@@ -1,0 +1,28 @@
+{
+  "pipeline_id": "20260410_222345",
+  "config": {
+    "model_name": "google-bert/bert-base-uncased",
+    "dataset": "csv/None",
+    "svd_rank": 8,
+    "device": "mps",
+    "batch_size": 8
+  },
+  "original_model": {
+    "metrics": {},
+    "stats": {}
+  },
+  "compressed_model": {
+    "metrics": {},
+    "stats": {}
+  },
+  "comparison": {
+    "error": "Could not compare due to missing accuracy values"
+  },
+  "timestamp": "2026-04-10T22:23:45.479181",
+  "errors": [
+    "Original Eval Error: 'list' object has no attribute 'to'",
+    "Step 1 Error: unsupported format string passed to NoneType.__format__",
+    "SVD Eval Error: 'list' object has no attribute 'to'",
+    "Step 3 Error: unsupported format string passed to NoneType.__format__"
+  ]
+}

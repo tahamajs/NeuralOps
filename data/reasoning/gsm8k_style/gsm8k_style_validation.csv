@@ -1,0 +1,77 @@
+id,split,question,expression,answer,num_terms,difficulty
+validation_gsm_00000,validation,Solve the arithmetic word problem and return only the final integer. Expression: 28 * 7,28 * 7,196,2,easy
+validation_gsm_00001,validation,Solve the arithmetic word problem and return only the final integer. Expression: 21 * 25 + 5 * 29,21 * 25 + 5 * 29,15370,4,hard
+validation_gsm_00002,validation,Solve the arithmetic word problem and return only the final integer. Expression: 22 * 7 + 7,22 * 7 + 7,161,3,medium
+validation_gsm_00003,validation,Solve the arithmetic word problem and return only the final integer. Expression: 3 * 24 * 31 * 34,3 * 24 * 31 * 34,75888,4,hard
+validation_gsm_00004,validation,Solve the arithmetic word problem and return only the final integer. Expression: 5 - 23 - 29 - 32,5 - 23 - 29 - 32,-79,4,hard
+validation_gsm_00005,validation,Solve the arithmetic word problem and return only the final integer. Expression: 36 + 18 + 3 * 16,36 + 18 + 3 * 16,912,4,hard
+validation_gsm_00006,validation,Solve the arithmetic word problem and return only the final integer. Expression: 2 + 13,2 + 13,15,2,easy
+validation_gsm_00007,validation,Solve the arithmetic word problem and return only the final integer. Expression: 14 - 15 * 24 * 38,14 - 15 * 24 * 38,-912,4,hard
+validation_gsm_00008,validation,Solve the arithmetic word problem and return only the final integer. Expression: 36 - 3 - 13 + 15,36 - 3 - 13 + 15,35,4,hard
+validation_gsm_00009,validation,Solve the arithmetic word problem and return only the final integer. Expression: 7 - 11 * 17,7 - 11 * 17,-68,3,medium
+validation_gsm_00010,validation,Solve the arithmetic word problem and return only the final integer. Expression: 40 + 28 + 11 * 37,40 + 28 + 11 * 37,2923,4,hard
+validation_gsm_00011,validation,Solve the arithmetic word problem and return only the final integer. Expression: 35 - 17 + 17,35 - 17 + 17,35,3,medium
+validation_gsm_00012,validation,Solve the arithmetic word problem and return only the final integer. Expression: 20 - 28 * 32,20 - 28 * 32,-256,3,medium
+validation_gsm_00013,validation,Solve the arithmetic word problem and return only the final integer. Expression: 19 * 12,19 * 12,228,2,easy
+validation_gsm_00014,validation,Solve the arithmetic word problem and return only the final integer. Expression: 32 * 25 * 4,32 * 25 * 4,3200,3,medium
+validation_gsm_00015,validation,Solve the arithmetic word problem and return only the final integer. Expression: 23 - 35 - 1 + 16,23 - 35 - 1 + 16,3,4,hard
+validation_gsm_00016,validation,Solve the arithmetic word problem and return only the final integer. Expression: 30 * 2,30 * 2,60,2,easy
+validation_gsm_00017,validation,Solve the arithmetic word problem and return only the final integer. Expression: 18 + 39,18 + 39,57,2,easy
+validation_gsm_00018,validation,Solve the arithmetic word problem and return only the final integer. Expression: 29 + 21 + 30,29 + 21 + 30,80,3,medium
+validation_gsm_00019,validation,Solve the arithmetic word problem and return only the final integer. Expression: 23 + 36 * 25,23 + 36 * 25,1475,3,medium
+validation_gsm_00020,validation,Solve the arithmetic word problem and return only the final integer. Expression: 16 + 20,16 + 20,36,2,easy
+validation_gsm_00021,validation,Solve the arithmetic word problem and return only the final integer. Expression: 11 - 5 * 1 * 28,11 - 5 * 1 * 28,168,4,hard
+validation_gsm_00022,validation,Solve the arithmetic word problem and return only the final integer. Expression: 12 - 36,12 - 36,-24,2,easy
+validation_gsm_00023,validation,Solve the arithmetic word problem and return only the final integer. Expression: 14 + 35 * 28,14 + 35 * 28,1372,3,medium
+validation_gsm_00024,validation,Solve the arithmetic word problem and return only the final integer. Expression: 14 - 24,14 - 24,-10,2,easy
+validation_gsm_00025,validation,Solve the arithmetic word problem and return only the final integer. Expression: 24 - 6 - 15,24 - 6 - 15,3,3,medium
+validation_gsm_00026,validation,Solve the arithmetic word problem and return only the final integer. Expression: 25 - 32 + 3,25 - 32 + 3,-4,3,medium
+validation_gsm_00027,validation,Solve the arithmetic word problem and return only the final integer. Expression: 9 + 36 - 28,9 + 36 - 28,17,3,medium
+validation_gsm_00028,validation,Solve the arithmetic word problem and return only the final integer. Expression: 4 * 1 * 6,4 * 1 * 6,24,3,medium
+validation_gsm_00029,validation,Solve the arithmetic word problem and return only the final integer. Expression: 7 + 28 * 37,7 + 28 * 37,1295,3,medium
+validation_gsm_00030,validation,Solve the arithmetic word problem and return only the final integer. Expression: 26 - 20 - 4 - 14,26 - 20 - 4 - 14,-12,4,hard
+validation_gsm_00031,validation,Solve the arithmetic word problem and return only the final integer. Expression: 17 + 31,17 + 31,48,2,easy
+validation_gsm_00032,validation,Solve the arithmetic word problem and return only the final integer. Expression: 13 - 33 + 38,13 - 33 + 38,18,3,medium
+validation_gsm_00033,validation,Solve the arithmetic word problem and return only the final integer. Expression: 9 - 9,9 - 9,0,2,easy
+validation_gsm_00034,validation,Solve the arithmetic word problem and return only the final integer. Expression: 31 * 37 - 29,31 * 37 - 29,1118,3,medium
+validation_gsm_00035,validation,Solve the arithmetic word problem and return only the final integer. Expression: 2 - 18,2 - 18,-16,2,easy
+validation_gsm_00036,validation,Solve the arithmetic word problem and return only the final integer. Expression: 3 * 15 - 27,3 * 15 - 27,18,3,medium
+validation_gsm_00037,validation,Solve the arithmetic word problem and return only the final integer. Expression: 33 - 27 + 39,33 - 27 + 39,45,3,medium
+validation_gsm_00038,validation,Solve the arithmetic word problem and return only the final integer. Expression: 34 + 35 - 31 * 33,34 + 35 - 31 * 33,1254,4,hard
+validation_gsm_00039,validation,Solve the arithmetic word problem and return only the final integer. Expression: 1 * 21 * 26 * 1,1 * 21 * 26 * 1,546,4,hard
+validation_gsm_00040,validation,Solve the arithmetic word problem and return only the final integer. Expression: 30 - 11 + 22 - 26,30 - 11 + 22 - 26,15,4,hard
+validation_gsm_00041,validation,Solve the arithmetic word problem and return only the final integer. Expression: 29 * 12 * 18 - 35,29 * 12 * 18 - 35,6229,4,hard
+validation_gsm_00042,validation,Solve the arithmetic word problem and return only the final integer. Expression: 7 - 9 + 14 + 35,7 - 9 + 14 + 35,47,4,hard
+validation_gsm_00043,validation,Solve the arithmetic word problem and return only the final integer. Expression: 16 - 2 * 14,16 - 2 * 14,196,3,medium
+validation_gsm_00044,validation,Solve the arithmetic word problem and return only the final integer. Expression: 36 + 6 + 37 + 36,36 + 6 + 37 + 36,115,4,hard
+validation_gsm_00045,validation,Solve the arithmetic word problem and return only the final integer. Expression: 33 + 31,33 + 31,64,2,easy
+validation_gsm_00046,validation,Solve the arithmetic word problem and return only the final integer. Expression: 39 + 40,39 + 40,79,2,easy
+validation_gsm_00047,validation,Solve the arithmetic word problem and return only the final integer. Expression: 28 - 37 + 1,28 - 37 + 1,-8,3,medium
+validation_gsm_00048,validation,Solve the arithmetic word problem and return only the final integer. Expression: 22 - 8 + 5 - 32,22 - 8 + 5 - 32,-13,4,hard
+validation_gsm_00049,validation,Solve the arithmetic word problem and return only the final integer. Expression: 5 - 6 * 27 * 7,5 - 6 * 27 * 7,-189,4,hard
+validation_gsm_00050,validation,Solve the arithmetic word problem and return only the final integer. Expression: 24 - 8,24 - 8,16,2,easy
+validation_gsm_00051,validation,Solve the arithmetic word problem and return only the final integer. Expression: 29 + 29 + 7 - 2,29 + 29 + 7 - 2,63,4,hard
+validation_gsm_00052,validation,Solve the arithmetic word problem and return only the final integer. Expression: 3 - 2 * 1 - 9,3 - 2 * 1 - 9,-8,4,hard
+validation_gsm_00053,validation,Solve the arithmetic word problem and return only the final integer. Expression: 37 - 33,37 - 33,4,2,easy
+validation_gsm_00054,validation,Solve the arithmetic word problem and return only the final integer. Expression: 15 * 18,15 * 18,270,2,easy
+validation_gsm_00055,validation,Solve the arithmetic word problem and return only the final integer. Expression: 26 + 5 * 27,26 + 5 * 27,837,3,medium
+validation_gsm_00056,validation,Solve the arithmetic word problem and return only the final integer. Expression: 4 + 12 * 32,4 + 12 * 32,512,3,medium
+validation_gsm_00057,validation,Solve the arithmetic word problem and return only the final integer. Expression: 40 - 17 - 30 * 17,40 - 17 - 30 * 17,-119,4,hard
+validation_gsm_00058,validation,Solve the arithmetic word problem and return only the final integer. Expression: 33 - 23,33 - 23,10,2,easy
+validation_gsm_00059,validation,Solve the arithmetic word problem and return only the final integer. Expression: 38 + 2,38 + 2,40,2,easy
+validation_gsm_00060,validation,Solve the arithmetic word problem and return only the final integer. Expression: 30 + 14,30 + 14,44,2,easy
+validation_gsm_00061,validation,Solve the arithmetic word problem and return only the final integer. Expression: 1 - 23 + 11,1 - 23 + 11,-11,3,medium
+validation_gsm_00062,validation,Solve the arithmetic word problem and return only the final integer. Expression: 23 - 23 * 16,23 - 23 * 16,0,3,medium
+validation_gsm_00063,validation,Solve the arithmetic word problem and return only the final integer. Expression: 17 - 3,17 - 3,14,2,easy
+validation_gsm_00064,validation,Solve the arithmetic word problem and return only the final integer. Expression: 40 * 1 + 28,40 * 1 + 28,68,3,medium
+validation_gsm_00065,validation,Solve the arithmetic word problem and return only the final integer. Expression: 34 + 36 + 31,34 + 36 + 31,101,3,medium
+validation_gsm_00066,validation,Solve the arithmetic word problem and return only the final integer. Expression: 8 * 3 - 37 - 2,8 * 3 - 37 - 2,-15,4,hard
+validation_gsm_00067,validation,Solve the arithmetic word problem and return only the final integer. Expression: 31 - 33 + 11 - 40,31 - 33 + 11 - 40,-31,4,hard
+validation_gsm_00068,validation,Solve the arithmetic word problem and return only the final integer. Expression: 4 * 32,4 * 32,128,2,easy
+validation_gsm_00069,validation,Solve the arithmetic word problem and return only the final integer. Expression: 7 + 17,7 + 17,24,2,easy
+validation_gsm_00070,validation,Solve the arithmetic word problem and return only the final integer. Expression: 30 * 6 * 22,30 * 6 * 22,3960,3,medium
+validation_gsm_00071,validation,Solve the arithmetic word problem and return only the final integer. Expression: 19 - 39 - 20,19 - 39 - 20,-40,3,medium
+validation_gsm_00072,validation,Solve the arithmetic word problem and return only the final integer. Expression: 27 - 39,27 - 39,-12,2,easy
+validation_gsm_00073,validation,Solve the arithmetic word problem and return only the final integer. Expression: 20 + 17,20 + 17,37,2,easy
+validation_gsm_00074,validation,Solve the arithmetic word problem and return only the final integer. Expression: 20 - 39,20 - 39,-19,2,easy
+validation_gsm_00075,validation,Solve the arithmetic word problem and return only the final integer. Expression: 7 * 13 + 23,7 * 13 + 23,114,3,medium

@@ -1,0 +1,86 @@
+{
+  "pipeline_id": "20260410_230341",
+  "config": {
+    "model_name": "google-bert/bert-base-uncased",
+    "dataset": "csv/None",
+    "svd_rank": 8,
+    "device": "mps",
+    "batch_size": 8
+  },
+  "original_model": {
+    "metrics": {
+      "accuracy": 0.49212962962962964,
+      "precision_weighted": 0.24219157235939642,
+      "recall_weighted": 0.49212962962962964,
+      "f1_score_weighted": 0.3246253777823743,
+      "precision_macro": 0.24606481481481482,
+      "recall_macro": 0.5,
+      "f1_score_macro": 0.3298169407384424,
+      "confusion_matrix": [
+        [
+          1063,
+          0
+        ],
+        [
+          1097,
+          0
+        ]
+      ],
+      "total_samples": 2160,
+      "per_class": {
+        "0": {
+          "precision": 0.49212962962962964,
+          "recall": 1.0,
+          "f1-score": 0.6596338814768848,
+          "support": 1063.0
+        },
+        "1": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 1097.0
+        },
+        "accuracy": 0.49212962962962964,
+        "macro avg": {
+          "precision": 0.24606481481481482,
+          "recall": 0.5,
+          "f1-score": 0.3298169407384424,
+          "support": 2160.0
+        },
+        "weighted avg": {
+          "precision": 0.24219157235939642,
+          "recall": 0.49212962962962964,
+          "f1-score": 0.3246253777823743,
+          "support": 2160.0
+        }
+      },
+      "status": "success"
+    },
+    "stats": {
+      "original_bytes": 437935112,
+      "compressed_bytes": 437935112,
+      "reduction_mb": 0.0,
+      "reduction_percent": 0.0
+    }
+  },
+  "compressed_model": {
+    "metrics": {
+      "error": "Classification metrics can't handle a mix of binary and multilabel-indicator targets",
+      "status": "failed",
+      "accuracy": null
+    },
+    "stats": {
+      "original_bytes": 437935112,
+      "compressed_bytes": 103507232,
+      "reduction_mb": 318.94,
+      "reduction_percent": 76.3647
+    }
+  },
+  "comparison": {
+    "error": "Could not compare due to missing accuracy values"
+  },
+  "timestamp": "2026-04-10T23:03:41.874005",
+  "errors": [
+    "SVD Eval Error: Classification metrics can't handle a mix of binary and multilabel-indicator targets"
+  ]
+}
