@@ -1,0 +1,91 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+class SVDLinearAttention(nn.Module):
+    def __init__(self, config, rank=64):
+        super().__init__()
+        self.num_heads = config.num_attention_heads
+        self.head_dim = config.hidden_size // self.num_heads
+        self.all_head_size = self.num_heads * self.head_dim
+        self.rank = rank
+
+        self.query = nn.Linear(config.hidden_size, self.all_head_size)
+        self.key   = nn.Linear(config.hidden_size, self.all_head_size)
+        self.value = nn.Linear(config.hidden_size, self.all_head_size)
+        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+
+    def transpose_for_scores(self, x):
+        new_shape = x.size()[:-1] + (self.num_heads, self.head_dim)
+        x = x.view(*new_shape)
+        return x.permute(0, 2, 1, 3)
+
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        encoder_hidden_states=None,
+        encoder_attention_mask=None,
+        past_key_value=None,
+        output_attentions=False,
+    ):
+        # If encoder_hidden_states is provided, we are in cross-attention mode.
+        # For simplicity, we only support self-attention (encoder_hidden_states is None).
+        # If cross-attention is needed, fallback to original BERT attention.
+        if encoder_hidden_states is not None:
+            # Fallback to standard attention for cross-attention
+            # But we don't have the original implementation; we can raise an error
+            # or implement a simple version. For now, raise NotImplementedError.
+            raise NotImplementedError("SVDLinearAttention does not support cross-attention yet.")
+
+        batch_size, seq_len, _ = hidden_states.shape
+        Q = self.transpose_for_scores(self.query(hidden_states))
+        K = self.transpose_for_scores(self.key(hidden_states))
+        V = self.transpose_for_scores(self.value(hidden_states))
+
+        if self.rank is None or seq_len <= self.rank:
+            # Full attention
+            attention_scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.head_dim ** 0.5)
+            if attention_mask is not None:
+                # attention_mask is typically [batch, 1, 1, seq_len] for BERT
+                attention_scores = attention_scores + attention_mask
+            attention_probs = F.softmax(attention_scores, dim=-1)
+            attention_probs = self.dropout(attention_probs)
+            context = torch.matmul(attention_probs, V)
+        else:
+            # SVD compression
+            original_device = hidden_states.device
+            if original_device.type == 'mps':
+                hidden_cpu = hidden_states.cpu()
+            else:
+                hidden_cpu = hidden_states
+
+            U_r_list = []
+            for b in range(batch_size):
+                U, S, Vt = torch.svd_lowrank(hidden_cpu[b], q=self.rank, niter=2)
+                U_r_list.append(U[:, :self.rank])
+            U_r = torch.stack(U_r_list, dim=0).to(original_device)  # (batch, seq_len, rank)
+            U_r = U_r.unsqueeze(1)   # (batch, 1, seq_len, rank)
+
+            # Project K and V
+            K_proj = torch.matmul(U_r.transpose(-2, -1), K)  # (batch, heads, rank, head_dim)
+            V_proj = torch.matmul(U_r.transpose(-2, -1), V)
+
+            attention_scores = torch.matmul(Q, K_proj.transpose(-2, -1)) / (self.head_dim ** 0.5)
+            if attention_mask is not None:
+                attention_scores = attention_scores + attention_mask.unsqueeze(-1)
+
+            attention_probs = F.softmax(attention_scores, dim=-1)
+            attention_probs = self.dropout(attention_probs)
+            context = torch.matmul(attention_probs, V_proj)
+
+        context = context.permute(0, 2, 1, 3).contiguous()
+        new_shape = context.size()[:-2] + (self.all_head_size,)
+        context = context.view(*new_shape)
+
+        # Return tuple to match original BERT output
+        if output_attentions:
+            return (context, attention_probs)
+        else:
+            return (context,)
