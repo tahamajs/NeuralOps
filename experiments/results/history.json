@@ -1,0 +1,986 @@
+[
+  {
+    "pipeline_id": "20260410_222210",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "compressed_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T22:22:10.558330",
+    "errors": [
+      "Original Eval Error: not enough values to unpack (expected 2, got 1)",
+      "SVD Eval Error: not enough values to unpack (expected 2, got 1)"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_222345",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "compressed_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T22:23:45.479181",
+    "errors": [
+      "Original Eval Error: 'list' object has no attribute 'to'",
+      "Step 1 Error: unsupported format string passed to NoneType.__format__",
+      "SVD Eval Error: 'list' object has no attribute 'to'",
+      "Step 3 Error: unsupported format string passed to NoneType.__format__"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_223610",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "compressed_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "comparison": {
+      "accuracy_loss": 0.011111111111111127,
+      "accuracy_delta": -0.011111111111111127,
+      "size_reduction_mb": 0.0,
+      "size_reduction_pct": 0.0
+    },
+    "timestamp": "2026-04-10T22:36:10.545692",
+    "errors": []
+  },
+  {
+    "pipeline_id": "20260410_224739",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "compressed_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T22:47:39.548570",
+    "errors": [
+      "Original Eval Error: name 'config' is not defined",
+      "Step 1 Error: unsupported format string passed to NoneType.__format__",
+      "Step 2 Error: name 'config' is not defined"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_224937",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "compressed_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T22:49:37.471190",
+    "errors": [
+      "Original Eval Error: name 'config' is not defined",
+      "Step 1 Error: unsupported format string passed to NoneType.__format__",
+      "Step 2 Error: name 'config' is not defined"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_225046",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "compressed_model": {
+      "metrics": {},
+      "stats": {}
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T22:50:46.580067",
+    "errors": [
+      "Step 2 Error: name 'config' is not defined"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_225259",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {
+        "accuracy": 0.5078703703703704,
+        "precision_weighted": 0.2579323131001372,
+        "recall_weighted": 0.5078703703703704,
+        "f1_score_weighted": 0.34211470451108156,
+        "precision_macro": 0.2539351851851852,
+        "recall_macro": 0.5,
+        "f1_score_macro": 0.3368130181148296,
+        "confusion_matrix": [
+          [
+            0,
+            1063
+          ],
+          [
+            0,
+            1097
+          ]
+        ],
+        "total_samples": 2160,
+        "per_class": {
+          "0": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1063.0
+          },
+          "1": {
+            "precision": 0.5078703703703704,
+            "recall": 1.0,
+            "f1-score": 0.6736260362296592,
+            "support": 1097.0
+          },
+          "accuracy": 0.5078703703703704,
+          "macro avg": {
+            "precision": 0.2539351851851852,
+            "recall": 0.5,
+            "f1-score": 0.3368130181148296,
+            "support": 2160.0
+          },
+          "weighted avg": {
+            "precision": 0.2579323131001372,
+            "recall": 0.5078703703703704,
+            "f1-score": 0.34211470451108156,
+            "support": 2160.0
+          }
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 437935112,
+        "reduction_mb": 0.0,
+        "reduction_percent": 0.0
+      }
+    },
+    "compressed_model": {
+      "metrics": {
+        "error": "The size of tensor a (768) must match the size of tensor b (8) at non-singleton dimension 2",
+        "status": "failed",
+        "accuracy": null
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 103183880,
+        "reduction_mb": 319.24,
+        "reduction_percent": 76.4385
+      }
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T22:52:59.769286",
+    "errors": [
+      "SVD Eval Error: The size of tensor a (768) must match the size of tensor b (8) at non-singleton dimension 2"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_225623",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {
+        "accuracy": 0.5078703703703704,
+        "precision_weighted": 0.2579323131001372,
+        "recall_weighted": 0.5078703703703704,
+        "f1_score_weighted": 0.34211470451108156,
+        "precision_macro": 0.2539351851851852,
+        "recall_macro": 0.5,
+        "f1_score_macro": 0.3368130181148296,
+        "confusion_matrix": [
+          [
+            0,
+            1063
+          ],
+          [
+            0,
+            1097
+          ]
+        ],
+        "total_samples": 2160,
+        "per_class": {
+          "0": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1063.0
+          },
+          "1": {
+            "precision": 0.5078703703703704,
+            "recall": 1.0,
+            "f1-score": 0.6736260362296592,
+            "support": 1097.0
+          },
+          "accuracy": 0.5078703703703704,
+          "macro avg": {
+            "precision": 0.2539351851851852,
+            "recall": 0.5,
+            "f1-score": 0.3368130181148296,
+            "support": 2160.0
+          },
+          "weighted avg": {
+            "precision": 0.2579323131001372,
+            "recall": 0.5078703703703704,
+            "f1-score": 0.34211470451108156,
+            "support": 2160.0
+          }
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 437935112,
+        "reduction_mb": 0.0,
+        "reduction_percent": 0.0
+      }
+    },
+    "compressed_model": {
+      "metrics": {
+        "error": "mat1 and mat2 shapes cannot be multiplied (1024x768 and 3072x8)",
+        "status": "failed",
+        "accuracy": null
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 103510288,
+        "reduction_mb": 318.93,
+        "reduction_percent": 76.364
+      }
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T22:56:23.328435",
+    "errors": [
+      "SVD Eval Error: mat1 and mat2 shapes cannot be multiplied (1024x768 and 3072x8)"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_230003",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {
+        "accuracy": 0.4898148148148148,
+        "precision_weighted": 0.4517147736419084,
+        "recall_weighted": 0.4898148148148148,
+        "f1_score_weighted": 0.33315906757609176,
+        "precision_macro": 0.45232123497143967,
+        "recall_macro": 0.4974732251046427,
+        "f1_score_macro": 0.338146235559347,
+        "confusion_matrix": [
+          [
+            1046,
+            17
+          ],
+          [
+            1085,
+            12
+          ]
+        ],
+        "total_samples": 2160,
+        "per_class": {
+          "0": {
+            "precision": 0.4908493664946035,
+            "recall": 0.9840075258701787,
+            "f1-score": 0.6549780839073263,
+            "support": 1063.0
+          },
+          "1": {
+            "precision": 0.41379310344827586,
+            "recall": 0.010938924339106655,
+            "f1-score": 0.021314387211367674,
+            "support": 1097.0
+          },
+          "accuracy": 0.4898148148148148,
+          "macro avg": {
+            "precision": 0.45232123497143967,
+            "recall": 0.4974732251046427,
+            "f1-score": 0.338146235559347,
+            "support": 2160.0
+          },
+          "weighted avg": {
+            "precision": 0.4517147736419084,
+            "recall": 0.4898148148148148,
+            "f1-score": 0.33315906757609176,
+            "support": 2160.0
+          }
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 437935112,
+        "reduction_mb": 0.0,
+        "reduction_percent": 0.0
+      }
+    },
+    "compressed_model": {
+      "metrics": {
+        "error": "mat1 and mat2 shapes cannot be multiplied (1024x8 and 768x8)",
+        "status": "failed",
+        "accuracy": null
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 102622488,
+        "reduction_mb": 319.78,
+        "reduction_percent": 76.5667
+      }
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T23:00:03.129628",
+    "errors": [
+      "SVD Eval Error: mat1 and mat2 shapes cannot be multiplied (1024x8 and 768x8)"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_230341",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {
+        "accuracy": 0.49212962962962964,
+        "precision_weighted": 0.24219157235939642,
+        "recall_weighted": 0.49212962962962964,
+        "f1_score_weighted": 0.3246253777823743,
+        "precision_macro": 0.24606481481481482,
+        "recall_macro": 0.5,
+        "f1_score_macro": 0.3298169407384424,
+        "confusion_matrix": [
+          [
+            1063,
+            0
+          ],
+          [
+            1097,
+            0
+          ]
+        ],
+        "total_samples": 2160,
+        "per_class": {
+          "0": {
+            "precision": 0.49212962962962964,
+            "recall": 1.0,
+            "f1-score": 0.6596338814768848,
+            "support": 1063.0
+          },
+          "1": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1097.0
+          },
+          "accuracy": 0.49212962962962964,
+          "macro avg": {
+            "precision": 0.24606481481481482,
+            "recall": 0.5,
+            "f1-score": 0.3298169407384424,
+            "support": 2160.0
+          },
+          "weighted avg": {
+            "precision": 0.24219157235939642,
+            "recall": 0.49212962962962964,
+            "f1-score": 0.3246253777823743,
+            "support": 2160.0
+          }
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 437935112,
+        "reduction_mb": 0.0,
+        "reduction_percent": 0.0
+      }
+    },
+    "compressed_model": {
+      "metrics": {
+        "error": "Classification metrics can't handle a mix of binary and multilabel-indicator targets",
+        "status": "failed",
+        "accuracy": null
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 103507232,
+        "reduction_mb": 318.94,
+        "reduction_percent": 76.3647
+      }
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T23:03:41.874005",
+    "errors": [
+      "SVD Eval Error: Classification metrics can't handle a mix of binary and multilabel-indicator targets"
+    ]
+  },
+  {
+    "pipeline_id": "20260410_230657",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 8,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {
+        "accuracy": 0.49444444444444446,
+        "precision_weighted": 0.6121045259481741,
+        "recall_weighted": 0.49444444444444446,
+        "f1_score_weighted": 0.3321516809957046,
+        "precision_macro": 0.6102627014679132,
+        "recall_macro": 0.5022352074545219,
+        "f1_score_macro": 0.3372326699066227,
+        "confusion_matrix": [
+          [
+            1060,
+            3
+          ],
+          [
+            1089,
+            8
+          ]
+        ],
+        "total_samples": 2160,
+        "per_class": {
+          "0": {
+            "precision": 0.4932526756630991,
+            "recall": 0.9971777986829727,
+            "f1-score": 0.660024906600249,
+            "support": 1063.0
+          },
+          "1": {
+            "precision": 0.7272727272727273,
+            "recall": 0.007292616226071103,
+            "f1-score": 0.01444043321299639,
+            "support": 1097.0
+          },
+          "accuracy": 0.49444444444444446,
+          "macro avg": {
+            "precision": 0.6102627014679132,
+            "recall": 0.5022352074545219,
+            "f1-score": 0.3372326699066227,
+            "support": 2160.0
+          },
+          "weighted avg": {
+            "precision": 0.6121045259481741,
+            "recall": 0.49444444444444446,
+            "f1-score": 0.3321516809957046,
+            "support": 2160.0
+          }
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 437935112,
+        "reduction_mb": 0.0,
+        "reduction_percent": 0.0
+      }
+    },
+    "compressed_model": {
+      "metrics": {
+        "accuracy": 0.5152777777777777,
+        "precision_weighted": 0.6371954877412623,
+        "recall_weighted": 0.5152777777777777,
+        "f1_score_weighted": 0.3638036208040455,
+        "precision_macro": 0.6392018779342723,
+        "recall_macro": 0.5076279187830318,
+        "f1_score_macro": 0.35881802415631375,
+        "confusion_matrix": [
+          [
+            23,
+            1040
+          ],
+          [
+            7,
+            1090
+          ]
+        ],
+        "total_samples": 2160,
+        "per_class": {
+          "0": {
+            "precision": 0.7666666666666667,
+            "recall": 0.021636876763875823,
+            "f1-score": 0.042086001829826164,
+            "support": 1063.0
+          },
+          "1": {
+            "precision": 0.5117370892018779,
+            "recall": 0.9936189608021878,
+            "f1-score": 0.6755500464828014,
+            "support": 1097.0
+          },
+          "accuracy": 0.5152777777777777,
+          "macro avg": {
+            "precision": 0.6392018779342723,
+            "recall": 0.5076279187830318,
+            "f1-score": 0.35881802415631375,
+            "support": 2160.0
+          },
+          "weighted avg": {
+            "precision": 0.6371954877412623,
+            "recall": 0.5152777777777777,
+            "f1-score": 0.3638036208040455,
+            "support": 2160.0
+          }
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 103507232,
+        "reduction_mb": 318.94,
+        "reduction_percent": 76.3647
+      }
+    },
+    "comparison": {
+      "accuracy_loss": 0.02083333333333326,
+      "accuracy_delta": 0.02083333333333326,
+      "size_reduction_mb": 318.94,
+      "size_reduction_pct": 76.3647
+    },
+    "timestamp": "2026-04-10T23:06:57.305631",
+    "errors": []
+  },
+  {
+    "pipeline_id": "20260410_231416",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 32,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {
+        "accuracy": 0.5078703703703704,
+        "precision_weighted": 0.2579323131001372,
+        "recall_weighted": 0.5078703703703704,
+        "f1_score_weighted": 0.34211470451108156,
+        "precision_macro": 0.2539351851851852,
+        "recall_macro": 0.5,
+        "f1_score_macro": 0.3368130181148296,
+        "confusion_matrix": [
+          [
+            0,
+            1063
+          ],
+          [
+            0,
+            1097
+          ]
+        ],
+        "total_samples": 2160,
+        "per_class": {
+          "0": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1063.0
+          },
+          "1": {
+            "precision": 0.5078703703703704,
+            "recall": 1.0,
+            "f1-score": 0.6736260362296592,
+            "support": 1097.0
+          },
+          "accuracy": 0.5078703703703704,
+          "macro avg": {
+            "precision": 0.2539351851851852,
+            "recall": 0.5,
+            "f1-score": 0.3368130181148296,
+            "support": 2160.0
+          },
+          "weighted avg": {
+            "precision": 0.2579323131001372,
+            "recall": 0.5078703703703704,
+            "f1-score": 0.34211470451108156,
+            "support": 2160.0
+          }
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 437935112,
+        "reduction_mb": 0.0,
+        "reduction_percent": 0.0
+      }
+    },
+    "compressed_model": {
+      "metrics": {
+        "accuracy": 0.49212962962962964,
+        "precision_weighted": 0.24219157235939642,
+        "recall_weighted": 0.49212962962962964,
+        "f1_score_weighted": 0.3246253777823743,
+        "precision_macro": 0.24606481481481482,
+        "recall_macro": 0.5,
+        "f1_score_macro": 0.3298169407384424,
+        "confusion_matrix": [
+          [
+            1063,
+            0
+          ],
+          [
+            1097,
+            0
+          ]
+        ],
+        "total_samples": 2160,
+        "per_class": {
+          "0": {
+            "precision": 0.49212962962962964,
+            "recall": 1.0,
+            "f1-score": 0.6596338814768848,
+            "support": 1063.0
+          },
+          "1": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1097.0
+          },
+          "accuracy": 0.49212962962962964,
+          "macro avg": {
+            "precision": 0.24606481481481482,
+            "recall": 0.5,
+            "f1-score": 0.3298169407384424,
+            "support": 2160.0
+          },
+          "weighted avg": {
+            "precision": 0.24219157235939642,
+            "recall": 0.49212962962962964,
+            "f1-score": 0.3246253777823743,
+            "support": 2160.0
+          }
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 119439368,
+        "reduction_mb": 303.74,
+        "reduction_percent": 72.7267
+      }
+    },
+    "comparison": {
+      "accuracy_loss": 0.015740740740740777,
+      "accuracy_delta": -0.015740740740740777,
+      "size_reduction_mb": 303.74,
+      "size_reduction_pct": 72.7267
+    },
+    "timestamp": "2026-04-10T23:14:16.611670",
+    "errors": []
+  },
+  {
+    "pipeline_id": "20260410_231645",
+    "config": {
+      "model_name": "google-bert/bert-base-uncased",
+      "dataset": "csv/None",
+      "svd_rank": 32,
+      "device": "mps",
+      "batch_size": 8
+    },
+    "original_model": {
+      "metrics": {
+        "experiment_id": "20260410_231645",
+        "timestamp": "2026-04-10 23:17:43",
+        "experiment_type": "evaluation",
+        "duration_seconds": 54.34,
+        "model_info": {
+          "name": "google-bert/bert-base-uncased",
+          "device": "mps",
+          "num_parameters": 109483778,
+          "estimated_size_mb": 417.65,
+          "compression_config": null
+        },
+        "dataset_info": {
+          "total_samples_evaluated": 2160,
+          "split_used": "validation",
+          "source": "csv"
+        },
+        "metrics": {
+          "accuracy": 0.49212962962962964,
+          "precision_weighted": 0.24219157235939642,
+          "recall_weighted": 0.49212962962962964,
+          "f1_score_weighted": 0.3246253777823743,
+          "precision_macro": 0.24606481481481482,
+          "recall_macro": 0.5,
+          "f1_score_macro": 0.3298169407384424,
+          "confusion_matrix": [
+            [
+              1063,
+              0
+            ],
+            [
+              1097,
+              0
+            ]
+          ],
+          "per_class": {
+            "0": {
+              "precision": 0.49212962962962964,
+              "recall": 1.0,
+              "f1-score": 0.6596338814768848,
+              "support": 1063.0
+            },
+            "1": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 1097.0
+            },
+            "accuracy": 0.49212962962962964,
+            "macro avg": {
+              "precision": 0.24606481481481482,
+              "recall": 0.5,
+              "f1-score": 0.3298169407384424,
+              "support": 2160.0
+            },
+            "weighted avg": {
+              "precision": 0.24219157235939642,
+              "recall": 0.49212962962962964,
+              "f1-score": 0.3246253777823743,
+              "support": 2160.0
+            }
+          }
+        },
+        "raw_predictions": {
+          "y_true_sample": [
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0
+          ],
+          "y_pred_sample": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 437935112,
+        "reduction_mb": 0.0,
+        "reduction_percent": 0.0
+      }
+    },
+    "compressed_model": {
+      "metrics": {
+        "experiment_id": "20260410_231645",
+        "timestamp": "2026-04-10 23:18:30",
+        "experiment_type": "evaluation",
+        "duration_seconds": 35.13,
+        "model_info": {
+          "name": "google-bert/bert-base-uncased",
+          "device": "mps",
+          "num_parameters": 29859842,
+          "estimated_size_mb": 113.91,
+          "compression_config": {
+            "method": "true_svd",
+            "rank": 32,
+            "original_params": 85017600,
+            "compressed_params": 5393664,
+            "reduction_pct": 93.65582655826559,
+            "layers_compressed": 72,
+            "skip_classifier": true
+          }
+        },
+        "dataset_info": {
+          "total_samples_evaluated": 2160,
+          "split_used": "validation",
+          "source": "csv"
+        },
+        "metrics": {
+          "accuracy": 0.5078703703703704,
+          "precision_weighted": 0.2579323131001372,
+          "recall_weighted": 0.5078703703703704,
+          "f1_score_weighted": 0.34211470451108156,
+          "precision_macro": 0.2539351851851852,
+          "recall_macro": 0.5,
+          "f1_score_macro": 0.3368130181148296,
+          "confusion_matrix": [
+            [
+              0,
+              1063
+            ],
+            [
+              0,
+              1097
+            ]
+          ],
+          "per_class": {
+            "0": {
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1-score": 0.0,
+              "support": 1063.0
+            },
+            "1": {
+              "precision": 0.5078703703703704,
+              "recall": 1.0,
+              "f1-score": 0.6736260362296592,
+              "support": 1097.0
+            },
+            "accuracy": 0.5078703703703704,
+            "macro avg": {
+              "precision": 0.2539351851851852,
+              "recall": 0.5,
+              "f1-score": 0.3368130181148296,
+              "support": 2160.0
+            },
+            "weighted avg": {
+              "precision": 0.2579323131001372,
+              "recall": 0.5078703703703704,
+              "f1-score": 0.34211470451108156,
+              "support": 2160.0
+            }
+          }
+        },
+        "raw_predictions": {
+          "y_true_sample": [
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0
+          ],
+          "y_pred_sample": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "status": "success"
+      },
+      "stats": {
+        "original_bytes": 437935112,
+        "compressed_bytes": 119439368,
+        "reduction_mb": 303.74,
+        "reduction_percent": 72.7267
+      }
+    },
+    "comparison": {
+      "error": "Could not compare due to missing accuracy values"
+    },
+    "timestamp": "2026-04-10T23:16:45.737617",
+    "errors": []
+  }
+]

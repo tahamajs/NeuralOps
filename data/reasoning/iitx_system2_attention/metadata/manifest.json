@@ -1,0 +1,135 @@
+{
+  "benchmark": "iitx_system2_attention",
+  "generated_at_utc": "2026-02-14T23:04:52Z",
+  "profile": "v1",
+  "seed": 2026,
+  "schema": [
+    "id",
+    "split",
+    "task_id",
+    "task_sketch",
+    "metric_track",
+    "effort_tier",
+    "risk_tag",
+    "prompt",
+    "expected_answer",
+    "answer_type",
+    "choices_json",
+    "pair_group",
+    "pair_variant",
+    "expected_behavior",
+    "control_decoy",
+    "control_novelty",
+    "control_position",
+    "budget_tokens",
+    "meta_json"
+  ],
+  "tasks": {
+    "I1": {
+      "task_sketch": "XOR(odd,red)->y",
+      "metric_track": "M_alpha",
+      "effort_tier": "L",
+      "risk_tag": "sh"
+    },
+    "I2": {
+      "task_sketch": "2span(key,rule)->a",
+      "metric_track": "M_alpha",
+      "effort_tier": "M",
+      "risk_tag": "sh"
+    },
+    "I3": {
+      "task_sketch": "revise(A,not A)->a2",
+      "metric_track": "M_beta",
+      "effort_tier": "M",
+      "risk_tag": "amb"
+    },
+    "I4": {
+      "task_sketch": "budget(B=32)->a",
+      "metric_track": "M_gamma",
+      "effort_tier": "L",
+      "risk_tag": "sh"
+    },
+    "I5": {
+      "task_sketch": "pos(s/m/e same fact)->a",
+      "metric_track": "M_beta",
+      "effort_tier": "L",
+      "risk_tag": "lk"
+    },
+    "I6": {
+      "task_sketch": "full vs abl(drop blk2) conf_down",
+      "metric_track": "M_delta",
+      "effort_tier": "M",
+      "risk_tag": "amb"
+    },
+    "I7": {
+      "task_sketch": "1 edit(swap fact)->flip",
+      "metric_track": "M_delta",
+      "effort_tier": "M",
+      "risk_tag": "lk"
+    },
+    "I8": {
+      "task_sketch": "rename(A->C)->same",
+      "metric_track": "M_beta",
+      "effort_tier": "L",
+      "risk_tag": "lk"
+    },
+    "I9": {
+      "task_sketch": "few IO(gridtxt)->new",
+      "metric_track": "M_alpha",
+      "effort_tier": "H",
+      "risk_tag": "amb"
+    },
+    "I10": {
+      "task_sketch": "rules(3)->(a,minproof)",
+      "metric_track": "M_alpha",
+      "effort_tier": "H",
+      "risk_tag": "amb"
+    },
+    "I11": {
+      "task_sketch": "ops(7+4;decoy 9)->a",
+      "metric_track": "M_alpha",
+      "effort_tier": "M",
+      "risk_tag": "sh"
+    },
+    "I12": {
+      "task_sketch": "rel(A aunt B)->rel",
+      "metric_track": "M_alpha",
+      "effort_tier": "M",
+      "risk_tag": "sh"
+    }
+  },
+  "task_row_counts": {
+    "I1": 5000,
+    "I2": 1800,
+    "I3": 1800,
+    "I4": 1800,
+    "I5": 6000,
+    "I6": 2000,
+    "I7": 2000,
+    "I8": 1800,
+    "I9": 1400,
+    "I10": 1400,
+    "I11": 1800,
+    "I12": 1800
+  },
+  "files": [
+    {
+      "split": "train",
+      "file": "/Users/tahamajs/Documents/uni/Research/consciousness/data/benchmarks/reasoning/iitx_system2_attention/processed/iitx_system2_attention_train.csv",
+      "rows": 20018,
+      "sha256": "546f861b591de628901c76b5ccc41cb8cacd9d9088a9b12b81ef5101d7b7e96a"
+    },
+    {
+      "split": "validation",
+      "file": "/Users/tahamajs/Documents/uni/Research/consciousness/data/benchmarks/reasoning/iitx_system2_attention/processed/iitx_system2_attention_validation.csv",
+      "rows": 4290,
+      "sha256": "ed6e375756b1dfed28ba22a8bbfc8a9d608000f2499a4c40cde91f5d1e59106f"
+    },
+    {
+      "split": "test",
+      "file": "/Users/tahamajs/Documents/uni/Research/consciousness/data/benchmarks/reasoning/iitx_system2_attention/processed/iitx_system2_attention_test.csv",
+      "rows": 4292,
+      "sha256": "8746f5c9c7127b1e04881009e83114d5f6fcb269c5ee9c98eba8de3127a995a7"
+    }
+  ]
+}

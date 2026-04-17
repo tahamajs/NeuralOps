@@ -1,0 +1,7 @@
+torch>=2.1
+transformers>=4.35
+numpy>=1.24
+onnx>=1.14
+onnxruntime>=1.16
+coremltools>=7.0
+pandas

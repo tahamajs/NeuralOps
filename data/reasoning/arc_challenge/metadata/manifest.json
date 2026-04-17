@@ -1,0 +1,37 @@
+{
+  "benchmark": "arc_challenge",
+  "generated_at_utc": "2026-02-14T18:53:45Z",
+  "schema": [
+    "id",
+    "split",
+    "question",
+    "choice_a",
+    "choice_b",
+    "choice_c",
+    "choice_d",
+    "answer_label",
+    "answer_text",
+    "source",
+    "notes"
+  ],
+  "files": [
+    {
+      "split": "train",
+      "file": "/Users/tahamajs/Documents/uni/Research/consciousness/data/benchmarks/reasoning/arc_challenge/processed/arc_challenge_train.csv",
+      "rows": 143,
+      "sha256": "6727784db572effb265646645029c831501533260dc35793476e3ff373de95a9"
+    },
+    {
+      "split": "validation",
+      "file": "/Users/tahamajs/Documents/uni/Research/consciousness/data/benchmarks/reasoning/arc_challenge/processed/arc_challenge_validation.csv",
+      "rows": 47,
+      "sha256": "3b5b670d8d22d7412eb086116be15aeb7537065d0f58309231f0ca1dd793f153"
+    },
+    {
+      "split": "test",
+      "file": "/Users/tahamajs/Documents/uni/Research/consciousness/data/benchmarks/reasoning/arc_challenge/processed/arc_challenge_test.csv",
+      "rows": 47,
+      "sha256": "720625d262985e737811fd712b2594b1c3490944726c25115dcb5d17481ca7c4"
+    }
+  ]
+}
