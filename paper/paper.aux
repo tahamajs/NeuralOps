@@ -1,0 +1,75 @@
+\relax 
+\citation{vaswani2017attention}
+\citation{beltagy2020longformer}
+\citation{zaheer2020bigbird}
+\citation{choromanski2020rethinking}
+\citation{wang2020linformer}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.1}Motivation}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2}Limitations of Existing Low-Rank Methods}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Our Contribution: Data-Dependent SVD Projection}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4}Paper Outline}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Transformer Self-Attention}{2}{}\protected@file@percent }
+\citation{halko2011finding}
+\citation{wang2020linformer}
+\citation{choromanski2020rethinking}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.1.1}Quadratic Complexity: A Deeper Look}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Singular Value Decomposition (SVD)}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}Truncated SVD}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}Randomized SVD}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Low-Rank Attention: Prior Work}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.1}Linformer}{3}{}\protected@file@percent }
+\citation{xiong2021nystromformer}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.2}Performer}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.3.3}Nyströmformer}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Methodology: SVD-Lin Attention}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Core Idea}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Why Project Keys and Values, Not Queries?}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Mathematical Derivation of Complexity}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Handling Multi-Head Attention}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Fallback to Full Attention}{4}{}\protected@file@percent }
+\citation{wang2018glue}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Pseudo-Code}{5}{}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces SVD-Lin Attention Forward Pass}}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Integration into BERT}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8}Computational Considerations on M1 Mac}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experimental Setup}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}GLUE Benchmark}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Model and Hyperparameters}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Hardware and Software}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Evaluation Metrics}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Results}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Accuracy Comparison}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Efficiency Gains}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Effect of Sequence Length}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Ablation: SVD vs. Random Projection}{6}{}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces GLUE validation scores for SVD-Lin with different ranks. Full BERT baseline is rank $\infty $.}}{7}{}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:full_results}{{1}{7}{}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Relative efficiency on M1 Mac (SST-2).}}{7}{}\protected@file@percent }
+\newlabel{tab:efficiency}{{2}{7}{}{table.2}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces SVD vs. random projection (rank 128).}}{7}{}\protected@file@percent }
+\newlabel{tab:ablation}{{3}{7}{}{table.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Sensitivity to Rank}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Why Does SVD Work for Attention?}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Trade-Offs and Practical Recommendations}{7}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}Limitations}{7}{}\protected@file@percent }
+\bibstyle{unsrt}
+\bibcite{vaswani2017attention}{1}
+\bibcite{wang2018glue}{2}
+\bibcite{wang2020linformer}{3}
+\bibcite{choromanski2020rethinking}{4}
+\bibcite{beltagy2020longformer}{5}
+\bibcite{zaheer2020bigbird}{6}
+\bibcite{xiong2021nystromformer}{7}
+\bibcite{halko2011finding}{8}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Future Work}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.4.1}Adaptive Rank Selection}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.4.2}Per-Head SVD}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.4.3}Incremental SVD for Causal Attention}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.4.4}Combination with Pruning}{8}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{8}{}\protected@file@percent }
+\bibcite{katharopoulos2020transformers}{9}
+\gdef \@abspage@last{9}
