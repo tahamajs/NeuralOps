@@ -1,0 +1,86 @@
+{
+  "pipeline_id": "20260410_225259",
+  "config": {
+    "model_name": "google-bert/bert-base-uncased",
+    "dataset": "csv/None",
+    "svd_rank": 8,
+    "device": "mps",
+    "batch_size": 8
+  },
+  "original_model": {
+    "metrics": {
+      "accuracy": 0.5078703703703704,
+      "precision_weighted": 0.2579323131001372,
+      "recall_weighted": 0.5078703703703704,
+      "f1_score_weighted": 0.34211470451108156,
+      "precision_macro": 0.2539351851851852,
+      "recall_macro": 0.5,
+      "f1_score_macro": 0.3368130181148296,
+      "confusion_matrix": [
+        [
+          0,
+          1063
+        ],
+        [
+          0,
+          1097
+        ]
+      ],
+      "total_samples": 2160,
+      "per_class": {
+        "0": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 1063.0
+        },
+        "1": {
+          "precision": 0.5078703703703704,
+          "recall": 1.0,
+          "f1-score": 0.6736260362296592,
+          "support": 1097.0
+        },
+        "accuracy": 0.5078703703703704,
+        "macro avg": {
+          "precision": 0.2539351851851852,
+          "recall": 0.5,
+          "f1-score": 0.3368130181148296,
+          "support": 2160.0
+        },
+        "weighted avg": {
+          "precision": 0.2579323131001372,
+          "recall": 0.5078703703703704,
+          "f1-score": 0.34211470451108156,
+          "support": 2160.0
+        }
+      },
+      "status": "success"
+    },
+    "stats": {
+      "original_bytes": 437935112,
+      "compressed_bytes": 437935112,
+      "reduction_mb": 0.0,
+      "reduction_percent": 0.0
+    }
+  },
+  "compressed_model": {
+    "metrics": {
+      "error": "The size of tensor a (768) must match the size of tensor b (8) at non-singleton dimension 2",
+      "status": "failed",
+      "accuracy": null
+    },
+    "stats": {
+      "original_bytes": 437935112,
+      "compressed_bytes": 103183880,
+      "reduction_mb": 319.24,
+      "reduction_percent": 76.4385
+    }
+  },
+  "comparison": {
+    "error": "Could not compare due to missing accuracy values"
+  },
+  "timestamp": "2026-04-10T22:52:59.769286",
+  "errors": [
+    "SVD Eval Error: The size of tensor a (768) must match the size of tensor b (8) at non-singleton dimension 2"
+  ]
+}

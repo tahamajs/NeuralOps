@@ -1,0 +1,26 @@
+{
+  "pipeline_id": "20260410_223610",
+  "config": {
+    "model_name": "google-bert/bert-base-uncased",
+    "dataset": "csv/None",
+    "svd_rank": 8,
+    "device": "mps",
+    "batch_size": 8
+  },
+  "original_model": {
+    "metrics": {},
+    "stats": {}
+  },
+  "compressed_model": {
+    "metrics": {},
+    "stats": {}
+  },
+  "comparison": {
+    "accuracy_loss": 0.011111111111111127,
+    "accuracy_delta": -0.011111111111111127,
+    "size_reduction_mb": 0.0,
+    "size_reduction_pct": 0.0
+  },
+  "timestamp": "2026-04-10T22:36:10.545692",
+  "errors": []
+}

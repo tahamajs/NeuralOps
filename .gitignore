@@ -1,0 +1,26 @@
+# Python Cache & Bytecode
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual Environments & Specific Env Folders
+**/soa_env/
+venv/
+.env/
+.env.local
+
+# Model Artifacts (All Subdirectories)
+**/models/
+**/smart_adaptive_final_model/
+**/temp_finetune/
+**/models_cache/
+**/*.pt
+**/*.onnx
+**/*.data
+**/*.safetensors
+
+# Other potential large files
+**/*.bin
+**/*.h5
