@@ -1,4 +1,15 @@
 import os
+os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'   # optional, only needed if you ever need to download
+os.environ['HF_HUB_OFFLINE'] = '1'                    # force offline after caching
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'        # suppress tokenizer warnings
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module="huggingface_hub.file_download")
+from visualization import SVDAttentionVisualizer
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for saving figures
+
+import os
 import json
 import torch
 import numpy as np
@@ -98,9 +109,15 @@ def get_best_metric_name(task_name):
     }
     return metric_map.get(task_name, "accuracy")
 
-def train_and_evaluate(task, rank, output_dir):
+def train_and_evaluate(task, rank, output_dir, visualize=True):
     device = get_device()
     print(f"\n>>> Running {task} with rank={rank} on {device}")
+    
+    # Initialize visualizer
+    if visualize:
+        viz_dir = os.path.join(output_dir, "visualizations")
+        visualizer = SVDAttentionVisualizer(output_dir=viz_dir)
+
 
     dataset = load_local_glue(task)
     eval_key = "validation_matched" if task == "mnli" and "validation_matched" in dataset else "validation"
@@ -135,7 +152,36 @@ def train_and_evaluate(task, rank, output_dir):
             batched=True
         )
         encoded[split].set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
-    
+    if visualize and rank is not None:
+        print(f"  📊 Capturing pre-training attention patterns...")
+        # Get a sample batch
+        sample_batch = {k: v[:1].to(device) for k, v in encoded["train"].items()}
+        sample_batch = {k: v.to(device) for k, v in sample_batch.items()}
+        
+        # Extract attention weights
+        attention_weights = visualizer.extract_attention_weights(
+            model, sample_batch, task, rank, MODEL_NAME
+        )
+        
+        # Generate visualizations for first few layers/heads
+        for layer_idx in range(min(3, len(attention_weights))):
+            attn = attention_weights[layer_idx][0].numpy()  # [heads, seq_len, seq_len]
+            for head_idx in range(min(3, attn.shape[0])):
+                attn_matrix = attn[head_idx]
+                # Plot heatmap
+                tokens = ['[CLS]'] + [f'tok_{i}' for i in range(attn_matrix.shape[0]-2)] + ['[SEP]']
+                visualizer.plot_attention_heatmap(
+                    attn_matrix, tokens, layer_idx, head_idx, rank, MODEL_NAME, task
+                )
+                # Plot entropy
+                visualizer.plot_attention_entropy(
+                    attn_matrix, layer_idx, head_idx, rank, MODEL_NAME, task
+                )
+                # SVD analysis
+                s, cum_energy = visualizer.analyze_singular_values(
+                    attn_matrix, rank, MODEL_NAME, task, layer_idx, head_idx
+                )
+
     # Training arguments - no checkpoint saving
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -164,6 +210,23 @@ def train_and_evaluate(task, rank, output_dir):
     
     trainer.train()
     eval_results = trainer.evaluate()
+
+    if visualize and rank is not None:
+        print(f"  📊 Capturing post-training attention patterns...")
+        # Extract attention again after training
+        attention_weights_post = visualizer.extract_attention_weights(
+            model, sample_batch, task, rank, MODEL_NAME
+        )
+        
+        # Generate difference maps
+        for layer_idx in range(min(3, len(attention_weights))):
+            for head_idx in range(min(3, attention_weights[layer_idx][0].shape[0])):
+                pre_attn = attention_weights[layer_idx][0][head_idx].numpy()
+                post_attn = attention_weights_post[layer_idx][0][head_idx].numpy()
+                visualizer.plot_attention_difference(
+                    pre_attn, post_attn, layer_idx, head_idx, rank, MODEL_NAME, task
+                )
+    
     return eval_results
 
 def main():
