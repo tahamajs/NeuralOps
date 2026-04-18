@@ -32,3 +32,24 @@ seed: 42
 # Visualisation
 visualize: true
 visualizations: ["attention_heatmap", "entropy", "svd_spectrum"]
+
+
+# Existing keys...
+compression_methods:
+  - standard_svd
+  - head_pruning
+  - layer_skipping
+  - quantized_svd
+  - blockwise_lowrank
+  - randomized_svd
+  - tensor_train_decomp
+  - cp_decomposition
+  - dynamic_token_pruning
+  - spectral_clustering_prune
+  - hash_quantization
+  - moe_sparsification
+  - hybrid_advanced
+energy_threshold_base: 0.90
+min_rank_global: 4
+limit_tasks: null
+limit_samples_per_task: 1000
