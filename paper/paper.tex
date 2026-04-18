@@ -232,6 +232,15 @@ The General Language Understanding Evaluation (GLUE) benchmark \cite{wang2018glu
     \item \textbf{STS-B}: Semantic textual similarity (regression, Pearson/Spearman).
 \end{itemize}
 We use the standard training/validation splits.
+\subsection{Considerations for Small Datasets}
+Several GLUE tasks (e.g., RTE, MRPC, STS‑B) have training sets of only a few thousand examples – STS‑B contains approximately 5.7k training samples and 1.5k validation samples. Fine‑tuning a 110M‑parameter model like BERT on such limited data risks overfitting. To mitigate this, we adopt:
+\begin{itemize}
+    \item A conservative learning rate ($2\times10^{-5}$) with linear warmup.
+    \item Dropout of 0.1 (and 0.2 for smaller tasks).
+    \item Early stopping based on validation loss.
+    \item Evaluation after each epoch to monitor overfitting.
+\end{itemize}
+These practices are standard for low‑resource fine‑tuning and ensure that our SVD‑Lin comparisons are fair and robust.
 
 \subsection{Model and Hyperparameters}
 \begin{itemize}
