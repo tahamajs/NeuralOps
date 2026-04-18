@@ -33,7 +33,7 @@ os.environ['HF_HUB_OFFLINE'] = '1'
 GLUE_TASKS = ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "qqp", "mnli"]
 RANKS = [64, 128, 256, None]
 MODEL_NAME = "bert-base-uncased"
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 EPOCHS = 3
 LEARNING_RATE = 2e-5
 BASE_OUTPUT_DIR = "results"
@@ -118,24 +118,31 @@ def train_and_evaluate(task, rank, output_dir, visualize=True):
         viz_dir = os.path.join(output_dir, "visualizations")
         visualizer = SVDAttentionVisualizer(output_dir=viz_dir)
 
-
+    # Load datasets
     dataset = load_local_glue(task)
     eval_key = "validation_matched" if task == "mnli" and "validation_matched" in dataset else "validation"
     
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     
+    # Determine number of labels
     if task == "stsb":
         num_labels = 1
     else:
+        # Ensure 'label' exists in train set
+        if "label" not in dataset["train"].column_names:
+            raise KeyError(f"'label' column not found in {task} training data.")
         labels = dataset["train"].unique("label")
         num_labels = len(labels)
     
     config = BertConfig.from_pretrained(MODEL_NAME, num_labels=num_labels)
+    
     if rank is None:
         model = BertForSequenceClassification.from_pretrained(MODEL_NAME, config=config)
     else:
         model = BertForSequenceClassification(config)
         model.bert = BertModelSVD(config, rank=rank)
+        
+        # Load pretrained weights for BERT part only
         pretrained = BertForSequenceClassification.from_pretrained(MODEL_NAME, config=config)
         model.bert.load_state_dict(pretrained.bert.state_dict(), strict=False)
         model.classifier = pretrained.classifier
@@ -147,52 +154,96 @@ def train_and_evaluate(task, rank, output_dir, visualize=True):
     for split in ["train", eval_key]:
         if split not in dataset:
             continue
+        
+        def map_func(examples):
+            return preprocess_function(examples, tokenizer, task)
+            
         encoded[split] = dataset[split].map(
-            lambda x: preprocess_function(x, tokenizer, task),
-            batched=True
+            map_func,
+            batched=True,
+            # نکته: ستون‌های خام غیرضروری را حذف می‌کنیم تا حافظه آزاد شود
+            remove_columns=[col for col in dataset[split].column_names if col not in ['input_ids', 'attention_mask', 'token_type_ids', 'label']]
         )
-        encoded[split].set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
+        
+        # *** اصلاح مهم: اضافه کردن token_type_ids به ستون‌های فعال ***
+        # مدل BERT برای کارکرد صحیح به این ستون نیاز دارد
+        encoded[split].set_format(
+            type='torch', 
+            columns=['input_ids', 'attention_mask', 'token_type_ids', 'label']
+        )
+
+    # --- Visualization Section (Pre-training) ---
+    sample_batch = None
     if visualize and rank is not None:
         print(f"  📊 Capturing pre-training attention patterns...")
-        # Get a sample batch
-        sample_batch = {k: v[:1].to(device) for k, v in encoded["train"].items()}
-        sample_batch = {k: v.to(device) for k, v in sample_batch.items()}
+        
+        # 1. Identify the original text column name from the RAW dataset
+        raw_train = dataset["train"]
+        raw_columns = raw_train.column_names
+        
+        text_col_name = None
+        if "sentence" in raw_columns:
+            text_col_name = "sentence"
+        elif "sentence1" in raw_columns:
+            text_col_name = "sentence1"
+        elif "question" in raw_columns:
+            text_col_name = "question"
+        elif "premise" in raw_columns:
+            text_col_name = "premise"
+        
+        # 2. Build sample_batch with ALL necessary tensors (including token_type_ids)
+    # Build batch with ALL necessary tensors, but WITHOUT 'label'
+        sample_batch = {}
+        required_cols = ['input_ids', 'attention_mask', 'token_type_ids']   # 'label' removed
+        
+        for col_name in required_cols:
+            if col_name not in encoded["train"].column_names:
+                raise KeyError(f"Column '{col_name}' is missing from processed dataset.")
+            col_data = encoded["train"][col_name]
+            single_tensor = col_data[0].unsqueeze(0).to(device)
+            sample_batch[col_name] = single_tensor
+
+        # Add original text if available (not used by model)
+        if text_col_name:
+            first_item = raw_train[0]
+            text_value = first_item[text_col_name]
+            sample_batch[text_col_name] = [text_value]
         
         # Extract attention weights
-        attention_weights = visualizer.extract_attention_weights(
-            model, sample_batch, task, rank, MODEL_NAME
-        )
-        
-        # Generate visualizations for first few layers/heads
-        for layer_idx in range(min(3, len(attention_weights))):
-            attn = attention_weights[layer_idx][0].numpy()  # [heads, seq_len, seq_len]
-            for head_idx in range(min(3, attn.shape[0])):
-                attn_matrix = attn[head_idx]
-                # Plot heatmap
-                tokens = ['[CLS]'] + [f'tok_{i}' for i in range(attn_matrix.shape[0]-2)] + ['[SEP]']
-                visualizer.plot_attention_heatmap(
-                    attn_matrix, tokens, layer_idx, head_idx, rank, MODEL_NAME, task
-                )
-                # Plot entropy
-                visualizer.plot_attention_entropy(
-                    attn_matrix, layer_idx, head_idx, rank, MODEL_NAME, task
-                )
-                # SVD analysis
-                s, cum_energy = visualizer.analyze_singular_values(
-                    attn_matrix, rank, MODEL_NAME, task, layer_idx, head_idx
-                )
+        try:
+            attention_weights = visualizer.extract_attention_weights(
+                model, sample_batch, task, rank, MODEL_NAME
+            )
+        except Exception as e:
+            print(f"  ⚠️ Error during pre-training extraction: {e}")
+            attention_weights = None
+            
 
-    # Training arguments - no checkpoint saving
+
+        # 5. Generate visualizations
+        if attention_weights is not None:
+            for layer_idx in range(min(3, len(attention_weights))):
+                attn = attention_weights[layer_idx][0].numpy()
+                for head_idx in range(min(3, attn.shape[0])):
+                    attn_matrix = attn[head_idx]
+                    seq_len = attn_matrix.shape[0]
+                    tokens = ['[CLS]'] + [f'tok_{i}' for i in range(seq_len-2)] + ['[SEP]']
+                    
+                    visualizer.plot_attention_heatmap(attn_matrix, tokens, layer_idx, head_idx, rank, MODEL_NAME, task)
+                    visualizer.plot_attention_entropy(attn_matrix, layer_idx, head_idx, rank, MODEL_NAME, task)
+
+            
+    # Training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
         evaluation_strategy="epoch",
-        save_strategy="no",                     # no checkpoints saved
+        save_strategy="no",
         learning_rate=LEARNING_RATE,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
         num_train_epochs=EPOCHS,
         weight_decay=0.01,
-        load_best_model_at_end=False,           # disabled to avoid save/eval mismatch
+        load_best_model_at_end=False,
         report_to="none",
         fp16=False,
     )
@@ -211,23 +262,27 @@ def train_and_evaluate(task, rank, output_dir, visualize=True):
     trainer.train()
     eval_results = trainer.evaluate()
 
-    if visualize and rank is not None:
+    # --- Visualization Section (Post-training) ---
+    if visualize and rank is not None and attention_weights is not None:
         print(f"  📊 Capturing post-training attention patterns...")
-        # Extract attention again after training
-        attention_weights_post = visualizer.extract_attention_weights(
-            model, sample_batch, task, rank, MODEL_NAME
-        )
-        
-        # Generate difference maps
-        for layer_idx in range(min(3, len(attention_weights))):
-            for head_idx in range(min(3, attention_weights[layer_idx][0].shape[0])):
-                pre_attn = attention_weights[layer_idx][0][head_idx].numpy()
-                post_attn = attention_weights_post[layer_idx][0][head_idx].numpy()
-                visualizer.plot_attention_difference(
-                    pre_attn, post_attn, layer_idx, head_idx, rank, MODEL_NAME, task
-                )
+        try:
+            attention_weights_post = visualizer.extract_attention_weights(
+                model, sample_batch, task, rank, MODEL_NAME
+            )
+            
+            for layer_idx in range(min(3, len(attention_weights))):
+                for head_idx in range(min(3, attention_weights[layer_idx][0].shape[0])):
+                    pre_attn = attention_weights[layer_idx][0][head_idx].numpy()
+                    post_attn = attention_weights_post[layer_idx][0][head_idx].numpy()
+                    
+                    visualizer.plot_attention_difference(
+                        pre_attn, post_attn, layer_idx, head_idx, rank, MODEL_NAME, task
+                    )
+        except Exception as e:
+            print(f"  ⚠️ Error during post-training extraction/plotting: {e}")
     
     return eval_results
+
 
 def main():
     parser = argparse.ArgumentParser()

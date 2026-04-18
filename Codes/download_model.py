@@ -1,5 +1,5 @@
 import os
-os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'   # fast mirror
+os.environ['HF_ENDPOINT'] = 'https://hf.devneeds.ir/'   # fast mirror
 
 from transformers import AutoTokenizer, BertConfig, BertForSequenceClassification
 
