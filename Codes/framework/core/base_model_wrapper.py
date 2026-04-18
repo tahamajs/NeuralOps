@@ -1,16 +1,10 @@
-from transformers import AutoModelForSequenceClassification
 from ..core.registry import ATTENTION_REGISTRY
 
 def replace_attention_in_model(model, attention_type, rank):
-    """
-    Replace self‑attention in any transformer model with a registered attention module.
-    Works for BERT, RoBERTa, DistilBERT, ALBERT, etc.
-    """
     attention_class = ATTENTION_REGISTRY.get(attention_type)
     if attention_class is None:
         raise ValueError(f"Unknown attention type: {attention_type}")
 
-    # Recursively traverse model and replace attention layers
     for module_name, module in model.named_modules():
         if "attention" in module_name.lower() and hasattr(module, "query"):
             parent_name, child_name = module_name.rsplit('.', 1)

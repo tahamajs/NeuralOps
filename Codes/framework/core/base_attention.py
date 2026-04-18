@@ -1,7 +1,6 @@
 from torch import nn
 
 class BaseAttention(nn.Module):
-    """All custom attention modules must inherit from this."""
     def __init__(self, config, rank=None):
         super().__init__()
         self.config = config
