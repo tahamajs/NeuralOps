@@ -15,19 +15,14 @@ class SVDLinearAttention(nn.Module):
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
-        # Apply SVD to weights once at initialization
         if rank is not None and rank < config.hidden_size:
-            self._apply_svd_to_weights()
-
-    def _apply_svd_to_weights(self):
-        """Reduce rank of query, key, value weight matrices using SVD"""
-        with torch.no_grad():
-            for linear in [self.query, self.key, self.value]:
-                U, S, V = torch.svd(linear.weight.data)
-                U_r = U[:, :self.rank]
-                S_r = S[:self.rank]
-                V_r = V[:, :self.rank]
-                linear.weight.data = U_r @ torch.diag(S_r) @ V_r.T
+            with torch.no_grad():
+                for linear in [self.query, self.key, self.value]:
+                    U, S, V = torch.svd(linear.weight.data)
+                    U_r = U[:, :rank]
+                    S_r = S[:rank]
+                    V_r = V[:, :rank]
+                    linear.weight.data = U_r @ torch.diag(S_r) @ V_r.T
 
     def transpose_for_scores(self, x):
         new_shape = x.size()[:-1] + (self.num_heads, self.head_dim)
@@ -39,7 +34,7 @@ class SVDLinearAttention(nn.Module):
                 past_key_value=None, output_attentions=False):
 
         if encoder_hidden_states is not None:
-            raise NotImplementedError("SVDLinearAttention does not support cross-attention yet.")
+            raise NotImplementedError("Cross-attention not supported")
 
         Q = self.transpose_for_scores(self.query(hidden_states))
         K = self.transpose_for_scores(self.key(hidden_states))
