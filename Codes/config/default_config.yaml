@@ -1,0 +1,13 @@
+device: "mps"                     # "cuda", "mps", "cpu"
+local_glue_path: "/path/to/datasets/glue"   # local Parquet folder
+batch_size: 16
+epochs: 3
+learning_rate: 2e-5
+weight_decay: 0.01
+output_dir: "results"
+seed: 42
+logging_steps: 50
+save_checkpoints: false
+early_stopping_patience: 2
+eval_steps: null                 # null = evaluate at epoch end
+max_seq_length: 128
