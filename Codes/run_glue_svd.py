@@ -1,7 +1,8 @@
 import os
-os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'   # optional
 os.environ['HF_HUB_OFFLINE'] = '1'
-os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+# os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+import gc
+import torch
 
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning, module="huggingface_hub.file_download")
@@ -32,7 +33,7 @@ from visualization import SVDAttentionVisualizer
 os.environ['HF_HUB_OFFLINE'] = '1'
 
 GLUE_TASKS = ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "qqp", "mnli"]
-RANKS = [64, 128, 256, None]
+RANKS = [ None]
 MODEL_NAME = "bert-base-uncased"
 BATCH_SIZE = 16
 EPOCHS = 1
@@ -42,9 +43,9 @@ LOCAL_GLUE_PATH = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
 
 def get_device(rank=None):
     if rank is not None:
-        return torch.device("cpu")
-    if torch.backends.mps.is_available():
         return torch.device("mps")
+    if torch.backends.mps.is_available():
+        return torch.device("cpu")
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def load_local_glue(task_name):
@@ -97,7 +98,7 @@ def preprocess_function(examples, tokenizer, task_name):
         keys = list(examples.keys())
         raise KeyError(f"Unknown column names for task {task_name}: {keys}")
 
-def train_and_evaluate(task, rank, output_dir, visualize=True):
+def train_and_evaluate(task, rank, output_dir, visualize=True, max_train_samples=200):
     # Decide device based on rank: SVD models on CPU, full model on MPS/CUDA
     if rank is not None:
         device = torch.device("cpu")
@@ -111,6 +112,10 @@ def train_and_evaluate(task, rank, output_dir, visualize=True):
         visualizer = SVDAttentionVisualizer(output_dir=viz_dir)
 
     dataset = load_local_glue(task)
+    if max_train_samples is not None and "train" in dataset:
+        dataset["train"] = dataset["train"].select(range(min(max_train_samples, len(dataset["train"]))))
+        print(f"  → Using only {len(dataset['train'])} training samples (for fast debugging)")
+
     eval_key = "validation_matched" if task == "mnli" and "validation_matched" in dataset else "validation"
     
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
@@ -185,8 +190,8 @@ def train_and_evaluate(task, rank, output_dir, visualize=True):
         
         if attention_weights is not None:
             attn_numpy = [attn.cpu().numpy() for attn in attention_weights]
-            print(f"  → Generating visualizations for first 3 layers and heads...")
-            for layer_idx in range(min(3, len(attn_numpy))):
+            print(f"  → Generating visualizations for first 10 layers and heads...")
+            for layer_idx in range(min(10, len(attn_numpy))):
                 layer_attn = attn_numpy[layer_idx][0]
                 num_heads = min(3, layer_attn.shape[0])
                 for head_idx in range(num_heads):
@@ -251,6 +256,14 @@ def train_and_evaluate(task, rank, output_dir, visualize=True):
             print(f"  ⚠️ Error in post-training visualisation: {e}")
         finally:
             model.train()
+    # پاکسازی حافظه
+    del model
+    del trainer
+    if 'encoded' in locals():
+        del encoded
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     
     return eval_results
 
@@ -287,7 +300,7 @@ def main():
         for rank in RANKS:
             out_dir = os.path.join(OUTPUT_DIR, task, f"rank_{rank}")
             try:
-                metrics = train_and_evaluate(task, rank, out_dir, visualize=True)
+                metrics = train_and_evaluate(task, rank, out_dir, visualize=False)
                 task_results[str(rank)] = metrics
                 os.makedirs(out_dir, exist_ok=True)
                 with open(os.path.join(out_dir, "metrics.json"), "w") as f:
