@@ -23,15 +23,14 @@ def plot_all():
         scores = []
         for rank_str, metrics in data.items():
             if rank_str == "None":
-                continue   # we'll add full attention later manually if needed
+                continue
             ranks.append(int(rank_str))
             scores.append(extract_score(task, metrics))
 
-        # Sort by rank
         sorted_pairs = sorted(zip(ranks, scores))
-        ranks, scores = zip(*sorted_pairs) if sorted_pairs else ([], [])
-
-        axes[i].plot(ranks, scores, marker='o', linestyle='-', linewidth=2)
+        if sorted_pairs:
+            ranks, scores = zip(*sorted_pairs)
+            axes[i].plot(ranks, scores, marker='o', linestyle='-', linewidth=2)
         axes[i].set_title(task.upper())
         axes[i].set_xlabel("Rank (r)")
         axes[i].set_ylabel("Score (Acc / Spearman)")
@@ -39,7 +38,7 @@ def plot_all():
 
     plt.tight_layout()
     plt.savefig(f"{RESULTS_DIR}/accuracy_vs_rank.png", dpi=150)
-    plt.show()
+    plt.close()
     print(f"Plot saved as {RESULTS_DIR}/accuracy_vs_rank.png")
 
 if __name__ == "__main__":
