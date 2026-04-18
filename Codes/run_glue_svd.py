@@ -82,6 +82,20 @@ def preprocess_function(examples, tokenizer, task_name):
         keys = list(examples.keys())
         raise KeyError(f"Unknown column names for task {task_name}: {keys}")
 
+def get_best_metric_name(task_name):
+    # Map GLUE task to the metric name used by evaluate.load
+    metric_map = {
+        "cola": "matthews_correlation",
+        "sst2": "accuracy",
+        "mrpc": "accuracy",
+        "qqp": "accuracy",
+        "qnli": "accuracy",
+        "rte": "accuracy",
+        "mnli": "accuracy",
+        "stsb": "pearson",
+    }
+    return metric_map.get(task_name, "accuracy")
+
 def train_and_evaluate(task, rank):
     device = get_device()
     print(f"\n>>> Running {task} with rank={rank} on {device}")
@@ -91,6 +105,7 @@ def train_and_evaluate(task, rank):
     
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     
+    # Determine number of labels
     if task == "stsb":
         num_labels = 1
     else:
@@ -103,14 +118,13 @@ def train_and_evaluate(task, rank):
     else:
         model = BertForSequenceClassification(config)
         model.bert = BertModelSVD(config, rank=rank)
-        # Load pretrained weights (except attention layers)
         pretrained = BertForSequenceClassification.from_pretrained(MODEL_NAME, config=config)
         model.bert.load_state_dict(pretrained.bert.state_dict(), strict=False)
         model.classifier = pretrained.classifier
     
     model.to(device)
     
-    # Tokenize datasets
+    # Tokenize
     encoded = {}
     for split in ["train", eval_key]:
         if split not in dataset:
@@ -119,10 +133,10 @@ def train_and_evaluate(task, rank):
             lambda x: preprocess_function(x, tokenizer, task),
             batched=True
         )
-        columns = ['input_ids', 'attention_mask', 'label']
-        encoded[split].set_format(type='torch', columns=columns)
+        encoded[split].set_format(type='torch', columns=['input_ids', 'attention_mask', 'label'])
     
-    # Training arguments
+    # Training arguments with correct metric name
+    best_metric = get_best_metric_name(task)
     output_subdir = f"{OUTPUT_DIR}/{task}/rank_{rank}"
     os.makedirs(output_subdir, exist_ok=True)
     
@@ -136,14 +150,13 @@ def train_and_evaluate(task, rank):
         num_train_epochs=EPOCHS,
         weight_decay=0.01,
         load_best_model_at_end=True,
-        metric_for_best_model="eval_loss" if task == "stsb" else "accuracy",
+        metric_for_best_model=best_metric,
+        greater_is_better=True,
         report_to="none",
-        use_mps_device=(device.type == "mps"),
         fp16=False,
     )
     
     data_collator = DataCollatorWithPadding(tokenizer)
-    
     trainer = Trainer(
         model=model,
         args=training_args,
