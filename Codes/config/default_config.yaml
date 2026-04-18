@@ -34,7 +34,7 @@ visualize: true
 visualizations: ["attention_heatmap", "entropy", "svd_spectrum"]
 
 
-# Existing keys...
+# ... existing keys ...
 compression_methods:
   - standard_svd
   - head_pruning
@@ -53,3 +53,4 @@ energy_threshold_base: 0.90
 min_rank_global: 4
 limit_tasks: null
 limit_samples_per_task: 1000
+svd_rank: 32
