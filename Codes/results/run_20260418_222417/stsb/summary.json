@@ -1,0 +1,11 @@
+{
+  "None": {
+    "eval_loss": 2.256241798400879,
+    "eval_pearson": 0.09835405647754669,
+    "eval_spearmanr": 0.0929822046921788,
+    "eval_runtime": 38.4501,
+    "eval_samples_per_second": 39.012,
+    "eval_steps_per_second": 2.445,
+    "epoch": 3.0
+  }
+}
