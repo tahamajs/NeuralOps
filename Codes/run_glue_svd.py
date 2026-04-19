@@ -36,8 +36,8 @@ GLUE_TASKS = ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "qqp", "mnli"]
 RANKS = [ None]
 MODEL_NAME = "bert-base-uncased"
 BATCH_SIZE = 16
-EPOCHS = 1
-LEARNING_RATE = 2e-5
+EPOCHS = 3
+LEARNING_RATE = 2e-4
 BASE_OUTPUT_DIR = "results"
 LOCAL_GLUE_PATH = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
 
@@ -98,7 +98,7 @@ def preprocess_function(examples, tokenizer, task_name):
         keys = list(examples.keys())
         raise KeyError(f"Unknown column names for task {task_name}: {keys}")
 
-def train_and_evaluate(task, rank, output_dir, visualize=True, max_train_samples=200):
+def train_and_evaluate(task, rank, output_dir, visualize=True, max_train_samples=1000):
     # Decide device based on rank: SVD models on CPU, full model on MPS/CUDA
     if rank is not None:
         device = torch.device("cpu")
@@ -193,7 +193,7 @@ def train_and_evaluate(task, rank, output_dir, visualize=True, max_train_samples
             print(f"  → Generating visualizations for first 10 layers and heads...")
             for layer_idx in range(min(10, len(attn_numpy))):
                 layer_attn = attn_numpy[layer_idx][0]
-                num_heads = min(3, layer_attn.shape[0])
+                num_heads = min(10, layer_attn.shape[0])
                 for head_idx in range(num_heads):
                     attn_matrix = layer_attn[head_idx]
                     seq_len = attn_matrix.shape[0]
