@@ -7,6 +7,21 @@ local_glue_path: "/Users/tahamajs/Documents/uni/Project/datasets/glue"
 max_seq_length: 128
 max_train_samples: null
 
+# Available GLUE tasks (subdirectories under local_glue_path)
+glue_tasks:
+  - ax
+  - cola
+  - mnli
+  - mnli_matched
+  - mnli_mismatched
+  - mrpc
+  - qnli
+  - qqp
+  - rte
+  - sst2
+  - stsb
+  - wnli
+
 # Model
 model_name: "bert-base-uncased"   # also: roberta-base, distilbert-base-uncased, albert-base-v2
 attention_type: "svd"             # svd, full, linformer
@@ -33,8 +48,7 @@ seed: 42
 visualize: true
 visualizations: ["attention_heatmap", "entropy", "svd_spectrum"]
 
-
-# ... existing keys ...
+# Compression methods
 compression_methods:
   - standard_svd
   - head_pruning
