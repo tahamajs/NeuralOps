@@ -10,7 +10,7 @@
 venv/
 .env/
 .env.local
-
+*.parquet
 # Model Artifacts (All Subdirectories)
 **/models/
 **/smart_adaptive_final_model/
@@ -23,4 +23,6 @@ venv/
 
 # Other potential large files
 **/*.bin
-**/*.h5
+**/*.h5datasets/truthful_qa/
+datasets/glue/
+datasets/
