@@ -1,0 +1,8 @@
+{
+  "hostname": "tahamajss-MacBook-Air.local",
+  "pid": 95243,
+  "time": "2026-04-30 18:04:47",
+  "cuda_available": false,
+  "mps_available": true,
+  "gpu_name": null
+}

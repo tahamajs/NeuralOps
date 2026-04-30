@@ -17,6 +17,8 @@ venv/
 **/temp_finetune/
 **/models_cache/
 **/*.pt
+**/*.pth
+
 **/*.onnx
 **/*.data
 **/*.safetensors

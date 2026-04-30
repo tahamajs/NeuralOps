@@ -1,324 +1,1185 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+GLUE Research Framework – Ultimate Production‑Grade
+- All methods: Baseline, LoRA, DoRA, DisLoRA, Fisher‑LoRA, Fisher‑GeLoRA, R‑Drop, R3F, Mixout, LLRD, Lion.
+- Multi‑seed aggregation with mean/std (NaN‑safe).
+- Memory optimised for MPS (gradient checkpointing, clipping, cache clearing).
+- Local GLUE dataset fallback.
+- Fisher importance computed in eval mode with random sampling.
+- GeLoRA intrinsic dimension estimation (PyTorch only, no sklearn).
+"""
+
 import os
-os.environ['HF_HUB_OFFLINE'] = '1'
-# os.environ['TOKENIZERS_PARALLELISM'] = 'false'
-import gc
-import torch
-
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module="huggingface_hub.file_download")
-
-import matplotlib
-matplotlib.use('Agg')
-
-import os
+import sys
 import json
-import torch
-import numpy as np
+import math
+import time
+import uuid
+import socket
+import random
+import logging
 import argparse
-from datetime import datetime
-from transformers import (
-    AutoTokenizer,
-    TrainingArguments,
-    Trainer,
-    DataCollatorWithPadding,
-    BertConfig,
-    BertForSequenceClassification
-)
-from datasets import Dataset
+from dataclasses import dataclass, asdict
+from typing import Dict, Any, List, Optional, Tuple
+
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
+
+from datasets import load_dataset, Dataset, DatasetDict
 import evaluate
-from modeling_bert_svd import BertModelSVD
-from visualization import SVDAttentionVisualizer
 
-# Force offline mode
-os.environ['HF_HUB_OFFLINE'] = '1'
+from transformers import (
+    AutoConfig,
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+    Trainer,
+    TrainingArguments,
+    DataCollatorWithPadding,
+    EarlyStoppingCallback,
+    set_seed,
+)
+from transformers.trainer_callback import TrainerCallback
 
-GLUE_TASKS = ["cola", "mrpc", "rte", "stsb", "sst2", "qnli", "qqp", "mnli"]
-RANKS = [ None]
-MODEL_NAME = "bert-base-uncased"
-BATCH_SIZE = 16
-EPOCHS = 3
-LEARNING_RATE = 2e-4
-BASE_OUTPUT_DIR = "results"
-LOCAL_GLUE_PATH = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+# Optional libraries
+try:
+    import pandas as pd
+    _HAS_PANDAS = True
+except ImportError:
+    pd = None
+    _HAS_PANDAS = False
 
-def get_device(rank=None):
-    if rank is not None:
-        return torch.device("mps")
+try:
+    from sklearn.metrics import confusion_matrix
+    _HAS_SKLEARN = True
+except ImportError:
+    _HAS_SKLEARN = False
+    confusion_matrix = None
+
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    _HAS_PLT = True
+except ImportError:
+    _HAS_PLT = False
+    plt = None
+    sns = None
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    datefmt="%m/%d/%Y %H:%M:%S",
+    level=logging.INFO,
+)
+
+# ----------------------------------------------------------------------
+# Configuration
+# ----------------------------------------------------------------------
+@dataclass
+class ExperimentConfig:
+    model_name_or_path: str
+    tasks: List[str]
+    method: str
+    output_root: str
+    num_train_epochs: int
+    per_device_train_batch_size: int
+    per_device_eval_batch_size: int
+    learning_rate: float
+    weight_decay: float
+    warmup_ratio: float
+    seed: int
+    max_seq_length: int
+    gradient_accumulation_steps: int
+    lr_scheduler_type: str
+    logging_steps: int
+    save_total_limit: int
+    fp16: bool
+    lora_r: int
+    lora_alpha: int
+    lora_dropout: float
+    rdrop_alpha: float
+    r3f_epsilon: float
+    llrd_decay: float
+    mixout_p: float
+    use_lion: bool
+    early_stopping_patience: Optional[int] = None
+    gradient_checkpointing: bool = False
+    max_grad_norm: float = 1.0
+    # Fisher / GeLoRA
+    fisher_num_batches: int = 20
+    fisher_sample_size: int = 200
+    gelora_margin: float = 1.0
+    gelora_min_rank: int = 2
+    gelora_max_rank: int = 32
+    fisher_scale_max: float = 2.0
+    # DisLoRA
+    dislora_beta: float = 0.5
+    dislora_capacity_factor: float = 1.0
+    # Multi‑seed
+    num_seeds: int = 1
+
+# ----------------------------------------------------------------------
+# Helpers
+# ----------------------------------------------------------------------
+def get_device_and_precision(fp16_flag: bool):
+    if torch.cuda.is_available():
+        return torch.device("cuda"), fp16_flag
     if torch.backends.mps.is_available():
-        return torch.device("cpu")
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        return torch.device("mps"), False
+    return torch.device("cpu"), False
 
-def load_local_glue(task_name):
-    task_path = os.path.join(LOCAL_GLUE_PATH, task_name)
-    if not os.path.exists(task_path):
-        raise FileNotFoundError(f"Task folder not found: {task_path}")
-    files = os.listdir(task_path)
-    train_file = None
-    valid_file = None
-    valid_matched_file = None
-    for f in files:
-        if f.startswith("train-") and f.endswith(".parquet"):
-            train_file = os.path.join(task_path, f)
-        elif f.startswith("validation-") and f.endswith(".parquet"):
-            valid_file = os.path.join(task_path, f)
-        elif "matched" in f and f.endswith(".parquet"):
-            valid_matched_file = os.path.join(task_path, f)
-    dataset_dict = {}
-    if train_file:
-        dataset_dict["train"] = Dataset.from_parquet(train_file)
-    if valid_file:
-        dataset_dict["validation"] = Dataset.from_parquet(valid_file)
-    if valid_matched_file:
-        dataset_dict["validation_matched"] = Dataset.from_parquet(valid_matched_file)
-    return dataset_dict
+def get_model_device(model: nn.Module) -> torch.device:
+    return next(model.parameters()).device
 
-def compute_metrics(task_name):
-    metric = evaluate.load("glue", task_name)
-    def compute(eval_pred):
-        logits, labels = eval_pred
-        if task_name == "stsb":
-            predictions = logits.squeeze()
+def set_all_seeds(seed: int):
+    set_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+def create_experiment_dir(config: ExperimentConfig) -> str:
+    run_id = time.strftime("%Y%m%d-%H%M%S") + "-" + str(uuid.uuid4())[:8]
+    run_dir = os.path.join(config.output_root, run_id)
+    os.makedirs(run_dir, exist_ok=True)
+    return run_dir
+
+def save_json(obj: Any, path: str):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, ensure_ascii=False, indent=2)
+
+def save_system_info(run_dir: str):
+    info = {
+        "hostname": socket.gethostname(),
+        "pid": os.getpid(),
+        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "cuda_available": torch.cuda.is_available(),
+        "mps_available": torch.backends.mps.is_available(),
+        "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+    }
+    save_json(info, os.path.join(run_dir, "system.json"))
+
+def save_config(config: ExperimentConfig, run_dir: str):
+    save_json(asdict(config), os.path.join(run_dir, "config.json"))
+
+# ----------------------------------------------------------------------
+# GLUE Metadata
+# ----------------------------------------------------------------------
+GLUE_TASK_KEYS = {
+    "cola": ("sentence", None), "sst2": ("sentence", None),
+    "mrpc": ("sentence1", "sentence2"), "qqp": ("question1", "question2"),
+    "stsb": ("sentence1", "sentence2"), "mnli": ("premise", "hypothesis"),
+    "qnli": ("question", "sentence"), "rte": ("sentence1", "sentence2"),
+    "wnli": ("sentence1", "sentence2"),
+}
+
+def get_num_labels_and_is_regression(task_name: str) -> Tuple[int, bool]:
+    t = task_name.lower()
+    if t == "stsb": return 1, True
+    if t == "cola": return 2, False
+    glue_num_labels = {"sst2":2, "mrpc":2, "qqp":2, "mnli":3, "qnli":2, "rte":2, "wnli":2}
+    return glue_num_labels[t], False
+
+def get_primary_metric_name(task_name: str) -> str:
+    t = task_name.lower()
+    if t == "cola": return "matthews_correlation"
+    if t == "stsb": return "pearson_spearman"
+    if t in ["mrpc","qqp"]: return "f1"
+    return "accuracy"
+
+def compute_metrics_builder(task_name: str):
+    t = task_name.lower()
+    metric = evaluate.load("glue", t)
+    def compute_metrics(p):
+        preds = p.predictions
+        if t == "stsb":
+            preds = np.squeeze(preds)
         else:
-            predictions = np.argmax(logits, axis=-1)
-        return metric.compute(predictions=predictions, references=labels)
-    return compute
+            preds = np.argmax(preds, axis=1)
+        result = metric.compute(predictions=preds, references=p.label_ids)
+        if t == "stsb" and "pearson" in result and "spearmanr" in result:
+            result["pearson_spearman"] = (result["pearson"] + result["spearmanr"]) / 2.0
+        if t == "mrpc" and "accuracy" in result and "f1" in result:
+            result["accuracy_f1"] = (result["accuracy"] + result["f1"]) / 2.0
+        return result
+    return compute_metrics
 
-def preprocess_function(examples, tokenizer, task_name):
-    if "sentence" in examples:
-        return tokenizer(examples["sentence"], truncation=True, max_length=128)
-    elif "sentence1" in examples and "sentence2" in examples:
-        return tokenizer(examples["sentence1"], examples["sentence2"], truncation=True, max_length=128)
-    elif "question1" in examples and "question2" in examples:
-        return tokenizer(examples["question1"], examples["question2"], truncation=True, max_length=128)
-    elif "premise" in examples and "hypothesis" in examples:
-        return tokenizer(examples["premise"], examples["hypothesis"], truncation=True, max_length=128)
-    elif "question" in examples and "sentence" in examples:
-        return tokenizer(examples["question"], examples["sentence"], truncation=True, max_length=128)
-    else:
-        keys = list(examples.keys())
-        raise KeyError(f"Unknown column names for task {task_name}: {keys}")
+# ----------------------------------------------------------------------
+# Local GLUE Loader
+# ----------------------------------------------------------------------
+def load_glue_local(task_name: str) -> DatasetDict:
+    base_path = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+    task_path = os.path.join(base_path, task_name)
+    if not os.path.exists(task_path):
+        raise FileNotFoundError(f"Local path {task_path} not found")
+    splits = {}
+    split_files = {}
+    for fname in os.listdir(task_path):
+        if not fname.endswith(".parquet"): continue
+        split = fname.split("-")[0]
+        split_files.setdefault(split, []).append(os.path.join(task_path, fname))
+    for split, files in split_files.items():
+        splits[split] = Dataset.from_parquet(files)
+    return DatasetDict(splits)
 
-def train_and_evaluate(task, rank, output_dir, visualize=True, max_train_samples=1000):
-    # Decide device based on rank: SVD models on CPU, full model on MPS/CUDA
-    if rank is not None:
-        device = torch.device("cpu")
-        print(f"\n>>> Running {task} with rank={rank} on CPU (SVD models require CPU)")
-    else:
-        device = get_device()
-        print(f"\n>>> Running {task} with rank={rank} on {device}")
-    
-    if visualize:
-        viz_dir = os.path.join(output_dir, "visualizations")
-        visualizer = SVDAttentionVisualizer(output_dir=viz_dir)
+# ----------------------------------------------------------------------
+# Preprocessing
+# ----------------------------------------------------------------------
+def preprocess_function_builder(tokenizer, task_name: str, max_seq_len: int):
+    sent1_key, sent2_key = GLUE_TASK_KEYS[task_name.lower()]
+    def preprocess(examples):
+        args = (examples[sent1_key],) if sent2_key is None else (examples[sent1_key], examples[sent2_key])
+        tokenized = tokenizer(*args, truncation=True, max_length=max_seq_len, padding=False)
+        if get_num_labels_and_is_regression(task_name)[1]:
+            tokenized["labels"] = [float(label) for label in examples["label"]]
+        else:
+            tokenized["labels"] = examples["label"]
+        return tokenized
+    return preprocess
 
-    dataset = load_local_glue(task)
-    if max_train_samples is not None and "train" in dataset:
-        dataset["train"] = dataset["train"].select(range(min(max_train_samples, len(dataset["train"]))))
-        print(f"  → Using only {len(dataset['train'])} training samples (for fast debugging)")
-
-    eval_key = "validation_matched" if task == "mnli" and "validation_matched" in dataset else "validation"
-    
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    
-    if task == "stsb":
-        num_labels = 1
-    else:
-        if "label" not in dataset["train"].column_names:
-            raise KeyError(f"'label' column not found in {task} training data.")
-        labels = dataset["train"].unique("label")
-        num_labels = len(labels)
-    
-    config = BertConfig.from_pretrained(MODEL_NAME, num_labels=num_labels)
-    if visualize and rank is not None:
-        config.output_attentions = True
-    
-    if rank is None:
-        model = BertForSequenceClassification.from_pretrained(MODEL_NAME, config=config)
-    else:
-        model = BertForSequenceClassification(config)
-        model.bert = BertModelSVD(config, rank=rank)
-        pretrained = BertForSequenceClassification.from_pretrained(MODEL_NAME, config=config)
-        model.bert.load_state_dict(pretrained.bert.state_dict(), strict=False)
-        model.classifier = pretrained.classifier
-    
-    model.to(device)
-    
-    # Tokenize datasets (same as before)
-    encoded = {}
-    for split in ["train", eval_key]:
-        if split not in dataset:
-            continue
-        def map_func(examples):
-            return preprocess_function(examples, tokenizer, task)
-        encoded[split] = dataset[split].map(
-            map_func,
-            batched=True,
-            remove_columns=[col for col in dataset[split].column_names if col not in ['input_ids', 'attention_mask', 'token_type_ids', 'label']]
-        )
-        encoded[split].set_format(
-            type='torch',
-            columns=['input_ids', 'attention_mask', 'token_type_ids', 'label']
-        )
-
-    # ---------- PRE-TRAINING VISUALISATION ----------
-    sample_batch = None
-    attention_weights = None
-    if visualize and rank is not None:
-        print(f"  📊 Capturing pre-training attention patterns...")
-        sample_batch = {}
-        for col in ['input_ids', 'attention_mask', 'token_type_ids']:
-            # Move data to the same device as model (CPU)
-            sample_batch[col] = encoded["train"][col][0].unsqueeze(0).to(device)
-        
-        model.eval()
-        model.config.output_attentions = True
-        try:
-            with torch.no_grad():
-                outputs = model(**sample_batch)
-            if hasattr(outputs, 'attentions') and outputs.attentions is not None:
-                attention_weights = outputs.attentions
-                print(f"  ✓ Extracted attentions from {len(attention_weights)} layers")
+# ----------------------------------------------------------------------
+# Advanced Modules
+# ----------------------------------------------------------------------
+class MixoutLinear(nn.Module):
+    def __init__(self, linear: nn.Linear, p: float):
+        super().__init__()
+        self.in_features, self.out_features = linear.in_features, linear.out_features
+        self.weight = linear.weight
+        self.bias = linear.bias
+        self.p = p
+        self.register_buffer("target_weight", self.weight.data.clone())
+        if self.bias is not None:
+            self.register_buffer("target_bias", self.bias.data.clone())
+    def forward(self, x):
+        if self.training and self.p > 0:
+            mask = torch.bernoulli(torch.full_like(self.weight, 1 - self.p))
+            mixed_weight = self.weight * mask + self.target_weight * (1 - mask)
+            if self.bias is not None:
+                mask_bias = torch.bernoulli(torch.full_like(self.bias, 1 - self.p))
+                mixed_bias = self.bias * mask_bias + self.target_bias * (1 - mask_bias)
             else:
-                print("  ⚠️ WARNING: Model did not return attentions.")
-                attention_weights = None
-        except Exception as e:
-            print(f"  ⚠️ Error during attention extraction: {e}")
-            import traceback; traceback.print_exc()
-            attention_weights = None
-        finally:
-            model.train()
-        
-        if attention_weights is not None:
-            attn_numpy = [attn.cpu().numpy() for attn in attention_weights]
-            print(f"  → Generating visualizations for first 10 layers and heads...")
-            for layer_idx in range(min(10, len(attn_numpy))):
-                layer_attn = attn_numpy[layer_idx][0]
-                num_heads = min(10, layer_attn.shape[0])
-                for head_idx in range(num_heads):
-                    attn_matrix = layer_attn[head_idx]
-                    seq_len = attn_matrix.shape[0]
-                    tokens = ['[CLS]'] + [f'tok_{i}' for i in range(seq_len-2)] + ['[SEP]']
-                    try:
-                        visualizer.plot_attention_heatmap(attn_matrix, tokens, layer_idx, head_idx, rank, MODEL_NAME, task)
-                        visualizer.plot_attention_entropy(attn_matrix, layer_idx, head_idx, rank, MODEL_NAME, task)
-                    except Exception as e:
-                        print(f"    ⚠️ Failed plot layer {layer_idx}, head {head_idx}: {e}")
-            print(f"  ✓ Pre-training visualizations saved.")
+                mixed_bias = None
+            return F.linear(x, mixed_weight, mixed_bias)
+        return F.linear(x, self.weight, self.bias)
 
-    # ---------- TRAINING ----------
-    training_args = TrainingArguments(
-        output_dir=output_dir,
-        evaluation_strategy="epoch",
-        save_strategy="no",
-        learning_rate=LEARNING_RATE,
-        per_device_train_batch_size=BATCH_SIZE,
-        per_device_eval_batch_size=BATCH_SIZE,
-        num_train_epochs=EPOCHS,
-        weight_decay=0.01,
-        load_best_model_at_end=False,
-        report_to="none",
-        fp16=False,
-    )
+def replace_linears_with_mixout(model: nn.Module, p: float, skip_classifier: bool = True):
+    for name, module in list(model.named_children()):
+        if skip_classifier and "classifier" in name:
+            continue
+        if isinstance(module, nn.Linear):
+            setattr(model, name, MixoutLinear(module, p))
+        else:
+            replace_linears_with_mixout(module, p, skip_classifier)
+
+class LoRALinear(nn.Module):
+    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float):
+        super().__init__()
+        self.linear = linear
+        self.linear.weight.requires_grad = False
+        if self.linear.bias is not None:
+            self.linear.bias.requires_grad = False
+        self.r = r
+        if r > 0:
+            self.lora_A = nn.Linear(linear.in_features, r, bias=False)
+            self.lora_B = nn.Linear(r, linear.out_features, bias=False)
+            nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B.weight)
+            self.scaling = alpha / r
+            self.dropout = nn.Dropout(dropout)
+        else:
+            self.lora_A = self.lora_B = None
+            self.scaling = 1.0
+            self.dropout = nn.Identity()
+    def forward(self, x):
+        if self.r > 0:
+            lora_out = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
+            return self.linear(x) + lora_out
+        return self.linear(x)
+
+class DoRALinear(nn.Module):
+    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float):
+        super().__init__()
+        self.linear = linear
+        self.linear.weight.requires_grad = False
+        if self.linear.bias is not None:
+            self.linear.bias.requires_grad = False
+        self.r = r
+        if r > 0:
+            self.lora_A = nn.Linear(linear.in_features, r, bias=False)
+            self.lora_B = nn.Linear(r, linear.out_features, bias=False)
+            nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B.weight)
+            self.scaling = alpha / r
+        else:
+            self.lora_A = self.lora_B = None
+            self.scaling = 1.0
+        with torch.no_grad():
+            w_norm = linear.weight.norm(p=2, dim=1, keepdim=True)
+        self.magnitude = nn.Parameter(w_norm)
+    def forward(self, x):
+        w_base = self.linear.weight
+        if self.r > 0:
+            ba = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+            w_combined = w_base + ba
+        else:
+            w_combined = w_base
+        w_norm = w_combined.norm(p=2, dim=1, keepdim=True) + 1e-8
+        w_dir = w_combined / w_norm
+        w_scaled = w_dir * self.magnitude
+        return F.linear(x, w_scaled, self.linear.bias)
+
+class DisLoRALinear(nn.Module):
+    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float,
+                 beta: float = 0.5, capacity_factor: float = 1.0):
+        super().__init__()
+        self.linear = linear
+        self.linear.weight.requires_grad = False
+        if self.linear.bias is not None:
+            self.linear.bias.requires_grad = False
+        d = linear.in_features
+        target_params = capacity_factor * 2 * d * r
+        self.r_eff = max(1, int(math.sqrt(target_params)))
+        self.r_eff = min(self.r_eff, d)
+        self.alpha = alpha
+        self.beta = beta
+        with torch.no_grad():
+            U, S, Vh = torch.linalg.svd(linear.weight.data, full_matrices=False)
+            V = Vh.T
+            self.register_buffer('U_frozen', U[:, :self.r_eff])
+            self.register_buffer('S_frozen', S[:self.r_eff])
+            self.register_buffer('V_frozen', V[:, :self.r_eff])
+        self.C = nn.Parameter(torch.zeros(self.r_eff, self.r_eff))
+        nn.init.eye_(self.C)
+        self.scaling = alpha / self.r_eff
+        self.dropout = nn.Dropout(dropout)
+    def forward(self, x):
+        x_proj = x @ self.U_frozen
+        x_proj = self.dropout(x_proj)
+        coeff_out = x_proj @ self.C
+        delta = coeff_out @ self.V_frozen.T
+        base = self.linear(x)
+        return base + self.beta * delta * self.scaling
+
+def apply_lora_or_dora(model: nn.Module, r: int, alpha: float, dropout: float,
+                       method_type: str = 'lora',
+                       per_layer_ranks: Optional[Dict[str, int]] = None,
+                       dislora_beta: float = 0.5,
+                       dislora_capacity_factor: float = 1.0):
+    target_substrings = ["query", "key", "value", "dense"]
+    targets = []
+    for name, module in model.named_modules():
+        if not isinstance(module, nn.Linear):
+            continue
+        if "classifier" in name or "pooler" in name:
+            continue
+        if not any(ts in name for ts in target_substrings):
+            continue
+        targets.append(name)
+    for full_name in targets:
+        parent_name = ".".join(full_name.split(".")[:-1])
+        child_name = full_name.split(".")[-1]
+        parent = model.get_submodule(parent_name) if parent_name else model
+        module = getattr(parent, child_name)
+        layer_r = per_layer_ranks.get(full_name, r) if per_layer_ranks else r
+        if method_type == 'dora':
+            setattr(parent, child_name, DoRALinear(module, layer_r, alpha, dropout))
+        elif method_type == 'dislora':
+            setattr(parent, child_name, DisLoRALinear(module, layer_r, alpha, dropout,
+                                                      beta=dislora_beta,
+                                                      capacity_factor=dislora_capacity_factor))
+        else:  # lora
+            setattr(parent, child_name, LoRALinear(module, layer_r, alpha, dropout))
+
+# ----------------------------------------------------------------------
+# Fisher Importance (eval mode, random sampling, softmax)
+# ----------------------------------------------------------------------
+def compute_fisher_importance(model, dataset, tokenizer, task_name, config,
+                              target_substrings=None):
+    if target_substrings is None:
+        target_substrings = ["query", "key", "value", "dense"]
+    fisher = {}
+    model.eval()
+    device = get_model_device(model)
+    total = len(dataset)
+    sample_size = min(config.fisher_sample_size, total)
+    indices = np.random.choice(total, sample_size, replace=False)
+    sampled = dataset.select(indices)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[task_name.lower()]
+    def collate_fn(batch):
+        if sent2_key is None:
+            texts = [ex[sent1_key] for ex in batch]
+            enc = tokenizer(texts, truncation=True, max_length=config.max_seq_length,
+                            padding=True, return_tensors="pt")
+        else:
+            texts1 = [ex[sent1_key] for ex in batch]
+            texts2 = [ex[sent2_key] for ex in batch]
+            enc = tokenizer(texts1, texts2, truncation=True, max_length=config.max_seq_length,
+                            padding=True, return_tensors="pt")
+        labels = [ex["label"] for ex in batch]
+        if get_num_labels_and_is_regression(task_name)[1]:
+            enc["labels"] = torch.tensor(labels, dtype=torch.float)
+        else:
+            enc["labels"] = torch.tensor(labels, dtype=torch.long)
+        return enc
+    loader = DataLoader(sampled, batch_size=config.per_device_train_batch_size,
+                        collate_fn=collate_fn)
+    for param in model.parameters():
+        param.requires_grad = True
+    for i, batch in enumerate(loader):
+        if i >= config.fisher_num_batches:
+            break
+        batch = {k: v.to(device) for k, v in batch.items()}
+        outputs = model(**batch)
+        loss = outputs.loss
+        loss.backward()
+        for name, param in model.named_parameters():
+            if param.grad is None:
+                continue
+            if not any(ts in name for ts in target_substrings):
+                continue
+            score = (param.grad ** 2).mean().item()
+            module_name = name.replace(".weight", "").replace(".bias", "")
+            fisher[module_name] = fisher.get(module_name, 0.0) + score
+        model.zero_grad()
+    if not fisher:
+        return None
+    for k in fisher:
+        fisher[k] /= config.fisher_num_batches
+    scores = np.array(list(fisher.values()))
+    exp_scores = np.exp(scores - np.max(scores))
+    norm_scores = exp_scores / np.sum(exp_scores)
+    fisher = {k: norm_scores[i] for i, k in enumerate(fisher.keys())}
+    return fisher
+
+# ----------------------------------------------------------------------
+# GeLoRA intrinsic dimension (PyTorch only)
+# ----------------------------------------------------------------------
+def estimate_intrinsic_dimension_pytorch(hidden_states: torch.Tensor, k: int = 5) -> float:
+    N = hidden_states.shape[0]
+    if N < k + 1:
+        return 1.0
+    if N > 1000:
+        idx = torch.randperm(N)[:1000]
+        hidden_states = hidden_states[idx]
+        N = 1000
+    dist = torch.cdist(hidden_states, hidden_states, compute_mode='donot_use_mm_for_euclid_dist')
+    dist.fill_diagonal_(float('inf'))
+    topk_dist, _ = torch.topk(dist, k, dim=1, largest=False)
+    d_k = topk_dist[:, -1:]
+    log_ratios = torch.log(topk_dist / (d_k + 1e-8))
+    id_per_point = -1.0 / torch.mean(log_ratios, dim=1)
+    id_global = torch.mean(id_per_point).item()
+    return max(1.0, id_global)
+
+def get_encoder_layers(model):
+    if hasattr(model, 'bert') and hasattr(model.bert, 'encoder'):
+        return model.bert.encoder.layer
+    if hasattr(model, 'roberta') and hasattr(model.roberta, 'encoder'):
+        return model.roberta.encoder.layer
+    if hasattr(model, 'distilbert') and hasattr(model.distilbert, 'transformer'):
+        return model.distilbert.transformer.layer
+    if hasattr(model, 'encoder') and hasattr(model.encoder, 'layer'):
+        return model.encoder.layer
+    layers = []
+    for name, module in model.named_modules():
+        if 'layer' in name and isinstance(module, (nn.ModuleList, nn.Sequential)):
+            for submod in module:
+                layers.append(submod)
+        elif 'layer' in name:
+            layers.append(module)
+    if layers:
+        return layers
+    raise ValueError("Cannot find encoder layers")
+
+def collect_hidden_states(model, dataloader, num_batches: int = 10, max_samples: int = 800):
+    layers = get_encoder_layers(model)
+    num_layers = len(layers)
+    hidden_states_per_layer = {i: [] for i in range(num_layers)}
+    hooks = []
+    def hook_fn(layer_idx):
+        def hook(module, input, output):
+            if isinstance(output, tuple):
+                hs = output[0].detach()
+            else:
+                hs = output.detach()
+            hidden_states_per_layer[layer_idx].append(hs)
+        return hook
+    for i, layer in enumerate(layers):
+        hook = layer.register_forward_hook(hook_fn(i))
+        hooks.append(hook)
+    model.eval()
+    total_samples = 0
+    with torch.no_grad():
+        for i, batch in enumerate(dataloader):
+            if i >= num_batches or total_samples >= max_samples:
+                break
+            batch = {k: v.to(model.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+            model(**batch)
+            total_samples += batch['input_ids'].size(0)
+    for hook in hooks:
+        hook.remove()
+    for i in range(num_layers):
+        if hidden_states_per_layer[i]:
+            hidden_states_per_layer[i] = torch.cat(hidden_states_per_layer[i], dim=0)
+        else:
+            hidden_states_per_layer[i] = torch.empty(0)
+    return hidden_states_per_layer
+
+def compute_gelora_base_ranks(model, dataloader, config: ExperimentConfig) -> Dict[str, int]:
+    layer_hidden = collect_hidden_states(model, dataloader, num_batches=8, max_samples=800)
+    layer_id = {}
+    for layer_idx, hs in layer_hidden.items():
+        if hs.shape[0] < 10:
+            id_val = 1.0
+        else:
+            id_val = estimate_intrinsic_dimension_pytorch(hs, k=min(5, hs.shape[0]-1))
+        base_rank = max(config.gelora_min_rank, min(config.gelora_max_rank,
+                                                    int(id_val + config.gelora_margin)))
+        layer_id[layer_idx] = base_rank
+        logger.info(f"Layer {layer_idx} intrinsic dim ≈ {id_val:.2f} → base rank {base_rank}")
+    target_substrings = ["query", "key", "value", "dense"]
+    rank_dict = {}
+    for name, _ in model.named_modules():
+        if any(ts in name for ts in target_substrings) and "classifier" not in name and "pooler" not in name:
+            parts = name.split('.')
+            layer_idx = None
+            for i, part in enumerate(parts):
+                if part == 'layer' and i+1 < len(parts):
+                    try:
+                        layer_idx = int(parts[i+1])
+                        break
+                    except:
+                        pass
+            if layer_idx is not None and layer_idx in layer_id:
+                rank_dict[name] = layer_id[layer_idx]
+            else:
+                rank_dict[name] = config.lora_r
+    return rank_dict
+
+def scale_ranks_with_fisher(base_ranks: Dict[str, int], fisher_scores: Dict[str, float],
+                            config: ExperimentConfig) -> Dict[str, int]:
+    module_fisher = {}
+    for full_name, score in fisher_scores.items():
+        base_name = full_name.split('.weight')[0].split('.bias')[0].replace('.lora_A', '').replace('.lora_B', '')
+        module_fisher[base_name] = module_fisher.get(base_name, 0.0) + score
+    total = sum(module_fisher.values()) + 1e-8
+    module_fisher = {k: v/total for k, v in module_fisher.items()}
+    scaled = {}
+    for module_name, base_r in base_ranks.items():
+        fisher_score = module_fisher.get(module_name, 0.0)
+        if fisher_score == 0.0:
+            for key in module_fisher:
+                if key in module_name or module_name in key:
+                    fisher_score = module_fisher[key]
+                    break
+        scale = 1 + fisher_score * (config.fisher_scale_max - 1)
+        new_r = int(base_r * scale)
+        new_r = max(config.gelora_min_rank, min(config.gelora_max_rank, new_r))
+        scaled[module_name] = new_r
+        if fisher_score > 0.01:
+            logger.info(f"Fisher scaling {module_name}: {base_r} -> {new_r} (score {fisher_score:.3f})")
+    return scaled
+
+# ----------------------------------------------------------------------
+# R‑Drop & R3F
+# ----------------------------------------------------------------------
+def rdrop_loss(logits1, logits2, labels, is_regression, alpha):
+    if is_regression:
+        loss_fn = nn.MSELoss()
+        loss1 = loss_fn(logits1.view(-1), labels.view(-1))
+        loss2 = loss_fn(logits2.view(-1), labels.view(-1))
+        p = torch.distributions.Normal(logits1, torch.ones_like(logits1))
+        q = torch.distributions.Normal(logits2, torch.ones_like(logits2))
+        kl = (torch.distributions.kl_divergence(p, q).mean() +
+              torch.distributions.kl_divergence(q, p).mean()) / 2.0
+        loss = (loss1 + loss2)/2.0 + alpha * kl
+    else:
+        ce = nn.CrossEntropyLoss()
+        loss1 = ce(logits1.view(-1, logits1.size(-1)), labels.view(-1))
+        loss2 = ce(logits2.view(-1, logits2.size(-1)), labels.view(-1))
+        logp1 = F.log_softmax(logits1, dim=-1)
+        logp2 = F.log_softmax(logits2, dim=-1)
+        p1 = torch.softmax(logits1, dim=-1)
+        p2 = torch.softmax(logits2, dim=-1)
+        kl1 = F.kl_div(logp1, p2, reduction="batchmean")
+        kl2 = F.kl_div(logp2, p1, reduction="batchmean")
+        kl = (kl1 + kl2)/2.0
+        loss = (loss1 + loss2)/2.0 + alpha * kl
+    return loss
+
+def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilon, is_regression):
+    base_kwargs = {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
+    if token_type_ids is not None:
+        base_kwargs["token_type_ids"] = token_type_ids
+    out_clean = model(**base_kwargs)
+    logits_clean = out_clean.logits
+    embed = model.get_input_embeddings()
+    inputs_embeds = embed(input_ids)
+    noise = torch.randn_like(inputs_embeds) * epsilon
+    noise_kwargs = {"inputs_embeds": inputs_embeds + noise, "attention_mask": attention_mask, "labels": labels}
+    if token_type_ids is not None:
+        noise_kwargs["token_type_ids"] = token_type_ids
+    out_noisy = model(**noise_kwargs)
+    logits_noisy = out_noisy.logits
+    if is_regression:
+        mse = nn.MSELoss()
+        loss_clean = mse(logits_clean.view(-1), labels.view(-1))
+        loss_noisy = mse(logits_noisy.view(-1), labels.view(-1))
+        p = torch.distributions.Normal(logits_clean, torch.ones_like(logits_clean))
+        q = torch.distributions.Normal(logits_noisy, torch.ones_like(logits_noisy))
+        kl = torch.distributions.kl_divergence(p, q).mean()
+        loss = (loss_clean + loss_noisy)/2.0 + kl
+    else:
+        ce = nn.CrossEntropyLoss()
+        loss_clean = ce(logits_clean.view(-1, logits_clean.size(-1)), labels.view(-1))
+        loss_noisy = ce(logits_noisy.view(-1, logits_noisy.size(-1)), labels.view(-1))
+        logp_clean = F.log_softmax(logits_clean, dim=-1)
+        logp_noisy = F.log_softmax(logits_noisy, dim=-1)
+        p = torch.softmax(logits_clean, dim=-1)
+        q = torch.softmax(logits_noisy, dim=-1)
+        kl1 = F.kl_div(logp_clean, q, reduction="batchmean")
+        kl2 = F.kl_div(logp_noisy, p, reduction="batchmean")
+        loss = (loss_clean + loss_noisy)/2.0 + (kl1+kl2)/2.0
+    return loss, logits_clean
+
+# ----------------------------------------------------------------------
+# LLRD
+# ----------------------------------------------------------------------
+def get_llrd_param_groups(model: nn.Module, base_lr: float, weight_decay: float, decay: float):
+    no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight", "layernorm.weight"]
+    max_layer = -1
+    for name, _ in model.named_parameters():
+        if "encoder.layer." in name:
+            layer = int(name.split("encoder.layer.")[1].split(".")[0])
+            max_layer = max(max_layer, layer)
+    num_layers = max_layer + 1
+    emb_decay, emb_nodecay = [], []
+    layer_decay = {i: [] for i in range(num_layers)}
+    layer_nodecay = {i: [] for i in range(num_layers)}
+    head_decay, head_nodecay = [], []
+    for name, param in model.named_parameters():
+        if "embeddings" in name:
+            if any(nd in name for nd in no_decay):
+                emb_nodecay.append(param)
+            else:
+                emb_decay.append(param)
+        elif "encoder.layer." in name:
+            layer = int(name.split("encoder.layer.")[1].split(".")[0])
+            if any(nd in name for nd in no_decay):
+                layer_nodecay[layer].append(param)
+            else:
+                layer_decay[layer].append(param)
+        elif "classifier" in name or "pooler" in name:
+            if any(nd in name for nd in no_decay):
+                head_nodecay.append(param)
+            else:
+                head_decay.append(param)
+    groups = []
+    emb_lr = base_lr * (decay ** (num_layers + 1))
+    if emb_decay:
+        groups.append({"params": emb_decay, "lr": emb_lr, "weight_decay": weight_decay})
+    if emb_nodecay:
+        groups.append({"params": emb_nodecay, "lr": emb_lr, "weight_decay": 0.0})
+    for layer in range(num_layers):
+        lr_layer = base_lr * (decay ** (num_layers - layer))
+        if layer_decay[layer]:
+            groups.append({"params": layer_decay[layer], "lr": lr_layer, "weight_decay": weight_decay})
+        if layer_nodecay[layer]:
+            groups.append({"params": layer_nodecay[layer], "lr": lr_layer, "weight_decay": 0.0})
+    if head_decay:
+        groups.append({"params": head_decay, "lr": base_lr, "weight_decay": weight_decay})
+    if head_nodecay:
+        groups.append({"params": head_nodecay, "lr": base_lr, "weight_decay": 0.0})
+    return groups
+
+# ----------------------------------------------------------------------
+# Visualizer (with fallbacks)
+# ----------------------------------------------------------------------
+class Visualizer:
+    @staticmethod
+    def save_training_plots(history: List[Dict], out_dir: str, method: str, task: str):
+        if not _HAS_PLT or not _HAS_PANDAS:
+            logger.warning("matplotlib/pandas not installed – skipping plots")
+            return
+        df = pd.DataFrame(history)
+        df.to_csv(os.path.join(out_dir, f"{method}_{task}_log.csv"), index=False)
+        plot_cols = [
+            ("loss", "Training Loss", "Step", "Loss"),
+            ("eval_loss", "Validation Loss", "Epoch", "Loss"),
+            ("eval_accuracy", "Accuracy", "Epoch", "Score"),
+            ("eval_matthews_correlation", "Matthews Correlation", "Epoch", "Score"),
+            ("eval_pearson", "Pearson Correlation", "Epoch", "Score"),
+            ("learning_rate", "Learning Rate", "Step", "LR"),
+            ("grad_norm", "Gradient Norm", "Step", "||grad||"),
+        ]
+        for col, title, xlabel, ylabel in plot_cols:
+            if col in df.columns:
+                plt.figure(figsize=(8,5))
+                df[col].dropna().plot()
+                plt.title(f"{method.upper()} - {task.upper()} - {title}")
+                plt.xlabel(xlabel); plt.ylabel(ylabel); plt.grid(True)
+                plt.savefig(os.path.join(out_dir, f"{method}_{task}_{col}.png"), dpi=150, bbox_inches="tight")
+                plt.close()
+    @staticmethod
+    def save_confusion_matrix(preds, labels, out_dir, method, task):
+        if not _HAS_SKLEARN or not _HAS_PLT:
+            return
+        if len(np.unique(labels)) > 10:
+            return
+        cm = confusion_matrix(labels, preds)
+        plt.figure(figsize=(6,5))
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+        plt.title(f"{method.upper()} - {task.upper()} - Confusion Matrix")
+        plt.savefig(os.path.join(out_dir, f"{method}_{task}_confusion.png"), dpi=150, bbox_inches="tight")
+        plt.close()
+    @staticmethod
+    def save_prediction_distribution(scores, out_dir, method, task):
+        if not _HAS_PLT:
+            return
+        plt.figure(figsize=(8,5))
+        plt.hist(scores, bins=30, alpha=0.7, edgecolor="black")
+        plt.title(f"{method.upper()} - {task.upper()} - Prediction Confidence")
+        plt.xlabel("Confidence"); plt.ylabel("Frequency"); plt.grid(True)
+        plt.savefig(os.path.join(out_dir, f"{method}_{task}_pred_dist.png"), dpi=150, bbox_inches="tight")
+        plt.close()
+
+# ----------------------------------------------------------------------
+# Custom Trainer
+# ----------------------------------------------------------------------
+class MethodTrainer(Trainer):
+    def __init__(self, method: str, rdrop_alpha: float, r3f_epsilon: float,
+                 is_regression: bool, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.method = method
+        self.rdrop_alpha = rdrop_alpha
+        self.r3f_epsilon = r3f_epsilon
+        self.is_regression = is_regression
+
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        if "rdrop" in self.method:
+            outputs1 = model(**inputs)
+            outputs2 = model(**inputs)
+            loss = rdrop_loss(outputs1.logits, outputs2.logits, inputs["labels"],
+                              self.is_regression, self.rdrop_alpha)
+            return (loss, outputs1) if return_outputs else loss
+        elif "r3f" in self.method:
+            loss, logits = r3f_forward(
+                model,
+                input_ids=inputs["input_ids"],
+                attention_mask=inputs.get("attention_mask"),
+                token_type_ids=inputs.get("token_type_ids"),
+                labels=inputs["labels"],
+                epsilon=self.r3f_epsilon,
+                is_regression=self.is_regression,
+            )
+            return (loss, logits) if return_outputs else loss
+        return super().compute_loss(model, inputs, return_outputs, **kwargs)
+
+# ----------------------------------------------------------------------
+# Logging Callback
+# ----------------------------------------------------------------------
+class LoggingCallback(TrainerCallback):
+    def __init__(self, task_dir: str):
+        self.task_dir = task_dir
+        self.records = []
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs:
+            logs = {**logs, "step": state.global_step, "epoch": state.epoch}
+            self.records.append(logs)
+    def on_train_end(self, args, state, control, **kwargs):
+        if self.records and _HAS_PANDAS:
+            pd.DataFrame(self.records).to_csv(os.path.join(self.task_dir, "training_log.csv"), index=False)
+        elif self.records:
+            with open(os.path.join(self.task_dir, "training_log.jsonl"), "w") as f:
+                for rec in self.records:
+                    f.write(json.dumps(rec) + "\n")
+
+# ----------------------------------------------------------------------
+# Memory helper
+# ----------------------------------------------------------------------
+def adjust_batch_size_on_oom(exception, batch_size, device):
+    if "MPS backend out of memory" in str(exception) and "mps" in str(device):
+        new_bs = max(1, batch_size // 2)
+        logger.warning(f"OOM on MPS with batch size {batch_size}. Try reducing to {new_bs}.")
+        return new_bs
+    return None
+
+# ----------------------------------------------------------------------
+# Single Task Training (with all method branches)
+# ----------------------------------------------------------------------
+def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.device,
+                     fp16_usable: bool, task_name: str, seed: int) -> Dict:
+    logger.info(f"===== Task: {task_name} (method={config.method}, seed={seed}) =====")
+    task_dir = os.path.join(run_dir, task_name, f"seed_{seed}")
+    os.makedirs(task_dir, exist_ok=True)
+
+    set_all_seeds(seed)
+
+    # Load data
+    try:
+        datasets = load_dataset("glue", task_name)
+    except Exception as e:
+        logger.warning(f"HF error: {e}, falling back to local Parquet files")
+        datasets = load_glue_local(task_name)
+
+    num_labels, is_regression = get_num_labels_and_is_regression(task_name)
+    tokenizer = AutoTokenizer.from_pretrained(config.model_name_or_path, use_fast=True)
+    config_obj = AutoConfig.from_pretrained(config.model_name_or_path, num_labels=num_labels)
+    model = AutoModelForSequenceClassification.from_pretrained(config.model_name_or_path, config=config_obj)
+
+    # --------------------------------------------------------------
+    # Apply advanced methods
+    # --------------------------------------------------------------
+    per_layer_ranks = None
+    if "fisher_gelora" in config.method:
+        logger.info("Applying Fisher‑Weighted GeLoRA (static rank scaling)")
+        # Prepare sample dataloader for Fisher/GeLoRA computation
+        preprocess_fn = preprocess_function_builder(tokenizer, task_name, config.max_seq_length)
+        sample_dataset = datasets["train"].select(range(min(800, len(datasets["train"]))))
+        sample_dataset = sample_dataset.map(preprocess_fn, batched=True, remove_columns=["label"])
+        sample_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+        sample_loader = DataLoader(sample_dataset, batch_size=4, shuffle=False)
+        model.to(device)
+        model.eval()
+        ckpt_state = getattr(model, 'gradient_checkpointing', False)
+        if ckpt_state:
+            model.gradient_checkpointing_disable()
+        # GeLoRA base ranks
+        base_ranks = compute_gelora_base_ranks(model, sample_loader, config)
+        # Fisher importance
+        target_names = ["query", "key", "value", "dense"]
+        fisher_scores = compute_fisher_importance(model, datasets["train"], tokenizer, task_name, config,
+                                                  target_substrings=target_names)
+        if fisher_scores is None:
+            logger.warning("Fisher scores not computed; falling back to uniform ranks.")
+            per_layer_ranks = base_ranks
+        else:
+            per_layer_ranks = scale_ranks_with_fisher(base_ranks, fisher_scores, config)
+        save_json(per_layer_ranks, os.path.join(task_dir, "per_layer_ranks.json"))
+        if ckpt_state:
+            model.gradient_checkpointing_enable()
+        # Apply DoRA or LoRA (GeLoRA uses LoRA by default)
+        apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout,
+                           method_type='lora', per_layer_ranks=per_layer_ranks)
+
+    elif "fisher_lora" in config.method:
+        logger.info("Applying Fisher‑LoRA (uniform base rank per layer)")
+        fisher_scores = compute_fisher_importance(model, datasets["train"], tokenizer, task_name, config)
+        if fisher_scores is None:
+            logger.warning("Fisher scores not computed; using uniform LoRA")
+            apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout, method_type='lora')
+        else:
+            target_substrings = ["query", "key", "value", "dense"]
+            rank_dict = {}
+            for name, _ in model.named_modules():
+                if any(ts in name for ts in target_substrings) and "classifier" not in name and "pooler" not in name:
+                    best_score = 0.5
+                    for fname, fval in fisher_scores.items():
+                        if name in fname or fname in name:
+                            best_score = max(best_score, fval)
+                    rank = int(config.lora_r * (0.5 + best_score))
+                    rank = max(config.gelora_min_rank, min(config.gelora_max_rank, rank))
+                    rank_dict[name] = rank
+            save_json(rank_dict, os.path.join(task_dir, "fisher_lora_ranks.json"))
+            apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout,
+                               method_type='lora', per_layer_ranks=rank_dict)
+
+    elif "dislora" in config.method:
+        apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout,
+                           method_type='dislora',
+                           dislora_beta=config.dislora_beta,
+                           dislora_capacity_factor=config.dislora_capacity_factor)
+
+    elif "dora" in config.method:
+        apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout, method_type='dora')
+
+    elif "lora" in config.method:
+        apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout, method_type='lora')
+
+    elif "mixout" in config.method:
+        replace_linears_with_mixout(model, config.mixout_p, skip_classifier=True)
+
+    # Gradient checkpointing
+    if config.gradient_checkpointing:
+        model.gradient_checkpointing_enable()
+        logger.info("Gradient checkpointing enabled")
+
+    model.to(device)
+
+    # --------------------------------------------------------------
+    # Preprocess full dataset
+    # --------------------------------------------------------------
+    preprocess_fn = preprocess_function_builder(tokenizer, task_name, config.max_seq_length)
+    num_cpus = os.cpu_count() or 1
+    num_proc = min(4, num_cpus)
+    encoded = datasets.map(preprocess_fn, batched=True, num_proc=num_proc, remove_columns=["label"])
+    cols = ["input_ids", "attention_mask", "labels"]
+    if "token_type_ids" in encoded["train"].column_names:
+        cols.append("token_type_ids")
+    encoded.set_format(type="torch", columns=cols)
+
+    train_ds = encoded["train"]
+    eval_key = "validation" if "validation" in encoded else "validation_matched"
+    eval_ds = encoded[eval_key]
     data_collator = DataCollatorWithPadding(tokenizer)
-    trainer = Trainer(
+
+    # Compute warmup_steps correctly
+    effective_batch = config.per_device_train_batch_size * config.gradient_accumulation_steps
+    num_training_steps = (len(train_ds) // effective_batch) * config.num_train_epochs
+    warmup_steps = int(config.warmup_ratio * num_training_steps)
+
+    primary_metric = get_primary_metric_name(task_name)
+    training_args = TrainingArguments(
+        output_dir=task_dir,
+        eval_strategy="epoch",
+        save_strategy="epoch",
+        save_total_limit=config.save_total_limit,
+        learning_rate=config.learning_rate,
+        per_device_train_batch_size=config.per_device_train_batch_size,
+        per_device_eval_batch_size=config.per_device_eval_batch_size,
+        num_train_epochs=config.num_train_epochs,
+        weight_decay=config.weight_decay,
+        warmup_steps=warmup_steps,
+        logging_steps=config.logging_steps,
+        load_best_model_at_end=True,
+        metric_for_best_model=f"eval_{primary_metric}",
+        greater_is_better=True,
+        fp16=fp16_usable,
+        gradient_accumulation_steps=config.gradient_accumulation_steps,
+        lr_scheduler_type=config.lr_scheduler_type,
+        dataloader_pin_memory=False,
+        max_grad_norm=config.max_grad_norm,
+    )
+
+    # Optimizer
+    if "llrd" in config.method.lower():
+        param_groups = get_llrd_param_groups(model, config.learning_rate, config.weight_decay, config.llrd_decay)
+        if config.use_lion:
+            try:
+                from lion_pytorch import Lion
+            except ImportError:
+                logger.warning("Lion not installed – using AdamW")
+                from torch.optim import AdamW
+                optimizer = AdamW(param_groups, lr=config.learning_rate, weight_decay=config.weight_decay)
+            else:
+                optimizer = Lion(param_groups, lr=config.learning_rate, weight_decay=config.weight_decay)
+        else:
+            from torch.optim import AdamW
+            optimizer = AdamW(param_groups, lr=config.learning_rate, weight_decay=config.weight_decay)
+    else:
+        if config.use_lion:
+            try:
+                from lion_pytorch import Lion
+            except ImportError:
+                logger.warning("Lion not installed – using AdamW")
+                from torch.optim import AdamW
+                optimizer = AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+            else:
+                optimizer = Lion(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+        else:
+            from torch.optim import AdamW
+            optimizer = AdamW(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+
+    callbacks = [LoggingCallback(task_dir)]
+    if config.early_stopping_patience is not None:
+        callbacks.append(EarlyStoppingCallback(early_stopping_patience=config.early_stopping_patience))
+
+    compute_metrics = compute_metrics_builder(task_name)
+    trainer = MethodTrainer(
+        method=config.method,
+        rdrop_alpha=config.rdrop_alpha,
+        r3f_epsilon=config.r3f_epsilon,
+        is_regression=is_regression,
         model=model,
         args=training_args,
-        train_dataset=encoded["train"],
-        eval_dataset=encoded[eval_key],
-        tokenizer=tokenizer,
+        train_dataset=train_ds,
+        eval_dataset=eval_ds,
         data_collator=data_collator,
-        compute_metrics=compute_metrics(task),
+        compute_metrics=compute_metrics,
+        optimizers=(optimizer, None),
+        callbacks=callbacks,
     )
-    
-    trainer.train()
-    eval_results = trainer.evaluate()
 
-    # ---------- POST-TRAINING VISUALISATION ----------
-    if visualize and rank is not None and attention_weights is not None:
-        print(f"  📊 Capturing post-training attention patterns...")
-        model.eval()
-        model.config.output_attentions = True
-        try:
-            with torch.no_grad():
-                outputs_post = model(**sample_batch)
-            if hasattr(outputs_post, 'attentions') and outputs_post.attentions is not None:
-                attn_post = [attn.cpu().numpy() for attn in outputs_post.attentions]
-                attn_pre = [attn.cpu().numpy() for attn in attention_weights]
-                for layer_idx in range(min(3, len(attn_pre))):
-                    pre = attn_pre[layer_idx][0]
-                    post = attn_post[layer_idx][0]
-                    for head_idx in range(min(3, pre.shape[0])):
-                        visualizer.plot_attention_difference(
-                            pre[head_idx], post[head_idx], layer_idx, head_idx, rank, MODEL_NAME, task
-                        )
-                print(f"  ✓ Post-training visualizations saved.")
-        except Exception as e:
-            print(f"  ⚠️ Error in post-training visualisation: {e}")
-        finally:
-            model.train()
-    # پاکسازی حافظه
-    del model
-    del trainer
-    if 'encoded' in locals():
-        del encoded
-    gc.collect()
+    try:
+        trainer.train()
+    except RuntimeError as e:
+        new_bs = adjust_batch_size_on_oom(e, config.per_device_train_batch_size, device)
+        if new_bs is not None:
+            raise RuntimeError(
+                f"OOM with batch size {config.per_device_train_batch_size}. "
+                f"Restart with --per_device_train_batch_size {new_bs}"
+            ) from e
+        else:
+            raise
+
+    eval_metrics = trainer.evaluate()
+    save_json(eval_metrics, os.path.join(task_dir, "eval_metrics.json"))
+
+    # Visualisations (if libraries present)
+    if _HAS_PLT and _HAS_PANDAS:
+        vis = Visualizer()
+        vis.save_training_plots(trainer.state.log_history, task_dir, config.method, task_name)
+        if not is_regression and _HAS_SKLEARN:
+            preds = trainer.predict(eval_ds)
+            pred_labels = np.argmax(preds.predictions, axis=1)
+            vis.save_confusion_matrix(pred_labels, preds.label_ids, task_dir, config.method, task_name)
+            probs = torch.softmax(torch.tensor(preds.predictions), dim=-1).max(dim=-1).values.numpy()
+            vis.save_prediction_distribution(probs, task_dir, config.method, task_name)
+    else:
+        logger.info("Visualization skipped (missing libraries)")
+
+    del trainer, model
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    
-    return eval_results
+    elif torch.backends.mps.is_available():
+        torch.mps.empty_cache()
 
+    return eval_metrics
+
+# ----------------------------------------------------------------------
+# Main (multi‑seed loop)
+# ----------------------------------------------------------------------
+def parse_args():
+    parser = argparse.ArgumentParser(description="GLUE Ultimate Framework")
+    parser.add_argument("--model_name_or_path", type=str, default="bert-base-uncased")
+    parser.add_argument("--tasks", nargs="+", default=["cola", "mrpc", "rte", "stsb", "sst2"])
+    parser.add_argument("--method", type=str, required=True)
+    parser.add_argument("--output_root", type=str, default="./experiments")
+    parser.add_argument("--num_train_epochs", type=int, default=3)
+    parser.add_argument("--per_device_train_batch_size", type=int, default=32)
+    parser.add_argument("--per_device_eval_batch_size", type=int, default=64)
+    parser.add_argument("--learning_rate", type=float, default=2e-5)
+    parser.add_argument("--weight_decay", type=float, default=0.01)
+    parser.add_argument("--warmup_ratio", type=float, default=0.06)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--max_seq_length", type=int, default=128)
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
+    parser.add_argument("--lr_scheduler_type", type=str, default="cosine")
+    parser.add_argument("--logging_steps", type=int, default=50)
+    parser.add_argument("--save_total_limit", type=int, default=1)
+    parser.add_argument("--fp16", action="store_true")
+    parser.add_argument("--lora_r", type=int, default=8)
+    parser.add_argument("--lora_alpha", type=int, default=16)
+    parser.add_argument("--lora_dropout", type=float, default=0.1)
+    parser.add_argument("--rdrop_alpha", type=float, default=5.0)
+    parser.add_argument("--r3f_epsilon", type=float, default=1e-5)
+    parser.add_argument("--llrd_decay", type=float, default=0.95)
+    parser.add_argument("--mixout_p", type=float, default=0.9)
+    parser.add_argument("--use_lion", action="store_true")
+    parser.add_argument("--early_stopping_patience", type=int, default=None)
+    parser.add_argument("--gradient_checkpointing", action="store_true")
+    parser.add_argument("--force_cpu", action="store_true")
+    parser.add_argument("--max_grad_norm", type=float, default=1.0)
+    # Fisher / GeLoRA
+    parser.add_argument("--fisher_num_batches", type=int, default=20)
+    parser.add_argument("--fisher_sample_size", type=int, default=200)
+    parser.add_argument("--gelora_margin", type=float, default=1.0)
+    parser.add_argument("--gelora_min_rank", type=int, default=2)
+    parser.add_argument("--gelora_max_rank", type=int, default=32)
+    parser.add_argument("--fisher_scale_max", type=float, default=2.0)
+    # DisLoRA
+    parser.add_argument("--dislora_beta", type=float, default=0.5)
+    parser.add_argument("--dislora_capacity_factor", type=float, default=1.0)
+    # Multi‑seed
+    parser.add_argument("--num_seeds", type=int, default=1)
+    return parser.parse_args()
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--run_name", type=str, default=None)
-    args = parser.parse_args()
-
-    if args.run_name:
-        run_id = args.run_name
+    args = parse_args()
+    if args.force_cpu:
+        device = torch.device("cpu")
+        fp16_usable = False
     else:
-        run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    OUTPUT_DIR = os.path.join(BASE_OUTPUT_DIR, f"run_{run_id}")
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
-    metadata = {
-        "run_id": run_id,
-        "timestamp": datetime.now().isoformat(),
-        "model": MODEL_NAME,
-        "ranks": [str(r) for r in RANKS],
-        "tasks": GLUE_TASKS,
-        "batch_size": BATCH_SIZE,
-        "epochs": EPOCHS,
-        "learning_rate": LEARNING_RATE,
-    }
-    with open(os.path.join(OUTPUT_DIR, "run_metadata.json"), "w") as f:
-        json.dump(metadata, f, indent=2)
-    
+        device, fp16_usable = get_device_and_precision(args.fp16)
+    logger.info(f"Device: {device}, fp16_usable={fp16_usable}")
+
+    config = ExperimentConfig(
+        model_name_or_path=args.model_name_or_path,
+        tasks=args.tasks,
+        method=args.method,
+        output_root=args.output_root,
+        num_train_epochs=args.num_train_epochs,
+        per_device_train_batch_size=args.per_device_train_batch_size,
+        per_device_eval_batch_size=args.per_device_eval_batch_size,
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay,
+        warmup_ratio=args.warmup_ratio,
+        seed=args.seed,
+        max_seq_length=args.max_seq_length,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
+        lr_scheduler_type=args.lr_scheduler_type,
+        logging_steps=args.logging_steps,
+        save_total_limit=args.save_total_limit,
+        fp16=fp16_usable,
+        lora_r=args.lora_r,
+        lora_alpha=args.lora_alpha,
+        lora_dropout=args.lora_dropout,
+        rdrop_alpha=args.rdrop_alpha,
+        r3f_epsilon=args.r3f_epsilon,
+        llrd_decay=args.llrd_decay,
+        mixout_p=args.mixout_p,
+        use_lion=args.use_lion,
+        early_stopping_patience=args.early_stopping_patience,
+        gradient_checkpointing=args.gradient_checkpointing,
+        max_grad_norm=args.max_grad_norm,
+        fisher_num_batches=args.fisher_num_batches,
+        fisher_sample_size=args.fisher_sample_size,
+        gelora_margin=args.gelora_margin,
+        gelora_min_rank=args.gelora_min_rank,
+        gelora_max_rank=args.gelora_max_rank,
+        fisher_scale_max=args.fisher_scale_max,
+        dislora_beta=args.dislora_beta,
+        dislora_capacity_factor=args.dislora_capacity_factor,
+        num_seeds=args.num_seeds,
+    )
+
+    run_dir = create_experiment_dir(config)
+    save_system_info(run_dir)
+    save_config(config, run_dir)
+
+    logger.info(f"Experiment dir: {run_dir}")
+    logger.info(f"Tasks: {config.tasks}")
+    logger.info(f"Method: {config.method}")
+
     all_results = {}
-    for task in GLUE_TASKS:
-        task_results = {}
-        for rank in RANKS:
-            out_dir = os.path.join(OUTPUT_DIR, task, f"rank_{rank}")
+    for task in config.tasks:
+        task_seed_results = []
+        for i in range(config.num_seeds):
+            seed = config.seed + i
             try:
-                metrics = train_and_evaluate(task, rank, out_dir, visualize=False)
-                task_results[str(rank)] = metrics
-                os.makedirs(out_dir, exist_ok=True)
-                with open(os.path.join(out_dir, "metrics.json"), "w") as f:
-                    json.dump(metrics, f, indent=2)
+                metrics = train_single_task(config, run_dir, device, fp16_usable, task, seed)
+                task_seed_results.append(metrics)
+                if torch.backends.mps.is_available():
+                    torch.mps.empty_cache()
+                logger.info(f"✅ {task} (seed={seed}): {metrics}")
             except Exception as e:
-                print(f"Failed for {task} rank {rank}: {e}")
-                task_results[str(rank)] = {"error": str(e)}
-                os.makedirs(out_dir, exist_ok=True)
-                with open(os.path.join(out_dir, "error.txt"), "w") as f:
-                    f.write(str(e))
-        with open(os.path.join(OUTPUT_DIR, task, "summary.json"), "w") as f:
-            json.dump(task_results, f, indent=2)
-        all_results[task] = task_results
-    
-    with open(os.path.join(OUTPUT_DIR, "all_results.json"), "w") as f:
-        json.dump(all_results, f, indent=2)
-    
-    print(f"\n✅ All experiments completed. Results saved in: {OUTPUT_DIR}")
+                logger.error(f"❌ {task} (seed={seed}) failed: {e}", exc_info=True)
+                task_seed_results.append({"error": str(e)})
+
+        # Aggregate across seeds
+        if task_seed_results and all("error" not in r for r in task_seed_results):
+            keys = task_seed_results[0].keys()
+            aggregated = {}
+            for key in keys:
+                values = [r[key] for r in task_seed_results if key in r and r[key] is not None]
+                if values:
+                    aggregated[f"{key}_mean"] = float(np.mean(values))
+                    aggregated[f"{key}_std"] = float(np.std(values))
+                    aggregated[f"{key}_values"] = values
+            all_results[task] = aggregated
+        else:
+            all_results[task] = {"errors": task_seed_results}
+        save_json(all_results, os.path.join(run_dir, "summary_all_tasks.json"))
+
+    save_json(all_results, os.path.join(run_dir, "summary_all_tasks.json"))
+    logger.info("🎉 All experiments finished.")
 
 if __name__ == "__main__":
     main()
