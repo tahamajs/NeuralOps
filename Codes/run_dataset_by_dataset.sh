@@ -24,13 +24,12 @@ BASE_SEED=42
 TASKS=("cola" "mrpc" "rte" "stsb" "sst2")
 
 # List of methods (in any order)
-# Add: fisher_gelora, dislora, fisher_lora
 METHODS=(
     # "baseline"
     # "lora"
     # "dora"
-    "dislora"
-    "fisher_lora"
+    # "dislora"
+    # "fisher_lora"
     "fisher_gelora"
     "rdrop"
     "r3f"
@@ -51,6 +50,11 @@ echo "Tasks: ${TASKS[@]}"
 echo "Methods: ${METHODS[@]}"
 echo "============================================================"
 
+# Function to clean MPS cache
+clean_cache() {
+    python -c "import torch; torch.mps.empty_cache() if torch.backends.mps.is_available() else None" 2>/dev/null || true
+}
+
 # Loop over each dataset (task)
 for TASK in "${TASKS[@]}"; do
     echo " "
@@ -66,7 +70,7 @@ for TASK in "${TASKS[@]}"; do
         # Method-specific hyperparameters
         case $METHOD in
             baseline)
-                BATCH=8
+                BATCH=16
                 LR=2e-5
                 GRAD_ACC=4
                 EXTRA=""
@@ -99,40 +103,40 @@ for TASK in "${TASKS[@]}"; do
                 BATCH=16
                 LR=1e-4
                 GRAD_ACC=4
-                EXTRA="--lora_r 8 --lora_alpha 16 --lora_dropout 0.1 --gelora_margin 1.0 --gelora_min_rank 2 --gelora_max_32 --fisher_scale_max 2.0 --fisher_num_batches 20 --fisher_sample_size 200"
+                EXTRA="--lora_r 8 --lora_alpha 16 --lora_dropout 0.1 --gelora_margin 1.0 --gelora_min_rank 2 --gelora_max_rank 32 --fisher_scale_max 2.0 --fisher_num_batches 20 --fisher_sample_size 200"
                 ;;
             rdrop)
-                BATCH=3
+                BATCH=8
                 LR=2e-5
-                GRAD_ACC=8
+                GRAD_ACC=4
                 EXTRA="--rdrop_alpha 5.0"
                 ;;
             r3f)
-                BATCH=3
+                BATCH=8
                 LR=2e-5
-                GRAD_ACC=8
+                GRAD_ACC=4
                 EXTRA="--r3f_epsilon 1e-5"
                 ;;
             mixout)
-                BATCH=8
+                BATCH=16
                 LR=2e-5
                 GRAD_ACC=4
                 EXTRA="--mixout_p 0.5"
                 ;;
             llrd)
-                BATCH=8
+                BATCH=16
                 LR=2e-5
                 GRAD_ACC=4
                 EXTRA="--llrd_decay 0.95"
                 ;;
             lora+rdrop)
-                BATCH=4
+                BATCH=8
                 LR=1e-4
-                GRAD_ACC=6
+                GRAD_ACC=4
                 EXTRA="--lora_r 8 --lora_alpha 16 --lora_dropout 0.1 --rdrop_alpha 5.0"
                 ;;
             *)
-                BATCH=8
+                BATCH=16
                 LR=2e-5
                 GRAD_ACC=4
                 EXTRA=""
@@ -160,7 +164,7 @@ for TASK in "${TASKS[@]}"; do
             --seed $BASE_SEED"
         
         # Add gradient checkpointing for memory-intensive methods
-        if [[ "$METHOD" == "rdrop" || "$METHOD" == "r3f" || "$METHOD" == "fisher_gelora" ]]; then
+        if [[ "$METHOD" == "rdrop" || "$METHOD" == "r3f" || "$METHOD" == "fisher_gelora" || "$METHOD" == "lora+rdrop" ]]; then
             CMD="$CMD --gradient_checkpointing"
         fi
         
@@ -170,10 +174,18 @@ for TASK in "${TASKS[@]}"; do
         fi
         
         echo ">> $CMD"
-        eval $CMD
+        
+        # Run the command with error handling
+        if eval $CMD; then
+            echo "✅ SUCCESS: $METHOD on $TASK"
+        else
+            echo "❌ FAILED: $METHOD on $TASK (continuing with next method)"
+            # Optional: uncomment to stop on failure
+            # exit 1
+        fi
         
         # Clear MPS cache after each method (free memory)
-        python -c "import torch; torch.mps.empty_cache() if torch.backends.mps.is_available() else None" 2>/dev/null || true
+        clean_cache
         
         echo ">>> Finished $METHOD on $TASK"
         echo "---"
@@ -181,7 +193,7 @@ for TASK in "${TASKS[@]}"; do
     done
     
     # Full cleanup after completing all methods for a dataset
-    python -c "import torch; torch.mps.empty_cache() if torch.backends.mps.is_available() else None" 2>/dev/null || true
+    clean_cache
     
     # Optional: Clean old checkpoints to save disk space after each dataset
     echo "Cleaning old checkpoints to save disk space..."
@@ -196,3 +208,24 @@ echo "============================================================"
 echo "All experiments completed successfully."
 echo "Results saved in $OUTPUT_ROOT"
 echo "============================================================"
+
+# Final summary
+echo ""
+echo "📊 EXPERIMENT SUMMARY"
+echo "============================================================"
+echo "Model: $MODEL"
+echo "Epochs: $EPOCHS"
+echo "Seeds per run: $NUM_SEEDS"
+echo "Total combinations: $((${#TASKS[@]} * ${#METHODS[@]}))"
+echo ""
+echo "Datasets processed: ${TASKS[@]}"
+echo "Methods attempted: ${METHODS[@]}"
+echo "============================================================"
+
+# Optional: Generate quick result summary if results directory exists
+if [ -d "$OUTPUT_ROOT" ]; then
+    echo ""
+    echo "📁 Results directory: $OUTPUT_ROOT"
+    echo "Latest run:"
+    ls -lt "$OUTPUT_ROOT" | head -5 || true
+fi
