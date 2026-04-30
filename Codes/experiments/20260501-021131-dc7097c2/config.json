@@ -1,14 +1,14 @@
 {
   "model_name_or_path": "bert-base-uncased",
   "tasks": [
-    "cola"
+    "stsb"
   ],
-  "method": "fisher_lora",
+  "method": "fisher_gelora",
   "output_root": "./experiments",
   "num_train_epochs": 3,
   "per_device_train_batch_size": 16,
   "per_device_eval_batch_size": 64,
-  "learning_rate": 0.0003,
+  "learning_rate": 5e-05,
   "weight_decay": 0.01,
   "warmup_ratio": 0.1,
   "seed": 42,
@@ -27,7 +27,7 @@
   "mixout_p": 0.9,
   "use_lion": false,
   "early_stopping_patience": null,
-  "gradient_checkpointing": false,
+  "gradient_checkpointing": true,
   "max_grad_norm": 1.0,
   "fisher_num_batches": 20,
   "fisher_sample_size": 200,
