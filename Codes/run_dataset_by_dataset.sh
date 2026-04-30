@@ -21,7 +21,7 @@ NUM_SEEDS=1
 BASE_SEED=42
 
 # List of datasets (tasks) - in order of execution
-TASKS=("cola" "mrpc" "rte" "stsb" "sst2")
+TASKS=("rte" "stsb" "sst2")
 
 # List of methods (in any order)
 METHODS=(
@@ -30,12 +30,14 @@ METHODS=(
     # "dora"
     # "dislora"
     # "fisher_lora"
-    "fisher_gelora"
+    # "fisher_gelora"
     # "rdrop"
     # "r3f"
     # "mixout"
     # "llrd"
     # "lora+rdrop"
+        "svd_attention"          # <-- NEW: SVD compressed attention
+
 )
 
 # Output root directory
