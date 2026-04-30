@@ -1,129 +1,113 @@
-# framework/soa/svd_compression.py
-"""
-SVD compression utilities for BERT models.
-"""
-
+# framework/soa/svd_migration.py
 import torch
 import torch.nn as nn
-from ..compression.svd_linear import SVDLinearLayer
+from transformers import BertModel
+from .config import SOAConfig
 
+def compute_global_basis(bert_model: BertModel, k_rank: int):
+    """Compute basis from concatenated QKV weights (original method)."""
+    q_weights, k_weights, v_weights = [], [], []
+    for layer in bert_model.encoder.layer:
+        q_weights.append(layer.attention.self.query.weight.detach().cpu())
+        k_weights.append(layer.attention.self.key.weight.detach().cpu())
+        v_weights.append(layer.attention.self.value.weight.detach().cpu())
 
-def compress_bert_true_svd(model: nn.Module, rank: int) -> nn.Module:
-    """
-    Compress all linear layers in BERT except embeddings, pooler, classifier.
-    
-    This function replaces standard linear layers with low-rank SVD approximations.
-    
-    Args:
-        model: BERT model to compress
-        rank: Target rank for SVD compression
-        
-    Returns:
-        Compressed model
-        
-    Example:
-        >>> from transformers import BertModel
-        >>> model = BertModel.from_pretrained('bert-base-uncased')
-        >>> compressed_model = compress_bert_true_svd(model, rank=64)
-    """
-    print(f"\n🔄 Starting TRUE SVD Compression (Rank={rank})...")
-    compressed_count = 0
-    total_original = sum(p.numel() for p in model.parameters())
-    
-    skip_patterns = ['embeddings', 'pooler', 'classifier']
-    
-    for name, module in list(model.named_modules()):
-        if isinstance(module, nn.Linear):
-            # Skip certain layers
-            if any(skip in name.lower() for skip in skip_patterns):
-                continue
-            
-            try:
-                new_layer = SVDLinearLayer(module, rank)
-                
-                # Replace the layer
-                if '.' in name:
-                    parent_name = '.'.join(name.split('.')[:-1])
-                    child_name = name.split('.')[-1]
-                    parent = model.get_submodule(parent_name)
-                else:
-                    parent = model
-                    child_name = name
-                
-                setattr(parent, child_name, new_layer)
-                compressed_count += 1
-                
-            except Exception as e:
-                print(f"   ⚠️ Failed to compress {name}: {e}")
-    
-    total_compressed = sum(p.numel() for p in model.parameters())
-    reduction = 100 * (1 - total_compressed / total_original)
-    print(f"✅ Compressed {compressed_count} layers. Reduction: {reduction:.2f}%")
-    
-    return model
+    W_combined = torch.cat([torch.cat(q_weights, dim=1),
+                            torch.cat(k_weights, dim=1),
+                            torch.cat(v_weights, dim=1)], dim=1)
+    U, S, Vh = torch.linalg.svd(W_combined, full_matrices=False)
+    basis = U[:, :k_rank]
+    return basis
 
+def compute_global_basis_from_hidden_states(bert_model: BertModel, k_rank: int, sample_size=64):
+    """Compute basis using hidden states from random inputs (more robust)."""
+    device = next(bert_model.parameters()).device
+    bert_model.eval()
+    all_hidden = []
 
-def svd_compress_input(inputs: torch.Tensor, rank: int) -> torch.Tensor:
-    """
-    Apply SVD to input embeddings and reconstruct with softmax-weighted rank.
-    
-    Args:
-        inputs: Input tensor of shape (batch, seq_len, hidden_size)
-        rank: Target rank for compression
-        
-    Returns:
-        Compressed and reconstructed tensor
-    """
-    B, S, D = inputs.shape
-    X = inputs.view(-1, D)
-    
-    # Compute SVD
-    U, S_val, Vh = torch.linalg.svd(X, full_matrices=False)
-    
-    # Keep top-k components
-    U_r = U[:, :rank]
-    S_r = S_val[:rank]
-    Vh_r = Vh[:rank, :]
-    
-    # Softmax weighting of singular values
-    softmax_weights = torch.softmax(S_r, dim=0)
-    
-    # Weighted reconstruction
-    compressed = (U_r * softmax_weights.view(1, -1)) @ Vh_r
-    
-    return compressed.view(B, S, D)
+    dummy_ids = torch.randint(0, 30522, (sample_size, 128)).to(device)
+    dummy_mask = torch.ones_like(dummy_ids).to(device)
+    dummy_types = torch.zeros_like(dummy_ids).to(device)
 
+    with torch.no_grad():
+        outputs = bert_model(input_ids=dummy_ids, attention_mask=dummy_mask,
+                             token_type_ids=dummy_types, output_hidden_states=True)
+        for hs in outputs.hidden_states[1:]:
+            all_hidden.append(hs.reshape(-1, hs.shape[-1]))
 
-def apply_svd_to_inputs(model: nn.Module, rank: int) -> nn.Module:
-    """
-    Wrap model to compress inputs before forward pass.
-    
-    Args:
-        model: Model to wrap
-        rank: Target rank for input compression
-        
-    Returns:
-        Model with input compression wrapper
-    """
-    original_forward = model.forward
-    embeddings = model.embeddings
-    
-    def new_forward(input_ids=None, attention_mask=None, token_type_ids=None, **kwargs):
-        # Get embeddings
-        if hasattr(embeddings, 'forward'):
-            emb = embeddings(input_ids, token_type_ids=token_type_ids)
-        else:
-            emb = embeddings(input_ids)
-        
-        # Compress embeddings
-        compressed_emb = svd_compress_input(emb, rank)
-        
-        # Call original forward with compressed inputs
-        return original_forward(
-            inputs_embeds=compressed_emb,
-            attention_mask=attention_mask,
-            **kwargs
-        )
-    
-    model.forward = new_forward
-    return model
+    X = torch.cat(all_hidden, dim=0)
+    U, S, Vh = torch.linalg.svd(X, full_matrices=False)
+    basis = Vh[:k_rank, :].t()
+    return basis
+
+def compute_global_basis_from_input_states(bert_model: BertModel, k_rank: int, sample_size=64):
+    """Compute basis from input tokens across all layers."""
+    device = next(bert_model.parameters()).device
+    bert_model.eval()
+    all_inputs = []
+
+    dummy_ids = torch.randint(0, 30522, (sample_size, 128)).to(device)
+    dummy_mask = torch.ones_like(dummy_ids).to(device)
+    dummy_types = torch.zeros_like(dummy_ids).to(device)
+
+    with torch.no_grad():
+        outputs = bert_model(input_ids=dummy_ids, attention_mask=dummy_mask,
+                             token_type_ids=dummy_types, output_hidden_states=True)
+        for hs in outputs.hidden_states:
+            all_inputs.append(hs.reshape(-1, hs.shape[-1]))
+
+    X = torch.cat(all_inputs, dim=0)
+    U, S, Vh = torch.linalg.svd(X, full_matrices=False)
+    basis = Vh[:k_rank, :].t()
+    return basis
+
+def migrate_bert_to_soa(bert_model: BertModel, soa_model, basis):
+    """Transfer BERT weights to SOA model using the computed basis."""
+    hidden_size = soa_model.cfg.hidden_size
+    k_rank = soa_model.cfg.k_rank
+    assert basis.shape == (hidden_size, k_rank)
+
+    # Embeddings
+    bert_emb = bert_model.embeddings
+    soa_model.word_emb.weight.data.copy_(bert_emb.word_embeddings.weight)
+    soa_model.pos_emb.weight.data.copy_(bert_emb.position_embeddings.weight)
+    soa_model.seg_emb.weight.data.copy_(bert_emb.token_type_embeddings.weight)
+    soa_model.ln.weight.data.copy_(bert_emb.LayerNorm.weight)
+    soa_model.ln.bias.data.copy_(bert_emb.LayerNorm.bias)
+
+    # Basis
+    soa_model.basis.data.copy_(basis)
+
+    # Pooler & classifier
+    if hasattr(bert_model, 'pooler') and bert_model.pooler is not None:
+        soa_model.pooler.weight.data.copy_(bert_model.pooler.dense.weight)
+        soa_model.pooler.bias.data.copy_(bert_model.pooler.dense.bias)
+
+    # Encoder layers
+    U = basis
+    for soa_layer, bert_layer in zip(soa_model.layers, bert_model.encoder.layer):
+        # LayerNorms
+        ln_attn = bert_layer.attention.output.LayerNorm
+        ln_ffn = bert_layer.output.LayerNorm
+        soa_layer.ln1.weight.data.copy_(ln_attn.weight)
+        soa_layer.ln1.bias.data.copy_(ln_attn.bias)
+        soa_layer.ln2.weight.data.copy_(ln_ffn.weight)
+        soa_layer.ln2.bias.data.copy_(ln_ffn.bias)
+
+        # FFN
+        soa_layer.ffn[0].weight.data.copy_(bert_layer.intermediate.dense.weight)
+        soa_layer.ffn[0].bias.data.copy_(bert_layer.intermediate.dense.bias)
+        soa_layer.ffn[2].weight.data.copy_(bert_layer.output.dense.weight)
+        soa_layer.ffn[2].bias.data.copy_(bert_layer.output.dense.bias)
+
+        # Attention projections: A = U^T @ W -> then transpose for Linear weight
+        W_q = bert_layer.attention.self.query.weight
+        W_k = bert_layer.attention.self.key.weight
+        W_v = bert_layer.attention.self.value.weight
+        soa_layer.attn.q_proj.weight.data.copy_((U.t() @ W_q).t())
+        soa_layer.attn.k_proj.weight.data.copy_((U.t() @ W_k).t())
+        soa_layer.attn.v_proj.weight.data.copy_((U.t() @ W_v).t())
+        soa_layer.attn.out_proj.weight.data.copy_(bert_layer.attention.output.dense.weight)
+        soa_layer.attn.out_proj.bias.data.copy_(bert_layer.attention.output.dense.bias)
+
+    return soa_model
