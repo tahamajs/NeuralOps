@@ -38,6 +38,23 @@ from typing import Dict, Any, Optional, List, Tuple
 import warnings
 warnings.filterwarnings("ignore")
 
+import argparse
+from pathlib import Path
+
+# Add plugin discovery
+from framework import discover_plugins, list_all_components
+
+
+def add_plugin_arguments(parser):
+    """Add plugin-related arguments to parser."""
+    parser.add_argument("--list_components", action="store_true",
+                        help="List all available components and exit")
+    parser.add_argument("--plugin_dir", type=str, default=None,
+                        help="Additional plugin directory to scan")
+    parser.add_argument("--extend", action="store_true",
+                        help="Enable extension mode (load custom plugins)")
+
+
 # ============================================================================
 # Framework Imports
 # ============================================================================
@@ -733,7 +750,24 @@ Examples:
 def main():
     """Main entry point."""
     args = parse_args()
-    
+    if args.extend:
+        plugin_dirs = ["framework/attentions/custom", "framework/compression/custom"]
+        if args.plugin_dir:
+            plugin_dirs.append(args.plugin_dir)
+        discover_plugins(plugin_dirs)
+        print(f"✅ Loaded custom plugins from: {plugin_dirs}")
+
+    # List components if requested
+    if args.list_components:
+        components = list_all_components()
+        print("\n📦 Available Components:")
+        for comp_type, comp_list in components.items():
+            print(f"\n  {comp_type.upper()}:")
+            for comp in comp_list:
+                print(f"    - {comp}")
+        return
+
+
     # Create configuration
     config = MainConfig(args)
     
