@@ -26,9 +26,9 @@ TASKS=("cola" "mrpc" "rte" "stsb" "sst2")
 # List of methods (in any order)
 # Add: fisher_gelora, dislora, fisher_lora
 METHODS=(
-    "baseline"
-    "lora"
-    "dora"
+    # "baseline"
+    # "lora"
+    # "dora"
     "dislora"
     "fisher_lora"
     "fisher_gelora"
