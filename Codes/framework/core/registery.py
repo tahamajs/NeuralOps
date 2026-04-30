@@ -1,20 +1,24 @@
 # framework/core/registry.py
 """
-Plugin registry system for framework components.
-
-This module provides a simple registry pattern to register and retrieve
-components like attention mechanisms, models, and visualizers.
+Enhanced registry system with auto-discovery and plugin support.
 """
 
-from typing import Dict, Any, Optional, Callable
+import importlib
+import pkgutil
+import inspect
+from typing import Dict, Any, Callable, Optional, List, Type
+from pathlib import Path
 
 
 class Registry:
     """
-    A simple registry for plugins (models, attentions, visualizers).
+    Enhanced registry with auto-discovery and plugin support.
     
-    The registry allows components to be registered with a key and
-    retrieved later by that key.
+    Features:
+        - Register components with decorators
+        - Auto-discover plugins from directories
+        - List all registered components
+        - Get component by name with fallback
     
     Example:
         >>> registry = Registry("attentions")
@@ -23,85 +27,110 @@ class Registry:
         ... class MyAttention:
         ...     pass
         >>> 
-        >>> attn_class = registry.get("my_attention")
+        >>> # Auto-discover from directory
+        >>> registry.auto_discover("framework/attentions/custom")
     """
     
     def __init__(self, name: str):
-        """
-        Args:
-            name: Name of the registry (e.g., "models", "attentions")
-        """
         self.name = name
         self._dict: Dict[str, Callable] = {}
+        self._aliases: Dict[str, str] = {}
     
-    def register(self, key: Optional[str] = None) -> Callable:
+    def register(self, key: Optional[str] = None, alias: Optional[str] = None) -> Callable:
         """
         Decorator to register a class or function.
         
         Args:
-            key: Optional custom key. If None, uses the class/function name.
+            key: Registration key (defaults to class name)
+            alias: Alternative name for backward compatibility
             
-        Returns:
-            Decorator function
-        
         Example:
-            >>> @registry.register()
-            ... class MyClass:
-            ...     pass
-            
-            >>> @registry.register("custom_key")
-            ... class AnotherClass:
-            ...     pass
+            @registry.register("svd")
+            class SVDAttention:
+                pass
         """
         def decorator(obj: Callable) -> Callable:
             nonlocal key
             if key is None:
                 key = obj.__name__
-            if key in self._dict:
-                import warnings
-                warnings.warn(
-                    f"Registry '{self.name}' already contains key '{key}'. "
-                    f"Overwriting with {obj}.",
-                    UserWarning
-                )
-            self._dict[key] = obj
+            
+            self._dict[key.lower()] = obj
+            
+            if alias:
+                self._aliases[alias.lower()] = key.lower()
+            
             return obj
         return decorator
     
     def get(self, key: str) -> Optional[Callable]:
+        """Get registered component by key."""
+        key_lower = key.lower()
+        
+        # Check direct match
+        if key_lower in self._dict:
+            return self._dict[key_lower]
+        
+        # Check aliases
+        if key_lower in self._aliases:
+            return self._dict[self._aliases[key_lower]]
+        
+        return None
+    
+    def get_all(self) -> Dict[str, Callable]:
+        """Get all registered components."""
+        return self._dict.copy()
+    
+    def keys(self) -> List[str]:
+        """Return all registered keys."""
+        return list(self._dict.keys())
+    
+    def auto_discover(self, package_path: str, prefix: str = ""):
         """
-        Retrieve a registered component by key.
+        Auto-discover and register components from directory.
         
         Args:
-            key: The registration key
-            
-        Returns:
-            The registered class/function, or None if not found
+            package_path: Path to directory containing modules
+            prefix: Prefix for registration keys
         """
-        return self._dict.get(key)
-    
-    def keys(self) -> Iterable[str]:
-        """Return all registered keys."""
-        return self._dict.keys()
-    
-    def values(self) -> Iterable[Callable]:
-        """Return all registered values."""
-        return self._dict.values()
-    
-    def items(self) -> Iterable[tuple]:
-        """Return all key-value pairs."""
-        return self._dict.items()
+        path = Path(package_path)
+        if not path.exists():
+            return
+        
+        for module_info in pkgutil.iter_modules([str(path)]):
+            module_name = module_info.name
+            if module_name.startswith('_'):
+                continue
+            
+            try:
+                # Import module
+                spec = importlib.util.spec_from_file_location(
+                    f"{prefix}.{module_name}" if prefix else module_name,
+                    path / f"{module_name}.py"
+                )
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    
+                    # Register classes that inherit from base classes
+                    for name, obj in inspect.getmembers(module, inspect.isclass):
+                        if hasattr(obj, '__base__') and obj.__base__.__name__ in ['BaseAttention', 'BaseCompressor']:
+                            reg_key = f"{prefix}_{module_name}" if prefix else module_name
+                            self.register(reg_key)(obj)
+                            
+            except Exception as e:
+                print(f"Warning: Failed to load module {module_name}: {e}")
     
     def __contains__(self, key: str) -> bool:
-        """Check if a key exists in the registry."""
-        return key in self._dict
+        return key.lower() in self._dict or key.lower() in self._aliases
     
     def __len__(self) -> int:
-        """Number of registered items."""
         return len(self._dict)
     
     def __repr__(self) -> str:
-        return f"Registry(name='{self.name}', items={len(self._dict)})"
+        return f"Registry(name='{self.name}', items={list(self._dict.keys())})"
+
+
+# Global registries
 
 
 # ----------------------------------------------------------------------------
@@ -174,6 +203,25 @@ def print_registry_summary():
     
     print("\n" + "=" * 60)
 
+# Global registries
+ATTENTION_REGISTRY = Registry("attentions")
+COMPRESSOR_REGISTRY = Registry("compressors")
+TRAINER_REGISTRY = Registry("trainers")
+VISUALIZER_REGISTRY = Registry("visualizers")
+DATASET_REGISTRY = Registry("datasets")
+OPTIMIZER_REGISTRY = Registry("optimizers")
+SCHEDULER_REGISTRY = Registry("schedulers")
+
+
+def list_all_components() -> Dict[str, List[str]]:
+    """List all registered components by type."""
+    return {
+        "attentions": ATTENTION_REGISTRY.keys(),
+        "compressors": COMPRESSOR_REGISTRY.keys(),
+        "trainers": TRAINER_REGISTRY.keys(),
+        "visualizers": VISUALIZER_REGISTRY.keys(),
+        "datasets": DATASET_REGISTRY.keys(),
+    }
 
 if __name__ == "__main__":
     # Example usage
