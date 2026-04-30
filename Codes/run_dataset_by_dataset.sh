@@ -31,11 +31,11 @@ METHODS=(
     # "dislora"
     # "fisher_lora"
     "fisher_gelora"
-    "rdrop"
-    "r3f"
-    "mixout"
-    "llrd"
-    "lora+rdrop"
+    # "rdrop"
+    # "r3f"
+    # "mixout"
+    # "llrd"
+    # "lora+rdrop"
 )
 
 # Output root directory
@@ -95,13 +95,13 @@ for TASK in "${TASKS[@]}"; do
                 ;;
             fisher_lora)
                 BATCH=16
-                LR=3e-4
+                LR=9e-5
                 GRAD_ACC=4
                 EXTRA="--lora_r 8 --lora_alpha 16 --lora_dropout 0.1 --fisher_num_batches 20 --fisher_sample_size 200"
                 ;;
             fisher_gelora)
                 BATCH=16
-                LR=1e-4
+                LR=5e-5
                 GRAD_ACC=4
                 EXTRA="--lora_r 8 --lora_alpha 16 --lora_dropout 0.1 --gelora_margin 1.0 --gelora_min_rank 2 --gelora_max_rank 32 --fisher_scale_max 2.0 --fisher_num_batches 20 --fisher_sample_size 200"
                 ;;
