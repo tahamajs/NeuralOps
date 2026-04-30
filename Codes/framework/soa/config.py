@@ -37,8 +37,8 @@ class SOAConfig:
     hidden_act: str = "gelu"
     layer_norm_eps: float = 1e-12
     dropout_prob: float = 0.1
-    k_rank: int = 64          # Rank of the shared basis
-    num_labels: int = 2       # For classification tasks
+    k_rank: int = 64          # rank of the shared basis
+    num_labels: int = 2       # for classification
     
     @classmethod
     def from_pretrained(cls, model_name: str, **kwargs):

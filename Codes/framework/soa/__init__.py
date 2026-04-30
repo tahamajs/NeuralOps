@@ -1,44 +1,50 @@
 # framework/soa/__init__.py
 """
-SOA (SVD-Optimized Architecture) - Low-rank transformer models.
+SOA (SVD-Optimized Architecture) – Low‑rank transformer models.
 
-This module provides SVD-optimized transformer blocks that use a shared
-low-rank basis for attention projections, significantly reducing parameters
-while maintaining performance.
-
-Components:
-    - SOAConfig: Configuration for SOA models
-    - SOAFusedAttention: Fused attention with low-rank projections
-    - SOABlock: Transformer block with SOA attention
-    - SOABert: Complete BERT model with SOA architecture
-    - Migration utilities: Convert BERT to SOA format
+This module provides SVD‑based compressed transformers with a shared basis
+computed from BERT's QKV weights. It supports:
+- Computing a global basis from a trained BERT model.
+- Migrating BERT weights to SOA format.
+- Fine‑tuning and exporting to ONNX/CoreML.
 
 Example:
     >>> from framework.soa import SOAConfig, SOABert, migrate_bert_to_soa
+    >>> from transformers import BertModel
     >>> 
-    >>> config = SOAConfig(k_rank=64)
-    >>> soa_model = SOABert(config)
-    >>> # Migrate from pretrained BERT
-    >>> soa_model = migrate_bert_to_soa(bert_model, soa_model, basis)
+    >>> bert = BertModel.from_pretrained("bert-base-uncased")
+    >>> basis = compute_global_basis_from_hidden_states(bert, rank=64)
+    >>> soa = SOABert(SOAConfig(k_rank=64))
+    >>> soa = migrate_bert_to_soa(bert, soa, basis)
 """
 
 from .config import SOAConfig
 from .attention import SOAFusedAttention
-from .block import SOABlock
-from .model import SOABert
-from .svd_compression import compress_bert_true_svd, svd_compress_input, apply_svd_to_inputs
-from .migration import compute_global_basis_from_bert, migrate_bert_to_soa
+from .model import SOABlock, SOABert, SVDBasedBERT, SVDBasedBlock
+from .svd_migration import (
+    compute_global_basis,
+    compute_global_basis_from_hidden_states,
+    compute_global_basis_from_input_states,
+    migrate_bert_to_soa,
+)
+from .utils import set_seed, get_device, count_parameters
+from .export_onnx import export_onnx
+from .export_coreml import export_to_coreml
 
 __all__ = [
     "SOAConfig",
     "SOAFusedAttention",
     "SOABlock",
     "SOABert",
-    "compress_bert_true_svd",
-    "svd_compress_input",
-    "apply_svd_to_inputs",
-    "compute_global_basis_from_bert",
+    "SVDBasedBERT",
+    "SVDBasedBlock",
+    "compute_global_basis",
+    "compute_global_basis_from_hidden_states",
+    "compute_global_basis_from_input_states",
     "migrate_bert_to_soa",
+    "set_seed",
+    "get_device",
+    "count_parameters",
+    "export_onnx",
+    "export_to_coreml",
 ]
-
-__version__ = "1.0.0"

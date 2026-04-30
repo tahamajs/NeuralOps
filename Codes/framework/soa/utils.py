@@ -7,6 +7,19 @@ import torch
 import torch.nn as nn
 from typing import Dict, Optional
 
+def set_seed(seed: int = 42):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.backends.mps.is_available():
+        torch.mps.manual_seed(seed)
+
+def get_device():
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    return torch.device("cpu")
 
 def count_parameters(model: nn.Module, trainable_only: bool = True) -> Dict[str, int]:
     """
