@@ -1,0 +1,53 @@
+# config/default_config.yaml
+# Default configuration for SVD-Lin framework
+
+# Hardware
+device: "auto"
+force_cpu_for_svd: true
+gradient_checkpointing: true
+mixed_precision: false
+
+# Data
+local_glue_path: "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+max_seq_length: 128
+batch_size: 16
+eval_batch_size: 32
+
+# Model
+model_name: "bert-base-uncased"
+attention_type: "svd"
+rank: 128
+
+# Training
+epochs: 3
+learning_rate: 2e-5
+weight_decay: 0.01
+warmup_ratio: 0.1
+max_grad_norm: 1.0
+gradient_accumulation_steps: 1
+
+# Compression
+compression_method: "standard_svd"
+compression_rank: 64
+compression_threshold: 0.90
+
+# Experiment
+tasks:
+  - cola
+  - sst2
+  - mrpc
+seed: 42
+num_seeds: 1
+
+# Output
+output_dir: "./results"
+plots_dir: "./results/plots"
+log_dir: "./logs"
+
+# Visualization
+visualize: true
+generate_report: true
+
+# Logging
+logging_steps: 50
+verbose: true
