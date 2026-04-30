@@ -60,7 +60,36 @@ def cmd_benchmark(args):
     """Benchmark compression methods across ranks and models."""
     from studio.benchmark.universal_svd_benchmark import run_universal_benchmark
     run_universal_benchmark()
+# inside studio/cli.py
 
+def cmd_generate_data(args):
+    from studio.data.synthetic import run_universal_generation, run_comprehensive_generation, run_advanced_generation
+    from studio.data.synthetic_advanced import generate_reasoning_datasets
+    from studio.data.synthetic_task_specific import run_all_task_generations
+
+    output = Path(args.output_dir)
+    if args.type == "universal":
+        run_universal_generation(output, total_samples_per_domain=args.samples)
+    elif args.type == "comprehensive":
+        run_comprehensive_generation(output, total_samples=args.samples)
+    elif args.type == "advanced":
+        run_advanced_generation(output, total_samples=args.samples)
+    elif args.type == "reasoning":
+        generate_reasoning_datasets(output, samples_per_task=args.samples)
+    elif args.type == "task_specific":
+        run_all_task_generations(output)
+    else:
+        print("Available types: universal, comprehensive, advanced, reasoning, task_specific")
+
+def cmd_analyze_data(args):
+    from studio.data.analyze_datasets import plot_distribution_report
+    plot_distribution_report(data_dir=args.data_dir, output_image=args.output)
+
+def cmd_benchmark_speed(args):
+    from studio.evaluation.speed_benchmark import run_speed_benchmark
+    run_speed_benchmark(original_model_path=args.original, compressed_model_path=args.compressed, rank=args.rank)
+
+# Add these parsers in main()
 def cmd_soa(args):
     """Create and evaluate an SVD‑Optimized Architecture (SOA) model."""
     from transformers import BertModel, AutoTokenizer
