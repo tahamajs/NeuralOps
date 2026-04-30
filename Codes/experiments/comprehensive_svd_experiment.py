@@ -18,7 +18,7 @@ from datetime import datetime
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from framework.utils.architecture_utils import detect_architecture, get_layer_patterns
+from Codes.framework.utils.architecture import detect_architecture, get_layer_patterns
 from framework.compression.svd_compressor import SVDLinearLayer
 from framework.compression.adaptive_compressor import AdaptiveTransformerCompressor
 
