@@ -1,0 +1,64 @@
+"""
+Mamba‑Shedder: Sensitivity‑based structured pruning.
+Paper: https://arxiv.org/abs/2501.17088
+Code: https://github.com/IntelLabs/Hardware-Aware-Automated-Machine-Learning/tree/main/Mamba-Shedder
+"""
+import torch
+import torch.nn as nn
+
+
+class MambaShedderCompressor:
+    def __init__(self, model, tokenizer, sparsity=0.2, device="cuda"):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.sparsity = sparsity
+        self.device = device
+
+    def _collect_activations(self, calib_loader):
+        self.model.eval()
+        activations = {}
+        hooks = []
+
+        def hook_fn(module, input, output, name):
+            if isinstance(module, nn.Linear):
+                activations[name] = input[0].detach().clone()
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear):
+                hook = module.register_forward_hook(
+                    lambda m, i, o, n=name: hook_fn(m, i, o, n)
+                )
+                hooks.append(hook)
+
+        with torch.no_grad():
+            for batch in calib_loader:
+                batch = {k: v.to(self.device) for k, v in batch.items()}
+                _ = self.model(**batch)
+
+        for hook in hooks:
+            hook.remove()
+        return activations
+
+    def _compute_sensitivity(self, activations):
+        sensitivities = {}
+        for name, act in activations.items():
+            act_flat = act.view(-1, act.shape[-1])
+            fisher = (act_flat ** 2).mean(dim=0)
+            sensitivities[name] = fisher.sqrt()
+        return sensitivities
+
+    def compress(self, calib_loader):
+        print(f"✂️ Applying Mamba‑Shedder (sparsity={self.sparsity})...")
+        activations = self._collect_activations(calib_loader)
+        sensitivities = self._compute_sensitivity(activations)
+
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear) and name in sensitivities:
+                weight = module.weight.data
+                sens = sensitivities[name]
+                n_keep = int(weight.shape[1] * (1 - self.sparsity))
+                keep_idx = torch.argsort(sens, descending=True)[:n_keep]
+                module.weight.data = weight[:, keep_idx]
+                if module.bias is not None:
+                    module.bias.data = module.bias.data[keep_idx]
+        return self.model
