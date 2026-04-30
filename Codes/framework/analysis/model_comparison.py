@@ -1,6 +1,6 @@
+# framework/analysis/model_comparison.py
 """
-Model Comparison Tool for SVD Compression Analysis
-Compares multiple models across different ranks and datasets
+Model comparison utilities for SVD compression analysis.
 """
 
 import os
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import json
 from pathlib import Path
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Tuple
 import numpy as np
 
 
@@ -95,12 +95,13 @@ class ModelComparison:
             self.df_all['accuracy_drop'] = self.df_all['original_accuracy'] - self.df_all['compressed_accuracy']
         elif 'accuracy' in self.df_all.columns and 'rank' in self.df_all.columns:
             # Calculate drop relative to full attention
-            full_accuracy = self.df_all[self.df_all['rank'] == 64]['accuracy'].mean()
+            full_accuracy = self.df_all[self.df_all['rank'] == self.df_all['rank'].max()]['accuracy'].mean()
             self.df_all['accuracy_drop'] = full_accuracy - self.df_all['accuracy']
         
         # Add compression ratio if not present
         if 'param_reduction' not in self.df_all.columns and 'original_params' in self.df_all.columns:
             self.df_all['param_reduction'] = (self.df_all['original_params'] - self.df_all['compressed_params']) / self.df_all['original_params']
+            self.df_all['param_reduction'] = self.df_all['param_reduction'] * 100  # Convert to percentage
     
     def _build_from_json(self):
         """Build dataframe from JSON summaries when CSV not available."""
@@ -127,7 +128,7 @@ class ModelComparison:
             self._add_derived_columns()
     
     def plot_accuracy_vs_rank(self, task: str = 'cola', save: bool = True, 
-                               show: bool = False) -> plt.Figure:
+                               show: bool = False, save_path: str = None) -> plt.Figure:
         """
         Plot accuracy vs compression rank for a specific task.
         
@@ -135,6 +136,10 @@ class ModelComparison:
             task: GLUE task name (cola, mrpc, sst2, etc.)
             save: Whether to save the figure to disk
             show: Whether to display the figure
+            save_path: Custom save path for the figure
+            
+        Returns:
+            Matplotlib figure object
         """
         if self.df_all is None:
             self.load_all_results()
@@ -161,13 +166,14 @@ class ModelComparison:
         ax.grid(True, alpha=0.3)
         
         if save:
-            plt.savefig(f'comparison_{task}.png', dpi=150, bbox_inches='tight')
-            print(f"Saved figure: comparison_{task}.png")
+            save_file = save_path or f'comparison_{task}.png'
+            plt.savefig(save_file, dpi=150, bbox_inches='tight')
+            print(f"Saved figure: {save_file}")
         
         if show:
             plt.show()
         else:
-            plt.close()
+            plt.close(fig)
         
         return fig
     
@@ -189,7 +195,7 @@ class ModelComparison:
         print(f"Plots saved to {save_dir}")
         return figures
     
-    def generate_summary_table(self) -> pd.DataFrame:
+    def generate_summary_table(self, save_path: str = 'summary_table.csv') -> pd.DataFrame:
         """Generate a pivot table summary of results."""
         if self.df_all is None:
             self.load_all_results()
@@ -214,8 +220,8 @@ class ModelComparison:
         )
         
         # Save to CSV
-        pivot.to_csv('summary_table.csv')
-        print("Saved: summary_table.csv")
+        pivot.to_csv(save_path)
+        print(f"Saved: {save_path}")
         
         return pivot
     
@@ -233,26 +239,19 @@ class ModelComparison:
         
         return ranking
     
-    def compare_methods(self, task: str = 'cola') -> pd.DataFrame:
-        """Compare different compression methods."""
+    def get_best_config_per_task(self) -> pd.DataFrame:
+        """Get best configuration for each task."""
         if self.df_all is None:
             self.load_all_results()
         
-        df_task = self.df_all[self.df_all['task'] == task]
+        best_configs = []
+        for task in self.df_all['task'].unique():
+            df_task = self.df_all[self.df_all['task'] == task]
+            if 'accuracy' in df_task.columns:
+                best_idx = df_task['accuracy'].idxmax()
+                best_configs.append(df_task.loc[best_idx])
         
-        # Determine method from run name or model column
-        methods = {}
-        for idx, row in df_task.iterrows():
-            method = self._extract_method(row)
-            methods[(row['rank'], row['model'])] = method
-        
-        comparison = df_task.pivot_table(
-            index='rank', 
-            columns='model', 
-            values='accuracy'
-        )
-        
-        return comparison
+        return pd.DataFrame(best_configs)
     
     def _extract_method(self, row: pd.Series) -> str:
         """Extract compression method from row data."""
@@ -266,19 +265,24 @@ class ModelComparison:
         return 'unknown'
 
 
-def quick_compare(results_dirs: List[str], task: str = 'cola'):
-    """Quick comparison function for one-line usage."""
+def quick_compare(results_dirs: List[str], task: str = 'cola', save_dir: str = './comparison'):
+    """
+    Quick comparison function for one-line usage.
+    
+    Args:
+        results_dirs: List of result directories
+        task: GLUE task to analyze
+        save_dir: Directory to save outputs
+        
+    Returns:
+        Summary table DataFrame
+    """
+    os.makedirs(save_dir, exist_ok=True)
+    
     comparator = ModelComparison(results_dirs)
     comparator.load_all_results()
-    comparator.plot_accuracy_vs_rank(task=task, save=True, show=True)
-    return comparator.generate_summary_table()
-
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser(description="Compare model compression results")
-    parser.add_argument("--results_dirs", nargs="+", required=True, help="Directories with results")
-    parser.add_argument("--task", default="cola", help="GLUE task to analyze")
-    args = parser.parse_args()
+    comparator.plot_accuracy_vs_rank(task=task, save=True, save_path=os.path.join(save_dir, f'comparison_{task}.png'))
     
-    quick_compare(args.results_dirs, args.task)
+    summary = comparator.generate_summary_table(save_path=os.path.join(save_dir, 'summary_table.csv'))
+    
+    return summary
