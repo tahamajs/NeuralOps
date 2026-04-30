@@ -338,7 +338,7 @@ class DoRALinear(nn.Module):
 
 
 class DisLoRALinear(nn.Module):
-    """FIXED: Correct dimension handling for any linear layer."""
+    """Corrected DisLoRA with proper dimension handling."""
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float,
                  beta: float = 0.5, capacity_factor: float = 1.0):
         super().__init__()
@@ -349,6 +349,8 @@ class DisLoRALinear(nn.Module):
         
         d_in = linear.in_features
         d_out = linear.out_features
+        
+        # Calculate effective rank
         target_params = capacity_factor * 2 * d_in * r
         self.r_eff = max(1, int(math.sqrt(target_params)))
         self.r_eff = min(self.r_eff, d_in, d_out)
@@ -357,16 +359,15 @@ class DisLoRALinear(nn.Module):
         self.beta = beta
         
         with torch.no_grad():
-            # SVD on weight: U (d_out x r), S (r), Vt (r x d_in)
-            # Using full_matrices=False for efficiency
             U, S, Vt = torch.linalg.svd(linear.weight.data, full_matrices=False)
-            # Keep up to r_eff components
             rank_actual = min(self.r_eff, len(S))
-            self.U_frozen = nn.Parameter(U[:, :rank_actual], requires_grad=False)
-            self.S_frozen = nn.Parameter(S[:rank_actual], requires_grad=False)
-            self.V_frozen = nn.Parameter(Vt[:rank_actual, :], requires_grad=False)
             
-            # C is r_eff x r_eff
+            # U: (d_out, rank)
+            # Vt: (rank, d_in) -> we want V: (d_in, rank)
+            self.register_buffer('U_frozen', U[:, :rank_actual])
+            self.register_buffer('S_frozen', S[:rank_actual])
+            self.register_buffer('V_frozen', Vt[:rank_actual, :].T)  # (d_in, rank)
+            
             self.C = nn.Parameter(torch.zeros(rank_actual, rank_actual))
             nn.init.eye_(self.C)
         
@@ -374,22 +375,21 @@ class DisLoRALinear(nn.Module):
         self.dropout = nn.Dropout(dropout)
     
     def forward(self, x):
-        # x shape: (batch, seq_len, d_in)
-        # Project to U space: (batch, seq_len, r_eff)
-        x_proj = x @ self.U_frozen.t()
+        # x: (B, L, d_in)
+        # Project to latent: (B, L, d_in) @ (d_in, r) -> (B, L, r)
+        x_proj = x @ self.V_frozen
         x_proj = self.dropout(x_proj)
         
-        # Apply C: (batch, seq_len, r_eff) @ (r_eff, r_eff) -> (batch, seq_len, r_eff)
+        # Transform in latent space: (B, L, r) @ (r, r) -> (B, L, r)
         coeff_out = x_proj @ self.C
         
-        # Project back to output space: (batch, seq_len, r_eff) @ (r_eff, d_out) -> (batch, seq_len, d_out)
-        # Using V_frozen which is (r_eff, d_in) – wait, we need U for output projection.
-        # Actually the reconstruction is: U @ C @ Vt
-        # So delta = coeff_out @ V_frozen
-        delta = coeff_out @ self.V_frozen
+        # Project to output: (B, L, r) @ (r, d_out) -> (B, L, d_out)
+        delta = coeff_out @ self.U_frozen.T
         
         base = self.linear(x)
         return base + self.beta * delta * self.scaling
+    
+    
 
 
 def apply_lora_or_dora(model: nn.Module, r: int, alpha: float, dropout: float,
