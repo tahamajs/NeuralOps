@@ -122,8 +122,10 @@ class ExperimentConfig:
     dislora_capacity_factor: float = 1.0
     # Multi‑seed
     num_seeds: int = 1
-
-# ----------------------------------------------------------------------
+    # SVD attention – place these LAST (all have defaults)
+    svd_attn: bool = False
+    svd_rank_qkv: int = 32
+    svd_rank_out: int = 32# ----------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------
 def get_device_and_precision(fp16_flag: bool):
@@ -145,7 +147,92 @@ def set_all_seeds(seed: int):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+# ----------------------------------------------------------------------
+# SVD Compressed Attention Layer (replaces MultiheadAttention)
+# ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# SVD Compressed Attention Layer
+# ----------------------------------------------------------------------
+class CompressedAttentionLayer(nn.Module):
+    def __init__(self, original_layer: nn.MultiheadAttention, rank_qkv: int, rank_out: int):
+        super().__init__()
+        self.original_dim = original_layer.embed_dim
+        self.num_heads = original_layer.num_heads
+        self.head_dim = self.original_dim // self.num_heads
+        self.dropout = original_layer.dropout
 
+        w_qkv = original_layer.in_proj_weight.data.cpu().numpy()
+        w_out = original_layer.out_proj.weight.data.cpu().numpy()
+
+        U_qkv, S_qkv, Vh_qkv = np.linalg.svd(w_qkv, full_matrices=False)
+        U_out, S_out, Vh_out = np.linalg.svd(w_out, full_matrices=False)
+
+        rank_qkv = min(rank_qkv, w_qkv.shape[1])
+        rank_out = min(rank_out, w_out.shape[1])
+
+        self.register_buffer('U_qkv', torch.from_numpy(U_qkv[:, :rank_qkv]).float())
+        self.register_buffer('S_qkv_sqrt', torch.from_numpy(np.sqrt(S_qkv[:rank_qkv])).float())
+        self.register_buffer('Vh_qkv', torch.from_numpy(Vh_qkv[:rank_qkv, :]).float())
+        self.register_buffer('U_out', torch.from_numpy(U_out[:, :rank_out]).float())
+        self.register_buffer('S_out_sqrt', torch.from_numpy(np.sqrt(S_out[:rank_out])).float())
+        self.register_buffer('Vh_out', torch.from_numpy(Vh_out[:rank_out, :]).float())
+
+        if original_layer.in_proj_bias is not None:
+            self.bias_qkv = nn.Parameter(original_layer.in_proj_bias.data.clone())
+        else:
+            self.bias_qkv = None
+        if original_layer.out_proj.bias is not None:
+            self.bias_out = nn.Parameter(original_layer.out_proj.bias.data.clone())
+        else:
+            self.bias_out = None
+
+    def forward(self, query, key, value, key_padding_mask=None, need_weights=False,
+                attn_mask=None, average_attn_weights=True):
+        x = query
+        B, L, D = x.shape
+        projected = torch.matmul(x, self.Vh_qkv.t())
+        qkv_comp = torch.matmul(projected, self.U_qkv.t() * self.S_qkv_sqrt.view(1, -1, 1))
+        if self.bias_qkv is not None:
+            qkv_comp += self.bias_qkv
+
+        dim = self.original_dim
+        q = qkv_comp[:, :, :dim]
+        k = qkv_comp[:, :, dim:2*dim]
+        v = qkv_comp[:, :, 2*dim:]
+
+        q = q.view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        k = k.view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        v = v.view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+
+        scale = 1.0 / (self.head_dim ** 0.5)
+        attn = torch.matmul(q, k.transpose(-2, -1)) * scale
+        if attn_mask is not None:
+            attn += attn_mask
+        if key_padding_mask is not None:
+            attn = attn.masked_fill(key_padding_mask.unsqueeze(1).unsqueeze(2), -1e9)
+
+        attn_weights = F.softmax(attn, dim=-1)
+        attn_weights = F.dropout(attn_weights, p=self.dropout, training=self.training)
+        context = torch.matmul(attn_weights, v)
+        context = context.transpose(1,2).contiguous().view(B, L, dim)
+
+        context_fused = torch.matmul(context, self.Vh_out.t() * self.S_out_sqrt.view(1, -1, 1))
+        out = torch.matmul(context_fused, self.U_out.t())
+        if self.bias_out is not None:
+            out += self.bias_out
+        return out, attn_weights if need_weights else None
+
+
+
+
+
+def replace_attention_with_svd(model: nn.Module, rank_qkv: int = 32, rank_out: int = 32):
+    for name, module in list(model.named_modules()):
+        if isinstance(module, nn.MultiheadAttention):
+            parent = model.get_submodule('.'.join(name.split('.')[:-1]))
+            child_name = name.split('.')[-1]
+            setattr(parent, child_name, CompressedAttentionLayer(module, rank_qkv, rank_out))
+            logger.info(f"Replaced {name} with SVD attention (rank_qkv={rank_qkv}, rank_out={rank_out})")
 def create_experiment_dir(config: ExperimentConfig) -> str:
     run_id = time.strftime("%Y%m%d-%H%M%S") + "-" + str(uuid.uuid4())[:8]
     run_dir = os.path.join(config.output_root, run_id)
@@ -751,6 +838,7 @@ def get_llrd_param_groups(model: nn.Module, base_lr: float, weight_decay: float,
                 emb_nodecay.append(param)
             else:
                 emb_decay.append(param)
+
         elif "encoder.layer." in name:
             layer = int(name.split("encoder.layer.")[1].split(".")[0])
             if any(nd in name for nd in no_decay):
@@ -902,6 +990,7 @@ def adjust_batch_size_on_oom(exception, batch_size, device):
 # Single Task Training (with all method branches)
 # ----------------------------------------------------------------------
 def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.device,
+                      
                      fp16_usable: bool, task_name: str, seed: int) -> Dict:
     logger.info(f"===== Task: {task_name} (method={config.method}, seed={seed}) =====")
     task_dir = os.path.join(run_dir, task_name, f"seed_{seed}")
@@ -920,6 +1009,10 @@ def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.devi
     tokenizer = AutoTokenizer.from_pretrained(config.model_name_or_path, use_fast=True)
     config_obj = AutoConfig.from_pretrained(config.model_name_or_path, num_labels=num_labels)
     model = AutoModelForSequenceClassification.from_pretrained(config.model_name_or_path, config=config_obj)
+    # Apply SVD attention compression if requested
+    if config.svd_attn:
+        logger.info("Replacing all MultiheadAttention layers with SVD compression")
+        replace_attention_with_svd(model, config.svd_rank_qkv, config.svd_rank_out)
 
     # --------------------------------------------------------------
     # Apply advanced methods
@@ -1177,7 +1270,13 @@ def parse_args():
     parser.add_argument("--dislora_capacity_factor", type=float, default=1.0)
     # Multi‑seed
     parser.add_argument("--num_seeds", type=int, default=1)
+    # SVD attention
+    parser.add_argument("--svd_attn", action="store_true", help="Replace attention with SVD compressed version")
+    parser.add_argument("--svd_rank_qkv", type=int, default=32, help="Rank for QKV SVD")
+    parser.add_argument("--svd_rank_out", type=int, default=32, help="Rank for output SVD")
     return parser.parse_args()
+
+
 
 def main():
     args = parse_args()
@@ -1200,6 +1299,10 @@ def main():
         weight_decay=args.weight_decay,
         warmup_ratio=args.warmup_ratio,
         seed=args.seed,
+        svd_attn=args.svd_attn,
+        svd_rank_qkv=args.svd_rank_qkv,
+        svd_rank_out=args.svd_rank_out,
+
         max_seq_length=args.max_seq_length,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         lr_scheduler_type=args.lr_scheduler_type,
