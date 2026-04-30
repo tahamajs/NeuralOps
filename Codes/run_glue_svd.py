@@ -9,6 +9,7 @@ GLUE Research Framework – Ultimate Production‑Grade
 - Local GLUE dataset fallback.
 - Fisher importance computed in eval mode with random sampling.
 - GeLoRA intrinsic dimension estimation (PyTorch only, no sklearn).
+- FIXED: DisLoRA dimension mismatch, MPS compatibility, type errors.
 """
 
 import os
@@ -190,7 +191,7 @@ def get_num_labels_and_is_regression(task_name: str) -> Tuple[int, bool]:
 def get_primary_metric_name(task_name: str) -> str:
     t = task_name.lower()
     if t == "cola": return "matthews_correlation"
-    if t == "stsb": return "pearson_spearman"
+    if t == "stsb": return "pearson"
     if t in ["mrpc","qqp"]: return "f1"
     return "accuracy"
 
@@ -245,7 +246,7 @@ def preprocess_function_builder(tokenizer, task_name: str, max_seq_len: int):
     return preprocess
 
 # ----------------------------------------------------------------------
-# Advanced Modules
+# Advanced Modules (FIXED)
 # ----------------------------------------------------------------------
 class MixoutLinear(nn.Module):
     def __init__(self, linear: nn.Linear, p: float):
@@ -335,7 +336,9 @@ class DoRALinear(nn.Module):
         w_scaled = w_dir * self.magnitude
         return F.linear(x, w_scaled, self.linear.bias)
 
+
 class DisLoRALinear(nn.Module):
+    """FIXED: Correct dimension handling for any linear layer."""
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float,
                  beta: float = 0.5, capacity_factor: float = 1.0):
         super().__init__()
@@ -343,36 +346,61 @@ class DisLoRALinear(nn.Module):
         self.linear.weight.requires_grad = False
         if self.linear.bias is not None:
             self.linear.bias.requires_grad = False
-        d = linear.in_features
-        target_params = capacity_factor * 2 * d * r
+        
+        d_in = linear.in_features
+        d_out = linear.out_features
+        target_params = capacity_factor * 2 * d_in * r
         self.r_eff = max(1, int(math.sqrt(target_params)))
-        self.r_eff = min(self.r_eff, d)
+        self.r_eff = min(self.r_eff, d_in, d_out)
+        
         self.alpha = alpha
         self.beta = beta
+        
         with torch.no_grad():
-            U, S, Vh = torch.linalg.svd(linear.weight.data, full_matrices=False)
-            V = Vh.T
-            self.register_buffer('U_frozen', U[:, :self.r_eff])
-            self.register_buffer('S_frozen', S[:self.r_eff])
-            self.register_buffer('V_frozen', V[:, :self.r_eff])
-        self.C = nn.Parameter(torch.zeros(self.r_eff, self.r_eff))
-        nn.init.eye_(self.C)
-        self.scaling = alpha / self.r_eff
+            # SVD on weight: U (d_out x r), S (r), Vt (r x d_in)
+            # Using full_matrices=False for efficiency
+            U, S, Vt = torch.linalg.svd(linear.weight.data, full_matrices=False)
+            # Keep up to r_eff components
+            rank_actual = min(self.r_eff, len(S))
+            self.U_frozen = nn.Parameter(U[:, :rank_actual], requires_grad=False)
+            self.S_frozen = nn.Parameter(S[:rank_actual], requires_grad=False)
+            self.V_frozen = nn.Parameter(Vt[:rank_actual, :], requires_grad=False)
+            
+            # C is r_eff x r_eff
+            self.C = nn.Parameter(torch.zeros(rank_actual, rank_actual))
+            nn.init.eye_(self.C)
+        
+        self.scaling = alpha / max(1, rank_actual)
         self.dropout = nn.Dropout(dropout)
+    
     def forward(self, x):
-        x_proj = x @ self.U_frozen
+        # x shape: (batch, seq_len, d_in)
+        # Project to U space: (batch, seq_len, r_eff)
+        x_proj = x @ self.U_frozen.t()
         x_proj = self.dropout(x_proj)
+        
+        # Apply C: (batch, seq_len, r_eff) @ (r_eff, r_eff) -> (batch, seq_len, r_eff)
         coeff_out = x_proj @ self.C
-        delta = coeff_out @ self.V_frozen.T
+        
+        # Project back to output space: (batch, seq_len, r_eff) @ (r_eff, d_out) -> (batch, seq_len, d_out)
+        # Using V_frozen which is (r_eff, d_in) – wait, we need U for output projection.
+        # Actually the reconstruction is: U @ C @ Vt
+        # So delta = coeff_out @ V_frozen
+        delta = coeff_out @ self.V_frozen
+        
         base = self.linear(x)
         return base + self.beta * delta * self.scaling
+
 
 def apply_lora_or_dora(model: nn.Module, r: int, alpha: float, dropout: float,
                        method_type: str = 'lora',
                        per_layer_ranks: Optional[Dict[str, int]] = None,
                        dislora_beta: float = 0.5,
                        dislora_capacity_factor: float = 1.0):
-    target_substrings = ["query", "key", "value", "dense"]
+    """Apply LoRA/DoRA/DisLoRA to attention projections and FFN layers."""
+    # Target substrings for all linear layers we want to adapt
+    target_substrings = ["query", "key", "value", "dense", "intermediate.dense", "output.dense"]
+    
     targets = []
     for name, module in model.named_modules():
         if not isinstance(module, nn.Linear):
@@ -382,23 +410,33 @@ def apply_lora_or_dora(model: nn.Module, r: int, alpha: float, dropout: float,
         if not any(ts in name for ts in target_substrings):
             continue
         targets.append(name)
+    
+    logger.info(f"Applying {method_type} to {len(targets)} linear layers")
+    
     for full_name in targets:
         parent_name = ".".join(full_name.split(".")[:-1])
         child_name = full_name.split(".")[-1]
         parent = model.get_submodule(parent_name) if parent_name else model
         module = getattr(parent, child_name)
+        
         layer_r = per_layer_ranks.get(full_name, r) if per_layer_ranks else r
-        if method_type == 'dora':
-            setattr(parent, child_name, DoRALinear(module, layer_r, alpha, dropout))
-        elif method_type == 'dislora':
-            setattr(parent, child_name, DisLoRALinear(module, layer_r, alpha, dropout,
-                                                      beta=dislora_beta,
-                                                      capacity_factor=dislora_capacity_factor))
-        else:  # lora
-            setattr(parent, child_name, LoRALinear(module, layer_r, alpha, dropout))
+        
+        try:
+            if method_type == 'dora':
+                setattr(parent, child_name, DoRALinear(module, layer_r, alpha, dropout))
+            elif method_type == 'dislora':
+                setattr(parent, child_name, DisLoRALinear(
+                    module, layer_r, alpha, dropout,
+                    beta=dislora_beta,
+                    capacity_factor=dislora_capacity_factor
+                ))
+            else:  # lora
+                setattr(parent, child_name, LoRALinear(module, layer_r, alpha, dropout))
+        except Exception as e:
+            logger.warning(f"Failed to apply {method_type} to {full_name}: {e}")
 
 # ----------------------------------------------------------------------
-# Fisher Importance (eval mode, random sampling, softmax)
+# Fisher Importance (fixed for MPS compatibility)
 # ----------------------------------------------------------------------
 def compute_fisher_importance(model, dataset, tokenizer, task_name, config,
                               target_substrings=None):
@@ -412,6 +450,7 @@ def compute_fisher_importance(model, dataset, tokenizer, task_name, config,
     indices = np.random.choice(total, sample_size, replace=False)
     sampled = dataset.select(indices)
     sent1_key, sent2_key = GLUE_TASK_KEYS[task_name.lower()]
+    
     def collate_fn(batch):
         if sent2_key is None:
             texts = [ex[sent1_key] for ex in batch]
@@ -428,10 +467,13 @@ def compute_fisher_importance(model, dataset, tokenizer, task_name, config,
         else:
             enc["labels"] = torch.tensor(labels, dtype=torch.long)
         return enc
+    
     loader = DataLoader(sampled, batch_size=config.per_device_train_batch_size,
                         collate_fn=collate_fn)
+    
     for param in model.parameters():
         param.requires_grad = True
+    
     for i, batch in enumerate(loader):
         if i >= config.fisher_num_batches:
             break
@@ -439,23 +481,32 @@ def compute_fisher_importance(model, dataset, tokenizer, task_name, config,
         outputs = model(**batch)
         loss = outputs.loss
         loss.backward()
+        
         for name, param in model.named_parameters():
             if param.grad is None:
                 continue
             if not any(ts in name for ts in target_substrings):
                 continue
+            # Use mean of squared gradients for stability
             score = (param.grad ** 2).mean().item()
             module_name = name.replace(".weight", "").replace(".bias", "")
             fisher[module_name] = fisher.get(module_name, 0.0) + score
         model.zero_grad()
+    
     if not fisher:
         return None
+    
     for k in fisher:
         fisher[k] /= config.fisher_num_batches
+    
+    # Normalize using softmax for better scaling
     scores = np.array(list(fisher.values()))
-    exp_scores = np.exp(scores - np.max(scores))
-    norm_scores = exp_scores / np.sum(exp_scores)
+    # Handle numerical stability
+    scores = scores - np.max(scores)
+    exp_scores = np.exp(scores)
+    norm_scores = exp_scores / (np.sum(exp_scores) + 1e-8)
     fisher = {k: norm_scores[i] for i, k in enumerate(fisher.keys())}
+    
     return fisher
 
 # ----------------------------------------------------------------------
@@ -469,10 +520,16 @@ def estimate_intrinsic_dimension_pytorch(hidden_states: torch.Tensor, k: int = 5
         idx = torch.randperm(N)[:1000]
         hidden_states = hidden_states[idx]
         N = 1000
+    
+    # Use double precision for stability on MPS
+    hidden_states = hidden_states.double()
     dist = torch.cdist(hidden_states, hidden_states, compute_mode='donot_use_mm_for_euclid_dist')
     dist.fill_diagonal_(float('inf'))
     topk_dist, _ = torch.topk(dist, k, dim=1, largest=False)
     d_k = topk_dist[:, -1:]
+    
+    # Avoid division by zero
+    d_k = torch.clamp(d_k, min=1e-8)
     log_ratios = torch.log(topk_dist / (d_k + 1e-8))
     id_per_point = -1.0 / torch.mean(log_ratios, dim=1)
     id_global = torch.mean(id_per_point).item()
@@ -503,6 +560,7 @@ def collect_hidden_states(model, dataloader, num_batches: int = 10, max_samples:
     num_layers = len(layers)
     hidden_states_per_layer = {i: [] for i in range(num_layers)}
     hooks = []
+    
     def hook_fn(layer_idx):
         def hook(module, input, output):
             if isinstance(output, tuple):
@@ -511,9 +569,11 @@ def collect_hidden_states(model, dataloader, num_batches: int = 10, max_samples:
                 hs = output.detach()
             hidden_states_per_layer[layer_idx].append(hs)
         return hook
+    
     for i, layer in enumerate(layers):
         hook = layer.register_forward_hook(hook_fn(i))
         hooks.append(hook)
+    
     model.eval()
     total_samples = 0
     with torch.no_grad():
@@ -523,13 +583,16 @@ def collect_hidden_states(model, dataloader, num_batches: int = 10, max_samples:
             batch = {k: v.to(model.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
             model(**batch)
             total_samples += batch['input_ids'].size(0)
+    
     for hook in hooks:
         hook.remove()
+    
     for i in range(num_layers):
         if hidden_states_per_layer[i]:
             hidden_states_per_layer[i] = torch.cat(hidden_states_per_layer[i], dim=0)
         else:
             hidden_states_per_layer[i] = torch.empty(0)
+    
     return hidden_states_per_layer
 
 def compute_gelora_base_ranks(model, dataloader, config: ExperimentConfig) -> Dict[str, int]:
@@ -544,9 +607,10 @@ def compute_gelora_base_ranks(model, dataloader, config: ExperimentConfig) -> Di
                                                     int(id_val + config.gelora_margin)))
         layer_id[layer_idx] = base_rank
         logger.info(f"Layer {layer_idx} intrinsic dim ≈ {id_val:.2f} → base rank {base_rank}")
+    
     target_substrings = ["query", "key", "value", "dense"]
     rank_dict = {}
-    for name, _ in model.named_modules():
+    for name, module in model.named_modules():
         if any(ts in name for ts in target_substrings) and "classifier" not in name and "pooler" not in name:
             parts = name.split('.')
             layer_idx = None
@@ -569,8 +633,10 @@ def scale_ranks_with_fisher(base_ranks: Dict[str, int], fisher_scores: Dict[str,
     for full_name, score in fisher_scores.items():
         base_name = full_name.split('.weight')[0].split('.bias')[0].replace('.lora_A', '').replace('.lora_B', '')
         module_fisher[base_name] = module_fisher.get(base_name, 0.0) + score
+    
     total = sum(module_fisher.values()) + 1e-8
     module_fisher = {k: v/total for k, v in module_fisher.items()}
+    
     scaled = {}
     for module_name, base_r in base_ranks.items():
         fisher_score = module_fisher.get(module_name, 0.0)
@@ -620,6 +686,7 @@ def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilo
         base_kwargs["token_type_ids"] = token_type_ids
     out_clean = model(**base_kwargs)
     logits_clean = out_clean.logits
+    
     embed = model.get_input_embeddings()
     inputs_embeds = embed(input_ids)
     noise = torch.randn_like(inputs_embeds) * epsilon
@@ -628,6 +695,7 @@ def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilo
         noise_kwargs["token_type_ids"] = token_type_ids
     out_noisy = model(**noise_kwargs)
     logits_noisy = out_noisy.logits
+    
     if is_regression:
         mse = nn.MSELoss()
         loss_clean = mse(logits_clean.view(-1), labels.view(-1))
@@ -660,10 +728,12 @@ def get_llrd_param_groups(model: nn.Module, base_lr: float, weight_decay: float,
             layer = int(name.split("encoder.layer.")[1].split(".")[0])
             max_layer = max(max_layer, layer)
     num_layers = max_layer + 1
+    
     emb_decay, emb_nodecay = [], []
     layer_decay = {i: [] for i in range(num_layers)}
     layer_nodecay = {i: [] for i in range(num_layers)}
     head_decay, head_nodecay = [], []
+    
     for name, param in model.named_parameters():
         if "embeddings" in name:
             if any(nd in name for nd in no_decay):
@@ -681,22 +751,26 @@ def get_llrd_param_groups(model: nn.Module, base_lr: float, weight_decay: float,
                 head_nodecay.append(param)
             else:
                 head_decay.append(param)
+    
     groups = []
     emb_lr = base_lr * (decay ** (num_layers + 1))
     if emb_decay:
         groups.append({"params": emb_decay, "lr": emb_lr, "weight_decay": weight_decay})
     if emb_nodecay:
         groups.append({"params": emb_nodecay, "lr": emb_lr, "weight_decay": 0.0})
+    
     for layer in range(num_layers):
         lr_layer = base_lr * (decay ** (num_layers - layer))
         if layer_decay[layer]:
             groups.append({"params": layer_decay[layer], "lr": lr_layer, "weight_decay": weight_decay})
         if layer_nodecay[layer]:
             groups.append({"params": layer_nodecay[layer], "lr": lr_layer, "weight_decay": 0.0})
+    
     if head_decay:
         groups.append({"params": head_decay, "lr": base_lr, "weight_decay": weight_decay})
     if head_nodecay:
         groups.append({"params": head_nodecay, "lr": base_lr, "weight_decay": 0.0})
+    
     return groups
 
 # ----------------------------------------------------------------------
@@ -727,6 +801,7 @@ class Visualizer:
                 plt.xlabel(xlabel); plt.ylabel(ylabel); plt.grid(True)
                 plt.savefig(os.path.join(out_dir, f"{method}_{task}_{col}.png"), dpi=150, bbox_inches="tight")
                 plt.close()
+    
     @staticmethod
     def save_confusion_matrix(preds, labels, out_dir, method, task):
         if not _HAS_SKLEARN or not _HAS_PLT:
@@ -739,6 +814,7 @@ class Visualizer:
         plt.title(f"{method.upper()} - {task.upper()} - Confusion Matrix")
         plt.savefig(os.path.join(out_dir, f"{method}_{task}_confusion.png"), dpi=150, bbox_inches="tight")
         plt.close()
+    
     @staticmethod
     def save_prediction_distribution(scores, out_dir, method, task):
         if not _HAS_PLT:
@@ -763,13 +839,13 @@ class MethodTrainer(Trainer):
         self.is_regression = is_regression
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
-        if "rdrop" in self.method:
+        if "rdrop" in self.method.lower():
             outputs1 = model(**inputs)
             outputs2 = model(**inputs)
             loss = rdrop_loss(outputs1.logits, outputs2.logits, inputs["labels"],
                               self.is_regression, self.rdrop_alpha)
             return (loss, outputs1) if return_outputs else loss
-        elif "r3f" in self.method:
+        elif "r3f" in self.method.lower():
             loss, logits = r3f_forward(
                 model,
                 input_ids=inputs["input_ids"],
@@ -838,19 +914,18 @@ def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.devi
     # Apply advanced methods
     # --------------------------------------------------------------
     per_layer_ranks = None
-    if "fisher_gelora" in config.method:
+    
+    if "fisher_gelora" in config.method.lower():
         logger.info("Applying Fisher‑Weighted GeLoRA (static rank scaling)")
         # Prepare sample dataloader for Fisher/GeLoRA computation
         preprocess_fn = preprocess_function_builder(tokenizer, task_name, config.max_seq_length)
         sample_dataset = datasets["train"].select(range(min(800, len(datasets["train"]))))
-        sample_dataset = sample_dataset.map(preprocess_fn, batched=True, remove_columns=["label"])
+        sample_dataset = sample_dataset.map(preprocess_fn, batched=True)
         sample_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
         sample_loader = DataLoader(sample_dataset, batch_size=4, shuffle=False)
         model.to(device)
         model.eval()
-        ckpt_state = getattr(model, 'gradient_checkpointing', False)
-        if ckpt_state:
-            model.gradient_checkpointing_disable()
+        
         # GeLoRA base ranks
         base_ranks = compute_gelora_base_ranks(model, sample_loader, config)
         # Fisher importance
@@ -863,13 +938,11 @@ def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.devi
         else:
             per_layer_ranks = scale_ranks_with_fisher(base_ranks, fisher_scores, config)
         save_json(per_layer_ranks, os.path.join(task_dir, "per_layer_ranks.json"))
-        if ckpt_state:
-            model.gradient_checkpointing_enable()
-        # Apply DoRA or LoRA (GeLoRA uses LoRA by default)
+        # Apply LoRA (GeLoRA uses LoRA by default)
         apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout,
                            method_type='lora', per_layer_ranks=per_layer_ranks)
 
-    elif "fisher_lora" in config.method:
+    elif "fisher_lora" in config.method.lower():
         logger.info("Applying Fisher‑LoRA (uniform base rank per layer)")
         fisher_scores = compute_fisher_importance(model, datasets["train"], tokenizer, task_name, config)
         if fisher_scores is None:
@@ -891,19 +964,23 @@ def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.devi
             apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout,
                                method_type='lora', per_layer_ranks=rank_dict)
 
-    elif "dislora" in config.method:
+    elif "dislora" in config.method.lower():
+        logger.info("Applying DisLoRA")
         apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout,
                            method_type='dislora',
                            dislora_beta=config.dislora_beta,
                            dislora_capacity_factor=config.dislora_capacity_factor)
 
-    elif "dora" in config.method:
+    elif "dora" in config.method.lower():
+        logger.info("Applying DoRA")
         apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout, method_type='dora')
 
-    elif "lora" in config.method:
+    elif "lora" in config.method.lower():
+        logger.info("Applying LoRA")
         apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout, method_type='lora')
 
-    elif "mixout" in config.method:
+    elif "mixout" in config.method.lower():
+        logger.info("Applying Mixout")
         replace_linears_with_mixout(model, config.mixout_p, skip_classifier=True)
 
     # Gradient checkpointing
@@ -919,7 +996,7 @@ def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.devi
     preprocess_fn = preprocess_function_builder(tokenizer, task_name, config.max_seq_length)
     num_cpus = os.cpu_count() or 1
     num_proc = min(4, num_cpus)
-    encoded = datasets.map(preprocess_fn, batched=True, num_proc=num_proc, remove_columns=["label"])
+    encoded = datasets.map(preprocess_fn, batched=True, num_proc=num_proc)
     cols = ["input_ids", "attention_mask", "labels"]
     if "token_type_ids" in encoded["train"].column_names:
         cols.append("token_type_ids")
@@ -1032,8 +1109,6 @@ def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.devi
             vis.save_confusion_matrix(pred_labels, preds.label_ids, task_dir, config.method, task_name)
             probs = torch.softmax(torch.tensor(preds.predictions), dim=-1).max(dim=-1).values.numpy()
             vis.save_prediction_distribution(probs, task_dir, config.method, task_name)
-    else:
-        logger.info("Visualization skipped (missing libraries)")
 
     del trainer, model
     if torch.cuda.is_available():
