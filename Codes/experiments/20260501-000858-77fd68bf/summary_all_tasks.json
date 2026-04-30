@@ -1,0 +1,44 @@
+{
+  "mrpc": {
+    "eval_loss_mean": 0.5194526314735413,
+    "eval_loss_std": 0.0,
+    "eval_loss_values": [
+      0.5194526314735413
+    ],
+    "eval_accuracy_mean": 0.7598039215686274,
+    "eval_accuracy_std": 0.0,
+    "eval_accuracy_values": [
+      0.7598039215686274
+    ],
+    "eval_f1_mean": 0.8382838283828383,
+    "eval_f1_std": 0.0,
+    "eval_f1_values": [
+      0.8382838283828383
+    ],
+    "eval_accuracy_f1_mean": 0.7990438749757329,
+    "eval_accuracy_f1_std": 0.0,
+    "eval_accuracy_f1_values": [
+      0.7990438749757329
+    ],
+    "eval_runtime_mean": 6.5794,
+    "eval_runtime_std": 0.0,
+    "eval_runtime_values": [
+      6.5794
+    ],
+    "eval_samples_per_second_mean": 62.012,
+    "eval_samples_per_second_std": 0.0,
+    "eval_samples_per_second_values": [
+      62.012
+    ],
+    "eval_steps_per_second_mean": 1.064,
+    "eval_steps_per_second_std": 0.0,
+    "eval_steps_per_second_values": [
+      1.064
+    ],
+    "epoch_mean": 3.0,
+    "epoch_std": 0.0,
+    "epoch_values": [
+      3.0
+    ]
+  }
+}

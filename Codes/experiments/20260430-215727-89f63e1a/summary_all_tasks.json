@@ -1,0 +1,34 @@
+{
+  "cola": {
+    "eval_loss_mean": 0.49898263812065125,
+    "eval_loss_std": 0.0,
+    "eval_loss_values": [
+      0.49898263812065125
+    ],
+    "eval_matthews_correlation_mean": 0.4883991757826137,
+    "eval_matthews_correlation_std": 0.0,
+    "eval_matthews_correlation_values": [
+      0.4883991757826137
+    ],
+    "eval_runtime_mean": 4.9774,
+    "eval_runtime_std": 0.0,
+    "eval_runtime_values": [
+      4.9774
+    ],
+    "eval_samples_per_second_mean": 209.547,
+    "eval_samples_per_second_std": 0.0,
+    "eval_samples_per_second_values": [
+      209.547
+    ],
+    "eval_steps_per_second_mean": 3.415,
+    "eval_steps_per_second_std": 0.0,
+    "eval_steps_per_second_values": [
+      3.415
+    ],
+    "epoch_mean": 3.0,
+    "epoch_std": 0.0,
+    "epoch_values": [
+      3.0
+    ]
+  }
+}
