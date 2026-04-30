@@ -3,11 +3,26 @@
 Quick integration functions for easy use.
 One-line functions to apply compression to any transformer model.
 """
+from .soa import SOAConfig, SOABert, migrate_bert_to_soa, compute_global_basis_from_hidden_states
 
 import torch
 from typing import Optional, Union, List
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
+def quick_soa_model(model_name="bert-base-uncased", rank=64, num_labels=2, device="auto"):
+    """
+    Load a BERT model, compute basis, and return an SOA model.
+    """
+    from transformers import BertModel
+    from .core.device import get_device
+
+    device = get_device(device)
+    bert = BertModel.from_pretrained(model_name).to(device)
+    basis = compute_global_basis_from_hidden_states(bert, rank, sample_size=32)
+    cfg = SOAConfig(k_rank=rank, num_labels=num_labels)
+    soa = SOABert(cfg).to(device)
+    soa = migrate_bert_to_soa(bert, soa, basis)
+    return soa
 
 def quick_svd_compress(
     model_name: str = "bert-base-uncased",
