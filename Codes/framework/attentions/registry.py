@@ -1,3 +1,4 @@
+# studio/attentions/registry.py
 class Registry:
     def __init__(self, name):
         self.name = name
@@ -19,6 +20,4 @@ class Registry:
         return self._dict.keys()
 
 
-MODEL_REGISTRY = Registry("models")
 ATTENTION_REGISTRY = Registry("attentions")
-VISUALIZER_REGISTRY = Registry("visualizers")
