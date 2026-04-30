@@ -1,11 +1,9 @@
-# studio/config.py
 import os
 import torch
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
-# ---------- Paths ----------
 BASE_DIR = Path.home() / "Documents" / "huggingface_secure_cache"
 HF_CACHE_DIR = BASE_DIR / "models"
 DATASET_CACHE_DIR = BASE_DIR / "datasets"
@@ -67,7 +65,7 @@ class SVDConfig:
     energy_threshold: float = 0.95
     min_rank: int = 4
     max_rank: int = 128
-    compression_method: str = "standard_svd"   # from advanced_methods
+    compression_method: str = "standard_svd"
     adaptive_ranks: bool = True
 
 @dataclass
@@ -88,13 +86,6 @@ class MainConfig:
     training: TrainingConfig = field(default_factory=TrainingConfig)
     svd: SVDConfig = field(default_factory=SVDConfig)
     experiment: ExperimentConfig = field(default_factory=ExperimentConfig)
-
-    @classmethod
-    def from_yaml(cls, path: str):
-        import yaml
-        with open(path) as f:
-            data = yaml.safe_load(f)
-        return cls(**data)
 
     def get_device(self) -> torch.device:
         dev = self.hardware.device
