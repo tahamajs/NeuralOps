@@ -1,9 +1,0 @@
-{
-  "cola": {
-    "errors": [
-      {
-        "error": "stack expects each tensor to be equal size, but got [19] at entry 0 and [14] at entry 1"
-      }
-    ]
-  }
-}

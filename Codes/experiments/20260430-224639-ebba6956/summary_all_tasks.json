@@ -1,9 +1,0 @@
-{
-  "cola": {
-    "errors": [
-      {
-        "error": "Mismatch in the number of predictions (1026) and references (1043)"
-      }
-    ]
-  }
-}
