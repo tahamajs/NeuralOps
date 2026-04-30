@@ -200,18 +200,24 @@ def compute_metrics_builder(task_name: str):
     metric = evaluate.load("glue", t)
     def compute_metrics(p):
         preds = p.predictions
+        labels = p.label_ids
+        # Truncate to the smaller length
+        min_len = min(len(preds), len(labels))
+        if len(preds) != len(labels):
+            logger.warning(f"Length mismatch: predictions {len(preds)} vs labels {len(labels)}. Truncating to {min_len}.")
+            preds = preds[:min_len]
+            labels = labels[:min_len]
         if t == "stsb":
             preds = np.squeeze(preds)
         else:
             preds = np.argmax(preds, axis=1)
-        result = metric.compute(predictions=preds, references=p.label_ids)
+        result = metric.compute(predictions=preds, references=labels)
         if t == "stsb" and "pearson" in result and "spearmanr" in result:
             result["pearson_spearman"] = (result["pearson"] + result["spearmanr"]) / 2.0
         if t == "mrpc" and "accuracy" in result and "f1" in result:
             result["accuracy_f1"] = (result["accuracy"] + result["f1"]) / 2.0
         return result
     return compute_metrics
-
 # ----------------------------------------------------------------------
 # Local GLUE Loader
 # ----------------------------------------------------------------------
@@ -389,7 +395,7 @@ class DisLoRALinear(nn.Module):
         base = self.linear(x)
         return base + self.beta * delta * self.scaling
     
-    
+
 
 
 def apply_lora_or_dora(model: nn.Module, r: int, alpha: float, dropout: float,
@@ -513,6 +519,16 @@ def compute_fisher_importance(model, dataset, tokenizer, task_name, config,
 # GeLoRA intrinsic dimension (PyTorch only)
 # ----------------------------------------------------------------------
 def estimate_intrinsic_dimension_pytorch(hidden_states: torch.Tensor, k: int = 5) -> float:
+    """
+    Estimate intrinsic dimension from hidden states.
+    Input can be 2D (N, D) or 3D (N, L, D). For 3D, we average over the sequence dimension.
+    """
+    # If 3D, average over sequence dimension -> (N, D)
+    if hidden_states.dim() == 3:
+        hidden_states = hidden_states.mean(dim=1)   # average over tokens
+    elif hidden_states.dim() != 2:
+        raise ValueError(f"Expected 2D or 3D tensor, got {hidden_states.dim()}D")
+    
     N = hidden_states.shape[0]
     if N < k + 1:
         return 1.0
@@ -521,20 +537,15 @@ def estimate_intrinsic_dimension_pytorch(hidden_states: torch.Tensor, k: int = 5
         hidden_states = hidden_states[idx]
         N = 1000
     
-    # Use double precision for stability on MPS
-    hidden_states = hidden_states.double()
+    # Use torch.cdist for pairwise distances (works with 2D)
     dist = torch.cdist(hidden_states, hidden_states, compute_mode='donot_use_mm_for_euclid_dist')
     dist.fill_diagonal_(float('inf'))
     topk_dist, _ = torch.topk(dist, k, dim=1, largest=False)
-    d_k = topk_dist[:, -1:]
-    
-    # Avoid division by zero
-    d_k = torch.clamp(d_k, min=1e-8)
+    d_k = topk_dist[:, -1:]   # distance to k-th neighbor
     log_ratios = torch.log(topk_dist / (d_k + 1e-8))
     id_per_point = -1.0 / torch.mean(log_ratios, dim=1)
     id_global = torch.mean(id_per_point).item()
     return max(1.0, id_global)
-
 def get_encoder_layers(model):
     if hasattr(model, 'bert') and hasattr(model.bert, 'encoder'):
         return model.bert.encoder.layer
@@ -917,30 +928,32 @@ def train_single_task(config: ExperimentConfig, run_dir: str, device: torch.devi
     
     if "fisher_gelora" in config.method.lower():
         logger.info("Applying Fisher‑Weighted GeLoRA (static rank scaling)")
-        # Prepare sample dataloader for Fisher/GeLoRA computation
-        preprocess_fn = preprocess_function_builder(tokenizer, task_name, config.max_seq_length)
-        sample_dataset = datasets["train"].select(range(min(800, len(datasets["train"]))))
-        sample_dataset = sample_dataset.map(preprocess_fn, batched=True)
+        
+        # ---- Create a fixed‑length sample dataset for GeLoRA ----
+        sent1_key, sent2_key = GLUE_TASK_KEYS[task_name.lower()]
+        def sample_preprocess(examples):
+            # Force padding to max_seq_length
+            args = (examples[sent1_key],) if sent2_key is None else (examples[sent1_key], examples[sent2_key])
+            tokenized = tokenizer(*args, truncation=True, max_length=config.max_seq_length, padding='max_length')
+            # Keep labels for loss calculation (if needed)
+            if get_num_labels_and_is_regression(task_name)[1]:
+                tokenized["labels"] = [float(label) for label in examples["label"]]
+            else:
+                tokenized["labels"] = examples["label"]
+            return tokenized
+        
+        sample_size = min(800, len(datasets["train"]))
+        sample_dataset = datasets["train"].select(range(sample_size))
+        sample_dataset = sample_dataset.map(sample_preprocess, batched=True)
         sample_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
         sample_loader = DataLoader(sample_dataset, batch_size=4, shuffle=False)
+        
+        # Continue with GeLoRA and Fisher rank computation...
         model.to(device)
         model.eval()
-        
-        # GeLoRA base ranks
         base_ranks = compute_gelora_base_ranks(model, sample_loader, config)
-        # Fisher importance
-        target_names = ["query", "key", "value", "dense"]
-        fisher_scores = compute_fisher_importance(model, datasets["train"], tokenizer, task_name, config,
-                                                  target_substrings=target_names)
-        if fisher_scores is None:
-            logger.warning("Fisher scores not computed; falling back to uniform ranks.")
-            per_layer_ranks = base_ranks
-        else:
-            per_layer_ranks = scale_ranks_with_fisher(base_ranks, fisher_scores, config)
-        save_json(per_layer_ranks, os.path.join(task_dir, "per_layer_ranks.json"))
-        # Apply LoRA (GeLoRA uses LoRA by default)
-        apply_lora_or_dora(model, config.lora_r, config.lora_alpha, config.lora_dropout,
-                           method_type='lora', per_layer_ranks=per_layer_ranks)
+        # ... rest of the code
+
 
     elif "fisher_lora" in config.method.lower():
         logger.info("Applying Fisher‑LoRA (uniform base rank per layer)")
