@@ -18,6 +18,7 @@ venv/
 **/models_cache/
 **/*.pt
 **/*.pth
+**/*.tar.gz
 
 **/*.onnx
 **/*.data
