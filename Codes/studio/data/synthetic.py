@@ -45,6 +45,7 @@ def generate_batch(domain, size, label, templates, prep_phrases):
     return data
 
 def run_universal_generation(output_dir: Path, total_samples_per_domain: int = 5000):
+    """Generate multi-domain synthetic dataset (original 10_sample.py style)."""
     output_dir.mkdir(parents=True, exist_ok=True)
     all_dfs = []
     for domain in DOMAINS:
