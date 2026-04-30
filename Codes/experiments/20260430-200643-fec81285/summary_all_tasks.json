@@ -1,0 +1,9 @@
+{
+  "cola": {
+    "errors": [
+      {
+        "error": "mat1 and mat2 shapes cannot be multiplied (368x768 and 3072x110)"
+      }
+    ]
+  }
+}
