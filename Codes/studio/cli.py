@@ -1,167 +1,134 @@
 #!/usr/bin/env python
-# studio/cli.py
+"""
+Unified Command‑Line Interface for SVD‑Lin Studio
+"""
+
 import argparse
 import sys
 from pathlib import Path
-from studio.config import config, DEVICE
-from studio.data.loader import discover_datasets, load_dataset_from_config
-from studio.compression.adaptive_compressor import AdvancedZeroShotCompressor
-from studio.ensemble.weighted_ensemble import run_smart_ensemble
-from studio.routing.smart_router import run_smart_router
-from studio.training.trainer import fine_tune_compressed_model
-from studio.analysis.evaluate import evaluate_model_on_dataset
-from studio.soa.migration import migrate_bert_to_soa, compute_global_basis_from_hidden_states
-from studio.utils.logger import setup_logger
-
-logger = setup_logger("SVD-Lin-CLI")
-
-def cmd_compress(args):
-    """Compress a model with SVD (zero‑shot or with fine‑tuning)."""
-    from transformers import AutoModelForSequenceClassification, AutoTokenizer
-    model_name = args.model
-    rank = args.rank
-    method = args.method
-    logger.info(f"Loading {model_name}...")
-    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=config.model.cache_dir)
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_name, num_labels=config.model.num_labels,
-        cache_dir=config.model.cache_dir
-    ).to(DEVICE)
-
-    compressor = AdvancedZeroShotCompressor(method=method, base_threshold=config.svd.energy_threshold,
-                                             min_rank=config.svd.min_rank)
-    model, stats, reduction = compressor.compress_model(model, method)
-    logger.info(f"Compressed {stats['layers_compressed']} layers, reduction {reduction:.2f}%")
-
-    if args.finetune:
-        # Load dataset (default: from args.dataset or first discovered)
-        ds = discover_datasets(config.data.local_glue_path)[0]
-        train_ds, val_ds = load_dataset_from_config(ds, tokenizer, config.data.max_seq_length)
-        results = fine_tune_compressed_model(model, tokenizer, train_ds, val_ds,
-                                             epochs=config.training.epochs,
-                                             lr=config.training.learning_rate)
-        logger.info(f"Fine‑tuned accuracy: {results['eval_accuracy']:.4f}")
-
-    # Save
-    output_dir = Path(args.output) if args.output else Path("./compressed_model")
-    model.save_pretrained(output_dir)
-    tokenizer.save_pretrained(output_dir)
-    logger.info(f"Model saved to {output_dir}")
-
-def cmd_ensemble(args):
-    """Run the smart weighted ensemble on a dataset."""
-    run_smart_ensemble(config, args.dataset)
-
-def cmd_router(args):
-    """Run the keyword‑based router ensemble."""
-    run_smart_router(config, args.dataset)
-
-def cmd_benchmark(args):
-    """Benchmark compression methods across ranks and models."""
-    from studio.benchmark.universal_svd_benchmark import run_universal_benchmark
-    run_universal_benchmark()
-# inside studio/cli.py
-
-def cmd_generate_data(args):
-    from studio.data.synthetic import run_universal_generation, run_comprehensive_generation, run_advanced_generation
-    from studio.data.synthetic_advanced import generate_reasoning_datasets
-    from studio.data.synthetic_task_specific import run_all_task_generations
-
-    output = Path(args.output_dir)
-    if args.type == "universal":
-        run_universal_generation(output, total_samples_per_domain=args.samples)
-    elif args.type == "comprehensive":
-        run_comprehensive_generation(output, total_samples=args.samples)
-    elif args.type == "advanced":
-        run_advanced_generation(output, total_samples=args.samples)
-    elif args.type == "reasoning":
-        generate_reasoning_datasets(output, samples_per_task=args.samples)
-    elif args.type == "task_specific":
-        run_all_task_generations(output)
-    else:
-        print("Available types: universal, comprehensive, advanced, reasoning, task_specific")
-
-def cmd_analyze_data(args):
-    from studio.data.analyze_datasets import plot_distribution_report
-    plot_distribution_report(data_dir=args.data_dir, output_image=args.output)
-
-def cmd_benchmark_speed(args):
-    from studio.evaluation.speed_benchmark import run_speed_benchmark
-    run_speed_benchmark(original_model_path=args.original, compressed_model_path=args.compressed, rank=args.rank)
-
-# Add these parsers in main()
-def cmd_soa(args):
-    """Create and evaluate an SVD‑Optimized Architecture (SOA) model."""
-    from transformers import BertModel, AutoTokenizer
-    from studio.soa.model import SOABert
-    from studio.soa.config import SOAConfig
-
-    bert = BertModel.from_pretrained(args.model).to(DEVICE)
-    basis = compute_global_basis_from_hidden_states(bert, k_rank=args.rank)
-    cfg = SOAConfig(k_rank=args.rank, num_labels=args.num_labels)
-    soa = SOABert(cfg).to(DEVICE)
-    soa = migrate_bert_to_soa(bert, soa, basis)
-    # Evaluate on a sample dataset
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
-    ds = discover_datasets(config.data.local_glue_path)[0]
-    _, val_ds = load_dataset_from_config(ds, tokenizer, config.data.max_seq_length)
-    metrics = evaluate_model_on_dataset(soa, tokenizer, val_ds)
-    logger.info(f"SOA accuracy: {metrics['accuracy']:.4f}")
-
-def cmd_generate_data(args):
-    """Generate synthetic dataset."""
-    from studio.data.synthetic import run_universal_generation
-    run_universal_generation(Path(args.output_dir), total_samples_per_domain=args.samples)
 
 def main():
-    parser = argparse.ArgumentParser(description="SVD‑Lin Studio – Unified CLI")
+    parser = argparse.ArgumentParser(description="SVD‑Lin Studio CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    # -----------------------------------------------------------------
+    # generate-data
+    # -----------------------------------------------------------------
+    p_gen = subparsers.add_parser("generate-data", help="Generate synthetic datasets")
+    p_gen.add_argument("--type", required=True,
+                       choices=["universal", "comprehensive", "advanced", "reasoning", "task_specific"],
+                       help="Type of dataset to generate")
+    p_gen.add_argument("--samples", type=int, default=5000, help="Number of samples (approx)")
+    p_gen.add_argument("--output_dir", default="./data", help="Output directory")
+
+    # -----------------------------------------------------------------
+    # analyze-data
+    # -----------------------------------------------------------------
+    p_ana = subparsers.add_parser("analyze-data", help="Analyse dataset distribution")
+    p_ana.add_argument("--data_dir", default="./data", help="Directory containing CSV files")
+    p_ana.add_argument("--output", default="distribution_report.png", help="Output image file")
+
+    # -----------------------------------------------------------------
+    # benchmark-speed
+    # -----------------------------------------------------------------
+    p_bs = subparsers.add_parser("benchmark-speed", help="Benchmark inference speed")
+    p_bs.add_argument("--original", help="Path to original model")
+    p_bs.add_argument("--compressed", help="Path to compressed model")
+    p_bs.add_argument("--rank", type=int, default=32, help="SVD rank (if models not given)")
+    p_bs.add_argument("--model_name", default="bert-base-uncased", help="Base model name")
+    p_bs.add_argument("--texts", nargs="+", default=["This is a test sentence."], help="Test texts")
+
+    # -----------------------------------------------------------------
     # compress
-    p = subparsers.add_parser("compress", help="Apply SVD compression")
-    p.add_argument("--model", default=config.model.name)
-    p.add_argument("--rank", type=int, default=config.svd.min_rank)
-    p.add_argument("--method", default=config.svd.compression_method)
-    p.add_argument("--finetune", action="store_true")
-    p.add_argument("--output", help="Output directory")
+    # -----------------------------------------------------------------
+    p_comp = subparsers.add_parser("compress", help="Compress a model")
+    p_comp.add_argument("--model", default="bert-base-uncased")
+    p_comp.add_argument("--rank", type=int, default=32)
+    p_comp.add_argument("--method", default="standard_svd")
+    p_comp.add_argument("--finetune", action="store_true")
+    p_comp.add_argument("--task", default="cola")
+    p_comp.add_argument("--output", help="Output directory")
 
+    # -----------------------------------------------------------------
     # ensemble
-    p = subparsers.add_parser("ensemble", help="Run weighted ensemble")
-    p.add_argument("--dataset", default="./data/test.csv")
+    # -----------------------------------------------------------------
+    p_ens = subparsers.add_parser("ensemble", help="Run weighted ensemble")
+    p_ens.add_argument("--dataset", required=True, help="Path to CSV")
 
+    # -----------------------------------------------------------------
     # router
-    p = subparsers.add_parser("router", help="Run smart router")
-    p.add_argument("--dataset", default="./data")
+    # -----------------------------------------------------------------
+    p_rou = subparsers.add_parser("router", help="Run smart router")
+    p_rou.add_argument("--dataset", default="./data", help="Data directory")
 
+    # -----------------------------------------------------------------
     # benchmark
-    p = subparsers.add_parser("benchmark", help="Run compression benchmark")
+    # -----------------------------------------------------------------
+    p_ben = subparsers.add_parser("benchmark", help="Run full compression benchmark")
+    p_ben.add_argument("--epochs", type=int, default=1, help="Quick test epochs")
+    p_ben.add_argument("--batch_size", type=int, default=8)
 
+    # -----------------------------------------------------------------
     # soa
-    p = subparsers.add_parser("soa", help="Build SOA model")
-    p.add_argument("--model", default="bert-base-uncased")
-    p.add_argument("--rank", type=int, default=64)
-    p.add_argument("--num_labels", type=int, default=2)
+    # -----------------------------------------------------------------
+    p_soa = subparsers.add_parser("soa", help="Build SOA model")
+    p_soa.add_argument("--model", default="bert-base-uncased")
+    p_soa.add_argument("--rank", type=int, default=64)
+    p_soa.add_argument("--num_labels", type=int, default=2)
 
-    # generate_data
-    p = subparsers.add_parser("generate-data", help="Generate synthetic data")
-    p.add_argument("--output_dir", default="./data")
-    p.add_argument("--samples", type=int, default=5000)
-
+    # -----------------------------------------------------------------
+    # Execute
+    # -----------------------------------------------------------------
     args = parser.parse_args()
-    if args.command == "compress":
+
+    if args.command == "generate-data":
+        from .data.synthetic import run_universal_generation, run_comprehensive_generation, run_advanced_generation
+        from .data.synthetic_advanced import generate_reasoning_datasets
+        from .data.synthetic_task_specific import run_all_task_generations
+
+        out = Path(args.output_dir)
+        if args.type == "universal":
+            run_universal_generation(out, total_samples_per_domain=args.samples)
+        elif args.type == "comprehensive":
+            run_comprehensive_generation(out, total_samples=args.samples)
+        elif args.type == "advanced":
+            run_advanced_generation(out, total_samples=args.samples)
+        elif args.type == "reasoning":
+            generate_reasoning_datasets(out, samples_per_task=args.samples)
+        elif args.type == "task_specific":
+            run_all_task_generations(out)
+
+    elif args.command == "analyze-data":
+        from .data.analyze_datasets import plot_distribution_report
+        plot_distribution_report(data_dir=args.data_dir, output_image=args.output)
+
+    elif args.command == "benchmark-speed":
+        from .evaluation.speed_benchmark import run_speed_benchmark
+        run_speed_benchmark(original_model_path=args.original,
+                            compressed_model_path=args.compressed,
+                            rank=args.rank,
+                            model_name=args.model_name,
+                            test_texts=args.texts)
+
+    elif args.command == "compress":
+        from .cli_actions import cmd_compress
         cmd_compress(args)
+
     elif args.command == "ensemble":
+        from .cli_actions import cmd_ensemble
         cmd_ensemble(args)
+
     elif args.command == "router":
+        from .cli_actions import cmd_router
         cmd_router(args)
+
     elif args.command == "benchmark":
+        from .cli_actions import cmd_benchmark
         cmd_benchmark(args)
+
     elif args.command == "soa":
+        from .cli_actions import cmd_soa
         cmd_soa(args)
-    elif args.command == "generate-data":
-        cmd_generate_data(args)
-    else:
-        parser.print_help()
 
 if __name__ == "__main__":
     main()
