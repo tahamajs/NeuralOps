@@ -152,35 +152,43 @@ GLUE_TASK_KEYS = {
     "wnli": ("sentence1", "sentence2"),
 }
 
-# ── 3. Orthogonal Projection Module ─────────────────────────
-class OrthogonalProjection(nn.Module):
-    def __init__(self, n: int, k: int, enforce_orthogonal: bool = True):
+class LinformerProjection(nn.Module):
+    """Learnable projection for keys and values (no orthogonal constraint)."""
+    def __init__(self, n: int, k: int):
         super().__init__()
-        self.n, self.k = n, k
-        self.enforce_orthogonal = enforce_orthogonal
-        self.C_raw = nn.Parameter(torch.empty(n, k))
-        nn.init.orthogonal_(self.C_raw)
-        if enforce_orthogonal:
-            orthogonal(self, "C_raw")
-        else:
-            # No constraint – just a free parameter
-            pass
+        # Initialise as truncated identity + small noise
+        base = torch.eye(n)[:k, :]          # (k, n)
+        self.E = nn.Parameter(base.clone())
+        self.F = nn.Parameter(base.clone())
+        with torch.no_grad():
+            self.E += torch.randn_like(self.E) * 0.02
+            self.F += torch.randn_like(self.F) * 0.02
 
-    @property
-    def C(self) -> torch.Tensor:
-        return self.C_raw
+    def forward(self, K, V, mask_2d=None):
+        # K, V: (B, heads, N, d)
+        B, H, N, d = K.shape
+        if mask_2d is not None:
+            mask = mask_2d.unsqueeze(1).unsqueeze(-1)   # (B, 1, N, 1)
+            K = K * mask
+            V = V * mask
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.dim() == 2:
-            return x @ self.C
-        elif x.dim() == 3:
-            return (x.transpose(-1,-2) @ self.C).transpose(-1,-2)
-        raise ValueError(f"Bad shape {x.shape}")
+        # Combine batch and heads for batched matrix multiplication
+        K_flat = K.reshape(B * H, N, d)     # (B*H, N, d)
+        V_flat = V.reshape(B * H, N, d)
 
+        E_exp = self.E.unsqueeze(0).expand(B * H, -1, -1)   # (B*H, k, N)
+        F_exp = self.F.unsqueeze(0).expand(B * H, -1, -1)
 
+        # Project: (B*H, k, N) @ (B*H, N, d) -> (B*H, k, d)
+        K_comp = torch.bmm(E_exp, K_flat)
+        V_comp = torch.bmm(F_exp, V_flat)
 
+        # Reshape back to (B, heads, k, d)
+        K_comp = K_comp.reshape(B, H, self.E.shape[0], d)
+        V_comp = V_comp.reshape(B, H, self.F.shape[0], d)
+        return K_comp, V_comp
 class TokenCompressedAttention(nn.Module):
-    def __init__(self, config, comp_config: CompressionConfig, layer_idx: int, bert_mode: bool = False):
+    def __init__(self, config, comp_config, layer_idx, bert_mode=False):
         super().__init__()
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
@@ -188,7 +196,7 @@ class TokenCompressedAttention(nn.Module):
         self.comp_config = comp_config
         self.layer_idx = layer_idx
         self.k = comp_config.get_k_for_layer(layer_idx)
-        self.bert_mode = bert_mode          # <-- new flag
+        self.bert_mode = bert_mode
 
         self.query = nn.Linear(self.hidden_size, self.hidden_size)
         self.key = nn.Linear(self.hidden_size, self.hidden_size)
@@ -196,85 +204,53 @@ class TokenCompressedAttention(nn.Module):
         self.dropout = nn.Dropout(comp_config.dropout)
         self.output = nn.Linear(self.hidden_size, self.hidden_size)
 
-        self.projection = OrthogonalProjection(
-            comp_config.max_seq_len, self.k,
-            enforce_orthogonal=self.comp_config.use_orthogonal
-        )
+        # جایگزین پروجکشن متعامد با LinformerProjection (بدون قید)
+        self.projection = LinformerProjection(comp_config.max_seq_len, self.k)
 
-        if comp_config.use_gate:
+        if comp_config.use_gate and not self.bert_mode:
             self.gate = nn.Parameter(torch.tensor(comp_config.gate_bias))
         else:
             self.gate = None
 
-        self._ortho_loss = None
+        self._ortho_loss = None   # دیگر استفاده نمی‌شود
 
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,          # unused, for compatibility
-        output_attentions: bool = False,
-        **kwargs
-    ):
-        # DistilBERT passes mask as 'attn_mask'
+
+    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
         if attention_mask is None:
             attention_mask = kwargs.get('attn_mask', None)
 
         B, N, D = hidden_states.size()
         scale = (self.head_dim ** -0.5)
 
-        # 1) Q, K, V → (B, heads, N, head_dim)
         q = self.query(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k = self.key(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         v = self.value(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # 2) Orthogonal projection matrix C (N, k)
-        C = self.projection.C[:N, :]   # (N, k)
-
-        # 3) Build mask‑weighted C: zero out padding rows
         if attention_mask is not None:
-            if attention_mask.dim() == 4:                       # BERT
-                mask_2d = (attention_mask > -1).float()[:, 0, 0, :]   # (B, N)
-            elif attention_mask.dim() == 2:                     # DistilBERT
-                mask_2d = attention_mask.float()                # (B, N)
+            if attention_mask.dim() == 4:
+                mask_2d = (attention_mask > -1).float()[:, 0, 0, :]
+            elif attention_mask.dim() == 2:
+                mask_2d = attention_mask.float()
             else:
                 raise ValueError(f"Unexpected mask shape: {attention_mask.shape}")
         else:
             mask_2d = None
 
-        # Weight C by mask → (B, N, k)
-        if mask_2d is not None:
-            C_weighted = C.unsqueeze(0) * mask_2d.unsqueeze(-1)   # (B, N, k)
-        else:
-            C_weighted = C.unsqueeze(0).expand(B, -1, -1)
+        # ⚠️ critical – unpack the tuple from LinformerProjection
+        k_comp, v_comp = self.projection(k, v, mask_2d)   # both: (B, heads, k, d)
 
-        # Expand to all heads: (B, heads, N, k)
-        C_weighted = C_weighted.unsqueeze(1).expand(-1, self.num_heads, -1, -1)
-
-        # 4) Compress keys and values
-        k_comp = torch.matmul(k.transpose(-2, -1), C_weighted).transpose(-2, -1)   # (B, heads, k, head_dim)
-        v_comp = torch.matmul(v.transpose(-2, -1), C_weighted).transpose(-2, -1)
-
-        # 5) Attention scores: Q × K_compressed → (B, heads, N, k)
         scores = torch.matmul(q, k_comp.transpose(-2, -1)) * scale
         scores = torch.clamp(scores, max=self.comp_config.attn_score_clamp)
 
-        # 6) Apply query mask for padded positions
         if mask_2d is not None:
-            query_mask = (1.0 - mask_2d)[:, None, :, None] * -1e9
-            scores = scores + query_mask
+            scores = scores + ((1.0 - mask_2d)[:, None, :, None] * -1e9)
 
-        # 7) Softmax + dropout
         attn = F.softmax(scores, dim=-1)
         attn = self.dropout(attn)
 
-        # 8) Context: attention × compressed values → (B, heads, N, head_dim)
         context = torch.matmul(attn, v_comp)
-
-        # 9) Back to (B, N, D)
         context = context.permute(0, 2, 1, 3).reshape(B, N, D)
 
-        # 10) Gating and output projection – SKIP in bert_mode
         if not self.bert_mode:
             if self.gate is not None:
                 g = torch.sigmoid(self.gate)
@@ -283,21 +259,17 @@ class TokenCompressedAttention(nn.Module):
                 output = context
             output = self.output(output)
         else:
-            # BERT: just return raw context, original BertSelfOutput will handle the rest
             output = context
 
-        # 11) Orthogonality loss
-        self._ortho_loss = None
-        if not self.comp_config.use_orthogonal:
-            I_k = torch.eye(self.k, device=C.device, dtype=C.dtype)
-            self._ortho_loss = F.mse_loss(C.T @ C, I_k)
-
-        # 12) Return tuple as required by BERT
         return (output, attn) if output_attentions else (output, None)
 
     def get_ortho_loss(self):
-        return self._ortho_loss
+        return 0.0
     
+
+
+
+
 
 
 class CompressedBertAttention(nn.Module):
@@ -359,7 +331,6 @@ def inject_compression_into_layer(layer, comp_config, layer_idx, model_config, m
         layer.attention = replacement
         return new_attn
     elif model_type == 'distilbert':
-        # DistilBERT: replace the whole attention module directly (like before)
         new_attn = TokenCompressedAttention(
             config=model_config,
             comp_config=comp_config,
@@ -376,12 +347,15 @@ def inject_compression_into_layer(layer, comp_config, layer_idx, model_config, m
         new_attn.output.weight.data.copy_(old_attn.out_lin.weight.data)
         new_attn.output.bias.data.copy_(old_attn.out_lin.bias.data)
 
-        layer.attention = new_attn
+        layer.attention = new_attn      # ← ensure it's exactly this, nothing else
         return new_attn
 
+
+
+
     else:
-        raise NotImplementedError(f"Unsupported model type: {model_type}")
-    
+                raise NotImplementedError(f"Unsupported model type: {model_type}")
+            
 
 
 
@@ -662,7 +636,7 @@ def main():
             remove_unused_columns=False,   # ← add this line
         weight_decay=0.01,
         lr_scheduler_type="cosine",
-    max_grad_norm=0.5,          # stricter clipping
+    max_grad_norm=10,          # stricter clipping
     warmup_ratio=0.1,
         logging_steps=50,
         eval_strategy="epoch",
