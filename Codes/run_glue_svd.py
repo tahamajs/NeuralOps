@@ -137,6 +137,151 @@ def get_device_and_precision(fp16_flag: bool):
 
 def get_model_device(model: nn.Module) -> torch.device:
     return next(model.parameters()).device
+class SVDLinear(nn.Module):
+    """
+    Replace a Linear layer with its truncated SVD factors.
+    During training, both U and W ( = ΣVᵀ ) are updated.
+    """
+    def __init__(self, in_features, out_features, rank, bias=True):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = rank
+        self.U = nn.Parameter(torch.empty(out_features, rank))
+        self.W = nn.Parameter(torch.empty(rank, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter('bias', None)
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        nn.init.kaiming_uniform_(self.U, a=np.sqrt(5))
+        nn.init.kaiming_uniform_(self.W, a=np.sqrt(5))
+        if self.bias is not None:
+            fan_in = self.in_features
+            bound = 1 / np.sqrt(fan_in) if fan_in > 0 else 0
+            nn.init.uniform_(self.bias, -bound, bound)
+
+    def forward(self, x):
+        # Reconstruct and compute forward pass
+        weight = self.U @ self.W
+        return F.linear(x, weight, self.bias)
+
+
+# ----------------------------------------------------------------------
+# Replace Linear Layers
+# ----------------------------------------------------------------------
+def compress_model_with_svd(model, rank, target_names=None):
+    """
+    Replace linear layers in the model with compressed SVDLinear.
+    If target_names is None, compress all linear layers.
+    """
+    if target_names is None:
+        target_names = ["query", "key", "value", "dense"]
+
+    compressed_count = 0
+    for name, module in model.named_modules():
+        if not isinstance(module, nn.Linear):
+            continue
+        # Check if this layer should be compressed
+        compress = any(t in name for t in target_names)
+        if not compress:
+            continue
+        # Perform SVD on the existing weight
+        W_orig = module.weight.data.cpu().numpy()
+        U, S, Vt = np.linalg.svd(W_orig, full_matrices=False)
+        # Keep only top 'rank' singular values
+        rank_actual = min(rank, len(S))
+        U_r = U[:, :rank_actual]
+        W_r = np.diag(S[:rank_actual]) @ Vt[:rank_actual, :]
+
+        # Create SVDLinear and copy factors
+        svd_linear = SVDLinear(module.in_features, module.out_features,
+                               rank_actual, bias=module.bias is not None)
+        with torch.no_grad():
+            svd_linear.U.copy_(torch.tensor(U_r, dtype=module.weight.dtype))
+            svd_linear.W.copy_(torch.tensor(W_r, dtype=module.weight.dtype))
+            if module.bias is not None:
+                svd_linear.bias.copy_(module.bias)
+
+        # Replace the original layer
+        parent_name = '.'.join(name.split('.')[:-1])
+        child_name = name.split('.')[-1]
+        parent = model.get_submodule(parent_name) if parent_name else model
+        setattr(parent, child_name, svd_linear)
+        compressed_count += 1
+        print(f"Compressed {name} to rank {rank_actual}")
+
+    print(f"✅ Compressed {compressed_count} layers to rank {rank}")
+    return model
+# ----------------------------------------------------------------------
+def fine_tune(model, tokenizer, task_name, output_dir, args):
+    """Fine‑tune the compressed model on the given GLUE task."""
+    dataset = load_dataset("glue", task_name)
+
+    # Preprocess dataset
+    def preprocess_function(examples):
+        if task_name in ["cola", "sst2"]:
+            texts = examples["sentence"]
+        elif task_name in ["mrpc", "rte", "wnli"]:
+            texts = (examples["sentence1"], examples["sentence2"])
+        elif task_name == "stsb":
+            texts = (examples["sentence1"], examples["sentence2"])
+        elif task_name == "mnli":
+            texts = (examples["premise"], examples["hypothesis"])
+        elif task_name in ["qnli", "qqp"]:
+            texts = (examples["question"], examples["sentence"])
+        else:
+            texts = (examples["sentence1"], examples["sentence2"])
+        tokenized = tokenizer(*texts, truncation=True, padding='max_length',
+                              max_length=args.max_seq_length)
+        tokenized["labels"] = examples["label"]
+        return tokenized
+
+    encoded_dataset = dataset.map(preprocess_function, batched=True)
+
+    training_args = TrainingArguments(
+        output_dir=output_dir,
+        evaluation_strategy="epoch",
+        save_strategy="epoch",
+        learning_rate=args.learning_rate,
+        per_device_train_batch_size=args.batch_size,
+        per_device_eval_batch_size=args.batch_size,
+        num_train_epochs=args.epochs,
+        weight_decay=args.weight_decay,
+        logging_dir=os.path.join(output_dir, 'logs'),
+        logging_steps=args.logging_steps,
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_accuracy",
+    )
+
+    # Use compute_metrics to track accuracy
+    from evaluate import load
+    metric = load("glue", task_name)
+
+    def compute_metrics(eval_pred):
+        predictions, labels = eval_pred
+        predictions = np.argmax(predictions, axis=1)
+        return metric.compute(predictions=predictions, references=labels)
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=encoded_dataset["train"],
+        eval_dataset=encoded_dataset["validation_matched" if task_name == "mnli" else "validation"],
+        tokenizer=tokenizer,
+        compute_metrics=compute_metrics,
+    )
+
+    trainer.train()
+    eval_result = trainer.evaluate()
+    print(f"Fine‑tuning results: {eval_result}")
+    model.save_pretrained(output_dir)
+    tokenizer.save_pretrained(output_dir)
+    return model
+
+
 
 def set_all_seeds(seed: int):
     set_seed(seed)
