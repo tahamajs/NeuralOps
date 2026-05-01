@@ -12,5 +12,5 @@ class AstroQuantizer:
                 min_val, max_val = W.min(), W.max()
                 scale = (max_val - min_val) / (2**self.bits - 1)
                 W_q = torch.round((W - min_val) / scale) * scale + min_val
-                module.weight.data = W_q
+                module.weixqght.data = W_q
         return self.model
