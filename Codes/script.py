@@ -154,52 +154,33 @@ GLUE_TASK_KEYS = {
 
 # ── 3. Orthogonal Projection Module ─────────────────────────
 class OrthogonalProjection(nn.Module):
-    """
-    Learnable projection C ∈ ℝ^{n×k} with C^T C = I constraint.
-    Uses PyTorch's orthogonal parametrization for exact orthogonality.
-    """
-    def __init__(self, n: int, k: int):
+    def __init__(self, n: int, k: int, enforce_orthogonal: bool = True):
         super().__init__()
         self.n, self.k = n, k
-        assert 1 <= k <= n, f"k={k} must be in [1, n={n}]"
-        
-        # Initialize with orthogonal matrix
+        self.enforce_orthogonal = enforce_orthogonal
         self.C_raw = nn.Parameter(torch.empty(n, k))
         nn.init.orthogonal_(self.C_raw)
-        
-        # Apply orthogonal constraint
-        orthogonal(self, "C_raw")
-    
+        if enforce_orthogonal:
+            orthogonal(self, "C_raw")
+        else:
+            # No constraint – just a free parameter
+            pass
+
     @property
     def C(self) -> torch.Tensor:
-        """Returns the orthogonal matrix Q (n×k) where Q^T Q = I."""
-        return self.C_raw  # Parametrization ensures orthogonality
-    
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Project x using C.
-        
-        Args:
-            x: (..., n) or (..., n, d)
-        Returns:
-            (..., k) or (..., k, d)
-        """
-        if x.dim() == 2 and x.shape[-1] == self.n:
-            # (batch, n) → (batch, k)
-            return x @ self.C
-        elif x.dim() == 3 and x.shape[-2] == self.n:
-            # (batch, n, d) → (batch, k, d)
-            # x: (B, n, d), C: (n, k)
-            # x @ C: (B, d, k) → transpose to (B, k, d)
-            return (x.transpose(-1, -2) @ self.C).transpose(-1, -2)
-        else:
-            raise ValueError(f"Unexpected input shape {x.shape}")
+        return self.C_raw
 
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.dim() == 2:
+            return x @ self.C
+        elif x.dim() == 3:
+            return (x.transpose(-1,-2) @ self.C).transpose(-1,-2)
+        raise ValueError(f"Bad shape {x.shape}")
 
 
 
 class TokenCompressedAttention(nn.Module):
-    def __init__(self, config, comp_config: CompressionConfig, layer_idx: int):
+    def __init__(self, config, comp_config: CompressionConfig, layer_idx: int, bert_mode: bool = False):
         super().__init__()
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
@@ -207,6 +188,7 @@ class TokenCompressedAttention(nn.Module):
         self.comp_config = comp_config
         self.layer_idx = layer_idx
         self.k = comp_config.get_k_for_layer(layer_idx)
+        self.bert_mode = bert_mode          # <-- new flag
 
         self.query = nn.Linear(self.hidden_size, self.hidden_size)
         self.key = nn.Linear(self.hidden_size, self.hidden_size)
@@ -214,7 +196,10 @@ class TokenCompressedAttention(nn.Module):
         self.dropout = nn.Dropout(comp_config.dropout)
         self.output = nn.Linear(self.hidden_size, self.hidden_size)
 
-        self.projection = OrthogonalProjection(comp_config.max_seq_len, self.k)
+        self.projection = OrthogonalProjection(
+            comp_config.max_seq_len, self.k,
+            enforce_orthogonal=self.comp_config.use_orthogonal
+        )
 
         if comp_config.use_gate:
             self.gate = nn.Parameter(torch.tensor(comp_config.gate_bias))
@@ -227,112 +212,179 @@ class TokenCompressedAttention(nn.Module):
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,          # kept for signature compatibility
+        head_mask: Optional[torch.Tensor] = None,          # unused, for compatibility
         output_attentions: bool = False,
         **kwargs
     ):
+        # DistilBERT passes mask as 'attn_mask'
+        if attention_mask is None:
+            attention_mask = kwargs.get('attn_mask', None)
+
         B, N, D = hidden_states.size()
         scale = (self.head_dim ** -0.5)
 
-        # 1) Q, K, V projections and reshape to (B, heads, N, head_dim)
+        # 1) Q, K, V → (B, heads, N, head_dim)
         q = self.query(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k = self.key(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         v = self.value(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
-        # 2) Attention scores (B, heads, N, N)
-        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+        # 2) Orthogonal projection matrix C (N, k)
+        C = self.projection.C[:N, :]   # (N, k)
+
+        # 3) Build mask‑weighted C: zero out padding rows
+        if attention_mask is not None:
+            if attention_mask.dim() == 4:                       # BERT
+                mask_2d = (attention_mask > -1).float()[:, 0, 0, :]   # (B, N)
+            elif attention_mask.dim() == 2:                     # DistilBERT
+                mask_2d = attention_mask.float()                # (B, N)
+            else:
+                raise ValueError(f"Unexpected mask shape: {attention_mask.shape}")
+        else:
+            mask_2d = None
+
+        # Weight C by mask → (B, N, k)
+        if mask_2d is not None:
+            C_weighted = C.unsqueeze(0) * mask_2d.unsqueeze(-1)   # (B, N, k)
+        else:
+            C_weighted = C.unsqueeze(0).expand(B, -1, -1)
+
+        # Expand to all heads: (B, heads, N, k)
+        C_weighted = C_weighted.unsqueeze(1).expand(-1, self.num_heads, -1, -1)
+
+        # 4) Compress keys and values
+        k_comp = torch.matmul(k.transpose(-2, -1), C_weighted).transpose(-2, -1)   # (B, heads, k, head_dim)
+        v_comp = torch.matmul(v.transpose(-2, -1), C_weighted).transpose(-2, -1)
+
+        # 5) Attention scores: Q × K_compressed → (B, heads, N, k)
+        scores = torch.matmul(q, k_comp.transpose(-2, -1)) * scale
         scores = torch.clamp(scores, max=self.comp_config.attn_score_clamp)
 
-        # 3) Apply attention mask (if provided)
-        if attention_mask is not None:
-            # BERT passes a mask of shape (B, 1, 1, N) with large negative for padding.
-            # Add it directly.
-            scores = scores + attention_mask
+        # 6) Apply query mask for padded positions
+        if mask_2d is not None:
+            query_mask = (1.0 - mask_2d)[:, None, :, None] * -1e9
+            scores = scores + query_mask
 
-        # 4) Compression matrix C (N, k)
-        C = self.projection.C[:N, :]
-
-        # 5) Compress key dimension: (B, heads, N, N) @ (N, k) -> (B, heads, N, k)
-        scores_comp = torch.matmul(scores, C)
-        attn = F.softmax(scores_comp, dim=-1)
+        # 7) Softmax + dropout
+        attn = F.softmax(scores, dim=-1)
         attn = self.dropout(attn)
 
-        # 6) Compress value dimension: (B, heads, N, head_dim) -> (B, heads, k, head_dim)
-        v_comp = torch.matmul(v.transpose(-2, -1), C)   # (B, heads, head_dim, k)
-        v_comp = v_comp.transpose(-2, -1)               # (B, heads, k, head_dim)
-
-        # 7) Context: (B, heads, N, k) @ (B, heads, k, head_dim) -> (B, heads, N, head_dim)
+        # 8) Context: attention × compressed values → (B, heads, N, head_dim)
         context = torch.matmul(attn, v_comp)
 
-        # 8) Reshape back to (B, N, D)
+        # 9) Back to (B, N, D)
         context = context.permute(0, 2, 1, 3).reshape(B, N, D)
 
-        # 9) Gating (optional)
-        if self.gate is not None:
-            g = torch.sigmoid(self.gate)
-            output = g * context + (1 - g) * hidden_states
+        # 10) Gating and output projection – SKIP in bert_mode
+        if not self.bert_mode:
+            if self.gate is not None:
+                g = torch.sigmoid(self.gate)
+                output = g * context + (1 - g) * hidden_states
+            else:
+                output = context
+            output = self.output(output)
         else:
+            # BERT: just return raw context, original BertSelfOutput will handle the rest
             output = context
 
-        # 10) Output projection (same as original BertSelfAttention)
-        output = self.output(output)
-
-        # 11) Orthogonality loss (soft constraint)
+        # 11) Orthogonality loss
         self._ortho_loss = None
         if not self.comp_config.use_orthogonal:
             I_k = torch.eye(self.k, device=C.device, dtype=C.dtype)
             self._ortho_loss = F.mse_loss(C.T @ C, I_k)
 
-        # 12) Return value(s) – IMPORTANT: always return a tuple of two items
-        if output_attentions:
-            return (output, attn)
-        else:
-            return (output, None)
-            
-        
+        # 12) Return tuple as required by BERT
+        return (output, attn) if output_attentions else (output, None)
+
     def get_ortho_loss(self):
-            return self._ortho_loss
+        return self._ortho_loss
+    
+
+
+class CompressedBertAttention(nn.Module):
+    def __init__(self, original_attention, compressed_self_attn):
+        super().__init__()
+        self.compressed_self = compressed_self_attn   # TokenCompressedAttention (normal mode)
+        self.output = original_attention.output        # BertSelfOutput (dense will be replaced with Identity)
+        self.output_dropout = original_attention.output.dropout   # keep original dropout
+        self.pruned_heads = getattr(original_attention, 'pruned_heads', set())
+
+    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
+        attn_result = self.compressed_self(
+            hidden_states,
+            attention_mask=attention_mask,
+            head_mask=head_mask,
+            output_attentions=output_attentions,
+            **kwargs
+        )
+        if isinstance(attn_result, tuple):
+            context, attn_weights = attn_result
+        else:
+            context, attn_weights = attn_result, None
+
+        # Apply the same dropout that original BertSelfOutput used to have after the dense
+        context = self.output_dropout(context)
+        # Now call BertSelfOutput (its dense is now Identity, so it only does residual + LayerNorm)
+        layer_output = self.output(context, hidden_states)
+
+        return (layer_output, attn_weights)    
+
+            # ── 5. Inject Compression into BERT ─────────────────────────
+def inject_compression_into_layer(layer, comp_config, layer_idx, model_config, model_type):
+    if model_type == 'bert':
+        new_attn = TokenCompressedAttention(
+            config=model_config,
+            comp_config=comp_config,
+            layer_idx=layer_idx,
+            bert_mode=False          # normal mode – will apply output dense (copied below)
+        )
+        old_self = layer.attention.self
+
+        # Copy Q/K/V weights
+        new_attn.query.weight.data.copy_(old_self.query.weight.data)
+        new_attn.query.bias.data.copy_(old_self.query.bias.data)
+        new_attn.key.weight.data.copy_(old_self.key.weight.data)
+        new_attn.key.bias.data.copy_(old_self.key.bias.data)
+        new_attn.value.weight.data.copy_(old_self.value.weight.data)
+        new_attn.value.bias.data.copy_(old_self.value.bias.data)
+
+        # Copy the original self-attention output dense (the projection before residual)
+        new_attn.output.weight.data.copy_(old_self.output.weight.data)
+        new_attn.output.bias.data.copy_(old_self.output.bias.data)
+
+        # Replace BertSelfOutput's dense with Identity to avoid double projection
+        layer.attention.output.dense = nn.Identity()
+
+        # Wrap the whole attention in our replacement module
+        replacement = CompressedBertAttention(layer.attention, new_attn)
+        layer.attention = replacement
+        return new_attn
+    elif model_type == 'distilbert':
+        # DistilBERT: replace the whole attention module directly (like before)
+        new_attn = TokenCompressedAttention(
+            config=model_config,
+            comp_config=comp_config,
+            layer_idx=layer_idx,
+            bert_mode=False
+        )
+        old_attn = layer.attention
+        new_attn.query.weight.data.copy_(old_attn.q_lin.weight.data)
+        new_attn.query.bias.data.copy_(old_attn.q_lin.bias.data)
+        new_attn.key.weight.data.copy_(old_attn.k_lin.weight.data)
+        new_attn.key.bias.data.copy_(old_attn.k_lin.bias.data)
+        new_attn.value.weight.data.copy_(old_attn.v_lin.weight.data)
+        new_attn.value.bias.data.copy_(old_attn.v_lin.bias.data)
+        new_attn.output.weight.data.copy_(old_attn.out_lin.weight.data)
+        new_attn.output.bias.data.copy_(old_attn.out_lin.bias.data)
+
+        layer.attention = new_attn
+        return new_attn
+
+    else:
+        raise NotImplementedError(f"Unsupported model type: {model_type}")
+    
 
 
 
-
-    # ── 5. Inject Compression into BERT ─────────────────────────
-def inject_compression_into_layer(
-    layer: nn.Module,
-    comp_config: CompressionConfig,
-    layer_idx: int,
-    model_config
-) -> TokenCompressedAttention:
-    """Replace a BERT layer's self-attention with compressed attention."""
-    
-    # Create new compressed attention module
-    new_attention = TokenCompressedAttention(
-        config=model_config,
-        comp_config=comp_config,
-        layer_idx=layer_idx
-    )
-    
-    # Copy weights from original attention
-    old_attention = layer.attention.self
-    
-    # Copy Q/K/V weights
-    new_attention.query.weight.data.copy_(old_attention.query.weight.data)
-    new_attention.query.bias.data.copy_(old_attention.query.bias.data)
-    
-    new_attention.key.weight.data.copy_(old_attention.key.weight.data)
-    new_attention.key.bias.data.copy_(old_attention.key.bias.data)
-    
-    new_attention.value.weight.data.copy_(old_attention.value.weight.data)
-    new_attention.value.bias.data.copy_(old_attention.value.bias.data)
-    
-    # Copy output projection weights (CRITICAL!)
-    new_attention.output.weight.data.copy_(layer.attention.output.dense.weight.data)
-    new_attention.output.bias.data.copy_(layer.attention.output.dense.bias.data)
-    
-    # Replace the attention module
-    layer.attention.self = new_attention
-    
-    return new_attention
 
 def fix_layernorm_naming(model: nn.Module):
     """
@@ -356,10 +408,6 @@ def fix_layernorm_naming(model: nn.Module):
 
 # ── 6. Main Model Wrapper ───────────────────────────────────
 class BertWithTokenCompression(nn.Module):
-    """
-    BERT model with token-compressed attention layers.
-    Compatible with HuggingFace Trainer.
-    """
     def __init__(
         self,
         model_name: str = "bert-base-uncased",
@@ -368,45 +416,53 @@ class BertWithTokenCompression(nn.Module):
         disable_compression: bool = False,
     ):
         super().__init__()
-        
         self.comp_config = comp_config or CompressionConfig()
         self.disable_compression = disable_compression
-        
-        # Load base BERT model
+
+        # Load config and model
         config = AutoConfig.from_pretrained(
-            model_name, 
+            model_name,
             num_labels=num_labels,
-            hidden_dropout_prob=0.1,
-            attention_probs_dropout_prob=0.1
         )
-        
         self.bert = AutoModelForSequenceClassification.from_pretrained(
             model_name,
-            config=config
+            config=config,
         )
-        
-        # Fix LayerNorm naming for checkpoint compatibility
         fix_layernorm_naming(self.bert)
-        
-        # Inject compression into all layers
+
+        # Identify base transformer layers
+        model_type = config.model_type
+        if model_type == 'bert':
+            self.base_model = self.bert.bert
+            layers = self.base_model.encoder.layer
+        elif model_type == 'distilbert':
+            self.base_model = self.bert.distilbert
+            layers = self.base_model.transformer.layer
+        else:
+            raise ValueError(f"Unsupported model type: {model_type}")
+
+        # Inject compression
         self.compression_modules = nn.ModuleList()
         if not disable_compression:
-            for i, layer in enumerate(self.bert.bert.encoder.layer):
+            for i, layer in enumerate(layers):
                 new_attn = inject_compression_into_layer(
                     layer=layer,
                     comp_config=self.comp_config,
                     layer_idx=i,
-                    model_config=config
+                    model_config=config,
+                    model_type=model_type,
                 )
                 self.compression_modules.append(new_attn)
-        
-        # Enable gradient checkpointing for memory efficiency
+
+        # Gradient checkpointing for memory
         self.bert.gradient_checkpointing_enable()
-        
-        log.info(f"Created model with {len(self.compression_modules)} compressed layers")
+
+        log.info(f"Created model with {len(self.compression_modules)} compressed layers "
+                 f"(type={model_type})")
         log.info(f"Compression ratios: early={self.comp_config.k_early}, "
-                f"mid={self.comp_config.k_mid}, late={self.comp_config.k_late}")
-    
+                 f"mid={self.comp_config.k_mid}, late={self.comp_config.k_late}")
+                 
+                     
     def forward(self, **kwargs):
         """Forward pass through the model."""
         return self.bert(**kwargs)
@@ -578,7 +634,13 @@ def main():
 
     # Build model
     model = BertWithTokenCompression(args.model, num_labels, comp_config)
-
+    if torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("Using MPS (Metal) device")
+        model = model.to(device)
+    else:
+        device = torch.device("cpu")
+        print("Using CPU")
     # Metric for best model (with 'eval_' prefix)
     if args.task == "cola":
         metric_name = "eval_matthews_correlation"
@@ -598,11 +660,10 @@ def main():
         gradient_accumulation_steps=args.grad_accum,
         learning_rate=args.lr,
             remove_unused_columns=False,   # ← add this line
-
-        warmup_ratio=0.1,
         weight_decay=0.01,
         lr_scheduler_type="cosine",
-        max_grad_norm=1.0,
+    max_grad_norm=0.5,          # stricter clipping
+    warmup_ratio=0.1,
         logging_steps=50,
         eval_strategy="epoch",
         save_strategy="epoch",
