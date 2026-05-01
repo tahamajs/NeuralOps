@@ -87,3 +87,70 @@ Write the complete PyTorch code for this module. Include:
 
 
 
+
+
+
+
+
+# Role Definition
+You are a Principal AI Research Engineer and Architect specializing in Next-Generation Efficient Transformers. Your expertise lies in synthesizing state-of-the-art compression techniques into robust, production-ready architectures. You prioritize **numerical stability**, **computational efficiency**, and **accuracy retention** over theoretical complexity.
+
+# Objective
+Design a superior attention mechanism called **"Aegis-Attention"** by selectively integrating the *best* components from four distinct families of efficient attention methods:
+1. **Linear/Kernel Attention** (e.g., LEKA, Performer): For global context with linear complexity.
+2. **Sparse/Block Attention** (e.g., SPECTRA-v2, Longformer): For local detail and dynamic token selection.
+3. **Low-Rank/SVD Compression** (e.g., SLiM, SVD-Compressed): For parameter reduction and memory efficiency.
+4. **Adaptive Sparsity/Masking** (e.g., AST, Softpick): For dynamic resource allocation per head/tokend.
+
+Your goal is to create a **unified module** that uses these techniques where they complement each other, avoiding redundancy or conflict.
+
+# Step 1: Strategic Selection & Synergy Analysis
+Analyze the following trade-offs and select the optimal configuration:
+- **Problem:** Full Attention is $O(N^2)$; Linear Attention loses local detail; Sparse Attention can miss long-range dependencies; Low-Rank can lose precision.
+- **Solution Strategy:**
+    - Use **SVD/Low-Rank** for the *projection layers* (Q/K/V) to reduce parameter count and initial noise.
+    - Use **Hybrid Sparse-Linear** logic for the *attention core*: 
+        - Compute **Local Dense Attention** for a small window (e.g., block size 64) to preserve local structure.
+        - Compute **Global Linear Attention** (via Kernel Trick) for the rest to capture long-range context efficiently.
+    - Use **Adaptive Masking (AST/Softpick)** to prune redundant computations in both local and global paths dynamically.
+    - Use **DeltaKV-style residual caching** only if it doesn't break gradient flow during training (prefer static initialization for stability).
+
+*Question:* Why does this specific combination work better than using any single method alone? Explain the synergy.
+
+# Step 2: Architecture Design ("Aegis-Attention")
+Design the module with these strict constraints:
+1. **Drop-in Replacement:** Must replace `DistilBertAttention` exactly. Input: `(B, N, H)`, Output: `(B, N, H)`.
+2. **Efficiency:** 
+    - Parameter count < Original DistilBERT.
+    - Memory footprint reduced via low-rank projections.
+    - Inference speed improved via hybrid sparse-linear computation.
+3. **Stability:** 
+    - No real-time heavy SVD during forward pass (use cached basis or pre-computed factors).
+    - Robust masking for padding tokens.
+    - Gradient-friendly design (avoid hard thresholds during training unless using Straight-Through Estimator).
+4. **Initialization:** 
+    - Initialize Q/K/V projection weights from pretrained DistilBERT using **Truncated SVD** to ensure zero-shot compatibility.
+
+# Step 3: Complete PyTorch Implementation
+Write the full, clean, and commented code for `AegisAttention`. Include:
+1. **Config Class:** Hyperparameters for block sizes, ranks, kernel features, etc.
+2. **Core Module:** 
+    - `__init__`: Setup projections, kernel maps, and masks.
+    - `_svd_init`: Helper to decompose pretrained weights.
+    - `forward`: 
+        - Project inputs using low-rank factors.
+        - Split sequence into Local Blocks and Global Remainder.
+        - Compute Local Attention (Dense) and Global Attention (Linear/Kernel).
+        - Fuse results using adaptive weights or simple concatenation.
+        - Apply output projection.
+3. **Injection Helper:** Function to swap the original layer with `AegisAttention`.
+
+# Step 4: Explanation & Usage
+1. **Why this works:** Briefly explain how the hybrid approach balances local precision with global efficiency.
+2. **Code Usage:** Show how to inject it into a DistilBERT model.
+
+---
+**Context:**
+- Base Model: DistilBERT (`hidden_size=768`, `num_heads=12`, `head_dim=64`)
+- Target: High throughput on GPU, low memory usage.
+- Priority: Stability > Complexity.
