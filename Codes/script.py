@@ -476,42 +476,40 @@ import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from scipy.stats import pearsonr
 
-# ── 8. Metrics ──────────────────────────────────────────────
+import evaluate
+
 def get_compute_metrics(task: str):
     task = task.lower()
     if task == "cola":
-        from sklearn.metrics import matthews_corrcoef
+        metric = evaluate.load("matthews_correlation")
         def compute(eval_pred):
             logits, labels = eval_pred
             preds = np.argmax(logits, axis=-1)
-            return {"eval_matthews_correlation": matthews_corrcoef(labels, preds)}
+            return metric.compute(predictions=preds, references=labels)
         return compute
     elif task == "stsb":
-        from scipy.stats import pearsonr
+        metric = evaluate.load("pearsonr")
         def compute(eval_pred):
             logits, labels = eval_pred
             preds = logits.squeeze()
-            corr, _ = pearsonr(preds, labels)
-            return {"eval_pearsonr": corr}
+            return metric.compute(predictions=preds, references=labels)
         return compute
-    elif task == "mrpc":
-        from sklearn.metrics import accuracy_score, f1_score
+    elif task in ("mrpc", "qqp"):
+        acc_metric = evaluate.load("accuracy")
+        f1_metric = evaluate.load("f1")
         def compute(eval_pred):
             logits, labels = eval_pred
             preds = np.argmax(logits, axis=-1)
-            return {
-                "eval_accuracy": accuracy_score(labels, preds),
-                "eval_f1": f1_score(labels, preds)
-            }
+            return {"eval_accuracy": acc_metric.compute(predictions=preds, references=labels)["accuracy"],
+                    "eval_f1": f1_metric.compute(predictions=preds, references=labels)["f1"]}
         return compute
     else:
-        from sklearn.metrics import accuracy_score
+        metric = evaluate.load("accuracy")
         def compute(eval_pred):
             logits, labels = eval_pred
             preds = np.argmax(logits, axis=-1)
-            return {"eval_accuracy": accuracy_score(labels, preds)}
-        return compute
-    
+            return {"eval_accuracy": metric.compute(predictions=preds, references=labels)["accuracy"]}
+        return compute    
     
     # ── 8. Main ─────────────────────────────────────────────────
 def main():
