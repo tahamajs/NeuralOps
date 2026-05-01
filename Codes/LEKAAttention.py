@@ -972,3 +972,136 @@ def main():
     log.info("Done.")
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# vocab_layer_norm.weight | UNEXPECTED | 
+# vocab_layer_norm.bias   | UNEXPECTED | 
+# classifier.weight       | MISSING    | 
+# pre_classifier.weight   | MISSING    | 
+# pre_classifier.bias     | MISSING    | 
+# classifier.bias         | MISSING    | 
+
+# Notes:
+# - UNEXPECTED:   can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+# - MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+# 01:58:17 | INFO    | Created model with 6 compressed layers (type=distilbert)
+# 01:58:17 | INFO    | Compression ratios: early=32, mid=16, late=12
+# Using MPS (Metal) device
+# 01:58:18 | INFO    | DEBUG: model device is mps:0
+# [transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+# jjj
+# 01:58:18 | INFO    | Train dataset columns: ['input_ids', 'token_type_ids', 'attention_mask', 'labels']
+# 01:58:18 | INFO    | Train dataset features: {'input_ids': List(Value('int32')), 'token_type_ids': List(Value('int8')), 'attention_mask': List(Value('int8')), 'labels': Value('int64')}
+# 01:58:18 | INFO    | First example: {'input_ids': [101, 5342, 2047, 3595, 8496, 2013, 1996, 18643, 3197, 102, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'labels': 0}
+# 01:58:18 | INFO    | CompressionTrainer initialized
+# 01:58:18 | INFO    | Starting training...
+# {'loss': '1.389', 'grad_norm': '2.229', 'learning_rate': '9.307e-07', 'epoch': '0.02375'}                                                                          
+# {'loss': '1.376', 'grad_norm': '4.12', 'learning_rate': '1.88e-06', 'epoch': '0.04751'}                                                                            
+# {'loss': '1.366', 'grad_norm': '3.964', 'learning_rate': '2.83e-06', 'epoch': '0.07126'}                                                                           
+# {'loss': '1.362', 'grad_norm': '5.464', 'learning_rate': '3.78e-06', 'epoch': '0.09501'}                                                                           
+# {'loss': '1.361', 'grad_norm': '3.028', 'learning_rate': '4.729e-06', 'epoch': '0.1188'}                                                                           
+# {'loss': '1.367', 'grad_norm': '4.236', 'learning_rate': '5.679e-06', 'epoch': '0.1425'}                                                                           
+# {'loss': '1.378', 'grad_norm': '2.384', 'learning_rate': '6.629e-06', 'epoch': '0.1663'}                                                                           
+# {'loss': '1.36', 'grad_norm': '3.828', 'learning_rate': '7.578e-06', 'epoch': '0.19'}                                                                              
+# {'loss': '1.356', 'grad_norm': '3.347', 'learning_rate': '8.528e-06', 'epoch': '0.2138'}                                                                           
+# {'loss': '1.349', 'grad_norm': '4.503', 'learning_rate': '9.478e-06', 'epoch': '0.2375'}                                                                           
+# {'loss': '1.375', 'grad_norm': '2.597', 'learning_rate': '1.043e-05', 'epoch': '0.2613'}                                                                           
+# {'loss': '1.357', 'grad_norm': '7.647', 'learning_rate': '1.138e-05', 'epoch': '0.285'}                                                                            
+# {'loss': '1.347', 'grad_norm': '5.213', 'learning_rate': '1.233e-05', 'epoch': '0.3088'}                                                                           
+# {'loss': '1.355', 'grad_norm': '2.564', 'learning_rate': '1.328e-05', 'epoch': '0.3325'}                                                                           
+# {'loss': '1.339', 'grad_norm': '3.865', 'learning_rate': '1.423e-05', 'epoch': '0.3563'}                                                                           
+# {'loss': '1.308', 'grad_norm': '8.488', 'learning_rate': '1.518e-05', 'epoch': '0.38'}                                                                             
+# {'loss': '1.309', 'grad_norm': '9.319', 'learning_rate': '1.613e-05', 'epoch': '0.4038'}                                                                           
+# {'loss': '1.324', 'grad_norm': '20.14', 'learning_rate': '1.708e-05', 'epoch': '0.4276'}                                                                           
+# {'loss': '1.312', 'grad_norm': '13.66', 'learning_rate': '1.802e-05', 'epoch': '0.4513'}                                                                           
+# {'loss': '1.317', 'grad_norm': '4.528', 'learning_rate': '1.897e-05', 'epoch': '0.4751'}                                                                           
+# {'loss': '1.314', 'grad_norm': '11.47', 'learning_rate': '1.992e-05', 'epoch': '0.4988'}                                                                           
+# {'loss': '1.339', 'grad_norm': '8.952', 'learning_rate': '2e-05', 'epoch': '0.5226'}                                                                               
+# {'loss': '1.297', 'grad_norm': '6.602', 'learning_rate': '1.999e-05', 'epoch': '0.5463'}                                                                           
+# {'loss': '1.32', 'grad_norm': '4.256', 'learning_rate': '1.999e-05', 'epoch': '0.5701'}                                                                            
+# {'loss': '1.287', 'grad_norm': '5.295', 'learning_rate': '1.998e-05', 'epoch': '0.5938'}                                                                           
+# {'loss': '1.319', 'grad_norm': '2.317', 'learning_rate': '1.997e-05', 'epoch': '0.6176'}                                                                           
+# {'loss': '1.276', 'grad_norm': '3.974', 'learning_rate': '1.995e-05', 'epoch': '0.6413'}                                                                           
+# {'loss': '1.293', 'grad_norm': '3.121', 'learning_rate': '1.993e-05', 'epoch': '0.6651'}                                                                           
+# {'loss': '1.263', 'grad_norm': '5.827', 'learning_rate': '1.991e-05', 'epoch': '0.6888'}                                                                           
+# {'loss': '1.291', 'grad_norm': '7.101', 'learning_rate': '1.989e-05', 'epoch': '0.7126'}                                                                           
+# {'loss': '1.263', 'grad_norm': '7.552', 'learning_rate': '1.986e-05', 'epoch': '0.7363'}                                                                           
+# {'loss': '1.276', 'grad_norm': '9.575', 'learning_rate': '1.984e-05', 'epoch': '0.7601'}                                                                           
+# {'loss': '1.264', 'grad_norm': '7.142', 'learning_rate': '1.981e-05', 'epoch': '0.7838'}                                                                           
+# {'loss': '1.281', 'grad_norm': '12.83', 'learning_rate': '1.977e-05', 'epoch': '0.8076'}                                                                           
+# {'loss': '1.285', 'grad_norm': '6.523', 'learning_rate': '1.973e-05', 'epoch': '0.8314'}                                                                           
+# {'loss': '1.286', 'grad_norm': '8.291', 'learning_rate': '1.97e-05', 'epoch': '0.8551'}                                                                            
+# {'loss': '1.281', 'grad_norm': '18.49', 'learning_rate': '1.965e-05', 'epoch': '0.8789'}                                                                           
+# {'loss': '1.262', 'grad_norm': '23.58', 'learning_rate': '1.961e-05', 'epoch': '0.9026'}                                                                           
+# {'loss': '1.269', 'grad_norm': '3.058', 'learning_rate': '1.956e-05', 'epoch': '0.9264'}                                                                           
+# {'loss': '1.23', 'grad_norm': '13.25', 'learning_rate': '1.951e-05', 'epoch': '0.9501'}                                                                            
+# {'loss': '1.265', 'grad_norm': '13.11', 'learning_rate': '1.946e-05', 'epoch': '0.9739'}                                                                           
+# {'loss': '1.236', 'grad_norm': '9.675', 'learning_rate': '1.94e-05', 'epoch': '0.9976'}                                                                            
+# {'eval_runtime': '8.155', 'eval_samples_per_second': '106.9', 'eval_steps_per_second': '3.434', 'epoch': '1'}                                                      
+#  20%|███████████████████████▊                                                                                               | 2105/10525 [28:53<2:02:11,  1.15it/sTraceback (most recent call last):                                                                                                                                  
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 3124, in _determine_best_metric
+#     metric_value = metrics[metric_to_check]
+#                    ~~~~~~~^^^^^^^^^^^^^^^^^
+# KeyError: 'eval_accuracy'
+
+# The above exception was the direct cause of the following exception:
+
+# Traceback (most recent call last):
+#   File "/Users/tahamajs/Documents/uni/Project/Codes/LEKAAttention.py", line 974, in <module>
+#     main()
+#     ~~~~^^
+#   File "/Users/tahamajs/Documents/uni/Project/Codes/LEKAAttention.py", line 967, in main
+#     trainer.train()
+#     ~~~~~~~~~~~~~^^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1427, in train
+#     return inner_training_loop(
+#         args=args,
+#     ...<2 lines>...
+#         ignore_keys_for_eval=ignore_keys_for_eval,
+#     )
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+#     self._run_epoch(
+#     ~~~~~~~~~~~~~~~^
+#         model=model,
+#         ^^^^^^^^^^^^
+#     ...<9 lines>...
+#         steps_trained_in_current_epoch=steps_trained_in_current_epoch,
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     )
+#     ^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1810, in _run_epoch
+#     self._maybe_log_save_evaluate(
+#     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+#         self._tr_loss,
+#         ^^^^^^^^^^^^^^
+#     ...<6 lines>...
+#         learning_rate=learning_rate,
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     )
+#     ^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 2085, in _maybe_log_save_evaluate
+#     is_new_best_metric = self._determine_best_metric(metrics=metrics, trial=trial)
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 3126, in _determine_best_metric
+#     raise KeyError(
+#     ...<2 lines>...
+#     ) from exc
+# KeyError: "The `metric_for_best_model` training argument is set to 'eval_accuracy', which is not found in the evaluation metrics. The available evaluation metrics are: ['eval_runtime', 'eval_samples_per_second', 'eval_steps_per_second', 'epoch']. Consider changing the `metric_for_best_model` via the TrainingArguments."
+#  20%|███████████████████████▊                                                                                               | 2105/10525 [28:55<1:55:40,  1.21it/s]
+# (.venv) ➜  Codes git:(main) ✗ 
