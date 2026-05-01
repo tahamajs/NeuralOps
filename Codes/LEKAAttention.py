@@ -714,6 +714,10 @@ import evaluate
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from scipy.stats import pearsonr
 
+import numpy as np
+from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+from scipy.stats import pearsonr
+
 def get_compute_metrics(task: str):
     task = task.lower()
     if task == "cola":
@@ -743,8 +747,7 @@ def get_compute_metrics(task: str):
             logits, labels = eval_pred
             preds = np.argmax(logits, axis=-1)
             return {"eval_accuracy": accuracy_score(labels, preds)}
-        return compute    
-    # ── 8. Main ─────────────────────────────────────────────────
+        return compute    # ── 8. Main ─────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="Token‑Compressed Attention for GLUE")
     parser.add_argument("--task", type=str, default="sst2",
