@@ -653,3 +653,108 @@ Despite the slightly slower convergence, the compressed model:
 4. **Plugs into any pre‑trained transformer** without changing the architecture, making adoption easy.
 
 The trade‑off is a minor accuracy drop (usually <1%) and slightly more training epochs – acceptable for many real‑world applications where speed and memory matter.
+
+
+baseline 
+
+(.venv) ➜  Codes git:(main) ✗ python baseline.py --task sst2 --model distilbert-base-uncased \
+  --max_len 64 --batch_size 16 --grad_accum 2 --epochs 5 --lr 2e-5
+23:31:58 | INFO    | ============================================================
+23:31:58 | INFO    | BASELINE MODE: Standard BERT (No Compression)
+23:31:58 | INFO    | ============================================================
+23:31:58 | INFO    | Task: sst2
+23:31:58 | INFO    | Model: distilbert-base-uncased
+23:31:58 | INFO    | Max length: 64
+23:31:58 | INFO    | Epochs: 5
+23:31:58 | INFO    | Learning rate: 2e-05
+23:31:58 | INFO    | Batch size: 16
+Generating train split: 1821 examples [00:00, 72010.82 examples/s]
+23:31:58 | INFO    | Dataset loaded: train=67349, val=872
+Map: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████| 872/872 [00:00<00:00, 15101.94 examples/s]
+Map: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 67349/67349 [00:02<00:00, 26940.56 examples/s]
+Map: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████| 1821/1821 [00:00<00:00, 19832.49 examples/s]
+23:32:01 | INFO    | Tokenized: train=67349, val=872
+Loading weights: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:00<00:00, 6201.56it/s]
+[transformers] DistilBertForSequenceClassification LOAD REPORT from: distilbert-base-uncased
+Key                     | Status     | 
+------------------------+------------+-
+vocab_transform.bias    | UNEXPECTED | 
+vocab_transform.weight  | UNEXPECTED | 
+vocab_layer_norm.bias   | UNEXPECTED | 
+vocab_layer_norm.weight | UNEXPECTED | 
+vocab_projector.bias    | UNEXPECTED | 
+pre_classifier.weight   | MISSING    | 
+pre_classifier.bias     | MISSING    | 
+classifier.weight       | MISSING    | 
+classifier.bias         | MISSING    | 
+
+Notes:
+- UNEXPECTED:   can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+- MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+23:32:01 | INFO    | Gradient checkpointing enabled
+23:32:01 | INFO    | Using MPS (Metal) device
+[transformers] warmup_ratio is deprecated and will be removed in v5.2. Use `warmup_steps` instead.
+23:32:01 | INFO    | Starting training...
+{'loss': '1.396', 'grad_norm': '1.397', 'learning_rate': '9.307e-07', 'epoch': '0.02375'}                                                                          
+{'loss': '1.384', 'grad_norm': '1.437', 'learning_rate': '1.88e-06', 'epoch': '0.04751'}                                                                           
+{'loss': '1.36', 'grad_norm': '1.977', 'learning_rate': '2.83e-06', 'epoch': '0.07126'}                                                                            
+{'loss': '1.275', 'grad_norm': '4.068', 'learning_rate': '3.78e-06', 'epoch': '0.09501'}                                                                           
+{'loss': '0.9707', 'grad_norm': '8.9', 'learning_rate': '4.729e-06', 'epoch': '0.1188'}                                                                            
+{'loss': '0.7947', 'grad_norm': '13.97', 'learning_rate': '5.679e-06', 'epoch': '0.1425'}                                                                          
+{'loss': '0.6782', 'grad_norm': '9.113', 'learning_rate': '6.629e-06', 'epoch': '0.1663'}                                                                          
+{'loss': '0.6682', 'grad_norm': '10.46', 'learning_rate': '7.578e-06', 'epoch': '0.19'}                                                                            
+{'loss': '0.6873', 'grad_norm': '7.108', 'learning_rate': '8.528e-06', 'epoch': '0.2138'}                                                                          
+{'loss': '0.5893', 'grad_norm': '18.86', 'learning_rate': '9.478e-06', 'epoch': '0.2375'}                                                                          
+{'loss': '0.5771', 'grad_norm': '7.119', 'learning_rate': '1.043e-05', 'epoch': '0.2613'}                                                                          
+{'loss': '0.5186', 'grad_norm': '27.65', 'learning_rate': '1.138e-05', 'epoch': '0.285'}                                                                           
+{'loss': '0.5577', 'grad_norm': '17.88', 'learning_rate': '1.233e-05', 'epoch': '0.3088'}                                                                          
+{'loss': '0.5332', 'grad_norm': '14.52', 'learning_rate': '1.328e-05', 'epoch': '0.3325'}                                                                          
+{'loss': '0.5499', 'grad_norm': '10.24', 'learning_rate': '1.423e-05', 'epoch': '0.3563'}                                                                          
+{'loss': '0.4747', 'grad_norm': '6.751', 'learning_rate': '1.518e-05', 'epoch': '0.38'}                                                                            
+{'loss': '0.5209', 'grad_norm': '33.32', 'learning_rate': '1.613e-05', 'epoch': '0.4038'}                                                                          
+{'loss': '0.4865', 'grad_norm': '10.61', 'learning_rate': '1.708e-05', 'epoch': '0.4276'}                                                                          
+{'loss': '0.5035', 'grad_norm': '5.695', 'learning_rate': '1.802e-05', 'epoch': '0.4513'}                                                                          
+{'loss': '0.5304', 'grad_norm': '18.5', 'learning_rate': '1.897e-05', 'epoch': '0.4751'}                                                                           
+{'loss': '0.5067', 'grad_norm': '9.43', 'learning_rate': '1.992e-05', 'epoch': '0.4988'}                                                                           
+{'loss': '0.419', 'grad_norm': '8.806', 'learning_rate': '2e-05', 'epoch': '0.5226'}                                                                               
+{'loss': '0.4074', 'grad_norm': '6.318', 'learning_rate': '1.999e-05', 'epoch': '0.5463'}                                                                          
+{'loss': '0.4568', 'grad_norm': '18.25', 'learning_rate': '1.999e-05', 'epoch': '0.5701'}                                                                          
+{'loss': '0.4578', 'grad_norm': '17.54', 'learning_rate': '1.998e-05', 'epoch': '0.5938'}                                                                          
+{'loss': '0.4491', 'grad_norm': '7.569', 'learning_rate': '1.997e-05', 'epoch': '0.6176'}                                                                          
+{'loss': '0.4668', 'grad_norm': '9.699', 'learning_rate': '1.995e-05', 'epoch': '0.6413'}                                                                          
+{'loss': '0.4205', 'grad_norm': '9.309', 'learning_rate': '1.993e-05', 'epoch': '0.6651'}                                                                          
+{'loss': '0.4338', 'grad_norm': '4.427', 'learning_rate': '1.991e-05', 'epoch': '0.6888'}                                                                          
+{'loss': '0.4435', 'grad_norm': '12.8', 'learning_rate': '1.989e-05', 'epoch': '0.7126'}                                                                           
+{'loss': '0.4051', 'grad_norm': '12.69', 'learning_rate': '1.986e-05', 'epoch': '0.7363'}                                                                          
+ 15%|█████████████████▉                                                                                                     | 1592/10525 [21:23<1:57:54,  1.26it/s]^CTraceback (most recent call last):
+  File "/Users/tahamajs/Documents/uni/Project/Codes/baseline.py", line 307, in <module>
+    main()
+    ~~~~^^
+  File "/Users/tahamajs/Documents/uni/Project/Codes/baseline.py", line 289, in main
+    trainer.train()
+    ~~~~~~~~~~~~~^^
+  File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1427, in train
+    return inner_training_loop(
+        args=args,
+    ...<2 lines>...
+        ignore_keys_for_eval=ignore_keys_for_eval,
+    )
+  File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+    self._run_epoch(
+    ~~~~~~~~~~~~~~~^
+        model=model,
+        ^^^^^^^^^^^^
+    ...<9 lines>...
+        steps_trained_in_current_epoch=steps_trained_in_current_epoch,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1742, in _run_epoch
+    and (torch.isnan(tr_loss_step) or torch.isinf(tr_loss_step))
+                                      ~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyboardInterrupt
+ 15%|█████████████████▉                                                                                                     | 1592/10525 [21:24<2:00:06,  1.24it/s]
+
+(.venv) ➜  Codes git:(main) ✗ python LEKAAttention.py --task sst2 --model distilbert-base-uncased \ 
+
+
