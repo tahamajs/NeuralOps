@@ -39,7 +39,7 @@ from torch.nn.utils.parametrizations import orthogonal
 
 from transformers import (
     AutoConfig, AutoTokenizer, AutoModelForSequenceClassification,
-    Trainer, TrainingArguments, DataCollatorWithPadding,
+    Trainer, TrainingArguments, default_data_collator,
     EarlyStoppingCallback, get_cosine_schedule_with_warmup,
     set_seed, PreTrainedModel, PretrainedConfig
 )
@@ -106,145 +106,201 @@ TASK_KEYS = {
     "wnli": ("sentence1", "sentence2"),
 }
 class LEKAAttention(nn.Module):
-    """
-    Landmark‑Enhanced Kernel Attention (LEKA)
-    Combines: spherical norm, kernel features, landmarks, learnable correction.
-    Complexity O(N (feature_dim + num_landmarks))
-    """
     def __init__(self, config, comp_config, layer_idx, bert_mode=False):
         super().__init__()
-        self.num_heads = config.num_attention_heads
-        self.head_dim = config.hidden_size // self.num_heads
-        self.hidden_size = config.hidden_size
-        self.comp_config = comp_config
-        self.layer_idx = layer_idx
+        self.num_attention_heads = config.num_attention_heads
+        self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
+        self.all_head_size = self.num_attention_heads * self.attention_head_size
+        self.head_dim = self.attention_head_size
         self.bert_mode = bert_mode
-
+        
+        # دریافت پارامترها از comp_config
         self.num_landmarks = comp_config.num_landmarks
         self.feature_dim = comp_config.feature_dim
-        self.use_spherical_norm = comp_config.use_spherical_norm
-        self.kernel = comp_config.kernel
-
-        # Q/K/V projections
-        self.query = nn.Linear(self.hidden_size, self.hidden_size)
-        self.key   = nn.Linear(self.hidden_size, self.hidden_size)
-        self.value = nn.Linear(self.hidden_size, self.hidden_size)
-        self.out_proj = nn.Linear(self.hidden_size, self.hidden_size)
+        
+        # لایه‌های Q/K/V
+        self.query = nn.Linear(config.hidden_size, self.all_head_size)
+        self.key   = nn.Linear(config.hidden_size, self.all_head_size)
+        self.value = nn.Linear(config.hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
         self.dropout = nn.Dropout(comp_config.dropout)
-
-        # Random projection for kernel features (shared across heads)
-        self.register_buffer("rand_proj", torch.randn(self.head_dim, self.feature_dim))
-
-        # Landmark correction: per‑head linear transformation of landmark values
-        self.W_corr = nn.Parameter(torch.empty(self.num_heads, self.head_dim, self.head_dim))
-        nn.init.xavier_normal_(self.W_corr)
-        self.alpha = nn.Parameter(torch.tensor(0.1))
-
-    def _spherical_normalize(self, x):
-        return F.normalize(x, p=2, dim=-1)
-
-    def _kernel_feature_map(self, x):
-        # x: (B, H, N, D)
-        proj = torch.matmul(x, self.rand_proj)          # (B,H,N,F)
-        scale = self.head_dim ** -0.25
-        if self.kernel == "elu":
-            return F.elu(proj * scale) + 1.0
+        
+        # ماتریس تصادفی برای kernel features (بافر)
+        self.register_buffer('rand_proj', torch.randn(self.head_dim, self.feature_dim))
+        
+        # ماتریس تصحیح landmark (per head)
+        self.W_corr = nn.Parameter(
+            torch.eye(self.head_dim).unsqueeze(0).repeat(self.num_attention_heads, 1, 1)
+        )
+        
+        # دروازه (اختیاری، از comp_config)
+        if comp_config.use_gate and not self.bert_mode:
+            self.gate = nn.Parameter(torch.tensor(comp_config.gate_bias))
         else:
-            return F.relu(proj * scale) + 1e-6
-
-    def _select_landmarks(self, x, mask_float):
-        # x: (B, H, N, D)
-        B, H, N, D = x.shape
+            self.gate = None
+            
+            
+            
+    def transpose_for_scores(self, x):
+        """Reshape from (B, N, all_head_size) to (B, H, N, head_dim)"""
+        new_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
+        x = x.view(new_shape)
+        return x.permute(0, 2, 1, 3)
+    
+    def kernel_feature_map(self, x):
+        """
+        Apply random Fourier features: φ(x) = [cos(xW), sin(xW)] / sqrt(feature_dim)
+        
+        Args:
+            x: (B, H, N, D)
+        Returns:
+            features: (B, H, N, 2*feature_dim)
+        """
+        # Move rand_proj to correct device
+        rand_proj = self.rand_proj.to(x.device)
+        
+        # Project: (B, H, N, D) @ (D, feature_dim) -> (B, H, N, feature_dim)
+        proj = torch.matmul(x, rand_proj)
+        
+        # Apply cos and sin
+        cos_features = torch.cos(proj)
+        sin_features = torch.sin(proj)
+        
+        # Concatenate and normalize
+        features = torch.cat([cos_features, sin_features], dim=-1)  # (B, H, N, 2*feature_dim)
+        features = features / math.sqrt(self.feature_dim)
+        
+        return features
+    
+    def select_landmarks(self, K_features, V):
+        """
+        Select landmarks using k-means++ initialization
+        
+        Args:
+            K_features: (B, H, N, 2*feature_dim)
+            V: (B, H, N, D)
+        Returns:
+            K_land: (B, H, L, 2*feature_dim)
+            V_land: (B, H, L, D)
+        """
+        B, H, N, feat_dim = K_features.shape
         L = self.num_landmarks
-        if N % L == 0:
-            seg = N // L
-            x_ = x.view(B, H, L, seg, D)   # (B,H,L,seg,D)
-            mask_ = mask_float.view(B, 1, N).reshape(B, 1, L, seg).unsqueeze(-1)  # (B,1,L,seg,1)
-            x_sum = (x_ * mask_).sum(dim=3)   # (B,H,L,D)
-            seg_len = mask_.sum(dim=3) + 1e-8
-            return x_sum / seg_len
-        else:
-            idx = torch.linspace(0, N-1, L, device=x.device).long()
-            return x[:, :, idx, :]
+        
+        if N <= L:
+            # If sequence is shorter than landmarks, use all tokens
+            return K_features, V
+        
+        # Simple uniform sampling (faster than k-means++)
+        indices = torch.linspace(0, N - 1, L, device=K_features.device).long()
+        indices = indices.unsqueeze(0).unsqueeze(0).expand(B, H, -1)  # (B, H, L)
+        
+        # Gather landmarks
+        K_land = torch.gather(
+            K_features, 
+            2, 
+            indices.unsqueeze(-1).expand(-1, -1, -1, feat_dim)
+        )  # (B, H, L, feat_dim)
+        
+        V_land = torch.gather(
+            V, 
+            2, 
+            indices.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1])
+        )  # (B, H, L, D)
+        
+        return K_land, V_land
+    
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ):
+        B, N, D = hidden_states.shape
+        L = self.num_landmarks
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
-        if attention_mask is None:
-            attention_mask = kwargs.get('attn_mask', None)
+        # print("==== DEBUG LEKAAttention.forward ====")
+        # print(f"hidden_states.shape = {hidden_states.shape}")
+        # print(f"N = {N}, L = {L}")
 
-        B, N, D = hidden_states.size()
-        H = self.num_heads
+        # Linear projections
+        Q = self.transpose_for_scores(self.query(hidden_states))
+        K = self.transpose_for_scores(self.key(hidden_states))
+        V = self.transpose_for_scores(self.value(hidden_states))
+        Q_features = self.kernel_feature_map(Q)
+        K_features = self.kernel_feature_map(K)
 
-        q = self.query(hidden_states).view(B, N, H, self.head_dim).permute(0,2,1,3)
-        k = self.key(hidden_states).view(B, N, H, self.head_dim).permute(0,2,1,3)
-        v = self.value(hidden_states).view(B, N, H, self.head_dim).permute(0,2,1,3)
+        K_land, V_land = self.select_landmarks(K_features, V)
 
-        # Mask normalization to 2D (B,N) with 1=valid, 0=pad
-        if attention_mask is not None:
-            if attention_mask.dim() == 4:
-                mask_2d = (attention_mask > -1).float()[:, 0, 0, :]
-            elif attention_mask.dim() == 2:
-                mask_2d = attention_mask.float()
+        W = self.W_corr.unsqueeze(0).expand(B, -1, -1, -1)
+        V_land_adj = torch.einsum('bhld,bhde->bhle', V_land, W)
+
+        attn_weights = torch.matmul(Q_features, K_land.transpose(-2, -1))  # (B, H, N, L)
+        # print(f"attn_weights.shape (before mask) = {attn_weights.shape}")
+
+        # Mask handling – DistilBERT gives us (B,1,N,N) extended mask
+        mask = attention_mask
+        if mask is None:
+            mask = kwargs.get('attn_mask', None)
+
+        if mask is not None:
+            # print(f"mask.shape = {mask.shape}")
+            # The mask is 4D with shape (B,1,N,N) – full attention mask
+            if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
+                # Extract per-token validity from the first query position ([CLS])
+                # Valid positions have 0.0, padding positions have -10000.0
+                token_valid = mask[:, 0, 0, :] > -1e9   # (B, N) boolean True = valid
+                # print(f"token_valid.shape = {token_valid.shape}")
+
+                # Sub-sample landmarks
+                if N > L:
+                    indices = torch.linspace(0, N - 1, L, device=token_valid.device).long()
+                    landmark_mask = token_valid[:, indices]     # (B, L)
+                    # print(f"landmark_mask after indexing = {landmark_mask.shape}")
+                else:
+                    landmark_mask = token_valid
+                # Reshape to (B, 1, 1, L) for broadcasting
+                landmark_mask = landmark_mask.unsqueeze(1).unsqueeze(2)
+                # print(f"landmark_mask final = {landmark_mask.shape}")
             else:
-                raise ValueError(f"Unexpected mask shape: {attention_mask.shape}")
-        else:
-            mask_2d = None
+                # Fallback for standard (B,1,1,N) or 2D masks (if ever used)
+                if mask.dim() == 4:
+                    mask_2d = mask.squeeze(1).squeeze(1) > -1e9
+                elif mask.dim() == 3:
+                    mask_2d = mask.squeeze(1).bool()
+                elif mask.dim() == 2:
+                    mask_2d = mask.bool()
+                else:
+                    raise ValueError(f"Unexpected mask dim: {mask.dim()}")
+                if N > L:
+                    indices = torch.linspace(0, N - 1, L, device=mask_2d.device).long()
+                    landmark_mask = mask_2d[:, indices]
+                else:
+                    landmark_mask = mask_2d
+                landmark_mask = landmark_mask.unsqueeze(1).unsqueeze(2)
 
-        # Spherical normalization (optional)
-        if self.use_spherical_norm:
-            q = self._spherical_normalize(q)
-            k = self._spherical_normalize(k)
+            attn_weights = attn_weights.masked_fill(~landmark_mask, -10000.0)
+            # print("Mask applied successfully")
+        # else:
+        #     print("No mask provided")
 
-        # Kernel feature map
-        Q_feat = self._kernel_feature_map(q)   # (B,H,N,F)
-        K_feat = self._kernel_feature_map(k)
+        attn_weights = torch.softmax(attn_weights, dim=-1)
+        attn_weights = self.dropout(attn_weights)
 
-        # Mask keys before aggregation
-        if mask_2d is not None:
-            key_mask = mask_2d.unsqueeze(1).unsqueeze(-1)  # (B,1,N,1)
-            K_feat = K_feat * key_mask.to(K_feat.dtype)
-            v = v * key_mask.to(v.dtype)   # also mask values for correctness
+        context_layer = torch.matmul(attn_weights, V_land_adj)
+        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
+        new_shape = context_layer.size()[:-2] + (self.all_head_size,)
+        context_layer = context_layer.view(new_shape)
 
-        # Linear attention baseline
-        KV = torch.matmul(K_feat.transpose(-2, -1), v)   # (B,H,F,D)
-        K_sum = K_feat.sum(dim=-2, keepdim=True)          # (B,H,1,F)
-        Z = torch.matmul(Q_feat, K_sum.transpose(-2, -1)) + 1e-8  # (B,H,N,1)
-        O_lin = torch.matmul(Q_feat, KV) / Z               # (B,H,N,D)
+        # print(f"context_layer.shape = {context_layer.shape}")
+        # print("=====================================\n")
 
-        # Landmark correction
-        # Select landmark Q/K/V from original q,k,v (before kernel)
-        Q_land = self._select_landmarks(q, mask_2d) if mask_2d is not None else q[:, :, :self.num_landmarks, :]
-        K_land = self._select_landmarks(k, mask_2d) if mask_2d is not None else k[:, :, :self.num_landmarks, :]
-        V_land = self._select_landmarks(v, mask_2d) if mask_2d is not None else v[:, :, :self.num_landmarks, :]
+        return context_layer, None
 
-        Q_land_feat = self._kernel_feature_map(Q_land)  # (B,H,L,F)
-        K_land_feat = self._kernel_feature_map(K_land)
+    def get_ortho_loss(self):
+        return 0.0
 
-        C = torch.matmul(Q_feat, K_land_feat.transpose(-2, -1)) * (self.head_dim ** -0.5)
-        # Mask query positions that are pads
-        if mask_2d is not None:
-            C = C + ((1.0 - mask_2d)[:, None, :, None] * -1e9)
-        C = F.softmax(C, dim=-1)   # (B,H,N,L)
-
-        # Learnable transformation of landmark values
-        W = self.W_corr.unsqueeze(0).expand(B, -1, -1, -1)   # (B,H,D,D)
-        V_land_adj = torch.matmul(V_land, W)                  # (B,H,L,D)
-        O_corr = torch.matmul(C, V_land_adj)                  # (B,H,N,D)
-
-        alpha = torch.sigmoid(self.alpha)
-        O_final = O_lin + alpha * O_corr
-
-        # Reshape to (B,N,D)
-        context = O_final.permute(0,2,1,3).contiguous().view(B, N, D)
-
-        # Output projection and optional gate (like before)
-        if not self.bert_mode:
-            output = self.out_proj(context)
-        else:
-            output = context   # for BERT, BertSelfOutput will handle it
-
-        if output_attentions:
-            return (output, None)    # weights not directly available
-        return (output, None)
 
 def load_glue_local(task_name: str) -> DatasetDict:
     """Load GLUE dataset from local parquet files (raw, no tokenization)."""
@@ -348,7 +404,7 @@ class TokenCompressedAttention(nn.Module):
         self.dropout = nn.Dropout(comp_config.dropout)
         self.output = nn.Linear(self.hidden_size, self.hidden_size)
 
-        # جایگزین پروجکشن متعامد با LinformerProjection (بدون قید)
+        # Linformer-style projection (free parameters)
         self.projection = LinformerProjection(comp_config.max_seq_len, self.k)
 
         if comp_config.use_gate and not self.bert_mode:
@@ -356,62 +412,83 @@ class TokenCompressedAttention(nn.Module):
         else:
             self.gate = None
 
-        self._ortho_loss = None   # دیگر استفاده نمی‌شود
+        self._ortho_loss = None
 
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ):
+        B, N, _ = hidden_states.shape
+        L = self.num_landmarks
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
-        if attention_mask is None:
-            attention_mask = kwargs.get('attn_mask', None)
+        # --- Linear projections ------------------------------------------------
+        Q = self.transpose_for_scores(self.query(hidden_states))   # (B, H, N, D)
+        K = self.transpose_for_scores(self.key(hidden_states))
+        V = self.transpose_for_scores(self.value(hidden_states))
 
-        B, N, D = hidden_states.size()
-        scale = (self.head_dim ** -0.5)
+        Q_features = self.kernel_feature_map(Q)   # (B, H, N, 2*feat_dim)
+        K_features = self.kernel_feature_map(K)
 
-        q = self.query(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k = self.key(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        v = self.value(hidden_states).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        K_land, V_land = self.select_landmarks(K_features, V)  # (B, H, L, ...)
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 4:
-                mask_2d = (attention_mask > -1).float()[:, 0, 0, :]
-            elif attention_mask.dim() == 2:
-                mask_2d = attention_mask.float()
+        # Corrected values
+        W = self.W_corr.unsqueeze(0).expand(B, -1, -1, -1)   # (B, H, D, D)
+        V_land_adj = torch.einsum('bhld,bhde->bhle', V_land, W)  # (B, H, L, D)
+
+        # Kernel attention scores
+        attn_weights = torch.matmul(Q_features, K_land.transpose(-2, -1))  # (B, H, N, L)
+
+        # --- Mask handling ----------------------------------------------------
+        # DistilBERT passes mask as `attn_mask`; BERT sometimes as `attention_mask`.
+        # Unify them here.
+        mask = attention_mask
+        if mask is None:
+            mask = kwargs.get('attn_mask', None)
+
+        if mask is not None:
+            # Convert any mask to 2D booleans (True = keep this token)
+            if mask.dim() == 2:                     # (B, N)
+                mask_2d = mask.bool()
+            elif mask.dim() == 3:                   # (B, 1, N)
+                mask_2d = mask.squeeze(1).bool()
+            elif mask.dim() == 4:                   # (B, 1, 1, N) e.g. additive masks
+                mask_2d = mask.squeeze(1).squeeze(1) > -1e9
             else:
-                raise ValueError(f"Unexpected mask shape: {attention_mask.shape}")
-        else:
-            mask_2d = None
+                raise ValueError(f"Unexpected mask shape: {mask.shape}")
 
-        # ⚠️ critical – unpack the tuple from LinformerProjection
-        k_comp, v_comp = self.projection(k, v, mask_2d)   # both: (B, heads, k, d)
-
-        scores = torch.matmul(q, k_comp.transpose(-2, -1)) * scale
-        scores = torch.clamp(scores, max=self.comp_config.attn_score_clamp)
-
-        if mask_2d is not None:
-            scores = scores + ((1.0 - mask_2d)[:, None, :, None] * -1e9)
-
-        attn = F.softmax(scores, dim=-1)
-        attn = self.dropout(attn)
-
-        context = torch.matmul(attn, v_comp)
-        context = context.permute(0, 2, 1, 3).reshape(B, N, D)
-
-        if not self.bert_mode:
-            if self.gate is not None:
-                g = torch.sigmoid(self.gate)
-                output = g * context + (1 - g) * hidden_states
+            # Sub‑sample to get mask for landmarks
+            if N > L:
+                # Take L evenly spaced positions (you can also use k‑means++ later)
+                indices = torch.linspace(0, N-1, L, device=mask_2d.device).long()
+                landmark_mask = mask_2d[:, indices]            # (B, L)
             else:
-                output = context
-            output = self.output(output)
-        else:
-            output = context
+                landmark_mask = mask_2d                        # (B, N)
 
-        return (output, attn) if output_attentions else (output, None)
+            # Broadcast to (B, 1, 1, L) so it can be applied to attn_weights
+            landmark_mask = landmark_mask.unsqueeze(1).unsqueeze(2)
+
+            # Apply additive masking: set scores for invalid landmarks to a large negative number
+            attn_weights = attn_weights.masked_fill(~landmark_mask, -10000.0)
+
+        # Softmax and dropout
+        attn_weights = torch.softmax(attn_weights, dim=-1)
+        attn_weights = self.dropout(attn_weights)
+
+        # Output computation
+        context_layer = torch.matmul(attn_weights, V_land_adj)  # (B, H, N, D)
+        context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
+        new_shape = context_layer.size()[:-2] + (self.all_head_size,)
+        context_layer = context_layer.view(new_shape)
+
+        return context_layer, None
+
 
     def get_ortho_loss(self):
         return 0.0
-    
-
-
 
 
 
@@ -432,6 +509,10 @@ class CompressedBertAttention(nn.Module):
             output_attentions=output_attentions,
             **kwargs
         )
+        self.bert.config.gradient_checkpointing = False
+        if hasattr(self.bert, 'gradient_checkpointing_disable'):
+            self.bert.gradient_checkpointing_disable()
+
         if isinstance(attn_result, tuple):
             context, attn_weights = attn_result
         else:
@@ -445,7 +526,8 @@ class CompressedBertAttention(nn.Module):
         return (layer_output, attn_weights)    
 
             # ── 5. Inject Compression into BERT ─────────────────────────
-def inject_compression_into_layer(layer, comp_config, layer_idx, model_config, model_type):
+            
+def inject_compression_into_layer(layer, comp_config, layer_idx, model_config, model_type="bert"):
     if comp_config.attn_type == "leka":
         new_attn = LEKAAttention(model_config, comp_config, layer_idx, bert_mode=False)
     else:
@@ -467,23 +549,40 @@ def inject_compression_into_layer(layer, comp_config, layer_idx, model_config, m
             output_dense = layer.attention.output.dense
             new_attn.out_proj.weight.data.copy_(output_dense.weight.data)
             new_attn.out_proj.bias.data.copy_(output_dense.bias.data)
-        layer.attention.output.dense = nn.Identity()
+        # layer.attention.output.dense = nn.Identity()
+        replacement = CompressedBertAttention(layer.attention, new_attn)
+        replacement.output.dense = nn.Identity()  # ✓
+        layer.attention = replacement
+
         replacement = CompressedBertAttention(layer.attention, new_attn)
         layer.attention = replacement
         return new_attn
     elif model_type == 'distilbert':
+        if comp_config.attn_type == "leka":
+            new_attn = LEKAAttention(model_config, comp_config, layer_idx, bert_mode=False)
+        else:
+            new_attn = TokenCompressedAttention(model_config, comp_config, layer_idx, bert_mode=False)
+        
         old_attn = layer.attention
+        
+        # کپی وزن‌های Q, K, V
         new_attn.query.weight.data.copy_(old_attn.q_lin.weight.data)
         new_attn.query.bias.data.copy_(old_attn.q_lin.bias.data)
         new_attn.key.weight.data.copy_(old_attn.k_lin.weight.data)
         new_attn.key.bias.data.copy_(old_attn.k_lin.bias.data)
         new_attn.value.weight.data.copy_(old_attn.v_lin.weight.data)
         new_attn.value.bias.data.copy_(old_attn.v_lin.bias.data)
+        
+        # کپی وزن output projection
         new_attn.out_proj.weight.data.copy_(old_attn.out_lin.weight.data)
         new_attn.out_proj.bias.data.copy_(old_attn.out_lin.bias.data)
+        
+        # جایگزینی مستقیم (DistilBERT ساختار متفاوتی دارد)
         layer.attention = new_attn
         return new_attn
-    else:
+
+
+    else:   
         raise NotImplementedError(f"Unsupported model type: {model_type}")
     
 
@@ -557,13 +656,16 @@ class BertWithTokenCompression(nn.Module):
                 self.compression_modules.append(new_attn)
 
         # Gradient checkpointing for memory
-        self.bert.gradient_checkpointing_enable()
+        # self.bert.gradient_checkpointing_enable()
 
         log.info(f"Created model with {len(self.compression_modules)} compressed layers "
                  f"(type={model_type})")
         log.info(f"Compression ratios: early={self.comp_config.k_early}, "
                  f"mid={self.comp_config.k_mid}, late={self.comp_config.k_late}")
-                 
+        self.bert.config.gradient_checkpointing = False
+        if hasattr(self.bert, 'gradient_checkpointing_disable'):
+            self.bert.gradient_checkpointing_disable()
+
                      
     def forward(self, **kwargs):
         """Forward pass through the model."""
@@ -592,53 +694,56 @@ class CompressionTrainer(Trainer):
     def __init__(self, ortho_weight: float = 0.0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ortho_weight = ortho_weight
+        log.info("CompressionTrainer initialized")
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        # log.info("compute_loss called")
         outputs = model(**inputs)
+        # log.info(f"Model forward pass complete, loss: {outputs.loss}")
         task_loss = outputs.loss
         ortho_loss = model.get_ortho_loss()
+        # log.info(f"Ortho loss: {ortho_loss}")
         total_loss = task_loss + self.ortho_weight * ortho_loss
         return (total_loss, outputs) if return_outputs else total_loss
-    
 import numpy as np
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from scipy.stats import pearsonr
 
 import evaluate
 
+from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+from scipy.stats import pearsonr
+
 def get_compute_metrics(task: str):
     task = task.lower()
     if task == "cola":
-        metric = evaluate.load("matthews_correlation")
         def compute(eval_pred):
             logits, labels = eval_pred
             preds = np.argmax(logits, axis=-1)
-            return metric.compute(predictions=preds, references=labels)
+            return {"eval_matthews_correlation": matthews_corrcoef(labels, preds)}
         return compute
     elif task == "stsb":
-        metric = evaluate.load("pearsonr")
         def compute(eval_pred):
             logits, labels = eval_pred
             preds = logits.squeeze()
-            return metric.compute(predictions=preds, references=labels)
+            corr, _ = pearsonr(preds, labels)
+            return {"eval_pearsonr": corr}
         return compute
     elif task in ("mrpc", "qqp"):
-        acc_metric = evaluate.load("accuracy")
-        f1_metric = evaluate.load("f1")
         def compute(eval_pred):
             logits, labels = eval_pred
             preds = np.argmax(logits, axis=-1)
-            return {"eval_accuracy": acc_metric.compute(predictions=preds, references=labels)["accuracy"],
-                    "eval_f1": f1_metric.compute(predictions=preds, references=labels)["f1"]}
+            return {
+                "eval_accuracy": accuracy_score(labels, preds),
+                "eval_f1": f1_score(labels, preds)
+            }
         return compute
-    else:
-        metric = evaluate.load("accuracy")
+    else:   # sst2, mnli, qnli, rte, wnli
         def compute(eval_pred):
             logits, labels = eval_pred
             preds = np.argmax(logits, axis=-1)
-            return {"eval_accuracy": metric.compute(predictions=preds, references=labels)["accuracy"]}
+            return {"eval_accuracy": accuracy_score(labels, preds)}
         return compute    
-    
     # ── 8. Main ─────────────────────────────────────────────────
 def main():
     parser = argparse.ArgumentParser(description="Token‑Compressed Attention for GLUE")
@@ -720,11 +825,17 @@ def main():
         if is_regression:
             tokenized["labels"] = [float(label) for label in examples["label"]]
         else:
-            tokenized["labels"] = examples["label"]
+            tokenized["labels"] = list(examples["label"])
+
         return tokenized
 
     # Apply tokenization
-    dataset = raw_datasets.map(preprocess, batched=True)
+    # dataset = raw_datasets.map(preprocess, batched=True, remove_columns=raw_datasets["train"].column_names)
+    dataset = raw_datasets.map(
+        preprocess, 
+        batched=True, 
+        remove_columns=raw_datasets["train"].column_names  # Remove all original columns
+    )
 
     # --- Sanity checks ---
     if len(dataset["train"]) == 0:
@@ -737,10 +848,14 @@ def main():
         raise RuntimeError(f"Missing columns after tokenization: {missing}")
 
     # Set format for PyTorch
+    # columns = ["input_ids", "attention_mask", "labels"]
+    # if args.task in ("mnli", "rte", "wnli", "mrpc", "qqp", "qnli"):
+    #     columns.append("token_type_ids")
+    # dataset.set_format(type="torch", columns=columns)
     columns = ["input_ids", "attention_mask", "labels"]
-    if args.task in ("mnli", "rte", "wnli", "mrpc", "qqp", "qnli"):
+    # فقط برای BERT اضافه کنید
+    if "bert-base" in args.model and args.task in ("mnli", "rte", "wnli", "mrpc", "qqp", "qnli"):
         columns.append("token_type_ids")
-    dataset.set_format(type="torch", columns=columns)
 
     log.info(f"Tokenized dataset: train={len(dataset['train'])}, val={len(dataset.get('validation', []))}")
 
@@ -753,6 +868,21 @@ def main():
     else:
         device = torch.device("cpu")
         print("Using CPU")
+    log.info("DEBUG: model device is %s", next(model.bert.parameters()).device)
+
+# بعد از model.to(device)
+    # model.eval()
+    # test_batch = dataset["train"].select(range(8))  # 8 نمونه
+    # inputs = tokenizer(test_batch[sent1_key], 
+    #                 test_batch[sent2_key] if sent2_key else None,
+    #                 truncation=True, padding="max_length", max_length=args.max_len,
+    #                 return_tensors="pt")
+    # inputs = {k: v.to(device) for k, v in inputs.items()}
+    # inputs["labels"] = torch.tensor(test_batch["label"]).to(device)
+    # with torch.no_grad():
+    #     outputs = model(**inputs)
+    #     print("Test forward OK, loss:", outputs.loss.item())
+    # exit()
     # Metric for best model (with 'eval_' prefix)
     if args.task == "cola":
         metric_name = "eval_matthews_correlation"
@@ -771,34 +901,64 @@ def main():
         per_device_eval_batch_size=args.batch_size * 2,
         gradient_accumulation_steps=args.grad_accum,
         learning_rate=args.lr,
-            remove_unused_columns=False,   # ← add this line
+            # remove_unused_columns=False,   # ← add this line
         weight_decay=0.01,
         lr_scheduler_type="cosine",
-    max_grad_norm=10,          # stricter clipping
-    warmup_ratio=0.1,
+        max_grad_norm=10,          # stricter clipping
+        warmup_ratio=0.1,
+        # use_mps_device=True,
+        # dataloader_pin_memory=False,
+        remove_unused_columns=False,   # این خط را بگذارید
+
         logging_steps=50,
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,
         greater_is_better=True,
-        fp16=args.fp16,
+        # fp16=args.fp16,
+            fp16=False,                     # fp16 روی MPS ناپایدار است
+
         save_total_limit=2,
         # remove_unused_columns=True,
         report_to="none",
     )
-
+    print("jjj")
     ortho_weight = comp_config.ortho_reg_weight if not comp_config.use_orthogonal else 0.0
+    log.info(f"Train dataset columns: {dataset['train'].column_names}")
+    log.info(f"Train dataset features: {dataset['train'].features}")
+    log.info(f"First example: {dataset['train'][0]}")
+
     trainer = CompressionTrainer(
         ortho_weight=ortho_weight,
         model=model,
         args=training_args,
         train_dataset=dataset["train"],
         eval_dataset=dataset.get("validation", dataset.get("validation_matched")),
-        # tokenizer=tokenizer,
-        data_collator=DataCollatorWithPadding(tokenizer),
-        compute_metrics=get_compute_metrics(args.task),  # must return keys with 'eval_' prefix
+        data_collator=default_data_collator,  # Use default instead
+        compute_metrics=get_compute_metrics(args.task),
     )
+
+    # log.info("Testing first batch...")
+    # try:
+    #     test_batch = next(iter(trainer.get_train_dataloader()))
+    #     test_batch = {k: v.to(device) for k, v in test_batch.items()}
+    #     log.info(f"Batch keys: {test_batch.keys()}")
+    #     log.info(f"Batch shapes: {[(k, v.shape) for k, v in test_batch.items()]}")
+        
+    #     model.train()
+    #     with torch.amp.autocast('cpu'):  # or 'cuda' if using GPU
+    #         outputs = model(**test_batch)
+    #         loss = outputs.loss
+    #         log.info(f"Test forward pass OK, loss: {loss.item()}")
+    #         loss.backward()
+    #         log.info("Test backward pass OK")
+    # except Exception as e:
+    #     log.error(f"Failed at first batch: {e}")
+    #     import traceback
+    #     traceback.print_exc()
+    #     exit(1)
+
 
     log.info("Starting training...")
     trainer.train()
