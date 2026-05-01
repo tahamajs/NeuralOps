@@ -28,6 +28,8 @@ import evaluate
 from typing import Dict, List, Optional, Tuple, Union
 from dataclasses import dataclass, field
 from tqdm import tqdm
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_DATASETS_OFFLINE"] = "1"  # though we use local parquet, still good
 
 # ---------- Offline settings ----------
 os.environ["HF_HUB_OFFLINE"] = "1"
