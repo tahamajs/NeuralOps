@@ -1,7 +1,8 @@
-# framework/data/__init__.py
-"""Data loading utilities for SVD-Lin framework."""
-from .glue_loader import (
-    load_glue_local,
-    GLUE_TASK_KEYS,
-    get_num_labels_and_is_regression,
-)
+# Auto-generated __init__.py
+from . import custom_loader
+from . import dataset_discovery
+from . import glue_loader
+from . import multi_choice
+from . import preprocessing
+from . import synthetic_generator
+from . import task_mapper
