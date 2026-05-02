@@ -35,6 +35,12 @@ class AegisConfigV3:
     use_pre_norm: bool = True
     long_context_threshold: int = 2048   # apply top‑k reduction beyond this length
     max_global_tokens: int = 1024
+    kernel_method: str = "orthogonal"      # "orthogonal", "random", "cosine", "custom"
+    kernel_clamp_min: float = -20.0
+    kernel_clamp_max: float = 20.0
+    kernel_use_float64: bool = False
+    kernel_seed: Optional[int] = None
+
 
 
 # ----------------------------------------------------------------------
@@ -420,8 +426,16 @@ class AegisAttentionV3(nn.Module):
             self.q_norm = nn.RMSNorm(self.d, eps=1e-6)
             self.k_norm = nn.RMSNorm(self.d, eps=1e-6)
 
-        # Kernel feature map
-        self.kernel_map = StableKernelFeatureMap(self.d, config.kernel_feature_dim)
+        kernel_cfg = KernelFeatureConfig(
+            head_dim=self.d,
+            num_features=config.kernel_feature_dim,
+            method=config.kernel_method,
+            clamp_min=config.kernel_clamp_min,
+            clamp_max=config.kernel_clamp_max,
+            use_float64_exp=config.kernel_use_float64,
+            seed=config.kernel_seed,
+        )
+        self.kernel_map = StableKernelFeatureMap(kernel_cfg)
 
         # Gates
         self.gates = GatingModule(config.hidden_size, self.h, self.d,
