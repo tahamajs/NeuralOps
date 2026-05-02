@@ -3143,3 +3143,176 @@ if __name__ == "__main__":
 # ```
 
 # This implementation embodies state‑of‑the‑art efficiency and robustness, ready for integration into production transformer models.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#                       ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# TypeError: StableKernelFeatureMap.__init__() takes 2 positional arguments but 3 were given
+# (.venv) ➜  Codes git:(main) ✗ python Aegis6Attention.py --attn_type aegis_V3 \
+#   --max_len 64 --batch_size 32 --epochs 5 --lr 1e-5  \
+#   --model distilbert-base-uncased --task sst2
+
+# 09:10:16 | INFO    | Task: sst2 | Progressive: True
+# 09:10:16 | INFO    | k early/mid/late = 32/16/12
+# 09:10:16 | INFO    | Raw dataset sizes: train=67349, val=872
+# 09:10:17 | INFO    | Tokenized dataset: train=67349, val=872
+# Loading weights: 100%|████████████████████████████████████| 100/100 [00:00<00:00, 5073.37it/s]
+# [transformers] DistilBertForSequenceClassification LOAD REPORT from: distilbert-base-uncased
+# Key                     | Status     | 
+# ------------------------+------------+-
+# vocab_transform.bias    | UNEXPECTED | 
+# vocab_transform.weight  | UNEXPECTED | 
+# vocab_projector.bias    | UNEXPECTED | 
+# vocab_layer_norm.weight | UNEXPECTED | 
+# vocab_layer_norm.bias   | UNEXPECTED | 
+# pre_classifier.weight   | MISSING    | 
+# pre_classifier.bias     | MISSING    | 
+# classifier.bias         | MISSING    | 
+# classifier.weight       | MISSING    | 
+
+# Notes:
+# - UNEXPECTED:   can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+# - MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+# 09:10:18 | INFO    | Created model with 6 compressed layers (type=distilbert)
+# 09:10:18 | INFO    | Compression ratios: early=32, mid=16, late=12
+# Using MPS (Metal) device
+# 09:10:18 | INFO    | DEBUG: model device is mps:0
+# jjj
+# 09:10:18 | INFO    | Train dataset columns: ['input_ids', 'token_type_ids', 'attention_mask', 'labels']
+# 09:10:18 | INFO    | Train dataset features: {'input_ids': List(Value('int32')), 'token_type_ids': List(Value('int8')), 'attention_mask': List(Value('int8')), 'labels': Value('int64')}
+# 09:10:18 | INFO    | First example: {'input_ids': [101, 5342, 2047, 3595, 8496, 2013, 1996, 18643, 3197, 102, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'labels': 0}
+# 09:10:18 | INFO    | CompressionTrainer initialized
+# 09:10:18 | INFO    | Starting training...
+# {'loss': '0.6973', 'grad_norm': '0.6616', 'learning_rate': '1.569e-06', 'epoch': '0.04751'}   
+# {'loss': '0.6908', 'grad_norm': '1.605', 'learning_rate': '3.154e-06', 'epoch': '0.09501'}    
+# {'loss': '0.6862', 'grad_norm': '0.7082', 'learning_rate': '4.739e-06', 'epoch': '0.1425'}    
+# {'loss': '0.6887', 'grad_norm': '0.8509', 'learning_rate': '6.323e-06', 'epoch': '0.19'}      
+# {'loss': '0.6857', 'grad_norm': '0.7359', 'learning_rate': '7.908e-06', 'epoch': '0.2375'}    
+# {'loss': '0.6859', 'grad_norm': '2.112', 'learning_rate': '9.493e-06', 'epoch': '0.285'}      
+# {'loss': '0.6583', 'grad_norm': '2.474', 'learning_rate': '9.931e-06', 'epoch': '0.3325'}     
+# {'loss': '0.5147', 'grad_norm': '4.768', 'learning_rate': '9.83e-06', 'epoch': '0.38'}        
+# {'loss': '0.4803', 'grad_norm': '2.91', 'learning_rate': '9.729e-06', 'epoch': '0.4276'}      
+# {'loss': '0.4326', 'grad_norm': '4.078', 'learning_rate': '9.628e-06', 'epoch': '0.4751'}     
+# {'loss': '0.4208', 'grad_norm': '3.329', 'learning_rate': '9.527e-06', 'epoch': '0.5226'}     
+# {'loss': '0.3745', 'grad_norm': '3.211', 'learning_rate': '9.426e-06', 'epoch': '0.5701'}     
+# {'loss': '0.3712', 'grad_norm': '3.704', 'learning_rate': '9.325e-06', 'epoch': '0.6176'}     
+# {'loss': '0.3456', 'grad_norm': '7.101', 'learning_rate': '9.224e-06', 'epoch': '0.6651'}     
+# {'loss': '0.3487', 'grad_norm': '4.335', 'learning_rate': '9.123e-06', 'epoch': '0.7126'}     
+# {'loss': '0.3583', 'grad_norm': '3.506', 'learning_rate': '9.022e-06', 'epoch': '0.7601'}     
+# {'loss': '0.3515', 'grad_norm': '4.371', 'learning_rate': '8.921e-06', 'epoch': '0.8076'}     
+# {'loss': '0.3503', 'grad_norm': '3.439', 'learning_rate': '8.819e-06', 'epoch': '0.8551'}     
+# {'loss': '0.3423', 'grad_norm': '3.684', 'learning_rate': '8.718e-06', 'epoch': '0.9026'}     
+# {'loss': '0.3176', 'grad_norm': '4.214', 'learning_rate': '8.617e-06', 'epoch': '0.9501'}     
+# {'loss': '0.3445', 'grad_norm': '3.943', 'learning_rate': '8.516e-06', 'epoch': '0.9976'}     
+# {'loss': '0.3237', 'grad_norm': '4.282', 'learning_rate': '8.415e-06', 'epoch': '1.045'}      
+# {'loss': '0.296', 'grad_norm': '3.136', 'learning_rate': '8.314e-06', 'epoch': '1.093'}       
+# {'loss': '0.2919', 'grad_norm': '5.272', 'learning_rate': '8.213e-06', 'epoch': '1.14'}       
+# {'loss': '0.2994', 'grad_norm': '4.345', 'learning_rate': '8.112e-06', 'epoch': '1.188'}      
+# {'loss': '0.2892', 'grad_norm': '3.738', 'learning_rate': '8.011e-06', 'epoch': '1.235'}      
+# {'loss': '0.3001', 'grad_norm': '3.044', 'learning_rate': '7.91e-06', 'epoch': '1.283'}       
+# {'loss': '0.2866', 'grad_norm': '1.134', 'learning_rate': '7.809e-06', 'epoch': '1.33'}       
+# {'loss': '0.2883', 'grad_norm': '3.522', 'learning_rate': '7.708e-06', 'epoch': '1.378'}      
+# {'loss': '0.2703', 'grad_norm': '6.474', 'learning_rate': '7.607e-06', 'epoch': '1.425'}      
+# {'loss': '0.3047', 'grad_norm': '9.404', 'learning_rate': '7.506e-06', 'epoch': '1.473'}      
+# {'loss': '0.2885', 'grad_norm': '10.32', 'learning_rate': '7.404e-06', 'epoch': '1.52'}       
+# {'loss': '0.2893', 'grad_norm': '5.326', 'learning_rate': '7.303e-06', 'epoch': '1.568'}      
+# {'loss': '0.2763', 'grad_norm': '8.297', 'learning_rate': '7.202e-06', 'epoch': '1.615'}      
+# {'loss': '0.2623', 'grad_norm': '3.621', 'learning_rate': '7.101e-06', 'epoch': '1.663'}      
+# {'loss': '0.2465', 'grad_norm': '3.038', 'learning_rate': '7e-06', 'epoch': '1.71'}           
+# {'loss': '0.2673', 'grad_norm': '3.905', 'learning_rate': '6.899e-06', 'epoch': '1.758'}      
+# {'loss': '0.2569', 'grad_norm': '7.211', 'learning_rate': '6.798e-06', 'epoch': '1.805'}      
+# {'loss': '0.2521', 'grad_norm': '7.021', 'learning_rate': '6.697e-06', 'epoch': '1.853'}      
+# {'loss': '0.2681', 'grad_norm': '4.999', 'learning_rate': '6.596e-06', 'epoch': '1.9'}        
+# {'loss': '0.2753', 'grad_norm': '4.302', 'learning_rate': '6.495e-06', 'epoch': '1.948'}      
+# {'loss': '0.2634', 'grad_norm': '8.418', 'learning_rate': '6.394e-06', 'epoch': '1.995'}      
+# {'loss': '0.2313', 'grad_norm': '7.464', 'learning_rate': '6.293e-06', 'epoch': '2.043'}      
+# {'loss': '0.2384', 'grad_norm': '6.296', 'learning_rate': '6.192e-06', 'epoch': '2.09'}       
+# {'loss': '0.2338', 'grad_norm': '2.62', 'learning_rate': '6.091e-06', 'epoch': '2.138'}       
+#  43%|████████████████████▊                           | 4558/10525 [2:15:12<3:08:34,  1.90s/it]^CTraceback (most recent call last):
+#   File "/Users/tahamajs/Documents/uni/Project/Codes/Aegis6Attention.py", line 1800, in <module>
+#     main()
+#     ~~~~^^
+#   File "/Users/tahamajs/Documents/uni/Project/Codes/Aegis6Attention.py", line 1793, in main
+#     trainer.train()
+#     ~~~~~~~~~~~~~^^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1427, in train
+#     return inner_training_loop(
+#         args=args,
+#     ...<2 lines>...
+#         ignore_keys_for_eval=ignore_keys_for_eval,
+#     )
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+#     self._run_epoch(
+#     ~~~~~~~~~~~~~~~^
+#         model=model,
+#         ^^^^^^^^^^^^
+#     ...<9 lines>...
+#         steps_trained_in_current_epoch=steps_trained_in_current_epoch,
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     )
+#     ^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1737, in _run_epoch
+#     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1937, in training_step
+#     self.accelerator.backward(loss, **kwargs)
+#     ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/accelerate/accelerator.py", line 2838, in backward
+#     loss.backward(**kwargs)
+#     ~~~~~~~~~~~~~^^^^^^^^^^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/torch/_tensor.py", line 631, in backward
+#     torch.autograd.backward(
+#     ~~~~~~~~~~~~~~~~~~~~~~~^
+#         self, gradient, retain_graph, create_graph, inputs=inputs
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     )
+#     ^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/torch/autograd/__init__.py", line 381, in backward
+#     _engine_run_backward(
+#     ~~~~~~~~~~~~~~~~~~~~^
+#         tensors,
+#         ^^^^^^^^
+#     ...<5 lines>...
+#         accumulate_grad=True,
+#         ^^^^^^^^^^^^^^^^^^^^^
+#     )
+#     ^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/torch/autograd/graph.py", line 869, in _engine_run_backward
+#     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+#            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#         t_outputs, *args, **kwargs
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     )  # Calls into the C++ engine to run the backward pass
+#     ^
+# KeyboardInterrupt
+#  43%|████████████████████▊                           | 4558/10525 [2:15:15<2:57:04,  1.78s/it]
+
+# (.venv) ➜  Codes git:(main) ✗ 
