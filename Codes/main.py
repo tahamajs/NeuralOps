@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 """
-╔══════════════════════════════════════════════════════════════╗
-║     EFFICIENT ATTENTION FRAMEWORK – GLUE FINE‑TUNING        ║
-╚══════════════════════════════════════════════════════════════╝
+Efficient Attention Framework – GLUE Fine‑Tuning
 Usage:
-    python main.py --attn_type leka_v2 --task sst2 --epochs 5
-    python main.py --attn_type spectra_v2 --model bert-base-uncased --task mrpc
+    python main.py --attn_type nexus --method lora --task sst2
+    python main.py --attn_type spectra_v2 --method rdrop --task mrpc
 """
 
 import argparse, os, torch, logging
@@ -13,8 +11,8 @@ from transformers import (
     AutoTokenizer, AutoConfig, AutoModelForSequenceClassification,
     TrainingArguments, DataCollatorWithPadding, set_seed
 )
-from datasets import DatasetDict
 
+# Framework imports
 from framework.data.glue_loader import (
     load_glue_local, GLUE_TASK_KEYS, get_num_labels_and_is_regression
 )
@@ -22,30 +20,56 @@ from framework.data.preprocessing import preprocess_function as build_preprocess
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
 from framework.trainer.trainer import CompressionTrainer, get_compute_metrics
+from framework.trainer.methods.registry import METHOD_REGISTRY
+from framework.trainer.methods.rdrop_r3f import MethodTrainer
 from framework.utils.device import get_device
 from framework.utils.seed import set_all_seeds
 from framework.utils.layer_norm_fix import fix_layernorm_naming
 from framework.config import CompressionConfig
-from experiment_logging import setup_logging, MetricsTracker
+from experiment_logging import setup_logging, MetricsTracker, LoggingCallback
 
 # -------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="Efficient Attention GLUE Runner")
     # Model & Data
     parser.add_argument("--model", type=str, default="distilbert-base-uncased")
-    parser.add_argument("--attn_type", type=str, required=True, help="Registered attention type (e.g., leka_v2, spectra_v2, full)")
-    parser.add_argument("--compressor", type=str, default=None, help="Registered compressor name")
+    parser.add_argument("--attn_type", type=str, required=True,
+                        help="Attention type (e.g., nexus, leka_v2, full)")
+    parser.add_argument("--method", type=str, default="baseline",
+                        help="Training method (e.g., baseline, lora, rdrop, fisher_lora)")
+    parser.add_argument("--compressor", type=str, default=None)
     parser.add_argument("--task", "-t", type=str, default="sst2")
     parser.add_argument("--max_len", type=int, default=128)
-    parser.add_argument("--batch_size", type=int, default=32, help="Per device")
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--epochs", type=int, default=5)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--grad_accum", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output_dir", type=str, default="./experiments")
     parser.add_argument("--log_dir", type=str, default="./logs")
-    parser.add_argument("--exp_name", type=str, default=None, help="Experiment name")
-    # Additional attention config (optional)
+    parser.add_argument("--exp_name", type=str, default=None)
+    # Method‑specific parameters
+    parser.add_argument("--lora_r", type=int, default=8)
+    parser.add_argument("--lora_alpha", type=int, default=16)
+    parser.add_argument("--lora_dropout", type=float, default=0.1)
+    parser.add_argument("--rdrop_alpha", type=float, default=5.0)
+    parser.add_argument("--r3f_epsilon", type=float, default=1e-5)
+    parser.add_argument("--mixout_p", type=float, default=0.9)
+    parser.add_argument("--llrd_decay", type=float, default=0.95)
+    parser.add_argument("--dislora_beta", type=float, default=0.5)
+    parser.add_argument("--dislora_capacity_factor", type=float, default=1.0)
+    parser.add_argument("--fisher_num_batches", type=int, default=20)
+    parser.add_argument("--fisher_sample_size", type=int, default=200)
+    parser.add_argument("--gelora_margin", type=float, default=1.0)
+    parser.add_argument("--gelora_min_rank", type=int, default=2)
+    parser.add_argument("--gelora_max_rank", type=int, default=32)
+    parser.add_argument("--fisher_scale_max", type=float, default=2.0)
+    parser.add_argument("--use_lion", action="store_true")
+    parser.add_argument("--gradient_checkpointing", action="store_true")
+    parser.add_argument("--early_stopping_patience", type=int, default=None)
+    parser.add_argument("--max_grad_norm", type=float, default=1.0)
+    parser.add_argument("--num_seeds", type=int, default=1)
+    # Attention‑specific params (passed through to CompressionConfig)
     parser.add_argument("--num_landmarks", type=int, default=16)
     parser.add_argument("--feature_dim", type=int, default=128)
     parser.add_argument("--k_early", type=int, default=32)
@@ -55,14 +79,14 @@ def main():
     args = parser.parse_args()
 
     # Setup logging
-    exp_name = args.exp_name or f"{args.attn_type}_{args.task}_{args.seed}"
+    exp_name = args.exp_name or f"{args.attn_type}_{args.method}_{args.task}_{args.seed}"
     logger = setup_logging(log_dir=args.log_dir, experiment_name=exp_name)
     tracker = MetricsTracker(save_path=os.path.join(args.log_dir, f"{exp_name}_metrics.json"))
 
     logger.info("══════════════════════════════════════")
     logger.info(f"🚀 Experiment: {exp_name}")
     logger.info(f"   Attention: {args.attn_type}")
-    logger.info(f"   Compressor: {args.compressor if args.compressor else 'none'}")
+    logger.info(f"   Method: {args.method}")
     logger.info(f"   Task: {args.task}")
     logger.info(f"   Model: {args.model}")
     logger.info("══════════════════════════════════════")
@@ -85,25 +109,33 @@ def main():
     if "token_type_ids" in dataset["train"].column_names:
         cols.append("token_type_ids")
     dataset.set_format(type="torch", columns=cols)
-    logger.info(f"Train samples: {len(dataset['train'])}, Validation: {len(dataset.get('validation', []))}")
+    logger.info(f"Train: {len(dataset['train'])}, Val: {len(dataset.get('validation', []))}")
 
     # Load model
     config = AutoConfig.from_pretrained(args.model, num_labels=num_labels)
     model = AutoModelForSequenceClassification.from_pretrained(args.model, config=config)
     fix_layernorm_naming(model)
 
-    # Build compression config
+    # Build compression config (shared with attention and methods)
     comp_config = CompressionConfig(
         attn_type=args.attn_type,
         dropout=0.1,
-        num_landmarks=args.num_landmarks,
-        feature_dim=args.feature_dim,
-        k_early=args.k_early,
-        k_mid=args.k_mid,
-        k_late=args.k_late,
-        use_gate=not args.no_gate,
-        progressive=True,
-        max_seq_len=args.max_len,
+        # method parameters
+        lora_r=args.lora_r, lora_alpha=args.lora_alpha, lora_dropout=args.lora_dropout,
+        rdrop_alpha=args.rdrop_alpha, r3f_epsilon=args.r3f_epsilon,
+        llrd_decay=args.llrd_decay, mixout_p=args.mixout_p,
+        dislora_beta=args.dislora_beta, dislora_capacity_factor=args.dislora_capacity_factor,
+        fisher_num_batches=args.fisher_num_batches, fisher_sample_size=args.fisher_sample_size,
+        gelora_margin=args.gelora_margin, gelora_min_rank=args.gelora_min_rank,
+        gelora_max_rank=args.gelora_max_rank, fisher_scale_max=args.fisher_scale_max,
+        use_lion=args.use_lion,
+        gradient_checkpointing=args.gradient_checkpointing,
+        early_stopping_patience=args.early_stopping_patience,
+        max_grad_norm=args.max_grad_norm,
+        # attention-specific fields
+        num_landmarks=args.num_landmarks, feature_dim=args.feature_dim,
+        k_early=args.k_early, k_mid=args.k_mid, k_late=args.k_late,
+        use_gate=not args.no_gate, progressive=True, max_seq_len=args.max_len,
     )
 
     # Inject attention
@@ -111,7 +143,6 @@ def main():
         inject_fn = ATTENTION_REGISTRY.get(args.attn_type)
         if inject_fn is None:
             raise ValueError(f"Unknown attention type: {args.attn_type}. Available: {ATTENTION_REGISTRY.keys()}")
-        # Determine architecture
         if hasattr(model, "distilbert"):
             layers = model.distilbert.transformer.layer
         elif hasattr(model, "bert"):
@@ -126,21 +157,22 @@ def main():
         logger.info("Using full attention (no injection).")
 
     model.to(device)
-    # Ensure get_ortho_loss exists
     if not hasattr(model, 'get_ortho_loss'):
         def dummy_ortho_loss():
             return torch.tensor(0.0, device=device)
         model.get_ortho_loss = dummy_ortho_loss
 
-    # Apply additional compression if requested
-    if args.compressor:
-        comp_class = COMPRESSOR_REGISTRY.get(args.compressor)
-        if comp_class:
-            compressor = comp_class(model, energy_threshold=0.95)
-            model, stats = compressor.compress()
-            logger.info(f"Compression applied: {stats}")
+    # Apply training method (from registry)
+    if args.method != "baseline":
+        if args.method not in METHOD_REGISTRY:
+            raise ValueError(f"Unknown method: {args.method}. Available: {list(METHOD_REGISTRY.keys())}")
+        apply_fn = METHOD_REGISTRY[args.method]
+        # Some methods need dataset/tokenizer (fisher, gelora)
+        if args.method in ("fisher_lora", "fisher_gelora"):
+            apply_fn(model, comp_config, dataset["train"], tokenizer, GLUE_TASK_KEYS[args.task])
         else:
-            logger.warning(f"Compressor '{args.compressor}' not found. Available: {COMPRESSOR_REGISTRY.keys()}")
+            apply_fn(model, comp_config)
+        logger.info(f"Applied method: {args.method}")
 
     # Metric name
     metric_map = {"cola": "eval_matthews_correlation", "stsb": "eval_pearson",
@@ -171,8 +203,16 @@ def main():
         report_to="none",
     )
 
-    # Trainer
-    trainer = CompressionTrainer(
+    # Choose trainer
+    if args.method in ("rdrop", "r3f"):
+        trainer_cls = MethodTrainer
+        extra = dict(method=args.method, rdrop_alpha=args.rdrop_alpha,
+                     r3f_epsilon=args.r3f_epsilon, is_regression=is_regression)
+    else:
+        trainer_cls = CompressionTrainer
+        extra = {}
+
+    trainer = trainer_cls(
         ortho_weight=0.0,
         model=model,
         args=training_args,
@@ -180,7 +220,11 @@ def main():
         eval_dataset=dataset.get("validation", dataset.get("validation_matched")),
         data_collator=DataCollatorWithPadding(tokenizer),
         compute_metrics=get_compute_metrics(args.task),
+        **extra
     )
+
+    # Attach our logging callback
+    trainer.add_callback(LoggingCallback(tracker, logger))
 
     logger.info("Starting training...")
     trainer.train()
@@ -191,7 +235,7 @@ def main():
         logger.info(f"{k}: {v:.4f}")
     logger.info("=" * 60)
 
-    # Save everything
+    # Save
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
     tracker.save(os.path.join(output_dir, "metrics.json"))

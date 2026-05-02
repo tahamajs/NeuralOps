@@ -97,7 +97,7 @@ def example_3_fine_tuning():
     tokenized_dataset.set_format("torch")
     
     # Fine-tune (just a few epochs for demo)
-    from framework.training import create_trainer
+    from framework.trainer import create_trainer
     
     trainer = create_trainer(
         model=model.model,
