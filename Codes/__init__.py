@@ -1,32 +1,7 @@
-# Auto-generated __init__.py
-from . import AARAttention
-from . import AEGIS
-from . import AEGIS3Attention
-from . import AURORA
-from . import Aegis2Attention
-from . import Aegis4Attention
-from . import Aegis5Attention
-from . import Aegis6Attention
-from . import AegisAttention
-from . import Aegis‑Attention
-from . import FUSIONATTN
-from . import LEKAAttention
-from . import MinimalAURORA
-from . import MinimalNOVA
-from . import MinimalPRISM
-from . import MinimalSVD‑Attention
-from . import NEBULA
-from . import NEXUS
-from . import NOVA
-from . import OHA
-from . import ORION
-from . import PHANTOM
-from . import PRISM
-from . import SVDCompressedAttention
-from . import SpectraV2Attention
-from . import baseline
-from . import glue_compression
-from . import main
-from . import run_glue_svd
-from . import script
-from . import setup
+"""SVD-Lin Studio research modules.
+
+Top-level attention experiments are imported explicitly by consumers to avoid
+import-time side effects and invalid module names from legacy prototype files.
+"""
+
+__all__ = []

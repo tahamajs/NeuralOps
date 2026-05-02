@@ -377,33 +377,3 @@ def inject_aegis_into_distilbert(layer, model_config, aegis_cfg: AegisConfig, ol
     new_attn = AegisAttention(model_config, aegis_cfg, old_attn)
     layer.attention = new_attn
     return new_attn
-```
-
----
-
-## 4. Usage Example
-
-```python
-# In your injection loop:
-elif comp_config.attn_type == "aegis":
-    aegis_cfg = AegisConfig(
-        cur_rank=16,
-        num_local_heads=8,
-        num_global_heads=4,
-        local_window=64,
-        rff_features=256,
-        use_zero_sum=True,
-        use_conv_enhance=True,
-    )
-    old_attn = layer.attention
-    new_attn = inject_aegis_into_distilbert(layer, config, aegis_cfg, old_attn)
-    self.compression_modules.append(new_attn)
-
-
-
-# **Run with:**  
-# ```bash
-# python LEKAAttention.py --attn_type aegis --batch_size 16 --epochs 5
-# ```
-
-# Aegis‑Attention is now a state‑of‑the‑art efficient module that combines the best of structural compression, hybrid attention, and adaptive routing – ready for immediate deployment.
