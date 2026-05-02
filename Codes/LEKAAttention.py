@@ -1051,9 +1051,9 @@ def main():
         # --- Logging & evaluation ---
         logging_steps=100,                       # ↓ 50 → 100 (reduce overhead)
         eval_strategy="steps",                   # ← "epoch" → "steps" (faster feedback)
-        eval_steps=500,                          # evaluate every 500 steps
+        eval_steps=10000,                          # evaluate every 500 steps
         save_strategy="steps",
-        save_steps=500,                          # save checkpoints aligned with eval
+        save_steps=10000,                          # save checkpoints aligned with eval
         load_best_model_at_end=True,
         metric_for_best_model=metric_name,       # e.g., "eval_accuracy"
         greater_is_better=True,
@@ -1066,6 +1066,7 @@ def main():
 
     # Optional: early stopping (patience = 3 evaluations)
     early_stopping = EarlyStoppingCallback(
+        
         early_stopping_patience=3,
         early_stopping_threshold=0.001,
     )
@@ -1078,7 +1079,7 @@ def main():
         eval_dataset=dataset.get("validation", dataset.get("validation_matched")),
         data_collator=default_data_collator,
         compute_metrics=get_compute_metrics(args.task),
-        callbacks=[early_stopping],              # ← add early stopping
+        # callbacks=[early_stopping],              # ← add early stopping
     )
     # log.info("Testing first batch...")
     # try:
@@ -1246,3 +1247,81 @@ if __name__ == "__main__":
 # KeyError: "The `metric_for_best_model` training argument is set to 'eval_accuracy', which is not found in the evaluation metrics. The available evaluation metrics are: ['eval_runtime', 'eval_samples_per_second', 'eval_steps_per_second', 'epoch']. Consider changing the `metric_for_best_model` via the TrainingArguments."
 #  20%|███████████████████████▊                                                                                               | 2105/10525 [28:55<1:55:40,  1.21it/s]
 # (.venv) ➜  Codes git:(main) ✗ 
+
+
+
+
+
+
+
+
+# (.venv) ➜  Codes git:(main) ✗ python LEKAAttention.py --attn_type leka_v2 --num_landmarks 16 --feature_dim 128 \
+#   --max_len 64 --batch_size 32 --epochs 5 --lr 1e-5 --no_gate \
+#   --model distilbert-base-uncased --task sst2
+# 05:08:18 | INFO    | Task: sst2 | Progressive: True
+# 05:08:18 | INFO    | k early/mid/late = 32/16/12
+# 05:08:19 | INFO    | Raw dataset sizes: train=67349, val=872
+# 05:08:19 | INFO    | Tokenized dataset: train=67349, val=872
+# Loading weights: 100%|████████████████████████████████████| 100/100 [00:00<00:00, 5830.60it/s]
+# [transformers] DistilBertForSequenceClassification LOAD REPORT from: distilbert-base-uncased
+# Key                     | Status     | 
+# ------------------------+------------+-
+# vocab_layer_norm.weight | UNEXPECTED | 
+# vocab_layer_norm.bias   | UNEXPECTED | 
+# vocab_projector.bias    | UNEXPECTED | 
+# vocab_transform.weight  | UNEXPECTED | 
+# vocab_transform.bias    | UNEXPECTED | 
+# classifier.bias         | MISSING    | 
+# pre_classifier.weight   | MISSING    | 
+# pre_classifier.bias     | MISSING    | 
+# classifier.weight       | MISSING    | 
+
+# Notes:
+# - UNEXPECTED:   can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+# - MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+# 05:08:19 | INFO    | Created model with 6 compressed layers (type=distilbert)
+# 05:08:19 | INFO    | Compression ratios: early=32, mid=16, late=12
+# Using MPS (Metal) device
+# 05:08:20 | INFO    | DEBUG: model device is mps:0
+# jjj
+# 05:08:20 | INFO    | Train dataset columns: ['input_ids', 'token_type_ids', 'attention_mask', 'labels']
+# 05:08:20 | INFO    | Train dataset features: {'input_ids': List(Value('int32')), 'token_type_ids': List(Value('int8')), 'attention_mask': List(Value('int8')), 'labels': Value('int64')}
+# 05:08:20 | INFO    | First example: {'input_ids': [101, 5342, 2047, 3595, 8496, 2013, 1996, 18643, 3197, 102, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'labels': 0}
+# 05:08:20 | INFO    | CompressionTrainer initialized
+# 05:08:20 | INFO    | Starting training...
+# {'loss': '0.6908', 'grad_norm': '1.548', 'learning_rate': '1.569e-06', 'epoch': '0.04751'}    
+# {'loss': '0.6805', 'grad_norm': '2.738', 'learning_rate': '3.154e-06', 'epoch': '0.09501'}    
+# {'loss': '0.6637', 'grad_norm': '3.305', 'learning_rate': '4.739e-06', 'epoch': '0.1425'}     
+# {'loss': '0.638', 'grad_norm': '10.38', 'learning_rate': '6.323e-06', 'epoch': '0.19'}        
+# {'loss': '0.5742', 'grad_norm': '14.15', 'learning_rate': '7.908e-06', 'epoch': '0.2375'}     
+# {'loss': '0.5552', 'grad_norm': '11.11', 'learning_rate': '9.493e-06', 'epoch': '0.285'}      
+# {'loss': '0.49', 'grad_norm': '33.62', 'learning_rate': '9.931e-06', 'epoch': '0.3325'}       
+# {'loss': '0.457', 'grad_norm': '26.67', 'learning_rate': '9.83e-06', 'epoch': '0.38'}         
+# {'loss': '0.4554', 'grad_norm': '14.28', 'learning_rate': '9.729e-06', 'epoch': '0.4276'}     
+# {'loss': '0.436', 'grad_norm': '27.66', 'learning_rate': '9.628e-06', 'epoch': '0.4751'}      
+# {'loss': '0.429', 'grad_norm': '9.52', 'learning_rate': '9.527e-06', 'epoch': '0.5226'}       
+# {'loss': '0.4004', 'grad_norm': '8.422', 'learning_rate': '9.426e-06', 'epoch': '0.5701'}     
+# {'loss': '0.3856', 'grad_norm': '7.425', 'learning_rate': '9.325e-06', 'epoch': '0.6176'}     
+# {'loss': '0.3715', 'grad_norm': '16.23', 'learning_rate': '9.224e-06', 'epoch': '0.6651'}     
+# {'loss': '0.3593', 'grad_norm': '12.69', 'learning_rate': '9.123e-06', 'epoch': '0.7126'}     
+# {'loss': '0.3817', 'grad_norm': '11.79', 'learning_rate': '9.022e-06', 'epoch': '0.7601'}     
+# {'loss': '0.3516', 'grad_norm': '20.56', 'learning_rate': '8.921e-06', 'epoch': '0.8076'}     
+# {'loss': '0.3656', 'grad_norm': '8.041', 'learning_rate': '8.819e-06', 'epoch': '0.8551'}     
+# {'loss': '0.3496', 'grad_norm': '11.13', 'learning_rate': '8.718e-06', 'epoch': '0.9026'}     
+# {'loss': '0.3467', 'grad_norm': '18.02', 'learning_rate': '8.617e-06', 'epoch': '0.9501'}     
+# {'loss': '0.3419', 'grad_norm': '14.04', 'learning_rate': '8.516e-06', 'epoch': '0.9976'}     
+# {'loss': '0.3223', 'grad_norm': '5.301', 'learning_rate': '8.415e-06', 'epoch': '1.045'}      
+# {'loss': '0.3185', 'grad_norm': '18.49', 'learning_rate': '8.314e-06', 'epoch': '1.093'}      
+# {'loss': '0.315', 'grad_norm': '14.94', 'learning_rate': '8.213e-06', 'epoch': '1.14'}        
+# {'loss': '0.3075', 'grad_norm': '10.32', 'learning_rate': '8.112e-06', 'epoch': '1.188'}      
+# {'loss': '0.2933', 'grad_norm': '3.704', 'learning_rate': '8.011e-06', 'epoch': '1.235'}      
+# {'loss': '0.3056', 'grad_norm': '14.1', 'learning_rate': '7.91e-06', 'epoch': '1.283'}        
+# {'loss': '0.2821', 'grad_norm': '7.689', 'learning_rate': '7.809e-06', 'epoch': '1.33'}       
+# {'loss': '0.2734', 'grad_norm': '5.206', 'learning_rate': '7.708e-06', 'epoch': '1.378'}      
+# {'loss': '0.2803', 'grad_norm': '12.43', 'learning_rate': '7.607e-06', 'epoch': '1.425'}      
+# {'loss': '0.2886', 'grad_norm': '9.118', 'learning_rate': '7.506e-06', 'epoch': '1.473'}      
+# {'loss': '0.2794', 'grad_norm': '11.06', 'learning_rate': '7.404e-06', 'epoch': '1.52'}       
+# {'loss': '0.2827', 'grad_norm': '3.273', 'learning_rate': '7.303e-06', 'epoch': '1.568'}      
+#  32%|█████████████████████████████████████▏                                                                               | 3348/10525 [1:12:09<2:37:57,  1.32s/it]^CTraceback (most recent call last):
+#   File "/Users/tahamajs/Documents/uni/Project/Codes/LEKAAttention.py", line 1116, in <module>
+#     main()
