@@ -10,3 +10,4 @@ from . import prism
 from . import svd
 from . import nebula
 from . import oha
+from . import orion
