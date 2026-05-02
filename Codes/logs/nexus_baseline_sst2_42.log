@@ -57,3 +57,6 @@
 2026-05-02 15:13:12 | INFO     | nexus_baseline_sst2_42 |    Model: distilbert-base-uncased
 2026-05-02 15:13:12 | INFO     | nexus_baseline_sst2_42 | ══════════════════════════════════════
 2026-05-02 15:13:12 | INFO     | nexus_baseline_sst2_42 | Using device: mps
+2026-05-02 15:13:16 | INFO     | nexus_baseline_sst2_42 | Train: 67349, Val: 872
+2026-05-02 15:13:17 | INFO     | nexus_baseline_sst2_42 | Injected 'nexus' into 6 layers.
+2026-05-02 15:13:17 | INFO     | nexus_baseline_sst2_42 | Starting training...
