@@ -1,1 +1,1 @@
-from . import minimal_nova
+from . import nova
