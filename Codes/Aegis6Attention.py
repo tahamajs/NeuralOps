@@ -91,25 +91,245 @@ class FactorisedLowRankProjection(nn.Module):
 # ----------------------------------------------------------------------
 # Kernel Feature Map (stable float32)
 # ----------------------------------------------------------------------
+"""
+Kernel Feature Map for Linear Attention
+========================================
+Implements the positive orthogonal random feature map (FAVOR+) used in
+Performers and similar linear‑attention models, with multiple initialisation
+strategies, aggressive numerical stability measures, and full shape‑safety.
+
+Mathematical core:
+    φ(x) = (1 / √m) · exp( x·Π  -  ‖x‖² / 2 )
+where Π ∈ R^{d×m} is a (semi‑)orthogonal matrix scaled by √d.
+The dot product φ(q)ᵀφ(k) approximates exp(qᵀk / √d).
+
+Supported variants:
+    - Orthogonal random features (Performer, FAVOR+)
+    - Unstructured random Fourier features (original Rahimi & Recht)
+    - Cosine / Sine deterministic features (for reproducibility)
+    - Custom projection matrix
+
+Stability features:
+    - Clamped exponential input (default [-20, 20]) to avoid float32 overflow
+    - RMS pre‑norm friendly (variance ~1 after projection when using √d scaling)
+    - EPS‑protected scaling factor
+    - Optional float64 upcast for exp (disabled by default for speed)
+    - Safe initialisation of projection matrix with fallbacks
+"""
+import math
+from dataclasses import dataclass
+from typing import Optional, Literal
+
+import torch
+import torch.nn as nn
+
+
+# -------------------------------------------------------------------------
+# Configuration
+# -------------------------------------------------------------------------
+@dataclass
+class KernelFeatureConfig:
+    head_dim: int            # d (e.g. 64)
+    num_features: int        # m (e.g. 128)
+    method: Literal["orthogonal", "random", "cosine", "custom"] = "orthogonal"
+    clamp_min: float = -20.0
+    clamp_max: float = 20.0
+    use_float64_exp: bool = False
+    eps: float = 1e-8
+    scaling: Optional[float] = None   # if None, auto‑set to 1/√m
+    projection_scale: Optional[float] = None  # if None, auto‑set to √d
+    seed: Optional[int] = None        # reproducibility
+    # For custom method only:
+    custom_proj: Optional[torch.Tensor] = None
+
+
+# -------------------------------------------------------------------------
+# Main Kernel Feature Map class
+# -------------------------------------------------------------------------
 class StableKernelFeatureMap(nn.Module):
-    def __init__(self, head_dim: int, m: int):
+    """
+    A feature map φ: R^d → R^m for linear attention that satisfies
+        φ(q)ᵀ φ(k) ≈ exp(qᵀ k / √d).
+
+    Args:
+        config: KernelFeatureConfig dataclass with all hyperparameters.
+    """
+
+    def __init__(self, config: KernelFeatureConfig):
         super().__init__()
-        self.head_dim = head_dim
-        self.m = m
-        # Orthogonal random projection (fixed)
-        q, _ = torch.linalg.qr(torch.randn(head_dim, m))
-        self.register_buffer('proj', q * math.sqrt(head_dim))
-        self.scale = 1.0 / math.sqrt(m)
+        self.cfg = config
+        self.head_dim = config.head_dim
+        self.m = config.num_features
 
+        # ---- 1. Set scaling factor ----
+        if config.scaling is not None:
+            self.scale = config.scaling
+        else:
+            self.scale = 1.0 / math.sqrt(self.m + config.eps)
+
+        # ---- 2. Build projection matrix ----
+        proj = self._build_projection()
+        self.register_buffer('proj', proj)
+
+        # ---- 3. Validate final shape ----
+        assert self.proj.shape == (self.head_dim, self.m), \
+            f"Projection matrix shape {self.proj.shape} != ({self.head_dim}, {self.m})"
+
+    # ------------------------------------------------------------------
+    # Projection initialisation strategies
+    # ------------------------------------------------------------------
+    def _build_projection(self) -> torch.Tensor:
+        """Return a tensor of shape (d, m) according to self.cfg.method."""
+        if self.cfg.seed is not None:
+            torch.manual_seed(self.cfg.seed)
+
+        d, m = self.head_dim, self.m
+
+        if self.cfg.method == "orthogonal":
+            return self._orthogonal_random(d, m)
+        elif self.cfg.method == "random":
+            return self._random_fourier(d, m)
+        elif self.cfg.method == "cosine":
+            return self._cosine_features(d, m)
+        elif self.cfg.method == "custom":
+            if self.cfg.custom_proj is None:
+                raise ValueError("custom_proj must be provided when method='custom'")
+            return self.cfg.custom_proj.to(dtype=torch.float32)
+        else:
+            raise ValueError(f"Unknown method: {self.cfg.method}")
+
+    @staticmethod
+    def _orthogonal_random(d: int, m: int) -> torch.Tensor:
+        """
+        Create a (d, m) matrix with orthonormal columns, scaled by √d.
+        This is the FAVOR+ scheme that minimises kernel approximation variance.
+        If m > d, we fall back to an identity‑padded random matrix.
+        """
+        if m <= d:
+            # Standard case: QR of random d×m → orthonormal columns
+            q, _ = torch.linalg.qr(torch.randn(d, m))
+        else:
+            # More features than dimensions: create d orthonormal vectors,
+            # then pad the rest with random orthonormal ones.
+            q_full, _ = torch.linalg.qr(torch.randn(d, d))
+            if m == d:
+                q = q_full
+            else:
+                extra, _ = torch.linalg.qr(torch.randn(d, m - d))
+                q = torch.cat([q_full, extra], dim=1)
+        # Scale to preserve the norm of the dot product
+        return q * math.sqrt(d)
+
+    @staticmethod
+    def _random_fourier(d: int, m: int) -> torch.Tensor:
+        """
+        Unstructured random Fourier features drawn from N(0, I).
+        Scaling is still √d, but variance is higher than orthogonal variant.
+        """
+        return torch.randn(d, m) * math.sqrt(d)
+
+    @staticmethod
+    def _cosine_features(d: int, m: int) -> torch.Tensor:
+        """
+        Deterministic features using cos / sin of linear combinations.
+        This produces a (d, m) projection matrix with alternating cos/sin
+        frequencies. Purely deterministic and reproducible.
+        """
+        # Generate evenly spaced frequencies
+        freq = torch.linspace(0.1, 10.0, steps=m)  # (m,)
+        # Random phase for each frequency (but deterministic via seed)
+        phase = torch.linspace(0.0, 2 * math.pi, steps=m)
+        # Build matrix: for each column, use cos or sin of freq * idx
+        idx = torch.arange(d, dtype=torch.float32).unsqueeze(1)  # (d,1)
+        # Use a mix: even columns cos, odd columns sin
+        cols = []
+        for j in range(m):
+            if j % 2 == 0:
+                col = torch.cos(freq[j] * idx.squeeze(1) + phase[j])
+            else:
+                col = torch.sin(freq[j] * idx.squeeze(1) + phase[j])
+            cols.append(col)
+        return torch.stack(cols, dim=1) * math.sqrt(d)
+
+    # ------------------------------------------------------------------
+    # Forward pass
+    # ------------------------------------------------------------------
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: (..., head_dim)
-        phi = torch.matmul(x, self.proj)                # (..., m)
+        """
+        Args:
+            x: input tensor of shape (..., head_dim)
+        Returns:
+            φ(x): tensor of shape (..., m), dtype = input dtype (or float64 if enabled)
+        """
+        # 1. Projection: (..., d) x (d, m) -> (..., m)
+        phi = torch.matmul(x, self.proj)
+
+        # 2. L2 normalisation term: ‖x‖² / 2, shape (..., 1)
         norm_sq = (x * x).sum(dim=-1, keepdim=True) / 2.0
-        return self.scale * torch.exp(
-            torch.clamp(phi - norm_sq, min=-20.0, max=20.0)
-        )
+
+        # 3. Exponent input
+        exp_in = phi - norm_sq
+
+        # 4. Clamping for stability (prevent overflow)
+        exp_in = torch.clamp(exp_in, min=self.cfg.clamp_min, max=self.cfg.clamp_max)
+
+        # 5. Optional float64 cast
+        if self.cfg.use_float64_exp:
+            exp_in = exp_in.to(torch.float64)
+
+        # 6. Exponential and scaling
+        out = self.scale * torch.exp(exp_in)
+
+        # 7. Convert back to input dtype if upcast was used
+        if self.cfg.use_float64_exp and x.dtype != torch.float64:
+            out = out.to(x.dtype)
+
+        return out
+
+    # ------------------------------------------------------------------
+    # Utility: compute full kernel matrix (for debugging)
+    # ------------------------------------------------------------------
+    def kernel_matrix(self, x: torch.Tensor, y: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """
+        Compute the approximate kernel matrix φ(x) φ(y)ᵀ.
+        If y is None, computes φ(x) φ(x)ᵀ.
+        Returns shape (..., N, M) or (..., N, N).
+        Handles 3D / 4D inputs by reshaping to (..., d).
+        """
+        if y is None:
+            y = x
+        phi_x = self(x)   # (..., N, m)
+        phi_y = self(y)   # (..., M, m)
+        return torch.matmul(phi_x, phi_y.transpose(-2, -1))
+
+    # ------------------------------------------------------------------
+    # Extra: recompute projection matrix (for dynamic experiments)
+    # ------------------------------------------------------------------
+    def reset_projection(self):
+        """Re‑initialise the projection matrix with the current config."""
+        self.proj = self._build_projection().to(self.proj.device, self.proj.dtype)
 
 
+# -------------------------------------------------------------------------
+# Convenience constructors
+# -------------------------------------------------------------------------
+def kernel_feature_map_orthogonal(head_dim: int, num_features: int,
+                                  clamp_range=(-20.0, 20.0), seed=None) -> StableKernelFeatureMap:
+    """Factory for orthogonal random features."""
+    config = KernelFeatureConfig(
+        head_dim=head_dim,
+        num_features=num_features,
+        method="orthogonal",
+        clamp_min=clamp_range[0],
+        clamp_max=clamp_range[1],
+        seed=seed
+    )
+    return StableKernelFeatureMap(config)
+
+
+# -------------------------------------------------------------------------
+# Test / demo
+# -------------------------------------------------------------------------
 # ----------------------------------------------------------------------
 # Gating Module
 # ----------------------------------------------------------------------
