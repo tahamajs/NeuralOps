@@ -1,7 +1,7 @@
 """
 Aegis‑Attention v3 — Production‑Grade Efficient Hybrid Attention
 =================================================================
-Improvements over v2:
+Improvements over V3:
 - Tiled sliding window local attention (no N² mask, O(NW) memory)
 - Factorised low‑rank projections (no materialised full weights)
 - Numerically stable kernel exp with float32 clamping
@@ -217,41 +217,57 @@ class AegisAttentionV3(nn.Module):
     def _tiled_sliding_window_attention(self, Q, K, V, pad_mask):
         """
         Tiled local attention without an N×N mask.
-        pad_mask: (B,1,1,N), 1=valid, 0=pad
-        Returns: (B,h,N,d)
+        pad_mask may arrive as (B, N), (B, 1, 1, N), or with extra leading 1s.
+        We normalise it to (B, 1, 1, N).
         """
+        # Normalise pad_mask to exactly 4D: (B, 1, 1, N)
+        if pad_mask.dim() == 2:
+            pad_mask = pad_mask.unsqueeze(1).unsqueeze(2)          # (B,1,1,N)
+        elif pad_mask.dim() == 3:
+            # Could be (B, N, 1) or (B, 1, N) – force to (B,1,1,N)
+            if pad_mask.size(1) == 1:
+                pad_mask = pad_mask.unsqueeze(2)                   # (B,1,1,N)
+            else:
+                pad_mask = pad_mask.unsqueeze(1)                   # (B,1,N,?) → not safe, reshape
+                pad_mask = pad_mask.view(pad_mask.size(0), 1, 1, -1)
+        elif pad_mask.dim() > 4:
+            # Collapse all extra dimensions into the batch dimension or simply squeeze
+            # Here we take the outermost batch and the innermost sequence length
+            B = pad_mask.size(0)
+            N = pad_mask.size(-1)
+            pad_mask = pad_mask.view(B, 1, 1, N)
+
         B, h, N, d = Q.shape
-        W = self.window          # half‑window size
-        step = W                 # tile step = half‑window (overlap W)
+        W = self.window
+        step = W
         out = torch.zeros_like(Q)
 
-        # Number of tiles
         num_tiles = (N + step - 1) // step
         for i in range(num_tiles):
             start = i * step
-            end = min(start + W, N)               # tile query length (≤ W)
-            # Expanded key/value window: from max(0, start-W) to min(N, end+W)
+            end = min(start + W, N)
             k_start = max(0, start - W)
             k_end   = min(N, end + W)
 
-            q_tile = Q[:, :, start:end, :]        # (B,h, qlen, d)
-            k_tile = K[:, :, k_start:k_end, :]    # (B,h, kvlen, d)
+            q_tile = Q[:, :, start:end, :]          # (B, h, qlen, d)
+            k_tile = K[:, :, k_start:k_end, :]
             v_tile = V[:, :, k_start:k_end, :]
 
-            # Build a small padding mask for this tile
-            # (B,1,1,kvlen)
-            kv_mask = pad_mask[:, :, :, k_start:k_end].to(q_tile.dtype)
+            # Extract local padding mask for key/value tokens
+            kv_mask = pad_mask[:, :, :, k_start:k_end]   # (B, 1, 1, kvlen)
+            kv_mask = kv_mask.to(q_tile.dtype)
 
-            # Compute scaled dot‑product attention with mask
-            # We need an additive mask of shape (B,1,qlen,kvlen)
-            # Expand kv_mask to shape (B,1,1,kvlen) -> (B,1,qlen,kvlen) by repeating
-            attn_mask = (1.0 - kv_mask) * -1e9   # 0 for pad -> -inf
-            # attn_mask shape: (B,1,1,kvlen) -> (B,1,qlen,kvlen)
+            # Additive mask: 0 → allowed, -inf → masked
+            attn_mask = (1.0 - kv_mask) * -1e9            # (B, 1, 1, kvlen)
+
+            # Expand to (B, 1, qlen, kvlen)
             attn_mask = attn_mask.expand(-1, -1, q_tile.size(2), -1)
-            # Also mask query padding (though we rely on output overwriting)
-            q_mask = pad_mask[:, :, :, start:end].to(q_tile.dtype)  # (B,1,1,qlen)
-            q_mask_inv = (1.0 - q_mask) * -1e9
-            attn_mask = attn_mask + q_mask_inv.transpose(-2,-1)   # (B,1,qlen,kvlen)
+
+            # Also mask query padding (rows with all -inf after addition)
+            q_mask = pad_mask[:, :, :, start:end].to(q_tile.dtype)  # (B, 1, 1, qlen)
+            q_mask_inv = (1.0 - q_mask) * -1e9                       # (B, 1, 1, qlen)
+            # Broadcast to (B, 1, qlen, kvlen)
+            attn_mask = attn_mask + q_mask_inv.transpose(-2, -1)
 
             tile_out = F.scaled_dot_product_attention(
                 q_tile, k_tile, v_tile,
@@ -259,8 +275,8 @@ class AegisAttentionV3(nn.Module):
                 dropout_p=self.cfg.dropout if self.training else 0.0
             )
             out[:, :, start:end, :] = tile_out
-        return out
 
+        return out
     def _global_linear_attention(self, Q, K, V, pad_mask, q_gate, in_gate):
         B, h, N, d = Q.shape
         m = self.cfg.kernel_feature_dim
@@ -313,6 +329,15 @@ class AegisAttentionV3(nn.Module):
             pad_mask = attention_mask.to(hidden_states.dtype).unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
         else:
             pad_mask = torch.ones(B, 1, 1, N, device=hidden_states.device, dtype=hidden_states.dtype)
+        if attention_mask is not None:
+            pad_mask = attention_mask.to(hidden_states.dtype)
+            # Ensure it is at most 2D; unsqueeze to 4D
+            if pad_mask.dim() > 2:
+                pad_mask = pad_mask.view(pad_mask.size(0), -1)   # collapse to (B, N)
+            pad_mask = pad_mask.unsqueeze(1).unsqueeze(2)        # (B, 1, 1, N)
+        else:
+            pad_mask = torch.ones(B, 1, 1, N, device=..., dtype=...)
+
 
         # Project
         Q = self._reshape(self.q_proj(hidden_states))
@@ -357,7 +382,7 @@ def inject_aegis_v3(model, config: AegisConfigV3):
         else:
             inject_aegis_v3(module, config)
 
-            
+
 
 
 
@@ -484,7 +509,7 @@ TASK_KEYS = {
     "wnli": ("sentence1", "sentence2"),
 }
 """
-LEKAv2 — Research‑backed Linear‑time Efficient Kernel Attention v2
+LEKAV3 — Research‑backed Linear‑time Efficient Kernel Attention V3
 ====================================================================
 A drop‑in replacement for DistilBERT attention, integrating:
 
@@ -509,9 +534,9 @@ import torch.nn.functional as F
 from typing import Optional, Tuple
 
 
-class LEKAv2Attention(nn.Module):
+class LEKAV3Attention(nn.Module):
     """
-    LEKAv2: Linear‑time Efficient Kernel Attention with softpick,
+    LEKAV3: Linear‑time Efficient Kernel Attention with softpick,
             content‑aware landmarks, orthogonal features, and local gating.
     """
     def __init__(
@@ -764,11 +789,11 @@ class LEKAv2Attention(nn.Module):
         return 0.0
 
 # ── Injection helper ──────────────────────────────────────────────
-def inject_leka_v2_into_distilbert(
+def inject_leka_V3_into_distilbert(
     layer, model_config, comp_config, layer_idx, total_layers, old_attn
 ):
-    """Replace DistilBERT attention with LEKAv2."""
-    new_attn = LEKAv2Attention(
+    """Replace DistilBERT attention with LEKAV3."""
+    new_attn = LEKAV3Attention(
         config=model_config,
         comp_config=comp_config,
         layer_idx=layer_idx,
@@ -1060,17 +1085,17 @@ def inject_compression_into_layer(layer, comp_config, layer_idx, model_config, m
             layer.attention = new_attn
             return new_attn
 
-        elif comp_config.attn_type == "leka_v2":
-            # استفاده از تزریق‌گر اختصاصی LEKAv2
-            new_attn = inject_leka_v2_into_distilbert(
+        elif comp_config.attn_type == "leka_V3":
+            # استفاده از تزریق‌گر اختصاصی LEKAV3
+            new_attn = inject_leka_V3_into_distilbert(
                 layer, model_config, comp_config, layer_idx,
                 total_layers=6,   # یا از تنظیمات مدل بخوانید
                 old_attn=layer.attention
             )
             return new_attn       # خود تابع جایگزینی را انجام می‌دهد
-        elif comp_config.attn_type == "aegis_v2":
+        elif comp_config.attn_type == "aegis_V3":
             # Build a config – you can tune these later
-            aegis_cfg = AegisConfigV2(
+            aegis_cfg = AegisConfigV3(
                 hidden_size=model_config.hidden_size,
                 num_heads=model_config.num_attention_heads,
                 head_dim=model_config.hidden_size // model_config.num_attention_heads,
@@ -1093,7 +1118,7 @@ def inject_compression_into_layer(layer, comp_config, layer_idx, model_config, m
                 'o': old_attn.out_lin.weight.data.clone().detach()
             }
 
-            new_attn = AegisAttentionV2(aegis_cfg, pretrained)
+            new_attn = AegisAttentionV3(aegis_cfg, pretrained)
             layer.attention = new_attn
 
             return new_attn
@@ -1283,7 +1308,7 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--fp16", action="store_true")
     parser.add_argument("--attn_type", type=str, default="linformer",
-                    choices=["linformer", "leka", "leka_v2", "aegis_v2"])
+                    choices=["linformer", "leka", "leka_V3", "aegis_V3"])
     parser.add_argument("--num_landmarks", type=int, default=16)
     parser.add_argument("--feature_dim", type=int, default=128)
     parser.add_argument("--use_spherical_norm", action="store_true", default=True)
@@ -1639,7 +1664,7 @@ if __name__ == "__main__":
 
 # ---
 
-# ## Phase 3 – Redesign (Aegis‑Attention v2)
+# ## Phase 3 – Redesign (Aegis‑Attention V3)
 
 # ### Core improvements:
 # - **Sliding window local attention (overlapping)** instead of disjoint blocks, using `F.scaled_dot_product_attention` to leverage FlashAttention.
@@ -1754,7 +1779,7 @@ if __name__ == "__main__":
 
 # ```python
 # """
-# Aegis-Attention v2: Production-grade hybrid efficient attention.
+# Aegis-Attention V3: Production-grade hybrid efficient attention.
 # Combines:
 #   - Sliding window local attention (FlashAttention compatible)
 #   - Linear global attention with query‑aware gating
@@ -1774,7 +1799,7 @@ if __name__ == "__main__":
 
 
 # @dataclass
-# class AegisConfigV2:
+# class AegisConfigV3:
 #     hidden_size: int = 768
 #     num_heads: int = 12
 #     head_dim: int = 64
@@ -1788,7 +1813,7 @@ if __name__ == "__main__":
 #     use_pre_norm: bool = True
 
 
-# class LowRankProjectionV2(nn.Module):
+# class LowRankProjectionV3(nn.Module):
 #     def __init__(self, in_features, out_features, svd_rank, lora_rank,
 #                  pretrained_weight=None):
 #         super().__init__()
@@ -1817,7 +1842,7 @@ if __name__ == "__main__":
 #         return F.linear(x, W)
 
 
-# class KernelFeatureMapV2(nn.Module):
+# class KernelFeatureMapV3(nn.Module):
 #     def __init__(self, head_dim, m):
 #         super().__init__()
 #         self.head_dim = head_dim
@@ -1837,7 +1862,7 @@ if __name__ == "__main__":
 #         return self.scale * torch.exp((feat - norm).to(torch.float64)).to(x.dtype)
 
 
-# class GatesV2(nn.Module):
+# class GatesV3(nn.Module):
 #     def __init__(self, hidden_size, num_heads, head_dim,
 #                  use_query_gate, use_input_gate):
 #         super().__init__()
@@ -1860,8 +1885,8 @@ if __name__ == "__main__":
 #         return q_gate, in_gate
 
 
-# class AegisAttentionV2(nn.Module):
-#     def __init__(self, config: AegisConfigV2, pretrained_qkv=None):
+# class AegisAttentionV3(nn.Module):
+#     def __init__(self, config: AegisConfigV3, pretrained_qkv=None):
 #         super().__init__()
 #         self.cfg = config
 #         self.num_heads = config.num_heads
@@ -1875,13 +1900,13 @@ if __name__ == "__main__":
 #         K_p = pretrained_qkv['k'] if pretrained_qkv else None
 #         V_p = pretrained_qkv['v'] if pretrained_qkv else None
 #         O_p = pretrained_qkv['o'] if pretrained_qkv else None
-#         self.q_proj = LowRankProjectionV2(config.hidden_size, self.all_head_size,
+#         self.q_proj = LowRankProjectionV3(config.hidden_size, self.all_head_size,
 #                                           config.svd_rank, config.low_rank_update, Q_p)
-#         self.k_proj = LowRankProjectionV2(config.hidden_size, self.all_head_size,
+#         self.k_proj = LowRankProjectionV3(config.hidden_size, self.all_head_size,
 #                                           config.svd_rank, config.low_rank_update, K_p)
-#         self.v_proj = LowRankProjectionV2(config.hidden_size, self.all_head_size,
+#         self.v_proj = LowRankProjectionV3(config.hidden_size, self.all_head_size,
 #                                           config.svd_rank, config.low_rank_update, V_p)
-#         self.out_proj = LowRankProjectionV2(self.all_head_size, config.hidden_size,
+#         self.out_proj = LowRankProjectionV3(self.all_head_size, config.hidden_size,
 #                                             config.svd_rank, config.low_rank_update, O_p)
 
 #         # RMS pre-norm
@@ -1891,10 +1916,10 @@ if __name__ == "__main__":
 #             self.k_norm = nn.RMSNorm(self.head_dim, eps=1e-6)
 
 #         # Kernel feature map
-#         self.kernel_map = KernelFeatureMapV2(self.head_dim, config.kernel_feature_dim)
+#         self.kernel_map = KernelFeatureMapV3(self.head_dim, config.kernel_feature_dim)
 
 #         # Gates
-#         self.gates = GatesV2(config.hidden_size, config.num_heads, config.head_dim,
+#         self.gates = GatesV3(config.hidden_size, config.num_heads, config.head_dim,
 #                             config.use_query_gate, config.use_input_gate)
 
 #         # Token-wise fusion gate
@@ -1993,15 +2018,15 @@ if __name__ == "__main__":
 #         }
 
 
-# def inject_aegis_v2(model, config: AegisConfigV2):
+# def inject_aegis_V3(model, config: AegisConfigV3):
 #     from transformers import DistilBertAttention
 #     for name, module in model.named_children():
 #         if isinstance(module, DistilBertAttention):
-#             pretrained = AegisAttentionV2.init_from_pretrained(module)
-#             new_attn = AegisAttentionV2(config, pretrained)
+#             pretrained = AegisAttentionV3.init_from_pretrained(module)
+#             new_attn = AegisAttentionV3(config, pretrained)
 #             setattr(model, name, new_attn)
 #         else:
-#             inject_aegis_v2(module, config)
+#             inject_aegis_V3(module, config)
 # ```
 
 # ---
@@ -2041,8 +2066,8 @@ if __name__ == "__main__":
 # ### Test script (minimal)
 
 # ```python
-# config = AegisConfigV2()
-# attn = AegisAttentionV2(config)  # no pretrained weights => random init
+# config = AegisConfigV3()
+# attn = AegisAttentionV3(config)  # no pretrained weights => random init
 # x = torch.randn(2, 128, 768)
 # mask = torch.ones(2, 128)
 # mask[0, 100:] = 0   # some padding
@@ -2248,7 +2273,7 @@ if __name__ == "__main__":
 
 # ## Phase 2 – Diagnosis of the Original Hybrid Design
 
-# The described Aegis‑Attention v2 combines:
+# The described Aegis‑Attention V3 combines:
 # - Sliding window local attention
 # - Kernel‑based linear global attention
 # - Query‑aware + input‑driven gates
@@ -2431,7 +2456,7 @@ if __name__ == "__main__":
 # """
 # Aegis‑Attention v3 — Production‑Grade Efficient Hybrid Attention
 # =================================================================
-# Improvements over v2:
+# Improvements over V3:
 # - Tiled sliding window local attention (no N² mask, O(NW) memory)
 # - Factorised low‑rank projections (no materialised full weights)
 # - Numerically stable kernel exp with float32 clamping
