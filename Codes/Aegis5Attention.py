@@ -184,32 +184,62 @@ def local_window_attention(
 
 
 # ---------- Kernel linear attention (Performer style) ----------
-def kernel_linear_attention(Q, K, V, rff_proj=None, use_zero_sum=True, kernel_type='elu'):
+import torch
+import torch.nn.functional as F
+
+def kernel_linear_attention(Q, K, V, mask=None, eps=1e-6):
     """
-    Performer‑style linear attention.
-    rff_proj: (Hg, head_dim, F) – if None, uses ELU+1 kernel (no projection).
+    Stable linear attention using bounded Gaussian features.
+    φ(x) = exp(-(scale·x)²) / L2-norm, with V normalisation and KV scaling.
+    mask: (B, 1, N, 1) – 1 = keep, 0 = pad
     """
-    B, H, N, D = Q.shape
-    if kernel_type == 'rff' and rff_proj is not None:
-        F_dim = rff_proj.size(-1)
-        Q_proj = torch.einsum('bhnd,hdf->bhnf', Q, rff_proj)
-        K_proj = torch.einsum('bhnd,hdf->bhnf', K, rff_proj)
-        # Positive random features
-        Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
-        K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
-    else:  # ELU + 1 (simple, no random proj, always positive)
-        Q_feat = F.elu(Q) + 1
-        K_feat = F.elu(K) + 1
+    import math
 
-    if use_zero_sum:
-        K_feat = K_feat - K_feat.mean(dim=2, keepdim=True)
+    # 1. Scale down Q, K to keep exp(-x²) in a safe range
+    Q = Q * 0.15
+    K = K * 0.15
 
-    KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V)          # (B, H, F, D) or (B, H, D, D)
-    K_sum = K_feat.sum(dim=2, keepdim=True)                  # (B, H, 1, F)
-    denom = (Q_feat * K_sum).sum(dim=-1, keepdim=True) + 1e-8
-    ctx = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV) / denom
-    return ctx
+    # 2. Bounded Gaussian feature map
+    Q_feat = torch.exp(-Q.square())       # (B, H, N, D), values in (0,1]
+    K_feat = torch.exp(-K.square())
 
+    # 3. L2 normalise features per token (keeps magnitudes ~1)
+    Q_feat = Q_feat / (Q_feat.norm(dim=-1, keepdim=True) + eps)
+    K_feat = K_feat / (K_feat.norm(dim=-1, keepdim=True) + eps)
+
+    # 4. 🔑 CRITICAL: normalise V (stops the KV matrix from exploding with N)
+    V = V / (V.norm(dim=-1, keepdim=True) + eps)
+
+    # 5. Apply padding mask – mask is already (B, 1, N, 1) from your forward
+    if mask is not None:
+        K_feat = K_feat * mask
+        V = V * mask
+
+    # 6. Linear attention core
+    D = Q.shape[-1]
+    KV = torch.einsum('b h n d, b h n e -> b h d e', K_feat, V)   # (B, H, D, D)
+    KV = KV / math.sqrt(D)                                       # scale like standard attention
+
+    # Denominator: φ(Q) · sum(φ(K))
+    K_sum = K_feat.sum(dim=2)                                     # (B, H, D)
+    denom = (Q_feat @ K_sum.unsqueeze(-1)).clamp(min=1e-2, max=5.0)  # (B, H, N, 1)
+
+    # Numerator: φ(Q) · KV
+    numer = torch.einsum('b h n d, b h d e -> b h n e', Q_feat, KV)
+
+    return numer / denom
+
+
+
+
+
+def kernel_feature(x):
+    # normalize per token
+    x = x / (x.norm(dim=-1, keepdim=True).clamp(min=1e-6))
+    # scale: small to prevent exp overflow
+    x = 0.5 * x
+    # Gaussian RFF mapping
+    return torch.exp(-x.square())
 
 # ══════════════════════════════════════════════════════════════════════
 # 2. AEGIS Attention Module (drop‑in for DistilBERT)
@@ -269,100 +299,77 @@ class AegisAttention(nn.Module):
         K_all = self.k_proj(hidden_states)
         V_all = self.v_proj(hidden_states)
 
-        Q_all = Q_all.view(B, N, H, D).transpose(1, 2)  # (B, H, N, D)
+        Q_all = Q_all.view(B, N, H, D).transpose(1, 2)    # (B, H, N, D)
         K_all = K_all.view(B, N, H, D).transpose(1, 2)
         V_all = V_all.view(B, N, H, D).transpose(1, 2)
 
-        Q_local, Q_global = Q_all[:, :Hl], Q_all[:, Hl:]  # (B, Hl, N, D) , (B, Hg, N, D)
+        Q_local, Q_global = Q_all[:, :Hl], Q_all[:, Hl:]
         K_local, K_global = K_all[:, :Hl], K_all[:, Hl:]
         V_local, V_global = V_all[:, :Hl], V_all[:, Hl:]
 
-        # --- Mask handling (as previously fixed) ---
+        # ----- Robust mask handling (DistilBERT extended mask) -----
+        # DistilBERT passes extended mask with 0.0 = attend, -10000.0 = ignore
         if attention_mask is not None:
-            attention_mask = attention_mask.squeeze()
-            if attention_mask.dim() == 3:
-                attention_mask = attention_mask[:, 0, :]          # (B, N)
-            elif attention_mask.dim() == 1:
-                attention_mask = attention_mask.unsqueeze(0)      # (1, N)
-            elif attention_mask.dim() == 0:
-                attention_mask = attention_mask.view(1, 1)        # (1, 1)
-
-            Bm, M = attention_mask.shape
-            if M > N:
-                attention_mask = attention_mask[:, :N]
-            elif M < N:
-                padding = torch.ones(Bm, N - M, device=attention_mask.device, dtype=torch.bool)
-                attention_mask = torch.cat([attention_mask.bool(), padding], dim=1)
-
-            if attention_mask.dtype == torch.long:
-                pad_mask_bool = (attention_mask == 0)
+            # Reduce to 2D (B, N)
+            if attention_mask.dim() == 4:
+                attn_mask_2d = attention_mask[:, 0, 0, :]   # (B, N)
+            elif attention_mask.dim() == 3:
+                attn_mask_2d = attention_mask[:, 0, :]
             else:
-                pad_mask_bool = (attention_mask <= -1e3)
+                attn_mask_2d = attention_mask
+
+            # True = real token (value 0.0), False = padding (value -10000)
+            token_valid = (attn_mask_2d > -1e2)   # robust: real tokens are > -100
         else:
-            pad_mask_bool = None
+            token_valid = None
 
-        # token_valid = True for real tokens, False for padding
-        token_valid = None if pad_mask_bool is None else ~pad_mask_bool  # (B, N)
-
-        # 2. Local window attention (pass token_valid)
+        # 2. Local window attention (standard softmax)
         ctx_local = local_window_attention(
             Q_local, K_local, V_local,
             window=self.cfg.local_window,
-            temperature=self.cfg.softpick_temperature,
+            temperature=self.cfg.softpick_temperature,  # ignored (softmax)
             token_valid=token_valid,
-        )  # (B, Hl, N, D)
-# After Q_all, K_all, V_all are computed, right before splitting heads:
-        if attention_mask is not None:
-            # DistilBERT gives (B, N) with 1=real, 0=pad
-            token_valid = attention_mask.bool()          # True = real token
-        else:
-            token_valid = None
-        # 3. Global kernel linear attention using learned rff_proj
-        # Project Q_global and K_global to (B, Hg, N, rff_features)
-        # self.rff_proj: (Hg, head_dim, rff_features)
-        Q_feat = torch.einsum('bhnd,hdf->bhnf', Q_global, self.rff_proj)  # (B, Hg, N, kdim)
-        K_feat = torch.einsum('bhnd,hdf->bhnf', K_global, self.rff_proj)
+        )   # (B, Hl, N, D)
 
-        # Mask out padding tokens (set features to zero)
+        # 3. Global kernel linear attention – mask out padding before kernel
         if token_valid is not None:
-            mask_global = token_valid.unsqueeze(1).unsqueeze(-1)  # (B, 1, N, 1)
-            K_feat = K_feat.masked_fill(~mask_global, 0.0)
+            mask_global = token_valid.unsqueeze(1).unsqueeze(-1)      # (B, 1, N, 1)
+            K_global = K_global.masked_fill(~mask_global, 0.0)
             V_global = V_global.masked_fill(~mask_global, 0.0)
 
-        # KV accumulation and normalizer
-        KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V_global)          # (B, Hg, kdim, D)
-        K_sum = K_feat.sum(dim=2, keepdim=True)                          # (B, Hg, 1, kdim)
-        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-8     # (B, Hg, N, 1)
         ctx_global = kernel_linear_attention(
             Q_global, K_global, V_global,
-            rff_proj=self.rff_proj,
-            use_zero_sum=self.cfg.use_zero_sum_keys,
-            kernel_type='rff'   # or 'elu' if you want parameter‑free
+            mask=mask_global
         )
 
-        # 4. Adaptive blending (if enabled)
+        # 4. Combine local and global contexts
         if self.blend_logits is not None:
-            # Expand global context to all heads (pad local part with zeros for global heads)
-            # But in this design, local heads only for Hl, global for Hg -> blend per head
-            blend_weights = torch.sigmoid(self.blend_logits)  # (H,)
-            blend_weights = blend_weights.view(1, H, 1, 1)
-            combined = blend_weights * torch.cat([ctx_local, ctx_global], dim=1)  # simple weighted sum
-            # Alternatively, separate blend for local and global (using two sets of weights)
-            # For simplicity, we just combine the two parts (they are already concatenated)
-            context = combined
-        else:
-            context = torch.cat([ctx_local, ctx_global], dim=1)  # (B, H, N, D)
+            alpha = torch.sigmoid(self.blend_logits)
 
-        # Apply token mask if needed
+            alpha_local = alpha[:Hl].view(1, Hl, 1, 1)
+            alpha_global = alpha[Hl:].view(1, Hg, 1, 1)
+
+            ctx_local = alpha_local * ctx_local
+            ctx_global = (1 - alpha_global) * ctx_global
+
+            context = torch.cat([ctx_local, ctx_global], dim=1)
+        else:
+            context = torch.cat([ctx_local, ctx_global], dim=1)
+
+        # Apply token validity mask to output (zero out padding positions)
         if token_valid is not None:
             context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
 
-        # Output projection
+        # 5. Merge heads and factorised output projection
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         output = self.out_proj(context)
         output = self.dropout(output)
+        # print(ctx_local.abs().mean(), ctx_global.abs().mean())
 
         return (output, None)
+
+
+
 
 
 
