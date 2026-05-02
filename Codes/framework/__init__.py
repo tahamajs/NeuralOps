@@ -14,7 +14,7 @@ from .core.registry import (
     list_all_components,
 )
 
-
+from .registry import ATTENTION_REGISTRY
 from . import core
 from . import compression
 from . import attentions
