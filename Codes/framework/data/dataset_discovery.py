@@ -1,12 +1,22 @@
-import json
-import pandas as pd
-import torch
+"""Dataset discovery utilities. No external config dependency."""
+import json, pandas as pd, torch
 from pathlib import Path
 from torch.utils.data import Dataset
-from typing import List
-from ..config.experiment_config import DatasetConfig, ExperimentConfig
+from typing import List, Optional
 
-def discover_datasets(config: ExperimentConfig) -> List[DatasetConfig]:
+class DatasetConfig:
+    def __init__(self, name: str, path: str, task_type: str = 'single',
+                 num_choices: int = 0, num_labels: int = 2):
+        self.name = name
+        self.path = path
+        self.task_type = task_type
+        self.num_choices = num_choices
+        self.num_labels = num_labels
+
+class ExperimentConfig:
+    pass
+
+def discover_datasets(config: Optional[ExperimentConfig] = None) -> List[DatasetConfig]:
     dataset_paths = {
         "data_custom": "./data/data_custom.csv",
         "arc_challenge": "./data/reasoning/arc_challenge/processed/arc_challenge_train.csv",
@@ -62,8 +72,10 @@ def discover_datasets(config: ExperimentConfig) -> List[DatasetConfig]:
             else:
                 print(f"⚠️ {name}: No clear labels found.")
                 continue
-            datasets.append(DatasetConfig(name=name, path=path, task_type=final_task_type,
-                num_choices=num_choices if is_multichoice else 0, num_labels=final_num_labels))
+            datasets.append(DatasetConfig(
+                name=name, path=path, task_type=final_task_type,
+                num_choices=num_choices if is_multichoice else 0,
+                num_labels=final_num_labels))
         except Exception as e:
             print(f"⚠️ Error analyzing {name}: {e}")
             continue
