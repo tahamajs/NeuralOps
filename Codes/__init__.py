@@ -1,25 +1,32 @@
-# studio/__init__.py
-from .config import config, DEVICE
-from .compression import SVDLinearLayer, AdvancedZeroShotCompressor
-from .attentions import SVDLinearAttention, CompressedAttentionLayer
-from .routing import KeywordRouter, SmartRouter
-from .ensemble import WeightedEnsemble
-from .training import fine_tune_compressed_model
-from .analysis import evaluate_model, benchmark_model
-from .soa import SOABert, migrate_bert_to_soa, compute_global_basis_from_hidden_states
-from .data import discover_datasets, load_dataset_from_config
-from .utils import setup_logger, get_device, set_seed
-
-__version__ = "2.0.0"
-__all__ = [
-    "config", "DEVICE",
-    "SVDLinearLayer", "AdvancedZeroShotCompressor",
-    "SVDLinearAttention", "CompressedAttentionLayer",
-    "KeywordRouter", "SmartRouter",
-    "WeightedEnsemble",
-    "fine_tune_compressed_model",
-    "evaluate_model", "benchmark_model",
-    "SOABert", "migrate_bert_to_soa", "compute_global_basis_from_hidden_states",
-    "discover_datasets", "load_dataset_from_config",
-    "setup_logger", "get_device", "set_seed",
-]
+# Auto-generated __init__.py
+from . import AARAttention
+from . import AEGIS
+from . import AEGIS3Attention
+from . import AURORA
+from . import Aegis2Attention
+from . import Aegis4Attention
+from . import Aegis5Attention
+from . import Aegis6Attention
+from . import AegisAttention
+from . import Aegis‑Attention
+from . import FUSIONATTN
+from . import LEKAAttention
+from . import MinimalAURORA
+from . import MinimalNOVA
+from . import MinimalPRISM
+from . import MinimalSVD‑Attention
+from . import NEBULA
+from . import NEXUS
+from . import NOVA
+from . import OHA
+from . import ORION
+from . import PHANTOM
+from . import PRISM
+from . import SVDCompressedAttention
+from . import SpectraV2Attention
+from . import baseline
+from . import glue_compression
+from . import main
+from . import run_glue_svd
+from . import script
+from . import setup
