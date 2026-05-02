@@ -1424,3 +1424,101 @@ if __name__ == "__main__":
 
 
 
+
+
+
+# (.venv) ➜  Codes git:(main) ✗ python SpectraV2Attention.py --attn_type spectra_v2 \
+#   --max_len 64 --batch_size 32 --epochs 5 --lr 1e-5 --no_gate \
+#   --model distilbert-base-uncased --task sst2
+# 06:34:55 | INFO    | Task: sst2 | Progressive: True
+# 06:34:55 | INFO    | k early/mid/late = 32/16/12
+# 06:34:55 | INFO    | Raw dataset sizes: train=67349, val=872
+# 06:34:55 | INFO    | Tokenized dataset: train=67349, val=872
+# Loading weights: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 100/100 [00:00<00:00, 5992.63it/s]
+# [transformers] DistilBertForSequenceClassification LOAD REPORT from: distilbert-base-uncased
+# Key                     | Status     | 
+# ------------------------+------------+-
+# vocab_transform.weight  | UNEXPECTED | 
+# vocab_layer_norm.bias   | UNEXPECTED | 
+# vocab_projector.bias    | UNEXPECTED | 
+# vocab_transform.bias    | UNEXPECTED | 
+# vocab_layer_norm.weight | UNEXPECTED | 
+# classifier.bias         | MISSING    | 
+# classifier.weight       | MISSING    | 
+# pre_classifier.bias     | MISSING    | 
+# pre_classifier.weight   | MISSING    | 
+
+# Notes:
+# - UNEXPECTED:   can be ignored when loading from different task/architecture; not ok if you expect identical arch.
+# - MISSING:      those params were newly initialized because missing from the checkpoint. Consider training on your downstream task.
+# 06:34:55 | INFO    | Created model with 6 compressed layers (type=distilbert)
+# 06:34:55 | INFO    | Compression ratios: early=32, mid=16, late=12
+# Using MPS (Metal) device
+# 06:34:56 | INFO    | DEBUG: model device is mps:0
+# jjj
+# 06:34:56 | INFO    | Train dataset columns: ['input_ids', 'token_type_ids', 'attention_mask', 'labels']
+# 06:34:56 | INFO    | Train dataset features: {'input_ids': List(Value('int32')), 'token_type_ids': List(Value('int8')), 'attention_mask': List(Value('int8')), 'labels': Value('int64')}
+# 06:34:56 | INFO    | First example: {'input_ids': [101, 5342, 2047, 3595, 8496, 2013, 1996, 18643, 3197, 102, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'token_type_ids': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'attention_mask': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'labels': 0}
+# 06:34:56 | INFO    | CompressionTrainer initialized
+# 06:34:56 | INFO    | Starting training...
+# {'loss': '0.6922', 'grad_norm': '0.9323', 'learning_rate': '1.569e-06', 'epoch': '0.04751'}                                                                        
+# {'loss': '0.6824', 'grad_norm': '3.353', 'learning_rate': '3.154e-06', 'epoch': '0.09501'}                                                                         
+# {'loss': '0.663', 'grad_norm': '4.947', 'learning_rate': '4.739e-06', 'epoch': '0.1425'}                                                                           
+# {'loss': '0.618', 'grad_norm': '14.87', 'learning_rate': '6.323e-06', 'epoch': '0.19'}                                                                             
+# {'loss': '0.5986', 'grad_norm': '7.059', 'learning_rate': '7.908e-06', 'epoch': '0.2375'}                                                                          
+# {'loss': '0.5577', 'grad_norm': '28.42', 'learning_rate': '9.493e-06', 'epoch': '0.285'}                                                                           
+# {'loss': '0.4933', 'grad_norm': '13.33', 'learning_rate': '9.931e-06', 'epoch': '0.3325'}                                                                          
+# {'loss': '0.4434', 'grad_norm': '21.21', 'learning_rate': '9.83e-06', 'epoch': '0.38'}                                                                             
+# {'loss': '0.4258', 'grad_norm': '13.68', 'learning_rate': '9.729e-06', 'epoch': '0.4276'}                                                                          
+# {'loss': '0.3922', 'grad_norm': '28.26', 'learning_rate': '9.628e-06', 'epoch': '0.4751'}                                                                          
+# {'loss': '0.3588', 'grad_norm': '5.481', 'learning_rate': '9.527e-06', 'epoch': '0.5226'}                                                                          
+# {'loss': '0.3408', 'grad_norm': '2.85', 'learning_rate': '9.426e-06', 'epoch': '0.5701'}                                                                           
+# {'loss': '0.3495', 'grad_norm': '5.213', 'learning_rate': '9.325e-06', 'epoch': '0.6176'}                                                                          
+# {'loss': '0.3229', 'grad_norm': '4.747', 'learning_rate': '9.224e-06', 'epoch': '0.6651'}                                                                          
+# {'loss': '0.3185', 'grad_norm': '6.216', 'learning_rate': '9.123e-06', 'epoch': '0.7126'}                                                                          
+# {'loss': '0.3238', 'grad_norm': '5.498', 'learning_rate': '9.022e-06', 'epoch': '0.7601'}                                                                          
+# {'loss': '0.3099', 'grad_norm': '6.174', 'learning_rate': '8.921e-06', 'epoch': '0.8076'}                                                                          
+# {'loss': '0.3122', 'grad_norm': '7.905', 'learning_rate': '8.819e-06', 'epoch': '0.8551'}                                                                          
+# {'loss': '0.3002', 'grad_norm': '6.587', 'learning_rate': '8.718e-06', 'epoch': '0.9026'}                                                                          
+# {'loss': '0.2726', 'grad_norm': '7.161', 'learning_rate': '8.617e-06', 'epoch': '0.9501'}                                                                          
+# {'loss': '0.2977', 'grad_norm': '6.493', 'learning_rate': '8.516e-06', 'epoch': '0.9976'}                                                                          
+# {'loss': '0.2629', 'grad_norm': '9.409', 'learning_rate': '8.415e-06', 'epoch': '1.045'}                                                                           
+# {'loss': '0.2475', 'grad_norm': '7.853', 'learning_rate': '8.314e-06', 'epoch': '1.093'}                                                                           
+# {'loss': '0.2402', 'grad_norm': '6.938', 'learning_rate': '8.213e-06', 'epoch': '1.14'}                                                                            
+# {'loss': '0.2618', 'grad_norm': '3.037', 'learning_rate': '8.112e-06', 'epoch': '1.188'}                                                                           
+# {'loss': '0.248', 'grad_norm': '2.79', 'learning_rate': '8.011e-06', 'epoch': '1.235'}                                                                             
+# {'loss': '0.2447', 'grad_norm': '6.226', 'learning_rate': '7.91e-06', 'epoch': '1.283'}                                                                            
+# {'loss': '0.2285', 'grad_norm': '1.992', 'learning_rate': '7.809e-06', 'epoch': '1.33'}                                                                            
+# {'loss': '0.2349', 'grad_norm': '3.694', 'learning_rate': '7.708e-06', 'epoch': '1.378'}                                                                           
+# {'loss': '0.2236', 'grad_norm': '6.939', 'learning_rate': '7.607e-06', 'epoch': '1.425'}                                                                           
+# {'loss': '0.2213', 'grad_norm': '5.934', 'learning_rate': '7.506e-06', 'epoch': '1.473'}                                                                           
+#  29%|███████████████████████████████████                                                                                    | 3102/10525 [50:21<1:49:18,  1.13it/s]^CTraceback (most recent call last):
+#   File "/Users/tahamajs/Documents/uni/Project/Codes/SpectraV2Attention.py", line 1423, in <module>
+#     main()
+#     ~~~~^^
+#   File "/Users/tahamajs/Documents/uni/Project/Codes/SpectraV2Attention.py", line 1416, in main
+#     trainer.train()
+#     ~~~~~~~~~~~~~^^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1427, in train
+#     return inner_training_loop(
+#         args=args,
+#     ...<2 lines>...
+#         ignore_keys_for_eval=ignore_keys_for_eval,
+#     )
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1509, in _inner_training_loop
+#     self._run_epoch(
+#     ~~~~~~~~~~~~~~~^
+#         model=model,
+#         ^^^^^^^^^^^^
+#     ...<9 lines>...
+#         steps_trained_in_current_epoch=steps_trained_in_current_epoch,
+#         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#     )
+#     ^
+#   File "/Users/tahamajs/Documents/uni/Project/.venv/lib/python3.14/site-packages/transformers/trainer.py", line 1742, in _run_epoch
+#     and (torch.isnan(tr_loss_step) or torch.isinf(tr_loss_step))
+#                                       ~~~~~~~~~~~^^^^^^^^^^^^^^
+# KeyboardInterrupt
+#  29%|███████████████████████████████████                                                                                    | 3102/10525 [50:24<2:00:37,  1.03it/s]
+
+# (.venv) ➜  Codes git:(main) ✗ 
