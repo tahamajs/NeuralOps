@@ -1,51 +1,51 @@
-# Aegis-Attention: Unified Efficient Transformer Module
+# # Aegis-Attention: Unified Efficient Transformer Module
 
-## Step 1: Strategic Selection & Synergy Analysis
+# ## Step 1: Strategic Selection & Synergy Analysis
 
-The proposed Aegis‑Attention synthesises **Low‑Rank Projections**, **Hybrid Sparse‑Linear Attention**, **Adaptive Masking**, and **Static Residual Initialisation** into a single, production‑ready module. Each component alone suffers from fundamental limitations:
+# The proposed Aegis‑Attention synthesises **Low‑Rank Projections**, **Hybrid Sparse‑Linear Attention**, **Adaptive Masking**, and **Static Residual Initialisation** into a single, production‑ready module. Each component alone suffers from fundamental limitations:
 
-| Technique | Strength | Weakness |
-|-----------|----------|----------|
-| **Linear/Kernel Attention** | $O(Nd^2)$ complexity, long‑range coverage | Washes out fine‑grained local structure |
-| **Sparse/Block Attention** | Preserves local detail, $O(N\cdot B)$ cost | Misses long‑range interactions across blocks |
-| **Low‑Rank Compression** | Drastic parameter & memory reduction | Loses high‑frequency precision if used alone |
-| **Adaptive Sparsity** | Dynamic computation, discards irrelevant tokens | Hard‑pruning harms gradient flow; soft‑pruning alone doesn't reduce O(.) |
+# | Technique | Strength | Weakness |
+# |-----------|----------|----------|
+# | **Linear/Kernel Attention** | $O(Nd^2)$ complexity, long‑range coverage | Washes out fine‑grained local structure |
+# | **Sparse/Block Attention** | Preserves local detail, $O(N\cdot B)$ cost | Misses long‑range interactions across blocks |
+# | **Low‑Rank Compression** | Drastic parameter & memory reduction | Loses high‑frequency precision if used alone |
+# | **Adaptive Sparsity** | Dynamic computation, discards irrelevant tokens | Hard‑pruning harms gradient flow; soft‑pruning alone doesn't reduce O(.) |
 
-**Synergy of the combination:**
-- **Low‑Rank projections** pre‑condition the Q/K/V spaces, removing noise and reducing the cost of every following operation. Because the rank is fixed, there is **no SVD in the forward pass** – only a cached factorisation.
-- **Hybrid attention core** marries the best of both worlds: a small **local dense window** ($B=64$) guarantees strong local structure (critical for syntax, neighbouring token relations), while **global linear attention** (via kernel trick) captures document‑level semantics in $O(N d^2)$.
-- **Adaptive soft‑masking** (token‑wise gating) is applied **only to the global linear path**. It down‑weights redundant tokens (e.g., stop‑words) before they are accumulated, making the $O(N d^2)$ step even more efficient without breaking back‑propagation. No hard thresholds are used; the gate is a smooth sigmoid, fully differentiable.
-- **DeltaKV‑style caching is deliberately avoided** during training; we use a simple static low‑rank factorisation, ensuring stable gradient flow and consistent behaviour from step 0.
+# **Synergy of the combination:**
+# - **Low‑Rank projections** pre‑condition the Q/K/V spaces, removing noise and reducing the cost of every following operation. Because the rank is fixed, there is **no SVD in the forward pass** – only a cached factorisation.
+# - **Hybrid attention core** marries the best of both worlds: a small **local dense window** ($B=64$) guarantees strong local structure (critical for syntax, neighbouring token relations), while **global linear attention** (via kernel trick) captures document‑level semantics in $O(N d^2)$.
+# - **Adaptive soft‑masking** (token‑wise gating) is applied **only to the global linear path**. It down‑weights redundant tokens (e.g., stop‑words) before they are accumulated, making the $O(N d^2)$ step even more efficient without breaking back‑propagation. No hard thresholds are used; the gate is a smooth sigmoid, fully differentiable.
+# - **DeltaKV‑style caching is deliberately avoided** during training; we use a simple static low‑rank factorisation, ensuring stable gradient flow and consistent behaviour from step 0.
 
-**Why this works better than any single method:**
-Linear attention alone would blur local syntax; block attention alone would lose document context; low‑rank alone would degrade precision. By **decoupling local and global processing** and **allocating parameter reduction only to the projection layers**, the model retains full expressivity where it matters while drastically shrinking the parameter and memory footprint.
+# **Why this works better than any single method:**
+# Linear attention alone would blur local syntax; block attention alone would lose document context; low‑rank alone would degrade precision. By **decoupling local and global processing** and **allocating parameter reduction only to the projection layers**, the model retains full expressivity where it matters while drastically shrinking the parameter and memory footprint.
 
----
+# ---
 
-## Step 2: Architecture Design – "Aegis‑Attention"
+# ## Step 2: Architecture Design – "Aegis‑Attention"
 
-### Drop‑in Replacement Constraints
-- Signature: `forward(hidden_states, attention_mask=None)` → output `(B, L, H)`
-- Replaces the original `DistilBertSelfAttention` without changing the surrounding encoder.
+# ### Drop‑in Replacement Constraints
+# - Signature: `forward(hidden_states, attention_mask=None)` → output `(B, L, H)`
+# - Replaces the original `DistilBertSelfAttention` without changing the surrounding encoder.
 
-### Efficiency
-- **Parameter count < original:** All Q/K/V/Out projections are low‑rank (`rank = 64`). Original DistilBERT uses 4×768² ≈ 2.36M parameters for attention; Aegis uses 4× (768×64 + 64×768) ≈ 0.39M → ~6× reduction.
-- **Memory:** Low‑rank projections halve activation memory; global linear attention uses $O(L d^2)$ memory instead of $O(L^2)$.
-- **Speed:** Local dense attention on block‑size 64 adds negligible overhead; global path uses highly optimised matrix‑multiplies.
+# ### Efficiency
+# - **Parameter count < original:** All Q/K/V/Out projections are low‑rank (`rank = 64`). Original DistilBERT uses 4×768² ≈ 2.36M parameters for attention; Aegis uses 4× (768×64 + 64×768) ≈ 0.39M → ~6× reduction.
+# - **Memory:** Low‑rank projections halve activation memory; global linear attention uses $O(L d^2)$ memory instead of $O(L^2)$.
+# - **Speed:** Local dense attention on block‑size 64 adds negligible overhead; global path uses highly optimised matrix‑multiplies.
 
-### Stability
-- **No real‑time SVD:** Factorisation is done once during initialisation and the factors are frozen / fine‑tuned.
-- **Robust padding:** Binary mask derived from `attention_mask` zeroes out padded tokens in both local and global paths.
-- **Gradient‑friendly:** All pruning is soft‑sigmoid; hard thresholds are completely avoided.
+# ### Stability
+# - **No real‑time SVD:** Factorisation is done once during initialisation and the factors are frozen / fine‑tuned.
+# - **Robust padding:** Binary mask derived from `attention_mask` zeroes out padded tokens in both local and global paths.
+# - **Gradient‑friendly:** All pruning is soft‑sigmoid; hard thresholds are completely avoided.
 
-### Initialisation
-- Weights of Q, K, V, Out are initialised via **Truncated SVD** of the corresponding pretrained DistilBERT matrices, guaranteeing zero‑shot compatibility.
+# ### Initialisation
+# - Weights of Q, K, V, Out are initialised via **Truncated SVD** of the corresponding pretrained DistilBERT matrices, guaranteeing zero‑shot compatibility.
 
----
+# ---
 
-## Step 3: Complete PyTorch Implementation
+# ## Step 3: Complete PyTorch Implementation
 
-```python
+
 import math
 import torch
 import torch.nn as nn
