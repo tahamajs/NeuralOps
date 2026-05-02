@@ -1,4 +1,2 @@
-# studio/visualization/__init__.py
-from .dashboard import AttentionDashboard, ModelVisualizer
-
-__all__ = ["AttentionDashboard", "ModelVisualizer"]
+# Auto-generated __init__.py
+from . import dashboard
