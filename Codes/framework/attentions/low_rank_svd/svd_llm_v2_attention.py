@@ -5,7 +5,7 @@ Paper: SVD-LLM V2 (further optimizations on top of SVD-LLM)
 import torch
 import torch.nn as nn
 import numpy as np
-from ..core.base_attention import BaseAttention
+from ..core.base import BaseAttention
 from ..core.registry import ATTENTION_REGISTRY
 
 

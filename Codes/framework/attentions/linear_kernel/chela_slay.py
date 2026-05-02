@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..core.base_attention import BaseAttention
+from ..core.base import BaseAttention
 from ..core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("chela_slay")

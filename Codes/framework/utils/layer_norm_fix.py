@@ -1,7 +1,4 @@
-"""
-Fix DistilBERT checkpoint LayerNorm naming (beta/gamma → bias/weight).
-"""
-
+"""Fix DistilBERT checkpoint LayerNorm naming (beta/gamma -> bias/weight)."""
 import torch.nn as nn
 
 def fix_layernorm_naming(model: nn.Module):
