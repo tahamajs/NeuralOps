@@ -1,144 +1,61 @@
-# framework/data/glue_loader.py
 """
-GLUE dataset loader from local Parquet files.
+Local GLUE dataset loader from Parquet files.
 """
 
 import os
-from pathlib import Path
-from typing import Dict, Optional, List, Tuple
 from datasets import Dataset, DatasetDict
-import pandas as pd
 
+GLUE_TASK_KEYS = {
+    "cola": ("sentence", None),
+    "sst2": ("sentence", None),
+    "mrpc": ("sentence1", "sentence2"),
+    "qqp": ("question1", "question2"),
+    "stsb": ("sentence1", "sentence2"),
+    "mnli": ("premise", "hypothesis"),
+    "qnli": ("question", "sentence"),
+    "rte": ("sentence1", "sentence2"),
+    "wnli": ("sentence1", "sentence2"),
+}
 
-def load_glue_task(task_name: str, local_path: str) -> DatasetDict:
+def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
     """
     Load a GLUE task from local Parquet files.
-    
     Args:
-        task_name: Name of the GLUE task (cola, mrpc, etc.)
-        local_path: Path to the local GLUE dataset directory
-        
+        task_name: e.g., 'sst2', 'mrpc'
+        base_path: root directory of GLUE datasets
     Returns:
-        DatasetDict with 'train' and 'validation' splits
-        
-    Example:
-        >>> dataset = load_glue_task("cola", "/path/to/glue")
-        >>> train_data = dataset["train"]
+        DatasetDict with at least 'train' and 'validation' splits.
     """
-    task_path = os.path.join(local_path, task_name)
+    task_path = os.path.join(base_path, task_name)
     if not os.path.exists(task_path):
-        raise FileNotFoundError(f"Task folder not found: {task_path}")
-    
-    files = os.listdir(task_path)
-    
-    # Find Parquet files for different splits
-    train_files = []
-    valid_files = []
-    valid_matched_files = []
-    test_files = []
-    
-    for f in files:
-        if not f.endswith(".parquet"):
+        raise FileNotFoundError(f"GLUE task folder not found: {task_path}")
+
+    splits = {}
+    for fname in os.listdir(task_path):
+        if not fname.endswith(".parquet"):
             continue
-        
-        full_path = os.path.join(task_path, f)
-        
-        if f.startswith("train-"):
-            train_files.append(full_path)
-        elif f.startswith("validation-") and "matched" not in f:
-            valid_files.append(full_path)
-        elif "matched" in f:
-            valid_matched_files.append(full_path)
-        elif f.startswith("test-"):
-            test_files.append(full_path)
-    
-    dataset_dict = {}
-    
-    if train_files:
-        dataset_dict["train"] = Dataset.from_parquet(train_files)
-        
-    if valid_files:
-        dataset_dict["validation"] = Dataset.from_parquet(valid_files)
-        
-    if valid_matched_files:
-        dataset_dict["validation_matched"] = Dataset.from_parquet(valid_matched_files)
-        
-    if test_files:
-        dataset_dict["test"] = Dataset.from_parquet(test_files)
-    
-    if not dataset_dict:
-        raise ValueError(f"No Parquet files found for task {task_name}")
-    
-    # Print summary
-    print(f"✅ Loaded GLUE task '{task_name}':")
-    for split_name, split_data in dataset_dict.items():
-        print(f"   - {split_name}: {len(split_data)} samples")
-    
-    return DatasetDict(dataset_dict)
+        split = fname.split("-")[0]      # 'train', 'validation', etc.
+        file_path = os.path.join(task_path, fname)
+        splits[split] = Dataset.from_parquet([file_path])
 
+    # Handle MNLI special splits
+    if task_name == "mnli":
+        for special in ["validation_matched", "validation_mismatched"]:
+            fname = f"{special}.parquet"
+            fpath = os.path.join(task_path, fname)
+            if os.path.exists(fpath):
+                splits[special] = Dataset.from_parquet([fpath])
 
-def load_glue_tasks(task_names: List[str], local_path: str) -> Dict[str, DatasetDict]:
-    """
-    Load multiple GLUE tasks.
-    
-    Args:
-        task_names: List of GLUE task names
-        local_path: Path to local GLUE dataset directory
-        
-    Returns:
-        Dictionary mapping task names to DatasetDict objects
-    """
-    datasets = {}
-    for task_name in task_names:
-        try:
-            datasets[task_name] = load_glue_task(task_name, local_path)
-        except Exception as e:
-            print(f"⚠️ Failed to load {task_name}: {e}")
-    
-    return datasets
+    if "train" not in splits:
+        raise RuntimeError(f"No training split found for task {task_name}")
+    return DatasetDict(splits)
 
-
-def get_glue_task_info(task_name: str) -> Dict:
-    """
-    Get information about a GLUE task.
-    
-    Args:
-        task_name: Name of the GLUE task
-        
-    Returns:
-        Dictionary with task info
-    """
-    from .task_config import TASK_METRICS, TASK_NUM_LABELS, TASK_COLUMNS
-    
-    return {
-        "name": task_name,
-        "metric": TASK_METRICS.get(task_name, "accuracy"),
-        "num_labels": TASK_NUM_LABELS.get(task_name, 2),
-        "text_columns": TASK_COLUMNS.get(task_name, ["sentence"]),
-        "is_regression": task_name == "stsb",
-    }
-
-
-def get_available_glue_tasks(local_path: str) -> List[str]:
-    """
-    Get list of available GLUE tasks in the local directory.
-    
-    Args:
-        local_path: Path to local GLUE dataset directory
-        
-    Returns:
-        List of available task names
-    """
-    available = []
-    base_path = Path(local_path)
-    
-    if not base_path.exists():
-        return available
-    
-    for item in base_path.iterdir():
-        if item.is_dir():
-            # Check if directory contains Parquet files
-            if any(f.endswith(".parquet") for f in item.iterdir()):
-                available.append(item.name)
-    
-    return sorted(available)
+def get_num_labels_and_is_regression(task_name: str):
+    """Returns (num_labels, is_regression) for a GLUE task."""
+    t = task_name.lower()
+    if t == "stsb":
+        return 1, True
+    if t == "cola":
+        return 2, False
+    mapping = {"sst2": 2, "mrpc": 2, "qqp": 2, "mnli": 3, "qnli": 2, "rte": 2, "wnli": 2}
+    return mapping.get(t, 2), False
