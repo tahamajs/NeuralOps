@@ -56,58 +56,99 @@ class AegisHybridAttention(nn.Module):
 
     def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
         B, N, H = hidden_states.shape
+
         def lr(p1, p2, x): return p2(p1(x))
-        Q = lr(self.q_proj1, self.q_proj2, hidden_states)
+        Q = lr(self.q_proj1, self.q_proj2, hidden_states)                   # (B, N, H)
         K = lr(self.k_proj1, self.k_proj2, hidden_states)
         V = lr(self.v_proj1, self.v_proj2, hidden_states)
 
-        Q = Q.view(B, N, self.num_heads, self.head_dim)
+        Q = Q.view(B, N, self.num_heads, self.head_dim)                     # (B, N, h, d)
         K = K.view(B, N, self.num_heads, self.head_dim)
         V = V.view(B, N, self.num_heads, self.head_dim)
 
+        # -------- padding mask (2D bool, True = keep) --------
         mask_2d = None
         if attention_mask is not None:
-            if attention_mask.dim() == 2: mask_2d = attention_mask.bool()
-            elif attention_mask.dim() == 4: mask_2d = (attention_mask[:,0,0,:] > -1e9)
-        if mask_2d is not None:
-            Q, K, V = [x * mask_2d.unsqueeze(1).unsqueeze(-1) for x in (Q, K, V)]
+            if attention_mask.dim() == 2:
+                mask_2d = attention_mask.bool()                              # (B, N)
+            elif attention_mask.dim() == 4:
+                mask_2d = (attention_mask[:, 0, 0, :] > -1e9)               # (B, N)
 
-        # Local attention
+        # zero out padded tokens in Q, K, V  (B, N, 1, 1)
+        if mask_2d is not None:
+            mask_4d = mask_2d.unsqueeze(-1).unsqueeze(-1)                   # (B, N, 1, 1)
+            Q = Q * mask_4d
+            K = K * mask_4d
+            V = V * mask_4d
+
+        # ============== 1. Local window attention ==============
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.einsum('bnhd,bmhd->bhnm', Q, K) * scale
+        scores = torch.einsum('bnhd,bmhd->bhnm', Q, K) * scale               # (B, h, N, N)
+
+        # local band mask
         idx = torch.arange(N, device=hidden_states.device)
-        band = (idx.unsqueeze(1)-idx.unsqueeze(0)).abs() <= self.local_window
-        scores = scores.masked_fill(~band.unsqueeze(0).unsqueeze(0), float('-inf'))
-        if mask_2d is not None: scores = scores.masked_fill(~mask_2d.unsqueeze(1).unsqueeze(2), float('-inf'))
+        band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.local_window   # (N, N)
+        band_mask = band_mask.unsqueeze(0).unsqueeze(0)                     # (1, 1, N, N)
+        scores = scores.masked_fill(~band_mask, float('-inf'))
+
+        # also apply padding mask to keys (B, 1, 1, N)
+        if mask_2d is not None:
+            key_mask = mask_2d.unsqueeze(1).unsqueeze(2)                    # (B, 1, 1, N)
+            scores = scores.masked_fill(~key_mask, float('-inf'))
+
         attn_local = F.softmax(scores, dim=-1)
         attn_local = self.dropout(attn_local)
-        local_out = torch.einsum('bhnm,bmhd->bnhd', attn_local, V)
+        local_out = torch.einsum('bhnm,bmhd->bnhd', attn_local, V)          # (B, N, h, d)
 
-        # Global linear attention
-        phi = lambda x: F.elu(x)+1
+        # ============== 2. Global linear attention ==============
+        phi = lambda x: F.elu(x) + 1
+
         if self.prune_gate is not None:
-            keep = torch.sigmoid(self.prune_gate(hidden_states))
-            Kg, Vg = K * keep.unsqueeze(-1), V * keep.unsqueeze(-1)
-        else: Kg, Vg = K, V
-        if mask_2d is not None: Kg, Vg = [x*mask_2d.unsqueeze(1).unsqueeze(-1) for x in (Kg, Vg)]
-        phi_K, phi_Q = phi(Kg), phi(Q)
-        phi_K_t = phi_K.permute(0,2,3,1)          # B,h,d,N
-        Vg_t = Vg.permute(0,2,1,3)                # B,h,N,d
-        KV = torch.matmul(phi_K_t, Vg_t)           # B,h,d,d
-        Z = torch.matmul(phi_K_t, torch.ones(B,self.num_heads,N,1,device=Kg.device))   # B,h,d,1
-        phi_Q_t = phi_Q.permute(0,2,1,3).unsqueeze(-2)   # B,h,N,1,d
-        global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2) / (torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2) + 1e-8)
-        global_out = global_out.permute(0,2,1,3)   # B,N,h,d
+            keep = torch.sigmoid(self.prune_gate(hidden_states))            # (B, N, h)
+            Kg = K * keep.unsqueeze(-1)                                     # (B, N, h, d)
+            Vg = V * keep.unsqueeze(-1)
+        else:
+            Kg, Vg = K, V
 
-        # Fusion
-        alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)
-        fused = alpha*local_out + (1-alpha)*global_out
+        # zero out padded tokens again (mask_4d already applied to K,V but we re-check Kg,Vg)
+        if mask_2d is not None:
+            Kg = Kg * mask_4d
+            Vg = Vg * mask_4d
+
+        phi_K = phi(Kg)                                                     # (B, N, h, d)
+        phi_Q = phi(Q)
+
+        phi_K_t = phi_K.permute(0, 2, 3, 1)                                 # (B, h, d, N)
+        Vg_t = Vg.permute(0, 2, 1, 3)                                       # (B, h, N, d)
+
+        KV = torch.matmul(phi_K_t, Vg_t)                                    # (B, h, d, d)
+
+        ones = torch.ones(B, self.num_heads, N, 1, device=Kg.device)        # (B, h, N, 1)
+        Z = torch.matmul(phi_K_t, ones)                                     # (B, h, d, 1)
+
+        phi_Q_t = phi_Q.permute(0, 2, 1, 3).unsqueeze(-2)                  # (B, h, N, 1, d)
+
+        global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2)     # (B, h, N, d)
+        norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)            # (B, h, N, 1)
+        global_out = global_out / (norm + 1e-8)
+        global_out = global_out.permute(0, 2, 1, 3)                         # (B, N, h, d)
+
+        # ============== 3. Adaptive fusion ==============
+        alpha = torch.sigmoid(self.fusion_gate(hidden_states)).unsqueeze(-1)  # (B, N, h, 1)
+        fused = alpha * local_out + (1 - alpha) * global_out                   # (B, N, h, d)
+
+        # ============== 4. Output projection ==============
         fused = fused.reshape(B, N, H)
         out = self.out_proj2(self.out_proj1(fused))
         out = self.dropout(out)
-        if mask_2d is not None: out = out * mask_2d.unsqueeze(-1)
-        return (out, None)
 
+        if mask_2d is not None:
+            out = out * mask_2d.unsqueeze(-1)                               # zero out padding in output
+
+        return (out, None)
+    
+
+    
     def get_ortho_loss(self): return torch.tensor(0.0, device=self.out_proj2.weight.device)
 
 # ------------------------------------------------------------
