@@ -214,33 +214,21 @@ class AegisAttentionV3(nn.Module):
         B, N, _ = x.shape
         return x.view(B, N, self.h, self.d).permute(0,2,1,3)
 
-    def _tiled_sliding_window_attention(self, Q, K, V, pad_mask):
+    def _tiled_sliding_window_attention(self, Q, K, V, pad_mask_1d, square_mask=None):
         """
-        Tiled local attention without an N×N mask.
-        pad_mask may arrive as (B, N), (B, 1, 1, N), or with extra leading 1s.
-        We normalise it to (B, 1, 1, N).
+        pad_mask_1d : (B, 1, 1, N) 1=valid, 0=pad
+        square_mask : optional (B, 1, N, N) additive mask (0 ok, -inf masked)
         """
-        # Normalise pad_mask to exactly 4D: (B, 1, 1, N)
-        if pad_mask.dim() == 2:
-            pad_mask = pad_mask.unsqueeze(1).unsqueeze(2)          # (B,1,1,N)
-        elif pad_mask.dim() == 3:
-            # Could be (B, N, 1) or (B, 1, N) – force to (B,1,1,N)
-            if pad_mask.size(1) == 1:
-                pad_mask = pad_mask.unsqueeze(2)                   # (B,1,1,N)
-            else:
-                pad_mask = pad_mask.unsqueeze(1)                   # (B,1,N,?) → not safe, reshape
-                pad_mask = pad_mask.view(pad_mask.size(0), 1, 1, -1)
-        elif pad_mask.dim() > 4:
-            # Collapse all extra dimensions into the batch dimension or simply squeeze
-            # Here we take the outermost batch and the innermost sequence length
-            B = pad_mask.size(0)
-            N = pad_mask.size(-1)
-            pad_mask = pad_mask.view(B, 1, 1, N)
-
         B, h, N, d = Q.shape
         W = self.window
         step = W
         out = torch.zeros_like(Q)
+
+        # Normalise 1D mask to 4D just in case
+        if pad_mask_1d.dim() == 2:
+            pad_mask_1d = pad_mask_1d.unsqueeze(1).unsqueeze(2)
+        elif pad_mask_1d.dim() == 3:
+            pad_mask_1d = pad_mask_1d.unsqueeze(1)
 
         num_tiles = (N + step - 1) // step
         for i in range(num_tiles):
@@ -253,20 +241,24 @@ class AegisAttentionV3(nn.Module):
             k_tile = K[:, :, k_start:k_end, :]
             v_tile = V[:, :, k_start:k_end, :]
 
-            # Extract local padding mask for key/value tokens
-            kv_mask = pad_mask[:, :, :, k_start:k_end]   # (B, 1, 1, kvlen)
-            kv_mask = kv_mask.to(q_tile.dtype)
+            # Build additive mask for this tile
+            # 1. padding mask from 1D pad_mask_1d
+            kv_mask = pad_mask_1d[:, :, :, k_start:k_end].to(q_tile.dtype)   # (B,1,1,kvlen)
+            attn_mask = (1.0 - kv_mask) * -1e9                                 # pad → -inf
 
-            # Additive mask: 0 → allowed, -inf → masked
-            attn_mask = (1.0 - kv_mask) * -1e9            # (B, 1, 1, kvlen)
+            # 2. add square mask slice, if provided
+            if square_mask is not None:
+                # square_mask shape (B, 1, N, N)
+                tile_sq_mask = square_mask[:, :, start:end, k_start:k_end]   # (B,1,qlen,kvlen)
+                attn_mask = attn_mask + tile_sq_mask.to(q_tile.dtype)
 
-            # Expand to (B, 1, qlen, kvlen)
-            attn_mask = attn_mask.expand(-1, -1, q_tile.size(2), -1)
+            # 3. sliding window mask (band)
+            win_mask = self._sliding_window_mask_local(q_tile.size(2), k_tile.size(2), start, k_start, N)
+            attn_mask = attn_mask + win_mask
 
-            # Also mask query padding (rows with all -inf after addition)
-            q_mask = pad_mask[:, :, :, start:end].to(q_tile.dtype)  # (B, 1, 1, qlen)
-            q_mask_inv = (1.0 - q_mask) * -1e9                       # (B, 1, 1, qlen)
-            # Broadcast to (B, 1, qlen, kvlen)
+            # 4. query padding mask
+            q_mask = pad_mask_1d[:, :, :, start:end].to(q_tile.dtype)       # (B,1,1,qlen)
+            q_mask_inv = (1.0 - q_mask) * -1e9
             attn_mask = attn_mask + q_mask_inv.transpose(-2, -1)
 
             tile_out = F.scaled_dot_product_attention(
@@ -275,50 +267,60 @@ class AegisAttentionV3(nn.Module):
                 dropout_p=self.cfg.dropout if self.training else 0.0
             )
             out[:, :, start:end, :] = tile_out
-
         return out
-    def _global_linear_attention(self, Q, K, V, pad_mask, q_gate, in_gate):
+
+    def _sliding_window_mask_local(self, qlen, kvlen, q_start, kv_start, N):
+        """Return (1,1,qlen,kvlen) mask with 0 inside window, -inf outside."""
+        q_idx = torch.arange(qlen, device=self.kernel_map.proj.device) + q_start
+        kv_idx = torch.arange(kvlen, device=self.kernel_map.proj.device) + kv_start
+        dist = (q_idx.unsqueeze(-1) - kv_idx.unsqueeze(-2)).abs()
+        win = (dist < self.window).float()
+        return (1.0 - win) * -1e9
+        
+    def _global_linear_attention(self, Q, K, V, pad_mask_1d, q_gate, in_gate):
+        """
+        pad_mask_1d : (B, N) or (B,1,1,N) – 1=valid, 0=pad.
+        All other args as before.
+        """
         B, h, N, d = Q.shape
         m = self.cfg.kernel_feature_dim
+
+        # Normalise pad_mask_1d to (B, 1, 1, N)
+        if pad_mask_1d.dim() == 2:
+            pad = pad_mask_1d.unsqueeze(1).unsqueeze(2).to(Q.dtype)
+        elif pad_mask_1d.dim() == 4:
+            pad = pad_mask_1d.to(Q.dtype)
+        else:
+            pad = pad_mask_1d.view(B, 1, 1, N).to(Q.dtype)
 
         # Pre‑norm
         Qk = self.q_norm(Q) if self.pre_norm else Q
         Kk = self.k_norm(K) if self.pre_norm else K
 
-        Q_feat = self.kernel_map(Qk)   # (B,h,N,m)
+        Q_feat = self.kernel_map(Qk)
         K_feat = self.kernel_map(Kk)
         V_val = V
 
-        # Apply gates
         if q_gate is not None:
             Q_feat = Q_feat * q_gate
         if in_gate is not None:
             K_feat = K_feat * in_gate
             V_val = V_val * in_gate
 
-        # Padding mask
-        pad = pad_mask.to(Q.dtype)  # (B,1,1,N)
-        K_feat = K_feat * pad.transpose(-2,-1)
-        V_val = V_val * pad.transpose(-2,-1)
+        # Apply 1D padding mask
+        K_feat = K_feat * pad.transpose(-2, -1)   # (B,1,1,N) → (B,1,N,1) broadcast to (B,h,N,m)
+        V_val  = V_val  * pad.transpose(-2, -1)
 
-        # Long‑context reduction (optional)
-        if N > self.cfg.long_context_threshold:
-            # Keep top‑k tokens based on input gate score (or K_feat norm)
-            # For simplicity, use norm of K_feat as importance
-            # Implementation omitted for brevity, would use torch.topk and gather
-            pass
-
-        # Accumulate
-        KV = torch.matmul(K_feat.transpose(-2,-1), V_val)   # (B,h,m,d)
+        KV = torch.matmul(K_feat.transpose(-2, -1), V_val)   # (B,h,m,d)
         Z  = K_feat.sum(dim=-2, keepdim=True)               # (B,h,1,m)
 
-        num   = torch.matmul(Q_feat, KV)                     # (B,h,N,d)
-        denom = torch.matmul(Q_feat, Z.transpose(-2,-1))     # (B,h,N,1)
-
-        # Stable division
-        safe = denom > 1e-6
-        out = torch.where(safe, num / denom, torch.zeros_like(num))
+        num   = torch.matmul(Q_feat, KV)
+        denom = torch.matmul(Q_feat, Z.transpose(-2, -1))
+        safe  = denom > 1e-6
+        out   = torch.where(safe, num / denom, torch.zeros_like(num))
         return out
+
+
 
     @staticmethod
     def _convert_attention_mask(attention_mask, B, N, device):
@@ -341,39 +343,58 @@ class AegisAttentionV3(nn.Module):
                 return attention_mask.squeeze(1).squeeze(1) > -1e9
         raise ValueError(f"Unexpected mask dim: {attention_mask.dim()}")
 
-    def forward(self, hidden_states: torch.Tensor,
-                attention_mask: Optional[torch.Tensor] = None,
-                **kwargs) -> Tuple[torch.Tensor, None]:
+    def forward(self, hidden_states, attention_mask=None, **kwargs):
         B, N, _ = hidden_states.shape
-        device = hidden_states.device
 
-        # Robust mask conversion → 2D boolean (B,N)
-        valid_2d = self._convert_attention_mask(attention_mask, B, N, device)
-        # Create a float mask (1 = valid, 0 = pad) of shape (B,1,1,N)
-        pad_mask = valid_2d.to(dtype=hidden_states.dtype).unsqueeze(1).unsqueeze(2)
+        # Determine mask type and create both 1D padding mask and optional square mask
+        if attention_mask is not None:
+            mask_tensor = attention_mask.to(hidden_states.dtype)
+            if mask_tensor.dim() == 2:                 # standard (B, N)
+                pad_mask_1d = mask_tensor.unsqueeze(1).unsqueeze(2)   # (B,1,1,N)
+                square_mask = None
+            elif mask_tensor.dim() == 3:
+                # Could be (B, N, N) or (B, 1, N) – assume square if last two dims equal
+                if mask_tensor.size(1) == mask_tensor.size(2):
+                    square_mask = mask_tensor.unsqueeze(1)            # (B,1,N,N)
+                    # extract 1D padding: any row that is all -inf? use max> -1e9
+                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -1e9).to(dtype=hidden_states.dtype)
+                    pad_mask_1d = pad_1d.unsqueeze(1).unsqueeze(2)    # (B,1,1,N)
+                else:   # treat as (B, 1, N)
+                    pad_mask_1d = mask_tensor.unsqueeze(2)            # (B,1,1,N)
+                    square_mask = None
+            elif mask_tensor.dim() == 4:                # (B,1,N,N) or (B,1,1,N)
+                if mask_tensor.size(-1) == mask_tensor.size(-2) and mask_tensor.size(-1) > 1:
+                    square_mask = mask_tensor                           # (B,1,N,N)
+                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -1e9).to(dtype=hidden_states.dtype)
+                    pad_mask_1d = pad_1d.unsqueeze(1).unsqueeze(2)
+                else:   # (B,1,1,N)
+                    pad_mask_1d = mask_tensor
+                    square_mask = None
+            else:
+                # fallback: collapse to 1D
+                pad_mask_1d = mask_tensor.view(B, -1).unsqueeze(1).unsqueeze(2)
+                square_mask = None
+        else:
+            pad_mask_1d = torch.ones(B, 1, 1, N, device=hidden_states.device, dtype=hidden_states.dtype)
+            square_mask = None
 
-        # Project
         Q = self._reshape(self.q_proj(hidden_states))
         K = self._reshape(self.k_proj(hidden_states))
         V = self._reshape(self.v_proj(hidden_states))
 
-        # Gates
         q_gate, in_gate = self.gates(hidden_states, Q)
 
-        # Local sliding window attention
-        local_out = self._tiled_sliding_window_attention(Q, K, V, pad_mask)
+        local_out = self._tiled_sliding_window_attention(Q, K, V, pad_mask_1d, square_mask)
+        global_out = self._global_linear_attention(Q, K, V, pad_mask_1d, q_gate, in_gate)
 
-        # Global linear attention
-        global_out = self._global_linear_attention(Q, K, V, pad_mask, q_gate, in_gate)
-
-        # Token‑wise fusion
-        fuse_gate = self.fusion(hidden_states, local_out, global_out)  # (B,h,N,1)
+        fuse_gate = self.fusion(hidden_states, local_out, global_out)
         fused = (1.0 - fuse_gate) * local_out + fuse_gate * global_out
-
-        # Reshape and output projection
         fused = fused.permute(0,2,1,3).contiguous().view(B, N, self.all_head_size)
         out = self.out_proj(fused)
         return out, None
+
+
+
 
     def get_ortho_loss(self):
         return torch.tensor(0.0, device=self.out_proj.A.device)
