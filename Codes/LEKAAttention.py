@@ -1102,6 +1102,9 @@ def main():
 
 
     log.info("Starting training...")
+    trainer.args.metric_for_best_model = None
+    trainer.args.load_best_model_at_end = False
+
     trainer.train()
     eval_result = trainer.evaluate()
     log.info(f"Final eval: {eval_result}")
