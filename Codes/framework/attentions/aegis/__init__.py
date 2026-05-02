@@ -4,3 +4,4 @@ from . import aegis_v3
 from . import aegis_v4
 from . import aegis_v5
 from . import aegis_v2
+from . import aegis_v1
