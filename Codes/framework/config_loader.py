@@ -1,53 +1,72 @@
-"""Load configuration from YAML file and update CompressionConfig / ExperimentConfig."""
+# framework/config_loader.py
+"""Load YAML configuration and merge with CLI arguments."""
 
 import yaml
 import os
-from pathlib import Path
-from dataclasses import asdict
 from framework.config import CompressionConfig
 
 def load_yaml_config(path: str) -> dict:
-    """Load YAML config file."""
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
-def apply_config_to_dataclass(config_dataclass, yaml_dict: dict, prefix: str = "") -> None:
+def build_compression_config(yaml_dict: dict, args=None) -> CompressionConfig:
     """
-    Recursively apply YAML values to a dataclass instance.
-    Only updates fields that exist in the dataclass.
+    Build a CompressionConfig from YAML sections, optionally overriding with CLI args.
     """
-    for key, value in yaml_dict.items():
-        full_key = f"{prefix}.{key}" if prefix else key
-        if hasattr(config_dataclass, key):
-            setattr(config_dataclass, key, value)
-        # If the value is a dict and the field is a nested dataclass, we would
-        # need a recursive approach; for now we only handle flat fields.
+    cfg = CompressionConfig()
 
-def merge_yaml_with_args(yaml_config: dict, args) -> CompressionConfig:
-    """
-    Build a CompressionConfig from YAML + CLI arguments.
-    CLI arguments take precedence over YAML values.
-    """
-    # Start with defaults
-    comp_config = CompressionConfig()
+    # Helper to set attributes from a dict
+    def _apply_section(section, target_dict):
+        for key, value in section.items():
+            if hasattr(cfg, key):
+                setattr(cfg, key, value)
 
-    # Override with YAML sections (if present)
-    yaml_hardware = yaml_config.get('hardware', {})
-    yaml_data = yaml_config.get('data', {})
-    yaml_training = yaml_config.get('training', {})
-    yaml_lora = yaml_config.get('lora', {})
-    yaml_rdrop = yaml_config.get('rdrop', {})
-    yaml_r3f = yaml_config.get('r3f', {})
-    yaml_mixout = yaml_config.get('mixout', {})
-    yaml_llrd = yaml_config.get('llrd', {})
+    # Apply from YAML sections
+    if 'attention_config' in yaml_dict:
+        _apply_section(yaml_dict['attention_config'], {})
+    if 'training' in yaml_dict:
+        _apply_section(yaml_dict['training'], {})
+    if 'lora' in yaml_dict:
+        _apply_section(yaml_dict['lora'], {})
+    if 'dora' in yaml_dict:
+        _apply_section(yaml_dict['dora'], {})
+    if 'rdrop' in yaml_dict:
+        _apply_section(yaml_dict['rdrop'], {})
+    if 'r3f' in yaml_dict:
+        _apply_section(yaml_dict['r3f'], {})
+    if 'mixout' in yaml_dict:
+        _apply_section(yaml_dict['mixout'], {})
+    if 'llrd' in yaml_dict:
+        _apply_section(yaml_dict['llrd'], {})
+    if 'dislora' in yaml_dict:
+        _apply_section(yaml_dict['dislora'], {})
+    if 'fisher' in yaml_dict:
+        _apply_section(yaml_dict['fisher'], {})
+    if 'gelora' in yaml_dict:
+        _apply_section(yaml_dict['gelora'], {})
+    if 'hardware' in yaml_dict:
+        _apply_section(yaml_dict['hardware'], {})
+    if 'memory' in yaml_dict:
+        _apply_section(yaml_dict['memory'], {})
+    if 'model' in yaml_dict:
+        _apply_section(yaml_dict['model'], {})
+        if 'attention_type' in yaml_dict['model']:
+            cfg.attn_type = yaml_dict['model']['attention_type']
 
-    # Apply YAML values to CompressionConfig (flat fields)
-    for section in [yaml_data, yaml_training, yaml_lora, yaml_rdrop, yaml_r3f, yaml_mixout, yaml_llrd]:
-        apply_config_to_dataclass(comp_config, section)
+    # Override with CLI arguments (if provided)
+    if args:
+        for key in ['batch_size', 'epochs', 'lr', 'max_len', 'attn_type',
+                    'lora_r', 'lora_alpha', 'lora_dropout', 'rdrop_alpha',
+                    'r3f_epsilon', 'mixout_p', 'llrd_decay', 'dislora_beta',
+                    'dislora_capacity_factor', 'gelora_margin', 'gelora_min_rank',
+                    'gelora_max_rank', 'fisher_scale_max', 'num_landmarks',
+                    'feature_dim', 'k_early', 'k_mid', 'k_late', 'use_gate',
+                    'block_size', 'rff_features', 'cur_rank', 'lsh_rounds',
+                    'lsh_bucket_size', 'svd_energy', 'svd_rank_qkv',
+                    'svd_rank_out', 'compression_rank', 'softpick_enabled',
+                    'armor_enabled', 'ast_enabled', 'deltakv_enabled',
+                    'kvt_enabled']:
+            if hasattr(args, key) and getattr(args, key) is not None:
+                setattr(cfg, key, getattr(args, key))
 
-    # CLU arguments override YAML
-    for arg_name, value in vars(args).items():
-        if hasattr(comp_config, arg_name) and value is not None:
-            setattr(comp_config, arg_name, value)
-
-    return comp_config
+    return cfg
