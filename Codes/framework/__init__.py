@@ -1,6 +1,6 @@
-# Auto-generated __init__.py
-from . import attention_injector
-from . import base
+"""Efficient Attention Framework – minimal bootstrap."""
 from . import config
-from . import quick
-from . import registry
+from . import data
+from . import trainer
+from . import utils
+from . import attentions   # triggers registration of all attention modules
