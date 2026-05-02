@@ -5,7 +5,7 @@ Paper: reference from earlier (ASVD is an improved SVD‑LLM variant)
 import torch
 import torch.nn as nn
 import numpy as np
-from ..core.base_attention import BaseAttention
+from ..core.base import BaseAttention
 from ..core.registry import ATTENTION_REGISTRY
 
 
