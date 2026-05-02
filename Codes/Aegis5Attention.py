@@ -178,35 +178,38 @@ def local_window_attention(
     scores = scores.masked_fill(~mask, -1e9)
     if token_valid is not None:
         scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e9)
-    attn = softpick(scores, dim=-1, temperature=temperature)
+    attn = F.softmax(scores, dim=-1)
+
     return torch.matmul(attn, V)
 
 
 # ---------- Kernel linear attention (Performer style) ----------
-def kernel_linear_attention(Q, K, V, rff_proj, use_zero_sum=False):
+def kernel_linear_attention(Q, K, V, rff_proj=None, use_zero_sum=True, kernel_type='elu'):
     """
-    Q, K, V: (B, h, N, d_head)
-    rff_proj: maps (B, h, N, d_head) -> (B, h, N, kdim)
+    Performer‑style linear attention.
+    rff_proj: (Hg, head_dim, F) – if None, uses ELU+1 kernel (no projection).
     """
-    B, h, N, d = Q.shape
-    Q_feat = rff_proj(Q)          # (B, h, N, kdim)
-    K_feat = rff_proj(K)          # (B, h, N, kdim)
-    
-    # KV accumulation: (B, h, kdim, d_head)
-    KV = torch.einsum('b h n f, b h n d -> b h f d', K_feat, V)
-    
-    # Sum of K features for normalization: (B, h, 1, kdim)
-    K_sum = K_feat.sum(dim=2, keepdim=True)
-    
-    # Denominator: (Q_feat @ K_sum^T) -> (B, h, N, 1)
-    # Use matmul instead of einsum to avoid digit subscripts
-    denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-8   # (B, h, N, 1)
-    
-    # Numerator: (Q_feat @ KV) -> (B, h, N, d_head)
-    numer = torch.matmul(Q_feat, KV.transpose(-1, -2))   # (B, h, N, d_head)
-    
-    out = numer / denom
-    return out
+    B, H, N, D = Q.shape
+    if kernel_type == 'rff' and rff_proj is not None:
+        F_dim = rff_proj.size(-1)
+        Q_proj = torch.einsum('bhnd,hdf->bhnf', Q, rff_proj)
+        K_proj = torch.einsum('bhnd,hdf->bhnf', K, rff_proj)
+        # Positive random features
+        Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
+        K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
+    else:  # ELU + 1 (simple, no random proj, always positive)
+        Q_feat = F.elu(Q) + 1
+        K_feat = F.elu(K) + 1
+
+    if use_zero_sum:
+        K_feat = K_feat - K_feat.mean(dim=2, keepdim=True)
+
+    KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V)          # (B, H, F, D) or (B, H, D, D)
+    K_sum = K_feat.sum(dim=2, keepdim=True)                  # (B, H, 1, F)
+    denom = (Q_feat * K_sum).sum(dim=-1, keepdim=True) + 1e-8
+    ctx = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV) / denom
+    return ctx
+
 
 # ══════════════════════════════════════════════════════════════════════
 # 2. AEGIS Attention Module (drop‑in for DistilBERT)
@@ -244,8 +247,8 @@ class AegisAttention(nn.Module):
             aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
 
         # Random Fourier features (only for global heads)
-        self.rff_proj = nn.Parameter(
-            torch.randn(self.num_global_heads, self.head_dim, aegis_cfg.rff_features) * 0.02)
+        w = torch.randn(self.num_global_heads, self.head_dim, aegis_cfg.rff_features)
+        self.rff_proj = nn.Parameter(torch.linalg.qr(w)[0] * 0.1)
 
         if aegis_cfg.use_adaptive_gate:
             self.blend_logits = nn.Parameter(torch.zeros(self.num_heads))
@@ -308,7 +311,12 @@ class AegisAttention(nn.Module):
             temperature=self.cfg.softpick_temperature,
             token_valid=token_valid,
         )  # (B, Hl, N, D)
-
+# After Q_all, K_all, V_all are computed, right before splitting heads:
+        if attention_mask is not None:
+            # DistilBERT gives (B, N) with 1=real, 0=pad
+            token_valid = attention_mask.bool()          # True = real token
+        else:
+            token_valid = None
         # 3. Global kernel linear attention using learned rff_proj
         # Project Q_global and K_global to (B, Hg, N, rff_features)
         # self.rff_proj: (Hg, head_dim, rff_features)
@@ -325,7 +333,12 @@ class AegisAttention(nn.Module):
         KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V_global)          # (B, Hg, kdim, D)
         K_sum = K_feat.sum(dim=2, keepdim=True)                          # (B, Hg, 1, kdim)
         denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-8     # (B, Hg, N, 1)
-        ctx_global = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV) / denom # (B, Hg, N, D)
+        ctx_global = kernel_linear_attention(
+            Q_global, K_global, V_global,
+            rff_proj=self.rff_proj,
+            use_zero_sum=self.cfg.use_zero_sum_keys,
+            kernel_type='rff'   # or 'elu' if you want parameter‑free
+        )
 
         # 4. Adaptive blending (if enabled)
         if self.blend_logits is not None:
