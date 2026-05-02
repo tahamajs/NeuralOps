@@ -11,7 +11,7 @@ from datasets import load_dataset
 
 # Import only the parts of your framework that exist
 from framework.models.compressed_bert import CompressedBertModel
-from framework.training.trainer_svd import train_model, benchmark_model, count_parameters
+from framework.trainer.trainer_svd import train_model, benchmark_model, count_parameters
 from framework.analysis.plotting import create_comprehensive_plots
 from framework.utils.checkpoint import CheckpointManager
 from framework.utils.device import get_device
