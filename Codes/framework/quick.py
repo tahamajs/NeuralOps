@@ -94,7 +94,7 @@ def quick_finetune(
         >>> model = quick_svd_compress("bert-base-uncased", rank=64)
         >>> quick_finetune(model, train_dataset, eval_dataset)
     """
-    from .training import create_trainer
+    from .trainer import create_trainer
     
     trainer = create_trainer(
         model=model,
