@@ -26,7 +26,7 @@ from framework.utils.device import get_device
 from framework.utils.seed import set_all_seeds
 from framework.utils.layer_norm_fix import fix_layernorm_naming
 from framework.config import CompressionConfig
-from logging import setup_logging, MetricsTracker
+from experiment_logging import setup_logging, MetricsTracker
 
 # -------------------------------------------------------------------
 def main():
