@@ -11,6 +11,14 @@ from transformers import (
     AutoTokenizer, AutoConfig, AutoModelForSequenceClassification,
     TrainingArguments, DataCollatorWithPadding, set_seed
 )
+# ~~~~~~~~~~~~~~ Environment (offline) ~~~~~~~~~~~~~~
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# warnings.filterwarnings("ignore", category=UserWarning)
+# logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-7s | %(message)s", datefmt="%H:%M:%S")
+# log = logging.getLogger(__name__)
+
 
 # Framework imports
 from framework.data.glue_loader import (

@@ -233,3 +233,65 @@ def create_trainer(
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
     )
+"""
+Custom Trainer and metric builders for GLUE tasks.
+"""
+
+import numpy as np
+from transformers import Trainer
+from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+from scipy.stats import pearsonr
+
+class CompressionTrainer(Trainer):
+    """
+    Trainer that adds an optional orthogonality loss from the model.
+    All attention modules must implement `get_ortho_loss()` (return 0 if not used).
+    """
+    def __init__(self, ortho_weight: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ortho_weight = ortho_weight
+
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+        outputs = model(**inputs)
+        task_loss = outputs.loss
+        ortho_loss = model.get_ortho_loss()
+        total_loss = task_loss + self.ortho_weight * ortho_loss
+        return (total_loss, outputs) if return_outputs else total_loss
+
+
+def get_compute_metrics(task_name: str):
+    """
+    Return a compute_metrics function for the given GLUE task.
+    All metric keys must start with 'eval_' so the Trainer can pick the best model.
+    """
+    t = task_name.lower()
+
+    if t == "cola":
+        def compute_metrics(p):
+            preds = np.argmax(p.predictions, axis=-1)
+            mcc = matthews_corrcoef(p.label_ids, preds)
+            return {"eval_matthews_correlation": mcc}
+        return compute_metrics
+
+    if t == "stsb":
+        def compute_metrics(p):
+            preds = p.predictions.squeeze()
+            corr, _ = pearsonr(p.label_ids, preds)
+            return {"eval_pearson": corr}
+        return compute_metrics
+
+    if t in ("mrpc", "qqp"):
+        def compute_metrics(p):
+            preds = np.argmax(p.predictions, axis=-1)
+            acc = accuracy_score(p.label_ids, preds)
+            f1 = f1_score(p.label_ids, preds)
+            return {"eval_accuracy": acc, "eval_f1": f1}
+        return compute_metrics
+
+    # Default: accuracy
+    def compute_metrics(p):
+        preds = np.argmax(p.predictions, axis=-1)
+        acc = accuracy_score(p.label_ids, preds)
+        return {"eval_accuracy": acc}
+
+    return compute_metrics
