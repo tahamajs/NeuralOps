@@ -57,3 +57,6 @@
 {"timestamp": "2026-05-02T11:43:12.209595", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "main", "function": "main"}
 {"timestamp": "2026-05-02T11:43:12.209623", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
 {"timestamp": "2026-05-02T11:43:12.238632", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Using device: mps", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:16.854712", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Train: 67349, Val: 872", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:17.318638", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Injected 'nexus' into 6 layers.", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:17.758528", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Starting training...", "module": "main", "function": "main"}
