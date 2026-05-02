@@ -47,6 +47,8 @@ def main():
                         help="Training method (e.g., baseline, lora, rdrop, fisher_lora)")
     parser.add_argument("--compressor", type=str, default=None)
     parser.add_argument("--task", "-t", type=str, default="sst2")
+    parser.add_argument("--config", type=str, default=None, help="YAML configuration file")
+
     parser.add_argument("--max_len", type=int, default=128)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--epochs", type=int, default=5)

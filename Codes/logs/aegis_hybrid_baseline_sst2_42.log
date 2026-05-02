@@ -1,0 +1,20 @@
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 | 🚀 Logging initialized – logs: ./logs
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 | ══════════════════════════════════════
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 | 🚀 Experiment: aegis_hybrid_baseline_sst2_42
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 |    Attention: aegis_hybrid
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 |    Method: baseline
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 |    Task: sst2
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 |    Model: distilbert-base-uncased
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 | ══════════════════════════════════════
+2026-05-02 15:17:23 | INFO     | aegis_hybrid_baseline_sst2_42 | Using device: mps
+2026-05-02 15:17:27 | INFO     | aegis_hybrid_baseline_sst2_42 | Train: 67349, Val: 872
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 | 🚀 Logging initialized – logs: ./logs
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 | ══════════════════════════════════════
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 | 🚀 Experiment: aegis_hybrid_baseline_sst2_42
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 |    Attention: aegis_hybrid
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 |    Method: baseline
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 |    Task: sst2
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 |    Model: distilbert-base-uncased
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 | ══════════════════════════════════════
+2026-05-02 15:19:06 | INFO     | aegis_hybrid_baseline_sst2_42 | Using device: mps
+2026-05-02 15:19:07 | INFO     | aegis_hybrid_baseline_sst2_42 | Train: 67349, Val: 872
