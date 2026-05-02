@@ -1,0 +1,59 @@
+{"timestamp": "2026-05-02T11:37:09.281478", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Logging initialized – logs: ./logs", "module": "logger", "function": "setup_logging"}
+{"timestamp": "2026-05-02T11:37:09.282166", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:37:09.282317", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Experiment: nexus_baseline_sst2_42", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:37:09.282379", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Attention: nexus", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:37:09.282487", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Method: baseline", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:37:09.282585", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Task: sst2", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:37:09.282630", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:37:09.282670", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:37:09.528852", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Using device: mps", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:38:30.312796", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Logging initialized – logs: ./logs", "module": "logger", "function": "setup_logging"}
+{"timestamp": "2026-05-02T11:38:30.313179", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:38:30.313247", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Experiment: nexus_baseline_sst2_42", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:38:30.313295", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Attention: nexus", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:38:30.313333", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Method: baseline", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:38:30.313369", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Task: sst2", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:38:30.313401", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:38:30.313433", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:38:30.407823", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Using device: mps", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:03.540186", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Logging initialized – logs: ./logs", "module": "logger", "function": "setup_logging"}
+{"timestamp": "2026-05-02T11:39:03.540547", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:03.540611", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Experiment: nexus_baseline_sst2_42", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:03.540706", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Attention: nexus", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:03.540770", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Method: baseline", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:03.540815", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Task: sst2", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:03.540853", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:03.540885", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:03.570564", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Using device: mps", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:39:10.014932", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Train: 67349, Val: 872", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:33.022975", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Logging initialized – logs: ./logs", "module": "logger", "function": "setup_logging"}
+{"timestamp": "2026-05-02T11:40:33.023255", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:33.023318", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Experiment: nexus_baseline_sst2_42", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:33.023366", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Attention: nexus", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:33.023402", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Method: baseline", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:33.023433", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Task: sst2", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:33.023463", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:33.023493", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:33.048912", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Using device: mps", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:40:34.053982", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Train: 67349, Val: 872", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:09.112894", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Logging initialized – logs: ./logs", "module": "logger", "function": "setup_logging"}
+{"timestamp": "2026-05-02T11:41:09.113328", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:09.113405", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Experiment: nexus_baseline_sst2_42", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:09.113451", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Attention: nexus", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:09.113492", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Method: baseline", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:09.113522", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Task: sst2", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:09.113552", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:09.113582", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:09.135803", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Using device: mps", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:10.036984", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Train: 67349, Val: 872", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:10.498852", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Injected 'nexus' into 6 layers.", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:41:11.075097", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Starting training...", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:12.209055", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Logging initialized – logs: ./logs", "module": "logger", "function": "setup_logging"}
+{"timestamp": "2026-05-02T11:43:12.209390", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:12.209455", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "🚀 Experiment: nexus_baseline_sst2_42", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:12.209500", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Attention: nexus", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:12.209535", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Method: baseline", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:12.209566", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Task: sst2", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:12.209595", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:12.209623", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-02T11:43:12.238632", "level": "INFO", "logger": "nexus_baseline_sst2_42", "message": "Using device: mps", "module": "main", "function": "main"}

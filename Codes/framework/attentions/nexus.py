@@ -313,18 +313,17 @@ class SpectraformerRectify(nn.Module):
         B, H, N, D = Q.shape
         F_dim = self.rff_features
 
-        # positive random features (Performer / Spectraformer)
         Q_proj = torch.matmul(F.normalize(Q, p=2, dim=-1), self.proj.to(Q.device))
         K_proj = torch.matmul(F.normalize(K, p=2, dim=-1), self.proj.to(Q.device))
 
-        Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
-        K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
+        Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)   # (B,H,N,F)
+        K_feat = torch.exp(K_proj) / math.sqrt(F_dim)   # (B,H,N,F)
 
-        KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V)
-        Z = K_feat.sum(dim=2, keepdim=True)
-        ctx = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV)
-        return ctx / (torch.einsum('bhnf,bhfd->bhnd', Q_feat, Z) + 1e-8)
-
+        KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V)        # (B,H,F,D)
+        Z = K_feat.sum(dim=2)                                   # (B,H,F)
+        ctx = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV)      # (B,H,N,D)
+        norm = torch.einsum('bhnf,bhf->bhn', Q_feat, Z).unsqueeze(-1)  # (B,H,N,1)
+        return ctx / (norm + 1e-8)
 
 # ============================================================================
 # 5. NEXUS Attention  Full Module

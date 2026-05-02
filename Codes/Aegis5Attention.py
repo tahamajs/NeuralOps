@@ -56,301 +56,483 @@
 
 # ## Step 3: Complete PyTorch Implementation
 
-# ```python
-import math
+#!/usr/bin/env python3
+"""
+Aegis‑Attention – Drop‑in DistilBERT training on GLUE (SST‑2).
+Usage:
+    python aegis_train.py --task sst2 --epochs 5 --batch_size 32 --lr 1e-5
+"""
+#!/usr/bin/env python3
+"""
+AEGIS‑Attention — Full training script for DistilBERT on GLUE (SST‑2)
+Zero‑shot low‑rank projections, hybrid local/global attention, Softpick, kernel linear attention.
+Completely offline – no internet required after initial model download.
+
+Usage:
+    python aegis_train.py --task sst2 --batch_size 32 --epochs 5 --lr 1e-5
+"""
+
+import os, math, argparse, logging, warnings
+from typing import Optional, Tuple
+from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
 
+from transformers import (
+    AutoConfig, AutoTokenizer, AutoModelForSequenceClassification,
+    Trainer, TrainingArguments, EarlyStoppingCallback, set_seed,
+)
+from datasets import Dataset, DatasetDict
 
+# ~~~~~~~~~~~~~~ Environment (offline) ~~~~~~~~~~~~~~
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+warnings.filterwarnings("ignore", category=UserWarning)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-7s | %(message)s", datefmt="%H:%M:%S")
+log = logging.getLogger(__name__)
+
+# ══════════════════════════════════════════════════════════════════════
+# 1. AEGIS Attention Components
+# ══════════════════════════════════════════════════════════════════════
+
+@dataclass
 class AegisConfig:
-    """Configuration for Aegis-Attention."""
-    def __init__(
-        self,
-        hidden_size: int = 768,
-        num_heads: int = 12,
-        head_dim: int = 64,
-        block_size: int = 64,
-        rank_proj: int = 192,
-        kernel_feat_dim: int = 256,
-        dropout: float = 0.1,
-        adaptive_mask: bool = True,
-    ):
-        self.hidden_size = hidden_size
-        self.num_heads = num_heads
-        self.head_dim = head_dim
-        self.block_size = block_size
-        self.rank_proj = rank_proj
-        self.kernel_feat_dim = kernel_feat_dim
-        self.dropout = dropout
-        self.adaptive_mask = adaptive_mask
+    # SVD projection factorisation
+    svd_energy: float = 0.95            # fraction of singular‑value energy to keep
+    min_rank: int = 4
+    max_rank: int = 64
+
+    # Head split (must sum to total heads, e.g. 8+4=12)
+    num_local_heads: int = 8            # local window attention
+    num_global_heads: int = 4           # global kernel linear attention
+
+    # Local attention
+    local_window: int = 64              # sliding window radius
+    softpick_temperature: float = 1.0
+
+    # Global attention (Performer‑style)
+    rff_features: int = 256             # random Fourier feature dimension
+    use_zero_sum_keys: bool = True
+
+    # Adaptive gating
+    use_adaptive_gate: bool = True
+    gate_init_bias: float = 1.5
+
+    dropout: float = 0.1
 
 
-class LowRankLinear(nn.Module):
-    """Linear layer factorised as W = U @ V (with biases omitted for simplicity)."""
-    def __init__(self, in_features: int, out_features: int, rank: int):
+class FactorisedLinear(nn.Module):
+    """Low‑rank linear layer initialised via truncated SVD of a pretrained weight."""
+    def __init__(self, pretrained_weight: torch.Tensor,
+                 pretrained_bias: Optional[torch.Tensor],
+                 energy: float, min_rank: int = 4, max_rank: int = 64):
         super().__init__()
-        self.linear1 = nn.Linear(in_features, rank, bias=False)
-        self.linear2 = nn.Linear(rank, out_features, bias=False)
+        out_dim, in_dim = pretrained_weight.shape
+        with torch.no_grad():
+            U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
+            total = (S**2).sum()
+            cum = torch.cumsum(S**2, dim=0) / total
+            rank = int(torch.searchsorted(cum, energy).item()) + 1
+            rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
+            self.rank = rank
+            A = U[:, :rank] * S[:rank].unsqueeze(0)   # (out, r)
+            B = Vt[:rank, :]                           # (r, in)
+
+        self.down = nn.Linear(in_dim, rank, bias=False)
+        self.up   = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
+        self.down.weight.data = B.float()
+        self.up.weight.data   = A.float()
+        if pretrained_bias is not None:
+            self.up.bias.data = pretrained_bias.float()
+        else:
+            self.up.bias.data.zero_()
 
     def forward(self, x):
-        return self.linear2(self.linear1(x))
+        return self.up(self.down(x))
 
 
-class OrthoRandomFeatures(nn.Module):
-    """Fixed orthogonal random projection for kernel-based attention."""
-    def __init__(self, head_dim: int, kernel_dim: int):
-        super().__init__()
-        # Create a random orthogonal matrix of shape (head_dim, kernel_dim)
-        w = torch.randn(head_dim, kernel_dim)
-        q, _ = torch.linalg.qr(w)        # orthogonal columns
-        self.register_buffer('proj', q)
-        self.scale = math.sqrt(head_dim)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: (B, num_heads, N, head_dim)
-        # project and apply positive random features (softmax kernel)
-        x_proj = x @ self.proj                    # (B, h, N, kernel_dim)
-        # φ(x) = 1/√m * exp( x·W - ½||x||² )
-        phi = torch.exp(x_proj - 0.5 * torch.sum(x ** 2, dim=-1, keepdim=True))
-        phi = phi / math.sqrt(self.proj.shape[1])  # scaling
-        return phi
+# ---------- Softpick ----------
+def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
+    m = x.max(dim=dim, keepdim=True).values
+    e = torch.exp((x - m) / temperature)
+    denom = e - torch.exp(-m / temperature)
+    p = F.relu(denom)
+    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
 
 
+# ---------- Local window attention ----------
+def local_window_attention(
+    Q, K, V, window: int, temperature: float,
+    token_valid: Optional[torch.Tensor] = None,
+):
+    B, H, N, D = Q.shape
+    scale = D ** -0.5
+    idx = torch.arange(N, device=Q.device)
+    dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
+    mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
+
+    scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+    scores = scores.masked_fill(~mask, -1e9)
+    if token_valid is not None:
+        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e9)
+    attn = softpick(scores, dim=-1, temperature=temperature)
+    return torch.matmul(attn, V)
+
+
+# ---------- Kernel linear attention (Performer style) ----------
+def kernel_linear_attention(Q, K, V, rff_proj, use_zero_sum=False):
+    """
+    Q, K, V: (B, h, N, d_head)
+    rff_proj: maps (B, h, N, d_head) -> (B, h, N, kdim)
+    """
+    B, h, N, d = Q.shape
+    Q_feat = rff_proj(Q)          # (B, h, N, kdim)
+    K_feat = rff_proj(K)          # (B, h, N, kdim)
+    
+    # KV accumulation: (B, h, kdim, d_head)
+    KV = torch.einsum('b h n f, b h n d -> b h f d', K_feat, V)
+    
+    # Sum of K features for normalization: (B, h, 1, kdim)
+    K_sum = K_feat.sum(dim=2, keepdim=True)
+    
+    # Denominator: (Q_feat @ K_sum^T) -> (B, h, N, 1)
+    # Use matmul instead of einsum to avoid digit subscripts
+    denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-8   # (B, h, N, 1)
+    
+    # Numerator: (Q_feat @ KV) -> (B, h, N, d_head)
+    numer = torch.matmul(Q_feat, KV.transpose(-1, -2))   # (B, h, N, d_head)
+    
+    out = numer / denom
+    return out
+
+# ══════════════════════════════════════════════════════════════════════
+# 2. AEGIS Attention Module (drop‑in for DistilBERT)
+# ══════════════════════════════════════════════════════════════════════
 class AegisAttention(nn.Module):
-    """Aegis-Attention: low-rank projections + hybrid sparse-linear attention + adaptive masking."""
-
-    def __init__(self, config: AegisConfig):
+    def __init__(self, model_config, aegis_cfg: AegisConfig,
+                 pretrained_attn=None, bert_mode: bool = False):
         super().__init__()
-        self.hidden_size = config.hidden_size
-        self.num_heads = config.num_heads
-        self.head_dim = config.head_dim
-        self.block_size = config.block_size
-        self.dropout_rate = config.dropout
-        self.use_adaptive_mask = config.adaptive_mask
+        self.num_heads = model_config.num_attention_heads
+        self.head_dim = model_config.hidden_size // self.num_heads
+        self.all_head_size = self.num_heads * self.head_dim
+        self.hidden_size = model_config.hidden_size
+        self.cfg = aegis_cfg
+        self.bert_mode = bert_mode
 
-        # Low-rank projections for Q, K, V
-        self.q_proj = LowRankLinear(self.hidden_size, self.hidden_size, config.rank_proj)
-        self.k_proj = LowRankLinear(self.hidden_size, self.hidden_size, config.rank_proj)
-        self.v_proj = LowRankLinear(self.hidden_size, self.hidden_size, config.rank_proj)
+        assert (aegis_cfg.num_local_heads + aegis_cfg.num_global_heads == self.num_heads)
+        self.num_local_heads = aegis_cfg.num_local_heads
+        self.num_global_heads = aegis_cfg.num_global_heads
 
-        # Adaptive importance gate (Softpick style)
-        if self.use_adaptive_mask:
-            self.importance_linear = nn.Linear(self.hidden_size, self.num_heads)
+        if pretrained_attn is None:
+            raise ValueError("AegisAttention requires pretrained_attn for zero‑shot init")
 
-        # Local attention: nothing extra needed
-        # Global linear attention: orthogonal random features
-        self.random_feat = OrthoRandomFeatures(self.head_dim, config.kernel_feat_dim)
+        # SVD‑factorised projections
+        self.q_proj = FactorisedLinear(
+            pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias.data,
+            aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
+        self.k_proj = FactorisedLinear(
+            pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias.data,
+            aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
+        self.v_proj = FactorisedLinear(
+            pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias.data,
+            aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
+        self.out_proj = FactorisedLinear(
+            pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias.data,
+            aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
 
-        # Learnable fusion parameter (per head)
-        self.alpha = nn.Parameter(torch.zeros(self.num_heads))  # will be clipped to [0,1] via sigmoid
+        # Random Fourier features (only for global heads)
+        self.rff_proj = nn.Parameter(
+            torch.randn(self.num_global_heads, self.head_dim, aegis_cfg.rff_features) * 0.02)
 
-        # Output projection (low-rank)
-        self.out_proj = LowRankLinear(self.hidden_size, self.hidden_size, config.rank_proj)
-        self.dropout = nn.Dropout(self.dropout_rate)
-
-        # Cache for padding mask in case of static shape (not used)
-        self._mask_cache = None
-
-    def _reshape_for_heads(self, x: torch.Tensor) -> torch.Tensor:
-        B, N, D = x.shape
-        return x.view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-
-    def _apply_adaptive_mask(self, hidden_states: torch.Tensor, V: torch.Tensor) -> torch.Tensor:
-        """Compute per-token importance mask and scale V."""
-        B, N, H = hidden_states.shape
-        scores = self.importance_linear(hidden_states)       # (B, N, num_heads)
-        mask = torch.sigmoid(scores)                         # (B, N, num_heads)
-        mask = mask.unsqueeze(-1)                            # (B, N, num_heads, 1)
-        # V is (B, num_heads, N, head_dim)
-        V_masked = V * mask.permute(0, 2, 1, 3)
-        return V_masked
-
-    def _local_attention(self,
-                         Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor,
-                         pad_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """Compute dense attention within non-overlapping blocks of size `block_size`."""
-        B, h, N, d = Q.shape
-        assert d == self.head_dim
-
-        # Pad sequence length to a multiple of block_size for clean blocking
-        block_size = self.block_size
-        num_blocks = (N + block_size - 1) // block_size
-        pad_len = num_blocks * block_size - N
-
-        if pad_len > 0:
-            Q = F.pad(Q, (0, 0, 0, pad_len))
-            K = F.pad(K, (0, 0, 0, pad_len))
-            V = F.pad(V, (0, 0, 0, pad_len))
-            if pad_mask is not None:
-                pad_mask = F.pad(pad_mask, (0, pad_len), value=1)  # treat padded as valid? We'll mask later
+        if aegis_cfg.use_adaptive_gate:
+            self.blend_logits = nn.Parameter(torch.zeros(self.num_heads))
+            self.gate_bias = aegis_cfg.gate_init_bias
         else:
-            pad_len = 0  # no padding
+            self.blend_logits = None
 
-        # Reshape into blocks: (B*h, num_blocks, block_size, d)
-        Q_blocks = Q.reshape(B * h, num_blocks, block_size, d)
-        K_blocks = K.reshape(B * h, num_blocks, block_size, d)
-        V_blocks = V.reshape(B * h, num_blocks, block_size, d)
+        self.dropout = nn.Dropout(aegis_cfg.dropout)
 
-        # Attention scores within each block: (B*h, num_blocks, block_size, block_size)
-        scale = 1.0 / math.sqrt(d)
-        scores = torch.einsum('b n i d, b n j d -> b n i j', Q_blocks, K_blocks) * scale
-
-        # Apply padding mask: create boolean mask per block
-        if pad_mask is not None:
-            # pad_mask is (B, N) with 1 for valid, 0 for padding (or inverted). We assume 1 = keep, 0 = ignore?
-            # DistilBERT uses mask as 0 for valid, -10000 for padding? We need to adapt.
-            # We'll accept padding_mask of shape (B, 1, 1, N) with 0 for valid, large negative for ignored.
-            # Here we'll construct a mask of shape (B*h, num_blocks, 1, block_size) indicating valid keys.
-            # For simplicity, we assume we have a bool mask of shape (B, N) where True means ignore (padding).
-            # We'll convert: mask = pad_mask.unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
-            # After block reshape: mask_blocks = mask.view(B, 1, num_blocks, block_size).expand(-1, h, -1, -1).reshape(B*h, 1, num_blocks, block_size)
-            # Then mask out with large negative.
-            pass  # placeholder – left for integration; in production we would handle it here
-        # For now, no mask.
-
-        attn_weights = F.softmax(scores, dim=-1)
-        local_out = torch.einsum('b n i j, b n j d -> b n i d', attn_weights, V_blocks)
-
-        # Reshape back: (B*h, num_blocks, block_size, d) -> (B, h, num_blocks*block_size, d) -> slice to N
-        local_out = local_out.reshape(B, h, num_blocks * block_size, d)
-        if pad_len > 0:
-            local_out = local_out[:, :, :N, :]   # remove padding
-        return local_out
-
-    def _global_linear_attention(self,
-                                 Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor,
-                                 pad_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """Linear attention using orthogonal random features (Performer style)."""
-        # Apply random feature map
-        Q_feat = self.random_feat(Q)    # (B, h, N, kernel_dim)
-        K_feat = self.random_feat(K)    # (B, h, N, kernel_dim)
-
-        # Mask out padding positions if needed.
-        # Here we assume pad_mask is (B, N) with True for padding.
-        if pad_mask is not None:
-            mask = pad_mask.unsqueeze(1).unsqueeze(-1)   # (B, 1, N, 1)
-            K_feat = K_feat * mask.float()
-            V = V * mask.float()
-
-        # KV product: (B, h, kernel_dim, head_dim)
-        KV = torch.einsum('bhnd,bhne->bhde', K_feat, V)
-        # Normalizer: (B, h, kernel_dim, 1)
-        K_sum = K_feat.sum(dim=2, keepdim=True)  # (B, h, 1, kernel_dim)
-        normalizer = torch.einsum('bhnf,bhf1->bn1', Q_feat, K_sum) + 1e-6  # (B, h, N, 1)
-
-        # Compute output: (B, h, N, head_dim)
-        out = torch.einsum('bhnf,bhfe->bhne', Q_feat, KV) / normalizer
-        return out
-
-    def forward(self,
-                hidden_states: torch.Tensor,
-                attention_mask: Optional[torch.Tensor] = None,
-                head_mask: Optional[torch.Tensor] = None,
-                output_attentions: bool = False) -> Tuple[torch.Tensor, ...]:
-        """
-        Args:
-            hidden_states: (B, N, H)
-            attention_mask: optional (B, N) with 1 for tokens to attend, 0 for padding.
-                            (Adapted to standard DistilBERT format; we assume 0 = masked.)
-        Returns:
-            (output, ...) where output is (B, N, H)
-        """
+    def forward(self, hidden_states, attention_mask=None, head_mask=None,
+                output_attentions=False, **kwargs):
         B, N, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+        Hl, Hg = self.num_local_heads, self.num_global_heads
 
-        # Low-rank projections to Q, K, V
-        Q_all = self.q_proj(hidden_states)          # (B, N, H)
+        # 1. Low‑rank projections
+        Q_all = self.q_proj(hidden_states)
         K_all = self.k_proj(hidden_states)
         V_all = self.v_proj(hidden_states)
 
-        # Reshape for multi-head
-        Q = self._reshape_for_heads(Q_all)          # (B, h, N, d)
-        K = self._reshape_for_heads(K_all)
-        V = self._reshape_for_heads(V_all)
+        Q_all = Q_all.view(B, N, H, D).transpose(1, 2)  # (B, H, N, D)
+        K_all = K_all.view(B, N, H, D).transpose(1, 2)
+        V_all = V_all.view(B, N, H, D).transpose(1, 2)
 
-        # Adaptive importance mask on values
-        if self.use_adaptive_mask:
-            V = self._apply_adaptive_mask(hidden_states, V)
+        Q_local, Q_global = Q_all[:, :Hl], Q_all[:, Hl:]  # (B, Hl, N, D) , (B, Hg, N, D)
+        K_local, K_global = K_all[:, :Hl], K_all[:, Hl:]
+        V_local, V_global = V_all[:, :Hl], V_all[:, Hl:]
 
-        # Build padding mask (if provided) – convert to bool True for padding
-        pad_mask_bool = None
+        # --- Mask handling (as previously fixed) ---
         if attention_mask is not None:
-            # DistilBERT gives mask with 0 for tokens to ignore. We want True for ignored.
-            pad_mask_bool = (attention_mask == 0)   # (B, N)
+            attention_mask = attention_mask.squeeze()
+            if attention_mask.dim() == 3:
+                attention_mask = attention_mask[:, 0, :]          # (B, N)
+            elif attention_mask.dim() == 1:
+                attention_mask = attention_mask.unsqueeze(0)      # (1, N)
+            elif attention_mask.dim() == 0:
+                attention_mask = attention_mask.view(1, 1)        # (1, 1)
 
-        # Local dense attention
-        local_out = self._local_attention(Q, K, V, pad_mask_bool)
+            Bm, M = attention_mask.shape
+            if M > N:
+                attention_mask = attention_mask[:, :N]
+            elif M < N:
+                padding = torch.ones(Bm, N - M, device=attention_mask.device, dtype=torch.bool)
+                attention_mask = torch.cat([attention_mask.bool(), padding], dim=1)
 
-        # Global linear attention
-        global_out = self._global_linear_attention(Q, K, V, pad_mask_bool)
+            if attention_mask.dtype == torch.long:
+                pad_mask_bool = (attention_mask == 0)
+            else:
+                pad_mask_bool = (attention_mask <= -1e3)
+        else:
+            pad_mask_bool = None
 
-        # Adaptive fusion
-        alpha = torch.sigmoid(self.alpha).view(1, self.num_heads, 1, 1)
-        combined = alpha * local_out + (1 - alpha) * global_out
+        # token_valid = True for real tokens, False for padding
+        token_valid = None if pad_mask_bool is None else ~pad_mask_bool  # (B, N)
 
-        # Reshape back to (B, N, H)
-        combined = combined.permute(0, 2, 1, 3).contiguous().view(B, N, self.hidden_size)
+        # 2. Local window attention (pass token_valid)
+        ctx_local = local_window_attention(
+            Q_local, K_local, V_local,
+            window=self.cfg.local_window,
+            temperature=self.cfg.softpick_temperature,
+            token_valid=token_valid,
+        )  # (B, Hl, N, D)
 
-        # Output projection + dropout
-        output = self.out_proj(combined)
+        # 3. Global kernel linear attention using learned rff_proj
+        # Project Q_global and K_global to (B, Hg, N, rff_features)
+        # self.rff_proj: (Hg, head_dim, rff_features)
+        Q_feat = torch.einsum('bhnd,hdf->bhnf', Q_global, self.rff_proj)  # (B, Hg, N, kdim)
+        K_feat = torch.einsum('bhnd,hdf->bhnf', K_global, self.rff_proj)
+
+        # Mask out padding tokens (set features to zero)
+        if token_valid is not None:
+            mask_global = token_valid.unsqueeze(1).unsqueeze(-1)  # (B, 1, N, 1)
+            K_feat = K_feat.masked_fill(~mask_global, 0.0)
+            V_global = V_global.masked_fill(~mask_global, 0.0)
+
+        # KV accumulation and normalizer
+        KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V_global)          # (B, Hg, kdim, D)
+        K_sum = K_feat.sum(dim=2, keepdim=True)                          # (B, Hg, 1, kdim)
+        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-8     # (B, Hg, N, 1)
+        ctx_global = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV) / denom # (B, Hg, N, D)
+
+        # 4. Adaptive blending (if enabled)
+        if self.blend_logits is not None:
+            # Expand global context to all heads (pad local part with zeros for global heads)
+            # But in this design, local heads only for Hl, global for Hg -> blend per head
+            blend_weights = torch.sigmoid(self.blend_logits)  # (H,)
+            blend_weights = blend_weights.view(1, H, 1, 1)
+            combined = blend_weights * torch.cat([ctx_local, ctx_global], dim=1)  # simple weighted sum
+            # Alternatively, separate blend for local and global (using two sets of weights)
+            # For simplicity, we just combine the two parts (they are already concatenated)
+            context = combined
+        else:
+            context = torch.cat([ctx_local, ctx_global], dim=1)  # (B, H, N, D)
+
+        # Apply token mask if needed
+        if token_valid is not None:
+            context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
+
+        # Output projection
+        context = context.transpose(1, 2).contiguous().view(B, N, H * D)
+        output = self.out_proj(context)
         output = self.dropout(output)
 
-        if output_attentions:
-            # For compatibility, return None for attention weights
-            return (output, None)
-        return (output,)
-
-    # ---------- Initialisation helper ----------
-    @torch.no_grad()
-    def _svd_init(self, q_weight: torch.Tensor, k_weight: torch.Tensor,
-                  v_weight: torch.Tensor, out_weight: torch.Tensor, rank: int):
-        """Initialise low-rank factors from pretrained DistilBERT weights using truncated SVD."""
-        def _init_lowrank(module: LowRankLinear, weight: torch.Tensor):
-            # weight is (out_features, in_features), shape (H, H)
-            U, S, Vt = torch.linalg.svd(weight, full_matrices=False)
-            U_r = U[:, :rank]            # (H, rank)
-            S_r = S[:rank]               # (rank,)
-            Vt_r = Vt[:rank, :]          # (rank, H)
-            # We want module.linear2.weight (H, rank) @ module.linear1.weight (rank, H) ≈ weight.T? Actually careful:
-            # LowRankLinear: x -> linear1 (H->rank) -> y = x @ W1.T, then linear2 (rank->H) -> y @ W2.T = x @ (W2 @ W1).T
-            # We want (W2 @ W1) ≈ weight.T? For compatibility, our weight W_q has shape (H, H) and original operation is x @ W_q.T.
-            # So we need effective matrix = W_q.T. Then W2 @ W1 = W_q.T.
-            # W_q.T = V * S * U.T  (since W = U S V^T, then W.T = V S U^T)
-            # Thus set W2 = V_r @ diag(S_r)  (H, rank)   and   W1 = U_r.T  (rank, H)
-            # Then W2 @ W1 = V_r diag(S_r) @ U_r.T = W_q.T (approx).
-            W2 = torch.mm(Vt_r.T, torch.diag(S_r))   # (H, rank)
-            W1 = U_r.T                                # (rank, H)
-            module.linear1.weight.copy_(W1)
-            module.linear2.weight.copy_(W2)
-
-        _init_lowrank(self.q_proj, q_weight)
-        _init_lowrank(self.k_proj, k_weight)
-        _init_lowrank(self.v_proj, v_weight)
-        _init_lowrank(self.out_proj, out_weight)
+        return (output, None)
 
 
-# ----- Injection helper -----
-def inject_aegis_into_distilbert(model, layer_idx: int, config: AegisConfig):
-    """Replace the DistilBertAttention at a given layer with AegisAttention, initialised from the original weights."""
-    distil_layer = model.distilbert.transformer.layer[layer_idx]
-    old_attn = distil_layer.attention
 
-    new_attn = AegisAttention(config)
 
-    # Extract weights
-    q_w = old_attn.q_lin.weight.data                   # (H, H)
-    k_w = old_attn.k_lin.weight.data
-    v_w = old_attn.v_lin.weight.data
-    out_w = old_attn.out_lin.weight.data
+    def get_ortho_loss(self):
+        return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
-    new_attn._svd_init(q_w, k_w, v_w, out_w, config.rank_proj)
 
-    # Replace and copy other attributes if needed (dropout already inside)
-    distil_layer.attention = new_attn
+# ══════════════════════════════════════════════════════════════════════
+# 3. Injection helper
+# ══════════════════════════════════════════════════════════════════════
+def inject_aegis_into_distilbert(layer, model_config, aegis_cfg, old_attn):
+    new_attn = AegisAttention(model_config=model_config,
+                              aegis_cfg=aegis_cfg,
+                              pretrained_attn=old_attn,
+                              bert_mode=False)
+    layer.attention = new_attn
     return new_attn
-# ```
 
+
+# ══════════════════════════════════════════════════════════════════════
+# 4. GLUE data loading (local parquet, offline)
+# ══════════════════════════════════════════════════════════════════════
+GLUE_TASK_KEYS = {
+    "cola": ("sentence", None),
+    "sst2": ("sentence", None),
+    "mrpc": ("sentence1", "sentence2"),
+    "qqp": ("question1", "question2"),
+    "stsb": ("sentence1", "sentence2"),
+    "mnli": ("premise", "hypothesis"),
+    "qnli": ("question", "sentence"),
+    "rte": ("sentence1", "sentence2"),
+    "wnli": ("sentence1", "sentence2"),
+}
+
+def load_glue_local(task_name: str) -> DatasetDict:
+    base_path = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+    task_path = os.path.join(base_path, task_name)
+    if not os.path.exists(task_path):
+        raise FileNotFoundError(f"Dataset not found: {task_path}")
+
+    splits = {}
+    for fname in os.listdir(task_path):
+        if fname.endswith(".parquet"):
+            split = fname.split("-")[0]
+            splits[split] = Dataset.from_parquet(os.path.join(task_path, fname))
+
+    if task_name == "mnli":
+        for extra in ["validation_matched", "validation_mismatched"]:
+            fpath = os.path.join(task_path, f"{extra}.parquet")
+            if os.path.exists(fpath):
+                splits[extra] = Dataset.from_parquet(fpath)
+
+    return DatasetDict(splits)
+
+def get_num_labels_and_is_regression(task):
+    if task == "stsb":
+        return 1, True
+    if task == "cola":
+        return 2, False
+    return {"sst2": 2, "mrpc": 2, "qqp": 2, "mnli": 3, "qnli": 2, "rte": 2, "wnli": 2}[task], False
+
+def preprocess_function(examples, tokenizer, sent1_key, sent2_key, max_length, is_regression):
+    if sent2_key is None:
+        t = tokenizer(examples[sent1_key], truncation=True, padding="max_length", max_length=max_length)
+    else:
+        t = tokenizer(examples[sent1_key], examples[sent2_key],
+                      truncation=True, padding="max_length", max_length=max_length)
+    t["labels"] = [float(l) for l in examples["label"]] if is_regression else examples["label"]
+    return t
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    preds = logits.argmax(-1)
+    return {"accuracy": (preds == labels).mean().item()}
+
+
+# ══════════════════════════════════════════════════════════════════════
+# 5. Main training script
+# ══════════════════════════════════════════════════════════════════════
+def main():
+    parser = argparse.ArgumentParser(description="Train DistilBERT with AEGIS‑Attention on GLUE")
+    parser.add_argument("--task", type=str, default="sst2")
+    parser.add_argument("--model", type=str, default="distilbert-base-uncased")
+    parser.add_argument("--output_dir", type=str, default="./aegis_output")
+    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--epochs", type=int, default=5)
+    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--seed", type=int, default=42)
+    # Aegis specific (optional)
+    parser.add_argument("--local_heads", type=int, default=8)
+    parser.add_argument("--global_heads", type=int, default=4)
+    parser.add_argument("--svd_energy", type=float, default=0.95)
+    parser.add_argument("--rff_features", type=int, default=256)
+    parser.add_argument("--local_window", type=int, default=64)
+    args = parser.parse_args()
+
+    set_seed(args.seed)
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    # ---- Load data (offline) ----
+    raw_datasets = load_glue_local(args.task)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True, local_files_only=True)
+    num_labels, is_regression = get_num_labels_and_is_regression(args.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
+
+    tokenized = raw_datasets.map(
+        lambda ex: preprocess_function(ex, tokenizer, sent1_key, sent2_key, args.max_len, is_regression),
+        batched=True,
+        remove_columns=raw_datasets["train"].column_names,
+    )
+    train_dataset = tokenized["train"]
+    eval_dataset = tokenized.get("validation", tokenized.get("validation_matched"))
+    log.info(f"Train size: {len(train_dataset)}, Eval size: {len(eval_dataset)}")
+
+    # ---- Load model & inject AEGIS ----
+    config = AutoConfig.from_pretrained(args.model, local_files_only=True)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        args.model, config=config, local_files_only=True)
+
+    aegis_cfg = AegisConfig(
+        num_local_heads=args.local_heads,
+        num_global_heads=args.global_heads,
+        svd_energy=args.svd_energy,
+        rff_features=args.rff_features,
+        local_window=args.local_window,
+        # total heads accordingly (must match DistilBERT = 12)
+    )
+
+    for layer_idx in range(6):   # 6 layers in DistilBERT
+        distil_layer = model.distilbert.transformer.layer[layer_idx]
+        old_attn = distil_layer.attention
+        inject_aegis_into_distilbert(distil_layer, config, aegis_cfg, old_attn)
+
+    log.info("AEGIS‑Attention injected into all 6 layers.")
+
+    # ---- Training setup ----
+    total_steps = (len(train_dataset) // args.batch_size) * args.epochs
+    warmup_steps = int(0.06 * total_steps)
+
+    training_args = TrainingArguments(
+        output_dir=os.path.join(args.output_dir, args.task),
+        num_train_epochs=args.epochs,
+        per_device_train_batch_size=args.batch_size,
+        per_device_eval_batch_size=args.batch_size * 2,
+        learning_rate=args.lr,
+        weight_decay=0.01,
+        lr_scheduler_type="linear",
+        warmup_steps=warmup_steps,
+        logging_steps=100,
+        eval_strategy="steps",
+        eval_steps=500,
+        save_strategy="steps",
+        save_steps=500,
+        load_best_model_at_end=True,
+        metric_for_best_model="accuracy",
+        greater_is_better=True,
+        remove_unused_columns=False,
+        fp16=False,
+        report_to="none",
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        compute_metrics=compute_metrics,
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
+    )
+
+    log.info("Starting training...")
+    trainer.train()
+    trainer.save_model(os.path.join(args.output_dir, args.task))
+    log.info("Training completed.")
+
+
+if __name__ == "__main__":
+    main()
+
+
+    
 # ---
 
 # ## Step 4: Explanation & Usage
