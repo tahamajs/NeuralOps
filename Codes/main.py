@@ -11,6 +11,10 @@ from transformers import (
     AutoTokenizer, AutoConfig, AutoModelForSequenceClassification,
     TrainingArguments, DataCollatorWithPadding, set_seed
 )
+
+import os
+os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
+os.environ["HF_HOME"] = "./models"
 # ~~~~~~~~~~~~~~ Environment (offline) ~~~~~~~~~~~~~~
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -40,6 +44,9 @@ from experiment_logging import setup_logging, MetricsTracker, LoggingCallback
 def main():
     parser = argparse.ArgumentParser(description="Efficient Attention GLUE Runner")
     # Model & Data
+    parser.add_argument("--config", type=str, default=None,
+                    help="Path to YAML configuration file")
+
     parser.add_argument("--model", type=str, default="distilbert-base-uncased")
     parser.add_argument("--attn_type", type=str, required=True,
                         help="Attention type (e.g., nexus, leka_v2, full)")
@@ -127,26 +134,31 @@ def main():
     fix_layernorm_naming(model)
 
     # Build compression config (shared with attention and methods)
-    comp_config = CompressionConfig(
-        attn_type=args.attn_type,
-        dropout=0.1,
-        # method parameters
-        lora_r=args.lora_r, lora_alpha=args.lora_alpha, lora_dropout=args.lora_dropout,
-        rdrop_alpha=args.rdrop_alpha, r3f_epsilon=args.r3f_epsilon,
-        llrd_decay=args.llrd_decay, mixout_p=args.mixout_p,
-        dislora_beta=args.dislora_beta, dislora_capacity_factor=args.dislora_capacity_factor,
-        fisher_num_batches=args.fisher_num_batches, fisher_sample_size=args.fisher_sample_size,
-        gelora_margin=args.gelora_margin, gelora_min_rank=args.gelora_min_rank,
-        gelora_max_rank=args.gelora_max_rank, fisher_scale_max=args.fisher_scale_max,
-        use_lion=args.use_lion,
-        gradient_checkpointing=args.gradient_checkpointing,
-        early_stopping_patience=args.early_stopping_patience,
-        max_grad_norm=args.max_grad_norm,
-        # attention-specific fields
-        num_landmarks=args.num_landmarks, feature_dim=args.feature_dim,
-        k_early=args.k_early, k_mid=args.k_mid, k_late=args.k_late,
-        use_gate=not args.no_gate, progressive=True, max_seq_len=args.max_len,
-    )
+    if args.config:
+        yaml_cfg = load_yaml_config(args.config)
+        comp_config = build_compression_config(yaml_cfg, args)
+    else:
+
+        comp_config = CompressionConfig(
+            attn_type=args.attn_type,
+            dropout=0.1,
+            # method parameters
+            lora_r=args.lora_r, lora_alpha=args.lora_alpha, lora_dropout=args.lora_dropout,
+            rdrop_alpha=args.rdrop_alpha, r3f_epsilon=args.r3f_epsilon,
+            llrd_decay=args.llrd_decay, mixout_p=args.mixout_p,
+            dislora_beta=args.dislora_beta, dislora_capacity_factor=args.dislora_capacity_factor,
+            fisher_num_batches=args.fisher_num_batches, fisher_sample_size=args.fisher_sample_size,
+            gelora_margin=args.gelora_margin, gelora_min_rank=args.gelora_min_rank,
+            gelora_max_rank=args.gelora_max_rank, fisher_scale_max=args.fisher_scale_max,
+            use_lion=args.use_lion,
+            gradient_checkpointing=args.gradient_checkpointing,
+            early_stopping_patience=args.early_stopping_patience,
+            max_grad_norm=args.max_grad_norm,
+            # attention-specific fields
+            num_landmarks=args.num_landmarks, feature_dim=args.feature_dim,
+            k_early=args.k_early, k_mid=args.k_mid, k_late=args.k_late,
+            use_gate=not args.no_gate, progressive=True, max_seq_len=args.max_len,
+        )
 
     # Inject attention
     if args.attn_type != "full":
