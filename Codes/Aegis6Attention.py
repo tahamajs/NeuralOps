@@ -320,24 +320,37 @@ class AegisAttentionV3(nn.Module):
         out = torch.where(safe, num / denom, torch.zeros_like(num))
         return out
 
+    @staticmethod
+    def _convert_attention_mask(attention_mask, B, N, device):
+        """
+        Convert a possibly 2D/3D/4D mask to a 2D boolean tensor (True = valid).
+        Handles DistilBERT's 4D additive mask (0 = valid, -10000 = invalid).
+        """
+        if attention_mask is None:
+            return torch.ones(B, N, device=device, dtype=torch.bool)
+        if attention_mask.dim() == 2:
+            return attention_mask.bool()
+        if attention_mask.dim() == 3:
+            return attention_mask.squeeze(1).bool()
+        if attention_mask.dim() == 4:
+            if attention_mask.shape[-2] == attention_mask.shape[-1]:
+                # extended additive mask (B,1,N,N): row 0 tells us valid key positions
+                return attention_mask[:, 0, 0, :] > -1e9      # True where valid
+            else:
+                # typical padding mask (B,1,1,N)
+                return attention_mask.squeeze(1).squeeze(1) > -1e9
+        raise ValueError(f"Unexpected mask dim: {attention_mask.dim()}")
+
     def forward(self, hidden_states: torch.Tensor,
                 attention_mask: Optional[torch.Tensor] = None,
                 **kwargs) -> Tuple[torch.Tensor, None]:
         B, N, _ = hidden_states.shape
+        device = hidden_states.device
 
-        if attention_mask is not None:
-            pad_mask = attention_mask.to(hidden_states.dtype).unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
-        else:
-            pad_mask = torch.ones(B, 1, 1, N, device=hidden_states.device, dtype=hidden_states.dtype)
-        if attention_mask is not None:
-            pad_mask = attention_mask.to(hidden_states.dtype)
-            # Ensure it is at most 2D; unsqueeze to 4D
-            if pad_mask.dim() > 2:
-                pad_mask = pad_mask.view(pad_mask.size(0), -1)   # collapse to (B, N)
-            pad_mask = pad_mask.unsqueeze(1).unsqueeze(2)        # (B, 1, 1, N)
-        else:
-            pad_mask = torch.ones(B, 1, 1, N, device=..., dtype=...)
-
+        # Robust mask conversion → 2D boolean (B,N)
+        valid_2d = self._convert_attention_mask(attention_mask, B, N, device)
+        # Create a float mask (1 = valid, 0 = pad) of shape (B,1,1,N)
+        pad_mask = valid_2d.to(dtype=hidden_states.dtype).unsqueeze(1).unsqueeze(2)
 
         # Project
         Q = self._reshape(self.q_proj(hidden_states))
@@ -362,6 +375,10 @@ class AegisAttentionV3(nn.Module):
         out = self.out_proj(fused)
         return out, None
 
+    def get_ortho_loss(self):
+        return torch.tensor(0.0, device=self.out_proj.A.device)
+        
+        
     @staticmethod
     def init_from_pretrained(layer):
         return {
