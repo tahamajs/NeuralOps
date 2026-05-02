@@ -5,5 +5,5 @@ from . import config
 from . import experiment_tracker
 from . import interfaces
 from . import model_wrapper
-from registery import 
+from . import registery
 from . import utils

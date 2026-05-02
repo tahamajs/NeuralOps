@@ -480,37 +480,3 @@ def inject_aegis_into_distilbert(
     )
     layer.attention = new_attn
     return new_attn
-```
-
----
-
-## Usage Example
-
-```python
-# In your injection loop:
-elif comp_config.attn_type == "aegis":
-    aegis_cfg = AEGISConfig(
-        cur_rank=16,
-        num_local_heads=8,
-        num_global_heads=4,
-        local_window=64,
-        rff_features=256,
-    )
-    old_attn = layer.attention
-    new_attn = inject_aegis_into_distilbert(layer, config, aegis_cfg, old_attn)
-    self.compression_modules.append(new_attn)
-
-
-# ---
-
-# ## Complexity & Benefits
-
-# | Metric | DistilBERT | AEGIS | Reduction |
-# |--------|-----------|-------|-----------| 
-# | Q/K/V/Out params | 4 × 768² ≈ 2.36M | 4 × (768×16 + 16×768) with tile sharing → ~50K | **>40×** |
-# | Local attention FLOPs (8 heads) | O(8·N²·D) | O(8·N·W·D) with W=64 | ~N/W |
-# | Global attention FLOPs (4 heads) | O(4·N²·D) | O(4·N·F·D) with F=256 | linear |
-# | Memory (KV cache) | O(H·N·D) | O(Hl·N·D + Hg·N·F) | ~2× |
-# | Zero‑shot accuracy | baseline | ~98‑99% of baseline | — |
-
-# **Key stability features**: no runtime SVD; projections are factorised once; local/global paths share no intermediate gradients, avoiding interference; Softpick provides natural gradient regularisation. AEGIS delivers a **practical, deployment‑ready** efficiency breakthrough for DistilBERT.
