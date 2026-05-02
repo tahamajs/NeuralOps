@@ -1,0 +1,9 @@
+{"timestamp": "2026-05-02T04:11:49.156872", "level": "INFO", "logger": "nexus_sst2_42", "message": "🚀 Logging initialized – logs: ./logs", "module": "logger", "function": "info"}
+{"timestamp": "2026-05-02T04:11:49.157291", "level": "INFO", "logger": "nexus_sst2_42", "message": "══════════════════════════════════════", "module": "logger", "function": "info"}
+{"timestamp": "2026-05-02T04:11:49.157370", "level": "INFO", "logger": "nexus_sst2_42", "message": "🚀 Experiment: nexus_sst2_42", "module": "logger", "function": "info"}
+{"timestamp": "2026-05-02T04:11:49.157425", "level": "INFO", "logger": "nexus_sst2_42", "message": "   Attention: nexus", "module": "logger", "function": "info"}
+{"timestamp": "2026-05-02T04:11:49.157469", "level": "INFO", "logger": "nexus_sst2_42", "message": "   Compressor: none", "module": "logger", "function": "info"}
+{"timestamp": "2026-05-02T04:11:49.157507", "level": "INFO", "logger": "nexus_sst2_42", "message": "   Task: sst2", "module": "logger", "function": "info"}
+{"timestamp": "2026-05-02T04:11:49.157545", "level": "INFO", "logger": "nexus_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "logger", "function": "info"}
+{"timestamp": "2026-05-02T04:11:49.157581", "level": "INFO", "logger": "nexus_sst2_42", "message": "══════════════════════════════════════", "module": "logger", "function": "info"}
+{"timestamp": "2026-05-02T04:11:49.332492", "level": "INFO", "logger": "nexus_sst2_42", "message": "Using device: mps", "module": "logger", "function": "info"}
