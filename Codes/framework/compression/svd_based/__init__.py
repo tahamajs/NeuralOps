@@ -1,27 +1,9 @@
-# framework/compression/svd_based/__init__.py
-"""
-SVD-based Compression Methods
-
-This module provides core SVD-based compression techniques for linear layers,
-including the main SVDLinearLayer and adaptive rank selection utilities.
-
-Examples:
-    >>> from framework.compression.svd_based import SVDLinearLayer, get_adaptive_ranks
-    >>> 
-    >>> # Create compressed layer
-    >>> compressed = SVDLinearLayer(original_layer, rank=32)
-    >>> 
-    >>> # Get adaptive ranks for BERT
-    >>> rank_map = get_adaptive_ranks("bert-base-uncased", ["query", "key", "value"])
-"""
-
-from .svd_linear import SVDLinearLayer
-from .adaptive_ranks import get_adaptive_ranks, apply_adaptive_svd
-
-__all__ = [
-    "SVDLinearLayer",
-    "get_adaptive_ranks",
-    "apply_adaptive_svd",
-]
-
-__version__ = "1.0.0"
+# Auto-generated __init__.py
+from . import saes_svd_compressor
+from . import gfws_d_compressor
+from . import erc_svd
+from . import mgie_svd
+from . import salr
+from . import svd_linear
+from . import adaptive_ranks
+from . import dobi_svd
