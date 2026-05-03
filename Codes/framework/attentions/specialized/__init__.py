@@ -1,4 +1,3 @@
-# Auto-generated __init__.py
 from . import adasplash_attention
 from . import flash_attention3
 from . import flash_attention3_fp8
