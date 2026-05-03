@@ -1,27 +1,35 @@
-def get_adaptive_ranks(model_name: str, patterns: list) -> dict:
-    """Returns a dictionary mapping pattern → rank."""
-    base_low = 32
-    base_high = 64
+"""Utility for assigning ranks based on layer patterns."""
+
+import torch
+import torch.nn as nn
+
+def get_adaptive_ranks(patterns: list) -> dict:
+    """Return a dictionary mapping pattern → rank."""
     ranks = {}
     for pattern in patterns:
-        if 'out' in pattern.lower() or 'output' in pattern.lower():
-            ranks[pattern] = base_high
-        elif 'q_lin' in pattern.lower() or 'k_lin' in pattern.lower() or 'v_lin' in pattern.lower():
-            ranks[pattern] = base_low
+        if any(k in pattern.lower() for k in ['out', 'output', 'classifier']):
+            ranks[pattern] = 64
+        elif any(k in pattern.lower() for k in ['q_lin', 'k_lin', 'v_lin']):
+            ranks[pattern] = 32
+        elif any(k in pattern.lower() for k in ['query', 'key', 'value']):
+            ranks[pattern] = 32
         else:
-            ranks[pattern] = base_high
+            ranks[pattern] = 48
     return ranks
 
 def apply_adaptive_svd(model, rank_map):
-    """Apply SVDLinearLayer to matched layers with given ranks."""
+    """
+    Apply SVD compression to linear layers according to pattern-rank mapping.
+    Uses SVDLinearLayer from svd_linear.
+    """
     from .svd_linear import SVDLinearLayer
     count = 0
     for name, module in model.named_modules():
-        if isinstance(module, torch.nn.Linear):
+        if isinstance(module, nn.Linear):
             for pattern, rank in rank_map.items():
-                if pattern in name.lower():
+                if pattern.lower() in name.lower():
                     try:
-                        new_layer = SVDLinearLayer(module, rank)
+                        new_layer = SVDLinearLayer(module, rank=rank)
                         parent_name = '.'.join(name.split('.')[:-1])
                         child_name = name.split('.')[-1]
                         parent = model.get_submodule(parent_name) if parent_name else model
@@ -29,5 +37,5 @@ def apply_adaptive_svd(model, rank_map):
                         count += 1
                     except Exception:
                         pass
-                    break
+                    break   # first match wins
     return count
