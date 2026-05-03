@@ -1,31 +1,39 @@
-import torch
-import numpy as np
-from sklearn.cluster import KMeans
+"""CoopQ: Shapley‑inspired per‑layer bit allocation. Registered as 'coopq'."""
 
-class CoopQQuantizer:
-    def __init__(self, model, bits=4):
-        self.model = model
+import torch
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
+
+@COMPRESSOR_REGISTRY.register("coopq")
+class CoopQQuantizer(BaseCompressor):
+    def __init__(self, model, bits=4, **kwargs):
+        super().__init__(model, name="coopq", **kwargs)
         self.bits = bits
 
+    def _quantize_layer(self, module, bits):
+        W = module.weight.data.float()
+        min_v, max_v = W.min(), W.max()
+        if max_v == min_v:
+            return
+        scale = (max_v - min_v) / (2**bits - 1)
+        W_q = torch.round((W - min_v) / scale) * scale + min_v
+        module.weight.data = W_q.to(dtype=module.weight.dtype)
+        if module.bias is not None:
+            min_b, max_b = module.bias.min(), module.bias.max()
+            if max_b > min_b:
+                scale_b = (max_b - min_b) / (2**bits - 1)
+                module.bias.data = torch.round((module.bias.data - min_b) / scale_b) * scale_b + min_b
+
     def compress(self):
-        # Approximate Shapley values by layer sensitivity
         sensitivities = {}
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
-                w = module.weight.data
-                sensitivities[name] = w.abs().max().item()  # proxy
+                sensitivities[name] = module.weight.data.abs().max().item()
         total_sens = sum(sensitivities.values())
         for name, module in self.model.named_modules():
-            if name in sensitivities:
-                # assign bits proportional to sensitivity
+            if isinstance(module, torch.nn.Linear) and name in sensitivities:
                 frac = sensitivities[name] / total_sens
-                bits_layer = max(1, min(8, int(self.bits + 2*frac)))
-                # quantize layer
+                bits_layer = max(1, min(8, int(self.bits + 4 * frac)))
                 self._quantize_layer(module, bits_layer)
-
-    def _quantize_layer(self, module, bits):
-        W = module.weight.data
-        min_v, max_v = W.min(), W.max()
-        scale = (max_v - min_v) / (2**bits - 1)
-        W_q = torch.round((W - min_v) / scale) * scale + min_v
-        module.weight.data = W_q
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()

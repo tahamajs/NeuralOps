@@ -1,61 +1,70 @@
+"""MLoRQ: Multi‑Layer optimal rank & quantisation under a total memory budget. Registered as 'mlorq'."""
+
 import torch
 import numpy as np
-from scipy.optimize import minimize
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class MLoRQCompressor:
-    """
-    Multi‑Layer low‑rank + quantization: joint per‑layer bit‑width and rank assignment.
-    Uses a simple greedy search to meet total memory budget.
-    """
-    def __init__(self, model, total_memory_budget_mb=500, bits_candidates=[2,4,8]):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("mlorq")
+class MLoRQCompressor(BaseCompressor):
+    def __init__(self, model, total_memory_budget_mb=500, bits_candidates=[2,4,8], **kwargs):
+        super().__init__(model, name="mlorq", **kwargs)
         self.total_budget = total_memory_budget_mb * 8 * 1024 * 1024  # bits
         self.bits_candidates = bits_candidates
 
-    def _param_size(self, shape, bits):
+    @staticmethod
+    def _param_size(shape, bits):
         return shape[0] * shape[1] * bits
 
+    @staticmethod
+    def _quantize(tensor, bits):
+        if bits >= 32:
+            return tensor.float()
+        t = tensor.float()
+        min_v, max_v = t.min(), t.max()
+        if max_v == min_v:
+            return t
+        scale = (max_v - min_v) / (2**bits - 1)
+        return torch.round((t - min_v) / scale) * scale + min_v
+
     def compress(self):
-        layers_info = []
+        layers = []
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data
                 out_f, in_f = W.shape
-                layers_info.append({'name': name, 'module': module, 'shape': (out_f, in_f), 'W': W})
+                layers.append({'name': name, 'module': module, 'shape': (out_f, in_f), 'W': W})
 
-        # Simple brute‑force: try all rank‑bit combinations
         total_cost = 0
-        for info in layers_info:
+        for info in layers:
             best = None
-            for bits in self.bits_candidates:
-                max_rank = min(info['shape'])
-                for rank in range(1, max_rank+1):
-                    # Memory of low‑rank factors + quantised
+            best_mem = 0
+            max_rank = min(info['shape'])
+            for bits in sorted(self.bits_candidates, reverse=True):
+                for rank in range(max_rank, 0, -1):
                     mem = (info['shape'][0] * rank + rank * info['shape'][1]) * bits
                     if total_cost + mem <= self.total_budget:
                         best = (rank, bits, mem)
+                        best_mem = mem
                         break
-                if best: break
+                if best is not None:
+                    break
             if best is None:
-                best = (1, 8, 0)
+                best = (1, self.bits_candidates[-1], 0)
             r, b, mem = best
             total_cost += mem
-            # Compress this layer
-            W_np = info['W'].cpu().numpy()
-            U, S, Vt = np.linalg.svd(W_np, full_matrices=False)
+            # Compress layer
+            W_np = info['W'].cpu().float()
+            U, S, Vt = torch.linalg.svd(W_np, full_matrices=False)
             U_r = U[:, :r]
             S_r = S[:r]
             Vt_r = Vt[:r, :]
-            # Quantize each factor to b bits
-            def quantize(t):
-                t_min, t_max = t.min(), t.max()
-                if t_max == t_min:
-                    return t
-                scale = (t_max - t_min) / (2**b - 1)
-                return torch.round((t - t_min) / scale) * scale + t_min
-            U_r_t = quantize(torch.tensor(U_r)).to(info['W'].device)
-            S_r_t = quantize(torch.tensor(S_r)).to(info['W'].device)
-            Vt_r_t = quantize(torch.tensor(Vt_r)).to(info['W'].device)
-            W_new = U_r_t @ torch.diag(S_r_t) @ Vt_r_t
+            U_q = self._quantize(U_r, b).to(info['W'].device)
+            S_q = self._quantize(S_r, b).to(info['W'].device)
+            Vt_q = self._quantize(Vt_r, b).to(info['W'].device)
+            W_new = U_q @ torch.diag(S_q) @ Vt_q
             info['module'].weight.data = W_new.to(dtype=info['W'].dtype)
-        return self.model
+            if info['module'].bias is not None:
+                info['module'].bias.data = self._quantize(info['module'].bias.data, b)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
