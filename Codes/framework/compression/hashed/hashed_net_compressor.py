@@ -1,31 +1,46 @@
-import torch
-import torch.nn as nn
-import numpy as np
+"""
+HashedNet Compressor: replaces nn.Linear with HashedLinear.
+Registered as 'hashed_net'.
+"""
 
-class HashedNetCompressor:
-    def __init__(self, model, num_buckets=1000):
-        self.model = model
-        self.num_buckets = num_buckets
+import torch.nn as nn
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
+from .hashed_linear import HashedLinear
+
+
+@COMPRESSOR_REGISTRY.register("hashed_net")
+class HashedNetCompressor(BaseCompressor):
+    """
+    Compress a model by replacing every nn.Linear layer with HashedLinear,
+    which shares weights via a hash table.
+
+    Args:
+        model: PyTorch model.
+        n_buckets: number of hash buckets (size of weight table).
+    """
+
+    def __init__(self, model, n_buckets=1024, **kwargs):
+        super().__init__(model, name="hashed_net", **kwargs)
+        self.n_buckets = n_buckets
 
     def compress(self):
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                W = module.weight.data
-                N, M = W.shape
-                # Group weights into buckets using a hash function
-                buckets = {}
-                for i in range(N):
-                    for j in range(M):
-                        h = hash((i,j)) % self.num_buckets
-                        if h not in buckets:
-                            buckets[h] = []
-                        buckets[h].append((i,j))
-                # Replace each bucket's weights by their mean
-                W_new = W.clone()
-                for h, indices in buckets.items():
-                    vals = torch.stack([W[i,j] for i,j in indices])
-                    mean_val = vals.mean()
-                    for i,j in indices:
-                        W_new[i,j] = mean_val
-                module.weight.data = W_new.to(dtype=module.weight.dtype)
-        return self.model
+                # Replace with HashedLinear initialized from existing weights
+                new_layer = HashedLinear.from_linear(module, self.n_buckets)
+                parent = self._get_parent(name)
+                if parent is not None:
+                    child_name = name.split('.')[-1]
+                    setattr(parent, child_name, new_layer)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
+
+    def _get_parent(self, full_name):
+        parts = full_name.split('.')
+        parent = self.model
+        for part in parts[:-1]:
+            parent = getattr(parent, part, None)
+            if parent is None:
+                return None
+        return parent
