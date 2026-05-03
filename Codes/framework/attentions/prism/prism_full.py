@@ -39,6 +39,7 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
     return p_rect / denom
 
 class BlockDiagonal(nn.Module):
+    """Block‑diagonal matrix for ARMOR structured sparsity."""
     def __init__(self, dim: int, block_size: int, bias: bool = False):
         super().__init__()
         self.dim = dim
@@ -64,6 +65,7 @@ class BlockDiagonal(nn.Module):
         return x
 
 class KVTQuantiser:
+    """PCA‑based adaptive quantisation for K/V."""
     def __init__(self, n_bits: int = 4, pca_components: float = 0.95):
         self.n_bits = n_bits
         self.pca_components = pca_components
@@ -102,6 +104,15 @@ class KVTQuantiser:
         return (dq @ self.pca_basis.T.to(x.device)).to(x.dtype)
 
 class PRISMAttention(nn.Module):
+    """
+    PRISM attention: 6 integrated compression techniques.
+    - SVD rank reduction on projections
+    - ARMOR block‑diagonal structured sparsity
+    - AST learned sparse masking
+    - DeltaKV residual compression via reference tokens
+    - KVT PCA quantisation of keys/values
+    - Softpick sparse activation
+    """
     def __init__(self, model_config, prism_cfg: PRISMConfig, layer_idx=0, total_layers=6,
                  pretrained_attn=None, bert_mode=False):
         super().__init__()
@@ -146,7 +157,7 @@ class PRISMAttention(nn.Module):
             self.armor_v = BlockDiagonal(self.all_head_size, self.cfg.armor_block_size)
             self.armor_out = BlockDiagonal(self.hidden_size, self.cfg.armor_block_size)
 
-        self.ast_q_mask = self.ast_k_mask = self.ast_v_mask = self.ast_out_mask = None
+        self.ast_q_logits = self.ast_k_logits = self.ast_v_logits = self.ast_out_logits = None
         if self.cfg.ast_enabled:
             self.ast_q_logits = nn.Parameter(torch.zeros(self.q_rank))
             self.ast_k_logits = nn.Parameter(torch.zeros(self.k_rank))
