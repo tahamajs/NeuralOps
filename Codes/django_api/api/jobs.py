@@ -44,3 +44,43 @@ def cancel_job(experiment: Experiment):
     # The runner should periodically check if status changed to cancelled.
     # In the runner callback, we'll raise an exception to stop training.
     push_update(experiment, {"type": "status", "status": "cancelled"})
+
+
+
+
+
+_running_jobs = {}   # job_id -> threading.Event for stopping
+
+def stop_job(job_id):
+    event = _running_jobs.pop(str(job_id), None)
+    if event:
+        event.set()
+
+def start_job(experiment: Experiment, runner_func):
+    stop_event = threading.Event()
+    _running_jobs[str(experiment.id)] = stop_event
+
+    def _run():
+        try:
+            experiment.status = "running"
+            experiment.save()
+            push_update(experiment, {"type": "status", "status": "running"})
+            # Pass stop_event to runner so it can check during training
+            runner_func(experiment, stop_event)
+            if stop_event.is_set():
+                experiment.status = "stopped"
+                experiment.save()
+                push_update(experiment, {"type": "status", "status": "stopped"})
+            else:
+                experiment.status = "completed"
+                experiment.save()
+                push_update(experiment, {"type": "status", "status": "completed"})
+        except Exception as e:
+            experiment.status = "failed"
+            experiment.logs += f"\nError: {str(e)}"
+            experiment.save()
+            push_update(experiment, {"type": "status", "status": "failed"})
+            logger.exception("Job failed")
+
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
