@@ -1,36 +1,51 @@
 import torch
 import torch.nn as nn
-from mamba_ssm import Mamba
+import torch.nn.functional as F
+
+# Simple Mamba stub if not using official package
+class Mamba(nn.Module):
+    def __init__(self, d_model):
+        super().__init__()
+        self.d_model = d_model
+        self.in_proj = nn.Linear(d_model, d_model*2)
+        self.out_proj = nn.Linear(d_model, d_model)
+    def forward(self, x):
+        # Trivial placeholder; replace with real Mamba for performance
+        return self.out_proj(F.silu(self.in_proj(x)))
 
 class ExpertChoiceMoE(nn.Module):
-    def __init__(self, d_model, n_experts=8, capacity=4):
+    """Token‑choice MoE with top‑2 gating."""
+    def __init__(self, d_model, n_experts=8, top_k=2):
         super().__init__()
         self.n_experts = n_experts
-        self.capacity = capacity
-        self.experts = nn.ModuleList([nn.Linear(d_model, d_model) for _ in range(n_experts)])
+        self.top_k = top_k
+        self.experts = nn.ModuleList([nn.Sequential(
+            nn.Linear(d_model, d_model*4),
+            nn.GELU(),
+            nn.Linear(d_model*4, d_model)
+        ) for _ in range(n_experts)])
         self.router = nn.Linear(d_model, n_experts)
 
     def forward(self, x):
-        # Expert choice: each expert picks top‑capacity tokens
         B, L, D = x.shape
-        scores = self.router(x)  # (B, L, E)
-        # For simplicity, we use standard token‑choice with auxiliary loss
-        # Real Expert‑Choice requires sorting, omitted here.
-        top_scores, top_idx = torch.topk(scores, k=self.capacity, dim=-1)
+        scores = self.router(x)   # (B, L, E)
+        weights, indices = torch.topk(scores, self.top_k, dim=-1)  # (B, L, k)
+        weights = F.softmax(weights, dim=-1)
         out = torch.zeros_like(x)
         for e in range(self.n_experts):
-            # Find tokens that chose expert e
-            mask = (top_idx == e).any(dim=-1)
-            if mask.sum() > 0:
-                out[mask] += self.experts[e](x[mask])
+            mask = (indices == e).any(dim=-1)   # (B, L)
+            if mask.any():
+                # Weighted sum for tokens that selected this expert
+                selected_weights = (weights * (indices == e).float()).sum(dim=-1, keepdim=True)
+                out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
         return out
 
 class Jamba2Block(nn.Module):
-    def __init__(self, d_model, n_heads, n_experts=8, capacity=4):
+    def __init__(self, d_model, n_heads, n_experts=8, top_k=2):
         super().__init__()
         self.mamba = Mamba(d_model=d_model)
         self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
-        self.moe = ExpertChoiceMoE(d_model, n_experts, capacity)
+        self.moe = ExpertChoiceMoE(d_model, n_experts, top_k)
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
         self.norm3 = nn.LayerNorm(d_model)

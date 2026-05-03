@@ -20,7 +20,7 @@ class GoldFinchAHNBlock(BaseAttention):
         self.W_k = nn.Linear(self.dim, self.dim, bias=False)
         self.W_v = nn.Linear(self.dim, self.dim, bias=False)
 
-        # Long‑term memory: GatedDeltaNet
+        # Long‑term memory: GatedDeltaNet (assume it returns (B,L,D))
         self.delta_mem = GatedDeltaNetLayer(self.dim, use_spectral_norm=True)
 
         # Fusion gate
@@ -30,20 +30,24 @@ class GoldFinchAHNBlock(BaseAttention):
     def forward(self, x, mask=None, **kwargs):
         B, L, D = x.shape
 
-        # Short‑term sliding window attention
-        q = self.W_q(x).view(B, L, D)
-        k = self.W_k(x).view(B, L, D)
-        v = self.W_v(x).view(B, L, D)
-        # Apply causal sliding window (simplified: full attention masked to window)
-        attn = torch.bmm(q, k.transpose(1,2)) / (D ** 0.5)
-        window_mask = torch.triu(torch.ones(L, L, device=x.device), diagonal=-self.window_size).bool()
-        attn = attn.masked_fill(window_mask.unsqueeze(0), float('-inf'))
-        short_out = torch.bmm(F.softmax(attn, dim=-1), v)
+        # Short‑term sliding window attention (causal, fixed window)
+        q = self.W_q(x)  # (B, L, D)
+        k = self.W_k(x)
+        v = self.W_v(x)
+        scores = torch.bmm(q, k.transpose(1, 2)) / (D ** 0.5)   # (B, L, L)
+
+        # Causal sliding window mask: allow j <= i and j > i - window_size
+        idx = torch.arange(L, device=x.device)
+        causal_mask = idx.unsqueeze(1) >= idx.unsqueeze(0)                  # (L, L)
+        window_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)) < self.window_size
+        mask = ~(causal_mask & window_mask)                                 # True where to mask
+        scores = scores.masked_fill(mask.unsqueeze(0), float('-inf'))
+        short_out = torch.bmm(F.softmax(scores, dim=-1), v)
 
         # Long‑term memory via GatedDeltaNet
         long_out = self.delta_mem(x)   # (B, L, D)
 
-        # Fusion
+        # Fusion gate
         gate = torch.sigmoid(self.gate(x))   # (B, L, 1)
         out = self.out_proj(gate * short_out + (1 - gate) * long_out)
         return (out, None)
