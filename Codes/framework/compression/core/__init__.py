@@ -1,3 +1,2 @@
-# Auto-generated __init__.py
-from . import base
-from . import registry
+from .base import BaseCompressor
+from .registry import CompressorRegistry, COMPRESSOR_REGISTRY

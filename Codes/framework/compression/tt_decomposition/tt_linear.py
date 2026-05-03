@@ -1,14 +1,14 @@
 """
 Tensor Train (TT) Decomposition Layer for PyTorch.
-Uses torchtt package if available; falls back to a simple SVD approximation.
+Uses torchtt if available; falls back to a low‑rank SVD approximation.
 """
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import math
-from typing import Optional, List, Tuple
+from typing import Optional, Tuple
 
-# Try to import torchtt – if not available, we provide a fallback SVD.
 try:
     import torchtt
     _HAS_TORCHTT = True
@@ -18,10 +18,10 @@ except ImportError:
 
 class TTLinearLayer(nn.Module):
     """
-    A linear layer with weights stored in Tensor Train (TT) format.
+    Linear layer with weights stored in Tensor Train (TT) format.
 
     If torchtt is installed, true TT decomposition is used.
-    Otherwise, falls back to a low‑rank SVD approximation with comparable
+    Otherwise, falls back to a low‑rank SVD approximation with the same
     parameter savings and a unified interface.
     """
 
@@ -41,7 +41,7 @@ class TTLinearLayer(nn.Module):
         self.tt_rank = tt_rank
         self.use_tt = _HAS_TORCHTT
 
-        # Determine tensorized shapes automatically
+        # Determine tensorized shapes automatically if not provided
         if tensorized_shape_in is None:
             tensorized_shape_in = self._auto_tensorize(in_features)
         if tensorized_shape_out is None:
@@ -51,7 +51,7 @@ class TTLinearLayer(nn.Module):
         self.tensorized_shape_out = tensorized_shape_out
 
         if self.use_tt:
-            # Convert rank to list (required by torchtt)
+            # Build a rank list for torchtt: [1, r1, r2, ..., r_{d-1}, 1]
             num_dims = len(tensorized_shape_in)
             rank_list = [1] + [tt_rank] * (num_dims - 1) + [1]
             self.tt_layer = torchtt.nn.LinearLayerTT(
@@ -63,11 +63,10 @@ class TTLinearLayer(nn.Module):
             )
         else:
             # Fallback: simple low‑rank SVD decomposition
-            # We decompose the weight matrix as U @ diag(S) @ V, where rank = tt_rank
-            # This provides similar parameter savings.
-            self.U = nn.Parameter(torch.empty(out_features, tt_rank))
-            self.S = nn.Parameter(torch.empty(tt_rank))
-            self.V = nn.Parameter(torch.empty(tt_rank, in_features))
+            r = min(tt_rank, min(out_features, in_features))
+            self.U = nn.Parameter(torch.empty(out_features, r))
+            self.S = nn.Parameter(torch.empty(r))
+            self.V = nn.Parameter(torch.empty(r, in_features))
             nn.init.normal_(self.U, std=0.02)
             nn.init.ones_(self.S)
             nn.init.normal_(self.V, std=0.02)
@@ -139,9 +138,9 @@ class TTLinearLayer(nn.Module):
                 y = y + self.bias
             return y.view(*batch_shape, self.out_features)
         else:
-            # Fallback: (x @ V^T) @ diag(S) @ U^T
-            xV = F.linear(x, self.V)
-            xV = xV * self.S.unsqueeze(0).unsqueeze(0)
+            # Fallback: (x @ V^T) * S @ U^T
+            xV = F.linear(x, self.V)  # (..., r)
+            xV = xV * self.S.unsqueeze(0) if xV.dim() > 2 else xV * self.S
             out = F.linear(xV, self.U.t())
             if self.bias is not None:
                 out = out + self.bias

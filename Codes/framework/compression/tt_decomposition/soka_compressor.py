@@ -1,26 +1,23 @@
 """
-SoKA (Kronecker Approximation) Compressor: replaces nn.Linear with two
-factorised matrices (A ⊗ B) via SVD reshaping.
+SoKA (Kronecker product) Compressor: replaces nn.Linear with low‑rank SVD,
+approximating the Kronecker decomposition.
 Registered in COMPRESSOR_REGISTRY as "soka".
 """
 
 import torch
 import torch.nn as nn
-import numpy as np
+import torch.nn.functional as F
 from typing import Dict, Any, Tuple
-from ...compression.core.registry import COMPRESSOR_REGISTRY
-from ...compression.core.base import BaseCompressor
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
 
 class SoKALinear(nn.Module):
     """
-    Linear layer approximated by Kronecker product: W ≈ A ⊗ B.
-    Shape assumptions: out_features = out1 * out2, in_features = in1 * in2.
-    The layer stores two matrices A (out1*out2, rank) and B (rank, in1*in2)
-    which can be reshaped to perform the Kronecker product efficiently.
-    For simplicity, here we implement a simple low‑rank SVD as placeholder.
+    Linear layer implemented via low‑rank SVD: W ≈ U @ V.
+    This serves as a placeholder for a true Kronecker product decomposition.
     """
-    def __init__(self, in_features, out_features, rank):
+    def __init__(self, in_features: int, out_features: int, rank: int):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -29,16 +26,16 @@ class SoKALinear(nn.Module):
         self.V = nn.Parameter(torch.empty(rank, in_features))
         nn.init.normal_(self.U, std=0.02)
         nn.init.normal_(self.V, std=0.02)
+        self.bias = nn.Parameter(torch.zeros(out_features))
 
     def forward(self, x):
-        # W ≈ U @ V
-        return F.linear(F.linear(x, self.V), self.U.t())
+        return F.linear(F.linear(x, self.V), self.U.t()) + self.bias
 
 
 @COMPRESSOR_REGISTRY.register("soka")
 class SoKACompressor(BaseCompressor):
     """
-    Compress a model using SoKA (Kronecker product) low‑rank approximation.
+    Compress a model using SoKA (Kronecker) low‑rank approximation.
 
     Args:
         model: PyTorch model.
@@ -53,7 +50,6 @@ class SoKACompressor(BaseCompressor):
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         self._replace_all_linear()
         self._compressed_params = self._count_params(self.model)
-        self._compression_stats = self._compute_stats()
         return self.model, self.get_compression_stats()
 
     def _replace_all_linear(self):
@@ -67,12 +63,14 @@ class SoKACompressor(BaseCompressor):
                 new_layer.U.data = (U[:, :r] * S[:r].unsqueeze(0)).float()
                 new_layer.V.data = Vh[:r, :].float()
                 if module.bias is not None:
-                    new_layer.register_parameter('bias', nn.Parameter(module.bias.data.clone()))
+                    new_layer.bias.data.copy_(module.bias.data)
+
                 # Replace in model
                 parent = self._get_parent(name)
                 if parent is not None:
                     child_name = name.split('.')[-1]
                     setattr(parent, child_name, new_layer)
+
                 self.compressed_layers.append({
                     'name': name,
                     'original_size': module.weight.shape,
@@ -88,14 +86,11 @@ class SoKACompressor(BaseCompressor):
                 return None
         return parent
 
-    def _compute_stats(self) -> Dict[str, Any]:
-        total_original = self._original_params
-        total_compressed = self._compressed_params
-        return {
-            'total_layers_compressed': len(self.compressed_layers),
-            'compression_ratio': total_compressed / total_original if total_original > 0 else 1.0,
-            'parameters_saved': total_original - total_compressed,
-            'reduction_percentage': (1 - total_compressed / total_original) * 100 if total_original > 0 else 0,
+    def get_compression_stats(self) -> Dict[str, Any]:
+        stats = super().get_compression_stats()
+        stats.update({
+            'total_layers': len(self.compressed_layers),
             'method': 'soka_kronecker',
             'rank': self.rank,
-        }
+        })
+        return stats
