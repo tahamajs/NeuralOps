@@ -2,12 +2,10 @@
 Adaptive Transformer Compressor: automatically compresses all
 nn.MultiheadAttention layers using energy‑threshold SVD.
 """
-
 import torch.nn as nn
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
-from ..attentions.compressed_attention import CompressedAttentionLayer
-
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
+from framework.attentions.compressed_attention import CompressedAttentionLayer
 
 @COMPRESSOR_REGISTRY.register("adaptive_svd")
 class AdaptiveTransformerCompressor(BaseCompressor):

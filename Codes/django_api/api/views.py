@@ -10,6 +10,12 @@ from .jobs import start_job
 from .runners import run_training, run_evaluation, run_compression
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
+import psutil
+import subprocess
+from django.http import JsonResponse
+from .models import Experiment
+from .jobs import cancel_job
+
 
 logger = logging.getLogger(__name__)
 
@@ -118,12 +124,6 @@ def experiment_model_download(request, job_id):
     return FileResponse(open(tmp.name, "rb"), as_attachment=True, filename="model.zip")
 
 
-
-import psutil
-import subprocess
-from django.http import JsonResponse
-from .models import Experiment
-from .jobs import cancel_job
 
 @api_view(["GET"])
 def system_metrics(request):

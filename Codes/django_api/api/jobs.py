@@ -10,7 +10,9 @@ def stop_job(job_id):
     event = _running_jobs.pop(str(job_id), None)
     if event:
         event.set()
-
+def cancel_job(job_id):
+    """Cancel a running job by setting its stop event."""
+    stop_job(job_id)
 def start_job(experiment: Experiment, runner_func):
     stop_event = threading.Event()
     _running_jobs[str(experiment.id)] = stop_event
