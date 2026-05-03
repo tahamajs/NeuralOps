@@ -1,41 +1,50 @@
-# framework/compression/slicegpt_compressor.py
+"""SliceGPT PCA‑based slicing compressor. Registered as 'slicegpt_pca'."""
+
 import torch
 import torch.nn as nn
 import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class SliceGPTCompressor:
-    """
-    SliceGPT: PCA-based row/column slicing.
-    """
-    def __init__(self, model, calibration_loader, sparsity=0.3):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("slicegpt_pca")
+class SliceGPTPCACompressor(BaseCompressor):
+    def __init__(self, model, calibration_loader, sparsity=0.3, **kwargs):
+        super().__init__(model, name="slicegpt_pca", **kwargs)
         self.calibration_loader = calibration_loader
         self.sparsity = sparsity
 
     def compress(self):
-        # Collect activations from first layer
         activations = []
-        hooks = []
         def hook(module, input, output):
             activations.append(output.detach().cpu().numpy())
-        hook_handle = self.model.encoder.layer[0].register_forward_hook(hook)
+        handle = None
+        # Attach to first layer of encoder if exists
+        for name, module in self.model.named_modules():
+            if 'encoder.layer.0' in name:
+                handle = module.register_forward_hook(hook)
+                break
+        if handle is None:
+            # fallback: attach to first Linear
+            for name, module in self.model.named_modules():
+                if isinstance(module, nn.Linear):
+                    handle = module.register_forward_hook(hook)
+                    break
+        if handle is None:
+            raise RuntimeError("Could not attach hook")
         with torch.no_grad():
             for batch in self.calibration_loader:
-                _ = self.model(**batch)
-        hook_handle.remove()
-        activations = np.concatenate(activations, axis=0)
-        # PCA on activations
+                self.model(**{k: v.to(next(self.model.parameters()).device) for k, v in batch.items()})
+        handle.remove()
+        activations = np.concatenate(activations, axis=0).reshape(-1, activations[0].shape[-1])
         from sklearn.decomposition import PCA
         pca = PCA(n_components=activations.shape[-1])
-        pca.fit(activations.reshape(-1, activations.shape[-1]))
-        explained_variance = pca.explained_variance_ratio_
-        # Keep dimensions that explain (1 - sparsity) of variance
-        cumsum = np.cumsum(explained_variance)
-        keep = np.where(cumsum >= 1 - self.sparsity)[0][0] + 1
-        # Apply slicing to all linear layers
+        pca.fit(activations)
+        cumsum = np.cumsum(pca.explained_variance_ratio_)
+        keep = np.searchsorted(cumsum, 1 - self.sparsity) + 1
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 module.weight.data = module.weight.data[:, :keep]
                 if module.bias is not None:
                     module.bias.data = module.bias.data[:keep]
-        return self.model
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()

@@ -1,15 +1,24 @@
-import torch
-import numpy as np
+"""A3: grouped QK/OV/MLP compression. Registered as 'a3'."""
 
-class A3Compressor:
-    def __init__(self, model, rank=64):
-        self.model = model
+import torch
+import torch.nn as nn
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
+
+@COMPRESSOR_REGISTRY.register("a3")
+class A3Compressor(BaseCompressor):
+    def __init__(self, model, rank=64, **kwargs):
+        super().__init__(model, name="a3", **kwargs)
         self.rank = rank
 
     def compress(self):
-        # Apply to QK, OV, MLP pairs separately
         for name, module in self.model.named_modules():
-            if 'attention' in name.lower():
-                # Placeholder: compress QK projection
-                pass
-        return self.model
+            # Example: compress all Linear layers in attention blocks to rank
+            if isinstance(module, nn.Linear) and ('attention' in name.lower() or 'attn' in name.lower()):
+                W = module.weight.data.float()
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                r = min(self.rank, min(W.shape), len(S))
+                W_approx = (U[:, :r] * S[:r]) @ Vt[:r, :]
+                module.weight.data = W_approx.to(dtype=module.weight.dtype)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
