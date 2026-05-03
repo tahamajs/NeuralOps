@@ -1,23 +1,75 @@
-"""Registry for compression methods."""
+"""
+Registry for compression methods.
+Allows plug‑and‑play loading of compressors via a simple key.
+"""
 
-class Registry:
-    def __init__(self, name):
+from typing import Callable, Dict, Optional, Type, Union
+from .base import BaseCompressor
+
+
+class CompressorRegistry:
+    """
+    A registry for compressor classes.
+
+    Usage:
+        COMPRESSOR_REGISTRY.register("my_method")
+        @COMPRESSOR_REGISTRY.register("my_method")
+        class MyCompressor(BaseCompressor):
+            ...
+
+        # Later:
+        compressor_cls = COMPRESSOR_REGISTRY.get("my_method")
+        compressor = compressor_cls(model, ...)
+    """
+
+    def __init__(self, name: str = "compressor_registry"):
         self.name = name
-        self._dict = {}
+        self._registry: Dict[str, Type[BaseCompressor]] = {}
 
-    def register(self, key=None):
-        def decorator(obj):
+    def register(self, key: Optional[str] = None):
+        """
+        Decorator to register a compressor class.
+
+        Args:
+            key: Optional string identifier. If not given, uses the class name.
+        """
+        def decorator(obj: Type[BaseCompressor]) -> Type[BaseCompressor]:
             nonlocal key
+            if not issubclass(obj, BaseCompressor):
+                raise TypeError(f"Registered class {obj.__name__} must inherit from BaseCompressor")
             if key is None:
                 key = obj.__name__
-            self._dict[key] = obj
+            if key in self._registry:
+                # Allow overwriting with a warning? We'll simply update silently.
+                pass
+            self._registry[key] = obj
             return obj
         return decorator
 
-    def get(self, key):
-        return self._dict.get(key)
+    def get(self, key: str) -> Optional[Type[BaseCompressor]]:
+        """Retrieve a compressor class by key."""
+        return self._registry.get(key)
 
-    def keys(self):
-        return list(self._dict.keys())
+    def keys(self) -> list:
+        """Return all registered compressor keys."""
+        return list(self._registry.keys())
 
-COMPRESSOR_REGISTRY = Registry("compressors")
+    def registered(self, key: str) -> bool:
+        """Check if a key is registered."""
+        return key in self._registry
+
+    def list(self) -> None:
+        """Print all registered compressors."""
+        print(f"Registered compressors ({len(self._registry)}):")
+        for key, cls in self._registry.items():
+            print(f"  - {key}: {cls.__name__}")
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._registry
+
+    def __repr__(self) -> str:
+        return f"<CompressorRegistry: {len(self._registry)} methods>"
+
+
+# Singleton instance used across the framework
+COMPRESSOR_REGISTRY = CompressorRegistry()
