@@ -1,4 +1,3 @@
-# framework/utils/logger.py
 """
 Logging setup utilities.
 """
@@ -17,37 +16,37 @@ def setup_logger(
 ) -> logging.Logger:
     """
     Set up a logger with console and optional file output.
-    
+
     Args:
         name: Logger name
         level: Logging level
         log_file: Optional file path for log output
         format_string: Custom format string
-        
+
     Returns:
         Configured logger
     """
     if format_string is None:
         format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    
+
     logger = logging.getLogger(name)
     logger.setLevel(level)
-    
+
     # Clear existing handlers
     logger.handlers.clear()
-    
+
     # Console handler
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(logging.Formatter(format_string))
     logger.addHandler(console_handler)
-    
+
     # File handler
     if log_file:
         Path(log_file).parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(logging.Formatter(format_string))
         logger.addHandler(file_handler)
-    
+
     return logger
 
 

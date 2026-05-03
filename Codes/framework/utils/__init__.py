@@ -1,4 +1,3 @@
-# Auto-generated __init__.py
 from . import architecture
 from . import checkpoint
 from . import config
