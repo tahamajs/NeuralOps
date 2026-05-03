@@ -24,7 +24,7 @@ class HGRN2Layer(nn.Module):
         return torch.stack(outs, dim=1)
 
 class GatedDeltaNetBlock(nn.Module):
-    """A block that uses HGRN‑2 as the linear attention part, with a full attention layer every few layers."""
+    """Block with HGRN2 and optional full attention."""
     def __init__(self, d_model, n_heads, use_full_attention=False):
         super().__init__()
         self.use_full_attention = use_full_attention
@@ -42,7 +42,7 @@ class GatedDeltaNetBlock(nn.Module):
         return x
 
 class HGRN2GatedDeltaNet(nn.Module):
-    """Hybrid model with 3:1 linear‑to‑full ratio."""
+    """Hybrid model with configurable linear‑to‑full ratio."""
     def __init__(self, d_model, n_heads, n_layers, ratio=3):
         super().__init__()
         self.layers = nn.ModuleList()

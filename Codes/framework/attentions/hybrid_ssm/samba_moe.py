@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .samba_m3 import SAMBAM3Block   # or from ..attentions.samba_m3
+from .samba_m3 import SAMBAM3Block
 
 class REAPMoE(nn.Module):
-    """Token‑choice MoE with top‑2 gating (REAP compression)."""
+    """Token‑choice MoE with top‑2 gating."""
     def __init__(self, d_model, n_experts=8, top_k=2):
         super().__init__()
         self.n_experts = n_experts

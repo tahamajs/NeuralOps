@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 
 class HGRN2OuterBlock(nn.Module):
-    def __init__(self, dim, forget_lower_bound=False):
+    """Outer‑product state update for linear attention."""
+    def __init__(self, dim):
         super().__init__()
         self.dim = dim
         self.W_f = nn.Linear(dim, dim)
@@ -17,12 +18,10 @@ class HGRN2OuterBlock(nn.Module):
         outputs = []
         for t in range(L):
             xt = x[:, t]
-            f = torch.sigmoid(self.W_f(xt))        # (B, D)
-            k = self.W_k(xt)                       # (B, D)
-            v = self.W_v(xt)                       # (B, D)
-            # Outer‑product state update
-            state = f.unsqueeze(-1) * state + \
-                    (1 - f.unsqueeze(-1)) * (k.unsqueeze(-1) @ v.unsqueeze(1))
+            f = torch.sigmoid(self.W_f(xt))
+            k = self.W_k(xt)
+            v = self.W_v(xt)
+            state = f.unsqueeze(-1) * state + (1 - f.unsqueeze(-1)) * (k.unsqueeze(-1) @ v.unsqueeze(1))
             yt = (state @ xt.unsqueeze(-1)).squeeze(-1)
             outputs.append(yt)
         out = torch.stack(outputs, dim=1)
