@@ -13,7 +13,7 @@ from framework.compression.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# ── Config endpoints ─────────────────────────────────────────────
+# ── Config discovery ─────────────────────────────────────────────
 @api_view(["GET"])
 def list_attentions(request):
     return Response({"attentions": list(ATTENTION_REGISTRY.keys())})
@@ -41,7 +41,6 @@ def list_compressors(request):
 
 @api_view(["GET"])
 def list_methods(request):
-    # Training methods (baseline, lora, rdrop, etc.)
     return Response({"methods": ["baseline", "lora", "rdrop", "r3f", "fisher_lora", "fisher_gelora", "llrd"]})
 
 @api_view(["GET"])
@@ -99,7 +98,7 @@ def experiment_artifacts(request, job_id):
             artifacts.append(str(p.relative_to(exp_dir)))
     return Response({"artifacts": artifacts})
 
-# ── Download a specific artifact (e.g., metrics.json, training_history.png) ──
+# ── Download a specific artifact ──────────────────────────────────
 @api_view(["GET"])
 def experiment_artifact_download(request, job_id, artifact_path):
     exp_dir = settings.MEDIA_ROOT / str(job_id)
@@ -114,9 +113,6 @@ def experiment_model_download(request, job_id):
     exp_dir = settings.MEDIA_ROOT / str(job_id) / "model"
     if not exp_dir.exists():
         raise Http404("Model directory not found")
-    # Create a zip archive in temp
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
     shutil.make_archive(tmp.name.replace(".zip", ""), "zip", exp_dir)
-    response = FileResponse(open(tmp.name, "rb"), as_attachment=True, filename="model.zip")
-    # Note: temp file cleanup not handled here; consider a scheduled cleanup or use StreamingHttpResponse.
-    return response
+    return FileResponse(open(tmp.name, "rb"), as_attachment=True, filename="model.zip")
