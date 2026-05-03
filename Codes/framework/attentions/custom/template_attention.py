@@ -1,12 +1,6 @@
-# framework/attentions/custom/template_attention.py
 """
 Template for creating new attention mechanisms.
-
-To create a new attention:
-    1. Copy this file to your custom directory
-    2. Rename the class and file
-    3. Implement the forward method
-    4. Register with @ATTENTION_REGISTRY.register("your_name")
+Customizable and ready to run.
 """
 
 import torch
@@ -22,61 +16,41 @@ class YourCustomAttention(BaseAttention):
     """
     Your custom attention mechanism.
     
-    This template provides a starting point for implementing
-    new attention mechanisms with the following features:
-        - Low-rank approximation support
-        - Attention mask handling
-        - Optional attention weights output
+    Currently implements a standard Transformer attention with an optional
+    low‑rank modulation based on pooled hidden states.
     """
-    
+
     def __init__(self, config, rank: Optional[int] = None, **kwargs):
-        """
-        Initialize your custom attention.
-        
-        Args:
-            config: Model configuration (HuggingFace config)
-            rank: Optional compression rank
-            **kwargs: Additional custom parameters
-        """
         super().__init__(config, rank)
-        
-        # Extract configuration
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_attention_heads
         self.head_dim = self.hidden_size // self.num_heads
         self.dropout = config.attention_probs_dropout_prob
-        
-        # Your custom parameters
+
         self.custom_param = kwargs.get('custom_param', 0.1)
-        
-        # Projection layers
+
         self.query = nn.Linear(self.hidden_size, self.hidden_size)
         self.key = nn.Linear(self.hidden_size, self.hidden_size)
         self.value = nn.Linear(self.hidden_size, self.hidden_size)
         self.out_proj = nn.Linear(self.hidden_size, self.hidden_size)
-        
-        # Optional low-rank projections
+
         if rank is not None and rank > 0:
             self.rank_proj = nn.Linear(self.hidden_size, rank, bias=False)
         else:
             self.rank_proj = None
-        
-        # Initialize weights
+
         self._init_weights()
-    
+
     def _init_weights(self):
-        """Initialize weights using standard transformer init."""
         for module in [self.query, self.key, self.value, self.out_proj]:
-            if hasattr(module, 'weight'):
-                nn.init.xavier_uniform_(module.weight)
-                if module.bias is not None:
-                    nn.init.zeros_(module.bias)
-    
+            nn.init.xavier_uniform_(module.weight)
+            if module.bias is not None:
+                nn.init.zeros_(module.bias)
+
     def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
-        """Reshape for multi-head attention."""
         x = x.view(batch_size, -1, self.num_heads, self.head_dim)
         return x.permute(0, 2, 1, 3)
-    
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -84,71 +58,41 @@ class YourCustomAttention(BaseAttention):
         output_attentions: bool = False,
         **kwargs
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """
-        Forward pass of custom attention.
-        
-        Args:
-            hidden_states: Input tensor (batch, seq_len, hidden_size)
-            attention_mask: Optional attention mask
-            output_attentions: Whether to return attention weights
-            
-        Returns:
-            Tuple of (output, attention_weights)
-        """
         batch_size, seq_len, _ = hidden_states.shape
-        
-        # Project to Q, K, V
+
         Q = self._reshape(self.query(hidden_states), batch_size)
         K = self._reshape(self.key(hidden_states), batch_size)
         V = self._reshape(self.value(hidden_states), batch_size)
-        
-        # ============================================================
-        # YOUR CUSTOM ATTENTION LOGIC HERE
-        # ============================================================
-        
-        # Example: Apply low-rank projection if rank_proj is set
+
+        scale = self.head_dim ** -0.5
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+
+        # --- Your custom modification ---
         if self.rank_proj is not None:
-            # Project to low-rank space
-            H = hidden_states.mean(dim=1)  # Pool over sequence
-            H_proj = self.rank_proj(H)  # (batch, rank)
-            
-            # Use rank information to modulate attention
-            scale = torch.sigmoid(H_proj).mean(dim=1, keepdim=True)  # (batch, 1)
-            scale = scale.view(batch_size, 1, 1, 1)
-            
-            # Scale attention scores
-            attention_scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.head_dim ** 0.5)
-            attention_scores = attention_scores * scale
-        else:
-            # Standard attention
-            attention_scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.head_dim ** 0.5)
-        
-        # Apply attention mask
+            # Pool sequence dimension → global vector, then project to rank
+            H_pool = hidden_states.mean(dim=1)          # (B, D)
+            H_rank = self.rank_proj(H_pool)            # (B, rank)
+            modulation = torch.sigmoid(H_rank).mean(dim=-1, keepdim=True)  # (B, 1)
+            modulation = modulation.view(batch_size, 1, 1, 1)
+            scores = scores * modulation
+
         if attention_mask is not None:
-            attention_scores = attention_scores + attention_mask.unsqueeze(1)
-        
-        # Softmax and dropout
-        attention_probs = F.softmax(attention_scores, dim=-1)
-        attention_probs = F.dropout(attention_probs, p=self.dropout, training=self.training)
-        
-        # Context aggregation
-        context = torch.matmul(attention_probs, V)
-        context = context.permute(0, 2, 1, 3).contiguous()
-        context = context.view(batch_size, seq_len, self.hidden_size)
-        
-        # Output projection
+            scores = scores + attention_mask.unsqueeze(1)
+
+        attn_probs = F.softmax(scores, dim=-1)
+        attn_probs = F.dropout(attn_probs, p=self.dropout, training=self.training)
+
+        context = torch.matmul(attn_probs, V)
+        context = context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.hidden_size)
         output = self.out_proj(context)
-        
+
         if output_attentions:
-            return output, attention_probs
+            return output, attn_probs
         return output, None
-    
+
     @property
     def complexity(self) -> str:
-        """Return complexity class."""
-        if self.rank_proj is not None:
-            return "linear"
-        return "quadratic"
-    
+        return "quadratic" if self.rank_proj is None else "quadratic (with rank modulation)"
+
     def extra_repr(self) -> str:
         return f"num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}"
