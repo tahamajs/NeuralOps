@@ -1,24 +1,23 @@
-"""
-FLAP: Fluctuation‑based Adaptive Structured Pruning
-Paper: https://arxiv.org/abs/2312.11983
-Code: https://github.com/CASIA-LMC-Lab/FLAP
-"""
+"""FLAP: Fluctuation-based Adaptive Structured Pruning. Registered as 'flap'."""
+
 import torch
 import torch.nn as nn
 import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-
-class FLAPCompressor:
-    def __init__(self, model, tokenizer, sparsity=0.2, device="cuda", nsamples=1024):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("flap")
+class FLAPCompressor(BaseCompressor):
+    def __init__(self, model, tokenizer, sparsity=0.2, device="cuda", nsamples=1024, **kwargs):
+        super().__init__(model, name="flap", **kwargs)
         self.tokenizer = tokenizer
         self.sparsity = sparsity
         self.device = device
         self.nsamples = nsamples
 
     def _compute_fluctuation_metric(self, weight, inputs, metric_type="WIFV"):
-        inp = inputs.detach().float()                       # (batch*seqlen, in_features)
-        inp_var = torch.var(inp, dim=0)                     # (in_features,)
+        inp = inputs.detach().float()
+        inp_var = torch.var(inp, dim=0)
         if metric_type == "IFV":
             scores = inp_var
         elif metric_type == "WIFV":
@@ -32,8 +31,6 @@ class FLAPCompressor:
     def compress(self):
         print(f"✂️ Applying FLAP (sparsity={self.sparsity})...")
         self.model.eval()
-
-        # Quick dummy calibration data
         calib_texts = [
             "The quick brown fox jumps over the lazy dog.",
             "Machine learning is a subfield of artificial intelligence.",
@@ -46,7 +43,6 @@ class FLAPCompressor:
             flat_inputs = embeds.view(-1, embeds.shape[-1])
 
         for layer_idx, layer in enumerate(self.model.encoder.layer):
-            # Find all Linear layers inside this block
             for name, module in layer.named_modules():
                 if isinstance(module, nn.Linear):
                     weight = module.weight.data
@@ -56,6 +52,6 @@ class FLAPCompressor:
                     module.weight.data = weight[:, keep_idx]
                     if module.bias is not None:
                         module.bias.data = module.bias.data[keep_idx]
-                    # Update input for next layer
                     flat_inputs = flat_inputs[:, keep_idx]
-        return self.model, self.tokenizer
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()

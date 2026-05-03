@@ -1,15 +1,14 @@
-"""
-Mamba‑Shedder: Sensitivity‑based structured pruning.
-Paper: https://arxiv.org/abs/2501.17088
-Code: https://github.com/IntelLabs/Hardware-Aware-Automated-Machine-Learning/tree/main/Mamba-Shedder
-"""
+"""Mamba-Shedder: sensitivity-based structured pruning. Registered as 'mamba_shedder'."""
+
 import torch
 import torch.nn as nn
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-
-class MambaShedderCompressor:
-    def __init__(self, model, tokenizer, sparsity=0.2, device="cuda"):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("mamba_shedder")
+class MambaShedderCompressor(BaseCompressor):
+    def __init__(self, model, tokenizer, sparsity=0.2, device="cuda", **kwargs):
+        super().__init__(model, name="mamba_shedder", **kwargs)
         self.tokenizer = tokenizer
         self.sparsity = sparsity
         self.device = device
@@ -48,7 +47,7 @@ class MambaShedderCompressor:
         return sensitivities
 
     def compress(self, calib_loader):
-        print(f"✂️ Applying Mamba‑Shedder (sparsity={self.sparsity})...")
+        print(f"✂️ Applying Mamba-Shedder (sparsity={self.sparsity})...")
         activations = self._collect_activations(calib_loader)
         sensitivities = self._compute_sensitivity(activations)
 
@@ -61,4 +60,5 @@ class MambaShedderCompressor:
                 module.weight.data = weight[:, keep_idx]
                 if module.bias is not None:
                     module.bias.data = module.bias.data[keep_idx]
-        return self.model
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
