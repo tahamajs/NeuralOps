@@ -1,5 +1,6 @@
 """
 Professional logging setup: colored console, plain text file, JSON structured logs.
+Automatically creates a unique run directory based on experiment name and timestamp.
 """
 
 import logging
@@ -8,7 +9,9 @@ import json
 import os
 import sys
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
+
+from .config import LoggingConfig
 
 # Try importing colorlog for colored console output
 try:
@@ -19,8 +22,8 @@ except ImportError:
 
 
 class ColoredFormatter(logging.Formatter):
-    """Formatter with colored log levels."""
-    def __init__(self, use_colors=True):
+    """Formatter with colored log levels (if colorlog is available)."""
+    def __init__(self, use_colors: bool = True):
         super().__init__()
         self.use_colors = use_colors and _has_colorlog
         if self.use_colors:
@@ -58,45 +61,64 @@ class JSONFormatter(logging.Formatter):
             "module": record.module,
             "function": record.funcName,
         }
-        # Include extra fields if present
-        if hasattr(record, "metrics"):
-            log_entry["metrics"] = record.metrics
-        if hasattr(record, "experiment_id"):
-            log_entry["experiment_id"] = record.experiment_id
+        # Include extra fields if present (e.g., from adapter)
+        for attr in ["metrics", "experiment_id", "step"]:
+            if hasattr(record, attr):
+                log_entry[attr] = getattr(record, attr)
         return json.dumps(log_entry, ensure_ascii=False)
 
 
-def setup_logging(
-    log_dir: str = "logs",
-    experiment_name: str = "experiment",
-    console_level: str = "INFO",
-    file_level: str = "DEBUG",
-    json_log: bool = True,
-    colored_console: bool = True,
-) -> logging.Logger:
+def _build_run_dir(cfg: LoggingConfig) -> str:
+    """Create and return the unique run directory path."""
+    os.makedirs(cfg.log_base_dir, exist_ok=True)
+
+    # Build unique run name
+    if cfg.run_id:
+        run_name = cfg.run_id
+    elif cfg.use_timestamp:
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        run_name = f"{cfg.experiment_name}_{timestamp}"
+    else:
+        run_name = cfg.experiment_name
+
+    run_dir = os.path.join(cfg.log_base_dir, run_name)
+    os.makedirs(run_dir, exist_ok=True)
+    return run_dir
+
+
+def setup_logging(cfg: LoggingConfig) -> logging.Logger:
     """
     Set up professional logging with console, text file, and JSON outputs.
+    Returns a logger for the root of the experiment (cfg.experiment_name).
 
-    Returns:
-        logging.Logger instance (you can use as `logger.info(...)`)
+    Example:
+        cfg = LoggingConfig(experiment_name="mrpc_aurora")
+        logger = setup_logging(cfg)
+        logger.info("Training started")
     """
-    os.makedirs(log_dir, exist_ok=True)
-
-    # Root logger for the experiment
-    logger = logging.getLogger(experiment_name)
+    run_dir = _build_run_dir(cfg)
+    logger = logging.getLogger(cfg.experiment_name)
     logger.setLevel(logging.DEBUG)
     logger.handlers.clear()  # remove any previous handlers
 
-    # ---- Console Handler (colored if possible) ----
+    # ---- Console Handler ----
     console_handler = logging.StreamHandler(sys.stdout)
-    console_handler.setLevel(getattr(logging, console_level.upper(), logging.INFO))
-    console_handler.setFormatter(ColoredFormatter(use_colors=colored_console))
+    console_handler.setLevel(getattr(logging, cfg.console_level.upper(), logging.INFO))
+    console_handler.setFormatter(ColoredFormatter(use_colors=cfg.colored_console))
     logger.addHandler(console_handler)
 
     # ---- Plain Text File Handler ----
-    txt_log_path = os.path.join(log_dir, f"{experiment_name}.log")
-    file_handler = logging.FileHandler(txt_log_path, encoding="utf-8")
-    file_handler.setLevel(getattr(logging, file_level.upper(), logging.DEBUG))
+    txt_log_path = os.path.join(run_dir, cfg.log_filename)
+    if cfg.max_log_size_mb > 0:
+        file_handler = logging.handlers.RotatingFileHandler(
+            txt_log_path,
+            maxBytes=cfg.max_log_size_mb * 1024 * 1024,
+            backupCount=cfg.backup_count,
+            encoding="utf-8"
+        )
+    else:
+        file_handler = logging.FileHandler(txt_log_path, encoding="utf-8")
+    file_handler.setLevel(getattr(logging, cfg.file_level.upper(), logging.DEBUG))
     file_handler.setFormatter(logging.Formatter(
         "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
@@ -104,12 +126,26 @@ def setup_logging(
     logger.addHandler(file_handler)
 
     # ---- JSON Structured Log Handler ----
-    if json_log:
-        json_log_path = os.path.join(log_dir, f"{experiment_name}.jsonl")
+    if cfg.json_log:
+        json_log_path = os.path.join(run_dir, cfg.json_filename)
         json_handler = logging.FileHandler(json_log_path, encoding="utf-8")
         json_handler.setLevel(logging.DEBUG)
         json_handler.setFormatter(JSONFormatter())
         logger.addHandler(json_handler)
 
-    logger.info(f"🚀 Logging initialized – logs: {log_dir}")
+    logger.info(f"🚀 Logging initialized. Run directory: {run_dir}")
+    # Store run_dir in logger for later access (via logging.getLogger(...).run_dir)
+    logger.run_dir = run_dir
+    return logger
+
+
+def get_logger(name: str, cfg: Optional[LoggingConfig] = None) -> logging.Logger:
+    """
+    Return a child logger. If cfg is provided and the root logger hasn't been set up,
+    it will set up logging first. Usually you call setup_logging once at the start,
+    then use get_logger for submodules.
+    """
+    logger = logging.getLogger(name)
+    if cfg is not None and not logger.hasHandlers():
+        setup_logging(cfg)
     return logger
