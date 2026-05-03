@@ -14,7 +14,9 @@ class Experiment(models.Model):
     current_step = models.IntegerField(default=0)
     total_steps = models.IntegerField(default=0)
     estimated_remaining_seconds = models.FloatField(null=True, blank=True)
-    
+    cpu_usage = models.FloatField(default=0.0)
+    ram_usage_mb = models.FloatField(default=0.0)
+
     # GPU metrics (updated via callback)
     gpu_usage = models.FloatField(null=True, blank=True)
     gpu_memory_mb = models.FloatField(null=True, blank=True)
@@ -23,3 +25,6 @@ class Experiment(models.Model):
 
     def __str__(self):
         return f"Experiment {self.id} ({self.status})"
+
+
+

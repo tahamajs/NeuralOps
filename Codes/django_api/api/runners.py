@@ -1,15 +1,12 @@
-import os, sys, json, logging
+import os, sys, json, logging, time, math
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from django.conf import settings as django_settings
 from .models import Experiment
 from .jobs import push_update
-import time
 import psutil
 from django.utils import timezone
-from .models import Experiment
-from .jobs import push_update
 
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
@@ -38,44 +35,65 @@ def _update_status(exp, status):
     exp.save()
 
 class _MetricsCallback(TrainerCallback):
-    def __init__(self, experiment, total_steps):
+    """
+    Calls push_update on every log and periodically sends progress.
+    Also checks for cancellation via the stop_event.
+    """
+    def __init__(self, experiment: Experiment, total_steps: int, stop_event=None):
         self.experiment = experiment
         self.total_steps = total_steps
+        self.stop_event = stop_event
         self.start_time = time.time()
-    
+        self.last_progress_step = 0
+
     def on_step_end(self, args, state, control, **kwargs):
-        # Check for cancellation
-        exp = Experiment.objects.get(id=self.experiment.id)
-        if exp.status == "cancelled":
+        # Check for cancellation signal
+        if self.stop_event and self.stop_event.is_set():
             control.should_training_stop = True
+            _log(self.experiment, "Training cancelled by user.")
+            _update_status(self.experiment, "cancelled")
             return
-        
-        # Update progress
-        if state.global_step % 50 == 0:
-            elapsed = time.time() - self.start_time
-            self.experiment.current_step = state.global_step
-            self.experiment.total_steps = self.total_steps
-            if state.global_step > 0:
-                eta = (elapsed / state.global_step) * (self.total_steps - state.global_step)
-                self.experiment.estimated_remaining_seconds = eta
-            # System metrics
-            self.experiment.cpu_usage = psutil.cpu_percent()
-            self.experiment.ram_usage_mb = psutil.virtual_memory().used / 1024**2
-            self.experiment.save()
-            push_update(self.experiment, {
-                "type": "progress",
-                "current_step": state.global_step,
-                "total_steps": self.total_steps,
-                "eta_seconds": eta if state.global_step > 0 else None,
-                "cpu": self.experiment.cpu_usage,
-                "ram_mb": self.experiment.ram_usage_mb,
-            })
-    
+
+        # Only update progress every 10 steps to avoid flooding
+        if state.global_step - self.last_progress_step < 10:
+            return
+        self.last_progress_step = state.global_step
+
+        elapsed = time.time() - self.start_time
+        self.experiment.current_step = state.global_step
+        self.experiment.total_steps = self.total_steps
+
+        if state.global_step > 0 and self.total_steps > 0:
+            steps_per_sec = state.global_step / elapsed
+            remaining_steps = self.total_steps - state.global_step
+            eta = remaining_steps / steps_per_sec if steps_per_sec > 0 else 0
+            self.experiment.estimated_remaining_seconds = eta
+        else:
+            eta = 0
+
+        # System metrics
+        self.experiment.cpu_usage = psutil.cpu_percent()
+        self.experiment.ram_usage_mb = psutil.virtual_memory().used / 1024**2
+        self.experiment.save(update_fields=[
+            'current_step', 'total_steps', 'estimated_remaining_seconds',
+            'cpu_usage', 'ram_usage_mb'
+        ])
+
+        push_update(self.experiment, {
+            "type": "progress",
+            "current_step": state.global_step,
+            "total_steps": self.total_steps,
+            "eta_seconds": eta,
+            "cpu": self.experiment.cpu_usage,
+            "ram_mb": self.experiment.ram_usage_mb,
+        })
+
     def on_log(self, args, state, control, logs=None, **kwargs):
         if logs:
             push_update(self.experiment, {"type": "metrics", "data": logs})
 
-def run_training(experiment: Experiment):
+
+def run_training(experiment: Experiment, stop_event=None):
     config = experiment.config
     _update_status(experiment, "running")
     _log(experiment, "Starting training pipeline...")
@@ -84,9 +102,10 @@ def run_training(experiment: Experiment):
     set_seed(config.get("seed", 42))
 
     # 1. Model
-    _log(experiment, f"Loading model: {config.get('model_name')}")
+    model_name = config.get("model_name", "distilbert-base-uncased")
+    _log(experiment, f"Loading model: {model_name}")
     model, tokenizer = load_model(
-        model_name=config.get("model_name", "distilbert-base-uncased"),
+        model_name=model_name,
         num_labels=None,
         attention_type=config.get("attention_type", "full"),
         rank=config.get("compression_rank", 64),
@@ -119,7 +138,8 @@ def run_training(experiment: Experiment):
         sent2_key=sent2_key,
         is_regression=(task == "stsb"),
     )
-    encoded = dataset_dict.map(preprocess_fn, batched=True, remove_columns=dataset_dict["train"].column_names)
+    encoded = dataset_dict.map(preprocess_fn, batched=True,
+                               remove_columns=dataset_dict["train"].column_names)
     cols = ["input_ids", "attention_mask", "labels"]
     if "token_type_ids" in encoded["train"].column_names:
         cols.append("token_type_ids")
@@ -129,12 +149,19 @@ def run_training(experiment: Experiment):
     output_dir = os.path.join(str(django_settings.MEDIA_ROOT), str(experiment.id), "model")
     os.makedirs(output_dir, exist_ok=True)
 
-    # 5. Training
+    # 5. Estimate total training steps
+    train_batch_size = config.get("batch_size", 16)
+    epochs = config.get("epochs", 3)
+    total_steps = (len(encoded["train"]) // train_batch_size) * epochs
+    experiment.total_steps = total_steps
+    experiment.save()
+
+    # 6. Training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
-        num_train_epochs=config.get("epochs", 3),
-        per_device_train_batch_size=config.get("batch_size", 16),
-        per_device_eval_batch_size=config.get("batch_size", 16) * 2,
+        num_train_epochs=epochs,
+        per_device_train_batch_size=train_batch_size,
+        per_device_eval_batch_size=train_batch_size * 2,
         learning_rate=config.get("learning_rate", 2e-5),
         weight_decay=config.get("weight_decay", 0.01),
         lr_scheduler_type="linear",
@@ -150,6 +177,8 @@ def run_training(experiment: Experiment):
         report_to="none",
     )
 
+    # 7. Trainer with callback
+    metrics_callback = _MetricsCallback(experiment, total_steps, stop_event)
     trainer = CompressionTrainer(
         ortho_weight=0.0,
         model=model,
@@ -158,13 +187,17 @@ def run_training(experiment: Experiment):
         eval_dataset=encoded.get("validation") or encoded.get("test"),
         data_collator=DataCollatorWithPadding(tokenizer),
         compute_metrics=get_compute_metrics(task),
+        callbacks=[metrics_callback],   # <-- pass directly
     )
-    trainer.add_callback(_MetricsCallback(experiment))
-    total_steps = len(encoded["train"]) // config.get("batch_size", 16) * config.get("epochs", 3)
-    trainer.add_callback(_MetricsCallback(experiment, total_steps))
 
     _log(experiment, "Training started...")
     trainer.train()
+
+    # Check if cancelled before saving
+    if stop_event and stop_event.is_set():
+        _log(experiment, "Training stopped before completion. Model not saved.")
+        return
+
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
     final_metrics = trainer.evaluate()
@@ -172,7 +205,8 @@ def run_training(experiment: Experiment):
     experiment.config["final_metrics"] = final_metrics
     experiment.save()
 
-def run_evaluation(experiment: Experiment):
+
+def run_evaluation(experiment: Experiment, stop_event=None):
     config = experiment.config
     _update_status(experiment, "running")
     _log(experiment, "Loading model for evaluation...")
@@ -191,18 +225,22 @@ def run_evaluation(experiment: Experiment):
         tokenizer=tokenizer, max_seq_length=config.get("max_seq_length", 128),
         sent1_key=sent1_key, sent2_key=sent2_key, is_regression=(task=="stsb")
     )
-    encoded = dataset_dict.map(preprocess_fn, batched=True, remove_columns=dataset_dict["train"].column_names)
+    encoded = dataset_dict.map(preprocess_fn, batched=True,
+                               remove_columns=dataset_dict["train"].column_names)
     encoded.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
     from transformers import Trainer, TrainingArguments
-    eval_args = TrainingArguments(output_dir="/tmp/eval", per_device_eval_batch_size=config.get("batch_size", 32))
-    trainer = Trainer(model=model, args=eval_args, eval_dataset=encoded.get("validation") or encoded.get("test"))
+    eval_args = TrainingArguments(output_dir="/tmp/eval",
+                                 per_device_eval_batch_size=config.get("batch_size", 32))
+    trainer = Trainer(model=model, args=eval_args,
+                      eval_dataset=encoded.get("validation") or encoded.get("test"))
     results = trainer.evaluate()
     _log(experiment, f"Evaluation results: {json.dumps(results)}")
     experiment.config["final_metrics"] = results
     experiment.save()
 
-def run_compression(experiment: Experiment):
+
+def run_compression(experiment: Experiment, stop_event=None):
     config = experiment.config
     _update_status(experiment, "running")
     _log(experiment, "Loading model for compression...")
