@@ -29,7 +29,7 @@ class ChelaSlayAttention(BaseAttention):
         return F.normalize(x, p=2, dim=-1)
 
     def _yat_feature_map(self, x):
-        # x: (..., head_dim) -> (..., feature_dim)
+        # x: (..., head_dim) -> (..., 2*feature_dim)
         proj = torch.matmul(x, self.random_proj)   # (..., feature_dim)
         return torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) * (1.0 / self.feature_dim**0.25)
 
@@ -44,12 +44,14 @@ class ChelaSlayAttention(BaseAttention):
         k_norm = self._spherical_normalize(k)
 
         # Apply Yat‑kernel feature map
-        q_feat = self._yat_feature_map(q_norm)   # (B, H, L, 2*feature_dim)
-        k_feat = self._yat_feature_map(k_norm)
+        q_feat = self._yat_feature_map(q_norm)   # (B, H, L, 2F)
+        k_feat = self._yat_feature_map(k_norm)   # (B, H, L, 2F)
 
         # Linear attention: O = φ(Q) ( φ(K)^T V ) / (φ(Q) sum(φ(K)))
         kv = torch.matmul(k_feat.transpose(-2, -1), v)   # (B, H, 2F, D_h)
-        Z = 1.0 / torch.matmul(q_feat, k_feat.sum(dim=-2, keepdim=True).unsqueeze(-1))
-        out = torch.matmul(q_feat, kv) * Z   # (B, H, L, D_h)
+        # Denominator: φ(Q) · (sum_t φ(K)_t)  --> (B, H, L, 1)
+        k_sum = k_feat.sum(dim=2, keepdim=True)          # (B, H, 1, 2F)
+        denom = torch.matmul(q_feat, k_sum.transpose(-2, -1)) + 1e-8  # (B, H, L, 1)
+        out = torch.matmul(q_feat, kv) / denom
         out = out.permute(0,2,1,3).contiguous().view(B, L, D)
         return self.out_proj(out), None
