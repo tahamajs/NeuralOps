@@ -3,12 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from ..core.registry import ATTENTION_REGISTRY
 
-# Minimal Mamba‑2 stub (replace with real mamba_ssm import if available)
 class Mamba2(nn.Module):
+    """Simplified Mamba‑2 stub (replace with official mamba_ssm)."""
     def __init__(self, d_model, d_state=16, d_conv=4, expand=2):
         super().__init__()
         self.d_model = d_model
-        self.d_state = d_state
         self.expand = expand
         inner_dim = d_model * expand
         self.in_proj = nn.Linear(d_model, inner_dim * 2)
@@ -19,30 +18,25 @@ class Mamba2(nn.Module):
         self.out_proj = nn.Linear(inner_dim, d_model)
 
     def forward(self, x):
-        # Simplified selective scan (use official Mamba if possible)
         B, L, D = x.shape
-        x_proj = self.in_proj(x)   # (B, L, 2*inner)
-        x_ssm, z = x_proj.chunk(2, dim=-1)   # each (B, L, inner)
-        x_ssm = x_ssm.transpose(1,2)
-        x_ssm = self.conv1d(x_ssm)[..., :L].transpose(1,2)
+        x_proj = self.in_proj(x)            # (B, L, 2*inner)
+        x_ssm, z = x_proj.chunk(2, dim=-1)  # each (B, L, inner)
+        x_ssm = self.conv1d(x_ssm.transpose(1,2))[..., :L].transpose(1,2)
         dt = F.softplus(self.dt_proj(x_ssm))   # (B, L, D)
         A = -torch.exp(self.A_log)             # (D, d_state)
-        # Recurrent scan (slow, but works for demo)
+        # Recurrent scan (slow but functional)
         h = torch.zeros(B, D, self.d_state, device=x.device, dtype=x.dtype)
         outputs = []
         for t in range(L):
-            xt = x_ssm[:, t, :self.d_model]     # use original dim size
-            h = h * torch.exp(dt[:, t].unsqueeze(-1) * A) + \
-                (xt.unsqueeze(-1) * dt[:, t].unsqueeze(-1))
+            xt = x_ssm[:, t, :self.d_model]   # take first d_model channels as input
+            h = h * torch.exp(dt[:, t].unsqueeze(-1) * A) + (xt.unsqueeze(-1) * dt[:, t].unsqueeze(-1))
             out_t = (h * self.D.unsqueeze(-1)).sum(dim=-1)
             outputs.append(out_t)
-        out = torch.stack(outputs, dim=1)
-        out = out * F.silu(z)
+        out = torch.stack(outputs, dim=1) * F.silu(z)
         return self.out_proj(out)
 
-
 class MixtureOfExperts(nn.Module):
-    """Standard top‑k token‑choice MoE."""
+    """Top‑k token‑choice MoE."""
     def __init__(self, dim, ff_dim, num_experts, top_k=2):
         super().__init__()
         self.num_experts = num_experts
@@ -56,20 +50,16 @@ class MixtureOfExperts(nn.Module):
 
     def forward(self, x):
         B, L, D = x.shape
-        scores = self.router(x)                 # (B, L, E)
-        weights, indices = torch.topk(scores, self.top_k, dim=-1)  # (B, L, k)
+        scores = self.router(x)            # (B, L, E)
+        weights, indices = torch.topk(scores, self.top_k, dim=-1)
         weights = F.softmax(weights, dim=-1)
         out = torch.zeros_like(x)
         for e in range(self.num_experts):
-            # tokens that selected expert e in any of the top‑k slots
-            mask = (indices == e).any(dim=-1)    # (B, L)
+            mask = (indices == e).any(dim=-1)   # (B, L)
             if mask.any():
-                # sum of weights for those tokens
-                selected_weights = (weights * (indices == e).float()).sum(dim=-1, keepdim=True)  # (B, L, 1)
-                out += mask.unsqueeze(-1) * selected_weights * self.experts[e](
-                    x * mask.unsqueeze(-1))
+                selected_weights = (weights * (indices == e).float()).sum(dim=-1, keepdim=True)
+                out += mask.unsqueeze(-1) * selected_weights * self.experts[e](x * mask.unsqueeze(-1))
         return out
-
 
 @ATTENTION_REGISTRY.register("granite_hybrid")
 class GraniteHybridBlock(nn.Module):
@@ -78,15 +68,14 @@ class GraniteHybridBlock(nn.Module):
         self.mamba = Mamba2(d_model=dim)
         self.attn = nn.MultiheadAttention(dim, 8, batch_first=True)
         self.moe = MixtureOfExperts(dim, dim * 4, num_experts, top_k)
-        self.ratio = ratio          # 9 mamba : 1 attn
-        self.counter = 0
+        self.ratio = ratio
+        self.register_buffer('counter', torch.tensor(0, dtype=torch.long))   # use buffer for state
 
     def forward(self, x):
-        # Update counter (not stored in buffer, so careful with DataParallel)
         self.counter += 1
         if self.counter % (self.ratio + 1) < self.ratio:
             x = self.mamba(x)
         else:
             x, _ = self.attn(x, x, x)
-        x = x + self.moe(x)   # residual MoE
+        x = x + self.moe(x)
         return x
