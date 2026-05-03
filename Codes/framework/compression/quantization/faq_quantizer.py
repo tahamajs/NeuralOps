@@ -1,42 +1,52 @@
+"""FAQ (Future‑Aware Quantization): adjusts quantisation scale using next layer activations. Registered as 'faq'."""
+
 import torch
 import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class FAQQuantizer:
-    """
-    Future‑Aware Quantization: uses next layer's activations to adjust quantization scale.
-    """
-    def __init__(self, model, tokenizer, bits=8, calibration_texts=None):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("faq")
+class FAQQuantizer(BaseCompressor):
+    def __init__(self, model, tokenizer, bits=8, calibration_texts=None, **kwargs):
+        super().__init__(model, name="faq", **kwargs)
         self.tokenizer = tokenizer
         self.bits = bits
-        self.calibration_texts = calibration_texts or ["Quant"]
+        self.calibration_texts = calibration_texts or ["The quick brown fox jumps over the lazy dog"]
 
     def compress(self):
         self.model.eval()
-        # Capture activations layer by layer
         activations = {}
         hooks = []
+
         def make_hook(name):
             def hook(module, input, output):
                 activations[name] = output.detach()
             return hook
+
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 hooks.append(module.register_forward_hook(make_hook(name)))
-        inputs = self.tokenizer(self.calibration_texts, return_tensors="pt", padding=True)
+
+        inputs = self.tokenizer(self.calibration_texts, return_tensors="pt", padding=True, truncation=True)
+        if next(self.model.parameters()).is_cuda:
+            inputs = {k: v.cuda() for k, v in inputs.items()}
         with torch.no_grad():
             self.model(**inputs)
+
         for hook in hooks:
             hook.remove()
 
-        # Use next layer's activation range to shift quantization of current layer (simplified)
         for name, module in self.model.named_modules():
-            if name in activations:
-                act_next = activations[name].view(-1).cpu().numpy()
-                min_val, max_val = np.min(act_next), np.max(act_next)
-                scale = (max_val - min_val) / (2**self.bits - 1)
-                # Quantize weights of previous layer (here same layer for simplicity)
-                W = module.weight.data
-                q_W = torch.round((W - min_val) / scale) * scale + min_val
-                module.weight.data = q_W.to(dtype=module.weight.dtype)
-        return self.model
+            if isinstance(module, torch.nn.Linear) and name in activations:
+                act = activations[name].view(-1).float()
+                min_a, max_a = act.min(), act.max()
+                if max_a == min_a:
+                    continue
+                scale = (max_a - min_a) / (2**self.bits - 1)
+                W = module.weight.data.float()
+                quant = torch.round((W - min_a) / scale) * scale + min_a
+                module.weight.data = quant.to(dtype=module.weight.dtype)
+                if module.bias is not None:
+                    module.bias.data = torch.round((module.bias.data - min_a) / scale) * scale + min_a
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
