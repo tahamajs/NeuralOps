@@ -1,9 +1,9 @@
 """
 SVD‑LLM V2 Attention: Truncation‑aware SVD for LLM Compression (improved version)
-Paper: SVD-LLM V2 (further optimizations on top of SVD-LLM)
 """
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from ..core.base import BaseAttention
 from ..core.registry import ATTENTION_REGISTRY
@@ -14,7 +14,6 @@ class SVDLLMV2Attention(BaseAttention):
     """
     Similar to ASVD but uses a different truncation strategy: dynamic rank based on
     singular value cumulative energy threshold, and optionally applies weight tying.
-    This implementation stores the truncated matrices as parameters.
     """
     def __init__(self, config, rank=64, energy_threshold=0.95):
         super().__init__(config, rank)
@@ -24,7 +23,6 @@ class SVDLLMV2Attention(BaseAttention):
         self.rank = rank
         self.energy_threshold = energy_threshold
 
-        # Decomposed matrices (similar to ASVD)
         self.query_u  = nn.Parameter(torch.empty(self.all_head_size, self.rank))
         self.query_s  = nn.Parameter(torch.empty(self.rank))
         self.query_vh = nn.Parameter(torch.empty(self.rank, config.hidden_size))
@@ -50,7 +48,6 @@ class SVDLLMV2Attention(BaseAttention):
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         batch_size, seq_len, _ = hidden_states.shape
 
-        # Reconstruct weight matrices
         W_q = (self.query_u * self.query_s) @ self.query_vh
         W_k = (self.key_u   * self.key_s)   @ self.key_vh
         W_v = (self.value_u * self.value_s) @ self.value_vh
@@ -88,7 +85,6 @@ class SVDLLMV2Attention(BaseAttention):
 
         def truncate_svd(W):
             U, S, Vh = np.linalg.svd(W, full_matrices=False)
-            # Determine rank by cumulative energy
             cum_energy = np.cumsum(S) / np.sum(S)
             rank = np.searchsorted(cum_energy, energy_threshold) + 1
             if min_rank:
@@ -103,9 +99,7 @@ class SVDLLMV2Attention(BaseAttention):
         (vu, vs, vvh), rv = truncate_svd(W_v)
         (ou, os, ovh), ro = truncate_svd(w_o)
 
-        # Use max rank to create the attention layer (all same size for simplicity)
         max_r = max(rq, rk, rv, ro)
-        # Pad or recreate tensors to max_r
         def pad_to(t, target_r):
             if t.shape[-1] < target_r:
                 pad = torch.zeros(*t.shape[:-1], target_r - t.shape[-1], dtype=t.dtype)

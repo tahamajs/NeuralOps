@@ -1,6 +1,6 @@
 """
 Tensor Product Attention (TPA)
-Paper: "Tensor Product Attention Is All You Need" (NeurIPS 2025)
+Paper: "Tensor Product Attention Is All You Need"
 """
 import torch
 import torch.nn as nn
@@ -32,18 +32,18 @@ class TPAttention(BaseAttention):
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
         self.kv_cache = None
 
-    def _tensor_product(self, x, factor1, factor2):
-        f1 = factor1(x).view(x.shape[0], -1, self.num_heads, self.rank_Q)
-        f2 = factor2(x).view(x.shape[0], -1, self.num_heads, self.rank_Q)
+    def _tensor_product(self, x, factor1, factor2, rank):
+        f1 = factor1(x).view(x.shape[0], -1, self.num_heads, rank)
+        f2 = factor2(x).view(x.shape[0], -1, self.num_heads, rank)
         return torch.einsum('bnhd,bnhk->bnhdk', f1, f2).reshape(
-            x.shape[0], -1, self.num_heads, self.rank_Q * self.rank_Q
+            x.shape[0], -1, self.num_heads, rank * rank
         )
 
     def forward(self, hidden_states, attention_mask=None, past_kv=None, **kwargs):
         batch_size, seq_len, _ = hidden_states.shape
-        Q = self._tensor_product(hidden_states, self.Q_factor1, self.Q_factor2)
-        K = self._tensor_product(hidden_states, self.K_factor1, self.K_factor2)
-        V = self._tensor_product(hidden_states, self.V_factor1, self.V_factor2)
+        Q = self._tensor_product(hidden_states, self.Q_factor1, self.Q_factor2, self.rank_Q)
+        K = self._tensor_product(hidden_states, self.K_factor1, self.K_factor2, self.rank_K)
+        V = self._tensor_product(hidden_states, self.V_factor1, self.V_factor2, self.rank_V)
 
         Q = Q.view(batch_size, seq_len, self.num_heads, -1).permute(0, 2, 1, 3)
         K = K.view(batch_size, seq_len, self.num_heads, -1).permute(0, 2, 1, 3)
