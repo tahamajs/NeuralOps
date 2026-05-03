@@ -1,126 +1,153 @@
 """
-Tensor Train (TT) Decomposition Layer for PyTorch
-Based on the torchTT package by ion-g-ion.
+Tensor Train (TT) Decomposition Layer for PyTorch.
+Uses torchtt package if available; falls back to a simple SVD approximation.
 """
 
 import torch
 import torch.nn as nn
-import torchtt
+import math
+from typing import Optional, List, Tuple
+
+# Try to import torchtt – if not available, we provide a fallback SVD.
+try:
+    import torchtt
+    _HAS_TORCHTT = True
+except ImportError:
+    _HAS_TORCHTT = False
+
 
 class TTLinearLayer(nn.Module):
     """
     A linear layer with weights stored in Tensor Train (TT) format.
-    
-    This layer can be used as a drop‑in replacement for nn.Linear.
-    The weight matrix W of shape (out_features, in_features) is represented
-    as a TT‑tensor, dramatically reducing the number of parameters.
+
+    If torchtt is installed, true TT decomposition is used.
+    Otherwise, falls back to a low‑rank SVD approximation with comparable
+    parameter savings and a unified interface.
     """
-    def __init__(self, in_features: int, out_features: int,
-                 tt_rank: list, tensorized_shape_in: tuple = None,
-                 tensorized_shape_out: tuple = None,
-                 bias: bool = True, dtype=torch.float32):
-        """
-        Args:
-            in_features: input dimension.
-            out_features: output dimension.
-            tt_rank: TT‑rank (list of ints, length = number of dimensions).
-            tensorized_shape_in: factorization of in_features (e.g., (16, 48)).
-            tensorized_shape_out: factorization of out_features (e.g., (16, 48)).
-            bias: whether to include a bias term.
-            dtype: data type of the weights.
-        """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        tt_rank: int = 16,
+        tensorized_shape_in: Optional[Tuple[int, ...]] = None,
+        tensorized_shape_out: Optional[Tuple[int, ...]] = None,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+    ):
         super().__init__()
-        # Determine tensorized shapes automatically if not provided
+        self.in_features = in_features
+        self.out_features = out_features
+        self.tt_rank = tt_rank
+        self.use_tt = _HAS_TORCHTT
+
+        # Determine tensorized shapes automatically
         if tensorized_shape_in is None:
             tensorized_shape_in = self._auto_tensorize(in_features)
         if tensorized_shape_out is None:
             tensorized_shape_out = self._auto_tensorize(out_features)
-        
-        self.in_features = in_features
-        self.out_features = out_features
-        self.tt_rank = tt_rank
+
         self.tensorized_shape_in = tensorized_shape_in
         self.tensorized_shape_out = tensorized_shape_out
-        
-        # Create the TT layer using torchtt
-        self.tt_layer = torchtt.nn.LinearLayerTT(
-            size_in=list(tensorized_shape_in),
-            size_out=list(tensorized_shape_out),
-            rank=tt_rank,
-            dtype=dtype,
-            initializer='He'
-        )
-        
-        # Bias (if requested)
+
+        if self.use_tt:
+            # Convert rank to list (required by torchtt)
+            num_dims = len(tensorized_shape_in)
+            rank_list = [1] + [tt_rank] * (num_dims - 1) + [1]
+            self.tt_layer = torchtt.nn.LinearLayerTT(
+                size_in=list(tensorized_shape_in),
+                size_out=list(tensorized_shape_out),
+                rank=rank_list,
+                dtype=dtype,
+                initializer='He',
+            )
+        else:
+            # Fallback: simple low‑rank SVD decomposition
+            # We decompose the weight matrix as U @ diag(S) @ V, where rank = tt_rank
+            # This provides similar parameter savings.
+            self.U = nn.Parameter(torch.empty(out_features, tt_rank))
+            self.S = nn.Parameter(torch.empty(tt_rank))
+            self.V = nn.Parameter(torch.empty(tt_rank, in_features))
+            nn.init.normal_(self.U, std=0.02)
+            nn.init.ones_(self.S)
+            nn.init.normal_(self.V, std=0.02)
+
+        # Bias
         if bias:
             self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype))
         else:
             self.register_parameter('bias', None)
-    
+
     @staticmethod
-    def _auto_tensorize(dim: int) -> tuple:
-        """
-        Automatically factorize a dimension into a near‑square product.
-        Example: 768 -> (16, 48) because 16 * 48 = 768.
-        """
-        # Find the two factors that are closest to sqrt(dim)
-        import math
+    def _auto_tensorize(dim: int) -> Tuple[int, int]:
+        """Factorize a dimension into two near‑square factors."""
         a = int(math.sqrt(dim))
         while dim % a != 0:
             a -= 1
         b = dim // a
-        # Ensure the first factor is the larger one (for consistency)
-        if a < b:
-            a, b = b, a
-        return (a, b)
-    
+        # Return the larger first
+        return (b, a) if b > a else (a, b)
+
     @classmethod
-    def from_linear(cls, linear: nn.Linear, tt_rank: list, **kwargs):
+    def from_linear(
+        cls,
+        linear: nn.Linear,
+        tt_rank: int,
+        **kwargs,
+    ) -> "TTLinearLayer":
         """
-        Initialise a TTLinearLayer from a pre‑trained nn.Linear layer.
-        
+        Initialise from a pretrained nn.Linear layer.
+
         Args:
-            linear: the original nn.Linear layer.
+            linear: original nn.Linear layer.
             tt_rank: TT‑rank for the decomposition.
-            **kwargs: passed to TTLinearLayer.__init__.
         """
-        # Create an empty TT layer
         tt_layer = cls(
             in_features=linear.in_features,
             out_features=linear.out_features,
             tt_rank=tt_rank,
             bias=linear.bias is not None,
-            **kwargs
+            **kwargs,
         )
-        # Decompose the pre‑trained weight matrix into TT format
-        weight_tensor = linear.weight.data
-        # Reshape to the tensorized shape
-        tensorized_shape = tt_layer.tensorized_shape_out + tt_layer.tensorized_shape_in
-        weight_tensor = weight_tensor.view(tensorized_shape)
-        # Decompose using torchtt (low‑rank approximation)
-        tt_tensor = torchtt.tensor(weight_tensor, tt_rank)
-        # Copy the cores into the TT layer
-        for i, core in enumerate(tt_tensor.cores):
-            tt_layer.tt_layer.cores[i].data = core.clone()
-        # Copy bias if present
-        if linear.bias is not None and tt_layer.bias is not None:
-            tt_layer.bias.data = linear.bias.data.clone()
+        weight = linear.weight.data
+
+        if _HAS_TORCHTT:
+            # Reshape to tensorized shape and decompose with torchtt
+            tensorized_shape = tt_layer.tensorized_shape_out + tt_layer.tensorized_shape_in
+            weight_reshaped = weight.view(tensorized_shape).cpu()
+            tt_tensor = torchtt.tensor(weight_reshaped, eps=1e-6, rmax=tt_rank)
+            for i, core in enumerate(tt_tensor.cores):
+                tt_layer.tt_layer.cores[i].data = core.clone()
+        else:
+            # Fallback: SVD decomposition
+            U, S, Vh = torch.linalg.svd(weight.float(), full_matrices=False)
+            r = min(tt_rank, min(weight.shape))
+            tt_layer.U.data = (U[:, :r] * S[:r].unsqueeze(0)).float()
+            tt_layer.S.data = S[:r].float()
+            tt_layer.V.data = Vh[:r, :].float()
+
+        if linear.bias is not None:
+            tt_layer.bias.data.copy_(linear.bias.data)
         return tt_layer
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass: compute y = Wx + b using the TT representation."""
-        # The TT layer expects inputs shaped according to its tensorized dimensions.
-        # We reshape the input accordingly.
-        batch_shape = x.shape[:-1]
-        x_flat = x.view(-1, self.in_features)
-        # Perform the TT multiplication
-        y = self.tt_layer(x_flat)
-        # Add bias
-        if self.bias is not None:
-            y = y + self.bias
-        # Reshape back to batch shape + out_features
-        return y.view(*batch_shape, self.out_features)
-    
+        if self.use_tt:
+            batch_shape = x.shape[:-1]
+            x_flat = x.view(-1, self.in_features)
+            y = self.tt_layer(x_flat)
+            if self.bias is not None:
+                y = y + self.bias
+            return y.view(*batch_shape, self.out_features)
+        else:
+            # Fallback: (x @ V^T) @ diag(S) @ U^T
+            xV = F.linear(x, self.V)
+            xV = xV * self.S.unsqueeze(0).unsqueeze(0)
+            out = F.linear(xV, self.U.t())
+            if self.bias is not None:
+                out = out + self.bias
+            return out
+
     def extra_repr(self) -> str:
         return (f'in_features={self.in_features}, out_features={self.out_features}, '
-                f'tt_rank={self.tt_rank}, bias={self.bias is not None}')
+                f'tt_rank={self.tt_rank}, bias={self.bias is not None}, '
+                f'use_tt={self.use_tt}')
