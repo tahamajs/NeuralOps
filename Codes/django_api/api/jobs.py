@@ -5,18 +5,25 @@ from .models import Experiment
 
 logger = logging.getLogger(__name__)
 
+# Store running threads to allow cancellation
+running_jobs = {}
+
 def start_job(experiment: Experiment, runner_func):
     def _run():
+        running_jobs[str(experiment.id)] = threading.current_thread()
         try:
             experiment.status = "running"
+            experiment.started_at = timezone.now()
             experiment.save()
             push_update(experiment, {"type": "status", "status": "running"})
             push_update(experiment, {"type": "log", "data": "Job started."})
             runner_func(experiment)
-            experiment.status = "completed"
-            experiment.save()
-            push_update(experiment, {"type": "status", "status": "completed"})
-            push_update(experiment, {"type": "log", "data": "Job completed successfully."})
+            if experiment.status != "cancelled":
+                experiment.status = "completed"
+                experiment.completed_at = timezone.now()
+                experiment.save()
+                push_update(experiment, {"type": "status", "status": "completed"})
+                push_update(experiment, {"type": "log", "data": "Job completed successfully."})
         except Exception as e:
             experiment.status = "failed"
             experiment.logs += f"\nError: {str(e)}"
@@ -24,14 +31,16 @@ def start_job(experiment: Experiment, runner_func):
             push_update(experiment, {"type": "status", "status": "failed"})
             push_update(experiment, {"type": "log", "data": f"Job failed: {str(e)}"})
             logger.exception("Job failed")
+        finally:
+            running_jobs.pop(str(experiment.id), None)
 
-    threading.Thread(target=_run, daemon=True).start()
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
 
-def push_update(experiment: Experiment, message: dict):
-    try:
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"job_{experiment.id}", {"type": "send_message", "message": message}
-        )
-    except Exception as e:
-        logger.warning(f"WebSocket push failed: {e}")
+def cancel_job(experiment: Experiment):
+    """Signal cancellation to a running job."""
+    experiment.status = "cancelled"
+    experiment.save()
+    # The runner should periodically check if status changed to cancelled.
+    # In the runner callback, we'll raise an exception to stop training.
+    push_update(experiment, {"type": "status", "status": "cancelled"})

@@ -116,3 +116,52 @@ def experiment_model_download(request, job_id):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
     shutil.make_archive(tmp.name.replace(".zip", ""), "zip", exp_dir)
     return FileResponse(open(tmp.name, "rb"), as_attachment=True, filename="model.zip")
+
+
+
+import psutil
+import subprocess
+from django.http import JsonResponse
+from .models import Experiment
+from .jobs import cancel_job
+
+@api_view(["GET"])
+def system_metrics(request):
+    """Return live system metrics: CPU, RAM, GPU."""
+    cpu = psutil.cpu_percent(interval=0.1)
+    ram = psutil.virtual_memory()
+    metrics = {
+        "cpu_percent": cpu,
+        "ram_percent": ram.percent,
+        "ram_used_gb": round(ram.used / (1024**3), 2),
+        "ram_total_gb": round(ram.total / (1024**3), 2),
+    }
+    try:
+        # Try to get GPU info via nvidia-smi
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=2
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            parts = result.stdout.strip().split(",")
+            if len(parts) >= 3:
+                metrics["gpu_percent"] = float(parts[0].strip())
+                metrics["gpu_memory_used_mb"] = float(parts[1].strip())
+                metrics["gpu_memory_total_mb"] = float(parts[2].strip())
+                if len(parts) >= 4:
+                    metrics["gpu_temp"] = float(parts[3].strip())
+    except Exception:
+        pass
+    return Response(metrics)
+
+@api_view(["POST"])
+def stop_job(request, job_id):
+    try:
+        exp = Experiment.objects.get(id=job_id)
+    except Experiment.DoesNotExist:
+        return Response({"error": "Job not found"}, status=404)
+    if exp.status in ("queued", "running"):
+        cancel_job(exp)
+        return Response({"status": "cancelled"})
+    return Response({"error": "Job not cancelable"}, status=400)
