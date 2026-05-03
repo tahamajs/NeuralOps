@@ -1,21 +1,11 @@
-"""
-Runner functions that invoke the actual framework logic.
-Each runner receives an Experiment model instance.
-It should update logs and push metrics via `jobs.push_update`.
-"""
-
 import os, sys, json, logging
 from pathlib import Path
-from datetime import datetime
-
-# Make sure framework is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from django.conf import settings as django_settings
 from .models import Experiment
 from .jobs import push_update
 
-# Framework imports
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
 from framework.models.model_loader import load_model
@@ -24,8 +14,8 @@ from framework.data.preprocessing import preprocess_function
 from framework.data.glue_loader import get_num_labels_and_is_regression, GLUE_TASK_KEYS
 from framework.trainer.trainer import CompressionTrainer, get_compute_metrics
 from framework.utils.device import get_device
-from framework.utils.helpers import set_seed, count_parameters
-from framework.utils.layer_norm_fix import fix_layernorm_naming
+from framework.utils.helpers import set_seed
+
 from transformers import (
     AutoTokenizer, AutoConfig, AutoModelForSequenceClassification,
     TrainingArguments, DataCollatorWithPadding, TrainerCallback
@@ -43,7 +33,6 @@ def _update_status(exp, status):
     exp.save()
 
 class _MetricsCallback(TrainerCallback):
-    """Forward trainer logs to our WebSocket."""
     def __init__(self, experiment):
         self.experiment = experiment
     def on_log(self, args, state, control, logs=None, **kwargs):
@@ -59,11 +48,11 @@ def run_training(experiment: Experiment):
     device = get_device()
     set_seed(config.get("seed", 42))
 
-    # 1. Load model with attention injection
+    # 1. Model
     _log(experiment, f"Loading model: {config.get('model_name')}")
     model, tokenizer = load_model(
         model_name=config.get("model_name", "distilbert-base-uncased"),
-        num_labels=None,  # determined later
+        num_labels=None,
         attention_type=config.get("attention_type", "full"),
         rank=config.get("compression_rank", 64),
         device=device,
@@ -71,7 +60,7 @@ def run_training(experiment: Experiment):
         cache_dir=config.get("cache_dir"),
     )
 
-    # 2. Load dataset
+    # 2. Dataset
     task = config.get("task_name", "mrpc")
     _log(experiment, f"Loading dataset: {task}")
     data_cfg = ExperimentConfig(
@@ -95,8 +84,7 @@ def run_training(experiment: Experiment):
         sent2_key=sent2_key,
         is_regression=(task == "stsb"),
     )
-    encoded = dataset_dict.map(preprocess_fn, batched=True,
-                               remove_columns=dataset_dict["train"].column_names)
+    encoded = dataset_dict.map(preprocess_fn, batched=True, remove_columns=dataset_dict["train"].column_names)
     cols = ["input_ids", "attention_mask", "labels"]
     if "token_type_ids" in encoded["train"].column_names:
         cols.append("token_type_ids")
@@ -106,7 +94,7 @@ def run_training(experiment: Experiment):
     output_dir = os.path.join(str(django_settings.MEDIA_ROOT), str(experiment.id), "model")
     os.makedirs(output_dir, exist_ok=True)
 
-    # 5. Training arguments
+    # 5. Training
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=config.get("epochs", 3),
@@ -127,7 +115,6 @@ def run_training(experiment: Experiment):
         report_to="none",
     )
 
-    # 6. Trainer with custom callback for live updates
     trainer = CompressionTrainer(
         ortho_weight=0.0,
         model=model,
@@ -167,14 +154,12 @@ def run_evaluation(experiment: Experiment):
         tokenizer=tokenizer, max_seq_length=config.get("max_seq_length", 128),
         sent1_key=sent1_key, sent2_key=sent2_key, is_regression=(task=="stsb")
     )
-    encoded = dataset_dict.map(preprocess_fn, batched=True,
-                               remove_columns=dataset_dict["train"].column_names)
+    encoded = dataset_dict.map(preprocess_fn, batched=True, remove_columns=dataset_dict["train"].column_names)
     encoded.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
     from transformers import Trainer, TrainingArguments
     eval_args = TrainingArguments(output_dir="/tmp/eval", per_device_eval_batch_size=config.get("batch_size", 32))
-    trainer = Trainer(model=model, args=eval_args,
-                      eval_dataset=encoded.get("validation") or encoded.get("test"))
+    trainer = Trainer(model=model, args=eval_args, eval_dataset=encoded.get("validation") or encoded.get("test"))
     results = trainer.evaluate()
     _log(experiment, f"Evaluation results: {json.dumps(results)}")
     experiment.config["final_metrics"] = results
