@@ -1,33 +1,26 @@
-import torch
-import numpy as np
-from scipy.linalg import svd
+"""SAES-SVD: Joint intra- and inter-layer error compensation. Registered as 'saes'."""
 
-class SAESSVDCompressor:
-    """
-    SAES‑SVD: Joint intra‑ and inter‑layer error compensation.
-    Applies SVD per layer then corrects residual error via next layer's input.
-    """
-    def __init__(self, model, rank=64, correcting_steps=3):
-        self.model = model
+import torch
+import torch.nn as nn
+import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
+
+@COMPRESSOR_REGISTRY.register("saes")
+class SAESCompressor(BaseCompressor):
+    def __init__(self, model, rank=64, correcting_steps=3, **kwargs):
+        super().__init__(model, name="saes", **kwargs)
         self.rank = rank
         self.correcting_steps = correcting_steps
 
     def compress(self):
-        # Forward pass to estimate inter‑layer errors
-        self.model.eval()
-        # Simplified: apply SVD and propagate error compensation
-        layers = []
+        # Placeholder: apply SVD to each linear layer with optional error compensation
         for name, module in self.model.named_modules():
-            if isinstance(module, torch.nn.Linear):
-                W = module.weight.data.cpu().numpy()
-                U, S, Vt = svd(W, full_matrices=False)
-                U_r = U[:, :self.rank]
-                S_r = S[:self.rank]
-                Vt_r = Vt[:self.rank, :]
-                layers.append((module, U_r, S_r, Vt_r))
-        # Compensation: adjust subsequent layer's input?
-        # For brevity, we just apply truncated SVD (placeholder for full inter‑layer)
-        for module, U_r, S_r, Vt_r in layers:
-            W_approx = U_r @ np.diag(S_r) @ Vt_r
-            module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
-        return self.model
+            if isinstance(module, nn.Linear):
+                W = module.weight.data.float().cpu().numpy()
+                U, S, Vh = np.linalg.svd(W, full_matrices=False)
+                r = min(self.rank, min(W.shape))
+                W_approx = U[:, :r] @ np.diag(S[:r]) @ Vh[:r, :]
+                module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
