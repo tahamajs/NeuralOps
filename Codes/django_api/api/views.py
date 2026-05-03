@@ -6,16 +6,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Experiment
 from .serializers import ExperimentSerializer
-from .jobs import start_job
+from .jobs import start_job, stop_job as do_stop, cancel_job
 from .runners import run_training, run_evaluation, run_compression
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
-import psutil
-import subprocess
-from django.http import JsonResponse
-from .models import Experiment
-from .jobs import cancel_job
-
+import psutil, torch, time, math
 
 logger = logging.getLogger(__name__)
 
@@ -27,18 +22,13 @@ def list_attentions(request):
 @api_view(["GET"])
 def list_models(request):
     return Response({
-        "models": [
-            "distilbert-base-uncased",
-            "bert-base-uncased",
-            "roberta-base",
-            "albert-base-v2",
-        ]
+        "models": ["distilbert-base-uncased","bert-base-uncased","roberta-base","albert-base-v2"]
     })
 
 @api_view(["GET"])
 def list_tasks(request):
     return Response({
-        "tasks": ["cola", "sst2", "mrpc", "qqp", "stsb", "mnli", "qnli", "rte", "wnli"]
+        "tasks": ["cola","sst2","mrpc","qqp","stsb","mnli","qnli","rte","wnli"]
     })
 
 @api_view(["GET"])
@@ -47,13 +37,11 @@ def list_compressors(request):
 
 @api_view(["GET"])
 def list_methods(request):
-    return Response({"methods": ["baseline", "lora", "rdrop", "r3f", "fisher_lora", "fisher_gelora", "llrd"]})
+    return Response({"methods": ["baseline","lora","rdrop","r3f","fisher_lora","fisher_gelora","llrd"]})
 
 @api_view(["GET"])
 def list_presets(request):
-    return Response({
-        "presets": ["fast", "accurate", "extreme_compress"]
-    })
+    return Response({"presets": ["fast","accurate","extreme_compress"]})
 
 # ── Start jobs ────────────────────────────────────────────────────
 @api_view(["POST"])
@@ -77,13 +65,38 @@ def start_compress(request):
     start_job(exp, run_compression)
     return Response(ExperimentSerializer(exp).data, status=status.HTTP_202_ACCEPTED)
 
-# ── Job status ────────────────────────────────────────────────────
+# ── Job status / stop / config update ─────────────────────────────
 @api_view(["GET"])
 def job_status(request, job_id):
     try:
         exp = Experiment.objects.get(id=job_id)
     except Experiment.DoesNotExist:
         return Response({"error": "Job not found"}, status=404)
+    return Response(ExperimentSerializer(exp).data)
+
+@api_view(["POST"])
+def stop_job(request, job_id):
+    """Stop a running job (alias for cancel)."""
+    try:
+        exp = Experiment.objects.get(id=job_id)
+    except Experiment.DoesNotExist:
+        return Response({"error": "Job not found"}, status=404)
+    if exp.status in ("queued", "running"):
+        cancel_job(str(job_id))              # sets the event in jobs.py
+        exp.status = "stopped"
+        exp.save()
+        return Response({"status": "stopped"})
+    return Response({"error": "Job not cancelable"}, status=400)
+
+@api_view(["PATCH"])
+def update_job_config(request, job_id):
+    try:
+        exp = Experiment.objects.get(id=job_id)
+    except Experiment.DoesNotExist:
+        return Response({"error": "Job not found"}, status=404)
+    new_config = request.data
+    exp.config.update(new_config)
+    exp.save(update_fields=["config"])
     return Response(ExperimentSerializer(exp).data)
 
 # ── List experiments ─────────────────────────────────────────────
@@ -98,13 +111,9 @@ def experiment_artifacts(request, job_id):
     exp_dir = settings.MEDIA_ROOT / str(job_id)
     if not exp_dir.exists():
         return Response({"artifacts": []})
-    artifacts = []
-    for p in exp_dir.rglob("*"):
-        if p.is_file():
-            artifacts.append(str(p.relative_to(exp_dir)))
+    artifacts = [str(p.relative_to(exp_dir)) for p in exp_dir.rglob("*") if p.is_file()]
     return Response({"artifacts": artifacts})
 
-# ── Download a specific artifact ──────────────────────────────────
 @api_view(["GET"])
 def experiment_artifact_download(request, job_id, artifact_path):
     exp_dir = settings.MEDIA_ROOT / str(job_id)
@@ -113,7 +122,6 @@ def experiment_artifact_download(request, job_id, artifact_path):
         raise Http404("Artifact not found")
     return FileResponse(open(file_path, "rb"), as_attachment=True, filename=os.path.basename(artifact_path))
 
-# ── Model download (zip entire model directory) ────────────────────
 @api_view(["GET"])
 def experiment_model_download(request, job_id):
     exp_dir = settings.MEDIA_ROOT / str(job_id) / "model"
@@ -123,75 +131,7 @@ def experiment_model_download(request, job_id):
     shutil.make_archive(tmp.name.replace(".zip", ""), "zip", exp_dir)
     return FileResponse(open(tmp.name, "rb"), as_attachment=True, filename="model.zip")
 
-
-
-@api_view(["GET"])
-def system_metrics(request):
-    """Return live system metrics: CPU, RAM, GPU."""
-    cpu = psutil.cpu_percent(interval=0.1)
-    ram = psutil.virtual_memory()
-    metrics = {
-        "cpu_percent": cpu,
-        "ram_percent": ram.percent,
-        "ram_used_gb": round(ram.used / (1024**3), 2),
-        "ram_total_gb": round(ram.total / (1024**3), 2),
-    }
-    try:
-        # Try to get GPU info via nvidia-smi
-        result = subprocess.run(
-            ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=2
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            parts = result.stdout.strip().split(",")
-            if len(parts) >= 3:
-                metrics["gpu_percent"] = float(parts[0].strip())
-                metrics["gpu_memory_used_mb"] = float(parts[1].strip())
-                metrics["gpu_memory_total_mb"] = float(parts[2].strip())
-                if len(parts) >= 4:
-                    metrics["gpu_temp"] = float(parts[3].strip())
-    except Exception:
-        pass
-    return Response(metrics)
-
-@api_view(["POST"])
-def stop_job(request, job_id):
-    try:
-        exp = Experiment.objects.get(id=job_id)
-    except Experiment.DoesNotExist:
-        return Response({"error": "Job not found"}, status=404)
-    if exp.status in ("queued", "running"):
-        cancel_job(exp)
-        return Response({"status": "cancelled"})
-    return Response({"error": "Job not cancelable"}, status=400)
-
-from framework.utils.device import get_device
-import torch, psutil, time, math
-
-@api_view(["POST"])
-def stop_job(request, job_id):
-    from .jobs import stop_job as do_stop
-    try:
-        exp = Experiment.objects.get(id=job_id)
-    except Experiment.DoesNotExist:
-        return Response({"error": "Job not found"}, status=404)
-    do_stop(job_id)
-    exp.status = "stopped"
-    exp.save()
-    return Response({"status": "stopped"})
-
-@api_view(["PATCH"])
-def update_job_config(request, job_id):
-    try:
-        exp = Experiment.objects.get(id=job_id)
-    except Experiment.DoesNotExist:
-        return Response({"error": "Job not found"}, status=404)
-    new_config = request.data
-    exp.config.update(new_config)
-    exp.save(update_fields=["config"])
-    return Response(ExperimentSerializer(exp).data)
-
+# ── System monitoring ────────────────────────────────────────────
 @api_view(["GET"])
 def gpu_info(request):
     info = {"cuda_available": torch.cuda.is_available()}
@@ -205,6 +145,7 @@ def gpu_info(request):
 
 @api_view(["GET"])
 def system_status(request):
-    cpu = psutil.cpu_percent()
-    mem = psutil.virtual_memory().percent
-    return Response({"cpu": cpu, "memory": mem})
+    return Response({
+        "cpu": psutil.cpu_percent(),
+        "memory": psutil.virtual_memory().percent,
+    })
