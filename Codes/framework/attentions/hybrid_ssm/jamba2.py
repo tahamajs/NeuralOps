@@ -2,19 +2,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# Simple Mamba stub if not using official package
 class Mamba(nn.Module):
+    """Trivial Mamba placeholder – replace with official implementation."""
     def __init__(self, d_model):
         super().__init__()
         self.d_model = d_model
         self.in_proj = nn.Linear(d_model, d_model*2)
         self.out_proj = nn.Linear(d_model, d_model)
     def forward(self, x):
-        # Trivial placeholder; replace with real Mamba for performance
         return self.out_proj(F.silu(self.in_proj(x)))
 
 class ExpertChoiceMoE(nn.Module):
-    """Token‑choice MoE with top‑2 gating."""
+    """Top‑2 token‑choice MoE."""
     def __init__(self, d_model, n_experts=8, top_k=2):
         super().__init__()
         self.n_experts = n_experts
@@ -28,14 +27,13 @@ class ExpertChoiceMoE(nn.Module):
 
     def forward(self, x):
         B, L, D = x.shape
-        scores = self.router(x)   # (B, L, E)
-        weights, indices = torch.topk(scores, self.top_k, dim=-1)  # (B, L, k)
+        scores = self.router(x)
+        weights, indices = torch.topk(scores, self.top_k, dim=-1)
         weights = F.softmax(weights, dim=-1)
         out = torch.zeros_like(x)
         for e in range(self.n_experts):
-            mask = (indices == e).any(dim=-1)   # (B, L)
+            mask = (indices == e).any(dim=-1)
             if mask.any():
-                # Weighted sum for tokens that selected this expert
                 selected_weights = (weights * (indices == e).float()).sum(dim=-1, keepdim=True)
                 out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
         return out
@@ -43,7 +41,7 @@ class ExpertChoiceMoE(nn.Module):
 class Jamba2Block(nn.Module):
     def __init__(self, d_model, n_heads, n_experts=8, top_k=2):
         super().__init__()
-        self.mamba = Mamba(d_model=d_model)
+        self.mamba = Mamba(d_model)
         self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
         self.moe = ExpertChoiceMoE(d_model, n_experts, top_k)
         self.norm1 = nn.LayerNorm(d_model)
