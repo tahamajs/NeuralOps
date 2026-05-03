@@ -1,7 +1,6 @@
-# Auto-generated __init__.py
-from . import enlighten_compressor
-from . import frandi_compressor
-from . import grecodec_compressor
-from . import nmf_compressor
-from . import rpca_compressor
-from . import slim_compressor
+from .slim_compressor import SLiMCompressor
+from .rpca_compressor import RPCACompressor
+from .nmf_compressor import NMFCompressor
+from .grecodec_compressor import GreGoDecCompressor
+from .frandi_compressor import FRanDICompressor
+from .enlighten_compressor import ENLightenCompressor
