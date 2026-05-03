@@ -4,7 +4,7 @@
 *.pyo
 *.pyd
 .Python
-
+*/**/node_modules
 # Virtual Environments & Specific Env Folders
 **/soa_env/
 venv/
