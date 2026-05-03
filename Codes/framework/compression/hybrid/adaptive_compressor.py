@@ -1,24 +1,35 @@
-import torch
+"""
+Adaptive Transformer Compressor: automatically compresses all
+nn.MultiheadAttention layers using energy‑threshold SVD.
+"""
+
 import torch.nn as nn
-import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 from ..attentions.compressed_attention import CompressedAttentionLayer
 
-class AdaptiveTransformerCompressor:
-    def __init__(self, energy_threshold: float = 0.95, min_rank: int = 16):
+
+@COMPRESSOR_REGISTRY.register("adaptive_svd")
+class AdaptiveTransformerCompressor(BaseCompressor):
+    def __init__(self, model, energy_threshold=0.95, min_rank=16, **kwargs):
+        super().__init__(model, name="adaptive_svd", **kwargs)
         self.energy_threshold = energy_threshold
         self.min_rank = min_rank
 
-    def compress_model(self, model: nn.Module):
-        print(f"🔧 Starting Compression (Threshold: {self.energy_threshold}, Min Rank: {self.min_rank})")
+    def compress(self):
+        print(f"🔧 Starting Compression (Threshold: {self.energy_threshold}, "
+              f"Min Rank: {self.min_rank})")
         compression_stats = []
-        for name, module in model.named_modules():
+        for name, module in self.model.named_modules():
             if isinstance(module, nn.MultiheadAttention):
                 try:
-                    compressed = CompressedAttentionLayer(module, self.energy_threshold, self.min_rank)
+                    compressed = CompressedAttentionLayer(
+                        module, self.energy_threshold, self.min_rank
+                    )
                     # Replace in place
                     parent_name = '.'.join(name.split('.')[:-1])
                     child_name = name.split('.')[-1]
-                    parent = model.get_submodule(parent_name) if parent_name else model
+                    parent = self.model.get_submodule(parent_name) if parent_name else self.model
                     setattr(parent, child_name, compressed)
 
                     orig_params = sum(p.numel() for p in module.parameters())
@@ -31,8 +42,6 @@ class AdaptiveTransformerCompressor:
                     })
                 except Exception as e:
                     print(f"   ❌ Failed to compress {name}: {e}")
-        orig_total = sum(p.numel() for p in model.parameters())
-        new_total = sum(p.numel() for p in model.parameters())  # after replacement
-        total_ratio = new_total / orig_total if orig_total > 0 else 1.0
-        print(f"✅ Compression Complete! Total Params: {orig_total} -> {new_total} (Ratio: {total_ratio:.2%})")
-        return model, compression_stats
+
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
