@@ -1,6 +1,6 @@
 """
-LEKAv2 – Linear‑time Efficient Kernel Attention (original standalone version)
-Drop‑in replacement for DistilBERT attention.
+LEKAv2 – Linear‑time Efficient Kernel Attention (landmark version)
+Dual‑scale random features, landmark selection, correction matrix, local window gate.
 """
 
 import math
@@ -42,7 +42,7 @@ class LEKAv2Attention(nn.Module):
             torch.eye(self.head_dim).unsqueeze(0).repeat(self.num_attention_heads, 1, 1)
         )
 
-        self.local_window_size = 5
+        self.local_window_size = getattr(comp_config, 'local_window_size', 5)
         self.local_gate = nn.Parameter(torch.zeros(self.num_attention_heads) + 0.1)
 
         self.landmark_logits = nn.Parameter(
@@ -75,9 +75,11 @@ class LEKAv2Attention(nn.Module):
         L_max = self.num_landmarks
         if N <= L_max:
             return K_features, V
-        scores = self.landmark_scorer(K_features).squeeze(-1)
+
+        scores = self.landmark_scorer(K_features).squeeze(-1)  # (B, H, N)
         L = L_max
-        _, idx = scores.topk(L, dim=-1)
+        _, idx = scores.topk(L, dim=-1)  # (B, H, L)
+
         K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
         V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
         return K_land, V_land
@@ -94,7 +96,6 @@ class LEKAv2Attention(nn.Module):
         B, N, D = hidden_states.shape
         H = self.num_attention_heads
         L = self.num_landmarks
-        head_dim = self.head_dim
 
         Q = self.transpose_for_scores(self.query(hidden_states))
         K = self.transpose_for_scores(self.key(hidden_states))
@@ -110,45 +111,39 @@ class LEKAv2Attention(nn.Module):
 
         attn_weights = torch.matmul(Q_features, K_land.transpose(-2, -1))
 
+        # Mask handling
         mask = attention_mask
         if mask is None:
             mask = kwargs.get('attn_mask', None)
         if mask is not None:
+            # Convert to boolean mask (B, N) where True = keep
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
                 token_valid = mask[:, 0, 0, :] > -1e9
-                if N > L:
-                    indices = torch.linspace(0, N - 1, L, device=token_valid.device).long()
-                    landmark_mask = token_valid[:, indices]
-                else:
-                    landmark_mask = token_valid
-                landmark_mask = landmark_mask.unsqueeze(1).unsqueeze(2)
+            elif mask.dim() == 4:
+                token_valid = mask.squeeze(1).squeeze(1) > -1e9
+            elif mask.dim() == 3:
+                token_valid = mask.squeeze(1).bool()
+            elif mask.dim() == 2:
+                token_valid = mask.bool()
             else:
-                if mask.dim() == 4:
-                    mask_2d = mask.squeeze(1).squeeze(1) > -1e9
-                elif mask.dim() == 3:
-                    mask_2d = mask.squeeze(1).bool()
-                elif mask.dim() == 2:
-                    mask_2d = mask.bool()
-                else:
-                    raise ValueError(f"Unexpected mask dim: {mask.dim()}")
-                if N > L:
-                    indices = torch.linspace(0, N - 1, L, device=mask_2d.device).long()
-                    landmark_mask = mask_2d[:, indices]
-                else:
-                    landmark_mask = mask_2d
-                landmark_mask = landmark_mask.unsqueeze(1).unsqueeze(2)
-            attn_weights = attn_weights.masked_fill(~landmark_mask, -10000.0)
+                token_valid = None
+
+            if token_valid is not None:
+                # For landmarks, we need to mask queries to padded positions only.
+                # attn_weights: (B, H, N, L); we mask where query position is invalid.
+                attn_weights = attn_weights.masked_fill(~token_valid.unsqueeze(1).unsqueeze(-1), -1e9)
 
         attn_weights = self.softpick(attn_weights, dim=-1)
         attn_weights = self.dropout(attn_weights)
 
         context_leka = torch.matmul(attn_weights, V_land_adj)
 
+        # Local window attention
         idx = torch.arange(N, device=hidden_states.device)
         dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
         window_mask = (dist <= self.local_window_size // 2).unsqueeze(0).unsqueeze(0)
 
-        scale = head_dim ** -0.5
+        scale = self.head_dim ** -0.5
         local_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
         local_scores = local_scores.masked_fill(~window_mask, -1e9)
         local_attn = F.softmax(local_scores, dim=-1)
@@ -157,19 +152,14 @@ class LEKAv2Attention(nn.Module):
         gate_val = torch.sigmoid(self.local_gate).view(1, H, 1, 1)
         context = gate_val * context_leka + (1 - gate_val) * context_local
 
-        context = context.permute(0, 2, 1, 3).contiguous()
-        new_shape = context.size()[:-2] + (self.all_head_size,)
-        context = context.view(new_shape)
-
-        return context, None
+        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        out = self.out_proj(context)
+        return out, None
 
     def get_ortho_loss(self):
         return 0.0
 
 
-# ------------------------------------------------------------
-# Framework injection & registration
-# ------------------------------------------------------------
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("leka_v2")
