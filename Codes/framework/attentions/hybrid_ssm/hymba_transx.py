@@ -25,9 +25,9 @@ class HymbaTransXBlock(BaseAttention):
         self.W_k1 = nn.Linear(self.dim, self.dim, bias=False)
         self.W_q2 = nn.Linear(self.dim, self.dim, bias=False)
         self.W_k2 = nn.Linear(self.dim, self.dim, bias=False)
-        self.W_v = nn.Linear(self.dim, self.dim, bias=False)
+        self.W_v  = nn.Linear(self.dim, self.dim, bias=False)
 
-        # Mamba‑2 branch (simplified)
+        # Mamba‑2 branch (simple SSM)
         from ..ssm.simple_ssm import SimpleSSM
         self.mamba = SimpleSSM(self.dim)
 
@@ -42,22 +42,23 @@ class HymbaTransXBlock(BaseAttention):
         x_rope = self.rope(x)
 
         # Differential attention
-        q1 = self.W_q1(x_rope).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        k1 = self.W_k1(x_rope).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        q2 = self.W_q2(x_rope).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        k2 = self.W_k2(x_rope).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        v  = self.W_v(x_rope).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
+        q1 = self.W_q1(x_rope).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        k1 = self.W_k1(x_rope).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        q2 = self.W_q2(x_rope).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        k2 = self.W_k2(x_rope).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        v  = self.W_v(x_rope).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
 
         scale = self.head_dim ** -0.5
         attn1 = F.softmax(torch.matmul(q1, k1.transpose(-2,-1)) * scale, dim=-1)
         attn2 = F.softmax(torch.matmul(q2, k2.transpose(-2,-1)) * scale, dim=-1)
-        diff_attn = attn1 - 0.5 * attn2   # differential attention
-        A_out = torch.matmul(diff_attn, v).permute(0,2,1,3).contiguous().view(B, L, D)
+        diff_attn = attn1 - 0.5 * attn2          # λ = 0.5
+        diff_attn = F.relu(diff_attn)            # ensure non-negative
+        A_out = torch.matmul(diff_attn, v).transpose(1,2).contiguous().view(B, L, D)
 
         # Mamba branch
         M_out = self.mamba(x_rope)   # (B, L, D)
 
         # Learned fusion
         alpha = torch.sigmoid(self.alpha)
-        out = self.out_proj(x + alpha * A_out + (1-alpha) * M_out)
+        out = self.out_proj(x + alpha * A_out + (1 - alpha) * M_out)
         return (out, None)
