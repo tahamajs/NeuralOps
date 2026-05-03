@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
 
+
 @dataclass
 class ORIONConfig:
     svd_energy: float = 0.95
@@ -21,15 +22,20 @@ class ORIONConfig:
     softpick_temperature: float = 1.0
     dropout: float = 0.1
 
-def softpick(x, dim=-1, temperature=1.0):
+
+def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
+    """Rectified softmax – avoids attention sinks, ~47% sparse."""
     m = x.max(dim=dim, keepdim=True).values
     e = torch.exp((x - m) / temperature)
     denom = e - torch.exp(-m / temperature)
     p = F.relu(denom)
     return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
 
+
 class FactorisedLinear(nn.Module):
-    def __init__(self, pretrained_weight, pretrained_bias, energy, min_rank=4, max_rank=64):
+    """SVD‑factorised linear layer with energy‑based rank selection."""
+    def __init__(self, pretrained_weight: torch.Tensor, pretrained_bias: Optional[torch.Tensor],
+                 energy: float, min_rank: int = 4, max_rank: int = 64):
         super().__init__()
         out_dim, in_dim = pretrained_weight.shape
         with torch.no_grad():
@@ -49,51 +55,97 @@ class FactorisedLinear(nn.Module):
             self.up.bias.data = pretrained_bias.float()
         else:
             self.up.bias.data.zero_()
-    def forward(self, x): return self.up(self.down(x))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.up(self.down(x))
+
 
 class ORIONAttention(nn.Module):
-    def __init__(self, model_config, orion_cfg: ORIONConfig, pretrained_attn=None, bert_mode=False):
+    """
+    ORION hybrid attention.
+    Heads are split into two groups:
+      - Kernel heads: perform linearised attention via Random Fourier Features.
+      - Full heads: perform standard scaled dot‑product attention with Softpick.
+    All projections are SVD‑factorised for parameter efficiency.
+    """
+    def __init__(self, model_config, orion_cfg: ORIONConfig,
+                 pretrained_attn=None, bert_mode: bool = False):
         super().__init__()
         if pretrained_attn is None:
             raise ValueError("ORION requires pretrained_attn for zero‑shot SVD init")
+
         self.num_heads = model_config.num_attention_heads
         self.head_dim  = model_config.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
         self.hidden_size   = model_config.hidden_size
         self.cfg = orion_cfg
         self.bert_mode = bert_mode
-        assert orion_cfg.num_kernel_heads + orion_cfg.num_full_heads == self.num_heads
+
+        # Validate head split
+        if orion_cfg.num_kernel_heads + orion_cfg.num_full_heads != self.num_heads:
+            raise ValueError(
+                f"num_kernel_heads ({orion_cfg.num_kernel_heads}) + "
+                f"num_full_heads ({orion_cfg.num_full_heads}) must equal "
+                f"total heads ({self.num_heads})"
+            )
         self.num_kernel_heads = orion_cfg.num_kernel_heads
         self.num_full_heads   = orion_cfg.num_full_heads
 
-        self.q_proj = FactorisedLinear(pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias.data,
-                                       orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank)
-        self.k_proj = FactorisedLinear(pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias.data,
-                                       orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank)
-        self.v_proj = FactorisedLinear(pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias.data,
-                                       orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank)
-        self.out_proj = FactorisedLinear(pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias.data,
-                                         orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank)
-        self.rff_proj = nn.Parameter(torch.randn(self.num_kernel_heads, self.head_dim, orion_cfg.rff_features) * 0.02)
+        # Factorised Q/K/V projections
+        self.q_proj = FactorisedLinear(
+            pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias.data,
+            orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank
+        )
+        self.k_proj = FactorisedLinear(
+            pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias.data,
+            orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank
+        )
+        self.v_proj = FactorisedLinear(
+            pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias.data,
+            orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank
+        )
+        self.out_proj = FactorisedLinear(
+            pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias.data,
+            orion_cfg.svd_energy, orion_cfg.svd_min_rank, orion_cfg.svd_max_rank
+        )
+
+        # Random Fourier Features for kernel attention (per kernel head)
+        self.rff_proj = nn.Parameter(
+            torch.randn(self.num_kernel_heads, self.head_dim, orion_cfg.rff_features) * 0.02
+        )
         self.dropout = nn.Dropout(orion_cfg.dropout)
 
-    def _kernel_linear_attention(self, Q, K, V):
+    def _kernel_linear_attention(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor) -> torch.Tensor:
+        """
+        Linearised attention via Random Fourier Features.
+        Q, K, V: (B, num_kernel_heads, N, head_dim)
+        """
         B, Hk, N, D = Q.shape
         F_dim = self.cfg.rff_features
+
+        # Normalize Q, K for stability
         Q_norm = F.normalize(Q, p=2, dim=-1)
         K_norm = F.normalize(K, p=2, dim=-1)
-        proj = self.rff_proj.to(Q.device)
-        Q_proj = torch.einsum('bhnd,hdf->bhnf', Q_norm, proj)
+
+        proj = self.rff_proj.to(Q.device)  # (Hk, D, F)
+        Q_proj = torch.einsum('bhnd,hdf->bhnf', Q_norm, proj)  # (B, Hk, N, F)
         K_proj = torch.einsum('bhnd,hdf->bhnf', K_norm, proj)
+
+        # Apply RBF kernel approximation: exp(Q'K / √F) ≈ φ(Q)·φ(K)
         Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
         K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
-        KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V)
-        Z  = K_feat.sum(dim=2, keepdim=True)
-        lin_ctx = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV)
+
+        # Compute linearised attention: (φ(K)^T V) then multiply by φ(Q)
+        KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V)        # (B, Hk, F, D)
+        Z  = K_feat.sum(dim=2, keepdim=True)                   # (B, Hk, 1, F)
+
+        lin_ctx = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV)  # (B, Hk, N, D)
         lin_ctx = lin_ctx / (torch.einsum('bhnf,bhfd->bhnd', Q_feat, Z) + 1e-8)
         return lin_ctx
 
-    def _full_softpick_attention(self, Q, K, V, token_valid=None):
+    def _full_softpick_attention(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor,
+                                 token_valid: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """Standard scaled dot‑product attention with Softpick activation."""
         scale = self.head_dim ** -0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
         if token_valid is not None:
@@ -102,23 +154,29 @@ class ORIONAttention(nn.Module):
         attn_w = self.dropout(attn_w)
         return torch.matmul(attn_w, V)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
+    def forward(self, hidden_states: torch.Tensor,
+                attention_mask: Optional[torch.Tensor] = None,
+                head_mask: Optional[torch.Tensor] = None,
+                output_attentions: bool = False,
+                **kwargs) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
-        H, D = self.num_heads, self.head_dim
         Hk = self.num_kernel_heads
         Hf = self.num_full_heads
 
+        # Project and reshape
         Q_all = self.q_proj(hidden_states)
         K_all = self.k_proj(hidden_states)
         V_all = self.v_proj(hidden_states)
-        Q_all = Q_all.view(B, N, H, D).transpose(1, 2)
-        K_all = K_all.view(B, N, H, D).transpose(1, 2)
-        V_all = V_all.view(B, N, H, D).transpose(1, 2)
+        Q_all = Q_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        K_all = K_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
+        V_all = V_all.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
 
+        # Split heads
         Q_kernel, Q_full = Q_all[:, :Hk], Q_all[:, Hk:]
         K_kernel, K_full = K_all[:, :Hk], K_all[:, Hk:]
         V_kernel, V_full = V_all[:, :Hk], V_all[:, Hk:]
 
+        # Convert mask to token_valid boolean
         mask = attention_mask if attention_mask is not None else kwargs.get('attn_mask', None)
         token_valid = None
         if mask is not None:
@@ -131,19 +189,25 @@ class ORIONAttention(nn.Module):
             elif mask.dim() == 2:
                 token_valid = mask.bool()
 
+        # Compute attention for each group
         ctx_kernel = self._kernel_linear_attention(Q_kernel, K_kernel, V_kernel)
         ctx_full = self._full_softpick_attention(Q_full, K_full, V_full, token_valid)
 
-        context = torch.cat([ctx_kernel, ctx_full], dim=1)
+        # Concatenate back
+        context = torch.cat([ctx_kernel, ctx_full], dim=1)  # (B, H, N, D)
+
+        # Apply masking to padded positions (redundant but safe)
         if token_valid is not None:
             context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
 
-        context = context.transpose(1, 2).contiguous().view(B, N, H * D)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         output = self.out_proj(context)
+
         return (output, None)
 
-    def get_ortho_loss(self):
+    def get_ortho_loss(self) -> torch.Tensor:
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
+
 
 # ------------------------------------------------------------
 # Framework injection & registration
