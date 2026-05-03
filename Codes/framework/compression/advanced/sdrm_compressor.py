@@ -1,13 +1,18 @@
+"""
+SDRM: rank assignment proportional to parameter budget for edge inference.
+Registered as 'sdrm'.
+"""
+
 import torch
 import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class SDRMCompressor:
-    """
-    SDRM: SVD‑based dimensionality reduction with AdaMatrix optimization.
-    For edge inference, selects optimal rank per matrix.
-    """
-    def __init__(self, model, total_param_ratio=0.7):
-        self.model = model
+
+@COMPRESSOR_REGISTRY.register("sdrm")
+class SDRMCompressor(BaseCompressor):
+    def __init__(self, model, total_param_ratio=0.7, **kwargs):
+        super().__init__(model, name="sdrm", **kwargs)
         self.total_param_ratio = total_param_ratio
 
     def compress(self):
@@ -20,17 +25,15 @@ class SDRMCompressor:
                 layer_params[name] = (module, params, n, m)
                 total_params += params
         target_params = total_params * self.total_param_ratio
-        # allocate ranks proportionally to original params
+
         for name, (module, p, n, m) in layer_params.items():
             allowed = p * self.total_param_ratio
-            # rank * (n+m) <= allowed -> rank = allowed/(n+m)
             rank = max(1, int(allowed / (n + m)))
             rank = min(rank, min(n, m))
-            W = module.weight.data.cpu().numpy()
+            W = module.weight.data.float().cpu().numpy()
             U, S, Vt = np.linalg.svd(W, full_matrices=False)
-            U_r = U[:, :rank]
-            S_r = S[:rank]
-            Vt_r = Vt[:rank, :]
-            W_approx = U_r @ np.diag(S_r) @ Vt_r
+            r = min(rank, len(S))
+            W_approx = U[:, :r] @ np.diag(S[:r]) @ Vt[:r, :]
             module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
-        return self.model
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
