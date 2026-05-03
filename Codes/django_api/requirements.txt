@@ -1,5 +1,6 @@
 django>=4.2
 djangorestframework>=3.14
+django-cors-headers>=4.0
 channels>=4.0
 daphne>=4.0
-django-cors-headers>=4.0
+channels-redis>=4.0         # optional for production, not required for dev
