@@ -1,0 +1,4 @@
+dataset_name: "mnli"
+num_labels: 3
+max_seq_length: 128
+config_description: "MNLI entailment – 3 classes"

@@ -1,0 +1,4 @@
+dataset_name: "sst2"
+num_labels: 2
+max_seq_length: 64
+config_description: "SST‑2 sentiment – 2 classes"

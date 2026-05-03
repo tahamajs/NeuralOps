@@ -1,0 +1,2 @@
+attention_type: "full"
+config_description: "Original full attention – no compression"
