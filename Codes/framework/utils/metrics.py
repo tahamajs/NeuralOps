@@ -1,11 +1,10 @@
-# framework/utils/metrics.py
 """
-Metrics computation utilities.
+Metrics computation utilities for classification and regression tasks.
 """
 
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
-from typing import List, Dict, Any, Union
+from typing import Dict
 
 
 def compute_accuracy(preds: np.ndarray, labels: np.ndarray) -> float:
@@ -52,41 +51,37 @@ def compute_metrics_for_task(
 ) -> Dict[str, float]:
     """
     Compute metrics for a specific GLUE task.
-    
+
     Args:
         predictions: Model predictions
         labels: Ground truth labels
         task_name: GLUE task name
         is_regression: Whether task is regression
-        
+
     Returns:
         Dictionary of metrics
     """
     metrics = {}
-    
+
     if is_regression or task_name == 'stsb':
-        # Regression metrics
         pred_flat = np.squeeze(predictions)
         labels_flat = np.squeeze(labels)
         metrics['pearson'] = compute_pearson(pred_flat, labels_flat)
         metrics['spearman'] = compute_spearman(pred_flat, labels_flat)
         metrics['pearson_spearman'] = (metrics['pearson'] + metrics['spearman']) / 2
-        
     else:
-        # Classification metrics
         if predictions.ndim > 1:
             preds = np.argmax(predictions, axis=-1)
         else:
             preds = predictions
-        
+
         metrics['accuracy'] = compute_accuracy(preds, labels)
         metrics['f1_macro'] = compute_f1(preds, labels, average='macro')
         metrics['f1_weighted'] = compute_f1(preds, labels, average='weighted')
-        
+
         if task_name == 'cola':
             metrics['matthews_correlation'] = compute_matthews_corrcoef(preds, labels)
-        
         if task_name in ['mrpc', 'qqp']:
             metrics['f1'] = compute_f1(preds, labels, average='binary')
-    
+
     return metrics
