@@ -363,8 +363,12 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--budget_ratio", type=float, default=0.2,
-                        help="Target fraction of original attention parameters (e.g. 0.2 = 20%)")
+    parser.add_argument(
+        "--budget_ratio",
+        type=float,
+        default=0.2,
+        help="Target fraction of original attention parameters (e.g. 0.2 = 20%%)"
+    )
     args = parser.parse_args()
 
     set_seed(args.seed)
