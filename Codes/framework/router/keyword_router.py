@@ -1,7 +1,5 @@
-# framework/routing/keyword_router.py
 """
 Keyword-based task detection router.
-
 Routes inputs based on keyword presence in text.
 """
 
@@ -79,7 +77,7 @@ class KeywordRouter:
             case_sensitive: Whether to match case sensitively
             use_weights: Whether to use weighted scoring
         """
-        self.keywords = keywords or ROUTER_KEYWORDS
+        self.keywords = keywords if keywords is not None else ROUTER_KEYWORDS
         self.case_sensitive = case_sensitive
         self.use_weights = use_weights
         
@@ -91,7 +89,7 @@ class KeywordRouter:
                 flags = 0 if case_sensitive else re.IGNORECASE
                 self._patterns[task_type] = re.compile(pattern, flags)
     
-    def route(self, text: str) -> Tuple[str, Dict[str, int]]:
+    def route(self, text: str) -> Tuple[str, Dict[str, float]]:
         """
         Route text to a task type.
         
@@ -105,26 +103,29 @@ class KeywordRouter:
             >>> task_type, scores = router.route("This is better than that")
             >>> print(task_type)  # 'comparative'
         """
-        text_lower = text if self.case_sensitive else text.lower()
-        scores = {}
+        text_proc = text if self.case_sensitive else text.lower()
+        scores: Dict[str, float] = {}
         
         for task_type, words in self.keywords.items():
             if self.use_weights:
                 # Weighted scoring: longer matches count more
-                score = 0
+                score = 0.0
                 for word in words:
-                    count = text_lower.count(word.lower() if not self.case_sensitive else word)
-                    # Longer words get higher weight
-                    weight = len(word) / 10
+                    word_to_find = word if self.case_sensitive else word.lower()
+                    count = text_proc.count(word_to_find)
+                    weight = len(word) / 10.0
                     score += count * (weight if weight > 0.5 else 0.5)
                 scores[task_type] = score
             else:
                 # Simple counting
-                count = sum(1 for word in words if word in text_lower)
-                scores[task_type] = count
+                count = sum(1 for word in words if (word if self.case_sensitive else word.lower()) in text_proc)
+                scores[task_type] = float(count)
         
         # Find best match
-        best_task = max(scores, key=scores.get) if any(scores.values()) else 'factual'
+        if any(v > 0 for v in scores.values()):
+            best_task = max(scores, key=lambda k: scores[k])
+        else:
+            best_task = 'factual'
         return best_task, scores
     
     def batch_route(self, texts: List[str]) -> List[str]:
@@ -151,7 +152,7 @@ class KeywordRouter:
         """
         task, scores = self.route(text)
         total = sum(scores.values())
-        if total == 0:
+        if total == 0.0:
             return 0.0
         return scores[task] / total
     
