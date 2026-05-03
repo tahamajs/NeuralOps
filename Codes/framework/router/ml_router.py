@@ -1,4 +1,6 @@
-"""Machine learning-based routing utilities."""
+"""
+Machine learning-based task routing using fast text classifiers.
+"""
 
 import joblib
 import numpy as np
@@ -12,14 +14,13 @@ from typing import Dict, List, Optional, Tuple
 
 
 class MLRouter:
-    """ML-based router using TF-IDF and logistic regression."""
+    """ML‑based router using TF‑IDF + Logistic Regression."""
 
     def __init__(self, model_path: Optional[str] = None):
         self.model = Pipeline([
             ("tfidf", TfidfVectorizer(max_features=5000, ngram_range=(1, 2))),
             ("clf", LogisticRegression(max_iter=1000, multi_class="auto")),
         ])
-
         if model_path:
             self.load(model_path)
 
@@ -40,7 +41,7 @@ class MLRouter:
 
 
 class FastTextRouter(nn.Module):
-    """FastText-style neural router for task detection."""
+    """FastText‑style neural router for task detection."""
 
     def __init__(
         self,
@@ -58,8 +59,8 @@ class FastTextRouter(nn.Module):
         self.max_seq_len = max_seq_len
 
     def forward(self, x):
-        emb = self.embedding(x)
-        pooled = emb.mean(dim=1)
+        emb = self.embedding(x)                      # (B, L, E)
+        pooled = emb.mean(dim=1)                     # (B, E)
         pooled = self.dropout(F.relu(self.fc1(pooled)))
         return self.fc2(pooled)
 
