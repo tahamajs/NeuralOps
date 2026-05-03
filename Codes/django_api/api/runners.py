@@ -5,6 +5,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 from django.conf import settings as django_settings
 from .models import Experiment
 from .jobs import push_update
+import time
+import psutil
+from django.utils import timezone
+from .models import Experiment
+from .jobs import push_update
 
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
@@ -33,12 +38,42 @@ def _update_status(exp, status):
     exp.save()
 
 class _MetricsCallback(TrainerCallback):
-    def __init__(self, experiment):
+    def __init__(self, experiment, total_steps):
         self.experiment = experiment
+        self.total_steps = total_steps
+        self.start_time = time.time()
+    
+    def on_step_end(self, args, state, control, **kwargs):
+        # Check for cancellation
+        exp = Experiment.objects.get(id=self.experiment.id)
+        if exp.status == "cancelled":
+            control.should_training_stop = True
+            return
+        
+        # Update progress
+        if state.global_step % 50 == 0:
+            elapsed = time.time() - self.start_time
+            self.experiment.current_step = state.global_step
+            self.experiment.total_steps = self.total_steps
+            if state.global_step > 0:
+                eta = (elapsed / state.global_step) * (self.total_steps - state.global_step)
+                self.experiment.estimated_remaining_seconds = eta
+            # System metrics
+            self.experiment.cpu_usage = psutil.cpu_percent()
+            self.experiment.ram_usage_mb = psutil.virtual_memory().used / 1024**2
+            self.experiment.save()
+            push_update(self.experiment, {
+                "type": "progress",
+                "current_step": state.global_step,
+                "total_steps": self.total_steps,
+                "eta_seconds": eta if state.global_step > 0 else None,
+                "cpu": self.experiment.cpu_usage,
+                "ram_mb": self.experiment.ram_usage_mb,
+            })
+    
     def on_log(self, args, state, control, logs=None, **kwargs):
         if logs:
             push_update(self.experiment, {"type": "metrics", "data": logs})
-            _log(self.experiment, f"Step {state.global_step}: {json.dumps(logs)}")
 
 def run_training(experiment: Experiment):
     config = experiment.config
@@ -125,6 +160,8 @@ def run_training(experiment: Experiment):
         compute_metrics=get_compute_metrics(task),
     )
     trainer.add_callback(_MetricsCallback(experiment))
+    total_steps = len(encoded["train"]) // config.get("batch_size", 16) * config.get("epochs", 3)
+    trainer.add_callback(_MetricsCallback(experiment, total_steps))
 
     _log(experiment, "Training started...")
     trainer.train()
