@@ -1,163 +1,114 @@
-"""Dataset discovery utilities. No external config dependency."""
-import json, pandas as pd, torch
+"""
+Unified dataset loader driven by an ExperimentConfig.
+Supports GLUE, custom CSV/JSON/Parquet, multi‑choice, synthetic, and more.
+"""
+
+import os
 from pathlib import Path
-from torch.utils.data import Dataset
-from typing import List, Optional
+from typing import Optional, Dict, Any
+from datasets import DatasetDict
 
-class DatasetConfig:
-    def __init__(self, name: str, path: str, task_type: str = 'single',
-                 num_choices: int = 0, num_labels: int = 2):
-        self.name = name
-        self.path = path
-        self.task_type = task_type
-        self.num_choices = num_choices
-        self.num_labels = num_labels
-
+# Assume a minimal ExperimentConfig (can be expanded)
 class ExperimentConfig:
-    pass
+    def __init__(
+        self,
+        dataset_name: str,
+        dataset_path: Optional[str] = None,
+        task_type: str = "single",          # "single", "pair", "multi_choice", "regression"
+        text_columns: Optional[list] = None,
+        label_column: Optional[str] = None,
+        num_labels: int = 2,
+        metric: str = "accuracy",
+        max_seq_length: int = 128,
+        split_ratio: float = 0.1,           # for custom datasets without validation split
+        synthetic_samples: int = 5000,
+        glue_base_path: Optional[str] = None,
+        **kwargs
+    ):
+        self.dataset_name = dataset_name
+        self.dataset_path = dataset_path
+        self.task_type = task_type
+        self.text_columns = text_columns
+        self.label_column = label_column
+        self.num_labels = num_labels
+        self.metric = metric
+        self.max_seq_length = max_seq_length
+        self.split_ratio = split_ratio
+        self.synthetic_samples = synthetic_samples
+        self.glue_base_path = glue_base_path or "./data/glue"
+        self.kwargs = kwargs
 
-def discover_datasets(config: Optional[ExperimentConfig] = None) -> List[DatasetConfig]:
-    dataset_paths = {
-        "data_custom": "./data/data_custom.csv",
-        "arc_challenge": "./data/reasoning/arc_challenge/processed/arc_challenge_train.csv",
-        "arc_agi": "./data/reasoning/arc_agi/processed/arc_agi_train.csv",
-    }
-    datasets = []
-    for name, path in dataset_paths.items():
-        if not Path(path).exists():
-            print(f"❌ {name}: File not found at {path}")
-            continue
-        try:
-            df_sample = pd.read_csv(path, nrows=5)
-            is_multichoice = False
-            num_choices = 0
-            final_num_labels = 2
-            final_task_type = 'single'
-            has_choices_json = 'choices_json' in df_sample.columns
-            has_gold_answer = 'gold_answer_json' in df_sample.columns or 'answer_json' in df_sample.columns
-            if has_choices_json and has_gold_answer:
-                first_val = df_sample['choices_json'].iloc[0]
-                if isinstance(first_val, str):
-                    try:
-                        choices_list = json.loads(first_val)
-                        if isinstance(choices_list, list) and len(choices_list) >= 2:
-                            is_multichoice = True
-                            num_choices = len(choices_list)
-                            final_num_labels = num_choices
-                            final_task_type = 'mc'
-                            print(f"✅ Detected {name}: Multi-Choice ({num_choices} options from JSON)")
-                    except json.JSONDecodeError:
-                        continue
-                elif isinstance(first_val, list) and len(first_val) >= 2:
-                    is_multichoice = True
-                    num_choices = len(first_val)
-                    final_num_labels = num_choices
-                    final_task_type = 'mc'
-                    print(f"✅ Detected {name}: Multi-Choice ({num_choices} options directly)")
-            elif 'choice_a' in df_sample.columns and 'answer_label' in df_sample.columns:
-                choice_cols = [col for col in df_sample.columns if col.startswith('choice_')]
-                if len(choice_cols) >= 2:
-                    is_multichoice = True
-                    num_choices = len(choice_cols)
-                    final_num_labels = num_choices
-                    final_task_type = 'mc'
-                    print(f"✅ Detected {name}: Multi-Choice ({num_choices} options - ARC Style)")
-            elif 'endings' in df_sample.columns:
-                is_multichoice = True
-                final_task_type = 'mc'
-                print(f"✅ Detected {name}: Multi-Choice (Endings Column)")
-            elif 'label' in df_sample.columns:
-                final_task_type = 'single'
-                print(f"✅ Detected {name}: Single Label")
-            else:
-                print(f"⚠️ {name}: No clear labels found.")
-                continue
-            datasets.append(DatasetConfig(
-                name=name, path=path, task_type=final_task_type,
-                num_choices=num_choices if is_multichoice else 0,
-                num_labels=final_num_labels))
-        except Exception as e:
-            print(f"⚠️ Error analyzing {name}: {e}")
-            continue
-    return datasets
 
-class MultiChoiceDataset(Dataset):
-    def __init__(self, df: pd.DataFrame, tokenizer, max_length: int = 128):
-        self.df = df
-        self.tokenizer = tokenizer
-        self.max_length = max_length
-        self.samples = []
-        has_choices_json = 'choices_json' in df.columns
-        has_endings = 'endings' in df.columns
-        has_gold_answer = 'gold_answer_json' in df.columns or 'answer_json' in df.columns
-        valid_count = 0
-        invalid_count = 0
-        for idx in range(len(df)):
-            row = df.iloc[idx]
-            question = ""
-            choices = []
-            label = 0
-            if 'prompt' in row: question = str(row['prompt'])
-            elif 'ctx' in row: question = str(row['ctx'])
-            else:
-                parts = [str(v) for v in row[['ctx', 'ctx_a', 'ctx_b']].dropna().values]
-                question = " ".join(parts)
-            if has_choices_json:
-                try: choices_str = str(row['choices_json']); choices = json.loads(choices_str)
-                except: pass
-            elif has_endings:
-                try: endings_str = str(row['endings']); choices = json.loads(endings_str)
-                except: pass
-            if has_gold_answer:
-                if 'gold_answer_json' in row:
-                    ans_json = json.loads(str(row['gold_answer_json']))
-                    if 'choice_index' in ans_json: label = int(ans_json['choice_index'])
-                elif 'answer_json' in row:
-                    ans_json = json.loads(str(row['answer_json']))
-                    if 'choice_index' in ans_json: label = int(ans_json['choice_index'])
-            elif 'label' in row:
-                label = int(row['label'])
-            if len(choices) >= 2 and 0 <= label < len(choices):
-                self.samples.append({'question': question, 'choices': choices, 'label': label})
-                valid_count += 1
-            else:
-                invalid_count += 1
-        print(f"📊 Dataset Filtered ({len(df)} total): {valid_count} valid kept, {invalid_count} filtered.")
-    def __len__(self): return len(self.samples)
-    def __getitem__(self, idx):
-        sample = self.samples[idx]
-        choices = sample['choices']
-        label = sample['label']
-        encoded_choices = []
-        for choice in choices:
-            text = f"{sample['question']} {choice}"
-            enc = self.tokenizer(text, truncation=True, padding='max_length', max_length=self.max_length, return_tensors='pt')
-            encoded_choices.append({
-                'input_ids': enc['input_ids'].squeeze(0),
-                'attention_mask': enc['attention_mask'].squeeze(0)
-            })
-        input_ids = torch.stack([ec['input_ids'] for ec in encoded_choices])
-        attention_mask = torch.stack([ec['attention_mask'] for ec in encoded_choices])
-        return {'input_ids': input_ids, 'attention_mask': attention_mask, 'labels': torch.tensor(label, dtype=torch.long)}
+def load_dataset(config: ExperimentConfig) -> DatasetDict:
+    """
+    Load a dataset based on ExperimentConfig.
 
-class SingleLabelDataset(Dataset):
-    def __init__(self, df: pd.DataFrame, tokenizer, max_length: int = 128):
-        self.df = df
-        self.tokenizer = tokenizer
-        self.max_length = max_length
-        self.texts = []
-        self.labels = []
-        for idx in range(len(df)):
-            row = df.iloc[idx]
-            text = str(row.get('question', row.get('prompt', '')))
-            label = 0
-            self.texts.append(text)
-            self.labels.append(label)
-    def __len__(self): return len(self.texts)
-    def __getitem__(self, idx):
-        enc = self.tokenizer(self.texts[idx], truncation=True, padding='max_length', max_length=self.max_length, return_tensors='pt')
-        return {
-            'input_ids': enc['input_ids'].squeeze(0),
-            'attention_mask': enc['attention_mask'].squeeze(0),
-            'labels': torch.tensor(self.labels[idx], dtype=torch.long)
-        }
+    Args:
+        config: ExperimentConfig with dataset parameters.
+
+    Returns:
+        DatasetDict with at least 'train' and optionally 'validation'/'test' splits.
+    """
+    name = config.dataset_name.lower()
+
+    if name in {"cola", "sst2", "mrpc", "qqp", "stsb", "mnli", "qnli", "rte", "wnli"}:
+        return _load_glue(config)
+    elif name == "synthetic":
+        return _load_synthetic(config)
+    elif name.endswith((".csv", ".json", ".jsonl", ".parquet")):
+        return _load_custom(config)
+    elif name == "multi_choice":
+        return _load_multi_choice(config)
+    else:
+        # fallback: attempt HuggingFace dataset hub
+        from datasets import load_dataset as hf_load
+        dataset = hf_load(name)
+        # if only train split, split it
+        if "validation" not in dataset and "test" not in dataset:
+            dataset = dataset["train"].train_test_split(test_size=config.split_ratio)
+        return dataset
+
+
+def _load_glue(config):
+    from .glue_loader import load_glue_local, get_num_labels_and_is_regression
+    num_labels, is_regression = get_num_labels_and_is_regression(config.dataset_name)
+    dataset = load_glue_local(config.dataset_name, config.glue_base_path)
+    # Preprocessing will be done later in the pipeline
+    return dataset
+
+
+def _load_synthetic(config):
+    from .synthetic_generator import run_universal_generation
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmpdir:
+        df = run_universal_generation(
+            output_dir=Path(tmpdir),
+            total_samples_per_domain=config.synthetic_samples
+        )
+        from datasets import Dataset
+        import pandas as pd
+        dataset = Dataset.from_pandas(df)
+        dataset = dataset.train_test_split(test_size=config.split_ratio)
+        return DatasetDict({
+            "train": dataset["train"],
+            "validation": dataset["test"]
+        })
+
+
+def _load_custom(config):
+    from .custom_loader import load_dataset_from_file
+    return load_dataset_from_file(
+        file_path=config.dataset_path or config.dataset_name,
+        split_ratio=config.split_ratio,
+        text_column=config.text_columns[0] if config.text_columns else None,
+        label_column=config.label_column
+    )
+
+
+def _load_multi_choice(config):
+    # assumes dataset_path points to a CSV/JSON with multi‑choice structure
+    from .custom_loader import load_custom_dataset
+    dataset = load_custom_dataset(config.dataset_path)
+    # multi‑choice datasets are not directly usable; we'll process later with MultiChoiceDataset
+    # return the base dataset for later conversion in the training script
+    return dataset
