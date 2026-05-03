@@ -1,22 +1,47 @@
-# framework/compression/cur_moe.py
+"""
+CUR‑MoE: Interpretable CUR decomposition for MoE expert layers.
+Registered as 'cur_moe'.
+"""
+
 import torch
 import torch.nn as nn
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class CURMoECompressor:
-    """
-    CUR-MoE: Interpretable CUR decomposition for MoE experts.
-    """
-    def cur_compress(self, W, rank):
-        # Column selection (random for simplicity)
-        col_idx = torch.randperm(W.shape[1])[:rank]
-        row_idx = torch.randperm(W.shape[0])[:rank]
-        C = W[:, col_idx]
-        R = W[row_idx, :]
-        U = torch.linalg.lstsq(C, W @ torch.linalg.pinv(R)).solution
-        return C @ U @ R
 
-    def compress(self, model):
-        for name, module in model.named_modules():
-            if 'expert' in name and isinstance(module, nn.Linear):
-                module.weight.data = self.cur_compress(module.weight.data, rank=32)
-        return model
+def cur_compress(weight, rank):
+    """
+    Approximate weight matrix W as C @ U @ R, where C and R are column/row subsets.
+    """
+    out_dim, in_dim = weight.shape
+    # Column and row selection (random for simplicity; real CUR uses leverage scores)
+    col_idx = torch.randperm(in_dim)[:rank]
+    row_idx = torch.randperm(out_dim)[:rank]
+    C = weight[:, col_idx]                    # (out, rank)
+    R = weight[row_idx, :]                    # (rank, in)
+    # Solve for U: C @ U @ R ≈ W  ->  U ≈ C^+ @ W @ R^+
+    C_pinv = torch.linalg.pinv(C.float())
+    R_pinv = torch.linalg.pinv(R.float())
+    U = C_pinv @ weight.float() @ R_pinv      # (rank, rank)
+    return (C @ U @ R).to(weight.dtype)
+
+
+@COMPRESSOR_REGISTRY.register("cur_moe")
+class CURMoECompressor(BaseCompressor):
+    """
+    Compresses expert layers using CUR decomposition.
+
+    Args:
+        model: PyTorch model.
+        rank: rank for CUR decomposition (default 32).
+    """
+    def __init__(self, model, rank=32, **kwargs):
+        super().__init__(model, name="cur_moe", **kwargs)
+        self.rank = rank
+
+    def compress(self):
+        for name, module in self.model.named_modules():
+            if isinstance(module, nn.Linear) and 'expert' in name:
+                module.weight.data = cur_compress(module.weight.data, self.rank)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
