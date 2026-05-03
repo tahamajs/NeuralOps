@@ -25,19 +25,13 @@ class SpanExpandedAttention(nn.Module):
             self.lora_B = nn.Linear(lora_rank, dim, bias=False)
 
     def forward(self, x: torch.Tensor, kv_cache: tuple = None) -> torch.Tensor:
-        """
-        x: (B, L, D)
-        kv_cache: tuple of (k_cache, v_cache) each (B, C, D) where C=expansion_span
-        """
         B, L, D = x.shape
         q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)   # (B, H, L, d)
         if kv_cache is not None:
             k_cache, v_cache = kv_cache
-            # Use cached keys/values from historical context
             k = k_cache.unsqueeze(1).expand(-1, self.num_heads, -1, -1)   # (B, H, C, d)
             v = v_cache.unsqueeze(1).expand(-1, self.num_heads, -1, -1)
         else:
-            # Fallback: self attention on current input
             k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
             v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
 
