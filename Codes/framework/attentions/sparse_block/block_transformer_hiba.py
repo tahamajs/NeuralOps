@@ -8,7 +8,7 @@ from ..core.registry import ATTENTION_REGISTRY
 class BlockTransformerHIBA(BaseAttention):
     """
     Block Transformer with HIBA: intra‑block full attention + inter‑block sparse attention
-    and periodic dense rectification.
+    and periodic dense rectification to prevent fragmentation.
     """
     def __init__(self, config, rank=64, block_size=512, top_k_inter=32, rectification_interval=4):
         super().__init__(config, rank)
@@ -24,55 +24,86 @@ class BlockTransformerHIBA(BaseAttention):
         self.W_v = nn.Linear(self.dim, self.dim, bias=False)
         self.out_proj = nn.Linear(self.dim, self.dim)
 
-        # Layer‑wise counter for rectification
-        self.layer_idx = 0
+        self.layer_idx = 0   # incremented each forward pass; not a buffer intentionally
 
-    def _block_attention(self, q, k, v, block_indices):
-        # simple block sparse: not implemented fully
-        pass
+    def _intra_block_attention(self, q, k, v, causal=True):
+        """Standard scaled dot‑product attention, optionally causal."""
+        scale = self.head_dim ** -0.5
+        attn = torch.matmul(q, k.transpose(-2, -1)) * scale
+        if causal:
+            L = q.size(2)
+            mask = torch.tril(torch.ones(L, L, device=q.device)).bool()
+            attn = attn.masked_fill(~mask.unsqueeze(0).unsqueeze(0), float('-inf'))
+        return torch.matmul(F.softmax(attn, dim=-1), v)
+
+    def _inter_block_sparse(self, q_b, k_all, v_all, block_idx, num_blocks):
+        """Sparse attention to top‑k tokens from adjacent blocks."""
+        # For simplicity, select all tokens from previous block and next block if exist.
+        B, H, _, D = q_b.shape
+        total_len = k_all.size(2)
+        start_b = block_idx * self.block_size
+        end_b = min((block_idx+1)*self.block_size, total_len)
+
+        k_select = []
+        v_select = []
+        if block_idx > 0:
+            k_select.append(k_all[:, :, :start_b, :])   # previous blocks
+            v_select.append(v_all[:, :, :start_b, :])
+        if (block_idx+1)*self.block_size < total_len:
+            k_select.append(k_all[:, :, end_b:, :])      # next blocks
+            v_select.append(v_all[:, :, end_b:, :])
+
+        if not k_select:
+            return torch.zeros_like(q_b)
+        k_neighbors = torch.cat(k_select, dim=2)
+        v_neighbors = torch.cat(v_select, dim=2)
+        # For each query token, attend to the neighbor keys with sparse top‑k selection
+        scale = self.head_dim ** -0.5
+        scores = torch.matmul(q_b, k_neighbors.transpose(-2, -1)) * scale
+        mask = torch.zeros_like(scores)
+        # For each query position, pick top_k key tokens
+        topk_vals, topk_idx = torch.topk(scores, min(self.top_k_inter, k_neighbors.size(2)), dim=-1)
+        mask.scatter_(-1, topk_idx, 1.0)
+        scores = scores.masked_fill(mask == 0, float('-inf'))
+        return torch.matmul(F.softmax(scores, dim=-1), v_neighbors)
 
     def forward(self, x, mask=None, **kwargs):
         B, L, D = x.shape
-        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
+        H = self.num_heads
+        head_dim = self.head_dim
 
-        scale = self.head_dim ** -0.5
+        q = self.W_q(x).view(B, L, H, head_dim).permute(0,2,1,3)  # (B, H, L, d)
+        k = self.W_k(x).view(B, L, H, head_dim).permute(0,2,1,3)
+        v = self.W_v(x).view(B, L, H, head_dim).permute(0,2,1,3)
+
         num_blocks = (L + self.block_size - 1) // self.block_size
-
-        # Decide whether to use dense rectification this layer
         use_rectify = (self.layer_idx % self.rectification_interval == 0)
         self.layer_idx += 1
 
         if use_rectify:
-            # Full global attention
-            attn = torch.matmul(q, k.transpose(-2,-1)) * scale
-            attn = F.softmax(attn, dim=-1)
+            # Global full attention (dense rectification)
+            scale = head_dim ** -0.5
+            scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+            if mask is not None:
+                scores = scores + mask.unsqueeze(1)
+            attn_probs = F.softmax(scores, dim=-1)
+            out = torch.matmul(attn_probs, v)
         else:
-            # Intra‑block full attention + inter‑block sparse attention
             out_list = []
-            for b in range(num_blocks):
-                start = b * self.block_size
+            for b_idx in range(num_blocks):
+                start = b_idx * self.block_size
                 end = min(start + self.block_size, L)
                 q_b = q[:, :, start:end, :]
                 k_b = k[:, :, start:end, :]
                 v_b = v[:, :, start:end, :]
 
-                # Intra‑block attention (causal)
-                intra_attn = F.softmax(torch.matmul(q_b, k_b.transpose(-2,-1)) * scale, dim=-1)
-                intra_out = torch.matmul(intra_attn, v_b)
+                # Intra‑block full attention (causal)
+                intra_out = self._intra_block_attention(q_b, k_b, v_b, causal=True)
+                # Inter‑block sparse attention
+                inter_out = self._inter_block_sparse(q_b, k, v, b_idx, num_blocks)
+                out_b = intra_out + inter_out
+                out_list.append(out_b)
+            out = torch.cat(out_list, dim=2)   # (B, H, L, d)
 
-                # Inter‑block: select top‑k tokens from adjacent blocks (simplified as averaging)
-                if b > 0:
-                    k_prev = k[:, :, start-self.block_size:start, :]
-                    v_prev = v[:, :, start-self.block_size:start, :]
-                    # compute attention to previous block and average
-                    inter_attn = F.softmax(torch.matmul(q_b, k_prev.transpose(-2,-1)) * scale, dim=-1)
-                    inter_out = torch.matmul(inter_attn, v_prev)
-                    intra_out = intra_out + inter_out
-                out_list.append(intra_out)
-            attn_out = torch.cat(out_list, dim=2)
-            return self.out_proj(attn_out.permute(0,2,1,3).contiguous().view(B, L, D)), None
-
-        out = torch.matmul(attn, v).permute(0,2,1,3).contiguous().view(B, L, D)
+        out = out.permute(0,2,1,3).contiguous().view(B, L, D)
         return self.out_proj(out), None
