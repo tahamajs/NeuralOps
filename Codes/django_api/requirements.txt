@@ -1,0 +1,5 @@
+django>=4.2
+djangorestframework>=3.14
+channels>=4.0
+daphne>=4.0
+django-cors-headers>=4.0
