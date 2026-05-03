@@ -1,13 +1,11 @@
-# framework/utils/architecture.py
 """
 Architecture detection and layer pattern management for different transformer models.
 """
 
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Any
 
 
-# Architecture patterns for linear layer compression
 ARCH_PATTERNS: Dict[str, List[str]] = {
     'bert': [
         'attention.self.query',
@@ -77,19 +75,15 @@ ARCH_PATTERNS: Dict[str, List[str]] = {
 def detect_architecture(model_name: str) -> str:
     """
     Detect model architecture from name.
-    
+
     Args:
         model_name: HuggingFace model name
-        
+
     Returns:
         Architecture identifier ('bert', 'roberta', 'distilbert', etc.)
-        
-    Example:
-        >>> arch = detect_architecture("bert-base-uncased")
-        >>> print(arch)  # 'bert'
     """
     name_lower = model_name.lower()
-    
+
     if 'distilbert' in name_lower:
         return 'distilbert'
     if 'roberta' in name_lower:
@@ -106,18 +100,17 @@ def detect_architecture(model_name: str) -> str:
         return 'gpt2'
     if 'bert' in name_lower:
         return 'bert'
-    
-    # Default to bert pattern
+
     return 'bert'
 
 
 def get_layer_patterns(arch: str) -> List[str]:
     """
     Get layer name patterns for a given architecture.
-    
+
     Args:
         arch: Architecture identifier
-        
+
     Returns:
         List of pattern strings for matching layer names
     """
@@ -127,38 +120,36 @@ def get_layer_patterns(arch: str) -> List[str]:
 def get_compression_targets(model_name: str, include_ffn: bool = True) -> List[str]:
     """
     Get target layer names for compression.
-    
+
     Args:
         model_name: HuggingFace model name
         include_ffn: Whether to include FFN layers
-        
+
     Returns:
         List of layer name patterns to compress
     """
     arch = detect_architecture(model_name)
     patterns = get_layer_patterns(arch)
-    
+
     if not include_ffn:
-        # Filter out FFN patterns
         ffn_patterns = ['ffn', 'intermediate', 'mlp', 'ff', 'feedforward']
         patterns = [p for p in patterns if not any(fp in p for fp in ffn_patterns)]
-    
+
     return patterns
 
 
-def get_model_info(model_name: str) -> Dict[str, any]:
+def get_model_info(model_name: str) -> Dict[str, Any]:
     """
     Get information about a model architecture.
-    
+
     Args:
         model_name: HuggingFace model name
-        
+
     Returns:
         Dictionary with model info
     """
     arch = detect_architecture(model_name)
-    
-    # Estimate config based on architecture
+
     default_configs = {
         'bert': {'hidden_size': 768, 'num_layers': 12, 'num_heads': 12},
         'distilbert': {'hidden_size': 768, 'num_layers': 6, 'num_heads': 12},
@@ -169,15 +160,11 @@ def get_model_info(model_name: str) -> Dict[str, any]:
         'gpt2': {'hidden_size': 768, 'num_layers': 12, 'num_heads': 12},
         'xlnet': {'hidden_size': 768, 'num_layers': 12, 'num_heads': 12},
     }
-    
-    # Try to extract from name
+
     if 'large' in model_name.lower():
         default_configs['bert']['hidden_size'] = 1024
         default_configs['roberta']['hidden_size'] = 1024
-    
-    if 'base' not in model_name.lower() and 'small' not in model_name.lower():
-        pass  # keep defaults
-    
+
     return {
         'architecture': arch,
         'patterns': get_layer_patterns(arch),
@@ -188,37 +175,36 @@ def get_model_info(model_name: str) -> Dict[str, any]:
 def get_layer_count(model) -> int:
     """
     Get number of transformer layers in a model.
-    
+
     Args:
         model: HuggingFace model
-        
+
     Returns:
         Number of layers
     """
     if hasattr(model, 'config') and hasattr(model.config, 'num_hidden_layers'):
         return model.config.num_hidden_layers
-    
-    # Try to detect from encoder
+
     if hasattr(model, 'encoder') and hasattr(model.encoder, 'layer'):
         return len(model.encoder.layer)
-    
+
     if hasattr(model, 'transformer') and hasattr(model.transformer, 'layer'):
         return len(model.transformer.layer)
-    
-    return 12  # Default
+
+    return 12
 
 
 def get_hidden_size(model) -> int:
     """
     Get hidden size of a model.
-    
+
     Args:
         model: HuggingFace model
-        
+
     Returns:
         Hidden dimension size
     """
     if hasattr(model, 'config') and hasattr(model.config, 'hidden_size'):
         return model.config.hidden_size
-    
-    return 768  # Default
+
+    return 768

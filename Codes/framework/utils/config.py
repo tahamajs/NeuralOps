@@ -1,4 +1,3 @@
-# framework/utils/config.py
 """
 Configuration management utilities.
 """
@@ -6,24 +5,24 @@ Configuration management utilities.
 import json
 import yaml
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 
 def load_config(config_path: str) -> Dict[str, Any]:
     """
     Load configuration from JSON or YAML file.
-    
+
     Args:
-        config_path: Path to config file (.json or .yaml)
-        
+        config_path: Path to config file (.json, .yaml, or .yml)
+
     Returns:
         Configuration dictionary
     """
     config_path = Path(config_path)
-    
+
     if not config_path.exists():
         raise FileNotFoundError(f"Config file not found: {config_path}")
-    
+
     if config_path.suffix in ['.yaml', '.yml']:
         with open(config_path, 'r') as f:
             return yaml.safe_load(f)
@@ -35,14 +34,14 @@ def load_config(config_path: str) -> Dict[str, Any]:
 def save_config(config: Dict[str, Any], config_path: str):
     """
     Save configuration to JSON or YAML file.
-    
+
     Args:
         config: Configuration dictionary
         config_path: Output path
     """
     config_path = Path(config_path)
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     if config_path.suffix in ['.yaml', '.yml']:
         with open(config_path, 'w') as f:
             yaml.dump(config, f, default_flow_style=False)
@@ -54,11 +53,11 @@ def save_config(config: Dict[str, Any], config_path: str):
 def update_config(config: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
     """
     Recursively update a configuration dictionary.
-    
+
     Args:
         config: Original config
         updates: Updates to apply
-        
+
     Returns:
         Updated config
     """
