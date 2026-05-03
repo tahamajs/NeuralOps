@@ -1,7 +1,5 @@
 """
 Primal‑Attention: Self‑attention through Asymmetric Kernel SVD in Primal Representation
-Paper: https://arxiv.org/abs/2305.19798
-Code: https://github.com/yingyichen-cyy/PrimalAttention
 """
 import torch
 import torch.nn as nn
@@ -54,7 +52,7 @@ class PrimalAttention(BaseAttention):
         def moore_penrose(A, iters=6):
             X = torch.linalg.pinv(A)
             for _ in range(iters):
-                X = X * (2 - A @ X)
+                X = X @ (2 * torch.eye(A.shape[-1], device=A.device) - A @ X)
             return X
         F2_pinv = moore_penrose(F2)
 

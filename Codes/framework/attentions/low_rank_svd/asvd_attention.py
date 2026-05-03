@@ -1,9 +1,9 @@
 """
 ASVD Attention: Activation‑Aware Singular Value Decomposition for Attention Compression
-Paper: reference from earlier (ASVD is an improved SVD‑LLM variant)
 """
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from ..core.base import BaseAttention
 from ..core.registry import ATTENTION_REGISTRY
@@ -14,6 +14,7 @@ class ASVDAttention(BaseAttention):
     """
     Replaces MultiheadAttention with low‑rank decomposed projections
     where the SVD is weighted by activation variance (activation‑aware).
+    Stores U, S, Vh separately per projection.
     """
     def __init__(self, config, rank=64, activation_scales=None):
         super().__init__(config, rank)
@@ -22,7 +23,6 @@ class ASVDAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.rank = rank
 
-        # We store the decomposed matrices directly
         self.query_u  = nn.Parameter(torch.empty(self.all_head_size, self.rank))
         self.query_s  = nn.Parameter(torch.empty(self.rank))
         self.query_vh = nn.Parameter(torch.empty(self.rank, config.hidden_size))
@@ -41,13 +41,11 @@ class ASVDAttention(BaseAttention):
 
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
-        # If activation scales are provided, apply them during initialization
         if activation_scales is not None:
             self.apply_activation_scales(activation_scales)
 
     def apply_activation_scales(self, scales):
-        """Scale weight matrices by activation statistics before SVD (to be called externally)."""
-        # Placeholder: you can implement ASVD‑specific scaling here
+        """Placeholder: can be used to incorporate activation statistics before SVD."""
         pass
 
     def _reshape(self, x, batch_size):
@@ -57,20 +55,14 @@ class ASVDAttention(BaseAttention):
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         batch_size, seq_len, _ = hidden_states.shape
 
-        # Reconstruct full weight matrices (can be done once and cached, but for flexibility we recalc)
-        W_q = (self.query_u * self.query_s) @ self.query_vh        # (all_head, hidden)
+        W_q = (self.query_u * self.query_s) @ self.query_vh
         W_k = (self.key_u   * self.key_s)   @ self.key_vh
         W_v = (self.value_u * self.value_s) @ self.value_vh
         W_o = (self.out_proj_u * self.out_proj_s) @ self.out_proj_vh
 
-        # Compute Q, K, V
-        Q = F.linear(hidden_states, W_q, None).view(batch_size, seq_len, self.num_heads, self.head_dim)
-        K = F.linear(hidden_states, W_k, None).view(batch_size, seq_len, self.num_heads, self.head_dim)
-        V = F.linear(hidden_states, W_v, None).view(batch_size, seq_len, self.num_heads, self.head_dim)
-
-        Q = Q.permute(0, 2, 1, 3)   # (B, H, N, D)
-        K = K.permute(0, 2, 1, 3)
-        V = V.permute(0, 2, 1, 3)
+        Q = F.linear(hidden_states, W_q, None).view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0,2,1,3)
+        K = F.linear(hidden_states, W_k, None).view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0,2,1,3)
+        V = F.linear(hidden_states, W_v, None).view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0,2,1,3)
 
         scale = 1.0 / (self.head_dim ** 0.5)
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
@@ -81,8 +73,8 @@ class ASVDAttention(BaseAttention):
         probs = F.softmax(scores, dim=-1)
         probs = self.dropout(probs)
 
-        context = torch.matmul(probs, V)   # (B, H, N, D)
-        context = context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
+        context = torch.matmul(probs, V)
+        context = context.permute(0,2,1,3).contiguous().view(batch_size, seq_len, self.all_head_size)
 
         out = F.linear(context, W_o)
         return (out, None) if kwargs.get('output_attentions') else (out,)
@@ -91,22 +83,18 @@ class ASVDAttention(BaseAttention):
     def from_module(module, rank, activation_scales=None):
         """Create ASVDAttention by SVD of the original module's weights."""
         attn = ASVDAttention(module, rank, activation_scales)
-        # Extract and decompose the in_proj_weight (Q, K, V concatenated)
         w_qkv = module.in_proj_weight.data.cpu().numpy()
         w_o   = module.out_proj.weight.data.cpu().numpy()
-        # Split Q, K, V from in_proj_weight (shape: 3*all_head, hidden)
         all_head = module.embed_dim * module.num_heads
         W_q = w_qkv[:all_head, :]
         W_k = w_qkv[all_head:2*all_head, :]
         W_v = w_qkv[2*all_head:, :]
 
-        # Perform SVD on each
         def decomposed_weights(W, rank):
             U, S, Vh = np.linalg.svd(W, full_matrices=False)
             U_r = U[:, :rank]
             S_r = S[:rank]
             Vh_r = Vh[:rank, :]
-            # Return as tensor triplets
             return (torch.tensor(U_r, dtype=torch.float32),
                     torch.tensor(S_r, dtype=torch.float32),
                     torch.tensor(Vh_r, dtype=torch.float32))
