@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-import os
-import sys
+import os, sys
 
 def main():
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_api.settings")
