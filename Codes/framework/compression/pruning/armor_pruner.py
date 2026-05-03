@@ -1,33 +1,35 @@
+"""ARMOR: 2:4 sparse core + low-rank error correction. Registered as 'armor_pruner'."""
+
 import torch
 import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class ARMORPruner:
-    """
-    ARMOR: factorizes weight into 2:4 sparse core + two block‑diagonal error‑correcting matrices.
-    """
-    def __init__(self, model, block_size=4):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("armor_pruner")
+class ARMORPruner(BaseCompressor):
+    def __init__(self, model, block_size=4, **kwargs):
+        super().__init__(model, name="armor_pruner", **kwargs)
         self.block_size = block_size
 
-    def prune(self):
+    def compress(self):
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
-                W = module.weight.data.cpu().numpy()
+                W = module.weight.data.float().cpu().numpy()
                 N, M = W.shape
-                # Create 2:4 sparsity pattern: within each group of 4, keep only 2 largest
                 W_pruned = np.zeros_like(W)
                 for i in range(0, N, self.block_size):
                     blk = W[i:i+self.block_size, :]
-                    # For each row, keep 2 largest abs values
                     abs_blk = np.abs(blk)
-                    threshold = np.sort(abs_blk, axis=1)[:, -2:]  # top 2
+                    # keep top 2 per row
+                    threshold = np.sort(abs_blk, axis=1)[:, -2:]
                     mask = abs_blk >= threshold[:, 0:1]
                     W_pruned[i:i+self.block_size] = blk * mask
-                # Add block‑diagonal error correction (simplified: add back residual low‑rank)
-                residual = (W - W_pruned) @ np.eye(M)
+                # Low-rank correction
+                residual = W - W_pruned
                 U, S, Vt = np.linalg.svd(residual, full_matrices=False)
                 rank = min(16, len(S))
                 correction = U[:, :rank] @ np.diag(S[:rank]) @ Vt[:rank, :]
                 W_armor = W_pruned + correction
                 module.weight.data = torch.tensor(W_armor, dtype=module.weight.dtype, device=module.weight.device)
-        return self.model
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()

@@ -1,17 +1,15 @@
-"""
-OATS: Outlier‑Aware Pruning through Sparse and Low Rank Decomposition
-Paper: https://arxiv.org/abs/2409.13652
-Code: https://github.com/stephenqz/OATS
-"""
+"""OATS: Outlier-Aware Training Sparsification. Registered as 'oats'."""
+
 import torch
 import torch.nn as nn
 import numpy as np
-from scipy.linalg import svd
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-
-class OATSCompressor:
-    def __init__(self, model, tokenizer, sparsity=0.5, rank_ratio=0.2, num_iters=5, device="cuda"):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("oats")
+class OATSCompressor(BaseCompressor):
+    def __init__(self, model, tokenizer, sparsity=0.5, rank_ratio=0.2, num_iters=5, device="cuda", **kwargs):
+        super().__init__(model, name="oats", **kwargs)
         self.tokenizer = tokenizer
         self.sparsity = sparsity
         self.rank_ratio = rank_ratio
@@ -22,23 +20,19 @@ class OATSCompressor:
         return (inputs.T @ inputs) / inputs.shape[0]
 
     def _oats_decompose(self, W, M, sparsity, rank_ratio, num_iters):
-        # Scale weight by Cholesky of M
-        L_chol = torch.linalg.cholesky(M)   # (hidden, hidden)
+        L_chol = torch.linalg.cholesky(M)
         W_scaled = W @ L_chol.T
-        # SVD
-        U, s, Vt = svd(W_scaled.cpu().numpy(), full_matrices=False)
+        U, s, Vt = np.linalg.svd(W_scaled.cpu().numpy(), full_matrices=False)
         rank = max(1, int(rank_ratio * min(W.shape)))
         L = U[:, :rank] @ np.diag(s[:rank]) @ Vt[:rank, :]
         R = W_scaled.cpu().numpy() - L
-
-        # Sparsify residual
         flat_R = R.flatten()
         n_keep = int((1 - sparsity) * len(flat_R))
         threshold = np.sort(np.abs(flat_R))[-n_keep]
         S = R * (np.abs(R) >= threshold)
 
         for _ in range(num_iters):
-            U, s, Vt = svd(R - S, full_matrices=False)
+            U, s, Vt = np.linalg.svd(R - S, full_matrices=False)
             rank = max(1, int(rank_ratio * min(W.shape)))
             L = U[:, :rank] @ np.diag(s[:rank]) @ Vt[:rank, :]
             R_new = R - L
@@ -66,4 +60,5 @@ class OATSCompressor:
                 W = module.weight.data
                 W_comp = self._oats_decompose(W, M, self.sparsity, self.rank_ratio, self.num_iters)
                 module.weight.data = W_comp
-        return self.model, self.tokenizer
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
