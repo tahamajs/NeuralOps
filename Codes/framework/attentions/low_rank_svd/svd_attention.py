@@ -6,6 +6,10 @@ from ..core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("svd")
 class SVDLinearAttention(BaseAttention):
+    """
+    SVD‑compressed attention: uses low‑rank projection of K and V using SVD of the
+    hidden states (scene‑dependent) when seq_len > rank, else full attention.
+    """
     def __init__(self, config, rank=64):
         super().__init__(config, rank)
         self.num_heads = config.num_attention_heads
@@ -28,7 +32,6 @@ class SVDLinearAttention(BaseAttention):
         K = self.transpose_for_scores(self.key(hidden_states))
         V = self.transpose_for_scores(self.value(hidden_states))
 
-        # If no compression or sequence too short, use full attention
         if self.rank is None or seq_len <= self.rank:
             scores = torch.matmul(Q, K.transpose(-2, -1)) / (self.head_dim ** 0.5)
             if attention_mask is not None:
@@ -37,21 +40,18 @@ class SVDLinearAttention(BaseAttention):
             probs = self.dropout(probs)
             context = torch.matmul(probs, V)
         else:
-            # SVD compression – move to CPU if needed
+            # SVD compression – for each batch element
             original_device = hidden_states.device
-            if original_device.type == 'mps':
-                hidden_cpu = hidden_states.cpu()
-            else:
-                hidden_cpu = hidden_states
+            hidden_cpu = hidden_states.cpu() if original_device.type == 'mps' else hidden_states
 
             U_r_list = []
             for b in range(batch_size):
                 U, S, _ = torch.svd_lowrank(hidden_cpu[b], q=self.rank, niter=2)
                 U_r_list.append(U[:, :self.rank])
-            U_r = torch.stack(U_r_list, dim=0).to(original_device)
-            U_r = U_r.unsqueeze(1)   # (batch, 1, seq_len, rank)
+            U_r = torch.stack(U_r_list, dim=0).to(original_device)          # (B, seq_len, rank)
+            U_r = U_r.unsqueeze(1)                                          # (B, 1, seq_len, rank)
 
-            K_proj = torch.matmul(U_r.transpose(-2, -1), K)
+            K_proj = torch.matmul(U_r.transpose(-2, -1), K)                 # (B,1,rank,d) -> actually (B,H,rank,d)
             V_proj = torch.matmul(U_r.transpose(-2, -1), V)
 
             scores = torch.matmul(Q, K_proj.transpose(-2, -1)) / (self.head_dim ** 0.5)
@@ -62,6 +62,5 @@ class SVDLinearAttention(BaseAttention):
             context = torch.matmul(probs, V_proj)
 
         context = context.permute(0, 2, 1, 3).contiguous()
-        new_shape = context.size()[:-2] + (self.all_head_size,)
-        context = context.view(*new_shape)
+        context = context.view(batch_size, seq_len, self.all_head_size)
         return (context, None) if kwargs.get('output_attentions', False) else (context,)
