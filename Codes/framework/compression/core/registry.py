@@ -3,7 +3,7 @@ Registry for compression methods.
 Allows plug‑and‑play loading of compressors via a simple key.
 """
 
-from typing import Callable, Dict, Optional, Type, Union
+from typing import Dict, Optional, Type
 from .base import BaseCompressor
 
 
@@ -11,13 +11,12 @@ class CompressorRegistry:
     """
     A registry for compressor classes.
 
-    Usage:
-        COMPRESSOR_REGISTRY.register("my_method")
+    Usage::
+
         @COMPRESSOR_REGISTRY.register("my_method")
         class MyCompressor(BaseCompressor):
             ...
 
-        # Later:
         compressor_cls = COMPRESSOR_REGISTRY.get("my_method")
         compressor = compressor_cls(model, ...)
     """
@@ -36,12 +35,11 @@ class CompressorRegistry:
         def decorator(obj: Type[BaseCompressor]) -> Type[BaseCompressor]:
             nonlocal key
             if not issubclass(obj, BaseCompressor):
-                raise TypeError(f"Registered class {obj.__name__} must inherit from BaseCompressor")
+                raise TypeError(
+                    f"Registered class {obj.__name__} must inherit from BaseCompressor"
+                )
             if key is None:
                 key = obj.__name__
-            if key in self._registry:
-                # Allow overwriting with a warning? We'll simply update silently.
-                pass
             self._registry[key] = obj
             return obj
         return decorator
