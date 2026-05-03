@@ -1,4 +1,4 @@
-# AEGIS‑Attention Family
+  10 # AEGIS‑Attention Family
 
 A collection of **efficient attention modules** for DistilBERT, ranging from simple low‑rank hybrids to a full‑fledged adaptive architecture with tiled sliding windows, stable kernel features, context fusion, and SVD‑factorised projections.  
 All variants are zero‑shot drop‑in replacements – weights are copied from the original DistilBERT attention layer.
