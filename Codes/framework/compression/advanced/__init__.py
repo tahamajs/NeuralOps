@@ -1,5 +1,4 @@
-# Auto-generated __init__.py
-from . import adaptive_compressor
-from . import advanced_methods
-from . import entropy_budget_allocation
-from . import sdrm_compressor
+from .adaptive_compressor import AdaptiveTransformerCompressor
+from .advanced_methods import AdvancedZeroShotCompressor
+from .entropy_budget_allocation import EntropyBudgetCompressor
+from .sdrm_compressor import SDRMCompressor
