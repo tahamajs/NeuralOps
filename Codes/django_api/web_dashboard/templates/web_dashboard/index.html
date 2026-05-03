@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Efficient Transformer Toolkit – Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gpu-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .cpu-card { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+        .progress-bar-determinate { transition: width 0.5s; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">🧠 Efficient Transformer Toolkit</span>
+            <div class="d-flex">
+                <a href="{% url 'create_job' %}" class="btn btn-primary me-2">+ New Experiment</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- System Metrics Cards -->
+            <div class="col-md-3 mb-3">
+                <div class="card gpu-card">
+                    <div class="card-body">
+                        <h5 class="card-title">GPU Usage</h5>
+                        <div class="d-flex justify-content-between">
+                            <span>Utilization:</span> <span id="gpu-util">--%</span>
+                        </div>
+                        <div class="progress mt-2" style="height: 20px;">
+                            <div class="progress-bar bg-warning" id="gpu-util-bar" style="width:0%"></div>
+                        </div>
+                        <div class="mt-2 d-flex justify-content-between">
+                            <span>Memory:</span> <span id="gpu-mem">-- MB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card cpu-card">
+                    <div class="card-body">
+                        <h5 class="card-title">CPU Usage</h5>
+                        <h2 id="cpu-util">--%</h2>
+                        <div class="progress mt-2" style="height: 20px;">
+                            <div class="progress-bar" id="cpu-util-bar" style="width:0%"></div>
+                        </div>
+                        <p>RAM: <span id="ram-usage">-- GB</span> / <span id="ram-total">-- GB</span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Active Jobs</h5>
+                        <h2 id="active-jobs-count">0</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">Completed</h5>
+                        <h2 id="completed-jobs-count">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Experiments List -->
+        <h2 class="mb-3">Experiments</h2>
+        <div class="row" id="experiment-list">
+            {% for exp in experiments %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ exp.config.model_name|default:"Unknown" }}</h5>
+                        <p>Task: {{ exp.config.task_name|default:"N/A" }}</p>
+                        <p>Attention: {{ exp.config.attention_type|default:"full" }}</p>
+                        <p>Status: <span class="badge bg-{% if exp.status == 'completed' %}success{% elif exp.status == 'running' %}warning{% elif exp.status == 'failed' %}danger{% else %}secondary{% endif %}">{{ exp.status }}</span></p>
+                        {% if exp.status == 'running' %}
+                        <div class="progress mb-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {% widthratio exp.current_step exp.total_steps 100 %}%"></div>
+                        </div>
+                        <small>ETA: {{ exp.estimated_remaining_seconds|default:"--" }}s</small>
+                        {% endif %}
+                        <a href="{% url 'job_detail' exp.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        async function refreshSystemMetrics() {
+            const resp = await fetch('/api/system-metrics/');
+            const data = await resp.json();
+            document.getElementById('gpu-util').innerText = (data.gpu_percent || '--') + '%';
+            document.getElementById('gpu-util-bar').style.width = (data.gpu_percent || 0) + '%';
+            document.getElementById('gpu-mem').innerText = (data.gpu_memory_used_mb || '--') + ' MB';
+            document.getElementById('cpu-util').innerText = data.cpu_percent + '%';
+            document.getElementById('cpu-util-bar').style.width = data.cpu_percent + '%';
+            document.getElementById('ram-usage').innerText = data.ram_used_gb;
+            document.getElementById('ram-total').innerText = data.ram_total_gb;
+        }
+        setInterval(refreshSystemMetrics, 3000);
+        refreshSystemMetrics();
+    </script>
+</body>
+</html>
