@@ -1,10 +1,4 @@
-from django.shortcuts import render
-
-# Create your views here.
-import os
-import shutil
-import tempfile
-import logging
+import os, shutil, tempfile, json, logging
 from django.http import FileResponse, Http404
 from django.conf import settings
 from rest_framework.decorators import api_view
@@ -19,7 +13,7 @@ from framework.compression.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# ── Config discovery ─────────────────────────────────────────────
+# ── Config endpoints ─────────────────────────────────────────────
 @api_view(["GET"])
 def list_attentions(request):
     return Response({"attentions": list(ATTENTION_REGISTRY.keys())})
@@ -32,8 +26,6 @@ def list_models(request):
             "bert-base-uncased",
             "roberta-base",
             "albert-base-v2",
-            "gpt2",
-            "microsoft/deberta-v3-base",
         ]
     })
 
@@ -42,6 +34,15 @@ def list_tasks(request):
     return Response({
         "tasks": ["cola", "sst2", "mrpc", "qqp", "stsb", "mnli", "qnli", "rte", "wnli"]
     })
+
+@api_view(["GET"])
+def list_compressors(request):
+    return Response({"compressors": list(COMPRESSOR_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_methods(request):
+    # Training methods (baseline, lora, rdrop, etc.)
+    return Response({"methods": ["baseline", "lora", "rdrop", "r3f", "fisher_lora", "fisher_gelora", "llrd"]})
 
 @api_view(["GET"])
 def list_presets(request):
@@ -92,25 +93,30 @@ def experiment_artifacts(request, job_id):
     exp_dir = settings.MEDIA_ROOT / str(job_id)
     if not exp_dir.exists():
         return Response({"artifacts": []})
-    files = []
+    artifacts = []
     for p in exp_dir.rglob("*"):
         if p.is_file():
-            files.append(str(p.relative_to(exp_dir)))
-    return Response({"artifacts": files})
+            artifacts.append(str(p.relative_to(exp_dir)))
+    return Response({"artifacts": artifacts})
 
-# ── Model download ────────────────────────────────────────────────
+# ── Download a specific artifact (e.g., metrics.json, training_history.png) ──
+@api_view(["GET"])
+def experiment_artifact_download(request, job_id, artifact_path):
+    exp_dir = settings.MEDIA_ROOT / str(job_id)
+    file_path = exp_dir / artifact_path
+    if not file_path.exists() or not file_path.is_file():
+        raise Http404("Artifact not found")
+    return FileResponse(open(file_path, "rb"), as_attachment=True, filename=os.path.basename(artifact_path))
+
+# ── Model download (zip entire model directory) ────────────────────
 @api_view(["GET"])
 def experiment_model_download(request, job_id):
-    """Zip the trained model directory and return it as a download."""
     exp_dir = settings.MEDIA_ROOT / str(job_id) / "model"
     if not exp_dir.exists():
-        raise Http404("Model directory not found for this experiment.")
-
-    # Create a zip archive in memory
+        raise Http404("Model directory not found")
+    # Create a zip archive in temp
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
     shutil.make_archive(tmp.name.replace(".zip", ""), "zip", exp_dir)
     response = FileResponse(open(tmp.name, "rb"), as_attachment=True, filename="model.zip")
-    # After response is sent, clean up
-    # (Note: FileResponse does not delete the temp file automatically; we can't easily hook into closing.
-    #  For production, consider using a streaming response and cleaning up after.)
+    # Note: temp file cleanup not handled here; consider a scheduled cleanup or use StreamingHttpResponse.
     return response
