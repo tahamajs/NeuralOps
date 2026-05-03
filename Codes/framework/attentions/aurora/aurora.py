@@ -9,7 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple, List, Dict
 from dataclasses import dataclass
-import numpy as np
+
 
 # --------------------------------------------------------------------------
 # Configuration
@@ -71,7 +71,7 @@ class AURORAConfig:
 
 
 # --------------------------------------------------------------------------
-# Utility functions (copied from original)
+# Utility components
 # --------------------------------------------------------------------------
 def _select_rank_svd(W: torch.Tensor, energy: float, min_r: int = 4) -> int:
     """Energy‑thresholded rank from singular values."""
@@ -84,7 +84,7 @@ def _select_rank_svd(W: torch.Tensor, energy: float, min_r: int = 4) -> int:
 
 
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    """Rectified softmax — ~47 % sparse, no attention sink."""
+    """Rectified softmax — ~47% sparse, no attention sink."""
     m = x.max(dim=dim, keepdim=True).values
     e = torch.exp((x - m) / temperature)
     denom = e - torch.exp(-m / temperature)
@@ -103,7 +103,8 @@ class DeltaKVStore:
     @torch.no_grad()
     def update(self, k: torch.Tensor, v: torch.Tensor):
         B, H, N, D = k.shape
-        if B == 0: return
+        if B == 0:
+            return
         ks = k[0]; vs = v[0]
         if self.ref_k is None:
             self.ref_k, self.ref_v = ks, vs
@@ -116,8 +117,10 @@ class DeltaKVStore:
 
     @torch.no_grad()
     def compress(self, k: torch.Tensor, v: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        if self.ref_k is None: return k, v
-        B, H, N, D = k.shape; tk = min(self.topk, self.ref_k.size(1))
+        if self.ref_k is None:
+            return k, v
+        B, H, N, D = k.shape
+        tk = min(self.topk, self.ref_k.size(1))
         sim = torch.matmul(k, self.ref_k.transpose(-2, -1))
         _, idx = sim.topk(tk, dim=-1)
         idx_e = idx.unsqueeze(-1).expand(-1, -1, -1, -1, D)
@@ -129,7 +132,8 @@ class DeltaKVStore:
 class KVTQuantiser:
     """PCA‑decorrelated adaptive quantisation (KVTC, ICLR 2026)."""
     def __init__(self, n_bits: int = 4, pca_ratio: float = 0.95):
-        self.n_bits = n_bits; self.pca_ratio = pca_ratio
+        self.n_bits = n_bits
+        self.pca_ratio = pca_ratio
         self.basis: Optional[torch.Tensor] = None
         self.scale: Optional[torch.Tensor] = None
         self.zp: Optional[torch.Tensor] = None
@@ -137,9 +141,12 @@ class KVTQuantiser:
 
     @torch.no_grad()
     def fit(self, x: torch.Tensor):
-        X = x.float(); m = X.mean(dim=0, keepdim=True); Xc = X - m
+        X = x.float()
+        m = X.mean(dim=0, keepdim=True)
+        Xc = X - m
         U, S, _ = torch.linalg.svd(Xc, full_matrices=False)
-        total = (S ** 2).sum(); cum = torch.cumsum(S ** 2, dim=0) / total
+        total = (S ** 2).sum()
+        cum = torch.cumsum(S ** 2, dim=0) / total
         r = min(int(torch.searchsorted(cum, self.pca_ratio).item()) + 1, X.size(1))
         self.basis = U[:, :r].contiguous()
         proj = Xc @ self.basis
@@ -149,7 +156,8 @@ class KVTQuantiser:
         self.fitted = True
 
     def compress(self, x: torch.Tensor) -> torch.Tensor:
-        if not self.fitted or self.basis is None: return x
+        if not self.fitted or self.basis is None:
+            return x
         *B, D = x.shape
         xc = x.float() - x.float().mean(dim=-1, keepdim=True)
         proj = xc @ self.basis.to(x.device)
@@ -186,7 +194,8 @@ class QSLProjection(nn.Module):
                     mask_2d[idx] = 1.0
                     residual[i, j:j+4] *= mask_2d
         r_min, r_max = residual.min(), residual.max()
-        if r_max == r_min: r_max = r_min + 1e-6
+        if r_max == r_min:
+            r_max = r_min + 1e-6
         scale_q = (r_max - r_min) / (2 ** bits - 1)
         self.register_buffer('sparse_q', torch.round((residual - r_min) / scale_q).to(torch.int8))
         self.register_buffer('r_min', r_min)
@@ -261,6 +270,7 @@ class AURORAAttention(nn.Module):
         self.layer_idx = layer_idx
         self.bert_mode = bert_mode
 
+        # Build projections
         if pretrained_attn is not None:
             q_w = pretrained_attn.q_lin.weight.data
             k_w = pretrained_attn.k_lin.weight.data
@@ -269,17 +279,17 @@ class AURORAAttention(nn.Module):
 
             if aurora_cfg.slim_enabled:
                 self.q_proj = QSLProjection(q_w, pretrained_attn.q_lin.bias,
-                                             aurora_cfg.slim_energy, aurora_cfg.slim_quant_bits,
-                                             aurora_cfg.slim_use_2of4)
+                                            aurora_cfg.slim_energy, aurora_cfg.slim_quant_bits,
+                                            aurora_cfg.slim_use_2of4)
                 self.k_proj = QSLProjection(k_w, pretrained_attn.k_lin.bias,
-                                             aurora_cfg.slim_energy, aurora_cfg.slim_quant_bits,
-                                             aurora_cfg.slim_use_2of4)
+                                            aurora_cfg.slim_energy, aurora_cfg.slim_quant_bits,
+                                            aurora_cfg.slim_use_2of4)
                 self.v_proj = QSLProjection(v_w, pretrained_attn.v_lin.bias,
-                                             aurora_cfg.slim_energy, aurora_cfg.slim_quant_bits,
-                                             aurora_cfg.slim_use_2of4)
+                                            aurora_cfg.slim_energy, aurora_cfg.slim_quant_bits,
+                                            aurora_cfg.slim_use_2of4)
                 self.out_proj = QSLProjection(o_w, pretrained_attn.out_lin.bias,
-                                               aurora_cfg.slim_energy, aurora_cfg.slim_quant_bits,
-                                               aurora_cfg.slim_use_2of4)
+                                              aurora_cfg.slim_energy, aurora_cfg.slim_quant_bits,
+                                              aurora_cfg.slim_use_2of4)
             else:
                 self.q_proj = nn.Linear(self.hidden_size, self.all_head_size, bias=True)
                 self.k_proj = nn.Linear(self.hidden_size, self.all_head_size, bias=True)
@@ -292,10 +302,12 @@ class AURORAAttention(nn.Module):
             self.v_proj = nn.Linear(self.hidden_size, self.all_head_size, bias=True)
             self.out_proj = nn.Linear(self.all_head_size, self.hidden_size, bias=True)
 
+        # NMF parallel path
         self.nmf_proj = None
         if aurora_cfg.nmf_enabled:
             self.nmf_proj = NMFProjection(self.hidden_size, self.all_head_size, aurora_cfg.nmf_rank)
 
+        # ProxSparse masks (attach to low‑rank branches if SLiM is used)
         self.ps_q = self.ps_k = self.ps_v = self.ps_out = None
         if aurora_cfg.proxsparse_enabled and hasattr(self.q_proj, 'lr_rank'):
             self.ps_q = ProxSparseMask(self.q_proj.lr_rank, aurora_cfg.proxsparse_sparsity)
@@ -303,16 +315,19 @@ class AURORAAttention(nn.Module):
             self.ps_v = ProxSparseMask(self.v_proj.lr_rank, aurora_cfg.proxsparse_sparsity)
             self.ps_out = ProxSparseMask(self.out_proj.lr_rank, aurora_cfg.proxsparse_sparsity)
 
+        # SliceGPT basis
         self.slicegpt_basis: Optional[torch.Tensor] = None
         if aurora_cfg.slicegpt_enabled:
             self.effective_dim = max(8, int(self.head_dim * (1.0 - aurora_cfg.slicegpt_reduce_ratio)))
         else:
             self.effective_dim = self.head_dim
 
+        # Dual pathway kernel
         if aurora_cfg.dual_pathway_enabled:
             self.rff_proj = nn.Parameter(
                 torch.randn(self.head_dim, aurora_cfg.kernel_rff_features) * 0.02)
 
+        # DeltaKV & KVTC
         self.deltakv: Optional[DeltaKVStore] = None
         self.kvt: Optional[KVTQuantiser] = None
         if aurora_cfg.deltakv_enabled:
@@ -327,13 +342,21 @@ class AURORAAttention(nn.Module):
 
     def _copy_weights(self, q_w, k_w, v_w, o_w, pretrained_attn):
         self.q_proj.weight.data = q_w.clone()
-        self.q_proj.bias.data = pretrained_attn.q_lin.bias.data.clone() if pretrained_attn.q_lin.bias is not None else torch.zeros(self.all_head_size)
+        self.q_proj.bias.data = (pretrained_attn.q_lin.bias.data.clone()
+                                 if pretrained_attn.q_lin.bias is not None
+                                 else torch.zeros(self.all_head_size))
         self.k_proj.weight.data = k_w.clone()
-        self.k_proj.bias.data = pretrained_attn.k_lin.bias.data.clone() if pretrained_attn.k_lin.bias is not None else torch.zeros(self.all_head_size)
+        self.k_proj.bias.data = (pretrained_attn.k_lin.bias.data.clone()
+                                 if pretrained_attn.k_lin.bias is not None
+                                 else torch.zeros(self.all_head_size))
         self.v_proj.weight.data = v_w.clone()
-        self.v_proj.bias.data = pretrained_attn.v_lin.bias.data.clone() if pretrained_attn.v_lin.bias is not None else torch.zeros(self.all_head_size)
+        self.v_proj.bias.data = (pretrained_attn.v_lin.bias.data.clone()
+                                 if pretrained_attn.v_lin.bias is not None
+                                 else torch.zeros(self.all_head_size))
         self.out_proj.weight.data = o_w.clone()
-        self.out_proj.bias.data = pretrained_attn.out_lin.bias.data.clone() if pretrained_attn.out_lin.bias is not None else torch.zeros(self.hidden_size)
+        self.out_proj.bias.data = (pretrained_attn.out_lin.bias.data.clone()
+                                   if pretrained_attn.out_lin.bias is not None
+                                   else torch.zeros(self.hidden_size))
 
     @torch.no_grad()
     def _oats_score_tokens(self, hidden_states: torch.Tensor) -> torch.Tensor:
@@ -349,7 +372,8 @@ class AURORAAttention(nn.Module):
         scores = (Xc ** 2 / diag_cov.unsqueeze(0)).sum(dim=-1)
         return scores.view(B, N)
 
-    def _rpca_decompose_attention(self, scores_full: torch.Tensor, rank: int) -> Tuple[torch.Tensor, torch.Tensor]:
+    def _rpca_decompose_attention(self, scores_full: torch.Tensor,
+                                  rank: int) -> Tuple[torch.Tensor, torch.Tensor]:
         B, H, N, _ = scores_full.shape
         k = max(1, int(N * self.cfg.oats_critical_ratio))
         _, top_idx = scores_full.topk(k, dim=-1)
@@ -362,7 +386,8 @@ class AURORAAttention(nn.Module):
         scores_lr = scores_lr.reshape(B, H, N, N).to(scores_full.dtype)
         return sparse_mask, scores_lr
 
-    def _kernel_linear_attention(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor) -> torch.Tensor:
+    def _kernel_linear_attention(self, Q: torch.Tensor, K: torch.Tensor,
+                                 V: torch.Tensor) -> torch.Tensor:
         B, H, N, D = Q.shape
         proj = torch.matmul(K, self.rff_proj.to(K.device))
         phi_k = torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) / (self.rff_proj.size(1) ** 0.25)
@@ -374,7 +399,8 @@ class AURORAAttention(nn.Module):
         lin_ctx = lin_ctx / (torch.matmul(phi_q, Z.transpose(-2, -1)) + 1e-8)
         return lin_ctx
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
+    def forward(self, hidden_states, attention_mask=None, head_mask=None,
+                output_attentions=False, **kwargs):
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         cfg = self.cfg
@@ -438,10 +464,11 @@ class AURORAAttention(nn.Module):
                 V = self.kvt.compress(V.reshape(B * H, N, D)).view(B, H, N, D)
 
         scale = D ** -0.5
-        scores_crit = torch.matmul(Q, K.transpose(-2, -1)) * scale if mask_critical.sum() > 0 else torch.zeros(B, H, N, N, device=Q.device)
+        scores_crit = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         if cfg.dual_pathway_enabled and mask_marginal.sum() > 0:
-            lin_ctx = self._kernel_linear_attention(Q * mask_marginal.unsqueeze(1).unsqueeze(-1), K, V)
+            lin_ctx = self._kernel_linear_attention(
+                Q * mask_marginal.unsqueeze(1).unsqueeze(-1), K, V)
         else:
             lin_ctx = torch.zeros_like(V)
 
@@ -463,20 +490,22 @@ class AURORAAttention(nn.Module):
             elif mask_attn.dim() == 2:
                 token_valid = mask_attn.bool()
             if token_valid is not None:
-                scores_combined = scores_combined.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e5)
+                scores_combined = scores_combined.masked_fill(
+                    ~token_valid.unsqueeze(1).unsqueeze(2), -1e5)
 
-        attn_w = softpick(scores_combined, dim=-1, temperature=cfg.softpick_temp) if cfg.softpick_enabled else F.softmax(scores_combined, dim=-1)
+        attn_w = (softpick(scores_combined, dim=-1, temperature=cfg.softpick_temp)
+                  if cfg.softpick_enabled else F.softmax(scores_combined, dim=-1))
         attn_w = self.dropout(attn_w)
 
-        context_full = torch.matmul(attn_w, V) if mask_critical.sum() > 0 else torch.zeros_like(V)
-
+        context_full = torch.matmul(attn_w, V)
         weight_critical = mask_critical.unsqueeze(1).unsqueeze(-1).to(context_full.dtype)
         weight_marginal = mask_marginal.unsqueeze(1).unsqueeze(-1).to(lin_ctx.dtype)
         context = weight_critical * context_full + weight_marginal * lin_ctx
 
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
 
-        if cfg.slicegpt_enabled and self.slicegpt_basis is not None and self.effective_dim < self.head_dim:
+        if (cfg.slicegpt_enabled and self.slicegpt_basis is not None
+                and self.effective_dim < self.head_dim):
             context = torch.matmul(context, self.slicegpt_basis)
 
         out = self.out_proj(context)
@@ -487,14 +516,17 @@ class AURORAAttention(nn.Module):
         return (out, attn_w) if output_attentions else (out,)
 
     def get_ortho_loss(self) -> torch.Tensor:
-        return torch.tensor(0.0, device=self.out_proj.bias.device
-                            if isinstance(self.out_proj, nn.Linear)
-                            else self.out_proj.B.device)
+        if isinstance(self.out_proj, nn.Linear):
+            return torch.tensor(0.0, device=self.out_proj.bias.device)
+        return torch.tensor(0.0, device=self.out_proj.B.device)
 
 
 # ------------------------------------------------------------
 # Framework injection & registration
 # ------------------------------------------------------------
+# from framework.attentions.core.registry import ATTENTION_REGISTRY   # uncomment in your project
+ATTENTION_REGISTRY = {}  # dummy placeholder – replace with your actual registry
+
 def inject_aurora_into_distilbert(layer, model_config, aurora_cfg, layer_idx, total_layers, old_attn):
     new_attn = AURORAAttention(model_config=model_config, aurora_cfg=aurora_cfg,
                                layer_idx=layer_idx, total_layers=total_layers,
@@ -502,10 +534,6 @@ def inject_aurora_into_distilbert(layer, model_config, aurora_cfg, layer_idx, to
     layer.attention = new_attn
     return new_attn
 
-
-from framework.attentions.core.registry import ATTENTION_REGISTRY
-
-@ATTENTION_REGISTRY.register("aurora")
 def inject_aurora(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     """Registry bridge that builds AURORAConfig from CompressionConfig."""
     cfg = AURORAConfig(
@@ -513,6 +541,8 @@ def inject_aurora(layer, model_config, comp_config, layer_idx, total_layers, old
         slim_enabled=getattr(comp_config, 'slim_enabled', True),
         dual_pathway_enabled=getattr(comp_config, 'aks_enabled', True),
         softpick_enabled=True,
-        # other fields can be mapped similarly if needed
+        # add other mappings as needed
     )
     return inject_aurora_into_distilbert(layer, model_config, cfg, layer_idx, total_layers, old_attn)
+
+ATTENTION_REGISTRY["aurora"] = inject_aurora
