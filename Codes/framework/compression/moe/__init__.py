@@ -1,3 +1,2 @@
-# Auto-generated __init__.py
-from . import cur_moe
-from . import tomoe_compressor
+from .cur_moe import CURMoECompressor
+from .tomoe_compressor import ToMoECompressor
