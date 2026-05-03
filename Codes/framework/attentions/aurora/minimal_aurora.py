@@ -6,7 +6,7 @@ SVD‑factorised Q/K/V/Out projections only.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
+
 
 class FactorisedLinear(nn.Module):
     """SVD‑factorised linear layer."""
@@ -30,7 +30,10 @@ class FactorisedLinear(nn.Module):
             self.up.bias.data = pretrained_bias.float()
         else:
             self.up.bias.data.zero_()
-    def forward(self, x): return self.up(self.down(x))
+
+    def forward(self, x):
+        return self.up(self.down(x))
+
 
 class MinimalAURORAAttention(nn.Module):
     def __init__(self, model_config, energy=0.95, dropout=0.1, pretrained_attn=None):
@@ -42,13 +45,18 @@ class MinimalAURORAAttention(nn.Module):
         self.all_head_size = self.num_heads * self.head_dim
         self.hidden_size = model_config.hidden_size
 
-        self.q_proj = FactorisedLinear(pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias.data, energy)
-        self.k_proj = FactorisedLinear(pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias.data, energy)
-        self.v_proj = FactorisedLinear(pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias.data, energy)
-        self.out_proj = FactorisedLinear(pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias.data, energy)
+        self.q_proj = FactorisedLinear(pretrained_attn.q_lin.weight.data,
+                                       pretrained_attn.q_lin.bias.data, energy)
+        self.k_proj = FactorisedLinear(pretrained_attn.k_lin.weight.data,
+                                       pretrained_attn.k_lin.bias.data, energy)
+        self.v_proj = FactorisedLinear(pretrained_attn.v_lin.weight.data,
+                                       pretrained_attn.v_lin.bias.data, energy)
+        self.out_proj = FactorisedLinear(pretrained_attn.out_lin.weight.data,
+                                         pretrained_attn.out_lin.bias.data, energy)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
+    def forward(self, hidden_states, attention_mask=None, head_mask=None,
+                output_attentions=False, **kwargs):
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         Q = self.q_proj(hidden_states)
@@ -86,12 +94,13 @@ class MinimalAURORAAttention(nn.Module):
     def get_ortho_loss(self):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
-# ------------------------------------------------------------
-# Framework injection & registration
-# ------------------------------------------------------------
-from framework.attentions.core.registry import ATTENTION_REGISTRY
 
-@ATTENTION_REGISTRY.register("minimal_aurora")
+# ------------------------------------------------------------
+# Framework injection & registration (requires your registry)
+# ------------------------------------------------------------
+# from framework.attentions.core.registry import ATTENTION_REGISTRY   # uncomment in your project
+ATTENTION_REGISTRY = {}  # dummy placeholder – replace with your actual registry
+
 def inject_minimal_aurora(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     new_attn = MinimalAURORAAttention(
         model_config=model_config,
@@ -101,3 +110,5 @@ def inject_minimal_aurora(layer, model_config, comp_config, layer_idx, total_lay
     )
     layer.attention = new_attn
     return new_attn
+
+ATTENTION_REGISTRY["minimal_aurora"] = inject_minimal_aurora
