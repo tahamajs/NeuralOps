@@ -1,0 +1,6 @@
+model_name: "distilbert-base-uncased"
+attention_type: "prism_full"
+compression_rank: 16
+batch_size: 32
+fp16: true
+config_description: "Extreme compression – 20× param reduction"
