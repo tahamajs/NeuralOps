@@ -1,34 +1,45 @@
+"""UniQL: Joint low‑rank + quantisation using SVD and uniform quant. Registered as 'uniql'."""
+
 import torch
 import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class UniQLCompressor:
-    """
-    Joint low‑rank + quantization: apply SVD then quantize the factors.
-    """
-    def __init__(self, model, rank=64, bits=8):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("uniql")
+class UniQLCompressor(BaseCompressor):
+    def __init__(self, model, rank=64, bits=8, **kwargs):
+        super().__init__(model, name="uniql", **kwargs)
         self.rank = rank
         self.bits = bits
 
-    def _quantize(self, tensor):
-        # Simple uniform quantization
-        min_val, max_val = tensor.min(), tensor.max()
-        scale = (max_val - min_val) / (2**self.bits - 1)
-        quant = torch.round((tensor - min_val) / scale) * scale + min_val
+    @staticmethod
+    def _quantize(tensor, bits):
+        if bits >= 32:
+            return tensor.float()
+        t = tensor.float()
+        min_val, max_val = t.min(), t.max()
+        if max_val == min_val:
+            return t
+        scale = (max_val - min_val) / (2**bits - 1)
+        quant = torch.round((t - min_val) / scale) * scale + min_val
         return quant
 
     def compress(self):
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
-                W = module.weight.data.cpu().numpy()
-                U, S, Vt = np.linalg.svd(W, full_matrices=False)
-                U_r = U[:, :self.rank]
-                S_r = S[:self.rank]
-                Vt_r = Vt[:self.rank, :]
-                # Quantize the factors
-                U_q = self._quantize(torch.tensor(U_r))
-                S_q = self._quantize(torch.tensor(S_r))
-                Vt_q = self._quantize(torch.tensor(Vt_r))
-                W_q = U_q @ torch.diag(S_q) @ Vt_q
-                module.weight.data = W_q.to(dtype=module.weight.dtype, device=module.weight.device)
-        return self.model
+                W = module.weight.data.float()
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+                r = min(self.rank, min(W.shape))
+                U_r = U[:, :r]
+                S_r = S[:r]
+                Vt_r = Vt[:r, :]
+                # Quantize factors
+                U_q = self._quantize(U_r, self.bits)
+                S_q = self._quantize(S_r, self.bits)
+                Vt_q = self._quantize(Vt_r, self.bits)
+                W_new = U_q @ torch.diag(S_q) @ Vt_q
+                module.weight.data = W_new.to(dtype=module.weight.dtype)
+                if module.bias is not None:
+                    module.bias.data = self._quantize(module.bias.data, self.bits)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
