@@ -1,37 +1,82 @@
-# framework/compression/liftr.py
+"""
+LIFTR – Linearized Function Trick Compressor.
+Replaces non‑linear activations and softmax attention with linear approximations,
+reducing the entire model to a single linear function for extreme inference speed.
+"""
+
 import torch
 import torch.nn as nn
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class LIFTR:
+
+class _LinearizedGELU(nn.Module):
+    """Linear approximation of GELU: 0.5 * x + 0.5 * sqrt(2/π) * x ≈ 0.8 * x"""
+    def forward(self, x):
+        return 0.8 * x
+
+
+class _LinearizedSoftmaxAttention(nn.Module):
     """
-    Linearized Function Trick: estimate functional similarity without data.
-    Paper: https://arxiv.org/abs/2104.12345 (placeholder)
+    Replaces softmax attention with a simple linear projection.
+    Actually just returns the mean of the values.
     """
-    @staticmethod
-    def linearize_activation(module, x):
-        """Replace activation function with its best linear approximation."""
-        # Example for ReLU: approximate with identity for positive input, zero for negative
-        # For GELU, we can use a Taylor expansion around zero.
-        if isinstance(module, nn.ReLU):
-            return nn.Identity()
-        elif isinstance(module, nn.GELU):
-            # Linearize GELU: ≈ 0.5 * x
-            return nn.Identity()  # placeholder: actual linearization would be a scaling
+    def forward(self, q, k, v):
+        # shape: q (B,*,L,D), k, v similar
+        return v.mean(dim=-2, keepdim=True).expand_as(v)
+
+
+@COMPRESSOR_REGISTRY.register("liftr")
+class LIFTRCompressor(BaseCompressor):
+    """
+    Linearizes the entire model: ReLU → Identity, GELU → 0.8*x,
+    softmax attention → average pooling. This makes the model extremely fast
+    at the cost of accuracy. Ideal for quick baselines or edge deployment.
+
+    Args:
+        model: PyTorch model.
+        replace_attention: if True, also linearize attention (default True).
+    """
+
+    def __init__(self, model: nn.Module, replace_attention: bool = True, **kwargs):
+        super().__init__(model, name="liftr", **kwargs)
+        self.replace_attention = replace_attention
+
+    def compress(self):
+        self._linearize_module(self.model)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
+
+    def _linearize_module(self, module: nn.Module):
+        for name, child in module.named_children():
+            # Replace activations
+            if isinstance(child, nn.ReLU):
+                setattr(module, name, nn.Identity())
+            elif isinstance(child, nn.GELU):
+                setattr(module, name, _LinearizedGELU())
+            elif isinstance(child, nn.SiLU):
+                setattr(module, name, _LinearizedGELU())  # similar
+            # Replace attention
+            elif self.replace_attention and isinstance(child, nn.MultiheadAttention):
+                # We replace the forward method by wrapping the module
+                child.forward = self._linear_attention_forward
+            # Recursively process children
+            else:
+                self._linearize_module(child)
+
+    def _linear_attention_forward(self, query, key, value, **kwargs):
+        """
+        A purely linear 'attention' – just averages the values.
+        Keeps the output shape consistent.
+        """
+        # query, key, value: (L, B, D) or (B, L, D) depending on batch_first
+        # We'll just average over the sequence dimension.
+        if query.dim() == 3:
+            # batch_first=False: (L, B, D) -> average over L
+            out = value.mean(dim=0, keepdim=True).expand_as(value)
+        elif query.dim() == 4:
+            # batch_first=True: (B, L, D) -> average over L
+            out = value.mean(dim=1, keepdim=True).expand_as(value)
         else:
-            return module
-
-    @staticmethod
-    def linearize_attention(attention_layer):
-        """Replace softmax attention with a linear projection (e.g., using random features)."""
-        # Already covered by Performer or Galerkin
-        pass
-
-    @staticmethod
-    def compare_models(model1, model2):
-        """Estimate functional distance using LIFTR without data."""
-        # Compute difference of linearized weights
-        diff = 0.0
-        for (n1, p1), (n2, p2) in zip(model1.named_parameters(), model2.named_parameters()):
-            if p1.shape == p2.shape:
-                diff += torch.norm(p1 - p2).item()
-        return diff
+            out = value
+        return out, None  # attention weights
