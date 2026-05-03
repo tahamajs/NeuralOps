@@ -10,9 +10,13 @@ from ..core.registry import ATTENTION_REGISTRY
 
 
 def _compute_moore_penrose(A, iters=6):
-    X = torch.linalg.pinv(A)
+    # A: (B, H, m, m)
+    # Initialize X = (1/||A||) A^T (rough approximation)
+    norm_A = torch.linalg.norm(A, dim=(-2, -1), keepdim=True)
+    X = A.transpose(-2, -1) / (norm_A + 1e-8)
+    I = torch.eye(A.size(-1), device=A.device).unsqueeze(0).unsqueeze(0)
     for _ in range(iters):
-        X = X * (2 - A @ X)
+        X = torch.matmul(X, 2 * I - torch.matmul(A, X))
     return X
 
 
@@ -43,16 +47,15 @@ class NystromAttention(BaseAttention):
         V = self._reshape(self.value(hidden_states), batch_size)
 
         num_landmarks = self.rank
+        # Landmark selection (segmented mean)
         if seq_len % num_landmarks == 0:
             seg = seq_len // num_landmarks
             Q_land = Q.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(dim=3)
             K_land = K.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(dim=3)
-            V_land = V.reshape(batch_size, self.num_heads, num_landmarks, seg, self.head_dim).mean(dim=3)
         else:
             idx = torch.linspace(0, seq_len-1, num_landmarks).long().to(hidden_states.device)
             Q_land = Q[:, :, idx, :]
             K_land = K[:, :, idx, :]
-            V_land = V[:, :, idx, :]
 
         scale = 1.0 / (self.head_dim ** 0.5)
         F1 = torch.matmul(Q, K_land.transpose(-2, -1)) * scale
@@ -63,6 +66,7 @@ class NystromAttention(BaseAttention):
         attn = torch.matmul(F1, torch.matmul(F2_pinv, F3))
         if attention_mask is not None:
             attn = attn + attention_mask.unsqueeze(1)
+
         probs = F.softmax(attn, dim=-1)
         probs = self.dropout(probs)
 
