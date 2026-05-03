@@ -1,30 +1,66 @@
-import torch
-import numpy as np
-from .cur_compressor import CURCompressor  # reuse column selection
+"""
+CUR‑MoE Compressor: apply CUR decomposition to MoE expert layers.
+Registered as 'cur_moe'.
+"""
 
-class CURMoECompressor:
+import torch
+import torch.nn as nn
+import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
+
+
+@COMPRESSOR_REGISTRY.register("cur_moe")
+class CURMoECompressor(BaseCompressor):
     """
-    Apply CUR decomposition to MoE expert layers.
+    Compresses MoE expert layers using CUR decomposition.
+
+    Args:
+        model: PyTorch model containing MoE modules.
+        rank: rank for CUR decomposition.
+        method: 'leverage' or 'uniform'.
     """
-    def __init__(self, model, rank=64):
-        self.model = model
+    def __init__(self, model, rank=64, method='leverage', **kwargs):
+        super().__init__(model, name="cur_moe", **kwargs)
         self.rank = rank
+        self.method = method
 
     def compress(self):
         for name, module in self.model.named_modules():
-            # Identify MoE layers (e.g., modules with `router` or expert lists)
             if hasattr(module, 'experts'):
                 for expert in module.experts:
-                    cur = CURCompressor(None, self.rank)  # we will manually process weights
                     for param_name, param in expert.named_parameters():
                         if 'weight' in param_name and param.dim() == 2:
-                            W = param.data.cpu().numpy()
-                            # Use column selection as in CUR
-                            col_norms = np.linalg.norm(W, axis=0)
-                            col_probs = col_norms / col_norms.sum()
-                            selected = np.random.choice(W.shape[1], size=self.rank, replace=False, p=col_probs)
-                            C = W[:, selected]
-                            R = np.linalg.lstsq(C, W, rcond=None)[0]
-                            new_W = C @ R
-                            param.data = torch.tensor(new_W, dtype=param.dtype, device=param.device)
-        return self.model
+                            W = param.data.float().cpu().numpy()
+                            out_dim, in_dim = W.shape
+                            r = min(self.rank, min(out_dim, in_dim))
+
+                            # Column selection
+                            if self.method == 'leverage':
+                                col_norms = np.linalg.norm(W, axis=0)
+                                col_probs = col_norms / (col_norms.sum() + 1e-8)
+                            else:
+                                col_probs = np.ones(in_dim) / in_dim
+                            selected_cols = np.random.choice(in_dim, size=r, replace=False, p=col_probs)
+                            C = W[:, selected_cols]
+
+                            # Row selection
+                            if self.method == 'leverage':
+                                row_norms = np.linalg.norm(W, axis=1)
+                                row_probs = row_norms / (row_norms.sum() + 1e-8)
+                            else:
+                                row_probs = np.ones(out_dim) / out_dim
+                            selected_rows = np.random.choice(out_dim, size=r, replace=False, p=row_probs)
+                            R = W[selected_rows, :]
+
+                            # Compute U
+                            C_pinv = np.linalg.pinv(C)
+                            R_pinv = np.linalg.pinv(R)
+                            U = C_pinv @ W @ R_pinv
+
+                            W_approx = C @ U @ R
+                            param.data = torch.tensor(
+                                W_approx, dtype=param.dtype, device=param.device
+                            )
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()

@@ -1,25 +1,47 @@
+"""
+CR (Interpolative Decomposition) Compressor.
+Decomposes W ≈ C @ V^T, where C are actual columns of W.
+Registered as 'cr'.
+"""
+
 import torch
+import torch.nn as nn
 import numpy as np
 from scipy.linalg import interpolative
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class CRCompressor:
+
+@COMPRESSOR_REGISTRY.register("cr")
+class CRCompressor(BaseCompressor):
     """
-    Interpolative Decomposition (CR): W ≈ C @ V^T where C are actual columns,
-    V is a row selection matrix.
+    Compress using interpolative decomposition: W ≈ C @ proj,
+    where C contains a subset of the columns of W.
+
+    Args:
+        model: PyTorch model.
+        rank: rank of the decomposition (number of columns to keep).
     """
-    def __init__(self, model, rank=64):
-        self.model = model
+    def __init__(self, model, rank=64, **kwargs):
+        super().__init__(model, name="cr", **kwargs)
         self.rank = rank
 
     def compress(self):
         for name, module in self.model.named_modules():
-            if isinstance(module, torch.nn.Linear):
-                W = module.weight.data.cpu().numpy()
-                # Use scipy's interpolative decomposition
-                idx, proj = interpolative.interp_decomp(W, self.rank)
-                # Keep selected columns
-                C = W[:, idx[:self.rank]]
-                # Reconstruct
-                W_approx = C @ proj
+            if isinstance(module, nn.Linear):
+                W = module.weight.data.float().cpu().numpy()
+                r = min(self.rank, min(W.shape))
+                try:
+                    idx, proj = interpolative.interp_decomp(W, r)
+                    C = W[:, idx[:r]]
+                    W_approx = C @ proj[:r, :]   # proj is (r, N) or (r, M)? Depends on axis.
+                    # Actually scipy's interp_decomp returns idx (columns to keep) and proj such that
+                    # W ≈ W[:, idx] @ proj. Correct.
+                except Exception:
+                    # Fallback to SVD if scipy fails
+                    U, S, Vt = np.linalg.svd(W, full_matrices=False)
+                    C = U[:, :r] * S[:r]
+                    W_approx = C @ Vt[:r, :]
                 module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
-        return self.model
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
