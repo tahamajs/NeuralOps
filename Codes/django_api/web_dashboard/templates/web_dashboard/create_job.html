@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Experiment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">New Experiment</span>
+            <a href="{% url 'index' %}" class="btn btn-secondary">Back to Dashboard</a>
+        </div>
+    </nav>
+    <div class="container">
+        <form id="job-form" onsubmit="submitJob(event)">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Model Configuration</h4>
+                    <label>Base Model</label>
+                    <select class="form-select" id="model_name" required>
+                        <option value="distilbert-base-uncased">DistilBERT Base</option>
+                        <option value="bert-base-uncased">BERT Base</option>
+                        <option value="roberta-base">RoBERTa Base</option>
+                    </select>
+                    <label class="mt-2">Attention Type</label>
+                    <select class="form-select" id="attention_type" required>
+                        <option value="full">Full (no compression)</option>
+                    </select>
+                    <label class="mt-2">Compression Rank</label>
+                    <input type="number" class="form-control" id="compression_rank" value="64">
+                </div>
+                <div class="col-md-6">
+                    <h4>Dataset & Training</h4>
+                    <label>GLUE Task</label>
+                    <select class="form-select" id="task_name" required>
+                        <option value="mrpc">MRPC</option>
+                        <option value="mnli">MNLI</option>
+                        <option value="sst2">SST-2</option>
+                        <option value="cola">CoLA</option>
+                        <option value="qqp">QQP</option>
+                    </select>
+                    <label class="mt-2">Epochs</label>
+                    <input type="number" class="form-control" id="epochs" value="3">
+                    <label class="mt-2">Batch Size</label>
+                    <input type="number" class="form-control" id="batch_size" value="16">
+                    <label class="mt-2">Learning Rate</label>
+                    <input type="number" step="any" class="form-control" id="learning_rate" value="0.00002">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg mt-4">Start Experiment</button>
+        </form>
+    </div>
+
+    <script>
+        // Load attention types via API
+        fetch('/api/config/attentions/')
+            .then(r => r.json())
+            .then(data => {
+                const sel = document.getElementById('attention_type');
+                data.attentions.forEach(att => {
+                    sel.innerHTML += `<option value="${att}">${att}</option>`;
+                });
+            });
+
+        function submitJob(e) {
+            e.preventDefault();
+            const payload = {
+                model_name: document.getElementById('model_name').value,
+                attention_type: document.getElementById('attention_type').value,
+                compression_rank: parseInt(document.getElementById('compression_rank').value),
+                task_name: document.getElementById('task_name').value,
+                epochs: parseInt(document.getElementById('epochs').value),
+                batch_size: parseInt(document.getElementById('batch_size').value),
+                learning_rate: parseFloat(document.getElementById('learning_rate').value),
+            };
+            fetch('/api/train/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(data => {
+                window.location.href = `/dashboard/job/${data.id}/`;
+            });
+        }
+    </script>
+</body>
+</html>
