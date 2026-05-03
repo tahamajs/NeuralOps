@@ -8,8 +8,9 @@ import shutil
 import torch
 from pathlib import Path
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+from .core.registry import COMPRESSOR_REGISTRY
 
-
+@COMPRESSOR_REGISTRY.register("slicegpt")
 class SliceGPTCompressor:
     def __init__(self, model, tokenizer, sparsity=0.25, device="cuda", use_wandb=False):
         self.model = model

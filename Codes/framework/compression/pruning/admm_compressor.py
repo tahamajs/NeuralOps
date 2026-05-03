@@ -1,21 +1,21 @@
-# framework/compression/admm_compressor.py
+"""ADMM-based structured pruning + quantization. Registered as 'admm'."""
+
 import torch
 import torch.nn as nn
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class ADMMCompressor:
-    """
-    ADMM-based structured pruning + quantization.
-    Paper: https://arxiv.org/abs/1904.10567
-    """
-    def __init__(self, model, sparsity=0.5, quant_bits=4):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("admm")
+class ADMMCompressor(BaseCompressor):
+    def __init__(self, model, sparsity=0.5, quant_bits=4, **kwargs):
+        super().__init__(model, name="admm", **kwargs)
         self.sparsity = sparsity
         self.quant_bits = quant_bits
 
     def compress(self):
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                W = module.weight.data
+                W = module.weight.data.float()
                 # Prune: keep top (1-sparsity)% weights
                 flat = W.abs().view(-1)
                 k = int(flat.numel() * (1 - self.sparsity))
@@ -26,5 +26,6 @@ class ADMMCompressor:
                 scale = (2 ** (self.quant_bits - 1) - 1)
                 W_scaled = torch.clamp(W_pruned * scale, -scale, scale)
                 W_quant = torch.round(W_scaled) / scale
-                module.weight.data = W_quant
-        return self.model
+                module.weight.data = W_quant.to(dtype=module.weight.dtype)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
