@@ -165,3 +165,46 @@ def stop_job(request, job_id):
         cancel_job(exp)
         return Response({"status": "cancelled"})
     return Response({"error": "Job not cancelable"}, status=400)
+
+from framework.utils.device import get_device
+import torch, psutil, time, math
+
+@api_view(["POST"])
+def stop_job(request, job_id):
+    from .jobs import stop_job as do_stop
+    try:
+        exp = Experiment.objects.get(id=job_id)
+    except Experiment.DoesNotExist:
+        return Response({"error": "Job not found"}, status=404)
+    do_stop(job_id)
+    exp.status = "stopped"
+    exp.save()
+    return Response({"status": "stopped"})
+
+@api_view(["PATCH"])
+def update_job_config(request, job_id):
+    try:
+        exp = Experiment.objects.get(id=job_id)
+    except Experiment.DoesNotExist:
+        return Response({"error": "Job not found"}, status=404)
+    new_config = request.data
+    exp.config.update(new_config)
+    exp.save(update_fields=["config"])
+    return Response(ExperimentSerializer(exp).data)
+
+@api_view(["GET"])
+def gpu_info(request):
+    info = {"cuda_available": torch.cuda.is_available()}
+    if torch.cuda.is_available():
+        info["device_name"] = torch.cuda.get_device_name(0)
+        info["memory_total"] = torch.cuda.get_device_properties(0).total_memory / 1024**3
+        info["memory_allocated"] = torch.cuda.memory_allocated() / 1024**3
+        info["memory_reserved"] = torch.cuda.memory_reserved() / 1024**3
+        info["utilization"] = torch.cuda.utilization() if hasattr(torch.cuda, 'utilization') else None
+    return Response(info)
+
+@api_view(["GET"])
+def system_status(request):
+    cpu = psutil.cpu_percent()
+    mem = psutil.virtual_memory().percent
+    return Response({"cpu": cpu, "memory": mem})

@@ -19,4 +19,8 @@ urlpatterns = [
     path("experiments/<uuid:job_id>/artifacts/", views.experiment_artifacts),
     re_path(r"experiments/(?P<job_id>[0-9a-f-]+)/artifacts/(?P<artifact_path>.+)$", views.experiment_artifact_download),
     path("experiments/<uuid:job_id>/model/", views.experiment_model_download),
+        path("jobs/<uuid:job_id>/stop/", views.stop_job),
+    path("jobs/<uuid:job_id>/config/", views.update_job_config),
+    path("system/gpu/", views.gpu_info),
+    path("system/status/", views.system_status),
 ]
