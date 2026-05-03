@@ -1,23 +1,96 @@
-# framework/attentions/halo_regla.py
 import torch
 import torch.nn as nn
-from performer_pytorch import FastAttention  # or your own ReGLA implementation
+import torch.nn.functional as F
+from ..core.registry import ATTENTION_REGISTRY
 
-class HyPE(nn.Module):
+# Simple rotary embedding
+def rotate_half(x):
+    x1, x2 = x.chunk(2, dim=-1)
+    return torch.cat((-x2, x1), dim=-1)
+
+def apply_rotary_pos_emb(x, cos, sin):
+    return (x * cos) + (rotate_half(x) * sin)
+
+class RotaryEmbedding(nn.Module):
+    def __init__(self, dim, max_seq_len=4096):
+        super().__init__()
+        inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
+        t = torch.arange(max_seq_len).float()
+        freqs = torch.einsum('i,j->ij', t, inv_freq)   # (L, dim/2)
+        emb = torch.cat((freqs, freqs), dim=-1)
+        self.register_buffer('cos_cached', emb.cos())
+        self.register_buffer('sin_cached', emb.sin())
+
     def forward(self, x, offset=0):
-        return apply_rotary_pos_emb(x, freqs_cis)  # standard RoPE
+        L = x.shape[1]
+        cos = self.cos_cached[offset:offset+L].unsqueeze(0).unsqueeze(2)
+        sin = self.sin_cached[offset:offset+L].unsqueeze(0).unsqueeze(2)
+        return apply_rotary_pos_emb(x, cos, sin)
 
+# Linear attention layer (ReGLA equivalent)
+class ReGLALayer(nn.Module):
+    """Linear attention using ReLU kernel."""
+    def __init__(self, dim, heads=8):
+        super().__init__()
+        self.heads = heads
+        self.head_dim = dim // heads
+        self.q_proj = nn.Linear(dim, dim)
+        self.k_proj = nn.Linear(dim, dim)
+        self.v_proj = nn.Linear(dim, dim)
+        self.out_proj = nn.Linear(dim, dim)
+
+    def forward(self, x):
+        B, L, D = x.shape
+        q = F.relu(self.q_proj(x)).view(B, L, self.heads, self.head_dim).transpose(1,2)  # (B, H, L, d)
+        k = F.relu(self.k_proj(x)).view(B, L, self.heads, self.head_dim).transpose(1,2)
+        v = self.v_proj(x).view(B, L, self.heads, self.head_dim).transpose(1,2)
+        # Linear attention: causal, using cumulative sums
+        kv = torch.einsum('bhld,bhlm->bhldm', k, v)   # (B, H, d, d)
+        z = k.cumsum(dim=2)                           # (B, H, L, d)
+        out = torch.einsum('bhld,bhldm->bhldm', q, kv)
+        out = out / (torch.einsum('bhld,bhld->bhl', q, z) + 1e-8).unsqueeze(-1).unsqueeze(-1)
+        out = out.transpose(1,2).contiguous().view(B, L, D)
+        return self.out_proj(out)
+
+# Standard Transformer block
+class TransformerLayer(nn.Module):
+    def __init__(self, dim, heads=8):
+        super().__init__()
+        self.attn = nn.MultiheadAttention(dim, heads, batch_first=True)
+        self.rope = RotaryEmbedding(dim)
+        self.ffn = nn.Sequential(
+            nn.Linear(dim, dim*4),
+            nn.GELU(),
+            nn.Linear(dim*4, dim)
+        )
+        self.norm1 = nn.LayerNorm(dim)
+        self.norm2 = nn.LayerNorm(dim)
+
+    def forward(self, x):
+        # Apply RoPE to queries and keys internally? MultiheadAttention doesn't support RoPE natively.
+        # We'll just use standard attention for simplicity; real HyPE replaces Q,K with RoPE.
+        attn_out, _ = self.attn(x, x, x)
+        x = self.norm1(x + attn_out)
+        x = self.norm2(x + self.ffn(x))
+        return x
+
+@ATTENTION_REGISTRY.register("halo_regla")
 class HALOReGLAStudent(nn.Module):
+    """
+    HALO‑ReGLA student model: alternates between linear attention (ReGLA) and
+    full Transformer layers at a given hybrid ratio.
+    """
     def __init__(self, dim, num_layers, hybrid_ratio=4):
         super().__init__()
         self.layers = nn.ModuleList()
         for i in range(num_layers):
             if i % hybrid_ratio == 0:
-                # Linear attention layer (ReGLA equivalent)
+                # Linear attention layer
                 self.layers.append(ReGLALayer(dim))
             else:
-                # Full attention layer (HyPE + Transformer)
+                # Full Transformer layer
                 self.layers.append(TransformerLayer(dim))
+
     def forward(self, x):
         for layer in self.layers:
             x = layer(x)

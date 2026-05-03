@@ -1,4 +1,3 @@
-# Auto-generated __init__.py
 from . import goldfinch_ahn
 from . import granite_hybrid
 from . import griffin_ssd
