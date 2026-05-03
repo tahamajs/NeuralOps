@@ -1,35 +1,36 @@
 """
-Runner functions that call the actual framework logic.
-Each runner receives an Experiment model instance and updates logs as it runs.
+Runner functions that invoke the actual framework logic.
+Each runner receives an Experiment model instance.
+It should update logs and push metrics via `jobs.push_update`.
 """
 
-import os
-import sys
-import logging
+import os, sys, json, logging
 from pathlib import Path
 from datetime import datetime
 
-# Ensure framework is importable
+# Make sure framework is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
+from django.conf import settings as django_settings
+from .models import Experiment
+from .jobs import push_update
+
+# Framework imports
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
 from framework.models.model_loader import load_model
 from framework.data.dataset_loader import ExperimentConfig, load_dataset
 from framework.data.preprocessing import preprocess_function
-from framework.data.glue_loader import get_num_labels_and_is_regression
+from framework.data.glue_loader import get_num_labels_and_is_regression, GLUE_TASK_KEYS
 from framework.trainer.trainer import CompressionTrainer, get_compute_metrics
 from framework.utils.device import get_device
 from framework.utils.helpers import set_seed, count_parameters
 from framework.utils.layer_norm_fix import fix_layernorm_naming
-from framework.analysis.metrics import MetricsTracker
-from experiment_logging import setup_logging, LoggingCallback
 from transformers import (
     AutoTokenizer, AutoConfig, AutoModelForSequenceClassification,
-    TrainingArguments, DataCollatorWithPadding, set_seed
+    TrainingArguments, DataCollatorWithPadding, TrainerCallback
 )
 import torch
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -41,26 +42,36 @@ def _update_status(exp, status):
     exp.status = status
     exp.save()
 
-def run_training(experiment):
+class _MetricsCallback(TrainerCallback):
+    """Forward trainer logs to our WebSocket."""
+    def __init__(self, experiment):
+        self.experiment = experiment
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs:
+            push_update(self.experiment, {"type": "metrics", "data": logs})
+            _log(self.experiment, f"Step {state.global_step}: {json.dumps(logs)}")
+
+def run_training(experiment: Experiment):
     config = experiment.config
     _update_status(experiment, "running")
-    _log(experiment, "Loading model...")
+    _log(experiment, "Starting training pipeline...")
 
     device = get_device()
     set_seed(config.get("seed", 42))
 
-    # Load model with attention injection
+    # 1. Load model with attention injection
+    _log(experiment, f"Loading model: {config.get('model_name')}")
     model, tokenizer = load_model(
         model_name=config.get("model_name", "distilbert-base-uncased"),
-        num_labels=None,
+        num_labels=None,  # determined later
         attention_type=config.get("attention_type", "full"),
         rank=config.get("compression_rank", 64),
         device=device,
         use_unsloth=config.get("use_unsloth", False),
-        cache_dir=config.get("cache_dir", None)
+        cache_dir=config.get("cache_dir"),
     )
 
-    # Load dataset
+    # 2. Load dataset
     task = config.get("task_name", "mrpc")
     _log(experiment, f"Loading dataset: {task}")
     data_cfg = ExperimentConfig(
@@ -68,34 +79,34 @@ def run_training(experiment):
         max_seq_length=config.get("max_seq_length", 128),
         split_ratio=config.get("split_ratio", 0.1),
         glue_base_path=config.get("glue_base_path", "./datasets/glue"),
-        num_labels=None
+        num_labels=None,
     )
     dataset_dict = load_dataset(data_cfg)
     num_labels, is_regression = get_num_labels_and_is_regression(task)
-
-    # Update model num_labels if needed
     if hasattr(model, 'config') and model.config.num_labels != num_labels:
         model.config.num_labels = num_labels
 
-    # Tokenization
-    from framework.data.glue_loader import GLUE_TASK_KEYS
+    # 3. Tokenization
     sent1_key, sent2_key = GLUE_TASK_KEYS.get(task, (None, None))
     preprocess_fn = preprocess_function(
         tokenizer=tokenizer,
         max_seq_length=config.get("max_seq_length", 128),
         sent1_key=sent1_key,
         sent2_key=sent2_key,
-        is_regression=(task == "stsb")
+        is_regression=(task == "stsb"),
     )
-    encoded = dataset_dict.map(preprocess_fn, batched=True)
+    encoded = dataset_dict.map(preprocess_fn, batched=True,
+                               remove_columns=dataset_dict["train"].column_names)
     cols = ["input_ids", "attention_mask", "labels"]
     if "token_type_ids" in encoded["train"].column_names:
         cols.append("token_type_ids")
     encoded.set_format(type="torch", columns=cols)
 
-    # Training arguments
-    output_dir = os.path.join(settings.MEDIA_ROOT, str(experiment.id), "model")
+    # 4. Output directory
+    output_dir = os.path.join(str(django_settings.MEDIA_ROOT), str(experiment.id), "model")
     os.makedirs(output_dir, exist_ok=True)
+
+    # 5. Training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=config.get("epochs", 3),
@@ -111,11 +122,12 @@ def run_training(experiment):
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
-        fp16=config.get("fp16", False),
+        fp16=config.get("fp16", torch.cuda.is_available()),
         remove_unused_columns=False,
         report_to="none",
     )
 
+    # 6. Trainer with custom callback for live updates
     trainer = CompressionTrainer(
         ortho_weight=0.0,
         model=model,
@@ -125,16 +137,8 @@ def run_training(experiment):
         data_collator=DataCollatorWithPadding(tokenizer),
         compute_metrics=get_compute_metrics(task),
     )
+    trainer.add_callback(_MetricsCallback(experiment))
 
-    # Add custom logging to capture steps
-    class APIProgressCallback(transformers.TrainerCallback):
-        def on_log(self, args, state, control, logs=None, **kwargs):
-            if logs:
-                from .jobs import push_update
-                push_update(experiment, {"type": "metrics", "data": logs})
-                _log(experiment, f"Step {state.global_step}: loss={logs.get('loss','?')}")
-
-    trainer.add_callback(APIProgressCallback())
     _log(experiment, "Training started...")
     trainer.train()
     trainer.save_model(output_dir)
@@ -144,12 +148,12 @@ def run_training(experiment):
     experiment.config["final_metrics"] = final_metrics
     experiment.save()
 
-def run_evaluation(experiment):
+def run_evaluation(experiment: Experiment):
     config = experiment.config
     _update_status(experiment, "running")
     _log(experiment, "Loading model for evaluation...")
-    from transformers import AutoModelForSequenceClassification, AutoTokenizer
-    model_path = config.get("model_name")  # path to saved model
+
+    model_path = config.get("model_name")
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     model = AutoModelForSequenceClassification.from_pretrained(model_path)
     device = get_device()
@@ -158,12 +162,14 @@ def run_evaluation(experiment):
     task = config.get("task_name", "mrpc")
     data_cfg = ExperimentConfig(dataset_name=task, max_seq_length=config.get("max_seq_length", 128))
     dataset_dict = load_dataset(data_cfg)
-    from framework.data.glue_loader import GLUE_TASK_KEYS
     sent1_key, sent2_key = GLUE_TASK_KEYS.get(task, (None, None))
-    preprocess_fn = preprocess_function(tokenizer, max_seq_length=config.get("max_seq_length", 128),
-                                        sent1_key=sent1_key, sent2_key=sent2_key, is_regression=(task=="stsb"))
-    encoded = dataset_dict.map(preprocess_fn, batched=True)
-    encoded.set_format(type="torch", columns=["input_ids","attention_mask","labels"])
+    preprocess_fn = preprocess_function(
+        tokenizer=tokenizer, max_seq_length=config.get("max_seq_length", 128),
+        sent1_key=sent1_key, sent2_key=sent2_key, is_regression=(task=="stsb")
+    )
+    encoded = dataset_dict.map(preprocess_fn, batched=True,
+                               remove_columns=dataset_dict["train"].column_names)
+    encoded.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
     from transformers import Trainer, TrainingArguments
     eval_args = TrainingArguments(output_dir="/tmp/eval", per_device_eval_batch_size=config.get("batch_size", 32))
@@ -174,10 +180,11 @@ def run_evaluation(experiment):
     experiment.config["final_metrics"] = results
     experiment.save()
 
-def run_compression(experiment):
+def run_compression(experiment: Experiment):
     config = experiment.config
     _update_status(experiment, "running")
     _log(experiment, "Loading model for compression...")
+
     model_name = config.get("model_name", "distilbert-base-uncased")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
@@ -193,7 +200,7 @@ def run_compression(experiment):
     compressed_model, stats = compressor.compress()
     _log(experiment, f"Compression stats: {json.dumps(stats)}")
 
-    output_dir = os.path.join(settings.MEDIA_ROOT, str(experiment.id), "model")
+    output_dir = os.path.join(str(django_settings.MEDIA_ROOT), str(experiment.id), "model")
     os.makedirs(output_dir, exist_ok=True)
     compressed_model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
