@@ -1,5 +1,4 @@
-# Auto-generated __init__.py
-from . import gqa_attention
-from . import mla_attention
-from . import qcqa_attention
-from . import wgqa_attention
+from .gqa_attention import GroupedQueryAttention
+from .mla_attention import MLAAttention
+from .qcqa_attention import QCQAAttention
+from .wgqa_attention import WeightedGroupedQueryAttention
