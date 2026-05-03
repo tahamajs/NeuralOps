@@ -1,21 +1,20 @@
+"""COMPOT: orthogonal dictionary learning from calibration. Registered as 'compot'."""
+
 import torch
 import numpy as np
-from scipy.linalg import orthogonal_procrustes
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class COMPOTCompressor:
-    """
-    COMPOT: Use calibration data to learn a sparse factorization with orthogonal dictionaries.
-    Simplified: decompose weight as W = D @ A, where D is learned dictionary (orthogonal).
-    """
-    def __init__(self, model, tokenizer, rank=64, calibration_texts=None):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("compot")
+class COMPOTCompressor(BaseCompressor):
+    def __init__(self, model, tokenizer, rank=64, calibration_texts=None, **kwargs):
+        super().__init__(model, name="compot", **kwargs)
         self.tokenizer = tokenizer
         self.rank = rank
         self.calibration_texts = calibration_texts or ["Example text for calibration."]
 
     def compress(self):
         self.model.eval()
-        # 1. Collect inputs and outputs of each linear layer
         layer_data = {}
         hooks = []
         def make_hook(name):
@@ -32,17 +31,15 @@ class COMPOTCompressor:
             hook.remove()
 
         for name, module in self.model.named_modules():
-            if name in layer_data:
-                inp = layer_data[name]['input']  # (batch*seq, in_features)
-                out = layer_data[name]['output']  # (batch*seq, out_features)
-                # Compute orthonormal basis for input via QR
-                Q, _ = np.linalg.qr(inp.cpu().numpy())
-                # Solve for dictionary D: out = D @ Q^T, so D = out @ Q
-                D = out.cpu().numpy() @ Q
-                # Truncate to rank (keep top components)
+            if isinstance(module, torch.nn.Linear) and name in layer_data:
+                inp = layer_data[name]['input'].view(-1, module.in_features).float().cpu().numpy()
+                out = layer_data[name]['output'].view(-1, module.out_features).float().cpu().numpy()
+                Q, _ = np.linalg.qr(inp)
+                D = out @ Q
                 U, S, Vt = np.linalg.svd(D, full_matrices=False)
-                D_approx = U[:, :self.rank] @ np.diag(S[:self.rank]) @ Vt[:self.rank, :]
-                # New weight: W_new = D_approx @ Q.T (but Q is orthonormal, so Q.T = Q^-1)
+                r = min(self.rank, len(S), min(D.shape))
+                D_approx = U[:, :r] @ np.diag(S[:r]) @ Vt[:r, :]
                 W_new = D_approx @ Q.T
                 module.weight.data = torch.tensor(W_new, dtype=module.weight.dtype, device=module.weight.device)
-        return self.model
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()

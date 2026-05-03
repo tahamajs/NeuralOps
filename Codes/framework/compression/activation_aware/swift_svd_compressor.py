@@ -1,13 +1,14 @@
+"""Swift‑SVD Activation‑aware via cross‑covariance. Registered as 'swift_svd_act'."""
+
 import torch
 import numpy as np
+from .core.base import BaseCompressor
+from .core.registry import COMPRESSOR_REGISTRY
 
-class SwiftSVDCompressor:
-    """
-    Swift‑SVD: incremental aggregation of output activation covariance to compute
-    optimal low‑rank approximation without full SVD.
-    """
-    def __init__(self, model, tokenizer, rank=64, calibration_texts=None):
-        self.model = model
+@COMPRESSOR_REGISTRY.register("swift_svd_act")
+class SwiftSVDActivationCompressor(BaseCompressor):
+    def __init__(self, model, tokenizer, rank=64, calibration_texts=None, **kwargs):
+        super().__init__(model, name="swift_svd_act", **kwargs)
         self.tokenizer = tokenizer
         self.rank = rank
         self.calibration_texts = calibration_texts or ["Sample text."]
@@ -30,17 +31,14 @@ class SwiftSVDCompressor:
             hook.remove()
 
         for name, module in self.model.named_modules():
-            if name in activations:
+            if isinstance(module, torch.nn.Linear) and name in activations:
                 inp, out = activations[name]
-                # Compute cross‑covariance between input and output
-                inp_flat = inp.view(-1, inp.size(-1))
-                out_flat = out.view(-1, out.size(-1))
+                inp_flat = inp.view(-1, inp.size(-1)).float()
+                out_flat = out.view(-1, out.size(-1)).float()
                 C = inp_flat.t() @ out_flat / inp_flat.size(0)
-                U, S, Vt = np.linalg.svd(C.cpu().numpy(), full_matrices=False)
-                # Truncate to rank
-                U_r = U[:, :self.rank]
-                S_r = S[:self.rank]
-                Vt_r = Vt[:self.rank, :]
-                W_new = (U_r * S_r) @ Vt_r
-                module.weight.data = torch.tensor(W_new, dtype=module.weight.dtype, device=module.weight.device)
-        return self.model
+                U, S, Vt = torch.linalg.svd(C, full_matrices=False)
+                r = min(self.rank, min(C.shape))
+                W_new = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
+                module.weight.data = W_new.to(dtype=module.weight.dtype)
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
