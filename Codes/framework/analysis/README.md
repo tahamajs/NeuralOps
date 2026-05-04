@@ -1,205 +1,138 @@
-# 📊 Analysis & Visualization Package
+# 📊 Analysis Package
 
-A complete toolkit for logging, tracking, plotting, and comparing your compression experiments.  
-All outputs are automatically saved in a structured `results/` folder.
+Comprehensive tools for analysing, visualising, and comparing transformer compression experiments – especially SVD‑based attention compression.  
+Provides publication‑ready plots, metrics tracking, layer‑wise analysis, model comparison, and automatic report generation.
 
-## 📁 Package Structure
+## 📁 Structure
 
 ```
 framework/analysis/
 ├── __init__.py
-├── callbacks.py           # LoggingCallback for HuggingFace Trainer
-├── metrics.py             # Metrics computation + MetricsTracker (JSONL)
-├── plotting.py            # Comprehensive plotting functions
-├── model_comparison.py    # Compare multiple runs & save comparison plots
-├── layerwise_analyzer.py  # Inspect hidden representations & attention
+├── plotting.py            # All plot functions (comprehensive grid, tradeoff, Pareto, rank allocation)
+├── metrics.py             # MetricsTracker, compute_metrics, aggregate_results
+├── layerwise_analyzer.py  # Layer‑wise hidden state analysis (cosine similarity, effective rank, intrinsic dimension)
+├── model_comparison.py    # Compare multiple runs (load, summarise, generate plots)
 ├── report_generator.py    # HTML, CSV, LaTeX reports
-└── README.md              # This file
+├── callbacks.py           # Trainer callback for logging and saving training curves
+├── utils.py               # Filtering, best configs, compressibility detection
+└── README.md
 ```
 
 ## 🚀 Quick Start
 
+### 1. Basic analysis of a single experiment
+
 ```python
-from framework.analysis import (
-    LoggingCallback, MetricsTracker, ModelComparison
-)
-import logging
+import pandas as pd
+from framework.analysis import create_comprehensive_plots, plot_tradeoff
 
-# 1. Set up metrics tracking (auto‑creates directories)
-tracker = MetricsTracker("results/my_experiment/metrics.json")
-
-# 2. Create logger
-logger = logging.getLogger("train")
-logger.setLevel(logging.INFO)
-
-# 3. Add callback to HuggingFace Trainer
-trainer.add_callback(
-    LoggingCallback(
-        tracker,
-        logger,
-        plots_dir="results/my_experiment/plots",
-        save_plots=True
-    )
-)
-
-# 4. Train as usual
-trainer.train()
+df = pd.read_csv("results/run1/performance.csv")
+create_comprehensive_plots(df, "plots/run1")
+plot_tradeoff(df, "plots/run1")
 ```
 
-After training, your `results/` folder will contain:
+### 2. Track metrics during training
 
-```
-results/my_experiment/
-├── metrics.json                # Step‑wise metrics (JSON lines)
-└── plots/
-    └── training_history.png     # Loss curves from training
+```python
+from framework.analysis import MetricsTracker, LoggingCallback
+
+tracker = MetricsTracker("results/exp1/metrics.json")
+trainer.add_callback(LoggingCallback(tracker, logger, plots_dir="results/exp1/plots"))
 ```
 
-If you run multiple experiments and want to compare them:
+### 3. Compare multiple runs
 
 ```python
 from framework.analysis import quick_compare
 
-quick_compare(
-    results_dirs=["results/run1", "results/run2", "results/run3"],
-    output_dir="results/comparison"
-)
+# Directories containing performance.csv files
+dirs = ["results/bert_base", "results/bert_large", "results/distilbert"]
+quick_compare(dirs, output_dir="comparison")
 ```
 
-This will create `results/comparison/plots/` with comprehensive 3×3 grid plots and tradeoff charts.
+### 4. Layer‑wise compressibility analysis
 
----
+```python
+from framework.analysis import LayerwiseAnalyzer, detect_least_compressible_layers
 
-## 📦 Modules
-
-### 1. `callbacks.py` – LoggingCallback
-
-A `TrainerCallback` that automatically:
-- Captures `loss`, `eval_loss`, and any other logged metrics.
-- Records them via `MetricsTracker`.
-- Logs them to the console using the provided logger.
-- Generates and saves a `training_history.png` plot at the end of training.
-
-**Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `tracker` | `MetricsTracker` | Instance to store metrics |
-| `logger` | `logging.Logger` | Logger for console output |
-| `plots_dir` | `str` (optional) | Directory to save plots (default: `None`) |
-| `save_plots` | `bool` | Whether to save plots (default: `True`) |
-
-### 2. `metrics.py` – Metrics Computation & Tracking
-
-- **`compute_metrics(preds, labels, task)`** – computes accuracy, F1, Matthews, Pearson/Spearman based on task type.
-- **`aggregate_results(list_of_dicts)`** – aggregates multiple runs (mean, std).
-- **`MetricsTracker`** – simple JSON‑lines logger for step‑wise metrics.
-
-**MetricsTracker methods:**
-
-| Method | Description |
-|--------|-------------|
-| `log(metrics, step, flush=False)` | Record a dict (optionally with a step number) |
-| `save()` / `_flush()` | Write in‑memory records to the JSON file |
-| `to_dataframe()` | Load all records into a pandas DataFrame |
-
-### 3. `plotting.py` – Publication‑Ready Plots
-
-Contains functions that generate and save plots directly to disk.
-
-| Function | Output |
-|----------|--------|
-| `create_comprehensive_plots(df, plots_dir)` | 3×3 grid: accuracy vs rank, speedup, param reduction, best config, etc. |
-| `plot_training_history(history, save_path)` | Loss curves (train + eval) |
-| `plot_tradeoff(df, plots_dir)` | Accuracy vs speedup scatter plot |
-
-All plots use `seaborn-v0_8-darkgrid` style, 300 DPI, and are saved as PNG files.
-
-### 4. `model_comparison.py` – Compare Multiple Experiments
-
-- **`ModelComparison(results_dirs, output_dir)`** – loads CSV/JSON results from several run directories.
-- **`quick_compare(results_dirs, output_dir)`** – one‑liner to load and generate all comparison plots.
-
-The comparison collects all `performance.csv` and `metrics.json` files and creates:
-
-```
-results/comparison/plots/
-├── comprehensive_analysis.png
-└── tradeoff.png
+analyzer = LayerwiseAnalyzer(model, tokenizer)
+result = analyzer.analyze(["Example sentence 1", "Example sentence 2"])
+print(result['cosine_similarities'])
+critical = detect_least_compressible_layers(model, tokenizer, texts, k=3)
+print(f"Keep layers {critical} at full rank")
 ```
 
-### 5. `layerwise_analyzer.py` – Inspect Model Internals
+### 5. Generate a full report
 
-- **`LayerwiseAnalyzer(model, tokenizer)`** – registers hooks and captures hidden states.
-- **`analyze(text)`** – returns cosine similarities, effective ranks, intrinsic dimensions, attention entropy.
-- **`save_results(results, path)`** – saves analysis to JSON.
+```python
+from framework.analysis import generate_full_report
 
-### 6. `report_generator.py` – HTML, CSV, LaTeX Reports
-
-- **`generate_html_report(df, output_dir, title)`** – creates a styled HTML report with summary tables and best configurations.
-- **`generate_csv_summary(df, output_path)`** – saves a grouped CSV summary.
-- **`generate_latex_table(df, output_path)`** – produces a LaTeX table for papers.
-
----
-
-## 📂 Output Directory Convention
-
-All output is organized under a user‑specified `results/` directory.  
-A typical workflow produces:
-
-```
-results/
-├── experiment1/
-│   ├── metrics.json
-│   └── plots/
-│       └── training_history.png
-├── experiment2/
-│   ├── metrics.json
-│   └── plots/
-│       └── training_history.png
-└── comparison/
-    └── plots/
-        ├── comprehensive_analysis.png
-        └── tradeoff.png
+df = pd.read_csv("results/summary.csv")
+generate_full_report(df, "reports/experiment", experiment_name="my_experiment")
 ```
 
-You can customise the root folder by changing the `plots_dir` parameter or the `output_dir` in `quick_compare`.
+## 🧩 Detailed Module Documentation
 
----
+### `plotting.py`
 
-## 🔄 Integration with the CLI
+| Function | Description |
+|----------|-------------|
+| `create_comprehensive_plots(df, output_dir)` | 3×3 grid: accuracy vs rank (model/task), speedup, param reduction, memory reduction, accuracy drop distribution, heatmap, best config per dataset. |
+| `plot_tradeoff(df, output_dir, metric)` | Scatter plot of speedup vs accuracy (or another metric) with rank annotations. |
+| `plot_pareto_front(df, output_dir, x_metric, y_metric)` | Highlights non‑dominated (Pareto‑optimal) configurations. |
+| `plot_rank_allocation(recommended_ranks, output_dir)` | Bar chart of recommended ranks per layer. |
+| `plot_training_history(history, save_path)` | Line plot of training/evaluation loss. |
 
-The analysis package is fully integrated with the CLI’s logging system.  
-When you run:
+All plots use `seaborn-v0_8-darkgrid` style, configurable.
 
-```bash
-python cli.py train --preset fast --task mrpc
-```
+### `metrics.py`
 
-The CLI automatically:
-- Creates a timestamped run directory under `logs/`
-- Sets up logging and metrics tracking
-- Passes the `LoggingCallback` to the trainer
-- Saves training plots in `logs/<run>/plots/`
+- **`MetricsTracker(filepath)`** – logs metrics as JSON lines; methods: `.log()`, `.save()`, `.to_dataframe()`.
+- **`compute_metrics(predictions, labels, task)`** – returns accuracy, F1, Matthews (classification) or Pearson/Spearman (regression).
+- **`aggregate_results(results_list)`** – computes mean, std, and list of values per key.
 
-After training, you can directly call:
+### `layerwise_analyzer.py`
 
-```bash
-python cli.py train --task mrpc --attention aurora
-```
+- **`LayerwiseAnalyzer(model, tokenizer)`** – register hooks, forward pass, compute cosine similarity between consecutive layers.
+- **`estimate_intrinsic_dimension(hidden_states, k)`** – nearest‑neighbour based intrinsic dimension estimate.
 
-And find the plots in `logs/mrpc_aurora_<timestamp>/plots/`.
+### `model_comparison.py`
 
----
+- **`ModelComparison(results_dirs, output_dir)`** – loads all `performance.csv`, concatenates, generates plots.
+  - `load_all_results() -> DataFrame`
+  - `generate_all_plots()` – comprehensive grid, tradeoff, Pareto.
+  - `best_accuracy_table() -> DataFrame`
+  - `summary_table() -> DataFrame`
+- **`quick_compare(dirs, output_dir)`** – one‑call convenience function.
 
-## 🛠️ Customization
+### `report_generator.py`
 
-- **Add your own plots:** Import `plotting.py` functions or add new ones; they just need a DataFrame and a save path.
-- **Use without Trainer:** Call `MetricsTracker` directly and then pass the DataFrame to `create_comprehensive_plots`.
-- **Layer analysis:** Use `LayerwiseAnalyzer` on any HuggingFace model to understand which layers can be pruned more aggressively.
+- **`generate_html_report(df, output_dir, title)`** – creates an HTML page with summary table.
+- **`generate_latex_table(df, output_path, caption)`** – exports a LaTeX `table` environment.
+- **`generate_full_report(df, output_dir, experiment_name)`** – produces HTML, CSV, LaTeX, and all plots.
 
----
+### `callbacks.py`
 
-## 📜 License
+- **`LoggingCallback(tracker, logger, plots_dir, save_plots)`** – Trainer callback that logs metrics, saves training history plots, and flushes tracker.
+
+### `utils.py`
+
+- **`filter_results(df, models, tasks, ranks, min_accuracy)`** – filters DataFrame.
+- **`get_best_configurations(df, metric)`** – returns best config per (task, model).
+- **`detect_least_compressible_layers(model, tokenizer, calibration_texts, k)`** – identifies layers that should **not** be heavily compressed (based on large changes in cosine similarity).
+
+## 🔧 Integration with the Toolkit
+
+- The `analysis` package expects DataFrames with at least columns `model`, `task`, `rank`, `accuracy`.
+- Optional columns: `speedup_factor`, `param_reduction`, `memory_reduction`, `task_type`, `accuracy_drop`.
+- The `LoggingCallback` works with any Hugging Face `Trainer`.
+- The layer‑wise analyzer requires a model that can be hooked (any HF transformer).
+
+## 📜 Dependencies
+
+- `matplotlib`, `seaborn`, `pandas`, `numpy`, `scipy`, `scikit‑learn`
+- `torch`, `transformers` (for `LayerwiseAnalyzer`)
+
+## 📄 License
 
 Part of the **Efficient Transformer Toolkit** – MIT License.
