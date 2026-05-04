@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Experiment Monitor – Live Training Dashboard</title>
+    <style>
+        * { box-sizing: border-box; }
+        .report { background: #10b981; color: white; }
+.pdf-preview { background: #ec489a; color: white; }
+
+        body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, monospace; padding: 20px; margin: 0; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        .card { background: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+        .badge { display: inline-block; padding: 6px 14px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; background: #334155; color: white; }
+        .badge.running { background: #f59e0b; color: #000; }
+        .badge.completed { background: #10b981; }
+        .badge.failed { background: #ef4444; }
+        button { background: #3b82f6; border: none; border-radius: 8px; padding: 6px 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin: 0 4px; }
+        button:hover { opacity: 0.85; transform: scale(0.98); }
+        .stop { background: #ef4444; color: white; }
+        .paper { background: #f59e0b; color: black; }
+        .eval { background: #8b5cf6; color: white; }
+        a { color: #60a5fa; text-decoration: none; }
+        .dashboard-grid { display: flex; gap: 24px; flex-wrap: wrap; }
+        .main-charts { flex: 2; min-width: 300px; }
+        .sidebar { flex: 1; min-width: 260px; }
+        canvas { background: #0f172a; border-radius: 12px; width: 100%; max-height: 260px; }
+        .progress-bar-container { background: #334155; border-radius: 12px; height: 24px; margin: 16px 0; overflow: hidden; }
+        .progress-bar { background: #10b981; width: 0%; height: 100%; transition: width 0.3s ease; text-align: center; color: white; line-height: 24px; font-size: 0.8rem; font-weight: bold; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; }
+        .stat-card { background: #0f172a; padding: 8px 12px; border-radius: 12px; text-align: center; }
+        .stat-label { font-size: 0.7rem; text-transform: uppercase; color: #94a3b8; }
+        .stat-value { font-size: 1.4rem; font-weight: bold; }
+        .log-area { background: #0f172a; font-family: 'Fira Code', monospace; font-size: 0.8rem; height: 240px; overflow-y: auto; padding: 12px; border-radius: 12px; white-space: pre-wrap; color: #86efac; }
+        .terminal-container { background: #000; height: 280px; border-radius: 12px; overflow: hidden; margin-top: 12px; }
+        hr { border-color: #334155; margin: 16px 0; }
+        h2, h3 { margin: 0 0 8px 0; font-weight: 600; }
+        .modal { animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+    
+    <script src="/static/web_dashboard/js/chart.js"></script>
+<!-- <link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
+ <link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
+<script src="/static/web_dashboard/js/xterm.js"></script>
+ -->
+<link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
+<script src="/static/web_dashboard/js/xterm.js"></script>
+
+<script src="/static/web_dashboard/js/xterm.js"></script>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"> -->
+</head>
+<body>
+<div class="container">
+    <div class="flex-row">
+        <h2>⚡ Experiment <span id="exp-id">{{ experiment.id|slice:"8" }}</span> <span id="status-badge" class="badge">{{ experiment.status|default:"queued" }}</span></h2>
+        <div>
+            <button id="eval-btn" class="eval">📊 Evaluate</button>
+            <button id="stop-btn" class="stop">⏹ Stop</button>
+            <button id="paper-btn" class="paper">📄 Generate Paper</button>
+            <button id="report-btn" class="report">📄 Full Report</button>
+            <button id="pdf-preview-btn" class="pdf-preview">📄 PDF Preview</button>
+
+
+            <a href="/">← Dashboard</a>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="main-charts">
+            <div class="card">
+                <h3>📉 Training Loss</h3>
+                <canvas id="lossChart" height="200"></canvas>
+            </div>
+            <div class="card">
+                <h3>📊 Evaluation Metrics</h3>
+                <canvas id="evalChart" height="200"></canvas>
+            </div>
+        </div>
+        <div class="sidebar">
+            <div class="card">
+                <h3>⏱️ Progress</h3>
+                <div class="progress-bar-container"><div id="progress-bar" class="progress-bar">0%</div></div>
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-label">Step</div><div class="stat-value"><span id="current-step">0</span> / <span id="total-steps">0</span></div></div>
+                    <div class="stat-card"><div class="stat-label">ETA</div><div class="stat-value" id="eta">--</div></div>
+                    <div class="stat-card"><div class="stat-label">Loss</div><div class="stat-value" id="loss">--</div></div>
+                    <div class="stat-card"><div class="stat-label">Accuracy</div><div class="stat-value" id="acc">--</div></div>
+                    
+                </div>
+            </div>
+            <div class="card">
+                <h3>🖥️ Live Terminal</h3>
+                <div id="terminal-container" class="terminal-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>📜 Live Logs</h3>
+        <div id="log-area" class="log-area">{{ experiment.logs|default:"Waiting for logs..." }}</div>
+    </div>
+</div>
+
+<!-- Evaluation Results Modal -->
+<div id="evalModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000;">
+    <div style="background:#1e293b; border-radius:20px; max-width:500px; width:90%; padding:20px; color:#e2e8f0;">
+        <h3>📊 Evaluation Results</h3>
+        <div id="evalResults" style="margin: 15px 0; font-family: monospace;"></div>
+        <button onclick="closeEvalModal()" style="background:#3b82f6; border:none; padding:6px 16px; border-radius:8px;">Close</button>
+    </div>
+</div>
+<!-- PDF Preview Modal -->
+<div id="pdfModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1002;">
+    <div style="position:relative; width:100%; height:100%;">
+        <button onclick="closePdfModal()" style="position:absolute; top:20px; right:30px; background:#ef4444; color:white; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer;">✕</button>
+        <iframe id="pdfIframe" src="" style="width:100%; height:100%; border:none;"></iframe>
+    </div>
+</div>
+<script>
+    const jobId = "{{ experiment.id }}";
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) window.location.href = '/login/';
+
+    let lossChart, evalChart;
+    let trainSteps = [], trainLosses = [];
+    let evalSteps = [], evalLosses = [], evalAccuracies = [];
+
+    function initCharts() {
+        lossChart = new Chart(document.getElementById('lossChart'), {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Train Loss', borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', data: [], tension: 0.2, fill: true }] },
+            options: { responsive: true, maintainAspectRatio: true, scales: { x: { title: { display: true, text: 'Step' } }, y: { title: { display: true, text: 'Loss' } } } }
+        });
+        evalChart = new Chart(document.getElementById('evalChart'), {
+            type: 'line',
+            data: { labels: [], datasets: [
+                { label: 'Eval Loss', borderColor: '#c084fc', backgroundColor: 'rgba(192,132,252,0.1)', data: [], yAxisID: 'y', fill: true, tension: 0.2 },
+                { label: 'Accuracy', borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', data: [], yAxisID: 'y1', fill: true, tension: 0.2 }
+            ] },
+            options: { responsive: true, scales: { y: { position: 'left', title: { display: true, text: 'Loss' } }, y1: { position: 'right', min: 0, max: 1, title: { display: true, text: 'Accuracy' } } } }
+        });
+    }
+    function updateProgress(data) {
+        if (data.current_step !== undefined && data.total_steps !== undefined) {
+            const pct = (data.current_step / data.total_steps * 100).toFixed(1);
+            document.getElementById('progress-bar').style.width = pct + '%';
+            document.getElementById('progress-bar').innerText = pct + '%';
+            document.getElementById('current-step').innerText = data.current_step;
+            document.getElementById('total-steps').innerText = data.total_steps;
+            if (data.eta_seconds) {
+                const eta = data.eta_seconds;
+                const h = Math.floor(eta/3600), m = Math.floor((eta%3600)/60), s = Math.floor(eta%60);
+                document.getElementById('eta').innerText = `${h}h ${m}m ${s}s`;
+            }
+        }
+    }
+document.getElementById('report-btn').onclick = () => {
+    window.open(`/api/experiments/${jobId}/report/`, '_blank');
+};
+document.getElementById('pdf-preview-btn').onclick = () => {
+    const url = `/api/experiments/${jobId}/paper_preview/`;   // no token
+    document.getElementById('pdfIframe').src = url;
+    document.getElementById('pdfModal').style.display = 'flex';
+};
+function closePdfModal() {
+    document.getElementById('pdfModal').style.display = 'none';
+    document.getElementById('pdfIframe').src = '';
+}
+    function addLog(line) {
+        const logDiv = document.getElementById('log-area');
+        logDiv.innerText += line + '\n';
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function updateMetrics(data) {
+        // Training loss (requires 'step' field from backend)
+        if (data.step !== undefined && data.loss !== undefined) {
+            trainSteps.push(data.step);
+            trainLosses.push(data.loss);
+            lossChart.data.labels = trainSteps;
+            lossChart.data.datasets[0].data = trainLosses;
+            lossChart.update();
+            document.getElementById('loss').innerText = data.loss.toFixed(4);
+        }
+        // Evaluation metrics
+        if (data.eval_loss !== undefined) {
+            const epoch = evalSteps.length + 1;
+            evalSteps.push(epoch);
+            evalLosses.push(data.eval_loss);
+            evalChart.data.labels = evalSteps;
+            evalChart.data.datasets[0].data = evalLosses;
+            if (data.eval_accuracy !== undefined) {
+                evalAccuracies.push(data.eval_accuracy);
+                evalChart.data.datasets[1].data = evalAccuracies;
+                document.getElementById('acc').innerText = data.eval_accuracy.toFixed(4);
+            }
+            evalChart.update();
+        }
+    }
+
+    // WebSocket connection with auto-reconnect
+    let ws;
+    function connectWebSocket() {
+        ws = new WebSocket(`ws://${location.host}/ws/jobs/${jobId}/`);
+        ws.onopen = () => console.log('[WS] Connected');
+        ws.onmessage = (e) => {
+            try {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'log') addLog(msg.data);
+                else if (msg.type === 'metrics') updateMetrics(msg.data);
+                else if (msg.type === 'progress') updateProgress(msg);
+                else if (msg.type === 'status') {
+                    const badge = document.getElementById('status-badge');
+                    badge.innerText = msg.status;
+                    badge.className = `badge ${msg.status}`;
+                    if (msg.status === 'completed' || msg.status === 'failed') ws.close();
+                }
+            } catch(err) { console.error('WS parse error', err); }
+        };
+        ws.onclose = () => {
+            console.log('[WS] Disconnected, reconnecting in 3s...');
+            setTimeout(connectWebSocket, 3000);
+        };
+        ws.onerror = (err) => console.error('[WS] Error', err);
+    }
+
+    // Terminal (xterm.js)
+    let term;
+    function initTerminal() {
+        if (typeof Terminal === 'undefined') {
+            document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js not loaded</div>';
+            return;
+        }
+        term = new Terminal({ cursorBlink: true, theme: { background: '#000000', foreground: '#00ff00' }, fontSize: 12 });
+        term.open(document.getElementById('terminal-container'));
+        const termWs = new WebSocket(`ws://${location.host}/ws/terminal/`);
+        termWs.onmessage = (ev) => term.write(ev.data);
+        term.onData((data) => { if (termWs.readyState === WebSocket.OPEN) termWs.send(data); });
+        termWs.onclose = () => term.write('\r\n\x1b[33mTerminal reconnecting...\x1b[0m\r\n');
+    }
+
+    // Evaluate button
+    document.getElementById('eval-btn').onclick = async () => {
+        const btn = document.getElementById('eval-btn');
+        btn.textContent = '⏳ Evaluating...';
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/jobs/${jobId}/evaluate/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
+            const data = await res.json();
+            if (res.ok) {
+                let html = '<ul>';
+                for (const [key, value] of Object.entries(data.metrics)) {
+                    html += `<li><strong>${key}:</strong> ${typeof value === 'number' ? value.toFixed(4) : value}</li>`;
+                }
+                html += '</ul>';
+                document.getElementById('evalResults').innerHTML = html;
+                document.getElementById('evalModal').style.display = 'flex';
+            } else {
+                alert('Evaluation failed: ' + (data.error || 'Unknown error'));
+            }
+        } catch (err) {
+            alert('Evaluation request failed');
+        } finally {
+            btn.textContent = '📊 Evaluate';
+            btn.disabled = false;
+        }
+    };
+    function closeEvalModal() {
+        document.getElementById('evalModal').style.display = 'none';
+    }
+
+    // Stop button
+    document.getElementById('stop-btn').onclick = async () => {
+        if (confirm('Stop this experiment?')) {
+            await fetch(`/api/jobs/${jobId}/stop/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
+            alert('Stop signal sent');
+        }
+    };
+    // Paper generation
+    document.getElementById('paper-btn').onclick = async () => {
+        const res = await fetch(`/api/experiments/${jobId}/paper/`, { headers: { 'Authorization': `Token ${authToken}` } });
+        if (res.ok) {
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = res.headers.get('Content-Type') === 'application/pdf' ? `paper_${jobId}.pdf` : `paper_${jobId}.tex`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } else alert('Paper generation failed');
+    };
+
+    // Initialise
+    initCharts();
+    initTerminal();
+    connectWebSocket();
+</script>
+</body>
+</html>

@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Efficient Transformer Toolkit – Dashboard</title>
-  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <title>Efficient Transformer Toolkit – Live Dashboard</title>
+<script src="https://unpkg.com/plotly.js@2.35.2/dist/plotly.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/xterm@4.18.0/css/xterm.css" />
+<script src="https://unpkg.com/xterm@4.18.0/lib/xterm.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; height: 100vh; background: #1e1e2f; color: #ccc; }
@@ -62,17 +64,28 @@
 <!-- Login overlay -->
 <div class="login-overlay" id="loginOverlay">
   <div class="login-box">
-    <h2>🔐 Login</h2>
-    <div class="error" id="loginError"></div>
-    <input type="text" id="username" placeholder="Username" autocomplete="username">
-    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-    <button onclick="doLogin()">Sign In</button>
+    <h2 id="authTitle">🔐 Login</h2>
+    <div class="error" id="authError"></div>
+    <div id="loginFields">
+      <input type="text" id="loginUsername" placeholder="Username" autocomplete="username">
+      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+      <button onclick="doLogin()">Sign In</button>
+    </div>
+    <div id="registerFields" style="display:none;">
+      <input type="text" id="regUsername" placeholder="Choose a username" autocomplete="username">
+      <input type="password" id="regPassword" placeholder="Create password">
+      <input type="password" id="regPassword2" placeholder="Confirm password">
+      <button onclick="doRegister()">Create Account</button>
+    </div>
+    <div style="margin-top:1rem; text-align:center; font-size:0.85rem; color:#aaa;">
+      <span id="toggleText">Don't have an account?</span>
+      <a href="#" id="toggleLink" onclick="toggleAuth()">Create one</a>
+    </div>
   </div>
 </div>
 
-<!-- Main app (hidden until login) -->
+<!-- Main app -->
 <div class="app" id="app" style="display:none;">
-  <!-- Sidebar -->
   <div class="sidebar">
     <h2>🚀 Experiment Config
       <button class="btn btn-logout" onclick="doLogout()">Logout</button>
@@ -110,7 +123,6 @@
     <div class="job-list" id="jobList"><div style="color:#aaa">Loading jobs...</div></div>
   </div>
 
-  <!-- Main area -->
   <div class="main">
     <div class="top-bar">
       <span id="jobStatus" style="font-weight:bold;">⚪ Idle</span>
@@ -125,21 +137,29 @@
       <div class="panel"><h3>Evaluation Metrics</h3><div id="evalPlot" style="flex:1;"></div></div>
       <div class="panel log-viewer"><h3>Logs</h3><div id="logContent" style="flex:1;"></div></div>
       <div class="panel"><h3>System</h3><div id="systemInfo">CPU: -- | Mem: --</div></div>
+<div class="panel" style="grid-column: span 2;">
+  <h3>Live Terminal (stdout/stderr)</h3>
+  <pre id="terminalOutput" style="background:#000; color:#0f0; height:200px; overflow-y:auto; padding:5px; font-family:monospace; font-size:12px;"></pre>
+</div>
+
     </div>
   </div>
 </div>
 
 <script>
-// ── Auth & State ───────────────────────────────────────────
+// ======================== AUTH & STATE ========================
 const API_BASE = 'http://127.0.0.1:8000/api';
 const WS_BASE = 'ws://127.0.0.1:8000/ws/jobs';
 let authToken = localStorage.getItem('authToken');
 let currentJobId = null;
 let ws = null;
-let plotData = {lossSteps:[], losses:[], evalSteps:[], evalLosses:[]};
+let plotData = { lossSteps: [], losses: [], evalSteps: [], evalLosses: [] };
+let reconnectTimeout = null;
+let jobListInterval = null;
+let systemInterval = null;
 
-// ── Toast notifications ────────────────────────────────────
-function showToast(msg, type='success') {
+// Toast notifications
+function showToast(msg, type = 'success') {
   const t = document.createElement('div');
   t.className = `toast toast-${type}`;
   t.textContent = msg;
@@ -147,66 +167,112 @@ function showToast(msg, type='success') {
   setTimeout(() => t.remove(), 3000);
 }
 
-// ── Auth functions ─────────────────────────────────────────
+// ======================== AUTH FUNCTIONS ========================
 async function doLogin() {
-  const username = document.getElementById('username').value;
-  const password = document.getElementById('password').value;
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
   if (!username || !password) {
-    document.getElementById('loginError').textContent = 'Username and password required';
+    document.getElementById('authError').textContent = 'Username and password required';
     return;
   }
   try {
     const resp = await fetch(`${API_BASE}/auth/login/`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({username, password})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
     });
     if (!resp.ok) throw new Error('Invalid credentials');
     const data = await resp.json();
-    authToken = data.token || data.key;  // DRF Token or SimpleJWT
+    authToken = data.token;
     localStorage.setItem('authToken', authToken);
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     initApp();
     showToast('Logged in successfully');
-  } catch(e) {
-    document.getElementById('loginError').textContent = e.message;
+  } catch (e) {
+    document.getElementById('authError').textContent = e.message;
+  }
+}
+
+let authMode = 'login';
+function toggleAuth() {
+  if (authMode === 'login') {
+    authMode = 'register';
+    document.getElementById('authTitle').textContent = '📝 Create Account';
+    document.getElementById('loginFields').style.display = 'none';
+    document.getElementById('registerFields').style.display = 'block';
+    document.getElementById('toggleText').textContent = 'Already have an account?';
+    document.getElementById('toggleLink').textContent = 'Sign In';
+  } else {
+    authMode = 'login';
+    document.getElementById('authTitle').textContent = '🔐 Login';
+    document.getElementById('loginFields').style.display = 'block';
+    document.getElementById('registerFields').style.display = 'none';
+    document.getElementById('toggleText').textContent = "Don't have an account?";
+    document.getElementById('toggleLink').textContent = 'Create one';
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const password2 = document.getElementById('regPassword2').value;
+  if (!username || !password) {
+    document.getElementById('authError').textContent = 'All fields are required';
+    return;
+  }
+  if (password !== password2) {
+    document.getElementById('authError').textContent = 'Passwords do not match';
+    return;
+  }
+  try {
+    const resp = await fetch(`${API_BASE}/auth/register/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    if (!resp.ok) {
+      const data = await resp.json();
+      throw new Error(data.error || 'Registration failed');
+    }
+    const data = await resp.json();
+    authToken = data.token;
+    localStorage.setItem('authToken', authToken);
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    initApp();
+    showToast('Account created successfully');
+  } catch (e) {
+    document.getElementById('authError').textContent = e.message;
   }
 }
 
 function doLogout() {
   localStorage.removeItem('authToken');
   authToken = null;
-  if (ws) ws.close();
+  if (ws) { ws.close(); ws = null; }
+  if (reconnectTimeout) clearTimeout(reconnectTimeout);
+  if (jobListInterval) clearInterval(jobListInterval);
+  if (systemInterval) clearInterval(systemInterval);
   location.reload();
 }
 
 function authHeaders() {
-  return authToken ? {'Authorization': `Token ${authToken}`} : {};
+  return authToken ? { 'Authorization': `Token ${authToken}` } : {};
 }
 
-// ── Check login state on load ──────────────────────────────
-if (authToken) {
-  document.getElementById('loginOverlay').style.display = 'none';
-  document.getElementById('app').style.display = 'flex';
-  initApp();
-} else {
-  document.getElementById('loginOverlay').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
-}
-
-// ── API helpers ────────────────────────────────────────────
+// ======================== API HELPERS ========================
 async function apiGet(url) {
-  const res = await fetch(`${API_BASE}${url}`, {headers: authHeaders()});
+  const res = await fetch(`${API_BASE}${url}`, { headers: authHeaders() });
   if (res.status === 401) { doLogout(); return null; }
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
 
-async function apiPost(url, body={}) {
+async function apiPost(url, body = {}) {
   const res = await fetch(`${API_BASE}${url}`, {
     method: 'POST',
-    headers: {...authHeaders(), 'Content-Type': 'application/json'},
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
   if (res.status === 401) { doLogout(); return null; }
@@ -214,16 +280,18 @@ async function apiPost(url, body={}) {
   return res.json();
 }
 
-// ── Load config options ────────────────────────────────────
+// ======================== CONFIG LOADING ========================
 async function loadConfigOptions() {
   try {
     const [models, tasks, attentions] = await Promise.all([
-      apiGet('/config/models/'), apiGet('/config/tasks/'), apiGet('/config/attentions/')
+      apiGet('/config/models/'),
+      apiGet('/config/tasks/'),
+      apiGet('/config/attentions/')
     ]);
     if (models) populateSelect('modelSelect', models.models, 'distilbert-base-uncased');
     if (tasks) populateSelect('taskSelect', tasks.tasks, 'mrpc');
     if (attentions) populateSelect('attentionSelect', attentions.attentions, 'full');
-  } catch(e) { console.error('Config load error:', e); }
+  } catch (e) { console.error('Config load error:', e); }
 }
 
 function populateSelect(id, options, defaultVal) {
@@ -231,29 +299,33 @@ function populateSelect(id, options, defaultVal) {
   sel.innerHTML = '';
   options.forEach(o => {
     const opt = document.createElement('option');
-    opt.value = o; opt.text = o;
+    opt.value = o;
+    opt.text = o;
     sel.appendChild(opt);
   });
   if (defaultVal && options.includes(defaultVal)) sel.value = defaultVal;
 }
 
-// ── Job list ───────────────────────────────────────────────
+// ======================== JOB LIST ========================
 async function loadJobList() {
   try {
     const data = await apiGet('/experiments/');
     if (!data) return;
     const container = document.getElementById('jobList');
-    if (!data.length) { container.innerHTML = '<div style="color:#aaa">No jobs yet</div>'; return; }
-    container.innerHTML = data.slice(0,20).map(j => `
+    if (!data.length) {
+      container.innerHTML = '<div style="color:#aaa">No jobs yet</div>';
+      return;
+    }
+    container.innerHTML = data.slice(0, 20).map(j => `
       <div class="job-item" onclick="selectJob('${j.id}')">
-        <span><span class="status-dot ${j.status}"></span>${j.name || j.id.slice(0,8)}</span>
+        <span><span class="status-dot ${j.status}"></span>${j.name || j.id.slice(0, 8)}</span>
         <span style="color:#888;font-size:0.75rem;">${j.status}</span>
       </div>
     `).join('');
-  } catch(e) {}
+  } catch (e) { console.error('Job list error', e); }
 }
 
-// ── Job management ─────────────────────────────────────────
+// ======================== JOB MANAGEMENT ========================
 function getConfig() {
   return {
     model_name: document.getElementById('modelSelect').value,
@@ -272,16 +344,23 @@ async function startTraining() {
   try {
     const config = getConfig();
     const data = await apiPost('/train/', config);
-    if (data) { selectJob(data.id); showToast('Job started!'); }
-  } catch(e) { showToast('Failed to start job', 'error'); }
+    if (data) {
+      selectJob(data.id);
+      showToast('Training started!');
+    }
+  } catch (e) {
+    showToast('Failed to start training', 'error');
+  }
 }
 
 async function stopTraining() {
   if (!currentJobId) return;
   try {
     await apiPost(`/jobs/${currentJobId}/stop/`);
-    showToast('Job stopped');
-  } catch(e) { showToast('Failed to stop job', 'error'); }
+    showToast('Stop signal sent');
+  } catch (e) {
+    showToast('Failed to stop job', 'error');
+  }
 }
 
 async function updateConfig() {
@@ -289,112 +368,169 @@ async function updateConfig() {
   try {
     const config = getConfig();
     await fetch(`${API_BASE}/jobs/${currentJobId}/config/`, {
-      method: 'PATCH', headers: {...authHeaders(), 'Content-Type':'application/json'},
+      method: 'PATCH',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(config)
     });
     showToast('Config updated');
-  } catch(e) { showToast('Failed to update config', 'error'); }
+  } catch (e) {
+    showToast('Failed to update config', 'error');
+  }
+}
+
+// ======================== WEBSOCKET & JOB SELECTION ========================
+function connectWebSocket(jobId) {
+  if (ws) {
+    ws.close();
+    ws = null;
+  }
+  ws = new WebSocket(`${WS_BASE}/${jobId}/`);
+  ws.onmessage = handleWSMessage;
+  ws.onerror = (err) => console.error('WebSocket error', err);
+  ws.onclose = () => {
+    console.log('WebSocket closed, will reconnect in 2s');
+    if (reconnectTimeout) clearTimeout(reconnectTimeout);
+    reconnectTimeout = setTimeout(() => {
+      if (currentJobId) connectWebSocket(currentJobId);
+    }, 2000);
+  };
+}
+
+function resetUI() {
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressText').innerText = '0%';
+  plotData = { lossSteps: [], losses: [], evalSteps: [], evalLosses: [] };
+  Plotly.newPlot('lossPlot', [{ x: [], y: [], type: 'scatter', mode: 'lines+markers', name: 'Loss' }],
+    { margin: { t: 10 }, paper_bgcolor: '#2d2d44', plot_bgcolor: '#2d2d44', font: { color: '#ccc' } });
+  Plotly.newPlot('evalPlot', [{ x: [], y: [], type: 'scatter', mode: 'lines+markers', name: 'Eval Loss' }],
+    { margin: { t: 10 }, paper_bgcolor: '#2d2d44', plot_bgcolor: '#2d2d44', font: { color: '#ccc' } });
+  document.getElementById('logContent').innerText = '';
 }
 
 async function selectJob(jobId) {
+  if (currentJobId === jobId) return;
   currentJobId = jobId;
   document.getElementById('startBtn').disabled = true;
   document.getElementById('stopBtn').disabled = false;
   document.getElementById('updateBtn').disabled = false;
-  if (ws) ws.close();
-  ws = new WebSocket(`${WS_BASE}/${jobId}/`);
-  ws.onmessage = handleWSMessage;
-  ws.onerror = () => console.log('WS error');
+  resetUI();
+  connectWebSocket(jobId);
   try {
     const job = await apiGet(`/jobs/${jobId}/`);
     if (job) {
       document.getElementById('jobStatus').innerHTML = `<span class="status-dot ${job.status}"></span>${job.status}`;
-      document.getElementById('logContent').innerText = job.logs || '';
+      if (job.logs) document.getElementById('logContent').innerText = job.logs;
+      if (job.current_step && job.total_steps) {
+        const pct = (job.current_step / job.total_steps) * 100;
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressText').innerText = Math.round(pct) + '%';
+      }
     }
-  } catch(e) {}
+  } catch (e) { console.error('Failed to load job details', e); }
 }
 
+// ======================== WEBSOCKET MESSAGE HANDLER ========================
 function handleWSMessage(event) {
-  const msg = JSON.parse(event.data);
-  switch (msg.type) {
-    case 'status':
-      document.getElementById('jobStatus').innerHTML = `<span class="status-dot ${msg.status}"></span>${msg.status}`;
-      if (['completed','stopped','failed'].includes(msg.status)) {
-        document.getElementById('startBtn').disabled = false;
-        document.getElementById('stopBtn').disabled = true;
-        document.getElementById('updateBtn').disabled = true;
-        if (ws) { ws.close(); ws = null; }
-        loadJobList();
-      }
-      break;
-    case 'log':
-      const logEl = document.getElementById('logContent');
-      logEl.innerText += msg.data + '\n';
-      logEl.scrollTop = logEl.scrollHeight;
-      break;
-    case 'metrics':
-      if (msg.data.loss !== undefined) {
-        plotData.lossSteps.push(plotData.lossSteps.length + 1);
-        plotData.losses.push(msg.data.loss);
-      }
-      if (msg.data.eval_loss !== undefined) {
-        plotData.evalSteps.push(plotData.evalSteps.length + 1);
-        plotData.evalLosses.push(msg.data.eval_loss);
-      }
-      Plotly.newPlot('lossPlot', [{
-        x: plotData.lossSteps, y: plotData.losses, type: 'scatter', mode: 'lines+markers', name: 'Loss'
-      }], {margin: {t:10}, paper_bgcolor:'#2d2d44', plot_bgcolor:'#2d2d44', font:{color:'#ccc'}});
-      Plotly.newPlot('evalPlot', [{
-        x: plotData.evalSteps, y: plotData.evalLosses, type: 'scatter', mode: 'lines+markers', name: 'Eval Loss'
-      }], {margin: {t:10}, paper_bgcolor:'#2d2d44', plot_bgcolor:'#2d2d44', font:{color:'#ccc'}});
-      break;
-    case 'progress':
-      const pct = Math.min(100, Math.round(msg.progress || 0));
-      document.getElementById('progressBar').style.width = pct + '%';
-      document.getElementById('progressText').innerText = pct + '% (Remaining: ' + formatTime(msg.eta_seconds) + ')';
-      break;
-    case 'gpu':
-      document.getElementById('gpuInfo').innerText = `GPU Memory: ${(msg.memory_used_gb||0).toFixed(2)} GB`;
-      break;
+  try {
+    const msg = JSON.parse(event.data);
+    switch (msg.type) {
+      case 'status':
+        document.getElementById('jobStatus').innerHTML = `<span class="status-dot ${msg.status}"></span>${msg.status}`;
+        if (['completed', 'stopped', 'failed'].includes(msg.status)) {
+          document.getElementById('startBtn').disabled = false;
+          document.getElementById('stopBtn').disabled = true;
+          document.getElementById('updateBtn').disabled = true;
+          if (ws) { ws.close(); ws = null; }
+          if (reconnectTimeout) clearTimeout(reconnectTimeout);
+          loadJobList();
+        }
+        break;
+      case 'terminal':
+        const termEl = document.getElementById('terminalOutput');
+        termEl.innerText += msg.data + '\n';
+        termEl.scrollTop = termEl.scrollHeight;
+        break;
+
+      case 'log':
+        const logEl = document.getElementById('logContent');
+        logEl.innerText += msg.data + '\n';
+        logEl.scrollTop = logEl.scrollHeight;
+        break;
+      case 'metrics':
+        if (msg.data.loss !== undefined) {
+          plotData.lossSteps.push(plotData.lossSteps.length + 1);
+          plotData.losses.push(msg.data.loss);
+          Plotly.update('lossPlot', { x: [plotData.lossSteps], y: [plotData.losses] }, {}, [0]);
+        }
+        if (msg.data.eval_loss !== undefined) {
+          plotData.evalSteps.push(plotData.evalSteps.length + 1);
+          plotData.evalLosses.push(msg.data.eval_loss);
+          Plotly.update('evalPlot', { x: [plotData.evalSteps], y: [plotData.evalLosses] }, {}, [0]);
+        }
+        break;
+      case 'progress':
+        const pct = Math.min(100, Math.round(msg.progress || 0));
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressText').innerText = pct + '% (Remaining: ' + formatTime(msg.eta_seconds) + ')';
+        break;
+      default:
+        // ignore
+    }
+  } catch (e) {
+    console.error('Failed to parse WebSocket message', e);
   }
 }
 
 function formatTime(seconds) {
   if (!seconds || seconds < 0) return '--';
-  const h = Math.floor(seconds/3600);
-  const m = Math.floor((seconds%3600)/60);
-  const s = Math.round(seconds%60);
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.round(seconds % 60);
   return `${h}h ${m}m ${s}s`;
 }
 
-// ── System polling ─────────────────────────────────────────
+// ======================== SYSTEM POLLING ========================
 async function pollSystem() {
   try {
     const sys = await apiGet('/system/status/');
-    if (sys) document.getElementById('systemInfo').innerText = `CPU: ${sys.cpu}% | Mem: ${sys.memory}%`;
+    if (sys) document.getElementById('systemInfo').innerHTML = `CPU: ${sys.cpu}% | Mem: ${sys.memory}%`;
     const gpu = await apiGet('/system/gpu/');
-    if (gpu?.cuda_available) {
-      document.getElementById('gpuInfo').innerText = `GPU: ${(gpu.memory_allocated||0).toFixed(2)} / ${gpu.memory_total} GB`;
+    if (gpu && gpu.cuda_available) {
+      const used = gpu.memory_allocated || 0;
+      const total = gpu.memory_total || 0;
+      document.getElementById('gpuInfo').innerHTML = `GPU: ${used.toFixed(2)} / ${total.toFixed(2)} GB`;
+    } else {
+      document.getElementById('gpuInfo').innerHTML = 'GPU: N/A';
     }
-  } catch(e) {}
+  } catch (e) { console.warn('System poll error', e); }
 }
 
-// ── Event listeners ────────────────────────────────────────
-document.getElementById('startBtn').addEventListener('click', startTraining);
-document.getElementById('stopBtn').addEventListener('click', stopTraining);
-document.getElementById('updateBtn').addEventListener('click', updateConfig);
-document.getElementById('password').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') doLogin();
-});
-
-// ── Init ───────────────────────────────────────────────────
+// ======================== INITIALIZATION ========================
 async function initApp() {
   await loadConfigOptions();
   await loadJobList();
-  setInterval(loadJobList, 10000);
-  setInterval(pollSystem, 3000);
+  jobListInterval = setInterval(loadJobList, 10000);
+  systemInterval = setInterval(pollSystem, 3000);
   pollSystem();
 }
+
+// Check login state on load
+if (authToken) {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  initApp();
+} else {
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// Attach event listeners
+document.getElementById('startBtn').addEventListener('click', startTraining);
+document.getElementById('stopBtn').addEventListener('click', stopTraining);
+document.getElementById('updateBtn').addEventListener('click', updateConfig);
+document.getElementById('loginPassword')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') doLogin();
+});
 </script>
 </body>
 </html>

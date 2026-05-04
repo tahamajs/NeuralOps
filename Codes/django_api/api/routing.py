@@ -1,6 +1,7 @@
-from django.urls import path
-from .consumers import JobConsumer
+from django.urls import re_path
+from .consumers import JobConsumer, TerminalConsumer
 
 websocket_urlpatterns = [
-    path("ws/jobs/<uuid:job_id>/", JobConsumer.as_asgi()),
+    re_path(r'ws/jobs/(?P<experiment_id>[^/]+)/$', JobConsumer.as_asgi()),
+    re_path(r'ws/terminal/$', TerminalConsumer.as_asgi()),   # terminal endpoint
 ]

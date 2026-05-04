@@ -1,52 +1,62 @@
-import { useState } from "react";
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
 
-export default function DownloadPaperButton({ experimentId }: { experimentId: string }) {
-  const [loading, setLoading] = useState(false);
+\title{ {{EXPERIMENT_NAME}} \\[0.3em] \large Efficiency Analysis of Attention Compression }
+\author{ {{AUTHOR_NAME}} }
+\date{ {{DATE}} }
 
-  const downloadPaper = async () => {
-    setLoading(true);
-    try {
-      const pdfUrl = `/api/experiments/${experimentId}/paper/`;
+\begin{document}
+\maketitle
 
-      // Try to fetch as blob to trigger download
-      const response = await fetch(pdfUrl);
-      if (!response.ok) throw new Error("Paper generation failed");
+\begin{abstract}
+This paper presents an evaluation of the \textbf{ {{ATTENTION_TYPE}} } attention mechanism
+on the \textbf{ {{TASK_NAME}} } task using the \texttt{ {{MODEL_NAME}} } model.
+The experiment achieved a final accuracy of \textbf{ {{ACCURACY}} } with a compression
+rank of \textbf{ {{COMPRESSION_RANK}} }.
+\end{abstract}
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
+\section{Experimental Setup}
+\begin{itemize}
+    \item \textbf{Model:} {{MODEL_NAME}}
+    \item \textbf{Task:} {{TASK_NAME}} ({{TASK_TYPE}})
+    \item \textbf{Attention type:} {{ATTENTION_TYPE}}
+    \item \textbf{Compression rank:} {{COMPRESSION_RANK}}
+    \item \textbf{Epochs:} {{EPOCHS}}
+    \item \textbf{Batch size:} {{BATCH_SIZE}}
+    \item \textbf{Learning rate:} {{LEARNING_RATE}}
+    \item \textbf{Max sequence length:} {{MAX_SEQ_LENGTH}}
+    \item \textbf{Seed:} {{SEED}}
+\end{itemize}
 
-      // Determine file extension from content type
-      const contentType = response.headers.get("content-type") || "";
-      const ext = contentType.includes("pdf") ? "pdf" : "tex";
-      link.download = `paper_${experimentId}.${ext}`;
+\section{Results}
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{lr}
+        \toprule
+        Metric & Value \\
+        \midrule
+        Training loss      &  {{LOSS}} \\
+        Accuracy           &  {{ACCURACY}} \\
+        F1‑score           &  {{F1}} \\
+        Matthews corr      &  {{MATTHEWS}} \\
+        \bottomrule
+    \end{tabular}
+    \caption{Final evaluation metrics for the experiment.}
+\end{table}
 
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to download paper:", error);
-      alert("Paper generation failed. Ensure pdflatex is installed on the server, or check the logs.");
-    } finally {
-      setLoading(false);
-    }
-  };
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{ {{LOSS_PLOT_PATH}} }
+    \caption{Training and evaluation loss curves.}
+\end{figure}
 
-  return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h2 className="text-lg font-semibold mb-2">Paper</h2>
-      <button
-        onClick={downloadPaper}
-        disabled={loading}
-        className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:opacity-50"
-      >
-        {loading ? "Generating..." : "📄 Generate Paper (LaTeX)"}
-      </button>
-      <p className="text-xs text-gray-500 mt-1">
-        Compiles a PDF if pdflatex is installed; otherwise downloads a .tex file.
-      </p>
-    </div>
-  );
-}
+\section{Conclusion}
+The \texttt{ {{ATTENTION_TYPE}} } attention with rank {{COMPRESSION_RANK}} achieves
+{{ACCURACY}} accuracy on {{TASK_NAME}}, demonstrating that efficient attention
+mechanisms can maintain competitive performance while reducing model size.
+\end{document}

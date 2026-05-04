@@ -5,13 +5,16 @@ Efficient Attention Framework – Interactive Training Launcher with Live Dashbo
 Usage:
     python run.py                          # interactive config then train
     python run.py --config config.yaml     # non‑interactive from YAML
-    python run.py --attention aurora --task mrpc
+    python run.py --attention minimal_nova --task mrpc
     python run.py --help
 """
 
-import argparse, os, sys, time, threading, queue, yaml
+import argparse
+import os
+import sys
+import time
+import yaml
 import torch
-import numpy as np
 from pathlib import Path
 from transformers import (
     AutoTokenizer, AutoConfig, AutoModelForSequenceClassification,
@@ -25,6 +28,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from framework.data.glue_loader import (
     load_glue_local, GLUE_TASK_KEYS, get_num_labels_and_is_regression
 )
+import framework.attentions   # triggers all @register decorators (populates ATTENTION_REGISTRY)
+
 from framework.data.preprocessing import preprocess_function as build_preprocess
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
@@ -34,7 +39,7 @@ from framework.utils.seed import set_all_seeds
 from framework.utils.layer_norm_fix import fix_layernorm_naming
 from framework.analysis.metrics import MetricsTracker
 
-# Logging – try the framework's experiment_logging, fallback to plain logging
+# Logging – try framework's experiment_logging, fallback to plain logging
 try:
     from experiment_logging import setup_logging, LoggingCallback
     from experiment_logging.config import LoggingConfig
@@ -65,16 +70,14 @@ try:
 except ImportError:
     HAS_RICH = False
 
+# Matplotlib – must be imported after setting backend; used only on main thread
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-# Global plot queue for live updates
-plot_queue = queue.Queue()
-training_active = threading.Event()
 
 # ================================================================
-# Live plotting callback
+# Live plotting callback (no extra threads, runs in main thread)
 # ================================================================
 class LivePlotCallback(TrainerCallback):
     def __init__(self):
@@ -82,6 +85,22 @@ class LivePlotCallback(TrainerCallback):
         self.eval_loss = []
         self.train_steps = []
         self.eval_steps = []
+        # Create figure on main thread
+        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(14, 5))
+        self.fig.canvas.manager.set_window_title("Training Dashboard")
+        self.line1, = self.ax1.plot([], [], 'b-', label="Train Loss")
+        self.line2, = self.ax2.plot([], [], 'r-o', label="Eval Loss")
+        self.ax1.set_title("Training Loss")
+        self.ax2.set_title("Evaluation Loss")
+        self.ax1.set_xlabel("Step")
+        self.ax2.set_xlabel("Step")
+        self.ax1.legend()
+        self.ax2.legend()
+        self.ax1.grid(True, alpha=0.3)
+        self.ax2.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.ion()
+        plt.show(block=False)
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         if logs:
@@ -91,53 +110,50 @@ class LivePlotCallback(TrainerCallback):
             if "eval_loss" in logs:
                 self.eval_loss.append(logs["eval_loss"])
                 self.eval_steps.append(state.global_step)
-            plot_queue.put(("update", {
-                "train_steps": self.train_steps,
-                "train_loss": self.train_loss,
-                "eval_steps": self.eval_steps,
-                "eval_loss": self.eval_loss,
-                "global_step": state.global_step,
-            }))
+            # Update plots
+            self.line1.set_data(self.train_steps, self.train_loss)
+            self.line2.set_data(self.eval_steps, self.eval_loss)
+            self.ax1.relim()
+            self.ax1.autoscale_view()
+            self.ax2.relim()
+            self.ax2.autoscale_view()
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
 
     def on_train_end(self, args, state, control, **kwargs):
-        plot_queue.put(("done", None))
+        plt.ioff()
+        plt.close(self.fig)
 
 
-def live_plotter():
-    """Starts a separate thread that updates a matplotlib figure from plot_queue."""
-    plt.ion()
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
-    fig.canvas.manager.set_window_title("Training Dashboard")
-    lines1, = ax1.plot([], [], 'b-', label="Train Loss")
-    lines2, = ax2.plot([], [], 'r-o', label="Eval Loss")
-    ax1.set_title("Training Loss")
-    ax2.set_title("Evaluation Loss")
-    ax1.set_xlabel("Step")
-    ax2.set_xlabel("Step")
-    ax1.legend()
-    ax2.legend()
-    ax1.grid(True, alpha=0.3)
-    ax2.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show(block=False)
-
-    while training_active.is_set() or not plot_queue.empty():
-        try:
-            cmd, data = plot_queue.get(timeout=0.5)
-            if cmd == "update" and data:
-                lines1.set_data(data["train_steps"], data["train_loss"])
-                lines2.set_data(data["eval_steps"], data["eval_loss"])
-                ax1.relim(); ax1.autoscale_view()
-                ax2.relim(); ax2.autoscale_view()
-                fig.canvas.draw()
-                fig.canvas.flush_events()
-            elif cmd == "done":
-                break
-        except queue.Empty:
-            pass
-        time.sleep(0.1)
-    plt.ioff()
-    plt.close(fig)
+# ================================================================
+# Attention visualization (optional, runs after training)
+# ================================================================
+def visualize_attentions(model, tokenizer, eval_dataset, device, save_path=None):
+    """Extract and save attention maps from the first batch of eval_dataset."""
+    model.eval()
+    # Create a tiny dataloader
+    from torch.utils.data import DataLoader
+    loader = DataLoader(eval_dataset.select(range(min(4, len(eval_dataset)))), batch_size=1)
+    with torch.no_grad():
+        for batch in loader:
+            batch = {k: v.to(device) for k, v in batch.items()}
+            outputs = model(**batch, output_attentions=True)
+            if not hasattr(outputs, 'attentions') or outputs.attentions is None:
+                print("No attentions returned. Ensure model was loaded with output_attentions=True.")
+                return
+            attentions = outputs.attentions  # tuple of (num_layers, batch, heads, seq_len, seq_len)
+            # Take first layer, first head, first sample
+            attn_map = attentions[0][0][0].cpu().numpy()
+            plt.figure(figsize=(10, 8))
+            plt.imshow(attn_map, cmap='viridis')
+            plt.title('Attention Map - Layer 0, Head 0')
+            plt.colorbar()
+            if save_path:
+                plt.savefig(save_path, bbox_inches='tight')
+                print(f"Saved attention map to {save_path}")
+            else:
+                plt.show()
+            break  # only one batch
 
 
 # ================================================================
@@ -209,7 +225,6 @@ def load_yaml_config(path):
 # Main training logic
 # ================================================================
 def run_training(args, cfg_dict):
-    """Execute training with given configuration."""
     console = Console() if HAS_RICH else None
     device = get_device()
     set_all_seeds(args.seed)
@@ -217,7 +232,7 @@ def run_training(args, cfg_dict):
     if console:
         console.rule("[bold green]Starting Experiment")
 
-    # ── Logging setup ──────────────────────────────────────────
+    # Logging setup
     exp_name = f"{cfg_dict['attention']}_{cfg_dict['method']}_{cfg_dict['task']}_{args.seed}"
     if _has_framework_logging:
         log_cfg = LoggingConfig(log_base_dir=args.log_dir or "./logs", experiment_name=exp_name)
@@ -230,7 +245,7 @@ def run_training(args, cfg_dict):
     logger.info(f"Model: {cfg_dict['model']}, Task: {cfg_dict['task']}, "
                 f"Attention: {cfg_dict['attention']}, Method: {cfg_dict['method']}")
 
-    # ── Tokenizer & Dataset ────────────────────────────────────
+    # Tokenizer & Dataset
     tokenizer = AutoTokenizer.from_pretrained(cfg_dict['model'], use_fast=True)
     raw_datasets = load_glue_local(cfg_dict['task'], "./datasets/glue")
     num_labels, is_regression = get_num_labels_and_is_regression(cfg_dict['task'])
@@ -245,12 +260,12 @@ def run_training(args, cfg_dict):
         cols.append("token_type_ids")
     dataset.set_format(type="torch", columns=cols)
 
-    # ── Load model ─────────────────────────────────────────────
-    config = AutoConfig.from_pretrained(cfg_dict['model'], num_labels=num_labels)
+    # Load model with output_attentions=True (enables attention extraction)
+    config = AutoConfig.from_pretrained(cfg_dict['model'], num_labels=num_labels, output_attentions=True)
     model = AutoModelForSequenceClassification.from_pretrained(cfg_dict['model'], config=config)
     fix_layernorm_naming(model)
 
-    # ── Inject attention ───────────────────────────────────────
+    # Inject attention (if not full)
     if cfg_dict['attention'] != "full":
         inject_fn = ATTENTION_REGISTRY.get(cfg_dict['attention'])
         if inject_fn is None:
@@ -266,7 +281,7 @@ def run_training(args, cfg_dict):
             inject_fn(layer, config, None, i, len(layers), old_attn)
         logger.info(f"Injected '{cfg_dict['attention']}' into {len(layers)} layers.")
 
-    # ── Additional compression ─────────────────────────────────
+    # Additional compression
     if cfg_dict.get('compressor'):
         compressor_cls = COMPRESSOR_REGISTRY.get(cfg_dict['compressor'])
         if compressor_cls:
@@ -278,12 +293,12 @@ def run_training(args, cfg_dict):
     if not hasattr(model, 'get_ortho_loss'):
         model.get_ortho_loss = lambda: torch.tensor(0.0, device=device)
 
-    # ── Metrics ────────────────────────────────────────────────
+    # Metrics
     metric_map = {"cola": "eval_matthews_correlation", "stsb": "eval_pearson",
                   "mrpc": "eval_f1", "qqp": "eval_f1"}
     metric_for_best = metric_map.get(cfg_dict['task'], "eval_accuracy")
 
-    # ── Training args ──────────────────────────────────────────
+    # Training arguments
     output_dir = os.path.join(cfg_dict['output_dir'], exp_name)
     os.makedirs(output_dir, exist_ok=True)
     training_args = TrainingArguments(
@@ -307,22 +322,17 @@ def run_training(args, cfg_dict):
         compute_metrics=get_compute_metrics(cfg_dict['task']),
     )
 
-    # Live plot callback
-    live_cb = LivePlotCallback()
-    trainer.add_callback(live_cb)
+    # Live plot callback (only if not disabled)
+    if not args.no_dashboard:
+        live_cb = LivePlotCallback()
+        trainer.add_callback(live_cb)
     if _has_framework_logging:
         trainer.add_callback(LoggingCallback(tracker, logger))
 
-    training_active.set()
-    plot_thread = threading.Thread(target=live_plotter, daemon=True)
-    plot_thread.start()
-
-    logger.info("Training started – watch the dashboard!")
+    logger.info("Training started – dashboard runs on main thread")
     trainer.train()
 
-    training_active.clear()
-    plot_thread.join(timeout=2)
-
+    # Final evaluation
     eval_result = trainer.evaluate()
     logger.info("=" * 60)
     logger.info("FINAL EVALUATION:")
@@ -334,6 +344,16 @@ def run_training(args, cfg_dict):
     tokenizer.save_pretrained(output_dir)
     tracker.save(os.path.join(output_dir, "metrics.json"))
     logger.info(f"Model saved to {output_dir}")
+
+    # Optional attention visualization after training
+    if args.visualize_attention:
+        eval_dataset = dataset.get("validation", dataset.get("validation_matched"))
+        if eval_dataset is not None:
+            save_path = os.path.join(output_dir, "attention_map.png")
+            visualize_attentions(model, tokenizer, eval_dataset, device, save_path)
+        else:
+            logger.warning("No evaluation dataset found for attention visualization.")
+
     if console:
         console.rule("[bold green]Experiment Complete")
 
@@ -359,9 +379,11 @@ def main():
     parser.add_argument("--compressor", type=str, default=None)
     parser.add_argument("--output_dir", type=str, default="./experiments")
     parser.add_argument("--log_dir", type=str, default="./logs")
+    parser.add_argument("--no_dashboard", action="store_true", help="Disable live training dashboard")
+    parser.add_argument("--visualize_attention", action="store_true", help="Save attention heatmap after training")
     args = parser.parse_args()
 
-    # ── Determine config source ───────────────────────────────
+    # Determine config source
     if args.config:
         yaml_cfg = load_yaml_config(args.config)
         cfg_dict = {**default_config(), **yaml_cfg}
@@ -386,6 +408,7 @@ def main():
         if key not in cfg_dict:
             cfg_dict[key] = default_config()[key]
 
+    print("Registered attentions:", list(ATTENTION_REGISTRY.keys()))
     run_training(args, cfg_dict)
 
 

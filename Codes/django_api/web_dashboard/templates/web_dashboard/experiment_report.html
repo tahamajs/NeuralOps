@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Experiment Report – {{ experiment.id|slice:"8" }}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding: 40px 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #1e293b;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+        h1, h2, h3 {
+            color: #60a5fa;
+            margin-top: 0;
+        }
+        h1 {
+            font-size: 1.8rem;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 12px;
+        }
+        .section {
+            margin: 28px 0;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: #334155;
+        }
+        .badge.running { background: #f59e0b; color: #000; }
+        .badge.completed { background: #10b981; }
+        .badge.failed { background: #ef4444; }
+        .badge.queued { background: #6b7280; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+        th, td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+        }
+        th {
+            width: 35%;
+            font-weight: 600;
+            color: #94a3b8;
+        }
+        .metric-card {
+            background: #0f172a;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 16px 0;
+            border-left: 4px solid #3b82f6;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #64748b;
+            border-top: 1px solid #334155;
+            padding-top: 20px;
+        }
+        .btn {
+            background: #3b82f6;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 20px;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 20px;
+            transition: 0.2s;
+        }
+        .btn:hover {
+            opacity: 0.85;
+            transform: scale(0.98);
+        }
+        .btn-secondary {
+            background: #475569;
+        }
+        hr {
+            border-color: #334155;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📄 Experiment Report</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+            <span class="badge {{ status }}">{{ status }}</span>
+            <span style="margin-left: 10px; font-size: 0.85rem;">ID: {{ experiment.id }}</span>
+        </div>
+        <div>
+            <a href="/dashboard/job/{{ experiment.id }}/" class="btn btn-secondary">← Back to Dashboard</a>
+            <a href="/api/experiments/{{ experiment.id }}/paper/" class="btn">📥 Download PDF/TeX</a>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ Configuration</h2>
+        <table>
+            <tr><th>Model</th><td>{{ model }}</td></tr>
+            <tr><th>Task</th><td>{{ task|upper }}</td></tr>
+            <tr><th>Attention Type</th><td>{{ attention }}</td></tr>
+            <tr><th>Training Method</th><td>{{ method }}</td></tr>
+            <tr><th>Epochs</th><td>{{ epochs }}</td></tr>
+            <tr><th>Batch Size</th><td>{{ batch_size }}</td></tr>
+            <tr><th>Learning Rate</th><td>{{ learning_rate }}</td></tr>
+            <tr><th>Max Sequence Length</th><td>{{ max_len }}</td></tr>
+            <tr><th>Compression Rank</th><td>{{ rank }}</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📊 Final Metrics</h2>
+        <div class="metric-card">
+            <table>
+                <tr><th>Loss</th><td>{{ loss }}</td></tr>
+                <tr><th>Accuracy</th><td>{{ accuracy }}</td></tr>
+                <tr><th>F1 Score</th><td>{{ f1 }}</td></tr>
+                <tr><th>Matthews Correlation</th><td>{{ matthews }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>⏱️ Timeline</h2>
+        <table>
+            <tr><th>Created</th><td>{{ created_at|date:"Y-m-d H:i:s" }}</td></tr>
+            <tr><th>Last Updated</th><td>{{ updated_at|date:"Y-m-d H:i:s" }}</td></tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>📝 Full Configuration (JSON)</h2>
+        <pre style="background: #0f172a; padding: 12px; border-radius: 12px; overflow-x: auto; font-size: 0.75rem;">{{ config|pprint }}</pre>
+    </div>
+
+    <div class="footer">
+        Generated by Efficient Transformer Toolkit • {{ now|date:"Y-m-d H:i:s" }}
+    </div>
+</div>
+</body>
+</html>

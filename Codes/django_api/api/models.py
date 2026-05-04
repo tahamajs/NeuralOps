@@ -4,7 +4,7 @@ from django.db import models
 class Experiment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
-    job_type = models.CharField(max_length=20, choices=[
+    job_type = models.CharField(max_length=20, default='training', choices=[
         ("training", "Training"), ("evaluation", "Evaluation"), ("compression", "Compression")
     ])
     status = models.CharField(max_length=20, default="queued", choices=[
@@ -32,3 +32,21 @@ class Experiment(models.Model):
             models.Index(fields=["created_at"]),
             models.Index(fields=["job_type"]),
         ]
+
+
+
+
+class TrainingSnapshot(models.Model):
+    experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name='snapshots')
+    step = models.IntegerField()
+    epoch = models.FloatField(null=True, blank=True)
+    train_loss = models.FloatField(null=True, blank=True)
+    eval_loss = models.FloatField(null=True, blank=True)
+    eval_accuracy = models.FloatField(null=True, blank=True)
+    learning_rate = models.FloatField(null=True, blank=True)
+    cpu_percent = models.FloatField(null=True)
+    ram_mb = models.FloatField(null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['experiment', 'step']
