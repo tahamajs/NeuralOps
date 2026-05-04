@@ -1,0 +1,263 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Queue Manager – Transformer Toolkit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%);
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            color: #eef2ff;
+            padding: 20px;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        .card {
+            background: rgba(20, 28, 40, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .queue-item {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: 0.2s;
+            border-left: 4px solid #3b82f6;
+        }
+        .priority-slider { width: 150px; }
+        .status-badge { padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; font-weight: 600; }
+        .status-queued { background: #6b7280; }
+        .status-running { background: #f59e0b; color: #000; }
+        .status-completed { background: #10b981; }
+        .status-failed { background: #ef4444; }
+        .status-paused { background: #8b5cf6; }
+        .log-area {
+            background: #0f172a;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.75rem;
+            height: 200px;
+            overflow-y: auto;
+            padding: 8px;
+            border-radius: 12px;
+            white-space: pre-wrap;
+        }
+        .btn-sm { padding: 4px 12px; font-size: 0.75rem; }
+        .chart-container canvas { max-height: 250px; width: 100%; }
+        .resource-bar {
+            background: #334155;
+            border-radius: 8px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .resource-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.3s; }
+        .note-input { background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: white; padding: 8px; width: 100%; }
+        hr { border-color: #334155; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-tasks me-2"></i>Job Queue Manager</h2>
+            <p class="text-secondary">Priority‑based scheduling, GPU allocation, checkpoint recovery</p>
+        </div>
+        <div>
+            <a href="/dashboard/" class="btn btn-outline-secondary me-2"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <button id="logoutBtn" class="btn btn-outline-secondary"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h5><i class="fas fa-microchip me-2"></i>GPU Resources</h5>
+        <div class="row">
+            <div class="col-md-4"><div class="d-flex justify-content-between"><span>Total GPUs:</span><span id="totalGpus">0</span></div></div>
+            <div class="col-md-4"><div class="d-flex justify-content-between"><span>Available:</span><span id="availableGpus">0</span></div></div>
+            <div class="col-md-4"><div class="d-flex justify-content-between"><span>In Use:</span><span id="usedGpus">0</span></div></div>
+        </div>
+        <div class="resource-bar mt-2"><div id="gpuUsageBar" class="resource-fill"></div></div>
+    </div>
+
+    <div class="card">
+        <h5><i class="fas fa-plus-circle me-2"></i>Submit New Training Job</h5>
+        <div class="row g-3">
+            <div class="col-md-3"><input type="text" id="jobName" class="form-control bg-dark text-light" placeholder="Job name (optional)"></div>
+            <div class="col-md-3"><select id="jobModel" class="form-select bg-dark text-light"><option value="distilbert-base-uncased">DistilBERT</option><option value="bert-base-uncased">BERT Base</option><option value="roberta-base">RoBERTa</option></select></div>
+            <div class="col-md-2"><select id="jobTask" class="form-select bg-dark text-light"><option value="mrpc">MRPC</option><option value="sst2">SST-2</option><option value="cola">CoLA</option></select></div>
+            <div class="col-md-2"><input type="number" id="jobGpus" class="form-control bg-dark text-light" value="1" min="1" placeholder="GPUs"></div>
+            <div class="col-md-2"><button id="submitJobBtn" class="btn btn-primary-custom w-100">🚀 Submit</button></div>
+        </div>
+        <div class="row mt-2"><div class="col-12"><textarea id="jobNotes" class="note-input" rows="2" placeholder="Researcher notes (optional)"></textarea></div></div>
+    </div>
+
+    <div class="card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5><i class="fas fa-list-ol me-2"></i>Job Queue</h5>
+            <div class="d-flex gap-2">
+                <select id="statusFilter" class="form-select form-select-sm w-auto bg-dark"><option value="all">All</option><option value="queued">Queued</option><option value="running">Running</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="paused">Paused</option></select>
+                <button id="refreshQueueBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync-alt"></i></button>
+            </div>
+        </div>
+        <div id="queueContainer">Loading jobs...</div>
+    </div>
+
+    <div class="card" id="detailPanel" style="display: none;">
+        <div class="d-flex justify-content-between"><h5><i class="fas fa-chart-line me-2"></i>Job Details: <span id="detailJobId"></span></h5><button id="closeDetailBtn" class="btn-close btn-close-white"></button></div>
+        <div class="row mt-3">
+            <div class="col-md-6"><h6>📜 Logs</h6><div id="detailLogs" class="log-area"></div></div>
+            <div class="col-md-6"><h6>📈 Metrics</h6><canvas id="trainLossChart" height="150"></canvas><canvas id="valAccChart" height="150" class="mt-3"></canvas></div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <button id="detailPauseBtn" class="btn btn-warning btn-sm">⏸ Pause</button>
+            <button id="detailResumeBtn" class="btn btn-success btn-sm">▶ Resume</button>
+            <button id="detailStopBtn" class="btn btn-danger btn-sm">⏹ Stop</button>
+            <button id="detailRetryBtn" class="btn btn-secondary btn-sm">🔄 Retry</button>
+        </div>
+        <div class="mt-2"><textarea id="detailNotes" class="note-input" rows="2" placeholder="Add notes..."></textarea><button id="saveNoteBtn" class="btn btn-sm btn-primary mt-1">Save Note</button></div>
+    </div>
+</div>
+
+<script>
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) window.location.href = '/login/';
+    let currentJobId = null, lossChart = null, accChart = null, ws = null;
+
+    async function apiFetch(url, options = {}) {
+        const res = await fetch(url, { ...options, headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...options.headers } });
+        if (res.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login/'; throw new Error('Unauthorized'); }
+        return res;
+    }
+
+    async function loadJobs() {
+        const res = await apiFetch('/api/jobs/');
+        const jobs = await res.json();
+        allJobs = jobs;
+        renderQueue(jobs);
+        updateGpuStats(jobs);
+    }
+
+    function renderQueue(jobs) {
+        const filter = document.getElementById('statusFilter').value;
+        const filtered = filter === 'all' ? jobs : jobs.filter(j => j.status === filter);
+        const container = document.getElementById('queueContainer');
+        if (!filtered.length) { container.innerHTML = '<div class="text-center py-4">No jobs</div>'; return; }
+        container.innerHTML = filtered.map(job => `
+            <div class="queue-item" data-job-id="${job.id}">
+                <div class="d-flex justify-content-between flex-wrap gap-2">
+                    <div><strong>${job.name || job.id.slice(0,8)}</strong><br><small>${job.model_name} / ${job.task_name}</small></div>
+                    <div><span class="status-badge status-${job.status}">${job.status}</span></div>
+                    <div class="d-flex align-items-center gap-2"><label class="small">Priority:</label><input type="range" class="priority-slider" min="1" max="10" value="${job.priority}" data-id="${job.id}" onchange="updatePriority('${job.id}', this.value)"><span>${job.priority}</span></div>
+                    <div><i class="fas fa-microchip"></i> ${job.gpu_requirements} GPU</div>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-outline-info view-detail" data-id="${job.id}"><i class="fas fa-eye"></i></button>
+                        ${job.status === 'running' ? `<button class="btn btn-sm btn-outline-warning pause-job" data-id="${job.id}"><i class="fas fa-pause"></i></button>` : ''}
+                        ${job.status === 'paused' ? `<button class="btn btn-sm btn-outline-success resume-job" data-id="${job.id}"><i class="fas fa-play"></i></button>` : ''}
+                        ${job.status === 'failed' ? `<button class="btn btn-sm btn-outline-secondary retry-job" data-id="${job.id}"><i class="fas fa-redo"></i></button>` : ''}
+                        <button class="btn btn-sm btn-outline-danger stop-job" data-id="${job.id}"><i class="fas fa-stop"></i></button>
+                    </div>
+                </div>
+                ${job.notes ? `<div class="mt-2 small text-secondary"><i class="fas fa-sticky-note"></i> ${job.notes}</div>` : ''}
+                ${job.status === 'running' ? `<div class="progress mt-2" style="height:6px;"><div class="progress-bar bg-success" style="width:${job.progress}%"></div></div>` : ''}
+            </div>
+        `).join('');
+        attachJobButtons();
+    }
+
+    function attachJobButtons() {
+        document.querySelectorAll('.view-detail').forEach(btn => btn.onclick = () => showJobDetail(btn.dataset.id));
+        document.querySelectorAll('.pause-job').forEach(btn => btn.onclick = () => controlJob(btn.dataset.id, 'pause'));
+        document.querySelectorAll('.resume-job').forEach(btn => btn.onclick = () => controlJob(btn.dataset.id, 'resume'));
+        document.querySelectorAll('.stop-job').forEach(btn => btn.onclick = () => controlJob(btn.dataset.id, 'stop'));
+        document.querySelectorAll('.retry-job').forEach(btn => btn.onclick = () => controlJob(btn.dataset.id, 'retry'));
+    }
+
+    async function updatePriority(jobId, priority) {
+        await apiFetch(`/api/jobs/${jobId}/priority/`, { method: 'PATCH', body: JSON.stringify({ priority: parseInt(priority) }) });
+        loadJobs();
+    }
+
+    async function controlJob(jobId, action) {
+        await apiFetch(`/api/jobs/${jobId}/${action}/`, { method: 'POST' });
+        loadJobs();
+        if (currentJobId === jobId) showJobDetail(jobId);
+    }
+
+    async function updateGpuStats(jobs) {
+        const res = await apiFetch('/api/system/gpu/');
+        const stats = await res.json();
+        document.getElementById('totalGpus').innerText = stats.total_gpus;
+        document.getElementById('availableGpus').innerText = stats.available;
+        document.getElementById('usedGpus').innerText = stats.used;
+        document.getElementById('gpuUsageBar').style.width = `${(stats.used / stats.total_gpus) * 100}%`;
+    }
+
+    async function showJobDetail(jobId) {
+        currentJobId = jobId;
+        document.getElementById('detailPanel').style.display = 'block';
+        document.getElementById('detailJobId').innerText = jobId.slice(0,8);
+        // Load history
+        const histRes = await apiFetch(`/api/jobs/${jobId}/history/`);
+        const hist = await histRes.json();
+        if (lossChart) lossChart.destroy();
+        lossChart = new Chart(document.getElementById('trainLossChart'), {
+            type: 'line', data: { labels: hist.steps, datasets: [{ label: 'Loss', borderColor: '#f97316', data: hist.losses }] }
+        });
+        if (accChart) accChart.destroy();
+        accChart = new Chart(document.getElementById('valAccChart'), {
+            type: 'line', data: { labels: hist.eval_steps, datasets: [{ label: 'Accuracy', borderColor: '#10b981', data: hist.eval_accuracies }] }
+        });
+        // Load notes
+        const notesRes = await apiFetch(`/api/jobs/${jobId}/notes/`);
+        const notesData = await notesRes.json();
+        document.getElementById('detailNotes').value = notesData.notes || '';
+        // Connect WebSocket for live logs
+        if (ws) ws.close();
+        ws = new WebSocket(`ws://${location.host}/ws/jobs/${jobId}/logs/`);
+        ws.onmessage = (e) => {
+            const logsDiv = document.getElementById('detailLogs');
+            logsDiv.innerText += e.data + '\n';
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        };
+    }
+
+    document.getElementById('saveNoteBtn').onclick = async () => {
+        const note = document.getElementById('detailNotes').value;
+        await apiFetch(`/api/jobs/${currentJobId}/notes/`, { method: 'POST', body: JSON.stringify({ notes: note }) });
+        alert('Note saved');
+        loadJobs();
+    };
+    document.getElementById('detailPauseBtn').onclick = () => controlJob(currentJobId, 'pause');
+    document.getElementById('detailResumeBtn').onclick = () => controlJob(currentJobId, 'resume');
+    document.getElementById('detailStopBtn').onclick = () => controlJob(currentJobId, 'stop');
+    document.getElementById('detailRetryBtn').onclick = () => controlJob(currentJobId, 'retry');
+    document.getElementById('closeDetailBtn').onclick = () => { document.getElementById('detailPanel').style.display = 'none'; if (ws) ws.close(); };
+    document.getElementById('submitJobBtn').onclick = async () => {
+        const payload = {
+            name: document.getElementById('jobName').value,
+            model_name: document.getElementById('jobModel').value,
+            task_name: document.getElementById('jobTask').value,
+            gpu_requirements: parseInt(document.getElementById('jobGpus').value),
+            priority: 5,
+            notes: document.getElementById('jobNotes').value
+        };
+        const res = await apiFetch('/api/jobs/', { method: 'POST', body: JSON.stringify(payload) });
+        if (res.ok) { alert('Job submitted'); document.getElementById('jobName').value = ''; document.getElementById('jobNotes').value = ''; loadJobs(); }
+        else alert('Submission failed');
+    };
+    document.getElementById('refreshQueueBtn').onclick = () => loadJobs();
+    document.getElementById('statusFilter').onchange = () => loadJobs();
+    document.getElementById('logoutBtn').onclick = async () => { await apiFetch('/api/auth/logout/', { method: 'POST' }); localStorage.removeItem('authToken'); window.location.href = '/login/'; };
+
+    loadJobs();
+    setInterval(loadJobs, 5000);
+</script>
+</body>
+</html>
