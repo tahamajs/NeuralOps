@@ -1,19 +1,17 @@
-"""Metrics computation and tracking utilities."""
-
+# framework/analysis/metrics.py
 import json
+import os
 import numpy as np
+import pandas as pd
 from typing import Dict, List, Any, Optional
 from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 from scipy.stats import pearsonr, spearmanr
-import os
-
 
 def compute_metrics(predictions: np.ndarray, labels: np.ndarray, task: str = "classification") -> Dict[str, float]:
     """Compute metrics based on task type."""
     metrics = {}
     if task in ("regression", "stsb"):
-        pred_flat = np.squeeze(predictions)
-        labels_flat = np.squeeze(labels)
+        pred_flat = np.squeeze(predictions); labels_flat = np.squeeze(labels)
         metrics['pearson'] = pearsonr(pred_flat, labels_flat)[0]
         metrics['spearman'] = spearmanr(pred_flat, labels_flat)[0]
         metrics['pearson_spearman'] = (metrics['pearson'] + metrics['spearman']) / 2
@@ -26,9 +24,8 @@ def compute_metrics(predictions: np.ndarray, labels: np.ndarray, task: str = "cl
             metrics['matthews_corrcoef'] = matthews_corrcoef(labels, preds)
     return metrics
 
-
 def aggregate_results(results_list: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Aggregate results from multiple runs."""
+    """Aggregate results from multiple runs (mean, std, values)."""
     if not results_list:
         return {}
     aggregated = {}
@@ -39,7 +36,6 @@ def aggregate_results(results_list: List[Dict[str, Any]]) -> Dict[str, Any]:
             aggregated[f"{key}_std"] = np.std(values)
             aggregated[f"{key}_values"] = values
     return aggregated
-
 
 class MetricsTracker:
     """Tracks per‑step metrics and saves as JSON lines."""
@@ -57,7 +53,7 @@ class MetricsTracker:
 
     def _flush(self):
         if self.filepath:
-            with open(self.filepath, "a", encoding="utf-8") as f:
+            with open(self.filepath, "a") as f:
                 for rec in self.records:
                     f.write(json.dumps(rec) + "\n")
             self.records.clear()
@@ -65,16 +61,14 @@ class MetricsTracker:
     def save(self):
         self._flush()
 
-    def to_dataframe(self):
-        import pandas as pd
-        # load all records from file + memory
+    def to_dataframe(self) -> pd.DataFrame:
         all_records = []
         if os.path.exists(self.filepath):
             with open(self.filepath, "r") as f:
                 for line in f:
                     try:
                         all_records.append(json.loads(line))
-                    except json.JSONDecodeError:
+                    except:
                         pass
         all_records.extend(self.records)
         return pd.DataFrame(all_records)
