@@ -77,3 +77,4 @@ def capture_environment(job: Job):
     pip_freeze = subprocess.run(['pip', 'freeze'], capture_output=True, text=True)
     job.pip_freeze = pip_freeze.stdout
     job.save()
+
