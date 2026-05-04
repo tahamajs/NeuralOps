@@ -28,3 +28,52 @@ def create_config_snapshot(job: Job, change_desc: str = None, user=None):
     )
     
     return version
+
+
+
+def create_config_snapshot(job: Job, change_desc: str = None, user=None):
+    latest = job.config_versions.order_by('-version_number').first()
+    new_version = (latest.version_number + 1) if latest else 1
+    config_snapshot = {
+        'model_name': job.model_name,
+        'task_name': job.task_name,
+        'attention_type': job.attention_type,
+        'method': job.method,
+        # ... include all relevant fields
+    }
+    version = VersionedConfig.objects.create(
+        run=job,
+        version_number=new_version,
+        config_snapshot=config_snapshot,
+        change_description=change_desc or f"Initial configuration",
+        previous_version=latest,
+        changed_by=user
+    )
+    return version
+
+
+
+
+from git import Repo
+
+def capture_git_info(job: Job):
+    try:
+        repo = Repo('.', search_parent_directories=True)
+        job.git_commit_hash = repo.head.commit.hexsha
+        job.git_branch = repo.active_branch.name
+        job.git_dirty = repo.is_dirty(untracked_files=True)
+        if repo.remotes:
+            job.git_repository = repo.remotes.origin.url
+        job.save()
+    except Exception as e:
+        print(f"Git info capture failed: {e}")
+
+
+
+
+def capture_environment(job: Job):
+    import sys, subprocess
+    job.python_version = sys.version
+    pip_freeze = subprocess.run(['pip', 'freeze'], capture_output=True, text=True)
+    job.pip_freeze = pip_freeze.stdout
+    job.save()

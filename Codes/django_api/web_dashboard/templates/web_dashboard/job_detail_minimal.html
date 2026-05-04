@@ -222,6 +222,82 @@ async function loadMetrics(runId) {
     // (implementation details omitted for brevity)
 }
 </script>
+
+
+
+
+
+
+<div class="card mt-3">
+    <h3>⚙️ Configuration History</h3>
+    <div class="row">
+        <div class="col-md-5">
+            <select id="configVersionA" class="form-select"></select>
+        </div>
+        <div class="col-md-2 text-center">vs</div>
+        <div class="col-md-5">
+            <select id="configVersionB" class="form-select"></select>
+        </div>
+    </div>
+    <button id="compareConfigsBtn" class="btn btn-sm btn-primary mt-2">Compare Versions</button>
+    <div id="configDiffViewer" class="mt-3" style="max-height: 400px; overflow-y: auto;"></div>
+</div>
+
+<script>
+document.getElementById('compareConfigsBtn').onclick = async () => {
+    const vA = document.getElementById('configVersionA').value;
+    const vB = document.getElementById('configVersionB').value;
+    const response = await fetch(`/api/runs/${runId}/config/compare/${vA}/${vB}/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const diff = await response.json();
+    const viewer = document.getElementById('configDiffViewer');
+    viewer.innerHTML = renderDiff(diff);  // a function that formats the diff
+};
+</script>
+
+
+
+
+
+
+<div class="card mt-3">
+    <h3>📌 Code & Data Versioning</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="stat-card">
+                <div class="stat-label">Git Commit</div>
+                <a href="{{ git_repository }}/commit/{{ git_commit_hash }}" target="_blank">
+                    {{ git_commit_hash|slice:":8" }}
+                </a>
+                <div class="small">Branch: {{ git_branch }}</div>
+                {% if git_dirty %}
+                    <span class="badge bg-warning text-dark mt-1">⚠️ Uncommitted changes</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stat-card">
+                <div class="stat-label">Data Version</div>
+                <code>{{ data_git_commit_id|slice:":8"|default:"—" }}</code>
+                <div class="small">DVC hash: {{ dvc_data_hash|default:"—" }}</div>
+            </div>
+        </div>
+    </div>
+    <button id="captureEnvBtn" class="btn btn-sm btn-outline-secondary mt-2">📦 Capture Environment</button>
+    <pre id="envDetails" style="display: none;" class="bg-dark p-2 rounded small mt-2"></pre>
+</div>
+
+<script>
+document.getElementById('captureEnvBtn').onclick = async () => {
+    const response = await fetch(`/api/runs/${runId}/environment/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const env = await response.json();
+    document.getElementById('envDetails').style.display = 'block';
+    document.getElementById('envDetails').textContent = JSON.stringify(env, null, 2);
+};
+</script>
 <div class="card mt-3">
     <h3>⚙️ Configuration History</h3>
     <div class="row">

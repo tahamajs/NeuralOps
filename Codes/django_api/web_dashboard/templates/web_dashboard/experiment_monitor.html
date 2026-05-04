@@ -1,0 +1,256 @@
+<!-- ============================================= -->
+<!-- 1. CUSTOM METRICS DASHBOARD (Plotly.js)      -->
+<!-- ============================================= -->
+<div class="card mt-4">
+    <h3><i class="fas fa-chart-line me-2"></i>Custom Metrics Dashboard</h3>
+    <div class="row">
+        <div class="col-md-3">
+            <label class="form-label small">Select metrics to plot:</label>
+            <select id="metricSelector" multiple size="5" class="form-select form-select-sm bg-dark text-light border-secondary"></select>
+            <button id="refreshMetricsBtn" class="btn btn-sm btn-primary mt-2 w-100"><i class="fas fa-chart-simple me-1"></i> Update Chart</button>
+        </div>
+        <div class="col-md-9">
+            <div id="scalarChart" style="height: 400px; background: #0f172a; border-radius: 16px;"></div>
+            <div id="imageGallery" class="row mt-3 g-3"></div>
+            <div id="tableView" class="table-responsive mt-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================= -->
+<!-- 2. CONFIGURATION HISTORY & DIFF VIEWER        -->
+<!-- ============================================= -->
+<div class="card mt-4">
+    <h3><i class="fas fa-history me-2"></i>Configuration Timeline & Diff</h3>
+    <div class="row align-items-end">
+        <div class="col-md-5">
+            <label class="form-label small">Version A (older)</label>
+            <select id="configVersionA" class="form-select form-select-sm bg-dark text-light border-secondary"></select>
+        </div>
+        <div class="col-md-2 text-center"><i class="fas fa-arrow-right text-secondary"></i></div>
+        <div class="col-md-5">
+            <label class="form-label small">Version B (newer)</label>
+            <select id="configVersionB" class="form-select form-select-sm bg-dark text-light border-secondary"></select>
+        </div>
+    </div>
+    <button id="compareConfigsBtn" class="btn btn-sm btn-outline-info mt-3"><i class="fas fa-code-branch me-1"></i> Compare Versions</button>
+    <div id="configDiffViewer" class="mt-3" style="max-height: 400px; overflow-y: auto; background: #0f172a; border-radius: 16px; padding: 1rem; font-family: monospace; font-size: 0.8rem;"></div>
+</div>
+
+<!-- ============================================= -->
+<!-- 3. CODE & DATA VERSIONING PANEL               -->
+<!-- ============================================= -->
+<div class="card mt-4">
+    <h3><i class="fas fa-code-branch me-2"></i>Reproducibility Metadata</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="stat-card" style="background:#0f172a;">
+                <div class="stat-label">Git Commit</div>
+                <div class="stat-value" style="font-size: 1rem;" id="gitCommitHash">—</div>
+                <div class="small text-secondary">Branch: <span id="gitBranch">—</span></div>
+                <div id="gitDirtyWarning" class="badge bg-warning text-dark mt-1" style="display: none;">⚠️ Uncommitted changes</div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stat-card" style="background:#0f172a;">
+                <div class="stat-label">Data Version (DVC)</div>
+                <div class="stat-value" style="font-size: 1rem;" id="dataCommit">—</div>
+                <div class="small text-secondary">DVC hash: <span id="dvcHash">—</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-2">
+        <button id="captureEnvBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-box me-1"></i> Capture Environment</button>
+        <div id="envDetails" style="display: none; margin-top: 12px; background: #0f172a; border-radius: 12px; padding: 12px; max-height: 300px; overflow-y: auto;">
+            <pre id="envContent" style="margin:0; font-size:0.7rem;"></pre>
+        </div>
+    </div>
+</div>
+
+<!-- Include Plotly.js (if not already) -->
+<script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
+
+<script>
+// Make sure runId is defined (comes from Django template)
+const runId = "{{ run.id|default:'' }}";
+if (!runId) console.warn("No runId for metrics/config panels");
+
+// ------------------------------------------------------------
+// 1. METRICS DASHBOARD
+// ------------------------------------------------------------
+let scalarChart = null;
+
+async function loadMetricOptions() {
+    const res = await fetch(`/api/runs/${runId}/metrics/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    if (!res.ok) return;
+    const metrics = await res.json();
+    const selector = document.getElementById('metricSelector');
+    selector.innerHTML = '';
+    for (const [name, data] of Object.entries(metrics)) {
+        if (data.type === 'scalar') {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            selector.appendChild(opt);
+        }
+    }
+    // Also populate image gallery (optional)
+    const gallery = document.getElementById('imageGallery');
+    gallery.innerHTML = '';
+    for (const [name, data] of Object.entries(metrics)) {
+        if (data.type === 'image' && data.values.length) {
+            const lastImg = data.values[data.values.length-1];
+            const step = data.steps[data.steps.length-1];
+            gallery.innerHTML += `
+                <div class="col-md-4">
+                    <div class="card bg-dark border-secondary">
+                        <img src="${lastImg}" class="card-img-top" alt="${name}" style="max-height: 180px; object-fit: contain;">
+                        <div class="card-body p-2"><small>${name} (step ${step})</small></div>
+                    </div>
+                </div>`;
+        }
+        if (data.type === 'table' && data.values.length) {
+            const lastTable = data.values[data.values.length-1];
+            const headers = Object.keys(lastTable);
+            let tableHtml = `<table class="table table-dark table-striped table-sm"><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody><tr>${headers.map(h => `<td>${lastTable[h]}</td>`).join('')}</tr></tbody></table>`;
+            document.getElementById('tableView').innerHTML = `<h6 class="mt-2">${name}</h6>${tableHtml}`;
+        }
+    }
+}
+
+async function updateScalarChart() {
+    const selected = Array.from(document.getElementById('metricSelector').selectedOptions).map(opt => opt.value);
+    if (selected.length === 0) return;
+    const res = await fetch(`/api/runs/${runId}/metrics/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const metrics = await res.json();
+    const traces = [];
+    for (const name of selected) {
+        const data = metrics[name];
+        if (data && data.type === 'scalar') {
+            traces.push({
+                x: data.steps,
+                y: data.values,
+                mode: 'lines+markers',
+                name: name,
+                line: { width: 2 }
+            });
+        }
+    }
+    if (scalarChart) Plotly.purge('scalarChart');
+    scalarChart = Plotly.newPlot('scalarChart', traces, {
+        title: 'Training Metrics',
+        xaxis: { title: 'Step', color: '#94a3b8' },
+        yaxis: { title: 'Value', color: '#94a3b8' },
+        paper_bgcolor: '#0f172a',
+        plot_bgcolor: '#0f172a',
+        font: { color: '#e2e8f0' }
+    });
+}
+
+document.getElementById('refreshMetricsBtn').onclick = updateScalarChart;
+loadMetricOptions();
+
+// ------------------------------------------------------------
+// 2. CONFIGURATION HISTORY & DIFF
+// ------------------------------------------------------------
+async function loadConfigVersions() {
+    const res = await fetch(`/api/runs/${runId}/config/history/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const selectA = document.getElementById('configVersionA');
+    const selectB = document.getElementById('configVersionB');
+    selectA.innerHTML = '';
+    selectB.innerHTML = '';
+    data.versions.forEach(v => {
+        const optA = document.createElement('option');
+        optA.value = v.version;
+        optA.textContent = `v${v.version} (${new Date(v.created_at).toLocaleString()})`;
+        selectA.appendChild(optA);
+        const optB = optA.cloneNode(true);
+        selectB.appendChild(optB);
+    });
+    if (data.versions.length >= 2) {
+        selectA.selectedIndex = 0;
+        selectB.selectedIndex = data.versions.length - 1;
+    }
+}
+
+async function compareConfigs() {
+    const vA = document.getElementById('configVersionA').value;
+    const vB = document.getElementById('configVersionB').value;
+    const res = await fetch(`/api/runs/${runId}/config/compare/${vA}/${vB}/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const diff = await res.json();
+    const viewer = document.getElementById('configDiffViewer');
+    if (Object.keys(diff.diff).length === 0) {
+        viewer.innerHTML = '<div class="text-center text-secondary">No differences between versions.</div>';
+        return;
+    }
+    // Format diff nicely
+    let html = '<div class="small"><strong>Changes:</strong></div><ul class="mt-2">';
+    if (diff.values_changed) {
+        for (const [path, change] of Object.entries(diff.values_changed)) {
+            html += `<li class="text-warning">${path}: ${change.old_value} → ${change.new_value}</li>`;
+        }
+    }
+    if (diff.dictionary_item_added) {
+        diff.dictionary_item_added.forEach(item => {
+            html += `<li class="text-success">➕ Added: ${item}</li>`;
+        });
+    }
+    if (diff.dictionary_item_removed) {
+        diff.dictionary_item_removed.forEach(item => {
+            html += `<li class="text-danger">➖ Removed: ${item}</li>`;
+        });
+    }
+    html += '</ul>';
+    viewer.innerHTML = html;
+}
+
+document.getElementById('compareConfigsBtn').onclick = compareConfigs;
+loadConfigVersions();
+
+// ------------------------------------------------------------
+// 3. CODE VERSIONING PANEL
+// ------------------------------------------------------------
+async function loadVersionInfo() {
+    const res = await fetch(`/api/runs/${runId}/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const run = await res.json();
+    document.getElementById('gitCommitHash').innerHTML = run.git_commit_hash ? `<a href="${run.git_repository}/commit/${run.git_commit_hash}" target="_blank">${run.git_commit_hash.slice(0,8)}</a>` : '—';
+    document.getElementById('gitBranch').innerText = run.git_branch || '—';
+    if (run.git_dirty) document.getElementById('gitDirtyWarning').style.display = 'inline-block';
+    document.getElementById('dataCommit').innerText = run.data_git_commit_id ? run.data_git_commit_id.slice(0,8) : '—';
+    document.getElementById('dvcHash').innerText = run.dvc_data_hash || '—';
+}
+
+async function captureEnvironment() {
+    const res = await fetch(`/api/runs/${runId}/environment/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const env = await res.json();
+    const container = document.getElementById('envDetails');
+    const content = document.getElementById('envContent');
+    content.textContent = JSON.stringify(env, null, 2);
+    container.style.display = 'block';
+}
+
+document.getElementById('captureEnvBtn').onclick = captureEnvironment;
+loadVersionInfo();
+
+// ------------------------------------------------------------
+// Helper: format diff (used in config diff)
+// ------------------------------------------------------------
+function formatDiffValue(value) {
+    if (typeof value === 'object') return JSON.stringify(value);
+    return value;
+}
+</script>
