@@ -3,38 +3,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Queue Manager – Transformer Toolkit</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Job Queue Manager – Transformer Pro</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Bootstrap 5 (dark theme) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- SortableJS for drag‑and‑drop priority -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%);
-            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             color: #eef2ff;
-            padding: 20px;
+            transition: background 0.3s, color 0.2s;
+            padding-bottom: 2rem;
         }
-        .container { max-width: 1600px; margin: 0 auto; }
+        body.light {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+        body.light .card, body.light .queue-item, body.light .modal-content, body.light .toast {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(8px);
+            border-color: #e2e8f0;
+            color: #0f172a;
+        }
+        body.light .stat-card, body.light .metric-card {
+            background: #ffffff;
+            border-left-color: #3b82f6;
+        }
+        body.light .log-area {
+            background: #f8fafc;
+            color: #1e293b;
+        }
         .card {
             background: rgba(20, 28, 40, 0.75);
             backdrop-filter: blur(12px);
-            border-radius: 24px;
+            border-radius: 28px;
             border: 1px solid rgba(255,255,255,0.1);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            transition: all 0.2s;
+        }
+        .stat-card {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 1rem;
+            border-left: 4px solid #3b82f6;
         }
         .queue-item {
             background: #1e293b;
-            border-radius: 16px;
+            border-radius: 20px;
             padding: 1rem;
             margin-bottom: 0.75rem;
-            transition: 0.2s;
-            border-left: 4px solid #3b82f6;
+            transition: all 0.2s;
+            cursor: grab;
         }
-        .priority-slider { width: 150px; }
-        .status-badge { padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; font-weight: 600; }
+        .queue-item:active { cursor: grabbing; }
+        .queue-item:hover { transform: translateY(-2px); background: #2d3a5e; }
+        .priority-slider { width: 120px; }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
         .status-queued { background: #6b7280; }
         .status-running { background: #f59e0b; color: #000; }
         .status-completed { background: #10b981; }
@@ -42,109 +78,141 @@
         .status-paused { background: #8b5cf6; }
         .log-area {
             background: #0f172a;
-            font-family: 'Fira Code', monospace;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 0.75rem;
-            height: 200px;
+            height: 250px;
             overflow-y: auto;
-            padding: 8px;
-            border-radius: 12px;
+            padding: 0.75rem;
+            border-radius: 16px;
             white-space: pre-wrap;
         }
-        .btn-sm { padding: 4px 12px; font-size: 0.75rem; }
-        .chart-container canvas { max-height: 250px; width: 100%; }
-        .resource-bar {
+        .progress-bar-custom {
             background: #334155;
-            border-radius: 8px;
-            height: 8px;
+            border-radius: 10px;
+            height: 6px;
             overflow: hidden;
         }
+        .progress-fill {
+            background: linear-gradient(90deg, #3b82f6, #a855f7);
+            width: 0%;
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        .btn-primary-custom {
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        .btn-primary-custom:hover { transform: scale(1.02); box-shadow: 0 0 12px rgba(59,130,246,0.5); }
+        .resource-bar { background: #334155; border-radius: 8px; height: 8px; overflow: hidden; }
         .resource-fill { background: #10b981; height: 100%; width: 0%; transition: width 0.3s; }
-        .note-input { background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: white; padding: 8px; width: 100%; }
-        hr { border-color: #334155; }
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 1100; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @media (max-width: 768px) {
+            .stat-card { padding: 0.75rem; }
+            .queue-item { padding: 0.75rem; }
+            .priority-slider { width: 100px; }
+        }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="container-lg py-3 py-md-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
         <div>
-            <h2><i class="fas fa-tasks me-2"></i>Job Queue Manager</h2>
-            <p class="text-secondary">Priority‑based scheduling, GPU allocation, checkpoint recovery</p>
+            <h1 class="display-6 fw-bold"><i class="fas fa-tasks me-2"></i>Job Queue Manager</h1>
+            <p class="text-secondary-emphasis mb-0">Priority‑based scheduling · GPU allocation · Checkpoint recovery</p>
         </div>
-        <div>
-            <a href="/dashboard/" class="btn btn-outline-secondary me-2"><i class="fas fa-arrow-left"></i> Dashboard</a>
-            <button id="logoutBtn" class="btn btn-outline-secondary"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        <div class="d-flex gap-2">
+            <button id="themeToggleBtn" class="btn btn-outline-secondary rounded-pill"><i class="fas fa-moon"></i> Theme</button>
+            <button id="logoutBtn" class="btn btn-outline-danger rounded-pill"><i class="fas fa-sign-out-alt"></i> Logout</button>
         </div>
     </div>
 
-    <!-- System Resources -->
-    <div class="card">
-        <h5><i class="fas fa-microchip me-2"></i>GPU Resources</h5>
-        <div class="row">
-            <div class="col-md-4"><div class="d-flex justify-content-between"><span>Total GPUs:</span><span id="totalGpus">0</span></div></div>
-            <div class="col-md-4"><div class="d-flex justify-content-between"><span>Available:</span><span id="availableGpus">0</span></div></div>
-            <div class="col-md-4"><div class="d-flex justify-content-between"><span>In Use:</span><span id="usedGpus">0</span></div></div>
-        </div>
-        <div class="resource-bar mt-2"><div id="gpuUsageBar" class="resource-fill"></div></div>
+    <!-- System Metrics Row -->
+    <div class="row g-3 mb-4" id="metricsRow">
+        <div class="col-md-3 col-sm-6"><div class="stat-card"><div class="d-flex justify-content-between"><span><i class="fas fa-microchip me-2"></i>GPU</span><span id="gpuUtil">0%</span></div><div class="progress-bar-custom mt-2"><div id="gpuBar" class="progress-fill"></div></div><div class="small mt-2">Used: <span id="gpuUsed">0</span> / <span id="gpuTotal">0</span> GB</div></div></div>
+        <div class="col-md-3 col-sm-6"><div class="stat-card"><div class="d-flex justify-content-between"><span><i class="fas fa-tachometer-alt me-2"></i>CPU</span><span id="cpuUtil">0%</span></div><div class="progress-bar-custom mt-2"><div id="cpuBar" class="progress-fill" style="background:#f59e0b;"></div></div><div class="small mt-2">RAM: <span id="ramUsed">0</span> / <span id="ramTotal">0</span> GB</div></div></div>
+        <div class="col-md-3 col-sm-6"><div class="stat-card"><i class="fas fa-hourglass-half me-2"></i>Queue<br><span id="queuedCount">0</span> queued · <span id="runningCount">0</span> running</div></div>
+        <div class="col-md-3 col-sm-6"><div class="stat-card"><i class="fas fa-chart-line me-2"></i>Total Jobs<br><span id="totalJobs">0</span> completed · <span id="failedJobs">0</span> failed</div></div>
     </div>
 
-    <!-- Create New Job Form -->
-    <div class="card">
-        <h5><i class="fas fa-plus-circle me-2"></i>Submit New Training Job</h5>
-        <div class="row g-3">
-            <div class="col-md-3"><input type="text" id="jobName" class="form-control bg-dark text-light" placeholder="Job name (optional)"></div>
-            <div class="col-md-3">
-                <select id="jobModel" class="form-select bg-dark text-light">
-                    <option value="distilbert-base-uncased">DistilBERT</option>
-                    <option value="bert-base-uncased">BERT Base</option>
-                    <option value="roberta-base">RoBERTa</option>
-                </select>
+    <!-- Create Job Form (Collapsible) -->
+    <div class="card mb-4">
+        <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#createJobForm" style="cursor:pointer;">
+            <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Submit New Training Job</h5>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+        <div id="createJobForm" class="collapse show">
+            <div class="card-body pt-0">
+                <div class="row g-3">
+                    <div class="col-md-3"><input type="text" id="jobName" class="form-control bg-dark bg-opacity-25" placeholder="Job name (optional)"></div>
+                    <div class="col-md-3"><select id="jobModel" class="form-select bg-dark bg-opacity-25"><option value="distilbert-base-uncased">DistilBERT</option><option value="bert-base-uncased">BERT Base</option><option value="roberta-base">RoBERTa</option></select></div>
+                    <div class="col-md-2"><select id="jobTask" class="form-select bg-dark bg-opacity-25"><option value="mrpc">MRPC</option><option value="sst2">SST-2</option><option value="cola">CoLA</option><option value="qqp">QQP</option></select></div>
+                    <div class="col-md-2"><input type="number" id="jobGpus" class="form-control bg-dark bg-opacity-25" value="1" min="1" placeholder="GPUs"></div>
+                    <div class="col-md-2"><button id="submitJobBtn" class="btn btn-primary-custom w-100"><i class="fas fa-rocket me-1"></i>Submit</button></div>
+                </div>
+                <div class="row mt-2"><div class="col-12"><textarea id="jobNotes" class="form-control bg-dark bg-opacity-25" rows="2" placeholder="Researcher notes (optional)"></textarea></div></div>
             </div>
-            <div class="col-md-2"><select id="jobTask" class="form-select bg-dark text-light"><option value="mrpc">MRPC</option><option value="sst2">SST-2</option><option value="cola">CoLA</option></select></div>
-            <div class="col-md-2"><input type="number" id="jobGpus" class="form-control bg-dark text-light" value="1" min="1" step="1" placeholder="GPUs"></div>
-            <div class="col-md-2"><button id="submitJobBtn" class="btn btn-primary-custom w-100">🚀 Submit</button></div>
         </div>
-        <div class="row mt-2">
-            <div class="col-12"><textarea id="jobNotes" class="note-input" rows="2" placeholder="Researcher notes (optional)"></textarea></div>
+    </div>
+
+    <!-- Filters & Actions Bar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div class="d-flex gap-2 flex-wrap">
+            <select id="statusFilter" class="form-select form-select-sm w-auto bg-dark bg-opacity-25"><option value="all">All status</option><option value="queued">Queued</option><option value="running">Running</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="paused">Paused</option></select>
+            <select id="modelFilter" class="form-select form-select-sm w-auto bg-dark bg-opacity-25"><option value="all">All models</option></select>
+            <select id="priorityFilter" class="form-select form-select-sm w-auto bg-dark bg-opacity-25"><option value="all">All priority</option><option value="1-3">High (1-3)</option><option value="4-7">Medium (4-7)</option><option value="8-10">Low (8-10)</option></select>
+            <input type="text" id="searchInput" class="form-control form-control-sm w-auto bg-dark bg-opacity-25" placeholder="Search job name or ID">
+        </div>
+        <div class="d-flex gap-2">
+            <button id="refreshQueueBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <button id="exportQueueBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-download"></i> Export CSV</button>
+            <button id="clearCompletedBtn" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash-alt"></i> Clear Completed</button>
         </div>
     </div>
 
     <!-- Job Queue List -->
     <div class="card">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5><i class="fas fa-list-ol me-2"></i>Job Queue</h5>
-            <div class="d-flex gap-2">
-                <select id="statusFilter" class="form-select form-select-sm w-auto bg-dark"><option value="all">All</option><option value="queued">Queued</option><option value="running">Running</option><option value="completed">Completed</option><option value="failed">Failed</option><option value="paused">Paused</option></select>
-                <button id="refreshQueueBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync-alt"></i></button>
-            </div>
+        <div class="card-body p-0 p-md-3">
+            <div id="queueContainer" class="p-2 p-md-3">Loading jobs...</div>
         </div>
-        <div id="queueContainer">Loading jobs...</div>
     </div>
+</div>
 
-    <!-- Detailed View Panel (Logs + Analytics) -->
-    <div class="card" id="detailPanel" style="display: none;">
-        <div class="d-flex justify-content-between">
-            <h5><i class="fas fa-chart-line me-2"></i>Job Details: <span id="detailJobId"></span></h5>
-            <button id="closeDetailBtn" class="btn-close btn-close-white"></button>
-        </div>
-        <div class="row mt-3">
-            <div class="col-md-6">
-                <h6>📜 Training Logs</h6>
-                <div id="detailLogs" class="log-area">Select a job to view logs</div>
+<!-- Toast Container -->
+<div class="toast-container"></div>
+
+<!-- Job Detail Modal -->
+<div class="modal fade" id="jobDetailModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary"><h5 class="modal-title" id="detailModalTitle">Job Details</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs border-secondary" id="detailTabs" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#logsTab">📜 Logs</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#metricsTab">📊 Metrics</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#configTab">⚙️ Config</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#notesTab">📝 Notes</button></li>
+                </ul>
+                <div class="tab-content mt-3">
+                    <div class="tab-pane fade show active" id="logsTab"><div id="modalLogs" class="log-area">Select a job to view logs...</div></div>
+                    <div class="tab-pane fade" id="metricsTab"><canvas id="modalLossChart" height="200"></canvas><canvas id="modalAccChart" height="200" class="mt-3"></canvas></div>
+                    <div class="tab-pane fade" id="configTab"><pre id="modalConfig" class="bg-black p-3 rounded small" style="max-height:300px; overflow:auto;"></pre></div>
+                    <div class="tab-pane fade" id="notesTab"><textarea id="modalNotes" class="form-control bg-dark text-light" rows="4"></textarea><button id="modalSaveNoteBtn" class="btn btn-sm btn-primary mt-2">Save Note</button></div>
+                </div>
             </div>
-            <div class="col-md-6">
-                <h6>📈 Training Metrics</h6>
-                <canvas id="trainLossChart" height="150"></canvas>
-                <canvas id="valAccChart" height="150" class="mt-3"></canvas>
+            <div class="modal-footer border-secondary">
+                <button id="modalPauseBtn" class="btn btn-warning">⏸ Pause</button>
+                <button id="modalResumeBtn" class="btn btn-success">▶ Resume</button>
+                <button id="modalStopBtn" class="btn btn-danger">⏹ Stop</button>
+                <button id="modalRetryBtn" class="btn btn-secondary">🔄 Retry</button>
+                <button class="btn btn-outline-light" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
-        <div class="mt-3 d-flex gap-2">
-            <button id="detailPauseBtn" class="btn btn-warning btn-sm">⏸ Pause</button>
-            <button id="detailResumeBtn" class="btn btn-success btn-sm">▶ Resume</button>
-            <button id="detailStopBtn" class="btn btn-danger btn-sm">⏹ Stop</button>
-            <button id="detailRetryBtn" class="btn btn-secondary btn-sm">🔄 Retry</button>
-        </div>
-        <div class="mt-2"><textarea id="detailNotes" class="note-input" rows="2" placeholder="Add notes..."></textarea><button id="saveNoteBtn" class="btn btn-sm btn-primary mt-1">Save Note</button></div>
     </div>
 </div>
 
@@ -153,47 +221,84 @@
     const authToken = localStorage.getItem('authToken');
     if (!authToken) window.location.href = '/login/';
 
-    let currentDetailJobId = null;
+    let allJobs = [], currentJobId = null;
     let lossChart = null, accChart = null;
     let ws = null;
+    let sortableInstance = null;
 
-    // Helper: Authenticated fetch
+    function showToast(message, type = 'info') {
+        const toastContainer = document.querySelector('.toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'primary'} border-0 fade-in`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 3000 });
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
     async function apiFetch(url, options = {}) {
         const res = await fetch(url, {
             ...options,
             headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...options.headers }
         });
         if (res.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login/'; throw new Error('Unauthorized'); }
-        return res;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
     }
 
-    // ---------- Load jobs and render queue ----------
-    let allJobs = [];
     async function loadJobs() {
         try {
-            const res = await apiFetch('/api/jobs/');
-            allJobs = await res.json();
+            allJobs = await apiFetch('/api/jobs/');
+            updateStats();
             renderQueue();
-            updateResourceStats();
-        } catch(e) { console.error(e); }
+            updateModelFilter();
+        } catch (e) {
+            console.error(e);
+            document.getElementById('queueContainer').innerHTML = '<div class="text-center py-5 text-danger">Failed to load jobs. Check server.</div>';
+        }
+    }
+
+    function updateStats() {
+        const total = allJobs.length;
+        const completed = allJobs.filter(j => j.status === 'completed').length;
+        const failed = allJobs.filter(j => j.status === 'failed').length;
+        const queued = allJobs.filter(j => j.status === 'queued').length;
+        const running = allJobs.filter(j => j.status === 'running').length;
+        document.getElementById('totalJobs').innerText = total;
+        document.getElementById('failedJobs').innerText = failed;
+        document.getElementById('queuedCount').innerText = queued;
+        document.getElementById('runningCount').innerText = running;
+    }
+
+    function updateModelFilter() {
+        const models = [...new Set(allJobs.map(j => j.model_name))];
+        const filter = document.getElementById('modelFilter');
+        filter.innerHTML = '<option value="all">All models</option>' + models.map(m => `<option value="${m}">${m}</option>`).join('');
     }
 
     function renderQueue() {
-        const filter = document.getElementById('statusFilter').value;
-        const filtered = filter === 'all' ? allJobs : allJobs.filter(job => job.status === filter);
+        const status = document.getElementById('statusFilter').value;
+        const model = document.getElementById('modelFilter').value;
+        const priorityRange = document.getElementById('priorityFilter').value;
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        let filtered = allJobs;
+        if (status !== 'all') filtered = filtered.filter(j => j.status === status);
+        if (model !== 'all') filtered = filtered.filter(j => j.model_name === model);
+        if (priorityRange === '1-3') filtered = filtered.filter(j => j.priority <= 3);
+        else if (priorityRange === '4-7') filtered = filtered.filter(j => j.priority >= 4 && j.priority <= 7);
+        else if (priorityRange === '8-10') filtered = filtered.filter(j => j.priority >= 8);
+        if (search) filtered = filtered.filter(j => (j.name || '').toLowerCase().includes(search) || j.id.toLowerCase().includes(search));
         const container = document.getElementById('queueContainer');
-        if (filtered.length === 0) { container.innerHTML = '<div class="text-center text-secondary py-4">No jobs in queue</div>'; return; }
+        if (!filtered.length) { container.innerHTML = '<div class="text-center py-5 text-secondary">No jobs match filters.</div>'; return; }
         container.innerHTML = filtered.map(job => `
-            <div class="queue-item" data-job-id="${job.id}">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div><strong>${job.name || job.id.slice(0,8)}</strong><br><small class="text-secondary">${job.model} / ${job.task}</small></div>
+            <div class="queue-item" data-id="${job.id}">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div style="min-width: 150px;"><strong>${escapeHtml(job.name || job.id.slice(0,8))}</strong><br><small class="text-secondary">${(job.model_name || '').split('/').pop()} / ${(job.task_name || '').toUpperCase()}</small></div>
                     <div><span class="status-badge status-${job.status}">${job.status}</span></div>
-                    <div class="d-flex align-items-center gap-2">
-                        <label class="small">Priority:</label>
-                        <input type="range" class="priority-slider form-range" min="1" max="10" value="${job.priority || 5}" data-id="${job.id}" onchange="updatePriority('${job.id}', this.value)">
-                        <span class="small">${job.priority || 5}</span>
-                    </div>
-                    <div><i class="fas fa-microchip"></i> ${job.gpu_requirements || 1} GPU</div>
+                    <div class="d-flex align-items-center gap-2"><i class="fas fa-sort-amount-down-alt"></i><input type="range" class="priority-slider form-range" min="1" max="10" value="${job.priority}" data-id="${job.id}" onchange="updatePriority('${job.id}', this.value)"><span class="small">${job.priority}</span></div>
+                    <div><i class="fas fa-microchip"></i> ${job.gpu_requirements || 1}</div>
                     <div class="d-flex gap-1">
                         <button class="btn btn-sm btn-outline-info view-detail" data-id="${job.id}"><i class="fas fa-eye"></i></button>
                         ${job.status === 'running' ? `<button class="btn btn-sm btn-outline-warning pause-job" data-id="${job.id}"><i class="fas fa-pause"></i></button>` : ''}
@@ -202,125 +307,95 @@
                         <button class="btn btn-sm btn-outline-danger stop-job" data-id="${job.id}"><i class="fas fa-stop"></i></button>
                     </div>
                 </div>
-                ${job.notes ? `<div class="mt-2 small text-secondary"><i class="fas fa-sticky-note"></i> ${job.notes}</div>` : ''}
-                ${job.status === 'running' ? `<div class="progress mt-2" style="height:6px;"><div class="progress-bar bg-success" style="width:${job.progress || 0}%"></div></div>` : ''}
+                ${job.notes ? `<div class="mt-2 small text-secondary"><i class="fas fa-sticky-note"></i> ${escapeHtml(job.notes)}</div>` : ''}
+                ${job.status === 'running' ? `<div class="mt-2"><div class="d-flex justify-content-between small"><span>Progress</span><span>${Math.round(job.progress)}%</span></div><div class="progress-bar-custom"><div class="progress-fill" style="width:${job.progress}%"></div></div><div class="small text-secondary mt-1">Step ${job.current_step} / ${job.total_steps}</div></div>` : ''}
             </div>
         `).join('');
         attachJobButtons();
+        if (sortableInstance) sortableInstance.destroy();
+        sortableInstance = new Sortable(container, {
+            animation: 150,
+            onEnd: (evt) => {
+                const items = container.querySelectorAll('.queue-item');
+                const newPriorities = {};
+                items.forEach((item, idx) => { newPriorities[item.dataset.id] = idx + 1; });
+                for (const [jobId, priority] of Object.entries(newPriorities)) updatePriority(jobId, priority);
+            }
+        });
     }
 
+    function escapeHtml(str) { return String(str || '').replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+
     function attachJobButtons() {
-        document.querySelectorAll('.view-detail').forEach(btn => btn.addEventListener('click', () => showJobDetail(btn.dataset.id)));
-        document.querySelectorAll('.pause-job').forEach(btn => btn.addEventListener('click', () => controlJob(btn.dataset.id, 'pause')));
-        document.querySelectorAll('.resume-job').forEach(btn => btn.addEventListener('click', () => controlJob(btn.dataset.id, 'resume')));
-        document.querySelectorAll('.stop-job').forEach(btn => btn.addEventListener('click', () => controlJob(btn.dataset.id, 'stop')));
-        document.querySelectorAll('.retry-job').forEach(btn => btn.addEventListener('click', () => controlJob(btn.dataset.id, 'retry')));
+        document.querySelectorAll('.view-detail').forEach(btn => btn.onclick = () => showJobDetail(btn.dataset.id));
+        document.querySelectorAll('.pause-job').forEach(btn => btn.onclick = () => controlJob(btn.dataset.id, 'pause'));
+        document.querySelectorAll('.resume-job').forEach(btn => btn.onclick = () => controlJob(btn.dataset.id, 'resume'));
+        document.querySelectorAll('.stop-job').forEach(btn => btn.onclick = () => controlJob(btn.dataset.id, 'stop'));
+        document.querySelectorAll('.retry-job').forEach(btn => btn.onclick = () => controlJob(btn.dataset.id, 'retry'));
     }
 
     async function updatePriority(jobId, priority) {
-        await apiFetch(`/api/jobs/${jobId}/priority/`, { method: 'PATCH', body: JSON.stringify({ priority: parseInt(priority) }) });
-        loadJobs();
+        try {
+            await apiFetch(`/api/jobs/${jobId}/priority/`, { method: 'PATCH', body: JSON.stringify({ priority: parseInt(priority) }) });
+            showToast(`Priority updated to ${priority}`, 'success');
+            loadJobs();
+        } catch(e) { showToast('Failed to update priority', 'error'); }
     }
 
     async function controlJob(jobId, action) {
-        await apiFetch(`/api/jobs/${jobId}/${action}/`, { method: 'POST' });
-        loadJobs();
-        if (currentDetailJobId === jobId) showJobDetail(jobId);
-    }
-
-    // ---------- Resource stats ----------
-    async function updateResourceStats() {
         try {
-            const res = await apiFetch('/api/system/gpu/');
-            const info = await res.json();
-            const total = info.total_gpus || 1;
-            const used = allJobs.filter(j => j.status === 'running').reduce((acc, j) => acc + (j.gpu_requirements || 1), 0);
-            const available = total - used;
-            document.getElementById('totalGpus').innerText = total;
-            document.getElementById('availableGpus').innerText = Math.max(0, available);
-            document.getElementById('usedGpus').innerText = used;
-            const percent = (used / total) * 100;
-            document.getElementById('gpuUsageBar').style.width = `${percent}%`;
-        } catch(e) {}
+            await apiFetch(`/api/jobs/${jobId}/${action}/`, { method: 'POST' });
+            showToast(`Job ${action} initiated`, 'success');
+            loadJobs();
+            if (currentJobId === jobId) refreshModalData();
+        } catch(e) { showToast(`Failed to ${action} job`, 'error'); }
     }
 
-    // ---------- Job detail view with WebSocket logs & charts ----------
     async function showJobDetail(jobId) {
-        currentDetailJobId = jobId;
-        const panel = document.getElementById('detailPanel');
-        panel.style.display = 'block';
-        document.getElementById('detailJobId').innerText = jobId.slice(0,8);
-        // Load initial logs and metrics
-        await loadJobMetrics(jobId);
-        // Connect WebSocket for real‑time logs
-        if (ws) ws.close();
-        ws = new WebSocket(`ws://${location.host}/ws/jobs/${jobId}/`);
-        ws.onmessage = (e) => {
-            const data = JSON.parse(e.data);
-            if (data.type === 'log') {
-                const logsDiv = document.getElementById('detailLogs');
-                logsDiv.innerText += data.data + '\n';
-                logsDiv.scrollTop = logsDiv.scrollHeight;
-            } else if (data.type === 'metrics') {
-                updateCharts(data);
-            } else if (data.type === 'progress') {
-                // update progress bar in queue
-                loadJobs();
-            }
-        };
-        // Load saved notes
+        currentJobId = jobId;
+        const job = allJobs.find(j => j.id === jobId);
+        if (!job) return;
+        document.getElementById('detailModalTitle').innerText = `Job: ${job.name || job.id.slice(0,8)}`;
+        document.getElementById('modalConfig').innerText = JSON.stringify({
+            model: job.model_name, task: job.task_name, attention: job.attention_type,
+            epochs: job.epochs, batch_size: job.batch_size, lr: job.learning_rate,
+            rank: job.compression_rank, gpu: job.gpu_requirements, priority: job.priority
+        }, null, 2);
         const notesRes = await apiFetch(`/api/jobs/${jobId}/notes/`);
-        const notesData = await notesRes.json();
-        document.getElementById('detailNotes').value = notesData.notes || '';
-    }
-
-    async function loadJobMetrics(jobId) {
-        const res = await apiFetch(`/api/jobs/${jobId}/history/`);
-        const history = await res.json();
-        // Initialize charts
-        const lossCtx = document.getElementById('trainLossChart').getContext('2d');
+        document.getElementById('modalNotes').value = notesRes.notes || '';
+        const hist = await apiFetch(`/api/jobs/${jobId}/history/`);
         if (lossChart) lossChart.destroy();
-        lossChart = new Chart(lossCtx, {
-            type: 'line',
-            data: { labels: history.steps || [], datasets: [{ label: 'Training Loss', borderColor: '#f97316', data: history.losses || [] }] },
-            options: { responsive: true, maintainAspectRatio: true }
+        lossChart = new Chart(document.getElementById('modalLossChart'), {
+            type: 'line', data: { labels: hist.steps || [], datasets: [{ label: 'Training Loss', borderColor: '#f97316', data: hist.losses || [] }] }
         });
-        const accCtx = document.getElementById('valAccChart').getContext('2d');
         if (accChart) accChart.destroy();
-        accChart = new Chart(accCtx, {
-            type: 'line',
-            data: { labels: history.eval_steps || [], datasets: [{ label: 'Validation Accuracy', borderColor: '#10b981', data: history.eval_accuracies || [] }] },
-            options: { responsive: true, maintainAspectRatio: true }
+        accChart = new Chart(document.getElementById('modalAccChart'), {
+            type: 'line', data: { labels: hist.eval_steps || [], datasets: [{ label: 'Validation Accuracy', borderColor: '#10b981', data: hist.eval_accuracies || [] }] }
         });
+        if (ws) ws.close();
+        ws = new WebSocket(`ws://${location.host}/ws/jobs/${jobId}/logs/`);
+        ws.onmessage = (e) => {
+            const logsDiv = document.getElementById('modalLogs');
+            logsDiv.innerText += e.data + '\n';
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        };
+        ws.onopen = () => document.getElementById('modalLogs').innerText = '';
+        new bootstrap.Modal(document.getElementById('jobDetailModal')).show();
     }
 
-    function updateCharts(metrics) {
-        if (metrics.step && metrics.loss !== undefined) {
-            lossChart.data.labels.push(metrics.step);
-            lossChart.data.datasets[0].data.push(metrics.loss);
-            lossChart.update();
-        }
-        if (metrics.eval_step && metrics.accuracy !== undefined) {
-            accChart.data.labels.push(metrics.eval_step);
-            accChart.data.datasets[0].data.push(metrics.accuracy);
-            accChart.update();
-        }
-    }
+    function refreshModalData() { if (currentJobId) showJobDetail(currentJobId); }
 
-    document.getElementById('saveNoteBtn').addEventListener('click', async () => {
-        const note = document.getElementById('detailNotes').value;
-        await apiFetch(`/api/jobs/${currentDetailJobId}/notes/`, { method: 'POST', body: JSON.stringify({ notes: note }) });
-        alert('Note saved');
+    document.getElementById('modalSaveNoteBtn').onclick = async () => {
+        const note = document.getElementById('modalNotes').value;
+        await apiFetch(`/api/jobs/${currentJobId}/notes/`, { method: 'POST', body: JSON.stringify({ notes: note }) });
+        showToast('Note saved', 'success');
         loadJobs();
-    });
+    };
+    document.getElementById('modalPauseBtn').onclick = () => controlJob(currentJobId, 'pause');
+    document.getElementById('modalResumeBtn').onclick = () => controlJob(currentJobId, 'resume');
+    document.getElementById('modalStopBtn').onclick = () => controlJob(currentJobId, 'stop');
+    document.getElementById('modalRetryBtn').onclick = () => controlJob(currentJobId, 'retry');
 
-    document.getElementById('detailPauseBtn').onclick = () => controlJob(currentDetailJobId, 'pause');
-    document.getElementById('detailResumeBtn').onclick = () => controlJob(currentDetailJobId, 'resume');
-    document.getElementById('detailStopBtn').onclick = () => controlJob(currentDetailJobId, 'stop');
-    document.getElementById('detailRetryBtn').onclick = () => controlJob(currentDetailJobId, 'retry');
-    document.getElementById('closeDetailBtn').onclick = () => { document.getElementById('detailPanel').style.display = 'none'; if (ws) ws.close(); };
-
-    // Submit new job
     document.getElementById('submitJobBtn').onclick = async () => {
         const payload = {
             name: document.getElementById('jobName').value,
@@ -330,22 +405,72 @@
             priority: 5,
             notes: document.getElementById('jobNotes').value
         };
-        const res = await apiFetch('/api/jobs/', { method: 'POST', body: JSON.stringify(payload) });
-        if (res.ok) {
-            alert('Job submitted');
+        try {
+            await apiFetch('/api/jobs/', { method: 'POST', body: JSON.stringify(payload) });
+            showToast('Job submitted successfully', 'success');
             document.getElementById('jobName').value = '';
             document.getElementById('jobNotes').value = '';
             loadJobs();
-        } else alert('Submission failed');
+        } catch(e) { showToast('Submission failed', 'error'); }
     };
 
     document.getElementById('refreshQueueBtn').onclick = () => loadJobs();
-    document.getElementById('statusFilter').onchange = () => renderQueue();
-    document.getElementById('logoutBtn').onclick = async () => { await apiFetch('/api/auth/logout/', { method: 'POST' }); localStorage.removeItem('authToken'); window.location.href = '/login/'; };
+    document.getElementById('exportQueueBtn').onclick = () => {
+        let csv = 'ID,Name,Model,Task,Status,Priority,GPUs,Notes,Created\n';
+        allJobs.forEach(j => csv += `${j.id},${j.name||''},${j.model_name},${j.task_name},${j.status},${j.priority},${j.gpu_requirements},${j.notes||''},${j.created_at}\n`);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `job_queue_${new Date().toISOString().slice(0,19)}.csv`; a.click();
+        URL.revokeObjectURL(url);
+        showToast('CSV exported', 'success');
+    };
+    document.getElementById('clearCompletedBtn').onclick = async () => {
+        const completed = allJobs.filter(j => j.status === 'completed');
+        for (const job of completed) await apiFetch(`/api/jobs/${job.id}/stop/`, { method: 'POST' });
+        loadJobs();
+        showToast('Cleared completed jobs', 'success');
+    };
 
-    // Initial load and periodic refresh
+    async function loadSystemMetrics() {
+        try {
+            const gpu = await apiFetch('/api/system/gpu/');
+            document.getElementById('gpuUtil').innerText = (gpu.utilization || 0) + '%';
+            document.getElementById('gpuBar').style.width = (gpu.utilization || 0) + '%';
+            document.getElementById('gpuUsed').innerText = (gpu.memory_allocated_mb || 0).toFixed(0);
+            document.getElementById('gpuTotal').innerText = (gpu.memory_total_mb || 0).toFixed(0);
+        } catch(e) {}
+        try {
+            const sys = await apiFetch('/api/system/status/');
+            document.getElementById('cpuUtil').innerText = (sys.cpu || 0) + '%';
+            document.getElementById('cpuBar').style.width = (sys.cpu || 0) + '%';
+            document.getElementById('ramUsed').innerText = (sys.memory_used_gb || 0).toFixed(1);
+            document.getElementById('ramTotal').innerText = (sys.memory_total_gb || 16).toFixed(0);
+        } catch(e) {}
+    }
+
+    document.getElementById('themeToggleBtn').onclick = () => {
+        document.body.classList.toggle('light');
+        localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+    };
+    if (localStorage.getItem('theme') === 'light') document.body.classList.add('light');
+
+    document.getElementById('statusFilter').onchange = () => renderQueue();
+    document.getElementById('modelFilter').onchange = () => renderQueue();
+    document.getElementById('priorityFilter').onchange = () => renderQueue();
+    document.getElementById('searchInput').oninput = () => renderQueue();
+
+    document.getElementById('logoutBtn').onclick = async () => {
+        await apiFetch('/api/auth/logout/', { method: 'POST' });
+        localStorage.removeItem('authToken');
+        window.location.href = '/login/';
+    };
+
     loadJobs();
     setInterval(loadJobs, 5000);
+    setInterval(loadSystemMetrics, 3000);
+    loadSystemMetrics();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

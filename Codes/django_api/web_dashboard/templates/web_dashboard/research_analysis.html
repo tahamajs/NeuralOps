@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
@@ -30,7 +29,7 @@
             border: 1px solid rgba(255,255,255,0.1);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            transition: all 0.2s;
+            transition: 0.2s;
         }
         .filter-bar {
             background: rgba(15, 23, 42, 0.8);
@@ -81,26 +80,14 @@
             max-height: 350px;
             width: 100%;
         }
-        .annotation-panel textarea {
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: #e2e8f0;
-            border-radius: 12px;
-            padding: 8px 12px;
-            width: 100%;
-        }
         .insight-card {
             background: #1e293b;
             border-radius: 16px;
             padding: 12px;
             margin-bottom: 12px;
         }
-        hr {
-            border-color: #334155;
-        }
-        .selected-row {
-            background-color: #3b82f620 !important;
-        }
+        hr { border-color: #334155; }
+        .selected-row { background-color: #3b82f620 !important; }
         .loading {
             display: none;
             position: fixed;
@@ -120,8 +107,8 @@
             <p class="text-secondary">Compare experiments, annotate findings, and export reports</p>
         </div>
         <div>
-            <a href="/dashboard/" class="btn btn-outline-secondary me-2"><i class="fas fa-arrow-left me-1"></i>Dashboard</a>
-            <button id="logoutBtn" class="btn btn-outline-secondary"><i class="fas fa-sign-out-alt me-1"></i>Logout</button>
+            <a href="/dashboard/" class="btn btn-outline-secondary me-2"><i class="fas fa-arrow-left"></i>Dashboard</a>
+            <button id="logoutBtn" class="btn btn-outline-secondary"><i class="fas fa-sign-out-alt"></i>Logout</button>
         </div>
     </div>
 
@@ -130,15 +117,11 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label">Task</label>
-                <select id="filterTask" class="form-select bg-dark border-secondary text-light">
-                    <option value="">All</option>
-                </select>
+                <select id="filterTask" class="form-select bg-dark border-secondary text-light"></select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Attention Type</label>
-                <select id="filterAttention" class="form-select bg-dark border-secondary text-light">
-                    <option value="">All</option>
-                </select>
+                <select id="filterAttention" class="form-select bg-dark border-secondary text-light"></select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Status</label>
@@ -155,7 +138,7 @@
         </div>
     </div>
 
-    <!-- Left: Table of experiments / Right: Comparison plot -->
+    <!-- Table + Comparison Plot Side‑by‑Side -->
     <div class="row g-4">
         <div class="col-md-7">
             <div class="card">
@@ -171,14 +154,8 @@
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="selectAllCheckbox"></th>
-                                <th>ID</th>
-                                <th>Task</th>
-                                <th>Model</th>
-                                <th>Attention</th>
-                                <th>Accuracy</th>
-                                <th>Loss</th>
-                                <th>Status</th>
-                                <th>Date</th>
+                                <th>ID</th><th>Task</th><th>Model</th><th>Attention</th>
+                                <th>Accuracy</th><th>Loss</th><th>Status</th><th>Date</th>
                             </tr>
                         </thead>
                         <tbody id="runsTableBody"></tbody>
@@ -190,9 +167,7 @@
             <!-- Comparison Plot -->
             <div class="card">
                 <h3><i class="fas fa-chart-line me-2"></i>Comparison Plot</h3>
-                <div class="plot-container">
-                    <canvas id="comparisonChart" width="400" height="300"></canvas>
-                </div>
+                <div class="plot-container"><canvas id="comparisonChart" width="400" height="300"></canvas></div>
                 <div class="mt-2">
                     <label class="form-label">Metric to plot</label>
                     <select id="metricSelect" class="form-select bg-dark border-secondary text-light">
@@ -211,26 +186,19 @@
                     <button id="loadNotesBtn" class="btn btn-sm btn-outline-secondary">Load Saved</button>
                 </div>
                 <hr>
-                <div id="savedNotesList" class="mt-2">
-                    <p class="text-secondary small">No notes yet. Save your first insight.</p>
-                </div>
+                <div id="savedNotesList" class="mt-2"><p class="text-secondary small">No notes yet.</p></div>
             </div>
         </div>
     </div>
 
-    <!-- Detailed metrics panel (optional) -->
+    <!-- Detailed metrics panel (shown on double‑click) -->
     <div class="card mt-4" id="detailsPanel" style="display: none;">
         <h3><i class="fas fa-info-circle me-2"></i>Selected Run Details</h3>
         <div id="runDetailsContent" class="row g-3"></div>
     </div>
 
-    <div class="text-center text-secondary mt-4">
-        <small>Double‑click a row to view detailed metrics and hyperparameters.</small>
-    </div>
-</div>
-
-<div class="loading" id="loadingSpinner">
-    <div class="spinner-border text-primary" role="status"></div>
+    <div class="text-center text-secondary mt-4"><small>Double‑click a row to view details.</small></div>
+    <div class="loading" id="loadingSpinner"><div class="spinner-border text-primary"></div></div>
 </div>
 
 <script>
@@ -238,10 +206,10 @@
     if (!authToken) window.location.href = '/login/';
 
     let allRuns = [];
-    let selectedRuns = new Set();  // store run ids
-    let chart = null;
+    let selectedRuns = new Set();
+    let comparisonChart = null;
+    let runsDataTable = null;
 
-    // Helper: authenticated fetch
     async function apiFetch(url, options = {}) {
         const res = await fetch(url, {
             ...options,
@@ -251,36 +219,29 @@
         return res;
     }
 
-    // Load runs from backend
     async function loadRuns() {
-        showLoading(true);
+        document.getElementById('loadingSpinner').style.display = 'flex';
         try {
             const res = await apiFetch('/api/runs/?all=true');
-            const data = await res.json();
-            allRuns = data;
+            allRuns = await res.json();
             populateFilters();
             renderTable(allRuns);
-        } catch (e) {
-            console.error(e);
-            alert('Failed to load runs');
-        } finally {
-            showLoading(false);
-        }
+        } catch(e) { console.error(e); alert('Failed to load runs'); }
+        finally { document.getElementById('loadingSpinner').style.display = 'none'; }
     }
 
     function populateFilters() {
-        const tasks = new Set();
-        const attentions = new Set();
-        allRuns.forEach(run => {
-            if (run.config?.task_name) tasks.add(run.config.task_name);
-            if (run.config?.attention_type) attentions.add(run.config.attention_type);
+        const tasks = new Set(), attentions = new Set();
+        allRuns.forEach(r => {
+            if (r.config?.task_name) tasks.add(r.config.task_name);
+            if (r.config?.attention_type) attentions.add(r.config.attention_type);
         });
-        const taskSelect = document.getElementById('filterTask');
-        taskSelect.innerHTML = '<option value="">All</option>';
-        tasks.forEach(t => { taskSelect.innerHTML += `<option value="${t}">${t.toUpperCase()}</option>`; });
-        const attSelect = document.getElementById('filterAttention');
-        attSelect.innerHTML = '<option value="">All</option>';
-        attentions.forEach(a => { attSelect.innerHTML += `<option value="${a}">${a}</option>`; });
+        const taskSel = document.getElementById('filterTask');
+        taskSel.innerHTML = '<option value="">All</option>';
+        tasks.forEach(t => taskSel.innerHTML += `<option value="${t}">${t.toUpperCase()}</option>`);
+        const attSel = document.getElementById('filterAttention');
+        attSel.innerHTML = '<option value="">All</option>';
+        attentions.forEach(a => attSel.innerHTML += `<option value="${a}">${a}</option>`);
     }
 
     function renderTable(runs) {
@@ -288,11 +249,9 @@
         tbody.innerHTML = '';
         runs.forEach(run => {
             const metrics = run.final_metrics || {};
-            const accuracy = metrics.eval_accuracy ? metrics.eval_accuracy.toFixed(4) : '—';
-            const loss = metrics.eval_loss ? metrics.eval_loss.toFixed(4) : metrics.loss ? metrics.loss.toFixed(4) : '—';
-            const f1 = metrics.eval_f1 ? metrics.eval_f1.toFixed(4) : '—';
             const row = tbody.insertRow();
             row.setAttribute('data-id', run.id);
+            // Checkbox cell
             const cbCell = row.insertCell(0);
             const cb = document.createElement('input');
             cb.type = 'checkbox';
@@ -310,44 +269,37 @@
             row.insertCell(2).innerText = (run.config?.task_name || '?').toUpperCase();
             row.insertCell(3).innerText = run.config?.model_name?.split('/').pop() || '?';
             row.insertCell(4).innerHTML = `<span class="badge-attention badge-method">${run.config?.attention_type || 'full'}</span>`;
-            row.insertCell(5).innerText = accuracy;
-            row.insertCell(6).innerText = loss;
+            row.insertCell(5).innerText = metrics.eval_accuracy ? metrics.eval_accuracy.toFixed(4) : '—';
+            row.insertCell(6).innerText = metrics.eval_loss ? metrics.eval_loss.toFixed(4) : (metrics.loss ? metrics.loss.toFixed(4) : '—');
             row.insertCell(7).innerHTML = `<span class="badge bg-${run.status === 'completed' ? 'success' : (run.status === 'failed' ? 'danger' : 'warning')}">${run.status}</span>`;
             row.insertCell(8).innerText = new Date(run.created_at).toLocaleDateString();
             row.addEventListener('dblclick', () => showRunDetails(run));
         });
-        // DataTable initialization (simple)
-        if (window.runsDataTable) window.runsDataTable.destroy();
-        window.runsDataTable = $('#runsTable').DataTable({
-            paging: true,
-            pageLength: 10,
-            order: [[7, 'desc']],
-            language: { search: "Filter:" },
-            dom: 'Bfrtip',
-            buttons: []
-        });
+        if (runsDataTable) runsDataTable.destroy();
+        runsDataTable = $('#runsTable').DataTable({ paging: true, pageLength: 10, order: [[7, 'desc']], language: { search: "Filter:" } });
     }
 
     function updateCompareButton() {
         const btn = document.getElementById('compareBtn');
-        if (selectedRuns.size >= 2 && selectedRuns.size <= 6) {
+        const size = selectedRuns.size;
+        if (size >= 2 && size <= 6) {
             btn.disabled = false;
-            btn.innerText = `Compare Selected (${selectedRuns.size})`;
+            btn.innerText = `Compare Selected (${size})`;
         } else {
             btn.disabled = true;
-            btn.innerText = selectedRuns.size < 2 ? 'Select ≥2 runs' : 'Max 6 runs';
+            btn.innerText = size < 2 ? 'Select ≥2 runs' : 'Max 6 runs';
         }
     }
 
     async function updateComparisonChart() {
         if (selectedRuns.size === 0) {
-            if (chart) { chart.destroy(); chart = null; }
+            if (comparisonChart) { comparisonChart.destroy(); comparisonChart = null; }
             return;
         }
         const metric = document.getElementById('metricSelect').value;
-        const selectedRunObjects = allRuns.filter(r => selectedRuns.has(r.id));
-        const labels = selectedRunObjects.map(r => `${r.config?.task_name?.toUpperCase() || '?'} (${r.config?.attention_type})`);
-        const values = selectedRunObjects.map(r => {
+        const selected = allRuns.filter(r => selectedRuns.has(r.id));
+        const labels = selected.map(r => `${r.config?.task_name?.toUpperCase() || '?'} (${r.config?.attention_type})`);
+        const values = selected.map(r => {
             const m = r.final_metrics || {};
             if (metric === 'accuracy') return m.eval_accuracy || m.accuracy || 0;
             if (metric === 'loss') return m.eval_loss || m.loss || 0;
@@ -355,16 +307,12 @@
             return 0;
         });
         const ctx = document.getElementById('comparisonChart').getContext('2d');
-        if (chart) chart.destroy();
-        chart = new Chart(ctx, {
+        if (comparisonChart) comparisonChart.destroy();
+        comparisonChart = new Chart(ctx, {
             type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{ label: metric.charAt(0).toUpperCase() + metric.slice(1), data: values, backgroundColor: '#3b82f6', borderRadius: 8 }]
-            },
+            data: { labels, datasets: [{ label: metric, data: values, backgroundColor: '#3b82f6', borderRadius: 8 }] },
             options: {
-                responsive: true,
-                maintainAspectRatio: true,
+                responsive: true, maintainAspectRatio: true,
                 plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(4)}` } } },
                 scales: { y: { title: { display: true, text: metric, color: '#94a3b8' } } }
             }
@@ -382,14 +330,14 @@
             <div class="col-md-6"><strong>Task:</strong> ${run.config?.task_name}</div>
             <div class="col-md-6"><strong>Attention:</strong> ${run.config?.attention_type}</div>
             <div class="col-md-6"><strong>Epochs:</strong> ${run.config?.epochs}</div>
-            <div class="col-md-6"><strong>Batch size:</strong> ${run.config?.batch_size}</div>
+            <div class="col-md-6"><strong>Batch:</strong> ${run.config?.batch_size}</div>
             <div class="col-md-6"><strong>Learning rate:</strong> ${run.config?.learning_rate}</div>
             <div class="col-12"><hr><h5>Metrics</h5><pre>${JSON.stringify(metrics, null, 2)}</pre></div>
         `;
         panel.style.display = 'block';
     }
 
-    // Filter logic
+    // Filtering
     document.getElementById('applyFiltersBtn').onclick = () => {
         const task = document.getElementById('filterTask').value;
         const attention = document.getElementById('filterAttention').value;
@@ -401,22 +349,23 @@
         renderTable(filtered);
     };
 
-    // Compare button action
-    document.getElementById('compareBtn').onclick = () => updateComparisonChart();
+    // Compare button
+    document.getElementById('compareBtn').onclick = updateComparisonChart;
+    document.getElementById('metricSelect').onchange = updateComparisonChart;
 
     // Export CSV
     document.getElementById('exportCsvBtn').onclick = () => {
-        let csvRows = [['ID','Task','Model','Attention','Accuracy','Loss','F1','Status','Date']];
+        let rows = [['ID','Task','Model','Attention','Accuracy','Loss','F1','Status','Date']];
         allRuns.forEach(r => {
-            const metrics = r.final_metrics || {};
-            csvRows.push([
+            const m = r.final_metrics || {};
+            rows.push([
                 r.id, r.config?.task_name || '', r.config?.model_name || '', r.config?.attention_type || '',
-                metrics.eval_accuracy || '', metrics.eval_loss || '', metrics.eval_f1 || '', r.status,
+                m.eval_accuracy || '', m.eval_loss || '', m.eval_f1 || '', r.status,
                 new Date(r.created_at).toLocaleDateString()
             ]);
         });
-        const csvContent = csvRows.map(row => row.join(',')).join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const csv = rows.map(row => row.join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -425,38 +374,41 @@
         URL.revokeObjectURL(url);
     };
 
-    // Notes (save to backend via custom API or localStorage fallback)
+    // ----- Researcher Notes (using /api/notes/ endpoints) -----
     async function saveNote() {
-        const note = document.getElementById('notesInput').value;
-        if (!note.trim()) return;
+        const text = document.getElementById('notesInput').value.trim();
+        if (!text) return;
+        // Associate with selected runs (or all? here with selected runs)
+        const runIds = Array.from(selectedRuns);
         try {
-            const res = await apiFetch('/api/notes/save/', {
+            const res = await apiFetch('/api/notes/', {
                 method: 'POST',
-                body: JSON.stringify({ note: note, run_ids: Array.from(selectedRuns) })
+                body: JSON.stringify({ content: text, title: 'Research insight', tags: ['analysis'], run: runIds[0] || null })
             });
-            if (res.ok) alert('Note saved!');
-            else alert('Failed to save note');
+            if (res.ok) {
+                alert('Note saved');
+                document.getElementById('notesInput').value = '';
+                loadNotes();
+            } else {
+                alert('Failed to save note');
+            }
         } catch(e) { alert('Error saving note'); }
-        loadNotes();
     }
 
     async function loadNotes() {
         try {
-            const res = await apiFetch('/api/notes/list/');
+            const res = await apiFetch('/api/notes/');
             const notes = await res.json();
             const container = document.getElementById('savedNotesList');
-            if (notes.length === 0) {
-                container.innerHTML = '<p class="text-secondary small">No saved notes.</p>';
-                return;
-            }
+            if (!notes.length) { container.innerHTML = '<p class="text-secondary small">No notes yet.</p>'; return; }
             container.innerHTML = notes.map(n => `
                 <div class="insight-card">
                     <div class="d-flex justify-content-between">
                         <small class="text-secondary">${new Date(n.created_at).toLocaleString()}</small>
                         <i class="fas fa-trash-alt text-danger" style="cursor:pointer;" onclick="deleteNote('${n.id}')"></i>
                     </div>
-                    <p class="mb-0 mt-1">${n.text}</p>
-                    ${n.run_ids && n.run_ids.length ? `<small class="text-muted">Affected runs: ${n.run_ids.join(', ')}</small>` : ''}
+                    <p class="mb-0 mt-1">${n.content.substring(0, 150)}${n.content.length > 150 ? '…' : ''}</p>
+                    ${n.run ? `<small class="text-muted">Run: ${n.run.slice(0,8)}</small>` : ''}
                 </div>
             `).join('');
         } catch(e) { console.warn(e); }
@@ -470,21 +422,27 @@
     document.getElementById('saveNoteBtn').onclick = saveNote;
     document.getElementById('loadNotesBtn').onclick = loadNotes;
 
-    function showLoading(show) {
-        const spinner = document.getElementById('loadingSpinner');
-        spinner.style.display = show ? 'flex' : 'none';
-    }
-
     document.getElementById('logoutBtn').onclick = async () => {
         await apiFetch('/api/auth/logout/', { method: 'POST' }).catch(()=>{});
         localStorage.removeItem('authToken');
         window.location.href = '/login/';
     };
 
-    // Metric select change updates chart
-    document.getElementById('metricSelect').onchange = () => updateComparisonChart();
+    // Select all checkbox
+    document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
+        const checkboxes = document.querySelectorAll('.run-checkbox');
+        checkboxes.forEach(cb => cb.checked = e.target.checked);
+        selectedRuns.clear();
+        if (e.target.checked) {
+            document.querySelectorAll('.run-checkbox').forEach(cb => selectedRuns.add(cb.dataset.id));
+        }
+        updateCompareButton();
+        updateComparisonChart();
+    });
 
+    // Initial load
     loadRuns();
+    loadNotes();
 </script>
 </body>
 </html>

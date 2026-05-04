@@ -1,313 +1,309 @@
-<!-- ============================================= -->
-<!-- 1. CUSTOM METRICS DASHBOARD (Plotly.js)      -->
-<!-- ============================================= -->
+<!-- Complete Custom Metrics Dashboard Component -->
+<!-- Place this inside your experiment monitor page (e.g., experiment_monitor.html) -->
+<!-- Requires global variables: runId (string), authToken (string) -->
+
 <div class="card mt-4">
-    <h3><i class="fas fa-chart-line me-2"></i>Custom Metrics Dashboard</h3>
-    <div class="row">
-        <div class="col-md-3">
-            <label class="form-label small">Select metrics to plot:</label>
-            <select id="metricSelector" multiple size="5" class="form-select form-select-sm bg-dark text-light border-secondary"></select>
-            <button id="refreshMetricsBtn" class="btn btn-sm btn-primary mt-2 w-100"><i class="fas fa-chart-simple me-1"></i> Update Chart</button>
-        </div>
-        <div class="col-md-9">
-            <div id="scalarChart" style="height: 400px; background: #0f172a; border-radius: 16px;"></div>
-            <div id="imageGallery" class="row mt-3 g-3"></div>
-            <div id="tableView" class="table-responsive mt-3"></div>
+    <div class="card-header bg-transparent border-secondary d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Custom Metrics Dashboard</h5>
+        <div>
+            <button id="metricsAutoRefreshToggle" class="btn btn-sm btn-outline-secondary me-1" title="Toggle auto‑refresh">
+                <i class="fas fa-sync-alt"></i> Auto
+            </button>
+            <button id="metricsForceRefreshBtn" class="btn btn-sm btn-primary">
+                <i class="fas fa-sync-alt"></i> Refresh Now
+            </button>
         </div>
     </div>
-</div>
-
-<!-- ============================================= -->
-<!-- 2. CONFIGURATION HISTORY & DIFF VIEWER        -->
-<!-- ============================================= -->
-<div class="card mt-4">
-    <h3><i class="fas fa-history me-2"></i>Configuration Timeline & Diff</h3>
-    <div class="row align-items-end">
-        <div class="col-md-5">
-            <label class="form-label small">Version A (older)</label>
-            <select id="configVersionA" class="form-select form-select-sm bg-dark text-light border-secondary"></select>
+    <div class="card-body">
+        <!-- Loading indicator -->
+        <div id="metricsLoading" class="text-center text-secondary py-3" style="display: none;">
+            <i class="fas fa-spinner fa-spin me-2"></i> Loading metrics...
         </div>
-        <div class="col-md-2 text-center"><i class="fas fa-arrow-right text-secondary"></i></div>
-        <div class="col-md-5">
-            <label class="form-label small">Version B (newer)</label>
-            <select id="configVersionB" class="form-select form-select-sm bg-dark text-light border-secondary"></select>
-        </div>
-    </div>
-    <button id="compareConfigsBtn" class="btn btn-sm btn-outline-info mt-3"><i class="fas fa-code-branch me-1"></i> Compare Versions</button>
-    <div id="configDiffViewer" class="mt-3" style="max-height: 400px; overflow-y: auto; background: #0f172a; border-radius: 16px; padding: 1rem; font-family: monospace; font-size: 0.8rem;"></div>
-</div>
 
-<!-- ============================================= -->
-<!-- 3. CODE & DATA VERSIONING PANEL               -->
-<!-- ============================================= -->
-<div class="card mt-4">
-    <h3><i class="fas fa-code-branch me-2"></i>Reproducibility Metadata</h3>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="stat-card" style="background:#0f172a;">
-                <div class="stat-label">Git Commit</div>
-                <div class="stat-value" style="font-size: 1rem;" id="gitCommitHash">—</div>
-                <div class="small text-secondary">Branch: <span id="gitBranch">—</span></div>
-                <div id="gitDirtyWarning" class="badge bg-warning text-dark mt-1" style="display: none;">⚠️ Uncommitted changes</div>
+        <div class="row" id="metricsContent">
+            <div class="col-md-3">
+                <label class="form-label small text-secondary fw-bold">📌 Select scalar metrics to plot</label>
+                <select id="metricSelector" multiple class="form-select form-select-sm bg-dark text-light border-secondary" size="8"></select>
+                <div class="mt-2">
+                    <button id="plotSelectedBtn" class="btn btn-sm btn-primary w-100">
+                        <i class="fas fa-chart-line me-1"></i> Update Chart
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div id="scalarChart" style="height: 380px; background: #0f172a; border-radius: 16px;"></div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="stat-card" style="background:#0f172a;">
-                <div class="stat-label">Data Version (DVC)</div>
-                <div class="stat-value" style="font-size: 1rem;" id="dataCommit">—</div>
-                <div class="small text-secondary">DVC hash: <span id="dvcHash">—</span></div>
-            </div>
+
+        <!-- Images Gallery -->
+        <div class="mt-4">
+            <h6 class="text-secondary fw-bold"><i class="fas fa-images me-2"></i>Logged Images</h6>
+            <div id="imageGallery" class="row g-3"></div>
         </div>
-    </div>
-    <div class="mt-2">
-        <button id="captureEnvBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-box me-1"></i> Capture Environment</button>
-        <div id="envDetails" style="display: none; margin-top: 12px; background: #0f172a; border-radius: 12px; padding: 12px; max-height: 300px; overflow-y: auto;">
-            <pre id="envContent" style="margin:0; font-size:0.7rem;"></pre>
+
+        <!-- Tables -->
+        <div class="mt-4">
+            <h6 class="text-secondary fw-bold"><i class="fas fa-table me-2"></i>Logged Tables</h6>
+            <div id="tableView" class="table-responsive"></div>
         </div>
+
+        <!-- Status message -->
+        <div id="metricsStatus" class="small text-secondary mt-3 text-center"></div>
     </div>
 </div>
 
-<!-- Include Plotly.js (if not already) -->
+<!-- Include Plotly.js (if not already present) -->
 <script src="https://cdn.plot.ly/plotly-3.0.1.min.js" charset="utf-8"></script>
 
 <script>
-// Make sure runId is defined (comes from Django template)
-const runId = "{{ run.id|default:'' }}";
-if (!runId) console.warn("No runId for metrics/config panels");
+    (function() {
+        // =========================================================================
+        //  Custom Metrics Dashboard – Complete Implementation
+        //  Expects backend endpoint: GET /api/runs/<runId>/metrics/
+        //  Response format:
+        //  {
+        //    "metric_name": {
+        //        "type": "scalar" | "image" | "table",
+        //        "steps": [0,1,2,...],
+        //        "values": [value0, value1, ...]  // for scalar: numbers; for image: base64 strings; for table: list of objects
+        //    }
+        //  }
+        // =========================================================================
 
-// ------------------------------------------------------------
-// 1. METRICS DASHBOARD
-// ------------------------------------------------------------
-let scalarChart = null;
+        if (typeof runId === 'undefined' || !runId) {
+            console.error("Metrics dashboard: runId is not defined");
+            return;
+        }
+        if (typeof authToken === 'undefined' || !authToken) {
+            console.error("Metrics dashboard: authToken is not defined");
+            return;
+        }
 
-async function loadMetricOptions() {
-    const res = await fetch(`/api/runs/${runId}/metrics/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    if (!res.ok) return;
-    const metrics = await res.json();
-    const selector = document.getElementById('metricSelector');
-    selector.innerHTML = '';
-    for (const [name, data] of Object.entries(metrics)) {
-        if (data.type === 'scalar') {
-            const opt = document.createElement('option');
-            opt.value = name;
-            opt.textContent = name;
-            selector.appendChild(opt);
-        }
-    }
-    // Also populate image gallery (optional)
-    const gallery = document.getElementById('imageGallery');
-    gallery.innerHTML = '';
-    for (const [name, data] of Object.entries(metrics)) {
-        if (data.type === 'image' && data.values.length) {
-            const lastImg = data.values[data.values.length-1];
-            const step = data.steps[data.steps.length-1];
-            gallery.innerHTML += `
-                <div class="col-md-4">
-                    <div class="card bg-dark border-secondary">
-                        <img src="${lastImg}" class="card-img-top" alt="${name}" style="max-height: 180px; object-fit: contain;">
-                        <div class="card-body p-2"><small>${name} (step ${step})</small></div>
-                    </div>
-                </div>`;
-        }
-        if (data.type === 'table' && data.values.length) {
-            const lastTable = data.values[data.values.length-1];
-            const headers = Object.keys(lastTable);
-            let tableHtml = `<table class="table table-dark table-striped table-sm"><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody><tr>${headers.map(h => `<td>${lastTable[h]}</td>`).join('')}</tr></tbody></table>`;
-            document.getElementById('tableView').innerHTML = `<h6 class="mt-2">${name}</h6>${tableHtml}`;
-        }
-    }
-}
+        let scalarChart = null;
+        let currentMetricsData = null;
+        let autoRefreshInterval = null;
+        let autoRefreshEnabled = true;
+        const REFRESH_INTERVAL_MS = 10000;
 
-async function updateScalarChart() {
-    const selected = Array.from(document.getElementById('metricSelector').selectedOptions).map(opt => opt.value);
-    if (selected.length === 0) return;
-    const res = await fetch(`/api/runs/${runId}/metrics/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    const metrics = await res.json();
-    const traces = [];
-    for (const name of selected) {
-        const data = metrics[name];
-        if (data && data.type === 'scalar') {
-            traces.push({
-                x: data.steps,
-                y: data.values,
-                mode: 'lines+markers',
-                name: name,
-                line: { width: 2 }
+        // Helper: authenticated fetch
+        async function apiFetch(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...options.headers }
             });
+            if (res.status === 401) throw new Error('Unauthorized');
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
         }
-    }
-    if (scalarChart) Plotly.purge('scalarChart');
-    scalarChart = Plotly.newPlot('scalarChart', traces, {
-        title: 'Training Metrics',
-        xaxis: { title: 'Step', color: '#94a3b8' },
-        yaxis: { title: 'Value', color: '#94a3b8' },
-        paper_bgcolor: '#0f172a',
-        plot_bgcolor: '#0f172a',
-        font: { color: '#e2e8f0' }
-    });
-}
 
-document.getElementById('refreshMetricsBtn').onclick = updateScalarChart;
-loadMetricOptions();
-
-// ------------------------------------------------------------
-// 2. CONFIGURATION HISTORY & DIFF
-// ------------------------------------------------------------
-async function loadConfigVersions() {
-    const res = await fetch(`/api/runs/${runId}/config/history/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    const selectA = document.getElementById('configVersionA');
-    const selectB = document.getElementById('configVersionB');
-    selectA.innerHTML = '';
-    selectB.innerHTML = '';
-    data.versions.forEach(v => {
-        const optA = document.createElement('option');
-        optA.value = v.version;
-        optA.textContent = `v${v.version} (${new Date(v.created_at).toLocaleString()})`;
-        selectA.appendChild(optA);
-        const optB = optA.cloneNode(true);
-        selectB.appendChild(optB);
-    });
-    if (data.versions.length >= 2) {
-        selectA.selectedIndex = 0;
-        selectB.selectedIndex = data.versions.length - 1;
-    }
-}
-
-async function compareConfigs() {
-    const vA = document.getElementById('configVersionA').value;
-    const vB = document.getElementById('configVersionB').value;
-    const res = await fetch(`/api/runs/${runId}/config/compare/${vA}/${vB}/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    const diff = await res.json();
-    const viewer = document.getElementById('configDiffViewer');
-    if (Object.keys(diff.diff).length === 0) {
-        viewer.innerHTML = '<div class="text-center text-secondary">No differences between versions.</div>';
-        return;
-    }
-    // Format diff nicely
-    let html = '<div class="small"><strong>Changes:</strong></div><ul class="mt-2">';
-    if (diff.values_changed) {
-        for (const [path, change] of Object.entries(diff.values_changed)) {
-            html += `<li class="text-warning">${path}: ${change.old_value} → ${change.new_value}</li>`;
+        // Show/hide loading spinner
+        function setLoading(loading) {
+            const spinner = document.getElementById('metricsLoading');
+            const content = document.getElementById('metricsContent');
+            if (loading) {
+                spinner.style.display = 'block';
+                content.style.opacity = '0.5';
+            } else {
+                spinner.style.display = 'none';
+                content.style.opacity = '1';
+            }
         }
-    }
-    if (diff.dictionary_item_added) {
-        diff.dictionary_item_added.forEach(item => {
-            html += `<li class="text-success">➕ Added: ${item}</li>`;
-        });
-    }
-    if (diff.dictionary_item_removed) {
-        diff.dictionary_item_removed.forEach(item => {
-            html += `<li class="text-danger">➖ Removed: ${item}</li>`;
-        });
-    }
-    html += '</ul>';
-    viewer.innerHTML = html;
-}
 
-document.getElementById('compareConfigsBtn').onclick = compareConfigs;
-loadConfigVersions();
+        // Main data loader
+        async function loadMetrics() {
+            try {
+                setLoading(true);
+                currentMetricsData = await apiFetch(`/api/runs/${runId}/metrics/`);
+                populateMetricSelector();
+                updateScalarChart();  // uses current selection
+                renderImageGallery();
+                renderTableView();
+                document.getElementById('metricsStatus').innerHTML = `<i class="fas fa-check-circle text-success me-1"></i>Updated at ${new Date().toLocaleTimeString()}`;
+            } catch (error) {
+                console.error('Metrics load error:', error);
+                document.getElementById('metricsStatus').innerHTML = `<i class="fas fa-exclamation-triangle text-danger me-1"></i>Failed to load metrics: ${error.message}`;
+                if (scalarChart) Plotly.purge('scalarChart');
+                document.getElementById('metricSelector').innerHTML = '<option disabled>No data</option>';
+            } finally {
+                setLoading(false);
+            }
+        }
 
-// ------------------------------------------------------------
-// 3. CODE VERSIONING PANEL
-// ------------------------------------------------------------
-async function loadVersionInfo() {
-    const res = await fetch(`/api/runs/${runId}/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    const run = await res.json();
-    document.getElementById('gitCommitHash').innerHTML = run.git_commit_hash ? `<a href="${run.git_repository}/commit/${run.git_commit_hash}" target="_blank">${run.git_commit_hash.slice(0,8)}</a>` : '—';
-    document.getElementById('gitBranch').innerText = run.git_branch || '—';
-    if (run.git_dirty) document.getElementById('gitDirtyWarning').style.display = 'inline-block';
-    document.getElementById('dataCommit').innerText = run.data_git_commit_id ? run.data_git_commit_id.slice(0,8) : '—';
-    document.getElementById('dvcHash').innerText = run.dvc_data_hash || '—';
-}
+        function populateMetricSelector() {
+            const selector = document.getElementById('metricSelector');
+            selector.innerHTML = '';
+            let hasScalar = false;
+            for (const [name, data] of Object.entries(currentMetricsData)) {
+                if (data.type === 'scalar') {
+                    hasScalar = true;
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    selector.appendChild(option);
+                }
+            }
+            if (!hasScalar) {
+                const placeholder = document.createElement('option');
+                placeholder.textContent = 'No scalar metrics yet';
+                placeholder.disabled = true;
+                selector.appendChild(placeholder);
+            }
+        }
 
-async function captureEnvironment() {
-    const res = await fetch(`/api/runs/${runId}/environment/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    const env = await res.json();
-    const container = document.getElementById('envDetails');
-    const content = document.getElementById('envContent');
-    content.textContent = JSON.stringify(env, null, 2);
-    container.style.display = 'block';
-}
+        function updateScalarChart() {
+            const selected = Array.from(document.getElementById('metricSelector').selectedOptions).map(opt => opt.value);
+            if (selected.length === 0) {
+                if (scalarChart) Plotly.purge('scalarChart');
+                return;
+            }
+            const traces = [];
+            for (const name of selected) {
+                const metric = currentMetricsData[name];
+                if (metric && metric.type === 'scalar' && metric.steps && metric.values) {
+                    traces.push({
+                        x: metric.steps,
+                        y: metric.values,
+                        mode: 'lines+markers',
+                        name: name,
+                        line: { width: 2 },
+                        marker: { size: 4 }
+                    });
+                }
+            }
+            const layout = {
+                title: { text: 'Training Metrics', font: { color: '#e2e8f0' } },
+                xaxis: { title: 'Step', color: '#94a3b8', gridcolor: '#334155' },
+                yaxis: { title: 'Value', color: '#94a3b8', gridcolor: '#334155' },
+                paper_bgcolor: '#0f172a',
+                plot_bgcolor: '#0f172a',
+                font: { color: '#e2e8f0' },
+                legend: { x: 1, y: 1, xanchor: 'right', bgcolor: 'rgba(0,0,0,0.5)' },
+                hovermode: 'closest',
+                margin: { t: 40, r: 20, b: 40, l: 50 }
+            };
+            if (scalarChart) Plotly.purge('scalarChart');
+            scalarChart = Plotly.newPlot('scalarChart', traces, layout);
+        }
 
-document.getElementById('captureEnvBtn').onclick = captureEnvironment;
-loadVersionInfo();
+        function renderImageGallery() {
+            const gallery = document.getElementById('imageGallery');
+            gallery.innerHTML = '';
+            let hasImages = false;
+            for (const [name, data] of Object.entries(currentMetricsData)) {
+                if (data.type === 'image' && data.values && data.values.length) {
+                    hasImages = true;
+                    // Show all images? For brevity, show the last 4 images.
+                    const steps = data.steps;
+                    const images = data.values;
+                    // Display up to 4 most recent images
+                    const recent = images.slice(-4);
+                    const recentSteps = steps.slice(-4);
+                    for (let i = 0; i < recent.length; i++) {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-3 col-sm-6 mb-3';
+                        col.innerHTML = `
+                            <div class="card bg-dark border-secondary h-100">
+                                <div class="position-relative" style="cursor: pointer;" onclick="viewFullImage('${escapeHtml(recent[i])}', '${escapeHtml(name)} (step ${recentSteps[i]})')">
+                                    <img src="${escapeHtml(recent[i])}" class="card-img-top" alt="${escapeHtml(name)}" style="max-height: 140px; object-fit: contain; background: #0f172a;">
+                                </div>
+                                <div class="card-body p-2">
+                                    <small class="text-secondary">${escapeHtml(name)} (step ${recentSteps[i]})</small>
+                                </div>
+                            </div>
+                        `;
+                        gallery.appendChild(col);
+                    }
+                }
+            }
+            if (!hasImages) {
+                gallery.innerHTML = '<div class="col-12 text-secondary text-center py-3">No images logged yet.</div>';
+            }
+        }
 
-// ------------------------------------------------------------
-// Helper: format diff (used in config diff)
-// ------------------------------------------------------------
-function formatDiffValue(value) {
-    if (typeof value === 'object') return JSON.stringify(value);
-    return value;
-}
-</script>
+        function renderTableView() {
+            const tableView = document.getElementById('tableView');
+            tableView.innerHTML = '';
+            let hasTables = false;
+            for (const [name, data] of Object.entries(currentMetricsData)) {
+                if (data.type === 'table' && data.values && data.values.length) {
+                    hasTables = true;
+                    const lastTable = data.values[data.values.length - 1];
+                    const headers = Object.keys(lastTable);
+                    let tableHtml = `
+                        <h6 class="mt-3">${escapeHtml(name)}</h6>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped table-sm border-secondary">
+                                <thead class="table-secondary text-dark">
+                                    <tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>
+                                </thead>
+                                <tbody>
+                                    <td>${headers.map(h => `<td>${escapeHtml(String(lastTable[h]))}</td>`).join('')} </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                    tableView.insertAdjacentHTML('beforeend', tableHtml);
+                }
+            }
+            if (!hasTables) {
+                tableView.innerHTML = '<div class="text-secondary text-center py-3">No tables logged yet.</div>';
+            }
+        }
 
-
-
-
-
-<!-- In experiment_monitor.html, add new tab -->
-<div class="card mt-4">
-    <h3><i class="fas fa-code-branch me-2"></i>Model Versions</h3>
-    <div id="modelVersionsList" class="list-group">
-        <!-- Dynamically populated -->
-    </div>
-    <button id="publishToHubBtn" class="btn btn-sm btn-primary mt-2" style="display:none;">
-        <i class="fas fa-cloud-upload-alt"></i> Publish to Hugging Face Hub
-    </button>
-</div>
-
-<script>
-async function loadModelVersions(runId) {
-    const res = await fetch(`/api/runs/${runId}/versions/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    const versions = await res.json();
-    const container = document.getElementById('modelVersionsList');
-    container.innerHTML = versions.map(v => `
-        <div class="list-group-item bg-dark border-secondary">
-            <div class="d-flex justify-content-between">
-                <strong>${v.version}</strong>
-                <div>
-                    <span class="badge bg-info me-1">${v.artifact_size_mb.toFixed(1)} MB</span>
-                    ${v.is_published_to_hub ? '<span class="badge bg-success">✅ On Hub</span>' : ''}
+        // Global function for image modal (called from inline onclick)
+        window.viewFullImage = function(imgSrc, title) {
+            const modal = document.createElement('div');
+            modal.id = 'fullImageModal';
+            modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1060; display:flex; align-items:center; justify-content:center; cursor:pointer;';
+            modal.onclick = () => modal.remove();
+            modal.innerHTML = `
+                <div style="max-width:90%; max-height:90%; position:relative;">
+                    <img src="${escapeHtml(imgSrc)}" style="max-width:100%; max-height:90vh; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.5);">
+                    <div style="position:absolute; top:-30px; right:0; color:white; font-size:28px; font-weight:bold; cursor:pointer;">&times;</div>
+                    <div class="text-center mt-2 text-secondary">${escapeHtml(title)}</div>
                 </div>
-            </div>
-            <div class="small text-secondary">Metrics: ${JSON.stringify(v.metrics)}</div>
-            <div class="mt-2">
-                <button class="btn btn-sm btn-outline-info download-version" data-id="${v.id}">⬇ Download</button>
-                ${!v.is_published_to_hub ? `<button class="btn btn-sm btn-outline-success publish-version" data-id="${v.id}">☁️ Publish to Hub</button>` : ''}
-            </div>
-        </div>
-    `).join('');
-    
-    document.querySelectorAll('.publish-version').forEach(btn => btn.onclick = () => publishToHub(btn.dataset.id));
-    document.querySelectorAll('.download-version').forEach(btn => btn.onclick = () => downloadVersion(btn.dataset.id));
-}
+            `;
+            document.body.appendChild(modal);
+        };
 
-async function publishToHub(versionId) {
-    const res = await fetch(`/api/model-versions/${versionId}/publish/`, {
-        method: 'POST',
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    if (res.ok) {
-        alert('Model published to Hugging Face Hub!');
-        loadModelVersions(runId);
-    } else {
-        alert('Publishing failed');
-    }
-}
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m]));
+        }
+
+        // Auto‑refresh control
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            if (autoRefreshEnabled) autoRefreshInterval = setInterval(loadMetrics, REFRESH_INTERVAL_MS);
+        }
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const btn = document.getElementById('metricsAutoRefreshToggle');
+            if (autoRefreshEnabled) {
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Auto On';
+                btn.classList.remove('btn-outline-secondary');
+                btn.classList.add('btn-success');
+                startAutoRefresh();
+            } else {
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Auto Off';
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+                if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('plotSelectedBtn').addEventListener('click', updateScalarChart);
+        document.getElementById('metricsForceRefreshBtn').addEventListener('click', loadMetrics);
+        document.getElementById('metricsAutoRefreshToggle').addEventListener('click', toggleAutoRefresh);
+
+        // Initial load
+        loadMetrics();
+        startAutoRefresh();
+
+        // Cleanup on page unload (optional)
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        });
+    })();
 </script>
