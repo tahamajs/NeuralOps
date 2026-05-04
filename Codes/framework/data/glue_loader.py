@@ -1,5 +1,4 @@
-"""Local GLUE dataset loader from Parquet files."""
-
+# framework/data/glue_loader.py
 import os
 from datasets import Dataset, DatasetDict
 
@@ -17,9 +16,7 @@ GLUE_TASK_KEYS = {
 
 def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
     """Load a GLUE task from local Parquet files."""
-    base_pathh = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
-
-    task_path = os.path.join(base_pathh, task_name)
+    task_path = os.path.join(base_path, task_name)
     if not os.path.exists(task_path):
         raise FileNotFoundError(f"Local path {task_path} not found")
 
@@ -27,10 +24,11 @@ def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
     for fname in os.listdir(task_path):
         if not fname.endswith(".parquet"):
             continue
-        split = fname.split("-")[0]
-        file_path = os.path.join(task_path, fname)
-        splits[split] = Dataset.from_parquet([file_path])
+        # Assume naming: train.parquet, validation.parquet, test.parquet
+        split = fname.replace(".parquet", "")
+        splits[split] = Dataset.from_parquet(os.path.join(task_path, fname))
 
+    # Special handling for MNLI (validation_matched, validation_mismatched)
     if task_name == "mnli":
         for special in ["validation_matched", "validation_mismatched"]:
             fpath = os.path.join(task_path, f"{special}.parquet")
@@ -42,11 +40,10 @@ def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
     return DatasetDict(splits)
 
 def get_num_labels_and_is_regression(task_name: str):
-    """Return (num_labels, is_regression)."""
+    """Return (num_labels, is_regression) for GLUE tasks."""
     t = task_name.lower()
     if t == "stsb":
         return 1, True
-    if t == "cola":
-        return 2, False
-    mapping = {"sst2": 2, "mrpc": 2, "qqp": 2, "mnli": 3, "qnli": 2, "rte": 2, "wnli": 2}
+    mapping = {"cola": 2, "sst2": 2, "mrpc": 2, "qqp": 2, "mnli": 3,
+               "qnli": 2, "rte": 2, "wnli": 2}
     return mapping.get(t, 2), False
