@@ -87,3 +87,52 @@ class DynamicPriorityManager:
                         # but we can signal the job to yield (if preemptive).
                         # For now, just log it.
                         print(f"Reduced priority of job {job.id} to {new_prio}")
+
+
+
+import threading
+import time
+from django.utils import timezone
+from .models import Job
+
+class DynamicPriorityManager:
+    """Adjusts priorities of queued and running jobs periodically."""
+
+    def __init__(self, scheduler, boost_wait_threshold=600, boost_amount=1,
+                 reduce_runtime_threshold=3600, reduce_amount=1,
+                 check_interval=30):
+        self.scheduler = scheduler
+        self.boost_wait_threshold = boost_wait_threshold
+        self.boost_amount = boost_amount
+        self.reduce_runtime_threshold = reduce_runtime_threshold
+        self.reduce_amount = reduce_amount
+        self.check_interval = check_interval
+        self._stop_event = threading.Event()
+        self.thread = None
+
+    def start(self):
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
+
+    def _run(self):
+        while not self._stop_event.is_set():
+            time.sleep(self.check_interval)
+            # Boost queued jobs that waited too long
+            for job in Job.objects.filter(status='queued'):
+                wait = (timezone.now() - job.created_at).total_seconds()
+                if wait > self.boost_wait_threshold:
+                    new_prio = max(1, job.priority - self.boost_amount)
+                    if new_prio != job.priority:
+                        job.priority = new_prio
+                        job.save(update_fields=['priority'])
+                        # Notify scheduler (best effort)
+                        self.scheduler.update_priority(str(job.id), new_prio)
+            # Reduce priority of long‑running jobs (encourage preemption)
+            for job in Job.objects.filter(status='running'):
+                runtime = (timezone.now() - job.started_at).total_seconds()
+                if runtime > self.reduce_runtime_threshold and job.priority < 10:
+                    new_prio = min(10, job.priority + self.reduce_amount)
+                    if new_prio != job.priority:
+                        job.priority = new_prio
+                        job.save(update_fields=['priority'])
+                        # No need to update scheduler; the job is already running

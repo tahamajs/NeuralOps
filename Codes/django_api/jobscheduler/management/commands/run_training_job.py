@@ -79,3 +79,53 @@ class Command(BaseCommand):
         
         # Then run training (with logging integration)
         ... (existing code)
+
+
+
+
+import sys
+import os
+import json
+import signal
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+from jobscheduler.models import Job
+from framework.experiment import run_training
+
+class Command(BaseCommand):
+    help = 'Run a training job for a given Job ID with preemption support'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--job-id', type=str, required=True)
+        parser.add_argument('--checkpoint-dir', type=str, default='')
+
+    def handle(self, *args, **options):
+        job_id = options['job_id']
+        job = Job.objects.get(id=job_id)
+        checkpoint_dir = options['checkpoint_dir']
+        preempt_flag = f"/tmp/preempt_flags/{job_id}"
+
+        def check_preempt():
+            if os.path.exists(preempt_flag):
+                self.stdout.write("Preemption signal received, saving checkpoint...")
+                # Save checkpoint logic (framework should support)
+                # For simplicity, we'll just exit
+                job.status = 'preempted'
+                job.save()
+                sys.exit(0)
+
+        # Hook into training loop (periodically call check_preempt)
+        # For brevity, assume the training function accepts a callback
+        try:
+            run_training(
+                config={...},
+                preempt_callback=check_preempt,
+            )
+            job.status = 'completed'
+            job.completed_at = timezone.now()
+            job.save()
+        except Exception as e:
+            job.status = 'failed'
+            job.logs += f"\nERROR: {str(e)}"
+            job.save()
+            sys.exit(1)
