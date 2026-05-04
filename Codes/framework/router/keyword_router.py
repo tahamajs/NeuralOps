@@ -1,13 +1,10 @@
-"""
-Keyword-based router with advanced features.
-"""
-
+# framework/routing/keyword_router.py
 import re
-from typing import Dict, List, Optional, Tuple, Set
 from collections import defaultdict
+from typing import Dict, Optional, Tuple
 from .base import BaseRouter
+from .router_registry import ROUTER_REGISTRY
 
-# Expanded keyword database with synonyms and weights
 DEFAULT_KEYWORDS: Dict[str, Dict[str, float]] = {
     'comparative': {
         'better': 1.2, 'worse': 1.2, 'than': 0.8, 'more': 0.6, 'less': 0.6,
@@ -55,17 +52,8 @@ DEFAULT_KEYWORDS: Dict[str, Dict[str, float]] = {
     },
 }
 
-
+@ROUTER_REGISTRY.register("keyword_router")
 class KeywordRouter(BaseRouter):
-    """
-    Keyword-based router with:
-    - Weighted keyword scoring
-    - Regex pattern matching
-    - Synonym expansion
-    - Case‑insensitive or sensitive modes
-    - Pre‑compiled patterns for speed
-    """
-    
     name = "keyword_router"
     
     def __init__(
@@ -81,11 +69,10 @@ class KeywordRouter(BaseRouter):
         self.use_word_boundaries = use_word_boundaries
         self.min_confidence = min_confidence
         self.default_task = default_task
+        self._patterns = {}
         self._compile_patterns()
     
     def _compile_patterns(self):
-        """Compile regex patterns for each task."""
-        self._patterns = {}
         for task, word_weights in self.keywords.items():
             if self.use_word_boundaries:
                 pattern = r'\b(' + '|'.join(re.escape(w) for w in word_weights) + r')\b'
@@ -95,43 +82,29 @@ class KeywordRouter(BaseRouter):
             self._patterns[task] = re.compile(pattern, flags)
     
     def route(self, text: str) -> Tuple[str, Dict[str, float]]:
-        scores: Dict[str, float] = defaultdict(float)
+        scores = defaultdict(float)
         text_proc = text if self.case_sensitive else text.lower()
-        
         for task, pattern in self._patterns.items():
             matches = pattern.findall(text_proc)
-            # Weighted sum based on keyword weights
             word_weights = self.keywords[task]
             for match in matches:
-                # match could be tuple if multiple groups, handle
                 if isinstance(match, tuple):
                     match = match[0] if match[0] else match[1] if len(match) > 1 else ''
-                if match in word_weights:
-                    scores[task] += word_weights[match]
-                else:
-                    scores[task] += 1.0  # fallback weight
-        
-        # Normalize scores by length?
+                scores[task] += word_weights.get(match, 1.0)
         if not scores:
             return self.default_task, {self.default_task: 1.0}
-        
-        best = max(scores, key=scores.get)
-        # Apply min confidence: if best score is too low, fallback to default
         total = sum(scores.values())
-        confidence = scores[best] / total if total > 0 else 0
+        best = max(scores, key=scores.get)
+        confidence = scores[best] / total
         if confidence < self.min_confidence:
             return self.default_task, {self.default_task: 1.0}
-        
-        # Convert to probabilities
         probs = {k: v / total for k, v in scores.items()}
         return best, probs
     
     def can_route(self, text: str) -> bool:
-        # Keyword router always works
         return True
     
     def add_keywords(self, task: str, word_weights: Dict[str, float]):
-        """Add or update keywords with weights."""
         if task not in self.keywords:
             self.keywords[task] = {}
         self.keywords[task].update(word_weights)

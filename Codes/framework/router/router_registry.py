@@ -1,14 +1,9 @@
-"""
-Registry for routers.
-"""
-
-from typing import Dict, Optional, Type, Any
+# framework/routing/router_registry.py
+from typing import Dict, Optional, Type
 from .base import BaseRouter
 
 
 class RouterRegistry:
-    """Registry for router classes."""
-    
     _instance = None
     
     def __new__(cls):
@@ -18,11 +13,10 @@ class RouterRegistry:
         return cls._instance
     
     def register(self, name: Optional[str] = None):
-        """Decorator to register a router class."""
         def decorator(cls):
             nonlocal name
             if name is None:
-                name = cls.name if hasattr(cls, 'name') else cls.__name__.lower()
+                name = getattr(cls, 'name', cls.__name__.lower())
             self._registry[name] = cls
             return cls
         return decorator

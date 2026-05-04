@@ -2,204 +2,175 @@
 
 Fast, lightweight, and flexible task detection for NLP pipelines.  
 The routing package helps you decide **which downstream model or processing path** to use for a given input text.  
-Three routers are provided – from simple keyword matching to a trainable neural classifier – plus an ensemble that combines them.
+It provides rule‑based, trainable, and ensemble routers – all integrated with a central registry and manager.
 
-## 📦 Modules
+## 📦 Module Structure
 
-| Module | Description |
-|--------|-------------|
-| `KeywordRouter` | Rule‑based router using comprehensive keyword dictionaries (7 built‑in task types). |
-| `MLRouter` | Machine‑learning router (TF‑IDF + Logistic Regression). Trainable on your own data. |
-| `FastTextRouter` | Neural router that mimics FastText (embedding → average → FFN). |
-| `EnsembleRouter` | Weighted ensemble of multiple routers for robust predictions. |
+```
+framework/routing/
+├── __init__.py             # Public API, exports all routers, registry, manager
+├── base.py                 # BaseRouter, TrainableRouter, RouteResult
+├── keyword_router.py       # KeywordRouter (rule‑based, zero‑shot)
+├── ml_router.py            # TfidfRouter, FastTextRouter (trainable)
+├── ensemble_router.py      # EnsembleRouter (weighted / majority / stacking / dynamic)
+├── router_registry.py      # ROUTER_REGISTRY (singleton)
+└── router_manager.py       # RouterManager (caching, metrics, active router)
+```
 
 ## 🚀 Quick Start
 
 ```python
-from routing.keyword_router import KeywordRouter
-from routing.ml_router import MLRouter
-from routing.ensemble_router import EnsembleRouter
-```
+from framework.routing import KeywordRouter, TfidfRouter, EnsembleRouter, RouterManager, ROUTER_REGISTRY
 
-### Keyword Router (zero‑shot)
-
-```python
+# 1. Use a single router
 router = KeywordRouter()
 task, scores = router.route("This product is better than the other one")
 print(task)   # 'comparative'
-print(scores) # {'comparative': 2.8, 'negation': 0, 'sentiment': 0.6, ...}
+
+# 2. Train and use an ML router
+tfidf = TfidfRouter()
+tfidf.train(texts, labels)
+task, probs = tfidf.route("A factual statement")
+
+# 3. Use the registry to create routers dynamically
+router = ROUTER_REGISTRY.create("fasttext_router", vocab_size=5000, num_classes=7)
+
+# 4. Manage multiple routers with RouterManager
+manager = RouterManager(default_router=KeywordRouter())
+manager.register_router(tfidf, make_active=True)
+result = manager.route("What is the capital of France?")
+print(result.task, result.confidence, result.inference_time_ms)
+
+# 5. Ensemble of routers
+ensemble = EnsembleRouter(routers=[(KeywordRouter(), 0.3), (tfidf, 0.7)])
+task, scores = ensemble.route("I think this is great")
 ```
 
-### ML Router (trainable)
+## 🧠 Router Details
+
+### 1. `KeywordRouter` (zero‑shot, rule‑based)
+
+- Maintains task‑specific keyword dictionaries with weights.
+- Uses regex with word boundaries; case‑insensitive by default.
+- Returns task with highest weighted sum; includes confidence threshold.
+
+**Built‑in tasks:** `comparative`, `negation`, `sentiment_positive`, `sentiment_negative`, `question`, `factual`, `opinion`.
+
+**Example:**
+```python
+router = KeywordRouter(min_confidence=0.4)
+router.add_keywords("urgent", {"asap": 2.0, "immediate": 1.5})
+task, scores = router.route("Please answer asap!")
+```
+
+### 2. `TfidfRouter` (TF‑IDF + Logistic Regression)
+
+- Scikit‑learn pipeline: `TfidfVectorizer` → `LogisticRegression`.
+- Trainable, fast, interpretable (feature weights).
+- Save/load via `joblib`.
+
+**Example:**
+```python
+router = TfidfRouter(max_features=1000)
+router.train(train_texts, train_labels)
+router.save("task_router.joblib")
+```
+
+### 3. `FastTextRouter` (Neural)
+
+- PyTorch model: Embedding → Mean pooling → 2‑layer FFN.
+- Trains with mini‑batch, supports GPU.
+- Requires a tokenizer function.
+
+**Example:**
+```python
+router = FastTextRouter(vocab_size=50000, embedding_dim=128, num_classes=7)
+history = router.train_model(texts, labels, tokenizer=lambda s: [ord(c) for c in s], epochs=5)
+```
+
+### 4. `EnsembleRouter`
+
+Combines multiple routers. Strategies:
+
+- `weighted_vote` (default): weighted sum of per‑task probabilities.
+- `majority_vote`: each router casts one vote.
+- `stacking`: meta‑classifier on router output vectors.
+- `dynamic`: a selector router decides which sub‑router to use.
+
+**Example:**
+```python
+ensemble = EnsembleRouter(routers=[(k_router, 0.4), (ml_router, 0.6)], strategy="weighted_vote")
+ensemble.set_selector(KeywordRouter())   # for dynamic strategy
+```
+
+## 🗂️ Registry and Manager
+
+### `ROUTER_REGISTRY` (singleton)
+
+Register routers automatically via decorator `@ROUTER_REGISTRY.register("name")`.  
+All provided routers are already registered.
 
 ```python
-ml_router = MLRouter()
-ml_router.train(train_texts, train_labels)
-task, probs = ml_router.route("This is a comparative sentence")
-ml_router.save("task_router.joblib")
+from framework.routing import ROUTER_REGISTRY
+print(ROUTER_REGISTRY.list())   # {'keyword_router': KeywordRouter, ...}
+router = ROUTER_REGISTRY.create("tfidf_router")
 ```
 
-### Ensemble Router
+### `RouterManager`
+
+Manages a collection of router instances with caching and metrics.
+
+- **Caching**: MD5‑based cache with configurable size and confidence threshold.
+- **Metrics**: tracks call count and total/average inference time per router.
+- **Active router**: set a default router to use when `router_name` is omitted.
 
 ```python
-ensemble = EnsembleRouter([
-    (keyword_router, 0.3),
-    (ml_router, 0.7)
-])
-task, conf = ensemble.route("I enjoy this movie")
-print(f"Task: {task}, confidence: {conf[task]:.2f}")
+manager = RouterManager(cache_size=5000)
+manager.register_router(KeywordRouter(), name="kw", make_active=True)
+res = manager.route("text")
+manager.get_metrics()
+manager.clear_cache()
 ```
 
----
+## 🧪 Extending
 
-## 🧠 KeywordRouter
+### Adding a custom router
 
-### How it works
-
-- Maintains a dictionary of task types → weighted keywords.
-- Counts occurrences in input text, applying length‑based weighting (longer words carry more weight).
-- Returns the task with the highest total score.
-
-### Built‑in task types
-
-| Task | Example keywords |
-|------|------------------|
-| `comparative` | better, worse, than, more, less, higher, lower |
-| `negation` | not, no, never, nobody, "n't", hardly |
-| `sentiment` | good, great, awesome, terrible, awful, love |
-| `question` | what, why, how, when, where, who, ? |
-| `irony` | ironically, sarcasm, "yeah right", "as if" |
-| `factual` | research, study, shows, data, statistics |
-| `opinion` | think, believe, feel, "in my opinion", I think |
-
-### API
+1. Subclass `BaseRouter` (or `TrainableRouter` if training required).
+2. Implement `route(self, text) -> (pred, scores_dict)` and `can_route(self, text) -> bool`.
+3. (Optional) Decorate with `@ROUTER_REGISTRY.register("my_router")`.
 
 ```python
-router.route(text)          # -> (task, scores_dict)
-router.batch_route(texts)   # -> [task, ...]
-router.get_confidence(text) # -> float (0‑1)
-router.add_keywords(task, ["new","keywords"])
-```
+from framework.routing import BaseRouter, ROUTER_REGISTRY
 
-### Customisation
-
-```python
-# Provide your own keyword dictionary
-my_keywords = {'spam': ['buy now', 'click here', 'free money']}
-router = KeywordRouter(keywords=my_keywords, use_weights=True)
-```
-
----
-
-## 🧪 MLRouter
-
-- Uses **TF‑IDF** vectoriser (max 5000 features, unigrams + bigrams) and **Logistic Regression**.
-- Fully scikit‑learn compatible – can be saved/loaded with `joblib`.
-- Lightweight and fast (milliseconds per prediction).
-
-### API
-
-```python
-router.train(texts, labels)   # fit the pipeline, returns self
-router.route("text")          # -> (predicted label, probability dict)
-router.save("path.joblib")
-router.load("path.joblib")
-```
-
----
-
-## 🤖 FastTextRouter
-
-- A tiny neural network: Embedding → Average Pooling → 2‑layer FFN → Softmax.
-- Trainable end‑to‑end with PyTorch.
-- Suitable when you have many examples and want a learnable representation.
-
-### Architecture
-
-```
-Input: token ids (batch, seq_len)
-  │
-Embedding (vocab_size, emb_dim)
-  │
-Mean pooling → (batch, emb_dim)
-  │
-Dense(emb_dim, hidden_dim) + ReLU + Dropout
-  │
-Dense(hidden_dim, num_classes) → logits
-```
-
-### API
-
-```python
-model = FastTextRouter(vocab_size=5000, num_classes=7)
-logits = model(input_ids)
-preds = model.predict(input_ids)   # returns class indices
-```
-
----
-
-## 🔀 EnsembleRouter
-
-- Combines multiple routers with user‑defined weights (automatically normalised).
-- Voting can be weighted; final score = sum(weight * router_score).
-- Falls back to a default task (`"factual"`) if no router produces a score.
-
-### API
-
-```python
-ensemble = EnsembleRouter(routers=[(r1, 0.3), (r2, 0.7)])
-task, scores = ensemble.route("text")
-```
-
----
-
-## 📊 Comparison
-
-| Router | Training Data | Speed | Interpretability | Customisation |
-|--------|---------------|-------|------------------|---------------|
-| KeywordRouter | None | ~0.1ms | Full (keywords) | Add/remove keywords |
-| MLRouter | Yes (text+labels) | ~1ms | Weights (LR) | Replace classifier |
-| FastTextRouter | Yes (tokenised) | ~2ms | Embedding | Full PyTorch model |
-| EnsembleRouter | Depends on members | Sum of members | Depends on members | Any combination |
-
----
-
-## 🛠️ Extending
-
-### Adding a new router
-
-1. Implement a class with a `route(self, text) -> (pred, scores_dict)` method.
-2. Pass it to `EnsembleRouter` or use standalone.
-
-Example:
-
-```python
-class LengthRouter:
+@ROUTER_REGISTRY.register("length_router")
+class LengthRouter(BaseRouter):
+    name = "length_router"
     def route(self, text):
-        return "short" if len(text) < 20 else "long", {"short": 0.8, "long": 0.2}
+        if len(text) < 20:
+            return "short", {"short": 0.9, "long": 0.1}
+        return "long", {"short": 0.1, "long": 0.9}
+    def can_route(self, text):
+        return True
 ```
 
-### Creating a custom task type
+### Adding a new task to `KeywordRouter`
 
 ```python
-KeywordRouter.ROUTER_KEYWORDS["urgent"] = ["asap", "urgent", "immediately", "now"]
+router = KeywordRouter()
+router.add_keywords("code", {"python": 1.0, "function": 0.8, "def": 1.2})
 ```
 
----
+## 📊 Performance Notes
 
-## 📁 Package Structure
+- `KeywordRouter`: ~0.05–0.2 ms per text.
+- `TfidfRouter`: ~1–2 ms per text (after training).
+- `FastTextRouter`: ~2–5 ms per text on CPU, ~0.5 ms on GPU (with batching).
+- `EnsembleRouter`: sum of times of its members.
 
-```
-routing/
-├── __init__.py
-├── keyword_router.py
-├── ml_router.py
-├── ensemble_router.py
-└── README.md
-```
-
----
+All routers are thread‑safe (read‑only after training).  
+`RouterManager` is also thread‑safe for reads (cache uses dictionary operations; if you need concurrency, add locks).
 
 ## 📜 License
 
-Provided as part of the Efficient Transformer Toolkit. Feel free to use and adapt.
+Part of the **Efficient Transformer Toolkit** – MIT License.
