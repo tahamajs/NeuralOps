@@ -1,3 +1,4 @@
+# experiments/models.py
 import uuid
 from django.db import models
 
@@ -12,32 +13,20 @@ class Experiment(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['created_at']),
-            models.Index(fields=['tags']),
-        ]
+        indexes = [models.Index(fields=['created_at']), models.Index(fields=['tags'])]
 
     def __str__(self):
         return self.name
 
-
 class TrainingRun(models.Model):
-    JOB_TYPES = (
-        ("training", "Training"),
-        ("evaluation", "Evaluation"),
-        ("compression", "Compression"),
-    )
+    JOB_TYPES = (("training", "Training"), ("evaluation", "Evaluation"), ("compression", "Compression"))
     STATUS_CHOICES = (
-        ("queued", "Queued"),
-        ("running", "Running"),
-        ("completed", "Completed"),
-        ("failed", "Failed"),
-        ("stopped", "Stopped"),
+        ("queued", "Queued"), ("running", "Running"), ("completed", "Completed"),
+        ("failed", "Failed"), ("stopped", "Stopped")
     )
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name='runs')
-    name = models.CharField(max_length=200, blank=True, help_text="Optional run name")
+    name = models.CharField(max_length=200, blank=True)
     job_type = models.CharField(max_length=20, default='training', choices=JOB_TYPES)
     status = models.CharField(max_length=20, default='queued', choices=STATUS_CHOICES)
     config = models.JSONField(default=dict)
@@ -58,14 +47,10 @@ class TrainingRun(models.Model):
 
     class Meta:
         ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['experiment', 'status']),
-            models.Index(fields=['job_type']),
-        ]
+        indexes = [models.Index(fields=['experiment', 'status']), models.Index(fields=['job_type'])]
 
     def __str__(self):
         return f"{self.experiment.name} - {self.name or self.job_type}"
-
 
 class TrainingSnapshot(models.Model):
     run = models.ForeignKey(TrainingRun, on_delete=models.CASCADE, related_name='snapshots', null=True, blank=True)
