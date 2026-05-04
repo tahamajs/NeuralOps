@@ -1,5 +1,5 @@
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 # Layer replacements
 from .svd_linear import SVDLinearLayer
@@ -12,6 +12,3 @@ from .dobi_svd import DobiSVDCompressor
 from .adaptive_ranks import get_adaptive_ranks, apply_adaptive_svd
 
 # Tensor Train modules (if available)
-from .tt_linear import TTLinearLayer
-from .tt_compressor import TTCompressor
-from .soka_compressor import SoKACompressor

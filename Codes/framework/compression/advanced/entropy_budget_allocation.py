@@ -5,8 +5,8 @@ Registered as 'entropy_budget'.
 
 import torch
 import torch.nn as nn
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 
 @COMPRESSOR_REGISTRY.register("entropy_budget")

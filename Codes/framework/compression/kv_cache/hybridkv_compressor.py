@@ -10,8 +10,8 @@ Registered as 'hybridkv'.
 
 import torch
 import torch.nn as nn
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 
 @COMPRESSOR_REGISTRY.register("hybridkv")

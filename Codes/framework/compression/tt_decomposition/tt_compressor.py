@@ -5,8 +5,8 @@ Registered in COMPRESSOR_REGISTRY as "tt".
 
 import torch.nn as nn
 from typing import Dict, Any, Tuple
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 from .tt_linear import TTLinearLayer
 
 

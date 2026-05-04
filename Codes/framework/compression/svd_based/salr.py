@@ -2,8 +2,8 @@
 
 import torch
 import torch.nn as nn
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 class SALRLayer(nn.Module):
     """Low-rank + sparse mask layer."""
