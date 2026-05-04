@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .samba_m3 import SAMBAM3Block
+from ..core.registry import ATTENTION_REGISTRY, AUX_REGISTRY
 
+@AUX_REGISTRY.register("reap_moe")
 class REAPMoE(nn.Module):
     """Token‑choice MoE with top‑2 gating."""
     def __init__(self, d_model, n_experts=8, top_k=2):
@@ -29,6 +31,7 @@ class REAPMoE(nn.Module):
                 out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
         return out
 
+@ATTENTION_REGISTRY.register("samba_moe")
 class SambaMoEBlock(nn.Module):
     def __init__(self, d_model, n_heads, n_experts=8, window=128):
         super().__init__()

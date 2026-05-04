@@ -6,8 +6,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers.activations import ACT2FN
+from ..core.registry import ATTENTION_REGISTRY
 
 
+@ATTENTION_REGISTRY.register("rala")
 class RALALinearAttention(nn.Module):
     def __init__(self, config):
         super().__init__()

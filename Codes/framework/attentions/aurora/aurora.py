@@ -521,11 +521,7 @@ class AURORAAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj.B.device)
 
 
-# ------------------------------------------------------------
-# Framework injection & registration
-# ------------------------------------------------------------
-# from framework.attentions.core.registry import ATTENTION_REGISTRY   # uncomment in your project
-ATTENTION_REGISTRY = {}  # dummy placeholder – replace with your actual registry
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 def inject_aurora_into_distilbert(layer, model_config, aurora_cfg, layer_idx, total_layers, old_attn):
     new_attn = AURORAAttention(model_config=model_config, aurora_cfg=aurora_cfg,
@@ -534,6 +530,7 @@ def inject_aurora_into_distilbert(layer, model_config, aurora_cfg, layer_idx, to
     layer.attention = new_attn
     return new_attn
 
+@ATTENTION_REGISTRY.register("aurora")
 def inject_aurora(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     """Registry bridge that builds AURORAConfig from CompressionConfig."""
     cfg = AURORAConfig(
@@ -544,5 +541,3 @@ def inject_aurora(layer, model_config, comp_config, layer_idx, total_layers, old
         # add other mappings as needed
     )
     return inject_aurora_into_distilbert(layer, model_config, cfg, layer_idx, total_layers, old_attn)
-
-ATTENTION_REGISTRY["aurora"] = inject_aurora

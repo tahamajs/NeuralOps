@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
+from ..core.registry import ATTENTION_REGISTRY
 
+@ATTENTION_REGISTRY.register("hgrn2_outer")
 class HGRN2OuterBlock(nn.Module):
     """Outer‑product state update for linear attention."""
     def __init__(self, dim):
