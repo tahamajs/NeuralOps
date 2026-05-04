@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Experiment Report – {{ experiment.id|slice:"8" }}</title>
+    <title>Training Report – {{ run.id|slice:"8" }}</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -14,7 +14,7 @@
             margin: 0;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1100px;
             margin: 0 auto;
             background: #1e293b;
             border-radius: 24px;
@@ -35,16 +35,17 @@
         }
         .badge {
             display: inline-block;
-            padding: 4px 12px;
+            padding: 4px 14px;
             border-radius: 40px;
             font-size: 0.75rem;
             font-weight: 600;
             background: #334155;
         }
         .badge.running { background: #f59e0b; color: #000; }
-        .badge.completed { background: #10b981; }
+        .badge.completed { background: #10b981; color: white; }
         .badge.failed { background: #ef4444; }
         .badge.queued { background: #6b7280; }
+        .badge.stopped { background: #6b7280; }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -67,6 +68,15 @@
             margin: 16px 0;
             border-left: 4px solid #3b82f6;
         }
+        .loss-plot {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .loss-plot img {
+            max-width: 100%;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
@@ -83,8 +93,9 @@
             color: white;
             text-decoration: none;
             display: inline-block;
-            margin-top: 20px;
+            margin-top: 0;
             transition: 0.2s;
+            cursor: pointer;
         }
         .btn:hover {
             opacity: 0.85;
@@ -96,26 +107,35 @@
         hr {
             border-color: #334155;
         }
+        pre {
+            background: #0f172a;
+            padding: 14px;
+            border-radius: 12px;
+            overflow-x: auto;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>📄 Experiment Report</h1>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
         <div>
-            <span class="badge {{ status }}">{{ status }}</span>
-            <span style="margin-left: 10px; font-size: 0.85rem;">ID: {{ experiment.id }}</span>
+            <span class="badge {{ run.status }}">{{ run.status }}</span>
+            <span style="margin-left: 10px; font-size: 0.85rem;">Run ID: {{ run.id }}</span>
         </div>
         <div>
-            <a href="/dashboard/job/{{ experiment.id }}/" class="btn btn-secondary">← Back to Dashboard</a>
-            <a href="/api/experiments/{{ experiment.id }}/paper/" class="btn">📥 Download PDF/TeX</a>
+            <a href="/dashboard/run/{{ run.id }}/" class="btn btn-secondary">← Back to Dashboard</a>
+            <a href="/api/runs/{{ run.id }}/paper/" class="btn">📥 Download PDF/TeX</a>
         </div>
     </div>
 
     <div class="section">
         <h2>⚙️ Configuration</h2>
         <table>
-            <tr><th>Model</th><td>{{ model }}</td></tr>
+            <tr><th>Experiment Name</th><td>{{ run.experiment.name|default:run.experiment.id|slice:"8" }}</td></tr>
+            <tr><th>Model</th><td>{{ model_name }}</td></tr>
             <tr><th>Task</th><td>{{ task|upper }}</td></tr>
             <tr><th>Attention Type</th><td>{{ attention }}</td></tr>
             <tr><th>Training Method</th><td>{{ method }}</td></tr>
@@ -130,7 +150,7 @@
     <div class="section">
         <h2>📊 Final Metrics</h2>
         <div class="metric-card">
-            <table>
+            <table style="width:100%">
                 <tr><th>Loss</th><td>{{ loss }}</td></tr>
                 <tr><th>Accuracy</th><td>{{ accuracy }}</td></tr>
                 <tr><th>F1 Score</th><td>{{ f1 }}</td></tr>
@@ -142,14 +162,25 @@
     <div class="section">
         <h2>⏱️ Timeline</h2>
         <table>
-            <tr><th>Created</th><td>{{ created_at|date:"Y-m-d H:i:s" }}</td></tr>
-            <tr><th>Last Updated</th><td>{{ updated_at|date:"Y-m-d H:i:s" }}</td></tr>
+            <tr><th>Created</th><td>{{ run.created_at|date:"Y-m-d H:i:s" }}</td></tr>
+            <tr><th>Started</th><td>{{ run.started_at|date:"Y-m-d H:i:s"|default:"—" }}</td></tr>
+            <tr><th>Completed</th><td>{{ run.completed_at|date:"Y-m-d H:i:s"|default:"—" }}</td></tr>
+            <tr><th>Total steps</th><td>{{ run.total_steps }}</td></tr>
         </table>
     </div>
 
+    {% if loss_plot_url %}
+    <div class="section">
+        <h2>📉 Loss Curve</h2>
+        <div class="loss-plot">
+            <img src="{{ loss_plot_url }}" alt="Training and evaluation loss curve">
+        </div>
+    </div>
+    {% endif %}
+
     <div class="section">
         <h2>📝 Full Configuration (JSON)</h2>
-        <pre style="background: #0f172a; padding: 12px; border-radius: 12px; overflow-x: auto; font-size: 0.75rem;">{{ config|pprint }}</pre>
+        <pre>{{ config_json }}</pre>
     </div>
 
     <div class="footer">

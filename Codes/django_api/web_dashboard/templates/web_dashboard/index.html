@@ -8,7 +8,7 @@
     <link href="{% static 'web_dashboard/css/bootstrap.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* (same as your original styles – keep them) */
+        /* (same styles – keep as is) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: #eef2ff; min-height: 100vh; }
         .glass-card { background: rgba(20, 28, 40, 0.7); backdrop-filter: blur(12px); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; }
@@ -51,7 +51,7 @@
             </div>
         </div>
 
-        <!-- System Metrics Row -->
+        <!-- System Metrics Row (unchanged) -->
         <div class="row mb-5 g-4">
             <div class="col-md-4">
                 <div class="metric-card">
@@ -84,9 +84,9 @@
             </div>
         </div>
 
-        <!-- Experiments List -->
+        <!-- Experiments (Runs) List -->
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3><i class="fas fa-flask me-2"></i> Experiments</h3>
+            <h3><i class="fas fa-flask me-2"></i> Training Runs</h3>
             <div class="input-group w-25">
                 <span class="input-group-text bg-dark border-secondary"><i class="fas fa-search text-secondary"></i></span>
                 <input type="text" id="job-search" class="form-control bg-dark border-secondary" placeholder="Filter by name or ID...">
@@ -97,12 +97,12 @@
         </div>
     </div>
 
-    <!-- Create Experiment Modal -->
+    <!-- Create Training Run Modal (still called "New Experiment") -->
     <div class="modal fade" id="newExpModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content modal-content-custom">
                 <div class="modal-header border-secondary">
-                    <h5 class="modal-title"><i class="fas fa-rocket me-2"></i>Create Experiment</h5>
+                    <h5 class="modal-title"><i class="fas fa-rocket me-2"></i>Create Training Run</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -151,7 +151,7 @@
                         </div>
                         <div class="mt-4 d-flex justify-content-end">
                             <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary-custom">Launch Experiment</button>
+                            <button type="submit" class="btn btn-primary-custom">Launch Run</button>
                         </div>
                     </form>
                 </div>
@@ -161,19 +161,16 @@
 
     <script src="{% static 'web_dashboard/js/bootstrap.bundle.min.js' %}"></script>
     <script>
-        // ─────────────────────────────────────────────────────────────
-        // Authentication & Setup
-        // ─────────────────────────────────────────────────────────────
+        // Authentication token
         const authToken = localStorage.getItem('authToken');
         if (!authToken) {
             window.location.href = '/login/';
         }
 
-        // Helper: fetch with token and credentials
         async function apiFetch(url, opts = {}) {
             const res = await fetch(url, {
                 ...opts,
-                credentials: 'include',   // send cookies (session)
+                credentials: 'include',
                 headers: {
                     'Authorization': `Token ${authToken}`,
                     'Content-Type': 'application/json',
@@ -188,15 +185,10 @@
             return res;
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Global State
-        // ─────────────────────────────────────────────────────────────
-        let experiments = [];
+        let runs = [];
         let filterText = '';
 
-        // ─────────────────────────────────────────────────────────────
-        // System Metrics
-        // ─────────────────────────────────────────────────────────────
+        // System metrics
         async function loadMetrics() {
             try {
                 const [sys, gpu] = await Promise.all([
@@ -218,50 +210,46 @@
                     document.getElementById('gpu-util-text').innerText = 'N/A';
                 }
                 document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
-            } catch(e) {
-                console.warn('Metrics error', e);
-            }
+            } catch(e) { console.warn('Metrics error', e); }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Experiments List
-        // ─────────────────────────────────────────────────────────────
-        async function loadExperiments() {
+        // Load training runs from /api/runs/
+        async function loadRuns() {
             try {
-                const res = await apiFetch('/api/experiments/');
-                experiments = await res.json();
-                const active = experiments.filter(e => e.status === 'running').length;
-                const completed = experiments.filter(e => e.status === 'completed').length;
+                const res = await apiFetch('/api/runs/');
+                runs = await res.json();
+                const active = runs.filter(r => r.status === 'running').length;
+                const completed = runs.filter(r => r.status === 'completed').length;
                 document.getElementById('active-jobs').innerText = active;
                 document.getElementById('completed-jobs').innerText = completed;
-                renderJobCards();
+                renderRunCards();
             } catch(e) {
-                console.warn('Failed to load experiments', e);
+                console.warn('Failed to load runs', e);
             }
         }
 
-        function renderJobCards() {
+        function renderRunCards() {
             const container = document.getElementById('experiment-list');
             if (!container) return;
-            const filtered = experiments.filter(exp =>
-                (exp.name || '').toLowerCase().includes(filterText) ||
-                exp.id.toLowerCase().includes(filterText)
+            const filtered = runs.filter(run =>
+                (run.name || '').toLowerCase().includes(filterText) ||
+                run.id.toLowerCase().includes(filterText)
             );
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="col-12 text-center text-muted py-5"><i class="fas fa-inbox fa-2x mb-2"></i><br/>No experiments found</div>`;
+                container.innerHTML = `<div class="col-12 text-center text-muted py-5"><i class="fas fa-inbox fa-2x mb-2"></i><br/>No training runs found</div>`;
                 return;
             }
-            container.innerHTML = filtered.map(exp => {
-                const config = exp.config || {};
+            container.innerHTML = filtered.map(run => {
+                const config = run.config || {};
                 const modelShort = (config.model_name || '').split('/').pop() || 'model';
                 const task = config.task_name || 'task';
-                const step = exp.current_step || 0;
-                const total = exp.total_steps || 1;
+                const step = run.current_step || 0;
+                const total = run.total_steps || 1;
                 const percent = (step / total) * 100;
-                const statusClass = exp.status || 'queued';
+                const statusClass = run.status || 'queued';
                 return `
                 <div class="col-md-4 fade-in">
-                    <div class="job-card p-3" onclick="location.href='/dashboard/job/${exp.id}/'">
+                    <div class="job-card p-3" onclick="location.href='/dashboard/run/${run.id}/'">
                         <div class="d-flex justify-content-between align-items-start">
                             <div>
                                 <h5 class="mb-1">${escapeHtml(modelShort)}</h5>
@@ -269,13 +257,13 @@
                             </div>
                             <span class="status-badge status-${statusClass}">${statusClass}</span>
                         </div>
-                        ${exp.status === 'running' ? `
+                        ${run.status === 'running' ? `
                             <div class="mt-3">
                                 <div class="d-flex justify-content-between small mb-1"><span>Progress</span><span>${Math.round(percent)}%</span></div>
                                 <div class="progress-bar-custom"><div class="progress-fill" style="width:${percent}%"></div></div>
                                 <div class="small text-secondary mt-1">Step ${step} / ${total}</div>
                             </div>
-                        ` : (exp.status === 'completed' || exp.status === 'failed' ? `<div class="mt-2 text-secondary small"><i class="fas fa-calendar-alt me-1"></i> ${new Date(exp.created_at).toLocaleString()}</div>` : '')}
+                        ` : (run.status === 'completed' || run.status === 'failed' ? `<div class="mt-2 text-secondary small"><i class="fas fa-calendar-alt me-1"></i> ${new Date(run.created_at).toLocaleString()}</div>` : '')}
                         <div class="mt-2 text-end"><i class="fas fa-chevron-right text-secondary"></i></div>
                     </div>
                 </div>`;
@@ -291,9 +279,7 @@
             });
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Create Experiment
-        // ─────────────────────────────────────────────────────────────
+        // Create training run (calls /api/train/)
         const form = document.getElementById('create-exp-form');
         if (form) {
             form.addEventListener('submit', async (e) => {
@@ -318,10 +304,10 @@
                             const modal = bootstrap.Modal.getInstance(modalEl);
                             if (modal) modal.hide();
                         }
-                        location.href = `/dashboard/job/${data.id}/`;
+                        location.href = `/dashboard/run/${data.id}/`;
                     } else {
                         const err = await res.text();
-                        alert('Failed to start experiment: ' + err);
+                        alert('Failed to start training run: ' + err);
                     }
                 } catch(e) {
                     alert('Request failed: ' + e.message);
@@ -329,9 +315,7 @@
             });
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Load Attention Options Dynamically
-        // ─────────────────────────────────────────────────────────────
+        // Load attention options
         (async () => {
             try {
                 const res = await apiFetch('/api/config/attentions/');
@@ -346,34 +330,27 @@
                 }
             } catch(e) {
                 console.warn("Could not load attentions", e);
-                // fallback
                 const sel = document.getElementById('modal-attention');
                 if (sel) sel.innerHTML = '<option value="full">full</option>';
             }
         })();
 
-        // ─────────────────────────────────────────────────────────────
-        // Search Filter
-        // ─────────────────────────────────────────────────────────────
+        // Search filter
         const searchInput = document.getElementById('job-search');
         if (searchInput) {
             searchInput.addEventListener('input', e => {
                 filterText = e.target.value.toLowerCase();
-                renderJobCards();
+                renderRunCards();
             });
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // Periodic Updates
-        // ─────────────────────────────────────────────────────────────
+        // Periodic updates
         setInterval(loadMetrics, 3000);
-        setInterval(loadExperiments, 5000);
+        setInterval(loadRuns, 5000);
         loadMetrics();
-        loadExperiments();
+        loadRuns();
 
-        // ─────────────────────────────────────────────────────────────
         // Logout
-        // ─────────────────────────────────────────────────────────────
         const logoutBtn = document.getElementById('logout-btn');
         if (logoutBtn) {
             logoutBtn.onclick = async () => {

@@ -10,30 +10,46 @@ urlpatterns = [
     path("config/methods/", views.list_methods),
     path("config/presets/", views.list_presets),
 
-    # Jobs
+    # Experiments (containers)
+    path("experiments/", views.list_experiments),
+    path("experiments/create/", views.create_experiment),
+    path("experiments/<uuid:exp_id>/", views.experiment_detail),
+
+    # Runs
+    path("runs/", views.list_runs),
+    path("runs/exp/<uuid:exp_id>/", views.list_runs),
+    path("runs/<uuid:run_id>/", views.job_status),
+    path("runs/<uuid:run_id>/history/", views.training_history),
+    path("runs/<uuid:run_id>/snapshots/", views.training_snapshots),
+    path("runs/<uuid:run_id>/stop/", views.stop_job),
+    path("runs/<uuid:run_id>/config/", views.update_run_config),
+    path("runs/<uuid:run_id>/paper/", views.generate_paper),
+    path("runs/<uuid:run_id>/paper_preview/", views.paper_preview_pdf),
+    path("runs/<uuid:run_id>/report/", views.experiment_report),
+    path("runs/<uuid:run_id>/evaluate/", views.evaluate_job),
+    path("runs/<uuid:run_id>/artifacts/", views.run_artifacts),
+    re_path(r"runs/(?P<run_id>[0-9a-f-]+)/artifacts/(?P<artifact_path>.+)$", views.run_artifact_download),
+    path("runs/<uuid:run_id>/model/", views.run_model_download),
+
+
+
+
+
+
+    # Start jobs (create runs)
     path("train/", views.start_train),
     path("evaluate/", views.start_evaluate),
     path("compress/", views.start_compress),
-    path("jobs/<uuid:job_id>/", views.job_status),
-    path("jobs/<uuid:job_id>/stop/", views.stop_job),
-    path("jobs/<uuid:job_id>/config/", views.update_job_config),
 
-    # Experiments
-    path("experiments/", views.list_experiments),
-    path("experiments/<uuid:job_id>/artifacts/", views.experiment_artifacts),
-    re_path(r"experiments/(?P<job_id>[0-9a-f-]+)/artifacts/(?P<artifact_path>.+)$", views.experiment_artifact_download),
-    path("experiments/<uuid:job_id>/model/", views.experiment_model_download),
-
-    # System & Paper
-    path("experiments/<uuid:job_id>/paper/", views.generate_paper),
-    path("experiments/<str:job_id>/paper_preview/", views.paper_preview_pdf, name="paper-preview"),
-    path("experiments/<str:job_id>/report/", views.experiment_report, name="experiment-report"),
+    # System & Paper preview
     path("system/status/", views.system_status),
     path("system/gpu/", views.gpu_info),
 
-    # Authentication (views are inside api/views.py)
+    # Authentication
     path("auth/register/", views.register_view),
     path("auth/login/", views.login_view),
     path("auth/logout/", views.logout_view),
-    path('jobs/<str:job_id>/evaluate/', views.evaluate_job, name='evaluate-job'),
+
+    # Preview (HTML modal)
+    path("preview/<uuid:run_id>/", views.preview_paper),
 ]
