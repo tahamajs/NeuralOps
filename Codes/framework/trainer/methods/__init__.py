@@ -1,8 +1,15 @@
-# Auto-generated __init__.py
-from . import fisher
-from . import gelora
-from . import llrd
-from . import lora
-from . import mixout
-from . import rdrop_r3f
-from . import registry
+# framework/trainer/methods/__init__.py
+from .registry import register_method, get_method, available_methods
+from . import fisher, gelora, llrd, lora, mixout, rdrop_r3f
+
+__all__ = [
+    "register_method",
+    "get_method",
+    "available_methods",
+    "fisher",
+    "gelora",
+    "llrd",
+    "lora",
+    "mixout",
+    "rdrop_r3f",
+]

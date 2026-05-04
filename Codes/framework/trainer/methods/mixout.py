@@ -1,4 +1,4 @@
-"""Mixout linear layer and application function."""
+# framework/trainer/methods/mixout.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -31,9 +31,7 @@ class MixoutLinear(nn.Module):
             return F.linear(x, mixed_weight, mixed_bias)
         return F.linear(x, self.weight, self.bias)
 
-
 def replace_linears_with_mixout(model: nn.Module, p: float, skip_classifier: bool = True):
-    """Recursively replace Linear layers with MixoutLinear."""
     for name, module in list(model.named_children()):
         if skip_classifier and "classifier" in name:
             continue
@@ -41,7 +39,6 @@ def replace_linears_with_mixout(model: nn.Module, p: float, skip_classifier: boo
             setattr(model, name, MixoutLinear(module, p))
         else:
             replace_linears_with_mixout(module, p, skip_classifier)
-
 
 @register_method("mixout")
 def apply_mixout(model, config):
