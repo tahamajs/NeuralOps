@@ -1,41 +1,63 @@
+# framework/attentions/specialized/flash_attention3.py
 import torch
 import torch.nn as nn
 from ..core.base import BaseAttention
 from ..core.registry import ATTENTION_REGISTRY
 
+# Try to import FlashAttention kernels
+try:
+    from flash_attn import flash_attn_func
+    FLASH_ATTN_AVAILABLE = True
+except ImportError:
+    FLASH_ATTN_AVAILABLE = False
+
 @ATTENTION_REGISTRY.register("flash3")
 class FlashAttention3(BaseAttention):
     """
-    FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision.
-    Uses flash_attn_func (or torch's SDPA if not available).
+    FlashAttention‑3: Fast and Memory‑Efficient Exact Attention.
+    Uses flash_attn.flash_attn_func if installed; falls back to PyTorch SDPA.
+    Paper: https://arxiv.org/abs/2205.14135
     """
-    def __init__(self, config, use_fp8=False):
-        super().__init__(config)
+
+    def __init__(self, config, rank: int = None, use_fp8: bool = False):
+        super().__init__(config, rank)
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
         self.use_fp8 = use_fp8
 
-        self.query = nn.Linear(config.hidden_size, config.hidden_size)
-        self.key = nn.Linear(config.hidden_size, config.hidden_size)
-        self.value = nn.Linear(config.hidden_size, config.hidden_size)
+        self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
 
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         B, L, D = hidden_states.shape
-        q = self.query(hidden_states).view(B, L, self.num_heads, self.head_dim)
-        k = self.key(hidden_states).view(B, L, self.num_heads, self.head_dim)
-        v = self.value(hidden_states).view(B, L, self.num_heads, self.head_dim)
+        H, D_head = self.num_heads, self.head_dim
 
-        # Try to use flash-attention if available
-        try:
-            from flash_attn import flash_attn_func
-            out = flash_attn_func(q, k, v, causal=False)
-        except ImportError:
-            # Fallback to PyTorch's SDPA
+        q = self.q_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)  # (B, H, L, D_head)
+        k = self.k_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)
+        v = self.v_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)
+
+        if FLASH_ATTN_AVAILABLE:
+            # FlashAttention expects (B, L, H, D_head) layout
+            q_fa = q.transpose(1, 2).contiguous()
+            k_fa = k.transpose(1, 2).contiguous()
+            v_fa = v.transpose(1, 2).contiguous()
+
+            if self.use_fp8 and q_fa.is_cuda:
+                # Convert to FP8 (requires H100 and proper kernel)
+                q_fa = q_fa.to(torch.float8_e4m3fn)
+                k_fa = k_fa.to(torch.float8_e4m3fn)
+                v_fa = v_fa.to(torch.float8_e4m3fn)
+
+            out = flash_attn_func(q_fa, k_fa, v_fa, causal=False)
+        else:
+            # Fallback to PyTorch SDPA
             out = torch.nn.functional.scaled_dot_product_attention(
-                q.transpose(1,2), k.transpose(1,2), v.transpose(1,2),
-                is_causal=False
-            ).transpose(1,2)
+                q, k, v,
+                attn_mask=(1 - attention_mask).to(q.dtype) * -1e9 if attention_mask is not None else None,
+                is_causal=False,
+            )
 
-        out = out.contiguous().view(B, L, D)
+        out = out.transpose(1, 2).contiguous().view(B, L, D)
         return self.out_proj(out), None
