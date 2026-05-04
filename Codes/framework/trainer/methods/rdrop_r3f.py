@@ -1,3 +1,4 @@
+# framework/trainer/methods/rdrop_r3f.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -30,7 +31,6 @@ def rdrop_loss(logits1, logits2, labels, is_regression, alpha):
         kl = (kl1 + kl2)/2.0
         loss = (loss1 + loss2)/2.0 + alpha * kl
     return loss
-
 
 def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilon, is_regression):
     base_kwargs = {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
@@ -69,7 +69,6 @@ def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilo
         loss = (loss_clean + loss_noisy)/2.0 + (kl1+kl2)/2.0
     return loss, logits_clean
 
-
 class MethodTrainer(Trainer):
     def __init__(self, method, rdrop_alpha, r3f_epsilon, is_regression, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -98,11 +97,9 @@ class MethodTrainer(Trainer):
             return (loss, logits) if return_outputs else loss
         return super().compute_loss(model, inputs, return_outputs, **kwargs)
 
-
 @register_method("rdrop")
 def apply_rdrop(model, config):
-    pass   # no model modification needed
-
+    pass
 
 @register_method("r3f")
 def apply_r3f(model, config):

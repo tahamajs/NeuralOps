@@ -1,25 +1,23 @@
-"""GeLoRA intrinsic dimension estimation and rank computation."""
-import torch, logging, math
+# framework/trainer/methods/gelora.py
+import torch
+import torch.nn as nn
+import logging
 from torch.utils.data import DataLoader
 from .registry import register_method
 
 logger = logging.getLogger(__name__)
-
 
 def estimate_intrinsic_dimension_pytorch(hidden_states, k=5):
     if hidden_states.dim() == 3:
         hidden_states = hidden_states.mean(dim=1)
     elif hidden_states.dim() != 2:
         raise ValueError(f"Expected 2D or 3D tensor, got {hidden_states.dim()}D")
-
     N = hidden_states.shape[0]
     if N < k + 1:
         return 1.0
     if N > 1000:
         idx = torch.randperm(N)[:1000]
         hidden_states = hidden_states[idx]
-        N = 1000
-
     dist = torch.cdist(hidden_states, hidden_states, compute_mode='donot_use_mm_for_euclid_dist')
     dist.fill_diagonal_(float('inf'))
     topk_dist, _ = torch.topk(dist, k, dim=1, largest=False)
@@ -28,7 +26,6 @@ def estimate_intrinsic_dimension_pytorch(hidden_states, k=5):
     id_per_point = -1.0 / torch.mean(log_ratios, dim=1)
     id_global = torch.mean(id_per_point).item()
     return max(1.0, id_global)
-
 
 def get_encoder_layers(model):
     if hasattr(model, 'bert') and hasattr(model.bert, 'encoder'):
@@ -49,7 +46,6 @@ def get_encoder_layers(model):
     if layers:
         return layers
     raise ValueError("Cannot find encoder layers")
-
 
 def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800):
     layers = get_encoder_layers(model)
@@ -79,12 +75,9 @@ def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800):
 
     for hook in hooks:
         hook.remove()
-
     for i in range(num_layers):
         hidden_states_per_layer[i] = torch.cat(hidden_states_per_layer[i], dim=0) if hidden_states_per_layer[i] else torch.empty(0)
-
     return hidden_states_per_layer
-
 
 def compute_gelora_base_ranks(model, dataloader, config):
     layer_hidden = collect_hidden_states(model, dataloader, num_batches=8, max_samples=800)
@@ -115,8 +108,8 @@ def compute_gelora_base_ranks(model, dataloader, config):
             rank_dict[name] = layer_id.get(layer_idx, config.lora_r)
     return rank_dict
 
-
 @register_method("fisher_gelora")
 def apply_fisher_gelora(model, config, dataset, tokenizer, task_keys):
-    logger.info("Fisher‑GeLoRA method called (placeholder).")
-    # Full implementation would call compute_gelora_base_ranks and apply adaptive LoRA.
+    logger.info("Fisher‑GeLoRA method called – placeholder.")
+    # Full implementation would compute ranks via intrinsic dimension estimation
+    # and then apply adaptive LoRA using those ranks.
