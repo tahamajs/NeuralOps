@@ -59,3 +59,19 @@ if git_info:
 import sys, pkg_resources
 mlflow.set_tag("python_version", sys.version)
 mlflow.log_text("\n".join([f"{pkg.key}=={pkg.version}" for pkg in pkg_resources.working_set]), "requirements.txt")
+
+
+
+
+
+# In your training function
+from jobscheduler.logger import CustomRunLogger
+
+logger = CustomRunLogger(run_id=str(job.id))
+for epoch in range(epochs):
+    loss = train_one_epoch()
+    logger.log_scalar('train_loss', loss, step=epoch)
+    # Log an image, e.g., confusion matrix
+    if epoch % 10 == 0:
+        fig = plot_confusion_matrix(...)
+        logger.log_figure('confusion_matrix', fig, step=epoch)

@@ -38,3 +38,77 @@ class Job(models.Model):
 
     def __str__(self):
         return f"{self.name or str(self.id)[:8]} - {self.status}"
+    
+
+
+# jobscheduler/models.py
+
+class VersionedConfig(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='config_versions')
+    
+    # The complete configuration snapshot as JSON
+    config_snapshot = models.JSONField()
+    
+    # Metadata
+    version_number = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    change_description = models.TextField(blank=True)
+    
+    # Link to previous version for efficient diffing
+    previous_version = models.ForeignKey('self', on_delete=models.SET_NULL, 
+                                         null=True, blank=True, related_name='next_version')
+    
+    # Who made the change (if manually triggered)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, 
+                                   null=True, blank=True)
+    git_commit_hash = models.CharField(max_length=40, blank=True, null=True)
+    git_branch = models.CharField(max_length=100, blank=True, null=True)
+    git_repository = models.URLField(max_length=500, blank=True, null=True)
+    git_dirty = models.BooleanField(default=False)  # True if uncommitted changes exist
+    
+    # Data versioning (DVC)
+    data_git_commit_id = models.CharField(max_length=40, blank=True, null=True)
+    dvc_data_hash = models.CharField(max_length=64, blank=True, null=True)
+    
+    # Full environment snapshot
+    pip_freeze = models.TextField(blank=True, null=True)
+    python_version = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        ordering = ['run', 'version_number']
+
+
+
+
+# jobscheduler/models.py
+import uuid
+from django.db import models
+from django.contrib.postgres.fields import ArrayField
+
+class MetricType(models.TextChoices):
+    SCALAR = 'scalar'
+    IMAGE = 'image'
+    TABLE = 'table'
+    FIGURE = 'figure'
+    TEXT = 'text'
+
+class CustomMetricEntry(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='custom_metrics')
+    
+    step = models.IntegerField()
+    epoch = models.FloatField(null=True, blank=True)
+    name = models.CharField(max_length=100)  # e.g., 'train_loss', 'accuracy_per_class'
+    type = models.CharField(max_length=20, choices=MetricType.choices, default=MetricType.SCALAR)
+    
+    value = models.JSONField()  # For scalars, a number; for images, base64 string; for tables, list of dicts
+    media_url = models.URLField(max_length=500, blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['run', 'name', 'step']),
+            models.Index(fields=['run', 'type']),
+        ]
