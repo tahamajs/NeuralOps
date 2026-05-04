@@ -1,3 +1,5 @@
+"""Linformer attention – registers as 'linformer'."""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,7 +20,7 @@ class LinformerAttention(BaseAttention):
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
-        # Linformer projection matrices (fixed random or learnable)
+        # Linformer projection matrices (learnable)
         self.E = nn.Parameter(torch.randn(config.hidden_size, rank) * 0.02)
         self.F = nn.Parameter(torch.randn(config.hidden_size, rank) * 0.02)
 
@@ -28,7 +30,7 @@ class LinformerAttention(BaseAttention):
         K = self._transpose(self.key(hidden_states))
         V = self._transpose(self.value(hidden_states))
 
-        # Project keys and values using fixed matrices
+        # Project keys and values
         K_proj = torch.matmul(self.E.T, K)  # (batch, heads, rank, head_dim)
         V_proj = torch.matmul(self.F.T, V)
 
@@ -41,7 +43,8 @@ class LinformerAttention(BaseAttention):
 
         context = context.permute(0, 2, 1, 3).contiguous()
         context = context.view(batch_size, seq_len, -1)
-        return (context, None) if kwargs.get('output_attentions') else (context,)
+        output_attentions = kwargs.get('output_attentions', False)
+        return (context, None) if output_attentions else (context,)
 
     def _transpose(self, x):
         new_shape = x.size()[:-1] + (self.num_heads, self.head_dim)

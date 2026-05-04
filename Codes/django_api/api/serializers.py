@@ -15,3 +15,7 @@ class TrainingSnapshotSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrainingSnapshot
         fields = '__all__'
+
+
+
+

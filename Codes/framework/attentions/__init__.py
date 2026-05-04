@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 
 # Directories to skip (they contain non‑attention code, e.g., compression, utils)
-SKIP_DIRS = {'compression', 'Other_Attentions', 'utils', 'core', '__pycache__'}
-
+# SKIP_DIRS = {'compression', 'Other_Attentions', 'utils', 'core', '__pycache__'}
+# SKIP_DIRS = {'hybrid_ssm', 'compression', 'Other_Attentions', 'utils', 'core', '__pycache__'}
 def _safe_import_all():
     """Import all Python modules under framework.attentions, skipping known non‑attention dirs and ignoring errors."""
     base_pkg = "framework.attentions"
@@ -16,8 +16,8 @@ def _safe_import_all():
         if py_file.name == "__init__.py":
             continue
         # Skip files inside excluded directories
-        if any(skip in py_file.parts for skip in SKIP_DIRS):
-            continue
+        # if any(skip in py_file.parts for skip in SKIP_DIRS):
+        #     continue
         # Convert path to module name, e.g., "nova.nova"
         rel = py_file.relative_to(base_path).with_suffix("")
         parts = rel.parts
