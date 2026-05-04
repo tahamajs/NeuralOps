@@ -402,3 +402,46 @@ def job_list(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # Other endpoints (job_detail, pause, resume, stop, etc.) remain unchanged
+
+
+
+# jobscheduler/views.py (additional functions)
+
+@api_view(['PATCH'])
+def update_job_scheduling(request, job_id):
+    job = get_object_or_404(Job, id=job_id)
+    data = request.data
+    if 'estimated_duration' in data:
+        job.estimated_duration = data['estimated_duration']
+    if 'memory_requirements' in data:
+        job.memory_requirements = data['memory_requirements']
+    if 'priority' in data:
+        new_prio = max(1, min(10, data['priority']))
+        job.priority = new_prio
+        # If job is queued, update scheduler queue (requires custom implementation)
+        if job.status == 'queued':
+            scheduler.update_priority(str(job.id), new_prio)
+    job.save()
+    return Response({'status': 'updated'})
+
+
+@api_view(['GET'])
+def scheduler_status(request):
+    """Return current scheduler status."""
+    return Response({
+        'total_gpus': scheduler.total_gpus,
+        'available_gpus': scheduler.available_gpus,
+        'queued_jobs': scheduler.task_queue.qsize(),
+        'running_jobs': len(scheduler.running_jobs),
+        'preempted_jobs': Job.objects.filter(status='preempted').count(),
+    })
+
+@api_view(['GET'])
+def scheduler_metrics(request):
+    """Return historical metrics for AI retraining."""
+    # Gather data for training (last 100 completed jobs)
+    jobs = Job.objects.filter(status='completed')[:100].values(
+        'estimated_duration', 'actual_duration', 'gpu_requirements',
+        'memory_requirements', 'priority', 'task_name'
+    )
+    return Response(list(jobs))
