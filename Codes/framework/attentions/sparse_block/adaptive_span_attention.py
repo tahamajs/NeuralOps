@@ -1,5 +1,7 @@
+# framework/attentions/specialized/adaptive_span_attention.py
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import math
 from ..core.registry import ATTENTION_REGISTRY
 
@@ -24,29 +26,31 @@ class AdaptiveSpanAttention(nn.Module):
 
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         batch_size, seq_len, _ = hidden_states.shape
-        Q = self.q_proj(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim)
-        K = self.k_proj(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim)
-        V = self.v_proj(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim)
+        H = self.num_heads
+        d = self.head_dim
+
+        Q = self.q_proj(hidden_states).view(batch_size, seq_len, H, d).permute(0,2,1,3)
+        K = self.k_proj(hidden_states).view(batch_size, seq_len, H, d).permute(0,2,1,3)
+        V = self.v_proj(hidden_states).view(batch_size, seq_len, H, d).permute(0,2,1,3)
 
         # Learnable span: z = log(span - 1) -> span = softplus(z) + 1 to have minimum span = 1
-        head_span = F.softplus(self.span_raw) + 1    # (1, H, 1, 1)
-        scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.einsum('bqhd,bkhd->bhqk', Q, K) * scale
+        head_span = F.softplus(self.span_raw) + 1    # (H,)
+        scale = 1.0 / math.sqrt(d)
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         # Causal mask with per‑head soft masking
         positions = torch.arange(seq_len, device=scores.device).float()
-        relative_dist = (positions.unsqueeze(0) - positions.unsqueeze(1))
-        # We only mask future tokens (j > i) by distance; we keep past intact.
-        # For j > i, distance is positive; for j <= i, we set distance to 0 to keep.
+        relative_dist = (positions.unsqueeze(0) - positions.unsqueeze(1)).abs()  # (L, L)
+        # For j > i (future), distance = relative_dist; for j <= i, set distance to 0 to keep.
         distance = torch.where(relative_dist > 0, relative_dist, torch.zeros_like(relative_dist))
         # Compute soft mask: 1 - sigmoid( (distance - span) / temp )
-        # Use a small temperature to make it sharper.
         temp = 1.0
-        mask_val = torch.sigmoid((distance - head_span.unsqueeze(-1)) / temp)  # (H, L, L)
-        # For j <= i, we want full attention, so we force mask_val to 0 (no masking)
+        # shape (H, L, L)
+        mask_val = torch.sigmoid((distance - head_span.view(-1, 1, 1)) / temp)
+        # For j <= i, we want full attention (no masking), force mask_val to 0
         mask_val = torch.where(relative_dist > 0, mask_val, torch.zeros_like(mask_val))
-        # Add a huge negative before softmax: subtract 1e9 * mask_val
-        scores = scores - 1e9 * mask_val.unsqueeze(0).unsqueeze(0)  # broadcast to (1, H, L, L)
+        # Apply mask to scores: subtract 1e9 * mask_val
+        scores = scores - 1e9 * mask_val.unsqueeze(0)  # (1, H, L, L)
 
         if attention_mask is not None:
             scores = scores + attention_mask.unsqueeze(1)
@@ -54,7 +58,7 @@ class AdaptiveSpanAttention(nn.Module):
         attn_probs = F.softmax(scores, dim=-1)
         attn_probs = self.dropout(attn_probs)
 
-        context = torch.matmul(attn_probs, V.permute(0,2,1,3))  # (B, H, L, d)
+        context = torch.matmul(attn_probs, V)  # (B, H, L, d)
         context = context.permute(0,2,1,3).contiguous().view(batch_size, seq_len, -1)
         out = self.out_proj(context)
         return out, attn_probs
