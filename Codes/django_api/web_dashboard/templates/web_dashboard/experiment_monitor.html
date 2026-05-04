@@ -254,3 +254,60 @@ function formatDiffValue(value) {
     return value;
 }
 </script>
+
+
+
+
+
+<!-- In experiment_monitor.html, add new tab -->
+<div class="card mt-4">
+    <h3><i class="fas fa-code-branch me-2"></i>Model Versions</h3>
+    <div id="modelVersionsList" class="list-group">
+        <!-- Dynamically populated -->
+    </div>
+    <button id="publishToHubBtn" class="btn btn-sm btn-primary mt-2" style="display:none;">
+        <i class="fas fa-cloud-upload-alt"></i> Publish to Hugging Face Hub
+    </button>
+</div>
+
+<script>
+async function loadModelVersions(runId) {
+    const res = await fetch(`/api/runs/${runId}/versions/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const versions = await res.json();
+    const container = document.getElementById('modelVersionsList');
+    container.innerHTML = versions.map(v => `
+        <div class="list-group-item bg-dark border-secondary">
+            <div class="d-flex justify-content-between">
+                <strong>${v.version}</strong>
+                <div>
+                    <span class="badge bg-info me-1">${v.artifact_size_mb.toFixed(1)} MB</span>
+                    ${v.is_published_to_hub ? '<span class="badge bg-success">✅ On Hub</span>' : ''}
+                </div>
+            </div>
+            <div class="small text-secondary">Metrics: ${JSON.stringify(v.metrics)}</div>
+            <div class="mt-2">
+                <button class="btn btn-sm btn-outline-info download-version" data-id="${v.id}">⬇ Download</button>
+                ${!v.is_published_to_hub ? `<button class="btn btn-sm btn-outline-success publish-version" data-id="${v.id}">☁️ Publish to Hub</button>` : ''}
+            </div>
+        </div>
+    `).join('');
+    
+    document.querySelectorAll('.publish-version').forEach(btn => btn.onclick = () => publishToHub(btn.dataset.id));
+    document.querySelectorAll('.download-version').forEach(btn => btn.onclick = () => downloadVersion(btn.dataset.id));
+}
+
+async function publishToHub(versionId) {
+    const res = await fetch(`/api/model-versions/${versionId}/publish/`, {
+        method: 'POST',
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    if (res.ok) {
+        alert('Model published to Hugging Face Hub!');
+        loadModelVersions(runId);
+    } else {
+        alert('Publishing failed');
+    }
+}
+</script>
