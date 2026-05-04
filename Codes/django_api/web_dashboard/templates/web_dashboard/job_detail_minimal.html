@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Experiment Monitor – Live Training Dashboard</title>
+    <title>Experiment Monitor – Transformer Pro</title>
     <style>
         * { box-sizing: border-box; }
         body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, monospace; padding: 20px; margin: 0; }
@@ -46,16 +46,25 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         #convergence-warning { background: #f59e0b20; color: #fbbf24; padding: 8px; border-radius: 8px; text-align: center; font-size: 0.85rem; display: none; margin-top: 12px; }
         .button-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .config-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+        .config-field { flex: 1; min-width: 150px; }
+        .config-field input, .config-field select, .config-field textarea { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px; color: white; }
+        .config-field label { display: block; font-size: 0.75rem; margin-bottom: 4px; color: #94a3b8; }
+        .collapsible-header { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .collapsible-content { display: none; margin-top: 16px; }
+        .fa-chevron-down, .fa-chevron-up { transition: transform 0.2s; }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 <div class="container">
     <div class="flex-row">
-        <h2>⚡ Experiment <span id="exp-id">{{ run.id|slice:"8" }}</span> <span id="status-badge" class="badge">{{ run.status|default:"queued" }}</span></h2>
+        <h2>⚡ Experiment <span id="exp-id">{% if run %}{{ run.id|slice:"8" }}{% else %}New{% endif %}</span> <span id="status-badge" class="badge">{% if run %}{{ run.status|default:"queued" }}{% else %}new{% endif %}</span></h2>
         <div class="button-group">
+            {% if run %}
             <button id="eval-btn" class="eval">📊 Evaluate</button>
             <button id="stop-btn" class="stop">⏹ Stop</button>
             <button id="retry-btn" class="retry">🔄 Retry</button>
@@ -63,59 +72,99 @@
             <button id="paper-btn" class="paper">📄 Generate Paper</button>
             <button id="report-btn" class="paper">📑 Full Report</button>
             <button id="pdf-preview-btn" class="paper">📄 PDF Preview</button>
+            {% endif %}
             <a href="/dashboard/" class="btn-download" style="background:#3b82f6;">← Dashboard</a>
         </div>
     </div>
 
-    <div class="dashboard-grid">
-        <div class="main-charts">
-            <div class="card"><h3>📉 Training Loss</h3><canvas id="lossChart" height="200"></canvas></div>
-            <div class="card"><h3>📊 Evaluation Metrics</h3><canvas id="evalChart" height="200"></canvas></div>
+    <!-- Configuration Panel (always visible, collapsible) -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleConfigPanel()">
+            <h3><i class="fas fa-sliders-h me-2"></i>Training Configuration</h3>
+            <i id="configToggleIcon" class="fas fa-chevron-down"></i>
         </div>
-        <div class="sidebar">
-            <div class="card">
-                <h3>⏱️ Progress</h3>
-                <div class="progress-bar-container"><div id="progress-bar" class="progress-bar">0%</div></div>
-                <div class="stats-grid">
-                    <div class="stat-card"><div class="stat-label">Step</div><div class="stat-value"><span id="current-step">0</span> / <span id="total-steps">0</span></div></div>
-                    <div class="stat-card"><div class="stat-label">ETA</div><div class="stat-value" id="eta">--</div></div>
-                    <div class="stat-card"><div class="stat-label">Loss</div><div class="stat-value" id="loss">--</div></div>
-                    <div class="stat-card"><div class="stat-label">Accuracy</div><div class="stat-value" id="acc">--</div></div>
-                </div>
+        <div id="configPanel" class="collapsible-content">
+            <div class="config-row">
+                <div class="config-field"><label>Run Name (optional)</label><input type="text" id="runName" placeholder="e.g., my_experiment"></div>
+                <div class="config-field"><label>Model</label><select id="modelSelect"><option value="distilbert-base-uncased">DistilBERT</option><option value="bert-base-uncased">BERT Base</option><option value="roberta-base">RoBERTa</option></select></div>
+                <div class="config-field"><label>GLUE Task</label><select id="taskSelect"><option value="mrpc">MRPC</option><option value="sst2">SST-2</option><option value="cola">CoLA</option><option value="qqp">QQP</option><option value="mnli">MNLI</option><option value="qnli">QNLI</option><option value="rte">RTE</option><option value="wnli">WNLI</option></select></div>
             </div>
-            <div class="card"><h3>🖥️ Live Terminal</h3><div id="terminal-container" class="terminal-container"></div></div>
+            <div class="config-row">
+                <div class="config-field"><label>Attention Type</label><select id="attentionSelect"></select></div>
+                <div class="config-field"><label>Training Method</label><select id="methodSelect"><option value="baseline">Baseline</option><option value="lora">LoRA</option><option value="rdrop">R-Drop</option><option value="r3f">R3F</option></select></div>
+                <div class="config-field"><label>Epochs</label><input type="number" id="epochs" value="3" step="1"></div>
+            </div>
+            <div class="config-row">
+                <div class="config-field"><label>Batch Size</label><input type="number" id="batchSize" value="16" step="1"></div>
+                <div class="config-field"><label>Learning Rate</label><input type="number" id="learningRate" value="2e-5" step="1e-6"></div>
+                <div class="config-field"><label>Max Sequence Length</label><input type="number" id="maxLen" value="128" step="8"></div>
+            </div>
+            <div class="config-row">
+                <div class="config-field"><label>Compression Rank</label><input type="number" id="compressionRank" value="64" step="1"></div>
+                <div class="config-field"><label>Priority (1=highest)</label><input type="number" id="priority" value="5" min="1" max="10"></div>
+                <div class="config-field"><label>GPU Requirements</label><input type="number" id="gpuRequirements" value="1" min="1"></div>
+            </div>
+            <div class="config-row">
+                <div class="config-field"><label>Researcher Notes</label><textarea id="jobNotes" rows="2" placeholder="Optional notes..."></textarea></div>
+            </div>
+            <div class="button-group" style="justify-content: flex-end;">
+                <button id="startTrainingBtn" class="btn-download" style="background:#10b981;"><i class="fas fa-play"></i> Start Training</button>
+            </div>
         </div>
     </div>
 
-    <div class="card"><h3>📜 Live Logs</h3><div id="log-area" class="log-area">{{ run.logs|default:"Waiting for logs..." }}</div></div>
-
-    <div class="card">
-        <h3>📊 Final Metrics</h3>
-        <div id="final-metrics" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px,1fr));"></div>
-    </div>
-
-    <div class="card">
-        <h3>📈 Training Analytics</h3>
-        <div id="analytics-content" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
-            <div class="stat-card"><div class="stat-label">Duration</div><div class="stat-value" id="duration">--</div></div>
-            <div class="stat-card"><div class="stat-label">Steps/sec</div><div class="stat-value" id="step_rate">--</div></div>
-            <div class="stat-card"><div class="stat-label">Min Loss</div><div class="stat-value" id="min_loss">--</div></div>
-            <div class="stat-card"><div class="stat-label">Max Loss</div><div class="stat-value" id="max_loss">--</div></div>
-            <div class="stat-card"><div class="stat-label">Avg Loss (last 10)</div><div class="stat-value" id="avg_loss_last">--</div></div>
-            <div class="stat-card"><div class="stat-label">Loss Reduction</div><div class="stat-value" id="loss_reduction">--</div></div>
-            <div class="stat-card"><div class="stat-label">Best Eval Metric</div><div class="stat-value" id="best_eval">--</div></div>
-            <div class="stat-card"><div class="stat-label">Epochs</div><div class="stat-value" id="epochs_done">--</div></div>
+    <!-- Monitoring section (only visible when a run exists) -->
+    <div id="monitoringSection" style="{% if not run %}display: none;{% endif %}">
+        <div class="dashboard-grid">
+            <div class="main-charts">
+                <div class="card"><h3>📉 Training Loss</h3><canvas id="lossChart" height="200"></canvas></div>
+                <div class="card"><h3>📊 Evaluation Metrics</h3><canvas id="evalChart" height="200"></canvas></div>
+            </div>
+            <div class="sidebar">
+                <div class="card">
+                    <h3>⏱️ Progress</h3>
+                    <div class="progress-bar-container"><div id="progress-bar" class="progress-bar">0%</div></div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-label">Step</div><div class="stat-value"><span id="current-step">0</span> / <span id="total-steps">0</span></div></div>
+                        <div class="stat-card"><div class="stat-label">ETA</div><div class="stat-value" id="eta">--</div></div>
+                        <div class="stat-card"><div class="stat-label">Loss</div><div class="stat-value" id="loss">--</div></div>
+                        <div class="stat-card"><div class="stat-label">Accuracy</div><div class="stat-value" id="acc">--</div></div>
+                    </div>
+                </div>
+                <div class="card"><h3>🖥️ Live Terminal</h3><div id="terminal-container" class="terminal-container"></div></div>
+            </div>
         </div>
-        <div id="convergence-warning">⚠️ Loss has not decreased for the last 50 steps. Consider early stopping.</div>
-    </div>
 
-    <div class="card">
-        <h3>📁 Artifacts & Downloads</h3>
-        <div id="artifacts-list" class="list-group" style="background:transparent;"></div>
-        <div class="button-group" style="margin-top: 12px;">
-            <a id="download-model-btn" class="btn-download" style="background:#10b981;"><i class="fas fa-download"></i> Download Model</a>
-            <a id="download-config-btn" class="btn-download" style="background:#3b82f6;"><i class="fas fa-download"></i> Config JSON</a>
-            <a id="download-metrics-btn" class="btn-download" style="background:#8b5cf6;"><i class="fas fa-download"></i> Metrics JSON</a>
+        <div class="card"><h3>📜 Live Logs</h3><div id="log-area" class="log-area">{% if run %}{{ run.logs|default:"Waiting for logs..." }}{% else %}Select a job to view logs{% endif %}</div></div>
+
+        <div class="card">
+            <h3>📊 Final Metrics</h3>
+            <div id="final-metrics" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px,1fr));"></div>
+        </div>
+
+        <div class="card">
+            <h3>📈 Training Analytics</h3>
+            <div id="analytics-content" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+                <div class="stat-card"><div class="stat-label">Duration</div><div class="stat-value" id="duration">--</div></div>
+                <div class="stat-card"><div class="stat-label">Steps/sec</div><div class="stat-value" id="step_rate">--</div></div>
+                <div class="stat-card"><div class="stat-label">Min Loss</div><div class="stat-value" id="min_loss">--</div></div>
+                <div class="stat-card"><div class="stat-label">Max Loss</div><div class="stat-value" id="max_loss">--</div></div>
+                <div class="stat-card"><div class="stat-label">Avg Loss (last 10)</div><div class="stat-value" id="avg_loss_last">--</div></div>
+                <div class="stat-card"><div class="stat-label">Loss Reduction</div><div class="stat-value" id="loss_reduction">--</div></div>
+                <div class="stat-card"><div class="stat-label">Best Eval Metric</div><div class="stat-value" id="best_eval">--</div></div>
+                <div class="stat-card"><div class="stat-label">Epochs</div><div class="stat-value" id="epochs_done">--</div></div>
+            </div>
+            <div id="convergence-warning">⚠️ Loss has not decreased for the last 50 steps. Consider early stopping.</div>
+        </div>
+
+        <div class="card">
+            <h3>📁 Artifacts & Downloads</h3>
+            <div id="artifacts-list" class="list-group" style="background:transparent;"></div>
+            <div class="button-group" style="margin-top: 12px;">
+                <a id="download-model-btn" class="btn-download" style="background:#10b981;"><i class="fas fa-download"></i> Download Model</a>
+                <a id="download-config-btn" class="btn-download" style="background:#3b82f6;"><i class="fas fa-download"></i> Config JSON</a>
+                <a id="download-metrics-btn" class="btn-download" style="background:#8b5cf6;"><i class="fas fa-download"></i> Metrics JSON</a>
+            </div>
         </div>
     </div>
 </div>
@@ -138,7 +187,7 @@
 </div>
 
 <script>
-    const runId = "{{ run.id }}";
+    const runId = "{{ run.id|default:'' }}";
     const authToken = localStorage.getItem('authToken');
     if (!authToken) window.location.href = '/login/';
 
@@ -158,269 +207,348 @@
         return res;
     }
 
-    function initCharts() {
-        lossChart = new Chart(document.getElementById('lossChart'), {
-            type: 'line',
-            data: { labels: [], datasets: [{ label: 'Train Loss', borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', data: [], tension: 0.2, fill: true }] },
-            options: { responsive: true, maintainAspectRatio: true, scales: { x: { title: { display: true, text: 'Step' } }, y: { title: { display: true, text: 'Loss' } } } }
-        });
-        evalChart = new Chart(document.getElementById('evalChart'), {
-            type: 'line',
-            data: { labels: [], datasets: [
-                { label: 'Eval Loss', borderColor: '#c084fc', backgroundColor: 'rgba(192,132,252,0.1)', data: [], yAxisID: 'y', fill: true, tension: 0.2 },
-                { label: 'Accuracy', borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', data: [], yAxisID: 'y1', fill: true, tension: 0.2 }
-            ] },
-            options: { responsive: true, scales: { y: { position: 'left', title: { display: true, text: 'Loss' } }, y1: { position: 'right', min: 0, max: 1, title: { display: true, text: 'Accuracy' } } } }
-        });
+    // Load attention types into dropdown
+    async function loadAttentionTypes() {
+        try {
+            const res = await apiFetch('/api/config/attentions/');
+            const data = await res.json();
+            const select = document.getElementById('attentionSelect');
+            if (data.attentions) {
+                select.innerHTML = data.attentions.map(a => `<option value="${a}">${a}</option>`).join('');
+            } else {
+                select.innerHTML = '<option value="full">full</option>';
+            }
+        } catch(e) {
+            console.warn('Failed to load attention types', e);
+            document.getElementById('attentionSelect').innerHTML = '<option value="full">full</option>';
+        }
     }
 
-    async function loadHistory() {
+    // Start new training
+    document.getElementById('startTrainingBtn').onclick = async () => {
+        const payload = {
+            name: document.getElementById('runName').value,
+            model_name: document.getElementById('modelSelect').value,
+            task_name: document.getElementById('taskSelect').value,
+            attention_type: document.getElementById('attentionSelect').value,
+            method: document.getElementById('methodSelect').value,
+            epochs: parseInt(document.getElementById('epochs').value),
+            batch_size: parseInt(document.getElementById('batchSize').value),
+            learning_rate: parseFloat(document.getElementById('learningRate').value),
+            max_seq_length: parseInt(document.getElementById('maxLen').value),
+            compression_rank: parseInt(document.getElementById('compressionRank').value),
+            priority: parseInt(document.getElementById('priority').value),
+            gpu_requirements: parseInt(document.getElementById('gpuRequirements').value),
+            notes: document.getElementById('jobNotes').value
+        };
         try {
-            const res = await apiFetch(`/api/runs/${runId}/history/`);
+            const res = await apiFetch('/api/jobs/', { method: 'POST', body: JSON.stringify(payload) });
             if (res.ok) {
-                const h = await res.json();
-                if (h.steps && h.losses) {
-                    trainSteps = h.steps; trainLosses = h.losses;
-                    lastStep = trainSteps[trainSteps.length-1] || 0;
-                    lossChart.data.labels = trainSteps;
-                    lossChart.data.datasets[0].data = trainLosses;
-                    lossChart.update();
-                }
-                if (h.eval_steps && h.eval_losses) {
-                    evalSteps = h.eval_steps; evalLosses = h.eval_losses;
-                    evalChart.data.labels = evalSteps;
-                    evalChart.data.datasets[0].data = evalLosses;
-                    if (h.eval_metrics && h.eval_metrics.length) {
-                        evalAccuracies = h.eval_metrics.map(m => m.eval_accuracy || null);
-                        evalChart.data.datasets[1].data = evalAccuracies;
+                const newJob = await res.json();
+                window.location.href = `/monitor/${newJob.id}/`;
+            } else {
+                const err = await res.json();
+                alert('Failed to start training: ' + (err.error || 'Unknown error'));
+            }
+        } catch(e) {
+            alert('Network error: ' + e.message);
+        }
+    };
+
+    // --------------------- Monitoring functionality (only if runId exists) ---------------------
+    if (runId) {
+        function initCharts() {
+            lossChart = new Chart(document.getElementById('lossChart'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Train Loss', borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', data: [], tension: 0.2, fill: true }] },
+                options: { responsive: true, maintainAspectRatio: true, scales: { x: { title: { display: true, text: 'Step' } }, y: { title: { display: true, text: 'Loss' } } } }
+            });
+            evalChart = new Chart(document.getElementById('evalChart'), {
+                type: 'line',
+                data: { labels: [], datasets: [
+                    { label: 'Eval Loss', borderColor: '#c084fc', backgroundColor: 'rgba(192,132,252,0.1)', data: [], yAxisID: 'y', fill: true, tension: 0.2 },
+                    { label: 'Accuracy', borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', data: [], yAxisID: 'y1', fill: true, tension: 0.2 }
+                ] },
+                options: { responsive: true, scales: { y: { position: 'left', title: { display: true, text: 'Loss' } }, y1: { position: 'right', min: 0, max: 1, title: { display: true, text: 'Accuracy' } } } }
+            });
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await apiFetch(`/api/runs/${runId}/history/`);
+                if (res.ok) {
+                    const h = await res.json();
+                    if (h.steps && h.losses) {
+                        trainSteps = h.steps; trainLosses = h.losses;
+                        lastStep = trainSteps[trainSteps.length-1] || 0;
+                        lossChart.data.labels = trainSteps;
+                        lossChart.data.datasets[0].data = trainLosses;
+                        lossChart.update();
                     }
-                    evalChart.update();
+                    if (h.eval_steps && h.eval_losses) {
+                        evalSteps = h.eval_steps; evalLosses = h.eval_losses;
+                        evalChart.data.labels = evalSteps;
+                        evalChart.data.datasets[0].data = evalLosses;
+                        if (h.eval_metrics && h.eval_metrics.length) {
+                            evalAccuracies = h.eval_metrics.map(m => m.eval_accuracy || null);
+                            evalChart.data.datasets[1].data = evalAccuracies;
+                        }
+                        evalChart.update();
+                    }
+                    computeAnalytics();
                 }
+            } catch(e) { console.warn('History load error', e); }
+        }
+
+        async function loadRunDetails() {
+            try {
+                const res = await apiFetch(`/api/runs/${runId}/`);
+                if (res.ok) {
+                    const run = await res.json();
+                    const metrics = run.final_metrics || {};
+                    const container = document.getElementById('final-metrics');
+                    container.innerHTML = Object.keys(metrics).length ? Object.entries(metrics).map(([k,v]) => `<div class="stat-card"><div class="stat-label">${k.replace(/_/g,' ')}</div><div class="stat-value">${typeof v === 'number' ? v.toFixed(4) : v}</div></div>`).join('') : '<div class="stat-card col-12">No final metrics yet.</div>';
+                    const configBlob = new Blob([JSON.stringify(run.config, null, 2)], {type:'application/json'});
+                    const metricsBlob = new Blob([JSON.stringify(run.final_metrics, null, 2)], {type:'application/json'});
+                    document.getElementById('download-config-btn').href = URL.createObjectURL(configBlob);
+                    document.getElementById('download-metrics-btn').href = URL.createObjectURL(metricsBlob);
+                    document.getElementById('status-badge').innerText = run.status;
+                    document.getElementById('status-badge').className = `badge ${run.status}`;
+                }
+            } catch(e) { console.warn('Run details load error', e); }
+        }
+
+        async function loadArtifacts() {
+            try {
+                const res = await apiFetch(`/api/runs/${runId}/artifacts/`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const artifacts = data.artifacts || [];
+                    const container = document.getElementById('artifacts-list');
+                    if (artifacts.length === 0) { container.innerHTML = '<div class="text-secondary">No artifacts yet.</div>'; return; }
+                    container.innerHTML = artifacts.map(path => `<div class="list-group-item"><a href="/api/runs/${runId}/artifacts/${encodeURIComponent(path)}" target="_blank">📄 ${path.split('/').pop()}</a></div>`).join('');
+                }
+            } catch(e) { console.warn('Artifacts load error', e); }
+        }
+
+        function computeAnalytics() {
+            if (trainSteps.length === 0) return;
+            const steps = trainSteps, losses = trainLosses;
+            const duration = (Date.now() - startTime) / 1000;
+            const stepsPerSec = (lastStep / duration).toFixed(2);
+            const minLoss = Math.min(...losses).toFixed(4);
+            const maxLoss = Math.max(...losses).toFixed(4);
+            const avgLast10 = (losses.slice(-10).reduce((a,b)=>a+b,0) / Math.min(10, losses.length)).toFixed(4);
+            const reduction = ((losses[0] - losses[losses.length-1]) / losses[0] * 100).toFixed(1);
+            const bestEval = evalAccuracies.length ? Math.max(...evalAccuracies.filter(v=>v!==null)).toFixed(4) : '--';
+            document.getElementById('duration').innerText = formatDuration(duration);
+            document.getElementById('step_rate').innerText = stepsPerSec;
+            document.getElementById('min_loss').innerText = minLoss;
+            document.getElementById('max_loss').innerText = maxLoss;
+            document.getElementById('avg_loss_last').innerText = avgLast10;
+            document.getElementById('loss_reduction').innerText = reduction + '%';
+            document.getElementById('best_eval').innerText = bestEval;
+            document.getElementById('epochs_done').innerText = evalSteps.length;
+            const warning = document.getElementById('convergence-warning');
+            if (losses.length > 50) {
+                const recent = losses.slice(-50);
+                const improved = recent[recent.length-1] < recent[0] - 0.01;
+                warning.style.display = improved ? 'none' : 'block';
+            } else warning.style.display = 'none';
+        }
+
+        function formatDuration(sec) {
+            const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.floor(sec%60);
+            return `${h}h ${m}m ${s}s`;
+        }
+
+        function updateProgress(data) {
+            if (data.current_step !== undefined && data.total_steps !== undefined) {
+                const pct = (data.current_step / data.total_steps * 100).toFixed(1);
+                document.getElementById('progress-bar').style.width = pct + '%';
+                document.getElementById('progress-bar').innerText = pct + '%';
+                document.getElementById('current-step').innerText = data.current_step;
+                document.getElementById('total-steps').innerText = data.total_steps;
+                if (data.eta_seconds) {
+                    const eta = data.eta_seconds;
+                    const h = Math.floor(eta/3600), m = Math.floor((eta%3600)/60), s = Math.floor(eta%60);
+                    document.getElementById('eta').innerText = `${h}h ${m}m ${s}s`;
+                }
+            }
+        }
+
+        function addLog(line) {
+            const logDiv = document.getElementById('log-area');
+            logDiv.innerText += line + '\n';
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateMetrics(data) {
+            if (data.step !== undefined && data.loss !== undefined) {
+                if (!startTimeSet) { startTime = Date.now(); startTimeSet = true; }
+                trainSteps.push(data.step);
+                trainLosses.push(data.loss);
+                lastStep = data.step;
+                lossChart.data.labels = trainSteps;
+                lossChart.data.datasets[0].data = trainLosses;
+                lossChart.update();
+                document.getElementById('loss').innerText = data.loss.toFixed(4);
                 computeAnalytics();
             }
-        } catch(e) { console.warn('History load error', e); }
-    }
-
-    async function loadRunDetails() {
-        try {
-            const res = await apiFetch(`/api/runs/${runId}/`);
-            if (res.ok) {
-                const run = await res.json();
-                const metrics = run.final_metrics || {};
-                const container = document.getElementById('final-metrics');
-                container.innerHTML = Object.keys(metrics).length ? Object.entries(metrics).map(([k,v]) => `<div class="stat-card"><div class="stat-label">${k.replace(/_/g,' ')}</div><div class="stat-value">${typeof v === 'number' ? v.toFixed(4) : v}</div></div>`).join('') : '<div class="stat-card col-12">No final metrics yet.</div>';
-                // download links for config and metrics
-                const configBlob = new Blob([JSON.stringify(run.config, null, 2)], {type:'application/json'});
-                const metricsBlob = new Blob([JSON.stringify(run.final_metrics, null, 2)], {type:'application/json'});
-                document.getElementById('download-config-btn').href = URL.createObjectURL(configBlob);
-                document.getElementById('download-metrics-btn').href = URL.createObjectURL(metricsBlob);
-                // update status badge
-                document.getElementById('status-badge').innerText = run.status;
-                document.getElementById('status-badge').className = `badge ${run.status}`;
-            }
-        } catch(e) { console.warn('Run details load error', e); }
-    }
-
-    async function loadArtifacts() {
-        try {
-            const res = await apiFetch(`/api/runs/${runId}/artifacts/`);
-            if (res.ok) {
-                const data = await res.json();
-                const artifacts = data.artifacts || [];
-                const container = document.getElementById('artifacts-list');
-                if (artifacts.length === 0) { container.innerHTML = '<div class="text-secondary">No artifacts yet.</div>'; return; }
-                container.innerHTML = artifacts.map(path => `<div class="list-group-item"><a href="/api/runs/${runId}/artifacts/${encodeURIComponent(path)}" target="_blank">📄 ${path.split('/').pop()}</a></div>`).join('');
-            }
-        } catch(e) { console.warn('Artifacts load error', e); }
-    }
-
-    function computeAnalytics() {
-        if (trainSteps.length === 0) return;
-        const steps = trainSteps, losses = trainLosses;
-        const duration = (Date.now() - startTime) / 1000;
-        const stepsPerSec = (lastStep / duration).toFixed(2);
-        const minLoss = Math.min(...losses).toFixed(4);
-        const maxLoss = Math.max(...losses).toFixed(4);
-        const avgLast10 = (losses.slice(-10).reduce((a,b)=>a+b,0) / Math.min(10, losses.length)).toFixed(4);
-        const reduction = ((losses[0] - losses[losses.length-1]) / losses[0] * 100).toFixed(1);
-        const bestEval = evalAccuracies.length ? Math.max(...evalAccuracies.filter(v=>v!==null)).toFixed(4) : '--';
-        document.getElementById('duration').innerText = formatDuration(duration);
-        document.getElementById('step_rate').innerText = stepsPerSec;
-        document.getElementById('min_loss').innerText = minLoss;
-        document.getElementById('max_loss').innerText = maxLoss;
-        document.getElementById('avg_loss_last').innerText = avgLast10;
-        document.getElementById('loss_reduction').innerText = reduction + '%';
-        document.getElementById('best_eval').innerText = bestEval;
-        document.getElementById('epochs_done').innerText = evalSteps.length;
-        // convergence warning
-        const warning = document.getElementById('convergence-warning');
-        if (losses.length > 50) {
-            const recent = losses.slice(-50);
-            const improved = recent[recent.length-1] < recent[0] - 0.01;
-            warning.style.display = improved ? 'none' : 'block';
-        } else warning.style.display = 'none';
-    }
-
-    function formatDuration(sec) {
-        const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.floor(sec%60);
-        return `${h}h ${m}m ${s}s`;
-    }
-
-    function updateProgress(data) {
-        if (data.current_step !== undefined && data.total_steps !== undefined) {
-            const pct = (data.current_step / data.total_steps * 100).toFixed(1);
-            document.getElementById('progress-bar').style.width = pct + '%';
-            document.getElementById('progress-bar').innerText = pct + '%';
-            document.getElementById('current-step').innerText = data.current_step;
-            document.getElementById('total-steps').innerText = data.total_steps;
-            if (data.eta_seconds) {
-                const eta = data.eta_seconds;
-                const h = Math.floor(eta/3600), m = Math.floor((eta%3600)/60), s = Math.floor(eta%60);
-                document.getElementById('eta').innerText = `${h}h ${m}m ${s}s`;
-            }
-        }
-    }
-
-    function addLog(line) {
-        const logDiv = document.getElementById('log-area');
-        logDiv.innerText += line + '\n';
-        logDiv.scrollTop = logDiv.scrollHeight;
-    }
-
-    function updateMetrics(data) {
-        if (data.step !== undefined && data.loss !== undefined) {
-            if (!startTimeSet) { startTime = Date.now(); startTimeSet = true; }
-            trainSteps.push(data.step);
-            trainLosses.push(data.loss);
-            lastStep = data.step;
-            lossChart.data.labels = trainSteps;
-            lossChart.data.datasets[0].data = trainLosses;
-            lossChart.update();
-            document.getElementById('loss').innerText = data.loss.toFixed(4);
-            computeAnalytics();
-        }
-        if (data.eval_loss !== undefined) {
-            const epoch = evalSteps.length + 1;
-            evalSteps.push(epoch);
-            evalLosses.push(data.eval_loss);
-            evalChart.data.labels = evalSteps;
-            evalChart.data.datasets[0].data = evalLosses;
-            if (data.eval_accuracy !== undefined) {
-                evalAccuracies.push(data.eval_accuracy);
-                evalChart.data.datasets[1].data = evalAccuracies;
-                document.getElementById('acc').innerText = data.eval_accuracy.toFixed(4);
-            }
-            evalChart.update();
-            computeAnalytics();
-        }
-    }
-
-    function connectWebSocket() {
-        if (ws) ws.close();
-        ws = new WebSocket(`ws://${location.host}/ws/jobs/${runId}/`);
-        ws.onopen = () => console.log('[WS] Job connected');
-        ws.onmessage = (e) => {
-            try {
-                const msg = JSON.parse(e.data);
-                if (msg.type === 'log') addLog(msg.data);
-                else if (msg.type === 'metrics') updateMetrics(msg.data);
-                else if (msg.type === 'progress') updateProgress(msg);
-                else if (msg.type === 'status') {
-                    const badge = document.getElementById('status-badge');
-                    badge.innerText = msg.status;
-                    badge.className = `badge ${msg.status}`;
-                    if (msg.status === 'completed' || msg.status === 'failed') ws.close();
+            if (data.eval_loss !== undefined) {
+                const epoch = evalSteps.length + 1;
+                evalSteps.push(epoch);
+                evalLosses.push(data.eval_loss);
+                evalChart.data.labels = evalSteps;
+                evalChart.data.datasets[0].data = evalLosses;
+                if (data.eval_accuracy !== undefined) {
+                    evalAccuracies.push(data.eval_accuracy);
+                    evalChart.data.datasets[1].data = evalAccuracies;
+                    document.getElementById('acc').innerText = data.eval_accuracy.toFixed(4);
                 }
-            } catch(err) { console.error('WS parse error', err); }
-        };
-        ws.onclose = () => { console.log('[WS] Job disconnected, reconnecting in 3s...'); setTimeout(connectWebSocket, 3000); };
-    }
-
-    function initTerminal() {
-        if (typeof Terminal === 'undefined') { document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js not loaded</div>'; return; }
-        term = new Terminal({ cursorBlink: true, theme: { background: '#000000', foreground: '#00ff00' }, fontSize: 12 });
-        term.open(document.getElementById('terminal-container'));
-        function connectTerminalWs() {
-            if (termWs) termWs.close();
-            termWs = new WebSocket(`ws://${location.host}/ws/terminal/`);
-            termWs.onmessage = (ev) => term.write(ev.data);
-            termWs.onclose = () => setTimeout(connectTerminalWs, 3000);
-            termWs.onopen = () => console.log('[WS] Terminal connected');
+                evalChart.update();
+                computeAnalytics();
+            }
         }
-        connectTerminalWs();
-        term.onData((data) => { if (termWs && termWs.readyState === WebSocket.OPEN) termWs.send(data); });
+
+        function connectWebSocket() {
+            if (ws) ws.close();
+            ws = new WebSocket(`ws://${location.host}/ws/jobs/${runId}/`);
+            ws.onopen = () => console.log('[WS] Job connected');
+            ws.onmessage = (e) => {
+                try {
+                    const msg = JSON.parse(e.data);
+                    if (msg.type === 'log') addLog(msg.data);
+                    else if (msg.type === 'metrics') updateMetrics(msg.data);
+                    else if (msg.type === 'progress') updateProgress(msg);
+                    else if (msg.type === 'status') {
+                        const badge = document.getElementById('status-badge');
+                        badge.innerText = msg.status;
+                        badge.className = `badge ${msg.status}`;
+                        if (msg.status === 'completed' || msg.status === 'failed') ws.close();
+                    }
+                } catch(err) { console.error('WS parse error', err); }
+            };
+            ws.onclose = () => { console.log('[WS] Job disconnected, reconnecting in 3s...'); setTimeout(connectWebSocket, 3000); };
+        }
+
+        function initTerminal() {
+            if (typeof Terminal === 'undefined') { document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js not loaded</div>'; return; }
+            term = new Terminal({ cursorBlink: true, theme: { background: '#000000', foreground: '#00ff00' }, fontSize: 12 });
+            term.open(document.getElementById('terminal-container'));
+            function connectTerminalWs() {
+                if (termWs) termWs.close();
+                termWs = new WebSocket(`ws://${location.host}/ws/terminal/`);
+                termWs.onmessage = (ev) => term.write(ev.data);
+                termWs.onclose = () => setTimeout(connectTerminalWs, 3000);
+                termWs.onopen = () => console.log('[WS] Terminal connected');
+            }
+            connectTerminalWs();
+            term.onData((data) => { if (termWs && termWs.readyState === WebSocket.OPEN) termWs.send(data); });
+        }
+
+        // Attach action buttons if they exist
+        const evalBtn = document.getElementById('eval-btn');
+        if (evalBtn) evalBtn.onclick = async () => {
+            const btn = evalBtn;
+            btn.disabled = true; btn.textContent = '⏳ Evaluating...';
+            try {
+                const res = await apiFetch(`/api/runs/${runId}/evaluate/`, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    let html = '<ul>';
+                    for (const [k,v] of Object.entries(data.metrics)) html += `<li><strong>${k}:</strong> ${typeof v === 'number' ? v.toFixed(4) : v}</li>`;
+                    html += '</ul>';
+                    document.getElementById('evalResults').innerHTML = html;
+                    document.getElementById('evalModal').style.display = 'flex';
+                } else alert('Evaluation failed: ' + (data.error || 'Unknown'));
+            } catch(err) { alert('Evaluation request failed'); }
+            finally { btn.disabled = false; btn.textContent = '📊 Evaluate'; }
+        };
+
+        const stopBtn = document.getElementById('stop-btn');
+        if (stopBtn) stopBtn.onclick = async () => {
+            if (!confirm('Stop this training run?')) return;
+            const btn = stopBtn;
+            btn.disabled = true;
+            await apiFetch(`/api/runs/${runId}/stop/`, { method: 'POST' });
+            btn.disabled = false;
+            loadRunDetails();
+        };
+
+        const retryBtn = document.getElementById('retry-btn');
+        if (retryBtn) retryBtn.onclick = async () => {
+            if (!confirm('Retry (resume) this run?')) return;
+            const btn = retryBtn;
+            btn.disabled = true;
+            await apiFetch(`/api/runs/${runId}/resume/`, { method: 'POST' });
+            btn.disabled = false;
+            loadRunDetails();
+            connectWebSocket();
+        };
+
+        const deleteBtn = document.getElementById('delete-btn');
+        if (deleteBtn) deleteBtn.onclick = async () => {
+            if (!confirm('Delete this run permanently? This cannot be undone.')) return;
+            const res = await apiFetch(`/api/runs/${runId}/`, { method: 'DELETE' });
+            if (res.ok) window.location.href = '/dashboard/';
+            else alert('Delete failed');
+        };
+
+        const paperBtn = document.getElementById('paper-btn');
+        if (paperBtn) paperBtn.onclick = async () => {
+            const res = await apiFetch(`/api/runs/${runId}/paper/`);
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = res.headers.get('Content-Type') === 'application/pdf' ? `paper_${runId}.pdf` : `paper_${runId}.tex`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } else alert('Paper generation failed');
+        };
+        const reportBtn = document.getElementById('report-btn');
+        if (reportBtn) reportBtn.onclick = () => window.open(`/api/runs/${runId}/report/`, '_blank');
+        const pdfPreviewBtn = document.getElementById('pdf-preview-btn');
+        if (pdfPreviewBtn) pdfPreviewBtn.onclick = () => { document.getElementById('pdfIframe').src = `/api/runs/${runId}/paper_preview/`; document.getElementById('pdfModal').style.display = 'flex'; };
+        document.getElementById('download-model-btn').href = `/api/runs/${runId}/model/`;
+        window.closeEvalModal = () => document.getElementById('evalModal').style.display = 'none';
+        window.closePdfModal = () => { document.getElementById('pdfModal').style.display = 'none'; document.getElementById('pdfIframe').src = ''; };
+
+        // Initialise monitoring
+        initCharts();
+        loadHistory().then(() => connectWebSocket());
+        initTerminal();
+        loadRunDetails();
+        loadArtifacts();
+        setInterval(computeAnalytics, 5000);
+        setInterval(loadRunDetails, 10000);
     }
 
-    // Action buttons
-    document.getElementById('eval-btn').onclick = async () => {
-        const btn = document.getElementById('eval-btn');
-        btn.disabled = true; btn.textContent = '⏳ Evaluating...';
-        try {
-            const res = await apiFetch(`/api/runs/${runId}/evaluate/`, { method: 'POST' });
-            const data = await res.json();
-            if (res.ok) {
-                let html = '<ul>';
-                for (const [k,v] of Object.entries(data.metrics)) html += `<li><strong>${k}:</strong> ${typeof v === 'number' ? v.toFixed(4) : v}</li>`;
-                html += '</ul>';
-                document.getElementById('evalResults').innerHTML = html;
-                document.getElementById('evalModal').style.display = 'flex';
-            } else alert('Evaluation failed: ' + (data.error || 'Unknown'));
-        } catch(err) { alert('Evaluation request failed'); }
-        finally { btn.disabled = false; btn.textContent = '📊 Evaluate'; }
-    };
+    // Toggle config panel
+    function toggleConfigPanel() {
+        const panel = document.getElementById('configPanel');
+        const icon = document.getElementById('configToggleIcon');
+        if (panel.style.display === 'none' || panel.style.display === '') {
+            panel.style.display = 'block';
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+        } else {
+            panel.style.display = 'none';
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+        }
+    }
 
-    document.getElementById('stop-btn').onclick = async () => {
-        if (!confirm('Stop this training run?')) return;
-        const btn = document.getElementById('stop-btn');
-        btn.disabled = true;
-        await apiFetch(`/api/runs/${runId}/stop/`, { method: 'POST' });
-        btn.disabled = false;
-        loadRunDetails();
-    };
-
-    document.getElementById('retry-btn').onclick = async () => {
-        if (!confirm('Retry (resume) this run?')) return;
-        const btn = document.getElementById('retry-btn');
-        btn.disabled = true;
-        await apiFetch(`/api/runs/${runId}/resume/`, { method: 'POST' });
-        btn.disabled = false;
-        loadRunDetails();
-        connectWebSocket();
-    };
-
-    document.getElementById('delete-btn').onclick = async () => {
-        if (!confirm('Delete this run permanently? This cannot be undone.')) return;
-        const res = await apiFetch(`/api/runs/${runId}/`, { method: 'DELETE' });
-        if (res.ok) window.location.href = '/dashboard/';
-        else alert('Delete failed');
-    };
-
-    document.getElementById('paper-btn').onclick = async () => {
-        const res = await apiFetch(`/api/runs/${runId}/paper/`);
-        if (res.ok) {
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = res.headers.get('Content-Type') === 'application/pdf' ? `paper_${runId}.pdf` : `paper_${runId}.tex`;
-            a.click();
-            URL.revokeObjectURL(url);
-        } else alert('Paper generation failed');
-    };
-    document.getElementById('report-btn').onclick = () => window.open(`/api/runs/${runId}/report/`, '_blank');
-    document.getElementById('pdf-preview-btn').onclick = () => { document.getElementById('pdfIframe').src = `/api/runs/${runId}/paper_preview/`; document.getElementById('pdfModal').style.display = 'flex'; };
-    document.getElementById('download-model-btn').href = `/api/runs/${runId}/model/`;
-    window.closeEvalModal = () => document.getElementById('evalModal').style.display = 'none';
-    window.closePdfModal = () => { document.getElementById('pdfModal').style.display = 'none'; document.getElementById('pdfIframe').src = ''; };
-
-    // Initialisation
-    initCharts();
-    loadHistory().then(() => connectWebSocket());
-    initTerminal();
-    loadRunDetails();
-    loadArtifacts();
-    setInterval(computeAnalytics, 5000);
-    setInterval(loadRunDetails, 10000);
+    // Load attention types on page load
+    loadAttentionTypes();
+    // If no run ID, show config panel expanded
+    if (!runId) {
+        document.getElementById('configPanel').style.display = 'block';
+        document.getElementById('configToggleIcon').classList.remove('fa-chevron-down');
+        document.getElementById('configToggleIcon').classList.add('fa-chevron-up');
+    }
 </script>
 </body>
 </html>
