@@ -2,13 +2,11 @@ import uuid
 from django.db import models
 
 class Experiment(models.Model):
-    """An experiment container (project) that can have multiple training runs."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    # Default configuration (can be overridden per run)
     default_config = models.JSONField(default=dict, blank=True)
     tags = models.CharField(max_length=200, blank=True, default="")
 
@@ -24,20 +22,27 @@ class Experiment(models.Model):
 
 
 class TrainingRun(models.Model):
-    """Single training run (or evaluation/compression) belonging to an experiment."""
+    JOB_TYPES = (
+        ("training", "Training"),
+        ("evaluation", "Evaluation"),
+        ("compression", "Compression"),
+    )
+    STATUS_CHOICES = (
+        ("queued", "Queued"),
+        ("running", "Running"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+        ("stopped", "Stopped"),
+    )
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     experiment = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name='runs')
-    name = models.CharField(max_length=200, blank=True, help_text="Optional run name, e.g., 'baseline', 'attention_nova'")
-    job_type = models.CharField(max_length=20, default='training', choices=[
-        ("training", "Training"), ("evaluation", "Evaluation"), ("compression", "Compression")
-    ])
-    status = models.CharField(max_length=20, default="queued", choices=[
-        ("queued", "Queued"), ("running", "Running"), ("completed", "Completed"),
-        ("failed", "Failed"), ("stopped", "Stopped")
-    ])
+    name = models.CharField(max_length=200, blank=True, help_text="Optional run name")
+    job_type = models.CharField(max_length=20, default='training', choices=JOB_TYPES)
+    status = models.CharField(max_length=20, default='queued', choices=STATUS_CHOICES)
     config = models.JSONField(default=dict)
     final_metrics = models.JSONField(default=dict)
-    training_history = models.JSONField(default=dict, blank=True)   # full history (steps, losses, eval metrics)
+    training_history = models.JSONField(default=dict, blank=True)
     logs = models.TextField(blank=True)
     artifacts_dir = models.CharField(max_length=500, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -63,7 +68,6 @@ class TrainingRun(models.Model):
 
 
 class TrainingSnapshot(models.Model):
-    """Detailed per‑step metrics (for real‑time plotting and long‑term storage)."""
     run = models.ForeignKey(TrainingRun, on_delete=models.CASCADE, related_name='snapshots', null=True, blank=True)
     step = models.IntegerField()
     epoch = models.FloatField(null=True, blank=True)
@@ -77,7 +81,4 @@ class TrainingSnapshot(models.Model):
 
     class Meta:
         ordering = ['run', 'step']
-        unique_together = [['run', 'step']]   # avoid duplicates
-
-    def __str__(self):
-        return f"Run {self.run.id} step {self.step}"
+        unique_together = [['run', 'step']]
