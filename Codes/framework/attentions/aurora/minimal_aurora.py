@@ -6,6 +6,7 @@ SVD‑factorised Q/K/V/Out projections only.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 
 class FactorisedLinear(nn.Module):
@@ -95,12 +96,7 @@ class MinimalAURORAAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-# ------------------------------------------------------------
-# Framework injection & registration (requires your registry)
-# ------------------------------------------------------------
-# from framework.attentions.core.registry import ATTENTION_REGISTRY   # uncomment in your project
-ATTENTION_REGISTRY = {}  # dummy placeholder – replace with your actual registry
-
+@ATTENTION_REGISTRY.register("minimal_aurora")
 def inject_minimal_aurora(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     new_attn = MinimalAURORAAttention(
         model_config=model_config,
@@ -110,5 +106,3 @@ def inject_minimal_aurora(layer, model_config, comp_config, layer_idx, total_lay
     )
     layer.attention = new_attn
     return new_attn
-
-ATTENTION_REGISTRY["minimal_aurora"] = inject_minimal_aurora

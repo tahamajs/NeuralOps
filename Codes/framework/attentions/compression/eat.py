@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 from .progressive_token_pruning import ProgressiveTokenPruning
+from ..core.registry import ATTENTION_REGISTRY
 
+@ATTENTION_REGISTRY.register("eat")
 class EATBlock(nn.Module):
     """
     Efficient Attention Transformer block.

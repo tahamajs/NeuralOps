@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from ..core.registry import ATTENTION_REGISTRY, AUX_REGISTRY
 
+@AUX_REGISTRY.register("mamba")
 class Mamba(nn.Module):
     """Trivial Mamba placeholder – replace with official implementation."""
     def __init__(self, d_model):
@@ -12,6 +14,7 @@ class Mamba(nn.Module):
     def forward(self, x):
         return self.out_proj(F.silu(self.in_proj(x)))
 
+@AUX_REGISTRY.register("expert_choice_moe")
 class ExpertChoiceMoE(nn.Module):
     """Top‑2 token‑choice MoE."""
     def __init__(self, d_model, n_experts=8, top_k=2):
@@ -38,6 +41,7 @@ class ExpertChoiceMoE(nn.Module):
                 out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
         return out
 
+@ATTENTION_REGISTRY.register("jamba2")
 class Jamba2Block(nn.Module):
     def __init__(self, d_model, n_heads, n_experts=8, top_k=2):
         super().__init__()

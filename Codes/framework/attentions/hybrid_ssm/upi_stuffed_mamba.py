@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from ..core.registry import ATTENTION_REGISTRY
 
+@ATTENTION_REGISTRY.register("upi_stuffed_mamba")
 class UPIMambaBlock(nn.Module):
     """DPLR selective scan with UPI stabilization."""
     def __init__(self, dim, d_state=16, d_conv=4, expand=2):

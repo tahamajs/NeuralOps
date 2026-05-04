@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
+from ..core.registry import AUX_REGISTRY
 
+@AUX_REGISTRY.register("factorised_matrix_state")
 class FactorisedMatrixState(nn.Module):
     """Maintains a low‑rank factorised state for linear attention."""
     def __init__(self, d_model, rank=32):
