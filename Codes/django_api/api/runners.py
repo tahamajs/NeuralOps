@@ -5,6 +5,10 @@ import time
 import traceback
 import asyncio
 import shutil
+import matplotlib
+matplotlib.use('Agg')   # must be before importing pyplot
+import matplotlib.pyplot as plt
+
 from pathlib import Path
 import matplotlib.pyplot as plt
 from asgiref.sync import async_to_sync
