@@ -336,3 +336,21 @@ def job_detail(request, job_id):
     if any(field in request.data for field in ['model_name','task_name','attention_type',...]):
         create_config_snapshot(job, f"Updated by {request.user.username}", request.user)
     return Response(...)
+
+
+
+
+# jobscheduler/views.py
+@api_view(['POST'])
+def job_list(request):
+    data = request.data
+    estimated = data.get('estimated_duration', None)
+    memory = data.get('memory_requirements', 8)
+    # Create job ...
+    job = Job.objects.create(
+        # ... other fields ...
+        estimated_duration=estimated,
+        memory_requirements=memory,
+    )
+    scheduler.add_job(str(job.id), job.priority, estimated)
+    return Response(JobSerializer(job).data, status=201)
