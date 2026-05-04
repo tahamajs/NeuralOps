@@ -1,3 +1,4 @@
+# api/apps.py
 from django.apps import AppConfig
 
 class ApiConfig(AppConfig):
@@ -5,6 +6,5 @@ class ApiConfig(AppConfig):
     name = 'api'
 
     def ready(self):
-        from .models import TrainingRun
-        # Any run that was 'running' when the server stopped is now stale
-        TrainingRun.objects.filter(status='running').update(status='stopped')
+        # Optional: startup tasks (e.g., mark stale jobs as stopped)
+        pass
