@@ -6,6 +6,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Make the outer framework importable
 sys.path.insert(0, str(BASE_DIR.parent))
 
+
+# HUGGINGFACE_TOKEN = os.environ.get('HF_TOKEN')
+# HUGGINGFACE_USERNAME = os.environ.get('HF_USERNAME')  # Your HF username or org
+# MODEL_PUBLISH_BUCKET = 'your-bucket-name'  # For intermediate storage
+
+
+
+
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"]
