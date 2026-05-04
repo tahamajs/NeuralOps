@@ -109,19 +109,32 @@ def list_runs(request, exp_id=None):
         runs = TrainingRun.objects.all().order_by("-created_at")
     return Response(TrainingRunSerializer(runs, many=True).data)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 @api_view(["POST"])
 def start_train(request):
-    """Start a new training run."""
     data = request.data
     exp_id = data.get('experiment_id')
-    if not exp_id:
-        # If no experiment specified, create a default experiment container
+    if exp_id:
+        exp = get_object_or_404(Experiment, id=exp_id)
+    else:
+        # Create a new experiment container
         exp = Experiment.objects.create(
-            name=f"Default_{data.get('task_name','train')}",
+            name=data.get('exp_name', f"Exp_{data.get('task_name','train')}"),
             default_config=data
         )
-    else:
-        exp = get_object_or_404(Experiment, id=exp_id)
+    # Create a training run
     run = TrainingRun.objects.create(
         experiment=exp,
         name=data.get('name', f"Run_{data.get('task_name','train')}"),
@@ -129,16 +142,24 @@ def start_train(request):
         config=data,
         status='queued'
     )
-    # Start background thread
+    # Start background training thread
     from threading import Thread
+    from .runners import run_training
     Thread(target=run_training, args=(run,), daemon=True).start()
     return Response(TrainingRunSerializer(run).data, status=202)
+
+
+
+
+
 
 @api_view(["POST"])
 def start_evaluate(request):
     data = request.data
     run_id = data.get('run_id')
     run = get_object_or_404(TrainingRun, id=run_id)
+    from .jobs import start_job
+    from .runners import run_evaluation
     start_job(run, run_evaluation)
     return Response(TrainingRunSerializer(run).data, status=202)
 
@@ -147,24 +168,30 @@ def start_compress(request):
     data = request.data
     run_id = data.get('run_id')
     run = get_object_or_404(TrainingRun, id=run_id)
+    from .jobs import start_job
+    from .runners import run_compression
     start_job(run, run_compression)
     return Response(TrainingRunSerializer(run).data, status=202)
 
 @api_view(["GET"])
-def job_status(request, job_id):
-    """Get status of a training run (job_id is run UUID)."""
-    run = get_object_or_404(TrainingRun, id=job_id)
-    return Response(TrainingRunSerializer(run).data)
+def job_status(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    serializer = TrainingRunSerializer(run)
+    return Response(serializer.data)
+
+
 
 @api_view(["POST"])
-def stop_job(request, job_id):
-    """Stop a running job (run_id)."""
-    run = get_object_or_404(TrainingRun, id=job_id)
+def stop_job(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
     if run.status in ("queued", "running"):
         cancel_job(str(run.id))
-        _update_run_status(run, "stopped")
+        run.status = "stopped"
+        run.save()
         return Response({"status": "stopped"})
-    return Response({"error": "Job not stoppable"}, status=400)
+    return Response({"error": f"Cannot stop run with status '{run.status}'"}, status=400)
+
+
 
 @api_view(["PATCH"])
 def update_run_config(request, run_id):
@@ -220,14 +247,49 @@ def run_model_download(request, run_id):
 # ---------- System monitoring (unchanged) ----------
 @api_view(["GET"])
 def gpu_info(request):
-    info = {"cuda_available": torch.cuda.is_available()}
+    info = {"cuda_available": False, "mps_available": False}
     if torch.cuda.is_available():
+        info["cuda_available"] = True
         info["device_name"] = torch.cuda.get_device_name(0)
-        info["memory_total"] = torch.cuda.get_device_properties(0).total_memory / 1024**3
-        info["memory_allocated"] = torch.cuda.memory_allocated() / 1024**3
-        info["memory_reserved"] = torch.cuda.memory_reserved() / 1024**3
+        # Return memory in megabytes (MB)
+        info["memory_total_mb"] = torch.cuda.get_device_properties(0).total_memory / (1024 ** 2)
+        info["memory_allocated_mb"] = torch.cuda.memory_allocated() / (1024 ** 2)
+        info["memory_reserved_mb"] = torch.cuda.memory_reserved() / (1024 ** 2)
         info["utilization"] = torch.cuda.utilization() if hasattr(torch.cuda, 'utilization') else None
+        info["type"] = "cuda"
+    elif torch.backends.mps.is_available():
+        info["mps_available"] = True
+        info["device_name"] = "Apple Silicon (MPS)"
+        # Estimate total memory from system RAM (in MB)
+        total_ram_mb = psutil.virtual_memory().total / (1024 ** 2)
+        info["memory_total_mb"] = total_ram_mb
+        if hasattr(torch.mps, 'current_allocated_memory'):
+            info["memory_allocated_mb"] = torch.mps.current_allocated_memory() / (1024 ** 2)
+        else:
+            info["memory_allocated_mb"] = 0.0
+        info["utilization"] = None
+        info["type"] = "mps"
+    else:
+        info["type"] = "cpu"
     return Response(info)
+
+from threading import Thread
+from .runners import run_training
+
+@api_view(["POST"])
+def resume_training(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    if run.status not in ('stopped', 'failed'):
+        return Response({"error": f"Cannot resume run with status '{run.status}'"}, status=400)
+    # Reset status to queued so the job system will start it
+    run.status = 'queued'
+    run.save()
+    Thread(target=run_training, args=(run,), daemon=True).start()
+    return Response({"status": "resumed"})@api_view(["POST"])
+def stop_all_jobs(request):
+    from .jobs import stop_all_jobs
+    stop_all_jobs()
+    return Response({"status": "stop signals sent to all running jobs"})
 
 @api_view(["GET"])
 def system_status(request):
@@ -239,6 +301,13 @@ def system_status(request):
 # ---------- Paper Generation (adapted for runs) ----------
 @api_view(["GET"])
 def generate_paper(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    # Use saved source if exists, otherwise generate default
+    if run.config.get('latex_source'):
+        template = run.config['latex_source']
+    else:
+        template = _generate_default_latex(run)  # your existing logic
+
     """Generate LaTeX paper for a training run, embed loss plot if exists."""
     run = get_object_or_404(TrainingRun, id=run_id)
     template_path = Path(__file__).parent / "templates" / "paper_template.tex"
@@ -490,9 +559,8 @@ def logout_view(request):
 def evaluate_job(request, run_id):
     run = get_object_or_404(TrainingRun, id=run_id)
     run_evaluation(run, stop_event=None)
-    metrics = run.final_metrics
+    metrics = run.config.get('final_metrics', {})
     return Response({"metrics": metrics})
-
 # ---------- Preview (HTML modal) ----------
 @api_view(["GET"])
 def preview_paper(request, run_id):
@@ -545,3 +613,19 @@ def preview_paper(request, run_id):
     </div>
     """
     return Response({"html": html})
+
+
+@api_view(["GET"])
+def paper_editor(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    # Load saved latex source from a file or from run.config
+    latex_source = run.config.get('latex_source', '')  # store in config or separate file
+    return render(request, 'web_dashboard/paper_editor.html', {'run_id': run_id, 'latex_source': latex_source})
+
+@api_view(["POST"])
+def save_paper_source(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    source = request.body.decode('utf-8')
+    run.config['latex_source'] = source
+    run.save(update_fields=['config'])
+    return Response({"status": "saved"})

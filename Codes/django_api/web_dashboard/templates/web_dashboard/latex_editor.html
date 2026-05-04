@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LaTeX Editor with Live Preview</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', monospace; }
+        .container { display: flex; height: 100vh; }
+        .editor-pane { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #334155; }
+        .preview-pane { flex: 1; display: flex; flex-direction: column; background: #1e293b; }
+        .toolbar { background: #1e293b; padding: 8px; border-bottom: 1px solid #334155; }
+        textarea { width: 100%; flex: 1; background: #0f172a; color: #e2e8f0; border: none; padding: 16px; font-family: 'Fira Code', monospace; font-size: 14px; resize: none; outline: none; }
+        iframe { width: 100%; flex: 1; border: none; background: white; }
+        button { background: #3b82f6; border: none; border-radius: 6px; padding: 6px 12px; color: white; cursor: pointer; margin-right: 8px; }
+        button:hover { opacity: 0.9; }
+        .error { background: #ef4444; color: white; padding: 8px; margin-top: 8px; display: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="editor-pane">
+        <div class="toolbar">
+            <button id="compileBtn">▶ Compile & Preview</button>
+            <button id="downloadBtn">📥 Download PDF</button>
+            <button id="saveBtn">💾 Save to Project</button>
+        </div>
+        <textarea id="latexEditor" placeholder="Write your LaTeX here...">
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\title{My Document}
+\author{You}
+\date{\today}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This is a sample document.
+\end{document}
+        </textarea>
+        <div id="errorMsg" class="error"></div>
+    </div>
+    <div class="preview-pane">
+        <div class="toolbar">📄 PDF Preview</div>
+        <iframe id="pdfPreview" src="about:blank"></iframe>
+    </div>
+</div>
+
+<script>
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) window.location.href = '/login/';
+
+    async function compileAndPreview() {
+        const latex = document.getElementById('latexEditor').value;
+        const errorDiv = document.getElementById('errorMsg');
+        errorDiv.style.display = 'none';
+        errorDiv.innerText = '';
+
+        try {
+            const formData = new FormData();
+            formData.append('latex', latex);
+            const res = await fetch('/api/latex/compile/', {
+                method: 'POST',
+                headers: { 'Authorization': `Token ${authToken}` },
+                body: JSON.stringify({ latex: latex }),
+                headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json' }
+            });
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                document.getElementById('pdfPreview').src = url;
+                // Store for download
+                window.currentPdfUrl = url;
+            } else {
+                const err = await res.json();
+                errorDiv.innerText = err.error || 'Compilation failed';
+                errorDiv.style.display = 'block';
+            }
+        } catch(e) {
+            errorDiv.innerText = 'Network error: ' + e.message;
+            errorDiv.style.display = 'block';
+        }
+    }
+
+    document.getElementById('compileBtn').onclick = compileAndPreview;
+
+    document.getElementById('downloadBtn').onclick = () => {
+        if (window.currentPdfUrl) {
+            const a = document.createElement('a');
+            a.href = window.currentPdfUrl;
+            a.download = 'document.pdf';
+            a.click();
+        } else {
+            alert('No PDF available. Click "Compile & Preview" first.');
+        }
+    };
+
+    document.getElementById('saveBtn').onclick = async () => {
+        // Save to backend (optional: store in a project)
+        alert('Save functionality can be implemented later.');
+    };
+
+    // Auto‑compile on page load (optional)
+    compileAndPreview();
+</script>
+</body>
+</html>

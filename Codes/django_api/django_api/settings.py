@@ -10,19 +10,17 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"]
 INSTALLED_APPS = [
-        'daphne',          # put at the top
-
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "corsheaders",
-    "channels",
-    "api",
-    'rest_framework.authtoken',   # this line is required
+    'daphne',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'corsheaders',
+    'channels',
+    'api',          # ← appears only once
+    'rest_framework.authtoken',
     'web_dashboard',
-
 ]
 ASGI_APPLICATION = 'django_api.asgi.application'
 # LOGIN_URL = '/login/'
@@ -45,7 +43,7 @@ WSGI_APPLICATION = "django_api.wsgi.application"
 
 # Channels layer (in‑memory for dev; use Redis in production)
 CHANNEL_LAYERS = {
-    "default": {
+    'default': {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }

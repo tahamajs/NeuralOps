@@ -30,11 +30,11 @@ def create_job(request):
     return render(request, 'web_dashboard/create_job.html')
 
 #@login_required(login_url='/login/')
-def job_detail(request, job_id):
-    """Live training dashboard – requires login"""
-    exp = get_object_or_404(Experiment, id=job_id)
-    return render(request, 'web_dashboard/job_detail_minimal.html', {'experiment': exp})
+from api.models import TrainingRun
 
+def job_detail(request, job_id):
+    run = get_object_or_404(TrainingRun, id=job_id)
+    return render(request, 'web_dashboard/job_detail_minimal.html', {'run': run})
 #@login_required(login_url='/login/')
 def dashboard(request):
     """Alternative dashboard (bootstrap version)"""
@@ -181,3 +181,15 @@ def dashboard_api_jobs(request):
             'ram_mb': exp.ram_usage_mb,
         })
     return Response(data)
+
+
+
+from api.models import TrainingRun
+
+def job_detail(request, job_id):
+    run = get_object_or_404(TrainingRun, id=job_id)
+    return render(request, 'web_dashboard/job_detail_minimal.html', {'run': run})
+
+
+
+
