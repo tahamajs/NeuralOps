@@ -1,9 +1,10 @@
-"""Model comparison utilities for SVD compression analysis."""
+# framework/analysis/model_comparison.py
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Optional
+
 from .plotting import create_comprehensive_plots, plot_tradeoff
 
 class ModelComparison:
@@ -11,18 +12,18 @@ class ModelComparison:
         self.results_dirs = results_dirs
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.dataframes = []
         self.df_all = None
 
     def load_all_results(self) -> pd.DataFrame:
+        dfs = []
         for d in self.results_dirs:
             csv_path = os.path.join(d, "performance.csv")
             if os.path.exists(csv_path):
                 df = pd.read_csv(csv_path)
                 df["run"] = os.path.basename(d)
-                self.dataframes.append(df)
-        if self.dataframes:
-            self.df_all = pd.concat(self.dataframes, ignore_index=True)
+                dfs.append(df)
+        if dfs:
+            self.df_all = pd.concat(dfs, ignore_index=True)
         return self.df_all
 
     def generate_all_plots(self):
