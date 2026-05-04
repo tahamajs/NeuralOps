@@ -35,6 +35,18 @@ class Job(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    git_commit_hash = models.CharField(max_length=40, blank=True, null=True)
+    git_branch = models.CharField(max_length=100, blank=True, null=True)
+    git_repository = models.URLField(max_length=500, blank=True, null=True)
+    git_dirty = models.BooleanField(default=False)
+    
+    # Data versioning (DVC)
+    data_git_commit_id = models.CharField(max_length=40, blank=True, null=True)
+    dvc_data_hash = models.CharField(max_length=64, blank=True, null=True)
+    
+    # Environment snapshot
+    pip_freeze = models.TextField(blank=True, null=True)
+    python_version = models.CharField(max_length=20, blank=True, null=True)
 
     def __str__(self):
         return f"{self.name or str(self.id)[:8]} - {self.status}"

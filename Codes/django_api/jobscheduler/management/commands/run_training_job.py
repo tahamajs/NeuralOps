@@ -68,3 +68,14 @@ class Command(BaseCommand):
             job.logs += f"\nERROR: {str(e)}"
             job.save()
             sys.exit(1)
+
+from jobscheduler.version_utils import capture_environment
+
+class Command(BaseCommand):
+    def handle(self, *args, **options):
+        job = Job.objects.get(id=job_id)
+        # Capture environment at training start
+        capture_environment(job)
+        
+        # Then run training (with logging integration)
+        ... (existing code)
