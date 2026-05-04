@@ -22,7 +22,6 @@
             padding: 2rem 1rem;
         }
 
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -74,8 +73,12 @@
             outline: none;
         }
 
-        .form-control::placeholder {
-            color: #475569;
+        .form-range {
+            background: #334155;
+            height: 4px;
+        }
+        .form-range::-webkit-slider-thumb {
+            background: #3b82f6;
         }
 
         h2 {
@@ -142,17 +145,22 @@
             font-size: 0.9rem;
         }
 
-        .spinner-border-sm {
-            width: 1.2rem;
-            height: 1.2rem;
-            border-width: 0.2em;
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1100;
         }
 
-        .info-icon {
-            font-size: 0.8rem;
-            color: #64748b;
-            cursor: help;
-            margin-left: 6px;
+        .config-preview {
+            background: #0f172a;
+            border-radius: 20px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            font-family: monospace;
+            font-size: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
         }
 
         @media (max-width: 768px) {
@@ -192,8 +200,8 @@
 
             <hr>
 
-            <!-- Training run configuration -->
             <div class="row g-4">
+                <!-- Left column: Model & Architecture -->
                 <div class="col-md-6">
                     <h4><i class="fas fa-microchip me-2"></i>Model & Architecture</h4>
                     <label class="form-label">Run Name (optional)</label>
@@ -224,7 +232,6 @@
                     <select id="attentionSelect" class="form-select" required>
                         <option value="">Loading available attentions...</option>
                     </select>
-                    <small id="attentionDesc" class="text-muted"></small>
 
                     <label class="form-label mt-3">Training Method</label>
                     <select id="methodSelect" class="form-select">
@@ -235,23 +242,37 @@
                     </select>
                 </div>
 
+                <!-- Right column: Hyperparameters & Scheduling -->
                 <div class="col-md-6">
                     <h4><i class="fas fa-sliders-h me-2"></i>Hyperparameters</h4>
-                    <label class="form-label">Epochs</label>
-                    <input type="number" id="epochs" class="form-control" value="3" min="1" step="1">
+                    <div class="row g-2">
+                        <div class="col-6"><label class="form-label">Epochs</label><input type="number" id="epochs" class="form-control" value="3" min="1"></div>
+                        <div class="col-6"><label class="form-label">Batch Size</label><input type="number" id="batchSize" class="form-control" value="16" min="1"></div>
+                        <div class="col-6"><label class="form-label">Learning Rate</label><input type="number" id="lr" class="form-control" value="2e-5" step="1e-6"></div>
+                        <div class="col-6"><label class="form-label">Max Seq Length</label><input type="number" id="maxLen" class="form-control" value="128" min="8"></div>
+                        <div class="col-6"><label class="form-label">Compression Rank</label><input type="number" id="rank" class="form-control" value="64" min="1"></div>
+                        <div class="col-6"><label class="form-label">Memory (GB)</label><input type="number" id="memoryReq" class="form-control" value="8" min="1"></div>
+                    </div>
 
-                    <label class="form-label mt-3">Batch Size</label>
-                    <input type="number" id="batchSize" class="form-control" value="16" min="1" step="1">
-
-                    <label class="form-label mt-3">Learning Rate</label>
-                    <input type="number" id="lr" class="form-control" value="2e-5" step="1e-6" min="0">
-
-                    <label class="form-label mt-3">Max Sequence Length</label>
-                    <input type="number" id="maxLen" class="form-control" value="128" min="8" step="8">
-
-                    <label class="form-label mt-3">Compression Rank (for SVD/CUR/LEKA)</label>
-                    <input type="number" id="rank" class="form-control" value="64" min="1" step="1">
+                    <h4 class="mt-3"><i class="fas fa-tachometer-alt me-2"></i>Scheduling & Priority</h4>
+                    <div class="row g-2">
+                        <div class="col-6"><label class="form-label">Priority (1–10, lower = higher)</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="small">High</span>
+                                <input type="range" id="prioritySlider" class="form-range" min="1" max="10" value="5">
+                                <span class="small" id="priorityValue">5</span>
+                            </div>
+                        </div>
+                        <div class="col-6"><label class="form-label">GPUs Required</label><input type="number" id="gpuReq" class="form-control" value="1" min="1"></div>
+                        <div class="col-6"><label class="form-label">Estimated Duration (sec)</label><input type="number" id="estimatedDuration" class="form-control" placeholder="optional"></div>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Preview & Submit -->
+            <div class="mt-4">
+                <button type="button" id="previewBtn" class="btn btn-outline-secondary me-2"><i class="fas fa-eye"></i> Preview Config</button>
+                <div id="configPreview" class="config-preview" style="display: none;"></div>
             </div>
 
             <div class="mt-5 text-end">
@@ -265,38 +286,38 @@
     </div>
 </div>
 
+<div class="toast-container" id="toastContainer"></div>
+
 <script>
-    // ---------- Authentication & API helpers ----------
     const authToken = localStorage.getItem('authToken');
-    if (!authToken) {
-        window.location.href = '/login/';
-    }
+    if (!authToken) window.location.href = '/login/';
 
     async function apiFetch(url, options = {}) {
-        const response = await fetch(url, {
+        const res = await fetch(url, {
             ...options,
-            headers: {
-                'Authorization': `Token ${authToken}`,
-                'Content-Type': 'application/json',
-                ...(options.headers || {})
-            }
+            headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...options.headers }
         });
-        if (response.status === 401) {
-            localStorage.removeItem('authToken');
-            window.location.href = '/login/';
-            throw new Error('Session expired. Please log in again.');
-        }
-        return response;
+        if (res.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login/'; throw new Error('Unauthorized'); }
+        return res;
     }
 
-    // ---------- UI Helpers ----------
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 fade show`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+        container.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 3000 });
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
     function showError(message) {
         const errorDiv = document.getElementById('errorMsg');
         errorDiv.innerText = message;
         errorDiv.style.display = 'block';
-        setTimeout(() => {
-            errorDiv.style.display = 'none';
-        }, 8000);
+        setTimeout(() => errorDiv.style.display = 'none', 8000);
     }
 
     function setLoading(loading) {
@@ -310,24 +331,21 @@
         }
     }
 
-    // ---------- Load existing experiments ----------
+    // Load experiments, attention types, models, tasks
     async function loadExperiments() {
         try {
             const res = await apiFetch('/api/experiments/');
             const experiments = await res.json();
             const select = document.getElementById('experimentSelect');
-            for (const exp of experiments) {
-                const option = document.createElement('option');
-                option.value = exp.id;
-                option.textContent = `${exp.name} (${new Date(exp.created_at).toLocaleDateString()})`;
-                select.appendChild(option);
-            }
-        } catch (err) {
-            console.warn('Failed to load experiments:', err);
-        }
+            experiments.forEach(exp => {
+                const opt = document.createElement('option');
+                opt.value = exp.id;
+                opt.textContent = `${exp.name} (${new Date(exp.created_at).toLocaleDateString()})`;
+                select.appendChild(opt);
+            });
+        } catch(e) { console.warn(e); }
     }
 
-    // ---------- Load attention types, models, tasks ----------
     async function loadConfigs() {
         try {
             const [attRes, modelsRes, tasksRes] = await Promise.all([
@@ -339,21 +357,18 @@
             const modelsData = await modelsRes.json();
             const tasksData = await tasksRes.json();
 
-            // Attention dropdown
             const attSel = document.getElementById('attentionSelect');
             attSel.innerHTML = '';
-            if (attData.attentions && attData.attentions.length) {
+            if (attData.attentions?.length) {
                 attData.attentions.forEach(att => {
                     const opt = document.createElement('option');
                     opt.value = att;
                     opt.textContent = att;
                     attSel.appendChild(opt);
                 });
-            } else {
-                attSel.innerHTML = '<option value="full">full (default)</option>';
-            }
+            } else attSel.innerHTML = '<option value="full">full (default)</option>';
 
-            // Models: add missing options dynamically
+            // Add missing models
             const modelSel = document.getElementById('modelSelect');
             const existingModels = Array.from(modelSel.options).map(o => o.value);
             modelsData.models.forEach(m => {
@@ -365,7 +380,7 @@
                 }
             });
 
-            // Tasks: add missing options
+            // Add missing tasks
             const taskSel = document.getElementById('taskSelect');
             const existingTasks = Array.from(taskSel.options).map(o => o.value);
             tasksData.tasks.forEach(t => {
@@ -376,101 +391,99 @@
                     taskSel.appendChild(opt);
                 }
             });
-        } catch (err) {
-            console.error('Failed to load configuration:', err);
-            showError('Could not load attention types or model list. Please refresh.');
-        }
+        } catch(e) { showError('Failed to load configuration: ' + e.message); }
     }
 
-    // Toggle new experiment fields
-    const expSelect = document.getElementById('experimentSelect');
-    const newExpFields = document.getElementById('newExpFields');
-    expSelect.addEventListener('change', () => {
-        newExpFields.style.display = expSelect.value === 'new' ? 'block' : 'none';
+    // Priority slider
+    const slider = document.getElementById('prioritySlider');
+    const prioritySpan = document.getElementById('priorityValue');
+    slider.addEventListener('input', () => prioritySpan.innerText = slider.value);
+
+    // Preview config
+    document.getElementById('previewBtn').addEventListener('click', () => {
+        const config = {
+            model_name: document.getElementById('modelSelect').value,
+            task_name: document.getElementById('taskSelect').value,
+            attention_type: document.getElementById('attentionSelect').value,
+            method: document.getElementById('methodSelect').value,
+            epochs: parseInt(document.getElementById('epochs').value),
+            batch_size: parseInt(document.getElementById('batchSize').value),
+            learning_rate: parseFloat(document.getElementById('lr').value),
+            max_seq_length: parseInt(document.getElementById('maxLen').value),
+            compression_rank: parseInt(document.getElementById('rank').value),
+            memory_requirements: parseInt(document.getElementById('memoryReq').value),
+            priority: parseInt(slider.value),
+            gpu_requirements: parseInt(document.getElementById('gpuReq').value),
+            estimated_duration: parseInt(document.getElementById('estimatedDuration').value) || null
+        };
+        const previewDiv = document.getElementById('configPreview');
+        previewDiv.innerHTML = '<pre>' + JSON.stringify(config, null, 2) + '</pre>';
+        previewDiv.style.display = 'block';
     });
-    // Initially trigger if needed (default option is 'new')
-    newExpFields.style.display = 'block';
 
     // Form submission
     document.getElementById('createExpForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         setLoading(true);
-        const errorDiv = document.getElementById('errorMsg');
-        errorDiv.style.display = 'none';
+        document.getElementById('errorMsg').style.display = 'none';
 
         try {
             let experimentId = null;
-
-            // 1) Create or reuse experiment container
-            if (expSelect.value === 'new') {
-                const newExpName = document.getElementById('newExpName').value.trim();
-                if (!newExpName) {
-                    throw new Error('Experiment name is required for a new container.');
-                }
-                const newExpDesc = document.getElementById('newExpDesc').value.trim();
+            if (document.getElementById('experimentSelect').value === 'new') {
+                const name = document.getElementById('newExpName').value.trim();
+                if (!name) throw new Error('Experiment name required');
+                const desc = document.getElementById('newExpDesc').value.trim();
                 const createRes = await apiFetch('/api/experiments/create/', {
                     method: 'POST',
-                    body: JSON.stringify({
-                        name: newExpName,
-                        description: newExpDesc,
-                        default_config: {}
-                    })
+                    body: JSON.stringify({ name, description: desc, default_config: {} })
                 });
-                if (!createRes.ok) {
-                    const errData = await createRes.json().catch(() => ({}));
-                    throw new Error(errData.error || 'Failed to create experiment');
-                }
                 const newExp = await createRes.json();
                 experimentId = newExp.id;
             } else {
-                experimentId = expSelect.value;
+                experimentId = document.getElementById('experimentSelect').value;
             }
 
-            // 2) Prepare training payload
-            const runName = document.getElementById('runName').value.trim();
             const payload = {
                 experiment_id: experimentId,
-                name: runName || undefined,
+                name: document.getElementById('runName').value.trim() || undefined,
                 model_name: document.getElementById('modelSelect').value,
                 task_name: document.getElementById('taskSelect').value,
                 attention_type: document.getElementById('attentionSelect').value,
                 method: document.getElementById('methodSelect').value,
-                epochs: parseInt(document.getElementById('epochs').value, 10),
-                batch_size: parseInt(document.getElementById('batchSize').value, 10),
+                epochs: parseInt(document.getElementById('epochs').value),
+                batch_size: parseInt(document.getElementById('batchSize').value),
                 learning_rate: parseFloat(document.getElementById('lr').value),
-                max_seq_length: parseInt(document.getElementById('maxLen').value, 10),
-                rank: parseInt(document.getElementById('rank').value, 10)
+                max_seq_length: parseInt(document.getElementById('maxLen').value),
+                compression_rank: parseInt(document.getElementById('rank').value),
+                memory_requirements: parseInt(document.getElementById('memoryReq').value),
+                priority: parseInt(slider.value),
+                gpu_requirements: parseInt(document.getElementById('gpuReq').value),
+                estimated_duration: parseInt(document.getElementById('estimatedDuration').value) || null
             };
 
             // Validation
-            if (isNaN(payload.epochs) || payload.epochs < 1) throw new Error('Epochs must be >= 1');
-            if (isNaN(payload.batch_size) || payload.batch_size < 1) throw new Error('Batch size must be >= 1');
+            if (isNaN(payload.epochs) || payload.epochs < 1) throw new Error('Epochs must be >=1');
+            if (isNaN(payload.batch_size) || payload.batch_size < 1) throw new Error('Batch size must be >=1');
             if (isNaN(payload.learning_rate) || payload.learning_rate <= 0) throw new Error('Learning rate must be positive');
 
-            const trainRes = await apiFetch('/api/train/', {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            if (!trainRes.ok) {
-                const errText = await trainRes.text();
-                throw new Error(`Training start failed: ${errText}`);
+            const res = await apiFetch('/api/jobs/', { method: 'POST', body: JSON.stringify(payload) });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Submission failed');
             }
-            const runData = await trainRes.json();
-            // Redirect to job detail page
-            window.location.href = `/dashboard/job/${runData.id}/`;
+            const job = await res.json();
+            showToast(`Job "${job.name || job.id.slice(0,8)}" submitted successfully!`, 'success');
+            setTimeout(() => { window.location.href = `/monitor/${job.id}/`; }, 1500);
         } catch (err) {
-            console.error(err);
-            showError(err.message || 'An unexpected error occurred.');
+            showError(err.message);
             setLoading(false);
         }
     });
 
-    // Optional: add a small description on attention selection (if you want to show hints)
-    // For brevity, we skip dynamic description, but could be extended.
-
     // Initialisation
-    loadExperiments().catch(console.warn);
-    loadConfigs().catch(console.warn);
+    loadExperiments();
+    loadConfigs();
+    document.getElementById('newExpFields').style.display = 'block'; // show initially
 </script>
 </body>
 </html>
