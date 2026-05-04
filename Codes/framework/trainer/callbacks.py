@@ -7,6 +7,8 @@ import torch
 import time
 from transformers.trainer_callback import TrainerCallback
 from typing import Optional, Dict, Any
+import os
+from transformers import TrainerCallback
 
 
 class MemoryCallback(TrainerCallback):
@@ -83,3 +85,16 @@ class SVDAttentionCallback(TrainerCallback):
         if svd_layers > 0:
             logs['svd_layers'] = svd_layers
             logs['compression_ratio'] = compressed_params / total_params if total_params > 0 else 0
+
+# framework/training/callbacks.py (existing)
+
+class PreemptionCallback(TrainerCallback):
+    def __init__(self, preempt_flag_dir="/tmp/preempt_flags", job_id=None):
+        self.preempt_flag_dir = preempt_flag_dir
+        self.job_id = job_id
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if self.job_id and os.path.exists(f"{self.preempt_flag_dir}/{self.job_id}"):
+            print("Preemption requested, saving checkpoint...")
+            # Optionally save checkpoint
+            control.should_training_stop = True
