@@ -211,3 +211,128 @@ def compare_configs(request, run_id, version_a, version_b):
         'dictionary_item_added': diff.get('dictionary_item_added', []),
         'dictionary_item_removed': diff.get('dictionary_item_removed', [])
     })
+
+
+
+from deepdiff import DeepDiff
+from .models import Job, CustomMetricEntry, VersionedConfig
+from .serializers import CustomMetricEntrySerializer, VersionedConfigSerializer
+from .version_utils import create_config_snapshot, capture_git_info, capture_environment, capture_data_version
+
+# ... existing views ...
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def log_custom_metric(request, run_id):
+    """Log a custom metric (called by the training script)"""
+    run = get_object_or_404(Job, id=run_id)
+    serializer = CustomMetricEntrySerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(run=run)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_custom_metrics(request, run_id):
+    """Retrieve all custom metrics for a run, grouped by name."""
+    run = get_object_or_404(Job, id=run_id)
+    metrics = run.custom_metrics.all().order_by('step')
+    grouped = {}
+    for m in metrics:
+        if m.name not in grouped:
+            grouped[m.name] = {
+                'steps': [],
+                'values': [],
+                'type': m.type,
+            }
+        grouped[m.name]['steps'].append(m.step)
+        grouped[m.name]['values'].append(m.value)
+    return Response(grouped)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_config_history(request, run_id):
+    """Return list of versioned configs for a run."""
+    run = get_object_or_404(Job, id=run_id)
+    versions = run.config_versions.all().order_by('-version_number')
+    data = [
+        {
+            'version': v.version_number,
+            'created_at': v.created_at,
+            'description': v.change_description,
+            'snapshot': v.config_snapshot,
+        }
+        for v in versions
+    ]
+    return Response({'versions': data})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def compare_configs(request, run_id, version_a, version_b):
+    """Compare two config versions and return diff."""
+    run = get_object_or_404(Job, id=run_id)
+    v1 = get_object_or_404(VersionedConfig, run=run, version_number=version_a)
+    v2 = get_object_or_404(VersionedConfig, run=run, version_number=version_b)
+    diff = DeepDiff(v1.config_snapshot, v2.config_snapshot, ignore_order=True)
+    return Response({
+        'version_a': version_a,
+        'version_b': version_b,
+        'diff': diff,
+        'values_changed': diff.get('values_changed', {}),
+        'type_changes': diff.get('type_changes', {}),
+        'dictionary_item_added': diff.get('dictionary_item_added', []),
+        'dictionary_item_removed': diff.get('dictionary_item_removed', [])
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_environment(request, run_id):
+    """Return the saved environment (Python version, pip freeze) for a run."""
+    run = get_object_or_404(Job, id=run_id)
+    return Response({
+        'python_version': run.python_version,
+        'pip_freeze': run.pip_freeze,
+        'git': {
+            'commit': run.git_commit_hash,
+            'branch': run.git_branch,
+            'dirty': run.git_dirty,
+            'repository': run.git_repository,
+        },
+        'data_version': {
+            'git_commit': run.data_git_commit_id,
+            'dvc_hash': run.dvc_data_hash,
+        }
+    })
+
+
+
+
+
+@api_view(['POST'])
+def job_list(request):
+    # ... existing validation and creation ...
+    job = Job.objects.create(...)
+    
+    # Capture versioning metadata
+    capture_git_info(job)
+    capture_data_version(job)   # optional
+    create_config_snapshot(job, "Initial configuration", request.user)
+    
+    # Add to scheduler
+    scheduler.add_job(str(job.id), job.priority)
+    return Response(JobSerializer(job).data, status=201)
+
+
+
+
+
+@api_view(['PATCH'])
+def job_detail(request, job_id):
+    job = get_object_or_404(Job, id=job_id)
+    # ... update fields ...
+    job.save()
+    # Create snapshot if relevant fields changed (optional)
+    if any(field in request.data for field in ['model_name','task_name','attention_type',...]):
+        create_config_snapshot(job, f"Updated by {request.user.username}", request.user)
+    return Response(...)

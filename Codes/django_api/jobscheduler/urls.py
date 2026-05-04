@@ -12,4 +12,10 @@ urlpatterns = [
     path('jobs/<uuid:job_id>/history/', views.job_history),
     path('jobs/<uuid:job_id>/notes/', views.job_notes),
     path('system/gpu/', views.gpu_info),
+        path('runs/<uuid:run_id>/metrics/', views.log_custom_metric),
+    path('runs/<uuid:run_id>/metrics/list/', views.get_custom_metrics),
+    path('runs/<uuid:run_id>/config/history/', views.get_config_history),
+    path('runs/<uuid:run_id>/config/compare/<int:version_a>/<int:version_b>/', views.compare_configs),
+    path('runs/<uuid:run_id>/environment/', views.get_environment),
+
 ]
