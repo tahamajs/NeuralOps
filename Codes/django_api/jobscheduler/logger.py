@@ -1,6 +1,5 @@
 # jobscheduler/logger.py
 import base64
-import json
 import io
 import requests
 from typing import Dict, Any, Optional, List
@@ -11,6 +10,7 @@ from django.conf import settings
 class CustomRunLogger:
     """
     A flexible logger for tracking arbitrary metrics during training.
+    Sends data to the backend API.
     """
     def __init__(self, run_id: str, api_base_url: str = None):
         self.run_id = run_id
@@ -34,8 +34,7 @@ class CustomRunLogger:
         })
 
     def log_image(self, name: str, image, step: int, caption: str = None):
-        """Log an image (PIL Image, numpy array, or file path)"""
-        # Convert image to base64 (simplified)
+        """Log an image (PIL Image, numpy array, or file path) – converts to base64."""
         buffered = io.BytesIO()
         if isinstance(image, Image.Image):
             image.save(buffered, format="PNG")
@@ -43,7 +42,8 @@ class CustomRunLogger:
             Image.open(image).save(buffered, format="PNG")
         else:
             # Assume numpy array
-            Image.fromarray(image).save(buffered, format="PNG")
+            from PIL import Image as PILImage
+            PILImage.fromarray(image).save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode()
         self._send_metric({
             'name': name, 'type': 'image',
@@ -52,7 +52,7 @@ class CustomRunLogger:
         })
 
     def log_figure(self, name: str, figure: plt.Figure, step: int):
-        """Log a matplotlib figure"""
+        """Log a matplotlib figure."""
         buf = io.BytesIO()
         figure.savefig(buf, format='png', bbox_inches='tight')
         img_str = base64.b64encode(buf.getvalue()).decode()
@@ -64,7 +64,7 @@ class CustomRunLogger:
         plt.close(figure)
 
     def log_table(self, name: str, data: List[Dict], step: int):
-        """Log a table (list of dictionaries)"""
+        """Log a table (list of dictionaries)."""
         self._send_metric({
             'name': name, 'type': 'table', 'value': data, 'step': step, 'epoch': None
         })
