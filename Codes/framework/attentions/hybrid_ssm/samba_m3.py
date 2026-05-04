@@ -2,7 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .jamba2 import Mamba   # import the stub or replace with official Mamba
+from ..core.registry import ATTENTION_REGISTRY, AUX_REGISTRY
 
+@AUX_REGISTRY.register("spectral_mamba")
 class SpectralMamba(nn.Module):
     """Mamba with learnable spectral scaling."""
     def __init__(self, d_model):
@@ -15,6 +17,7 @@ class SpectralMamba(nn.Module):
         out = out * torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
         return out
 
+@ATTENTION_REGISTRY.register("samba_m3")
 class SAMBAM3Block(nn.Module):
     """Sliding window attention + spectral Mamba."""
     def __init__(self, d_model, n_heads, window=128):
