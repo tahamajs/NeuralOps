@@ -6,8 +6,8 @@ reducing the entire model to a single linear function for extreme inference spee
 
 import torch
 import torch.nn as nn
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 
 class _LinearizedGELU(nn.Module):

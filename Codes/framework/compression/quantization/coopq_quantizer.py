@@ -1,8 +1,8 @@
 """CoopQ: Shapley‑inspired per‑layer bit allocation. Registered as 'coopq'."""
 
 import torch
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 @COMPRESSOR_REGISTRY.register("coopq")
 class CoopQQuantizer(BaseCompressor):

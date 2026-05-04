@@ -1,79 +1,137 @@
-# framework/routing/ensemble_router.py
 """
-Ensemble router combining multiple routing strategies.
+Ensemble router combining multiple routers.
 """
 
-from typing import Dict, List, Optional, Tuple
 import numpy as np
-from .keyword_router import KeywordRouter
-from .ml_router import MLRouter
+from typing import Dict, List, Optional, Tuple, Callable, Any
+from collections import defaultdict
+from .base import BaseRouter, RouteResult
 
 
-class EnsembleRouter:
+class EnsembleRouter(BaseRouter):
     """
-    Ensemble router that combines multiple routing strategies.
+    Ensemble router that aggregates predictions from multiple routers.
     
-    Uses weighted voting from keyword-based, ML-based, and other routers.
-    
-    Example:
-        >>> keyword_router = KeywordRouter()
-        >>> ml_router = MLRouter()
-        >>> ml_router.train(train_texts, train_labels)
-        >>> ensemble = EnsembleRouter([(keyword_router, 0.3), (ml_router, 0.7)])
-        >>> task = ensemble.route("This is a test")
+    Supported strategies:
+    - weighted_vote: weighted sum of confidence scores
+    - majority_vote: simple majority
+    - stacking: train a meta-classifier (requires labeled data)
+    - dynamic: router selection based on text characteristics
     """
+    
+    name = "ensemble_router"
     
     def __init__(
         self,
-        routers: List[Tuple[any, float]],
-        default_task: str = "factual"
+        routers: List[BaseRouter],
+        weights: Optional[List[float]] = None,
+        strategy: str = "weighted_vote",
+        default_task: str = "factual",
+        meta_classifier: Optional[Any] = None  # for stacking
     ):
         """
         Args:
-            routers: List of (router_instance, weight) tuples
-            default_task: Default task when no prediction available
+            routers: List of router instances
+            weights: Corresponding weights (must sum to 1 if given)
+            strategy: 'weighted_vote', 'majority_vote', 'stacking', 'dynamic'
+            default_task: Fallback task
+            meta_classifier: For stacking, a classifier that takes router outputs as features
         """
         self.routers = routers
+        self.strategy = strategy
         self.default_task = default_task
-        self._normalize_weights()
+        self.meta_classifier = meta_classifier
+        
+        # Normalize weights
+        if weights is None:
+            weights = [1.0 / len(routers)] * len(routers)
+        total = sum(weights)
+        self.weights = [w / total for w in weights]
+        
+        # For dynamic strategy, need a selector router (could be a simple rule)
+        self.selector: Optional[BaseRouter] = None
     
-    def _normalize_weights(self):
-        """Normalize router weights to sum to 1."""
-        total = sum(w for _, w in self.routers)
-        if total > 0:
-            self.routers = [(r, w / total) for r, w in self.routers]
+    def set_selector(self, selector: BaseRouter):
+        """Set a router that decides which sub-router to use for each input (dynamic strategy)."""
+        self.selector = selector
+        self.strategy = "dynamic"
     
     def route(self, text: str) -> Tuple[str, Dict[str, float]]:
-        """
-        Route text using weighted ensemble of routers.
-        
-        Args:
-            text: Input text
-            
-        Returns:
-            Tuple of (predicted_task, confidence_scores)
-        """
-        all_scores = {}
-        
-        for router, weight in self.routers:
-            if hasattr(router, 'route'):
-                # Single prediction
-                pred, scores = router.route(text)
-                for task, score in scores.items():
-                    all_scores[task] = all_scores.get(task, 0) + score * weight
-            else:
-                # Simple detect function
-                pred = router.detect(text)
-                all_scores[pred] = all_scores.get(pred, 0) + weight
-        
-        # Find best task
-        best_task = max(all_scores, key=all_scores.get) if all_scores else self.default_task
-        return best_task, all_scores
+        if self.strategy == "weighted_vote":
+            return self._weighted_vote(text)
+        elif self.strategy == "majority_vote":
+            return self._majority_vote(text)
+        elif self.strategy == "stacking":
+            return self._stacking(text)
+        elif self.strategy == "dynamic":
+            return self._dynamic(text)
+        else:
+            raise ValueError(f"Unknown strategy: {self.strategy}")
+    
+    def _weighted_vote(self, text: str) -> Tuple[str, Dict[str, float]]:
+        all_scores = defaultdict(float)
+        for router, weight in zip(self.routers, self.weights):
+            task, scores = router.route(text)
+            for t, score in scores.items():
+                all_scores[t] += score * weight
+        # Normalize to probabilities
+        total = sum(all_scores.values())
+        if total == 0:
+            return self.default_task, {self.default_task: 1.0}
+        probs = {k: v / total for k, v in all_scores.items()}
+        best = max(probs, key=probs.get)
+        return best, probs
+    
+    def _majority_vote(self, text: str) -> Tuple[str, Dict[str, float]]:
+        votes = defaultdict(int)
+        for router in self.routers:
+            task, _ = router.route(text)
+            votes[task] += 1
+        best = max(votes, key=votes.get)
+        # Confidence = fraction of votes
+        confidence = votes[best] / len(self.routers)
+        return best, {best: confidence}
+    
+    def _stacking(self, text: str) -> Tuple[str, Dict[str, float]]:
+        if self.meta_classifier is None:
+            raise ValueError("Meta-classifier not set for stacking strategy.")
+        # Build feature vector: for each router, get probability vector
+        features = []
+        task_set = set()
+        for router in self.routers:
+            task, scores = router.route(text)
+            task_set.update(scores.keys())
+        # Align tasks (use all tasks across all routers)
+        tasks_sorted = sorted(list(task_set))
+        for router in self.routers:
+            _, scores = router.route(text)
+            feat = [scores.get(t, 0.0) for t in tasks_sorted]
+            features.extend(feat)
+        # Meta-classifier predicts
+        pred_idx = self.meta_classifier.predict([features])[0]
+        pred_task = tasks_sorted[pred_idx] if pred_idx < len(tasks_sorted) else self.default_task
+        # Get probabilities if meta-classifier supports it
+        if hasattr(self.meta_classifier, 'predict_proba'):
+            probs = self.meta_classifier.predict_proba([features])[0]
+            scores = {t: probs[i] for i, t in enumerate(tasks_sorted)}
+        else:
+            scores = {pred_task: 1.0}
+        return pred_task, scores
+    
+    def _dynamic(self, text: str) -> Tuple[str, Dict[str, float]]:
+        if self.selector is None:
+            raise ValueError("Selector router not set for dynamic strategy.")
+        selected_idx, _ = self.selector.route(text)  # selects index as string
+        try:
+            idx = int(selected_idx)
+        except ValueError:
+            idx = 0
+        idx = min(max(idx, 0), len(self.routers) - 1)
+        return self.routers[idx].route(text)
+    
+    def can_route(self, text: str) -> bool:
+        return any(r.can_route(text) for r in self.routers)
     
     def get_confidence(self, text: str) -> float:
-        """Get confidence score for the best match."""
-        best_task, scores = self.route(text)
-        total = sum(scores.values())
-        if total == 0:
-            return 0.0
-        return scores[best_task] / total
+        best, scores = self.route(text)
+        return scores.get(best, 0.0)

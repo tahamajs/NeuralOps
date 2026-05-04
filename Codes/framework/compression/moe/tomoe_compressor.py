@@ -6,8 +6,9 @@ Registered as 'tomoe'.
 import torch
 import numpy as np
 from sklearn.cluster import KMeans
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
+import torch.nn as nn
 
 
 class ToMoELinear(nn.Module):

@@ -1,3 +1,2 @@
-"""Core framework primitives."""
-
-__all__ = []
+from .architecture import detect_architecture, get_attention_modules, replace_attention_module
+from .model_wrapper import UnifiedTransformerModel

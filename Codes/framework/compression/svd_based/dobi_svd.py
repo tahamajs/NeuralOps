@@ -4,8 +4,8 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 class DobiSVDLinearLayer(nn.Module):
     def __init__(self, in_features, out_features, bias=True, init_rank_ratio=0.5):

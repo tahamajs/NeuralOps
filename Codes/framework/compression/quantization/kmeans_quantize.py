@@ -3,8 +3,8 @@
 import torch
 import torch.nn as nn
 from sklearn.cluster import KMeans
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 class KMeansLinear(nn.Module):
     """Linear layer with weights replaced by k‑means centroids."""

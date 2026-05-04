@@ -3,9 +3,67 @@ import torch.nn as nn
 import torch.nn.functional as F
 from ..core.base import BaseAttention
 from ..core.registry import ATTENTION_REGISTRY
-from ..attentions.unified_rope import UnifiedRoPE
 from ..ssm.simple_ssm import SimpleSSM    # assumed available
+import torch
+import torch.nn as nn
 
+class UnifiedRoPE(nn.Module):
+    """
+    Unified Rotary Position Embedding (RoPE) that can be applied to any hidden states.
+    Rotates half of the feature dimensions based on position indices.
+    """
+    def __init__(self, dim, max_seq_len=4096, base=10000.0):
+        super().__init__()
+        self.dim = dim
+        self.max_seq_len = max_seq_len
+        self.base = base
+        
+        # Precompute frequency bands: shape (dim//2,)
+        inv_freq = 1.0 / (base ** (torch.arange(0, dim, 2).float() / dim))
+        self.register_buffer("inv_freq", inv_freq)
+        
+        # Precompute cos and sin tables for all positions up to max_seq_len
+        self._build_cache(max_seq_len)
+    
+    def _build_cache(self, seq_len):
+        """Precompute cos and sin for positions 0..seq_len-1."""
+        t = torch.arange(seq_len, device=self.inv_freq.device).float()
+        freqs = torch.einsum("i,j->ij", t, self.inv_freq)          # (seq_len, dim//2)
+        emb = torch.cat((freqs, freqs), dim=-1)                    # (seq_len, dim)
+        self.register_buffer("cos_cached", emb.cos().unsqueeze(0).unsqueeze(2))   # (1, seq_len, 1, dim)
+        self.register_buffer("sin_cached", emb.sin().unsqueeze(0).unsqueeze(2))
+    
+    def forward(self, x, offset=0):
+        """
+        Apply RoPE to input tensor.
+        
+        Args:
+            x: (batch_size, seq_len, hidden_dim)
+            offset: starting position offset (for incremental decoding)
+        Returns:
+            Rotated tensor of same shape.
+        """
+        batch, seq_len, dim = x.shape
+        assert dim == self.dim, f"Expected input dim {self.dim}, got {dim}"
+        
+        if seq_len > self.max_seq_len:
+            self._build_cache(seq_len)
+            self.max_seq_len = seq_len
+        
+        # Get cos and sin for the required positions
+        cos = self.cos_cached[:, offset:offset+seq_len, :, :]   # (1, seq_len, 1, dim)
+        sin = self.sin_cached[:, offset:offset+seq_len, :, :]
+        
+        # Reshape input to separate even and odd channels
+        x_even = x[..., 0::2]
+        x_odd = x[..., 1::2]
+        # Stack to apply rotation: (x_even, x_odd) -> (x_even * cos - x_odd * sin, x_odd * cos + x_even * sin)
+        rotated_even = x_even * cos.squeeze(2)[..., 0::2] - x_odd * sin.squeeze(2)[..., 0::2]
+        rotated_odd = x_odd * cos.squeeze(2)[..., 0::2] + x_even * sin.squeeze(2)[..., 0::2]
+        # Interleave back
+        rotated = torch.stack((rotated_even, rotated_odd), dim=-1).flatten(-2)
+        return rotated
+    
 @ATTENTION_REGISTRY.register("hymba_transx")
 class HymbaTransXBlock(BaseAttention):
     """Unified RoPE, differential attention, and SSM fusion."""

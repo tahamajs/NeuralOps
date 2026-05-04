@@ -3,8 +3,8 @@
 import torch
 import numpy as np
 from sklearn.decomposition import NMF as skNMF
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 @COMPRESSOR_REGISTRY.register("nmf")
 class NMFCompressor(BaseCompressor):

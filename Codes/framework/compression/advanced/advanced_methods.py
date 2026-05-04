@@ -7,9 +7,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 from typing import List, Dict, Tuple
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
-from ..attentions.compressed_attention import CompressedAttentionLayer
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
+from ...attentions.Other_Attentions.compressed_attention import CompressedAttentionLayer
 
 
 @COMPRESSOR_REGISTRY.register("advanced_zero_shot")

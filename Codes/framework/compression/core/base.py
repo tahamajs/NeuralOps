@@ -4,6 +4,7 @@ Base class for all compression methods.
 
 import torch.nn as nn
 from typing import Dict, Any, Tuple, Optional
+from framework.attentions.core.base import BaseAttention   # instead of from ..core.base
 
 
 class BaseCompressor:

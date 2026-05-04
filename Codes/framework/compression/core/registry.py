@@ -6,6 +6,7 @@ Allows plug‑and‑play loading of compressors via a simple key.
 from typing import Dict, Optional, Type
 from .base import BaseCompressor
 
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 class CompressorRegistry:
     """
@@ -71,3 +72,5 @@ class CompressorRegistry:
 
 # Singleton instance used across the framework
 COMPRESSOR_REGISTRY = CompressorRegistry()
+
+__all__ = ["ATTENTION_REGISTRY", "COMPRESSOR_REGISTRY"]
