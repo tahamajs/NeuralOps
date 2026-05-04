@@ -1,16 +1,7 @@
-"""Fix DistilBERT checkpoint LayerNorm naming (beta/gamma -> bias/weight)."""
-
+# framework/utils/layer_norm_fix.py
 import torch.nn as nn
 
-
 def fix_layernorm_naming(model: nn.Module):
-    """
-    Rename LayerNorm parameters from 'beta'/'gamma' to 'bias'/'weight'
-    for compatibility with HuggingFace checkpoints.
-
-    Args:
-        model: PyTorch model to fix (in-place)
-    """
     for module in model.modules():
         if isinstance(module, nn.LayerNorm):
             state = dict(module.named_parameters())

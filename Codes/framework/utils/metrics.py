@@ -1,47 +1,29 @@
-"""
-Metrics computation utilities for classification and regression tasks.
-"""
-
+# framework/utils/metrics.py
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
 from typing import Dict
 
-
 def compute_accuracy(preds: np.ndarray, labels: np.ndarray) -> float:
-    """Compute accuracy."""
     return np.mean(preds == labels)
 
-
 def compute_matthews_corrcoef(preds: np.ndarray, labels: np.ndarray) -> float:
-    """Compute Matthews correlation coefficient."""
     from sklearn.metrics import matthews_corrcoef
     return matthews_corrcoef(labels, preds)
 
-
 def compute_pearson(preds: np.ndarray, labels: np.ndarray) -> float:
-    """Compute Pearson correlation."""
     return pearsonr(preds, labels)[0]
 
-
 def compute_spearman(preds: np.ndarray, labels: np.ndarray) -> float:
-    """Compute Spearman correlation."""
     return spearmanr(preds, labels)[0]
 
-
 def compute_f1(preds: np.ndarray, labels: np.ndarray, average: str = 'weighted') -> float:
-    """Compute F1 score."""
     from sklearn.metrics import f1_score
     return f1_score(labels, preds, average=average, zero_division=0)
 
-
 def compute_precision_recall(preds: np.ndarray, labels: np.ndarray, average: str = 'weighted') -> Dict[str, float]:
-    """Compute precision and recall."""
     from sklearn.metrics import precision_recall_fscore_support
-    precision, recall, _, _ = precision_recall_fscore_support(
-        labels, preds, average=average, zero_division=0
-    )
+    precision, recall, _, _ = precision_recall_fscore_support(labels, preds, average=average, zero_division=0)
     return {'precision': precision, 'recall': recall}
-
 
 def compute_metrics_for_task(
     predictions: np.ndarray,
@@ -49,20 +31,7 @@ def compute_metrics_for_task(
     task_name: str,
     is_regression: bool = False
 ) -> Dict[str, float]:
-    """
-    Compute metrics for a specific GLUE task.
-
-    Args:
-        predictions: Model predictions
-        labels: Ground truth labels
-        task_name: GLUE task name
-        is_regression: Whether task is regression
-
-    Returns:
-        Dictionary of metrics
-    """
     metrics = {}
-
     if is_regression or task_name == 'stsb':
         pred_flat = np.squeeze(predictions)
         labels_flat = np.squeeze(labels)
@@ -70,18 +39,12 @@ def compute_metrics_for_task(
         metrics['spearman'] = compute_spearman(pred_flat, labels_flat)
         metrics['pearson_spearman'] = (metrics['pearson'] + metrics['spearman']) / 2
     else:
-        if predictions.ndim > 1:
-            preds = np.argmax(predictions, axis=-1)
-        else:
-            preds = predictions
-
+        preds = np.argmax(predictions, axis=-1) if predictions.ndim > 1 else predictions
         metrics['accuracy'] = compute_accuracy(preds, labels)
         metrics['f1_macro'] = compute_f1(preds, labels, average='macro')
         metrics['f1_weighted'] = compute_f1(preds, labels, average='weighted')
-
         if task_name == 'cola':
             metrics['matthews_correlation'] = compute_matthews_corrcoef(preds, labels)
-        if task_name in ['mrpc', 'qqp']:
+        if task_name in ('mrpc', 'qqp'):
             metrics['f1'] = compute_f1(preds, labels, average='binary')
-
     return metrics
