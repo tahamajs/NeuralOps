@@ -1,5 +1,4 @@
-"""Central registry for attention injection functions."""
-
+# framework/attentions/core/registry.py
 class Registry:
     def __init__(self, name):
         self.name = name
@@ -20,4 +19,9 @@ class Registry:
     def keys(self):
         return list(self._dict.keys())
 
+    def __contains__(self, key):
+        return key in self._dict
+
+
 ATTENTION_REGISTRY = Registry("attentions")
+AUX_REGISTRY = Registry("auxiliary")   # <-- for RoPE, SSM, DeltaNet, etc.
