@@ -1,30 +1,41 @@
 # 🏋️ Training Module
 
-The training module provides a **unified interface** for training Transformer models with the Efficient Transformer Toolkit.  
-It supports **standard HuggingFace Trainer**, **custom training loops**, **Unsloth‑accelerated training**, and **Reinforcement Learning (via TRL)**.  
-All runs are automatically saved into organized, timestamped directories under `results/`.
+The training module provides a **unified, extensible interface** for training Transformer models with the Efficient Transformer Toolkit.  
+It supports standard Hugging Face `Trainer`, Unsloth‑accelerated training, Reinforcement Learning (via TRL), and custom training loops – all with automatic result logging and versioning.
+
+## ✨ Features
+
+- **Registry‑based trainer selection** – add new trainers without modifying the factory.
+- **Automatic result management** – timestamped directories, config saves, metrics (JSONL), logs, final model, training plots.
+- **Callbacks** – memory usage, elapsed time, gradient norms, SVD attention stats.
+- **Hyperparameter optimization** – Optuna integration with pruning and visualisations.
+- **GLUE metrics** – ready‑to‑use accuracy, F1, Matthews corr., Pearson/Spearman.
+- **Lazy imports** – optional dependencies (`unsloth`, `trl`, `optuna`) are imported only when needed.
 
 ## 📁 Structure
 
 ```
 framework/training/
-├── __init__.py
-├── trainer.py              # SVDAwareTrainer (with SVD‑specific callbacks)
-├── callbacks.py            # Memory, Time, GradientNorm, SVDAttention callbacks
-├── hyperopt.py             # Optuna‑based hyperparameter optimization
-├── metrics.py              # Per‑GLUE‑task metric functions
-├── utils.py                # Custom training loop, evaluation, benchmarks
-├── results_manager.py      # Manages per‑run directories, logging, saving
-├── trainer_factory.py      # Factory to select trainer (HF, Unsloth, RL)
-└── README.md               # This file
+├── __init__.py              # public API
+├── base_trainer.py          # abstract base class
+├── registry.py              # trainer registry
+├── trainer_factory.py       # factory using registry
+├── hf_trainer.py            # Hugging Face Trainer
+├── unsloth_trainer.py       # Unsloth‑accelerated
+├── rl_trainer.py            # TRL PPO
+├── custom_loop_trainer.py   # custom PyTorch loop
+├── trainer.py               # SVDAwareTrainer (extends HF)
+├── callbacks.py             # Memory, Time, GradientNorm, SVDAttention
+├── metrics.py               # per‑GLUE metrics
+├── utils.py                 # custom training/evaluation/benchmark
+├── results_manager.py       # directory & logging management
+└── hyperopt.py              # Optuna hyperparameter optimisation
 ```
 
 ## 🚀 Quick Start
 
-### 1. Using the Trainer Factory
-
 ```python
-from framework.training import get_trainer, ResultsManager
+from framework.training import get_trainer
 
 config = {
     "experiment_name": "mrpc_aurora",
@@ -32,15 +43,22 @@ config = {
     "batch_size": 16,
     "epochs": 3,
 }
+
 trainer, results_mgr = get_trainer(
-    model, train_dataset, eval_dataset,
+    model=model,
+    train_dataset=train_dataset,
+    eval_dataset=eval_dataset,
     config=config,
-    compute_metrics=compute_metrics_fn
+    trainer_type="hf",           # "hf", "unsloth", "trl", "custom_loop"
+    device=device,
+    num_labels=2,
+    compute_metrics=my_metrics_fn,
 )
+
 trainer.train()
 ```
 
-After training, you'll find everything in `results/mrpc_aurora_<timestamp>/`:
+All outputs go to `results/mrpc_aurora_<timestamp>/`:
 - `config.yaml`
 - `metrics.jsonl`
 - `training_history.png`
@@ -48,89 +66,66 @@ After training, you'll find everything in `results/mrpc_aurora_<timestamp>/`:
 - `logs/`
 - `final_model/`
 
-### 2. Using a Custom Training Loop
+## 🧩 Trainer Types
 
-```python
-from framework.training.utils import train_model
+| `trainer_type` | Backend | Dependencies | Use Case |
+|----------------|---------|--------------|----------|
+| `"hf"` (default) | Hugging Face `Trainer` + `SVDAwareTrainer` | `transformers` | General purpose |
+| `"unsloth"` | Unsloth `FastLanguageModel` + `Trainer` | `unsloth` | Faster training on consumer GPUs |
+| `"trl"` | TRL `PPOTrainer` | `trl` | Reinforcement Learning from Human Feedback |
+| `"custom_loop"` | Pure PyTorch loop | none | Full control, debugging |
 
-results = train_model(model, train_loader, val_loader, device, config, num_labels)
-```
-
-### 3. With Unsloth
-
-Set `use_unsloth=True` in the config passed to `get_trainer`. Unsloth must be installed.
-
-### 4. With Reinforcement Learning (TRL)
-
-Set `use_rl=True` and provide a `tokenizer`. TRL must be installed.
-
-## 🧩 Components
-
-### ResultsManager
-
-Handles the creation of a unique run directory and saving of:
-- **Configuration** (`config.yaml`)
-- **Metrics** (`metrics.jsonl`, one JSON per line)
-- **Training curves** (`training_history.png`)
-- **Model checkpoints** (HuggingFace Trainer saves them; the manager stores the final model separately)
-- **Logs** (console + file)
-
-### Callbacks
-
-- `MemoryCallback` – logs GPU/CPU memory usage
-- `TimeCallback` – logs elapsed time
-- `GradientNormCallback` – logs gradient norms every N steps
-- `SVDAttentionCallback` – monitors SVD‑compressed layers
-
-Callbacks are automatically attached by the factory.
-
-### Hyperparameter Optimization
+## 📈 Hyperparameter Optimisation
 
 ```python
 from framework.training import HyperparameterOptimizer
 
+config_template = {...}
 optimizer = HyperparameterOptimizer(train_fn, eval_fn, config_template)
 best_params = optimizer.run(n_trials=20)
 ```
 
-### Metrics
+## 🔧 Custom Callbacks
+
+All provided callbacks are automatically attached by `ResultsManager.wrap_trainer()`.  
+You can add your own:
+
+```python
+from transformers.trainer_callback import TrainerCallback
+
+class MyCallback(TrainerCallback):
+    def on_step_end(self, args, state, control, **kwargs):
+        # custom logic
+        pass
+
+trainer.add_callback(MyCallback())
+```
+
+## 📊 Metrics
+
+Use `get_task_metrics(task_name)` to obtain the correct metric function for a GLUE task:
 
 ```python
 from framework.training import get_task_metrics
 
-compute_metrics_fn = get_task_metrics("mrpc")
-# Use with Trainer as `compute_metrics=compute_metrics_fn`
+compute_metrics = get_task_metrics("mrpc")  # returns {'accuracy', 'f1'}
 ```
 
-## 📊 Run Directory Structure
+## 🧪 Testing
 
-```
-results/
-  mrpc_aurora_2026-05-03_10-38-19/
-    config.yaml
-    metrics.jsonl
-    training_history.png
-    checkpoints/
-      checkpoint-100/
-      checkpoint-200/
-    logs/
-      run.log
-    final_model/
-      config.json
-      pytorch_model.bin
-      tokenizer_config.json
-      ...
+Run the training module with a small dataset to verify everything works:
+
+```bash
+python -c "from framework.training import get_trainer; print('OK')"
 ```
 
-## 🔧 Customization
+## 🤝 Extending
 
-- To add a new trainer, extend the `trainer_factory.py` with your own logic.
-- The `ResultsManager` can be used standalone to log metrics from any training loop.
+1. Create a new class inheriting from `BaseTrainer`.
+2. Decorate it with `@TrainerRegistry.register("my_trainer")`.
+3. Implement `train()` and `evaluate()`.
+4. The factory `get_trainer(trainer_type="my_trainer")` will now work.
 
-## 📜 License
+## 📄 License
 
 Part of the **Efficient Transformer Toolkit** – MIT License.
-
----
-
-*Train, log, and visualize – all in one place.*
