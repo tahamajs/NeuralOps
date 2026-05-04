@@ -1,4 +1,4 @@
-"""Layer‑wise Learning Rate Decay (LLRD)."""
+# framework/trainer/methods/llrd.py
 import logging
 from .registry import register_method
 
@@ -54,13 +54,8 @@ def get_llrd_param_groups(model, base_lr, weight_decay, decay):
         groups.append({"params": head_decay, "lr": base_lr, "weight_decay": weight_decay})
     if head_nodecay:
         groups.append({"params": head_nodecay, "lr": base_lr, "weight_decay": 0.0})
-
     return groups
-
 
 @register_method("llrd")
 def apply_llrd(model, config):
-    """LLRD does not modify the model; the param groups are used by the trainer."""
-    # The actual application happens in main.py when building the optimizer.
-    # This function is just a placeholder to confirm the method exists.
     logger.info("LLRD registered. Use --method llrd to enable layer‑wise learning rates.")
