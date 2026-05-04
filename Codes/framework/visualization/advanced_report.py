@@ -1,16 +1,8 @@
-"""
-Advanced interactive HTML report using Plotly dashboards.
-Requires plotly.
-"""
-
+# framework/visualization/advanced_report.py
 import os
-import json
 import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
 import pandas as pd
 from datetime import datetime
-
 
 class AdvancedReportGenerator:
     def __init__(self, output_dir: str):
@@ -42,10 +34,7 @@ class AdvancedReportGenerator:
 <html>
 <head><title>SVD-Lin Report</title>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<style>
-    body {{ font-family: Arial; margin: 20px; }}
-    .plot {{ margin: 20px 0; }}
-</style>
+<style> body {{ font-family: Arial; margin: 20px; }} .plot {{ margin: 20px 0; }} </style>
 </head>
 <body>
 <h1>Comprehensive Analysis Report</h1>

@@ -1,14 +1,9 @@
-"""
-Base classes and registry for visualizers.
-"""
-
+# framework/visualization/base.py
 import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-
 class Registry:
-    """Simple registry for visualizers."""
     def __init__(self, name: str):
         self.name = name
         self._dict: Dict[str, Any] = {}
@@ -31,27 +26,18 @@ class Registry:
     def __contains__(self, key: str) -> bool:
         return key in self._dict
 
-
 VISUALIZER_REGISTRY = Registry("visualizers")
 
-
 class BaseVisualizer(ABC):
-    """
-    Base class for all visualizers.
-    Subclasses must implement `generate()`.
-    """
-
     def __init__(self, output_dir: str = "visualizations"):
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
     @abstractmethod
     def generate(self, *args, **kwargs):
-        """Generate visualizations."""
         pass
 
     def _save_figure(self, fig, filename: str, dpi: int = 150, bbox_inches: str = "tight") -> str:
-        """Save a matplotlib figure and close it."""
         import matplotlib.pyplot as plt
         path = os.path.join(self.output_dir, filename)
         fig.savefig(path, dpi=dpi, bbox_inches=bbox_inches)
