@@ -14,6 +14,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('', include('web_dashboard.urls')),
+    path('api/', include('jobscheduler.urls')),
+path('api/', include('notes.urls')),
     path('api/', include('api.urls')),
     path('.well-known/appspecific/com.chrome.devtools.json', lambda request: HttpResponse(status=204)),
 
