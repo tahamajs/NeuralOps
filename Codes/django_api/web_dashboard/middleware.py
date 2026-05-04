@@ -1,44 +1,39 @@
+# web_dashboard/middleware.py
+from django.shortcuts import redirect
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import AnonymousUser
-from django.shortcuts import redirect
 
 class TokenAuthMiddleware:
+    """Authenticate user from authToken cookie (for page views, not API)."""
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Skip login, register, static, and API endpoints
-        skip_paths = ('/login', '/register', '/static', '/api/')
+        # Skip authentication for login, register, static, API endpoints
+        skip_paths = ('/login/', '/register/', '/static/', '/api/', '/.well-known/')
         if request.path.startswith(skip_paths):
             return self.get_response(request)
 
-        # Try to get token from cookie
         token_key = request.COOKIES.get('authToken')
         if token_key:
             try:
                 token = Token.objects.get(key=token_key)
                 request.user = token.user
             except Token.DoesNotExist:
+                # Not authenticated, redirect to login
                 return redirect(f'/login/?next={request.path}')
         else:
             return redirect(f'/login/?next={request.path}')
 
         return self.get_response(request)
-    
-
-
-
-
-
-
-from django.http import HttpResponse
 
 class WellKnownIgnoreMiddleware:
+    """Return 204 for .well-known requests (e.g., browser devtools)."""
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         if request.path.startswith('/.well-known/'):
-            # Return 204 No Content – browser will stop retrying
+            from django.http import HttpResponse
             return HttpResponse(status=204)
         return self.get_response(request)
