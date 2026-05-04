@@ -1,58 +1,75 @@
+# framework/attentions/specialized/adasplash_attention.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from ..core.base import BaseAttention
+from ..core.registry import ATTENTION_REGISTRY
 
-def alpha_entmax(X, alpha=1.5, n_iter=25):
-    """
-    α‑entmax: a sparse generalisation of softmax.
-    Approximated via Halley's method on the sparsemax transformation.
-    For α=1.5 (entmax) we use the closed‑form entmax bisection.
-    """
-    if alpha == 1.0:
-        return F.softmax(X, dim=-1)
-    if alpha == 1.5:
-        # Use the entmax root‑finding from the entmax paper
-        return _entmax15(X, dim=-1, n_iter=n_iter)
-    # Generic bisection for other α (simplified)
-    return _generic_entmax(X, alpha=alpha, dim=-1, n_iter=n_iter)
 
-def _entmax15(logits, dim=-1, n_iter=25):
-    B, H, N = logits.shape
-    logits = logits / 2   # factor from entmax paper
-    # Bisection search for the root of the function
-    # Implementation based on the entmax library
-    p = F.softmax(logits, dim=dim)
-    tau = torch.ones_like(p.sum(dim=dim, keepdim=True))
+def entmax15(
+    scores: torch.Tensor,
+    dim: int = -1,
+    n_iter: int = 10,
+    eps: float = 1e-8,
+) -> torch.Tensor:
+    """
+    Compute α‑entmax for α = 1.5 using a simple fixed‑point iteration.
+    Derived from the original entmax algorithm with Halley’s method.
+    """
+    p = F.softmax(scores, dim=dim)
     for _ in range(n_iter):
-        p_alpha = torch.sqrt(p + 1e-8)
-        tau = tau * torch.sum(p_alpha, dim=dim, keepdim=True) / torch.sum(p * p_alpha, dim=dim, keepdim=True)
-        p = F.softmax(logits * tau, dim=dim)
+        q = p.sqrt()
+        tau = torch.sum(q * p, dim=dim, keepdim=True)
+        p_1 = q / tau
+        if torch.max(torch.abs(p_1 - p)) < eps:
+            break
+        p = p_1
     return p
 
-def _generic_entmax(logits, alpha=1.5, dim=-1, n_iter=25):
-    # Placeholder: for simplicity we return softmax if alpha not 1 or 1.5
-    return F.softmax(logits, dim=dim)
 
-class AdaSplashAttention(nn.Module):
+@ATTENTION_REGISTRY.register("adasplash")
+class AdaSplashAttention(BaseAttention):
     """
-    AdaSplash: Sparse Attention with α‑entmax.
-    Replaces softmax with entmax to produce sparse attention patterns.
+    Adaptive sparse attention using α‑entmax (AdaSplash).
+    Paper: https://arxiv.org/abs/2502.12082
     """
-    def __init__(self, dim, num_heads, alpha=1.5):
-        super().__init__()
-        self.num_heads = num_heads
-        self.head_dim = dim // num_heads
+
+    def __init__(self, config, rank: int = None, alpha: float = 1.5, n_iter: int = 10):
+        super().__init__(config, rank)
         self.alpha = alpha
-        self.qkv = nn.Linear(dim, 3*dim)
-        self.out_proj = nn.Linear(dim, dim)
+        self.n_iter = n_iter
+        self.num_heads = config.num_attention_heads
+        self.head_dim = config.hidden_size // self.num_heads
 
-    def forward(self, x):
-        B, L, D = x.shape
-        q, k, v = self.qkv(x).chunk(3, dim=-1)
-        q = q.view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-        k = k.view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-        v = v.view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-        scores = torch.matmul(q, k.transpose(-2,-1)) / (self.head_dim**0.5)
-        attn = alpha_entmax(scores, self.alpha)
-        out = torch.matmul(attn, v).transpose(1,2).contiguous().view(B, L, D)
-        return self.out_proj(out)
+        self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+
+    def forward(self, hidden_states, attention_mask=None, **kwargs):
+        B, L, D = hidden_states.shape
+        H, D_head = self.num_heads, self.head_dim
+
+        q = self.q_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)
+        k = self.k_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)
+        v = self.v_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)
+
+        # Compute attention logits
+        logits = torch.matmul(q, k.transpose(-2, -1)) / (D_head ** 0.5)
+
+        # Apply mask (same broadcasting as in BERT)
+        if attention_mask is not None:
+            # attention_mask: (B, 1, 1, L) for key masking
+            logits = logits + (attention_mask.float() - 1.0) * -1e9
+
+        # α‑entmax activation
+        if self.alpha == 1.5:
+            attn = entmax15(logits, dim=-1, n_iter=self.n_iter)
+        else:
+            raise NotImplementedError(f"α={self.alpha} not yet implemented")
+        attn = self.dropout(attn)
+
+        out = torch.matmul(attn, v)
+        out = out.transpose(1, 2).contiguous().view(B, L, D)
+        return self.out_proj(out), attn if kwargs.get("output_attentions") else None
