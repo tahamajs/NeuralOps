@@ -315,3 +315,37 @@ def replace_model_attention(config: Dict[str, Any], model) -> Any:
     wrapper = UnifiedTransformerModel(model)
     wrapper.replace_attention(attention_type, rank=config.get("rank", 128))
     return wrapper.model
+
+
+
+# framework/experiment.py
+import os
+import sys
+
+def run_training(config, preempt_callback=None, **callbacks):
+    """
+    Run training with preemption support.
+    """
+    # ... existing setup code ...
+
+    # Define a hook that the trainer calls periodically (e.g., after each batch)
+    def preemption_hook():
+        if preempt_callback:
+            preempt_callback()
+        # Additional logic: check for file flag
+        job_id = config.get('job_id')
+        if job_id and os.path.exists(f"/tmp/preempt_flags/{job_id}"):
+            print("Preemption requested, saving checkpoint...")
+            trainer.save_model(config['output_dir'])
+            sys.exit(0)
+
+    # Integrate into training loop
+    # For Hugging Face Trainer, we can add a callback
+    from transformers import TrainerCallback
+
+    class PreemptionCallback(TrainerCallback):
+        def on_step_end(self, args, state, control, **kwargs):
+            preemption_hook()
+
+    # Add to trainer callbacks
+    # ... rest of training ...
