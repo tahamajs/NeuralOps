@@ -1,2 +1,2 @@
-from .cur_moe import CURMoECompressor
+from .cure import CURMoECompressor
 from .tomoe_compressor import ToMoECompressor

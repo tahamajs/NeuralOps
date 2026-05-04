@@ -3,8 +3,8 @@
 import torch
 import numpy as np
 from sklearn.decomposition import randomized_svd
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 @COMPRESSOR_REGISTRY.register("gregodec")
 class GreGoDecCompressor(BaseCompressor):

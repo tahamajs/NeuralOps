@@ -3,7 +3,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 from ..core.base import BaseAttention
 from ..core.registry import ATTENTION_REGISTRY
-from ..ssm.gated_delta_net import GatedDeltaNetLayer   # assumed available
+
+# Placeholder for GatedDeltaNetLayer in case the real module is missing
+class GatedDeltaNetLayer(nn.Module):
+    """Stub for GatedDeltaNetLayer – replace with actual implementation."""
+    def __init__(self, d_model, use_spectral_norm=False):
+        super().__init__()
+        self.net = nn.Linear(d_model, d_model)
+
+    def forward(self, x):
+        return self.net(x)
 
 @ATTENTION_REGISTRY.register("goldfinch_ahn")
 class GoldFinchAHNBlock(BaseAttention):

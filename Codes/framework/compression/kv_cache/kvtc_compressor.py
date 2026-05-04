@@ -10,8 +10,8 @@ Registered as 'kvtc'.
 import torch
 import torch.nn as nn
 import numpy as np
-from .core.base import BaseCompressor
-from .core.registry import COMPRESSOR_REGISTRY
+from ..core.base import BaseCompressor
+from ..core.registry import COMPRESSOR_REGISTRY
 
 
 class SimpleEntropyCoder:

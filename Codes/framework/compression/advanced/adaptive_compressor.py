@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from ..attentions.compressed_attention import CompressedAttentionLayer
+from ...attentions.Other_Attentions.compressed_attention import CompressedAttentionLayer
 
 class AdaptiveTransformerCompressor:
     def __init__(self, energy_threshold: float = 0.95, min_rank: int = 16):
