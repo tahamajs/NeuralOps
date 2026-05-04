@@ -3,7 +3,15 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Experiment Monitor – Transformer Pro</title>
+    <!-- Bootstrap + Icons + Chart.js + Plotly + xterm -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, monospace; padding: 20px; margin: 0; }
@@ -54,10 +62,6 @@
         .collapsible-content { display: none; margin-top: 16px; }
         .fa-chevron-down, .fa-chevron-up { transition: transform 0.2s; }
     </style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 <div class="container">
@@ -77,7 +81,7 @@
         </div>
     </div>
 
-    <!-- Configuration Panel (always visible, collapsible) -->
+    <!-- Configuration Panel (collapsible) -->
     <div class="card">
         <div class="collapsible-header" onclick="toggleConfigPanel()">
             <h3><i class="fas fa-sliders-h me-2"></i>Training Configuration</h3>
@@ -113,7 +117,7 @@
         </div>
     </div>
 
-    <!-- Monitoring section (only visible when a run exists) -->
+    <!-- Monitoring section (only if run exists) -->
     <div id="monitoringSection" style="{% if not run %}display: none;{% endif %}">
         <div class="dashboard-grid">
             <div class="main-charts">
@@ -137,185 +141,75 @@
 
         <div class="card"><h3>📜 Live Logs</h3><div id="log-area" class="log-area">{% if run %}{{ run.logs|default:"Waiting for logs..." }}{% else %}Select a job to view logs{% endif %}</div></div>
 
+        <!-- Final Metrics -->
         <div class="card">
             <h3>📊 Final Metrics</h3>
             <div id="final-metrics" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px,1fr));"></div>
         </div>
-        <div class="card mt-3">
-    <h3>📌 Code & Data Versioning</h3>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="stat-card">
-                <div class="stat-label">Git Commit</div>
-                <div class="stat-value" style="font-size: 0.9rem;">
-                    <a href="{{ git_repository }}/commit/{{ git_commit_hash }}" target="_blank">
-                        {{ git_commit_hash|slice:":8" }}
-                    </a>
+
+        <!-- Code & Data Versioning Panel -->
+        <div class="card">
+            <h3>📌 Code & Data Versioning</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-label">Git Commit</div>
+                        <div class="stat-value" style="font-size: 0.9rem;" id="gitCommit">—</div>
+                        <div class="small text-secondary" id="gitBranch">—</div>
+                        <div id="gitDirty" class="badge bg-warning text-dark mt-1" style="display:none;">⚠️ Uncommitted changes</div>
+                    </div>
                 </div>
-                <div class="small text-secondary">Branch: {{ git_branch }}</div>
-                {% if git_dirty %}
-                    <span class="badge bg-warning text-dark mt-1">⚠️ Uncommitted changes</span>
-                {% endif %}
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="stat-card">
-                <div class="stat-label">Data Version</div>
-                <div class="stat-value" style="font-size: 0.9rem;">
-                    <a href="{{ data_repository }}/commit/{{ data_git_commit_id }}" target="_blank">
-                        {{ data_git_commit_id|slice:":8"|default:"Not versioned" }}
-                    </a>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-label">Data Version (DVC)</div>
+                        <div class="stat-value" style="font-size: 0.9rem;" id="dataCommit">—</div>
+                        <div class="small text-secondary" id="dvcHash">—</div>
+                    </div>
                 </div>
-                <div class="small text-secondary">DVC hash: {{ dvc_data_hash|default:"—" }}</div>
+            </div>
+            <div class="mt-2">
+                <button id="captureEnvBtn" class="btn btn-sm btn-outline-secondary"><i class="fas fa-box"></i> Capture Environment</button>
+                <pre id="envDetails" style="display: none; margin-top: 10px;" class="bg-dark p-2 rounded small"></pre>
             </div>
         </div>
-    </div>
-    <div class="mt-2">
-        <button id="captureEnvBtn" class="btn btn-sm btn-outline-secondary">📦 Capture Environment</button>
-        <pre id="envDetails" style="display: none; margin-top: 10px;" class="bg-dark p-2 rounded small"></pre>
-    </div>
-</div>
 
-<script>
-document.getElementById('captureEnvBtn').onclick = async () => {
-    const response = await fetch(`/api/runs/${runId}/environment/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    const env = await response.json();
-    const pre = document.getElementById('envDetails');
-    pre.style.display = 'block';
-    pre.textContent = JSON.stringify(env, null, 2);
-};
-</script>
-<!-- templates/web_dashboard/components/metrics_dashboard.html -->
-<div class="card mt-3">
-    <h3>📊 Custom Metrics</h3>
-    <div class="row">
-        <div class="col-md-3">
-            <label>Select Metrics:</label>
-            <select id="metricSelector" multiple class="form-control"></select>
-            <button id="refreshMetricsBtn" class="btn btn-sm btn-primary mt-2">Update Chart</button>
-        </div>
-        <div class="col-md-9">
-            <div id="scalarChart" style="height: 400px;"></div>
-            <div id="imageGallery" class="row mt-4"></div>
-            <div id="tableView" class="table-responsive mt-4"></div>
-        </div>
-    </div>
-</div>
-
-<script>
-// This script fetches metrics and renders them using Plotly.js
-async function loadMetrics(runId) {
-    const response = await fetch(`/api/runs/${runId}/metrics/`, {
-        headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
-    });
-    const metrics = await response.json();
-    
-    // Populate selector and charts
-    const selector = document.getElementById('metricSelector');
-    selector.innerHTML = Object.keys(metrics).map(name => 
-        `<option value="${name}">${name}</option>`
-    ).join('');
-    
-    // Update plotly chart with selected scalar metrics
-    // (implementation details omitted for brevity)
-}
-</script>
-
-
-
-
-
-
-<div class="card mt-3">
-    <h3>⚙️ Configuration History</h3>
-    <div class="row">
-        <div class="col-md-5">
-            <select id="configVersionA" class="form-select"></select>
-        </div>
-        <div class="col-md-2 text-center">vs</div>
-        <div class="col-md-5">
-            <select id="configVersionB" class="form-select"></select>
-        </div>
-    </div>
-    <button id="compareConfigsBtn" class="btn btn-sm btn-primary mt-2">Compare Versions</button>
-    <div id="configDiffViewer" class="mt-3" style="max-height: 400px; overflow-y: auto;"></div>
-</div>
-
-<script>
-document.getElementById('compareConfigsBtn').onclick = async () => {
-    const vA = document.getElementById('configVersionA').value;
-    const vB = document.getElementById('configVersionB').value;
-    const response = await fetch(`/api/runs/${runId}/config/compare/${vA}/${vB}/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    const diff = await response.json();
-    const viewer = document.getElementById('configDiffViewer');
-    viewer.innerHTML = renderDiff(diff);  // a function that formats the diff
-};
-</script>
-
-
-
-
-
-
-<div class="card mt-3">
-    <h3>📌 Code & Data Versioning</h3>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="stat-card">
-                <div class="stat-label">Git Commit</div>
-                <a href="{{ git_repository }}/commit/{{ git_commit_hash }}" target="_blank">
-                    {{ git_commit_hash|slice:":8" }}
-                </a>
-                <div class="small">Branch: {{ git_branch }}</div>
-                {% if git_dirty %}
-                    <span class="badge bg-warning text-dark mt-1">⚠️ Uncommitted changes</span>
-                {% endif %}
+        <!-- Custom Metrics Dashboard (Plotly) -->
+        <div class="card">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h3><i class="fas fa-chart-line me-2"></i>Custom Metrics</h3>
+                <div>
+                    <button id="metricsAutoRefreshToggle" class="btn btn-sm btn-outline-secondary me-1">Auto</button>
+                    <button id="metricsForceRefreshBtn" class="btn btn-sm btn-primary">Refresh Now</button>
+                </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="stat-card">
-                <div class="stat-label">Data Version</div>
-                <code>{{ data_git_commit_id|slice:":8"|default:"—" }}</code>
-                <div class="small">DVC hash: {{ dvc_data_hash|default:"—" }}</div>
+            <div class="row mt-2">
+                <div class="col-md-3">
+                    <label class="form-label small">Select scalars:</label>
+                    <select id="metricSelector" multiple class="form-select form-select-sm bg-dark" size="6"></select>
+                    <button id="plotSelectedBtn" class="btn btn-sm btn-primary w-100 mt-2">Update Chart</button>
+                </div>
+                <div class="col-md-9">
+                    <div id="scalarChart" style="height: 380px; background: #0f172a; border-radius: 16px;"></div>
+                </div>
             </div>
+            <div class="mt-4"><h6>📸 Logged Images</h6><div id="imageGallery" class="row g-3"></div></div>
+            <div class="mt-4"><h6>📋 Logged Tables</h6><div id="tableView" class="table-responsive"></div></div>
+            <div id="metricsStatus" class="small text-secondary mt-2 text-center"></div>
         </div>
-    </div>
-    <button id="captureEnvBtn" class="btn btn-sm btn-outline-secondary mt-2">📦 Capture Environment</button>
-    <pre id="envDetails" style="display: none;" class="bg-dark p-2 rounded small mt-2"></pre>
-</div>
 
-<script>
-document.getElementById('captureEnvBtn').onclick = async () => {
-    const response = await fetch(`/api/runs/${runId}/environment/`, {
-        headers: { 'Authorization': `Token ${authToken}` }
-    });
-    const env = await response.json();
-    document.getElementById('envDetails').style.display = 'block';
-    document.getElementById('envDetails').textContent = JSON.stringify(env, null, 2);
-};
-</script>
-<div class="card mt-3">
-    <h3>⚙️ Configuration History</h3>
-    <div class="row">
-        <div class="col-md-6">
-            <select id="configVersionA" class="form-select">
-                <!-- Populated with version numbers -->
-            </select>
+        <!-- Configuration History & Diff Viewer -->
+        <div class="card">
+            <h3>⚙️ Configuration History</h3>
+            <div class="row">
+                <div class="col-md-5"><select id="configVersionA" class="form-select"></select></div>
+                <div class="col-md-2 text-center">vs</div>
+                <div class="col-md-5"><select id="configVersionB" class="form-select"></select></div>
+            </div>
+            <button id="compareConfigsBtn" class="btn btn-sm btn-primary mt-2">Compare Versions</button>
+            <div id="configDiffViewer" class="mt-3" style="max-height: 400px; overflow-y: auto; background:#0f172a; border-radius:12px; padding:12px; font-family:monospace; font-size:0.8rem;"></div>
         </div>
-        <div class="col-md-6">
-            <select id="configVersionB" class="form-select">
-                <!-- Populated with version numbers -->
-            </select>
-        </div>
-    </div>
-    <button id="compareConfigsBtn" class="btn btn-sm btn-primary mt-2">Compare Versions</button>
-    <div id="configDiffViewer" class="mt-3" style="max-height: 400px; overflow-y: auto;"></div>
-</div>
 
+        <!-- Training Analytics & Convergence Warning -->
         <div class="card">
             <h3>📈 Training Analytics</h3>
             <div id="analytics-content" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
@@ -328,16 +222,17 @@ document.getElementById('captureEnvBtn').onclick = async () => {
                 <div class="stat-card"><div class="stat-label">Best Eval Metric</div><div class="stat-value" id="best_eval">--</div></div>
                 <div class="stat-card"><div class="stat-label">Epochs</div><div class="stat-value" id="epochs_done">--</div></div>
             </div>
-            <div id="convergence-warning">⚠️ Loss has not decreased for the last 50 steps. Consider early stopping.</div>
+            <div id="convergence-warning" class="text-warning text-center mt-2 p-2 rounded" style="background:#f59e0b20; display:none;">⚠️ Loss has not decreased for the last 50 steps. Consider early stopping.</div>
         </div>
 
+        <!-- Artifacts & Downloads -->
         <div class="card">
             <h3>📁 Artifacts & Downloads</h3>
             <div id="artifacts-list" class="list-group" style="background:transparent;"></div>
             <div class="button-group" style="margin-top: 12px;">
-                <a id="download-model-btn" class="btn-download" style="background:#10b981;"><i class="fas fa-download"></i> Download Model</a>
-                <a id="download-config-btn" class="btn-download" style="background:#3b82f6;"><i class="fas fa-download"></i> Config JSON</a>
-                <a id="download-metrics-btn" class="btn-download" style="background:#8b5cf6;"><i class="fas fa-download"></i> Metrics JSON</a>
+                <a id="download-model-btn" class="btn-download" style="background:#10b981;">🤖 Download Model</a>
+                <a id="download-config-btn" class="btn-download" style="background:#3b82f6;">📄 Config JSON</a>
+                <a id="download-metrics-btn" class="btn-download" style="background:#8b5cf6;">📊 Metrics JSON</a>
             </div>
         </div>
     </div>
@@ -345,19 +240,12 @@ document.getElementById('captureEnvBtn').onclick = async () => {
 
 <!-- Evaluation Modal -->
 <div id="evalModal" class="modal" style="display:none;">
-    <div class="modal-content">
-        <h3>📊 Evaluation Results</h3>
-        <div id="evalResults" style="margin:15px 0; font-family:monospace;"></div>
-        <button onclick="closeEvalModal()" style="background:#3b82f6;">Close</button>
-    </div>
+    <div class="modal-content"><h3>📊 Evaluation Results</h3><div id="evalResults" style="margin:15px 0;"></div><button onclick="closeEvalModal()">Close</button></div>
 </div>
 
 <!-- PDF Preview Modal -->
 <div id="pdfModal" class="modal" style="display:none;">
-    <div style="position:relative; width:100%; height:100%;">
-        <button onclick="closePdfModal()" style="position:absolute; top:20px; right:30px; background:#ef4444; color:white; border:none; border-radius:50%; width:40px; height:40px;">✕</button>
-        <iframe id="pdfIframe" src="" style="width:100%; height:100%; border:none;"></iframe>
-    </div>
+    <div style="position:relative; width:100%; height:100%;"><button onclick="closePdfModal()" style="position:absolute; top:20px; right:30px; background:#ef4444; border-radius:50%; width:40px; height:40px;">✕</button><iframe id="pdfIframe" src="" style="width:100%; height:100%; border:none;"></iframe></div>
 </div>
 
 <script>
@@ -365,13 +253,14 @@ document.getElementById('captureEnvBtn').onclick = async () => {
     const authToken = localStorage.getItem('authToken');
     if (!authToken) window.location.href = '/login/';
 
-    let lossChart, evalChart;
-    let trainSteps = [], trainLosses = [];
-    let evalSteps = [], evalLosses = [], evalAccuracies = [];
+    let lossChart, evalChart, scalarChart = null;
+    let trainSteps = [], trainLosses = [], evalSteps = [], evalLosses = [], evalAccuracies = [];
     let startTime = Date.now(), startTimeSet = false, lastStep = 0;
     let ws = null, termWs = null, term = null;
+    let metricsAutoRefresh = true, metricsInterval = null;
+    let currentMetricsData = null;
 
-    // Helper: fetch with auth
+    // API fetch helper
     async function apiFetch(url, options = {}) {
         const res = await fetch(url, {
             ...options,
@@ -381,24 +270,18 @@ document.getElementById('captureEnvBtn').onclick = async () => {
         return res;
     }
 
-    // Load attention types into dropdown
+    // ****************************************
+    // 1. Training Configuration & New Run
+    // ****************************************
     async function loadAttentionTypes() {
         try {
-            const res = await apiFetch('/api/config/attentions/');
-            const data = await res.json();
+            const data = await apiFetch('/api/config/attentions/');
             const select = document.getElementById('attentionSelect');
-            if (data.attentions) {
-                select.innerHTML = data.attentions.map(a => `<option value="${a}">${a}</option>`).join('');
-            } else {
-                select.innerHTML = '<option value="full">full</option>';
-            }
-        } catch(e) {
-            console.warn('Failed to load attention types', e);
-            document.getElementById('attentionSelect').innerHTML = '<option value="full">full</option>';
-        }
+            if (data.attentions) select.innerHTML = data.attentions.map(a => `<option value="${a}">${a}</option>`).join('');
+            else select.innerHTML = '<option value="full">full</option>';
+        } catch(e) { console.warn(e); document.getElementById('attentionSelect').innerHTML = '<option value="full">full</option>'; }
     }
 
-    // Start new training
     document.getElementById('startTrainingBtn').onclick = async () => {
         const payload = {
             name: document.getElementById('runName').value,
@@ -418,102 +301,92 @@ document.getElementById('captureEnvBtn').onclick = async () => {
         try {
             const res = await apiFetch('/api/jobs/', { method: 'POST', body: JSON.stringify(payload) });
             if (res.ok) {
-                const newJob = await res.json();
-                window.location.href = `/monitor/${newJob.id}/`;
-            } else {
-                const err = await res.json();
-                alert('Failed to start training: ' + (err.error || 'Unknown error'));
-            }
-        } catch(e) {
-            alert('Network error: ' + e.message);
-        }
+                const job = await res.json();
+                window.location.href = `/monitor/${job.id}/`;
+            } else alert('Failed to start training');
+        } catch(e) { alert('Network error'); }
     };
 
-    // --------------------- Monitoring functionality (only if runId exists) ---------------------
+    function toggleConfigPanel() {
+        const panel = document.getElementById('configPanel');
+        const icon = document.getElementById('configToggleIcon');
+        if (panel.style.display === 'none' || panel.style.display === '') {
+            panel.style.display = 'block';
+            icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up');
+        } else {
+            panel.style.display = 'none';
+            icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down');
+        }
+    }
+
+    // ****************************************
+    // 2. Monitoring (only if runId exists)
+    // ****************************************
     if (runId) {
+        // Charts
         function initCharts() {
             lossChart = new Chart(document.getElementById('lossChart'), {
-                type: 'line',
-                data: { labels: [], datasets: [{ label: 'Train Loss', borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', data: [], tension: 0.2, fill: true }] },
-                options: { responsive: true, maintainAspectRatio: true, scales: { x: { title: { display: true, text: 'Step' } }, y: { title: { display: true, text: 'Loss' } } } }
+                type: 'line', data: { labels: [], datasets: [{ label: 'Train Loss', borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.1)', fill: true, tension: 0.2 }] },
+                options: { responsive: true, scales: { x: { title: { display: true, text: 'Step' } }, y: { title: { display: true, text: 'Loss' } } } }
             });
             evalChart = new Chart(document.getElementById('evalChart'), {
-                type: 'line',
-                data: { labels: [], datasets: [
-                    { label: 'Eval Loss', borderColor: '#c084fc', backgroundColor: 'rgba(192,132,252,0.1)', data: [], yAxisID: 'y', fill: true, tension: 0.2 },
-                    { label: 'Accuracy', borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', data: [], yAxisID: 'y1', fill: true, tension: 0.2 }
-                ] },
-                options: { responsive: true, scales: { y: { position: 'left', title: { display: true, text: 'Loss' } }, y1: { position: 'right', min: 0, max: 1, title: { display: true, text: 'Accuracy' } } } }
+                type: 'line', data: { labels: [], datasets: [
+                    { label: 'Eval Loss', borderColor: '#c084fc', backgroundColor: 'rgba(192,132,252,0.1)', yAxisID: 'y', fill: true, tension: 0.2 },
+                    { label: 'Accuracy', borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', yAxisID: 'y1', fill: true, tension: 0.2 }
+                ] }, options: { responsive: true, scales: { y: { position: 'left', title: 'Loss' }, y1: { position: 'right', min: 0, max: 1, title: 'Accuracy' } } }
             });
         }
 
         async function loadHistory() {
-            try {
-                const res = await apiFetch(`/api/runs/${runId}/history/`);
-                if (res.ok) {
-                    const h = await res.json();
-                    if (h.steps && h.losses) {
-                        trainSteps = h.steps; trainLosses = h.losses;
-                        lastStep = trainSteps[trainSteps.length-1] || 0;
-                        lossChart.data.labels = trainSteps;
-                        lossChart.data.datasets[0].data = trainLosses;
-                        lossChart.update();
-                    }
-                    if (h.eval_steps && h.eval_losses) {
-                        evalSteps = h.eval_steps; evalLosses = h.eval_losses;
-                        evalChart.data.labels = evalSteps;
-                        evalChart.data.datasets[0].data = evalLosses;
-                        if (h.eval_metrics && h.eval_metrics.length) {
-                            evalAccuracies = h.eval_metrics.map(m => m.eval_accuracy || null);
-                            evalChart.data.datasets[1].data = evalAccuracies;
-                        }
-                        evalChart.update();
-                    }
-                    computeAnalytics();
-                }
-            } catch(e) { console.warn('History load error', e); }
+            const data = await apiFetch(`/api/runs/${runId}/history/`);
+            if (data.steps && data.losses) {
+                trainSteps = data.steps; trainLosses = data.losses;
+                lastStep = trainSteps[trainSteps.length-1] || 0;
+                lossChart.data.labels = trainSteps; lossChart.data.datasets[0].data = trainLosses; lossChart.update();
+            }
+            if (data.eval_steps && data.eval_losses) {
+                evalSteps = data.eval_steps; evalLosses = data.eval_losses;
+                evalChart.data.labels = evalSteps; evalChart.data.datasets[0].data = evalLosses;
+                if (data.eval_metrics) evalAccuracies = data.eval_metrics.map(m => m.eval_accuracy || null);
+                evalChart.data.datasets[1].data = evalAccuracies; evalChart.update();
+            }
+            computeAnalytics();
         }
 
         async function loadRunDetails() {
-            try {
-                const res = await apiFetch(`/api/runs/${runId}/`);
-                if (res.ok) {
-                    const run = await res.json();
-                    const metrics = run.final_metrics || {};
-                    const container = document.getElementById('final-metrics');
-                    container.innerHTML = Object.keys(metrics).length ? Object.entries(metrics).map(([k,v]) => `<div class="stat-card"><div class="stat-label">${k.replace(/_/g,' ')}</div><div class="stat-value">${typeof v === 'number' ? v.toFixed(4) : v}</div></div>`).join('') : '<div class="stat-card col-12">No final metrics yet.</div>';
-                    const configBlob = new Blob([JSON.stringify(run.config, null, 2)], {type:'application/json'});
-                    const metricsBlob = new Blob([JSON.stringify(run.final_metrics, null, 2)], {type:'application/json'});
-                    document.getElementById('download-config-btn').href = URL.createObjectURL(configBlob);
-                    document.getElementById('download-metrics-btn').href = URL.createObjectURL(metricsBlob);
-                    document.getElementById('status-badge').innerText = run.status;
-                    document.getElementById('status-badge').className = `badge ${run.status}`;
-                }
-            } catch(e) { console.warn('Run details load error', e); }
+            const run = await apiFetch(`/api/runs/${runId}/`);
+            const metrics = run.final_metrics || {};
+            const container = document.getElementById('final-metrics');
+            container.innerHTML = Object.keys(metrics).length ? Object.entries(metrics).map(([k,v]) => `<div class="stat-card"><div class="stat-label">${k.replace(/_/g,' ')}</div><div class="stat-value">${typeof v === 'number' ? v.toFixed(4) : v}</div></div>`).join('') : '<div class="stat-card col-12">No final metrics yet.</div>';
+            document.getElementById('download-config-btn').href = URL.createObjectURL(new Blob([JSON.stringify(run.config,null,2)], {type:'application/json'}));
+            document.getElementById('download-metrics-btn').href = URL.createObjectURL(new Blob([JSON.stringify(run.final_metrics,null,2)], {type:'application/json'}));
+            document.getElementById('status-badge').innerText = run.status;
+            document.getElementById('status-badge').className = `badge ${run.status}`;
+            // Versioning data
+            document.getElementById('gitCommit').innerHTML = run.git_commit_hash ? `<a href="${run.git_repository}/commit/${run.git_commit_hash}" target="_blank">${run.git_commit_hash.slice(0,8)}</a>` : '—';
+            document.getElementById('gitBranch').innerHTML = `Branch: ${run.git_branch || '—'}`;
+            if (run.git_dirty) document.getElementById('gitDirty').style.display = 'inline-block';
+            document.getElementById('dataCommit').innerHTML = run.data_git_commit_id ? run.data_git_commit_id.slice(0,8) : '—';
+            document.getElementById('dvcHash').innerText = run.dvc_data_hash || '—';
         }
 
         async function loadArtifacts() {
-            try {
-                const res = await apiFetch(`/api/runs/${runId}/artifacts/`);
-                if (res.ok) {
-                    const data = await res.json();
-                    const artifacts = data.artifacts || [];
-                    const container = document.getElementById('artifacts-list');
-                    if (artifacts.length === 0) { container.innerHTML = '<div class="text-secondary">No artifacts yet.</div>'; return; }
-                    container.innerHTML = artifacts.map(path => `<div class="list-group-item"><a href="/api/runs/${runId}/artifacts/${encodeURIComponent(path)}" target="_blank">📄 ${path.split('/').pop()}</a></div>`).join('');
-                }
-            } catch(e) { console.warn('Artifacts load error', e); }
+            const data = await apiFetch(`/api/runs/${runId}/artifacts/`);
+            const artifacts = data.artifacts || [];
+            const container = document.getElementById('artifacts-list');
+            if (!artifacts.length) { container.innerHTML = '<div class="text-secondary">No artifacts yet.</div>'; return; }
+            container.innerHTML = artifacts.map(f => `<div class="list-group-item"><a href="/api/runs/${runId}/artifacts/${encodeURIComponent(f)}" target="_blank">📄 ${f.split('/').pop()}</a></div>`).join('');
+            document.getElementById('download-model-btn').href = `/api/runs/${runId}/model/`;
         }
 
         function computeAnalytics() {
-            if (trainSteps.length === 0) return;
-            const steps = trainSteps, losses = trainLosses;
+            if (!trainSteps.length) return;
             const duration = (Date.now() - startTime) / 1000;
             const stepsPerSec = (lastStep / duration).toFixed(2);
-            const minLoss = Math.min(...losses).toFixed(4);
-            const maxLoss = Math.max(...losses).toFixed(4);
-            const avgLast10 = (losses.slice(-10).reduce((a,b)=>a+b,0) / Math.min(10, losses.length)).toFixed(4);
-            const reduction = ((losses[0] - losses[losses.length-1]) / losses[0] * 100).toFixed(1);
+            const minLoss = Math.min(...trainLosses).toFixed(4);
+            const maxLoss = Math.max(...trainLosses).toFixed(4);
+            const avgLast10 = (trainLosses.slice(-10).reduce((a,b)=>a+b,0) / Math.min(10, trainLosses.length)).toFixed(4);
+            const reduction = ((trainLosses[0] - trainLosses[trainLosses.length-1]) / trainLosses[0] * 100).toFixed(1);
             const bestEval = evalAccuracies.length ? Math.max(...evalAccuracies.filter(v=>v!==null)).toFixed(4) : '--';
             document.getElementById('duration').innerText = formatDuration(duration);
             document.getElementById('step_rate').innerText = stepsPerSec;
@@ -524,8 +397,8 @@ document.getElementById('captureEnvBtn').onclick = async () => {
             document.getElementById('best_eval').innerText = bestEval;
             document.getElementById('epochs_done').innerText = evalSteps.length;
             const warning = document.getElementById('convergence-warning');
-            if (losses.length > 50) {
-                const recent = losses.slice(-50);
+            if (trainLosses.length > 50) {
+                const recent = trainLosses.slice(-50);
                 const improved = recent[recent.length-1] < recent[0] - 0.01;
                 warning.style.display = improved ? 'none' : 'block';
             } else warning.style.display = 'none';
@@ -545,8 +418,7 @@ document.getElementById('captureEnvBtn').onclick = async () => {
                 document.getElementById('total-steps').innerText = data.total_steps;
                 if (data.eta_seconds) {
                     const eta = data.eta_seconds;
-                    const h = Math.floor(eta/3600), m = Math.floor((eta%3600)/60), s = Math.floor(eta%60);
-                    document.getElementById('eta').innerText = `${h}h ${m}m ${s}s`;
+                    document.getElementById('eta').innerText = `${Math.floor(eta/3600)}h ${Math.floor((eta%3600)/60)}m ${Math.floor(eta%60)}s`;
                 }
             }
         }
@@ -560,21 +432,16 @@ document.getElementById('captureEnvBtn').onclick = async () => {
         function updateMetrics(data) {
             if (data.step !== undefined && data.loss !== undefined) {
                 if (!startTimeSet) { startTime = Date.now(); startTimeSet = true; }
-                trainSteps.push(data.step);
-                trainLosses.push(data.loss);
+                trainSteps.push(data.step); trainLosses.push(data.loss);
                 lastStep = data.step;
-                lossChart.data.labels = trainSteps;
-                lossChart.data.datasets[0].data = trainLosses;
-                lossChart.update();
+                lossChart.data.labels = trainSteps; lossChart.data.datasets[0].data = trainLosses; lossChart.update();
                 document.getElementById('loss').innerText = data.loss.toFixed(4);
                 computeAnalytics();
             }
             if (data.eval_loss !== undefined) {
                 const epoch = evalSteps.length + 1;
-                evalSteps.push(epoch);
-                evalLosses.push(data.eval_loss);
-                evalChart.data.labels = evalSteps;
-                evalChart.data.datasets[0].data = evalLosses;
+                evalSteps.push(epoch); evalLosses.push(data.eval_loss);
+                evalChart.data.labels = evalSteps; evalChart.data.datasets[0].data = evalLosses;
                 if (data.eval_accuracy !== undefined) {
                     evalAccuracies.push(data.eval_accuracy);
                     evalChart.data.datasets[1].data = evalAccuracies;
@@ -588,26 +455,22 @@ document.getElementById('captureEnvBtn').onclick = async () => {
         function connectWebSocket() {
             if (ws) ws.close();
             ws = new WebSocket(`ws://${location.host}/ws/jobs/${runId}/`);
-            ws.onopen = () => console.log('[WS] Job connected');
             ws.onmessage = (e) => {
-                try {
-                    const msg = JSON.parse(e.data);
-                    if (msg.type === 'log') addLog(msg.data);
-                    else if (msg.type === 'metrics') updateMetrics(msg.data);
-                    else if (msg.type === 'progress') updateProgress(msg);
-                    else if (msg.type === 'status') {
-                        const badge = document.getElementById('status-badge');
-                        badge.innerText = msg.status;
-                        badge.className = `badge ${msg.status}`;
-                        if (msg.status === 'completed' || msg.status === 'failed') ws.close();
-                    }
-                } catch(err) { console.error('WS parse error', err); }
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'log') addLog(msg.data);
+                else if (msg.type === 'metrics') updateMetrics(msg.data);
+                else if (msg.type === 'progress') updateProgress(msg);
+                else if (msg.type === 'status') {
+                    document.getElementById('status-badge').innerText = msg.status;
+                    document.getElementById('status-badge').className = `badge ${msg.status}`;
+                    if (msg.status === 'completed' || msg.status === 'failed') ws.close();
+                }
             };
-            ws.onclose = () => { console.log('[WS] Job disconnected, reconnecting in 3s...'); setTimeout(connectWebSocket, 3000); };
+            ws.onclose = () => setTimeout(connectWebSocket, 3000);
         }
 
         function initTerminal() {
-            if (typeof Terminal === 'undefined') { document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js not loaded</div>'; return; }
+            if (typeof Terminal === 'undefined') { document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js missing</div>'; return; }
             term = new Terminal({ cursorBlink: true, theme: { background: '#000000', foreground: '#00ff00' }, fontSize: 12 });
             term.open(document.getElementById('terminal-container'));
             function connectTerminalWs() {
@@ -615,77 +478,131 @@ document.getElementById('captureEnvBtn').onclick = async () => {
                 termWs = new WebSocket(`ws://${location.host}/ws/terminal/`);
                 termWs.onmessage = (ev) => term.write(ev.data);
                 termWs.onclose = () => setTimeout(connectTerminalWs, 3000);
-                termWs.onopen = () => console.log('[WS] Terminal connected');
             }
             connectTerminalWs();
             term.onData((data) => { if (termWs && termWs.readyState === WebSocket.OPEN) termWs.send(data); });
         }
 
-        // Attach action buttons if they exist
-        const evalBtn = document.getElementById('eval-btn');
-        if (evalBtn) evalBtn.onclick = async () => {
-            const btn = evalBtn;
-            btn.disabled = true; btn.textContent = '⏳ Evaluating...';
+        // Custom Metrics Dashboard (Plotly)
+        async function loadMetrics() {
             try {
-                const res = await apiFetch(`/api/runs/${runId}/evaluate/`, { method: 'POST' });
-                const data = await res.json();
-                if (res.ok) {
-                    let html = '<ul>';
-                    for (const [k,v] of Object.entries(data.metrics)) html += `<li><strong>${k}:</strong> ${typeof v === 'number' ? v.toFixed(4) : v}</li>`;
-                    html += '</ul>';
-                    document.getElementById('evalResults').innerHTML = html;
-                    document.getElementById('evalModal').style.display = 'flex';
-                } else alert('Evaluation failed: ' + (data.error || 'Unknown'));
-            } catch(err) { alert('Evaluation request failed'); }
-            finally { btn.disabled = false; btn.textContent = '📊 Evaluate'; }
+                currentMetricsData = await apiFetch(`/api/runs/${runId}/metrics/`);
+                populateMetricSelector();
+                updateScalarChart();
+                renderImageGallery();
+                renderTableView();
+                document.getElementById('metricsStatus').innerHTML = `<i class="fas fa-check-circle text-success"></i> Updated at ${new Date().toLocaleTimeString()}`;
+            } catch(e) { console.error(e); document.getElementById('metricsStatus').innerHTML = `<i class="fas fa-exclamation-triangle text-danger"></i> Failed to load metrics`; }
+        }
+        function populateMetricSelector() {
+            const sel = document.getElementById('metricSelector');
+            sel.innerHTML = '';
+            for (const [name, data] of Object.entries(currentMetricsData))
+                if (data.type === 'scalar') sel.appendChild(new Option(name, name));
+            if (!sel.options.length) sel.innerHTML = '<option disabled>No scalar metrics</option>';
+        }
+        function updateScalarChart() {
+            const selected = Array.from(document.getElementById('metricSelector').selectedOptions).map(o=>o.value);
+            if (!selected.length) { if(scalarChart) Plotly.purge('scalarChart'); return; }
+            const traces = selected.map(name => {
+                const d = currentMetricsData[name];
+                return { x: d.steps, y: d.values, mode: 'lines+markers', name: name, line: { width: 2 } };
+            });
+            const layout = { title: 'Training Metrics', xaxis: { title: 'Step' }, yaxis: { title: 'Value' }, paper_bgcolor: '#0f172a', plot_bgcolor: '#0f172a', font: { color: '#e2e8f0' } };
+            if (scalarChart) Plotly.purge('scalarChart');
+            scalarChart = Plotly.newPlot('scalarChart', traces, layout);
+        }
+        function renderImageGallery() {
+            const gallery = document.getElementById('imageGallery');
+            gallery.innerHTML = '';
+            for (const [name, data] of Object.entries(currentMetricsData)) {
+                if (data.type === 'image' && data.values.length) {
+                    const lastImg = data.values[data.values.length-1];
+                    const step = data.steps[data.steps.length-1];
+                    gallery.innerHTML += `
+                        <div class="col-md-3 mb-2">
+                            <div class="card bg-dark border-secondary" style="cursor:pointer;" onclick="viewFullImage('${escapeHtml(lastImg)}','${name} step ${step}')">
+                                <img src="${escapeHtml(lastImg)}" class="card-img-top" style="max-height:120px; object-fit:contain;">
+                                <div class="card-body p-1"><small>${escapeHtml(name)} (step ${step})</small></div>
+                            </div>
+                        </div>`;
+                }
+            }
+            if (!gallery.innerHTML) gallery.innerHTML = '<div class="col-12 text-secondary">No images logged</div>';
+        }
+        function renderTableView() {
+            const tv = document.getElementById('tableView');
+            tv.innerHTML = '';
+            for (const [name, data] of Object.entries(currentMetricsData)) {
+                if (data.type === 'table' && data.values.length) {
+                    const last = data.values[data.values.length-1];
+                    const headers = Object.keys(last);
+                    tv.innerHTML += `<h6 class="mt-3">${escapeHtml(name)}</h6>
+                        <table class="table table-dark table-sm"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+                        <tbody><tr>${headers.map(h=>`<td>${escapeHtml(String(last[h]))}</td>`).join('')}</tr></tbody></table>`;
+                }
+            }
+            if (!tv.innerHTML) tv.innerHTML = '<div class="text-secondary">No tables logged</div>';
+        }
+        window.viewFullImage = (src,title) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1060; display:flex; align-items:center; justify-content:center; cursor:pointer;';
+            div.onclick = () => div.remove();
+            div.innerHTML = `<div><img src="${escapeHtml(src)}" style="max-width:90%; max-height:90vh;"><div class="text-center mt-2 text-secondary">${escapeHtml(title)}</div></div>`;
+            document.body.appendChild(div);
+        };
+        function startMetricsAutoRefresh() { if (metricsAutoRefresh && !metricsInterval) metricsInterval = setInterval(loadMetrics, 10000); }
+        document.getElementById('plotSelectedBtn').onclick = updateScalarChart;
+        document.getElementById('metricsForceRefreshBtn').onclick = loadMetrics;
+        document.getElementById('metricsAutoRefreshToggle').onclick = () => {
+            metricsAutoRefresh = !metricsAutoRefresh;
+            if (metricsAutoRefresh) { startMetricsAutoRefresh(); document.getElementById('metricsAutoRefreshToggle').innerHTML = 'Auto On'; }
+            else { if (metricsInterval) clearInterval(metricsInterval); metricsInterval = null; document.getElementById('metricsAutoRefreshToggle').innerHTML = 'Auto Off'; }
+        };
+        startMetricsAutoRefresh();
+
+        // Config History Diff Viewer
+        async function loadConfigVersions() {
+            const data = await apiFetch(`/api/runs/${runId}/config/history/`);
+            const selectA = document.getElementById('configVersionA');
+            const selectB = document.getElementById('configVersionB');
+            selectA.innerHTML = selectB.innerHTML = '';
+            data.versions.forEach(v => {
+                const opt = document.createElement('option'); opt.value = v.version;
+                opt.textContent = `v${v.version} (${new Date(v.created_at).toLocaleString()})`;
+                selectA.appendChild(opt); selectB.appendChild(opt.cloneNode(true));
+            });
+            if (data.versions.length >= 2) { selectA.selectedIndex = 0; selectB.selectedIndex = data.versions.length-1; }
+        }
+        document.getElementById('compareConfigsBtn').onclick = async () => {
+            const vA = document.getElementById('configVersionA').value;
+            const vB = document.getElementById('configVersionB').value;
+            const diff = await apiFetch(`/api/runs/${runId}/config/compare/${vA}/${vB}/`);
+            const viewer = document.getElementById('configDiffViewer');
+            viewer.innerHTML = `<pre class="small">${JSON.stringify(diff.diff, null, 2)}</pre>`;
+        };
+        loadConfigVersions();
+
+        // Capture Environment
+        document.getElementById('captureEnvBtn').onclick = async () => {
+            const env = await apiFetch(`/api/runs/${runId}/environment/`);
+            const pre = document.getElementById('envDetails');
+            pre.textContent = JSON.stringify(env, null, 2);
+            pre.style.display = 'block';
         };
 
-        const stopBtn = document.getElementById('stop-btn');
-        if (stopBtn) stopBtn.onclick = async () => {
-            if (!confirm('Stop this training run?')) return;
-            const btn = stopBtn;
-            btn.disabled = true;
-            await apiFetch(`/api/runs/${runId}/stop/`, { method: 'POST' });
-            btn.disabled = false;
-            loadRunDetails();
+        // Action buttons
+        document.getElementById('eval-btn').onclick = async () => {
+            const res = await apiFetch(`/api/runs/${runId}/evaluate/`, { method: 'POST' });
+            const html = '<ul>' + Object.entries(res.metrics).map(([k,v]) => `<li><strong>${k}:</strong> ${typeof v==='number'?v.toFixed(4):v}</li>`).join('') + '</ul>';
+            document.getElementById('evalResults').innerHTML = html; document.getElementById('evalModal').style.display = 'flex';
         };
-
-        const retryBtn = document.getElementById('retry-btn');
-        if (retryBtn) retryBtn.onclick = async () => {
-            if (!confirm('Retry (resume) this run?')) return;
-            const btn = retryBtn;
-            btn.disabled = true;
-            await apiFetch(`/api/runs/${runId}/resume/`, { method: 'POST' });
-            btn.disabled = false;
-            loadRunDetails();
-            connectWebSocket();
-        };
-
-        const deleteBtn = document.getElementById('delete-btn');
-        if (deleteBtn) deleteBtn.onclick = async () => {
-            if (!confirm('Delete this run permanently? This cannot be undone.')) return;
-            const res = await apiFetch(`/api/runs/${runId}/`, { method: 'DELETE' });
-            if (res.ok) window.location.href = '/dashboard/';
-            else alert('Delete failed');
-        };
-
-        const paperBtn = document.getElementById('paper-btn');
-        if (paperBtn) paperBtn.onclick = async () => {
-            const res = await apiFetch(`/api/runs/${runId}/paper/`);
-            if (res.ok) {
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = res.headers.get('Content-Type') === 'application/pdf' ? `paper_${runId}.pdf` : `paper_${runId}.tex`;
-                a.click();
-                URL.revokeObjectURL(url);
-            } else alert('Paper generation failed');
-        };
-        const reportBtn = document.getElementById('report-btn');
-        if (reportBtn) reportBtn.onclick = () => window.open(`/api/runs/${runId}/report/`, '_blank');
-        const pdfPreviewBtn = document.getElementById('pdf-preview-btn');
-        if (pdfPreviewBtn) pdfPreviewBtn.onclick = () => { document.getElementById('pdfIframe').src = `/api/runs/${runId}/paper_preview/`; document.getElementById('pdfModal').style.display = 'flex'; };
+        document.getElementById('stop-btn').onclick = async () => { if(confirm('Stop run?')) await apiFetch(`/api/runs/${runId}/stop/`,{method:'POST'}); loadRunDetails(); };
+        document.getElementById('retry-btn').onclick = async () => { if(confirm('Retry run?')) await apiFetch(`/api/runs/${runId}/resume/`,{method:'POST'}); loadRunDetails(); connectWebSocket(); };
+        document.getElementById('delete-btn').onclick = async () => { if(confirm('Delete permanently?')) { await fetch(`/api/runs/${runId}/`,{method:'DELETE',headers:{'Authorization':`Token ${authToken}`}}); window.location.href='/dashboard/'; } };
+        document.getElementById('paper-btn').onclick = async () => { const res = await apiFetch(`/api/runs/${runId}/paper/`); const blob = await res.blob(); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=res.headers.get('Content-Type')==='application/pdf'?`paper_${runId}.pdf`:`paper_${runId}.tex`; a.click(); URL.revokeObjectURL(url); };
+        document.getElementById('report-btn').onclick = () => window.open(`/api/runs/${runId}/report/`,'_blank');
+        document.getElementById('pdf-preview-btn').onclick = () => { document.getElementById('pdfIframe').src = `/api/runs/${runId}/paper_preview/`; document.getElementById('pdfModal').style.display = 'flex'; };
         document.getElementById('download-model-btn').href = `/api/runs/${runId}/model/`;
         window.closeEvalModal = () => document.getElementById('evalModal').style.display = 'none';
         window.closePdfModal = () => { document.getElementById('pdfModal').style.display = 'none'; document.getElementById('pdfIframe').src = ''; };
@@ -696,60 +613,15 @@ document.getElementById('captureEnvBtn').onclick = async () => {
         initTerminal();
         loadRunDetails();
         loadArtifacts();
+        loadMetrics();
         setInterval(computeAnalytics, 5000);
         setInterval(loadRunDetails, 10000);
     }
 
-    // Toggle config panel
-    function toggleConfigPanel() {
-        const panel = document.getElementById('configPanel');
-        const icon = document.getElementById('configToggleIcon');
-        if (panel.style.display === 'none' || panel.style.display === '') {
-            panel.style.display = 'block';
-            icon.classList.remove('fa-chevron-down');
-            icon.classList.add('fa-chevron-up');
-        } else {
-            panel.style.display = 'none';
-            icon.classList.remove('fa-chevron-up');
-            icon.classList.add('fa-chevron-down');
-        }
-    }
+    function escapeHtml(str) { return String(str||'').replace(/[&<>]/g, m=> ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
 
-    // Load attention types on page load
     loadAttentionTypes();
-    // If no run ID, show config panel expanded
-    if (!runId) {
-        document.getElementById('configPanel').style.display = 'block';
-        document.getElementById('configToggleIcon').classList.remove('fa-chevron-down');
-        document.getElementById('configToggleIcon').classList.add('fa-chevron-up');
-    }
-
-    async function loadConfigHistory(runId) {
-        const response = await fetch(`/api/runs/${runId}/config/history/`, {
-            headers: { 'Authorization': `Token ${authToken}` }
-        });
-        const data = await response.json();
-        
-        const versionSelectA = document.getElementById('configVersionA');
-        const versionSelectB = document.getElementById('configVersionB');
-        
-        versionSelectA.innerHTML = data.versions.map(v => `<option value="${v.version}">v${v.version}: ${new Date(v.created_at).toLocaleString()}</option>`).join('');
-        versionSelectB.innerHTML = data.versions.map(v => `<option value="${v.version}">v${v.version}: ${new Date(v.created_at).toLocaleString()}</option>`).join('');
-    }
-
-    document.getElementById('compareConfigsBtn').onclick = async () => {
-        const vA = document.getElementById('configVersionA').value;
-        const vB = document.getElementById('configVersionB').value;
-        
-        const response = await fetch(`/api/runs/${runId}/config/compare/${vA}/${vB}/`, {
-            headers: { 'Authorization': `Token ${authToken}` }
-        });
-        const diff = await response.json();
-        
-        const viewer = document.getElementById('configDiffViewer');
-        viewer.innerHTML = `<pre class="bg-dark p-3 rounded">${JSON.stringify(diff.diff, null, 2)}</pre>`;
-    };
-
+    if (!runId) { document.getElementById('configPanel').style.display = 'block'; document.getElementById('configToggleIcon').classList.replace('fa-chevron-down','fa-chevron-up'); }
 </script>
 </body>
 </html>
