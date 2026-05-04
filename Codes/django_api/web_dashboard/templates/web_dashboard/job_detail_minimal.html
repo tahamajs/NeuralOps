@@ -141,6 +141,70 @@
             <h3>📊 Final Metrics</h3>
             <div id="final-metrics" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px,1fr));"></div>
         </div>
+        <div class="card mt-3">
+    <h3>📌 Code & Data Versioning</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="stat-card">
+                <div class="stat-label">Git Commit</div>
+                <div class="stat-value" style="font-size: 0.9rem;">
+                    <a href="{{ git_repository }}/commit/{{ git_commit_hash }}" target="_blank">
+                        {{ git_commit_hash|slice:":8" }}
+                    </a>
+                </div>
+                <div class="small text-secondary">Branch: {{ git_branch }}</div>
+                {% if git_dirty %}
+                    <span class="badge bg-warning text-dark mt-1">⚠️ Uncommitted changes</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stat-card">
+                <div class="stat-label">Data Version</div>
+                <div class="stat-value" style="font-size: 0.9rem;">
+                    <a href="{{ data_repository }}/commit/{{ data_git_commit_id }}" target="_blank">
+                        {{ data_git_commit_id|slice:":8"|default:"Not versioned" }}
+                    </a>
+                </div>
+                <div class="small text-secondary">DVC hash: {{ dvc_data_hash|default:"—" }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-2">
+        <button id="captureEnvBtn" class="btn btn-sm btn-outline-secondary">📦 Capture Environment</button>
+        <pre id="envDetails" style="display: none; margin-top: 10px;" class="bg-dark p-2 rounded small"></pre>
+    </div>
+</div>
+
+<script>
+document.getElementById('captureEnvBtn').onclick = async () => {
+    const response = await fetch(`/api/runs/${runId}/environment/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const env = await response.json();
+    const pre = document.getElementById('envDetails');
+    pre.style.display = 'block';
+    pre.textContent = JSON.stringify(env, null, 2);
+};
+</script>
+
+<div class="card mt-3">
+    <h3>⚙️ Configuration History</h3>
+    <div class="row">
+        <div class="col-md-6">
+            <select id="configVersionA" class="form-select">
+                <!-- Populated with version numbers -->
+            </select>
+        </div>
+        <div class="col-md-6">
+            <select id="configVersionB" class="form-select">
+                <!-- Populated with version numbers -->
+            </select>
+        </div>
+    </div>
+    <button id="compareConfigsBtn" class="btn btn-sm btn-primary mt-2">Compare Versions</button>
+    <div id="configDiffViewer" class="mt-3" style="max-height: 400px; overflow-y: auto;"></div>
+</div>
 
         <div class="card">
             <h3>📈 Training Analytics</h3>
@@ -549,6 +613,33 @@
         document.getElementById('configToggleIcon').classList.remove('fa-chevron-down');
         document.getElementById('configToggleIcon').classList.add('fa-chevron-up');
     }
+
+    async function loadConfigHistory(runId) {
+        const response = await fetch(`/api/runs/${runId}/config/history/`, {
+            headers: { 'Authorization': `Token ${authToken}` }
+        });
+        const data = await response.json();
+        
+        const versionSelectA = document.getElementById('configVersionA');
+        const versionSelectB = document.getElementById('configVersionB');
+        
+        versionSelectA.innerHTML = data.versions.map(v => `<option value="${v.version}">v${v.version}: ${new Date(v.created_at).toLocaleString()}</option>`).join('');
+        versionSelectB.innerHTML = data.versions.map(v => `<option value="${v.version}">v${v.version}: ${new Date(v.created_at).toLocaleString()}</option>`).join('');
+    }
+
+    document.getElementById('compareConfigsBtn').onclick = async () => {
+        const vA = document.getElementById('configVersionA').value;
+        const vB = document.getElementById('configVersionB').value;
+        
+        const response = await fetch(`/api/runs/${runId}/config/compare/${vA}/${vB}/`, {
+            headers: { 'Authorization': `Token ${authToken}` }
+        });
+        const diff = await response.json();
+        
+        const viewer = document.getElementById('configDiffViewer');
+        viewer.innerHTML = `<pre class="bg-dark p-3 rounded">${JSON.stringify(diff.diff, null, 2)}</pre>`;
+    };
+
 </script>
 </body>
 </html>
