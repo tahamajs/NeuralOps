@@ -1,0 +1,723 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Transformer Pro Dashboard - ML Experiment Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <!-- Chart.js for core charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- ApexCharts for advanced visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- jQuery and DataTables -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* Light/Dark theme variables */
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #60a5fa;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --bg-primary: #0a0f1e;
+            --bg-secondary: #0d1326;
+            --bg-card: rgba(20, 28, 40, 0.75);
+            --text-primary: #eef2ff;
+            --text-secondary: #94a3b8;
+            --border: rgba(255,255,255,0.1);
+            --sidebar-bg: rgba(15, 23, 42, 0.9);
+            --card-bg: #1e293b;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --bg-card: rgba(255,255,255,0.95);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border: rgba(0,0,0,0.1);
+            --sidebar-bg: rgba(255,255,255,0.95);
+            --card-bg: #ffffff;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+        .sidebar.collapsed .sidebar-link span,
+        .sidebar.collapsed .logo-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .sidebar-link i {
+            margin-right: 0;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            gap: 12px;
+        }
+
+        .sidebar-link:hover, .sidebar-link.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            border-left: 3px solid var(--primary);
+        }
+
+        .sidebar-link i {
+            width: 20px;
+            font-size: 1.1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            transition: all 0.3s ease;
+            padding: 1rem;
+        }
+
+        .main-content.expanded {
+            margin-left: 70px;
+        }
+
+        /* Top Navbar */
+        .top-navbar {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 0.75rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+        }
+
+        /* Cards */
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.25rem;
+            border-left: 4px solid var(--primary);
+            transition: transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        /* Tabs */
+        .nav-tabs {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--text-secondary);
+            border: none;
+            padding: 0.75rem 1.25rem;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: var(--primary);
+            border: none;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: transparent;
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        /* Tables */
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            color: var(--text-secondary) !important;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-radius: 40px;
+            padding: 6px 12px;
+        }
+
+        /* Chart containers */
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        /* Right panel */
+        .right-panel {
+            width: 320px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            border-left: 1px solid var(--border);
+            position: fixed;
+            right: 0;
+            top: 0;
+            height: 100vh;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 101;
+            padding: 1rem;
+        }
+
+        .right-panel.open {
+            transform: translateX(0);
+        }
+
+        /* Badges */
+        .badge-running { background: var(--warning); color: #000; }
+        .badge-completed { background: var(--success); }
+        .badge-failed { background: var(--danger); }
+        .badge-queued { background: var(--info); }
+
+        /* Utility classes */
+        .cursor-pointer { cursor: pointer; }
+        .transition-all { transition: all 0.2s ease; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="logo logo-text">⚡ Transformer Pro</span>
+            <button class="btn btn-sm btn-link text-secondary" id="sidebarToggle">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-link active" data-tab="dashboard">
+                <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+            </a>
+            <a href="#" class="sidebar-link" data-tab="experiments">
+                <i class="fas fa-flask"></i><span>Experiments</span>
+            </a>
+            <a href="#" class="sidebar-link" data-tab="analytics">
+                <i class="fas fa-chart-line"></i><span>Analytics</span>
+            </a>
+            <a href="#" class="sidebar-link" data-tab="compare">
+                <i class="fas fa-chart-simple"></i><span>Compare</span>
+            </a>
+            <a href="#" class="sidebar-link" data-tab="docs">
+                <i class="fas fa-book"></i><span>Documentation</span>
+            </a>
+        </nav>
+        <div class="sidebar-nav mt-auto" style="margin-top: auto; border-top: 1px solid var(--border);">
+            <a href="#" class="sidebar-link" id="themeToggle">
+                <i class="fas fa-sun"></i><span>Light/Dark Mode</span>
+            </a>
+            <a href="#" class="sidebar-link" id="logoutLink">
+                <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <div class="top-navbar">
+            <button class="btn btn-sm btn-link text-secondary" id="mobileMenuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="d-flex align-items-center gap-3">
+                <div class="text-end">
+                    <div class="small text-secondary" id="userName">Researcher</div>
+                    <div class="small text-secondary" id="lastUpdate">Last update: --:--:--</div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-link text-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#">No new notifications</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 1: Dashboard -->
+        <div id="dashboardTab" class="tab-content active">
+            <!-- Stats Row -->
+            <div class="row g-4 mb-4 stats-grid" id="statsGrid">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalExperiments">0</div>
+                        <div class="stat-label">Total Experiments</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card">
+                        <div class="stat-value text-success" id="completedCount">0</div>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card">
+                        <div class="stat-value text-warning" id="runningCount">0</div>
+                        <div class="stat-label">Running</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card">
+                        <div class="stat-value text-danger" id="failedCount">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <h6 class="mb-3">📈 Training Loss Over Time</h6>
+                        <canvas id="lossChart" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <h6 class="mb-3">📊 Accuracy Comparison by Model</h6>
+                        <div id="accuracyChart"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mt-2">
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <h6 class="mb-3">⚡ System Resources</h6>
+                        <div id="systemGaugeChart"></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="chart-container">
+                        <h6 class="mb-3">🔥 Recent Activity</h6>
+                        <div id="activityFeed" style="max-height: 250px; overflow-y: auto;">
+                            <div class="text-center text-secondary py-4">Loading activities...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Experiments Table -->
+        <div id="experimentsTab" class="tab-content" style="display: none;">
+            <div class="chart-container">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h6 class="mb-0">📋 Experiment History</h6>
+                    <div class="d-flex gap-2">
+                        <select id="statusFilter" class="form-select form-select-sm w-auto">
+                            <option value="all">All Status</option>
+                            <option value="running">Running</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                        <button id="refreshTableBtn" class="btn btn-sm btn-primary-custom">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="experimentsTable" class="table table-hover" style="width:100%">
+                        <thead>
+                            <tr><th>ID</th><th>Name</th><th>Model</th><th>Task</th><th>Accuracy</th><th>Status</th><th>Actions</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Analytics -->
+        <div id="analyticsTab" class="tab-content" style="display: none;">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h6>📊 Experiments per Day</h6>
+                        <canvas id="dailyExpChart" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h6>🏆 Success Rate by Model</h6>
+                        <div id="modelSuccessChart"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mt-2">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h6>⏱️ Average Duration by Task</h6>
+                        <canvas id="durationChart" height="200"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <h6>📈 Performance Trends</h6>
+                        <canvas id="trendChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Model Comparison -->
+        <div id="compareTab" class="tab-content" style="display: none;">
+            <div class="chart-container">
+                <h6>🔍 Compare Models</h6>
+                <div class="row">
+                    <div class="col-md-4">
+                        <select id="compareModel1" class="form-select mb-3">
+                            <option value="">Select Model 1</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="compareModel2" class="form-select mb-3">
+                            <option value="">Select Model 2</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="compareMetric" class="form-select mb-3">
+                            <option value="accuracy">Accuracy</option>
+                            <option value="loss">Loss</option>
+                            <option value="f1">F1 Score</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="comparisonChartContainer"></div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Documentation -->
+        <div id="docsTab" class="tab-content" style="display: none;">
+            <div class="chart-container">
+                <h6>📚 API Documentation & User Guide</h6>
+                <div class="accordion" id="docsAccordion">
+                    <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header"><button class="accordion-button bg-transparent text-light" data-bs-toggle="collapse" data-bs-target="#collapse1">Getting Started</button></h2>
+                        <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#docsAccordion">
+                            <div class="accordion-body text-secondary">The Transformer Pro Toolkit provides a comprehensive platform for training and evaluating transformer models with various attention mechanisms and compression techniques.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-transparent border-secondary">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed bg-transparent text-light" data-bs-toggle="collapse" data-bs-target="#collapse2">API Endpoints</button></h2>
+                        <div id="collapse2" class="accordion-collapse collapse"><div class="accordion-body text-secondary"><pre class="bg-dark text-light p-3 rounded">POST /api/train/ - Start training run<br>GET /api/runs/ - List all runs<br>GET /api/runs/{id}/ - Get run details<br>POST /api/runs/{id}/stop/ - Stop run</pre></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Right Panel (Details) -->
+    <div class="right-panel" id="rightPanel">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6>Experiment Details</h6>
+            <button class="btn-close btn-close-white" id="closeRightPanel"></button>
+        </div>
+        <div id="detailContent">Select an experiment to view details</div>
+    </div>
+</div>
+
+<script>
+    // ==================== Global State ====================
+    let authToken = localStorage.getItem('authToken');
+    if (!authToken) window.location.href = '/login/';
+
+    let currentTab = 'dashboard';
+    let lossChart, dailyExpChart, durationChart, trendChart;
+    let accuracyChart, systemGaugeChart, modelSuccessChart;
+    let experimentsData = [];
+    let runsData = [];
+
+    // ==================== API Helper ====================
+    async function apiFetch(url, options = {}) {
+        try {
+            const res = await fetch(url, {
+                ...options,
+                headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...options.headers }
+            });
+            if (res.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login/'; throw new Error('Unauthorized'); }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.json();
+        } catch (e) {
+            console.error(`API error ${url}:`, e);
+            return null;
+        }
+    }
+
+    // ==================== Data Loading ====================
+    async function loadRuns() {
+        const data = await apiFetch('/api/runs/');
+        if (data) { runsData = data; updateStats(); updateTable(); updateCharts(); updateCompareSelects(); updateActivityFeed(); }
+    }
+
+    function updateStats() {
+        const total = runsData.length;
+        const completed = runsData.filter(r => r.status === 'completed').length;
+        const running = runsData.filter(r => r.status === 'running').length;
+        const failed = runsData.filter(r => r.status === 'failed').length;
+        document.getElementById('totalExperiments').innerText = total;
+        document.getElementById('completedCount').innerText = completed;
+        document.getElementById('runningCount').innerText = running;
+        document.getElementById('failedCount').innerText = failed;
+        document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString();
+    }
+
+    // ==================== Table Management ====================
+    let experimentsTable;
+    function initTable() {
+        experimentsTable = $('#experimentsTable').DataTable({
+            data: [], columns: [
+                { data: 'id', render: (d) => d.slice(0,8) },
+                { data: 'name', defaultContent: '—' },
+                { data: 'config', render: (d) => d?.model_name?.split('/').pop() || '—' },
+                { data: 'config', render: (d) => d?.task_name?.toUpperCase() || '—' },
+                { data: 'final_metrics', render: (d) => d?.eval_accuracy ? d.eval_accuracy.toFixed(4) : '—' },
+                { data: 'status', render: (d) => `<span class="badge badge-${d}">${d}</span>` },
+                { data: 'id', render: (id) => `<button class="btn btn-sm btn-outline-primary view-details me-1" data-id="${id}"><i class="fas fa-eye"></i></button><button class="btn btn-sm btn-outline-danger stop-run" data-id="${id}"><i class="fas fa-stop"></i></button>` }
+            ], order: [[0, 'desc']], pageLength: 10, language: { search: "Filter:" }
+        });
+    }
+
+    function updateTable() {
+        if (!experimentsTable) initTable();
+        const filtered = document.getElementById('statusFilter').value === 'all' ? runsData : runsData.filter(r => r.status === document.getElementById('statusFilter').value);
+        experimentsTable.clear().rows.add(filtered).draw();
+    }
+
+    // ==================== Charts Initialization ====================
+    function initCharts() {
+        const ctx = document.getElementById('lossChart')?.getContext('2d');
+        if (ctx) lossChart = new Chart(ctx, { type: 'line', data: { labels: [], datasets: [{ label: 'Training Loss', borderColor: '#3b82f6', fill: true, backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: true } });
+        
+        const dailyCtx = document.getElementById('dailyExpChart')?.getContext('2d');
+        if (dailyCtx) dailyExpChart = new Chart(dailyCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'Experiments', backgroundColor: '#3b82f6' }] }, options: { responsive: true } });
+        
+        const durationCtx = document.getElementById('durationChart')?.getContext('2d');
+        if (durationCtx) durationChart = new Chart(durationCtx, { type: 'bar', data: { labels: [], datasets: [{ label: 'Duration (minutes)', backgroundColor: '#8b5cf6' }] }, options: { responsive: true } });
+        
+        const trendCtx = document.getElementById('trendChart')?.getContext('2d');
+        if (trendCtx) trendChart = new Chart(trendCtx, { type: 'line', data: { labels: [], datasets: [{ label: 'Accuracy Trend', borderColor: '#10b981', fill: false }] }, options: { responsive: true } });
+    }
+
+    function updateCharts() {
+        const completed = runsData.filter(r => r.status === 'completed');
+        if (completed.length === 0) return;
+        const steps = completed.map((_,i) => i+1);
+        const losses = completed.map(r => r.final_metrics?.eval_loss || 0);
+        const accuracies = completed.map(r => r.final_metrics?.eval_accuracy || 0);
+        if (lossChart) { lossChart.data.labels = steps; lossChart.data.datasets[0].data = losses; lossChart.update(); }
+        if (trendChart) { trendChart.data.labels = steps; trendChart.data.datasets[0].data = accuracies; trendChart.update(); }
+        
+        const modelTotals = {}, modelSuccesses = {};
+        runsData.forEach(r => { const m = r.config?.model_name; if (m) { modelTotals[m] = (modelTotals[m]||0)+1; if (r.status === 'completed') modelSuccesses[m] = (modelSuccesses[m]||0)+1; } });
+        const modelNames = Object.keys(modelTotals);
+        const successRates = modelNames.map(m => ((modelSuccesses[m]||0)/modelTotals[m])*100);
+        
+        if (window.modelSuccessChart) window.modelSuccessChart.destroy();
+        window.modelSuccessChart = new ApexCharts(document.querySelector("#modelSuccessChart"), { series: [{ name: "Success Rate (%)", data: successRates }], chart: { type: 'bar', height: 250, background: 'transparent' }, xaxis: { categories: modelNames, labels: { style: { colors: '#94a3b8' } } }, yaxis: { title: { text: '%' } }, theme: { mode: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark' } });
+        window.modelSuccessChart.render();
+        
+        const modelAccuracies = {};
+        completed.forEach(r => { const m = r.config?.model_name; if (m && r.final_metrics?.eval_accuracy) { modelAccuracies[m] = (modelAccuracies[m]||[]).concat(r.final_metrics.eval_accuracy); } });
+        const avgAccuracies = Object.keys(modelAccuracies).map(m => modelAccuracies[m].reduce((a,b)=>a+b,0)/modelAccuracies[m].length);
+        
+        if (window.accuracyChart) window.accuracyChart.destroy();
+        window.accuracyChart = new ApexCharts(document.querySelector("#accuracyChart"), { series: [{ name: "Avg Accuracy", data: avgAccuracies }], chart: { type: 'bar', height: 250, background: 'transparent' }, xaxis: { categories: Object.keys(modelAccuracies), labels: { style: { colors: '#94a3b8' } } }, plotOptions: { bar: { borderRadius: 8 } }, theme: { mode: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark' } });
+        window.accuracyChart.render();
+        
+        if (window.systemGaugeChart) window.systemGaugeChart.destroy();
+        window.systemGaugeChart = new ApexCharts(document.querySelector("#systemGaugeChart"), { series: [45, 30, 25], chart: { type: 'donut', height: 220, background: 'transparent' }, labels: ['CPU', 'RAM', 'GPU'], colors: ['#3b82f6', '#10b981', '#8b5cf6'], legend: { labels: { colors: '#94a3b8' } }, theme: { mode: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark' } });
+        window.systemGaugeChart.render();
+        
+        const last7Days = [...Array(7).keys()].reverse().map(i => { const d = new Date(); d.setDate(d.getDate()-i); return d.toLocaleDateString(); });
+        const dailyCounts = last7Days.map(date => runsData.filter(r => new Date(r.created_at).toLocaleDateString() === date).length);
+        if (dailyExpChart) { dailyExpChart.data.labels = last7Days; dailyExpChart.data.datasets[0].data = dailyCounts; dailyExpChart.update(); }
+        
+        const taskDuration = {};
+        completed.forEach(r => { const t = r.config?.task_name; if (t && r.completed_at && r.started_at) { const dur = (new Date(r.completed_at) - new Date(r.started_at))/60000; if (dur>0) taskDuration[t] = (taskDuration[t]||[]).concat(dur); } });
+        const taskNames = Object.keys(taskDuration);
+        const avgDurations = taskNames.map(t => taskDuration[t].reduce((a,b)=>a+b,0)/taskDuration[t].length);
+        if (durationChart) { durationChart.data.labels = taskNames; durationChart.data.datasets[0].data = avgDurations; durationChart.update(); }
+    }
+
+    function updateCompareSelects() {
+        const models = [...new Set(runsData.map(r => r.config?.model_name).filter(Boolean))];
+        const select1 = document.getElementById('compareModel1');
+        const select2 = document.getElementById('compareModel2');
+        select1.innerHTML = '<option value="">Select Model 1</option>' + models.map(m => `<option value="${m}">${m}</option>`).join('');
+        select2.innerHTML = '<option value="">Select Model 2</option>' + models.map(m => `<option value="${m}">${m}</option>`).join('');
+    }
+
+    function updateComparison() {
+        const model1 = document.getElementById('compareModel1').value;
+        const model2 = document.getElementById('compareModel2').value;
+        const metric = document.getElementById('compareMetric').value;
+        if (!model1 || !model2) return;
+        const getMetric = (run) => { const m = run.final_metrics; if (metric === 'accuracy') return m?.eval_accuracy || m?.accuracy || 0; if (metric === 'loss') return m?.eval_loss || m?.loss || 0; if (metric === 'f1') return m?.eval_f1 || m?.f1 || 0; return 0; };
+        const runs1 = runsData.filter(r => r.config?.model_name === model1 && r.status === 'completed');
+        const runs2 = runsData.filter(r => r.config?.model_name === model2 && r.status === 'completed');
+        const values1 = runs1.map(getMetric).filter(v => v !== 0);
+        const values2 = runs2.map(getMetric).filter(v => v !== 0);
+        if (window.comparisonChart) window.comparisonChart.destroy();
+        window.comparisonChart = new ApexCharts(document.querySelector("#comparisonChartContainer"), { series: [{ name: model1, data: values1 }, { name: model2, data: values2 }], chart: { type: 'bar', height: 300, background: 'transparent' }, xaxis: { categories: values1.map((_,i)=>`Run ${i+1}`) }, plotOptions: { bar: { borderRadius: 8 } }, theme: { mode: document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark' } });
+        window.comparisonChart.render();
+    }
+
+    function updateActivityFeed() {
+        const container = document.getElementById('activityFeed');
+        if (!container) return;
+        const recent = [...runsData].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,10);
+        container.innerHTML = recent.map(r => `<div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary"><div><i class="fas ${r.status==='running'?'fa-spinner fa-spin':r.status==='completed'?'fa-check-circle text-success':'fa-exclamation-circle text-danger'} me-2"></i><span>${r.config?.task_name?.toUpperCase() || 'Run'} ${r.id.slice(0,6)}</span></div><div class="small text-secondary">${new Date(r.created_at).toLocaleTimeString()}</div></div>`).join('');
+    }
+
+    function viewExperimentDetails(id) {
+        const run = runsData.find(r => r.id === id);
+        if (!run) return;
+        const panel = document.getElementById('rightPanel');
+        const content = document.getElementById('detailContent');
+        content.innerHTML = `<div><strong>ID:</strong> ${run.id}</div><div><strong>Model:</strong> ${run.config?.model_name || '—'}</div><div><strong>Task:</strong> ${run.config?.task_name || '—'}</div><div><strong>Attention:</strong> ${run.config?.attention_type || 'full'}</div><div><strong>Status:</strong> <span class="badge badge-${run.status}">${run.status}</span></div><hr><strong>Metrics:</strong><pre class="bg-dark p-2 rounded small">${JSON.stringify(run.final_metrics, null, 2)}</pre><button class="btn btn-sm btn-danger w-100 mt-2 stop-run" data-id="${run.id}">Stop Run</button></div>`;
+        panel.classList.add('open');
+    }
+
+    async function stopRun(id) { await apiFetch(`/api/runs/${id}/stop/`, { method: 'POST' }); alert('Stop signal sent'); loadRuns(); }
+
+    // ==================== UI Event Binding ====================
+    function bindEvents() {
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tab = link.dataset.tab;
+                if (tab) { currentTab = tab; document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none'); document.getElementById(`${tab}Tab`).style.display = 'block'; document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active')); link.classList.add('active'); }
+            });
+        });
+        
+        document.getElementById('sidebarToggle')?.addEventListener('click', () => { document.querySelector('.sidebar').classList.toggle('collapsed'); document.querySelector('.main-content').classList.toggle('expanded'); });
+        document.getElementById('mobileMenuToggle')?.addEventListener('click', () => document.querySelector('.sidebar').classList.toggle('mobile-open'));
+        document.getElementById('closeRightPanel')?.addEventListener('click', () => document.getElementById('rightPanel').classList.remove('open'));
+        document.getElementById('statusFilter')?.addEventListener('change', () => updateTable());
+        document.getElementById('refreshTableBtn')?.addEventListener('click', () => loadRuns());
+        document.getElementById('compareModel1')?.addEventListener('change', updateComparison);
+        document.getElementById('compareModel2')?.addEventListener('change', updateComparison);
+        document.getElementById('compareMetric')?.addEventListener('change', updateComparison);
+        
+        document.addEventListener('click', (e) => { if (e.target.closest('.view-details')) viewExperimentDetails(e.target.closest('.view-details').dataset.id); if (e.target.closest('.stop-run')) stopRun(e.target.closest('.stop-run').dataset.id); });
+        
+        const themeToggle = document.getElementById('themeToggle');
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            if (isLight) { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('theme', 'dark'); } 
+            else { document.documentElement.setAttribute('data-theme', 'light'); localStorage.setItem('theme', 'light'); }
+            updateCharts();
+        });
+        
+        document.getElementById('logoutLink')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await apiFetch('/api/auth/logout/', { method: 'POST' });
+            localStorage.removeItem('authToken');
+            window.location.href = '/login/';
+        });
+    }
+
+    // ==================== Initialization ====================
+    initTable();
+    initCharts();
+    loadRuns();
+    bindEvents();
+    setInterval(() => { if (currentTab === 'dashboard') loadRuns(); }, 5000);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
