@@ -71,3 +71,54 @@ def note_reaction(request, note_id):
     note.reactions = reactions
     note.save()
     return Response({"status": "updated", "reactions": reactions})
+
+
+
+@api_view(['POST'])
+def log_custom_metric(request, run_id):
+    """Endpoint for logging custom metrics during training"""
+    run = get_object_or_404(Job, id=run_id)
+    
+    metric_type = request.data.get('type')
+    name = request.data.get('name')
+    value = request.data.get('value')
+    step = request.data.get('step')
+    epoch = request.data.get('epoch')
+    
+    # For images and figures, handle base64 data
+    media_url = None
+    if metric_type in ['image', 'figure']:
+        # Optionally save to media storage and store URL
+        pass
+    
+    CustomMetricEntry.objects.create(
+        run=run,
+        name=name,
+        type=metric_type,
+        value=value,
+        step=step,
+        epoch=epoch,
+        media_url=media_url
+    )
+    
+    
+    return Response({'status': 'logged'})
+
+@api_view(['GET'])
+def get_custom_metrics(request, run_id):
+    """Retrieve all custom metrics for a run"""
+    run = get_object_or_404(Job, id=run_id)
+    
+    # Group metrics by name for easy plotting
+    metrics_by_name = {}
+    for metric in run.custom_metrics.all().order_by('step'):
+        if metric.name not in metrics_by_name:
+            metrics_by_name[metric.name] = {
+                'steps': [],
+                'values': [],
+                'type': metric.type
+            }
+        metrics_by_name[metric.name]['steps'].append(metric.step)
+        metrics_by_name[metric.name]['values'].append(metric.value)
+    
+    return Response(metrics_by_name)

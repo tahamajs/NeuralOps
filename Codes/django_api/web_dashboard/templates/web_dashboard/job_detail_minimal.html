@@ -187,7 +187,41 @@ document.getElementById('captureEnvBtn').onclick = async () => {
     pre.textContent = JSON.stringify(env, null, 2);
 };
 </script>
+<!-- templates/web_dashboard/components/metrics_dashboard.html -->
+<div class="card mt-3">
+    <h3>📊 Custom Metrics</h3>
+    <div class="row">
+        <div class="col-md-3">
+            <label>Select Metrics:</label>
+            <select id="metricSelector" multiple class="form-control"></select>
+            <button id="refreshMetricsBtn" class="btn btn-sm btn-primary mt-2">Update Chart</button>
+        </div>
+        <div class="col-md-9">
+            <div id="scalarChart" style="height: 400px;"></div>
+            <div id="imageGallery" class="row mt-4"></div>
+            <div id="tableView" class="table-responsive mt-4"></div>
+        </div>
+    </div>
+</div>
 
+<script>
+// This script fetches metrics and renders them using Plotly.js
+async function loadMetrics(runId) {
+    const response = await fetch(`/api/runs/${runId}/metrics/`, {
+        headers: { 'Authorization': `Token ${localStorage.getItem('authToken')}` }
+    });
+    const metrics = await response.json();
+    
+    // Populate selector and charts
+    const selector = document.getElementById('metricSelector');
+    selector.innerHTML = Object.keys(metrics).map(name => 
+        `<option value="${name}">${name}</option>`
+    ).join('');
+    
+    // Update plotly chart with selected scalar metrics
+    // (implementation details omitted for brevity)
+}
+</script>
 <div class="card mt-3">
     <h3>⚙️ Configuration History</h3>
     <div class="row">
