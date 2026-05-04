@@ -1,3 +1,4 @@
+# framework/data/task_mapper.py
 TASK_METRICS = {
     "cola": "matthews_correlation",
     "sst2": "accuracy",
@@ -16,8 +17,8 @@ TASK_NUM_LABELS = {
     "qqp": 2,
     "qnli": 2,
     "rte": 2,
-    "mnli": 3,      # entailment, neutral, contradiction
-    "stsb": 1,      # regression
+    "mnli": 3,
+    "stsb": 1,
 }
 
 TASK_COLUMNS = {
@@ -31,18 +32,17 @@ TASK_COLUMNS = {
     "stsb": ["sentence1", "sentence2"],
 }
 
-def get_metric_name(task):
+def get_metric_name(task: str) -> str:
     return TASK_METRICS.get(task, "accuracy")
 
-def get_num_labels(task, dataset=None):
+def get_num_labels(task: str, dataset=None) -> int:
     if task == "stsb":
         return 1
     if task in TASK_NUM_LABELS:
         return TASK_NUM_LABELS[task]
-    # fallback: detect from dataset
     if dataset and "label" in dataset["train"].column_names:
         return len(dataset["train"].unique("label"))
-    return 2  # default binary
+    return 2
 
-def get_text_columns(task):
+def get_text_columns(task: str) -> list:
     return TASK_COLUMNS.get(task, ["sentence"])
