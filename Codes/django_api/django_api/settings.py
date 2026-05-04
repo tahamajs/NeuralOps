@@ -11,15 +11,14 @@ sys.path.insert(0, str(BASE_DIR.parent))
 # HUGGINGFACE_USERNAME = os.environ.get('HF_USERNAME')  # Your HF username or org
 # MODEL_PUBLISH_BUCKET = 'your-bucket-name'  # For intermediate storage
 
-INSTALLED_APPS += ['django_filters', 'notes']
 
-REST_FRAMEWORK = {
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
-    'DEFAULT_VERSION': 'v1',
-    'ALLOWED_VERSIONS': ['v1'],
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    'DEFAULT_PAGINATION_CLASS': 'notes.pagination.StandardResultsSetPagination',
-}
+# REST_FRAMEWORK = {
+#     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+#     'DEFAULT_VERSION': 'v1',
+#     'ALLOWED_VERSIONS': ['v1'],
+#     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+#     'DEFAULT_PAGINATION_CLASS': 'notes.pagination.StandardResultsSetPagination',
+# }
 
 # Structured logging (JSON)
 LOGGING = {
@@ -158,3 +157,4 @@ LOGGING = {
     },
     
 }
+
