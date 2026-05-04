@@ -1,0 +1,5 @@
+{"timestamp": "2026-05-03T23:45:40.766311", "level": "INFO", "logger": "minimal_nova_baseline_mrpc_42", "message": "🚀 Logging initialized. Run directory: ./logs/minimal_nova_baseline_mrpc_42_2026-05-04_03-15-40", "module": "logger", "function": "setup_logging"}
+{"timestamp": "2026-05-03T23:45:40.766730", "level": "INFO", "logger": "minimal_nova_baseline_mrpc_42", "message": "Experiment: minimal_nova_baseline_mrpc_42", "module": "run", "function": "run_training"}
+{"timestamp": "2026-05-03T23:45:40.766789", "level": "INFO", "logger": "minimal_nova_baseline_mrpc_42", "message": "Model: distilbert-base-uncased, Task: mrpc, Attention: minimal_nova, Method: baseline", "module": "run", "function": "run_training"}
+{"timestamp": "2026-05-03T23:45:48.633301", "level": "INFO", "logger": "minimal_nova_baseline_mrpc_42", "message": "Injected 'minimal_nova' into 6 layers.", "module": "run", "function": "run_training"}
+{"timestamp": "2026-05-03T23:45:54.413062", "level": "INFO", "logger": "minimal_nova_baseline_mrpc_42", "message": "Training started – dashboard runs on main thread", "module": "run", "function": "run_training"}

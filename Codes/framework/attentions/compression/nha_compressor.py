@@ -1,4 +1,4 @@
-from framework.attentions.utils import replace_attention   # adjust import path as needed
+from framework.utils import replace_attention   # adjust import path as needed
 
 class NHACompressor:
     """

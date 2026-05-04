@@ -82,7 +82,10 @@ class MinimalNOVAAttention(nn.Module):
         context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         output = self.out_proj(context)
-        return (output, attn_weights) if output_attentions else (output,)
+        if output_attentions:
+            return (output, attn_weights)
+        else:
+            return (output, None)
 
     def get_ortho_loss(self):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)

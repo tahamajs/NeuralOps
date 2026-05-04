@@ -9,8 +9,9 @@ sys.path.insert(0, str(BASE_DIR.parent))
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"]
-
 INSTALLED_APPS = [
+        'daphne',          # put at the top
+
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -19,27 +20,33 @@ INSTALLED_APPS = [
     "corsheaders",
     "channels",
     "api",
-]
+    'rest_framework.authtoken',   # this line is required
+    'web_dashboard',
 
+]
+ASGI_APPLICATION = 'django_api.asgi.application'
+# LOGIN_URL = '/login/'
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
-    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
+    #     'web_dashboard.middleware.WellKnownIgnoreMiddleware',   # <-- add this line
 
+    # 'web_dashboard.middleware.TokenAuthMiddleware',  # <-- add this line at the top
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
 ROOT_URLCONF = "django_api.urls"
 WSGI_APPLICATION = "django_api.wsgi.application"
-ASGI_APPLICATION = "django_api.asgi.application"
+# ASGI_APPLICATION = "django_api.asgi.application"
 
 # Channels layer (in‑memory for dev; use Redis in production)
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
 
@@ -49,7 +56,14 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
     }
 }
-
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 'api.authentication.CookieTokenAuthentication',   # <-- use custom class
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+}
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
@@ -60,7 +74,27 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 CORS_ALLOW_ALL_ORIGINS = True
+import os
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],  # optional, for global templates
+        'APP_DIRS': True,  # this tells Django to look inside each app's templates/ folder
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -81,4 +115,5 @@ LOGGING = {
         "handlers": ["console"],
         "level": "INFO",
     },
+    
 }

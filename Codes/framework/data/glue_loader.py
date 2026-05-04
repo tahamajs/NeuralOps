@@ -17,7 +17,9 @@ GLUE_TASK_KEYS = {
 
 def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
     """Load a GLUE task from local Parquet files."""
-    task_path = os.path.join(base_path, task_name)
+    base_pathh = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+
+    task_path = os.path.join(base_pathh, task_name)
     if not os.path.exists(task_path):
         raise FileNotFoundError(f"Local path {task_path} not found")
 
