@@ -17,6 +17,8 @@ urlpatterns = [
     path('api/', include('jobscheduler.urls')),
 path('api/', include('notes.urls')),
     path('api/', include('api.urls')),
+    path('api/', include('experiments.urls')),
+
     path('.well-known/appspecific/com.chrome.devtools.json', lambda request: HttpResponse(status=204)),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
