@@ -6,8 +6,6 @@
     <title>Experiment Monitor – Live Training Dashboard</title>
     <style>
         * { box-sizing: border-box; }
-        .report { background: #10b981; color: white; }
-        .pdf-preview { background: #ec489a; color: white; }
         body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, monospace; padding: 20px; margin: 0; }
         .container { max-width: 1600px; margin: 0 auto; }
         .card { background: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
@@ -16,11 +14,14 @@
         .badge.running { background: #f59e0b; color: #000; }
         .badge.completed { background: #10b981; }
         .badge.failed { background: #ef4444; }
+        .badge.queued { background: #6b7280; }
         button { background: #3b82f6; border: none; border-radius: 8px; padding: 6px 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin: 0 4px; }
         button:hover { opacity: 0.85; transform: scale(0.98); }
         .stop { background: #ef4444; color: white; }
         .paper { background: #f59e0b; color: black; }
         .eval { background: #8b5cf6; color: white; }
+        .retry { background: #10b981; color: white; }
+        .delete { background: #dc2626; color: white; }
         a { color: #60a5fa; text-decoration: none; }
         .dashboard-grid { display: flex; gap: 24px; flex-wrap: wrap; }
         .main-charts { flex: 2; min-width: 300px; }
@@ -37,36 +38,32 @@
         .list-group-item { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
         .list-group-item a { color: #e2e8f0; text-decoration: none; display: block; }
         .list-group-item:hover { background: #334155; }
-        .btn-download { background: #10b981; color: white; }
+        .btn-download { background: #10b981; color: white; display: inline-block; padding: 6px 12px; border-radius: 8px; margin-right: 8px; }
         hr { border-color: #334155; margin: 16px 0; }
         h2, h3 { margin: 0 0 8px 0; font-weight: 600; }
-        .modal { animation: fadeIn 0.2s; }
+        .modal { animation: fadeIn 0.2s; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; }
+        .modal-content { background:#1e293b; border-radius:20px; max-width:500px; width:90%; padding:20px; color:#e2e8f0; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        #convergence-warning {
-            background: #f59e0b20;
-            color: #fbbf24;
-            padding: 8px;
-            border-radius: 8px;
-            text-align: center;
-            font-size: 0.85rem;
-            display: none;
-        }
+        #convergence-warning { background: #f59e0b20; color: #fbbf24; padding: 8px; border-radius: 8px; text-align: center; font-size: 0.85rem; display: none; margin-top: 12px; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
     </style>
-    <script src="/static/web_dashboard/js/chart.js"></script>
-    <link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
-    <script src="/static/web_dashboard/js/xterm.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
 </head>
 <body>
 <div class="container">
     <div class="flex-row">
         <h2>⚡ Experiment <span id="exp-id">{{ run.id|slice:"8" }}</span> <span id="status-badge" class="badge">{{ run.status|default:"queued" }}</span></h2>
-        <div>
+        <div class="button-group">
             <button id="eval-btn" class="eval">📊 Evaluate</button>
             <button id="stop-btn" class="stop">⏹ Stop</button>
+            <button id="retry-btn" class="retry">🔄 Retry</button>
+            <button id="delete-btn" class="delete">🗑 Delete</button>
             <button id="paper-btn" class="paper">📄 Generate Paper</button>
-            <button id="report-btn" class="report">📄 Full Report</button>
-            <button id="pdf-preview-btn" class="pdf-preview">📄 PDF Preview</button>
-            <a href="/">← Dashboard</a>
+            <button id="report-btn" class="paper">📑 Full Report</button>
+            <button id="pdf-preview-btn" class="paper">📄 PDF Preview</button>
+            <a href="/dashboard/" class="btn-download" style="background:#3b82f6;">← Dashboard</a>
         </div>
     </div>
 
@@ -115,27 +112,27 @@
     <div class="card">
         <h3>📁 Artifacts & Downloads</h3>
         <div id="artifacts-list" class="list-group" style="background:transparent;"></div>
-        <div class="mt-3">
-            <a id="download-model-btn" class="btn btn-primary-custom" style="background:#10b981;"><i class="fas fa-download me-1"></i> Download Model (ZIP)</a>
-            <a id="download-config-btn" class="btn btn-primary-custom" style="margin-left:10px;"><i class="fas fa-download me-1"></i> Download Config (JSON)</a>
-            <a id="download-metrics-btn" class="btn btn-primary-custom" style="margin-left:10px;"><i class="fas fa-download me-1"></i> Download Metrics (JSON)</a>
+        <div class="button-group" style="margin-top: 12px;">
+            <a id="download-model-btn" class="btn-download" style="background:#10b981;"><i class="fas fa-download"></i> Download Model</a>
+            <a id="download-config-btn" class="btn-download" style="background:#3b82f6;"><i class="fas fa-download"></i> Config JSON</a>
+            <a id="download-metrics-btn" class="btn-download" style="background:#8b5cf6;"><i class="fas fa-download"></i> Metrics JSON</a>
         </div>
     </div>
 </div>
 
 <!-- Evaluation Modal -->
-<div id="evalModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000;">
-    <div style="background:#1e293b; border-radius:20px; max-width:500px; width:90%; padding:20px; color:#e2e8f0;">
+<div id="evalModal" class="modal" style="display:none;">
+    <div class="modal-content">
         <h3>📊 Evaluation Results</h3>
         <div id="evalResults" style="margin:15px 0; font-family:monospace;"></div>
-        <button onclick="closeEvalModal()" style="background:#3b82f6; border:none; padding:6px 16px; border-radius:8px;">Close</button>
+        <button onclick="closeEvalModal()" style="background:#3b82f6;">Close</button>
     </div>
 </div>
 
 <!-- PDF Preview Modal -->
-<div id="pdfModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1002;">
+<div id="pdfModal" class="modal" style="display:none;">
     <div style="position:relative; width:100%; height:100%;">
-        <button onclick="closePdfModal()" style="position:absolute; top:20px; right:30px; background:#ef4444; color:white; border:none; border-radius:50%; width:40px; height:40px; cursor:pointer;">✕</button>
+        <button onclick="closePdfModal()" style="position:absolute; top:20px; right:30px; background:#ef4444; color:white; border:none; border-radius:50%; width:40px; height:40px;">✕</button>
         <iframe id="pdfIframe" src="" style="width:100%; height:100%; border:none;"></iframe>
     </div>
 </div>
@@ -148,10 +145,18 @@
     let lossChart, evalChart;
     let trainSteps = [], trainLosses = [];
     let evalSteps = [], evalLosses = [], evalAccuracies = [];
+    let startTime = Date.now(), startTimeSet = false, lastStep = 0;
+    let ws = null, termWs = null, term = null;
 
-    let startTime = Date.now();
-    let startTimeSet = false;
-    let lastStep = 0;
+    // Helper: fetch with auth
+    async function apiFetch(url, options = {}) {
+        const res = await fetch(url, {
+            ...options,
+            headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...options.headers }
+        });
+        if (res.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login/'; throw new Error('Unauthorized'); }
+        return res;
+    }
 
     function initCharts() {
         lossChart = new Chart(document.getElementById('lossChart'), {
@@ -171,20 +176,18 @@
 
     async function loadHistory() {
         try {
-            const res = await fetch(`/api/runs/${runId}/history/`, { headers: { 'Authorization': `Token ${authToken}` } });
+            const res = await apiFetch(`/api/runs/${runId}/history/`);
             if (res.ok) {
                 const h = await res.json();
                 if (h.steps && h.losses) {
-                    trainSteps = h.steps;
-                    trainLosses = h.losses;
+                    trainSteps = h.steps; trainLosses = h.losses;
                     lastStep = trainSteps[trainSteps.length-1] || 0;
                     lossChart.data.labels = trainSteps;
                     lossChart.data.datasets[0].data = trainLosses;
                     lossChart.update();
                 }
                 if (h.eval_steps && h.eval_losses) {
-                    evalSteps = h.eval_steps;
-                    evalLosses = h.eval_losses;
+                    evalSteps = h.eval_steps; evalLosses = h.eval_losses;
                     evalChart.data.labels = evalSteps;
                     evalChart.data.datasets[0].data = evalLosses;
                     if (h.eval_metrics && h.eval_metrics.length) {
@@ -195,78 +198,52 @@
                 }
                 computeAnalytics();
             }
-        } catch(e) { console.warn('Could not load history', e); }
+        } catch(e) { console.warn('History load error', e); }
     }
 
     async function loadRunDetails() {
         try {
-            const res = await fetch(`/api/runs/${runId}/`, { headers: { 'Authorization': `Token ${authToken}` } });
+            const res = await apiFetch(`/api/runs/${runId}/`);
             if (res.ok) {
                 const run = await res.json();
                 const metrics = run.final_metrics || {};
                 const container = document.getElementById('final-metrics');
-                if (container && Object.keys(metrics).length > 0) {
-                    container.innerHTML = Object.entries(metrics).map(([k,v]) => `
-                        <div class="stat-card"><div class="stat-label">${k.replace(/_/g,' ')}</div><div class="stat-value">${typeof v === 'number' ? v.toFixed(4) : v}</div></div>
-                    `).join('');
-                } else if (container) {
-                    container.innerHTML = '<div class="stat-card col-12">No final metrics yet.</div>';
-                }
-                // Config and metrics download blobs
-                const configBlob = new Blob([JSON.stringify(run.config, null, 2)], {type: 'application/json'});
-                const metricsBlob = new Blob([JSON.stringify(run.final_metrics, null, 2)], {type: 'application/json'});
+                container.innerHTML = Object.keys(metrics).length ? Object.entries(metrics).map(([k,v]) => `<div class="stat-card"><div class="stat-label">${k.replace(/_/g,' ')}</div><div class="stat-value">${typeof v === 'number' ? v.toFixed(4) : v}</div></div>`).join('') : '<div class="stat-card col-12">No final metrics yet.</div>';
+                // download links for config and metrics
+                const configBlob = new Blob([JSON.stringify(run.config, null, 2)], {type:'application/json'});
+                const metricsBlob = new Blob([JSON.stringify(run.final_metrics, null, 2)], {type:'application/json'});
                 document.getElementById('download-config-btn').href = URL.createObjectURL(configBlob);
                 document.getElementById('download-metrics-btn').href = URL.createObjectURL(metricsBlob);
+                // update status badge
+                document.getElementById('status-badge').innerText = run.status;
+                document.getElementById('status-badge').className = `badge ${run.status}`;
             }
-        } catch(e) { console.warn('Failed to load run details', e); }
+        } catch(e) { console.warn('Run details load error', e); }
     }
 
     async function loadArtifacts() {
         try {
-            const res = await fetch(`/api/runs/${runId}/artifacts/`, { headers: { 'Authorization': `Token ${authToken}` } });
+            const res = await apiFetch(`/api/runs/${runId}/artifacts/`);
             if (res.ok) {
                 const data = await res.json();
                 const artifacts = data.artifacts || [];
                 const container = document.getElementById('artifacts-list');
-                if (container) {
-                    if (artifacts.length === 0) {
-                        container.innerHTML = '<div class="text-secondary">No artifacts yet. Training may not have finished.</div>';
-                        return;
-                    }
-                    container.innerHTML = artifacts.map(path => {
-                        const filename = path.split('/').pop();
-                        let icon = 'fa-file';
-                        if (filename.endsWith('.png')) icon = 'fa-image';
-                        else if (filename.endsWith('.csv')) icon = 'fa-table';
-                        else if (filename.endsWith('.json')) icon = 'fa-code';
-                        else if (filename.endsWith('.txt')) icon = 'fa-file-alt';
-                        else if (filename.endsWith('.zip')) icon = 'fa-archive';
-                        return `<div class="list-group-item"><i class="fas ${icon} me-2"></i><a href="/api/runs/${runId}/artifacts/${encodeURIComponent(path)}" target="_blank">${filename}</a></div>`;
-                    }).join('');
-                }
+                if (artifacts.length === 0) { container.innerHTML = '<div class="text-secondary">No artifacts yet.</div>'; return; }
+                container.innerHTML = artifacts.map(path => `<div class="list-group-item"><a href="/api/runs/${runId}/artifacts/${encodeURIComponent(path)}" target="_blank">📄 ${path.split('/').pop()}</a></div>`).join('');
             }
-        } catch(e) { console.warn('Failed to load artifacts', e); }
+        } catch(e) { console.warn('Artifacts load error', e); }
     }
 
     function computeAnalytics() {
         if (trainSteps.length === 0) return;
-        const steps = trainSteps;
-        const losses = trainLosses;
+        const steps = trainSteps, losses = trainLosses;
         const duration = (Date.now() - startTime) / 1000;
         const stepsPerSec = (lastStep / duration).toFixed(2);
         const minLoss = Math.min(...losses).toFixed(4);
         const maxLoss = Math.max(...losses).toFixed(4);
-        const last10Losses = losses.slice(-10);
-        const avgLast10 = (last10Losses.reduce((a,b) => a+b,0) / last10Losses.length).toFixed(4);
-        const firstLoss = losses[0];
-        const lastLoss = losses[losses.length-1];
-        const reduction = ((firstLoss - lastLoss) / firstLoss * 100).toFixed(1);
-        let bestEval = '--';
-        if (evalAccuracies.length > 0) {
-            const maxAcc = Math.max(...evalAccuracies.filter(v => v !== null));
-            bestEval = maxAcc.toFixed(4);
-        }
-        const epochsDone = evalSteps.length;
+        const avgLast10 = (losses.slice(-10).reduce((a,b)=>a+b,0) / Math.min(10, losses.length)).toFixed(4);
+        const reduction = ((losses[0] - losses[losses.length-1]) / losses[0] * 100).toFixed(1);
+        const bestEval = evalAccuracies.length ? Math.max(...evalAccuracies.filter(v=>v!==null)).toFixed(4) : '--';
         document.getElementById('duration').innerText = formatDuration(duration);
         document.getElementById('step_rate').innerText = stepsPerSec;
         document.getElementById('min_loss').innerText = minLoss;
@@ -274,23 +251,18 @@
         document.getElementById('avg_loss_last').innerText = avgLast10;
         document.getElementById('loss_reduction').innerText = reduction + '%';
         document.getElementById('best_eval').innerText = bestEval;
-        document.getElementById('epochs_done').innerText = epochsDone;
-
-        // Convergence warning (loss not decreasing for last 50 steps)
-        const warningDiv = document.getElementById('convergence-warning');
+        document.getElementById('epochs_done').innerText = evalSteps.length;
+        // convergence warning
+        const warning = document.getElementById('convergence-warning');
         if (losses.length > 50) {
             const recent = losses.slice(-50);
-            const hasImproved = recent[recent.length-1] < recent[0] - 0.01;
-            warningDiv.style.display = hasImproved ? 'none' : 'block';
-        } else {
-            warningDiv.style.display = 'none';
-        }
+            const improved = recent[recent.length-1] < recent[0] - 0.01;
+            warning.style.display = improved ? 'none' : 'block';
+        } else warning.style.display = 'none';
     }
 
-    function formatDuration(seconds) {
-        const h = Math.floor(seconds / 3600);
-        const m = Math.floor((seconds % 3600) / 60);
-        const s = Math.floor(seconds % 60);
+    function formatDuration(sec) {
+        const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = Math.floor(sec%60);
         return `${h}h ${m}m ${s}s`;
     }
 
@@ -317,10 +289,7 @@
 
     function updateMetrics(data) {
         if (data.step !== undefined && data.loss !== undefined) {
-            if (!startTimeSet) {
-                startTime = Date.now();
-                startTimeSet = true;
-            }
+            if (!startTimeSet) { startTime = Date.now(); startTimeSet = true; }
             trainSteps.push(data.step);
             trainLosses.push(data.loss);
             lastStep = data.step;
@@ -346,11 +315,10 @@
         }
     }
 
-    // WebSocket connection
-    let ws;
     function connectWebSocket() {
+        if (ws) ws.close();
         ws = new WebSocket(`ws://${location.host}/ws/jobs/${runId}/`);
-        ws.onopen = () => console.log('[WS] Connected');
+        ws.onopen = () => console.log('[WS] Job connected');
         ws.onmessage = (e) => {
             try {
                 const msg = JSON.parse(e.data);
@@ -365,61 +333,70 @@
                 }
             } catch(err) { console.error('WS parse error', err); }
         };
-        ws.onclose = () => {
-            console.log('[WS] Disconnected, reconnecting in 3s...');
-            setTimeout(connectWebSocket, 3000);
-        };
-        ws.onerror = (err) => console.error('[WS] Error', err);
+        ws.onclose = () => { console.log('[WS] Job disconnected, reconnecting in 3s...'); setTimeout(connectWebSocket, 3000); };
     }
 
-function initTerminal() {
-    if (typeof Terminal === 'undefined') {
-        document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js not loaded</div>';
-        return;
+    function initTerminal() {
+        if (typeof Terminal === 'undefined') { document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js not loaded</div>'; return; }
+        term = new Terminal({ cursorBlink: true, theme: { background: '#000000', foreground: '#00ff00' }, fontSize: 12 });
+        term.open(document.getElementById('terminal-container'));
+        function connectTerminalWs() {
+            if (termWs) termWs.close();
+            termWs = new WebSocket(`ws://${location.host}/ws/terminal/`);
+            termWs.onmessage = (ev) => term.write(ev.data);
+            termWs.onclose = () => setTimeout(connectTerminalWs, 3000);
+            termWs.onopen = () => console.log('[WS] Terminal connected');
+        }
+        connectTerminalWs();
+        term.onData((data) => { if (termWs && termWs.readyState === WebSocket.OPEN) termWs.send(data); });
     }
-    term = new Terminal({ cursorBlink: true, theme: { background: '#000000', foreground: '#00ff00' }, fontSize: 12 });
-    term.open(document.getElementById('terminal-container'));
-    const termWs = new WebSocket(`ws://${location.host}/ws/terminal/`);
-    termWs.onmessage = (ev) => term.write(ev.data);
-    term.onData((data) => { if (termWs.readyState === WebSocket.OPEN) termWs.send(data); });
-    termWs.onclose = () => term.write('\r\n\x1b[33mTerminal reconnecting...\x1b[0m\r\n');
-}
 
-    // Button handlers
+    // Action buttons
     document.getElementById('eval-btn').onclick = async () => {
         const btn = document.getElementById('eval-btn');
-        btn.textContent = '⏳ Evaluating...';
-        btn.disabled = true;
+        btn.disabled = true; btn.textContent = '⏳ Evaluating...';
         try {
-            const res = await fetch(`/api/runs/${runId}/evaluate/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
+            const res = await apiFetch(`/api/runs/${runId}/evaluate/`, { method: 'POST' });
             const data = await res.json();
             if (res.ok) {
                 let html = '<ul>';
-                for (const [key, value] of Object.entries(data.metrics)) {
-                    html += `<li><strong>${key}:</strong> ${typeof value === 'number' ? value.toFixed(4) : value}</li>`;
-                }
+                for (const [k,v] of Object.entries(data.metrics)) html += `<li><strong>${k}:</strong> ${typeof v === 'number' ? v.toFixed(4) : v}</li>`;
                 html += '</ul>';
                 document.getElementById('evalResults').innerHTML = html;
                 document.getElementById('evalModal').style.display = 'flex';
-            } else {
-                alert('Evaluation failed: ' + (data.error || 'Unknown error'));
-            }
-        } catch (err) { alert('Evaluation request failed'); }
-        finally { btn.textContent = '📊 Evaluate'; btn.disabled = false; }
+            } else alert('Evaluation failed: ' + (data.error || 'Unknown'));
+        } catch(err) { alert('Evaluation request failed'); }
+        finally { btn.disabled = false; btn.textContent = '📊 Evaluate'; }
     };
 
-document.getElementById('stop-btn').onclick = async () => {
-    const btn = document.getElementById('stop-btn');
-    if (btn.disabled) return;
-    btn.disabled = true;
-    if (confirm('Stop this experiment?')) {
-        const res = await fetch(`/api/runs/${runId}/stop/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
-        if (!res.ok) alert('Failed to stop');
-    }
-    // optionally re‑enable after a delay or keep disabled
-};
+    document.getElementById('stop-btn').onclick = async () => {
+        if (!confirm('Stop this training run?')) return;
+        const btn = document.getElementById('stop-btn');
+        btn.disabled = true;
+        await apiFetch(`/api/runs/${runId}/stop/`, { method: 'POST' });
+        btn.disabled = false;
+        loadRunDetails();
+    };
+
+    document.getElementById('retry-btn').onclick = async () => {
+        if (!confirm('Retry (resume) this run?')) return;
+        const btn = document.getElementById('retry-btn');
+        btn.disabled = true;
+        await apiFetch(`/api/runs/${runId}/resume/`, { method: 'POST' });
+        btn.disabled = false;
+        loadRunDetails();
+        connectWebSocket();
+    };
+
+    document.getElementById('delete-btn').onclick = async () => {
+        if (!confirm('Delete this run permanently? This cannot be undone.')) return;
+        const res = await apiFetch(`/api/runs/${runId}/`, { method: 'DELETE' });
+        if (res.ok) window.location.href = '/dashboard/';
+        else alert('Delete failed');
+    };
+
     document.getElementById('paper-btn').onclick = async () => {
-        const res = await fetch(`/api/runs/${runId}/paper/`, { headers: { 'Authorization': `Token ${authToken}` } });
+        const res = await apiFetch(`/api/runs/${runId}/paper/`);
         if (res.ok) {
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
@@ -430,27 +407,20 @@ document.getElementById('stop-btn').onclick = async () => {
             URL.revokeObjectURL(url);
         } else alert('Paper generation failed');
     };
-
     document.getElementById('report-btn').onclick = () => window.open(`/api/runs/${runId}/report/`, '_blank');
-    document.getElementById('pdf-preview-btn').onclick = () => {
-        document.getElementById('pdfIframe').src = `/api/runs/${runId}/paper_preview/`;
-        document.getElementById('pdfModal').style.display = 'flex';
-    };
-    function closeEvalModal() { document.getElementById('evalModal').style.display = 'none'; }
-    function closePdfModal() {
-        document.getElementById('pdfModal').style.display = 'none';
-        document.getElementById('pdfIframe').src = '';
-    }
+    document.getElementById('pdf-preview-btn').onclick = () => { document.getElementById('pdfIframe').src = `/api/runs/${runId}/paper_preview/`; document.getElementById('pdfModal').style.display = 'flex'; };
     document.getElementById('download-model-btn').href = `/api/runs/${runId}/model/`;
+    window.closeEvalModal = () => document.getElementById('evalModal').style.display = 'none';
+    window.closePdfModal = () => { document.getElementById('pdfModal').style.display = 'none'; document.getElementById('pdfIframe').src = ''; };
 
-    // Periodic analytics update (every 5 seconds)
-    setInterval(computeAnalytics, 5000);
-
+    // Initialisation
     initCharts();
     loadHistory().then(() => connectWebSocket());
     initTerminal();
     loadRunDetails();
     loadArtifacts();
+    setInterval(computeAnalytics, 5000);
+    setInterval(loadRunDetails, 10000);
 </script>
 </body>
 </html>

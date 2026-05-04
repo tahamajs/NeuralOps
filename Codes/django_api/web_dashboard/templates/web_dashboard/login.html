@@ -43,9 +43,13 @@
             color: white;
             font-weight: bold;
             cursor: pointer;
+            transition: 0.2s;
         }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
         .error { color: #f87171; margin-bottom: 1rem; text-align: center; }
-        a { color: #60a5fa; display: block; text-align: center; margin-top: 1rem; }
+        a { color: #60a5fa; display: block; text-align: center; margin-top: 1rem; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .loader { display: none; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -54,7 +58,8 @@
     <div id="error" class="error" style="display:none;"></div>
     <input type="text" id="username" placeholder="Username" autocomplete="username">
     <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-    <button onclick="doLogin()">Sign In →</button>
+    <button onclick="doLogin()" id="loginBtn">Sign In →</button>
+    <div id="loader" class="loader">Authenticating...</div>
     <a href="/register/">Don't have an account? Create one</a>
 </div>
 
@@ -63,22 +68,28 @@
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
         const errorDiv = document.getElementById('error');
+        const btn = document.getElementById('loginBtn');
+        const loader = document.getElementById('loader');
         if (!username || !password) {
             errorDiv.innerText = 'Username and password required';
             errorDiv.style.display = 'block';
             return;
         }
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        loader.style.display = 'block';
+        errorDiv.style.display = 'none';
         try {
             const res = await fetch('/api/auth/login/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
-                credentials: 'include'   // ✅ important
+                credentials: 'include'
             });
             const data = await res.json();
             if (res.ok) {
                 localStorage.setItem('authToken', data.token);
-                window.location.href = '/';
+                window.location.href = '/dashboard/';
             } else {
                 errorDiv.innerText = data.error || 'Invalid credentials';
                 errorDiv.style.display = 'block';
@@ -86,6 +97,10 @@
         } catch (err) {
             errorDiv.innerText = 'Network error. Please try again.';
             errorDiv.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            loader.style.display = 'none';
         }
     }
     document.getElementById('password').addEventListener('keypress', (e) => {
