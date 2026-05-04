@@ -1,40 +1,59 @@
 # ============================================================================
 #  EFFICIENT ATTENTION FRAMEWORK – Master Configuration
+#  Complete selection of attention types, compression methods, models, datasets.
 # ============================================================================
 
 # ----------------------------------------------------------------------------
-# Hardware Settings
+# Experiment Metadata
 # ----------------------------------------------------------------------------
-hardware:
-  device: "auto"                    # auto, mps, cuda, cpu
-  force_cpu_for_svd: true           # Use CPU for SVD computation (recommended for MPS)
-  enable_fp16: false                # Enable mixed precision (MPS has limited support)
-  num_workers: 4                    # DataLoader workers
-  pin_memory: false                 # Pin memory (MPS doesn't support)
-  torch_compile: false              # Use torch.compile (experimental)
+experiment:
+  name: "efficient_attention_experiment"
+  seed: 42
+  num_seeds: 1
+  base_seed: 42
+  mode: "full"                     # full, quick, debug, benchmark
+  debug: false
+  profile: false
+  output_dir: "results"
+  plots_dir: "results/plots"
+  log_dir: "logs"
+  cache_dir: "./cache"
+
+  # Optional filters (null = use all)
+  limit_tasks: null                # e.g., ["cola", "mrpc"]
+  limit_models: null               # e.g., ["bert-base-uncased"]
+  limit_attention: null            # e.g., ["full", "nexus", "goldfinch_ahn"]
+  limit_compression: null          # e.g., ["slicegpt", "adasvd"]
+  limit_samples_per_task: null
 
 # ----------------------------------------------------------------------------
-# Memory Management
+# Hardware & Performance
 # ----------------------------------------------------------------------------
+hardware:
+  device: "auto"                   # auto, mps, cuda, cpu
+  force_cpu_for_svd: true
+  enable_fp16: false
+  num_workers: 4
+  pin_memory: false
+  torch_compile: false
+
 memory:
-  gradient_checkpointing: true      # Enable gradient checkpointing (saves memory)
-  max_grad_norm: 1.0                # Gradient clipping norm
-  empty_cache_every_step: false     # Clear cache after each step (slower but saves memory)
-  mixed_precision: false            # Use mixed precision training
+  gradient_checkpointing: true
+  max_grad_norm: 1.0
+  empty_cache_every_step: false
+  mixed_precision: false
 
 # ----------------------------------------------------------------------------
 # Data Settings
 # ----------------------------------------------------------------------------
 data:
-  local_glue_path: "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+  local_glue_path: "/path/to/glue"
   max_seq_length: 128
-  max_train_samples: null           # Limit training samples (null = all)
-  max_val_samples: null             # Limit validation samples
-  num_proc: 4                       # Number of processes for dataset mapping
-  remove_columns: ["label"]         # Columns to remove after tokenization
-  streaming: false                  # Use streaming datasets
-
-  # Dataset split mappings
+  max_train_samples: null
+  max_val_samples: null
+  num_proc: 4
+  remove_columns: ["label"]
+  streaming: false
   split_mapping:
     train: "train"
     validation: "validation"
@@ -43,184 +62,120 @@ data:
     validation_mismatched: "validation_mismatched"
 
 # ----------------------------------------------------------------------------
-# GLUE Tasks
+# GLUE Tasks (complete set)
 # ----------------------------------------------------------------------------
 glue_tasks:
   - name: "cola"
-    type: "classification"
     num_labels: 2
     metric: "matthews_correlation"
     text_keys: ["sentence"]
     regression: false
     skip: false
-    
   - name: "sst2"
-    type: "classification"
     num_labels: 2
     metric: "accuracy"
     text_keys: ["sentence"]
     regression: false
     skip: false
-    
   - name: "mrpc"
-    type: "classification"
     num_labels: 2
     metric: "f1"
     text_keys: ["sentence1", "sentence2"]
     regression: false
     skip: false
-    
   - name: "qqp"
-    type: "classification"
     num_labels: 2
     metric: "f1"
     text_keys: ["question1", "question2"]
     regression: false
     skip: false
-    
   - name: "qnli"
-    type: "classification"
     num_labels: 2
     metric: "accuracy"
     text_keys: ["question", "sentence"]
     regression: false
     skip: false
-    
   - name: "rte"
-    type: "classification"
     num_labels: 2
     metric: "accuracy"
     text_keys: ["sentence1", "sentence2"]
     regression: false
     skip: false
-    
   - name: "mnli"
-    type: "classification"
     num_labels: 3
     metric: "accuracy"
     text_keys: ["premise", "hypothesis"]
     regression: false
     skip: false
-    
   - name: "stsb"
-    type: "regression"
     num_labels: 1
     metric: "pearson_spearman"
     text_keys: ["sentence1", "sentence2"]
     regression: true
     skip: false
-    
   - name: "wnli"
-    type: "classification"
     num_labels: 2
     metric: "accuracy"
     text_keys: ["sentence1", "sentence2"]
     regression: false
-    skip: true                    # Skip because very small dataset
+    skip: true   # too small
 
 # ----------------------------------------------------------------------------
-# Model Settings
+# Model Selection
 # ----------------------------------------------------------------------------
 model:
-  name: "distilbert-base-uncased"     # Also: roberta-base, bert-base-uncased, albert-base-v2
-  attention_type: "nexus"             # nexus, aegis_v1, aegis_v2, leka_v2, spectra_v2, full, etc.
-  rank: 128                           # Default SVD rank (if applicable)
+  name: "distilbert-base-uncased"   # or bert-base-uncased, roberta-base, albert-base-v2
+  attention_type: "full"            # Choose from the attention list below
+  rank: 128                         # default rank for SVD-based attentions
   cache_dir: "./cache"
   use_fast_tokenizer: true
   trust_remote_code: false
 
-  # Model variants to test (for sweeping)
+  # All available model backbones
   variants:
     - "bert-base-uncased"
     - "roberta-base"
     - "distilbert-base-uncased"
     - "albert-base-v2"
+    - "google/electra-small-discriminator"
 
 # ----------------------------------------------------------------------------
-# Training Settings
+# Attention Type – Complete List (choose by key)
 # ----------------------------------------------------------------------------
-training:
-  batch_size: 32
-  eval_batch_size: 64
-  epochs: 5
-  learning_rate: 1e-5
-  weight_decay: 0.01
-  warmup_ratio: 0.06
-  warmup_steps: 0                    # If > 0, overrides warmup_ratio
-  gradient_accumulation_steps: 1
-  max_grad_norm: 1.0
-  lr_scheduler_type: "linear"        # linear, cosine, constant, polynomial
-  optimizer: "adamw"                 # adamw, lion, sgd
+# Possible attention_type values:
+#
+# === Hybrid SSM + Attention (13 blocks) ===
+#   goldfinch_ahn, granite_hybrid, griffin_ssd, halo_regla, hgrn2_gated_deltanet,
+#   hgrn2_outer, hymba_transx, jamba_info, jamba2, kda, samba_m3, samba_moe,
+#   upi_stuffed_mamba
+#
+# === LEKA variants ===
+#   leka_v1, leka_v2, leka_v3
+#
+# === Aegis family ===
+#   aegis_hybrid, aegis_v1, aegis_v2, aegis_v3, aegis_v4, aegis_v5
+#
+# === Compression/linear attentions ===
+#   full, svd, linformer, nexus, minimal_prism, prism_full, orion, nova,
+#   minimal_nova, chela_slay, nystrom, performer, regla, rpc, zeros, flash3,
+#   hamming, hla, infini, oha, minimal_svd, asvd, primal, svd_llm_v2, tpa,
+#   adaptive_span, block_transformer_hiba, cluster, lsh, mixattention_moska,
+#   moba, nsa, routing, xattention, bam_umoe, phantom, galerkin, spectra,
+#   tlinformer, padre
+#
+# === Multi‑Query / Grouped Query ===
+#   gqa, mla, qcqa, wgqa
+#
+# === Others ===
+#   nebula
+#
+# Default: "full"
 
-  # Early stopping
-  early_stopping_patience: null      # Number of epochs with no improvement
-  early_stopping_threshold: 0.001    # Minimum improvement to reset patience
-
-  # Checkpointing
-  save_strategy: "epoch"             # epoch, steps, no
-  save_steps: 500                    # If save_strategy = "steps"
-  save_total_limit: 2                # Keep only last N checkpoints
-  save_only_model: true              # Save only model weights (not optimizer)
-  save_safetensors: true             # Use safetensors format
-
-  # Evaluation
-  eval_strategy: "epoch"             # epoch, steps, no
-  eval_steps: 500                    # If eval_strategy = "steps"
-  eval_delay: 0                      # Epochs to wait before first evaluation
-  metric_for_best_model: "accuracy"  # auto-detected per task
-  greater_is_better: true
-
-# ----------------------------------------------------------------------------
-# Training Methods (LoRA, DoRA, R‑Drop, etc.)
-# ----------------------------------------------------------------------------
-method:
-  name: "baseline"                   # baseline, lora, dora, dislora, rdrop, r3f, mixout, llrd, fisher_lora, fisher_gelora
-
-lora:
-  r: 8                              # Rank
-  alpha: 16                         # Scaling factor
-  dropout: 0.1                      # Dropout rate
-  target_modules: ["query", "key", "value", "dense"]
-
-dora:
-  r: 8
-  alpha: 16
-  dropout: 0.1
-
-rdrop:
-  alpha: 5.0                        # KL divergence weight
-
-r3f:
-  epsilon: 1e-5                     # Noise scale
-
-mixout:
-  p: 0.5                            # Mixout probability
-
-llrd:
-  decay: 0.95                       # Decay factor per layer
-
-dislora:
-  beta: 0.5
-  capacity_factor: 1.0
-
-fisher:
-  num_batches: 20
-  sample_size: 200
-
-gelora:
-  margin: 1.0
-  min_rank: 2
-  max_rank: 32
-  scale_max: 2.0
-
-# ----------------------------------------------------------------------------
-# Attention‑Specific Parameters
-# ----------------------------------------------------------------------------
 attention_config:
   # Common
   dropout: 0.1
-  
-  # Linformer / TokenCompressedAttention
+
+  # Linformer / Nexus / Prism
   k_early: 32
   k_mid: 16
   k_late: 12
@@ -237,7 +192,7 @@ attention_config:
   use_spherical_norm: true
   kernel: "elu"
 
-  # SpectraV2
+  # Spectra, Galerkin, etc.
   block_size: 64
   top_k_inter: 16
   use_rel_pos_bias: true
@@ -249,12 +204,12 @@ attention_config:
   sph_features: 128
   aks_enabled: true
 
-  # SVD
+  # SVD / low‑rank
   svd_energy: 0.95
   svd_rank_qkv: 32
   svd_rank_out: 32
 
-  # Aegis / CUR
+  # CUR / Aegis
   cur_rank: 16
   tile_size: 32
   num_shared_tiles: 64
@@ -264,28 +219,98 @@ attention_config:
   lsh_bucket_size: 32
   lsh_n_hashes: 2
 
-  # Softpick
-  softpick_enabled: true
-  softpick_temperature: 1.0
-
   # ARMOR / AST / DeltaKV / KVT
   armor_enabled: false
   ast_enabled: false
   deltakv_enabled: false
   kvt_enabled: false
 
-# ----------------------------------------------------------------------------
-# Compression Settings (for SVD‑based linear layer compression)
-# ----------------------------------------------------------------------------
-compression_methods:
-  enabled: true
-  method: "standard_svd"             # standard_svd, randomized_svd, quantized_svd, adaptive_svd, etc.
-  energy_threshold: 0.90
-  min_rank: 4
-  max_rank: 128
+  # Softpick
+  softpick_enabled: true
+  softpick_temperature: 1.0
+
+  # Hybrid SSM specific (Mamba / DeltaNet)
+  ssm_d_state: 16
+  ssm_d_conv: 4
+  ssm_expand: 2
+  sliding_window_size: 256
 
 # ----------------------------------------------------------------------------
-# Post‑Training Compression
+# Training Hyperparameters
+# ----------------------------------------------------------------------------
+training:
+  batch_size: 32
+  eval_batch_size: 64
+  epochs: 5
+  learning_rate: 1e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.06
+  warmup_steps: 0
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+  lr_scheduler_type: "linear"
+  optimizer: "adamw"
+
+  early_stopping_patience: null
+  early_stopping_threshold: 0.001
+
+  save_strategy: "epoch"
+  save_steps: 500
+  save_total_limit: 2
+  save_only_model: true
+  save_safetensors: true
+
+  eval_strategy: "epoch"
+  eval_steps: 500
+  eval_delay: 0
+  metric_for_best_model: "accuracy"
+  greater_is_better: true
+
+# ----------------------------------------------------------------------------
+# Parameter‑Efficient Fine‑Tuning (LoRA, DoRA, etc.)
+# ----------------------------------------------------------------------------
+method:
+  name: "baseline"                 # baseline, lora, dora, dislora, rdrop, r3f, mixout, llrd, fisher_lora, fisher_gelora
+
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.1
+  target_modules: ["query", "key", "value", "dense"]
+
+dora:
+  r: 8
+  alpha: 16
+  dropout: 0.1
+
+rdrop:
+  alpha: 5.0
+
+r3f:
+  epsilon: 1e-5
+
+mixout:
+  p: 0.5
+
+llrd:
+  decay: 0.95
+
+dislora:
+  beta: 0.5
+  capacity_factor: 1.0
+
+fisher:
+  num_batches: 20
+  sample_size: 200
+
+gelora:
+  margin: 1.0
+  min_rank: 2
+  max_rank: 32
+  scale_max: 2.0
+
+# ----------------------------------------------------------------------------
+# Post‑Training Model Compression (SliceGPT, SparseGPT, etc.)
 # ----------------------------------------------------------------------------
 post_compression:
   enabled: false
@@ -294,39 +319,69 @@ post_compression:
       sparsity: 0.3
     - name: "sparsegpt"
       sparsity: 0.5
+    - name: "adasvd"
+      energy_threshold: 0.95
+    - name: "aasvd"
+      rank: 64
+    - name: "cr"                     # CUR decomposition
+      rank: 32
+    - name: "cur_moe"
+      rank: 16
+      num_experts: 4
+    - name: "hashed_net"
+      hash_size: 1024
+    - name: "roast"
+      rank: 32
+    - name: "kronecker"
+      rank: 32
+    - name: "tt"                     # Tensor Train
+      tt_ranks: [16, 16]
+    - name: "kmeans"
+      n_clusters: 256
+    - name: "uniql"
+      n_bits: 4
+    - name: "mlorq"
+      rank: 8
+    - name: "faq"
+      n_bits: 4
+    - name: "coopq"
+      n_bits: 4
+    - name: "astro"
+      n_bits: 3
+    - name: "admm"
+      sparsity: 0.5
+    - name: "sparsegpt"
+      sparsity: 0.5
   calibration_samples: 128
 
+  # Additional compression‑only methods (linear layer compression)
+  compression_methods:
+    enabled: false
+    method: "standard_svd"
+    energy_threshold: 0.90
+    min_rank: 4
+    max_rank: 128
+
 # ----------------------------------------------------------------------------
-# Experiment Settings
+# Advanced Compression Techniques (from your list)
+# They can be selected under post_compression.methods above.
+# Full list available:
+#   swift_svd, swift_svd_act, saes_svd_v2, subspace_projection, mgie_budget,
+#   lsc, lillama, kvt_weight, flat_llm, compot, a3, slicegpt_pca, adasvd,
+#   aasvd, advanced_zero_shot, entropy_budget, sdrm, liftr, cr, cur, cur_moe,
+#   modegpt, hashed_net, roast, direct_svd, adaptive_svd, kronecker,
+#   zerokv_neo, kvtc, hybridkv, delta_kv, cachenotes, slim, rpca, nmf,
+#   gregodec, frandi, enlighten, tomoe, admm, admm_pruner, armor_pruner,
+#   ast_pruner, bonsai, flap, mamba_shedder, oats, proxsparse, replaceme,
+#   slicegpt, sparsegpt, uniql, mlorq, kmeans, faq, coopq, astro, salr,
+#   saes, mgie, gfws, erc, dobi, tt, soka
 # ----------------------------------------------------------------------------
-experiment:
-  name: "efficient_attention_experiment"   # Run name prefix
-  seed: 42
-  num_seeds: 1
-  base_seed: 42
-
-  # Filter tasks/models/ranks to test
-  limit_tasks: null                     # e.g., ["cola", "mrpc"]
-  limit_models: null                    # e.g., ["bert-base-uncased"]
-  limit_ranks: null                     # e.g., [32, 64, 128]
-  limit_samples_per_task: null          # For debugging (e.g., 100)
-
-  # Output directories
-  output_dir: "results"
-  plots_dir: "results/plots"
-  log_dir: "logs"
-  cache_dir: "./cache"
-
-  # Experiment modes
-  mode: "full"                          # full, quick, debug, benchmark
-  debug: false
-  profile: false                        # Enable PyTorch profiler
 
 # ----------------------------------------------------------------------------
 # Logging & Visualization
 # ----------------------------------------------------------------------------
 logging:
-  level: "INFO"                         # DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
   format: "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
   datefmt: "%Y-%m-%d %H:%M:%S"
   file: "experiment.log"
@@ -341,6 +396,8 @@ visualization:
   visualizations:
     - "training_curves"
     - "confusion_matrix"
+    - "attention_heatmap"
+    - "subspace_alignment"
   dpi: 150
   figsize: [12, 8]
   colormap: "viridis"
@@ -348,22 +405,7 @@ visualization:
   generate_report: true
 
 # ----------------------------------------------------------------------------
-# Advanced / Experimental
-# ----------------------------------------------------------------------------
-advanced:
-  compile_model: false
-  use_flash_attention: false
-  use_xformers: false
-  svd_compute_uv: true
-  svd_driver: "auto"
-
-  distributed:
-    enabled: false
-    backend: "nccl"
-    world_size: 1
-
-# ----------------------------------------------------------------------------
-# Debug / Development Settings
+# Debugging & Profiling
 # ----------------------------------------------------------------------------
 debug:
   enabled: false
@@ -373,3 +415,17 @@ debug:
   verify_gradients: false
   check_nan: true
   break_on_nan: false
+
+# ----------------------------------------------------------------------------
+# Experimental / Distributed
+# ----------------------------------------------------------------------------
+advanced:
+  compile_model: false
+  use_flash_attention: false
+  use_xformers: false
+  svd_compute_uv: true
+  svd_driver: "auto"
+  distributed:
+    enabled: false
+    backend: "nccl"
+    world_size: 1
