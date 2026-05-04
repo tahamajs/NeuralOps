@@ -1,31 +1,18 @@
-"""
-Visualization tools for SVD‑based compression analysis.
-"""
-
-import os
+# framework/visualization/svd_analysis.py
 import numpy as np
-import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.linalg import subspace_angles
 from .base import BaseVisualizer, VISUALIZER_REGISTRY
-from .utils import create_custom_colormap, set_plot_style
-
+from .utils import create_custom_colormap
 
 @VISUALIZER_REGISTRY.register("svd_analysis")
 class SVDAttentionVisualizer(BaseVisualizer):
-    """
-    Visualizer for SVD‑compressed attention matrices.
-    Provides singular value spectra, cumulative energy, subspace alignment,
-    and comparative plots across ranks and models.
-    """
-
     def __init__(self, output_dir="visualizations"):
         super().__init__(output_dir)
         self.cmap = create_custom_colormap()
 
     def plot_singular_values(self, attention_matrix, rank, title_prefix="", save=True):
-        """Plot singular value spectrum and cumulative energy."""
         U, s, Vt = np.linalg.svd(attention_matrix, full_matrices=False)
         cum_energy = np.cumsum(s**2) / np.sum(s**2)
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -52,7 +39,6 @@ class SVDAttentionVisualizer(BaseVisualizer):
         return fig
 
     def subspace_alignment(self, full_attn, compressed_attn):
-        """Compute principal angles between subspaces."""
         Uf, _, _ = np.linalg.svd(full_attn, full_matrices=False)
         Uc, _, _ = np.linalg.svd(compressed_attn, full_matrices=False)
         min_dim = min(Uf.shape[1], Uc.shape[1])
@@ -72,9 +58,7 @@ class SVDAttentionVisualizer(BaseVisualizer):
         return fig
 
     def plot_rank_comparison(self, results_dict, task_name, save=True):
-        """Plot accuracy vs rank from results dict."""
-        ranks = []
-        accs = []
+        ranks, accs = [], []
         for r, v in results_dict.items():
             if r != "None" and "accuracy" in v:
                 ranks.append(int(r))
@@ -94,7 +78,6 @@ class SVDAttentionVisualizer(BaseVisualizer):
         return fig
 
     def plot_model_comparison(self, all_model_results, task_name, save=True):
-        """Compare multiple models on one task."""
         fig, ax = plt.subplots(figsize=(12, 6))
         colors = ["#440154", "#3B528B", "#21908C", "#5DC963", "#FDE725"]
         markers = ["o", "s", "^", "D", "v"]
@@ -114,7 +97,6 @@ class SVDAttentionVisualizer(BaseVisualizer):
         return fig
 
     def generate_training_plots(self, training_logs, model_name, task_name, rank, save=True):
-        """Plot training curves."""
         epochs = [log["epoch"] for log in training_logs]
         losses = [log["loss"] for log in training_logs]
         eval_epochs = [log["epoch"] for log in training_logs if "eval_score" in log]
