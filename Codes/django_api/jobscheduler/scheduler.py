@@ -151,3 +151,42 @@ class GPUScheduler:
     def _retrain_predictor(self):
         self.predictor.train()
         threading.Timer(3600, self._retrain_predictor).start()
+
+
+
+
+
+class GPUScheduler:
+    def __init__(self, total_gpus):
+        self.task_queue = queue.PriorityQueue()
+        self.available_gpus = total_gpus
+        self.running_jobs = {}
+        self.lock = threading.Lock()
+        self.predictor = PriorityPredictor()
+        self.batcher = ShortJobBatcher(self)
+        self.dynamic_mgr = DynamicPriorityManager()
+
+    def add_job(self, job_id, priority, estimated_duration=None):
+        # Use predictive model to refine priority
+        predicted = self.predictor.predict_priority(job_id)
+        final_prio = min(priority, predicted) if predicted else priority
+        # Let the batcher decide whether to batch or queue directly
+        self.batcher.add_job(job_id, final_prio, estimated_duration)
+
+    def _submit_batch(self, batch):
+        # Called by the batcher to submit a batch of jobs
+        # We submit them as a single meta‑item to the priority queue
+        # (the queue will treat them as a single element)
+        meta_prio = min(p for _, p in batch)
+        self.task_queue.put((meta_prio, time.time(), batch))
+
+    def _run_worker(self):
+        # ... existing worker loop ...
+        # When a batch is taken from the queue, execute its jobs in sequence
+        # (or in parallel if enough GPUs).
+
+    def start(self):
+        # Start the dynamic manager
+        self.dynamic_mgr.start()
+        # Start the worker thread
+        threading.Thread(target=self._run_worker, daemon=True).start()

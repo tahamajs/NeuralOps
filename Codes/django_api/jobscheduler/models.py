@@ -143,3 +143,12 @@ class VersionedConfig(models.Model):
 
     class Meta:
         ordering = ['run', 'version_number']
+
+
+# adding this terms
+
+
+#     estimated_duration = models.IntegerField(null=True, blank=True)  # seconds
+#     actual_duration = models.IntegerField(null=True, blank=True)
+#     memory_requirements = models.IntegerField(default=8)  # GB
+#     actual_priority_outcome = models.IntegerField(null=True, blank=True)  # for training
