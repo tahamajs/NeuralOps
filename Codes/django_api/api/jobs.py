@@ -1,69 +1,46 @@
 import threading
-import logging
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.utils import timezone
 from .models import TrainingRun
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
-logger = logging.getLogger(__name__)
-_running_jobs = {}   #  job_id -> threading.Event
+_stop_events = {}
 
-def stop_job( job_id):
-    event = _running_jobs.pop(str( job_id), None)
-    if event:
-        event.set()
+def stop_job(run_id: str):
+    """Signal a running job to stop."""
+    if run_id in _stop_events:
+        _stop_events[run_id].set()
+        return True
+    return False
 
-def cancel_job( job_id):
-    """Cancel a running job by setting its stop event."""
-    stop_job( job_id)
+def cancel_job(run_id: str):
+    return stop_job(run_id)
 
-def start_job(run: TrainingRun, runner_func):
-    """
-    Start a background job for a training run.
-    :param run: TrainingRun instance
-    :param runner_func: function that takes (run, stop_event)
-    """
-    stop_event = threading.Event()
-    _running_jobs[str(run.id)] = stop_event
+def start_job(run: TrainingRun, target_func):
+    """Run a job in a background thread."""
+    run_id = str(run.id)
+    _stop_events[run_id] = threading.Event()
 
-    def _run():
+    def worker():
         try:
-            run.status = "running"
-            run.started_at = timezone.now()
-            run.save()
-            push_update(run, {"type": "status", "status": "running"})
-            runner_func(run, stop_event)
-
-            if stop_event.is_set():
-                run.status = "stopped"
-                run.save()
-                push_update(run, {"type": "status", "status": "stopped"})
-            else:
-                run.status = "completed"
-                run.completed_at = timezone.now()
-                run.save()
-                push_update(run, {"type": "status", "status": "completed"})
+            target_func(run, _stop_events[run_id])
         except Exception as e:
             run.status = "failed"
-            run.logs = (run.logs or "") + f"\nError: {str(e)}"
             run.save()
-            push_update(run, {"type": "status", "status": "failed"})
-            logger.exception(f"Job for run {run.id} failed")
+            raise
         finally:
-            _running_jobs.pop(str(run.id), None)
+            _stop_events.pop(run_id, None)
 
-    threading.Thread(target=_run, daemon=True).start()
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
 
-def push_update(run: TrainingRun, message: dict):
-    try:
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f"job_{run.id}", {"type": "send_message", "message": message}
-        )
-    except Exception as e:
-        logger.warning(f"WebSocket push failed for run {run.id}: {e}")
+def push_update(run: TrainingRun, data: dict):
+    """Send WebSocket update to job group."""
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f"job_{run.id}",
+        {"type": "job_update", "data": data}
+    )
 
 def stop_all_jobs():
-    """Set stop_event for every currently running job."""
-    for  job_id, event in list(_running_jobs.items()):
+    for event in _stop_events.values():
         event.set()
