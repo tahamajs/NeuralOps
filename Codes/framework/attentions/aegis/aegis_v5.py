@@ -40,6 +40,9 @@ class AegisConfigV5:
 # --------------------------------------------------------------------------
 # Factorised Linear Layer (truncated SVD)
 # --------------------------------------------------------------------------
+from framework.attentions.core.registry import ATTENTION_REGISTRY
+
+@ATTENTION_REGISTRY.register("aegis_v5")
 class FactorisedLinear(nn.Module):
     def __init__(self, pretrained_weight: torch.Tensor,
                  pretrained_bias: Optional[torch.Tensor],

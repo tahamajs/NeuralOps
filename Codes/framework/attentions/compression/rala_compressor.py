@@ -1,5 +1,7 @@
 from ...utils import replace_attention   # adjust import path as needed
+from framework.attentions.core.registry import AUX_REGISTRY   # <-- added
 
+@AUX_REGISTRY.register("rala_compressor")   # <-- added
 class RALACompressor:
     """
     Replaces every attention layer with the 'rala' variant (Rank‑Allocated Low‑rank Attention).
