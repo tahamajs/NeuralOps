@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Login – Transformer Toolkit</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 2rem;
+            border-radius: 28px;
+            width: 380px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        h2 { color: #60a5fa; margin-bottom: 1.5rem; text-align: center; }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 1rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 40px;
+            color: #e2e8f0;
+        }
+        input:focus { outline: none; border-color: #3b82f6; }
+        button {
+            width: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .error { color: #f87171; margin-bottom: 1rem; text-align: center; }
+        a { color: #60a5fa; display: block; text-align: center; margin-top: 1rem; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>🔐 Welcome Back</h2>
+    <div id="error" class="error" style="display:none;"></div>
+    <input type="text" id="username" placeholder="Username" autocomplete="username">
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    <button onclick="doLogin()">Sign In →</button>
+    <a href="/register/">Don't have an account? Create one</a>
+</div>
+
+<script>
+    async function doLogin() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        const errorDiv = document.getElementById('error');
+        if (!username || !password) {
+            errorDiv.innerText = 'Username and password required';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        try {
+            const res = await fetch('/api/auth/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+                credentials: 'include'   // ✅ important
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('authToken', data.token);
+                window.location.href = '/';
+            } else {
+                errorDiv.innerText = data.error || 'Invalid credentials';
+                errorDiv.style.display = 'block';
+            }
+        } catch (err) {
+            errorDiv.innerText = 'Network error. Please try again.';
+            errorDiv.style.display = 'block';
+        }
+    }
+    document.getElementById('password').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') doLogin();
+    });
+</script>
+</body>
+</html>

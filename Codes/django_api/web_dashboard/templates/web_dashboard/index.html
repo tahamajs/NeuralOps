@@ -1,113 +1,393 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Efficient Transformer Toolkit – Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformer Pro Toolkit – Dashboard</title>
+    <link href="{% static 'web_dashboard/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        .gpu-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .cpu-card { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
-        .progress-bar-determinate { transition: width 0.5s; }
+        /* (same as your original styles – keep them) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: #eef2ff; min-height: 100vh; }
+        .glass-card { background: rgba(20, 28, 40, 0.7); backdrop-filter: blur(12px); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; }
+        .metric-card { background: linear-gradient(135deg, #1e2a3e 0%, #0f172a 100%); border-radius: 20px; padding: 1.2rem; border-left: 4px solid #3b82f6; }
+        .job-card { background: #111827; border-radius: 20px; transition: 0.2s; cursor: pointer; }
+        .job-card:hover { background: #1f2937; transform: scale(1.01); }
+        .status-badge { padding: 4px 12px; border-radius: 40px; font-size: 0.75rem; font-weight: 600; }
+        .status-running { background: #f59e0b20; color: #fbbf24; border: 1px solid #f59e0b60; }
+        .status-completed { background: #10b98120; color: #34d399; border: 1px solid #10b98160; }
+        .status-failed { background: #ef444420; color: #f87171; border: 1px solid #ef444460; }
+        .status-queued { background: #6b728020; color: #9ca3af; border: 1px solid #6b728060; }
+        .status-stopped { background: #6b728020; color: #9ca3af; border: 1px solid #6b728060; }
+        .progress-bar-custom { background: #2d3748; border-radius: 10px; overflow: hidden; height: 8px; }
+        .progress-fill { background: linear-gradient(90deg, #3b82f6, #a855f7); width: 0%; height: 100%; border-radius: 10px; transition: width 0.3s ease; }
+        .btn-primary-custom { background: linear-gradient(90deg, #2563eb, #7c3aed); border: none; border-radius: 40px; padding: 8px 20px; font-weight: 600; transition: 0.2s; }
+        .btn-primary-custom:hover { transform: scale(1.02); box-shadow: 0 0 12px rgba(59,130,246,0.5); }
+        .modal-content-custom { background: #0f172a; border-radius: 24px; border: 1px solid #334155; }
+        input, select, textarea { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 10px 14px; color: #f1f5f9; }
+        input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
+        .navbar-brand { font-weight: 700; font-size: 1.5rem; background: linear-gradient(135deg, #60a5fa, #c084fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark mb-4">
-        <div class="container-fluid">
-            <span class="navbar-brand mb-0 h1">🧠 Efficient Transformer Toolkit</span>
-            <div class="d-flex">
-                <a href="{% url 'create_job' %}" class="btn btn-primary me-2">+ New Experiment</a>
+    <div class="container-fluid p-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h1 class="navbar-brand mb-0">⚡ Transformer Pro Toolkit</h1>
+                <p class="text-secondary small mt-1">real‑time training, terminal access, full control</p>
+            </div>
+            <div>
+                <button class="btn btn-primary-custom me-2" data-bs-toggle="modal" data-bs-target="#newExpModal">
+                    <i class="fas fa-plus me-1"></i> New Experiment
+                </button>
+                <button class="btn btn-outline-secondary rounded-pill" id="logout-btn">
+                    <i class="fas fa-sign-out-alt me-1"></i> Logout
+                </button>
             </div>
         </div>
-    </nav>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- System Metrics Cards -->
-            <div class="col-md-3 mb-3">
-                <div class="card gpu-card">
-                    <div class="card-body">
-                        <h5 class="card-title">GPU Usage</h5>
-                        <div class="d-flex justify-content-between">
-                            <span>Utilization:</span> <span id="gpu-util">--%</span>
-                        </div>
-                        <div class="progress mt-2" style="height: 20px;">
-                            <div class="progress-bar bg-warning" id="gpu-util-bar" style="width:0%"></div>
-                        </div>
-                        <div class="mt-2 d-flex justify-content-between">
-                            <span>Memory:</span> <span id="gpu-mem">-- MB</span>
-                        </div>
+
+        <!-- System Metrics Row -->
+        <div class="row mb-5 g-4">
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-microchip me-2"></i> GPU</span>
+                        <span id="gpu-util-text" class="fw-bold">0%</span>
                     </div>
+                    <div class="progress-bar-custom mt-2"><div id="gpu-util-bar" class="progress-fill" style="width:0%"></div></div>
+                    <div class="mt-2 small"><i class="fas fa-memory me-1"></i> <span id="gpu-mem">0</span> MB / <span id="gpu-total">0</span> MB</div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
-                <div class="card cpu-card">
-                    <div class="card-body">
-                        <h5 class="card-title">CPU Usage</h5>
-                        <h2 id="cpu-util">--%</h2>
-                        <div class="progress mt-2" style="height: 20px;">
-                            <div class="progress-bar" id="cpu-util-bar" style="width:0%"></div>
-                        </div>
-                        <p>RAM: <span id="ram-usage">-- GB</span> / <span id="ram-total">-- GB</span></p>
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fas fa-tachometer-alt me-2"></i> CPU</span>
+                        <span id="cpu-util-text" class="fw-bold">0%</span>
                     </div>
+                    <div class="progress-bar-custom mt-2"><div id="cpu-util-bar" class="progress-fill" style="width:0%"></div></div>
+                    <div class="mt-2 small"><i class="fas fa-database me-1"></i> RAM <span id="ram-usage">0</span> GB / <span id="ram-total">0</span> GB</div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Active Jobs</h5>
-                        <h2 id="active-jobs-count">0</h2>
+            <div class="col-md-4">
+                <div class="metric-card">
+                    <div class="d-flex justify-content-between">
+                        <span><i class="fas fa-chart-line me-2"></i> Jobs</span>
+                        <span><span id="active-jobs">0</span> active / <span id="completed-jobs">0</span> done</span>
                     </div>
-                </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <h5 class="card-title">Completed</h5>
-                        <h2 id="completed-jobs-count">0</h2>
-                    </div>
+                    <div class="mt-2"><i class="fas fa-hourglass-half me-1"></i> Last update: <span id="last-update">just now</span></div>
                 </div>
             </div>
         </div>
 
         <!-- Experiments List -->
-        <h2 class="mb-3">Experiments</h2>
-        <div class="row" id="experiment-list">
-            {% for exp in experiments %}
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ exp.config.model_name|default:"Unknown" }}</h5>
-                        <p>Task: {{ exp.config.task_name|default:"N/A" }}</p>
-                        <p>Attention: {{ exp.config.attention_type|default:"full" }}</p>
-                        <p>Status: <span class="badge bg-{% if exp.status == 'completed' %}success{% elif exp.status == 'running' %}warning{% elif exp.status == 'failed' %}danger{% else %}secondary{% endif %}">{{ exp.status }}</span></p>
-                        {% if exp.status == 'running' %}
-                        <div class="progress mb-2">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: {% widthratio exp.current_step exp.total_steps 100 %}%"></div>
-                        </div>
-                        <small>ETA: {{ exp.estimated_remaining_seconds|default:"--" }}s</small>
-                        {% endif %}
-                        <a href="{% url 'job_detail' exp.id %}" class="btn btn-sm btn-outline-primary">View Details</a>
-                    </div>
-                </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3><i class="fas fa-flask me-2"></i> Experiments</h3>
+            <div class="input-group w-25">
+                <span class="input-group-text bg-dark border-secondary"><i class="fas fa-search text-secondary"></i></span>
+                <input type="text" id="job-search" class="form-control bg-dark border-secondary" placeholder="Filter by name or ID...">
             </div>
-            {% endfor %}
+        </div>
+        <div class="row g-4" id="experiment-list">
+            <!-- dynamic cards -->
         </div>
     </div>
 
+    <!-- Create Experiment Modal -->
+    <div class="modal fade" id="newExpModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-content-custom">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="fas fa-rocket me-2"></i>Create Experiment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-exp-form">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Model</label>
+                                <select id="modal-model" class="form-select" required>
+                                    <option value="distilbert-base-uncased">DistilBERT Base</option>
+                                    <option value="bert-base-uncased">BERT Base</option>
+                                    <option value="roberta-base">RoBERTa Base</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">GLUE Task</label>
+                                <select id="modal-task" class="form-select">
+                                    <option value="mrpc">MRPC</option>
+                                    <option value="sst2">SST-2</option>
+                                    <option value="cola">CoLA</option>
+                                    <option value="qqp">QQP</option>
+                                    <option value="mnli">MNLI</option>
+                                    <option value="qnli">QNLI</option>
+                                    <option value="rte">RTE</option>
+                                    <option value="wnli">WNLI</option>
+                                    <option value="stsb">STS-B</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Attention</label>
+                                <select id="modal-attention" class="form-select"><option value="full">full</option></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Training Method</label>
+                                <select class="form-select" id="modal-method">
+                                    <option value="baseline">Baseline</option>
+                                    <option value="lora">LoRA</option>
+                                    <option value="rdrop">R-Drop</option>
+                                    <option value="r3f">R3F</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3"><label>Epochs</label><input type="number" class="form-control" id="modal-epochs" value="3"></div>
+                            <div class="col-md-3"><label>Batch Size</label><input type="number" class="form-control" id="modal-batch" value="16"></div>
+                            <div class="col-md-3"><label>Learning Rate</label><input type="number" step="any" class="form-control" id="modal-lr" value="2e-5"></div>
+                            <div class="col-md-3"><label>Max Seq Len</label><input type="number" class="form-control" id="modal-maxlen" value="128"></div>
+                            <div class="col-md-6"><label>Compression Rank (if any)</label><input type="number" class="form-control" id="modal-rank" value="64"></div>
+                        </div>
+                        <div class="mt-4 d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary-custom">Launch Experiment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'web_dashboard/js/bootstrap.bundle.min.js' %}"></script>
     <script>
-        async function refreshSystemMetrics() {
-            const resp = await fetch('/api/system-metrics/');
-            const data = await resp.json();
-            document.getElementById('gpu-util').innerText = (data.gpu_percent || '--') + '%';
-            document.getElementById('gpu-util-bar').style.width = (data.gpu_percent || 0) + '%';
-            document.getElementById('gpu-mem').innerText = (data.gpu_memory_used_mb || '--') + ' MB';
-            document.getElementById('cpu-util').innerText = data.cpu_percent + '%';
-            document.getElementById('cpu-util-bar').style.width = data.cpu_percent + '%';
-            document.getElementById('ram-usage').innerText = data.ram_used_gb;
-            document.getElementById('ram-total').innerText = data.ram_total_gb;
+        // ─────────────────────────────────────────────────────────────
+        // Authentication & Setup
+        // ─────────────────────────────────────────────────────────────
+        const authToken = localStorage.getItem('authToken');
+        if (!authToken) {
+            window.location.href = '/login/';
         }
-        setInterval(refreshSystemMetrics, 3000);
-        refreshSystemMetrics();
+
+        // Helper: fetch with token and credentials
+        async function apiFetch(url, opts = {}) {
+            const res = await fetch(url, {
+                ...opts,
+                credentials: 'include',   // send cookies (session)
+                headers: {
+                    'Authorization': `Token ${authToken}`,
+                    'Content-Type': 'application/json',
+                    ...opts.headers
+                }
+            });
+            if (res.status === 401) {
+                localStorage.removeItem('authToken');
+                window.location.href = '/login/';
+                throw new Error('Unauthorized');
+            }
+            return res;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Global State
+        // ─────────────────────────────────────────────────────────────
+        let experiments = [];
+        let filterText = '';
+
+        // ─────────────────────────────────────────────────────────────
+        // System Metrics
+        // ─────────────────────────────────────────────────────────────
+        async function loadMetrics() {
+            try {
+                const [sys, gpu] = await Promise.all([
+                    (await apiFetch('/api/system/status/')).json(),
+                    (await apiFetch('/api/system/gpu/')).json()
+                ]);
+                document.getElementById('cpu-util-text').innerText = (sys.cpu || 0) + '%';
+                document.getElementById('cpu-util-bar').style.width = (sys.cpu || 0) + '%';
+                const ramGb = (sys.memory || 0).toFixed(1);
+                document.getElementById('ram-usage').innerText = ramGb;
+                document.getElementById('ram-total').innerText = '16';
+                if (gpu.cuda_available) {
+                    const util = gpu.utilization || 0;
+                    document.getElementById('gpu-util-text').innerText = util + '%';
+                    document.getElementById('gpu-util-bar').style.width = util + '%';
+                    document.getElementById('gpu-mem').innerText = (gpu.memory_allocated || 0).toFixed(0);
+                    document.getElementById('gpu-total').innerText = (gpu.memory_total || 0).toFixed(0);
+                } else {
+                    document.getElementById('gpu-util-text').innerText = 'N/A';
+                }
+                document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
+            } catch(e) {
+                console.warn('Metrics error', e);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Experiments List
+        // ─────────────────────────────────────────────────────────────
+        async function loadExperiments() {
+            try {
+                const res = await apiFetch('/api/experiments/');
+                experiments = await res.json();
+                const active = experiments.filter(e => e.status === 'running').length;
+                const completed = experiments.filter(e => e.status === 'completed').length;
+                document.getElementById('active-jobs').innerText = active;
+                document.getElementById('completed-jobs').innerText = completed;
+                renderJobCards();
+            } catch(e) {
+                console.warn('Failed to load experiments', e);
+            }
+        }
+
+        function renderJobCards() {
+            const container = document.getElementById('experiment-list');
+            if (!container) return;
+            const filtered = experiments.filter(exp =>
+                (exp.name || '').toLowerCase().includes(filterText) ||
+                exp.id.toLowerCase().includes(filterText)
+            );
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-12 text-center text-muted py-5"><i class="fas fa-inbox fa-2x mb-2"></i><br/>No experiments found</div>`;
+                return;
+            }
+            container.innerHTML = filtered.map(exp => {
+                const config = exp.config || {};
+                const modelShort = (config.model_name || '').split('/').pop() || 'model';
+                const task = config.task_name || 'task';
+                const step = exp.current_step || 0;
+                const total = exp.total_steps || 1;
+                const percent = (step / total) * 100;
+                const statusClass = exp.status || 'queued';
+                return `
+                <div class="col-md-4 fade-in">
+                    <div class="job-card p-3" onclick="location.href='/dashboard/job/${exp.id}/'">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="mb-1">${escapeHtml(modelShort)}</h5>
+                                <div class="small text-secondary">${escapeHtml(task)}</div>
+                            </div>
+                            <span class="status-badge status-${statusClass}">${statusClass}</span>
+                        </div>
+                        ${exp.status === 'running' ? `
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between small mb-1"><span>Progress</span><span>${Math.round(percent)}%</span></div>
+                                <div class="progress-bar-custom"><div class="progress-fill" style="width:${percent}%"></div></div>
+                                <div class="small text-secondary mt-1">Step ${step} / ${total}</div>
+                            </div>
+                        ` : (exp.status === 'completed' || exp.status === 'failed' ? `<div class="mt-2 text-secondary small"><i class="fas fa-calendar-alt me-1"></i> ${new Date(exp.created_at).toLocaleString()}</div>` : '')}
+                        <div class="mt-2 text-end"><i class="fas fa-chevron-right text-secondary"></i></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>]/g, function(m){
+                if(m==='&') return '&amp;';
+                if(m==='<') return '&lt;';
+                if(m==='>') return '&gt;';
+                return m;
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Create Experiment
+        // ─────────────────────────────────────────────────────────────
+        const form = document.getElementById('create-exp-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const payload = {
+                    model_name: document.getElementById('modal-model').value,
+                    task_name: document.getElementById('modal-task').value,
+                    attention_type: document.getElementById('modal-attention').value,
+                    method: document.getElementById('modal-method').value,
+                    epochs: parseInt(document.getElementById('modal-epochs').value),
+                    batch_size: parseInt(document.getElementById('modal-batch').value),
+                    learning_rate: parseFloat(document.getElementById('modal-lr').value),
+                    compression_rank: parseInt(document.getElementById('modal-rank').value),
+                    max_seq_length: parseInt(document.getElementById('modal-maxlen').value),
+                };
+                try {
+                    const res = await apiFetch('/api/train/', { method: 'POST', body: JSON.stringify(payload) });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const modalEl = document.getElementById('newExpModal');
+                        if (modalEl && window.bootstrap) {
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) modal.hide();
+                        }
+                        location.href = `/dashboard/job/${data.id}/`;
+                    } else {
+                        const err = await res.text();
+                        alert('Failed to start experiment: ' + err);
+                    }
+                } catch(e) {
+                    alert('Request failed: ' + e.message);
+                }
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Load Attention Options Dynamically
+        // ─────────────────────────────────────────────────────────────
+        (async () => {
+            try {
+                const res = await apiFetch('/api/config/attentions/');
+                const data = await res.json();
+                const sel = document.getElementById('modal-attention');
+                if (sel) {
+                    if (data.attentions && data.attentions.length) {
+                        sel.innerHTML = data.attentions.map(a => `<option value="${a}">${a}</option>`).join('');
+                    } else {
+                        sel.innerHTML = '<option value="full">full</option>';
+                    }
+                }
+            } catch(e) {
+                console.warn("Could not load attentions", e);
+                // fallback
+                const sel = document.getElementById('modal-attention');
+                if (sel) sel.innerHTML = '<option value="full">full</option>';
+            }
+        })();
+
+        // ─────────────────────────────────────────────────────────────
+        // Search Filter
+        // ─────────────────────────────────────────────────────────────
+        const searchInput = document.getElementById('job-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', e => {
+                filterText = e.target.value.toLowerCase();
+                renderJobCards();
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // Periodic Updates
+        // ─────────────────────────────────────────────────────────────
+        setInterval(loadMetrics, 3000);
+        setInterval(loadExperiments, 5000);
+        loadMetrics();
+        loadExperiments();
+
+        // ─────────────────────────────────────────────────────────────
+        // Logout
+        // ─────────────────────────────────────────────────────────────
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.onclick = async () => {
+                try {
+                    await fetch('/api/auth/logout/', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Authorization': `Token ${authToken}` }
+                    });
+                } catch(e) {}
+                localStorage.removeItem('authToken');
+                window.location.href = '/login/';
+            };
+        }
     </script>
 </body>
 </html>

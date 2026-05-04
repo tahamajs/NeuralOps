@@ -1,0 +1,3 @@
+2026-05-04 02:50:38 | INFO     | minimal_nova_baseline_mrpc_42 | 🚀 Logging initialized. Run directory: ./logs/minimal_nova_baseline_mrpc_42_2026-05-04_02-50-38
+2026-05-04 02:50:38 | INFO     | minimal_nova_baseline_mrpc_42 | Experiment: minimal_nova_baseline_mrpc_42
+2026-05-04 02:50:38 | INFO     | minimal_nova_baseline_mrpc_42 | Model: distilbert-base-uncased, Task: mrpc, Attention: minimal_nova, Method: baseline
