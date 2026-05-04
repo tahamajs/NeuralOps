@@ -44,7 +44,13 @@ def send_ws_update(experiment_id, data):
         print(f"WebSocket send error: {e}")
     finally:
         loop.close()
-
+def get_device():
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        return torch.device("mps")
+    else:
+        return torch.device("cpu")
 # ---------- Logging helpers ----------
 def _log(exp, msg):
     print(f"[LOG] {msg}")
@@ -236,7 +242,7 @@ def run_training(experiment: Experiment, stop_event=None):
         _update_status(experiment, "running")
         _log(experiment, "Starting training pipeline...")
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        device = get_device()
         _log(experiment, f"Device: {device}")
 
         model_name = config.get("model_name", "distilbert-base-uncased")
@@ -392,7 +398,6 @@ def run_training(experiment: Experiment, stop_event=None):
         if stop_event:
             stop_event.set()
 
-# ---------- EVALUATION (unchanged) ----------
 def run_evaluation(experiment: Experiment, stop_event=None):
     try:
         config = experiment.config
