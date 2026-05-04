@@ -1,0 +1,81 @@
+<div class="metrics-dashboard">
+    <div class="metric-selector mb-3">
+        <label>Select Metrics to Display:</label>
+        <select id="metricSelector" multiple class="form-control">
+            <!-- Dynamically populated -->
+        </select>
+        <button id="refreshMetricsBtn" class="btn btn-sm btn-primary mt-2">Update Chart</button>
+    </div>
+    
+    <div class="metrics-charts">
+        <div id="scalarChart" style="height: 400px;"></div>
+        <div id="imageGallery" class="row mt-4"></div>
+        <div id="tableView" class="table-responsive mt-4"></div>
+    </div>
+</div>
+
+<script>
+// Initialize Plotly chart
+let scalarChart = null;
+
+function initScalarChart() {
+    scalarChart = Plotly.newPlot('scalarChart', [], {
+        title: 'Training Metrics',
+        xaxis: { title: 'Step' },
+        yaxis: { title: 'Value' },
+        hovermode: 'closest'
+    });
+}
+
+async function loadMetrics(runId) {
+    const response = await fetch(`/api/runs/${runId}/metrics/`, {
+        headers: { 'Authorization': `Token ${authToken}` }
+    });
+    const metrics = await response.json();
+    
+    // Populate metric selector
+    const selector = document.getElementById('metricSelector');
+    selector.innerHTML = Object.keys(metrics).map(name => 
+        `<option value="${name}">${name}</option>`
+    ).join('');
+    
+    // Populate image gallery
+    const imageGallery = document.getElementById('imageGallery');
+    imageGallery.innerHTML = '';
+    
+    for (const [name, data] of Object.entries(metrics)) {
+        if (data.type === 'image') {
+            data.values.forEach((imgData, idx) => {
+                imageGallery.innerHTML += `
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-dark">
+                            <img src="${imgData}" class="card-img-top" alt="${name}">
+                            <div class="card-body">
+                                <p class="card-text small">${name} (Step ${data.steps[idx]})</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+        
+        if (data.type === 'table' && data.values.length > 0) {
+            const tableView = document.getElementById('tableView');
+            const tableData = data.values[data.values.length - 1]; // Latest table
+            const headers = Object.keys(tableData);
+            let tableHtml = `<table class="table table-dark table-striped"><thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>`;
+            tableHtml += `<tr>${headers.map(h => `<td>${tableData[h]}</td>`).join('')}</tr>`;
+            tableHtml += `</tbody></table>`;
+            tableView.innerHTML = `<h5>${name}</h5>${tableHtml}`;
+        }
+    }
+}
+
+function updateCharts() {
+    const selected = Array.from(document.getElementById('metricSelector').selectedOptions).map(opt => opt.value);
+    // Update Plotly chart with selected scalar traces
+    // ...
+}
+
+document.getElementById('refreshMetricsBtn').onclick = updateCharts;
+</script>
