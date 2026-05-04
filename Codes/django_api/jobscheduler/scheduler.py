@@ -87,3 +87,67 @@ class GPUScheduler:
 
 # Global instance (singleton)
 scheduler = GPUScheduler()
+
+
+
+
+
+# jobscheduler/scheduler.py
+import queue
+import threading
+import time
+from .models import Job
+from .dynamic_priority import DynamicPriorityManager
+from .predictive import PriorityPredictor
+
+class GPUScheduler:
+    def __init__(self, total_gpus):
+        self.task_queue = queue.PriorityQueue()
+        self.available_gpus = total_gpus
+        self.lock = threading.Lock()
+        self.running_jobs = {}
+        self.predictor = PriorityPredictor()
+        self.dynamic_mgr = DynamicPriorityManager()
+        self.short_job_batch = []
+        self.batch_lock = threading.Lock()
+        self._batch_timer = None
+        # ... (rest of existing code)
+
+    def add_job(self, job_id, priority, estimated_duration=None):
+        # Use predictive model to get a refined priority
+        job = Job.objects.get(id=job_id)
+        predicted_priority = self.predictor.predict_priority(job) if self.predictor.model else priority
+        final_priority = min(priority, predicted_priority)  # or a weighted combination
+
+        self.task_queue.put((final_priority, time.time(), job_id))
+        # ... rest
+
+    def _collect_short_jobs(self):
+        # Try to batch very short jobs
+        with self.batch_lock:
+            if self.short_job_batch and self.available_gpus >= len(self.short_job_batch):
+                # Execute batch as a single meta-job
+                self._execute_batch(self.short_job_batch)
+                self.short_job_batch = []
+
+    def _execute_batch(self, batch_jobs):
+        # Co‑scheduling: launch all at once on separate GPUs or sequentially
+        # For now, submit them individually
+        for job_id in batch_jobs:
+            self._run_job(job_id)
+
+    def _run_job(self, job_id):
+        # Existing job launching logic
+        # ...
+        pass
+
+    def start(self):
+        # Start dynamic priority manager
+        self.dynamic_mgr.start()
+        # Periodically retrain predictor
+        threading.Timer(3600, self._retrain_predictor).start()
+        # ... rest of scheduler loop
+
+    def _retrain_predictor(self):
+        self.predictor.train()
+        threading.Timer(3600, self._retrain_predictor).start()
