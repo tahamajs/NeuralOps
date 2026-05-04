@@ -112,3 +112,22 @@ class CustomMetricEntry(models.Model):
             models.Index(fields=['run', 'name', 'step']),
             models.Index(fields=['run', 'type']),
         ]
+
+
+# jobscheduler/models.py
+class VersionedConfig(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='config_versions')
+    config_snapshot = models.JSONField()
+    version_number = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    change_description = models.TextField(blank=True)
+    previous_version = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='next_version'
+    )
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+                                   null=True, blank=True)
+
+    class Meta:
+        ordering = ['run', 'version_number']

@@ -172,3 +172,42 @@ def get_custom_metrics(request, run_id):
         metrics_by_name[metric.name]['steps'].append(metric.step)
         metrics_by_name[metric.name]['values'].append(metric.value)
     return Response(metrics_by_name)
+
+
+
+
+# jobscheduler/views.py
+@api_view(['GET'])
+def get_config_history(request, run_id):
+    """Return version history of a run's configuration"""
+    run = get_object_or_404(Job, id=run_id)
+    versions = run.config_versions.all().order_by('-version_number')
+    return Response({
+        'versions': [
+            {
+                'version': v.version_number,
+                'created_at': v.created_at,
+                'description': v.change_description,
+                'snapshot': v.config_snapshot
+            }
+            for v in versions
+        ]
+    })
+
+@api_view(['GET'])
+def compare_configs(request, run_id, version_a, version_b):
+    """Compare two configuration versions using DeepDiff"""
+    from deepdiff import DeepDiff
+    run = get_object_or_404(Job, id=run_id)
+    v1 = run.config_versions.get(version_number=version_a)
+    v2 = run.config_versions.get(version_number=version_b)
+    diff = DeepDiff(v1.config_snapshot, v2.config_snapshot, ignore_order=True)
+    return Response({
+        'version_a': version_a,
+        'version_b': version_b,
+        'diff': diff,
+        'values_changed': diff.get('values_changed', {}),
+        'type_changes': diff.get('type_changes', {}),
+        'dictionary_item_added': diff.get('dictionary_item_added', []),
+        'dictionary_item_removed': diff.get('dictionary_item_removed', [])
+    })
