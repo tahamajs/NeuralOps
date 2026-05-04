@@ -13,6 +13,9 @@ sys.path.insert(0, str(BASE_DIR.parent))
 
 
 
+# SCHEDULER_TOTAL_GPUS = int(os.environ.get('SCHEDULER_TOTAL_GPUS', 1))
+# SCHEDULER_BOOST_WAIT_THRESHOLD = int(os.environ.get('SCHEDULER_BOOST_WAIT_THRESHOLD', 600))
+# SCHEDULER_SHORT_JOB_THRESHOLD = int(os.environ.get('SCHEDULER_SHORT_JOB_THRESHOLD', 60))
 
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-change-me")
