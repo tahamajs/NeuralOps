@@ -1,631 +1,303 @@
-import os
-import sys
-import json
-import time
-import traceback
-import asyncio
-import shutil
-import tempfile
-import subprocess
-import threading
-import re
+# api/views.py
 import psutil
 import torch
-from pathlib import Path
-from datetime import datetime, timedelta
-from django.http import FileResponse, Http404, HttpResponse
+import logging
+import platform
+import django
+from datetime import datetime
 from django.conf import settings
-from django.shortcuts import render, get_object_or_404
-from django.utils import timezone
-from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth import authenticate, update_session_auth_hash
 from django.contrib.auth.models import User
-from django.db.models import Count, Avg
-from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
-from .models import Experiment, TrainingRun, TrainingSnapshot
-from .serializers import ExperimentSerializer, TrainingRunSerializer, TrainingSnapshotSerializer
-from .jobs import start_job, stop_job as do_stop, cancel_job
-from .runners import run_training, run_evaluation, run_compression
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
+
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
-import logging
-import logging
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.clickjacking import xframe_options_exempt
 
 logger = logging.getLogger(__name__)
 
-# ---------- Utility ----------
-def _update_run_status(run: TrainingRun, status: str):
-    run.status = status
-    if status == 'running' and not run.started_at:
-        run.started_at = timezone.now()
-    elif status in ('completed', 'failed', 'stopped'):
-        run.completed_at = timezone.now()
-    run.save()
-
-# ---------- Config discovery (unchanged) ----------
-@api_view(["GET"])
-def list_attentions(request):
-    return Response({"attentions": list(ATTENTION_REGISTRY.keys())})
-
-@api_view(["GET"])
-def list_models(request):
-    return Response({
-        "models": ["distilbert-base-uncased","bert-base-uncased","roberta-base","albert-base-v2"]
-    })
-
-@api_view(["GET"])
-def list_tasks(request):
-    return Response({
-        "tasks": ["cola","sst2","mrpc","qqp","stsb","mnli","qnli","rte","wnli"]
-    })
-
-@api_view(["GET"])
-def list_compressors(request):
-    return Response({"compressors": list(COMPRESSOR_REGISTRY.keys())})
-
-@api_view(["GET"])
-def list_methods(request):
-    return Response({"methods": ["baseline","lora","rdrop","r3f","fisher_lora","fisher_gelora","llrd"]})
-
-@api_view(["GET"])
-def list_presets(request):
-    return Response({"presets": ["fast","accurate","extreme_compress"]})
-
-# ---------- Experiments (containers) ----------
-@api_view(["GET"])
-def list_experiments(request):
-    exps = Experiment.objects.all().order_by("-created_at")
-    return Response(ExperimentSerializer(exps, many=True).data)
-
-@api_view(["POST"])
-def create_experiment(request):
-    """Create a new experiment container."""
-    data = request.data
-    exp = Experiment.objects.create(
-        name=data.get('name', f"Experiment_{timezone.now().timestamp()}"),
-        description=data.get('description', ''),
-        default_config=data.get('default_config', {}),
-        tags=data.get('tags', '')
-    )
-    return Response(ExperimentSerializer(exp).data, status=201)
-
-@api_view(["GET"])
-def experiment_detail(request, exp_id):
-    exp = get_object_or_404(Experiment, id=exp_id)
-    return Response(ExperimentSerializer(exp).data)
-
-# ---------- Training Runs ----------
-@api_view(["GET"])
-def list_runs(request, exp_id=None):
-    """List all runs, optionally filtered by experiment."""
-    if exp_id:
-        runs = TrainingRun.objects.filter(experiment_id=exp_id).order_by("-created_at")
-    else:
-        runs = TrainingRun.objects.all().order_by("-created_at")
-    return Response(TrainingRunSerializer(runs, many=True).data)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-@api_view(["POST"])
-def start_train(request):
-    data = request.data
-    exp_id = data.get('experiment_id')
-    if exp_id:
-        exp = get_object_or_404(Experiment, id=exp_id)
-    else:
-        # Create a new experiment container
-        exp = Experiment.objects.create(
-            name=data.get('exp_name', f"Exp_{data.get('task_name','train')}"),
-            default_config=data
-        )
-    # Create a training run
-    run = TrainingRun.objects.create(
-        experiment=exp,
-        name=data.get('name', f"Run_{data.get('task_name','train')}"),
-        job_type='training',
-        config=data,
-        status='queued'
-    )
-    # Start background training thread
-    from threading import Thread
-    from .runners import run_training
-    Thread(target=run_training, args=(run,), daemon=True).start()
-    return Response(TrainingRunSerializer(run).data, status=202)
-
-
-
-
-
-
-@api_view(["POST"])
-def start_evaluate(request):
-    data = request.data
-    run_id = data.get('run_id')
-    run = get_object_or_404(TrainingRun, id=run_id)
-    from .jobs import start_job
-    from .runners import run_evaluation
-    start_job(run, run_evaluation)
-    return Response(TrainingRunSerializer(run).data, status=202)
-
-@api_view(["POST"])
-def start_compress(request):
-    data = request.data
-    run_id = data.get('run_id')
-    run = get_object_or_404(TrainingRun, id=run_id)
-    from .jobs import start_job
-    from .runners import run_compression
-    start_job(run, run_compression)
-    return Response(TrainingRunSerializer(run).data, status=202)
-
-@api_view(["GET"])
-def job_status(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    serializer = TrainingRunSerializer(run)
-    return Response(serializer.data)
-
-
-
-@api_view(["POST"])
-def stop_job(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    if run.status in ("queued", "running"):
-        cancel_job(str(run.id))
-        run.status = "stopped"
-        run.save()
-        return Response({"status": "stopped"})
-    return Response({"error": f"Cannot stop run with status '{run.status}'"}, status=400)
-
-
-
-@api_view(["PATCH"])
-def update_run_config(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    new_config = request.data
-    run.config.update(new_config)
-    run.save(update_fields=["config"])
-    return Response(TrainingRunSerializer(run).data)
-
-@api_view(["GET"])
-def training_history(request, run_id):
-    """Return the training history (steps, losses, eval metrics) for a run."""
-    run = get_object_or_404(TrainingRun, id=run_id)
-    history = run.training_history if isinstance(run.training_history, dict) else {}
-    return Response(history)
-
-@api_view(["GET"])
-def training_snapshots(request, run_id):
-    """Return detailed snapshots (optional, for precise plotting)."""
-    run = get_object_or_404(TrainingRun, id=run_id)
-    snapshots = run.snapshots.all().order_by('step')
-    data = [{'step': s.step, 'train_loss': s.train_loss, 'eval_loss': s.eval_loss,
-             'eval_accuracy': s.eval_accuracy, 'learning_rate': s.learning_rate}
-            for s in snapshots]
-    return Response(data)
-
-# ---------- Artifacts & Downloads ----------
-@api_view(["GET"])
-def run_artifacts(request, run_id):
-    run_dir = Path(settings.MEDIA_ROOT) / str(run_id)
-    if not run_dir.exists():
-        return Response({"artifacts": []})
-    artifacts = [str(p.relative_to(run_dir)) for p in run_dir.rglob("*") if p.is_file()]
-    return Response({"artifacts": artifacts})
-
-@api_view(["GET"])
-def run_artifact_download(request, run_id, artifact_path):
-    run_dir = Path(settings.MEDIA_ROOT) / str(run_id)
-    file_path = run_dir / artifact_path
-    if not file_path.exists() or not file_path.is_file():
-        raise Http404("Artifact not found")
-    return FileResponse(open(file_path, "rb"), as_attachment=True, filename=os.path.basename(artifact_path))
-
-@api_view(["GET"])
-def run_model_download(request, run_id):
-    run_dir = Path(settings.MEDIA_ROOT) / str(run_id) / "model"
-    if not run_dir.exists():
-        raise Http404("Model directory not found")
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
-    shutil.make_archive(tmp.name.replace(".zip", ""), "zip", run_dir)
-    return FileResponse(open(tmp.name, "rb"), as_attachment=True, filename="model.zip")
-
-# ---------- System monitoring (unchanged) ----------
-@api_view(["GET"])
-def gpu_info(request):
-    info = {"cuda_available": False, "mps_available": False}
-    if torch.cuda.is_available():
-        info["cuda_available"] = True
-        info["device_name"] = torch.cuda.get_device_name(0)
-        # Return memory in megabytes (MB)
-        info["memory_total_mb"] = torch.cuda.get_device_properties(0).total_memory / (1024 ** 2)
-        info["memory_allocated_mb"] = torch.cuda.memory_allocated() / (1024 ** 2)
-        info["memory_reserved_mb"] = torch.cuda.memory_reserved() / (1024 ** 2)
-        info["utilization"] = torch.cuda.utilization() if hasattr(torch.cuda, 'utilization') else None
-        info["type"] = "cuda"
-    elif torch.backends.mps.is_available():
-        info["mps_available"] = True
-        info["device_name"] = "Apple Silicon (MPS)"
-        # Estimate total memory from system RAM (in MB)
-        total_ram_mb = psutil.virtual_memory().total / (1024 ** 2)
-        info["memory_total_mb"] = total_ram_mb
-        if hasattr(torch.mps, 'current_allocated_memory'):
-            info["memory_allocated_mb"] = torch.mps.current_allocated_memory() / (1024 ** 2)
-        else:
-            info["memory_allocated_mb"] = 0.0
-        info["utilization"] = None
-        info["type"] = "mps"
-    else:
-        info["type"] = "cpu"
-    return Response(info)
-
-from threading import Thread
-from .runners import run_training
-
-@api_view(["POST"])
-def resume_training(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    if run.status not in ('stopped', 'failed'):
-        return Response({"error": f"Cannot resume run with status '{run.status}'"}, status=400)
-    # Reset status to queued so the job system will start it
-    run.status = 'queued'
-    run.save()
-    Thread(target=run_training, args=(run,), daemon=True).start()
-    return Response({"status": "resumed"})@api_view(["POST"])
-def stop_all_jobs(request):
-    from .jobs import stop_all_jobs
-    stop_all_jobs()
-    return Response({"status": "stop signals sent to all running jobs"})
-
-@api_view(["GET"])
-def system_status(request):
-    return Response({
-        "cpu": psutil.cpu_percent(),
-        "memory": psutil.virtual_memory().percent,
-    })
-
-# ---------- Paper Generation (adapted for runs) ----------
-@api_view(["GET"])
-def generate_paper(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    # Use saved source if exists, otherwise generate default
-    if run.config.get('latex_source'):
-        template = run.config['latex_source']
-    else:
-        template = _generate_default_latex(run)  # your existing logic
-
-    """Generate LaTeX paper for a training run, embed loss plot if exists."""
-    run = get_object_or_404(TrainingRun, id=run_id)
-    template_path = Path(__file__).parent / "templates" / "paper_template.tex"
-    if not template_path.exists():
-        return Response({"error": "Template not found"}, status=500)
-    template = template_path.read_text()
-
-    config = run.config
-    metrics = run.final_metrics
-    task = config.get("task_name", "mrpc")
-    model_name = config.get("model_name", "distilbert-base-uncased")
-    attention = config.get("attention_type", "full")
-    method = config.get("method", "baseline")
-    epochs = config.get("epochs", "N/A")
-    batch_size = config.get("batch_size", "N/A")
-    lr = config.get("learning_rate", "N/A")
-    max_len = config.get("max_seq_length", "N/A")
-    rank = config.get("compression_rank", config.get("rank", "N/A"))
-
-    loss = metrics.get("eval_loss", metrics.get("loss", "N/A"))
-    if isinstance(loss, float): loss = f"{loss:.4f}"
-    accuracy = metrics.get("eval_accuracy", metrics.get("accuracy", "N/A"))
-    if isinstance(accuracy, float): accuracy = f"{accuracy:.4f}"
-    f1 = metrics.get("eval_f1", metrics.get("f1", "N/A"))
-    if isinstance(f1, float): f1 = f"{f1:.4f}"
-    matthews = metrics.get("eval_matthews_correlation", metrics.get("matthews_correlation", "N/A"))
-    if isinstance(matthews, float): matthews = f"{matthews:.4f}"
-
-    # Loss plot from media directory
-    loss_plot_path = Path(settings.MEDIA_ROOT) / str(run_id) / "loss_plot.png"
-    if loss_plot_path.exists():
-        figure_block = f"""
-\\begin{{figure}}[htbp]
-    \\centering
-    \\includegraphics[width=\\textwidth]{{{loss_plot_path.as_posix()}}}
-    \\caption{{Training and evaluation loss curve.}}
-    \\label{{fig:loss}}
-\\end{{figure}}
-"""
-    else:
-        figure_block = ""
-
-    replacements = {
-        "\\TASKNAME": task.upper(),
-        "\\ATTENTION": attention,
-        "\\MODELNAME": model_name,
-        "\\METHOD": method,
-        "\\EPOCHS": str(epochs),
-        "\\BATCHSIZE": str(batch_size),
-        "\\LEARNINGRATE": str(lr),
-        "\\MAXSEQLEN": str(max_len),
-        "\\RANK": str(rank),
-        "\\LOSS": loss,
-        "\\ACCURACY": accuracy,
-        "\\FONE": f1,
-        "\\MATTHEWS": matthews,
-        "\\DATE": timezone.now().strftime("%B %d, %Y"),
-        "\\LOSSFIGURE": figure_block,
-    }
-    for key, value in replacements.items():
-        template = template.replace(key, value)
-
-    tmp_dir = tempfile.mkdtemp()
-    tex_path = os.path.join(tmp_dir, "paper.tex")
-    pdf_path = os.path.join(tmp_dir, "paper.pdf")
-    with open(tex_path, "w") as f:
-        f.write(template)
-
-    pdf_ok = False
-    try:
-        subprocess.run(
-            ["pdflatex", "-interaction=nonstopmode", "-output-directory", tmp_dir, tex_path],
-            capture_output=True, text=True, timeout=30, check=False
-        )
-        subprocess.run(
-            ["pdflatex", "-interaction=nonstopmode", "-output-directory", tmp_dir, tex_path],
-            capture_output=True, text=True, timeout=30, check=False
-        )
-        if os.path.exists(pdf_path):
-            pdf_ok = True
-    except Exception as e:
-        print(f"PDF compilation error: {e}")
-
-    # Save .tex file in the run's results folder
-    try:
-        results_base = Path("results")
-        if results_base.exists():
-            exp_folders = sorted(results_base.glob(f"*{str(run.id)[:8]}*"), key=lambda p: p.stat().st_mtime, reverse=True)
-            if exp_folders:
-                dest_tex = exp_folders[0] / "paper_source.tex"
-                with open(dest_tex, "w") as f:
-                    f.write(template)
-                print(f"Saved LaTeX source to {dest_tex}")
-    except Exception:
-        pass
-
-    if pdf_ok:
-        response = FileResponse(open(pdf_path, "rb"), as_attachment=True, filename=f"paper_{run_id}.pdf")
-        threading.Timer(10, lambda: shutil.rmtree(tmp_dir, ignore_errors=True)).start()
-        return response
-    else:
-        response = HttpResponse(template, content_type="application/x-latex")
-        response["Content-Disposition"] = f"attachment; filename=paper_{run_id}.tex"
-        return response
-
-# ---------- PDF Preview (public, for iframe) ----------
-@api_view(['GET'])
-@authentication_classes([])
-@permission_classes([AllowAny])
-@csrf_exempt
-@xframe_options_exempt
-def paper_preview_pdf(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    config = run.config
-    metrics = run.final_metrics
-    task = config.get("task_name", "mrpc")
-    model_name = config.get("model_name", "distilbert-base-uncased")
-    attention = config.get("attention_type", "full")
-    method = config.get("method", "baseline")
-    epochs = config.get("epochs", "N/A")
-    batch_size = config.get("batch_size", "N/A")
-    lr = config.get("learning_rate", "N/A")
-    max_len = config.get("max_seq_length", "N/A")
-    rank = config.get("compression_rank", config.get("rank", "N/A"))
-
-    loss = metrics.get("eval_loss", metrics.get("loss", "N/A"))
-    if isinstance(loss, float): loss = f"{loss:.4f}"
-    accuracy = metrics.get("eval_accuracy", metrics.get("accuracy", "N/A"))
-    if isinstance(accuracy, float): accuracy = f"{accuracy:.4f}"
-    f1 = metrics.get("eval_f1", metrics.get("f1", "N/A"))
-    if isinstance(f1, float): f1 = f"{f1:.4f}"
-    matthews = metrics.get("eval_matthews_correlation", metrics.get("matthews_correlation", "N/A"))
-    if isinstance(matthews, float): matthews = f"{matthews:.4f}"
-
-    latex_content = f"""\\documentclass{{article}}
-\\usepackage{{graphicx}}
-\\usepackage{{hyperref}}
-\\usepackage[margin=1in]{{geometry}}
-\\title{{Experiment Report: {task.upper()} with {attention} attention}}
-\\author{{Efficient Transformer Toolkit}}
-\\date{{\\today}}
-\\begin{{document}}
-\\maketitle
-\\section*{{Experiment Configuration}}
-\\begin{{tabular}}{{ll}}
-Model: & {model_name} \\\\
-Task: & {task.upper()} \\\\
-Attention type: & {attention} \\\\
-Training method: & {method} \\\\
-Epochs: & {epochs} \\\\
-Batch size: & {batch_size} \\\\
-Learning rate: & {lr} \\\\
-Max sequence length: & {max_len} \\\\
-Compression rank: & {rank} \\\\
-\\end{{tabular}}
-\\section*{{Final Metrics}}
-\\begin{{tabular}}{{ll}}
-Loss: & {loss} \\\\
-Accuracy: & {accuracy} \\\\
-F1 score: & {f1} \\\\
-Matthews correlation: & {matthews} \\\\
-\\end{{tabular}}
-\\end{{document}}
-"""
-    tmp_dir = tempfile.mkdtemp()
-    tex_path = os.path.join(tmp_dir, "paper.tex")
-    pdf_path = os.path.join(tmp_dir, "paper.pdf")
-    with open(tex_path, "w") as f:
-        f.write(latex_content)
-
-    pdf_ok = False
-    try:
-        subprocess.run(["pdflatex", "-interaction=nonstopmode", "-output-directory", tmp_dir, tex_path],
-                       capture_output=True, text=True, timeout=30, check=False)
-        subprocess.run(["pdflatex", "-interaction=nonstopmode", "-output-directory", tmp_dir, tex_path],
-                       capture_output=True, text=True, timeout=30, check=False)
-        if os.path.exists(pdf_path):
-            pdf_ok = True
-    except Exception:
-        pass
-
-    if pdf_ok:
-        response = FileResponse(open(pdf_path, "rb"), content_type="application/pdf")
-        threading.Timer(10, lambda: shutil.rmtree(tmp_dir, ignore_errors=True)).start()
-        return response
-    else:
-        return Response({"error": "PDF generation failed (pdflatex not installed?)"}, status=500)
-
-# ---------- HTML Report (web page) ----------
-def experiment_report(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    config = run.config
-    metrics = run.final_metrics
-    context = {
-        'run': run,
-        'config': config,
-        'metrics': metrics,
-        'task': config.get('task_name', 'mrpc'),
-        'model_name': config.get('model_name', 'distilbert-base-uncased'),
-        'attention': config.get('attention_type', 'full'),
-        'method': config.get('method', 'baseline'),
-        'epochs': config.get('epochs', 'N/A'),
-        'batch_size': config.get('batch_size', 'N/A'),
-        'learning_rate': config.get('learning_rate', 'N/A'),
-        'max_seq_length': config.get('max_seq_length', 'N/A'),
-        'rank': config.get('compression_rank', config.get('rank', 'N/A')),
-        'loss': metrics.get('eval_loss', metrics.get('loss', 'N/A')),
-        'accuracy': metrics.get('eval_accuracy', metrics.get('accuracy', 'N/A')),
-        'f1': metrics.get('eval_f1', metrics.get('f1', 'N/A')),
-        'matthews': metrics.get('eval_matthews_correlation', metrics.get('matthews_correlation', 'N/A')),
-    }
-    return render(request, 'web_dashboard/experiment_report.html', context)
-
-# ---------- Authentication ----------
+# ----------------------------------------------------------------------
+# Rate limiting (optional)
+# ----------------------------------------------------------------------
+class BurstRateThrottle(UserRateThrottle):
+    rate = '100/hour'
+
+class AnonBurstRateThrottle(AnonRateThrottle):
+    rate = '20/hour'
+
+# ----------------------------------------------------------------------
+# Authentication & User Management
+# ----------------------------------------------------------------------
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def register_view(request):
-    username = request.data.get("username")
-    password = request.data.get("password")
+@throttle_classes([AnonBurstRateThrottle])
+def register(request):
+    """Register a new user account."""
+    username = request.data.get("username", "").strip()
+    password = request.data.get("password", "")
+    email = request.data.get("email", "").strip()
+
     if not username or not password:
-        return Response({"error": "Username and password required"}, status=400)
+        return Response({"error": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+    if len(username) < 3:
+        return Response({"error": "Username must be at least 3 characters"}, status=status.HTTP_400_BAD_REQUEST)
+    if len(password) < 6:
+        return Response({"error": "Password must be at least 6 characters"}, status=status.HTTP_400_BAD_REQUEST)
+    if email:
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response({"error": "Invalid email address"}, status=status.HTTP_400_BAD_REQUEST)
+
     if User.objects.filter(username=username).exists():
-        return Response({"error": "Username already taken"}, status=400)
-    user = User.objects.create_user(username=username, password=password)
+        return Response({"error": "Username already taken"}, status=status.HTTP_400_BAD_REQUEST)
+    if email and User.objects.filter(email=email).exists():
+        return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = User.objects_create_user(username=username, password=password, email=email)
     token = Token.objects.create(user=user)
-    return Response({"token": token.key, "username": user.username}, status=201)
+    logger.info(f"New user registered: {username}")
+    return Response({
+        "token": token.key,
+        "username": user.username,
+        "email": user.email,
+        "user_id": user.id
+    }, status=status.HTTP_201_CREATED)
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-def login_view(request):
-    username = request.data.get("username")
-    password = request.data.get("password")
+@throttle_classes([AnonBurstRateThrottle])
+def login(request):
+    """Authenticate user and return token."""
+    username = request.data.get("username", "").strip()
+    password = request.data.get("password", "")
+    if not username or not password:
+        return Response({"error": "Username and password required"}, status=status.HTTP_400_BAD_REQUEST)
+
     user = authenticate(request, username=username, password=password)
     if user:
         token, _ = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "username": user.username})
-    return Response({"error": "Invalid credentials"}, status=400)
+        logger.info(f"User logged in: {username}")
+        return Response({
+            "token": token.key,
+            "username": user.username,
+            "email": user.email,
+            "user_id": user.id,
+            "is_staff": user.is_staff
+        })
+    return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(["POST"])
-def logout_view(request):
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Token "):
-        key = auth_header[6:]
-        Token.objects.filter(key=key).delete()
+@permission_classes([IsAuthenticated])
+def logout(request):
+    """Logout user by deleting the token."""
+    request.user.auth_token.delete()
+    logger.info(f"User logged out: {request.user.username}")
     return Response({"status": "logged out"})
 
-# ---------- Evaluation for a run ----------
-@api_view(["POST"])
-def evaluate_job(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    run_evaluation(run, stop_event=None)
-    metrics = run.config.get('final_metrics', {})
-    return Response({"metrics": metrics})
-# ---------- Preview (HTML modal) ----------
 @api_view(["GET"])
-def preview_paper(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    config = run.config
-    metrics = run.final_metrics
-    task = config.get("task_name", "mrpc")
-    model_name = config.get("model_name", "distilbert-base-uncased")
-    attention = config.get("attention_type", "full")
-    method = config.get("method", "baseline")
-    epochs = config.get("epochs", "N/A")
-    batch_size = config.get("batch_size", "N/A")
-    lr = config.get("learning_rate", "N/A")
-    max_len = config.get("max_seq_length", "N/A")
-    rank = config.get("compression_rank", config.get("rank", "N/A"))
+@permission_classes([IsAuthenticated])
+def user_info(request):
+    """Get current user profile information."""
+    user = request.user
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "date_joined": user.date_joined,
+        "last_login": user.last_login,
+        "is_staff": user.is_staff,
+    })
 
-    loss = metrics.get("eval_loss", metrics.get("loss", "N/A"))
-    if isinstance(loss, float): loss = f"{loss:.4f}"
-    accuracy = metrics.get("eval_accuracy", metrics.get("accuracy", "N/A"))
-    if isinstance(accuracy, float): accuracy = f"{accuracy:.4f}"
-    f1 = metrics.get("eval_f1", metrics.get("f1", "N/A"))
-    if isinstance(f1, float): f1 = f"{f1:.4f}"
-    matthews = metrics.get("eval_matthews_correlation", metrics.get("matthews_correlation", "N/A"))
-    if isinstance(matthews, float): matthews = f"{matthews:.4f}"
-
-    html = f"""
-    <div style="font-family: 'Segoe UI', sans-serif; background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 16px;">
-        <h2 style="color: #60a5fa;">📄 Experiment Report: {task.upper()}</h2>
-        <hr style="border-color: #334155;">
-        <h3>⚙️ Configuration</h3>
-        <table style="width:100%; border-collapse: collapse;">
-            <tr><td style="padding: 6px 0;"><strong>Model:</strong></td><td>{model_name}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Task:</strong></td><td>{task.upper()}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Attention:</strong></td><td>{attention}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Method:</strong></td><td>{method}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Epochs:</strong></td><td>{epochs}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Batch size:</strong></td><td>{batch_size}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Learning rate:</strong></td><td>{lr}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Max length:</strong></td><td>{max_len}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Compression rank:</strong></td><td>{rank}</td></tr>
-        </table>
-        <h3>📊 Final Metrics</h3>
-        <table style="width:100%; border-collapse: collapse;">
-            <tr><td style="padding: 6px 0;"><strong>Loss:</strong></td><td>{loss}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Accuracy:</strong></td><td>{accuracy}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>F1 score:</strong></td><td>{f1}</td></tr>
-            <tr><td style="padding: 6px 0;"><strong>Matthews corr.:</strong></td><td>{matthews}</td></tr>
-        </table>
-        <p style="margin-top: 20px; font-size: 0.85rem; color: #94a3b8;">Generated by Efficient Transformer Toolkit</p>
-    </div>
-    """
-    return Response({"html": html})
-
-
-@api_view(["GET"])
-def paper_editor(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    # Load saved latex source from a file or from run.config
-    latex_source = run.config.get('latex_source', '')  # store in config or separate file
-    return render(request, 'web_dashboard/paper_editor.html', {'run_id': run_id, 'latex_source': latex_source})
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    """Update user profile (first_name, last_name, email)."""
+    user = request.user
+    data = request.data
+    if "first_name" in data:
+        user.first_name = data["first_name"][:30]
+    if "last_name" in data:
+        user.last_name = data["last_name"][:30]
+    if "email" in data and data["email"]:
+        try:
+            validate_email(data["email"])
+            if User.objects.exclude(id=user.id).filter(email=data["email"]).exists():
+                return Response({"error": "Email already in use"}, status=status.HTTP_400_BAD_REQUEST)
+            user.email = data["email"]
+        except ValidationError:
+            return Response({"error": "Invalid email address"}, status=status.HTTP_400_BAD_REQUEST)
+    user.save()
+    return Response({
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+    })
 
 @api_view(["POST"])
-def save_paper_source(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    source = request.body.decode('utf-8')
-    run.config['latex_source'] = source
-    run.save(update_fields=['config'])
-    return Response({"status": "saved"})
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """Change user password."""
+    old_password = request.data.get("old_password")
+    new_password = request.data.get("new_password")
+    if not old_password or not new_password:
+        return Response({"error": "Old password and new password are required"}, status=status.HTTP_400_BAD_REQUEST)
+    if len(new_password) < 6:
+        return Response({"error": "New password must be at least 6 characters"}, status=status.HTTP_400_BAD_REQUEST)
+    if not request.user.check_password(old_password):
+        return Response({"error": "Old password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+    request.user.set_password(new_password)
+    request.user.save()
+    update_session_auth_hash(request, request.user)
+    request.user.auth_token.delete()
+    new_token = Token.objects.create(user=request.user)
+    logger.info(f"Password changed for user: {request.user.username}")
+    return Response({"status": "password changed", "token": new_token.key})
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def refresh_token(request):
+    """Delete existing token and create a new one."""
+    old_token = request.user.auth_token
+    old_token.delete()
+    new_token = Token.objects.create(user=request.user)
+    return Response({"token": new_token.key})
+
+# ----------------------------------------------------------------------
+# Configuration endpoints
+# ----------------------------------------------------------------------
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_attentions(request):
+    return Response({"attentions": list(ATTENTION_REGISTRY.keys()), "count": len(ATTENTION_REGISTRY.keys())})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_compressors(request):
+    return Response({"compressors": list(COMPRESSOR_REGISTRY.keys()), "count": len(COMPRESSOR_REGISTRY.keys())})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_models(request):
+    models = ["distilbert-base-uncased", "bert-base-uncased", "roberta-base", "albert-base-v2"]
+    return Response({"models": models, "count": len(models)})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_tasks(request):
+    tasks = ["cola", "sst2", "mrpc", "qqp", "stsb", "mnli", "qnli", "rte", "wnli"]
+    return Response({"tasks": tasks, "count": len(tasks)})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_methods(request):
+    methods = ["baseline", "lora", "rdrop", "r3f", "fisher_lora", "fisher_gelora", "llrd"]
+    return Response({"methods": methods, "count": len(methods)})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_presets(request):
+    presets = ["fast", "accurate", "extreme_compress"]
+    return Response({"presets": presets, "count": len(presets)})
+
+# ----------------------------------------------------------------------
+# System & hardware monitoring
+# ----------------------------------------------------------------------
+@api_view(["GET"])
+def system_status(request):
+    """Get CPU, memory, disk, uptime, platform info."""
+    mem = psutil.virtual_memory()
+    disk = psutil.disk_usage('/')
+    boot_time = datetime.fromtimestamp(psutil.boot_time())
+    cpu_freq = psutil.cpu_freq()
+    return Response({
+        "cpu": {
+            "percent": psutil.cpu_percent(interval=0.5),
+            "count": psutil.cpu_count(),
+            "freq_mhz": cpu_freq.current if cpu_freq else None,
+        },
+        "memory": {
+            "percent": mem.percent,
+            "used_gb": round(mem.used / (1024**3), 1),
+            "total_gb": round(mem.total / (1024**3), 1),
+            "available_gb": round(mem.available / (1024**3), 1),
+        },
+        "disk": {
+            "percent": disk.percent,
+            "used_gb": round(disk.used / (1024**3), 1),
+            "total_gb": round(disk.total / (1024**3), 1),
+            "free_gb": round(disk.free / (1024**3), 1),
+        },
+        "uptime_seconds": int(psutil.boot_time()),
+        "uptime_human": str(datetime.now() - boot_time).split('.')[0],
+        "platform": platform.platform(),
+        "python_version": platform.python_version(),
+    })
+
+@api_view(["GET"])
+def gpu_info(request):
+    """Get detailed GPU information (CUDA/MPS)."""
+    if torch.cuda.is_available():
+        total = torch.cuda.device_count()
+        result = {"type": "cuda", "total_gpus": total, "devices": []}
+        for i in range(total):
+            props = torch.cuda.get_device_properties(i)
+            mem_total = props.total_memory / (1024**2)
+            mem_alloc = torch.cuda.memory_allocated(i) / (1024**2)
+            mem_reserved = torch.cuda.memory_reserved(i) / (1024**2)
+            util = 0
+            try:
+                import pynvml
+                pynvml.nvmlInit()
+                handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+                util_info = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                util = util_info.gpu
+            except Exception:
+                pass
+            result["devices"].append({
+                "index": i,
+                "name": props.name,
+                "memory_total_mb": round(mem_total, 1),
+                "memory_allocated_mb": round(mem_alloc, 1),
+                "memory_reserved_mb": round(mem_reserved, 1),
+                "utilization_percent": util,
+                "compute_capability": f"{props.major}.{props.minor}",
+            })
+        return Response(result)
+    elif torch.backends.mps.is_available():
+        return Response({
+            "type": "mps",
+            "total_gpus": 1,
+            "device_name": "Apple Silicon (MPS)",
+            "memory_allocated_mb": round(torch.mps.current_allocated_memory() / (1024**2), 1) if hasattr(torch.mps, 'current_allocated_memory') else 0,
+        })
+    else:
+        return Response({"type": "cpu", "total_gpus": 0})
+
+@api_view(["GET"])
+def health_check(request):
+    """Simple health check endpoint."""
+    return Response({
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "database": "connected",
+    })
+
+@api_view(["GET"])
+def version(request):
+    """API version and backend info."""
+    return Response({
+        "api_version": "v1",
+        "django_version": django.get_version(),
+        "environment": getattr(settings, 'ENVIRONMENT', 'production'),
+    })
