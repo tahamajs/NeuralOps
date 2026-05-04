@@ -1,0 +1,249 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Experiment Monitor – Transformer Pro</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, monospace; padding: 20px; margin: 0; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        .card { background: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+        .badge { display: inline-block; padding: 6px 14px; border-radius: 40px; font-size: 0.85rem; font-weight: 600; background: #334155; color: white; }
+        .badge.running { background: #f59e0b; color: #000; }
+        .badge.completed { background: #10b981; }
+        .badge.failed { background: #ef4444; }
+        .badge.queued { background: #6b7280; }
+        button { background: #3b82f6; border: none; border-radius: 8px; padding: 6px 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin: 0 4px; }
+        button:hover { opacity: 0.85; transform: scale(0.98); }
+        .stop { background: #ef4444; color: white; }
+        .paper { background: #f59e0b; color: black; }
+        .eval { background: #8b5cf6; color: white; }
+        .retry { background: #10b981; color: white; }
+        .delete { background: #dc2626; color: white; }
+        a { color: #60a5fa; text-decoration: none; }
+        .dashboard-grid { display: flex; gap: 24px; flex-wrap: wrap; }
+        .main-charts { flex: 2; min-width: 300px; }
+        .sidebar { flex: 1; min-width: 260px; }
+        canvas { background: #0f172a; border-radius: 12px; width: 100%; max-height: 260px; }
+        .progress-bar-container { background: #334155; border-radius: 12px; height: 24px; margin: 16px 0; overflow: hidden; }
+        .progress-bar { background: #10b981; width: 0%; height: 100%; transition: width 0.3s ease; text-align: center; color: white; line-height: 24px; font-size: 0.8rem; font-weight: bold; }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 16px 0; }
+        .stat-card { background: #0f172a; padding: 8px 12px; border-radius: 12px; text-align: center; }
+        .stat-label { font-size: 0.7rem; text-transform: uppercase; color: #94a3b8; }
+        .stat-value { font-size: 1.4rem; font-weight: bold; }
+        .log-area { background: #0f172a; font-family: 'Fira Code', monospace; font-size: 0.8rem; height: 240px; overflow-y: auto; padding: 12px; border-radius: 12px; white-space: pre-wrap; color: #86efac; }
+        .terminal-container { background: #000; height: 280px; border-radius: 12px; overflow: hidden; margin-top: 12px; }
+        .list-group-item { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
+        .list-group-item a { color: #e2e8f0; text-decoration: none; display: block; }
+        .list-group-item:hover { background: #334155; }
+        .btn-download { background: #10b981; color: white; display: inline-block; padding: 6px 12px; border-radius: 8px; margin-right: 8px; }
+        hr { border-color: #334155; margin: 16px 0; }
+        h2, h3 { margin: 0 0 8px 0; font-weight: 600; }
+        .modal { animation: fadeIn 0.2s; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; }
+        .modal-content { background:#1e293b; border-radius:20px; max-width:500px; width:90%; padding:20px; color:#e2e8f0; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #convergence-warning { background: #f59e0b20; color: #fbbf24; padding: 8px; border-radius: 8px; text-align: center; font-size: 0.85rem; display: none; margin-top: 12px; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .markdown-preview { font-size: 0.85rem; max-height: 150px; overflow-y: auto; background: #0f172a; padding: 8px; border-radius: 12px; margin-top: 4px; }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <div class="flex-row">
+        <h2>⚡ Experiment <span id="exp-id">{% if run %}{{ run.id|slice:"8" }}{% else %}New{% endif %}</span> <span id="status-badge" class="badge">{% if run %}{{ run.status|default:"queued" }}{% else %}new{% endif %}</span></h2>
+        <div class="button-group">
+            {% if run %}
+            <button id="eval-btn" class="eval">📊 Evaluate</button>
+            <button id="stop-btn" class="stop">⏹ Stop</button>
+            <button id="retry-btn" class="retry">🔄 Retry</button>
+            <button id="delete-btn" class="delete">🗑 Delete</button>
+            <button id="paper-btn" class="paper">📄 Generate Paper</button>
+            <button id="report-btn" class="paper">📑 Full Report</button>
+            <button id="pdf-preview-btn" class="paper">📄 PDF Preview</button>
+            {% endif %}
+            <a href="/dashboard/" class="btn-download" style="background:#3b82f6;">← Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Configuration Panel (collapsible) -->
+    <div class="card">
+        <div class="collapsible-header" onclick="toggleConfigPanel()" style="cursor:pointer; display:flex; justify-content:space-between;">
+            <h3><i class="fas fa-sliders-h me-2"></i>Training Configuration</h3>
+            <i id="configToggleIcon" class="fas fa-chevron-down"></i>
+        </div>
+        <div id="configPanel" style="display:none; margin-top:16px;">
+            <div class="row g-3">
+                <div class="col-md-3"><input type="text" id="jobName" class="form-control" placeholder="Run name"></div>
+                <div class="col-md-3"><select id="modelSelect" class="form-select"><option value="distilbert-base-uncased">DistilBERT</option><option value="bert-base-uncased">BERT</option><option value="roberta-base">RoBERTa</option></select></div>
+                <div class="col-md-2"><select id="taskSelect" class="form-select"><option value="mrpc">MRPC</option><option value="sst2">SST2</option><option value="cola">CoLA</option></select></div>
+                <div class="col-md-2"><input type="number" id="gpuRequirements" class="form-control" value="1" placeholder="GPUs"></div>
+                <div class="col-md-2"><button id="startTrainingBtn" class="btn btn-success w-100"><i class="fas fa-play"></i> Start</button></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitoring section (only for existing runs) -->
+    <div id="monitoringSection" {% if not run %}style="display:none;"{% endif %}>
+        <div class="dashboard-grid">
+            <div class="main-charts">
+                <div class="card"><h3>📉 Training Loss</h3><canvas id="lossChart" height="200"></canvas></div>
+                <div class="card"><h3>📊 Evaluation Metrics</h3><canvas id="evalChart" height="200"></canvas></div>
+            </div>
+            <div class="sidebar">
+                <div class="card">
+                    <h3>⏱️ Progress</h3>
+                    <div class="progress-bar-container"><div id="progress-bar" class="progress-bar">0%</div></div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-label">Step</div><div class="stat-value"><span id="current-step">0</span> / <span id="total-steps">0</span></div></div>
+                        <div class="stat-card"><div class="stat-label">ETA</div><div class="stat-value" id="eta">--</div></div>
+                        <div class="stat-card"><div class="stat-label">Loss</div><div class="stat-value" id="loss">--</div></div>
+                        <div class="stat-card"><div class="stat-label">Accuracy</div><div class="stat-value" id="acc">--</div></div>
+                    </div>
+                </div>
+                <div class="card"><h3>🖥️ Live Terminal</h3><div id="terminal-container" class="terminal-container"></div></div>
+                <!-- === RESEARCHER NOTES CARD === -->
+                <div class="card">
+                    <h3><i class="fas fa-sticky-note me-2"></i>Researcher Notes</h3>
+                    <div id="runNotesList" style="max-height: 200px; overflow-y: auto;"></div>
+                    <button id="addNoteInlineBtn" class="btn btn-sm btn-outline-primary mt-2">+ Add Note</button>
+                    <div id="inlineNoteForm" style="display: none; margin-top: 8px;">
+                        <input type="text" id="inlineNoteTitle" class="form-control mb-1" placeholder="Title">
+                        <textarea id="inlineNoteContent" rows="2" class="form-control mb-1" placeholder="Write note..."></textarea>
+                        <input type="text" id="inlineNoteTags" class="form-control mb-1" placeholder="Tags (comma)">
+                        <div class="d-flex gap-2">
+                            <button id="saveInlineNoteBtn" class="btn btn-sm btn-success">Save</button>
+                            <button id="cancelInlineNoteBtn" class="btn btn-sm btn-secondary">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card"><h3>📜 Live Logs</h3><div id="log-area" class="log-area">{% if run %}{{ run.logs|default:"Waiting for logs..." }}{% else %}Select a job to view logs{% endif %}</div></div>
+        <div class="card"><h3>📊 Final Metrics</h3><div id="final-metrics" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px,1fr));"></div></div>
+        <div class="card"><h3>📈 Training Analytics</h3><div id="analytics-content" class="stats-grid">...</div><div id="convergence-warning"></div></div>
+        <div class="card"><h3>📁 Artifacts & Downloads</h3><div id="artifacts-list" class="list-group"></div><div class="button-group"><a id="download-model-btn" class="btn-download">Download Model</a><a id="download-config-btn" class="btn-download">Config JSON</a><a id="download-metrics-btn" class="btn-download">Metrics JSON</a></div></div>
+    </div>
+</div>
+
+<!-- Modals (same as before) -->
+<div id="evalModal" class="modal" style="display:none;"><div class="modal-content"><h3>📊 Evaluation Results</h3><div id="evalResults"></div><button onclick="closeEvalModal()">Close</button></div></div>
+<div id="pdfModal" class="modal" style="display:none;"><div style="position:relative; width:100%; height:100%;"><button onclick="closePdfModal()" style="position:absolute; top:20px; right:30px;">✕</button><iframe id="pdfIframe" src="" style="width:100%; height:100%;"></iframe></div></div>
+
+<script>
+    const runId = "{{ run.id|default:'' }}";
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) window.location.href = '/login/';
+
+    let lossChart, evalChart, ws, term, termWs;
+    let trainSteps = [], trainLosses = [], evalSteps = [], evalLosses = [], evalAccuracies = [];
+    let startTime = Date.now(), startTimeSet = false, lastStep = 0;
+
+    async function apiFetch(url, options = {}) {
+        const res = await fetch(url, {
+            ...options,
+            headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...options.headers }
+        });
+        if (res.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login/'; throw new Error('Unauthorized'); }
+        return res;
+    }
+
+    // --------------------- Monitoring functions (if runId exists) ---------------------
+    if (runId) {
+        function initCharts() { /* ... same as before ... */ }
+        async function loadHistory() { /* ... */ }
+        async function loadRunDetails() { /* ... */ }
+        async function loadArtifacts() { /* ... */ }
+        function computeAnalytics() { /* ... */ }
+        function updateProgress(data) { /* ... */ }
+        function addLog(line) { /* ... */ }
+        function updateMetrics(data) { /* ... */ }
+        function connectWebSocket() { /* ... */ }
+        function initTerminal() { /* ... */ }
+
+        // ----- Researcher Notes (inline) -----
+        async function loadRunNotes() {
+            const res = await apiFetch(`/api/notes/?run=${runId}`);
+            const notes = await res.json();
+            const container = document.getElementById('runNotesList');
+            if (!notes.length) { container.innerHTML = '<div class="text-secondary">No notes yet.</div>'; return; }
+            container.innerHTML = notes.map(n => `
+                <div class="border-bottom border-secondary pb-2 mb-2">
+                    <div class="d-flex justify-content-between"><strong>${escapeHtml(n.title || 'Note')}</strong><button class="btn btn-sm btn-outline-danger delete-note-inline" data-id="${n.id}"><i class="fas fa-trash"></i></button></div>
+                    <div class="small markdown-preview">${marked.parse(n.content.substring(0, 100))}...</div>
+                    <div class="small text-secondary">${new Date(n.created_at).toLocaleString()}</div>
+                </div>
+            `).join('');
+            document.querySelectorAll('.delete-note-inline').forEach(btn => btn.onclick = () => deleteNote(btn.dataset.id));
+        }
+
+        async function deleteNote(noteId) {
+            if (!confirm('Delete note?')) return;
+            await fetch(`/api/notes/${noteId}/`, { method: 'DELETE', headers: { 'Authorization': `Token ${authToken}` } });
+            loadRunNotes();
+        }
+
+        document.getElementById('addNoteInlineBtn').onclick = () => { document.getElementById('inlineNoteForm').style.display = 'block'; };
+        document.getElementById('cancelInlineNoteBtn').onclick = () => {
+            document.getElementById('inlineNoteForm').style.display = 'none';
+            document.getElementById('inlineNoteTitle').value = '';
+            document.getElementById('inlineNoteContent').value = '';
+            document.getElementById('inlineNoteTags').value = '';
+        };
+        document.getElementById('saveInlineNoteBtn').onclick = async () => {
+            const payload = {
+                title: document.getElementById('inlineNoteTitle').value,
+                content: document.getElementById('inlineNoteContent').value,
+                tags: document.getElementById('inlineNoteTags').value.split(',').map(s=>s.trim()).filter(s=>s),
+                run: runId
+            };
+            const res = await apiFetch('/api/notes/', { method: 'POST', body: JSON.stringify(payload) });
+            if (res) {
+                document.getElementById('inlineNoteForm').style.display = 'none';
+                loadRunNotes();
+            } else alert('Failed to save note');
+        };
+
+        function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+
+        // Initialization for monitoring
+        initCharts(); loadHistory().then(() => connectWebSocket()); initTerminal(); loadRunDetails(); loadArtifacts(); loadRunNotes();
+        setInterval(computeAnalytics, 5000); setInterval(loadRunDetails, 10000);
+    }
+
+    // Configuration panel toggle
+    function toggleConfigPanel() {
+        const panel = document.getElementById('configPanel');
+        const icon = document.getElementById('configToggleIcon');
+        if (panel.style.display === 'none') {
+            panel.style.display = 'block';
+            icon.classList.remove('fa-chevron-down'); icon.classList.add('fa-chevron-up');
+        } else {
+            panel.style.display = 'none';
+            icon.classList.remove('fa-chevron-up'); icon.classList.add('fa-chevron-down');
+        }
+    }
+
+    // Start new training
+    document.getElementById('startTrainingBtn').onclick = async () => {
+        const payload = {
+            name: document.getElementById('jobName').value,
+            model_name: document.getElementById('modelSelect').value,
+            task_name: document.getElementById('taskSelect').value,
+            gpu_requirements: parseInt(document.getElementById('gpuRequirements').value),
+            priority: 5
+        };
+        const res = await apiFetch('/api/jobs/', { method: 'POST', body: JSON.stringify(payload) });
+        if (res) window.location.href = `/monitor/${res.id}/`;
+        else alert('Submission failed');
+    };
+</script>
+</body>
+</html>
