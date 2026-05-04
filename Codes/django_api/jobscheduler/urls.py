@@ -17,6 +17,10 @@ urlpatterns = [
     path('runs/<uuid:run_id>/config/history/', views.get_config_history),
     path('runs/<uuid:run_id>/config/compare/<int:version_a>/<int:version_b>/', views.compare_configs),
     path('runs/<uuid:run_id>/environment/', views.get_environment),
+    path('jobs/<uuid:job_id>/scheduling/', views.update_job_scheduling),
+    path('scheduler/status/', views.scheduler_status),
+path('scheduler/metrics/', views.scheduler_metrics),
+]
 from django.urls import path
 from . import views
 
