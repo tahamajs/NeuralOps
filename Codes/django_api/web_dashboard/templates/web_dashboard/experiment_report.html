@@ -14,24 +14,27 @@
             margin: 0;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             background: #1e293b;
-            border-radius: 24px;
+            border-radius: 28px;
             padding: 32px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-        }
-        h1, h2, h3 {
-            color: #60a5fa;
-            margin-top: 0;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.5);
         }
         h1 {
-            font-size: 1.8rem;
-            border-bottom: 2px solid #334155;
-            padding-bottom: 12px;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0 0 8px 0;
         }
-        .section {
-            margin: 28px 0;
+        h2, h3 {
+            color: #cbd5e1;
+            margin: 24px 0 16px 0;
+            font-weight: 600;
+            border-left: 4px solid #3b82f6;
+            padding-left: 14px;
         }
         .badge {
             display: inline-block;
@@ -40,12 +43,40 @@
             font-size: 0.75rem;
             font-weight: 600;
             background: #334155;
+            color: white;
         }
         .badge.running { background: #f59e0b; color: #000; }
-        .badge.completed { background: #10b981; color: white; }
+        .badge.completed { background: #10b981; }
         .badge.failed { background: #ef4444; }
         .badge.queued { background: #6b7280; }
         .badge.stopped { background: #6b7280; }
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #0f172a;
+            border-radius: 20px;
+            padding: 16px;
+            text-align: center;
+            border: 1px solid #334155;
+            transition: 0.2s;
+        }
+        .metric-card:hover { background: #1e293b; transform: translateY(-2px); }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #60a5fa;
+        }
+        .metric-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            margin-top: 6px;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
@@ -61,131 +92,240 @@
             font-weight: 600;
             color: #94a3b8;
         }
-        .metric-card {
-            background: #0f172a;
-            border-radius: 16px;
-            padding: 16px;
-            margin: 16px 0;
-            border-left: 4px solid #3b82f6;
-        }
         .loss-plot {
             margin: 20px 0;
             text-align: center;
         }
         .loss-plot img {
             max-width: 100%;
-            border-radius: 12px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .btn {
+            background: #3b82f6;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 18px;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: #475569;
+        }
+        .btn-secondary:hover { background: #334155; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .btn-outline:hover { background: #3b82f620; transform: none; }
+        pre {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 16px;
+            overflow-x: auto;
+            font-size: 0.8rem;
+            font-family: 'Fira Code', monospace;
             border: 1px solid #334155;
         }
         .footer {
             margin-top: 40px;
             text-align: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #64748b;
             border-top: 1px solid #334155;
             padding-top: 20px;
         }
-        .btn {
-            background: #3b82f6;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 20px;
-            color: white;
-            text-decoration: none;
-            display: inline-block;
-            margin-top: 0;
-            transition: 0.2s;
-            cursor: pointer;
-        }
-        .btn:hover {
-            opacity: 0.85;
-            transform: scale(0.98);
-        }
-        .btn-secondary {
-            background: #475569;
-        }
         hr {
             border-color: #334155;
+            margin: 24px 0;
         }
-        pre {
+        details {
             background: #0f172a;
-            padding: 14px;
-            border-radius: 12px;
-            overflow-x: auto;
-            font-size: 0.75rem;
-            font-family: monospace;
+            border-radius: 16px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+        summary {
+            font-weight: 600;
+            cursor: pointer;
+            color: #94a3b8;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        @media (max-width: 700px) {
+            .container { padding: 20px; }
+            .metric-value { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>📄 Experiment Report</h1>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+    <div class="flex-between">
         <div>
-            <span class="badge {{ run.status }}">{{ run.status }}</span>
-            <span style="margin-left: 10px; font-size: 0.85rem;">Run ID: {{ run.id }}</span>
+            <h1>📄 Experiment Report</h1>
+            <div style="margin-top: 8px;">
+                <span class="badge {{ run.status }}">{{ run.status }}</span>
+                <span style="margin-left: 12px; font-size: 0.85rem;">ID: {{ run.id }}</span>
+            </div>
         </div>
-        <div>
-            <a href="/dashboard/run/{{ run.id }}/" class="btn btn-secondary">← Back to Dashboard</a>
-            <a href="/api/runs/{{ run.id }}/paper/" class="btn">📥 Download PDF/TeX</a>
+        <div class="button-group" style="margin:0;">
+            <a href="/dashboard/run/{{ run.id }}/" class="btn btn-secondary">← Dashboard</a>
+            <a href="/api/runs/{{ run.id }}/paper/" class="btn">📄 PDF/TeX</a>
         </div>
     </div>
 
-    <div class="section">
-        <h2>⚙️ Configuration</h2>
-        <table>
-            <tr><th>Experiment Name</th><td>{{ run.experiment.name|default:run.experiment.id|slice:"8" }}</td></tr>
-            <tr><th>Model</th><td>{{ model_name }}</td></tr>
-            <tr><th>Task</th><td>{{ task|upper }}</td></tr>
-            <tr><th>Attention Type</th><td>{{ attention }}</td></tr>
-            <tr><th>Training Method</th><td>{{ method }}</td></tr>
-            <tr><th>Epochs</th><td>{{ epochs }}</td></tr>
-            <tr><th>Batch Size</th><td>{{ batch_size }}</td></tr>
-            <tr><th>Learning Rate</th><td>{{ learning_rate }}</td></tr>
-            <tr><th>Max Sequence Length</th><td>{{ max_len }}</td></tr>
-            <tr><th>Compression Rank</th><td>{{ rank }}</td></tr>
-        </table>
-    </div>
-
-    <div class="section">
-        <h2>📊 Final Metrics</h2>
+    <!-- Quick Metrics Grid -->
+    <div class="metric-grid">
         <div class="metric-card">
-            <table style="width:100%">
-                <tr><th>Loss</th><td>{{ loss }}</td></tr>
-                <tr><th>Accuracy</th><td>{{ accuracy }}</td></tr>
-                <tr><th>F1 Score</th><td>{{ f1 }}</td></tr>
-                <tr><th>Matthews Correlation</th><td>{{ matthews }}</td></tr>
-            </table>
+            <div class="metric-value">{{ accuracy|default:"—" }}</div>
+            <div class="metric-label">Accuracy</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">{{ f1|default:"—" }}</div>
+            <div class="metric-label">F1 Score</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">{{ loss|default:"—" }}</div>
+            <div class="metric-label">Loss</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">{{ matthews|default:"—" }}</div>
+            <div class="metric-label">Matthews Corr.</div>
         </div>
     </div>
 
-    <div class="section">
-        <h2>⏱️ Timeline</h2>
-        <table>
-            <tr><th>Created</th><td>{{ run.created_at|date:"Y-m-d H:i:s" }}</td></tr>
-            <tr><th>Started</th><td>{{ run.started_at|date:"Y-m-d H:i:s"|default:"—" }}</td></tr>
-            <tr><th>Completed</th><td>{{ run.completed_at|date:"Y-m-d H:i:s"|default:"—" }}</td></tr>
-            <tr><th>Total steps</th><td>{{ run.total_steps }}</td></tr>
-        </table>
-    </div>
-
+    <!-- Loss Curve (if exists) -->
     {% if loss_plot_url %}
-    <div class="section">
+    <div class="loss-plot">
+        <h2>📉 Training Curves</h2>
+        <img src="{{ loss_plot_url }}" alt="Loss curve">
+        <div class="button-group" style="justify-content: center;">
+            <a href="{{ loss_plot_url }}" download="loss_curve.png" class="btn btn-outline">⬇ Download Plot</a>
+        </div>
+    </div>
+    {% else %}
+    <div class="loss-plot">
         <h2>📉 Loss Curve</h2>
-        <div class="loss-plot">
-            <img src="{{ loss_plot_url }}" alt="Training and evaluation loss curve">
+        <div style="background:#0f172a; padding:40px; border-radius:24px; text-align:center; color:#94a3b8;">
+            <i class="fas fa-chart-line fa-2x"></i>
+            <p>Loss plot not yet generated. Run training to see curves.</p>
         </div>
     </div>
     {% endif %}
 
-    <div class="section">
-        <h2>📝 Full Configuration (JSON)</h2>
-        <pre>{{ config_json }}</pre>
+    <!-- Configuration -->
+    <h2>⚙️ Configuration</h2>
+    <div class="metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px,1fr));">
+        <div class="metric-card"><span class="metric-label">Experiment</span><div class="metric-value" style="font-size:1.2rem;">{{ run.experiment.name|default:run.experiment.id|slice:"8" }}</div></div>
+        <div class="metric-card"><span class="metric-label">Model</span><div class="metric-value" style="font-size:1rem;">{{ model_name }}</div></div>
+        <div class="metric-card"><span class="metric-label">Task</span><div class="metric-value" style="font-size:1rem;">{{ task|upper }}</div></div>
+        <div class="metric-card"><span class="metric-label">Attention</span><div class="metric-value" style="font-size:1rem;">{{ attention }}</div></div>
+        <div class="metric-card"><span class="metric-label">Method</span><div class="metric-value" style="font-size:1rem;">{{ method }}</div></div>
+        <div class="metric-card"><span class="metric-label">Epochs</span><div class="metric-value">{{ epochs }}</div></div>
+        <div class="metric-card"><span class="metric-label">Batch size</span><div class="metric-value">{{ batch_size }}</div></div>
+        <div class="metric-card"><span class="metric-label">Learning rate</span><div class="metric-value">{{ learning_rate }}</div></div>
+        <div class="metric-card"><span class="metric-label">Max length</span><div class="metric-value">{{ max_len }}</div></div>
+        <div class="metric-card"><span class="metric-label">Compression rank</span><div class="metric-value">{{ rank }}</div></div>
     </div>
+
+    <!-- Timeline -->
+    <h2>⏱️ Timeline</h2>
+    <div class="metric-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+        <div class="metric-card"><span class="metric-label">Created</span><div class="metric-value" style="font-size:1rem;">{{ run.created_at|date:"Y-m-d H:i:s" }}</div></div>
+        <div class="metric-card"><span class="metric-label">Started</span><div class="metric-value" style="font-size:1rem;">{{ run.started_at|date:"Y-m-d H:i:s"|default:"—" }}</div></div>
+        <div class="metric-card"><span class="metric-label">Completed</span><div class="metric-value" style="font-size:1rem;">{{ run.completed_at|date:"Y-m-d H:i:s"|default:"—" }}</div></div>
+        <div class="metric-card"><span class="metric-label">Total steps</span><div class="metric-value">{{ run.total_steps }}</div></div>
+    </div>
+
+    <!-- Artifacts & Downloads -->
+    <h2>📁 Artifacts & Downloads</h2>
+    <div class="button-group">
+        <a href="/api/runs/{{ run.id }}/model/" class="btn">🤖 Download Model (ZIP)</a>
+        <a id="downloadConfigBtn" class="btn btn-secondary">📄 Download Config (JSON)</a>
+        <a id="downloadMetricsBtn" class="btn btn-secondary">📊 Download Metrics (JSON)</a>
+        <a href="/api/runs/{{ run.id }}/history/?format=csv" class="btn btn-secondary" target="_blank">📈 History CSV</a>
+        <a href="/api/runs/{{ run.id }}/paper/" class="btn btn-secondary">📝 LaTeX Source</a>
+    </div>
+
+    <!-- Full JSON config (collapsible) -->
+    <details>
+        <summary>📜 Full Configuration (JSON)</summary>
+        <pre id="fullConfigJson">{{ config_json }}</pre>
+    </details>
+
+    <!-- Full metrics (collapsible) -->
+    <details>
+        <summary>📊 Complete Metrics</summary>
+        <pre id="fullMetricsJson">{{ metrics_json }}</pre>
+    </details>
+
+    <!-- Training history summary (if available) -->
+    {% if history_summary %}
+    <h2>📈 Training Summary</h2>
+    <div class="metric-grid">
+        <div class="metric-card"><span class="metric-label">Min loss</span><div class="metric-value">{{ history_summary.min_loss|floatformat:4 }}</div></div>
+        <div class="metric-card"><span class="metric-label">Max loss</span><div class="metric-value">{{ history_summary.max_loss|floatformat:4 }}</div></div>
+        <div class="metric-card"><span class="metric-label">Final loss</span><div class="metric-value">{{ history_summary.final_loss|floatformat:4 }}</div></div>
+        <div class="metric-card"><span class="metric-label">Best eval accuracy</span><div class="metric-value">{{ history_summary.best_acc|default:"—" }}</div></div>
+    </div>
+    {% endif %}
 
     <div class="footer">
         Generated by Efficient Transformer Toolkit • {{ now|date:"Y-m-d H:i:s" }}
+        <br>
+        <button id="printBtn" class="btn btn-outline" style="margin-top: 12px; padding: 4px 16px;">🖨️ Print / Save as PDF</button>
     </div>
 </div>
+
+<script>
+    // Download config and metrics JSON from pre blocks
+    document.getElementById('downloadConfigBtn').addEventListener('click', function() {
+        const configText = document.getElementById('fullConfigJson').innerText;
+        const blob = new Blob([configText], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `config_${"{{ run.id }}".slice(0,8)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('downloadMetricsBtn').addEventListener('click', function() {
+        const metricsText = document.getElementById('fullMetricsJson').innerText;
+        const blob = new Blob([metricsText], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `metrics_${"{{ run.id }}".slice(0,8)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    // Print friendly version
+    document.getElementById('printBtn').addEventListener('click', () => window.print());
+</script>
 </body>
 </html>

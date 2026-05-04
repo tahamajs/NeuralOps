@@ -4,18 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transformer Pro Toolkit – Dashboard</title>
-    <link href="{% static 'web_dashboard/css/bootstrap.min.css' %}" rel="stylesheet">
+    <title>Transformer Pro Toolkit – Live Dashboard</title>
+    <!-- Bootstrap + Icons + Chart.js + xterm -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
     <style>
-        /* (same styles – keep as is) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: #eef2ff; min-height: 100vh; }
-        .glass-card { background: rgba(20, 28, 40, 0.7); backdrop-filter: blur(12px); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s ease; }
+        body { background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: #eef2ff; min-height: 100vh; padding-bottom: 350px; }
+        .glass-card { background: rgba(20, 28, 40, 0.75); backdrop-filter: blur(12px); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s ease; }
         .metric-card { background: linear-gradient(135deg, #1e2a3e 0%, #0f172a 100%); border-radius: 20px; padding: 1.2rem; border-left: 4px solid #3b82f6; }
         .job-card { background: #111827; border-radius: 20px; transition: 0.2s; cursor: pointer; }
-        .job-card:hover { background: #1f2937; transform: scale(1.01); }
-        .status-badge { padding: 4px 12px; border-radius: 40px; font-size: 0.75rem; font-weight: 600; }
+        .job-card:hover { background: #1f2937; transform: translateY(-2px); }
+        .status-badge { padding: 4px 12px; border-radius: 40px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
         .status-running { background: #f59e0b20; color: #fbbf24; border: 1px solid #f59e0b60; }
         .status-completed { background: #10b98120; color: #34d399; border: 1px solid #10b98160; }
         .status-failed { background: #ef444420; color: #f87171; border: 1px solid #ef444460; }
@@ -29,383 +32,328 @@
         input, select, textarea { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 10px 14px; color: #f1f5f9; }
         input:focus, select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.3); }
         .navbar-brand { font-weight: 700; font-size: 1.5rem; background: linear-gradient(135deg, #60a5fa, #c084fc); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .xterm { height: 300px; background: #0a0f1e; border-radius: 12px; padding: 8px; }
+        .xterm-viewport { background: #0a0f1e; }
+        .run-detail-monitor { max-height: 300px; overflow-y: auto; background: #0a0f1e; border-radius: 12px; padding: 12px; font-family: monospace; font-size: 0.8rem; }
+        .artifact-link { font-size: 0.8rem; word-break: break-all; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: fadeIn 0.4s ease-out; }
     </style>
 </head>
 <body>
-    <div class="container-fluid p-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center mb-5">
-            <div>
-                <h1 class="navbar-brand mb-0">⚡ Transformer Pro Toolkit</h1>
-                <p class="text-secondary small mt-1">real‑time training, terminal access, full control</p>
-            </div>
-            <div>
-                <button class="btn btn-primary-custom me-2" data-bs-toggle="modal" data-bs-target="#newExpModal">
-                    <i class="fas fa-plus me-1"></i> New Experiment
-                </button>
-                <button class="btn btn-outline-secondary rounded-pill" id="logout-btn">
-                    <i class="fas fa-sign-out-alt me-1"></i> Logout
-                </button>
-            </div>
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-5 gap-3">
+        <div>
+            <h1 class="navbar-brand mb-0">⚡ Transformer Pro Toolkit</h1>
+            <p class="text-secondary small mt-1">real‑time training · terminal · full control</p>
         </div>
+        <div>
+            <button class="btn btn-primary-custom me-2" data-bs-toggle="modal" data-bs-target="#newExpModal">
+                <i class="fas fa-plus me-1"></i> New Run
+            </button>
+            <button class="btn btn-outline-secondary rounded-pill" id="logout-btn">
+                <i class="fas fa-sign-out-alt me-1"></i> Logout
+            </button>
+        </div>
+    </div>
 
-        <!-- System Metrics Row (unchanged) -->
-        <div class="row mb-5 g-4">
-<div class="col-md-4">
-    <div class="metric-card">
-        <div class="d-flex justify-content-between align-items-center">
-            <span id="gpu-label"><i class="fas fa-microchip me-2"></i> GPU</span>
-            <span id="gpu-util-text" class="fw-bold">0%</span>
+    <!-- System Metrics -->
+    <div class="row mb-5 g-4">
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between"><span id="gpu-label"><i class="fas fa-microchip me-2"></i> GPU</span><span id="gpu-util-text" class="fw-bold">0%</span></div>
+                <div class="progress-bar-custom mt-2"><div id="gpu-util-bar" class="progress-fill" style="width:0%"></div></div>
+                <div class="mt-2 small"><i class="fas fa-memory me-1"></i> <span id="gpu-mem">0</span> MB / <span id="gpu-total">0</span> MB</div>
+            </div>
         </div>
-        <div class="progress-bar-custom mt-2"><div id="gpu-util-bar" class="progress-fill" style="width:0%"></div></div>
-        <div class="mt-2 small"><i class="fas fa-memory me-1"></i> <span id="gpu-mem">0</span> MB / <span id="gpu-total">0</span> MB</div>
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between"><span><i class="fas fa-tachometer-alt me-2"></i> CPU</span><span id="cpu-util-text" class="fw-bold">0%</span></div>
+                <div class="progress-bar-custom mt-2"><div id="cpu-util-bar" class="progress-fill" style="width:0%"></div></div>
+                <div class="mt-2 small"><i class="fas fa-database me-1"></i> RAM <span id="ram-usage">0</span> GB / <span id="ram-total">0</span> GB</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="metric-card">
+                <div class="d-flex justify-content-between"><span><i class="fas fa-chart-line me-2"></i> Jobs</span><span><span id="active-jobs">0</span> active / <span id="completed-jobs">0</span> done</span></div>
+                <div class="mt-2"><i class="fas fa-hourglass-half me-1"></i> Last update: <span id="last-update">just now</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jobs list toolbar -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h3><i class="fas fa-flask me-2"></i> Training Runs</h3>
+        <div class="d-flex gap-2">
+            <select id="status-filter" class="form-select form-select-sm w-auto bg-dark border-secondary">
+                <option value="all">All status</option>
+                <option value="running">Running</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+                <option value="queued">Queued</option>
+                <option value="stopped">Stopped</option>
+            </select>
+            <div class="input-group w-auto"><span class="input-group-text bg-dark border-secondary"><i class="fas fa-search text-secondary"></i></span><input type="text" id="job-search" class="form-control bg-dark border-secondary" placeholder="Filter name/ID"></div>
+        </div>
+    </div>
+    <div class="row g-4" id="experiment-list"><div class="col-12 text-center text-muted py-5">Loading runs...</div></div>
+</div>
+
+<!-- New Run Modal -->
+<div class="modal fade" id="newExpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header border-secondary"><h5 class="modal-title"><i class="fas fa-rocket me-2"></i>Create Training Run</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <form id="create-exp-form">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label>Model</label><select id="modal-model" class="form-select" required><option value="distilbert-base-uncased">DistilBERT</option><option value="bert-base-uncased">BERT Base</option><option value="roberta-base">RoBERTa</option><option value="albert-base-v2">ALBERT</option></select></div>
+                        <div class="col-md-6"><label>GLUE Task</label><select id="modal-task" class="form-select"><option value="mrpc">MRPC</option><option value="sst2">SST-2</option><option value="cola">CoLA</option><option value="qqp">QQP</option><option value="mnli">MNLI</option><option value="qnli">QNLI</option><option value="rte">RTE</option><option value="wnli">WNLI</option><option value="stsb">STS-B</option></select></div>
+                        <div class="col-md-6"><label>Attention</label><select id="modal-attention" class="form-select"><option value="full">full</option></select></div>
+                        <div class="col-md-6"><label>Method</label><select id="modal-method" class="form-select"><option value="baseline">Baseline</option><option value="lora">LoRA</option><option value="rdrop">R-Drop</option><option value="r3f">R3F</option></select></div>
+                        <div class="col-md-3"><label>Epochs</label><input type="number" id="modal-epochs" class="form-control" value="3"></div>
+                        <div class="col-md-3"><label>Batch Size</label><input type="number" id="modal-batch" class="form-control" value="16"></div>
+                        <div class="col-md-3"><label>Learning Rate</label><input type="number" step="any" id="modal-lr" class="form-control" value="2e-5"></div>
+                        <div class="col-md-3"><label>Max Seq Len</label><input type="number" id="modal-maxlen" class="form-control" value="128"></div>
+                        <div class="col-md-6"><label>Compression Rank</label><input type="number" id="modal-rank" class="form-control" value="64"></div>
+                        <div class="col-md-6"><label>Run name (optional)</label><input type="text" id="modal-run-name" class="form-control" placeholder="e.g., baseline_run1"></div>
+                    </div>
+                    <div class="mt-4 d-flex justify-content-end"><button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary-custom">Launch Run</button></div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
-           <div class="col-md-4">
-                <div class="metric-card">
-                    <div class="d-flex justify-content-between">
-                        <span><i class="fas fa-tachometer-alt me-2"></i> CPU</span>
-                        <span id="cpu-util-text" class="fw-bold">0%</span>
-                    </div>
-                    <div class="progress-bar-custom mt-2"><div id="cpu-util-bar" class="progress-fill" style="width:0%"></div></div>
-                    <div class="mt-2 small"><i class="fas fa-database me-1"></i> RAM <span id="ram-usage">0</span> GB / <span id="ram-total">0</span> GB</div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="metric-card">
-                    <div class="d-flex justify-content-between">
-                        <span><i class="fas fa-chart-line me-2"></i> Jobs</span>
-                        <span><span id="active-jobs">0</span> active / <span id="completed-jobs">0</span> done</span>
-                    </div>
-                    <div class="mt-2"><i class="fas fa-hourglass-half me-1"></i> Last update: <span id="last-update">just now</span></div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Experiments (Runs) List -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3><i class="fas fa-flask me-2"></i> Training Runs</h3>
-            <div class="input-group w-25">
-                <span class="input-group-text bg-dark border-secondary"><i class="fas fa-search text-secondary"></i></span>
-                <input type="text" id="job-search" class="form-control bg-dark border-secondary" placeholder="Filter by name or ID...">
+<!-- Run Detail Modal (Live logs, charts, artifacts) -->
+<div class="modal fade" id="runDetailModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content modal-content-custom">
+            <div class="modal-header border-secondary"><h5 class="modal-title" id="detail-title">Run Details</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6"><div class="mb-3"><span class="badge bg-secondary mb-2">Configuration</span><pre id="detail-config" class="small bg-dark p-2 rounded" style="max-height:200px; overflow:auto"></pre></div></div>
+                    <div class="col-md-6"><div class="mb-3"><span class="badge bg-secondary mb-2">Final Metrics</span><pre id="detail-metrics" class="small bg-dark p-2 rounded" style="max-height:200px; overflow:auto"></pre></div></div>
+                </div>
+                <ul class="nav nav-tabs border-secondary" id="detailTabs" role="tablist">
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#logs-tab">Live Logs</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#charts-tab">Training Curves</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#artifacts-tab">Artifacts</button></li>
+                </ul>
+                <div class="tab-content mt-3">
+                    <div class="tab-pane fade show active" id="logs-tab"><div id="detail-logs" class="run-detail-monitor" style="height:300px; overflow-y:auto; font-family:monospace; background:#0a0f1e;"></div></div>
+                    <div class="tab-pane fade" id="charts-tab"><canvas id="lossChart" width="400" height="200"></canvas><canvas id="accChart" width="400" height="200" class="mt-3"></canvas></div>
+                    <div class="tab-pane fade" id="artifacts-tab"><div id="artifacts-list" class="list-group list-group-flush bg-transparent"></div><div class="mt-3"><a id="download-model-btn" class="btn btn-sm btn-primary-custom"><i class="fas fa-download"></i> Download Model</a></div></div>
+                </div>
             </div>
-        </div>
-        <div class="row g-4" id="experiment-list">
-            <!-- dynamic cards -->
+            <div class="modal-footer border-secondary"><button id="stop-run-btn" class="btn btn-warning btn-sm"><i class="fas fa-stop"></i> Stop Run</button><button id="retry-run-btn" class="btn btn-success btn-sm"><i class="fas fa-redo"></i> Retry</button><button id="delete-run-btn" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete</button><button class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div>
         </div>
     </div>
+</div>
 
-    <!-- Create Training Run Modal (still called "New Experiment") -->
-    <div class="modal fade" id="newExpModal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content modal-content-custom">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title"><i class="fas fa-rocket me-2"></i>Create Training Run</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="create-exp-form">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Max Train Samples (‑1 = all)</label>
-                                    <input type="number" id="max_train_samples" class="form-control" value="-1">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Max Eval Samples (‑1 = all)</label>
-                                    <input type="number" id="max_eval_samples" class="form-control" value="-1">
-                                </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Model</label>
-                                <select id="modal-model" class="form-select" required>
-                                    <option value="distilbert-base-uncased">DistilBERT Base</option>
-                                    <option value="bert-base-uncased">BERT Base</option>
-                                    <option value="roberta-base">RoBERTa Base</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">GLUE Task</label>
-                                <select id="modal-task" class="form-select">
-                                    <option value="mrpc">MRPC</option>
-                                    <option value="sst2">SST-2</option>
-                                    <option value="cola">CoLA</option>
-                                    <option value="qqp">QQP</option>
-                                    <option value="mnli">MNLI</option>
-                                    <option value="qnli">QNLI</option>
-                                    <option value="rte">RTE</option>
-                                    <option value="wnli">WNLI</option>
-                                    <option value="stsb">STS-B</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Attention</label>
-                                <select id="modal-attention" class="form-select"><option value="full">full</option></select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Training Method</label>
-                                <select class="form-select" id="modal-method">
-                                    <option value="baseline">Baseline</option>
-                                    <option value="lora">LoRA</option>
-                                    <option value="rdrop">R-Drop</option>
-                                    <option value="r3f">R3F</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3"><label>Epochs</label><input type="number" class="form-control" id="modal-epochs" value="3"></div>
-                            <div class="col-md-3"><label>Batch Size</label><input type="number" class="form-control" id="modal-batch" value="16"></div>
-                            <div class="col-md-3"><label>Learning Rate</label><input type="number" step="any" class="form-control" id="modal-lr" value="2e-5"></div>
-                            <div class="col-md-3"><label>Max Seq Len</label><input type="number" class="form-control" id="modal-maxlen" value="128"></div>
-                            <div class="col-md-6"><label>Compression Rank (if any)</label><input type="number" class="form-control" id="modal-rank" value="64"></div>
-                        </div>
-                        <div class="mt-4 d-flex justify-content-end">
-                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary-custom">Launch Run</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+<!-- Terminal Panel (collapsible) -->
+<div class="position-fixed bottom-0 start-0 end-0" style="z-index: 1050;">
+    <div class="glass-card rounded-top-0 p-2">
+        <div class="d-flex justify-content-between align-items-center"><span><i class="fas fa-terminal me-2"></i>Live Terminal Feed</span><button id="toggleTerminal" class="btn btn-sm btn-outline-secondary">▲ Collapse</button></div>
+        <div id="terminal-container" style="height:250px; margin-top:8px;"></div>
     </div>
+</div>
 
-    <script src="{% static 'web_dashboard/js/bootstrap.bundle.min.js' %}"></script>
-    <script>
-        // Authentication token
-        const authToken = localStorage.getItem('authToken');
-        if (!authToken) {
-            window.location.href = '/login/';
-        }
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ---------- Globals ----------
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) window.location.href = '/login/';
 
-        async function apiFetch(url, opts = {}) {
-            const res = await fetch(url, {
-                ...opts,
-                credentials: 'include',
-                headers: {
-                    'Authorization': `Token ${authToken}`,
-                    'Content-Type': 'application/json',
-                    ...opts.headers
-                }
-            });
-            if (res.status === 401) {
-                localStorage.removeItem('authToken');
-                window.location.href = '/login/';
-                throw new Error('Unauthorized');
-            }
-            return res;
-        }
+    let runs = [], currentRunId = null, lossChart = null, accChart = null, ws = null, terminalWs = null;
+    let terminal = null;
 
-        let runs = [];
-        let filterText = '';
-
-        // System metrics
-async function loadMetrics() {
-    try {
-        const [sys, gpu] = await Promise.all([
-            (await apiFetch('/api/system/status/')).json(),
-            (await apiFetch('/api/system/gpu/')).json()
-        ]);
-        
-        // CPU & RAM
-        const cpuText = document.getElementById('cpu-util-text');
-        const cpuBar = document.getElementById('cpu-util-bar');
-        const ramUsage = document.getElementById('ram-usage');
-        const ramTotal = document.getElementById('ram-total');
-        if (cpuText) cpuText.innerText = (sys.cpu || 0) + '%';
-        if (cpuBar) cpuBar.style.width = (sys.cpu || 0) + '%';
-        if (ramUsage) ramUsage.innerText = (sys.memory || 0).toFixed(1);
-        if (ramTotal) ramTotal.innerText = '16';
-
-        // GPU / MPS
-        const gpuUtilText = document.getElementById('gpu-util-text');
-        const gpuUtilBar = document.getElementById('gpu-util-bar');
-        const gpuMem = document.getElementById('gpu-mem');
-        const gpuTotal = document.getElementById('gpu-total');
-        const gpuLabel = document.getElementById('gpu-label');
-
-        if (gpu.type === 'cuda') {
-            const util = gpu.utilization || 0;
-            if (gpuUtilText) gpuUtilText.innerText = util + '%';
-            if (gpuUtilBar) gpuUtilBar.style.width = util + '%';
-            if (gpuMem) gpuMem.innerText = (gpu.memory_allocated_mb || 0).toFixed(0);
-            if (gpuTotal) gpuTotal.innerText = (gpu.memory_total_mb || 0).toFixed(0);
-            if (gpuLabel) gpuLabel.innerHTML = '<i class="fas fa-microchip me-2"></i> GPU';
-        } else if (gpu.type === 'mps') {
-            if (gpuUtilText) gpuUtilText.innerText = 'MPS';
-            if (gpuUtilBar) gpuUtilBar.style.width = '100%';
-            if (gpuMem) gpuMem.innerText = (gpu.memory_allocated_mb || 0).toFixed(0);
-            if (gpuTotal) gpuTotal.innerText = (gpu.memory_total_mb || 0).toFixed(0);
-            if (gpuLabel) gpuLabel.innerHTML = '<i class="fas fa-microchip me-2"></i> MPS';
-        } else {
-            if (gpuUtilText) gpuUtilText.innerText = 'N/A';
-            if (gpuUtilBar) gpuUtilBar.style.width = '0%';
-            if (gpuMem) gpuMem.innerText = '0';
-            if (gpuTotal) gpuTotal.innerText = '0';
-            if (gpuLabel) gpuLabel.innerHTML = '<i class="fas fa-microchip me-2"></i> GPU';
-        }
-        
-        const lastUpdate = document.getElementById('last-update');
-        if (lastUpdate) lastUpdate.innerText = new Date().toLocaleTimeString();
-    } catch(e) {
-        console.warn('Metrics error', e);
+    // API helper
+    async function apiFetch(url, opts={}) {
+        const res = await fetch(url, { ...opts, headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...opts.headers } });
+        if (res.status===401) { localStorage.removeItem('authToken'); window.location.href='/login/'; throw new Error('Unauthorized'); }
+        return res;
     }
-}
 
+    // Load runs from backend
+    async function loadRuns() {
+        try {
+            const res = await apiFetch('/api/runs/');
+            runs = await res.json();
+            updateJobCounters();
+            renderRunCards();
+        } catch(e) { console.error(e); }
+    }
 
-
-// Load training runs from /api/runs/
-async function loadRuns() {
-    try {
-        const res = await apiFetch('/api/runs/');
-        runs = await res.json();
-        const active = runs.filter(r => r.status === 'running').length;
-        const completed = runs.filter(r => r.status === 'completed').length;
+    function updateJobCounters() {
+        const active = runs.filter(r=>r.status==='running').length;
+        const completed = runs.filter(r=>r.status==='completed').length;
         document.getElementById('active-jobs').innerText = active;
         document.getElementById('completed-jobs').innerText = completed;
-        renderRunCards();
-    } catch(e) {
-        console.warn('Failed to load runs', e);
     }
-}
 
-function renderRunCards() {
-    const container = document.getElementById('experiment-list');
-    if (!container) return;
-    const filtered = runs.filter(run =>
-        (run.name || '').toLowerCase().includes(filterText) ||
-        run.id.toLowerCase().includes(filterText)
-    );
-    if (filtered.length === 0) {
-        container.innerHTML = `<div class="col-12 text-center text-muted py-5"><i class="fas fa-inbox fa-2x mb-2"></i><br/>No runs found</div>`;
-        return;
-    }
-    container.innerHTML = filtered.map(run => {
-        const config = run.config || {};
-        const modelShort = (config.model_name || '').split('/').pop() || 'model';
-        const task = config.task_name || 'task';
-        const step = run.current_step || 0;
-        const total = run.total_steps || 1;
-        const percent = (step / total) * 100;
-        const statusClass = run.status || 'queued';
-        return `
-        <div class="col-md-4 fade-in">
-            <div class="job-card p-3" onclick="location.href='/dashboard/job/${run.id}/'">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h5 class="mb-1">${escapeHtml(modelShort)}</h5>
-                        <div class="small text-secondary">${escapeHtml(task)}</div>
-                    </div>
-                    <span class="status-badge status-${statusClass}">${statusClass}</span>
-                </div>
-                ${run.status === 'running' ? `
-                    <div class="mt-3">
-                        <div class="d-flex justify-content-between small mb-1"><span>Progress</span><span>${Math.round(percent)}%</span></div>
-                        <div class="progress-bar-custom"><div class="progress-fill" style="width:${percent}%"></div></div>
-                        <div class="small text-secondary mt-1">Step ${step} / ${total}</div>
-                    </div>
-                ` : (run.status === 'completed' || run.status === 'failed' ? `<div class="mt-2 text-secondary small"><i class="fas fa-calendar-alt me-1"></i> ${new Date(run.created_at).toLocaleString()}</div>` : '')}
+    // Filter + search
+    let currentFilter = 'all', currentSearch = '';
+    document.getElementById('status-filter')?.addEventListener('change', e=>{ currentFilter=e.target.value; renderRunCards(); });
+    document.getElementById('job-search')?.addEventListener('input', e=>{ currentSearch=e.target.value.toLowerCase(); renderRunCards(); });
+
+    function renderRunCards() {
+        const container = document.getElementById('experiment-list');
+        let filtered = runs.filter(run => (currentFilter==='all' || run.status===currentFilter) && (run.name?.toLowerCase().includes(currentSearch) || run.id.includes(currentSearch)));
+        if(filtered.length===0) { container.innerHTML='<div class="col-12 text-center text-muted py-5">No runs found</div>'; return; }
+        container.innerHTML = filtered.map(run=>`
+            <div class="col-md-4 fade-in"><div class="job-card p-3" onclick="openRunDetail('${run.id}')">
+                <div class="d-flex justify-content-between"><div><h5 class="mb-1">${escapeHtml(run.config?.model_name?.split('/').pop()||'model')}</h5><div class="small text-secondary">${escapeHtml(run.config?.task_name||'task')}</div></div><span class="status-badge status-${run.status}">${run.status}</span></div>
+                ${run.status==='running'? `<div class="mt-3"><div class="d-flex justify-content-between small"><span>Progress</span><span>${Math.round((run.current_step/run.total_steps)*100||0)}%</span></div><div class="progress-bar-custom"><div class="progress-fill" style="width:${(run.current_step/run.total_steps)*100||0}%"></div></div><div class="small text-secondary mt-1">Step ${run.current_step||0} / ${run.total_steps||1}</div></div>`:''}
                 <div class="mt-2 text-end"><i class="fas fa-chevron-right text-secondary"></i></div>
-            </div>
-        </div>`;
-    }).join('');
-}
+            </div></div>
+        `).join('');
+    }
 
-        function escapeHtml(str) {
-            return String(str).replace(/[&<>]/g, function(m){
-                if(m==='&') return '&amp;';
-                if(m==='<') return '&lt;';
-                if(m==='>') return '&gt;';
-                return m;
-            });
-        }
+    function escapeHtml(str){ return String(str||'').replace(/[&<>]/g, m=> m==='&'?'&amp;': m==='<'?'&lt;':'&gt;'); }
 
-        // Create training run (calls /api/train/)
-        const form = document.getElementById('create-exp-form');
-        if (form) {
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payload = {
-                    max_train_samples: parseInt(document.getElementById('max_train_samples').value),
-                    max_eval_samples: parseInt(document.getElementById('max_eval_samples').value),
-                    model_name: document.getElementById('modal-model').value,
-                    task_name: document.getElementById('modal-task').value,
-                    attention_type: document.getElementById('modal-attention').value,
-                    method: document.getElementById('modal-method').value,
-                    epochs: parseInt(document.getElementById('modal-epochs').value),
-                    batch_size: parseInt(document.getElementById('modal-batch').value),
-                    learning_rate: parseFloat(document.getElementById('modal-lr').value),
-                    compression_rank: parseInt(document.getElementById('modal-rank').value),
-                    max_seq_length: parseInt(document.getElementById('modal-maxlen').value),
-                };
-                try {
-                    const res = await apiFetch('/api/train/', { method: 'POST', body: JSON.stringify(payload) });
-                    if (res.ok) {
-                        const data = await res.json();
-                        const modalEl = document.getElementById('newExpModal');
-                        if (modalEl && window.bootstrap) {
-                            const modal = bootstrap.Modal.getInstance(modalEl);
-                            if (modal) modal.hide();
-                        }
-                        location.href = `/dashboard/run/${data.id}/`;
-                    } else {
-                        const err = await res.text();
-                        alert('Failed to start training run: ' + err);
-                    }
-                } catch(e) {
-                    alert('Request failed: ' + e.message);
-                }
-            });
-        }
+    // ---------- WebSocket connection for job updates ----------
+    function connectJobWS(runId) {
+        if(ws) ws.close();
+        ws = new WebSocket(`ws://${window.location.host}/ws/jobs/${runId}/`);
+        ws.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            if(data.type==='log') appendLog(data.data);
+            else if(data.type==='metrics') updateLiveMetrics(data.data);
+            else if(data.type==='progress') updateProgress(data);
+            else if(data.type==='status') { if(data.status==='completed'||data.status==='failed'||data.status==='stopped') loadRuns(); }
+        };
+        ws.onclose = ()=>console.log('Job WS closed');
+    }
 
-        // Load attention options
-        (async () => {
-            try {
-                const res = await apiFetch('/api/config/attentions/');
-                const data = await res.json();
-                const sel = document.getElementById('modal-attention');
-                if (sel) {
-                    if (data.attentions && data.attentions.length) {
-                        sel.innerHTML = data.attentions.map(a => `<option value="${a}">${a}</option>`).join('');
-                    } else {
-                        sel.innerHTML = '<option value="full">full</option>';
-                    }
-                }
-            } catch(e) {
-                console.warn("Could not load attentions", e);
-                const sel = document.getElementById('modal-attention');
-                if (sel) sel.innerHTML = '<option value="full">full</option>';
-            }
-        })();
+    function appendLog(msg) { let logsDiv=document.getElementById('detail-logs'); if(logsDiv) { logsDiv.innerHTML+=msg+'\n'; logsDiv.scrollTop=logsDiv.scrollHeight; } }
+    function updateLiveMetrics(metrics) { /* update charts */ if(metrics.loss) addChartData('loss', metrics.step, metrics.loss); if(metrics.eval_accuracy) addChartData('acc', metrics.step, metrics.eval_accuracy); }
 
-        // Search filter
-        const searchInput = document.getElementById('job-search');
-        if (searchInput) {
-            searchInput.addEventListener('input', e => {
-                filterText = e.target.value.toLowerCase();
-                renderRunCards();
-            });
-        }
+    // Charts
+    function initCharts() {
+        const ctxLoss = document.getElementById('lossChart')?.getContext('2d');
+        const ctxAcc = document.getElementById('accChart')?.getContext('2d');
+        if(ctxLoss) lossChart = new Chart(ctxLoss, { type:'line', data:{ labels:[], datasets:[{label:'Train Loss',borderColor:'#3b82f6',fill:false}] }, options:{ responsive:true } });
+        if(ctxAcc) accChart = new Chart(ctxAcc, { type:'line', data:{ labels:[], datasets:[{label:'Eval Accuracy',borderColor:'#10b981',fill:false}] }, options:{ responsive:true } });
+    }
+    function addChartData(type, step, val) { if(type==='loss' && lossChart) { lossChart.data.labels.push(step); lossChart.data.datasets[0].data.push(val); lossChart.update(); } else if(type==='acc' && accChart) { accChart.data.labels.push(step); accChart.data.datasets[0].data.push(val); accChart.update(); } }
 
-        // Periodic updates
-        setInterval(loadMetrics, 3000);
-        setInterval(loadRuns, 5000);
-        loadMetrics();
-        loadRuns();
+    // Open run detail modal
+    async function openRunDetail(runId) {
+        currentRunId = runId;
+        const run = runs.find(r=>r.id===runId);
+        if(!run) return;
+        document.getElementById('detail-title').innerText = `Run: ${run.name||run.id.slice(0,8)}`;
+        document.getElementById('detail-config').innerText = JSON.stringify(run.config,null,2);
+        document.getElementById('detail-metrics').innerText = JSON.stringify(run.final_metrics||{},null,2);
+        document.getElementById('detail-logs').innerHTML = run.logs || 'No logs yet.';
+        // artifacts
+        loadArtifacts(runId);
+        // reset charts
+        if(lossChart) { lossChart.data.labels=[]; lossChart.data.datasets[0].data=[]; lossChart.update(); }
+        if(accChart) { accChart.data.labels=[]; accChart.data.datasets[0].data=[]; accChart.update(); }
+        // load snapshot history if any
+        try {
+            const snapRes = await apiFetch(`/api/runs/${runId}/snapshots/`);
+            const snaps = await snapRes.json();
+            snaps.forEach(s=>{ if(s.train_loss) addChartData('loss', s.step, s.train_loss); if(s.eval_accuracy) addChartData('acc', s.step, s.eval_accuracy); });
+        } catch(e){}
+        connectJobWS(runId);
+        new bootstrap.Modal(document.getElementById('runDetailModal')).show();
+    }
 
-        // Logout
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.onclick = async () => {
-                try {
-                    await fetch('/api/auth/logout/', {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: { 'Authorization': `Token ${authToken}` }
-                    });
-                } catch(e) {}
-                localStorage.removeItem('authToken');
-                window.location.href = '/login/';
-            };
-        }
-    </script>
+    async function loadArtifacts(runId) {
+        const res = await apiFetch(`/api/runs/${runId}/artifacts/`);
+        const artifacts = await res.json();
+        const div = document.getElementById('artifacts-list');
+        if(artifacts.artifacts?.length) {
+            div.innerHTML = artifacts.artifacts.map(f=>`<a href="/api/runs/${runId}/artifacts/${encodeURIComponent(f)}" class="list-group-item list-group-item-action bg-dark text-light artifact-link" target="_blank">📄 ${f}</a>`).join('');
+        } else div.innerHTML = '<div class="text-muted">No artifacts yet</div>';
+        document.getElementById('download-model-btn').href = `/api/runs/${runId}/model/`;
+    }
+
+    // Actions
+    document.getElementById('stop-run-btn')?.addEventListener('click', async ()=>{
+        if(currentRunId) { await apiFetch(`/api/runs/${currentRunId}/stop/`,{method:'POST'}); alert('Stop signal sent'); loadRuns(); }
+    });
+    document.getElementById('retry-run-btn')?.addEventListener('click', async ()=>{
+        if(currentRunId) { await apiFetch(`/api/runs/${currentRunId}/resume/`,{method:'POST'}); alert('Retry started'); loadRuns(); }
+    });
+    document.getElementById('delete-run-btn')?.addEventListener('click', async ()=>{
+        if(confirm('Delete this run permanently?')) { await apiFetch(`/api/runs/${currentRunId}/`,{method:'DELETE'}); loadRuns(); bootstrap.Modal.getInstance(document.getElementById('runDetailModal')).hide(); }
+    });
+
+    // Create new run
+    document.getElementById('create-exp-form')?.addEventListener('submit', async(e)=>{
+        e.preventDefault();
+        const payload = {
+            model_name: document.getElementById('modal-model').value,
+            task_name: document.getElementById('modal-task').value,
+            attention_type: document.getElementById('modal-attention').value,
+            method: document.getElementById('modal-method').value,
+            epochs: parseInt(document.getElementById('modal-epochs').value),
+            batch_size: parseInt(document.getElementById('modal-batch').value),
+            learning_rate: parseFloat(document.getElementById('modal-lr').value),
+            max_seq_length: parseInt(document.getElementById('modal-maxlen').value),
+            compression_rank: parseInt(document.getElementById('modal-rank').value),
+            name: document.getElementById('modal-run-name').value || undefined
+        };
+        const res = await apiFetch('/api/train/',{method:'POST',body:JSON.stringify(payload)});
+        if(res.ok) { bootstrap.Modal.getInstance(document.getElementById('newExpModal')).hide(); loadRuns(); }
+        else alert('Failed to start run');
+    });
+
+    // System metrics (polling)
+    async function loadMetrics() {
+        try {
+            const [sys, gpu] = await Promise.all([ (await apiFetch('/api/system/status/')).json(), (await apiFetch('/api/system/gpu/')).json() ]);
+            document.getElementById('cpu-util-text').innerText = (sys.cpu||0)+'%'; document.getElementById('cpu-util-bar').style.width = (sys.cpu||0)+'%';
+            document.getElementById('ram-usage').innerText = (sys.memory||0).toFixed(1);
+            if(gpu.type==='cuda') { document.getElementById('gpu-util-text').innerText = (gpu.utilization||0)+'%'; document.getElementById('gpu-util-bar').style.width = (gpu.utilization||0)+'%'; document.getElementById('gpu-mem').innerText = (gpu.memory_allocated_mb||0).toFixed(0); document.getElementById('gpu-total').innerText = (gpu.memory_total_mb||0).toFixed(0); }
+            else if(gpu.type==='mps') { document.getElementById('gpu-util-text').innerText = 'MPS'; document.getElementById('gpu-util-bar').style.width='100%'; document.getElementById('gpu-mem').innerText = (gpu.memory_allocated_mb||0).toFixed(0); document.getElementById('gpu-total').innerText = (gpu.memory_total_mb||0).toFixed(0); }
+            document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
+        } catch(e){}
+    }
+
+    // Terminal WebSocket (global feed)
+    function initTerminal() {
+        if(terminalWs) terminalWs.close();
+        terminalWs = new WebSocket(`ws://${window.location.host}/ws/terminal/`);
+        terminal = new Terminal({ cursorBlink: true, theme: { background: '#0a0f1e' } });
+        terminal.open(document.getElementById('terminal-container'));
+        terminalWs.onmessage = (e) => { terminal.write(e.data+'\r\n'); };
+        terminalWs.onclose = () => setTimeout(initTerminal, 3000);
+    }
+
+    // Toggle terminal collapsing
+    let terminalVisible=true;
+    document.getElementById('toggleTerminal')?.addEventListener('click',()=>{
+        const cont = document.getElementById('terminal-container');
+        terminalVisible = !terminalVisible;
+        cont.style.display = terminalVisible ? 'block' : 'none';
+        document.getElementById('toggleTerminal').innerHTML = terminalVisible ? '▲ Collapse' : '▼ Expand';
+        if(terminalVisible && terminal) terminal.fit();
+    });
+
+    // Load attention options into modal
+    (async()=>{
+        const res = await apiFetch('/api/config/attentions/');
+        const data = await res.json();
+        const sel = document.getElementById('modal-attention');
+        if(data.attentions) sel.innerHTML = data.attentions.map(a=>`<option value="${a}">${a}</option>`).join('');
+    })();
+
+    // Periodic updates
+    setInterval(loadMetrics, 3000);
+    setInterval(loadRuns, 5000);
+    loadMetrics(); loadRuns(); initCharts(); initTerminal();
+
+    // Logout
+    document.getElementById('logout-btn')?.addEventListener('click', async()=>{
+        try{ await fetch('/api/auth/logout/',{method:'POST',headers:{'Authorization':`Token ${authToken}`}}); }catch(e){}
+        localStorage.removeItem('authToken'); window.location.href='/login/';
+    });
+</script>
 </body>
 </html>

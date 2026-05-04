@@ -8,138 +8,235 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%);
             font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
             color: #eef2ff;
             min-height: 100vh;
-            padding: 2rem 0;
+            padding: 2rem 1rem;
         }
-        .card {
-            background: rgba(20, 28, 40, 0.7);
-            backdrop-filter: blur(12px);
-            border-radius: 24px;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            padding: 2rem;
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-        .form-label {
-            font-weight: 500;
-            color: #cbd5e1;
-        }
-        .form-control, .form-select {
+        ::-webkit-scrollbar-track {
             background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            color: #f1f5f9;
-            padding: 10px 14px;
+            border-radius: 10px;
         }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5b6e8c;
+        }
+
+        .card {
+            background: rgba(20, 28, 40, 0.75);
+            backdrop-filter: blur(14px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.4);
+            padding: 2rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            background: #0f172a;
+            border: 1px solid #2d3a5e;
+            border-radius: 16px;
+            color: #f1f5f9;
+            padding: 12px 16px;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
         .form-control:focus, .form-select:focus {
             border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
-            background: #1e293b;
-            color: #fff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+            background: #0f172a;
+            outline: none;
         }
+
+        .form-control::placeholder {
+            color: #475569;
+        }
+
+        h2 {
+            font-weight: 700;
+            background: linear-gradient(135deg, #c084fc, #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            border-left: 4px solid #3b82f6;
+            padding-left: 12px;
+            margin-bottom: 1.2rem;
+        }
+
+        hr {
+            border-color: #2d3a5e;
+            margin: 1.5rem 0;
+        }
+
         .btn-primary-custom {
-            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            background: linear-gradient(95deg, #2563eb, #7c3aed);
             border: none;
             border-radius: 40px;
-            padding: 10px 24px;
+            padding: 12px 28px;
             font-weight: 600;
-            transition: 0.2s;
+            font-size: 1rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
         .btn-primary-custom:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 12px rgba(59,130,246,0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+            background: linear-gradient(95deg, #3b82f6, #8b5cf6);
         }
+        .btn-primary-custom:active {
+            transform: translateY(1px);
+        }
+
         .btn-secondary-custom {
-            background: #475569;
+            background: #334155;
             border: none;
             border-radius: 40px;
-            padding: 10px 24px;
-            font-weight: 600;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: 0.2s;
         }
-        h4 {
-            color: #60a5fa;
-            margin-bottom: 1rem;
-            font-weight: 600;
+        .btn-secondary-custom:hover {
+            background: #475569;
+            transform: scale(1.02);
         }
-        hr {
-            border-color: #334155;
-        }
+
         .alert {
-            background: #1e293b;
+            background: rgba(220, 38, 38, 0.15);
             border: 1px solid #ef4444;
-            color: #f87171;
-            border-radius: 16px;
+            color: #fca5a5;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
+            font-size: 0.9rem;
+        }
+
+        .spinner-border-sm {
+            width: 1.2rem;
+            height: 1.2rem;
+            border-width: 0.2em;
+        }
+
+        .info-icon {
+            font-size: 0.8rem;
+            color: #64748b;
+            cursor: help;
+            margin-left: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 1.5rem;
+            }
+            .btn-primary-custom {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="container-lg">
     <div class="card">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2><i class="fas fa-flask me-2"></i>Create New Experiment</h2>
-            <a href="/" class="btn btn-secondary-custom"><i class="fas fa-arrow-left me-1"></i>Back to Dashboard</a>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <h2><i class="fas fa-flask me-3"></i>Create New Experiment</h2>
+            <a href="/dashboard/" class="btn btn-secondary-custom">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
         </div>
 
         <form id="createExpForm">
-            <!-- Experiment Container Selection -->
+            <!-- Experiment container selection -->
             <div class="mb-4">
-                <label class="form-label">Experiment Container</label>
-                <select id="experimentSelect" class="form-select">
-                    <option value="new">✨ Create new experiment</option>
+                <label class="form-label"><i class="fas fa-folder-open me-2"></i>Experiment Container</label>
+                <select id="experimentSelect" class="form-select" required>
+                    <option value="new">✨ — Create new experiment —</option>
                 </select>
-                <div id="newExpFields" class="mt-3">
-                    <label class="form-label">New Experiment Name</label>
-                    <input type="text" id="newExpName" class="form-control" placeholder="e.g., GLUE Experiments">
-                    <label class="form-label mt-2">Description (optional)</label>
-                    <textarea id="newExpDesc" class="form-control" rows="2" placeholder="Describe this experiment set"></textarea>
+                <div id="newExpFields" class="mt-3" style="display: none;">
+                    <label class="form-label">Experiment Name <span class="text-danger">*</span></label>
+                    <input type="text" id="newExpName" class="form-control" placeholder="e.g., GLUE Benchmark Suite">
+                    <label class="form-label mt-3">Description (optional)</label>
+                    <textarea id="newExpDesc" class="form-control" rows="2" placeholder="Describe the goal of this experiment set"></textarea>
                 </div>
             </div>
 
             <hr>
 
-            <!-- Training Run Configuration -->
-            <div class="row">
+            <!-- Training run configuration -->
+            <div class="row g-4">
                 <div class="col-md-6">
-                    <h4>📌 Model & Architecture</h4>
-                    <label class="form-label">Base Model</label>
+                    <h4><i class="fas fa-microchip me-2"></i>Model & Architecture</h4>
+                    <label class="form-label">Run Name (optional)</label>
+                    <input type="text" id="runName" class="form-control" placeholder="e.g., baseline_sst2_attentionX">
+
+                    <label class="form-label mt-3">Base Model</label>
                     <select id="modelSelect" class="form-select" required>
-                        <option value="distilbert-base-uncased">DistilBERT Base</option>
+                        <option value="distilbert-base-uncased">DistilBERT (uncased)</option>
                         <option value="bert-base-uncased">BERT Base</option>
                         <option value="roberta-base">RoBERTa Base</option>
+                        <option value="albert-base-v2">ALBERT Base</option>
                     </select>
 
                     <label class="form-label mt-3">GLUE Task</label>
                     <select id="taskSelect" class="form-select" required>
-                        <option value="mrpc">MRPC</option>
-                        <option value="sst2">SST-2</option>
-                        <option value="cola">CoLA</option>
-                        <option value="qqp">QQP</option>
-                        <option value="mnli">MNLI</option>
-                        <option value="qnli">QNLI</option>
-                        <option value="rte">RTE</option>
-                        <option value="wnli">WNLI</option>
-                        <option value="stsb">STS-B</option>
+                        <option value="mrpc">MRPC (Paraphrase)</option>
+                        <option value="sst2">SST-2 (Sentiment)</option>
+                        <option value="cola">CoLA (Acceptability)</option>
+                        <option value="qqp">QQP (Duplicate)</option>
+                        <option value="mnli">MNLI (Entailment)</option>
+                        <option value="qnli">QNLI (QA)</option>
+                        <option value="rte">RTE (Entailment)</option>
+                        <option value="wnli">WNLI (Coreference)</option>
+                        <option value="stsb">STS-B (Similarity)</option>
                     </select>
 
                     <label class="form-label mt-3">Attention Type</label>
                     <select id="attentionSelect" class="form-select" required>
-                        <option value="full">Loading...</option>
+                        <option value="">Loading available attentions...</option>
                     </select>
+                    <small id="attentionDesc" class="text-muted"></small>
 
                     <label class="form-label mt-3">Training Method</label>
                     <select id="methodSelect" class="form-select">
-                        <option value="baseline">Baseline</option>
-                        <option value="lora">LoRA</option>
-                        <option value="rdrop">R-Drop</option>
-                        <option value="r3f">R3F</option>
+                        <option value="baseline">Baseline (Standard)</option>
+                        <option value="lora">LoRA (Low‑Rank Adaptation)</option>
+                        <option value="rdrop">R‑Drop (Regularization)</option>
+                        <option value="r3f">R3F (Noise)</option>
                     </select>
                 </div>
 
                 <div class="col-md-6">
-                    <h4>⚙️ Hyperparameters</h4>
+                    <h4><i class="fas fa-sliders-h me-2"></i>Hyperparameters</h4>
                     <label class="form-label">Epochs</label>
                     <input type="number" id="epochs" class="form-control" value="3" min="1" step="1">
 
@@ -147,65 +244,90 @@
                     <input type="number" id="batchSize" class="form-control" value="16" min="1" step="1">
 
                     <label class="form-label mt-3">Learning Rate</label>
-                    <input type="number" id="lr" class="form-control" value="2e-5" step="1e-6" min="1e-8">
+                    <input type="number" id="lr" class="form-control" value="2e-5" step="1e-6" min="0">
 
                     <label class="form-label mt-3">Max Sequence Length</label>
                     <input type="number" id="maxLen" class="form-control" value="128" min="8" step="8">
 
-                    <label class="form-label mt-3">Compression Rank (for compressed attentions)</label>
+                    <label class="form-label mt-3">Compression Rank (for SVD/CUR/LEKA)</label>
                     <input type="number" id="rank" class="form-control" value="64" min="1" step="1">
                 </div>
             </div>
 
-            <div class="mt-4 text-end">
-                <button type="submit" class="btn btn-primary-custom px-5">🚀 Launch Training Run</button>
+            <div class="mt-5 text-end">
+                <button type="submit" id="submitBtn" class="btn btn-primary-custom px-5">
+                    <i class="fas fa-rocket me-2"></i>Launch Training Run
+                </button>
             </div>
         </form>
 
-        <div id="errorMsg" class="alert mt-4" style="display:none;"></div>
+        <div id="errorMsg" class="alert mt-4" style="display: none;"></div>
     </div>
 </div>
 
 <script>
+    // ---------- Authentication & API helpers ----------
     const authToken = localStorage.getItem('authToken');
-    if (!authToken) window.location.href = '/login/';
+    if (!authToken) {
+        window.location.href = '/login/';
+    }
 
-    // Helper for API calls with token
-    async function apiFetch(url, opts = {}) {
-        const res = await fetch(url, {
-            ...opts,
+    async function apiFetch(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
             headers: {
                 'Authorization': `Token ${authToken}`,
                 'Content-Type': 'application/json',
-                ...opts.headers
+                ...(options.headers || {})
             }
         });
-        if (res.status === 401) {
+        if (response.status === 401) {
             localStorage.removeItem('authToken');
             window.location.href = '/login/';
-            throw new Error('Unauthorized');
+            throw new Error('Session expired. Please log in again.');
         }
-        return res;
+        return response;
     }
 
-    // Load existing experiments into dropdown
+    // ---------- UI Helpers ----------
+    function showError(message) {
+        const errorDiv = document.getElementById('errorMsg');
+        errorDiv.innerText = message;
+        errorDiv.style.display = 'block';
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+        }, 8000);
+    }
+
+    function setLoading(loading) {
+        const btn = document.getElementById('submitBtn');
+        if (loading) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting...';
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-rocket me-2"></i>Launch Training Run';
+        }
+    }
+
+    // ---------- Load existing experiments ----------
     async function loadExperiments() {
         try {
             const res = await apiFetch('/api/experiments/');
-            const exps = await res.json();
+            const experiments = await res.json();
             const select = document.getElementById('experimentSelect');
-            exps.forEach(exp => {
+            for (const exp of experiments) {
                 const option = document.createElement('option');
                 option.value = exp.id;
-                option.textContent = `${exp.name} (${exp.created_at.slice(0,10)})`;
+                option.textContent = `${exp.name} (${new Date(exp.created_at).toLocaleDateString()})`;
                 select.appendChild(option);
-            });
-        } catch(e) {
-            console.warn('Could not load experiments', e);
+            }
+        } catch (err) {
+            console.warn('Failed to load experiments:', err);
         }
     }
 
-    // Load attention types, models, tasks dynamically
+    // ---------- Load attention types, models, tasks ----------
     async function loadConfigs() {
         try {
             const [attRes, modelsRes, tasksRes] = await Promise.all([
@@ -217,11 +339,21 @@
             const modelsData = await modelsRes.json();
             const tasksData = await tasksRes.json();
 
-            // Populate attention dropdown
+            // Attention dropdown
             const attSel = document.getElementById('attentionSelect');
-            attSel.innerHTML = attData.attentions.map(a => `<option value="${a}">${a}</option>`).join('');
+            attSel.innerHTML = '';
+            if (attData.attentions && attData.attentions.length) {
+                attData.attentions.forEach(att => {
+                    const opt = document.createElement('option');
+                    opt.value = att;
+                    opt.textContent = att;
+                    attSel.appendChild(opt);
+                });
+            } else {
+                attSel.innerHTML = '<option value="full">full (default)</option>';
+            }
 
-            // Populate model dropdown (add any missing options)
+            // Models: add missing options dynamically
             const modelSel = document.getElementById('modelSelect');
             const existingModels = Array.from(modelSel.options).map(o => o.value);
             modelsData.models.forEach(m => {
@@ -233,7 +365,7 @@
                 }
             });
 
-            // Populate task dropdown (add any missing)
+            // Tasks: add missing options
             const taskSel = document.getElementById('taskSelect');
             const existingTasks = Array.from(taskSel.options).map(o => o.value);
             tasksData.tasks.forEach(t => {
@@ -244,95 +376,101 @@
                     taskSel.appendChild(opt);
                 }
             });
-        } catch(e) {
-            console.warn('Failed to load configs', e);
+        } catch (err) {
+            console.error('Failed to load configuration:', err);
+            showError('Could not load attention types or model list. Please refresh.');
         }
     }
 
-    // Handle experiment selection toggle (new vs existing)
-    document.getElementById('experimentSelect').addEventListener('change', function(e) {
-        const newFields = document.getElementById('newExpFields');
-        if (e.target.value === 'new') {
-            newFields.style.display = 'block';
-        } else {
-            newFields.style.display = 'none';
-        }
+    // Toggle new experiment fields
+    const expSelect = document.getElementById('experimentSelect');
+    const newExpFields = document.getElementById('newExpFields');
+    expSelect.addEventListener('change', () => {
+        newExpFields.style.display = expSelect.value === 'new' ? 'block' : 'none';
     });
+    // Initially trigger if needed (default option is 'new')
+    newExpFields.style.display = 'block';
 
     // Form submission
     document.getElementById('createExpForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        setLoading(true);
         const errorDiv = document.getElementById('errorMsg');
         errorDiv.style.display = 'none';
-        errorDiv.innerText = '';
 
-        const expSelect = document.getElementById('experimentSelect');
-        let experimentId = null;
-        let experimentName = null;
-        let experimentDesc = null;
+        try {
+            let experimentId = null;
 
-        if (expSelect.value === 'new') {
-            experimentName = document.getElementById('newExpName').value.trim();
-            experimentDesc = document.getElementById('newExpDesc').value.trim();
-            if (!experimentName) {
-                errorDiv.innerText = 'Please provide a name for the new experiment container.';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            // Create the experiment container first
-            try {
-                const createExpRes = await apiFetch('/api/experiments/create/', {
+            // 1) Create or reuse experiment container
+            if (expSelect.value === 'new') {
+                const newExpName = document.getElementById('newExpName').value.trim();
+                if (!newExpName) {
+                    throw new Error('Experiment name is required for a new container.');
+                }
+                const newExpDesc = document.getElementById('newExpDesc').value.trim();
+                const createRes = await apiFetch('/api/experiments/create/', {
                     method: 'POST',
                     body: JSON.stringify({
-                        name: experimentName,
-                        description: experimentDesc,
+                        name: newExpName,
+                        description: newExpDesc,
                         default_config: {}
                     })
                 });
-                if (!createExpRes.ok) throw new Error('Failed to create experiment');
-                const newExp = await createExpRes.json();
+                if (!createRes.ok) {
+                    const errData = await createRes.json().catch(() => ({}));
+                    throw new Error(errData.error || 'Failed to create experiment');
+                }
+                const newExp = await createRes.json();
                 experimentId = newExp.id;
-            } catch(err) {
-                errorDiv.innerText = 'Error creating experiment: ' + err.message;
-                errorDiv.style.display = 'block';
-                return;
+            } else {
+                experimentId = expSelect.value;
             }
-        } else {
-            experimentId = expSelect.value;
-        }
 
-        // Build training run payload
-        const payload = {
-            experiment_id: experimentId,
-            model_name: document.getElementById('modelSelect').value,
-            task_name: document.getElementById('taskSelect').value,
-            attention_type: document.getElementById('attentionSelect').value,
-            method: document.getElementById('methodSelect').value,
-            epochs: parseInt(document.getElementById('epochs').value),
-            batch_size: parseInt(document.getElementById('batchSize').value),
-            learning_rate: parseFloat(document.getElementById('lr').value),
-            max_seq_length: parseInt(document.getElementById('maxLen').value),
-            compression_rank: parseInt(document.getElementById('rank').value),
-        };
+            // 2) Prepare training payload
+            const runName = document.getElementById('runName').value.trim();
+            const payload = {
+                experiment_id: experimentId,
+                name: runName || undefined,
+                model_name: document.getElementById('modelSelect').value,
+                task_name: document.getElementById('taskSelect').value,
+                attention_type: document.getElementById('attentionSelect').value,
+                method: document.getElementById('methodSelect').value,
+                epochs: parseInt(document.getElementById('epochs').value, 10),
+                batch_size: parseInt(document.getElementById('batchSize').value, 10),
+                learning_rate: parseFloat(document.getElementById('lr').value),
+                max_seq_length: parseInt(document.getElementById('maxLen').value, 10),
+                rank: parseInt(document.getElementById('rank').value, 10)
+            };
 
-        try {
+            // Validation
+            if (isNaN(payload.epochs) || payload.epochs < 1) throw new Error('Epochs must be >= 1');
+            if (isNaN(payload.batch_size) || payload.batch_size < 1) throw new Error('Batch size must be >= 1');
+            if (isNaN(payload.learning_rate) || payload.learning_rate <= 0) throw new Error('Learning rate must be positive');
+
             const trainRes = await apiFetch('/api/train/', {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });
-            if (!trainRes.ok) throw new Error('Training start failed');
+            if (!trainRes.ok) {
+                const errText = await trainRes.text();
+                throw new Error(`Training start failed: ${errText}`);
+            }
             const runData = await trainRes.json();
-            // Redirect to the run detail page
+            // Redirect to job detail page
             window.location.href = `/dashboard/job/${runData.id}/`;
-        } catch(err) {
-            errorDiv.innerText = 'Error starting training: ' + err.message;
-            errorDiv.style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            showError(err.message || 'An unexpected error occurred.');
+            setLoading(false);
         }
     });
 
-    // Initial load
-    loadExperiments();
-    loadConfigs();
+    // Optional: add a small description on attention selection (if you want to show hints)
+    // For brevity, we skip dynamic description, but could be extended.
+
+    // Initialisation
+    loadExperiments().catch(console.warn);
+    loadConfigs().catch(console.warn);
 </script>
 </body>
 </html>
