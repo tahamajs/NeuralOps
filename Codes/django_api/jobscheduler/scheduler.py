@@ -190,3 +190,172 @@ class GPUScheduler:
         self.dynamic_mgr.start()
         # Start the worker thread
         threading.Thread(target=self._run_worker, daemon=True).start()
+
+
+
+import os
+import time
+import signal
+import threading
+import queue
+import subprocess
+import torch
+from django.utils import timezone
+from .models import Job
+from .dynamic_priority import DynamicPriorityManager
+from .predictive import PriorityPredictor
+from .batching import ShortJobBatcher
+
+class GPUScheduler:
+    _instance = None
+
+    def __new__(cls, total_gpus=None):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self, total_gpus=None):
+        if self._initialized:
+            return
+        if total_gpus is None:
+            import torch
+            total_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 1
+        self.total_gpus = total_gpus
+        self.available_gpus = total_gpus
+        self.task_queue = queue.PriorityQueue()
+        self.running_jobs = {}          # job_id -> subprocess.Popen
+        self.job_gpu_map = {}           # job_id -> allocated GPUs
+        self.lock = threading.Lock()
+        self._stop_event = threading.Event()
+        self.worker_thread = None
+        self.predictor = PriorityPredictor()
+        self.dynamic_mgr = DynamicPriorityManager(self)
+        self.batcher = ShortJobBatcher(self)
+        self.preempt_flag_dir = "/tmp/preempt_flags"
+        os.makedirs(self.preempt_flag_dir, exist_ok=True)
+        self._initialized = True
+
+    def add_job(self, job_id, priority, estimated_duration=None, memory_gb=None):
+        """Add a new job to the scheduler."""
+        job = Job.objects.get(id=job_id)
+        # Use AI predictor to refine priority (if available)
+        predicted = self.predictor.predict_priority(job)
+        if predicted:
+            # Weighted combination: 70% user priority, 30% predicted (or vice versa)
+            final_priority = int(round(0.3 * priority + 0.7 * predicted))
+            final_priority = max(1, min(10, final_priority))
+        else:
+            final_priority = priority
+        # Pass to batcher (may batch short jobs)
+        self.batcher.add_job(job_id, final_priority, estimated_duration, memory_gb)
+        # Optionally update job's priority in DB
+        if job.priority != final_priority:
+            job.priority = final_priority
+            job.save(update_fields=['priority'])
+
+    def _submit_job(self, job_id, priority):
+        """Internal: put job directly into priority queue."""
+        self.task_queue.put((priority, time.time(), job_id))
+
+    def _try_preempt(self, incoming_prio):
+        """Preempt a lower-priority job if needed."""
+        with self.lock:
+            # Find a running job with lower priority (higher numeric value)
+            for job_id, proc in list(self.running_jobs.items()):
+                job = Job.objects.get(id=job_id)
+                if job.priority > incoming_prio:
+                    # Signal the job to stop
+                    flag_file = os.path.join(self.preempt_flag_dir, str(job_id))
+                    with open(flag_file, 'w') as f:
+                        f.write('preempt')
+                    # Wait for graceful termination (max 10 seconds)
+                    start = time.time()
+                    while proc.poll() is None and (time.time() - start) < 10:
+                        time.sleep(0.5)
+                    if proc.poll() is None:
+                        proc.terminate()
+                    # Free resources
+                    self.available_gpus += self.job_gpu_map.pop(job_id, 1)
+                    self.running_jobs.pop(job_id, None)
+                    Job.objects.filter(id=job_id).update(status='preempted')
+                    return True
+        return False
+
+    def _run_job(self, job_id):
+        """Launch a training job as a subprocess."""
+        job = Job.objects.get(id=job_id)
+        job.status = 'running'
+        job.started_at = timezone.now()
+        job.save()
+        # Clear any preempt flag
+        flag_file = os.path.join(self.preempt_flag_dir, str(job_id))
+        if os.path.exists(flag_file):
+            os.remove(flag_file)
+        # Launch subprocess
+        cmd = [
+            'python', 'manage.py', 'run_training_job',
+            '--job-id', str(job_id),
+            '--checkpoint-dir', job.checkpoint_path or ''
+        ]
+        proc = subprocess.Popen(cmd)
+        with self.lock:
+            self.running_jobs[job_id] = proc
+            self.job_gpu_map[job_id] = job.gpu_requirements
+        proc.wait()
+        # After completion, check status (will be updated by the subprocess)
+        with self.lock:
+            self.available_gpus += self.job_gpu_map.pop(job_id, 1)
+            self.running_jobs.pop(job_id, None)
+        # If job was preempted, re-queue it with same priority
+        job.refresh_from_db()
+        if job.status == 'preempted':
+            self.add_job(job_id, job.priority, job.estimated_duration, job.memory_requirements)
+
+    def _worker(self):
+        """Background worker that picks jobs from the queue and runs them."""
+        while not self._stop_event.is_set():
+            try:
+                priority, _, job_id = self.task_queue.get(timeout=2)
+                # Check if we have GPUs
+                with self.lock:
+                    if self.available_gpus <= 0:
+                        # Try preemption
+                        preempted = self._try_preempt(priority)
+                        if not preempted:
+                            # Re-queue and wait
+                            self.task_queue.put((priority, time.time(), job_id))
+                            time.sleep(5)
+                            continue
+                        # Preemption succeeded, we now have free GPU
+                        self.available_gpus -= 1
+                    else:
+                        self.available_gpus -= 1
+                # Launch the job
+                self._run_job(job_id)
+            except queue.Empty:
+                continue
+
+    def start(self):
+        """Start the scheduler background threads."""
+        if self.worker_thread is None or not self.worker_thread.is_alive():
+            self.worker_thread = threading.Thread(target=self._worker, daemon=True)
+            self.worker_thread.start()
+        self.dynamic_mgr.start()
+        print(f"Scheduler started with {self.total_gpus} GPUs")
+
+    def stop(self):
+        self._stop_event.set()
+        if self.worker_thread:
+            self.worker_thread.join(timeout=5)
+
+    def update_priority(self, job_id, new_priority):
+        """Update the priority of a queued job in the priority queue."""
+        # This is non-trivial because PriorityQueue doesn't support removal.
+        # We'll simply mark the job as updated and rely on the dynamic manager
+        # to use the new priority when the job is re-inserted (if it gets preempted).
+        # For now, we only update the DB.
+        Job.objects.filter(id=job_id).update(priority=new_priority)
+
+# Singleton instance
+scheduler = GPUScheduler()
