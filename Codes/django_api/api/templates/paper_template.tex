@@ -1,62 +1,38 @@
-\documentclass[11pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage{amsmath,amssymb}
+\documentclass{article}
 \usepackage{graphicx}
 \usepackage{hyperref}
 \usepackage[margin=1in]{geometry}
-\usepackage{booktabs}
-
-\title{ {{EXPERIMENT_NAME}} \\[0.3em] \large Efficiency Analysis of Attention Compression }
-\author{ {{AUTHOR_NAME}} }
-\date{ {{DATE}} }
-
+\title{Experiment Report: \TASKNAME{} with \ATTENTION{} attention}
+\author{Efficient Transformer Toolkit}
+\date{\DATE}
 \begin{document}
 \maketitle
 
-\begin{abstract}
-This paper presents an evaluation of the \textbf{ {{ATTENTION_TYPE}} } attention mechanism
-on the \textbf{ {{TASK_NAME}} } task using the \texttt{ {{MODEL_NAME}} } model.
-The experiment achieved a final accuracy of \textbf{ {{ACCURACY}} } with a compression
-rank of \textbf{ {{COMPRESSION_RANK}} }.
-\end{abstract}
+\section*{Experiment Configuration}
+\begin{tabular}{ll}
+Model: & \MODELNAME \\
+Task: & \TASKNAME \\
+Attention type: & \ATTENTION \\
+Training method: & \METHOD \\
+Epochs: & \EPOCHS \\
+Batch size: & \BATCHSIZE \\
+Learning rate: & \LEARNINGRATE \\
+Max sequence length: & \MAXSEQLEN \\
+Compression rank: & \RANK \\
+\end{tabular}
 
-\section{Experimental Setup}
-\begin{itemize}
-    \item \textbf{Model:} {{MODEL_NAME}}
-    \item \textbf{Task:} {{TASK_NAME}} ({{TASK_TYPE}})
-    \item \textbf{Attention type:} {{ATTENTION_TYPE}}
-    \item \textbf{Compression rank:} {{COMPRESSION_RANK}}
-    \item \textbf{Epochs:} {{EPOCHS}}
-    \item \textbf{Batch size:} {{BATCH_SIZE}}
-    \item \textbf{Learning rate:} {{LEARNING_RATE}}
-    \item \textbf{Max sequence length:} {{MAX_SEQ_LENGTH}}
-    \item \textbf{Seed:} {{SEED}}
-\end{itemize}
+\section*{Final Metrics}
+\begin{tabular}{ll}
+Loss: & \LOSS \\
+Accuracy: & \ACCURACY \\
+F1 score: & \FONE \\
+Matthews correlation: & \MATTHEWS \\
+\end{tabular}
 
-\section{Results}
-\begin{table}[htbp]
-    \centering
-    \begin{tabular}{lr}
-        \toprule
-        Metric & Value \\
-        \midrule
-        Training loss      &  {{LOSS}} \\
-        Accuracy           &  {{ACCURACY}} \\
-        F1‑score           &  {{F1}} \\
-        Matthews corr      &  {{MATTHEWS}} \\
-        \bottomrule
-    \end{tabular}
-    \caption{Final evaluation metrics for the experiment.}
-\end{table}
+\LOSSFIGURE
 
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.8\textwidth]{ {{LOSS_PLOT_PATH}} }
-    \caption{Training and evaluation loss curves.}
-\end{figure}
+\section*{Notes}
+This experiment was run using the Efficient Transformer Toolkit.
+The model was fine‑tuned on the GLUE \TASKNAME{} dataset with \ATTENTION{} attention.
 
-\section{Conclusion}
-The \texttt{ {{ATTENTION_TYPE}} } attention with rank {{COMPRESSION_RANK}} achieves
-{{ACCURACY}} accuracy on {{TASK_NAME}}, demonstrating that efficient attention
-mechanisms can maintain competitive performance while reducing model size.
 \end{document}

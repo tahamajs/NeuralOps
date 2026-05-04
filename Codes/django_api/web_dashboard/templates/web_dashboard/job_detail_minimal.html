@@ -7,8 +7,7 @@
     <style>
         * { box-sizing: border-box; }
         .report { background: #10b981; color: white; }
-.pdf-preview { background: #ec489a; color: white; }
-
+        .pdf-preview { background: #ec489a; color: white; }
         body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', system-ui, monospace; padding: 20px; margin: 0; }
         .container { max-width: 1600px; margin: 0 auto; }
         .card { background: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 24px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
@@ -40,47 +39,28 @@
         .modal { animation: fadeIn 0.2s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
-    
     <script src="/static/web_dashboard/js/chart.js"></script>
-<!-- <link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
- <link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
-<script src="/static/web_dashboard/js/xterm.js"></script>
- -->
-<link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
-<script src="/static/web_dashboard/js/xterm.js"></script>
-
-<script src="/static/web_dashboard/js/xterm.js"></script>
-
-    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script> -->
-    <!-- <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css"> -->
+    <link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
+    <script src="/static/web_dashboard/js/xterm.js"></script>
 </head>
 <body>
 <div class="container">
     <div class="flex-row">
-        <h2>⚡ Experiment <span id="exp-id">{{ experiment.id|slice:"8" }}</span> <span id="status-badge" class="badge">{{ experiment.status|default:"queued" }}</span></h2>
+        <h2>⚡ Experiment <span id="exp-id">{{ run.id|slice:"8" }}</span> <span id="status-badge" class="badge">{{ run.status|default:"queued" }}</span></h2>
         <div>
             <button id="eval-btn" class="eval">📊 Evaluate</button>
             <button id="stop-btn" class="stop">⏹ Stop</button>
             <button id="paper-btn" class="paper">📄 Generate Paper</button>
             <button id="report-btn" class="report">📄 Full Report</button>
             <button id="pdf-preview-btn" class="pdf-preview">📄 PDF Preview</button>
-
-
             <a href="/">← Dashboard</a>
         </div>
     </div>
 
     <div class="dashboard-grid">
         <div class="main-charts">
-            <div class="card">
-                <h3>📉 Training Loss</h3>
-                <canvas id="lossChart" height="200"></canvas>
-            </div>
-            <div class="card">
-                <h3>📊 Evaluation Metrics</h3>
-                <canvas id="evalChart" height="200"></canvas>
-            </div>
+            <div class="card"><h3>📉 Training Loss</h3><canvas id="lossChart" height="200"></canvas></div>
+            <div class="card"><h3>📊 Evaluation Metrics</h3><canvas id="evalChart" height="200"></canvas></div>
         </div>
         <div class="sidebar">
             <div class="card">
@@ -91,30 +71,24 @@
                     <div class="stat-card"><div class="stat-label">ETA</div><div class="stat-value" id="eta">--</div></div>
                     <div class="stat-card"><div class="stat-label">Loss</div><div class="stat-value" id="loss">--</div></div>
                     <div class="stat-card"><div class="stat-label">Accuracy</div><div class="stat-value" id="acc">--</div></div>
-                    
                 </div>
             </div>
-            <div class="card">
-                <h3>🖥️ Live Terminal</h3>
-                <div id="terminal-container" class="terminal-container"></div>
-            </div>
+            <div class="card"><h3>🖥️ Live Terminal</h3><div id="terminal-container" class="terminal-container"></div></div>
         </div>
     </div>
 
-    <div class="card">
-        <h3>📜 Live Logs</h3>
-        <div id="log-area" class="log-area">{{ experiment.logs|default:"Waiting for logs..." }}</div>
-    </div>
+    <div class="card"><h3>📜 Live Logs</h3><div id="log-area" class="log-area">{{ run.logs|default:"Waiting for logs..." }}</div></div>
 </div>
 
 <!-- Evaluation Results Modal -->
 <div id="evalModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000;">
     <div style="background:#1e293b; border-radius:20px; max-width:500px; width:90%; padding:20px; color:#e2e8f0;">
         <h3>📊 Evaluation Results</h3>
-        <div id="evalResults" style="margin: 15px 0; font-family: monospace;"></div>
+        <div id="evalResults" style="margin:15px 0; font-family:monospace;"></div>
         <button onclick="closeEvalModal()" style="background:#3b82f6; border:none; padding:6px 16px; border-radius:8px;">Close</button>
     </div>
 </div>
+
 <!-- PDF Preview Modal -->
 <div id="pdfModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1002;">
     <div style="position:relative; width:100%; height:100%;">
@@ -122,8 +96,9 @@
         <iframe id="pdfIframe" src="" style="width:100%; height:100%; border:none;"></iframe>
     </div>
 </div>
+
 <script>
-    const jobId = "{{ experiment.id }}";
+    const runId = "{{ run.id }}";
     const authToken = localStorage.getItem('authToken');
     if (!authToken) window.location.href = '/login/';
 
@@ -146,6 +121,37 @@
             options: { responsive: true, scales: { y: { position: 'left', title: { display: true, text: 'Loss' } }, y1: { position: 'right', min: 0, max: 1, title: { display: true, text: 'Accuracy' } } } }
         });
     }
+
+    // Load persisted training history from backend
+    async function loadHistory() {
+        try {
+            const res = await fetch(`/api/runs/${runId}/history/`, {
+                headers: { 'Authorization': `Token ${authToken}` }
+            });
+            if (res.ok) {
+                const h = await res.json();
+                if (h.steps && h.losses) {
+                    trainSteps = h.steps;
+                    trainLosses = h.losses;
+                    lossChart.data.labels = trainSteps;
+                    lossChart.data.datasets[0].data = trainLosses;
+                    lossChart.update();
+                }
+                if (h.eval_steps && h.eval_losses) {
+                    evalSteps = h.eval_steps;
+                    evalLosses = h.eval_losses;
+                    evalChart.data.labels = evalSteps;
+                    evalChart.data.datasets[0].data = evalLosses;
+                    if (h.eval_metrics && h.eval_metrics.length) {
+                        evalAccuracies = h.eval_metrics.map(m => m.eval_accuracy || null);
+                        evalChart.data.datasets[1].data = evalAccuracies;
+                    }
+                    evalChart.update();
+                }
+            }
+        } catch(e) { console.warn('Could not load history', e); }
+    }
+
     function updateProgress(data) {
         if (data.current_step !== undefined && data.total_steps !== undefined) {
             const pct = (data.current_step / data.total_steps * 100).toFixed(1);
@@ -160,18 +166,7 @@
             }
         }
     }
-document.getElementById('report-btn').onclick = () => {
-    window.open(`/api/experiments/${jobId}/report/`, '_blank');
-};
-document.getElementById('pdf-preview-btn').onclick = () => {
-    const url = `/api/experiments/${jobId}/paper_preview/`;   // no token
-    document.getElementById('pdfIframe').src = url;
-    document.getElementById('pdfModal').style.display = 'flex';
-};
-function closePdfModal() {
-    document.getElementById('pdfModal').style.display = 'none';
-    document.getElementById('pdfIframe').src = '';
-}
+
     function addLog(line) {
         const logDiv = document.getElementById('log-area');
         logDiv.innerText += line + '\n';
@@ -179,7 +174,6 @@ function closePdfModal() {
     }
 
     function updateMetrics(data) {
-        // Training loss (requires 'step' field from backend)
         if (data.step !== undefined && data.loss !== undefined) {
             trainSteps.push(data.step);
             trainLosses.push(data.loss);
@@ -188,7 +182,6 @@ function closePdfModal() {
             lossChart.update();
             document.getElementById('loss').innerText = data.loss.toFixed(4);
         }
-        // Evaluation metrics
         if (data.eval_loss !== undefined) {
             const epoch = evalSteps.length + 1;
             evalSteps.push(epoch);
@@ -204,10 +197,10 @@ function closePdfModal() {
         }
     }
 
-    // WebSocket connection with auto-reconnect
+    // WebSocket connection
     let ws;
     function connectWebSocket() {
-        ws = new WebSocket(`ws://${location.host}/ws/jobs/${jobId}/`);
+        ws = new WebSocket(`ws://${location.host}/ws/jobs/${runId}/`);
         ws.onopen = () => console.log('[WS] Connected');
         ws.onmessage = (e) => {
             try {
@@ -245,13 +238,13 @@ function closePdfModal() {
         termWs.onclose = () => term.write('\r\n\x1b[33mTerminal reconnecting...\x1b[0m\r\n');
     }
 
-    // Evaluate button
+    // Button handlers
     document.getElementById('eval-btn').onclick = async () => {
         const btn = document.getElementById('eval-btn');
         btn.textContent = '⏳ Evaluating...';
         btn.disabled = true;
         try {
-            const res = await fetch(`/api/jobs/${jobId}/evaluate/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
+            const res = await fetch(`/api/runs/${runId}/evaluate/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
             const data = await res.json();
             if (res.ok) {
                 let html = '<ul>';
@@ -264,42 +257,52 @@ function closePdfModal() {
             } else {
                 alert('Evaluation failed: ' + (data.error || 'Unknown error'));
             }
-        } catch (err) {
-            alert('Evaluation request failed');
-        } finally {
-            btn.textContent = '📊 Evaluate';
-            btn.disabled = false;
-        }
+        } catch (err) { alert('Evaluation request failed'); }
+        finally { btn.textContent = '📊 Evaluate'; btn.disabled = false; }
     };
-    function closeEvalModal() {
-        document.getElementById('evalModal').style.display = 'none';
-    }
 
-    // Stop button
     document.getElementById('stop-btn').onclick = async () => {
         if (confirm('Stop this experiment?')) {
-            await fetch(`/api/jobs/${jobId}/stop/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
+            await fetch(`/api/runs/${runId}/stop/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
             alert('Stop signal sent');
         }
     };
-    // Paper generation
+
     document.getElementById('paper-btn').onclick = async () => {
-        const res = await fetch(`/api/experiments/${jobId}/paper/`, { headers: { 'Authorization': `Token ${authToken}` } });
+        const res = await fetch(`/api/runs/${runId}/paper/`, { headers: { 'Authorization': `Token ${authToken}` } });
         if (res.ok) {
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = res.headers.get('Content-Type') === 'application/pdf' ? `paper_${jobId}.pdf` : `paper_${jobId}.tex`;
+            a.download = res.headers.get('Content-Type') === 'application/pdf' ? `paper_${runId}.pdf` : `paper_${runId}.tex`;
             a.click();
             URL.revokeObjectURL(url);
         } else alert('Paper generation failed');
     };
 
+    document.getElementById('report-btn').onclick = () => {
+        window.open(`/api/runs/${runId}/report/`, '_blank');
+    };
+
+    document.getElementById('pdf-preview-btn').onclick = () => {
+        const url = `/api/runs/${runId}/paper_preview/`;
+        document.getElementById('pdfIframe').src = url;
+        document.getElementById('pdfModal').style.display = 'flex';
+    };
+
+    function closeEvalModal() { document.getElementById('evalModal').style.display = 'none'; }
+    function closePdfModal() {
+        document.getElementById('pdfModal').style.display = 'none';
+        document.getElementById('pdfIframe').src = '';
+    }
+
     // Initialise
     initCharts();
+    loadHistory().then(() => {
+        connectWebSocket();   // start WebSocket after loading history to avoid overwriting
+    });
     initTerminal();
-    connectWebSocket();
 </script>
 </body>
 </html>
