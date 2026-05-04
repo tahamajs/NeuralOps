@@ -8,7 +8,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
+@ATTENTION_REGISTRY.register("minimal_aurora")
 class FactorisedLinear(nn.Module):
     """SVD‑factorised linear layer."""
     def __init__(self, pretrained_weight, pretrained_bias, energy=0.95):

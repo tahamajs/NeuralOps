@@ -257,6 +257,9 @@ class ProxSparseMask(nn.Module):
 # --------------------------------------------------------------------------
 # Main AURORA Attention Module
 # --------------------------------------------------------------------------
+from framework.attentions.core.registry import ATTENTION_REGISTRY
+
+@ATTENTION_REGISTRY.register("aurora")
 class AURORAAttention(nn.Module):
     def __init__(self, model_config, aurora_cfg: AURORAConfig,
                  layer_idx: int = 0, total_layers: int = 6,
