@@ -748,3 +748,67 @@ def bulk_delete_jobs(request):
     count = deletable.count()
     deletable.delete()
     return Response({"deleted": count, "skipped": len(job_ids) - count})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def log_custom_metric(request, run_id):
+    run = get_object_or_404(Job, id=run_id)
+    serializer = CustomMetricEntrySerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(run=run)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_custom_metrics(request, run_id):
+    run = get_object_or_404(Job, id=run_id)
+    metrics = run.custom_metrics.all().order_by('step')
+    grouped = {}
+    for m in metrics:
+        if m.name not in grouped:
+            grouped[m.name] = {'steps': [], 'values': [], 'type': m.type}
+        grouped[m.name]['steps'].append(m.step)
+        grouped[m.name]['values'].append(m.value)
+    return Response(grouped)
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_model_versions(request, run_id):
+    run = get_object_or_404(Job, id=run_id)
+    versions = run.model_versions.all().order_by('-version_number')
+    return Response([{
+        'id': v.id,
+        'version': v.version,
+        'version_number': v.version_number,
+        'artifact_size_mb': v.artifact_size_mb,
+        'metrics': v.metrics,
+        'created_at': v.created_at,
+        'is_published_to_hub': v.is_published_to_hub,
+    } for v in versions])
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def publish_model_to_hub(request, version_id):
+    version = get_object_or_404(ModelVersion, id=version_id)
+    # Ensure user has permission (owner of the run)
+    if version.run.author != request.user and not request.user.is_staff:
+        return Response({"error": "Not allowed"}, status=403)
+    from .hf_publisher import HuggingFacePublisher
+    publisher = HuggingFacePublisher(version)
+    hub_url = publisher.publish()
+    return Response({'hub_url': hub_url, 'status': 'published'})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_model_version(request, version_id):
+    version = get_object_or_404(ModelVersion, id=version_id)
+    file_path = os.path.join(version.artifact_path, 'model.pth')
+    if not os.path.exists(file_path):
+        return Response({"error": "Model file not found"}, status=404)
+    response = FileResponse(open(file_path, 'rb'), as_attachment=True)
+    response['Content-Disposition'] = f'attachment; filename="model_v{version.version_number}.pth"'
+    return response

@@ -11,7 +11,36 @@ sys.path.insert(0, str(BASE_DIR.parent))
 # HUGGINGFACE_USERNAME = os.environ.get('HF_USERNAME')  # Your HF username or org
 # MODEL_PUBLISH_BUCKET = 'your-bucket-name'  # For intermediate storage
 
+INSTALLED_APPS += ['django_filters', 'notes']
 
+REST_FRAMEWORK = {
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.URLPathVersioning',
+    'DEFAULT_VERSION': 'v1',
+    'ALLOWED_VERSIONS': ['v1'],
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_PAGINATION_CLASS': 'notes.pagination.StandardResultsSetPagination',
+}
+
+# Structured logging (JSON)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            'format': '{"time": "%(asctime)s", "level": "%(levelname)s", "name": "%(name)s", "message": "%(message)s", "event": "%(event)s"}',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'json',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+}
 
 # SCHEDULER_TOTAL_GPUS = int(os.environ.get('SCHEDULER_TOTAL_GPUS', 1))
 # SCHEDULER_BOOST_WAIT_THRESHOLD = int(os.environ.get('SCHEDULER_BOOST_WAIT_THRESHOLD', 600))
