@@ -6,16 +6,16 @@ from django.utils import timezone
 from .models import TrainingRun
 
 logger = logging.getLogger(__name__)
-_running_jobs = {}   # run_id -> threading.Event
+_running_jobs = {}   #  job_id -> threading.Event
 
-def stop_job(run_id):
-    event = _running_jobs.pop(str(run_id), None)
+def stop_job( job_id):
+    event = _running_jobs.pop(str( job_id), None)
     if event:
         event.set()
 
-def cancel_job(run_id):
+def cancel_job( job_id):
     """Cancel a running job by setting its stop event."""
-    stop_job(run_id)
+    stop_job( job_id)
 
 def start_job(run: TrainingRun, runner_func):
     """
@@ -62,3 +62,8 @@ def push_update(run: TrainingRun, message: dict):
         )
     except Exception as e:
         logger.warning(f"WebSocket push failed for run {run.id}: {e}")
+
+def stop_all_jobs():
+    """Set stop_event for every currently running job."""
+    for  job_id, event in list(_running_jobs.items()):
+        event.set()

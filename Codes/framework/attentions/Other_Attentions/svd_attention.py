@@ -1,3 +1,5 @@
+"""SVD‑based linear attention – registers as 'svd'."""
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -37,7 +39,7 @@ class SVDLinearAttention(BaseAttention):
             probs = self.dropout(probs)
             context = torch.matmul(probs, V)
         else:
-            # SVD compression – move to CPU if needed
+            # SVD compression – using low‑rank approximation
             original_device = hidden_states.device
             if original_device.type == 'mps':
                 hidden_cpu = hidden_states.cpu()
@@ -64,4 +66,5 @@ class SVDLinearAttention(BaseAttention):
         context = context.permute(0, 2, 1, 3).contiguous()
         new_shape = context.size()[:-2] + (self.all_head_size,)
         context = context.view(*new_shape)
-        return (context, None) if kwargs.get('output_attentions', False) else (context,)
+        output_attentions = kwargs.get('output_attentions', False)
+        return (context, None) if output_attentions else (context,)

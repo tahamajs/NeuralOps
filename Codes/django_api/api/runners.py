@@ -7,6 +7,7 @@ import asyncio
 import shutil
 from pathlib import Path
 import matplotlib.pyplot as plt
+from asgiref.sync import async_to_sync
 
 # Allow importing framework modules
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -52,12 +53,21 @@ def get_device():
     else:
         return torch.device("cpu")
 # ---------- Logging helpers ----------
-def _log(exp, msg):
+def _log(run, msg):
     print(f"[LOG] {msg}")
-    exp.logs = (exp.logs or "") + msg + "\n"
-    exp.save()
-    send_ws_update(str(exp.id), {"type": "log", "data": msg})
-
+    run.logs = (run.logs or "") + msg + "\n"
+    run.save()
+    # Send to job‑specific WebSocket
+    send_ws_update(str(run.id), {"type": "log", "data": msg})
+    # Also send to terminal group (for xterm.js terminal)
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "terminal",
+            {"type": "terminal_message", "data": msg}
+        )
+    except Exception as e:
+        print(f"Terminal broadcast error: {e}")
 def _update_status(exp, status):
     print(f"[STATUS] {status}")
     exp.status = status
@@ -151,32 +161,50 @@ class LiveCallback(TrainerCallback):
             })
 
 # ---------- Results saving function ----------
-def save_experiment_results(exp, trainer, tokenizer, history, final_metrics, output_dir="results"):
-    """Save all experiment outputs to a timestamped folder."""
+def save_experiment_results(run, trainer, tokenizer, history, final_metrics, output_dir="results"):
     from datetime import datetime
+    import shutil
+    import json
+    import os
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    from pathlib import Path
+    from django.conf import settings as django_settings
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    exp_name = f"{exp.config.get('task_name', 'task')}_{exp.config.get('model_name', 'model')}_{str(exp.id)[:8]}_{timestamp}"
+    exp_name = f"{run.config.get('task_name', 'task')}_{run.config.get('model_name', 'model')}_{str(run.id)[:8]}_{timestamp}"
     save_path = Path(output_dir) / exp_name
     save_path.mkdir(parents=True, exist_ok=True)
 
-    # 1. Save configuration
+    # 1. Config
     with open(save_path / "config.json", "w") as f:
-        json.dump(exp.config, f, indent=2)
+        json.dump(run.config, f, indent=2)
 
-    # 2. Save training history
+    # 2. Training history (JSON)
     with open(save_path / "training_history.json", "w") as f:
         json.dump(history, f, indent=2)
 
-    # 3. Save final metrics
+    # 3. Final metrics
     with open(save_path / "final_metrics.json", "w") as f:
         json.dump(final_metrics, f, indent=2)
 
-    # 4. Save raw logs
-    if exp.logs:
+    # 4. Raw logs
+    if run.logs:
         with open(save_path / "logs.txt", "w") as f:
-            f.write(exp.logs)
+            f.write(run.logs)
 
-    # 5. Plot loss curves
+    # 5. CSV exports
+    if history.get("steps") and history.get("losses"):
+        df = pd.DataFrame({'step': history['steps'], 'train_loss': history['losses']})
+        df.to_csv(save_path / "training_history.csv", index=False)
+        if history.get('eval_steps') and history.get('eval_losses'):
+            eval_df = pd.DataFrame({
+                'epoch': history['eval_steps'],
+                'eval_loss': history['eval_losses']
+            })
+            eval_df.to_csv(save_path / "eval_metrics.csv", index=False)
+
+    # 6. Loss curve plot
     if history.get("steps") and history.get("losses"):
         plt.figure(figsize=(10, 6))
         plt.plot(history["steps"], history["losses"], label="Train Loss")
@@ -187,31 +215,64 @@ def save_experiment_results(exp, trainer, tokenizer, history, final_metrics, out
         plt.title("Training Loss Curve")
         plt.legend()
         plt.grid(True, alpha=0.3)
-        plt.savefig(save_path / "loss_curve.png", dpi=150, bbox_inches="tight")
+        plot_path = save_path / "loss_curve.png"
+        plt.savefig(plot_path, dpi=150, bbox_inches="tight")
         plt.close()
 
-    # 6. Save model
+    # 7. Model
     model_save_path = save_path / "model"
     trainer.save_model(str(model_save_path))
     tokenizer.save_pretrained(str(model_save_path))
 
-    # 7. Copy checkpoints if any
+    # 8. Checkpoints (if any)
     if trainer.args.output_dir and os.path.exists(trainer.args.output_dir):
         checkpoint_dir = save_path / "checkpoints"
         shutil.copytree(trainer.args.output_dir, checkpoint_dir, dirs_exist_ok=True)
 
-    # 8. README
+    # 9. README
     with open(save_path / "README.txt", "w") as f:
         f.write(f"Experiment: {exp_name}\n")
-        f.write(f"Task: {exp.config.get('task_name')}\n")
-        f.write(f"Model: {exp.config.get('model_name')}\n")
+        f.write(f"Task: {run.config.get('task_name')}\n")
+        f.write(f"Model: {run.config.get('model_name')}\n")
         first_metric = list(final_metrics.keys())[0] if final_metrics else "eval_loss"
         first_value = list(final_metrics.values())[0] if final_metrics else "N/A"
         f.write(f"Final {first_metric}: {first_value}\n")
         f.write(f"Saved at: {datetime.now()}\n")
 
+    # 10. Copy all artifacts and model to MEDIA_ROOT/run.id/ for frontend artifacts list
+    media_dir = Path(django_settings.MEDIA_ROOT) / str(run.id)
+    media_dir.mkdir(parents=True, exist_ok=True)
+    # Copy loss plot (already created) – ensure it exists
+    if plot_path.exists():
+        shutil.copy(plot_path, media_dir / "loss_plot.png")
+    # Copy model directory contents into media_dir/model/
+    model_media_dir = media_dir / "model"
+    if model_media_dir.exists():
+        shutil.rmtree(model_media_dir)
+    shutil.copytree(model_save_path, model_media_dir)
+    # Copy checkpoints (if any) into media_dir/checkpoints/
+    checkpoint_media_dir = media_dir / "checkpoints"
+    if checkpoint_dir and os.path.exists(checkpoint_dir):
+        if checkpoint_media_dir.exists():
+            shutil.rmtree(checkpoint_media_dir)
+        shutil.copytree(checkpoint_dir, checkpoint_media_dir)
+    # Copy CSV and JSON files for direct access
+    for f in save_path.glob("*.csv"):
+        shutil.copy(f, media_dir / f.name)
+    for f in save_path.glob("*.json"):
+        shutil.copy(f, media_dir / f.name)
+    # Copy logs.txt
+    logs_file = save_path / "logs.txt"
+    if logs_file.exists():
+        shutil.copy(logs_file, media_dir / "logs.txt")
+    # Also copy the training history JSON (already copied by *.json)
+    # Optionally, create a symlink to the timestamped folder (but copying is simpler)
+
     print(f"✅ Results saved to: {save_path}")
+    print(f"📁 Artifacts also available in media folder: {media_dir}")
     return save_path
+
+
 
 # ---------- Local GLUE loader ----------
 def load_glue_local(task_name, base_path):
@@ -311,6 +372,18 @@ def run_training(experiment: Experiment, stop_event=None):
 
         output_dir = os.path.join(str(django_settings.MEDIA_ROOT), str(experiment.id), "model")
         os.makedirs(output_dir, exist_ok=True)
+        # Check for existing checkpoints
+        checkpoint_dir = None
+        if os.path.exists(output_dir):
+            checkpoints = [d for d in os.listdir(output_dir) if d.startswith("checkpoint-")]
+            if checkpoints:
+                # Sort by step number (e.g., checkpoint-123)
+                checkpoints.sort(key=lambda x: int(x.split("-")[-1]))
+                checkpoint_dir = os.path.join(output_dir, checkpoints[-1])
+                _log(run, f"Found checkpoint, will resume from {checkpoint_dir}")
+
+
+
 
         train_batch_size = config.get("batch_size", 16)
         epochs = config.get("epochs", 3)
@@ -318,6 +391,19 @@ def run_training(experiment: Experiment, stop_event=None):
         experiment.total_steps = total_steps
         experiment.save()
         _log(experiment, f"Total training steps: {total_steps}")
+        # Limit training samples
+        max_train = config.get("max_train_samples", -1)
+        if max_train > 0 and len(train_encoded) > max_train:
+            train_encoded = train_encoded.select(range(max_train))
+            _log(experiment, f"Limited training set to {max_train} samples")
+
+        # Limit validation samples
+        max_eval = config.get("max_eval_samples", -1)
+        if val_encoded is not None and max_eval > 0 and len(val_encoded) > max_eval:
+            val_encoded = val_encoded.select(range(max_eval))
+            _log(experiment, f"Limited validation set to {max_eval} samples")
+
+
 
         training_args = TrainingArguments(
             output_dir=output_dir,
@@ -327,6 +413,8 @@ def run_training(experiment: Experiment, stop_event=None):
             learning_rate=config.get("learning_rate", 2e-5),
             warmup_steps=500,
             logging_steps=1,
+            save_total_limit=2,  # keep only last 2 checkpoints
+
             eval_strategy="epoch" if val_encoded else "no",
             save_strategy="epoch" if val_encoded else "no",
             load_best_model_at_end=bool(val_encoded),
@@ -347,7 +435,7 @@ def run_training(experiment: Experiment, stop_event=None):
         )
 
         _log(experiment, "Training started...")
-        trainer.train()
+        trainer.train(resume_from_checkpoint=checkpoint_dir)
 
         if stop_event and stop_event.is_set():
             _log(experiment, "Training cancelled by user.")
@@ -376,13 +464,14 @@ def run_training(experiment: Experiment, stop_event=None):
         # Save results to disk
         try:
             save_experiment_results(
-                exp=experiment,
+                run=experiment,
                 trainer=trainer,
                 tokenizer=tokenizer,
                 history=live_callback.history,
                 final_metrics=final,
                 output_dir="results"
             )
+
         except Exception as e:
             _log(experiment, f"Warning: Could not save results to disk: {e}")
 

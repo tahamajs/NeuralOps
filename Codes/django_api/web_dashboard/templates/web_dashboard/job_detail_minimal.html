@@ -34,10 +34,23 @@
         .stat-value { font-size: 1.4rem; font-weight: bold; }
         .log-area { background: #0f172a; font-family: 'Fira Code', monospace; font-size: 0.8rem; height: 240px; overflow-y: auto; padding: 12px; border-radius: 12px; white-space: pre-wrap; color: #86efac; }
         .terminal-container { background: #000; height: 280px; border-radius: 12px; overflow: hidden; margin-top: 12px; }
+        .list-group-item { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; }
+        .list-group-item a { color: #e2e8f0; text-decoration: none; display: block; }
+        .list-group-item:hover { background: #334155; }
+        .btn-download { background: #10b981; color: white; }
         hr { border-color: #334155; margin: 16px 0; }
         h2, h3 { margin: 0 0 8px 0; font-weight: 600; }
         .modal { animation: fadeIn 0.2s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #convergence-warning {
+            background: #f59e0b20;
+            color: #fbbf24;
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.85rem;
+            display: none;
+        }
     </style>
     <script src="/static/web_dashboard/js/chart.js"></script>
     <link rel="stylesheet" href="/static/web_dashboard/css/xterm.css">
@@ -78,9 +91,39 @@
     </div>
 
     <div class="card"><h3>📜 Live Logs</h3><div id="log-area" class="log-area">{{ run.logs|default:"Waiting for logs..." }}</div></div>
+
+    <div class="card">
+        <h3>📊 Final Metrics</h3>
+        <div id="final-metrics" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px,1fr));"></div>
+    </div>
+
+    <div class="card">
+        <h3>📈 Training Analytics</h3>
+        <div id="analytics-content" class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px,1fr));">
+            <div class="stat-card"><div class="stat-label">Duration</div><div class="stat-value" id="duration">--</div></div>
+            <div class="stat-card"><div class="stat-label">Steps/sec</div><div class="stat-value" id="step_rate">--</div></div>
+            <div class="stat-card"><div class="stat-label">Min Loss</div><div class="stat-value" id="min_loss">--</div></div>
+            <div class="stat-card"><div class="stat-label">Max Loss</div><div class="stat-value" id="max_loss">--</div></div>
+            <div class="stat-card"><div class="stat-label">Avg Loss (last 10)</div><div class="stat-value" id="avg_loss_last">--</div></div>
+            <div class="stat-card"><div class="stat-label">Loss Reduction</div><div class="stat-value" id="loss_reduction">--</div></div>
+            <div class="stat-card"><div class="stat-label">Best Eval Metric</div><div class="stat-value" id="best_eval">--</div></div>
+            <div class="stat-card"><div class="stat-label">Epochs</div><div class="stat-value" id="epochs_done">--</div></div>
+        </div>
+        <div id="convergence-warning">⚠️ Loss has not decreased for the last 50 steps. Consider early stopping.</div>
+    </div>
+
+    <div class="card">
+        <h3>📁 Artifacts & Downloads</h3>
+        <div id="artifacts-list" class="list-group" style="background:transparent;"></div>
+        <div class="mt-3">
+            <a id="download-model-btn" class="btn btn-primary-custom" style="background:#10b981;"><i class="fas fa-download me-1"></i> Download Model (ZIP)</a>
+            <a id="download-config-btn" class="btn btn-primary-custom" style="margin-left:10px;"><i class="fas fa-download me-1"></i> Download Config (JSON)</a>
+            <a id="download-metrics-btn" class="btn btn-primary-custom" style="margin-left:10px;"><i class="fas fa-download me-1"></i> Download Metrics (JSON)</a>
+        </div>
+    </div>
 </div>
 
-<!-- Evaluation Results Modal -->
+<!-- Evaluation Modal -->
 <div id="evalModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; z-index:1000;">
     <div style="background:#1e293b; border-radius:20px; max-width:500px; width:90%; padding:20px; color:#e2e8f0;">
         <h3>📊 Evaluation Results</h3>
@@ -106,6 +149,10 @@
     let trainSteps = [], trainLosses = [];
     let evalSteps = [], evalLosses = [], evalAccuracies = [];
 
+    let startTime = Date.now();
+    let startTimeSet = false;
+    let lastStep = 0;
+
     function initCharts() {
         lossChart = new Chart(document.getElementById('lossChart'), {
             type: 'line',
@@ -122,17 +169,15 @@
         });
     }
 
-    // Load persisted training history from backend
     async function loadHistory() {
         try {
-            const res = await fetch(`/api/runs/${runId}/history/`, {
-                headers: { 'Authorization': `Token ${authToken}` }
-            });
+            const res = await fetch(`/api/runs/${runId}/history/`, { headers: { 'Authorization': `Token ${authToken}` } });
             if (res.ok) {
                 const h = await res.json();
                 if (h.steps && h.losses) {
                     trainSteps = h.steps;
                     trainLosses = h.losses;
+                    lastStep = trainSteps[trainSteps.length-1] || 0;
                     lossChart.data.labels = trainSteps;
                     lossChart.data.datasets[0].data = trainLosses;
                     lossChart.update();
@@ -148,8 +193,105 @@
                     }
                     evalChart.update();
                 }
+                computeAnalytics();
             }
         } catch(e) { console.warn('Could not load history', e); }
+    }
+
+    async function loadRunDetails() {
+        try {
+            const res = await fetch(`/api/runs/${runId}/`, { headers: { 'Authorization': `Token ${authToken}` } });
+            if (res.ok) {
+                const run = await res.json();
+                const metrics = run.final_metrics || {};
+                const container = document.getElementById('final-metrics');
+                if (container && Object.keys(metrics).length > 0) {
+                    container.innerHTML = Object.entries(metrics).map(([k,v]) => `
+                        <div class="stat-card"><div class="stat-label">${k.replace(/_/g,' ')}</div><div class="stat-value">${typeof v === 'number' ? v.toFixed(4) : v}</div></div>
+                    `).join('');
+                } else if (container) {
+                    container.innerHTML = '<div class="stat-card col-12">No final metrics yet.</div>';
+                }
+                // Config and metrics download blobs
+                const configBlob = new Blob([JSON.stringify(run.config, null, 2)], {type: 'application/json'});
+                const metricsBlob = new Blob([JSON.stringify(run.final_metrics, null, 2)], {type: 'application/json'});
+                document.getElementById('download-config-btn').href = URL.createObjectURL(configBlob);
+                document.getElementById('download-metrics-btn').href = URL.createObjectURL(metricsBlob);
+            }
+        } catch(e) { console.warn('Failed to load run details', e); }
+    }
+
+    async function loadArtifacts() {
+        try {
+            const res = await fetch(`/api/runs/${runId}/artifacts/`, { headers: { 'Authorization': `Token ${authToken}` } });
+            if (res.ok) {
+                const data = await res.json();
+                const artifacts = data.artifacts || [];
+                const container = document.getElementById('artifacts-list');
+                if (container) {
+                    if (artifacts.length === 0) {
+                        container.innerHTML = '<div class="text-secondary">No artifacts yet. Training may not have finished.</div>';
+                        return;
+                    }
+                    container.innerHTML = artifacts.map(path => {
+                        const filename = path.split('/').pop();
+                        let icon = 'fa-file';
+                        if (filename.endsWith('.png')) icon = 'fa-image';
+                        else if (filename.endsWith('.csv')) icon = 'fa-table';
+                        else if (filename.endsWith('.json')) icon = 'fa-code';
+                        else if (filename.endsWith('.txt')) icon = 'fa-file-alt';
+                        else if (filename.endsWith('.zip')) icon = 'fa-archive';
+                        return `<div class="list-group-item"><i class="fas ${icon} me-2"></i><a href="/api/runs/${runId}/artifacts/${encodeURIComponent(path)}" target="_blank">${filename}</a></div>`;
+                    }).join('');
+                }
+            }
+        } catch(e) { console.warn('Failed to load artifacts', e); }
+    }
+
+    function computeAnalytics() {
+        if (trainSteps.length === 0) return;
+        const steps = trainSteps;
+        const losses = trainLosses;
+        const duration = (Date.now() - startTime) / 1000;
+        const stepsPerSec = (lastStep / duration).toFixed(2);
+        const minLoss = Math.min(...losses).toFixed(4);
+        const maxLoss = Math.max(...losses).toFixed(4);
+        const last10Losses = losses.slice(-10);
+        const avgLast10 = (last10Losses.reduce((a,b) => a+b,0) / last10Losses.length).toFixed(4);
+        const firstLoss = losses[0];
+        const lastLoss = losses[losses.length-1];
+        const reduction = ((firstLoss - lastLoss) / firstLoss * 100).toFixed(1);
+        let bestEval = '--';
+        if (evalAccuracies.length > 0) {
+            const maxAcc = Math.max(...evalAccuracies.filter(v => v !== null));
+            bestEval = maxAcc.toFixed(4);
+        }
+        const epochsDone = evalSteps.length;
+        document.getElementById('duration').innerText = formatDuration(duration);
+        document.getElementById('step_rate').innerText = stepsPerSec;
+        document.getElementById('min_loss').innerText = minLoss;
+        document.getElementById('max_loss').innerText = maxLoss;
+        document.getElementById('avg_loss_last').innerText = avgLast10;
+        document.getElementById('loss_reduction').innerText = reduction + '%';
+        document.getElementById('best_eval').innerText = bestEval;
+        document.getElementById('epochs_done').innerText = epochsDone;
+
+        // Convergence warning (loss not decreasing for last 50 steps)
+        const warningDiv = document.getElementById('convergence-warning');
+        if (losses.length > 50) {
+            const recent = losses.slice(-50);
+            const hasImproved = recent[recent.length-1] < recent[0] - 0.01;
+            warningDiv.style.display = hasImproved ? 'none' : 'block';
+        } else {
+            warningDiv.style.display = 'none';
+        }
+    }
+
+    function formatDuration(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        return `${h}h ${m}m ${s}s`;
     }
 
     function updateProgress(data) {
@@ -175,12 +317,18 @@
 
     function updateMetrics(data) {
         if (data.step !== undefined && data.loss !== undefined) {
+            if (!startTimeSet) {
+                startTime = Date.now();
+                startTimeSet = true;
+            }
             trainSteps.push(data.step);
             trainLosses.push(data.loss);
+            lastStep = data.step;
             lossChart.data.labels = trainSteps;
             lossChart.data.datasets[0].data = trainLosses;
             lossChart.update();
             document.getElementById('loss').innerText = data.loss.toFixed(4);
+            computeAnalytics();
         }
         if (data.eval_loss !== undefined) {
             const epoch = evalSteps.length + 1;
@@ -194,6 +342,7 @@
                 document.getElementById('acc').innerText = data.eval_accuracy.toFixed(4);
             }
             evalChart.update();
+            computeAnalytics();
         }
     }
 
@@ -223,20 +372,18 @@
         ws.onerror = (err) => console.error('[WS] Error', err);
     }
 
-    // Terminal (xterm.js)
-    let term;
-    function initTerminal() {
-        if (typeof Terminal === 'undefined') {
-            document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js not loaded</div>';
-            return;
-        }
-        term = new Terminal({ cursorBlink: true, theme: { background: '#000000', foreground: '#00ff00' }, fontSize: 12 });
-        term.open(document.getElementById('terminal-container'));
-        const termWs = new WebSocket(`ws://${location.host}/ws/terminal/`);
-        termWs.onmessage = (ev) => term.write(ev.data);
-        term.onData((data) => { if (termWs.readyState === WebSocket.OPEN) termWs.send(data); });
-        termWs.onclose = () => term.write('\r\n\x1b[33mTerminal reconnecting...\x1b[0m\r\n');
+function initTerminal() {
+    if (typeof Terminal === 'undefined') {
+        document.getElementById('terminal-container').innerHTML = '<div style="padding:20px;color:red;">xterm.js not loaded</div>';
+        return;
     }
+    term = new Terminal({ cursorBlink: true, theme: { background: '#000000', foreground: '#00ff00' }, fontSize: 12 });
+    term.open(document.getElementById('terminal-container'));
+    const termWs = new WebSocket(`ws://${location.host}/ws/terminal/`);
+    termWs.onmessage = (ev) => term.write(ev.data);
+    term.onData((data) => { if (termWs.readyState === WebSocket.OPEN) termWs.send(data); });
+    termWs.onclose = () => term.write('\r\n\x1b[33mTerminal reconnecting...\x1b[0m\r\n');
+}
 
     // Button handlers
     document.getElementById('eval-btn').onclick = async () => {
@@ -261,13 +408,16 @@
         finally { btn.textContent = '📊 Evaluate'; btn.disabled = false; }
     };
 
-    document.getElementById('stop-btn').onclick = async () => {
-        if (confirm('Stop this experiment?')) {
-            await fetch(`/api/runs/${runId}/stop/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
-            alert('Stop signal sent');
-        }
-    };
-
+document.getElementById('stop-btn').onclick = async () => {
+    const btn = document.getElementById('stop-btn');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    if (confirm('Stop this experiment?')) {
+        const res = await fetch(`/api/runs/${runId}/stop/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } });
+        if (!res.ok) alert('Failed to stop');
+    }
+    // optionally re‑enable after a delay or keep disabled
+};
     document.getElementById('paper-btn').onclick = async () => {
         const res = await fetch(`/api/runs/${runId}/paper/`, { headers: { 'Authorization': `Token ${authToken}` } });
         if (res.ok) {
@@ -281,28 +431,26 @@
         } else alert('Paper generation failed');
     };
 
-    document.getElementById('report-btn').onclick = () => {
-        window.open(`/api/runs/${runId}/report/`, '_blank');
-    };
-
+    document.getElementById('report-btn').onclick = () => window.open(`/api/runs/${runId}/report/`, '_blank');
     document.getElementById('pdf-preview-btn').onclick = () => {
-        const url = `/api/runs/${runId}/paper_preview/`;
-        document.getElementById('pdfIframe').src = url;
+        document.getElementById('pdfIframe').src = `/api/runs/${runId}/paper_preview/`;
         document.getElementById('pdfModal').style.display = 'flex';
     };
-
     function closeEvalModal() { document.getElementById('evalModal').style.display = 'none'; }
     function closePdfModal() {
         document.getElementById('pdfModal').style.display = 'none';
         document.getElementById('pdfIframe').src = '';
     }
+    document.getElementById('download-model-btn').href = `/api/runs/${runId}/model/`;
 
-    // Initialise
+    // Periodic analytics update (every 5 seconds)
+    setInterval(computeAnalytics, 5000);
+
     initCharts();
-    loadHistory().then(() => {
-        connectWebSocket();   // start WebSocket after loading history to avoid overwriting
-    });
+    loadHistory().then(() => connectWebSocket());
     initTerminal();
+    loadRunDetails();
+    loadArtifacts();
 </script>
 </body>
 </html>

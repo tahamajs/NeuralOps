@@ -28,7 +28,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
-
+from ..core.registry import ATTENTION_REGISTRY
 
 # ============================================================================
 # Configuration
@@ -440,6 +440,7 @@ class NEXUSAttention(nn.Module):
 # ============================================================================
 # Injection helper (internal)
 # ============================================================================
+@ATTENTION_REGISTRY.register("nexus")
 def inject_nexus_into_distilbert(layer, model_config, nexus_cfg: NEXUSConfig,
                                   layer_idx, total_layers, old_attn):
     """Replace the layer's attention with NEXUS and copy pretrained weights."""
