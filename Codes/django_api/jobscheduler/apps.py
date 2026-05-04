@@ -5,6 +5,9 @@ class JobschedulerConfig(AppConfig):
     name = 'jobscheduler'
 
     def ready(self):
-        # Start the background scheduler thread when Django starts
         from .scheduler import scheduler
-        # scheduler is a singleton; its thread starts automatically
+        # Start scheduler only once, e.g., in runserver or production worker
+        # Avoid starting twice (e.g., in autoreload)
+        import os
+        if os.environ.get('RUN_MAIN') != 'true' and not scheduler.worker_thread:
+            scheduler.start()

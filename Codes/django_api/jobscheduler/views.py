@@ -354,3 +354,51 @@ def job_list(request):
     )
     scheduler.add_job(str(job.id), job.priority, estimated)
     return Response(JobSerializer(job).data, status=201)
+
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+from django.shortcuts import get_object_or_404
+from .models import Job
+from .serializers import JobSerializer
+from .scheduler import scheduler
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def job_list(request):
+    if request.method == 'GET':
+        jobs = Job.objects.all().order_by('priority', '-created_at')
+        return Response(JobSerializer(jobs, many=True).data)
+    elif request.method == 'POST':
+        data = request.data
+        # Validate required fields
+        required = ['model_name', 'task_name']
+        for field in required:
+            if not data.get(field):
+                return Response({"error": f"Missing {field}"}, status=400)
+        # Create job with defaults
+        job = Job.objects.create(
+            name=data.get('name', ''),
+            model_name=data['model_name'],
+            task_name=data['task_name'],
+            attention_type=data.get('attention_type', 'full'),
+            method=data.get('method', 'baseline'),
+            epochs=data.get('epochs', 3),
+            batch_size=data.get('batch_size', 16),
+            learning_rate=data.get('learning_rate', 2e-5),
+            max_seq_length=data.get('max_seq_length', 128),
+            compression_rank=data.get('compression_rank', 64),
+            gpu_requirements=data.get('gpu_requirements', 1),
+            memory_requirements=data.get('memory_requirements', 8),
+            priority=data.get('priority', 5),
+            estimated_duration=data.get('estimated_duration', None),
+            notes=data.get('notes', ''),
+        )
+        # Add to scheduler
+        scheduler.add_job(str(job.id), job.priority, job.estimated_duration, job.memory_requirements)
+        serializer = JobSerializer(job)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+# Other endpoints (job_detail, pause, resume, stop, etc.) remain unchanged
