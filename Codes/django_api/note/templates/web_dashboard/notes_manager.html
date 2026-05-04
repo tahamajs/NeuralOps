@@ -1,0 +1,268 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Researcher Notebook – Transformer Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css">
+    <script src="https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: #eef2ff;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .card {
+            background: rgba(20, 28, 40, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .note-card {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            transition: 0.2s;
+            border-left: 4px solid #3b82f6;
+        }
+        .note-card:hover { transform: translateY(-2px); background: #2d3a5e; }
+        .tag {
+            background: #334155;
+            border-radius: 40px;
+            padding: 2px 10px;
+            font-size: 0.7rem;
+            display: inline-block;
+            margin-right: 6px;
+            margin-bottom: 6px;
+        }
+        .reaction-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-right: 12px;
+            transition: 0.1s;
+        }
+        .reaction-btn.active { color: #f59e0b; }
+        .reaction-btn:hover { color: #60a5fa; }
+        .markdown-body { font-size: 0.9rem; color: #cbd5e1; }
+        .markdown-body h1, .markdown-body h2 { font-size: 1.1rem; margin-top: 0.5rem; margin-bottom: 0.25rem; }
+        .btn-primary-custom {
+            background: linear-gradient(90deg, #2563eb, #7c3aed);
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+        }
+        .CodeMirror, .editor-toolbar { background: #0f172a; border-color: #334155; }
+        .editor-toolbar a { color: #94a3b8 !important; }
+        hr { border-color: #334155; }
+        .filter-section input, .filter-section select { background: #0f172a; border-color: #334155; color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h1><i class="fas fa-book-open me-2"></i>Researcher Notebook</h1>
+            <p class="text-secondary mb-0">Capture insights, hypotheses, and observations – fully searchable</p>
+        </div>
+        <div>
+            <a href="/dashboard/" class="btn btn-outline-secondary me-2"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            <button id="logoutBtn" class="btn btn-outline-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: Create & Filter -->
+        <div class="col-lg-4">
+            <!-- Create Note Card -->
+            <div class="card">
+                <h5 class="mb-3"><i class="fas fa-pen-alt me-2"></i>Write New Note</h5>
+                <input type="text" id="noteTitle" class="form-control mb-2" placeholder="Title (optional)">
+                <textarea id="noteContent" rows="5" class="form-control mb-2" placeholder="Write in **Markdown**..."></textarea>
+                <input type="text" id="noteTags" class="form-control mb-2" placeholder="Tags (comma separated, e.g., experiment, baseline, insight)">
+                <select id="noteRun" class="form-select mb-2"><option value="">📌 No specific run</option></select>
+                <button id="createNoteBtn" class="btn btn-primary-custom w-100"><i class="fas fa-save me-1"></i>Save Note</button>
+            </div>
+            <!-- Filter Card -->
+            <div class="card">
+                <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filter Notes</h5>
+                <div class="filter-section">
+                    <label class="form-label small">Tag</label>
+                    <input type="text" id="filterTag" class="form-control mb-2" placeholder="e.g., baseline">
+                    <label class="form-label small">Associated Run</label>
+                    <select id="filterRun" class="form-select mb-2"><option value="">All runs</option></select>
+                    <div class="d-flex gap-2 mt-2">
+                        <button id="applyFilterBtn" class="btn btn-sm btn-primary">Apply</button>
+                        <button id="clearFilterBtn" class="btn btn-sm btn-outline-secondary">Clear</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Quick Stats -->
+            <div class="card text-center">
+                <h5><i class="fas fa-chart-simple me-2"></i>Notebook Stats</h5>
+                <div class="row">
+                    <div class="col-6"><div class="stat-value" id="totalNotes">0</div><div class="small text-secondary">Total notes</div></div>
+                    <div class="col-6"><div class="stat-value" id="uniqueTags">0</div><div class="small text-secondary">Unique tags</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Notes List -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="fas fa-list-ul me-2"></i>All Notes</h5>
+                    <div><span id="notesCount" class="badge bg-secondary">0 notes</span></div>
+                </div>
+                <div id="notesList" class="notes-container" style="max-height: 70vh; overflow-y: auto;">Loading notes...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) window.location.href = '/login/';
+    let simplemde = null;
+
+    async function apiFetch(url, options = {}) {
+        const res = await fetch(url, {
+            ...options,
+            headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json', ...options.headers }
+        });
+        if (res.status === 401) { localStorage.removeItem('authToken'); window.location.href = '/login/'; throw new Error('Unauthorized'); }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+    }
+
+    // Load runs for dropdowns
+    async function loadRuns() {
+        try {
+            const runs = await apiFetch('/api/jobs/');
+            const selectCreate = document.getElementById('noteRun');
+            const selectFilter = document.getElementById('filterRun');
+            const options = '<option value="">📌 No specific run</option>' + runs.map(r => `<option value="${r.id}">${r.name || r.id.slice(0,8)} (${r.task_name})</option>`).join('');
+            selectCreate.innerHTML = options;
+            selectFilter.innerHTML = '<option value="">All runs</option>' + runs.map(r => `<option value="${r.id}">${r.name || r.id.slice(0,8)}</option>`).join('');
+        } catch(e) { console.warn(e); }
+    }
+
+    // Load notes with filters
+    async function loadNotes() {
+        const tag = document.getElementById('filterTag').value.trim();
+        const run = document.getElementById('filterRun').value;
+        let url = '/api/notes/';
+        const params = [];
+        if (tag) params.push(`tag=${encodeURIComponent(tag)}`);
+        if (run) params.push(`run=${run}`);
+        if (params.length) url += '?' + params.join('&');
+        try {
+            const notes = await apiFetch(url);
+            renderNotes(notes);
+            document.getElementById('totalNotes').innerText = notes.length;
+            const allTags = new Set(notes.flatMap(n => n.tags || []));
+            document.getElementById('uniqueTags').innerText = allTags.size;
+            document.getElementById('notesCount').innerText = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
+        } catch(e) { console.error(e); document.getElementById('notesList').innerHTML = '<div class="text-center py-5 text-danger">Failed to load notes</div>'; }
+    }
+
+    function renderNotes(notes) {
+        const container = document.getElementById('notesList');
+        if (!notes.length) { container.innerHTML = '<div class="text-center py-5 text-secondary"><i class="fas fa-inbox fa-2x mb-2"></i><br>No notes found. Create your first one!</div>'; return; }
+        container.innerHTML = notes.map(note => `
+            <div class="note-card" data-id="${note.id}">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div><h5 class="mb-1">${escapeHtml(note.title || 'Untitled')}</h5><div class="small text-secondary">by ${note.author_username} · ${new Date(note.created_at).toLocaleString()}</div></div>
+                    <div class="btn-group">
+                        <button class="edit-note btn btn-sm btn-outline-info" data-id="${note.id}"><i class="fas fa-edit"></i></button>
+                        <button class="delete-note btn btn-sm btn-outline-danger" data-id="${note.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="mt-2 markdown-body">${marked.parse(note.content.substring(0, 500) + (note.content.length > 500 ? '...' : ''))}</div>
+                <div class="mt-2">${(note.tags || []).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+                <div class="mt-2">
+                    ${Object.entries(note.reactions || {}).map(([reaction, users]) => `
+                        <button class="reaction-btn" data-id="${note.id}" data-reaction="${reaction}">👍 ${reaction} (${users.length})</button>
+                    `).join('')}
+                    <button class="reaction-btn add-reaction" data-id="${note.id}" data-reaction="like">➕ Like</button>
+                    <button class="reaction-btn add-reaction" data-id="${note.id}" data-reaction="insight">💡 Insight</button>
+                </div>
+                ${note.run ? `<div class="mt-2 small text-secondary"><i class="fas fa-flask me-1"></i>Run: ${note.run_id.slice(0,8)}</div>` : ''}
+            </div>
+        `).join('');
+        attachNoteActions();
+    }
+
+    function attachNoteActions() {
+        document.querySelectorAll('.edit-note').forEach(btn => btn.onclick = () => editNote(btn.dataset.id));
+        document.querySelectorAll('.delete-note').forEach(btn => btn.onclick = () => deleteNote(btn.dataset.id));
+        document.querySelectorAll('.reaction-btn.add-reaction').forEach(btn => btn.onclick = () => addReaction(btn.dataset.id, btn.dataset.reaction));
+    }
+
+    async function createNote() {
+        const title = document.getElementById('noteTitle').value.trim();
+        const content = simplemde.value();
+        if (!content) { alert('Note content cannot be empty'); return; }
+        const tags = document.getElementById('noteTags').value.split(',').map(s => s.trim()).filter(s => s);
+        const runId = document.getElementById('noteRun').value || null;
+        const payload = { title, content, tags, run: runId };
+        try {
+            await apiFetch('/api/notes/', { method: 'POST', body: JSON.stringify(payload) });
+            document.getElementById('noteTitle').value = '';
+            simplemde.value('');
+            document.getElementById('noteTags').value = '';
+            loadNotes();
+        } catch(e) { alert('Failed to save note: ' + e.message); }
+    }
+
+    async function deleteNote(noteId) {
+        if (!confirm('Delete this note permanently?')) return;
+        try {
+            await fetch(`/api/notes/${noteId}/`, { method: 'DELETE', headers: { 'Authorization': `Token ${authToken}` } });
+            loadNotes();
+        } catch(e) { alert('Delete failed'); }
+    }
+
+    async function editNote(noteId) {
+        // For simplicity, redirect to run detail page with note editing (or implement modal)
+        window.location.href = `/monitor/${noteId}/?edit=true`;
+    }
+
+    async function addReaction(noteId, reaction) {
+        try {
+            await fetch(`/api/notes/${noteId}/react/`, { method: 'POST', headers: { 'Authorization': `Token ${authToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ reaction }) });
+            loadNotes();
+        } catch(e) { console.warn(e); }
+    }
+
+    function escapeHtml(str) { return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+
+    // Initialize SimpleMDE
+    if (document.getElementById('noteContent')) {
+        simplemde = new SimpleMDE({ element: document.getElementById('noteContent'), spellChecker: false, autofocus: false, placeholder: 'Write in Markdown...' });
+    }
+
+    // Event listeners
+    document.getElementById('createNoteBtn').onclick = createNote;
+    document.getElementById('applyFilterBtn').onclick = loadNotes;
+    document.getElementById('clearFilterBtn').onclick = () => { document.getElementById('filterTag').value = ''; document.getElementById('filterRun').value = ''; loadNotes(); };
+    document.getElementById('logoutBtn').onclick = async () => { await fetch('/api/auth/logout/', { method: 'POST', headers: { 'Authorization': `Token ${authToken}` } }); localStorage.removeItem('authToken'); window.location.href = '/login/'; };
+
+    // Initial load
+    loadRuns().then(() => loadNotes());
+</script>
+</body>
+</html>
