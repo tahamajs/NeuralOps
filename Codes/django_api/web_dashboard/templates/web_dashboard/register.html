@@ -5,14 +5,51 @@
     <meta charset="UTF-8">
     <title>Register – Transformer Toolkit</title>
     <style>
-        /* same style as login */
-        body { background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%); display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; margin: 0; }
-        .card { background: rgba(30, 41, 59, 0.8); backdrop-filter: blur(12px); padding: 2rem; border-radius: 28px; width: 380px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); }
+        body {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0d1326 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+        }
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            padding: 2rem;
+            border-radius: 28px;
+            width: 380px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
         h2 { color: #60a5fa; margin-bottom: 1.5rem; text-align: center; }
-        input { width: 100%; padding: 12px 16px; margin-bottom: 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 40px; color: #e2e8f0; }
-        button { width: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border: none; padding: 12px; border-radius: 40px; color: white; font-weight: bold; cursor: pointer; }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 1rem;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 40px;
+            color: #e2e8f0;
+        }
+        input:focus { outline: none; border-color: #3b82f6; }
+        button {
+            width: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { opacity: 0.9; transform: scale(1.02); }
         .error { color: #f87171; margin-bottom: 1rem; text-align: center; }
-        a { color: #60a5fa; display: block; text-align: center; margin-top: 1rem; }
+        a { color: #60a5fa; display: block; text-align: center; margin-top: 1rem; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .loader { display: none; text-align: center; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -22,7 +59,8 @@
     <input type="text" id="username" placeholder="Username" autocomplete="username">
     <input type="password" id="password" placeholder="Password" autocomplete="new-password">
     <input type="password" id="confirm" placeholder="Confirm password">
-    <button onclick="doRegister()">Register →</button>
+    <button onclick="doRegister()" id="registerBtn">Register →</button>
+    <div id="loader" class="loader">Creating account...</div>
     <a href="/login/">Already have an account? Sign in</a>
 </div>
 
@@ -32,6 +70,8 @@
         const password = document.getElementById('password').value;
         const confirm = document.getElementById('confirm').value;
         const errorDiv = document.getElementById('error');
+        const btn = document.getElementById('registerBtn');
+        const loader = document.getElementById('loader');
         if (!username || !password) {
             errorDiv.innerText = 'All fields are required';
             errorDiv.style.display = 'block';
@@ -42,6 +82,15 @@
             errorDiv.style.display = 'block';
             return;
         }
+        if (password.length < 6) {
+            errorDiv.innerText = 'Password must be at least 6 characters';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        loader.style.display = 'block';
+        errorDiv.style.display = 'none';
         try {
             const res = await fetch('/api/auth/register/', {
                 method: 'POST',
@@ -52,7 +101,7 @@
             const data = await res.json();
             if (res.ok) {
                 localStorage.setItem('authToken', data.token);
-                window.location.href = '/';
+                window.location.href = '/dashboard/';
             } else {
                 errorDiv.innerText = data.error || 'Registration failed';
                 errorDiv.style.display = 'block';
@@ -60,6 +109,10 @@
         } catch (err) {
             errorDiv.innerText = 'Network error';
             errorDiv.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            loader.style.display = 'none';
         }
     }
     document.getElementById('confirm').addEventListener('keypress', (e) => {
