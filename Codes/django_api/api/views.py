@@ -60,7 +60,7 @@ def register(request):
     if email and User.objects.filter(email=email).exists():
         return Response({"error": "Email already registered"}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = User.objects_create_user(username=username, password=password, email=email)
+    user = User.objects.create_user(username=username, password=password, email=email)
     token = Token.objects.create(user=user)
     logger.info(f"New user registered: {username}")
     return Response({
@@ -393,6 +393,33 @@ def start_evaluate(request):
     
     import threading
     thread = threading.Thread(target=run_evaluation, args=(run,))
+    thread.start()
+    
+    return Response(TrainingRunSerializer(run).data, status=status.HTTP_201_CREATED)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def start_compress(request):
+    """Start a compression job."""
+    config = request.data
+    exp_id = config.get("experiment_id")
+    if not exp_id:
+        exp_name = config.get("name") or f"Compression {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        exp = Experiment.objects.create(name=exp_name)
+    else:
+        exp = Experiment.objects.get(pk=exp_id)
+        
+    run = TrainingRun.objects.create(
+        experiment=exp,
+        job_type="compression",
+        status="queued",
+        config=config,
+        name=config.get("name", "")
+    )
+    
+    import threading
+    from .runners import run_compression
+    thread = threading.Thread(target=run_compression, args=(run,))
     thread.start()
     
     return Response(TrainingRunSerializer(run).data, status=status.HTTP_201_CREATED)
