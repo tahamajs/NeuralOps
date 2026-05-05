@@ -10,13 +10,14 @@ class LoggingConfig:
     # Experiment name (used as subfolder prefix)
     experiment_name: str = "experiment"
     # If True, append current timestamp to experiment_name for a unique run dir
-    use_timestamp: bool = True
-    # Optional explicit run id – if provided, used instead of timestamp
-    run_id: Optional[str] = None
-
-    # Console output
+    run_id: Optional[str] = None          # add this
+    use_timestamp: bool = True            # add this
     console_level: str = "INFO"
     colored_console: bool = True
+    # log_base_dir: str = "./logs"        # already present? if not, add
+    # run_id: Optional[str] = None        # add
+    # use_timestamp: bool = True          # add
+    log_dir: str = "./logs"
 
     # Plain text file (inside the run directory)
     file_level: str = "DEBUG"

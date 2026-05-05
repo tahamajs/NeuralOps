@@ -2,8 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..core.base import BaseAttention
-from ..core.registry import ATTENTION_REGISTRY
+from framework.attentions.core.base import BaseAttention
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("span_expanded")

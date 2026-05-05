@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from ..core.registry import ATTENTION_REGISTRY
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("routing")
 class RoutingAttention(nn.Module):

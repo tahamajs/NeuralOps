@@ -1,0 +1,11 @@
+{"timestamp": "2026-05-04T18:57:37.371407", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "🚀 Logging initialized. Run directory: ./logs/full_baseline_sst2_42_2026-05-04_22-27-37", "module": "logger", "function": "setup_logging"}
+{"timestamp": "2026-05-04T18:57:37.371690", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:37.371751", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "🚀 Experiment: full_baseline_sst2_42", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:37.371802", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "   Attention: full", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:37.371839", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "   Method: baseline", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:37.371872", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "   Task: sst2", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:37.371903", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "   Model: distilbert-base-uncased", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:37.371932", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "══════════════════════════════════════", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:37.403466", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "Using device: mps", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:37.850870", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "Train: 67349, Val: 872", "module": "main", "function": "main"}
+{"timestamp": "2026-05-04T18:57:38.531631", "level": "INFO", "logger": "full_baseline_sst2_42", "message": "Starting training...", "module": "main", "function": "main"}

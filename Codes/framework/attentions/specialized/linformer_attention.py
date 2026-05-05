@@ -46,7 +46,8 @@ class LinformerAttention(BaseAttention):
         scores = torch.matmul(q, k_proj.transpose(-2, -1)) / (Dh ** 0.5)
         if attention_mask is not None:
             # Mask is applied only on the query side (projected keys are already compressed)
-            scores = scores + (attention_mask.float() - 1.0) * -1e9[:, :, None, None]
+            # Ensure correctly placed brackets and broadcasting
+            scores = scores + (attention_mask.float() - 1.0) * 1e9
 
         attn = F.softmax(scores, dim=-1)
         out = torch.matmul(attn, v_proj)

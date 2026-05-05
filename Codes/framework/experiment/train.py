@@ -5,11 +5,10 @@ from transformers import TrainingArguments, DataCollatorWithPadding
 from framework.trainer.trainer import CompressionTrainer, get_compute_metrics
 from framework.trainer.methods.rdrop_r3f import MethodTrainer
 from experiment_logging import MetricsTracker, LoggingCallback
-
+import torch
 logger = logging.getLogger(__name__)
 
 def setup_trainer(model, tokenizer, dataset, config, tracker, logger):
-    """Create and configure trainer."""
     metric_map = {
         "cola": "eval_matthews_correlation",
         "stsb": "eval_pearson",
@@ -45,19 +44,24 @@ def setup_trainer(model, tokenizer, dataset, config, tracker, logger):
         gradient_checkpointing=config.gradient_checkpointing,
     )
 
-    # Choose trainer class
+    # Define extra dictionary with default
+    extra = {}   # <-- FIX: define it before conditional blocks
+
+    # For rdrop/r3f methods, fill extra accordingly
     if config.method in ("rdrop", "r3f"):
-        trainer_cls = MethodTrainer
         extra = {
             "method": config.method,
             "rdrop_alpha": config.rdrop_alpha,
             "r3f_epsilon": config.r3f_epsilon,
             "is_regression": is_regression,
         }
+        trainer_cls = MethodTrainer
     else:
+        # baseline and other methods
         trainer_cls = CompressionTrainer
-        extra = {"ortho_weight": 0.0}
+        extra["ortho_weight"] = 0.0   # or any default needed
 
+    # Create trainer
     trainer = trainer_cls(
         model=model,
         args=training_args,
@@ -68,6 +72,7 @@ def setup_trainer(model, tokenizer, dataset, config, tracker, logger):
         **extra
     )
 
-    trainer.add_callback(LoggingCallback(tracker, logger, plots_dir=output_dir))
+    # Add logging callback (without plots_dir)
+    trainer.add_callback(LoggingCallback(tracker, logger))
 
     return trainer
