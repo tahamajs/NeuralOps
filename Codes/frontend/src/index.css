@@ -4,28 +4,47 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-[#0a0c10] text-slate-200 antialiased selection:bg-blue-500/30;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
 @layer components {
+  .glass-card {
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl transition-all duration-300;
+  }
+  
+  .glass-card-hover {
+    @apply hover:bg-white/[0.05] hover:border-white/20 hover:translate-y-[-2px] cursor-pointer;
+  }
+
   .btn-primary {
-    @apply px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm font-medium transition-all transform active:scale-95 disabled:opacity-50;
+    @apply px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-blue-500/20 font-semibold transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2;
   }
-  .card {
-    @apply bg-white rounded-xl shadow-sm border border-slate-200 p-6;
+
+  .status-pill {
+    @apply px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border;
   }
-  .input-field {
-    @apply w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all;
+
+  .cyber-grid {
+    background-image: linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 }
 
-/* Custom animations */
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+.animate-glow {
+  animation: glow 4s ease-in-out infinite;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.5)); }
+  50% { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8)); }
+}
+
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20;
 }
