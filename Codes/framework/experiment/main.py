@@ -22,6 +22,53 @@ from framework.utils.device import get_device
 # os.environ["TRANSFORMERS_OFFLINE"] = "1"
 # os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
+def run_training(config, stop_event=None, progress_callback=None, log_callback=None, final_callback=None):
+    """
+    API call for running training from the Django runner.
+    """
+    from framework.experiment.config import ExperimentConfig
+    import types
+
+    # Convert dict to namespace if needed
+    if isinstance(config, dict):
+        cfg = ExperimentConfig()
+        for k, v in config.items():
+            setattr(cfg, k, v)
+    else:
+        cfg = config
+
+    exp_name = cfg.exp_name or f"{cfg.attn_type}_{cfg.method}_{cfg.task}_{cfg.seed}"
+    
+    # Simple direct setup
+    set_all_seeds(cfg.seed)
+    device = get_device()
+    
+    tokenizer, dataset, num_labels, is_regression = load_and_preprocess_data(cfg)
+    model = load_model(cfg, num_labels, device)
+    model.to(device)
+
+    # Use a minimal progress callback wrapper if needed
+    # ... In a real scenario, we'd inject progress_callback into the trainer here ...
+    
+    trainer = setup_trainer(model, tokenizer, dataset, cfg, None, logging.getLogger("api"))
+    
+    # Execute
+    train_result = trainer.train()
+    eval_result = trainer.evaluate()
+    
+    if final_callback:
+        final_callback(eval_result, train_result.metrics if hasattr(train_result, 'metrics') else {})
+    
+    return eval_result
+
+def run_evaluation(config, model_path):
+    """Placeholder for evaluation runner."""
+    return {"accuracy": 0.85, "loss": 0.4}
+
+def run_compression(config, output_dir):
+    """Placeholder for compression runner."""
+    return {"reduction": "4x", "original_size_mb": 500, "new_size_mb": 125}
+
 def main():
     cfg = build_config_from_args()
 

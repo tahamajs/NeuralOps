@@ -25,4 +25,11 @@ urlpatterns = [
     path("system/gpu/", views.gpu_info),
     path("health/", views.health_check),
     path("version/", views.version),
+
+    # Experiments
+    path("experiments/", views.experiment_list),
+    path("experiments/<uuid:pk>/", views.experiment_detail),
+    path("train/", views.start_train),
+    path("evaluate/", views.start_evaluate),
+    path("runs/<uuid:pk>/", views.run_detail),
 ]

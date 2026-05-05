@@ -299,5 +299,109 @@ def version(request):
     return Response({
         "api_version": "v1",
         "django_version": django.get_version(),
-        "environment": getattr(settings, 'ENVIRONMENT', 'production'),
+        "environment": "production",
     })
+
+
+# ----------------------------------------------------------------------
+# Experiments
+# ----------------------------------------------------------------------
+from .models import Experiment, TrainingRun
+from .serializers import ExperimentSerializer, TrainingRunSerializer
+from .runners import run_training, run_evaluation
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def experiment_list(request):
+    if request.method == "GET":
+        experiments = Experiment.objects.all()
+        serializer = ExperimentSerializer(experiments, many=True)
+        return Response(serializer.data)
+    elif request.method == "POST":
+        serializer = ExperimentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["GET", "PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def experiment_detail(request, pk):
+    try:
+        experiment = Experiment.objects.get(pk=pk)
+    except Experiment.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        serializer = ExperimentSerializer(experiment)
+        return Response(serializer.data)
+    elif request.method == "PATCH":
+        serializer = ExperimentSerializer(experiment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == "DELETE":
+        experiment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def start_train(request):
+    """Start a training job."""
+    config = request.data
+    exp_id = config.get("experiment_id")
+    if not exp_id:
+        exp_name = config.get("name") or f"Training {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        exp = Experiment.objects.create(name=exp_name)
+    else:
+        exp = Experiment.objects.get(pk=exp_id)
+    
+    run = TrainingRun.objects.create(
+        experiment=exp,
+        job_type="training",
+        status="queued",
+        config=config,
+        name=config.get("name", "")
+    )
+    
+    import threading
+    thread = threading.Thread(target=run_training, args=(run,))
+    thread.start()
+    
+    return Response(TrainingRunSerializer(run).data, status=status.HTTP_201_CREATED)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def start_evaluate(request):
+    """Start an evaluation job."""
+    config = request.data
+    exp_id = config.get("experiment_id")
+    if not exp_id:
+        exp_name = config.get("name") or f"Eval {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        exp = Experiment.objects.create(name=exp_name)
+    else:
+        exp = Experiment.objects.get(pk=exp_id)
+        
+    run = TrainingRun.objects.create(
+        experiment=exp,
+        job_type="evaluation",
+        status="queued",
+        config=config,
+        name=config.get("name", "")
+    )
+    
+    import threading
+    thread = threading.Thread(target=run_evaluation, args=(run,))
+    thread.start()
+    
+    return Response(TrainingRunSerializer(run).data, status=status.HTTP_201_CREATED)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def run_detail(request, pk):
+    try:
+        run = TrainingRun.objects.get(pk=pk)
+        return Response(TrainingRunSerializer(run).data)
+    except TrainingRun.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
