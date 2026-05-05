@@ -8,8 +8,15 @@ from pathlib import Path
 # ----------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Make the outer framework (e.g., parent folder containing `framework`) importable
-sys.path.insert(0, str(BASE_DIR.parent))
+# Make the 'Codes' folder (where all Django apps reside) importable
+CODES_DIR = BASE_DIR.parent / 'Codes'
+if CODES_DIR.exists() and str(CODES_DIR) not in sys.path:
+    sys.path.insert(0, str(CODES_DIR))
+
+# Also add the parent of Codes (Project root) if needed by the framework
+PROJECT_ROOT = BASE_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 # ----------------------------------------------------------------------
 # Security & Debug
@@ -22,8 +29,7 @@ ALLOWED_HOSTS = ["*"] if DEBUG else os.environ.get("ALLOWED_HOSTS", "").split(",
 # Installed apps
 # ----------------------------------------------------------------------
 INSTALLED_APPS = [
-    # First-party Django apps
-    'daphne',                           # ASGI server (must be first)
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -31,24 +37,31 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Third-party
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
     'channels',
     'django_filters',
 
-    # Project apps
-    'api',                              # authentication, system status, config endpoints
-    'web_dashboard',                    # HTML pages (dashboard, login, etc.)
-    'experiments',                      # Experiment & TrainingRun models, API
-    'jobscheduler',                     # Job scheduler, GPU management, custom metrics
-    'notes',                            # Researcher notebook (with versioning, webhooks)
-    'model_versioning',                 # Model versioning and Hugging Face Hub integration
+    # Your project apps (now accessible because Codes/ is on sys.path)
+    'api',
+    'web_dashboard',
+    'experiment',   # not 'experiments'
+
+    'jobscheduler',
+    'notes',                 # this will work if Codes/notes exists
+    'model_versioning',
+    
 ]
 
 # ----------------------------------------------------------------------
-# Middleware (order matters)
+# (Optional) Remove 'notes' if the directory does not exist
+# ----------------------------------------------------------------------
+# if not (CODES_DIR / 'notes').exists():
+#     INSTALLED_APPS.remove('notes')
+
+# ----------------------------------------------------------------------
+# Middleware
 # ----------------------------------------------------------------------
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -59,9 +72,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Optional: custom middleware for token auth on HTML pages and .well‑known
-    # 'web_dashboard.middleware.TokenAuthMiddleware',          # uncomment to protect pages
-    # 'web_dashboard.middleware.WellKnownIgnoreMiddleware',    # uncomment to suppress devtools probe
 ]
 
 # ----------------------------------------------------------------------
@@ -69,13 +79,10 @@ MIDDLEWARE = [
 # ----------------------------------------------------------------------
 ROOT_URLCONF = "django_api.urls"
 
-# ----------------------------------------------------------------------
-# Templates
-# ----------------------------------------------------------------------
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],      # global templates directory
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -88,22 +95,15 @@ TEMPLATES = [
     },
 ]
 
-# ----------------------------------------------------------------------
-# WSGI / ASGI
-# ----------------------------------------------------------------------
 WSGI_APPLICATION = "django_api.wsgi.application"
 ASGI_APPLICATION = "django_api.asgi.application"
 
-# Channels layer (in‑memory for development; use Redis in production)
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
 
-# ----------------------------------------------------------------------
-# Database (SQLite for development – can switch to PostgreSQL)
-# ----------------------------------------------------------------------
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -111,12 +111,9 @@ DATABASES = {
     }
 }
 
-# ----------------------------------------------------------------------
-# Authentication & REST Framework
-# ----------------------------------------------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'api.authentication.CookieTokenAuthentication',   # token from header or cookie
+        'api.authentication.CookieTokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -128,16 +125,10 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
-# ----------------------------------------------------------------------
-# CORS (allow all for development; restrict in production)
-# ----------------------------------------------------------------------
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [] if DEBUG else os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
 
-# ----------------------------------------------------------------------
-# Static & Media files
-# ----------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -145,17 +136,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# ----------------------------------------------------------------------
-# Internationalization
-# ----------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-# ----------------------------------------------------------------------
-# Logging
-# ----------------------------------------------------------------------
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -181,38 +166,17 @@ LOGGING = {
     },
 }
 
-# ----------------------------------------------------------------------
-# Optional: Hugging Face Hub and S3 Cold Storage
-# ----------------------------------------------------------------------
 HUGGINGFACE_TOKEN = os.environ.get("HF_TOKEN")
 HUGGINGFACE_USERNAME = os.environ.get("HF_USERNAME")
-MODEL_ARCHIVE_BUCKET = os.environ.get("MODEL_ARCHIVE_BUCKET")   # for S3 Glacier
+MODEL_ARCHIVE_BUCKET = os.environ.get("MODEL_ARCHIVE_BUCKET")
 
-# ----------------------------------------------------------------------
-# Scheduler settings (optional overrides)
-# ----------------------------------------------------------------------
 SCHEDULER_TOTAL_GPUS = int(os.environ.get("SCHEDULER_TOTAL_GPUS", 1))
 SCHEDULER_BOOST_WAIT_THRESHOLD = int(os.environ.get("SCHEDULER_BOOST_WAIT_THRESHOLD", 600))
 SCHEDULER_SHORT_JOB_THRESHOLD = int(os.environ.get("SCHEDULER_SHORT_JOB_THRESHOLD", 60))
 SCHEDULER_PREEMPT_TIMEOUT = int(os.environ.get("SCHEDULER_PREEMPT_TIMEOUT", 10))
 JOB_TIMEOUT_SECONDS = int(os.environ.get("JOB_TIMEOUT_SECONDS", 0))
 
-# ----------------------------------------------------------------------
-# API base URL (used by logger.py)
-# ----------------------------------------------------------------------
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
-
-# ----------------------------------------------------------------------
-# ML Token for logger (if needed)
-# ----------------------------------------------------------------------
 ML_TOKEN = os.environ.get("ML_TOKEN", "")
-
-# ----------------------------------------------------------------------
-# Login URL (for decorator @login_required, not used with token auth)
-# ----------------------------------------------------------------------
 LOGIN_URL = "/login/"
-
-# ----------------------------------------------------------------------
-# Django Admin
-# ----------------------------------------------------------------------
 ADMIN_SITE_HEADER = "Transformer Toolkit Admin"

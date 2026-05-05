@@ -1,4 +1,4 @@
-# project/urls.py (main project – e.g., backend/urls.py)
+# django_api/urls.py (main project)
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -15,18 +15,18 @@ def well_known_ignore(request):
 # Main URL patterns
 # ----------------------------------------------------------------------
 urlpatterns = [
-    # Admin interface (optional, can be disabled in production)
+    # Admin interface
     path('admin/', admin.site.urls),
 
-    # Web dashboard (all HTML pages: /, /dashboard/, /login/, /register/, /statistics/, etc.)
+    # Web dashboard (all HTML pages)
     path('', include('web_dashboard.urls')),
 
     # REST API endpoints (all under /api/)
-    path('api/', include('jobscheduler.urls')),      # job scheduling, metrics, config history
-    path('api/', include('notes.urls')),             # researcher notebook (v1 endpoints)
-    path('api/', include('api.urls')),               # authentication, system status, config lists
-    path('api/', include('experiments.urls')),       # experiments, training runs, snapshots
-    path('api/', include('model_versioning.urls')),  # model version management (add if exists)
+    path('api/', include('experiment.urls')),           # ✅ singular, matches your app folder
+    path('api/', include('jobscheduler.urls')),         # job scheduling, metrics
+    path('api/', include('notes.urls')),                # researcher notebook
+    path('api/', include('api.urls')),                  # authentication, system status
+    path('api/', include('model_versioning.urls')),     # model version management (if exists)
 
     # Chrome DevTools probe (avoids console errors)
     path('.well-known/appspecific/com.chrome.devtools.json', well_known_ignore),
@@ -38,9 +38,3 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-# ----------------------------------------------------------------------
-# Optional: custom error handlers (can be added if needed)
-# ----------------------------------------------------------------------
-# handler404 = 'web_dashboard.views.custom_404'
-# handler500 = 'web_dashboard.views.custom_500'
