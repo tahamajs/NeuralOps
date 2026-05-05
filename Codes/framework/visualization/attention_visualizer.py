@@ -10,7 +10,7 @@ import torch
 from matplotlib.colors import LinearSegmentedColormap
 from scipy.linalg import subspace_angles
 from typing import Optional, List, Dict, Any
-from .base_visualizer import BaseVisualizer
+from .base import BaseVisualizer
 
 
 class SVDAttentionVisualizer(BaseVisualizer):

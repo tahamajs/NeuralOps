@@ -67,7 +67,29 @@ class JSONFormatter(logging.Formatter):
                 log_entry[attr] = getattr(record, attr)
         return json.dumps(log_entry, ensure_ascii=False)
 
+# Inside experiment_logging/logger.py, after the existing code
+import json
 
+class MetricsTracker:
+    """Simple metrics tracker that saves metrics to a JSON file."""
+    def __init__(self, save_path: str):
+        self.save_path = save_path
+        self.metrics = []
+        self.step = 0
+
+    def log(self, metrics: dict, step: int = None):
+        if step is not None:
+            self.step = step
+        entry = {"step": self.step, **metrics}
+        self.metrics.append(entry)
+        self.step += 1
+
+    def save(self, path: str = None):
+        save_path = path or self.save_path
+        with open(save_path, "w") as f:
+            json.dump(self.metrics, f, indent=2)
+
+            
 def _build_run_dir(cfg: LoggingConfig) -> str:
     """Create and return the unique run directory path."""
     os.makedirs(cfg.log_base_dir, exist_ok=True)
