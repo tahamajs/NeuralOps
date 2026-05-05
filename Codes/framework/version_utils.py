@@ -1,8 +1,16 @@
-import subprocess, json, sys, pkg_resources
-from git import Repo
-import mlflow  # optional
+import subprocess, json, sys, importlib.metadata
+try:
+    from git import Repo
+except ImportError:
+    Repo = None
+try:
+    import mlflow
+except ImportError:
+    mlflow = None
 
 def get_git_info():
+    if Repo is None:
+        return None
     try:
         repo = Repo('.', search_parent_directories=True)
         return {
