@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 from framework.attentions.core.base import BaseAttention
 from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.attentions.core.utils import transpose_for_scores
 
 
 @dataclass
@@ -71,12 +72,6 @@ class OptimizedHybridAttention(BaseAttention):
         nn.init.normal_(self.compress_k.weight, std=0.02)
         nn.init.normal_(self.compress_v.weight, std=0.02)
 
-    def _transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
-        """(B, N, all_head_size) → (B, num_heads, N, head_dim)"""
-        new_shape = x.size()[:-1] + (self.num_heads, self.head_dim)
-        x = x.view(*new_shape)
-        return x.permute(0, 2, 1, 3)
-
     def _sliding_window_mask(self, seq_len: int, device: torch.device) -> torch.Tensor:
         """Boolean mask: True for positions within the window."""
         idx = torch.arange(seq_len, device=device)
@@ -93,9 +88,9 @@ class OptimizedHybridAttention(BaseAttention):
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
 
-        Q = self._transpose_for_scores(self.query(hidden_states))  # (B, H, N, D)
-        K = self._transpose_for_scores(self.key(hidden_states))
-        V = self._transpose_for_scores(self.value(hidden_states))
+        Q = transpose_for_scores(self.query(hidden_states), self.num_heads, self.head_dim)  # (B, H, N, D)
+        K = transpose_for_scores(self.key(hidden_states), self.num_heads, self.head_dim)
+        V = transpose_for_scores(self.value(hidden_states), self.num_heads, self.head_dim)
 
         # -----------------------------
         # Convert attention_mask to additive shape

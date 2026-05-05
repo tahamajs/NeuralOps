@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
+from framework.attentions.core.utils import softpick
+
 
 @dataclass
 class AEGISConfigV1:
@@ -26,17 +28,6 @@ class AEGISConfigV1:
     use_adaptive_gate: bool = True
     gate_init_bias: float = 1.5
     dropout: float = 0.1
-
-
-# ----------------------------------------------------------------------
-# Utility: Softpick
-# ----------------------------------------------------------------------
-def softpick(x: torch.Tensor, dim=-1, temperature=1.0):
-    m = x.max(dim=dim, keepdim=True).values
-    e = torch.exp((x - m) / temperature)
-    denom = e - torch.exp(-m / temperature)
-    p = F.relu(denom)
-    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
 
 
 # ----------------------------------------------------------------------
