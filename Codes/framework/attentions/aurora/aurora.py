@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple, List, Dict
 from dataclasses import dataclass
+from framework.attentions.core.base import BaseAttention
 
 
 # --------------------------------------------------------------------------
@@ -260,11 +261,11 @@ class ProxSparseMask(nn.Module):
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("aurora")
-class AURORAAttention(nn.Module):
+class AURORAAttention(BaseAttention):
     def __init__(self, model_config, aurora_cfg: AURORAConfig,
                  layer_idx: int = 0, total_layers: int = 6,
                  pretrained_attn=None, bert_mode: bool = False):
-        super().__init__()
+        super().__init__(model_config)
         self.cfg = aurora_cfg
         self.num_heads = model_config.num_attention_heads
         self.head_dim = model_config.hidden_size // self.num_heads

@@ -15,6 +15,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from framework.attentions.core.base import BaseAttention
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 from scipy.linalg import svd
 
 from transformers import (
@@ -141,7 +143,8 @@ def lagrangian_rank_allocation(
 # 3. SVD‑Compressed Attention module (updated)
 # =============================================================================
 
-class SVDCompressedAttention(nn.Module):
+@ATTENTION_REGISTRY.register("svd_compressed")
+class SVDCompressedAttention(BaseAttention):
     """
     Replaces a DistilBERT multi‑head attention layer with SVD‑factorised
     Q/K/V/O projections. Ranks are provided externally (pre‑computed).
@@ -156,7 +159,7 @@ class SVDCompressedAttention(nn.Module):
         add_sparse: bool = False,                # future: low‑rank + sparse
         sparsity_level: float = 0.7,
     ):
-        super().__init__()
+        super().__init__(model_config)
         self.num_heads = model_config.num_attention_heads
         self.head_dim = model_config.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim

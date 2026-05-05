@@ -8,10 +8,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
+from framework.attentions.core.base import BaseAttention
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
-class LEKAV3Attention(nn.Module):
+@ATTENTION_REGISTRY.register("leka_v3")
+class LEKAV3Attention(BaseAttention):
     def __init__(self, config, comp_config, layer_idx, total_layers=6, bert_mode=False):
-        super().__init__()
+        super().__init__(config)
         self.num_attention_heads = config.num_attention_heads
         self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
         self.all_head_size = self.num_attention_heads * self.attention_head_size

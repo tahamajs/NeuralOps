@@ -8,6 +8,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from dataclasses import dataclass
 from typing import Optional, Tuple, Literal
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from framework.attentions.core.base import BaseAttention
+from framework.attentions.core.registry import ATTENTION_REGISTRY
+
 @dataclass
 class AegisConfigV3:
     hidden_size: int = 768
@@ -377,12 +383,14 @@ class ContextFusionGate(nn.Module):
 
 
 # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 # Aegis‑Attention v3 Core
 # ----------------------------------------------------------------------
-class AegisAttentionV3(nn.Module):
+@ATTENTION_REGISTRY.register("aegis_v6")
+class AegisAttentionV3(BaseAttention):
     def __init__(self, config: AegisConfigV3,
                  pretrained_qkv: Optional[dict] = None):
-        super().__init__()
+        super().__init__(config)
         self.cfg = config
         self.h = config.num_heads
         self.d = config.head_dim
