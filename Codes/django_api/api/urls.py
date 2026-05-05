@@ -31,5 +31,6 @@ urlpatterns = [
     path("experiments/<uuid:pk>/", views.experiment_detail),
     path("train/", views.start_train),
     path("evaluate/", views.start_evaluate),
+    path("compress/", views.start_compress),
     path("runs/<uuid:pk>/", views.run_detail),
 ]
