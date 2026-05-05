@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
+from framework.attentions.core.base import BaseAttention
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 
 @dataclass
@@ -34,9 +36,10 @@ class SpectraConfig:
     aks_enabled: bool = True
 
 
-class SpectraV2Attention(nn.Module):
+@ATTENTION_REGISTRY.register("spectra_v2")
+class SpectraV2Attention(BaseAttention):
     def __init__(self, model_config, spectra_cfg: SpectraConfig, layer_idx: int, total_layers: int, bert_mode=False):
-        super().__init__()
+        super().__init__(model_config)
         self.num_heads = model_config.num_attention_heads
         self.head_dim = model_config.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
