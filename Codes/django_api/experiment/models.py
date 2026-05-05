@@ -1,4 +1,3 @@
-# experiments/models.py
 import uuid
 from django.db import models
 
@@ -12,6 +11,7 @@ class Experiment(models.Model):
     tags = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:
+        app_label = 'experiment'          # <-- ADD THIS LINE
         ordering = ['-created_at']
         indexes = [models.Index(fields=['created_at']), models.Index(fields=['tags'])]
 
@@ -47,6 +47,7 @@ class TrainingRun(models.Model):
     gpu_memory_mb = models.FloatField(null=True, blank=True)
 
     class Meta:
+        app_label = 'experiment'          # <-- ADD THIS LINE
         ordering = ['-created_at']
         indexes = [models.Index(fields=['experiment', 'status']), models.Index(fields=['job_type'])]
 
@@ -67,5 +68,6 @@ class TrainingSnapshot(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        app_label = 'experiment'          # <-- ADD THIS LINE
         ordering = ['run', 'step']
         unique_together = [['run', 'step']]

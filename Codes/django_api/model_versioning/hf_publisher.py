@@ -86,9 +86,8 @@ tokenizer = AutoTokenizer.from_pretrained("{self.repo_name}")
 model = AutoModelForSequenceClassification.from_pretrained("{self.repo_name}")
 model = AutoModelForSequenceClassification.from_pretrained("{self.repo_name}")
 """
-with open(os.path.join(output_dir, "README.md"), "w") as f:
-f.write(card)
+        with open(os.path.join(output_dir, "README.md"), "w") as f:
+            f.write(card)
 
-def publish(self):
-"""Upload model to Hugging Face Hub."""
-
+    def publish(self):
+        """Upload model to Hugging Face Hub."""
