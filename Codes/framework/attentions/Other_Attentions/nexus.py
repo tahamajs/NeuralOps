@@ -28,6 +28,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
+from framework.attentions.core.base import BaseAttention
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 from ..core.registry import ATTENTION_REGISTRY
 
 # ============================================================================
@@ -328,7 +330,8 @@ class SpectraformerRectify(nn.Module):
 # ============================================================================
 # 5. NEXUS Attention  Full Module
 # ============================================================================
-class NEXUSAttention(nn.Module):
+@ATTENTION_REGISTRY.register("nexus")
+class NEXUSAttention(BaseAttention):
     """
     NEXUS  Neural Efficient X‑scoring Unified Sparse Attention.
     Drop‑in replacement for DistilBERT `attention`.
@@ -336,7 +339,7 @@ class NEXUSAttention(nn.Module):
     def __init__(self, model_config, nexus_cfg: NEXUSConfig,
                  layer_idx: int = 0, total_layers: int = 6,
                  pretrained_attn=None, bert_mode: bool = False):
-        super().__init__()
+        super().__init__(model_config)
         self.num_heads = model_config.num_attention_heads
         self.head_dim = model_config.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim

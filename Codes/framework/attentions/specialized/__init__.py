@@ -15,6 +15,9 @@ from . import infini_attention
 from . import linformer_attention
 from . import nha_attention
 from . import vig_attention
+from . import spectra_v2
+from . import spectron
+from . import vspec
 
 # Optionally re‑export the classes for direct import
 try:

@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from dataclasses import dataclass
 from typing import Optional, Tuple
+from framework.attentions.core.base import BaseAttention
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 
 @dataclass
@@ -23,7 +25,8 @@ class OptimizedHybridAttentionConfig:
     layer_norm_eps: float = 1e-12
 
 
-class OptimizedHybridAttention(nn.Module):
+@ATTENTION_REGISTRY.register("oha")
+class OptimizedHybridAttention(BaseAttention):
     """
     OHA attention: local sliding‑window + low‑rank global context, fused by a
     learned gate.
@@ -34,7 +37,7 @@ class OptimizedHybridAttention(nn.Module):
     """
 
     def __init__(self, config: OptimizedHybridAttentionConfig):
-        super().__init__()
+        super().__init__(config)
         if config.hidden_size % config.num_attention_heads != 0:
             raise ValueError("hidden_size must be divisible by num_attention_heads")
 
