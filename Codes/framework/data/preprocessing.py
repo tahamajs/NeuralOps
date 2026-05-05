@@ -1,24 +1,25 @@
-# framework/data/preprocessing.py
-def preprocess_function(tokenizer, task_name=None, max_seq_length=128,
-                        sent1_key="text", sent2_key=None, is_regression=False,
-                        multi_choice_config=None):
-    """Return a preprocessing function for tokenization."""
-    if multi_choice_config:
-        # Multi‑choice is handled by MultiChoiceDataset, not here.
-        return lambda examples: examples
-
+def preprocess_function(tokenizer, task_name, max_seq_length, sent1_key, sent2_key, is_regression):
+    """
+    Returns a preprocessing function for GLUE tasks that works with batched=True.
+    """
     def _preprocess(examples):
-        if sent2_key is None:
-            texts = examples[sent1_key]
-        else:
-            texts = (examples[sent1_key], examples[sent2_key])
-        tokenized = tokenizer(*texts,
-                              truncation=True,
-                              padding="max_length",
-                              max_length=max_seq_length)
-        tokenized["labels"] = (
-            [float(l) for l in examples["label"]] if is_regression else
-            [int(l) for l in examples["label"]]
+        # Extract the text(s) - each is a list of strings
+        texts = (examples[sent1_key],)
+        if sent2_key is not None:
+            texts = texts + (examples[sent2_key],)
+
+        # Tokenize (works with batched inputs)
+        tokenized = tokenizer(
+            *texts,
+            truncation=True,
+            padding="max_length",
+            max_length=max_seq_length,
+            return_tensors=None,
         )
+        # Labels: examples["label"] is a list of ints/strings
+        if is_regression:
+            tokenized["labels"] = [float(x) for x in examples["label"]]
+        else:
+            tokenized["labels"] = [int(x) for x in examples["label"]]
         return tokenized
     return _preprocess

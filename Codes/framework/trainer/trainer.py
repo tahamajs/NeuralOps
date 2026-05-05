@@ -254,8 +254,13 @@ class CompressionTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
         outputs = model(**inputs)
         task_loss = outputs.loss
-        ortho_loss = model.get_ortho_loss()
+        if hasattr(model, 'get_ortho_loss'):
+            ortho_loss = model.get_ortho_loss()
+        else:
+            ortho_loss = torch.tensor(0.0, device=model.device)
+
         total_loss = task_loss + self.ortho_weight * ortho_loss
+
         return (total_loss, outputs) if return_outputs else total_loss
 
 

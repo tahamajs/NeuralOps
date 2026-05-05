@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-from ..core.registry import ATTENTION_REGISTRY
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("adaptive_span")
 class AdaptiveSpanAttention(nn.Module):

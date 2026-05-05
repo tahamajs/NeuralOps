@@ -1,7 +1,7 @@
 # framework/experiment/config.py
 import argparse
 import yaml
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from typing import Optional, Dict, Any
 
 @dataclass
@@ -32,6 +32,9 @@ class ExperimentConfig:
     llrd_decay: float = 0.95
     dislora_beta: float = 0.5
     dislora_capacity_factor: float = 1.0
+    log_base_dir: str = "./logs"   # <-- add this line (default same as log_dir)
+    run_id: Optional[str] = None   # <-- add this
+
     fisher_num_batches: int = 20
     fisher_sample_size: int = 200
     gelora_margin: float = 1.0
@@ -52,18 +55,21 @@ class ExperimentConfig:
     k_late: int = 12
     use_gate: bool = True
     progressive: bool = True
+    config: Optional[str] = None   # for YAML file path
 
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in self.__dict__.items() if not k.startswith('_')}
+
 
 def load_yaml_config(path: str) -> Dict[str, Any]:
     with open(path, 'r') as f:
         return yaml.safe_load(f)
 
+
 def build_config_from_args() -> ExperimentConfig:
     parser = argparse.ArgumentParser(description="Efficient Attention GLUE Runner")
     parser.add_argument("--config", type=str, default=None, help="YAML config file")
-    parser.add_argument("--model", type=str, default="distilbert-base-uncased")
+    parser.add_argument("--model_name", type=str, default="distilbert-base-uncased", help="Model name")  # ← renamed
     parser.add_argument("--attn_type", type=str, required=True)
     parser.add_argument("--method", type=str, default="baseline")
     parser.add_argument("--compressor", type=str, default=None)
@@ -107,16 +113,23 @@ def build_config_from_args() -> ExperimentConfig:
     parser.add_argument("--no_gate", action="store_true")
 
     args = parser.parse_args()
+    # Start with command‑line args dictionary
+    cfg_dict = vars(args)
+
+    # If YAML config provided, load and override with CLI (CLI takes precedence)
     if args.config:
         yaml_cfg = load_yaml_config(args.config)
-        # Override with command line arguments (CLI takes precedence)
-        for key, value in vars(args).items():
+        # Merge: yaml_cfg first, then CLI overrides
+        for key, value in cfg_dict.items():
             if value is not None and key != 'config':
                 yaml_cfg[key] = value
         cfg_dict = yaml_cfg
-    else:
-        cfg_dict = vars(args)
 
-    # Convert to ExperimentConfig dataclass
-    cfg_dict['use_gate'] = not cfg_dict.get('no_gate', False)  # fix flag
-    return ExperimentConfig(**cfg_dict)
+    # Fix the no_gate vs use_gate
+    cfg_dict['use_gate'] = not cfg_dict.get('no_gate', False)
+
+    # Filter to only keys that exist in ExperimentConfig fields
+    valid_field_names = {f.name for f in fields(ExperimentConfig)}
+    filtered_dict = {k: v for k, v in cfg_dict.items() if k in valid_field_names}
+
+    return ExperimentConfig(**filtered_dict)

@@ -1,33 +1,48 @@
-# framework/experiment/main.py
 #!/usr/bin/env python
 """
 Efficient Attention Framework – GLUE Fine‑Tuning
 Usage: python -m framework.experiment.main --attn_type nexus --method lora --task sst2
 """
-
-import os
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import logging
 import torch
 from framework.experiment.config import build_config_from_args
 from framework.experiment.data import load_and_preprocess_data
 from framework.experiment.model import load_model
 from framework.experiment.train import setup_trainer
-from experiment_logging import setup_logging, MetricsTracker
+from experiment_logging.logger import setup_logging, MetricsTracker, LoggingConfig
 from framework.utils.seed import set_all_seeds
 from framework.utils.device import get_device
 
 # Environment (offline, optional)
-os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
-os.environ["HF_HOME"] = "./models"
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
+# os.environ["HF_HOME"] = "./models"
+# os.environ["HF_HUB_OFFLINE"] = "1"
+# os.environ["TRANSFORMERS_OFFLINE"] = "1"
+# os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 def main():
     cfg = build_config_from_args()
 
     exp_name = cfg.exp_name or f"{cfg.attn_type}_{cfg.method}_{cfg.task}_{cfg.seed}"
-    logger = setup_logging(log_dir=cfg.log_dir, experiment_name=exp_name)
+    # Ensure necessary attributes exist for the logger
+    if not hasattr(cfg, 'log_base_dir'):
+        cfg.log_base_dir = cfg.log_dir
+    if not hasattr(cfg, 'use_timestamp'):
+        cfg.use_timestamp = True
+    if not hasattr(cfg, 'run_id'):
+        cfg.run_id = None
+
+    # Build LoggingConfig from ExperimentConfig
+    log_cfg = LoggingConfig(
+        log_base_dir=cfg.log_base_dir,
+        experiment_name=exp_name,
+        run_id=cfg.run_id,
+        use_timestamp=cfg.use_timestamp,
+    )
+    logger = setup_logging(log_cfg)
+
     tracker = MetricsTracker(save_path=os.path.join(cfg.log_dir, f"{exp_name}_metrics.json"))
 
     logger.info("══════════════════════════════════════")
@@ -47,7 +62,7 @@ def main():
     logger.info(f"Train: {len(dataset['train'])}, Val: {len(dataset.get('validation', []))}")
 
     # Model
-    model = load_model(cfg)
+    model = load_model(cfg, num_labels, device)
     model.to(device)
 
     # Trainer

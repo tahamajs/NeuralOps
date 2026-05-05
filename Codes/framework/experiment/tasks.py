@@ -8,8 +8,9 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
 from django.conf import settings
-from .models import Experiment
-from framework.experiment import run_training, run_evaluation, run_compression
+# from .models import Experiment
+# from framework.experiment import run_training, run_evaluation, run_compression
+from framework.experiment.train import setup_trainer
 
 # -------------------------------------------------------------------------
 # WebSocket broadcaster (thread‑safe)

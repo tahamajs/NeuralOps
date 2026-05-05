@@ -1,5 +1,10 @@
 import os, torch
-from .models import ModelVersion
+try:
+    from model_versioning.models import ModelVersion
+except ImportError:
+    # Use dummy when running without Django or if import path differs
+    class ModelVersion:
+        objects = None
 
 class ModelVersionService:
     @staticmethod

@@ -14,30 +14,57 @@ GLUE_TASK_KEYS = {
     "wnli": ("sentence1", "sentence2"),
 }
 
+# framework/data/glue_loader.py
+import os
+from datasets import Dataset, DatasetDict
+
 def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
-    """Load a GLUE task from local Parquet files."""
+    """
+    Load a GLUE task from local Parquet files (supports Hugging Face cache naming).
+    Looks for any .parquet file in task_path and assigns split based on filename.
+    """
     task_path = os.path.join(base_path, task_name)
     if not os.path.exists(task_path):
-        raise FileNotFoundError(f"Local path {task_path} not found")
+        raise FileNotFoundError(f"Directory not found: {task_path}")
+
+    # Map filename substrings to split names
+    split_map = {
+        "train": "train",
+        "validation": "validation",
+        "test": "test",
+        "dev": "validation",      # in case dev appears
+        "valid": "validation",
+    }
 
     splits = {}
     for fname in os.listdir(task_path):
         if not fname.endswith(".parquet"):
             continue
-        # Assume naming: train.parquet, validation.parquet, test.parquet
-        split = fname.replace(".parquet", "")
-        splits[split] = Dataset.from_parquet(os.path.join(task_path, fname))
+        # Try to determine split from filename
+        found_split = None
+        for key, split_name in split_map.items():
+            if key in fname.lower():
+                found_split = split_name
+                break
+        if found_split:
+            splits[found_split] = Dataset.from_parquet(os.path.join(task_path, fname))
 
-    # Special handling for MNLI (validation_matched, validation_mismatched)
+    # If no splits found, raise error
+    if not splits:
+        raise RuntimeError(f"No Parquet files found in {task_path}")
+
+    # Special handling for MNLI matched/mismatched
     if task_name == "mnli":
         for special in ["validation_matched", "validation_mismatched"]:
-            fpath = os.path.join(task_path, f"{special}.parquet")
-            if os.path.exists(fpath):
-                splits[special] = Dataset.from_parquet([fpath])
+            for fname in os.listdir(task_path):
+                if special in fname and fname.endswith(".parquet"):
+                    splits[special] = Dataset.from_parquet(os.path.join(task_path, fname))
 
     if "train" not in splits:
-        raise RuntimeError(f"No 'train' split in {task_name}")
+        raise RuntimeError(f"No 'train' split found in {task_path}. Available: {list(splits.keys())}")
+
     return DatasetDict(splits)
+
 
 def get_num_labels_and_is_regression(task_name: str):
     """Return (num_labels, is_regression) for GLUE tasks."""
