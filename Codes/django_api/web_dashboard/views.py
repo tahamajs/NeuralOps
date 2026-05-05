@@ -17,7 +17,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
-from experiments.models import Experiment, TrainingRun
+from api.models import Experiment, TrainingRun
 
 # ---------- Web Page Views ----------
 def index(request):

@@ -86,9 +86,30 @@ This model was trained using the Transformer Pro Toolkit.
 - **F1 Score**: {metrics.get('eval_f1', 'N/A')}
 - **Loss**: {metrics.get('eval_loss', 'N/A')}
 
-## How to Use
-```python
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+"""
+        
 
-tokenizer = AutoTokenizer.from_pretrained("{self.repo_name}")
-model = AutoModelForSequenceClassification.from_pretrained("{self.repo_name}")
+
+def cleanup_old_versions(model_version, keep_last_n=5):
+    """
+    Delete older model versions for the same run, keeping only the most recent `keep_last_n`.
+    This helps manage disk space and storage costs.
+    """
+    from .models import ModelVersion
+    run = model_version.run
+    # Get all versions for this run, ordered by version_number descending
+    versions = ModelVersion.objects.filter(run=run).order_by('-version_number')
+    to_delete = versions[keep_last_n:]  # older ones beyond keep_last_n
+    deleted_count = 0
+    for v in to_delete:
+        try:
+            # Delete local artifact if it exists
+            if v.storage_tier == 'hot' and v.artifact_path and os.path.exists(v.artifact_path):
+                shutil.rmtree(v.artifact_path)
+            v.delete()
+            deleted_count += 1
+        except Exception as e:
+            logger.error(f"Failed to delete model version {v.id}: {e}")
+    if deleted_count:
+        logger.info(f"Cleaned up {deleted_count} old version(s) for run {run.id}")
+    return deleted_count
