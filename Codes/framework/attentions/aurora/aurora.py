@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from typing import Optional, Tuple, List, Dict
 from dataclasses import dataclass
 from framework.attentions.core.base import BaseAttention
+from framework.attentions.core.utils import softpick, select_rank_svd
 
 
 # --------------------------------------------------------------------------
@@ -74,24 +75,6 @@ class AURORAConfig:
 # --------------------------------------------------------------------------
 # Utility components
 # --------------------------------------------------------------------------
-def _select_rank_svd(W: torch.Tensor, energy: float, min_r: int = 4) -> int:
-    """Energy‑thresholded rank from singular values."""
-    with torch.no_grad():
-        _, S, _ = torch.linalg.svd(W.float(), full_matrices=False)
-        total = (S ** 2).sum()
-        cum = torch.cumsum(S ** 2, dim=0) / total
-        r = int(torch.searchsorted(cum, energy).item()) + 1
-        return max(min_r, min(r, min(W.shape[0], W.shape[1])))
-
-
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    """Rectified softmax — ~47% sparse, no attention sink."""
-    m = x.max(dim=dim, keepdim=True).values
-    e = torch.exp((x - m) / temperature)
-    denom = e - torch.exp(-m / temperature)
-    p = F.relu(denom)
-    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
-
 
 class DeltaKVStore:
     """Residual KV reference store (DeltaKV, arXiv 2602.08005)."""
@@ -178,8 +161,8 @@ class QSLProjection(nn.Module):
         out_dim, in_dim = W_pretrained.shape
         self.out_dim, self.in_dim = out_dim, in_dim
 
+        self.lr_rank = select_rank_svd(W_pretrained, energy)
         U, S, Vt = torch.linalg.svd(W_pretrained.float(), full_matrices=False)
-        self.lr_rank = _select_rank_svd(W_pretrained, energy)
         self.A = nn.Parameter((U[:, :self.lr_rank] * S[:self.lr_rank].unsqueeze(0)).float())
         self.B = nn.Parameter(Vt[:self.lr_rank, :].float())
 
