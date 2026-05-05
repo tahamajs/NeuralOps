@@ -11,6 +11,7 @@ from typing import Optional, Tuple
 from dataclasses import dataclass
 from framework.attentions.core.base import BaseAttention
 from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.attentions.core.utils import softpick
 
 
 @dataclass
@@ -571,16 +572,6 @@ class LEKAv2Attention(nn.Module):
         )
         return K_land, V_land
 
-    # ── Softpick rectified softmax (arXiv 2504.20966, 2025) ────────
-    @staticmethod
-    def softpick(x, dim=-1, temperature=1.0):
-        """~47 % sparse, no attention sink."""
-        m = x.max(dim=dim, keepdim=True).values
-        e = torch.exp((x - m) / temperature)
-        denom = e - torch.exp(-m / temperature)
-        p = F.relu(denom)
-        return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
-
     # ── Main forward pass ───────────────────────────────────────────
     def forward(
         self,
@@ -651,7 +642,7 @@ class LEKAv2Attention(nn.Module):
             )
 
         # 6. Softpick rectified softmax
-        attn_weights = self.softpick(attn_weights, dim=-1)
+        attn_weights = softpick(attn_weights, dim=-1)
         attn_weights = self.dropout(attn_weights)
 
         # 7. LEKA context
