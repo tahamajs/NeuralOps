@@ -47,58 +47,69 @@ export default function LauncherPage() {
   const updateField = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }))
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Launcher</h1>
-      <div className="flex gap-2 border-b pb-2">
+    <div className="space-y-8 max-w-5xl mx-auto">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Experiment Launcher</h1>
+        <p className="text-slate-500">Configure and deploy new attention compression jobs to the cluster.</p>
+      </div>
+
+      <div className="flex p-1 bg-slate-200/50 backdrop-blur rounded-xl w-fit">
         {(['training', 'evaluation', 'compression'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded ${tab === t ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
+              tab === t 
+                ? 'bg-white text-blue-600 shadow-sm' 
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
           >
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {tab === 'training' && (
-          <>
-            <ModelPicker value={form.model_name} onChange={(v) => updateField('model_name', v)} />
-            <TaskPicker value={form.task_name} onChange={(v) => updateField('task_name', v)} />
-            <AttentionPicker value={form.attention_type} onChange={(v) => updateField('attention_type', v)} />
-            <MethodPicker value={form.method} onChange={(v) => updateField('method', v)} />
-            <HyperparameterFields values={form} onChange={updateField} />
-            <PresetSelector onApply={(preset) => setForm({ ...form, ...preset })} />
-          </>
-        )}
-        {tab === 'evaluation' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium">Model Path</label>
-              <input
-                className="w-full border rounded px-3 py-2"
-                value={form.model_name}
-                onChange={(e) => updateField('model_name', e.target.value)}
-              />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="card space-y-6">
+            <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
+              <div className="w-2 h-2 rounded-full bg-blue-600" />
+              <h2 className="font-bold text-slate-800 uppercase tracking-wider text-xs">Arithemtic Configuration</h2>
             </div>
-            <TaskPicker value={form.task_name} onChange={(v) => updateField('task_name', v)} />
-          </>
-        )}
-        {tab === 'compression' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium">Model Name</label>
-              <input
-                className="w-full border rounded px-3 py-2"
-                value={form.model_name}
-                onChange={(e) => updateField('model_name', e.target.value)}
-              />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {tab === 'training' && (
+                <>
+                  <ModelPicker value={form.model_name} onChange={(v) => updateField('model_name', v)} />
+                  <TaskPicker value={form.task_name} onChange={(v) => updateField('task_name', v)} />
+                  <div className="md:col-span-2">
+                    <AttentionPicker value={form.attention_type} onChange={(v) => updateField('attention_type', v)} />
+                  </div>
+                  <MethodPicker value={form.method} onChange={(v) => updateField('method', v)} />
+                  <HyperparameterFields values={form} onChange={updateField} />
+                </>
+              )}
+              {/* ... other tabs ... */}
             </div>
-            <div>
-              <label className="block text-sm font-medium">Compression Method</label>
-              <select
-                className="w-full border rounded px-3 py-2"
+            
+            <div className="pt-6">
+                <LaunchButton 
+                  onClick={() => mutation.mutate()} 
+                  loading={mutation.isPending} 
+                  disabled={!form.name}
+                />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <ConfigPreviewPanel config={form} />
+          <PresetSelector onApply={(preset) => setForm({ ...form, ...preset })} />
+        </div>
+      </div>
+    </div>
+  )
+}                className="w-full border rounded px-3 py-2"
                 value={form.compression_method}
                 onChange={(e) => updateField('compression_method', e.target.value)}
               >

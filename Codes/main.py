@@ -13,7 +13,7 @@ from transformers import (
 )
 
 import os
-os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
+# os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
 os.environ["HF_HOME"] = "./models"
 # ~~~~~~~~~~~~~~ Environment (offline) ~~~~~~~~~~~~~~
 os.environ["HF_HUB_OFFLINE"] = "1"
