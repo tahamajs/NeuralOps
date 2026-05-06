@@ -1,9 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
+import React, { Suspense, lazy } from 'react'
 import api from '../api/client'
 import MetricSummaryCards from '../components/MetricSummaryCards'
-import ExperimentTable from '../components/ExperimentTable'
-import ActiveJobsWidget from '../components/ActiveJobsWidget'
-import SystemResourcesWidget from '../components/SystemResourcesWidget'
+
+const ExperimentTable = lazy(() => import('../components/ExperimentTable'))
+const ActiveJobsWidget = lazy(() => import('../components/ActiveJobsWidget'))
+const SystemResourcesWidget = lazy(() => import('../components/SystemResourcesWidget'))
+
+const LoadingCard = () => (
+  <div className="glass-card animate-pulse h-48 flex items-center justify-center">
+    <div className="text-slate-600 font-black tracking-widest text-[10px]">INITIALIZING_WIDGET...</div>
+  </div>
+)
 
 export default function DashboardPage() {
   const { data: experiments = [] } = useQuery({
@@ -47,7 +55,9 @@ export default function DashboardPage() {
               <button className="text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors">VIEW ALL →</button>
             </div>
             <div className="overflow-x-auto">
-              <ExperimentTable experiments={experiments.slice(0, 8)} />
+              <Suspense fallback={<LoadingCard />}>
+                <ExperimentTable experiments={experiments.slice(0, 8)} />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -67,8 +77,13 @@ export default function DashboardPage() {
             </div>
           </div>
           
-          <ActiveJobsWidget experiments={experiments} />
-          <SystemResourcesWidget />
+          <Suspense fallback={<LoadingCard />}>
+            <ActiveJobsWidget experiments={experiments} />
+          </Suspense>
+
+          <Suspense fallback={<LoadingCard />}>
+            <SystemResourcesWidget />
+          </Suspense>
         </div>
       </div>
     </div>

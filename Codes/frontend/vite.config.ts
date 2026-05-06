@@ -29,7 +29,22 @@ export default defineConfig({
 
     build: {
         outDir: 'dist',
-        sourcemap: true,
+        sourcemap: false,
         minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true,
+            },
+        },
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query'],
+                    charts: ['plotly.js-dist-min'],
+                },
+            },
+        },
+        chunkSizeWarningLimit: 1000,
     },
 })

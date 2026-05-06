@@ -1,9 +1,12 @@
 # framework/attentions/core/registry.py
+from functools import lru_cache
 
 class Registry:
     def __init__(self, name):
         self.name = name
         self._dict = {}
+        self._keys_cache = None
+        self._cache_version = 0
 
     def register(self, key=None):
         def decorator(obj):
@@ -11,6 +14,8 @@ class Registry:
             if key is None:
                 key = obj.__name__
             self._dict[key] = obj
+            self._cache_version += 1  # Invalidate cache on new registration
+            self._keys_cache = None
             return obj
         return decorator
 
@@ -18,7 +23,10 @@ class Registry:
         return self._dict.get(key)
 
     def keys(self):
-        return list(self._dict.keys())
+        # Cache the keys list to avoid repeated list() conversions
+        if self._keys_cache is None:
+            self._keys_cache = list(self._dict.keys())
+        return self._keys_cache
 
     def __contains__(self, key):
         return key in self._dict
