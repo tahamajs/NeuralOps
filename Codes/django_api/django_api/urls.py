@@ -10,7 +10,7 @@ def well_known_ignore(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('web_dashboard.urls')),
-    path('api/', include('api.urls')),                  # ← this will pick up api/urls.py
+    path('api/', include('api.urls')),
     path('api/notes/', include('notes.urls')),
     path('api/model-versioning/', include('model_versioning.urls')),
     path('.well-known/appspecific/com.chrome.devtools.json', well_known_ignore),
