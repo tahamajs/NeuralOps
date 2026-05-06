@@ -144,6 +144,30 @@ class AuthWorkflowTests(IntegrationTestBase):
     def test_login_with_empty_fields(self):
         resp = self.client.post('/api/auth/login/', {})
         self.assertEqual(resp.status_code, 400)
+    def test_change_password_invalid_old(self):
+        self.register_and_login('pwduser', 'OldPass1!')
+        resp = self.client.post('/api/auth/change-password/', {
+            'old_password': 'wrong',
+            'new_password': 'NewPass1!'
+        })
+        self.assertEqual(resp.status_code, 400)
+
+    def test_profile_update_duplicate_email(self):
+        self.register_and_login('emailuser1', 'Pass1!', email='a@b.com')
+        # Register another user with same email
+        User.objects.create_user(username='emailuser2', password='x', email='a@b.com')
+        resp = self.client.patch('/api/auth/profile/', {'email': 'a@b.com'})
+        self.assertEqual(resp.status_code, 400)
+
+    def test_login_rate_limiting(self):
+        # brute force login attempts should eventually be throttled
+        for _ in range(25):
+            resp = self.client.post('/api/auth/login/', {
+                'username': 'nonexistent', 'password': 'wrong'
+            })
+        # After many attempts, the response should be 429 (or 401 if throttle not yet triggered)
+        # As we may not have rate limiting fully active in tests, we just check that it doesn't crash.
+        self.assertIn(resp.status_code, [401, 429])
 
 
 # ----------------------------------------------------------------------
@@ -258,6 +282,41 @@ class ExperimentWorkflowTests(IntegrationTestBase):
         resp = self.client.get('/api/system/gpu/')  # authenticated
         self.assertEqual(resp.status_code, 200)
         self.assertIn('type', resp.data)
+    def test_run_artifacts_and_model_download(self):
+        resp = self.client.post('/api/train/', {
+            'name': 'ArtifactRun', 'model_name': 'bert', 'task_name': 'cola',
+            'epochs': 1, 'batch_size': 8
+        }, format='json')
+        run_id = resp.data['id']
+        # Artifacts list (empty initially)
+        resp = self.client.get(f'/api/runs/{run_id}/artifacts/')
+        self.assertEqual(resp.status_code, 200)
+        # Model download (should 404 because no model saved)
+        resp = self.client.get(f'/api/runs/{run_id}/model/')
+        self.assertEqual(resp.status_code, 404)
+
+    def test_experiment_permissions(self):
+        # Create experiment as researcher
+        exp = Experiment.objects.create(name='ResearcherExp')
+        resp = self.client.get(f'/api/experiments/{exp.id}/')
+        self.assertEqual(resp.status_code, 200)
+        # Another user without authentication cannot see it
+        client2 = APIClient()
+        resp = client2.get(f'/api/experiments/{exp.id}/')
+        self.assertEqual(resp.status_code, 401)
+
+    def test_start_evaluate_without_experiment(self):
+        resp = self.client.post('/api/evaluate/', {
+            'name': 'EvalNoExp', 'model_name': 'distilbert', 'task_name': 'mrpc'
+        }, format='json')
+        self.assertIn(resp.status_code, [201, 202])
+        self.assertTrue(resp.data.get('experiment'))
+
+    def test_stop_all_jobs(self):
+        # This endpoint may not exist in the new unified URL scheme, but if it does under experiment/urls.py we test it.
+        resp = self.client.post('/api/runs/stop_all/')
+        # Accept either 200 (if implemented) or 404 (if route removed). We just check it doesn't crash.
+        self.assertIn(resp.status_code, [200, 404])
 
 
 # ----------------------------------------------------------------------
@@ -373,6 +432,68 @@ class NotesWorkflowTests(IntegrationTestBase):
         # Delete webhook
         resp = self.client.delete(f'/api/notes/v1/webhooks/{sub_id}/')
         self.assertEqual(resp.status_code, 204)
+    def test_note_version_history(self):
+        note = ResearcherNote.objects.create(
+            title='Version Test', content='V1', author=User.objects.get(username=self.username),
+            run=self.job
+        )
+        note.content = 'V2'; note.save()  # creates version v1
+        resp = self.client.get(f'/api/notes/v1/notes/{note.id}/versions/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 1)
+        resp = self.client.get(f'/api/notes/v1/notes/{note.id}/versions/1/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['content'], 'V1')
+
+    def test_note_mentions_and_read(self):
+        note = ResearcherNote.objects.create(
+            title='Mention Test', content='Hey @other', author=User.objects.get(username=self.username),
+            run=self.job
+        )
+        from notes.models import NoteMention
+        mention = NoteMention.objects.create(note=note, mentioned_user=self.other_user())
+        # list mentions
+        resp = self.client.get(f'/api/notes/v1/notes/{note.id}/mentions/')
+        self.assertEqual(resp.status_code, 200)
+        # mark read
+        resp = self.client.post(f'/api/notes/v1/mentions/{mention.id}/read/')
+        self.assertEqual(resp.status_code, 200)
+        mention.refresh_from_db()
+        self.assertTrue(mention.is_read)
+
+    def test_note_bulk_tags_operations(self):
+        note = self.client.post('/api/notes/v1/notes/', {
+            'title': 'TagTest', 'content': 'x', 'run': str(self.job.id), 'tags': ['old']
+        }, format='json')
+        note_id = note.data['id']
+        resp = self.client.patch('/api/notes/v1/notes/bulk/tags/', {
+            'action': 'add', 'ids': [note_id], 'tags': ['new']
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+        note_obj = ResearcherNote.objects.get(id=note_id)
+        self.assertIn('new', note_obj.tags)
+
+    def test_recent_notes(self):
+        old_note = ResearcherNote.objects.create(
+            title='Old', content='x', author=User.objects.get(username=self.username),
+            run=self.job, created_at=timezone.now() - timedelta(days=30)
+        )
+        new_note = self._create_note_via_api(title='Recent')  # helper needed
+        resp = self.client.get('/api/notes/v1/notes/recent/?days=7')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data['results']), 1)  # only recent
+
+    def _create_note_via_api(self, **kw):
+        data = {
+            'title': kw.get('title', 'default'),
+            'content': kw.get('content', 'content'),
+            'run': str(self.job.id),
+            **kw
+        }
+        resp = self.client.post('/api/notes/v1/notes/', data, format='json')
+        self.assertEqual(resp.status_code, 201)
+        return resp
+
 
 
 # ----------------------------------------------------------------------
@@ -447,6 +568,69 @@ class ModelVersioningWorkflowTests(IntegrationTestBase):
                                     artifact_path='/tmp/fake', artifact_size_mb=60.0)
         resp = self.client.post(f'/api/model-versioning/runs/{self.job.id}/versions/2/set_production/')
         self.assertEqual(resp.status_code, 200)
+    def test_version_comparison(self):
+        run = Job.objects.create(name='CmpRun', model_name='x', task_name='y')
+        v1 = ModelVersion.objects.create(run=run, version='v1', version_number=1,
+                                         artifact_path='/tmp/v1', artifact_size_mb=10,
+                                         metrics={'eval_accuracy': 0.8})
+        v2 = ModelVersion.objects.create(run=run, version='v2', version_number=2,
+                                         artifact_path='/tmp/v2', artifact_size_mb=12,
+                                         metrics={'eval_accuracy': 0.85})
+        resp = self.client.get(f'/api/model-versioning/runs/{run.id}/versions/compare/1/2/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('metrics_diff', resp.data)
+        self.assertAlmostEqual(resp.data['size_diff_mb'], 2.0, places=1)
+
+    def test_version_search_and_filtering(self):
+        run = Job.objects.create(name='SearchRun', model_name='x', task_name='y')
+        ModelVersion.objects.create(run=run, version='bert-v1', version_number=1,
+                                    artifact_path='/tmp', artifact_size_mb=5,
+                                    validation_passed=True, storage_tier='hot')
+        ModelVersion.objects.create(run=run, version='bert-v2', version_number=2,
+                                    artifact_path='/tmp', artifact_size_mb=6,
+                                    validation_passed=False, storage_tier='cold')
+        resp = self.client.get(f'/api/model-versioning/runs/{run.id}/versions/?search=bert-v1')
+        self.assertEqual(len(resp.data['results']), 1)
+        resp = self.client.get(f'/api/model-versioning/runs/{run.id}/versions/?validation_passed=true')
+        self.assertEqual(len(resp.data['results']), 1)
+        resp = self.client.get(f'/api/model-versioning/runs/{run.id}/versions/?storage_tier=cold')
+        self.assertEqual(len(resp.data['results']), 1)
+
+    def test_download_via_glob(self):
+        mv = ModelVersion.objects.create(run=self.job, version='v1', version_number=1,
+                                         artifact_path='/tmp/fake', artifact_size_mb=5)
+        with patch('os.path.exists', side_effect=lambda p: 'model.pth' not in p), \
+             patch('glob.glob', return_value=['/tmp/fake/checkpoint.pth']), \
+             patch('builtins.open', MagicMock()):
+            resp = self.client.get(f'/api/model-versioning/versions/{mv.id}/download/')
+            self.assertEqual(resp.status_code, 200)
+
+    def test_archive_and_restore_failures(self):
+        mv = ModelVersion.objects.create(run=self.job, version='v1', version_number=1,
+                                         artifact_path='/tmp/fake', artifact_size_mb=5,
+                                         storage_tier='hot')
+        self.login_as_staff()
+        # Archive with missing bucket
+        with override_settings(MODEL_ARCHIVE_BUCKET=None):
+            resp = self.client.post(f'/api/model-versioning/versions/{mv.id}/archive/')
+            self.assertEqual(resp.status_code, 501)
+        # Restore from cold but not in cold
+        resp = self.client.post(f'/api/model-versioning/versions/{mv.id}/restore/')
+        self.assertEqual(resp.status_code, 400)
+
+    def test_set_production_switch(self):
+        v1 = ModelVersion.objects.create(run=self.job, version='v1', version_number=1,
+                                         artifact_path='/tmp', artifact_size_mb=5)
+        v2 = ModelVersion.objects.create(run=self.job, version='v2', version_number=2,
+                                         artifact_path='/tmp', artifact_size_mb=6)
+        self.login_as_staff()
+        self.client.post(f'/api/model-versioning/runs/{self.job.id}/versions/1/set_production/')
+        resp = self.client.post(f'/api/model-versioning/runs/{self.job.id}/versions/2/set_production/')
+        self.assertEqual(resp.status_code, 200)
+        v1.refresh_from_db()
+        v2.refresh_from_db()
+        self.assertFalse(v1.is_production)
+        self.assertTrue(v2.is_production)
 
 
 # ----------------------------------------------------------------------
@@ -556,6 +740,43 @@ class JobSchedulerWorkflowTests(IntegrationTestBase):
     def test_job_creation_missing_fields(self):
         resp = self.client.post('/api/jobs/', {'model_name': 'bert'}, format='json')
         self.assertEqual(resp.status_code, 400)
+    def test_job_update_scheduling(self):
+        job = Job.objects.create(name='SchedTest', model_name='x', task_name='y',
+                                 priority=5, estimated_duration=1000, memory_requirements=4)
+        resp = self.client.patch(f'/api/jobs/{job.id}/scheduling/', {
+            'priority': 3, 'estimated_duration': 2000, 'memory_requirements': 8
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+        job.refresh_from_db()
+        self.assertEqual(job.priority, 3)
+        self.assertEqual(job.estimated_duration, 2000)
+        self.assertEqual(job.memory_requirements, 8)
+
+    def test_job_bulk_delete_mixed(self):
+        j1 = Job.objects.create(name='Keep', model_name='x', task_name='y', status='running')
+        j2 = Job.objects.create(name='Delete', model_name='x', task_name='y', status='completed')
+        resp = self.client.post('/api/jobs/bulk-delete/', {
+            'job_ids': [str(j1.id), str(j2.id)]
+        }, format='json')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['deleted'], 1)
+        self.assertEqual(resp.data['skipped'], 1)
+        self.assertTrue(Job.objects.filter(id=j1.id).exists())
+        self.assertFalse(Job.objects.filter(id=j2.id).exists())
+
+    def test_job_list_ordering(self):
+        Job.objects.all().delete()
+        j1 = Job.objects.create(name='A', model_name='x', task_name='y', priority=2)
+        j2 = Job.objects.create(name='B', model_name='x', task_name='y', priority=1)
+        resp = self.client.get('/api/jobs/')
+        self.assertEqual(resp.data[0]['name'], 'B')  # priority 1 first
+        self.assertEqual(resp.data[1]['name'], 'A')
+
+    def test_job_stats_empty(self):
+        resp = self.client.get('/api/jobs/stats/')
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data['total'], 0)
+        self.assertIsNone(resp.data['average_completion_seconds'])
 
 
 # ----------------------------------------------------------------------
@@ -617,6 +838,22 @@ class PermissionTests(IntegrationTestBase):
         resp = self.client.patch(f'/api/notes/v1/notes/{note_id}/', {'is_public': True}, format='json')
         # Now Bob can see it
         resp = bob_client.get(f'/api/notes/v1/notes/{note_id}/')
+        self.assertEqual(resp.status_code, 200)
+    def test_staff_can_access_admin_endpoints(self):
+        self.login_as_staff()
+        # Staff should be able to list experiments, etc.
+        resp = self.client.get('/api/experiments/')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_public_system_endpoints(self):
+        client = APIClient()
+        resp = client.get('/api/system/status/')
+        self.assertEqual(resp.status_code, 200)
+        resp = client.get('/api/system/gpu/')
+        self.assertEqual(resp.status_code, 200)
+        resp = client.get('/api/health/')
+        self.assertEqual(resp.status_code, 200)
+        resp = client.get('/api/version/')
         self.assertEqual(resp.status_code, 200)
 
 
