@@ -122,12 +122,12 @@ class ResearcherNote(models.Model):
         if not is_new and old_content is not None and old_content != self.content:
             NoteVersion.objects.create(
                 note=self,
-                version_number=self.version - 1,  # version before increment
+                version_number=self.version,          # was self.version - 1
                 content_snapshot=old_content,
                 changed_by=self.author,
                 change_reason="auto"
             )
-            self.increment_version()
+            self.increment_version()                # now version becomes self.version + 1
         
         # Trigger webhook events
         from .webhook_utils import trigger_webhook_event
