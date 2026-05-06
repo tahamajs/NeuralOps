@@ -22,6 +22,27 @@ def register_default_plots():
     from .plots.rank_allocation import plot_rank_allocation
     from .plots.radar_chart import plot_radar_chart
     from .plots.attention import plot_attention_heatmap
+    from .plots.roc_pr_curve import plot_roc_pr_curve
+    from .plots.learning_curves import plot_learning_curve
+    from .plots.embedding import plot_embedding
+    from .plots.residuals import plot_residuals
+    from .plots.parallel_coords import plot_parallel_coords
+    from .plots.hyperparam_importance import plot_hyperparam_importance
+    from .plots.robustness import plot_robustness
+    from .plots.activation_dist import plot_activation_distribution
+    from .plots.precision_recall_by_class import plot_precision_recall_by_class
+
+    PLOT_REGISTRY.register("roc_pr_curve")(plot_roc_pr_curve)
+    PLOT_REGISTRY.register("learning_curve")(plot_learning_curve)
+    PLOT_REGISTRY.register("embedding")(plot_embedding)
+    PLOT_REGISTRY.register("residuals")(plot_residuals)
+    PLOT_REGISTRY.register("parallel_coords")(plot_parallel_coords)
+    PLOT_REGISTRY.register("hyperparam_importance")(plot_hyperparam_importance)
+    PLOT_REGISTRY.register("robustness")(plot_robustness)
+    PLOT_REGISTRY.register("activation_dist")(plot_activation_distribution)
+    PLOT_REGISTRY.register("precision_recall_by_class")(plot_precision_recall_by_class)
+
+
 
     PLOT_REGISTRY.register("loss_curve")(plot_loss_curve)
     PLOT_REGISTRY.register("accuracy_curve")(plot_accuracy_curve)
