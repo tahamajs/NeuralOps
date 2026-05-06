@@ -629,3 +629,49 @@ def list_model_variants(request):
         {"key": "hybrid_svd",  "description": "Low‑rank attention layers"},
     ]
     return Response({"variants": variants})
+
+
+import requests
+from django.core.cache import cache
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from huggingface_hub import HfApi
+
+SUGGESTED_MODELS = [
+    "distilbert-base-uncased",
+    "bert-base-uncased",
+    "roberta-base",
+    "albert-base-v2",
+    "google/electra-small-discriminator",
+    "microsoft/deberta-v3-base",
+    "Llama-2-7b-hf",
+    "Mistral-7B-v0.1",
+    "google/gemma-2b",
+    "facebook/opt-125m",
+]
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def search_huggingface_models(request):
+    query = request.query_params.get("q", "").strip()
+    limit = int(request.query_params.get("limit", 20))
+    if not query:
+        return Response({"results": SUGGESTED_MODELS[:limit]})
+
+    cache_key = f"hf_models_{query}_{limit}"
+    cached = cache.get(cache_key)
+    if cached:
+        return Response({"results": cached})
+
+    try:
+        api = HfApi()
+        models = api.list_models(search=query, limit=limit)
+        results = [model.modelId for model in models]
+        cache.set(cache_key, results, 300)   # 5‑minute cache
+        return Response({"results": results})
+    except Exception as e:
+        # Fallback: return empty list + log warning
+        import logging
+        logging.getLogger(__name__).warning("HF Hub search failed: %s", e)
+        return Response({"results": [], "error": str(e)})
