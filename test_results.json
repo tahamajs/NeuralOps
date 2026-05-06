@@ -1,0 +1,178 @@
+[
+  {
+    "timestamp": "2026-05-06T19:50:57.427464",
+    "endpoint": "/health/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:57.430206",
+    "endpoint": "/version/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:57.978765",
+    "endpoint": "/system/status/",
+    "method": "GET",
+    "status": "PASS",
+    "response_code": 200,
+    "message": "OK"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:58.019691",
+    "endpoint": "/system/gpu/",
+    "method": "GET",
+    "status": "PASS",
+    "response_code": 200,
+    "message": "OK"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:58.338179",
+    "endpoint": "/auth/register/",
+    "method": "POST",
+    "status": "PASS",
+    "response_code": 201,
+    "message": "OK"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:58.633650",
+    "endpoint": "/auth/login/",
+    "method": "POST",
+    "status": "PASS",
+    "response_code": 200,
+    "message": "OK"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:58.637228",
+    "endpoint": "/auth/user/",
+    "method": "GET",
+    "status": "PASS",
+    "response_code": 200,
+    "message": "OK"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:58.642276",
+    "endpoint": "/auth/profile/",
+    "method": "PATCH",
+    "status": "PASS",
+    "response_code": 200,
+    "message": "OK"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.234529",
+    "endpoint": "/auth/change-password/",
+    "method": "POST",
+    "status": "PASS",
+    "response_code": 200,
+    "message": "OK"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.238239",
+    "endpoint": "/auth/refresh-token/",
+    "method": "POST",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.242321",
+    "endpoint": "/config/attentions/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.246544",
+    "endpoint": "/config/compressors/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.251196",
+    "endpoint": "/config/models/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.255285",
+    "endpoint": "/config/tasks/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.259504",
+    "endpoint": "/config/methods/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.263152",
+    "endpoint": "/config/presets/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.267723",
+    "endpoint": "/experiments/",
+    "method": "GET",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.271634",
+    "endpoint": "/experiments/",
+    "method": "POST",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 201"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.275832",
+    "endpoint": "/train/",
+    "method": "POST",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 201"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.279732",
+    "endpoint": "/evaluate/",
+    "method": "POST",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 201"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.284478",
+    "endpoint": "/compress/",
+    "method": "POST",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 201"
+  },
+  {
+    "timestamp": "2026-05-06T19:50:59.288361",
+    "endpoint": "/auth/logout/",
+    "method": "POST",
+    "status": "FAIL",
+    "response_code": 401,
+    "message": "Expected 200"
+  }
+]
