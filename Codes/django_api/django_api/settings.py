@@ -2,11 +2,17 @@
 import os
 from pathlib import Path
 
-# ----------------------------------------------------------------------
-# Base directory
-# ----------------------------------------------------------------------
+import sys
+from pathlib import Path
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Make the 'Codes' folder (which contains the 'framework' package) importable
+CODES_DIR = BASE_DIR.parent      # ← this is the /Users/.../Codes directory
+if str(CODES_DIR) not in sys.path:
+    sys.path.insert(0, str(CODES_DIR))
+
+# Add Codes directory to sys.path so that 'framework' package can be imported
 # NOTE: No sys.path modifications are needed.
 #       All Django apps live inside the project root (BASE_DIR) and are
 #       automatically importable.  Adding the parent 'Codes' directory
