@@ -1,0 +1,71 @@
+{
+  "model_name": "bert-base-uncased",
+  "task_name": "mrpc",
+  "attn_type": "griffin_ssd",
+  "method": "lora",
+  "compressor": "svd",
+  "trainer_type": "hf",
+  "epochs": 3,
+  "batch_size": 16,
+  "learning_rate": 2e-5,
+  "model_variant": "quantized",
+
+  "hpo": {
+    "enabled": false
+  },
+
+  "federated_learning": {
+    "enabled": false
+  },
+
+  "distributed": {
+    "strategy": "ddp",
+    "num_gpus": 4,
+    "remote": { "enabled": false }
+  },
+
+  "save_config": {
+    "save_model": true,
+    "save_logs": true,
+    "save_plots": true,
+    "storage_backends": ["local", "s3"],
+    "experiment_trackers": ["mlflow"],
+    "model_registries": ["huggingface_hub"],
+    "plot_options": {
+      "loss_curve": true,
+      "confusion_matrix": true,
+      "shap": true,
+      "error_gallery": true,
+      "confidence": true
+    },
+    "versioning": {
+      "keep_best_k": 3,
+      "storage_backend": "s3"
+    },
+    "notification": {
+      "on_success": ["slack"],
+      "slack_webhook": "https://hooks.slack.com/..."
+    }
+  },
+
+  "drift": {
+    "enabled": true,
+    "methods": ["ks", "psi"]
+  },
+
+  "fairness": {
+    "enabled": true
+  },
+
+  "robustness": {
+    "enabled": true
+  },
+
+  "load_balancer": {
+    "enabled": true,
+    "num_gpus": 4,
+    "allocation_strategy": "best_fit",
+    "balance_batch_sizes": true,
+    "balance_dataloader": true
+  }
+}

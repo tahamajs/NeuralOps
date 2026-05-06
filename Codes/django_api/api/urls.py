@@ -33,6 +33,10 @@ urlpatterns = [
     path("config/tracking/", views.tracking_options),
     path("config/deployment/", views.deployment_options),
     path("runs/<uuid:run_id>/save/", views.run_save),
+    
+    
+    
+    path("launch/", views.launch_experiment, name="launch_experiment"),
 
 
 

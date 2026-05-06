@@ -1,166 +1,370 @@
 """
-MegaOrchestrator – ties every framework module together.
-Called from the Django runner with a single config dict.
+MegaOrchestrator – single entry point for the entire platform.
+Receives one config dictionary and executes the full pipeline.
 """
 
-import threading
-import logging
+import os, json, threading, logging, traceback
 from pathlib import Path
-from typing import Dict, Any, Optional
-from django.conf import settings
-
-from framework.experiment.config import ExperimentConfig
-from framework.models import load_model, replace_attention_in_model
-from framework.trainer.trainer_factory import get_trainer
-from framework.logging.integration import auto_setup as logging_setup
-from framework.callbacks.django_integration import DjangoCallback
-from framework.results_saver import ResultsSaver, SaveConfig
-from framework.model_versioning import ModelVersionService, VersioningConfig
-from framework.drift.integration import auto_drift_check
-from framework.evaluation.fairness import FairnessEvaluator
-from framework.evaluation.robustness import TextAdversarialTester
-from framework.hyperopt.integration import run_hpo_experiment
-from framework.federated_learning.integration import run_federated_experiment
-from framework.analysis.comparison import ComparisonEngine
+from typing import Dict, Any, Optional, Callable
+from dataclasses import dataclass, field
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 class MegaOrchestrator:
     """
-    One‑stop orchestrator for any experiment type.
-    Reads the full config blob from the Django API and executes everything.
+    Central orchestrator that connects all framework modules.
+
+    Usage (from Django runner):
+        orchestrator = MegaOrchestrator(
+            config=request.data,
+            run_id=str(uuid.uuid4()),
+            base_dir=Path(settings.MEDIA_ROOT),
+            progress_callback=progress_cb,
+            log_callback=log_cb,
+            final_callback=final_cb,
+            stop_event=stop_event,
+        )
+        orchestrator.run()
     """
 
-    def __init__(self, config: Dict[str, Any], run_id: str,
-                 progress_cb=None, log_cb=None, final_cb=None, stop_event=None):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        run_id: str,
+        base_dir: Path,
+        progress_callback: Optional[Callable] = None,
+        log_callback: Optional[Callable] = None,
+        final_callback: Optional[Callable] = None,
+        stop_event: Optional[threading.Event] = None,
+    ):
         self.config = config
         self.run_id = run_id
-        self.base_dir = Path(settings.MEDIA_ROOT) / run_id
-        self.base_dir.mkdir(parents=True, exist_ok=True)
+        self.base_dir = Path(base_dir)
+        self.run_dir = self.base_dir / str(run_id)
+        self.run_dir.mkdir(parents=True, exist_ok=True)
 
-        # Callbacks for Django dashboard
-        self.progress_cb = progress_cb
-        self.log_cb = log_cb
-        self.final_cb = final_cb
+        self.progress_cb = progress_callback
+        self.log_cb = log_callback
+        self.final_cb = final_callback
         self.stop_event = stop_event or threading.Event()
 
-        # Setup logging & tracking
-        self.log_components = logging_setup(config, run_id, Path(settings.MEDIA_ROOT))
+        # These will be populated during run()
+        self.model = None
+        self.tokenizer = None
+        self.trainer_state = None
+        self.final_metrics: Dict[str, float] = {}
 
-    # ------------------------------------------------------------------
+        # Log initial config
+        logger.info("MegaOrchestrator created: run_id=%s", run_id)
+
+    # ════════════════════════════════════════════════════════════════
+    # Main Entry Point
+    # ════════════════════════════════════════════════════════════════
     def run(self) -> Dict[str, Any]:
-        """Execute the full pipeline and return final metrics."""
-        logger.info("MegaOrchestrator started for run %s", self.run_id)
+        """Execute the full experiment pipeline."""
+        try:
+            # Phase 0 – save config
+            self._save_config()
 
-        # --- 1. Federated Learning (optional) ---
-        fl_config = self.config.get("federated_learning", {})
-        if fl_config.get("enabled"):
-            return self._run_federated(fl_config)
+            # Phase 1 – Hyperparameter Optimization (optional)
+            if self.config.get("hpo", {}).get("enabled"):
+                self._log("Starting HPO…")
+                self.config = self._run_hpo()
+                self._log(f"HPO finished. Best params: {self.config.get('hpo_best_params', {})}")
 
-        # --- 2. Hyperparameter Optimization (optional) ---
-        hpo_config = self.config.get("hpo", {})
-        if hpo_config.get("enabled"):
-            best_params = run_hpo_experiment(hpo_config, self._run_single_trial,
-                                             output_dir=self.base_dir / "hpo")
-            self.config.update(best_params["best_params"])
-            logger.info("HPO finished: best params = %s", best_params["best_params"])
+            # Phase 2 – Federated Learning (optional)
+            if self.config.get("federated_learning", {}).get("enabled"):
+                self._log("Starting federated learning…")
+                self.final_metrics = self._run_federated()
+                return self.final_metrics
 
-        # --- 3. Single training run ---
-        final_metrics = self._run_single_trial(self.config)
+            # Phase 3 – Single training run
+            self._log("Starting training…")
+            self.final_metrics = self._run_single_training()
+            self._log(f"Training finished. Metrics: {self.final_metrics}")
 
-        # --- 4. Post‑training analysis ---
-        self._post_training_analysis(final_metrics)
+            # Phase 4 – Post‑training analysis
+            self._run_post_analysis()
 
-        # --- 5. Final callback ---
-        if self.final_cb:
-            self.final_cb(final_metrics, {})
-        logger.info("MegaOrchestrator finished for run %s", self.run_id)
-        return final_metrics
+            # Phase 5 – Final callback
+            if self.final_cb:
+                self.final_cb(self.final_metrics, self.trainer_state)
 
-    # ------------------------------------------------------------------
-    def _run_single_trial(self, trial_config: Dict[str, Any]) -> Dict[str, Any]:
-        """Core training loop (used by HPO too)."""
-        cfg = self._build_experiment_config(trial_config)
+            self._log("Experiment completed successfully.")
+            return self.final_metrics
 
-        # 1. Load model
-        model, tokenizer = load_model(
-            model_name=cfg.model_name,
-            num_labels=getattr(cfg, 'num_labels', 2),
-            loader_type=getattr(cfg, 'model_variant', 'hf'),
-            rank=getattr(cfg, 'compression_rank', 64),
+        except Exception as e:
+            logger.exception("Orchestrator failed: %s", e)
+            self._log(f"Experiment failed: {traceback.format_exc()}")
+            if self.final_cb:
+                self.final_cb({"error": str(e)}, None)
+            raise
+
+    # ════════════════════════════════════════════════════════════════
+    # Phase 1 – HPO
+    # ════════════════════════════════════════════════════════════════
+    def _run_hpo(self) -> Dict[str, Any]:
+        from framework.hyperopt.integration import run_hpo_experiment
+
+        hpo_cfg = self.config.get("hpo", {})
+        def trial_objective(trial_params: Dict[str, Any]) -> float:
+            """Run one HPO trial. Returns a score to maximize."""
+            merged = {**self.config, **trial_params}
+            merged["hpo"] = {"enabled": False}  # prevent recursion
+            trial_orch = MegaOrchestrator(
+                config=merged,
+                run_id=f"{self.run_id}-hpo-{datetime.now().strftime('%H%M%S')}",
+                base_dir=self.base_dir,
+            )
+            metrics = trial_orch._run_single_training()
+            return metrics.get("eval_accuracy", 0)
+
+        result = run_hpo_experiment(hpo_cfg, trial_objective, output_dir=self.run_dir / "hpo")
+        self.config["hpo_best_params"] = result["best_params"]
+        self.config.update(result["best_params"])
+        return self.config
+
+    # ════════════════════════════════════════════════════════════════
+    # Phase 2 – Federated Learning
+    # ════════════════════════════════════════════════════════════════
+    def _run_federated(self) -> Dict[str, Any]:
+        from framework.federated_learning.integration import run_federated_experiment
+
+        fl_cfg = self.config.get("federated_learning", {})
+
+        def model_builder():
+            return self._load_model()
+
+        # User must provide a dataset or a dataset loader function
+        dataset = self.config.get("_dataset")   # injected by Django view
+        result = run_federated_experiment(
+            fl_cfg, model_builder, dataset,
+            output_dir=self.run_dir / "fl",
         )
+        return result
 
-        # 2. Inject attention
-        if cfg.attn_type and cfg.attn_type != "full":
-            model = replace_attention_in_model(model, cfg.attn_type)
+    # ════════════════════════════════════════════════════════════════
+    # Phase 3 – Single Training
+    # ════════════════════════════════════════════════════════════════
+    def _run_single_training(self) -> Dict[str, float]:
+        cfg = self.config
 
-        # 3. Build callbacks
-        callbacks = [DjangoCallback(self.progress_cb, self.log_cb, self.final_cb, self.stop_event)]
-        # (MemoryCallback, TimeCallback, etc. are added inside the trainer factory)
+        # 3a. Load model & tokenizer
+        self._log("Loading model…")
+        self.model, self.tokenizer = self._load_model()
 
-        # 4. Create trainer
-        trainer = get_trainer(getattr(cfg, 'trainer_type', 'hf'))(
-            model=model, dataset=self._load_data(cfg), config=cfg,
-            tokenizer=tokenizer, callbacks=callbacks,
-        )
+        # 3b. Inject attention
+        if cfg.get("attn_type") and cfg.get("attn_type") != "full":
+            from framework.models import replace_attention_in_model
+            self.model = replace_attention_in_model(self.model, cfg["attn_type"])
 
-        # 5. Train
-        trainer.train()
+        # 3c. Apply training method (LoRA, R-Drop, etc.)
+        if cfg.get("method") and cfg.get("method") != "baseline":
+            from framework.trainer.methods.registry import METHOD_REGISTRY
+            method = METHOD_REGISTRY.resolve(cfg["method"])
+            if method:
+                self.model = method.apply(self.model, cfg)
+
+        # 3d. Distributed wrapping (optional)
+        if cfg.get("distributed", {}).get("strategy", "none") != "none":
+            from framework.distributed.integration import wrap_with_distributed
+            self.model = wrap_with_distributed(
+                cfg.get("distributed", {}), self.model, self.run_id
+            )
+
+        # 3e. Build callbacks
+        callbacks = self._build_callbacks()
+
+        # 3f. Load data
+        train_dataset, eval_dataset, num_labels = self._load_data(cfg)
+
+        # 3g. Create trainer
+        trainer = self._create_trainer(cfg, train_dataset, eval_dataset, num_labels, callbacks)
+
+        # 3h. Train
+        self._log("Training started…")
+        train_result = trainer.train()
         eval_result = trainer.evaluate()
 
-        # 6. Save results (optional – controlled by save_config)
-        save_cfg = self.config.get("save_config", {})
-        saver = ResultsSaver(self.run_id, Path(settings.MEDIA_ROOT), save_cfg)
-        saver.save_all(model, trial_config, trainer.state.log_history, eval_result,
-                       tokenizer=tokenizer)
+        # 3i. Store state
+        self.trainer_state = trainer.state.log_history if hasattr(trainer, 'state') else []
+        self.final_metrics = eval_result
 
-        # 7. Versioning
-        version_cfg = VersioningConfig(**save_cfg.get("versioning", {}))
-        ModelVersionService.create_version(
-            run=None,   # in production, link to your Django TrainingRun
-            model_state=model.state_dict(),
-            metrics=eval_result,
-            config=version_cfg,
-            tokenizer=tokenizer,
-        )
+        # 3j. Save everything
+        self._save_results(eval_result)
+
+        # 3k. Model versioning
+        self._create_model_version(eval_result)
+
+        # 3l. Cleanup distributed
+        if cfg.get("distributed", {}).get("strategy", "none") != "none":
+            from framework.distributed.integration import cleanup_distributed
+            cleanup_distributed(self.model, self.run_id)
 
         return eval_result
 
-    # ------------------------------------------------------------------
-    def _run_federated(self, fl_config: Dict[str, Any]) -> Dict[str, Any]:
-        """Federated learning path."""
-        def model_builder():
-            from framework.models import load_model
-            m, _ = load_model(fl_config["model_name"], num_labels=fl_config.get("num_labels",2))
-            return m
-        dataset = ...   # user provides dataset loader
-        return run_federated_experiment(fl_config, model_builder, dataset,
-                                        output_dir=self.base_dir / "fl")
+    # ════════════════════════════════════════════════════════════════
+    # Phase 4 – Post‑Training Analysis
+    # ════════════════════════════════════════════════════════════════
+    def _run_post_analysis(self) -> None:
+        cfg = self.config
 
-    # ------------------------------------------------------------------
-    def _post_training_analysis(self, final_metrics: Dict[str, float]) -> None:
-        """Optional drift detection, fairness, robustness."""
-        if self.config.get("drift", {}).get("enabled"):
-            # compare training distribution with a reference
-            auto_drift_check(self.run_id, {}, {}, output_dir=self.base_dir / "drift")
+        # Drift detection
+        if cfg.get("drift", {}).get("enabled"):
+            self._log("Running drift detection…")
+            self._run_drift()
 
-        if self.config.get("fairness", {}).get("enabled"):
-            eval = FairnessEvaluator()
-            report = eval.evaluate(...)   # needs predictions + group arrays
-            report.save(self.base_dir / "fairness_report.json")
+        # Fairness
+        if cfg.get("fairness", {}).get("enabled"):
+            self._log("Evaluating fairness…")
+            self._run_fairness()
 
-        if self.config.get("robustness", {}).get("enabled"):
-            tester = TextAdversarialTester()
-            report = tester.evaluate(...)
-            report.save(self.base_dir / "robustness_report.json")
+        # Robustness
+        if cfg.get("robustness", {}).get("enabled"):
+            self._log("Testing adversarial robustness…")
+            self._run_robustness()
 
-    # ------------------------------------------------------------------
-    def _build_experiment_config(self, d: dict):
-        """Convert raw dict to ExperimentConfig."""
-        from framework.experiment.config import ExperimentConfig
-        valid = {k: v for k, v in d.items() if k in ExperimentConfig.__dataclass_fields__}
-        return ExperimentConfig(**valid)
+        # Notifications
+        if cfg.get("save_config", {}).get("notification"):
+            from framework.results_saver.backends.notification import notify
+            notify(self.run_id, True, self.final_metrics, cfg["save_config"])
+
+    # ── Helpers ─────────────────────────────────────────────────────
+    def _load_model(self):
+        from framework.models import load_model
+        cfg = self.config
+        return load_model(
+            model_name=cfg.get("model_name", "bert-base-uncased"),
+            num_labels=cfg.get("num_labels", 2),
+            loader_type=cfg.get("model_variant", "hf"),
+            rank=cfg.get("compression_rank", 64),
+        )
 
     def _load_data(self, cfg):
-        """Placeholder – replace with your actual DataLoader setup."""
-        return ...   # your existing data loading code
+        from framework.experiment.data import load_and_preprocess_data
+        from framework.experiment.config import ExperimentConfig
+        exp_cfg = ExperimentConfig(**{k: v for k, v in cfg.items()
+                                      if k in ExperimentConfig.__dataclass_fields__})
+        setattr(exp_cfg, 'glue_base_path', cfg.get('glue_base_path', '/default/path'))
+        return load_and_preprocess_data(exp_cfg)
+
+    def _create_trainer(self, cfg, train_ds, eval_ds, num_labels, callbacks):
+        from transformers import TrainingArguments, DataCollatorWithPadding
+        from framework.trainer.trainer_factory import get_trainer
+
+        training_args = TrainingArguments(
+            output_dir=str(self.run_dir / "checkpoints"),
+            num_train_epochs=cfg.get("epochs", 3),
+            per_device_train_batch_size=cfg.get("batch_size", 16),
+            per_device_eval_batch_size=cfg.get("batch_size", 16) * 2,
+            learning_rate=cfg.get("learning_rate", 2e-5),
+            weight_decay=cfg.get("weight_decay", 0.01),
+            warmup_steps=cfg.get("warmup_steps", 500),
+            logging_steps=100,
+            eval_strategy="epoch",
+            save_strategy="epoch",
+            load_best_model_at_end=True,
+            metric_for_best_model="eval_accuracy",
+            remove_unused_columns=False,
+            report_to="none",
+        )
+        trainer_cls = get_trainer(cfg.get("trainer_type", "hf"))
+        return trainer_cls(
+            model=self.model,
+            args=training_args,
+            train_dataset=train_ds,
+            eval_dataset=eval_ds,
+            data_collator=DataCollatorWithPadding(self.tokenizer),
+            callbacks=callbacks,
+        )
+
+    def _build_callbacks(self):
+        cbs = []
+        from framework.callbacks.django_integration import DjangoCallback
+        cbs.append(DjangoCallback(
+            progress_cb=self.progress_cb,
+            log_cb=self.log_cb,
+            final_cb=self.final_cb,
+            stop_event=self.stop_event,
+        ))
+        # Add more callbacks based on config…
+        return cbs
+
+    def _save_results(self, metrics):
+        from framework.results_saver import ResultsSaver
+        save_cfg = self.config.get("save_config", {})
+        saver = ResultsSaver(self.run_id, self.base_dir, save_cfg)
+        saver.save_all(
+            self.model, self.config, self.trainer_state, metrics,
+            tokenizer=self.tokenizer,
+        )
+        saver.push_all()
+        saver.git_commit_and_push()
+        saver.track_all(metrics, self.config)
+
+    def _create_model_version(self, metrics):
+        from framework.model_versioning import ModelVersionService, VersioningConfig
+        save_cfg = self.config.get("save_config", {})
+        vc = VersioningConfig(**save_cfg.get("versioning", {}))
+        ModelVersionService.create_version(
+            run=None,
+            model_state=self.model.state_dict(),
+            metrics=metrics,
+            config=vc,
+            tokenizer=self.tokenizer,
+            artifact_base=str(self.base_dir),
+        )
+
+    def _run_drift(self):
+        from framework.drift.integration import auto_drift_check
+        auto_drift_check(
+            self.run_id,
+            self.config.get("drift", {}).get("reference", {}),
+            self.config.get("drift", {}).get("current", {}),
+            output_dir=self.run_dir / "drift",
+        )
+
+    def _run_fairness(self):
+        from framework.evaluation.fairness import FairnessEvaluator
+        import numpy as np, json
+        eval_preds = self.run_dir / "artifacts" / "eval_predictions.json"
+        if eval_preds.exists():
+            with open(eval_preds) as f:
+                data = json.load(f)
+            evaluator = FairnessEvaluator()
+            report = evaluator.evaluate(
+                predictions=np.array(data["predictions"]),
+                labels=np.array(data["labels"]),
+                groups=data.get("groups", {}),
+            )
+            path = self.run_dir / "fairness_report.json"
+            with open(path, 'w') as f:
+                json.dump(report.__dict__, f, indent=2, default=str)
+
+    def _run_robustness(self):
+        from framework.evaluation.robustness import TextAdversarialTester
+        import numpy as np, json
+        eval_preds = self.run_dir / "artifacts" / "eval_predictions.json"
+        if eval_preds.exists():
+            with open(eval_preds) as f:
+                data = json.load(f)
+            tester = TextAdversarialTester()
+            # Simplified – needs model predict_fn
+            report = tester.evaluate(
+                predict_fn=lambda texts: np.zeros(len(texts)),
+                texts=data.get("texts", []),
+                labels=np.array(data.get("labels", [])),
+            )
+            path = self.run_dir / "robustness_report.json"
+            with open(path, 'w') as f:
+                json.dump(report.__dict__, f, indent=2, default=str)
+
+    def _save_config(self):
+        with open(self.run_dir / "config.json", 'w') as f:
+            json.dump(self.config, f, indent=2, default=str)
+
+    def _log(self, msg: str):
+        logger.info("[%s] %s", self.run_id[:8], msg)
+        if self.log_cb:
+            self.log_cb(0, {"message": msg})

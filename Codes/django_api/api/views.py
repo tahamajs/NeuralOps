@@ -879,3 +879,66 @@ def hpo_status(request):
 @permission_classes([IsAuthenticated])
 def fl_status(request):
     return Response({"status": "no active federated run", "connected_clients": 0})
+
+
+
+
+# api/views.py – add this view
+
+import uuid
+import threading
+from pathlib import Path
+from django.conf import settings
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
+from framework.experiment.mega_orchestrator import MegaOrchestrator
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def launch_experiment(request):
+    """
+    Single endpoint that launches any experiment – training, FL, HPO, etc.
+    The config dict determines which modules are activated.
+    """
+    config = request.data
+    run_id = str(uuid.uuid4())
+
+    # Optional callbacks for dashboard updates
+    def progress_cb(step, total, pct):
+        # Could push via WebSocket to the frontend
+        pass
+
+    def log_cb(step, logs):
+        pass
+
+    def final_cb(metrics, history):
+        pass
+
+    stop_event = threading.Event()
+    orchestrator = MegaOrchestrator(
+        config=config,
+        run_id=run_id,
+        base_dir=Path(settings.MEDIA_ROOT),
+        progress_callback=progress_cb,
+        log_callback=log_cb,
+        final_callback=final_cb,
+        stop_event=stop_event,
+    )
+
+    # Run in background thread (use Celery / task queue in production)
+    def _run():
+        try:
+            orchestrator.run()
+        except Exception:
+            pass
+    thread = threading.Thread(target=_run, daemon=True)
+    thread.start()
+
+    return Response({
+        "run_id": run_id,
+        "status": "launched",
+        "monitor_url": f"/dashboard/run/{run_id}/",
+    }, status=status.HTTP_202_ACCEPTED)
