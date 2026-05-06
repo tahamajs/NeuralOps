@@ -27,6 +27,16 @@ from .runners import run_training, run_evaluation, run_compression
 from .jobs import start_job
 
 logger = logging.getLogger(__name__)
+from framework.trainer.registry import TRAINER_REGISTRY   # if exists
+from framework.trainer.methods.registry import METHOD_REGISTRY
+
+@api_view(["GET"])
+def list_trainers(request):
+    return Response({"trainers": list(TRAINER_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_methods(request):
+    return Response({"methods": list(METHOD_REGISTRY.keys())})
 
 # ----------------------------------------------------------------------
 # Rate limiting (optional)
@@ -232,12 +242,6 @@ def list_tasks(request):
     tasks = ["cola", "sst2", "mrpc", "qqp", "stsb", "mnli", "qnli", "rte", "wnli"]
     return Response({"tasks": tasks, "count": len(tasks)})
 
-@cache_page(60 * 5)  # Cache for 5 minutes
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def list_methods(request):
-    methods = ["baseline", "lora", "rdrop", "r3f", "fisher_lora", "fisher_gelora", "llrd"]
-    return Response({"methods": methods, "count": len(methods)})
 
 @cache_page(60 * 5)  # Cache for 5 minutes
 @api_view(["GET"])
