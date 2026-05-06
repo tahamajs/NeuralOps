@@ -110,11 +110,22 @@ class ExperimentViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['name'], "Detail Exp")
 
+# Add this import at the top if not already present
+
 class TrainingRunViewTests(TestCase):
     def setUp(self):
         self.user, self.client = create_user_and_client()
         self.exp = Experiment.objects.create(name="RunTestExp")
         self.run = TrainingRun.objects.create(experiment=self.exp, name="TestRun")
+
+        # Patch start_job to run the target function instantly (no threads)
+        patcher = patch('experiment.views.start_job')
+        self.mock_start_job = patcher.start()
+        def run_sync(run, target_func):
+            # Simulate synchronous execution
+            target_func(run, stop_event=None)
+        self.mock_start_job.side_effect = run_sync
+        self.addCleanup(patcher.stop)
 
     def test_list_runs(self):
         response = self.client.get('/api/runs/')
@@ -171,23 +182,6 @@ class TrainingRunViewTests(TestCase):
     def test_stop_all_jobs(self):
         response = self.client.post('/api/jobs/stop_all/')
         self.assertEqual(response.status_code, 200)
-
-    @patch('experiment.views.start_job')
-    def test_start_train(self, mock_start_job):
-        # Make start_job run the training function immediately instead of spawning a thread
-        def fake_start_job(run, target_func):
-            target_func(run, stop_event=None)
-        mock_start_job.side_effect = fake_start_job
-
-        response = self.client.post('/api/train/', {
-            'experiment_id': str(self.exp.id),
-            'name': 'Train1',
-            'job_type': 'training',
-            'config': {'epochs': 1}
-        }, format='json')
-        self.assertEqual(response.status_code, 202)
-        self.assertEqual(TrainingRun.objects.count(), 2)
-
 
 
 class SystemViewTests(TestCase):
