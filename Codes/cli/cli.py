@@ -384,7 +384,7 @@ def compress_cmd(model, method, target_sparsity, target_rank, output, device):
     base_model = AutoModelForSequenceClassification.from_pretrained(model).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model)
 
-    from framework.compression_engine.core.registry import COMPRESSOR_REGISTRY
+    from framework.compression_engine_engine.core.registry import COMPRESSOR_REGISTRY
     compressor_cls = COMPRESSOR_REGISTRY.get(method)
     if compressor_cls is None:
         keys = list(COMPRESSOR_REGISTRY.keys())

@@ -19,7 +19,7 @@ import time
 
 # Try to import framework components, else define stubs
 try:
-    from framework.compression_engine.svd_compressor import SVDLinearLayer
+    from framework.compression_engine_engine.svd_compressor import SVDLinearLayer
     from framework.utils.config import config
 except ImportError:
     # Stub SVDLinearLayer

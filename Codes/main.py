@@ -32,7 +32,7 @@ from framework.data.glue_loader import (
 )
 from framework.data.preprocessing import preprocess_function as build_preprocess
 from framework.attentions.core.registry import ATTENTION_REGISTRY
-from framework.compression_engine.core.registry import COMPRESSOR_REGISTRY
+from framework.compression_engine_engine.core.registry import COMPRESSOR_REGISTRY
 from framework.trainer.trainer import CompressionTrainer, get_compute_metrics
 from framework.trainer.methods.registry import METHOD_REGISTRY
 from framework.trainer.methods.rdrop_r3f import MethodTrainer
