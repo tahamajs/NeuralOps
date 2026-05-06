@@ -6,7 +6,7 @@
 # import torch
 # import pandas as pd
 # from transformers import AutoTokenizer, AutoModelForSequenceClassification
-# from framework.compression_engine_engine.compress_utils import compress_bert_true_svd
+# from framework.compression_engine.compress_utils import compress_bert_true_svd
 # from framework.soa.config import SOAConfig
 # from framework.soa.model import SOABert
 # from framework.soa.migration import compute_global_basis_from_bert, migrate_bert_to_soa
