@@ -1,14 +1,14 @@
-import os, json, logging
+import json, logging
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix as sklearn_cm
 import seaborn as sns
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 def plot_confusion_matrix(history, metrics, config, output_dir, opts):
-    # Requires evaluation predictions – look in the run directory
-    preds_path = output_dir.parent / "artifacts" / "eval_predictions.json"
+    preds_path = Path(output_dir).parent / "artifacts" / "eval_predictions.json"
     if not preds_path.exists():
         logger.info("Confusion matrix requested but no eval_predictions.json found.")
         return []
@@ -28,7 +28,7 @@ def plot_confusion_matrix(history, metrics, config, output_dir, opts):
     ax.set_ylabel('True')
     ax.set_title('Confusion Matrix')
     plt.tight_layout()
-    path = output_dir / "confusion_matrix.png"
+    path = Path(output_dir) / "confusion_matrix.png"
     fig.savefig(path, dpi=opts.get("dpi", 150), bbox_inches='tight')
     plt.close(fig)
     return [str(path)]
