@@ -26,6 +26,13 @@ urlpatterns = [
     path("config/losses/", views.list_losses),
     path("config/optimizers/", views.list_optimizers),
     path("config/callbacks/", views.list_callbacks),
+    path("config/hpo/", views.hpo_options),          # returns available algorithms, backends
+    path("config/distributed/", views.distributed_options),
+    path("config/tracking/", views.tracking_options),
+    path("config/deployment/", views.deployment_options),
+    path("hpo/start/", views.start_hpo_job),
+    path("models/deploy/", views.deploy_model),
+    path("security/sign/", views.sign_model),
     # Health / Version
     path("health/", views.health_check),
     path("version/", views.version),
