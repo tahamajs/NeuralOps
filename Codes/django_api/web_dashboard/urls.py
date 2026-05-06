@@ -4,33 +4,32 @@ from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
-    # Main dashboard (list of runs / experiments)
-    path('', views.index, name='index'),
+    # Main dashboard – will be used by root include
+    path('', views.index, name='dashboard_index'),
 
     # Create new experiment / run (wizard)
-    path('create/', views.create_job, name='create_job'),
+    path('create/', views.create_job, name='dashboard_create_job'),
 
-    # Job (run) detail pages – both /dashboard/job/ and /dashboard/run/ work
-    path('dashboard/job/<uuid:job_id>/', views.job_detail, name='job_detail'),
-    path('dashboard/run/<uuid:job_id>/', views.job_detail, name='job_detail_run'),
+    # Job (run) detail pages
+    path('dashboard/job/<uuid:job_id>/', views.job_detail, name='dashboard_job_detail'),
+    path('dashboard/run/<uuid:job_id>/', views.job_detail, name='dashboard_job_detail_run'),
 
-    # Alternative full dashboard (bootstrap version)
-    path('dashboard/', views.dashboard, name='dashboard'),
+    # Full dashboard (bootstrap version)
+    path('dashboard/', views.dashboard, name='dashboard_dashboard'),
 
-    # Statistics page (aggregated metrics)
-    path('statistics/', views.statistics, name='statistics'),
+    # Statistics page
+    path('statistics/', views.statistics, name='dashboard_statistics'),
 
     # Authentication pages
-    path('login/', views.login_page, name='login'),
-    path('register/', views.register_page, name='register'),
+    path('login/', views.login_page, name='dashboard_login'),
+    path('register/', views.register_page, name='dashboard_register'),
 
     # API endpoints for the frontend (token‑based)
-    path('api/jobs/', views.dashboard_api_jobs, name='api_jobs'),
-    path('api/register/', views.api_register, name='api_register'),
-    path('api/login/', views.api_login, name='api_login'),
-    path('api/logout/', views.api_logout, name='api_logout'),
+    path('api/jobs/', views.dashboard_api_jobs, name='dashboard_api_jobs'),
+    path('api/register/', views.api_register, name='dashboard_api_register'),
+    path('api/login/', views.api_login, name='dashboard_api_login'),
+    path('api/logout/', views.api_logout, name='dashboard_api_logout'),
 ]
 
-# Serve static files in development
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
