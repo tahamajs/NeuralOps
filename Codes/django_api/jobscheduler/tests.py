@@ -7,9 +7,22 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
+from sympy import python
 
 from .models import Job, VersionedConfig, CustomMetricEntry
 from .serializers import JobSerializer
+
+from .models import Job, VersionedConfig, CustomMetricEntry
+from .serializers import JobSerializer
+
+import json
+import uuid
+from unittest.mock import patch, MagicMock
+
+from django.test import TestCase, override_settings
+from django.contrib.auth.models import User
+from rest_framework.test import APIClient
+from rest_framework import status
 
 # ----------------------------------------------------------------------
 # Helper
@@ -19,7 +32,7 @@ def create_authenticated_client():
     client = APIClient()
     client.force_authenticate(user=user)
     return client, user
-
+@override_settings(ROOT_URLCONF='jobscheduler.test_urls')   # <-- override for the whole class
 class JobschedulerTests(TestCase):
     def setUp(self):
         self.client, self.user = create_authenticated_client()
@@ -240,27 +253,29 @@ class JobschedulerTests(TestCase):
         self.assertEqual(response.data['git']['commit'], 'abc123')
 
     # ------------------------------- System & GPU Info ------------------------------
-    @patch('jobscheduler.views.torch.cuda.is_available')
-    @patch('jobscheduler.views.torch.cuda.device_count')
-    @patch('jobscheduler.views.torch.cuda.get_device_properties')
-    @patch('jobscheduler.views.torch.cuda.memory_allocated')
-    def test_gpu_info_cuda(self, mock_mem_alloc, mock_get_props, mock_dev_count, mock_avail):
-        mock_avail.return_value = True
-        mock_dev_count.return_value = 2
-        mock_get_props.return_value.total_memory = 8 * 1024 ** 3
-        mock_mem_alloc.return_value = 1 * 1024 ** 3
+    # @patch('jobscheduler.views.torch.cuda.is_available')
+    # @patch('jobscheduler.views.torch.cuda.device_count')
+    # @patch('jobscheduler.views.torch.cuda.get_device_properties')
+    # @patch('jobscheduler.views.torch.cuda.memory_allocated')
+    def test_gpu_info_cuda(self):
+        import jobscheduler.views as jv
+        mock_cuda = MagicMock()
+        mock_cuda.is_available.return_value = True
+        mock_cuda.device_count.return_value = 2
+        mock_cuda.get_device_properties.return_value.total_memory = 8 * 1024 ** 3
+        mock_cuda.memory_allocated.return_value = 1 * 1024 ** 3
+        mock_cuda.utilization.return_value = 50
 
-        Job.objects.create(model_name='m', task_name='t', status='running', gpu_requirements=1)
+        with patch.object(jv, 'torch', MagicMock(cuda=mock_cuda)):
+            Job.objects.create(model_name='m', task_name='t', status='running', gpu_requirements=1)
+            response = self.client.get('/api/system/gpu/')
+            self.assertEqual(response.status_code, 200)
+            data = response.data
+            self.assertEqual(data['total_gpus'], 2)
+            self.assertEqual(data['available'], 1)
+            self.assertEqual(data['used'], 1)
 
-        response = self.client.get('/api/system/gpu/')
-        self.assertEqual(response.status_code, 200)
-        data = response.data
-        self.assertEqual(data['total_gpus'], 2)
-        self.assertEqual(data['available'], 1)
-        self.assertEqual(data['used'], 1)
 
-
-        
     def test_system_status(self):
         response = self.client.get('/api/system/status/')
         self.assertEqual(response.status_code, 200)
