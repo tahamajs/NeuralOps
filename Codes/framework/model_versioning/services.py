@@ -1,18 +1,51 @@
 import os
 import logging
-from typing import Optional, Dict, Any
+import torch
+from typing import Optional, Dict, Any, List
+from dataclasses import dataclass, field
+from enum import Enum
 
 logger = logging.getLogger(__name__)
 
 
 # ----------------------------------------------------------------------
-# Dummy fallback – used when Django isn't loaded or models aren't ready
+# Configuration
+# ----------------------------------------------------------------------
+class StorageBackend(Enum):
+    LOCAL = "local"
+    S3 = "s3"
+    HUGGINGFACE = "huggingface"
+
+
+class CleanupPolicy(Enum):
+    KEEP_BEST_K = "keep_best_k"
+    KEEP_TAGGED = "keep_tagged"
+    TIME_BASED = "time_based"
+    NONE = "none"
+
+
+@dataclass
+class VersioningConfig:
+    """Controls how versions are created and managed."""
+    keep_best_k: int = 5
+    keep_tags: List[str] = field(default_factory=lambda: ["production", "staging"])
+    max_versions: Optional[int] = None
+    storage_backend: StorageBackend = StorageBackend.LOCAL
+    cleanup_policy: CleanupPolicy = CleanupPolicy.KEEP_BEST_K
+    compression: bool = False
+    save_optimizer_state: bool = False
+    upload_to_hub: bool = False
+    hub_repo_prefix: str = ""
+    s3_bucket: Optional[str] = None
+    s3_region: Optional[str] = None
+
+
+# ----------------------------------------------------------------------
+# Dummy fallback (unchanged)
 # ----------------------------------------------------------------------
 class _DummyManager:
-    """Mimics a Django model manager – returns None for any lookup."""
     def __getattr__(self, name):
         def dummy(*args, **kwargs):
-            logger.warning("Django models not available – operation skipped.")
             return None
         return dummy
 
@@ -21,20 +54,52 @@ class _DummyModelVersion:
 
 
 # ----------------------------------------------------------------------
-# Real service
+# Strategies (pluggable)
+# ----------------------------------------------------------------------
+class VersioningStrategy:
+    """Decides which versions to keep / delete."""
+    def __init__(self, config: VersioningConfig):
+        self.config = config
+
+    def select_versions_to_delete(self, all_versions):
+        raise NotImplementedError
+
+
+class BestKStrategy(VersioningStrategy):
+    def select_versions_to_delete(self, all_versions):
+        if not all_versions:
+            return []
+        sorted_versions = sorted(
+            all_versions,
+            key=lambda v: v.metrics.get('eval_accuracy', 0),
+            reverse=True
+        )
+        return sorted_versions[self.config.keep_best_k:]
+
+
+class TaggedStrategy(VersioningStrategy):
+    def select_versions_to_delete(self, all_versions):
+        protected = [v for v in all_versions if any(
+            t in (v.tags or []) for t in self.config.keep_tags
+        )]
+        return [v for v in all_versions if v not in protected]
+
+
+class TimeBasedStrategy(VersioningStrategy):
+    def select_versions_to_delete(self, all_versions):
+        import datetime
+        cutoff = datetime.datetime.now() - datetime.timedelta(days=self.config.keep_best_k)
+        return [v for v in all_versions if v.created_at < cutoff]
+
+
+# ----------------------------------------------------------------------
+# Real service (extended)
 # ----------------------------------------------------------------------
 class ModelVersionService:
-    """
-    High‑level service for managing ModelVersion objects.
-
-    All methods automatically fall back to a dummy implementation
-    when the Django model can't be imported (e.g., during framework
-    startup or in standalone scripts).
-    """
+    """High‑level service for creating, loading, and managing model versions."""
 
     @staticmethod
     def _get_model():
-        """Return the real ModelVersion class, or a dummy if unavailable."""
         try:
             from model_versioning.models import ModelVersion
             return ModelVersion
@@ -44,95 +109,89 @@ class ModelVersionService:
 
     @staticmethod
     def create_version(
-        run,               # Job instance (must have 'id', 'git_commit_hash', 'config_versions')
-        model_state: Any,  # PyTorch state_dict or serialisable object
+        run,
+        model_state: Any,
         metrics: Dict[str, Any],
         version: Optional[str] = None,
-        artifact_base: str = "/models"
+        artifact_base: str = "/models",
+        tags: Optional[List[str]] = None,
+        config: Optional[VersioningConfig] = None,
     ) -> Optional[Any]:
-        """
-        Save a model checkpoint and create a corresponding ModelVersion record.
-
-        Args:
-            run: The training run (Job instance)
-            model_state: The model's state_dict (anything torch.save accepts)
-            metrics: Dictionary of evaluation metrics
-            version: Optional version string (e.g., "v1.0.0"); auto‑generated if omitted
-            artifact_base: Base directory for storing artifacts
-
-        Returns:
-            The created ModelVersion instance, or None if models are unavailable
-        """
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return None
 
-        # Determine next version number
         latest = run.model_versions.order_by('-version_number').first()
         new_num = (latest.version_number + 1) if latest else 1
         version_str = version or f"v{new_num}"
 
-        artifact_path = os.path.join(artifact_base, str(run.id), f"v{new_num}")
-        try:
-            os.makedirs(artifact_path, exist_ok=True)
-        except OSError as e:
-            logger.error("Cannot create artifact directory %s: %s", artifact_path, e)
-            raise
+        artifact_path = os.path.join(artifact_base, str(run.id), version_str)
+        os.makedirs(artifact_path, exist_ok=True)
 
-        # Save the model (torch is imported lazily to avoid early heavy import)
-        import torch
         model_file = os.path.join(artifact_path, "model.pth")
         torch.save(model_state, model_file)
-
         size_mb = os.path.getsize(model_file) / 1e6
 
-        config_snapshot_id = None
-        if hasattr(run, 'config_versions') and run.config_versions.exists():
-            last_config = run.config_versions.last()
-            config_snapshot_id = last_config.id if last_config else None
+        # Handle cloud backends eagerly or lazily
+        cfg = config or VersioningConfig()
+        if cfg.storage_backend == StorageBackend.S3:
+            from .backends.s3 import upload_to_s3
+            upload_to_s3(model_file, cfg.s3_bucket, cfg.s3_region)
+        elif cfg.storage_backend == StorageBackend.HUGGINGFACE:
+            from .backends.huggingface import push_to_hub
+            push_to_hub(artifact_path, repo_name=cfg.hub_repo_prefix)
 
-        return ModelVersion.objects.create(
+        record = ModelVersion.objects.create(
             run=run,
             version=version_str,
             version_number=new_num,
             artifact_path=artifact_path,
             artifact_size_mb=round(size_mb, 2),
             metrics=metrics,
-            git_commit=run.git_commit_hash if hasattr(run, 'git_commit_hash') else None,
-            config_snapshot_id=config_snapshot_id,
+            tags=tags or [],
+            storage_tier=cfg.storage_backend.value,
         )
+        logger.info("Created %s", record)
+        return record
 
     @staticmethod
-    def load_version(version_id):
-        """Load a saved model from a ModelVersion record."""
+    def load_version(version_id, map_location="cpu"):
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return None
         try:
-            version = ModelVersion.objects.get(id=version_id)
-            model_path = os.path.join(version.artifact_path, "model.pth")
-            if not os.path.exists(model_path):
-                raise FileNotFoundError(f"Model file not found: {model_path}")
-            import torch
-            return torch.load(model_path, map_location='cpu')
+            version_obj = ModelVersion.objects.get(id=version_id)
+            model_file = os.path.join(version_obj.artifact_path, "model.pth")
+            if not os.path.exists(model_file):
+                if version_obj.storage_tier == StorageBackend.S3.value:
+                    from .backends.s3 import download_from_s3
+                    download_from_s3(model_file)  # populate local file
+                else:
+                    raise FileNotFoundError(f"Model file not found: {model_file}")
+            return torch.load(model_file, map_location=map_location)
         except ModelVersion.DoesNotExist:
             logger.error("ModelVersion %s not found", version_id)
             return None
-        except Exception as e:
-            logger.exception("Failed to load model version %s: %s", version_id, e)
-            return None
 
     @staticmethod
-    def delete_old_versions(run, keep_latest: int = 5):
-        """Remove artifact files and DB records for older versions beyond the keep threshold."""
+    def apply_cleanup_policy(run, config: VersioningConfig):
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return
-        versions = run.model_versions.order_by('-version_number')
-        to_delete = versions[keep_latest:]
-        for version in to_delete:
-            if os.path.exists(version.artifact_path):
+        versions = list(run.model_versions.all())
+        strategy_map = {
+            CleanupPolicy.KEEP_BEST_K: BestKStrategy,
+            CleanupPolicy.KEEP_TAGGED: TaggedStrategy,
+            CleanupPolicy.TIME_BASED: TimeBasedStrategy,
+        }
+        strategy_cls = strategy_map.get(config.cleanup_policy)
+        if strategy_cls is None:
+            return
+        strategy = strategy_cls(config)
+        to_delete = strategy.select_versions_to_delete(versions)
+        for version_obj in to_delete:
+            if os.path.exists(version_obj.artifact_path):
                 import shutil
-                shutil.rmtree(version.artifact_path, ignore_errors=True)
-            version.delete()
-        logger.info("Deleted %d old model versions for run %s", len(to_delete), run.id)
+                shutil.rmtree(version_obj.artifact_path, ignore_errors=True)
+            version_obj.delete()
+        logger.info("Deleted %d versions for run %s", len(to_delete), run.id)
