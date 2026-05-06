@@ -1,13 +1,24 @@
 # framework/experiment/data.py
 import torch
+import os
+from django.conf import settings
 from transformers import AutoTokenizer
 from framework.data.glue_loader import load_glue_local, GLUE_TASK_KEYS, get_num_labels_and_is_regression
 from framework.data.preprocessing import preprocess_function as build_preprocess
 
 def load_and_preprocess_data(config):
+    try:
+        from django.conf import settings
+        glue_path = settings.GLUE_DATA_PATH
+    except ImportError:
+        glue_path = "/default/fallback/path"
+    raw_datasets = load_glue_local(config.task, glue_path)
+
     """Load dataset, tokenizer, and preprocess."""
     tokenizer = AutoTokenizer.from_pretrained(config.model_name, use_fast=True)
-    raw_datasets = load_glue_local(config.task, "/Users/tahamajs/Documents/uni/Project/datasets/glue")
+    glue_path = getattr(settings, 'GLUE_DATA_PATH',
+                        "/Users/tahamajs/Documents/uni/Project/datasets/glue")
+    raw_datasets = load_glue_local(config.task, glue_path)
     num_labels, is_regression = get_num_labels_and_is_regression(config.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[config.task]
 
