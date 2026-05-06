@@ -1,5 +1,4 @@
 from django.urls import include, path
-from jobscheduler import views as job_views
 from . import views
 
 urlpatterns = [
@@ -24,26 +23,9 @@ urlpatterns = [
     path("health/", views.health_check),
     path("version/", views.version),
 
-    # Jobscheduler (explicit paths – avoids any conflict with experiment.urls)
-    path('jobs/', job_views.job_list, name='job_list'),
-    path('jobs/<uuid:job_id>/', job_views.job_detail, name='job_detail'),
-    path('jobs/<uuid:job_id>/pause/', job_views.job_pause, name='job_pause'),
-    path('jobs/<uuid:job_id>/resume/', job_views.job_resume, name='job_resume'),
-    path('jobs/<uuid:job_id>/stop/', job_views.job_stop, name='job_stop'),
-    path('jobs/<uuid:job_id>/retry/', job_views.job_retry, name='job_retry'),
-    path('jobs/<uuid:job_id>/history/', job_views.job_history, name='job_history'),
-    path('jobs/<uuid:job_id>/notes/', job_views.job_notes, name='job_notes'),
-    path('jobs/<uuid:job_id>/config/history/', job_views.get_config_history, name='config_history'),
-    path('jobs/<uuid:job_id>/config/compare/<int:version_a>/<int:version_b>/', job_views.compare_configs, name='compare_configs'),
-    path('jobs/<uuid:job_id>/metrics/', job_views.get_custom_metrics, name='get_custom_metrics'),
-    path('jobs/<uuid:job_id>/metrics/log/', job_views.log_custom_metric, name='log_custom_metric'),
-    path('jobs/<uuid:job_id>/environment/', job_views.get_environment, name='get_environment'),
+    # Jobscheduler – explicit paths to avoid conflicts
+    path('', include('jobscheduler.urls')),
 
-    path('scheduler/status/', job_views.scheduler_status, name='scheduler_status'),
-    path('scheduler/metrics/', job_views.scheduler_metrics, name='scheduler_metrics'),
-    path('system/gpu/', job_views.gpu_info),
-    path('system/status/', job_views.system_status),
-
-    # Experiment leftovers (only runs/preview)
+    # Experiment leftovers (runs, preview, etc.)
     path('', include('experiment.urls')),
 ]

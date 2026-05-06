@@ -15,19 +15,12 @@ urlpatterns = [
     path('jobs/<uuid:job_id>/metrics/', views.get_custom_metrics, name='get_custom_metrics'),
     path('jobs/<uuid:job_id>/metrics/log/', views.log_custom_metric, name='log_custom_metric'),
     path('jobs/<uuid:job_id>/environment/', views.get_environment, name='get_environment'),
+    path('jobs/<uuid:job_id>/scheduling/', views.update_job_scheduling, name='update_job_scheduling'),
+    path('jobs/stats/', views.job_stats, name='job_stats'),
+    path('jobs/bulk-delete/', views.bulk_delete_jobs, name='bulk_delete_jobs'),
+
     path('scheduler/status/', views.scheduler_status, name='scheduler_status'),
     path('scheduler/metrics/', views.scheduler_metrics, name='scheduler_metrics'),
     path('system/gpu/', views.gpu_info),
     path('system/status/', views.system_status),
-
-
-
-
-    path('jobs/<uuid:job_id>/scheduling/', views.update_job_scheduling, name='update_job_scheduling'),
-    path('jobs/stats/', views.job_stats, name='job_stats'),
-    path('jobs/bulk-delete/', views.bulk_delete_jobs, name='bulk_delete_jobs'),
-    # Model versioning (only if ModelVersion exists)
-    path('jobs/<uuid:job_id>/versions/', views.list_model_versions, name='list_model_versions'),
-    path('model-versions/<uuid:version_id>/publish/', views.publish_model_to_hub, name='publish_model_to_hub'),
-    path('model-versions/<uuid:version_id>/download/', views.download_model_version, name='download_model_version'),
 ]
