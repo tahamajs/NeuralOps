@@ -605,3 +605,27 @@ def run_save(request, run_id):
         )
     saver.handle_storage_backend()
     return Response({"status": "saved", "config": full_cfg})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_models(request):
+    models = [
+        {"name": "distilbert-base-uncased", "variants": ["standard", "compressed"]},
+        {"name": "bert-base-uncased",       "variants": ["standard", "compressed", "hybrid_svd"]},
+        {"name": "roberta-base",            "variants": ["standard"]},
+        {"name": "Llama-2-7b-hf",          "variants": ["unsloth"]},
+        {"name": "Mistral-7B-v0.1",        "variants": ["unsloth"]},
+    ]
+    return Response({"models": models})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_model_variants(request):
+    variants = [
+        {"key": "standard",    "description": "Standard HuggingFace model"},
+        {"key": "unsloth",     "description": "Unsloth accelerated (Llama/Mistral)"},
+        {"key": "compressed",  "description": "SVD compressed embeddings"},
+        {"key": "hybrid_svd",  "description": "Low‑rank attention layers"},
+    ]
+    return Response({"variants": variants})
