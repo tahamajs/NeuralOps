@@ -10,6 +10,8 @@ from django.contrib.auth import authenticate, update_session_auth_hash
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.views.decorators.cache import cache_page
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -63,12 +65,22 @@ def register(request):
     user = User.objects.create_user(username=username, password=password, email=email)
     token = Token.objects.create(user=user)
     logger.info(f"New user registered: {username}")
-    return Response({
+    response = Response({
         "token": token.key,
         "username": user.username,
         "email": user.email,
         "user_id": user.id
     }, status=status.HTTP_201_CREATED)
+    # Set cookie for registration too
+    response.set_cookie(
+        key='authToken',
+        value=token.key,
+        httponly=True,
+        samesite='Lax',
+        secure=False,
+        max_age=60*60*24*7
+    )
+    return response
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -84,13 +96,23 @@ def login(request):
     if user:
         token, _ = Token.objects.get_or_create(user=user)
         logger.info(f"User logged in: {username}")
-        return Response({
+        response = Response({
             "token": token.key,
             "username": user.username,
             "email": user.email,
             "user_id": user.id,
             "is_staff": user.is_staff
         })
+        # Set cookie for CookieTokenAuthentication fallback
+        response.set_cookie(
+            key='authToken',
+            value=token.key,
+            httponly=True,
+            samesite='Lax',
+            secure=False, # Set to True in production with HTTPS
+            max_age=60*60*24*7 # 7 days
+        )
+        return response
     return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(["POST"])
@@ -99,7 +121,9 @@ def logout(request):
     """Logout user by deleting the token."""
     request.user.auth_token.delete()
     logger.info(f"User logged out: {request.user.username}")
-    return Response({"status": "logged out"})
+    response = Response({"status": "logged out"})
+    response.delete_cookie('authToken')
+    return response
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -176,34 +200,42 @@ def refresh_token(request):
 # ----------------------------------------------------------------------
 # Configuration endpoints
 # ----------------------------------------------------------------------
+@cache_page(60 * 5)  # Cache for 5 minutes
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_attentions(request):
-    return Response({"attentions": list(ATTENTION_REGISTRY.keys()), "count": len(ATTENTION_REGISTRY.keys())})
+    return Response({"attentions": ATTENTION_REGISTRY.keys(), "count": len(ATTENTION_REGISTRY)})
 
+@cache_page(60 * 5)  # Cache for 5 minutes
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_compressors(request):
-    return Response({"compressors": list(COMPRESSOR_REGISTRY.keys()), "count": len(COMPRESSOR_REGISTRY.keys())})
+    return Response({"compressors": COMPRESSOR_REGISTRY.keys(), "count": len(COMPRESSOR_REGISTRY)})
 
+@cache_page(60 * 5)  # Cache for 5 minutes
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_models(request):
     models = ["distilbert-base-uncased", "bert-base-uncased", "roberta-base", "albert-base-v2"]
     return Response({"models": models, "count": len(models)})
 
+@cache_page(60 * 5)  # Cache for 5 minutes
+@api_view(["GET"])
+@cache_page(60 * 5)  # Cache for 5 minutes
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_tasks(request):
     tasks = ["cola", "sst2", "mrpc", "qqp", "stsb", "mnli", "qnli", "rte", "wnli"]
     return Response({"tasks": tasks, "count": len(tasks)})
 
+@cache_page(60 * 5)  # Cache for 5 minutes
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_methods(request):
     methods = ["baseline", "lora", "rdrop", "r3f", "fisher_lora", "fisher_gelora", "llrd"]
     return Response({"methods": methods, "count": len(methods)})
 
+@cache_page(60 * 5)  # Cache for 5 minutes
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_presets(request):
@@ -355,19 +387,18 @@ def start_train(request):
         exp_name = config.get("name") or f"Training {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         exp = Experiment.objects.create(name=exp_name)
     else:
-        exp = Experiment.objects.get(pk=exp_id)
+        exp = get_object_or_404(Experiment, pk=exp_id)
     
     run = TrainingRun.objects.create(
         experiment=exp,
         job_type="training",
         status="queued",
         config=config,
-        name=config.get("name", "")
+        name=config.get("name", exp.name)
     )
     
-    import threading
-    thread = threading.Thread(target=run_training, args=(run,))
-    thread.start()
+    from .jobs import start_job
+    start_job(run, run_training)
     
     return Response(TrainingRunSerializer(run).data, status=status.HTTP_201_CREATED)
 
@@ -381,19 +412,18 @@ def start_evaluate(request):
         exp_name = config.get("name") or f"Eval {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         exp = Experiment.objects.create(name=exp_name)
     else:
-        exp = Experiment.objects.get(pk=exp_id)
+        exp = get_object_or_404(Experiment, pk=exp_id)
         
     run = TrainingRun.objects.create(
         experiment=exp,
         job_type="evaluation",
         status="queued",
         config=config,
-        name=config.get("name", "")
+        name=config.get("name", exp.name)
     )
     
-    import threading
-    thread = threading.Thread(target=run_evaluation, args=(run,))
-    thread.start()
+    from .jobs import start_job
+    start_job(run, run_evaluation)
     
     return Response(TrainingRunSerializer(run).data, status=status.HTTP_201_CREATED)
 
@@ -407,28 +437,44 @@ def start_compress(request):
         exp_name = config.get("name") or f"Compression {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         exp = Experiment.objects.create(name=exp_name)
     else:
-        exp = Experiment.objects.get(pk=exp_id)
+        exp = get_object_or_404(Experiment, pk=exp_id)
         
     run = TrainingRun.objects.create(
         experiment=exp,
         job_type="compression",
         status="queued",
         config=config,
-        name=config.get("name", "")
+        name=config.get("name", exp.name)
     )
     
-    import threading
+    from .jobs import start_job
     from .runners import run_compression
-    thread = threading.Thread(target=run_compression, args=(run,))
-    thread.start()
+    start_job(run, run_compression)
     
     return Response(TrainingRunSerializer(run).data, status=status.HTTP_201_CREATED)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def run_detail(request, pk):
-    try:
-        run = TrainingRun.objects.get(pk=pk)
-        return Response(TrainingRunSerializer(run).data)
-    except TrainingRun.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+    run = get_object_or_404(TrainingRun, pk=pk)
+    return Response(TrainingRunSerializer(run).data)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def stop_run(request, pk):
+    """Stop a running job."""
+    from .jobs import stop_job
+    run = get_object_or_404(TrainingRun, pk=pk)
+    if run.status in ["running", "queued"]:
+        if stop_job(str(run.id)):
+            run.status = "stopped"
+            run.completed_at = datetime.now()
+            run.save()
+            return Response({"status": "job stop initiated"})
+        else:
+            # Maybe it wasn't in _stop_events but status says running
+            run.status = "stopped"
+            run.save()
+            return Response({"status": "job marked as stopped"})
+    return Response({"error": "Job is not running"}, status=status.HTTP_400_BAD_REQUEST)
+
