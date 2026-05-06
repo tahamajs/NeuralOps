@@ -1,80 +1,20 @@
-"""
-Unified callback system for the Efficient Transformer Toolkit.
-Every callback follows the HuggingFace TrainerCallback interface,
-making them pluggable into any Trainer subclass.
-"""
+CALLBACK_REGISTRY = Registry("callback")
 
-from typing import Optional, Dict, Any, List
-import logging
+# Register factories for each callback
+def register_default_callbacks():
+    from .resources import MemoryCallback, TimeCallback, GPUStatsCallback
+    from .training import EarlyStoppingCallback, CheckpointCallback
+    from .monitoring import WandbCallback, TensorBoardCallback
+    from .analysis import SVDAttentionCallback, GradientNormCallback
 
-# ----------------------------------------------------------------------
-# Base classes
-# ----------------------------------------------------------------------
-from .base import BaseCallback, CallbackList
+    CALLBACK_REGISTRY.register("memory")(lambda **kw: MemoryCallback(**kw))
+    CALLBACK_REGISTRY.register("time")(lambda **kw: TimeCallback(**kw))
+    CALLBACK_REGISTRY.register("gpu_stats")(lambda **kw: GPUStatsCallback(**kw))
+    CALLBACK_REGISTRY.register("early_stopping")(lambda **kw: EarlyStoppingCallback(**kw))
+    CALLBACK_REGISTRY.register("checkpoint")(lambda **kw: CheckpointCallback(**kw))
+    CALLBACK_REGISTRY.register("wandb")(lambda **kw: WandbCallback(**kw))
+    CALLBACK_REGISTRY.register("tensorboard")(lambda **kw: TensorBoardCallback(**kw))
+    CALLBACK_REGISTRY.register("svd_attention")(lambda **kw: SVDAttentionCallback(**kw))
+    CALLBACK_REGISTRY.register("gradient_norm")(lambda **kw: GradientNormCallback(**kw))
 
-# ----------------------------------------------------------------------
-# Training callbacks
-# ----------------------------------------------------------------------
-from .training import (
-    LoggingCallback,
-    MetricsTrackerCallback,
-    ProgressCallback,
-    EarlyStoppingCallback,
-    CheckpointCallback,
-    LRSchedulerCallback,
-)
-
-# ----------------------------------------------------------------------
-# Resource monitoring
-# ----------------------------------------------------------------------
-from .resources import (
-    MemoryCallback,
-    TimeCallback,
-    GPUStatsCallback,
-)
-
-# ----------------------------------------------------------------------
-# Analysis & inspection
-# ----------------------------------------------------------------------
-from .analysis import (
-    SVDAttentionCallback,
-    AttentionHeatmapCallback,
-    GradientNormCallback,
-    LayerwiseAnalysisCallback,
-    ActivationStatsCallback,
-)
-
-# ----------------------------------------------------------------------
-# External monitoring integrations
-# ----------------------------------------------------------------------
-from .monitoring import (
-    WandbCallback,
-    TensorBoardCallback,
-    TerminalCallback,
-    WebSocketCallback,
-)
-
-# ----------------------------------------------------------------------
-# Django integration (the bridge)
-# ----------------------------------------------------------------------
-from .django_integration import DjangoCallback
-
-# ----------------------------------------------------------------------
-# Public API
-# ----------------------------------------------------------------------
-__all__ = [
-    # Base
-    "BaseCallback", "CallbackList",
-    # Training
-    "LoggingCallback", "MetricsTrackerCallback", "ProgressCallback",
-    "EarlyStoppingCallback", "CheckpointCallback", "LRSchedulerCallback",
-    # Resources
-    "MemoryCallback", "TimeCallback", "GPUStatsCallback",
-    # Analysis
-    "SVDAttentionCallback", "AttentionHeatmapCallback", "GradientNormCallback",
-    "LayerwiseAnalysisCallback", "ActivationStatsCallback",
-    # Monitoring
-    "WandbCallback", "TensorBoardCallback", "TerminalCallback", "WebSocketCallback",
-    # Django
-    "DjangoCallback",
-]
+register_default_callbacks()
