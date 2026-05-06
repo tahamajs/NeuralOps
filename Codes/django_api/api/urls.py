@@ -1,11 +1,8 @@
-# api/urls.py
 from django.urls import include, path
 from . import views
 
 urlpatterns = [
-    path('', include('experiment.urls')),
-
-    # Authentication
+    # Authentication – must be first
     path("auth/register/", views.register),
     path("auth/login/", views.login),
     path("auth/logout/", views.logout),
@@ -28,7 +25,7 @@ urlpatterns = [
     path("health/", views.health_check),
     path("version/", views.version),
 
-    # Experiments
+    # Experiments (explicit)
     path("experiments/", views.experiment_list),
     path("experiments/<uuid:pk>/", views.experiment_detail),
     path("train/", views.start_train),
@@ -36,4 +33,7 @@ urlpatterns = [
     path("compress/", views.start_compress),
     path("runs/<uuid:pk>/", views.run_detail),
     path("runs/<uuid:pk>/stop/", views.stop_run),
+
+    # Include remaining experiment‑specific patterns (no duplicates!)
+    path('', include('experiment.urls')),
 ]
