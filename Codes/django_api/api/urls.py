@@ -10,6 +10,8 @@ urlpatterns = [
     path("auth/profile/", views.update_profile),
     path("auth/change-password/", views.change_password),
     path("auth/refresh-token/", views.refresh_token),
+    path("config/trainers/", views.list_trainers),
+    path("config/methods/", views.list_methods),
 
     # Configuration
     path("config/attentions/", views.list_attentions),
