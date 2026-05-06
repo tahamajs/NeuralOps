@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom'
+import { HardwareProvider } from './contexts/HardwareContext'
 import DashboardPage from './pages/DashboardPage'
 import ExperimentListPage from './pages/ExperimentListPage'
 import ExperimentDetailPage from './pages/ExperimentDetailPage'
@@ -14,7 +15,8 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0c10] cyber-grid">
+    <HardwareProvider>
+      <div className="min-h-screen bg-[#0a0c10] cyber-grid">
       <nav className="sticky top-0 z-50 bg-[#0a0c10]/70 backdrop-blur-xl border-b border-white/5 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-12">
@@ -70,5 +72,6 @@ export default function App() {
         </Routes>
       </main>
     </div>
+    </HardwareProvider>
   )
 }
