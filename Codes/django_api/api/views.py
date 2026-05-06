@@ -490,3 +490,35 @@ def stop_run(request, pk):
             return Response({"status": "job marked as stopped"})
     return Response({"error": "Job is not running"}, status=status.HTTP_400_BAD_REQUEST)
 
+
+
+
+# api/views.py (excerpt)
+
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, TRAINER_REGISTRY
+from framework.trainer.methods.registry import METHOD_REGISTRY
+from framework.trainer.losses import LOSS_REGISTRY
+from framework.trainer.optimizers import OPTIMIZER_REGISTRY
+from framework.callbacks import SUPPORTED_CALLBACKS   # dict of name -> description
+
+@api_view(["GET"])
+def list_trainers(request):
+    return Response({"trainers": list(TRAINER_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_methods(request):
+    return Response({"methods": list(METHOD_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_losses(request):
+    return Response({"losses": list(LOSS_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_optimizers(request):
+    return Response({"optimizers": list(OPTIMIZER_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_callbacks(request):
+    return Response({"callbacks": [
+        {"key": k, "description": v} for k, v in SUPPORTED_CALLBACKS.items()
+    ]})
