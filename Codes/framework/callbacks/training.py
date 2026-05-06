@@ -91,3 +91,11 @@ class LRSchedulerCallback(TrainerCallback):
         if 'lr_scheduler' in kwargs:
             lr = kwargs['lr_scheduler'].get_last_lr()[0]
             logger.debug(f"Learning rate: {lr}")
+
+class MetricsLoggerCallback(TrainerCallback):
+    def __init__(self, saver: ResultsSaver):
+        self.saver = saver
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs:
+            self.saver.save_metrics(logs, state.global_step)
