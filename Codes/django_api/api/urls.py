@@ -1,6 +1,6 @@
 from django.urls import include, path
+from jobscheduler import views as job_views
 from . import views
-from jobscheduler import views as job_views      # import the jobscheduler views
 
 urlpatterns = [
     # Authentication
@@ -24,7 +24,7 @@ urlpatterns = [
     path("health/", views.health_check),
     path("version/", views.version),
 
-    # ============ Jobscheduler – explicit paths (NO include) ============
+    # Jobscheduler (explicit paths – avoids any conflict with experiment.urls)
     path('jobs/', job_views.job_list, name='job_list'),
     path('jobs/<uuid:job_id>/', job_views.job_detail, name='job_detail'),
     path('jobs/<uuid:job_id>/pause/', job_views.job_pause, name='job_pause'),
@@ -44,6 +44,6 @@ urlpatterns = [
     path('system/gpu/', job_views.gpu_info),
     path('system/status/', job_views.system_status),
 
-    # ============ Experiment leftovers (only runs/preview) ============
+    # Experiment leftovers (only runs/preview)
     path('', include('experiment.urls')),
 ]

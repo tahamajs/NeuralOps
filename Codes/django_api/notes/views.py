@@ -3,95 +3,121 @@ import csv
 import json
 import logging
 from io import StringIO
+from datetime import timedelta
+
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
-from .models import ResearcherNote, NoteImage, WebhookSubscription
+
+from .models import ResearcherNote, NoteImage, WebhookSubscription, NoteMention
 from .serializers import (ResearcherNoteSerializer, NoteImageSerializer,
                           WebhookSubscriptionSerializer)
 from .permissions import IsOwnerOrReadOnly, IsResearcherOrReadOnly
 from .webhook_utils import trigger_webhook_event
 from .filters import NoteFilter
+from django.http import Http404
 
 logger = logging.getLogger(__name__)
+
 
 class StandardPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+
 # ----------------------------------------------------------------------
-# 1. Note List & Create (with advanced filtering, versioning)
+# 1. Note List & Create
 # ----------------------------------------------------------------------
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def note_list(request, version='v1'):
-    """List notes with advanced filtering, pagination, and export support."""
     if request.method == 'GET':
-        # Use Django FilterSet for advanced filtering
-        from .filters import NoteFilter
         notes = ResearcherNote.objects.filter(deleted_at__isnull=True)
         filter_set = NoteFilter(request.query_params, queryset=notes)
         notes = filter_set.qs
-        
-        # Additional permission filtering
+
         if not request.user.is_staff:
             notes = notes.filter(Q(is_public=True) | Q(author=request.user))
-        
-        # Export as CSV if requested
+
         if request.query_params.get('export') == 'csv':
             return export_notes_csv(notes)
         if request.query_params.get('export') == 'json':
             serializer = ResearcherNoteSerializer(notes, many=True)
             return Response(serializer.data)
-        
-        # Pagination
+
         paginator = StandardPagination()
         page = paginator.paginate_queryset(notes, request)
         serializer = ResearcherNoteSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
-    
+
     elif request.method == 'POST':
         serializer = ResearcherNoteSerializer(data=request.data)
         if serializer.is_valid():
             note = serializer.save(author=request.user)
-            # Log metric: note created
-            logger.info(f"Note created", extra={'user': request.user.username, 'note_id': str(note.id), 'event': 'note.created'})
+            logger.info("Note created", extra={
+                'user': request.user.username,
+                'note_id': str(note.id),
+                'event': 'note.created'
+            })
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # ----------------------------------------------------------------------
 # 2. Note Detail, Update, Delete
 # ----------------------------------------------------------------------
 @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
-@permission_classes([IsAuthenticated, IsOwnerOrReadOnly])
+@permission_classes([IsAuthenticated])
 def note_detail(request, note_id, version='v1'):
     note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
-    
+
+    # ----- Privacy & Permission Guard -----
+    if not note.is_public and note.author != request.user and not request.user.is_staff:
+        # For GET requests, hide the existence of the note entirely
+        if request.method == 'GET':
+            raise Http404
+        # For any modifying request, return Forbidden (403)
+        return Response({"error": "Not allowed"}, status=403)
+
+    # For GET, everyone who passed the guard can see the note
     if request.method == 'GET':
         serializer = ResearcherNoteSerializer(note)
         return Response(serializer.data)
-    
-    elif request.method in ['PUT', 'PATCH']:
-        serializer = ResearcherNoteSerializer(note, data=request.data, partial=(request.method=='PATCH'))
+
+    # For modifying requests, only author or staff are allowed
+    if note.author != request.user and not request.user.is_staff:
+        return Response({"error": "Not allowed"}, status=403)
+
+    if request.method == 'PUT' or request.method == 'PATCH':
+        partial = (request.method == 'PATCH')
+        serializer = ResearcherNoteSerializer(note, data=request.data, partial=partial)
         if serializer.is_valid():
             serializer.save()
             if 'content' in request.data:
-                note.increment_version()
-                logger.info(f"Note updated", extra={'user': request.user.username, 'note_id': str(note.id), 'event': 'note.updated'})
+                logger.info("Note updated", extra={
+                    'user': request.user.username,
+                    'note_id': str(note.id),
+                    'event': 'note.updated'
+                })
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     elif request.method == 'DELETE':
         note.soft_delete()
-        logger.info(f"Note deleted", extra={'user': request.user.username, 'note_id': str(note.id), 'event': 'note.deleted'})
+        logger.info("Note deleted", extra={
+            'user': request.user.username,
+            'note_id': str(note.id),
+            'event': 'note.deleted'
+        })
         return Response(status=status.HTTP_204_NO_CONTENT)
-
+    
 # ----------------------------------------------------------------------
 # 3. Reactions
 # ----------------------------------------------------------------------
@@ -102,6 +128,7 @@ def note_reaction(request, note_id, version='v1'):
     reaction_type = request.data.get('reaction')
     if not reaction_type:
         return Response({"error": "reaction type required"}, status=400)
+
     reactions = note.reactions or {}
     users = reactions.get(reaction_type, [])
     if request.user.username in users:
@@ -111,8 +138,13 @@ def note_reaction(request, note_id, version='v1'):
     reactions[reaction_type] = users
     note.reactions = reactions
     note.save()
-    logger.info(f"Reaction added to note", extra={'user': request.user.username, 'note_id': str(note.id), 'reaction': reaction_type})
+    logger.info("Reaction added", extra={
+        'user': request.user.username,
+        'note_id': str(note.id),
+        'reaction': reaction_type
+    })
     return Response({"status": "updated", "reactions": reactions})
+
 
 # ----------------------------------------------------------------------
 # 4. Image Upload
@@ -129,17 +161,17 @@ def upload_note_image(request, note_id, version='v1'):
         return Response(serializer.data, status=201)
     return Response(serializer.errors, status=400)
 
+
 # ----------------------------------------------------------------------
-# 5. Batch Operations
+# 5. Bulk Operations
 # ----------------------------------------------------------------------
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsResearcherOrReadOnly])
+@permission_classes([IsAuthenticated])
 def bulk_notes(request, version='v1'):
-    """Bulk create, update, or delete notes."""
     action = request.data.get('action')
     if not action:
         return Response({"error": "action required"}, status=400)
-    
+
     if action == 'delete':
         note_ids = request.data.get('ids', [])
         notes = ResearcherNote.objects.filter(id__in=note_ids, author=request.user, deleted_at__isnull=True)
@@ -147,7 +179,7 @@ def bulk_notes(request, version='v1'):
         for note in notes:
             note.soft_delete()
         return Response({"deleted": count})
-    
+
     elif action == 'create':
         items = request.data.get('items', [])
         created = []
@@ -159,11 +191,12 @@ def bulk_notes(request, version='v1'):
             else:
                 return Response(serializer.errors, status=400)
         return Response({"created": created})
-    
+
     return Response({"error": f"Unknown action {action}"}, status=400)
 
+
 # ----------------------------------------------------------------------
-# 6. Export (CSV/JSON) – reused in note_list
+# 6. Export CSV
 # ----------------------------------------------------------------------
 def export_notes_csv(queryset):
     output = StringIO()
@@ -174,6 +207,7 @@ def export_notes_csv(queryset):
     response = HttpResponse(output.getvalue(), content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="notes_export.csv"'
     return response
+
 
 # ----------------------------------------------------------------------
 # 7. Webhook Management
@@ -192,6 +226,7 @@ def webhook_list(request, version='v1'):
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
+
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def webhook_delete(request, webhook_id, version='v1'):
@@ -199,8 +234,9 @@ def webhook_delete(request, webhook_id, version='v1'):
     sub.delete()
     return Response(status=204)
 
+
 # ----------------------------------------------------------------------
-# 8. Versioned URL entry point (wrapper)
+# 8. Versioned URL wrapper
 # ----------------------------------------------------------------------
 def versioned_view(view_func):
     def wrapper(request, *args, **kwargs):
@@ -209,13 +245,12 @@ def versioned_view(view_func):
     return wrapper
 
 
-# ============================================================================
-# 8. Note Versions (history)
-# ============================================================================
+# ----------------------------------------------------------------------
+# 9. Note Versions (history)
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def note_versions(request, note_id, version='v1'):
-    """List all versions of a note."""
     note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
     if not request.user.is_staff and note.author != request.user:
         return Response({"error": "Not allowed"}, status=403)
@@ -232,10 +267,10 @@ def note_versions(request, note_id, version='v1'):
     ]
     return Response(data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def note_version_detail(request, note_id, version_number, version='v1'):
-    """Get a specific version snapshot."""
     note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
     if not request.user.is_staff and note.author != request.user:
         return Response({"error": "Not allowed"}, status=403)
@@ -249,13 +284,13 @@ def note_version_detail(request, note_id, version_number, version='v1'):
         'created_at': version_obj.created_at
     })
 
-# ============================================================================
-# 9. Mentions
-# ============================================================================
+
+# ----------------------------------------------------------------------
+# 10. Mentions
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def note_mentions(request, note_id, version='v1'):
-    """List all mentions in a note."""
     note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
     if not request.user.is_staff and note.author != request.user:
         return Response({"error": "Not allowed"}, status=403)
@@ -270,53 +305,56 @@ def note_mentions(request, note_id, version='v1'):
     ]
     return Response(data)
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_mention_read(request, mention_id, version='v1'):
-    """Mark a specific mention as read."""
     mention = get_object_or_404(NoteMention, id=mention_id, mentioned_user=request.user)
     mention.is_read = True
     mention.save()
     return Response({'status': 'marked_read'})
 
-# ============================================================================
-# 10. Replies (threading)
-# ============================================================================
+
+# ----------------------------------------------------------------------
+# 11. Replies
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def note_replies(request, note_id, version='v1'):
-    """List all replies to a note (threaded comments)."""
     note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True, parent_note__isnull=True)
     replies = note.replies.filter(deleted_at__isnull=True).order_by('created_at')
     serializer = ResearcherNoteSerializer(replies, many=True)
     return Response(serializer.data)
 
-# ============================================================================
-# 11. Restore soft-deleted note
-# ============================================================================
+
+# ----------------------------------------------------------------------
+# 12. Restore
+# ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def restore_note(request, note_id, version='v1'):
-    """Restore a soft-deleted note."""
     note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=False)
     if note.author != request.user and not request.user.is_staff:
         return Response({"error": "Not allowed"}, status=403)
     note.deleted_at = None
     note.save(update_fields=['deleted_at'])
-    logger.info(f"Note restored", extra={'user': request.user.username, 'note_id': str(note.id), 'event': 'note.restored'})
+    logger.info("Note restored", extra={
+        'user': request.user.username,
+        'note_id': str(note.id),
+        'event': 'note.restored'
+    })
     return Response({"status": "restored"})
 
-# ============================================================================
-# 12. Export note as PDF (requires reportlab or weasyprint)
-# ============================================================================
+
+# ----------------------------------------------------------------------
+# 13. Export as PDF
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def export_note_pdf(request, note_id, version='v1'):
-    """Export a single note as a PDF file."""
     note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
     if not note.is_public and note.author != request.user:
         return Response({"error": "Not allowed"}, status=403)
-    # Simplified PDF generation using weasyprint (install: pip install weasyprint)
     from weasyprint import HTML
     html_content = f"""
     <html>
@@ -335,34 +373,36 @@ def export_note_pdf(request, note_id, version='v1'):
     response['Content-Disposition'] = f'attachment; filename="note_{note_id}.pdf"'
     return response
 
-# ============================================================================
-# 13. Test Webhook (send test payload)
-# ============================================================================
+
+# ----------------------------------------------------------------------
+# 14. Test Webhook
+# ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def test_webhook(request, webhook_id, version='v1'):
-    """Send a test payload to a registered webhook URL."""
+    from .webhook_utils import manual_send
     sub = get_object_or_404(WebhookSubscription, id=webhook_id, user=request.user)
     test_payload = {
         'event': 'test',
         'timestamp': timezone.now().isoformat(),
         'data': {'message': 'This is a test webhook payload'}
     }
-    success = trigger_webhook_event.manual_send(sub.url, test_payload, sub.secret)
+    success = manual_send(sub.url, test_payload, sub.secret)
     return Response({"success": success, "url": sub.url})
 
-# ============================================================================
-# 14. Statistics
-# ============================================================================
+
+# ----------------------------------------------------------------------
+# 15. Statistics
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def notes_statistics(request, version='v1'):
-    """Aggregated statistics about notes."""
-    from django.db.models import Count
     total_notes = ResearcherNote.objects.filter(deleted_at__isnull=True).count()
     public_notes = ResearcherNote.objects.filter(deleted_at__isnull=True, is_public=True).count()
-    notes_by_author = ResearcherNote.objects.filter(deleted_at__isnull=True).values('author__username').annotate(count=Count('id')).order_by('-count')[:10]
-    notes_by_run = ResearcherNote.objects.filter(deleted_at__isnull=True, run__isnull=False).values('run__id').annotate(count=Count('id')).order_by('-count')[:10]
+    notes_by_author = ResearcherNote.objects.filter(deleted_at__isnull=True) \
+        .values('author__username').annotate(count=Count('id')).order_by('-count')[:10]
+    notes_by_run = ResearcherNote.objects.filter(deleted_at__isnull=True, run__isnull=False) \
+        .values('run__id').annotate(count=Count('id')).order_by('-count')[:10]
     return Response({
         'total_notes': total_notes,
         'public_notes': public_notes,
@@ -371,15 +411,14 @@ def notes_statistics(request, version='v1'):
         'top_runs': list(notes_by_run)
     })
 
-# ============================================================================
-# 15. Recent Notes (last N days)
-# ============================================================================
+
+# ----------------------------------------------------------------------
+# 16. Recent Notes
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def recent_notes(request, version='v1'):
-    """Get notes created or updated in the last N days (default 7)."""
     days = int(request.query_params.get('days', 7))
-    from datetime import timedelta
     cutoff = timezone.now() - timedelta(days=days)
     notes = ResearcherNote.objects.filter(
         deleted_at__isnull=True,
@@ -392,19 +431,19 @@ def recent_notes(request, version='v1'):
     serializer = ResearcherNoteSerializer(page, many=True)
     return paginator.get_paginated_response(serializer.data)
 
-# ============================================================================
-# 16. Bulk Tag Operations
-# ============================================================================
+
+# ----------------------------------------------------------------------
+# 17. Bulk Tag Operations
+# ----------------------------------------------------------------------
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def bulk_tags(request, version='v1'):
-    """Add or remove tags from multiple notes."""
     action = request.data.get('action')
     note_ids = request.data.get('ids', [])
     tags = request.data.get('tags', [])
     if not action or not note_ids or not tags:
         return Response({"error": "action, ids, and tags required"}, status=400)
-    
+
     notes = ResearcherNote.objects.filter(id__in=note_ids, author=request.user, deleted_at__isnull=True)
     if action == 'add':
         for note in notes:
