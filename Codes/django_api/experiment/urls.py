@@ -2,7 +2,7 @@ from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
-    # Keep only the endpoints that are NOT in api/urls.py
+    # Training Runs – unique endpoints
     path("runs/<uuid:run_id>/history/", views.training_history, name="training_history"),
     path("runs/<uuid:run_id>/snapshots/", views.training_snapshots, name="training_snapshots"),
     path("runs/<uuid:run_id>/config/", views.update_run_config, name="update_run_config"),
@@ -14,6 +14,10 @@ urlpatterns = [
     path("runs/<uuid:run_id>/artifacts/", views.run_artifacts, name="run_artifacts"),
     path("runs/<uuid:run_id>/model/", views.run_model_download, name="run_model_download"),
     re_path(r"^runs/(?P<run_id>[0-9a-f-]+)/artifacts/(?P<artifact_path>.+)$", views.run_artifact_download, name="run_artifact_download"),
-    path("jobs/stop_all/", views.stop_all_jobs_endpoint, name="stop_all_jobs"),
+
+    # Stop all runs (formerly jobs/stop_all/ – moved to avoid conflict with jobscheduler)
+    path("runs/stop_all/", views.stop_all_jobs_endpoint, name="stop_all_jobs"),
+
+    # Paper preview (standalone)
     path("preview/<uuid:run_id>/", views.preview_paper, name="preview_paper"),
 ]
