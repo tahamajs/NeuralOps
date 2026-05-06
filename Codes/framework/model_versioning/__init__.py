@@ -1,7 +1,13 @@
-from .services import ModelVersionService, VersioningConfig, VersioningStrategy
+from .config import StorageBackend, CleanupPolicy, VersioningConfig
+from .strategies import BestKStrategy, TaggedStrategy, TimeBasedStrategy
+from .service import ModelVersionService
 
 __all__ = [
-    "ModelVersionService",
+    "StorageBackend",
+    "CleanupPolicy",
     "VersioningConfig",
-    "VersioningStrategy",
+    "BestKStrategy",
+    "TaggedStrategy",
+    "TimeBasedStrategy",
+    "ModelVersionService",
 ]
