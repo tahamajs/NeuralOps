@@ -554,3 +554,21 @@ def list_augmentations(request):
 @api_view(["GET"])
 def list_methods(request):
     return Response({"methods": list(METHOD_REGISTRY.keys())})
+
+@api_view(["GET"])
+def run_results(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    base = Path(settings.MEDIA_ROOT) / str(run_id)
+    files = {}
+    for root, dirs, filenames in os.walk(base):
+        for f in filenames:
+            rel = os.path.relpath(os.path.join(root, f), base)
+            files[rel] = request.build_absolute_uri(
+                f"/media/{run_id}/{rel}")
+    return Response({
+        "run_id": run_id,
+        "status": run.status,
+        "metrics": run.final_metrics,
+        "history": run.training_history,
+        "files": files,
+    })
