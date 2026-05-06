@@ -1,4 +1,4 @@
-"""No distributed strategy – single GPU / CPU."""
+"""No distributed strategy – single GPU / CPU fallback."""
 
 from .base import BaseStrategy, STRATEGY_REGISTRY
 
@@ -6,3 +6,9 @@ from .base import BaseStrategy, STRATEGY_REGISTRY
 class NoDistributed(BaseStrategy):
     def wrap_model(self, model, **kwargs):
         return model
+
+    def setup(self):
+        pass
+
+    def cleanup(self):
+        pass

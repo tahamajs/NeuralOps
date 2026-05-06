@@ -3,28 +3,27 @@
 import subprocess
 import os
 import sys
+import pickle
+import tempfile
 from pathlib import Path
-from typing import Dict, Any, Callable
+from typing import Callable
 
-def launch_distributed(
-    config,
-    train_fn: Callable[[], None],
-    job_id: str,
-) -> int:
+def launch_distributed(config, train_fn: Callable[[], None], job_id: str) -> int:
     """
-    Launch distributed training using torchrun (or mp.spawn for single‑node).
+    Launch distributed training using torchrun (or mp.spawn for single node).
 
     Args:
         config: DistributedConfig
-        train_fn: a callable that contains the training loop (will be pickled / imported)
-        job_id: unique job identifier for GPU allocation
+        train_fn: a callable that contains the training loop
+        job_id: unique job identifier
 
     Returns:
         subprocess return code
     """
+    # Single GPU – no launcher needed
     if config.num_nodes == 1 and config.num_gpus == 1:
-        # Single GPU, no torchrun needed
-        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, config.gpu_ids or [0]))
+        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(
+            map(str, config.gpu_ids or [0]))
         try:
             train_fn()
             return 0
@@ -33,14 +32,12 @@ def launch_distributed(
             logging.getLogger(__name__).exception("Training failed")
             return 1
 
-    # Multi‑GPU / multi‑node: use torchrun
     nnodes = config.num_nodes
     nproc_per_node = config.num_gpus
     master_addr = config.master_addr
     master_port = config.master_port
     node_rank = config.node_rank
 
-    # Build torchrun command
     target_script = _make_training_script(train_fn, job_id)
     cmd = [
         sys.executable, "-m", "torch.distributed.run",
@@ -54,26 +51,22 @@ def launch_distributed(
     return subprocess.call(cmd)
 
 
-def _make_training_script(train_fn, job_id):
+def _make_training_script(train_fn: Callable, job_id: str) -> str:
     """Create a temporary Python script that calls train_fn()."""
-    import tempfile
-    import pickle
-    script = f"""
-import sys, pickle, base64
-from pathlib import Path
+    fn_path = Path(tempfile.gettempdir()) / f"train_fn_{job_id}.pkl"
+    script_path = Path(tempfile.gettempdir()) / f"launch_{job_id}.py"
 
-# The train_fn was pickled and written to a file
-fn_path = Path("{tempfile.gettempdir()}") / "train_fn_{job_id}.pkl"
+    with open(fn_path, "wb") as f:
+        pickle.dump(train_fn, f)
+
+    script = f"""
+import pickle, sys
+from pathlib import Path
+fn_path = Path("{fn_path}")
 with open(fn_path, "rb") as f:
     train_fn = pickle.load(f)
 train_fn()
 """
-    # Also pickle the function so it can be loaded
-    import pickle
-    script_path = Path(tempfile.gettempdir()) / f"launch_{job_id}.py"
-    fn_path = Path(tempfile.gettempdir()) / f"train_fn_{job_id}.pkl"
-    with open(fn_path, "wb") as f:
-        pickle.dump(train_fn, f)
     with open(script_path, "w") as f:
         f.write(script)
     return str(script_path)
