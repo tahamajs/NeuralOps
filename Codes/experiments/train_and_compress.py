@@ -11,7 +11,7 @@
 # from torch.utils.data import DataLoader
 
 # sys.path.insert(0, str(Path(__file__).parent.parent))
-# from framework.compression_engine.svd_linear import SVDLinearLayer
+# from framework.compression_engine_engine.svd_linear import SVDLinearLayer
 # from framework.utils.device import get_device
 
 # # ----------------------------------------------------------------------
