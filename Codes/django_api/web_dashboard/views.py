@@ -112,11 +112,13 @@ def api_register(request):
     password = request.data.get("password")
     if not username or not password:
         return Response({"error": "Username and password required"}, status=400)
+    if len(username) > 150:
+        return Response({"error": "Username too long"}, status=400)
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already taken"}, status=400)
     user = User.objects.create_user(username=username, password=password)
     token = Token.objects.create(user=user)
-    auth_login(request, user)   # also log in session
+    auth_login(request, user)
     response = Response({"token": token.key, "username": user.username}, status=201)
     response.set_cookie(
         key='authToken',
