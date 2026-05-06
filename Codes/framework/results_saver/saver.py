@@ -214,3 +214,116 @@ class ResultsSaver:
     def notify(self, success: bool, metrics: Dict[str, Any]) -> None:
         from .backends.notification import notify
         notify(self.run_id, success, metrics, self.cfg)
+
+# framework/results_saver/saver.py (inside ResultsSaver class)
+
+    def _generate_plots(self, history):
+        if not self.cfg.save_plots:
+            return
+        opts = self.cfg.plot_options   # guaranteed to exist as a dict
+
+        # Global style settings
+        import matplotlib.pyplot as plt
+        plt.style.use('seaborn-v0_8-darkgrid')
+        figsize = tuple(opts.get("figsize", [10, 6]))
+        dpi = opts.get("dpi", 150)
+
+        # Helper to save a single figure
+        def _save_figure(name, fig):
+            fig.savefig(self.run_dir / "plots" / f"{name}.png", dpi=dpi, bbox_inches='tight')
+            plt.close(fig)
+
+        # ----- Loss curves -----
+        if opts.get("loss_curve", True):
+            from framework.analysis.plotting import plot_loss_curves
+            fig = plot_loss_curves(history, smooth=opts.get("loss_smooth", 0.6), figsize=figsize)
+            _save_figure("loss_curve", fig)
+
+        # ----- Accuracy curves -----
+        if opts.get("accuracy_curve", True):
+            from framework.analysis.plotting import plot_accuracy_curves
+            fig = plot_accuracy_curves(history, figsize=figsize)
+            _save_figure("accuracy_curve", fig)
+
+        # ----- Confusion matrix -----
+        if opts.get("confusion_matrix", False):
+            from framework.analysis.plotting import plot_confusion_matrix
+            # Requires evaluation predictions + labels – must be passed separately
+            # We store them in the run directory if available
+            preds_path = self.run_dir / "artifacts" / "eval_predictions.json"
+            if preds_path.exists():
+                import json
+                with open(preds_path) as f:
+                    data = json.load(f)
+                fig = plot_confusion_matrix(data["labels"], data["predictions"],
+                                            class_names=opts.get("class_names"),
+                                            figsize=figsize)
+                _save_figure("confusion_matrix", fig)
+            else:
+                logger.info("Confusion matrix requested but no evaluation predictions found.")
+
+        # ----- Attention heatmap -----
+        if opts.get("attention_heatmap", False):
+            from framework.analysis.plotting import plot_attention_heatmap
+            # Requires the actual model – we don't have it here; skip gracefully
+            logger.info("Attention heatmap requested but model not available in saver context. "
+                        "To enable this, save the model first and call a separate analysis job.")
+
+        # ----- Gradient flow -----
+        if opts.get("gradient_flow", False):
+            from framework.analysis.plotting import plot_gradient_flow
+            # Requires gradient norms logged during training – can be extracted from history
+            if any("grad_norm" in entry for entry in history):
+                fig = plot_gradient_flow(history, figsize=figsize)
+                _save_figure("gradient_flow", fig)
+
+        # ----- Learning rate schedule -----
+        if opts.get("lr_schedule", True):
+            from framework.analysis.plotting import plot_lr_schedule
+            if any("learning_rate" in entry for entry in history):
+                fig = plot_lr_schedule(history, figsize=figsize)
+                _save_figure("lr_schedule", fig)
+
+        # ----- GPU memory / utilisation -----
+        if opts.get("gpu_memory", False):
+            from framework.analysis.plotting import plot_gpu_memory
+            if any("gpu_mem" in entry for entry in history):
+                fig = plot_gpu_memory(history, figsize=figsize)
+                _save_figure("gpu_memory", fig)
+
+        # ----- Training time vs steps -----
+        if opts.get("training_time", True):
+            from framework.analysis.plotting import plot_training_time
+            fig = plot_training_time(history, figsize=figsize)
+            _save_figure("training_time", fig)
+
+        # ----- Parameter count (static) -----
+        if opts.get("parameter_count", False):
+            from framework.analysis.plotting import plot_parameter_distribution
+            # This would need the model object; we skip with a warning
+            logger.info("Parameter count plot requested but model not available.")
+
+        # ----- Rank allocation (SVD) -----
+        if opts.get("rank_allocation", False):
+            from framework.analysis.plotting import plot_rank_allocation
+            if any("rank" in entry for entry in history):
+                fig = plot_rank_allocation(history, figsize=figsize)
+                _save_figure("rank_allocation", fig)
+
+        # ----- Pareto front -----
+        if opts.get("pareto_front", False):
+            from framework.analysis.plotting import plot_pareto_front
+            # Needs multiple runs data; not available in single run context
+            logger.info("Pareto front requires multiple runs comparison – skipped.")
+
+        # ----- Radar chart -----
+        if opts.get("radar_chart", False):
+            from framework.analysis.plotting import plot_radar_chart
+            # Requires multiple metrics; use final_metrics
+            metrics_path = self.run_dir / "artifacts" / "final_metrics.json"
+            if metrics_path.exists():
+                import json
+                with open(metrics_path) as f:
+                    metrics = json.load(f)
+                fig = plot_radar_chart(metrics, figsize=figsize)
+                _save_figure("radar_chart", fig)

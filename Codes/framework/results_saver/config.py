@@ -4,6 +4,25 @@ from typing import Optional, Dict, Any, List
 @dataclass
 class SaveConfig:
     """User‑facing configuration for result persistence."""
+    plot_options: Dict[str, Any] = field(default_factory=lambda: {
+        "loss_curve": True,
+        "accuracy_curve": True,
+        "confusion_matrix": False,       # requires validation labels
+        "attention_heatmap": False,      # expensive for large models
+        "gradient_flow": False,
+        "lr_schedule": True,
+        "gpu_memory": False,
+        "training_time": True,
+        "parameter_count": False,
+        "rank_allocation": False,        # only relevant for SVD compression
+        "pareto_front": False,           # multi‑objective trade‑offs
+        "radar_chart": False,
+        # Accepted sub‑options for each plot
+        "loss_smooth": 0.6,
+        "figsize": [10, 6],
+        "dpi": 150,
+        "class_names": None,             # e.g. ["negative", "positive"]
+    })
 
     save_model: bool = True
     save_checkpoints: bool = True
