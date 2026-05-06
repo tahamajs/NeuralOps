@@ -1,26 +1,14 @@
-# framework/distributed/__init__.py
-from .strategies import (
-    DDPStrategy, DeepSpeedStrategy, FSDPStrategy, DistributedConfig
-)
+from .config import DistributedConfig
+from .manager import GPUManager
+from .strategies import STRATEGY_REGISTRY, BaseStrategy
+from .launcher import launch_distributed
+from .integration import wrap_with_distributed
 
-# framework/distributed/strategies.py
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel as DDP
-import deepspeed
-import torch.distributed.fsdp as fsdp
-
-class DistributedConfig:
-    def __init__(self, strategy="ddp", num_gpus=1, **kwargs):
-        self.strategy = strategy
-        self.num_gpus = num_gpus
-        self.extra = kwargs
-
-def wrap_model_with_distributed(model, config: DistributedConfig):
-    if config.strategy == "ddp":
-        model = DDP(model)
-    elif config.strategy == "deepspeed":
-        engine, *_ = deepspeed.initialize(model=model, config_params=config.extra)
-        model = engine
-    elif config.strategy == "fsdp":
-        model = fsdp.FullyShardedDataParallel(model)
-    return model
+__all__ = [
+    "DistributedConfig",
+    "GPUManager",
+    "STRATEGY_REGISTRY",
+    "BaseStrategy",
+    "launch_distributed",
+    "wrap_with_distributed",
+]
