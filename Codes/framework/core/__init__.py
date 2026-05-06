@@ -1,5 +1,8 @@
 # framework/core/__init__.py
 """Core utilities for the Efficient Transformer Toolkit."""
+from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.compression_engine.core.registry import COMPRESSOR_REGISTRY
+from framework.trainer.registry import TRAINER_REGISTRY   # if you have one
 
 from .utils import (
     get_device,

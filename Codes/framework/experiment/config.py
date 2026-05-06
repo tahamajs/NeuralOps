@@ -21,6 +21,10 @@ class ExperimentConfig:
     output_dir: str = "./experiments"
     log_dir: str = "./logs"
     exp_name: Optional[str] = None
+    trainer_type: str = "hf"              # "hf", "unsloth", "custom_loop", "rl"
+    attn_implementation: str = "full"     # actual attention key from ATTENTION_REGISTRY
+    compressor: Optional[str] = None      # compressor key from COMPRESSOR_REGISTRY
+    method: str = "baseline"             # method key from METHOD_REGISTRY
 
     # Method‑specific
     lora_r: int = 8
