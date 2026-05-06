@@ -22,11 +22,10 @@ urlpatterns = [
     path('', include('web_dashboard.urls')),
 
     # REST API endpoints (all under /api/)
-    path('api/', include('experiment.urls')),           # ✅ singular, matches your app folder
-    path('api/', include('jobscheduler.urls')),         # job scheduling, metrics
-    path('api/', include('notes.urls')),                # researcher notebook
-    path('api/', include('api.urls')),                  # authentication, system status
-    path('api/', include('model_versioning.urls')),     # model version management (if exists)
+    path('api/', include('api.urls')),                  # authentication, system status, experiments
+    path('api/notes/', include('notes.urls')),          # researcher notebook
+    path('api/model-versioning/', include('model_versioning.urls')), # model version management
+
 
     # Chrome DevTools probe (avoids console errors)
     path('.well-known/appspecific/com.chrome.devtools.json', well_known_ignore),
