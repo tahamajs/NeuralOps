@@ -15,6 +15,8 @@ class APITester:
         self.base_url = base_url
         self.token = None
         self.session = requests.Session()
+        # Avoid system proxy settings that can cause local 502s.
+        self.session.trust_env = False
         self.results = []
         self.test_user = {
             "username": f"testuser_{int(time.time())}",
