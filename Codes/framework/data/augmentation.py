@@ -1,17 +1,21 @@
+# framework/data/augmentation.py
 from framework.core.registry import Registry
+import random
 
 AUGMENTATION_REGISTRY = Registry("augmentation")
 
-# Text augmentation examples (token-level)
-def simple_noise_augment(dataset, noise_prob=0.05):
-    import random
-    def add_noise(example):
-        tokens = example["input_ids"]
-        for i in range(len(tokens)):
-            if random.random() < noise_prob:
-                tokens[i] = random.randint(0, 30000)  # generic vocab id
-        example["input_ids"] = tokens
+def random_mask_augment(dataset, mask_prob=0.15):
+    def mask_tokens(example):
+        input_ids = example["input_ids"]
+        for i in range(len(input_ids)):
+            if random.random() < mask_prob:
+                input_ids[i] = 103  # [MASK] token id (BERT)
+        example["input_ids"] = input_ids
         return example
-    return dataset.map(add_noise)
+    return dataset.map(mask_tokens)
+AUGMENTATION_REGISTRY.register("random_mask")(random_mask_augment)
 
-AUGMENTATION_REGISTRY.register("simple_noise")(simple_noise_augment)
+# simple back‑translation placeholder
+def dummy_back_translation(dataset):
+    return dataset
+AUGMENTATION_REGISTRY.register("back_translation")(dummy_back_translation)

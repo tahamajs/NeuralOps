@@ -1,3 +1,4 @@
+# framework/trainer/schedulers.py
 import torch.optim.lr_scheduler as lr_scheduler
 from framework.core.registry import Registry
 
@@ -18,3 +19,16 @@ def create_rop(optimizer, factor=0.1, patience=10, **kwargs):
 @SCHEDULER_REGISTRY.register("one_cycle")
 def create_onecycle(optimizer, max_lr=0.01, steps_per_epoch=1000, epochs=10, **kwargs):
     return lr_scheduler.OneCycleLR(optimizer, max_lr=max_lr, steps_per_epoch=steps_per_epoch, epochs=epochs)
+
+@SCHEDULER_REGISTRY.register("cosine_warmup")
+def create_cosine_warmup(optimizer, num_warmup_steps=500, num_training_steps=10000, **kwargs):
+    def lr_lambda(current_step):
+        if current_step < num_warmup_steps:
+            return float(current_step) / float(max(1, num_warmup_steps))
+        progress = float(current_step - num_warmup_steps) / float(max(1, num_training_steps - num_warmup_steps))
+        return max(0.0, 0.5 * (1.0 + torch.cos(torch.pi * progress)))
+    return lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+@SCHEDULER_REGISTRY.register("polynomial")
+def create_poly(optimizer, total_iters=10000, power=1.0, **kwargs):
+    return lr_scheduler.PolynomialLR(optimizer, total_iters=total_iters, power=power)
