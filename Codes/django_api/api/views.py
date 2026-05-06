@@ -21,6 +21,10 @@ from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 from framework.compression.core.registry import COMPRESSOR_REGISTRY
+from .models import Experiment, TrainingRun
+from .serializers import ExperimentSerializer, TrainingRunSerializer
+from .runners import run_training, run_evaluation, run_compression
+from .jobs import start_job
 
 logger = logging.getLogger(__name__)
 
@@ -207,11 +211,12 @@ def refresh_token(request):
 def list_attentions(request):
     return Response({"attentions": ATTENTION_REGISTRY.keys(), "count": len(ATTENTION_REGISTRY)})
 
-@cache_page(60 * 5)  # Cache for 5 minutes
+@cache_page(60 * 5)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_compressors(request):
-    return Response({"compressors": COMPRESSOR_REGISTRY.keys(), "count": len(COMPRESSOR_REGISTRY)})
+    compressors = list(COMPRESSOR_REGISTRY.keys())
+    return Response({"compressors": compressors, "count": len(compressors)})
 
 @cache_page(60 * 5)  # Cache for 5 minutes
 @api_view(["GET"])
@@ -220,9 +225,7 @@ def list_models(request):
     models = ["distilbert-base-uncased", "bert-base-uncased", "roberta-base", "albert-base-v2"]
     return Response({"models": models, "count": len(models)})
 
-@cache_page(60 * 5)  # Cache for 5 minutes
-@api_view(["GET"])
-@cache_page(60 * 5)  # Cache for 5 minutes
+@cache_page(60 * 5)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_tasks(request):

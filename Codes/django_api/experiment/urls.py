@@ -2,7 +2,7 @@ from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
-    # Training Runs – unique endpoints not in api/urls.py
+    # Keep only the endpoints that are NOT in api/urls.py
     path("runs/<uuid:run_id>/history/", views.training_history, name="training_history"),
     path("runs/<uuid:run_id>/snapshots/", views.training_snapshots, name="training_snapshots"),
     path("runs/<uuid:run_id>/config/", views.update_run_config, name="update_run_config"),

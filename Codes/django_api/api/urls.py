@@ -2,7 +2,7 @@ from django.urls import include, path
 from . import views
 
 urlpatterns = [
-    # Authentication – must be first
+    # Authentication
     path("auth/register/", views.register),
     path("auth/login/", views.login),
     path("auth/logout/", views.logout),
@@ -25,7 +25,7 @@ urlpatterns = [
     path("health/", views.health_check),
     path("version/", views.version),
 
-    # Experiments (explicit)
+    # Experiments – explicit, must be before the include
     path("experiments/", views.experiment_list),
     path("experiments/<uuid:pk>/", views.experiment_detail),
     path("train/", views.start_train),
