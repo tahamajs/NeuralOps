@@ -4,6 +4,13 @@ from pathlib import Path
 
 import sys
 from pathlib import Path
+GLUE_DATA_PATH = os.environ.get("GLUE_DATA_PATH",
+                   "/Users/tahamajs/Documents/uni/Project/datasets/glue")
+try:
+    from django.conf import settings
+    GLUE_PATH = getattr(settings, 'GLUE_DATA_PATH', "/default/path")
+except ImportError:
+    GLUE_PATH = os.environ.get("GLUE_DATA_PATH", "/default/path")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
