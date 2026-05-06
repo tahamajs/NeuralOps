@@ -20,7 +20,12 @@ urlpatterns = [
     path("config/tasks/", views.list_tasks),
     path("config/methods/", views.list_methods),
     path("config/presets/", views.list_presets),
-
+    # api/urls.py (add these lines)
+    path("config/trainers/", views.list_trainers),
+    path("config/methods/", views.list_methods),
+    path("config/losses/", views.list_losses),
+    path("config/optimizers/", views.list_optimizers),
+    path("config/callbacks/", views.list_callbacks),
     # Health / Version
     path("health/", views.health_check),
     path("version/", views.version),

@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
+
 # ----------------------------------------------------------------------
 # Dummy fallback – used when Django isn't loaded or models aren't ready
 # ----------------------------------------------------------------------
@@ -18,15 +19,19 @@ class _DummyManager:
 class _DummyModelVersion:
     objects = _DummyManager()
 
+
 # ----------------------------------------------------------------------
 # Real service
 # ----------------------------------------------------------------------
 class ModelVersionService:
-    """High‑level service for managing ModelVersion objects."""
+    """
+    High‑level service for managing ModelVersion objects.
 
-    # ------------------------------------------------------------------
-    # Model accessor (lazy – only touches Django when called)
-    # ------------------------------------------------------------------
+    All methods automatically fall back to a dummy implementation
+    when the Django model can't be imported (e.g., during framework
+    startup or in standalone scripts).
+    """
+
     @staticmethod
     def _get_model():
         """Return the real ModelVersion class, or a dummy if unavailable."""
@@ -37,9 +42,6 @@ class ModelVersionService:
             logger.debug("ModelVersion not available: %s", e)
             return _DummyModelVersion
 
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
     @staticmethod
     def create_version(
         run,               # Job instance (must have 'id', 'git_commit_hash', 'config_versions')
@@ -70,7 +72,6 @@ class ModelVersionService:
         new_num = (latest.version_number + 1) if latest else 1
         version_str = version or f"v{new_num}"
 
-        # Build artifact path and ensure directory exists
         artifact_path = os.path.join(artifact_base, str(run.id), f"v{new_num}")
         try:
             os.makedirs(artifact_path, exist_ok=True)
@@ -78,20 +79,18 @@ class ModelVersionService:
             logger.error("Cannot create artifact directory %s: %s", artifact_path, e)
             raise
 
-        # Save the model
+        # Save the model (torch is imported lazily to avoid early heavy import)
+        import torch
         model_file = os.path.join(artifact_path, "model.pth")
         torch.save(model_state, model_file)
 
-        # Calculate size in MB
         size_mb = os.path.getsize(model_file) / 1e6
 
-        # Try to get the latest config version ID (may not exist)
         config_snapshot_id = None
         if hasattr(run, 'config_versions') and run.config_versions.exists():
             last_config = run.config_versions.last()
             config_snapshot_id = last_config.id if last_config else None
 
-        # Create the ModelVersion record
         return ModelVersion.objects.create(
             run=run,
             version=version_str,
@@ -114,6 +113,7 @@ class ModelVersionService:
             model_path = os.path.join(version.artifact_path, "model.pth")
             if not os.path.exists(model_path):
                 raise FileNotFoundError(f"Model file not found: {model_path}")
+            import torch
             return torch.load(model_path, map_location='cpu')
         except ModelVersion.DoesNotExist:
             logger.error("ModelVersion %s not found", version_id)
