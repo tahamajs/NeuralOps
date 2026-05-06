@@ -98,21 +98,11 @@ class ModelVersionTests(TestCase):
         self.assertEqual(len(resp.data['results']), 0)
 
     def test_csv_export(self):
-        # Create a mock run that returns a known queryset
-        from unittest.mock import MagicMock
-        mock_run = MagicMock()
-        mock_run.id = self.job.id
-        mock_manager = MagicMock()
-        mock_manager.all.return_value.order_by.return_value = ModelVersion.objects.filter(id=self.version.id)
-        mock_run.model_versions = mock_manager
-
-        with patch('model_versioning.views.get_object_or_404', return_value=mock_run):
-            url = f'/api/model-versioning/runs/{self.job.id}/versions/?format=csv'
-            resp = self.client.get(url)
-            self.assertEqual(resp.status_code, 200)
-            self.assertEqual(resp['Content-Type'], 'text/csv')
-
-
+        # Ensure the reel run has at least one version (it does from setUp)
+        url = f'/api/model-versioning/runs/{self.job.id}/versions/?format=csv'
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp['Content-Type'], 'text/csv')
             
     def test_pagination(self):
         for i in range(25):
