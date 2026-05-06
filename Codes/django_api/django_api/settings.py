@@ -1,6 +1,5 @@
 # django_api/settings.py
 import os
-import sys
 from pathlib import Path
 
 # ----------------------------------------------------------------------
@@ -8,15 +7,11 @@ from pathlib import Path
 # ----------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Make the 'Codes' folder (where all Django apps reside) importable
-CODES_DIR = BASE_DIR.parent / 'Codes'
-if CODES_DIR.exists() and str(CODES_DIR) not in sys.path:
-    sys.path.insert(0, str(CODES_DIR))
-
-# Also add the parent of Codes (Project root) if needed by the framework
-PROJECT_ROOT = BASE_DIR.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+# NOTE: No sys.path modifications are needed.
+#       All Django apps live inside the project root (BASE_DIR) and are
+#       automatically importable.  Adding the parent 'Codes' directory
+#       would expose the 'framework/experiment' package, which shadows
+#       our 'experiment' Django app.
 
 # ----------------------------------------------------------------------
 # Security & Debug
@@ -43,22 +38,14 @@ INSTALLED_APPS = [
     'channels',
     'django_filters',
 
-    # Your project apps (now accessible because Codes/ is on sys.path)
+    # Your project apps
     'api',
     'web_dashboard',
-    'experiment',   # not 'experiments'
-
+    'experiment',
     'jobscheduler',
-    'notes',                 # this will work if Codes/notes exists
+    'notes',
     'model_versioning',
-    
 ]
-
-# ----------------------------------------------------------------------
-# (Optional) Remove 'notes' if the directory does not exist
-# ----------------------------------------------------------------------
-# if not (CODES_DIR / 'notes').exists():
-#     INSTALLED_APPS.remove('notes')
 
 # ----------------------------------------------------------------------
 # Middleware
@@ -73,7 +60,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'web_dashboard.middleware.TokenAuthMiddleware',
-
 ]
 
 # ----------------------------------------------------------------------
