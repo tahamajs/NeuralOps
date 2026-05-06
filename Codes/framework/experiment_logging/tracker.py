@@ -1,105 +1,54 @@
-"""
-MetricsTracker: collect, save, and load training metrics (loss, accuracy, etc.).
-Supports JSON and CSV formats.
-"""
-
-import json
-import csv
-import os
-from typing import Any, Dict, List, Optional
 import logging
+from pathlib import Path
+from transformers import TrainerCallback
+from .tracker import MetricsTracker
 
-class MetricsTracker:
+class LoggingCallback(TrainerCallback):
     """
-    Simple step‑wise metrics recorder.
-
-    Usage:
-        tracker = MetricsTracker("metrics.json")
-        tracker.log({"loss": 2.3, "lr": 1e-4}, step=100)
-        tracker.log({"loss": 2.1}, step=200)
-        tracker.save()        # flushes to disk
-        tracker.to_csv("metrics.csv")
+    HuggingFace Trainer callback that pushes metrics to a MetricsTracker.
+    Optionally generates plots after training ends (delegates to analysis).
     """
-    def __init__(self, filepath: str, logger: Optional[logging.Logger] = None):
-        self.filepath = filepath
-        self.records: List[Dict[str, Any]] = []
-        self.logger = logger or logging.getLogger(__name__)
+    def __init__(
+        self,
+        tracker: MetricsTracker,
+        logger: logging.Logger,
+        plots_dir: str = None,
+        save_plots: bool = False,
+    ):
+        self.tracker = tracker
+        self.logger = logger
+        self.plots_dir = Path(plots_dir) if plots_dir else None
+        self.save_plots = save_plots
+        self._train_losses = []
+        self._eval_losses = []
 
-    def log(self, metrics: Dict[str, Any], step: Optional[int] = None, flush: bool = False):
-        """Record a metrics dict, optionally associated with a step."""
-        entry = {"step": step} if step is not None else {}
-        entry.update(metrics)
-        entry["timestamp"] = _now_iso()
-        self.records.append(entry)
-        if flush:
-            self._flush()
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs:
+            step = state.global_step
+            self.tracker.log(logs, step=step)
+            # Human‑readable summary
+            loss = logs.get("loss", None)
+            eval_loss = logs.get("eval_loss", None)
+            lr = logs.get("learning_rate", None)
+            msg = f"Step {step}: "
+            if loss is not None: msg += f"loss={loss:.4f} "
+            if eval_loss is not None: msg += f"eval_loss={eval_loss:.4f} "
+            if lr is not None: msg += f"lr={lr:.2e}"
+            self.logger.info(msg)
 
-    def _flush(self):
-        """Append to JSON file."""
-        if self.filepath:
-            os.makedirs(os.path.dirname(self.filepath), exist_ok=True)
-            with open(self.filepath, "a", encoding="utf-8") as f:
-                for rec in self.records:
-                    f.write(json.dumps(rec) + "\n")
-            self.records.clear()
-
-    def save(self, filepath: Optional[str] = None):
-        """Save all accumulated records to a file (default: self.filepath)."""
-        target = filepath or self.filepath
-        self._flush()
-        if self.logger:
-            self.logger.info(f"Metrics saved to {target}")
-
-    def to_csv(self, csv_path: str):
-        """Export all records (from file or memory) to a CSV file."""
-        all_records = self._load_all()
-        if not all_records:
-            return
-        # Collect all possible column names
-        columns = set()
-        for rec in all_records:
-            columns.update(rec.keys())
-        columns = sorted(columns)
-
-        with open(csv_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=columns)
-            writer.writeheader()
-            writer.writerows(all_records)
-        if self.logger:
-            self.logger.info(f"Metrics CSV exported to {csv_path}")
-
-    def _load_all(self) -> List[Dict[str, Any]]:
-        """Load all records from the JSON file (if any)."""
-        records = []
-        if self.filepath and os.path.exists(self.filepath):
-            with open(self.filepath, "r", encoding="utf-8") as f:
-                for line in f:
-                    try:
-                        records.append(json.loads(line))
-                    except json.JSONDecodeError:
-                        continue
-        # Also include any unsaved in‑memory records
-        records.extend(self.records)
-        return records
-
-    def get_best(self, metric: str, mode: str = "min") -> Dict[str, Any]:
-        """Return the best record according to a metric ('min' or 'max')."""
-        all_records = self._load_all()
-        if not all_records:
-            return {}
-        best = all_records[0]
-        for rec in all_records[1:]:
-            if mode == "min" and rec.get(metric, float("inf")) < best.get(metric, float("inf")):
-                best = rec
-            elif mode == "max" and rec.get(metric, float("-inf")) > best.get(metric, float("-inf")):
-                best = rec
-        return best
-
-    def clear(self):
-        """Clear in‑memory records (does not delete file)."""
-        self.records.clear()
-
-
-def _now_iso() -> str:
-    from datetime import datetime
-    return datetime.utcnow().isoformat()
+    def on_train_end(self, args, state, control, **kwargs):
+        self.tracker.flush()
+        self.logger.info("Training completed. Metrics flushed.")
+        if self.save_plots and self.plots_dir:
+            try:
+                from framework.analysis.plotting import plot_training_history
+                df = self.tracker.to_dataframe()
+                self.plots_dir.mkdir(parents=True, exist_ok=True)
+                plot_training_history(
+                    {"train_steps": df["step"].tolist() if "step" in df.columns else [],
+                     "train_loss": df["loss"].tolist() if "loss" in df.columns else []},
+                    save_path=str(self.plots_dir / "training_history.png")
+                )
+                self.logger.info(f"Plots saved to {self.plots_dir}")
+            except Exception as e:
+                self.logger.warning(f"Plot generation failed: {e}")
