@@ -1,37 +1,19 @@
-"""Logging configuration dataclass."""
-
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Dict, Any
 
 @dataclass
 class LoggingConfig:
-    # Directory that will contain all run subdirectories
-    log_base_dir: str = "logs"
-    # Experiment name (used as subfolder prefix)
-    experiment_name: str = "experiment"
-    # If True, append current timestamp to experiment_name for a unique run dir
-    run_id: Optional[str] = None          # add this
-    use_timestamp: bool = True            # add this
-    console_level: str = "INFO"
-    colored_console: bool = True
-    # log_base_dir: str = "./logs"        # already present? if not, add
-    # run_id: Optional[str] = None        # add
-    # use_timestamp: bool = True          # add
+    """Complete logging & experiment tracking configuration."""
+    log_level: str = "INFO"
+    log_format: str = "structured"       # "structured" (JSON lines), "human"
+    log_to_console: bool = True
+    log_to_file: bool = True
     log_dir: str = "./logs"
-
-    # Plain text file (inside the run directory)
-    file_level: str = "DEBUG"
-    log_filename: str = "run.log"
-
-    # Structured JSON log file (one JSON object per line)
-    json_log: bool = True
-    json_filename: str = "run.jsonl"
-
+    experiment_name: str = "experiment"
+    run_id: Optional[str] = None
+    use_timestamp: bool = True
     # Metrics tracking
-    track_metrics: bool = True
-    metrics_filename: str = "metrics.json"   # or "metrics.csv" if CSV output
-
-    # Rotating logs? Not per‑run; we use timestamped directories, so no need.
-    # Max size for text log before rotation (0 = no rotation)
-    max_log_size_mb: int = 0
-    backup_count: int = 5
+    metrics_enabled: bool = True
+    metrics_flush_every: int = 10         # flush metrics file every N logs
+    # Extra metadata added to every event
+    extra_metadata: Dict[str, Any] = field(default_factory=dict)
