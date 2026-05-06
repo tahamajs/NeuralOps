@@ -6,7 +6,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Count, Avg
+from django.db.models import Count, Avg, Value as V
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.cache import cache_page
@@ -40,6 +41,7 @@ def dashboard(request):
     """Full dashboard (bootstrap version with real‑time updates)."""
     return render(request, 'web_dashboard/dashboard.html')
 
+
 @login_required(login_url='/login/')
 def statistics(request):
     """Statistics page with aggregated metrics."""
@@ -50,22 +52,31 @@ def statistics(request):
     success_rate = (completed / total * 100) if total else 0
 
     # Last 7 days activity
+    from django.db.models.functions import TruncDate
     week_ago = timezone.now() - timedelta(days=7)
-    runs_by_day = TrainingRun.objects.filter(created_at__gte=week_ago) \
-        .extra({'date': "date(created_at)"}) \
-        .values('date') \
-        .annotate(count=Count('id')) \
+    runs_by_day = (
+        TrainingRun.objects
+        .filter(created_at__gte=week_ago)
+        .annotate(date=TruncDate('created_at'))
+        .values('date')
+        .annotate(count=Count('id'))
         .order_by('date')
-    days_labels = [item['date'].strftime('%Y-%m-%d') for item in runs_by_day]
+    )
+    days_labels = [item['date'].strftime('%Y-%m-%d') for item in runs_by_day]  # now works
     days_counts = [item['count'] for item in runs_by_day]
 
-    # Average metrics from completed runs (using final_metrics JSON)
-    avg_metrics = TrainingRun.objects.filter(status='completed', final_metrics__has_key='eval_accuracy') \
-        .aggregate(
-            avg_loss=Avg('final_metrics__eval_loss'),
-            avg_accuracy=Avg('final_metrics__eval_accuracy'),
-            avg_f1=Avg('final_metrics__eval_f1'),
+    # Average metrics – use a safe fallback for SQLite JSON fields
+    try:
+        avg_metrics = TrainingRun.objects.filter(
+            status='completed',
+            final_metrics__has_key='eval_accuracy'
+        ).aggregate(
+            avg_loss=Coalesce(Avg('final_metrics__eval_loss'), V(0.0)),
+            avg_accuracy=Coalesce(Avg('final_metrics__eval_accuracy'), V(0.0)),
+            avg_f1=Coalesce(Avg('final_metrics__eval_f1'), V(0.0)),
         )
+    except Exception:
+        avg_metrics = {'avg_loss': 0.0, 'avg_accuracy': 0.0, 'avg_f1': 0.0}
 
     model_usage = TrainingRun.objects.values('config__model_name').annotate(count=Count('id')).order_by('-count')[:5]
     task_usage = TrainingRun.objects.values('config__task_name').annotate(count=Count('id')).order_by('-count')[:5]
@@ -85,7 +96,6 @@ def statistics(request):
         'task_usage': task_usage,
     }
     return render(request, 'web_dashboard/statistics.html', context)
-
 # ---------- Authentication Pages ----------
 def login_page(request):
     return render(request, 'web_dashboard/login.html')
