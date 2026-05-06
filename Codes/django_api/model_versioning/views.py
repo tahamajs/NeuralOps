@@ -1,8 +1,7 @@
 import os
 import csv
 import logging
-from io import StringIO
-
+import boto3
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
@@ -16,8 +15,7 @@ from rest_framework.pagination import PageNumberPagination
 from jobscheduler.models import Job
 from .models import ModelVersion
 from .serializers import ModelVersionSerializer
-from .utils import cleanup_old_versions, HuggingFacePublisher   # adjusted import
-import boto3
+from .utils import cleanup_old_versions, HuggingFacePublisher
 
 logger = logging.getLogger(__name__)
 
@@ -36,32 +34,31 @@ class StandardPagination(PageNumberPagination):
 def list_model_versions(request, run_id):
     run = get_object_or_404(Job, id=run_id)
     queryset = run.model_versions.all().order_by('-version_number')
-    
+
     # Filtering
     validation = request.query_params.get('validation_passed')
     if validation is not None:
         queryset = queryset.filter(validation_passed=validation.lower() == 'true')
-    
+
     published = request.query_params.get('published')
     if published is not None:
         queryset = queryset.filter(is_published_to_hub=published.lower() == 'true')
-    
+
     storage_tier = request.query_params.get('storage_tier')
     if storage_tier in ['hot', 'warm', 'cold']:
         queryset = queryset.filter(storage_tier=storage_tier)
-    
+
     search = request.query_params.get('search')
     if search:
         queryset = queryset.filter(Q(version__icontains=search))
-    
+
     ordering = request.query_params.get('ordering', '-version_number')
-    allowed_orders = ['version_number', 'created_at', 'artifact_size_mb',
-                      'version_number', '-version_number', '-created_at', '-artifact_size_mb']
+    allowed_orders = ['version_number', 'created_at', 'artifact_size_mb', '-version_number', '-created_at', '-artifact_size_mb']
     if ordering in allowed_orders:
         queryset = queryset.order_by(ordering)
     else:
         queryset = queryset.order_by('-version_number')
-    
+
     # CSV export
     if request.query_params.get('format') == 'csv':
         response = HttpResponse(content_type='text/csv')
@@ -78,7 +75,7 @@ def list_model_versions(request, run_id):
                 v.created_at
             ])
         return response
-    
+
     paginator = StandardPagination()
     page = paginator.paginate_queryset(queryset, request)
     serializer = ModelVersionSerializer(page, many=True)
@@ -97,15 +94,14 @@ def model_version_detail(request, version_id):
 
 
 # ----------------------------------------------------------------------
-# Publish to Hugging Face Hub
+# Publish to Hugging Face Hub (staff only)
 # ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def publish_to_hub(request, version_id):
-    version = get_object_or_404(ModelVersion, id=version_id)
-    # Author check: Job model doesn't have author, so we fallback to staff check
     if not request.user.is_staff:
-        return Response({"error": "Not allowed to publish this model"}, status=403)
+        return Response({"error": "Not allowed"}, status=403)
+    version = get_object_or_404(ModelVersion, id=version_id)
     if version.is_published_to_hub:
         return Response({"error": "Already published", "hub_url": version.hub_repo_url}, status=400)
     try:
@@ -138,14 +134,14 @@ def download_model_version(request, version_id):
 
 
 # ----------------------------------------------------------------------
-# Cleanup old versions (keep best K)
+# Cleanup old versions (staff only)
 # ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cleanup_versions(request, run_id):
-    run = get_object_or_404(Job, id=run_id)
     if not request.user.is_staff:
         return Response({"error": "Not allowed"}, status=403)
+    run = get_object_or_404(Job, id=run_id)
     keep_best = request.data.get('keep_best_k', 3)
     keep_tags = request.data.get('keep_version_tags', ['v1', 'v2'])
     deleted_count = cleanup_old_versions(run, keep_best_k=keep_best, keep_version_tags=keep_tags)
@@ -153,14 +149,14 @@ def cleanup_versions(request, run_id):
 
 
 # ----------------------------------------------------------------------
-# Archive to cold storage (S3 Glacier)
+# Archive to cold storage (staff only)
 # ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def archive_to_cold_storage(request, version_id):
-    version = get_object_or_404(ModelVersion, id=version_id)
     if not request.user.is_staff:
         return Response({"error": "Not allowed"}, status=403)
+    version = get_object_or_404(ModelVersion, id=version_id)
     if version.storage_tier == 'cold':
         return Response({"error": "Already in cold storage"}, status=400)
     try:
@@ -174,18 +170,17 @@ def archive_to_cold_storage(request, version_id):
 
 
 # ----------------------------------------------------------------------
-# Restore from cold storage
+# Restore from cold storage (staff only)
 # ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def restore_from_cold_storage(request, version_id):
-    version = get_object_or_404(ModelVersion, id=version_id)
     if not request.user.is_staff:
         return Response({"error": "Not allowed"}, status=403)
+    version = get_object_or_404(ModelVersion, id=version_id)
     if version.storage_tier != 'cold':
         return Response({"error": "Not in cold storage"}, status=400)
     try:
-        import boto3
         bucket = getattr(settings, 'MODEL_ARCHIVE_BUCKET', None)
         if not bucket:
             return Response({"error": "MODEL_ARCHIVE_BUCKET not configured"}, status=501)
@@ -202,26 +197,25 @@ def restore_from_cold_storage(request, version_id):
 
 
 # ----------------------------------------------------------------------
-# Set as production version
+# Set as production version (staff only)
 # ----------------------------------------------------------------------
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def set_production_version(request, run_id, version_number):
-    run = get_object_or_404(Job, id=run_id)
     if not request.user.is_staff:
         return Response({"error": "Not allowed"}, status=403)
+    run = get_object_or_404(Job, id=run_id)
+    version = get_object_or_404(ModelVersion, run=run, version_number=version_number)   # 404 is raised here
     try:
         run.model_versions.filter(is_production=True).update(is_production=False)
-        version = get_object_or_404(ModelVersion, run=run, version_number=version_number)
         version.is_production = True
         version.save(update_fields=['is_production'])
         return Response({"status": "production version updated", "version_number": version_number})
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
-
 # ----------------------------------------------------------------------
-# Compare two versions (metrics and metadata)
+# Compare two versions
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
