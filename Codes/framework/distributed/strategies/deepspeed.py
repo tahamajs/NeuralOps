@@ -1,0 +1,24 @@
+"""DeepSpeed ZeRO strategy – single machine or multi‑node."""
+
+import os
+import torch
+import deepspeed
+from .base import BaseStrategy, STRATEGY_REGISTRY
+
+@STRATEGY_REGISTRY.register("deepspeed")
+class DeepSpeedStrategy(BaseStrategy):
+    def wrap_model(self, model, **kwargs):
+        ds_config = self.config.deepspeed_config or {}
+        ds_config.setdefault("train_batch_size", "auto")
+        ds_config.setdefault("train_micro_batch_size_per_gpu", "auto")
+        ds_config.setdefault("optimizer", {"type": "AdamW", "params": {"lr": "auto"}})
+
+        engine, _, _, _ = deepspeed.initialize(
+            model=model,
+            model_parameters=model.parameters(),
+            config_params=ds_config,
+        )
+        return engine
+
+    def cleanup(self):
+        pass  # DeepSpeed handles its own cleanup
