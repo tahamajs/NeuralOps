@@ -1,0 +1,13 @@
+import torch
+from .base import BaseQuantizer, QUANTIZER_REGISTRY
+
+@QUANTIZER_REGISTRY.register("gptq")
+class GPTQQuantizer(BaseQuantizer):
+    def apply(self, model, bits=4, dataset="c4", **kwargs):
+        try:
+            from transformers import GPTQConfig
+        except ImportError:
+            raise ImportError("Install transformers[gptq] for GPTQ support")
+        quant_config = GPTQConfig(bits=bits, dataset=dataset)
+        model.config.quantization_config = quant_config
+        return model
