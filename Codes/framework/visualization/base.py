@@ -1,5 +1,5 @@
-# framework/visualization/base.py
 import os
+import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
@@ -18,13 +18,24 @@ class Registry:
         return decorator
 
     def get(self, key: str):
-        return self._dict.get(key)
+        return self._dict.get(key.lower())
+
+    def resolve(self, key: str):
+        if key.lower() not in self._dict:
+            raise KeyError(f"Unknown {self.name} '{key}'. Available: {list(self._dict.keys())}")
+        return self._dict[key.lower()]
 
     def keys(self):
         return list(self._dict.keys())
 
-    def __contains__(self, key: str) -> bool:
-        return key in self._dict
+    def __contains__(self, key: str):
+        return key.lower() in self._dict
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __repr__(self):
+        return f"Registry({self.name!r}, {len(self)} items)"
 
 VISUALIZER_REGISTRY = Registry("visualizers")
 
@@ -38,7 +49,6 @@ class BaseVisualizer(ABC):
         pass
 
     def _save_figure(self, fig, filename: str, dpi: int = 150, bbox_inches: str = "tight") -> str:
-        import matplotlib.pyplot as plt
         path = os.path.join(self.output_dir, filename)
         fig.savefig(path, dpi=dpi, bbox_inches=bbox_inches)
         plt.close(fig)
