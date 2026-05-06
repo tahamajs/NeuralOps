@@ -1,38 +1,25 @@
-"""Automatic integration with ResultsSaver and Django runner."""
+"""Auto‑drift check integration – called by MegaOrchestrator post‑training."""
 
 from pathlib import Path
 from typing import Dict, Any, Optional
-
-from .detectors import DriftDetector
+import numpy as np
+import json
 from .config import DriftConfig
+from .detectors import DriftDetector
 
 def auto_drift_check(
     run_id: str,
-    reference_data: Dict[str, Any],
-    current_data: Dict[str, Any],
+    reference_data: Dict[str, np.ndarray],
+    current_data: Dict[str, np.ndarray],
     config: Optional[DriftConfig] = None,
-    output_dir: Path = None,
+    output_dir: Optional[Path] = None,
 ) -> "DriftReport":
-    """
-    Run drift detection and save the report to the run directory.
-    Designed to be called from the Django runner's `final_callback` or
-    from a dedicated monitoring job.
-
-    Args:
-        run_id: the training run ID
-        reference_data: dict of feature → array for training data
-        current_data: dict of feature → array for evaluation/serving data
-        config: drift configuration (uses defaults if None)
-        output_dir: base directory for results (e.g. settings.MEDIA_ROOT / run_id)
-
-    Returns:
-        DriftReport with all results
-    """
     cfg = config or DriftConfig()
     detector = DriftDetector(reference_data, cfg)
     report = detector.detect(current_data)
 
     if output_dir:
+        output_dir.mkdir(parents=True, exist_ok=True)
         report.save(str(output_dir / "drift_report.json"))
         if cfg.generate_plots:
             from .visualization import generate_drift_plots
