@@ -4,7 +4,7 @@
 # from pathlib import Path
 # from transformers import AutoTokenizer, AutoModelForSequenceClassification
 # sys.path.insert(0, str(Path(__file__).parent.parent))
-# from framework.compression.svd_linear import SVDLinearLayer
+# from framework.compression_engine.svd_linear import SVDLinearLayer
 # from framework.utils.device import get_device
 # from config import config
 

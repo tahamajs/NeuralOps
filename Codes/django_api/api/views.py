@@ -20,7 +20,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
 from framework.attentions.core.registry import ATTENTION_REGISTRY
-from framework.compression.core.registry import COMPRESSOR_REGISTRY
+from framework.compression_engine.core.registry import COMPRESSOR_REGISTRY
 from .models import Experiment, TrainingRun
 from .serializers import ExperimentSerializer, TrainingRunSerializer
 from .runners import run_training, run_evaluation, run_compression
