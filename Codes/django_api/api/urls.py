@@ -36,7 +36,6 @@ urlpatterns = [
     # Health / Version
     path("health/", views.health_check),
     path("version/", views.version),
-
     # Jobscheduler – explicit paths to avoid conflicts
     path('', include('jobscheduler.urls')),
 

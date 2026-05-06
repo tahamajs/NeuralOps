@@ -1,3 +1,4 @@
+# framework/trainer/losses.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,4 +40,41 @@ class LabelSmoothingLoss(nn.Module):
         nll_loss = -log_probs.gather(dim=-1, index=labels.unsqueeze(1))
         smooth_loss = -log_probs.mean(dim=-1)
         loss = self.confidence * nll_loss + self.smoothing * smooth_loss
+        return loss.mean()
+
+@LOSS_REGISTRY.register("dice")
+class DiceLoss(nn.Module):
+    def __init__(self, smooth=1.0, **kwargs):
+        super().__init__()
+        self.smooth = smooth
+
+    def forward(self, logits, labels):
+        probs = F.softmax(logits, dim=-1)
+        one_hot = F.one_hot(labels, num_classes=probs.shape[-1]).float()
+        intersection = (probs * one_hot).sum(dim=0)
+        union = probs.sum(dim=0) + one_hot.sum(dim=0)
+        dice = (2.0 * intersection + self.smooth) / (union + self.smooth)
+        return 1 - dice.mean()
+
+@LOSS_REGISTRY.register("poly")
+class PolyLoss(nn.Module):
+    def __init__(self, epsilon=1.0, **kwargs):
+        super().__init__()
+        self.epsilon = epsilon
+
+    def forward(self, logits, labels):
+        ce = F.cross_entropy(logits, labels)
+        pt = torch.exp(-ce)
+        return ce + self.epsilon * (1 - pt)
+
+@LOSS_REGISTRY.register("contrastive")
+class ContrastiveLoss(nn.Module):
+    def __init__(self, margin=1.0, **kwargs):
+        super().__init__()
+        self.margin = margin
+
+    def forward(self, embeddings, labels):
+        # Assumes embeddings and labels for pairs
+        dist = F.pairwise_distance(embeddings[0], embeddings[1])
+        loss = (1 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(self.margin - dist, min=0).pow(2)
         return loss.mean()
