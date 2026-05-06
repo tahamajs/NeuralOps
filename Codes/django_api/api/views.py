@@ -522,3 +522,35 @@ def list_callbacks(request):
     return Response({"callbacks": [
         {"key": k, "description": v} for k, v in SUPPORTED_CALLBACKS.items()
     ]})
+
+
+from framework.trainer.losses import LOSS_REGISTRY
+from framework.trainer.optimizers import OPTIMIZER_REGISTRY
+from framework.trainer.schedulers import SCHEDULER_REGISTRY
+from framework.callbacks import CALLBACK_REGISTRY
+from framework.data.augmentation import AUGMENTATION_REGISTRY
+from framework.trainer.methods.registry import METHOD_REGISTRY
+
+@api_view(["GET"])
+def list_losses(request):
+    return Response({"losses": list(LOSS_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_optimizers(request):
+    return Response({"optimizers": list(OPTIMIZER_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_schedulers(request):
+    return Response({"schedulers": list(SCHEDULER_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_callbacks(request):
+    return Response({"callbacks": list(CALLBACK_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_augmentations(request):
+    return Response({"augmentations": list(AUGMENTATION_REGISTRY.keys())})
+
+@api_view(["GET"])
+def list_methods(request):
+    return Response({"methods": list(METHOD_REGISTRY.keys())})

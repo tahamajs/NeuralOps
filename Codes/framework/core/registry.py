@@ -1,12 +1,29 @@
-# framework/core/registry.py
+"""
+Central registry system for the Efficient Transformer Toolkit.
+
+All framework components (attentions, compressors, trainers, visualizers, etc.)
+are stored in registries, enabling dynamic discovery and plug‑and‑play integration
+with Django's API.
+"""
+
 from typing import Dict, Callable, Optional, List
 
+
 class Registry:
+    """A named dictionary that maps string keys to classes or factory functions."""
+
     def __init__(self, name: str):
         self.name = name
         self._dict: Dict[str, Callable] = {}
 
     def register(self, key: Optional[str] = None) -> Callable:
+        """
+        Decorator (or function) to register a class/factory under the given key.
+
+        Usage:
+            @ATTENTION_REGISTRY.register("griffin")
+            class GriffinAttention(BaseAttention): ...
+        """
         def decorator(obj: Callable) -> Callable:
             nonlocal key
             if key is None:
@@ -16,9 +33,28 @@ class Registry:
         return decorator
 
     def get(self, key: str) -> Optional[Callable]:
+        """
+        Safely retrieve a registered component, or None if not found.
+        """
         return self._dict.get(key.lower())
 
+    def resolve(self, key: str) -> Callable:
+        """
+        Retrieve a registered component and raise a descriptive error if missing.
+
+        Raises:
+            KeyError: with available keys.
+        """
+        if key.lower() not in self._dict:
+            raise KeyError(
+                f"Unknown {self.name.rstrip('s')} '{key}'. "
+                f"Available: {list(self._dict.keys())}"
+            )
+        return self._dict[key.lower()]
+
     def keys(self) -> List[str]:
+        """Return a list of all registered keys (in original casing)."""
+        # Return keys as stored (could be a mix of cases if user overrode)
         return list(self._dict.keys())
 
     def __contains__(self, key: str) -> bool:
@@ -27,13 +63,26 @@ class Registry:
     def __len__(self) -> int:
         return len(self._dict)
 
-# Global registries
+    def __repr__(self) -> str:
+        return f"Registry({self.name!r}, {len(self)} items)"
+
+
+# ----------------------------------------------------------------------
+# Global registries – populated by their respective packages
+# ----------------------------------------------------------------------
 ATTENTION_REGISTRY = Registry("attentions")
 COMPRESSOR_REGISTRY = Registry("compressors")
 TRAINER_REGISTRY = Registry("trainers")
 VISUALIZER_REGISTRY = Registry("visualizers")
 
+# Additional registries can be added here as needed.
+# METHOD_REGISTRY, LOSS_REGISTRY, OPTIMIZER_REGISTRY, SCHEDULER_REGISTRY, etc.
+# For these, the specialised packages define their own Registry instances
+# (e.g., framework/trainer/losses.py defines LOSS_REGISTRY locally).
+
+
 def list_all_components() -> dict:
+    """Convenience function that returns all global registry keys."""
     return {
         "attentions": ATTENTION_REGISTRY.keys(),
         "compressors": COMPRESSOR_REGISTRY.keys(),
