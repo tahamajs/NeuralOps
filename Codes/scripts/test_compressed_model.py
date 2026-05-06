@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from framework.compression_engine_engine.svd_linear import SVDLinearLayer
+from framework.compression_engine.svd_linear import SVDLinearLayer
 from framework.utils.device import get_device
 from config import config
 

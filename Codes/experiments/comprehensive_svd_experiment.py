@@ -19,8 +19,8 @@
 # from plotly.subplots import make_subplots
 
 # from framework.utils.architecture import detect_architecture, get_layer_patterns
-# # from framework.compression_engine_engine.svd_compressor import SVDLinearLayer
-# # from framework.compression_engine_engine.adaptive_compressor import AdaptiveTransformerCompressor
+# # from framework.compression_engine.svd_compressor import SVDLinearLayer
+# # from framework.compression_engine.adaptive_compressor import AdaptiveTransformerCompressor
 
 # # ========== Configuration ==========
 # class Config:
