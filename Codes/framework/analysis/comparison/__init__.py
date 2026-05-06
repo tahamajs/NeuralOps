@@ -8,7 +8,38 @@ from .plotting import (
     plot_critical_difference_diagram,
     plot_pairwise_comparison_heatmap,
 )
-
+from .statistical_tests import (
+    # Omnibus tests
+    friedman_test,
+    friedman_aligned_ranks_test,
+    quade_test,
+    # Post‑hoc
+    critical_difference,
+    nemenyi_posthoc,
+    bonferroni_dunn_posthoc,
+    holm_correction,
+    hochberg_correction,
+    finner_correction,
+    hommel_correction,
+    holland_copenhaver_correction,
+    bergmann_hommel_posthoc,
+    # Pairwise
+    wilcoxon_signed_rank_test,
+    sign_test,
+    mcnemar_test,
+    # Effect sizes
+    cohens_d,
+    hedges_g,
+    cliffs_delta,
+    vargha_delaney_a12,
+    glass_rank_biserial,
+    # Bayesian
+    bayesian_correlated_ttest,
+    bayesian_signed_rank_test,
+    # Convenience
+    run_full_statistical_analysis,
+    compute_ranks,
+)
 __all__ = [
     "ComparisonEngine",
     "ComparisonResult",
