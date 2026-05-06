@@ -307,3 +307,242 @@ class JobConsumerTests(TransactionTestCase):
                 self.assertEqual(response, "Hello from test")
             await communicator.disconnect()
         async_to_sync(test)()
+
+
+
+
+
+# ----------------------------------------------------------------------
+# ADDITIONAL HARD TESTS (30) – insert into existing test classes
+# ----------------------------------------------------------------------
+
+# ======== ExperimentModelTests additions ========
+def test_experiment_defaults(self):
+    exp = Experiment.objects.create(name="Default Exp")
+    self.assertEqual(exp.description, "")
+    self.assertEqual(exp.default_config, {})
+    self.assertEqual(exp.tags, "")
+
+def test_experiment_name_max_length(self):
+    long_name = "a" * 201   # max_length is 200
+    with self.assertRaises(Exception):
+        Experiment.objects.create(name=long_name)
+
+
+# ======== TrainingRunModelTests additions ========
+def test_run_status_default(self):
+    run = TrainingRun.objects.create(experiment=self.exp)
+    self.assertEqual(run.status, "queued")
+
+def test_run_invalid_status_choice(self):
+    with self.assertRaises(Exception):
+        TrainingRun.objects.create(experiment=self.exp, status="invalid_status")
+
+
+# ======== TrainingSnapshotModelTests additions ========
+def test_snapshot_optional_fields(self):
+    snap = TrainingSnapshot.objects.create(run=self.run, step=1,
+                                           cpu_percent=None, ram_mb=None)
+    self.assertIsNone(snap.cpu_percent)
+    self.assertIsNone(snap.ram_mb)
+
+
+# ======== ExperimentViewTests additions ========
+def test_create_experiment_missing_name(self):
+    response = self.client.post('/api/experiments/create/', {}, format='json')
+    self.assertEqual(response.status_code, 400)
+
+def test_experiment_detail_not_found(self):
+    fake_id = '00000000-0000-0000-0000-000000000000'
+    response = self.client.get(f'/api/experiments/{fake_id}/')
+    self.assertEqual(response.status_code, 404)
+
+def test_list_experiments_unauthenticated(self):
+    client = APIClient()   # no authentication
+    response = client.get('/api/experiments/')
+    self.assertEqual(response.status_code, 401)   # IsAuthenticated required
+
+
+# ======== TrainingRunViewTests additions ========
+# (these methods already have start_job patched in setUp)
+def test_start_train_missing_experiment_id(self):
+    response = self.client.post('/api/train/', {
+        'name': 'NoExperiment',
+        'config': {'epochs': 1}
+    }, format='json')
+    # The view creates a new experiment if none provided? Actually it only gets experiment_id.
+    # If experiment_id is missing, the view will try to get_object_or_404 with None -> 404.
+    self.assertEqual(response.status_code, 404)
+
+def test_start_evaluate_missing_run_id_in_body(self):
+    # The route /evaluate/ expects run_id in request.data
+    response = self.client.post('/api/evaluate/', {}, format='json')
+    # Without run_id, get_object_or_404 raises 404
+    self.assertEqual(response.status_code, 404)
+
+def test_start_compress_missing_run_id(self):
+    response = self.client.post('/api/compress/', {}, format='json')
+    self.assertEqual(response.status_code, 404)
+
+def test_start_evaluate_invalid_run_id(self):
+    response = self.client.post('/api/runs/invalid-uuid/evaluate/')
+    self.assertEqual(response.status_code, 404)
+
+def test_stop_job_already_completed(self):
+    self.run.status = 'completed'
+    self.run.save()
+    response = self.client.post(f'/api/runs/{self.run.id}/stop/')
+    # View returns 400 because status is not queued/running
+    self.assertEqual(response.status_code, 400)
+
+def test_update_config_with_invalid_json(self):
+    response = self.client.patch(f'/api/runs/{self.run.id}/config/',
+                                 'not json', content_type='application/json')
+    self.assertEqual(response.status_code, 400)
+
+def test_training_history_nonexistent_run(self):
+    response = self.client.get('/api/runs/00000000-0000-0000-0000-000000000000/history/')
+    self.assertEqual(response.status_code, 404)
+
+def test_snapshots_nonexistent_run(self):
+    response = self.client.get('/api/runs/00000000-0000-0000-0000-000000000000/snapshots/')
+    self.assertEqual(response.status_code, 404)
+
+def test_run_artifacts_empty(self):
+    # run with no artifacts_dir set
+    response = self.client.get(f'/api/runs/{self.run.id}/artifacts/')
+    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.data['artifacts'], [])
+
+def test_run_artifact_download_nonexistent(self):
+    # run has no artifacts_dir
+    response = self.client.get(f'/api/runs/{self.run.id}/artifacts/somefile')
+    self.assertEqual(response.status_code, 404)
+
+def test_run_model_download_no_model(self):
+    # run with no artifacts_dir/model
+    response = self.client.get(f'/api/runs/{self.run.id}/model/')
+    self.assertEqual(response.status_code, 404)
+
+def test_list_runs_unauthenticated(self):
+    client = APIClient()
+    response = client.get('/api/runs/')
+    self.assertEqual(response.status_code, 401)
+
+def test_generate_paper_not_implemented(self):
+    response = self.client.get(f'/api/runs/{self.run.id}/paper/')
+    # The placeholder returns 200 with message
+    self.assertEqual(response.status_code, 200)
+    self.assertIn('message', response.data)
+
+def test_paper_preview_pdf_not_implemented(self):
+    response = self.client.get(f'/api/runs/{self.run.id}/paper_preview/')
+    self.assertEqual(response.status_code, 501)
+
+
+# ======== SystemViewTests additions ========
+def test_system_status_unauthenticated(self):
+    client = APIClient()
+    response = client.get('/api/system/status/')
+    # system_status view has no permission_classes, so public
+    self.assertEqual(response.status_code, 200)
+
+def test_gpu_info_unauthenticated(self):
+    client = APIClient()
+    response = client.get('/api/system/gpu/')
+    self.assertEqual(response.status_code, 200)
+
+
+# ======== AuthViewTests additions ========
+def test_register_missing_fields(self):
+    client = APIClient()
+    response = client.post('/api/auth/register/', {'username': 'onlyuser'})
+    self.assertEqual(response.status_code, 400)
+
+def test_login_missing_fields(self):
+    client = APIClient()
+    response = client.post('/api/auth/login/', {'username': 'user'})
+    self.assertEqual(response.status_code, 401)
+
+def test_logout_already_logged_out(self):
+    user = User.objects.create_user(username='nouser', password='nopass')
+    client = APIClient()
+    client.force_authenticate(user=user)   # user has no token
+    response = client.post('/api/auth/logout/')
+    # The view should not crash; it filters tokens and deletes none
+    self.assertEqual(response.status_code, 200)
+
+
+# ======== RunnerTests additions ========
+@patch('experiment.runners.push_update')
+@patch('experiment.runners._log')
+def test_run_training_exception(self, mock_log, mock_push):
+    # Force the training stub to raise
+    with patch('experiment.runners.framework_train', side_effect=Exception("Test error")):
+        run_training(self.run, self.stop_event)
+    self.run.refresh_from_db()
+    self.assertEqual(self.run.status, 'failed')
+
+@patch('experiment.runners.push_update')
+@patch('experiment.runners._log')
+def test_run_evaluation_exception(self, mock_log, mock_push):
+    with patch('experiment.runners.framework_eval', side_effect=Exception("Eval error")):
+        run_evaluation(self.run, self.stop_event)
+    self.run.refresh_from_db()
+    self.assertEqual(self.run.status, 'failed')
+
+@patch('experiment.runners.push_update')
+@patch('experiment.runners._log')
+def test_run_compression_exception(self, mock_log, mock_push):
+    with patch('experiment.runners.framework_compress', side_effect=Exception("Compress error")):
+        run_compression(self.run, self.stop_event)
+    self.run.refresh_from_db()
+    self.assertEqual(self.run.status, 'failed')
+
+
+# ======== ConsumerTests additions ========
+def test_connect_to_invalid_run(self):
+    async def test():
+        communicator = WebsocketCommunicator(application, "/ws/jobs/00000000-0000-0000-0000-000000000000/")
+        connected, _ = await communicator.connect()
+        # Should still connect because the consumer just joins a group (no validation)
+        self.assertTrue(connected)
+        await communicator.disconnect()
+    async_to_sync(test)()
+
+def test_receive_multiple_job_updates(self):
+    async def test():
+        communicator = WebsocketCommunicator(application, f"/ws/jobs/{self.run.id}/")
+        await communicator.connect()
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
+            f"job_{self.run.id}",
+            {"type": "job_update", "data": {"step": 1}}
+        )
+        await channel_layer.group_send(
+            f"job_{self.run.id}",
+            {"type": "job_update", "data": {"step": 2}}
+        )
+        msg1 = await communicator.receive_json_from()
+        msg2 = await communicator.receive_json_from()
+        self.assertEqual(msg1, {"step": 1})
+        self.assertEqual(msg2, {"step": 2})
+        await communicator.disconnect()
+    async_to_sync(test)()
+
+def test_terminal_consumer_disconnect(self):
+    async def test():
+        communicator = WebsocketCommunicator(application, "/ws/terminal/")
+        connected, _ = await communicator.connect()
+        self.assertTrue(connected)
+        await communicator.disconnect()
+        # After disconnect, sending to group should not reach
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
+            "terminal",
+            {"type": "terminal_message", "data": "after disconnect"}
+        )
+        # communicator.receive_from would timeout; we accept a short timeout
+        with self.assertRaises(Exception):
+            await communicator.receive_from()
+    async_to_sync(test)()

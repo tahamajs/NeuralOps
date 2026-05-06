@@ -347,3 +347,4 @@ def logout_view(request):
     Token.objects.filter(user=request.user).delete()
     return Response({"status": "logged out"})
 
+
