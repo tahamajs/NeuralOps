@@ -675,3 +675,207 @@ def search_huggingface_models(request):
         import logging
         logging.getLogger(__name__).warning("HF Hub search failed: %s", e)
         return Response({"results": [], "error": str(e)})
+    
+
+    # =============================================================================
+# Load Balancer & GPU Allocation
+# =============================================================================
+from framework.distributed.load_balancer.gpu_allocator import GPUAllocator
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def gpu_allocator_status(request):
+    allocator = GPUAllocator()
+    return Response(allocator.status())
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def gpu_nodes_detail(request):
+    allocator = GPUAllocator()
+    with allocator._lock:
+        nodes = {}
+        for node_name, gpus in allocator._gpus.items():
+            nodes[node_name] = [
+                {
+                    "index": g.index, "name": g.name,
+                    "total_memory_mb": round(g.total_memory_mb, 1),
+                    "free_memory_mb": round(g.free_memory_mb, 1),
+                    "allocated_mb": round(g.allocated_mb, 1),
+                    "utilization_pct": g.utilization_pct,
+                    "is_allocated": g.is_allocated,
+                    "allocated_to": g.allocated_to,
+                } for g in gpus
+            ]
+    return Response(nodes)
+
+# =============================================================================
+# Job Scheduler
+# =============================================================================
+from framework.distributed.load_balancer.job_scheduler import DistributedJobScheduler
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def scheduler_status(request):
+    scheduler = DistributedJobScheduler()
+    return Response(scheduler.status())
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def scheduler_queue(request):
+    scheduler = DistributedJobScheduler()
+    with scheduler._lock:
+        jobs = [
+            {
+                "job_id": j.job_id, "priority": j.priority,
+                "submit_time": j.submit_time, "num_gpus": j.num_gpus,
+                "estimated_duration": j.estimated_duration,
+                "state": j.state.value, "user": j.user,
+            } for j in scheduler._queue
+        ]
+    return Response(jobs)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def scheduler_history(request):
+    scheduler = DistributedJobScheduler()
+    with scheduler._lock:
+        history = [
+            {
+                "job_id": j.job_id, "state": j.state.value,
+                "num_gpus": j.num_gpus, "gpu_ids": str(j.gpu_ids),
+                "start_time": j.start_time, "user": j.user,
+            } for j in scheduler._history
+        ]
+    return Response(history)
+
+# =============================================================================
+# Cluster Management
+# =============================================================================
+from framework.distributed.load_balancer.cluster_manager import ClusterManager
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def cluster_nodes(request):
+    cluster = ClusterManager()
+    nodes = [
+        {
+            "hostname": n.hostname, "public_ip": n.public_ip,
+            "private_ip": n.private_ip, "role": n.role.value,
+            "gpu_count": n.gpu_count,
+        } for n in cluster._nodes
+    ]
+    return Response(nodes)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def cluster_gpu_availability(request):
+    cluster = ClusterManager()
+    result = cluster.check_gpu_availability()
+    return Response(result)
+
+# =============================================================================
+# Drift Detection
+# =============================================================================
+from framework.drift import DriftDetector, DriftReport
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def drift_report(request, run_id):
+    report_path = Path(settings.MEDIA_ROOT) / str(run_id) / "drift_report.json"
+    if not report_path.exists():
+        return Response({"error": "No drift report found"}, status=404)
+    report = DriftReport.load(str(report_path))
+    return Response(report.to_dict())
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def run_drift_check(request, run_id):
+    ref_data = request.data.get("reference", {})
+    cur_data = request.data.get("current", {})
+    cfg = DriftConfig(**request.data.get("config", {}))
+    detector = DriftDetector(ref_data, cfg)
+    report = detector.detect(cur_data)
+    report.save(str(Path(settings.MEDIA_ROOT) / str(run_id) / "drift_report.json"))
+    return Response(report.to_dict())
+
+# =============================================================================
+# Fairness & Bias
+# =============================================================================
+from framework.evaluation.fairness import FairnessEvaluator
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def fairness_evaluation(request, run_id):
+    data = request.data
+    evaluator = FairnessEvaluator(threshold=data.get("threshold", 0.05))
+    report = evaluator.evaluate(
+        predictions=np.array(data["predictions"]),
+        labels=np.array(data["labels"]),
+        groups=data["groups"],
+    )
+    path = Path(settings.MEDIA_ROOT) / str(run_id) / "fairness_report.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, 'w') as f:
+        json.dump(report.__dict__, f, indent=2, default=str)
+    return Response(report.__dict__)
+
+# =============================================================================
+# Adversarial Robustness
+# =============================================================================
+from framework.evaluation.robustness import TextAdversarialTester
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def robustness_evaluation(request, run_id):
+    data = request.data
+    tester = TextAdversarialTester()
+    report = tester.evaluate(
+        predict_fn=None,   # placeholder – you'd load the model here
+        texts=data["texts"],
+        labels=np.array(data["labels"]),
+    )
+    return Response(report.__dict__)
+
+# =============================================================================
+# Prompt Registry
+# =============================================================================
+from framework.prompts import PromptRegistry, PromptConfig
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def prompt_list(request):
+    registry = PromptRegistry()
+    return Response(registry.list_prompts())
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def prompt_detail(request, name):
+    registry = PromptRegistry()
+    version = request.query_params.get("version")
+    alias = request.query_params.get("alias", "production")
+    prompt = registry.load(name, version=int(version) if version else None, alias=alias)
+    return Response({"template": prompt.template if hasattr(prompt, 'template') else str(prompt)})
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def prompt_history(request, name):
+    registry = PromptRegistry()
+    history = registry.get_history(name)
+    return Response(history.to_list() if history else [])
+
+# =============================================================================
+# HPO Status
+# =============================================================================
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def hpo_status(request):
+    # Return the currently running HPO study (simplified – use a singleton or DB)
+    return Response({"status": "idle", "trials_completed": 0})
+
+# =============================================================================
+# Federated Learning Status
+# =============================================================================
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def fl_status(request):
+    return Response({"status": "no active federated run", "connected_clients": 0})
