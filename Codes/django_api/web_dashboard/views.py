@@ -189,3 +189,29 @@ def dashboard_api_jobs(request):
         'ram_mb': run.ram_usage_mb,
     } for run in runs]
     return Response(data)
+
+
+
+@api_view(["GET"])
+def launch_config_options(request):
+    """Return all available options for the launch page dropdowns."""
+    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, TRAINER_REGISTRY
+    from framework.trainer.methods.registry import METHOD_REGISTRY
+    from framework.trainer.losses import LOSS_REGISTRY
+    from framework.trainer.optimizers import OPTIMIZER_REGISTRY
+    from framework.trainer.schedulers import SCHEDULER_REGISTRY
+    from framework.callbacks import CALLBACK_REGISTRY
+    from framework.data.augmentation import AUGMENTATION_REGISTRY
+    return Response({
+        "attentions": list(ATTENTION_REGISTRY.keys()),
+        "compressors": list(COMPRESSOR_REGISTRY.keys()),
+        "trainers": list(TRAINER_REGISTRY.keys()),
+        "methods": list(METHOD_REGISTRY.keys()),
+        "losses": list(LOSS_REGISTRY.keys()),
+        "optimizers": list(OPTIMIZER_REGISTRY.keys()),
+        "schedulers": list(SCHEDULER_REGISTRY.keys()),
+        "callbacks": list(CALLBACK_REGISTRY.keys()),
+        "augmentations": list(AUGMENTATION_REGISTRY.keys()),
+        "model_variants": ["standard", "unsloth", "compressed", "hybrid_svd", "quantized", "lora"],
+        "distributed_strategies": ["none", "ddp", "deepspeed", "fsdp"],
+    })

@@ -433,3 +433,31 @@ def download_model_version(request, version_id):
     response = FileResponse(open(file_path, 'rb'), as_attachment=True)
     response['Content-Disposition'] = f'attachment; filename="model_v{version.version_number}.pth"'
     return response
+
+
+
+# At the top of jobscheduler/views.py
+from framework.distributed.load_balancer.job_scheduler import DistributedJobScheduler
+
+# Inside job_list (replace the existing POST section):
+elif request.method == 'POST':
+    data = request.data
+    required = ['model_name', 'task_name']
+    for field in required:
+        if not data.get(field):
+            return Response({"error": f"Missing field: {field}"}, status=400)
+
+    # Use the distributed job scheduler if load‑balancer is enabled
+    if data.get("load_balancer", {}).get("enabled"):
+        scheduler = DistributedJobScheduler()
+        job_id = scheduler.submit(
+            config=data,
+            num_gpus=data.get("load_balancer", {}).get("num_gpus", 1),
+            priority=data.get("priority", 5),
+            user=request.user.username,
+        )
+        return Response({"job_id": job_id, "status": "submitted_to_scheduler"}, status=202)
+
+    # Original single‑job creation (unchanged) …
+    job = Job.objects.create( … )
+    # …

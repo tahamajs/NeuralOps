@@ -16,6 +16,7 @@ urlpatterns = [
 
     # Full dashboard (bootstrap version)
     path('dashboard/', views.dashboard, name='dashboard_dashboard'),
+path('api/config/all/', views.launch_config_options, name='launch_config_options'),
 
     # Statistics page
     path('statistics/', views.statistics, name='dashboard_statistics'),
