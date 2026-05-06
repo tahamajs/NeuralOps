@@ -1,9 +1,9 @@
-"""Integration with Django runner and ResultsSaver."""
+"""Integration with Django runner – called by MegaOrchestrator."""
 
 import torch
 import numpy as np
 from pathlib import Path
-from typing import Dict, Any, Optional, Callable
+from typing import Callable, Dict, Any, Optional
 
 from .config import FLConfig
 from .server import FLServer
@@ -16,21 +16,8 @@ def run_federated_experiment(
     dataset: Any,
     output_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
-    """
-    Run a federated learning experiment from configuration.
-
-    Args:
-        config_dict: FL configuration dictionary
-        model_builder: function that returns a fresh model instance
-        dataset: full training dataset (will be partitioned)
-        output_dir: directory to save results
-
-    Returns:
-        dict with final metrics and round history
-    """
-    cfg = FLConfig(**{k: v for k, v in config_dict.items() if k in FLConfig.__dataclass_fields__})
-
-    # Partition data across clients
+    cfg = FLConfig(**{k: v for k, v in config_dict.items()
+                      if k in FLConfig.__dataclass_fields__})
     partitioner = DataPartitioner(
         num_clients=cfg.num_clients,
         partition_type=cfg.partition_type,
@@ -39,39 +26,28 @@ def run_federated_experiment(
         seed=cfg.seed,
     )
     client_data = partitioner.partition(dataset)
-
-    # Build global model
     global_model = model_builder()
-
-    # Create server
     server = FLServer(cfg, global_model)
-
-    # Client trainer
     trainer = FLClientTrainer(cfg)
 
-    # Define client training function
     def train_fn(model, data):
         return trainer.train_from_data(model, data, epochs=cfg.local_epochs,
                                        batch_size=cfg.local_batch_size)
 
-    # Optional evaluation function (must be provided by user)
-    eval_fn = None  # user can pass their own
+    result = server.run(client_data, train_fn)
 
-    # Run FL
-    result = server.run(client_data, train_fn, eval_fn)
-
-    # Save results
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
         import json
+        # Convert any numpy types to plain floats
+        serialisable = {
+            "final_accuracy": result.get("accuracy", 0),
+            "round_history": [
+                {k: float(v) if isinstance(v, (np.floating, float)) else v
+                 for k, v in r.items()}
+                for r in result.get("round_history", [])
+            ],
+        }
         with open(output_dir / "fl_results.json", 'w') as f:
-            # Convert round history to JSON‑serialisable
-            serialisable = {
-                "final_accuracy": result.get("accuracy", 0),
-                "round_history": [{k: float(v) if isinstance(v, (np.floating, float)) else v
-                                   for k, v in r.items()}
-                                  for r in result["round_history"]],
-            }
             json.dump(serialisable, f, indent=2)
-
     return result

@@ -1,26 +1,8 @@
-"""
-DjangoCallback – bridges training events to Django's WebSocket layer.
-Progress, logs, metrics, and final results are pushed in real-time.
-"""
 from transformers import TrainerCallback
 from typing import Optional, Callable
 
-
 class DjangoCallback(TrainerCallback):
-    """
-    Connects a training run to the Django backend via callback functions.
-
-    Args:
-        progress_cb(step, total, pct)    – called on each step
-        log_cb(step, logs: dict)         – called on each log event
-        final_cb(metrics, history)       – called at the end of training
-        stop_event(threading.Event)      – optional stop signal
-    """
-    def __init__(self,
-                 progress_cb: Optional[Callable] = None,
-                 log_cb: Optional[Callable] = None,
-                 final_cb: Optional[Callable] = None,
-                 stop_event=None):
+    def __init__(self, progress_cb=None, log_cb=None, final_cb=None, stop_event=None):
         self.progress_cb = progress_cb
         self.log_cb = log_cb
         self.final_cb = final_cb
@@ -47,7 +29,4 @@ class DjangoCallback(TrainerCallback):
 
     def on_train_end(self, args, state, control, **kwargs):
         if self.final_cb:
-            # Extract evaluation metrics and log history for the final callback
-            metrics = kwargs.get('metrics', {})
-            history = getattr(state, 'log_history', [])
-            self.final_cb(metrics, history)
+            self.final_cb({}, getattr(state, 'log_history', []))
