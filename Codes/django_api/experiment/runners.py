@@ -1,6 +1,7 @@
 # experiments/runners.py
 import os
 import json
+import time
 import traceback
 import psutil
 from pathlib import Path
@@ -9,20 +10,13 @@ from django.conf import settings
 from .models import TrainingRun, TrainingSnapshot
 from .jobs import push_update
 
-# ----------------------------------------------------------------------
-# Lazy import of real framework functions – avoids any startup issues
-# ----------------------------------------------------------------------
+# Lazy import of framework functions (avoids early init issues)
 def _get_framework():
-    """Return the three main functions from the framework."""
     from framework.experiment import run_training as fw_train
     from framework.experiment import run_evaluation as fw_eval
     from framework.experiment import run_compression as fw_compress
     return fw_train, fw_eval, fw_compress
 
-
-# ----------------------------------------------------------------------
-# Helpers (unchanged except minor improvements)
-# ----------------------------------------------------------------------
 def _log(run: TrainingRun, msg: str):
     run.logs = (run.logs or "") + msg + "\n"
     run.save(update_fields=['logs'])
@@ -31,7 +25,6 @@ def _log(run: TrainingRun, msg: str):
     from asgiref.sync import async_to_sync
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)("terminal", {"type": "terminal_message", "data": msg})
-
 
 def _update_status(run: TrainingRun, status: str):
     run.status = status
@@ -43,42 +36,26 @@ def _update_status(run: TrainingRun, status: str):
     run.save(update_fields=['status', 'started_at', 'completed_at'])
     push_update(run, {"type": "status", "status": status})
 
-
-# ----------------------------------------------------------------------
-# Training Runner
-# ----------------------------------------------------------------------
 def run_training(run: TrainingRun, stop_event=None):
-    """
-    Execute a training job using the framework.
-    `stop_event` is an optional threading.Event to cancel the run.
-    """
     _update_status(run, "running")
     config = run.config.copy()
-
-    # Prepare output directory and add to config for the framework
     output_dir = Path(settings.MEDIA_ROOT) / str(run.id) / "model"
     output_dir.mkdir(parents=True, exist_ok=True)
     config["output_dir"] = str(output_dir)
+    # Provide GLUE data path from Django settings
+    config["glue_base_path"] = getattr(settings, 'GLUE_DATA_PATH', "/default/path/to/glue")
 
-    # Progress callback – updates the DB and pushes to WebSocket
     def progress_callback(step, total, pct):
         run.current_step = step
         run.total_steps = total
-        run.estimated_remaining_seconds = (total - step) * 0.1   # crude estimate
+        run.estimated_remaining_seconds = (total - step) * 0.1
         run.cpu_usage = psutil.cpu_percent()
         run.ram_usage_mb = psutil.virtual_memory().used / 1024**2
-        run.save(update_fields=[
-            'current_step', 'total_steps', 'estimated_remaining_seconds',
-            'cpu_usage', 'ram_usage_mb'
-        ])
-        push_update(run, {
-            "type": "progress",
-            "progress": pct,
-            "current_step": step,
-            "total_steps": total
-        })
+        run.save(update_fields=['current_step', 'total_steps', 'estimated_remaining_seconds',
+                                'cpu_usage', 'ram_usage_mb'])
+        push_update(run, {"type": "progress", "progress": pct,
+                          "current_step": step, "total_steps": total})
 
-    # Logging/metrics callback – stores snapshots and sends live updates
     def log_callback(step, logs):
         metrics = {}
         if "loss" in logs:
@@ -89,13 +66,9 @@ def run_training(run: TrainingRun, stop_event=None):
             metrics["eval_accuracy"] = logs["eval_accuracy"]
         if metrics:
             push_update(run, {"type": "metrics", "data": metrics})
-
-        # Create a training snapshot record
         TrainingSnapshot.objects.create(
-            run=run,
-            step=step,
-            train_loss=logs.get("loss"),
-            eval_loss=logs.get("eval_loss"),
+            run=run, step=step,
+            train_loss=logs.get("loss"), eval_loss=logs.get("eval_loss"),
             eval_accuracy=logs.get("eval_accuracy"),
             learning_rate=logs.get("learning_rate"),
             cpu_percent=psutil.cpu_percent(),
@@ -103,57 +76,57 @@ def run_training(run: TrainingRun, stop_event=None):
         )
         _log(run, f"Step {step}: {logs}")
 
-    # Final callback – saves final metrics and training history
     def final_callback(final_metrics, history):
         run.final_metrics = final_metrics
         run.training_history = history
         run.save(update_fields=['final_metrics', 'training_history'])
         push_update(run, {"type": "final", "data": final_metrics})
 
+        # Auto-create a ModelVersion using the service
+        try:
+            from model_versioning.services import ModelVersionService
+            # The model state_dict is saved by the framework; we capture it
+            model_file = output_dir / "pytorch_model.bin"
+            if model_file.exists():
+                state = torch.load(model_file, map_location='cpu')
+                ModelVersionService.create_version(
+                    run=run,
+                    model_state=state,
+                    metrics=final_metrics,
+                    artifact_base=str(Path(settings.MEDIA_ROOT)),
+                )
+                _log(run, "Model version created successfully.")
+        except Exception as e:
+            _log(run, f"Model version creation failed: {e}")
+
     try:
-        # Import the real framework function
         fw_train, _, _ = _get_framework()
-
-        # Run the actual training
-        fw_train(
-            config,
-            stop_event=stop_event,
-            progress_callback=progress_callback,
-            log_callback=log_callback,
-            final_callback=final_callback
-        )
-
+        fw_train(config, stop_event=stop_event,
+                 progress_callback=progress_callback,
+                 log_callback=log_callback,
+                 final_callback=final_callback)
         if stop_event and stop_event.is_set():
             _update_status(run, "stopped")
             _log(run, "Training stopped by user.")
         else:
             _update_status(run, "completed")
             _log(run, "Training completed successfully.")
-
     except Exception as e:
         _log(run, f"Training failed: {str(e)}\n{traceback.format_exc()}")
         _update_status(run, "failed")
 
 
-# ----------------------------------------------------------------------
-# Evaluation Runner
-# ----------------------------------------------------------------------
 def run_evaluation(run: TrainingRun, stop_event=None):
-    """
-    Execute an evaluation job using the framework.
-    The framework's run_evaluation expects a config dict and a model path.
-    """
     _update_status(run, "running")
     model_path = Path(settings.MEDIA_ROOT) / str(run.id) / "model"
     if not model_path.exists():
         _log(run, "No trained model found, using base model")
         model_path = run.config.get("model_name", "distilbert-base-uncased")
-
     try:
         _, fw_eval, _ = _get_framework()
         metrics = fw_eval(run.config, str(model_path))
         run.final_metrics = metrics
-        run.save(update_fields=['final_metrics'])
+        run.save()
         _log(run, f"Evaluation results: {json.dumps(metrics)}")
         _update_status(run, "completed")
     except Exception as e:
@@ -161,23 +134,15 @@ def run_evaluation(run: TrainingRun, stop_event=None):
         _update_status(run, "failed")
 
 
-# ----------------------------------------------------------------------
-# Compression Runner
-# ----------------------------------------------------------------------
 def run_compression(run: TrainingRun, stop_event=None):
-    """
-    Execute a compression job using the framework.
-    The framework's run_compression expects a config dict and an output directory.
-    """
     _update_status(run, "running")
     output_dir = Path(settings.MEDIA_ROOT) / str(run.id) / "model"
     output_dir.mkdir(parents=True, exist_ok=True)
-
     try:
         _, _, fw_compress = _get_framework()
         stats = fw_compress(run.config, str(output_dir))
         run.final_metrics = stats
-        run.save(update_fields=['final_metrics'])
+        run.save()
         _log(run, f"Compression stats: {json.dumps(stats)}")
         _update_status(run, "completed")
     except Exception as e:
