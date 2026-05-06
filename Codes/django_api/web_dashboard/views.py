@@ -17,6 +17,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from experiment.models import Experiment, TrainingRun
 
@@ -149,16 +150,22 @@ def api_login(request):
     return Response({"error": "Invalid credentials"}, status=401)
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def api_logout(request):
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Token "):
-        key = auth_header[6:]
-        Token.objects.filter(key=key).delete()
+    # Delete the token – DRF's CookieTokenAuthentication sets request.auth to the Token object
+    if request.auth and hasattr(request.auth, 'delete'):
+        request.auth.delete()
+    else:
+        # Fallback: try to read from header (for backward compatibility)
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Token "):
+            key = auth_header[6:]
+            Token.objects.filter(key=key).delete()
+
     response = Response({"status": "logged out"})
     response.delete_cookie('authToken')
-    auth_logout(request)
+    auth_logout(request)      # also clear session
     return response
-
 # ---------- API for Dashboard (runs list) ----------
 @api_view(["GET"])
 def dashboard_api_jobs(request):

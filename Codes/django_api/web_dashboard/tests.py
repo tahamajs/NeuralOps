@@ -168,17 +168,17 @@ class WebDashboardViewTests(TestCase):
         user = User.objects.create_user(username='logoutuser', password='logoutpass')
         token = Token.objects.create(user=user)
 
-        # Log in via session to pass IsAuthenticated
-        self.client.login(username='logoutuser', password='logoutpass')
+        # Simulate cookie-based authentication:
+        # 1. Force login so the user is known (request.user)
+        self.client.force_login(user)
+        # 2. Set the authToken cookie so CookieTokenAuthentication finds the token
+        self.client.cookies['authToken'] = token.key
 
-        # Send token header so the view knows which token to delete
-        response = self.client.post(
-            reverse('dashboard_api_logout'),
-            HTTP_AUTHORIZATION='Token ' + token.key
-        )
+        response = self.client.post(reverse('dashboard_api_logout'))
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Token.objects.filter(user=user).exists())
-        self.assertIn('authToken', response.cookies)   # cookie is cleared
+        self.assertIn('authToken', response.cookies)   # cookie cleared
+
 
     def test_dashboard_api_jobs(self):
         self.api_client.force_authenticate(user=self.user)
