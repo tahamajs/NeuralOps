@@ -62,9 +62,17 @@ class APITester:
             success = response.status_code == expected_status_code
             status = "PASS" if success else "FAIL"
             message = response.status_code != expected_status_code and f"Expected {expected_status_code}" or "OK"
-            
+
+            # If response contains a token, update the stored token for subsequent requests
+            try:
+                body = response.json()
+                if isinstance(body, dict) and body.get('token'):
+                    self.token = body.get('token')
+            except Exception:
+                body = None
+
             self.log_result(endpoint, method, status, response.status_code, message)
-            
+
             try:
                 return success, response.json()
             except:

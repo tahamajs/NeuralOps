@@ -129,16 +129,23 @@ def start_train(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def start_evaluate(request):
-    run_id = request.data.get('run_id')
+def start_evaluate(request, run_id=None):
+    """
+    Start evaluation for a TrainingRun.
+    If run_id is provided from the URL, use it; otherwise read from request body.
+    """
+    if run_id is None:
+        run_id = request.data.get('run_id')
     run = get_object_or_404(TrainingRun, id=run_id)
     start_job(run, run_evaluation)
     return Response({"status": "evaluation started"})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def start_compress(request):
-    run_id = request.data.get('run_id')
+def start_compress(request, run_id=None):
+    """Start compression for a TrainingRun, with optional URL argument."""
+    if run_id is None:
+        run_id = request.data.get('run_id')
     run = get_object_or_404(TrainingRun, id=run_id)
     start_job(run, run_compression)
     return Response({"status": "compression started"})
