@@ -1,8 +1,10 @@
 # api/urls.py
-from django.urls import path
+from django.urls import include, path
 from . import views
 
 urlpatterns = [
+    path('', include('experiment.urls')),
+
     # Authentication
     path("auth/register/", views.register),
     path("auth/login/", views.login),
