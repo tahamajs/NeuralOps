@@ -23,7 +23,7 @@ venv/
 **/*.onnx
 **/*.data
 **/*.safetensors
-
+*/**/MasterHttpRelayVPN-python_testing
 # Other potential large files
 **/*.bin
 **/*.h5datasets/truthful_qa/
