@@ -458,3 +458,21 @@ def bulk_tags(request, version='v1'):
     else:
         return Response({"error": "action must be 'add' or 'remove'"}, status=400)
     return Response({"updated": notes.count()})
+
+
+
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def run_notes(request, run_id):
+    """Get all notes linked to a specific training run."""
+    notes = ResearcherNote.objects.filter(
+        run__id=run_id, deleted_at__isnull=True
+    ).order_by('-created_at')
+    if not request.user.is_staff:
+        notes = notes.filter(Q(is_public=True) | Q(author=request.user))
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(notes, request)
+    serializer = ResearcherNoteSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)

@@ -15,4 +15,7 @@ urlpatterns = [
     re_path(r"^runs/(?P<run_id>[0-9a-f-]+)/artifacts/(?P<artifact_path>.+)$", views.run_artifact_download, name="run_artifact_download"),
     path("runs/stop_all/", views.stop_all_jobs_endpoint, name="stop_all_jobs"),
     path("preview/<uuid:run_id>/", views.preview_paper, name="preview_paper"),
+
+    path("runs/<uuid:run_id>/analysis/", views.run_analysis_overview, name="run_analysis_overview"),
+
 ]

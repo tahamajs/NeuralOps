@@ -10,6 +10,7 @@ urlpatterns = [
     path('v1/notes/<uuid:note_id>/', views.versioned_view(views.note_detail)),
     path('v1/notes/<uuid:note_id>/react/', views.versioned_view(views.note_reaction)),
     path('v1/notes/<uuid:note_id>/upload-image/', views.versioned_view(views.upload_note_image)),
+path('v1/notes/runs/<uuid:run_id>/', views.versioned_view(views.run_notes)),
 
     # ------------------------------------------------------------------
     # Note versions (history)
