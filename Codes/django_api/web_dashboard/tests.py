@@ -167,9 +167,15 @@ class WebDashboardViewTests(TestCase):
     def test_api_logout(self):
         user = User.objects.create_user(username='logoutuser', password='logoutpass')
         token = Token.objects.create(user=user)
-        # The view looks for the token in the Authorization header
-        self.api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
-        response = self.api_client.post(reverse('dashboard_api_logout'))
+
+        # Log in via session to pass IsAuthenticated
+        self.client.login(username='logoutuser', password='logoutpass')
+
+        # Send token header so the view knows which token to delete
+        response = self.client.post(
+            reverse('dashboard_api_logout'),
+            HTTP_AUTHORIZATION='Token ' + token.key
+        )
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Token.objects.filter(user=user).exists())
         self.assertIn('authToken', response.cookies)   # cookie is cleared
