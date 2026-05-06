@@ -66,10 +66,15 @@ def job_detail(request, job_id):
 
     elif request.method == 'PATCH':
         if 'priority' in request.data:
-            new_prio = max(1, min(10, request.data['priority']))
+            try:
+                new_prio = int(request.data['priority'])
+            except (ValueError, TypeError):
+                return Response({"error": "Priority must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+            new_prio = max(1, min(10, new_prio))
             job.priority = new_prio
             if job.status == 'queued':
                 scheduler.update_priority(str(job.id), new_prio)
+
         if 'notes' in request.data:
             job.notes = request.data['notes']
         if 'estimated_duration' in request.data:
@@ -92,7 +97,7 @@ def job_detail(request, job_id):
                             status=status.HTTP_400_BAD_REQUEST)
         job.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
+    
 
 # ----------------------------------------------------------------------
 # 2. Job Control Actions (pause, resume, stop, retry)
@@ -100,19 +105,22 @@ def job_detail(request, job_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def job_pause(request, job_id):
-    scheduler.pause_job(str(job_id))   # was just job_id
+    job = get_object_or_404(Job, id=job_id)
+    scheduler.pause_job(str(job.id))
     return Response({'status': 'paused'})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def job_resume(request, job_id):
-    scheduler.resume_job(str(job_id))
+    job = get_object_or_404(Job, id=job_id)
+    scheduler.resume_job(str(job.id))
     return Response({'status': 'resumed'})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def job_stop(request, job_id):
-    scheduler.stop_job(str(job_id))
+    job = get_object_or_404(Job, id=job_id)
+    scheduler.stop_job(str(job.id))
     return Response({'status': 'stopped'})
 
 @api_view(['POST'])
@@ -340,7 +348,11 @@ def bulk_delete_jobs(request):
 def update_job_scheduling(request, job_id):
     job = get_object_or_404(Job, id=job_id)
     if 'priority' in request.data:
-        new_prio = max(1, min(10, request.data['priority']))
+        try:
+            new_prio = int(request.data['priority'])
+        except (ValueError, TypeError):
+            return Response({"error": "Priority must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+        new_prio = max(1, min(10, new_prio))
         job.priority = new_prio
         if job.status == 'queued':
             scheduler.update_priority(str(job.id), new_prio)
@@ -350,7 +362,6 @@ def update_job_scheduling(request, job_id):
         job.memory_requirements = request.data['memory_requirements']
     job.save()
     return Response({"status": "updated"})
-
 
 # ---------- Job Statistics ----------
 @api_view(['GET'])
