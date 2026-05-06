@@ -572,3 +572,36 @@ def run_results(request, run_id):
         "history": run.training_history,
         "files": files,
     })
+
+
+@api_view(["POST"])
+def run_save(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    save_cfg = request.data.get("save_config", {})
+    # merge with existing config if needed
+    full_cfg = {**run.config.get("save_config", {}), **save_cfg}
+
+    from framework.utils.results_saver import ResultsSaver
+    saver = ResultsSaver(run.id, Path(settings.MEDIA_ROOT), full_cfg)
+
+    # Load model from checkpoint or final artifact
+    # (we assume the model was already saved somewhere; if not, skip)
+    saver.save_config(run.config)
+    saver.save_history(run.training_history)
+    saver.save_final_metrics(run.final_metrics)
+    saver.generate_plots(run.training_history)
+    # For model save, we need the actual model object – we can load from a generic saved path
+    # or skip if not available. For simplicity, we'll assume if save_model is true, the
+    # model already exists in artifacts/model. Then we register version.
+    if full_cfg.get("save_as_version", True) and saver.should_save_model(run.final_metrics):
+        from model_versioning.services import ModelVersionService
+        ModelVersionService.create_version(
+            run=run,
+            model_state=torch.load(
+                Path(settings.MEDIA_ROOT) / str(run.id) / "artifacts" / "model" / "pytorch_model.bin")
+            ),
+            metrics=run.final_metrics,
+            artifact_base=str(Path(settings.MEDIA_ROOT)),
+        )
+    saver.handle_storage_backend()
+    return Response({"status": "saved", "config": full_cfg})

@@ -32,6 +32,7 @@ urlpatterns = [
     path("config/distributed/", views.distributed_options),
     path("config/tracking/", views.tracking_options),
     path("config/deployment/", views.deployment_options),
+    path("runs/<uuid:run_id>/save/", views.run_save),
 
     # ------------------------------------------------------------------
     # Advanced actions
