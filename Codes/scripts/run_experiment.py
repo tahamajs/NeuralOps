@@ -15,7 +15,7 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from framework.attentions.core.registry import ATTENTION_REGISTRY
-from framework.compression.core.registry import COMPRESSOR_REGISTRY
+from framework.compression_engine.core.registry import COMPRESSOR_REGISTRY
 from framework.models.model_loader import load_model
 from framework.data.dataset_loader import load_dataset, ExperimentConfig
 from framework.data.preprocessing import preprocess_function

@@ -13,7 +13,7 @@
 # from plotly.subplots import make_subplots
 
 # sys.path.insert(0, str(Path(__file__).parent.parent))
-# from framework.compression.advanced_methods import AdvancedZeroShotCompressor
+# from framework.compression_engine.advanced_methods import AdvancedZeroShotCompressor
 # from framework.utils.device import get_device
 
 # # ----------------------------------------------------------------------
