@@ -1,9 +1,9 @@
 """
 Pluggable plot types for the ResultsSaver.
-Each function receives (history, metrics, config, output_dir, global_opts) and returns a list of saved file paths.
+Each function receives (history, metrics, config, output_dir, opts) and returns a list of saved file paths.
 """
 from .base import Registry
-import os, logging
+import logging
 
 PLOT_REGISTRY = Registry("plots")
 logger = logging.getLogger(__name__)
