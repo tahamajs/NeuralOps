@@ -246,6 +246,7 @@ def list_presets(request):
 # System & hardware monitoring
 # ----------------------------------------------------------------------
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def system_status(request):
     """Get CPU, memory, disk, uptime, platform info."""
     mem = psutil.virtual_memory()
@@ -277,6 +278,7 @@ def system_status(request):
     })
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def gpu_info(request):
     """Get detailed GPU information (CUDA/MPS)."""
     if torch.cuda.is_available():
@@ -317,6 +319,7 @@ def gpu_info(request):
         return Response({"type": "cpu", "total_gpus": 0})
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def health_check(request):
     """Simple health check endpoint."""
     return Response({
@@ -326,6 +329,7 @@ def health_check(request):
     })
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def version(request):
     """API version and backend info."""
     return Response({
