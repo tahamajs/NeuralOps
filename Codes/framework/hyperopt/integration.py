@@ -1,8 +1,8 @@
-"""Integration with Django runner and ResultsSaver."""
+"""Integration helpers for HPO – called by MegaOrchestrator."""
 
 from pathlib import Path
-from typing import Dict, Any, Optional, Callable
-from .config import HPOConfig, HPOBackend
+from typing import Callable, Dict, Any, Optional
+from .config import HPOConfig
 from .base import HPO_REGISTRY
 
 def run_hpo_experiment(
@@ -10,18 +10,8 @@ def run_hpo_experiment(
     objective_fn: Callable[[Dict[str, Any]], float],
     output_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
-    """
-    Run an HPO experiment from configuration.
-
-    Args:
-        config_dict: dictionary following HPOConfig schema
-        objective_fn: function(params) -> float (score)
-        output_dir: directory to save results (optional)
-
-    Returns:
-        dict with best_params, best_score, and full trial history
-    """
-    cfg = HPOConfig(**{k: v for k, v in config_dict.items() if k in HPOConfig.__dataclass_fields__})
+    cfg = HPOConfig(**{k: v for k, v in config_dict.items()
+                       if k in HPOConfig.__dataclass_fields__})
     optimizer_cls = HPO_REGISTRY.resolve(cfg.backend.value)
     if optimizer_cls is None:
         raise ValueError(f"Unknown HPO backend: {cfg.backend}")
