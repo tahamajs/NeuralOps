@@ -40,7 +40,6 @@ class AnonBurstRateThrottle(AnonRateThrottle):
 @permission_classes([AllowAny])
 @throttle_classes([AnonBurstRateThrottle])
 def register(request):
-    """Register a new user account."""
     username = request.data.get("username", "").strip()
     password = request.data.get("password", "")
     email = request.data.get("email", "").strip()
@@ -49,6 +48,8 @@ def register(request):
         return Response({"error": "Username and password are required"}, status=status.HTTP_400_BAD_REQUEST)
     if len(username) < 3:
         return Response({"error": "Username must be at least 3 characters"}, status=status.HTTP_400_BAD_REQUEST)
+    if len(username) > 150:
+        return Response({"error": "Username too long"}, status=status.HTTP_400_BAD_REQUEST)
     if len(password) < 6:
         return Response({"error": "Password must be at least 6 characters"}, status=status.HTTP_400_BAD_REQUEST)
     if email:
