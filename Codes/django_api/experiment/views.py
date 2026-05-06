@@ -348,3 +348,24 @@ def logout_view(request):
     return Response({"status": "logged out"})
 
 
+
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def run_analysis_overview(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    base = Path(settings.MEDIA_ROOT) / str(run_id)
+    overview = {
+        "run_id": str(run.id),
+        "status": run.status,
+        "metrics": run.final_metrics,
+        "has_drift_report": (base / "drift_report.json").exists(),
+        "has_fairness_report": (base / "fairness_report.json").exists(),
+        "has_robustness_report": (base / "robustness_report.json").exists(),
+        "artifacts_url": f"/api/runs/{run_id}/artifacts/",
+        "drift_url": f"/api/runs/{run_id}/drift/",
+        "fairness_url": f"/api/runs/{run_id}/fairness/",
+        "robustness_url": f"/api/runs/{run_id}/robustness/",
+    }
+    return Response(overview)
