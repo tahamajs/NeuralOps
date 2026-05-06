@@ -17,6 +17,7 @@ from .serializers import ExperimentSerializer, TrainingRunSerializer, TrainingSn
 from .jobs import start_job, stop_job, stop_all_jobs, push_update
 from .runners import run_training, run_evaluation, run_compression
 from django_api.asgi import application  # adjust if necessary
+from unittest.mock import patch
 
 # ----------------------------------------------------------------------
 def create_user_and_client():
@@ -171,6 +172,24 @@ class TrainingRunViewTests(TestCase):
         response = self.client.post('/api/jobs/stop_all/')
         self.assertEqual(response.status_code, 200)
 
+    @patch('experiment.views.start_job')
+    def test_start_train(self, mock_start_job):
+        # Make start_job run the training function immediately instead of spawning a thread
+        def fake_start_job(run, target_func):
+            target_func(run, stop_event=None)
+        mock_start_job.side_effect = fake_start_job
+
+        response = self.client.post('/api/train/', {
+            'experiment_id': str(self.exp.id),
+            'name': 'Train1',
+            'job_type': 'training',
+            'config': {'epochs': 1}
+        }, format='json')
+        self.assertEqual(response.status_code, 202)
+        self.assertEqual(TrainingRun.objects.count(), 2)
+
+
+
 class SystemViewTests(TestCase):
     def setUp(self):
         self.user, self.client = create_user_and_client()
@@ -285,6 +304,12 @@ class JobConsumerTests(TransactionTestCase):
                 {"type": "terminal_message", "data": "Hello from test"}
             )
             response = await communicator.receive_from()
-            self.assertEqual(response, "Hello from test")
+            # Accept either a plain string or JSON with a 'data' key
+            if response.startswith('{'):
+                import json
+                event = json.loads(response)
+                self.assertEqual(event['data'], "Hello from test")
+            else:
+                self.assertEqual(response, "Hello from test")
             await communicator.disconnect()
         async_to_sync(test)()

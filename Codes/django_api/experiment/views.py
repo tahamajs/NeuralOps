@@ -344,10 +344,6 @@ def login_view(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    request.user.auth_token.delete()
+    Token.objects.filter(user=request.user).delete()
     return Response({"status": "logged out"})
-
-
-
-
 

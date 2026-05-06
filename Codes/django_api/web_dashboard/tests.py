@@ -190,3 +190,220 @@ class WebDashboardViewTests(TestCase):
         run = data[0]
         self.assertIn('id', run)
         self.assertIn('status', run)
+
+        # ------------------------------------------------------------------
+    # Additional hard tests (20)
+    # ------------------------------------------------------------------
+
+    # 1. Index with no runs (empty dataset)
+    def test_index_empty_runs(self):
+        TrainingRun.objects.all().delete()
+        response = self.client.get(reverse('dashboard_index'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Transformer Pro')  # page loads anyway
+
+    # 2. Job detail with invalid UUID format
+    def test_job_detail_invalid_uuid(self):
+        self.client.force_login(self.user)
+        url = reverse('dashboard_job_detail', kwargs={'job_id': 'not-a-uuid'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    # 3. Statistics with no runs (empty data)
+    def test_statistics_empty(self):
+        self.client.force_login(self.user)
+        TrainingRun.objects.all().delete()
+        response = self.client.get(reverse('dashboard_statistics'))
+        self.assertEqual(response.status_code, 200)
+        # success_rate will be 0 because total=0
+        self.assertContains(response, 'success_rate')
+        # check a safe default
+        self.assertContains(response, '0.0')
+
+    # 4. API register with missing username
+    def test_api_register_missing_username(self):
+        data = {'password': 'test123'}
+        response = self.api_client.post(
+            reverse('dashboard_api_register'),
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.json())
+
+    # 5. API register with missing password
+    def test_api_register_missing_password(self):
+        data = {'username': 'user123'}
+        response = self.api_client.post(
+            reverse('dashboard_api_register'),
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.json())
+
+    # 6. API login with missing fields
+    def test_api_login_missing_fields(self):
+        response = self.api_client.post(
+            reverse('dashboard_api_login'),
+            data=json.dumps({}),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 401)
+        self.assertIn('error', response.json())
+
+    # 7. API logout when not authenticated
+    def test_api_logout_unauthenticated(self):
+        response = self.client.post(reverse('dashboard_api_logout'))
+        self.assertEqual(response.status_code, 401)  # or 403; depends on DRF default
+
+    # 8. API jobs endpoint unauthenticated
+    def test_dashboard_api_jobs_unauthenticated(self):
+        response = self.api_client.get(reverse('dashboard_api_jobs'))
+        self.assertEqual(response.status_code, 401)
+
+    # 9. API register with very long username/password (boundary)
+    def test_api_register_long_credentials(self):
+        long_user = 'a' * 151  # Django's default max_length is 150
+        data = {'username': long_user, 'password': 'validpass'}
+        response = self.api_client.post(
+            reverse('dashboard_api_register'),
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        # Should fail because username too long (400)
+        self.assertEqual(response.status_code, 400)
+
+    # 10. Statistics when a run has missing final_metrics keys
+    def test_statistics_partial_metrics(self):
+        # Create a completed run without 'eval_loss' key
+        TrainingRun.objects.create(
+            experiment=self.exp,
+            name='Partial Metrics Run',
+            status='completed',
+            final_metrics={'eval_accuracy': 0.5},  # missing eval_loss
+            config={'model_name': 'xlm'}
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('dashboard_statistics'))
+        self.assertEqual(response.status_code, 200)
+        # View should not crash (uses Coalesce)
+        self.assertContains(response, 'success_rate')
+
+    # 11. Dashboard API jobs with empty list
+    def test_dashboard_api_jobs_empty(self):
+        TrainingRun.objects.all().delete()
+        self.api_client.force_authenticate(user=self.user)
+        response = self.api_client.get(reverse('dashboard_api_jobs'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
+
+    # 12. Create job page redirects if not authenticated? (It's public, stays)
+    # Instead: GET on an API endpoint that requires POST
+    def test_api_login_get_not_allowed(self):
+        # The API login view is POST-only, a GET should return 405
+        response = self.api_client.get(reverse('dashboard_api_login'))
+        self.assertEqual(response.status_code, 405)
+
+    # 13. Test that logout with an invalid token in cookie fails gracefully
+    def test_api_logout_invalid_token_cookie(self):
+        user = User.objects.create_user(username='invlogout', password='test')
+        self.client.force_login(user)
+        self.client.cookies['authToken'] = 'invalid-token'
+        response = self.client.post(reverse('dashboard_api_logout'))
+        # Should still succeed because it falls back to header or tries to delete token? 
+        # The view will try request.auth which will be None because cookie can't find token,
+        # but the user is authenticated via session, so permission passes. It will not delete any token.
+        # Status 200 and token not deleted.
+        self.assertEqual(response.status_code, 200)
+        # The real token (if exists) is not affected. But we didn't create one.
+        # Cookie is cleared.
+        self.assertIn('authToken', response.cookies)
+
+    # 14. Test job detail with a run that has no name
+    def test_job_detail_unnamed_run(self):
+        unnamed_run = TrainingRun.objects.create(
+            experiment=self.exp,
+            name='',  # empty name
+            status='running'
+        )
+        self.client.force_login(self.user)
+        url = reverse('dashboard_job_detail', kwargs={'job_id': unnamed_run.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    # 15. Test index page when many runs exist (pagination not applied, but view fetches last 20)
+    def test_index_many_runs(self):
+        # Create 25 runs, index shows only last 20
+        for i in range(25):
+            TrainingRun.objects.create(experiment=self.exp, name=f'Run {i}', status='completed')
+        response = self.client.get(reverse('dashboard_index'))
+        self.assertEqual(response.status_code, 200)
+        # The view passes 'runs' to template, we can't check count easily in rendered HTML,
+        # but ensure no error.
+        self.assertContains(response, 'Transformer Pro')
+
+    # 16. Statistics with multiple days (ensure date grouping works)
+    def test_statistics_multi_day(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        # Create runs on different days
+        today = timezone.now()
+        yesterday = today - timedelta(days=1)
+        TrainingRun.objects.create(experiment=self.exp, name='Yesterday Run', status='completed',
+                                   created_at=yesterday)
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('dashboard_statistics'))
+        self.assertEqual(response.status_code, 200)
+        # Check that days_labels is not empty
+        self.assertContains(response, 'days_labels')
+
+    # 17. API register response includes token and cookie (already tested, but verify cookie values)
+    def test_api_register_cookie_details(self):
+        data = {'username': 'cookieuser', 'password': 'cookiepass'}
+        response = self.api_client.post(
+            reverse('dashboard_api_register'),
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 201)
+        # Cookie 'authToken' should exist and have a value
+        cookie = response.cookies.get('authToken')
+        self.assertIsNotNone(cookie)
+        self.assertTrue(cookie.value)
+
+    # 18. API login sets cookie with correct token
+    def test_api_login_cookie_token_match(self):
+        User.objects.create_user(username='cookiematch', password='test')
+        data = {'username': 'cookiematch', 'password': 'test'}
+        response = self.api_client.post(
+            reverse('dashboard_api_login'),
+            data=json.dumps(data),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        json_data = response.json()
+        token_from_body = json_data['token']
+        cookie_token = response.cookies['authToken'].value
+        self.assertEqual(token_from_body, cookie_token)
+
+    # 19. Dashboard API jobs contains correct fields
+    def test_dashboard_api_jobs_field_set(self):
+        self.api_client.force_authenticate(user=self.user)
+        response = self.api_client.get(reverse('dashboard_api_jobs'))
+        data = response.json()
+        run = data[0]
+        expected_fields = {'id', 'status', 'config', 'created_at', 'started_at',
+                           'completed_at', 'current_step', 'total_steps', 'eta_seconds',
+                           'gpu_percent', 'gpu_memory_mb', 'cpu_percent', 'ram_mb'}
+        self.assertTrue(expected_fields.issubset(run.keys()))
+
+    # 20. Test that login page is accessible even after middleware override (already tested)
+    # We'll test that the redirect to login sets the next parameter correctly
+    def test_redirect_next_parameter_preserved(self):
+        from urllib.parse import quote
+        target = '/dashboard/statistics/'
+        url = f'/dashboard/job/{self.run.id}/?next={quote(target)}'
+        response = self.client.get(url)
+        # Should redirect to login with next parameter
+        self.assertRedirects(response, f'/login/?next={url}')
