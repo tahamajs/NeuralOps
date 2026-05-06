@@ -34,6 +34,42 @@ urlpatterns = [
     path("config/deployment/", views.deployment_options),
     path("runs/<uuid:run_id>/save/", views.run_save),
 
+
+
+
+
+
+# Add these patterns inside your existing urlpatterns list
+
+    # Load Balancer & GPU
+    path("loadbalancer/gpu/status/", views.gpu_allocator_status),
+    path("loadbalancer/gpu/nodes/", views.gpu_nodes_detail),
+    path("loadbalancer/scheduler/status/", views.scheduler_status),
+    path("loadbalancer/scheduler/queue/", views.scheduler_queue),
+    path("loadbalancer/scheduler/history/", views.scheduler_history),
+    path("loadbalancer/cluster/nodes/", views.cluster_nodes),
+    path("loadbalancer/cluster/gpu-check/", views.cluster_gpu_availability),
+
+    # Drift Detection
+    path("runs/<uuid:run_id>/drift/", views.drift_report),
+    path("runs/<uuid:run_id>/drift/check/", views.run_drift_check),
+
+    # Fairness
+    path("runs/<uuid:run_id>/fairness/", views.fairness_evaluation),
+
+    # Robustness
+    path("runs/<uuid:run_id>/robustness/", views.robustness_evaluation),
+
+    # Prompts
+    path("prompts/", views.prompt_list),
+    path("prompts/<str:name>/", views.prompt_detail),
+    path("prompts/<str:name>/history/", views.prompt_history),
+
+    # HPO
+    path("hpo/status/", views.hpo_status),
+
+    # Federated Learning
+    path("federated/status/", views.fl_status),
     # ------------------------------------------------------------------
     # Advanced actions
     # ------------------------------------------------------------------
