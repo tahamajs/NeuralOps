@@ -1,66 +1,91 @@
-# NeuralOps Performance Optimization Plan 🚀
+# Performance Improvement Plan (Agent Implementation Guide)
 
-This document outlines the high-impact performance improvements for the Transformer Compression Framework, specifically targeting the Django-React stack.
+This document outlines the high-priority performance improvements for the ML/NLP experiment platform, categorized by system component.
 
 ---
 
-## 1. Phase I: Backend Registry Caching 🧠
+## 1. Backend & Database (Django)
 
-Currently, the `Registry` system performs repetitive file system introspection and dynamic imports on every API request to `/api/attentions/` and `/api/compressors/`.
+### Query Optimization
 
-- **Problem:** O(N) directory scanning where N=140+ methods.
-- **Solution:**
-  - Implement `functools.lru_cache` on registry retrieval methods.
-  - Integration of Django's `cache` framework (In-memory/Redis) for system-wide configuration data.
+- **Problem:** Potential N+1 queries and lack of efficient data fetching.
+- **Action:**
+  - Use `select_related()` for ForeignKey relationships (e.g., `TrainingRun.experiment`).
+  - Use `prefetch_related()` for ManyToMany or reverse ForeignKey relationships (e.g., `Experiment.runs`).
+  - Add composite indexes to `TrainingRun` for `(experiment, status)` and `(created_at)`.
+
 - **Target Files:**
-  - [Codes/framework/attentions/core/registry.py](Codes/framework/attentions/core/registry.py)
   - [Codes/django_api/api/views.py](Codes/django_api/api/views.py)
-- **Expected Gain:** API response time reduction from ~150ms to <5ms.
+  - [Codes/django_api/api/models.py](Codes/django_api/api/models.py)
 
-## 2. Phase II: Frontend UX & Rendering Isolation ⚡
+### API Enhancements
 
-The real-time telemetry updates (CPU/GPU/RAM) currently trigger shallow re-renders across the entire Dashboard page due to central state polling.
+- **Action:**
+  - Implement cursor-based pagination for large result sets.
+  - Enable Gzip compression in `MIDDLEWARE`.
+  - Add caching for static configuration endpoints (models, tasks, presets) using `@cache_page`.
 
-- **Problem:** UI micro-stutters during heavy model training sessions.
-- **Solution:**
-  - **Hardware Context Provider:** Move hardware polling into a dedicated React Context with a separate update cycle.
-  - **React.memo:** Memoize heavy grid components (`AttentionPicker`, `ExperimentTable`).
-  - **Throttled Listeners:** Set up a 3000ms hardware polling window with a "dirty-check" to avoid DOM updates if values haven't changed by >1%.
 - **Target Files:**
-  - [Codes/frontend/src/components/SystemResourcesWidget.tsx](Codes/frontend/src/components/SystemResourcesWidget.tsx)
-  - [Codes/frontend/src/pages/DashboardPage.tsx](Codes/frontend/src/pages/DashboardPage.tsx)
-- **Expected Gain:** 60FPS UI stability even during 100% CPU/GPU saturation.
-
-## 3. Phase III: Code Splitting & Asset Optimization 🌳
-
-The "NeuralOps" dashboard imports heavy charting libraries (Plotly) and large UI components synchronously in the main bundle.
-
-- **Problem:** Large initial JavaScript payload delay.
-- **Solution:**
-  - **React.lazy/Suspense:** Dynamically load `LiveLossPlot` and `LiveLogViewer` only when the tab is active.
-  - **Dynamic Imports:** Use Vite's dynamic import for large method descriptions in the `AttentionPicker`.
-- **Target Files:**
-  - [Codes/frontend/src/pages/DashboardPage.tsx](Codes/frontend/src/pages/DashboardPage.tsx)
-  - [Codes/frontend/vite.config.ts](Codes/frontend/vite.config.ts)
-- **Expected Gain:** ~40% reduction in First Contentful Paint (FCP).
-
-## 4. Phase IV: Hardware-Aware Background Tasks 🏗️
-
-Synchronizing backend processing with frontend logging without blocking the main event loop.
-
-- **Problem:** API latency spikes when long-running evaluations start.
-- **Solution:**
-  - **Subprocess Decoupling:** Ensure `runners.py` uses detached processes for evaluation tasks.
-  - **WebSocket Buffer:** Implement a server-side buffer for logs to prevent flooding the frontend socket.
-- **Target Files:**
-  - [Codes/django_api/api/runners.py](Codes/django_api/api/runners.py)
-  - [Codes/django_api/api/consumers.py](Codes/django_api/api/consumers.py)
-- **Expected Gain:** Zero-latency API responsiveness during active experiments.
+  - [Codes/django_api/django_api/settings.py](Codes/django_api/django_api/settings.py)
+  - [Codes/django_api/api/views.py](Codes/django_api/api/views.py)
 
 ---
 
-### Implementation Priority
+## 2. Frontend (React + Vite)
 
-1. **Registry Caching** (Immediate impact, low risk)
-2. **Telemetry Isolation** (Improves usability)
-3. **Code Splitting** (Improves load time)
+### State & Memory Management
+
+- **Problem:** Infinite growth of log/metric arrays in Zustand store.
+- **Action:**
+  - Implement bounded log buffers (e.g., max 1000 entries).
+  - Implement metric downsampling for long-running jobs to prevent UI lag.
+
+- **Target Files:**
+  - [Codes/frontend/src/store/experimentStore.ts](Codes/frontend/src/store/experimentStore.ts)
+
+### Infrastructure & Bundle
+
+- **Action:**
+  - Implement code splitting for large modules like Plotly in `vite.config.ts`.
+  - Add virtualization (e.g., `react-window`) to the Experiment list and Log viewer.
+
+- **Target Files:**
+  - [Codes/frontend/vite.config.ts](Codes/frontend/vite.config.ts)
+  - [Codes/frontend/src/pages/](Codes/frontend/src/pages/)
+
+---
+
+## 3. Real-time Communication (WebSockets)
+
+### Message Throttling
+
+- **Problem:** High frequency updates causing browser bottlenecks.
+- **Action:**
+  - Implement server-side batching/throttling for logs and metrics (e.g., send every 500ms).
+
+- **Target Files:**
+  - `Codes/django_api/api/consumers.py`
+
+---
+
+## 4. GPU Scheduler
+
+### Concurrency & Performance
+
+- **Problem:** Lock contention and synchronous resource checking.
+- **Action:**
+  - Use fine-grained locking (separate queue/GPU locks) in `GPUScheduler`.
+  - Implement caching for Job objects to avoid repeated DB hits in the scheduler loop.
+
+- **Target Files:**
+  - [Codes/django_api/jobscheduler/scheduler.py](Codes/django_api/jobscheduler/scheduler.py)
+
+
+---
+
+## Implementation Priority
+
+1. **Tier 1 (Immediate):** Zustand log bounding, Django query optimization (select_related), API config caching.
+2. **Tier 2 (Med-term):** WebSocket throttling, GPU scheduler job caching, Vite manual chunks.
+3. **Tier 3 (Platform):** UI virtualization, Cursor pagination, Postgres migration.
+
