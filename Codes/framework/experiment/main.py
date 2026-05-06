@@ -325,3 +325,23 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+    from framework.models import load_model, replace_attention_in_model
+
+def run_training(config, ...):
+    cfg = normalize_config(config)
+    model, tokenizer = load_model(
+        model_name=cfg.model_name,
+        num_labels=num_labels,
+        variant=getattr(cfg, 'model_variant', 'standard'),
+        rank=getattr(cfg, 'compression_rank', 64),
+    )
+
+    if cfg.attn_type and cfg.attn_type != "full":
+        model = replace_attention_in_model(model, cfg.attn_type, rank=cfg.compression_rank)
+
+    model.to(device)
+    # ... rest of training
