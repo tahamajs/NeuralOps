@@ -1,79 +1,68 @@
-import { useEffect, useRef } from 'react';
-import { useLiveStore } from '../store/experimentStore';
-/**
- * Hook for WebSocket connection to live experiment updates.
- * Automatically handles protocol selection (ws/wss) and token authentication.
- */
-export function useWebSocket(experimentId) {
-    const store = useLiveStore();
-    const wsRef = useRef(null);
-    useEffect(() => {
-        if (!experimentId)
-            return;
-        store.reset();
-        // Determine WebSocket protocol
-        const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        // Build WebSocket URL with optional host override
-        const wsBaseURL = import.meta.env.VITE_WS_URL || `${protocol}://${window.location.host}`;
-        const url = `${wsBaseURL}/ws/experiments/${experimentId}/`;
-        const socket = new WebSocket(url);
-        wsRef.current = socket;
-        // Add token to WebSocket headers if available (note: 
-        // WebSocket doesn't support custom headers in browsers, 
-        // so token must be passed as URL parameter or handled by backend auth)
-        const token = localStorage.getItem('token');
-        if (token && !url.includes('?')) {
-            // Some implementations may support token in query params
-            // but Django Channels typically uses the authenticated user from HTTP upgrade
+import { useEffect, useRef, useState } from 'react'
+import { useLiveStore } from '../stores/experimentStore'
+
+export type WSStatus = 'connecting' | 'open' | 'closed' | 'error'
+
+export function useWebSocket(experimentId: string | undefined) {
+  const store = useLiveStore()
+  const [wsStatus, setWsStatus] = useState<WSStatus>('closed')
+  const wsRef = useRef<WebSocket | null>(null)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!experimentId) return
+    store.reset()
+
+    const connect = () => {
+      setWsStatus('connecting')
+      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      const wsUrl = import.meta.env.VITE_WS_URL || `${protocol}://${window.location.host}`
+      const url = `${wsUrl}/ws/experiments/${experimentId}/`
+      const socket = new WebSocket(url)
+      wsRef.current = socket
+
+      socket.onopen = () => {
+        setWsStatus('open')
+        store.addLog('Connected to live stream')
+      }
+
+      socket.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data)
+          switch (msg.type) {
+            case 'status': store.updateStatus(msg.status); break
+            case 'log': store.addLog(msg.data); break
+            case 'metrics': store.updateMetrics(msg.data); break
+            case 'progress': store.updateProgress(msg); break
+            case 'gpu': store.updateGpu?.(msg); break
+            case 'final': store.updateMetrics(msg.data); store.addLog('Job completed'); break
+          }
+        } catch (err) {
+          console.error('WS parse error', err)
         }
-        socket.onopen = () => {
-            console.log(`WebSocket connected to ${url}`);
-            store.addLog(`Connected to live stream`);
-        };
-        socket.onmessage = (event) => {
-            try {
-                const msg = JSON.parse(event.data);
-                switch (msg.type) {
-                    case 'status':
-                        store.updateStatus(msg.status);
-                        break;
-                    case 'log':
-                        store.addLog(msg.data);
-                        break;
-                    case 'metrics':
-                        store.updateMetrics(msg.data);
-                        break;
-                    case 'progress':
-                        store.updateProgress(msg);
-                        break;
-                    case 'gpu':
-                        store.updateGpu(msg);
-                        break;
-                    case 'final':
-                        store.updateMetrics(msg.data);
-                        store.addLog('Job completed');
-                        break;
-                    default:
-                        console.warn('Unknown WebSocket message type:', msg.type);
-                }
-            }
-            catch (error) {
-                console.error('Failed to parse WebSocket message:', error);
-            }
-        };
-        socket.onerror = (event) => {
-            console.error('WebSocket error:', event);
-            store.addLog(`WebSocket error occurred`);
-        };
-        socket.onclose = () => {
-            console.log('WebSocket closed');
-            store.addLog('Connection closed');
-        };
-        return () => {
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.close();
-            }
-        };
-    }, [experimentId, store]);
-    return wsRef;
+      }
+
+      socket.onerror = () => {
+        setWsStatus('error')
+        store.addLog('WebSocket error')
+      }
+
+      socket.onclose = () => {
+        setWsStatus('closed')
+        store.addLog('Connection closed. Reconnecting in 3s...')
+        // Attempt to reconnect after 3 seconds
+        if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+        reconnectTimerRef.current = setTimeout(connect, 3000)
+      }
+    }
+
+    connect()
+
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+      wsRef.current?.close()
+    }
+  }, [experimentId])
+
+  return { wsStatus, ws: wsRef }
 }

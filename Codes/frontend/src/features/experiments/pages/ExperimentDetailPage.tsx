@@ -6,6 +6,7 @@ import api from '../../../api/client'
 import { ENDPOINTS } from '../../../api/endpoints'
 import { Card } from '../../../components/ui/Card'
 import { Badge } from '../../../components/ui/Badge'
+import { Button } from '../../../components/ui/Button'
 import { Spinner } from '../../../components/ui/Spinner'
 import { LiveLossPlot } from '../../../components/widgets/LiveLossPlot'
 import { LiveLogViewer } from '../../../components/widgets/LiveLogViewer'
@@ -14,11 +15,16 @@ import { ConfigSummary } from '../../../components/widgets/ConfigSummary'
 import { ArtifactList } from '../../../components/widgets/ArtifactList'
 import { DownloadModelButton } from '../../../components/widgets/DownloadModelButton'
 import { DownloadPaperButton } from '../../../components/widgets/DownloadPaperButton'
+import TrainingControlPanel from '../components/TrainingControlPanel'
+import CustomMetricsDashboard from '../components/CustomMetricsDashboard'
+import ExperimentTimeline from '../components/ExperimentTimeline'
 import { Experiment } from '../../../types/experiment'
+import { useState } from 'react'
 
 export default function ExperimentDetailPage() {
   const { id } = useParams<{ id: string }>()
-  useWebSocket(id)
+  const { wsStatus } = useWebSocket(id)
+  const [showAllMetrics, setShowAllMetrics] = useState(false)
 
   const { data: experiment, isLoading } = useQuery<Experiment>({
     queryKey: ['experiment', id],
@@ -31,7 +37,7 @@ export default function ExperimentDetailPage() {
 
   if (isLoading || !experiment) return <Spinner className="py-16" />
 
-  // Merge live data from WebSocket with initial experiment data
+  // Merge live data
   const status = live.status || experiment.status
   const progress = live.progress || { current: experiment.current_step, total: experiment.total_steps, eta: 0 }
   const logs = live.logs.length > 0 ? live.logs : experiment.logs || []
@@ -42,7 +48,7 @@ export default function ExperimentDetailPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tighter">
+          <h1 className="text-2xl font-display font-bold text-white">
             {experiment.name || 'Unnamed Session'}
           </h1>
           <p className="text-xs text-slate-400 font-mono mt-1">{experiment.id}</p>
@@ -50,22 +56,27 @@ export default function ExperimentDetailPage() {
         <Badge status={status} />
       </div>
 
-      {/* Progress Bar */}
-      <Card>
-        <ProgressBar progress={progress} />
-      </Card>
+      {/* ────── Training Control Panel (stop / retry / connection) ────── */}
+      <TrainingControlPanel runId={id!} status={status} progress={progress} />
+
+      {/* Progress Bar (if running) */}
+      {(status === 'running' || status === 'queued') && (
+        <Card>
+          <ProgressBar progress={progress} />
+        </Card>
+      )}
 
       {/* Metrics & Configuration */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-display font-bold text-white mb-3 flex items-center gap-2">
             <span className="w-1 h-4 bg-neon-blue rounded-full" />
             Training Loss
           </h3>
           <LiveLossPlot metrics={metrics} />
         </Card>
         <Card>
-          <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-display font-bold text-white mb-3 flex items-center gap-2">
             <span className="w-1 h-4 bg-purple-500 rounded-full" />
             Configuration
           </h3>
@@ -73,27 +84,82 @@ export default function ExperimentDetailPage() {
         </Card>
       </div>
 
+      {/* Custom Metrics Dashboard */}
+      <CustomMetricsDashboard runId={id!} />
+
       {/* Live Logs */}
       <Card>
-        <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+        <h3 className="text-sm font-display font-bold text-white mb-3 flex items-center gap-2">
           <span className="w-1 h-4 bg-green-500 rounded-full" />
           Live Logs
         </h3>
         <LiveLogViewer logs={logs} />
       </Card>
 
+      {/* Experiment Timeline */}
+      <ExperimentTimeline run={experiment} />
+
+      {/* Environment Info (collapsible) */}
+      <Card>
+        <details>
+          <summary className="text-sm font-display font-bold text-white cursor-pointer">
+            📌 Code & Data Versioning / Environment
+          </summary>
+          <div className="mt-4 grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="text-slate-400">Python:</span>{' '}
+              <span className="text-white">{experiment.python_version || '—'}</span>
+            </div>
+            <div>
+              <span className="text-slate-400">Git Commit:</span>{' '}
+              <span className="text-white font-mono">{experiment.git_commit_hash?.slice(0,7) || '—'}</span>
+            </div>
+            <div>
+              <span className="text-slate-400">Branch:</span>{' '}
+              <span className="text-white">{experiment.git_branch || '—'}</span>
+            </div>
+            <div>
+              <span className="text-slate-400">DVC Hash:</span>{' '}
+              <span className="text-white font-mono">{experiment.dvc_data_hash?.slice(0,12) || '—'}</span>
+            </div>
+          </div>
+        </details>
+      </Card>
+
+      {/* Config History (quick diff) */}
+      <Card>
+        <details>
+          <summary className="text-sm font-display font-bold text-white cursor-pointer">
+            ⚙️ Configuration History & Diff
+          </summary>
+          {/* This can be replaced with the full ConfigHistoryDiff component if desired */}
+          <div className="mt-4 text-xs text-slate-500">
+            Use the dedicated config history page for version‑by‑version diffs.
+            <br />
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mt-2"
+              onClick={() => window.open(`/jobs/${id}/config-history`, '_blank')}
+            >
+              Open Config History
+            </Button>
+          </div>
+        </details>
+      </Card>
+
       {/* Artifacts, Model, Paper */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
-          <h3 className="text-sm font-semibold text-white mb-3">Artifacts</h3>
+          <h3 className="text-sm font-display font-bold text-white mb-3">Artifacts</h3>
           <ArtifactList experimentId={id!} />
         </Card>
         <Card>
-          <h3 className="text-sm font-semibold text-white mb-3">Model</h3>
+          <h3 className="text-sm font-display font-bold text-white mb-3">Model</h3>
           <DownloadModelButton experimentId={id!} />
         </Card>
         <Card>
-          <h3 className="text-sm font-semibold text-white mb-3">Paper</h3>
+          <h3 className="text-sm font-display font-bold text-white mb-3">Paper</h3>
           <DownloadPaperButton experimentId={id!} />
         </Card>
       </div>
