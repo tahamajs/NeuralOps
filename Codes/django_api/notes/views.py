@@ -476,3 +476,7 @@ def run_notes(request, run_id):
     page = paginator.paginate_queryset(notes, request)
     serializer = ResearcherNoteSerializer(page, many=True)
     return paginator.get_paginated_response(serializer.data)
+
+
+
+

@@ -1,18 +1,14 @@
-# notes/webhook_utils.py
 import json
 import hmac
 import hashlib
 import logging
 import requests
+from django.utils import timezone
+from .models import WebhookSubscription
 
 logger = logging.getLogger(__name__)
 
-
 def manual_send(url, payload, secret=''):
-    """
-    Send a webhook payload synchronously.
-    Returns True if the request was successful (status 2xx), else False.
-    """
     headers = {'Content-Type': 'application/json'}
     if secret:
         signature = hmac.new(
@@ -28,17 +24,8 @@ def manual_send(url, payload, secret=''):
         logger.warning(f"Webhook delivery failed to {url}: {e}")
         return False
 
-
 def trigger_webhook_event(event_type, note):
-    """
-    Find all active webhooks subscribed to the given event type
-    and send them a notification payload. (Placeholder implementation)
-    """
     from .models import WebhookSubscription
-    subscriptions = WebhookSubscription.objects.filter(
-        events__contains=[event_type], is_active=True
-    )
-    # Fetch all active subscriptions and filter in Python (avoids SQLite JSON contains issue)
     all_subs = WebhookSubscription.objects.filter(is_active=True)
     subscriptions = [s for s in all_subs if event_type in s.events]
 
@@ -54,6 +41,3 @@ def trigger_webhook_event(event_type, note):
         if success:
             sub.last_triggered_at = timezone.now()
             sub.save(update_fields=['last_triggered_at'])
-            logger.info(f"Webhook delivered to {sub.url}")
-        else:
-            logger.warning(f"Webhook delivery failed to {sub.url}")

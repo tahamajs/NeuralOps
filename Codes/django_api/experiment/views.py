@@ -369,3 +369,96 @@ def run_analysis_overview(request, run_id):
         "robustness_url": f"/api/runs/{run_id}/robustness/",
     }
     return Response(overview)
+
+
+
+from .comparison import compare_runs_api
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def compare_experiments(request):
+    """Compare multiple training runs side-by-side."""
+    run_ids = request.data.get("run_ids", [])
+    baseline_id = request.data.get("baseline_id")
+    if len(run_ids) < 2:
+        return Response({"error": "Need at least 2 run_ids"}, status=400)
+    try:
+        result = compare_runs_api(run_ids, baseline_id)
+        return Response(result)
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def run_diff(request, run_id_a, run_id_b):
+    """Deep diff between two specific runs."""
+    run_a = get_object_or_404(TrainingRun, id=run_id_a)
+    run_b = get_object_or_404(TrainingRun, id=run_id_b)
+    config_diff = DeepDiff(run_a.config or {}, run_b.config or {}, ignore_order=True, verbose_level=2)
+    metrics_diff = DeepDiff(run_a.final_metrics or {}, run_b.final_metrics or {}, ignore_order=True)
+    return Response({
+        "run_a": {"id": str(run_a.id), "name": run_a.name},
+        "run_b": {"id": str(run_b.id), "name": run_b.name},
+        "config_diff": config_diff,
+        "metrics_diff": metrics_diff,
+        "config_diff_json": config_diff.to_dict() if hasattr(config_diff, 'to_dict') else str(config_diff),
+        "metrics_diff_json": metrics_diff.to_dict() if hasattr(metrics_diff, 'to_dict') else str(metrics_diff),
+    })
+
+
+
+# ---- Import the analytics functions ----
+from .analytics import (
+    hyperparameter_importance,
+    metric_correlation_matrix,
+    training_stability_analysis,
+)
+from .templates_api import (
+    template_list as _template_list,
+    template_detail as _template_detail,
+    use_template as _use_template,
+)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def hp_importance_view(request):
+    run_ids = request.query_params.getlist("run_ids")
+    metric = request.query_params.get("metric", "eval_accuracy")
+    result = hyperparameter_importance(run_ids=run_ids if run_ids else None, target_metric=metric)
+    return Response(result)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def metric_correlation_view(request):
+    run_ids = request.query_params.getlist("run_ids")
+    result = metric_correlation_matrix(run_ids=run_ids if run_ids else None)
+    return Response(result)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def stability_analysis_view(request, run_id):
+    result = training_stability_analysis(run_id)
+    return Response(result)
+
+
+# Template endpoints – just forward to the imported functions
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def template_list(request):
+    return _template_list(request)
+
+
+@api_view(["GET", "PATCH", "DELETE"])
+@permission_classes([IsAuthenticated])
+def template_detail(request, template_id):
+    return _template_detail(request, template_id)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def use_template(request, template_id):
+    return _use_template(request, template_id)

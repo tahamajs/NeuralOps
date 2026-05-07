@@ -23,4 +23,6 @@ urlpatterns = [
     path('scheduler/metrics/', views.scheduler_metrics, name='scheduler_metrics'),
     path('system/gpu/', views.gpu_info),
     path('system/status/', views.system_status),
+    path('my-jobs/', views.my_scheduled_jobs, name='my_scheduled_jobs'),
+
 ]

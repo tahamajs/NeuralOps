@@ -35,16 +35,28 @@ def _update_status(run: TrainingRun, status: str):
         run.completed_at = now
     run.save(update_fields=['status', 'started_at', 'completed_at'])
     push_update(run, {"type": "status", "status": status})
-
 def run_training(run: TrainingRun, stop_event=None):
-    _update_status(run, "running")
-    config = run.config.copy()
-    output_dir = Path(settings.MEDIA_ROOT) / str(run.id) / "model"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    config["output_dir"] = str(output_dir)
-    # Provide GLUE data path from Django settings
-    config["glue_base_path"] = getattr(settings, 'GLUE_DATA_PATH', "/default/path/to/glue")
+    """Instantiate MegaOrchestrator and run in the background."""
+    from framework.experiment.mega_orchestrator import MegaOrchestrator
+    from pathlib import Path
+    from django.conf import settings
 
+    orchestrator = MegaOrchestrator(
+        config=run.config,
+        run_id=str(run.id),
+        base_dir=Path(settings.MEDIA_ROOT),
+        progress_callback=partial(progress_callback, run),
+        log_callback=partial(log_callback, run),
+        final_callback=partial(final_callback, run),
+        stop_event=stop_event,
+    )
+    try:
+        orchestrator.run()
+    except Exception as e:
+        run.status = 'failed'
+        run.save()
+
+        
 def progress_callback(step, total, pct):
     run.current_step = step
     run.total_steps = total

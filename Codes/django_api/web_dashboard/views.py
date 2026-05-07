@@ -1,41 +1,44 @@
-# web_dashboard/views.py
 import json
 from datetime import timedelta
 
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Count, Avg, Value as V
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.cache import cache_page
-from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from experiment.models import Experiment, TrainingRun
 
-# ---------- Web Page Views ----------
+
+# ============================================================================
+# HTML Page Views
+# ============================================================================
+
 def index(request):
-    """Main landing page (list of recent runs)."""
+    """Main landing page – list of recent runs."""
     runs = TrainingRun.objects.select_related('experiment').order_by('-created_at')[:20]
     return render(request, 'web_dashboard/index.html', {'runs': runs})
+
 
 def create_job(request):
     """Job creation wizard page."""
     return render(request, 'web_dashboard/create_job.html')
+
 
 @login_required(login_url='/login/')
 def job_detail(request, job_id):
     """Detailed view of a single run (experiment monitor)."""
     run = get_object_or_404(TrainingRun, id=job_id)
     return render(request, 'web_dashboard/experiment_monitor.html', {'run': run})
+
 
 @login_required(login_url='/login/')
 def dashboard(request):
@@ -45,7 +48,7 @@ def dashboard(request):
 
 @login_required(login_url='/login/')
 def statistics(request):
-    """Statistics page with aggregated metrics."""
+    """Statistics page with aggregated metrics and charts."""
     total = TrainingRun.objects.count()
     completed = TrainingRun.objects.filter(status='completed').count()
     failed = TrainingRun.objects.filter(status='failed').count()
@@ -53,7 +56,6 @@ def statistics(request):
     success_rate = (completed / total * 100) if total else 0
 
     # Last 7 days activity
-    from django.db.models.functions import TruncDate
     week_ago = timezone.now() - timedelta(days=7)
     runs_by_day = (
         TrainingRun.objects
@@ -63,10 +65,10 @@ def statistics(request):
         .annotate(count=Count('id'))
         .order_by('date')
     )
-    days_labels = [item['date'].strftime('%Y-%m-%d') for item in runs_by_day]  # now works
+    days_labels = [item['date'].strftime('%Y-%m-%d') for item in runs_by_day]
     days_counts = [item['count'] for item in runs_by_day]
 
-    # Average metrics – use a safe fallback for SQLite JSON fields
+    # Average metrics (handle SQLite JSON fields gracefully)
     try:
         avg_metrics = TrainingRun.objects.filter(
             status='completed',
@@ -97,14 +99,24 @@ def statistics(request):
         'task_usage': task_usage,
     }
     return render(request, 'web_dashboard/statistics.html', context)
-# ---------- Authentication Pages ----------
+
+
+# ============================================================================
+# Authentication Pages (public)
+# ============================================================================
+
 def login_page(request):
     return render(request, 'web_dashboard/login.html')
+
 
 def register_page(request):
     return render(request, 'web_dashboard/register.html')
 
-# ---------- API Endpoints for Frontend (token + cookie) ----------
+
+# ============================================================================
+# REST API Endpoints (used by the frontend JavaScript)
+# ============================================================================
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def api_register(request):
@@ -116,19 +128,22 @@ def api_register(request):
         return Response({"error": "Username too long"}, status=400)
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already taken"}, status=400)
+
     user = User.objects.create_user(username=username, password=password)
     token = Token.objects.create(user=user)
-    auth_login(request, user)
+    auth_login(request, user)          # optional session login
+
     response = Response({"token": token.key, "username": user.username}, status=201)
     response.set_cookie(
         key='authToken',
         value=token.key,
-        httponly=False,
+        httponly=False,                # accessible from JS
         samesite='Lax',
-        max_age=60*60*24*30,
+        max_age=60*60*24*30,           # 30 days
         path='/'
     )
     return response
+
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -138,7 +153,7 @@ def api_login(request):
     user = authenticate(request, username=username, password=password)
     if user:
         token, _ = Token.objects.get_or_create(user=user)
-        auth_login(request, user)
+        auth_login(request, user)      # optional session login
         response = Response({"token": token.key, "username": user.username})
         response.set_cookie(
             key='authToken',
@@ -151,14 +166,15 @@ def api_login(request):
         return response
     return Response({"error": "Invalid credentials"}, status=401)
 
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def api_logout(request):
-    # Delete the token – DRF's CookieTokenAuthentication sets request.auth to the Token object
+    # Delete the DRF token (request.auth is the Token object when using TokenAuthentication)
     if request.auth and hasattr(request.auth, 'delete'):
         request.auth.delete()
     else:
-        # Fallback: try to read from header (for backward compatibility)
+        # Fallback for header-based token
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Token "):
             key = auth_header[6:]
@@ -166,16 +182,19 @@ def api_logout(request):
 
     response = Response({"status": "logged out"})
     response.delete_cookie('authToken')
-    auth_logout(request)      # also clear session
+    auth_logout(request)               # also clear Django session
     return response
-# ---------- API for Dashboard (runs list) ----------
+
+
 @api_view(["GET"])
 def dashboard_api_jobs(request):
-    """Return recent runs as JSON (used by dashboard)."""
+    """Return recent runs as JSON (used by the dashboard frontend)."""
     runs = TrainingRun.objects.select_related('experiment').order_by('-created_at')[:50]
     data = [{
         'id': str(run.id),
         'status': run.status,
+        'experiment_name': run.experiment.name if run.experiment else '',
+        'name': run.name,
         'config': run.config,
         'created_at': run.created_at.isoformat(),
         'started_at': run.started_at.isoformat() if run.started_at else None,
@@ -191,17 +210,21 @@ def dashboard_api_jobs(request):
     return Response(data)
 
 
-
 @api_view(["GET"])
 def launch_config_options(request):
     """Return all available options for the launch page dropdowns."""
-    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, TRAINER_REGISTRY
+    from framework.core.registry import (
+        ATTENTION_REGISTRY,
+        COMPRESSOR_REGISTRY,
+        TRAINER_REGISTRY,
+    )
     from framework.trainer.methods.registry import METHOD_REGISTRY
     from framework.trainer.losses import LOSS_REGISTRY
     from framework.trainer.optimizers import OPTIMIZER_REGISTRY
     from framework.trainer.schedulers import SCHEDULER_REGISTRY
     from framework.callbacks import CALLBACK_REGISTRY
     from framework.data.augmentation import AUGMENTATION_REGISTRY
+
     return Response({
         "attentions": list(ATTENTION_REGISTRY.keys()),
         "compressors": list(COMPRESSOR_REGISTRY.keys()),

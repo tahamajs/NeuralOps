@@ -1143,3 +1143,67 @@ def hpo_status(request):
 def fl_status(request):
     return Response({"status": "no active federated run", "connected_clients": 0})
 
+
+
+
+# ---------- Model Card ----------
+from model_versioning.model_card import generate_model_card, push_model_card_to_hub
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def generate_model_card_view(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    card = generate_model_card(run)
+    return Response({"model_card_md": card})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def push_model_card_view(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    repo_id = request.data.get("repo_id")
+    if not repo_id:
+        return Response({"error": "repo_id required"}, status=400)
+    success, message = push_model_card_to_hub(run, repo_id)
+    return Response({"success": success, "message": message})
+
+
+# ---------- Data Lineage ----------
+from jobscheduler.data_lineage import DataLineageTracker
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def data_lineage_view(request, run_id):
+    tracker = DataLineageTracker(run_id)
+    report = tracker.get_lineage_report()
+    return Response(report)
+
+
+# ---------- Model Lineage ----------
+from model_versioning.lineage import get_lineage_graph
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def model_lineage_view(request, version_id):
+    direction = request.query_params.get("direction", "both")
+    max_depth = int(request.query_params.get("max_depth", 5))
+    graph = get_lineage_graph(version_id, direction=direction, max_depth=max_depth)
+    return Response(graph)
+
+
+# ---------- Global Search ----------
+from api.search import global_search as _global_search
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def global_search(request):
+    return _global_search(request)
+
+
+# ---------- Activity Feed ----------
+from api.activity import activity_feed as _activity_feed
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def activity_feed(request):
+    return _activity_feed(request)
