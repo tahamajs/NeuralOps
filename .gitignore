@@ -20,7 +20,7 @@ venv/
 **/*.pth
 **/*.tar.gz
 */.node_modules
-
+./Codes/frontend/node_modules/*
 **/*.onnx
 **/*.data
 **/*.safetensors
