@@ -2,15 +2,17 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '../../../api/client'
 import { ENDPOINTS } from '../../../api/endpoints'
-import { ExperimentFilters, ExperimentFiltersState } from '../components/ExperimentFilters'
-import { ExperimentTable } from '../../dashboard/components/ExperimentTable'  // reuse
+import { ExperimentFilters } from '../components/ExperimentFilters'
+import { ExperimentTable } from '../../dashboard/components/ExperimentTable'
+import { PaginationControls } from '../../../components/widgets/PaginationControls'
 import { Spinner } from '../../../components/ui/Spinner'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { Button } from '../../../components/ui/Button'
 import { Experiment } from '../../../types/experiment'
+import { Link } from 'react-router-dom'
 
 export default function ExperimentListPage() {
-  const [filters, setFilters] = useState<ExperimentFiltersState>({ search: '', status: '', type: '' })
+  const [filters, setFilters] = useState({ search: '', status: '', type: '' })
   const [page, setPage] = useState(1)
   const pageSize = 15
 
@@ -20,7 +22,7 @@ export default function ExperimentListPage() {
     refetchInterval: 5000,
   })
 
-  const filtered = experiments.filter((e) => {
+  const filtered = experiments.filter(e => {
     if (filters.status && e.status !== filters.status) return false
     if (filters.type && e.job_type !== filters.type) return false
     if (filters.search) {
@@ -35,28 +37,17 @@ export default function ExperimentListPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-black text-white tracking-tighter">
-        EXPERIMENT <span className="text-neon-blue">LOG</span>
-      </h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-display font-bold text-white">Experiments</h1>
+        <Link to="/launcher"><Button size="sm">+ New Experiment</Button></Link>
+      </div>
       <ExperimentFilters value={filters} onChange={setFilters} />
-      {isLoading ? (
-        <Spinner />
-      ) : filtered.length === 0 ? (
-        <EmptyState message={filters.search || filters.status || filters.type ? 'No matching experiments' : 'No experiments yet'} />
+      {isLoading ? <Spinner /> : filtered.length === 0 ? (
+        <EmptyState message="No experiments match your filters." />
       ) : (
         <>
           <ExperimentTable experiments={paged} />
-          {totalPages > 1 && (
-            <div className="flex justify-center gap-2">
-              <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                Previous
-              </Button>
-              <span className="py-1.5 text-xs text-slate-400">{page} / {totalPages}</span>
-              <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                Next
-              </Button>
-            </div>
-          )}
+          <PaginationControls page={page} total={totalPages} onChange={setPage} />
         </>
       )}
     </div>

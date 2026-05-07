@@ -148,6 +148,17 @@ export const router = createBrowserRouter([
 { path: '/notes/:noteId/mentions', element: <NoteMentionsPage /> },
 { path: '/models/search', element: <ModelSearchPage /> },
 { path: '/runs/:runId/config/update', element: <UpdateRunConfigPage /> },
+{ path: '/paper/editor', element: <PaperEditorPage /> },
+{ path: '/paper/editor/:runId', element: <PaperEditorPage /> },
+{
+  path: '/experiments/:id/monitor',
+  element: <ExperimentMonitorPage />,
+},
+{ path: '/paper/editor/:projectId', element: <OverleafEditorPage /> },
+// A new project creation route
+{ path: '/paper/new', element: <NewPaperProjectPage /> },
+{ path: '/analysis', element: <ResearchAnalysisPage /> },
+{ path: '/experiments/:id/report', element: <ExperimentReportPage /> },
     ],
   },
 ])
