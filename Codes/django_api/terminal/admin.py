@@ -1,0 +1,1 @@
+# No admin models for terminal.

@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
+from paper import views as paper_views
 
 def well_known_ignore(request):
     return HttpResponse(status=204)
@@ -14,6 +15,8 @@ urlpatterns = [
     path('api/notes/', include('notes.urls')),
     path('api/model-versioning/', include('model_versioning.urls')),
     path('.well-known/appspecific/com.chrome.devtools.json', well_known_ignore),
+    path('paper/compile/', paper_views.compile_latex, name='compile_latex'),
+
 ]
 
 if settings.DEBUG:

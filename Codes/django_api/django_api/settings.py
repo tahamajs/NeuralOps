@@ -1,30 +1,18 @@
 # django_api/settings.py
 import os
-from pathlib import Path
-
 import sys
 from pathlib import Path
-GLUE_DATA_PATH = os.environ.get("GLUE_DATA_PATH",
-                   "/Users/tahamajs/Documents/uni/Project/datasets/glue")
-try:
-    from django.conf import settings
-    GLUE_PATH = getattr(settings, 'GLUE_DATA_PATH', "/default/path")
-except ImportError:
-    GLUE_PATH = os.environ.get("GLUE_DATA_PATH", "/default/path")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Make the 'Codes' folder (which contains the 'framework' package) importable
-CODES_DIR = BASE_DIR.parent      # ← this is the /Users/.../Codes directory
-if str(CODES_DIR) not in sys.path:
-    sys.path.insert(0, str(CODES_DIR))
-
-# Add Codes directory to sys.path so that 'framework' package can be imported
-# NOTE: No sys.path modifications are needed.
-#       All Django apps live inside the project root (BASE_DIR) and are
-#       automatically importable.  Adding the parent 'Codes' directory
-#       would expose the 'framework/experiment' package, which shadows
-#       our 'experiment' Django app.
+# ----------------------------------------------------------------------
+# Make the framework package importable (if needed)
+# ----------------------------------------------------------------------
+# If your framework lives in a separate directory (e.g., a sibling "framework" package),
+# ensure it's on the Python path. Uncomment and adjust as necessary:
+# FRAMEWORK_DIR = BASE_DIR.parent / 'framework'
+# if str(FRAMEWORK_DIR) not in sys.path:
+#     sys.path.insert(0, str(FRAMEWORK_DIR))
 
 # ----------------------------------------------------------------------
 # Security & Debug
@@ -34,10 +22,10 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"] if DEBUG else os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 # ----------------------------------------------------------------------
-# Installed apps
+# Application definition
 # ----------------------------------------------------------------------
 INSTALLED_APPS = [
-    'daphne',
+    'daphne',                          # ASGI server (for terminal WebSocket)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,6 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # Third‑party
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -58,13 +47,15 @@ INSTALLED_APPS = [
     'jobscheduler',
     'notes',
     'model_versioning',
+    'terminal',                        # interactive terminal via WebSocket
+    'paper',                           # LaTeX compilation endpoint
 ]
 
 # ----------------------------------------------------------------------
 # Middleware
 # ----------------------------------------------------------------------
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',          # must be at the top
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -72,14 +63,28 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'web_dashboard.middleware.TokenAuthMiddleware',
+    'web_dashboard.middleware.TokenAuthMiddleware',   # optional cookie auth
 ]
 
 # ----------------------------------------------------------------------
-# URL configuration
+# URL & WSGI / ASGI
 # ----------------------------------------------------------------------
 ROOT_URLCONF = "django_api.urls"
+WSGI_APPLICATION = "django_api.wsgi.application"
+ASGI_APPLICATION = "django_api.asgi.application"
 
+# ----------------------------------------------------------------------
+# Channels (for terminal WebSocket)
+# ----------------------------------------------------------------------
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',   # use Redis in production
+    },
+}
+
+# ----------------------------------------------------------------------
+# Templates
+# ----------------------------------------------------------------------
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -95,31 +100,10 @@ TEMPLATES = [
         },
     },
 ]
-INSTALLED_APPS += ['corsheaders']
 
-MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')  # top of list
-
-# During development, allow your React dev server
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-CORS_ALLOW_CREDENTIALS = True
-
-# REST Framework auth must allow cookies + token
-REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
-    'api.authentication.CookieTokenAuthentication',
-    'rest_framework.authentication.TokenAuthentication',
-]
-WSGI_APPLICATION = "django_api.wsgi.application"
-ASGI_APPLICATION = "django_api.asgi.application"
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    },
-}
-
+# ----------------------------------------------------------------------
+# Database
+# ----------------------------------------------------------------------
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -127,9 +111,13 @@ DATABASES = {
     }
 }
 
+# ----------------------------------------------------------------------
+# REST Framework
+# ----------------------------------------------------------------------
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'api.authentication.CookieTokenAuthentication',
+        'api.authentication.CookieTokenAuthentication',    # custom cookie auth
+        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -141,10 +129,19 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+# ----------------------------------------------------------------------
+# CORS (Cross‑Origin Resource Sharing)
+# ----------------------------------------------------------------------
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [] if DEBUG else os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
 
+# ----------------------------------------------------------------------
+# Static & Media
+# ----------------------------------------------------------------------
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -152,11 +149,17 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# ----------------------------------------------------------------------
+# Internationalization
+# ----------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
+# ----------------------------------------------------------------------
+# Logging
+# ----------------------------------------------------------------------
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -182,17 +185,32 @@ LOGGING = {
     },
 }
 
+# ----------------------------------------------------------------------
+# Custom Settings
+# ----------------------------------------------------------------------
+# Path for GLUE datasets (used by experiment runners)
+GLUE_DATA_PATH = os.environ.get(
+    "GLUE_DATA_PATH",
+    "/Users/tahamajs/Documents/uni/Project/datasets/glue",
+)
+
+# HuggingFace credentials (for publishing models / model cards)
 HUGGINGFACE_TOKEN = os.environ.get("HF_TOKEN")
 HUGGINGFACE_USERNAME = os.environ.get("HF_USERNAME")
+
+# Model versioning / cold storage
 MODEL_ARCHIVE_BUCKET = os.environ.get("MODEL_ARCHIVE_BUCKET")
 
+# Scheduler / GPU defaults
 SCHEDULER_TOTAL_GPUS = int(os.environ.get("SCHEDULER_TOTAL_GPUS", 1))
 SCHEDULER_BOOST_WAIT_THRESHOLD = int(os.environ.get("SCHEDULER_BOOST_WAIT_THRESHOLD", 600))
 SCHEDULER_SHORT_JOB_THRESHOLD = int(os.environ.get("SCHEDULER_SHORT_JOB_THRESHOLD", 60))
 SCHEDULER_PREEMPT_TIMEOUT = int(os.environ.get("SCHEDULER_PREEMPT_TIMEOUT", 10))
 JOB_TIMEOUT_SECONDS = int(os.environ.get("JOB_TIMEOUT_SECONDS", 0))
 
+# API base URL (used by the custom logger)
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 ML_TOKEN = os.environ.get("ML_TOKEN", "")
+
+# Login redirects
 LOGIN_URL = "/login/"
-ADMIN_SITE_HEADER = "Transformer Toolkit Admin"
