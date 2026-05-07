@@ -10,10 +10,7 @@ const RegisterPage = lazy(() => import('./features/auth/pages/RegisterPage'))
 // Dashboard
 const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'))
 const DashboardWidgetsConfigPage = lazy(() => import('./features/dashboard/pages/DashboardWidgetsConfigPage'))
-const AgentChatPage = lazy(() => import('./features/agent/pages/AgentChatPage'))
-const AgentSessionsListPage = lazy(() => import('./features/agent/pages/AgentSessionsListPage'))
-const PaperLibraryPage = lazy(() => import('./features/agent/pages/PaperLibraryPage'))
-const PromptTestingPage = lazy(() => import('./features/agent/pages/PromptTestingPage'))
+
 // Experiments
 const ExperimentListPage = lazy(() => import('./features/experiments/pages/ExperimentListPage'))
 const ExperimentDetailPage = lazy(() => import('./features/experiments/pages/ExperimentDetailPage'))
@@ -118,37 +115,39 @@ const VersionPage = lazy(() => import('./features/system/pages/VersionPage'))
 const ConfigPage = lazy(() => import('./features/config/pages/ConfigPage'))
 const ModelSearchPage = lazy(() => import('./features/config/pages/ModelSearchPage'))
 
+// Agent
+const AgentChatPage = lazy(() => import('./features/agent/pages/AgentChatPage'))
+const AgentSessionsListPage = lazy(() => import('./features/agent/pages/AgentSessionsListPage'))
+const PaperLibraryPage = lazy(() => import('./features/agent/pages/PaperLibraryPage'))
+const PromptTestingPage = lazy(() => import('./features/agent/pages/PromptTestingPage'))
+
+// Sweeps
+const SweepDashboardPage = lazy(() => import('./features/sweeps/pages/SweepDashboardPage'))
+const SweepCreator = lazy(() => import('./features/sweeps/components/SweepCreator'))
+
 // Fallback
 const NotFoundPage = lazy(() => import('./features/NotFoundPage'))
 
 export const router = createBrowserRouter([
   {
     path: '/login',
-    element: (
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface"><Spinner /></div>}>
-        <LoginPage />
-      </Suspense>
-    ),
+    element: <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface"><Spinner /></div>}><LoginPage /></Suspense>,
   },
   {
     path: '/register',
-    element: (
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface"><Spinner /></div>}>
-        <RegisterPage />
-      </Suspense>
-    ),
+    element: <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface"><Spinner /></div>}><RegisterPage /></Suspense>,
   },
   {
     element: <MainLayout />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
 
-      // ─── Dashboard ──────────────────────────
+      // Dashboard
       { path: '/dashboard', element: <DashboardPage /> },
       { path: '/dashboard/widgets-config', element: <DashboardWidgetsConfigPage /> },
       { path: '/statistics', element: <DashboardPage /> },
 
-      // ─── Experiments ────────────────────────
+      // Experiments
       { path: '/experiments', element: <ExperimentListPage /> },
       { path: '/experiments/compare', element: <ExperimentComparePage /> },
       { path: '/experiments/diff', element: <ExperimentDiffPage /> },
@@ -164,12 +163,12 @@ export const router = createBrowserRouter([
       { path: '/runs/:runId/model-card', element: <ModelCardPage /> },
       { path: '/runs/:runId/config/update', element: <UpdateRunConfigPage /> },
 
-      // ─── Drift / Fairness / Robustness ──────
+      // Drift / Fairness / Robustness
       { path: '/runs/:runId/drift', element: <DriftCheckPage /> },
       { path: '/runs/:runId/fairness', element: <FairnessPage /> },
       { path: '/runs/:runId/robustness', element: <RobustnessPage /> },
 
-      // ─── Paper ──────────────────────────────
+      // Paper
       { path: '/runs/:runId/paper', element: <PaperEditorPage /> },
       { path: '/runs/:runId/paper/preview', element: <PaperPreviewPage /> },
       { path: '/paper/editor', element: <PaperEditorPage /> },
@@ -177,7 +176,7 @@ export const router = createBrowserRouter([
       { path: '/paper/editor/:projectId', element: <OverleafEditorPage /> },
       { path: '/paper/new', element: <NewPaperProjectPage /> },
 
-      // ─── Model Versioning ────────────────────
+      // Model Versioning
       { path: '/runs/:runId/model-versions', element: <ModelVersionsPage /> },
       { path: '/runs/:runId/model-versions/compare', element: <ModelVersionCompareFromRunPage /> },
       { path: '/runs/:runId/model-versions/cleanup', element: <ModelVersionCleanupPage /> },
@@ -187,7 +186,7 @@ export const router = createBrowserRouter([
       { path: '/model-versions/:versionId/archive', element: <ArchiveModelPage /> },
       { path: '/models/:versionId/lineage', element: <ModelLineagePage /> },
 
-      // ─── Jobs ───────────────────────────────
+      // Jobs
       { path: '/jobs/:jobId', element: <JobDetailPage /> },
       { path: '/jobs/:jobId/history', element: <JobHistoryPage /> },
       { path: '/jobs/:jobId/scheduling', element: <JobSchedulingPage /> },
@@ -196,10 +195,10 @@ export const router = createBrowserRouter([
       { path: '/jobs/:jobId/environment', element: <EnvironmentInfoPage /> },
       { path: '/my-jobs', element: <MyScheduledJobsPage /> },
 
-      // ─── Launcher ────────────────────────────
+      // Launcher
       { path: '/launcher', element: <LauncherPage /> },
 
-      // ─── Notes ──────────────────────────────
+      // Notes
       { path: '/notes', element: <NotesListPage /> },
       { path: '/notes/new', element: <NoteCreatePage /> },
       { path: '/notes/:id', element: <NoteDetailPage /> },
@@ -212,75 +211,61 @@ export const router = createBrowserRouter([
       { path: '/notes/bulk', element: <BulkNotesPage /> },
       { path: '/notes/webhooks', element: <WebhookManagerPage /> },
 
-      // ─── Prompts ─────────────────────────────
+      // Prompts
       { path: '/prompts', element: <PromptsListPage /> },
       { path: '/prompts/:name', element: <PromptDetailPage /> },
       { path: '/prompts/:name/history', element: <PromptHistoryPage /> },
 
-      // ─── Cluster / Scheduler ────────────────
+      // Cluster / Scheduler
       { path: '/cluster', element: <ClusterOverviewPage /> },
 
-      // ─── Search / Activity ──────────────────
+      // Search / Activity
       { path: '/search', element: <GlobalSearchPage /> },
       { path: '/activity', element: <ActivityFeedPage /> },
 
-      // ─── Analytics ──────────────────────────
+      // Analytics
       { path: '/analytics', element: <AdvancedAnalyticsPage /> },
       { path: '/analysis', element: <ResearchAnalysisPage /> },
 
-      // ─── Templates ──────────────────────────
+      // Templates
       { path: '/templates', element: <TemplatesListPage /> },
       { path: '/templates/:templateId', element: <TemplateDetailPage /> },
 
-      // ─── HPO / Federated ────────────────────
+      // HPO / Federated
       { path: '/hpo-status', element: <HPOStatusPage /> },
       { path: '/federated-status', element: <FederatedStatusPage /> },
 
-      // ─── Profile ────────────────────────────
+      // Profile
       { path: '/profile', element: <UserProfilePage /> },
       { path: '/profile/change-password', element: <ChangePasswordPage /> },
 
-      // ─── Admin ──────────────────────────────
+      // Admin
       { path: '/admin/dashboard', element: <AdminDashboard /> },
       { path: '/admin/jobs', element: <AdminJobsPage /> },
       { path: '/admin/model-versions', element: <AdminModelVersionsPage /> },
       { path: '/admin/users', element: <AdminUsersPage /> },
       { path: '/admin/stop-all-jobs', element: <StopAllJobsPage /> },
 
-      // ─── System ─────────────────────────────
+      // System
       { path: '/system', element: <SystemStatusPage /> },
       { path: '/health', element: <HealthPage /> },
       { path: '/version', element: <VersionPage /> },
       { path: '/config', element: <ConfigPage /> },
       { path: '/models/search', element: <ModelSearchPage /> },
-{ path: '/sweeps/create', element: <SweepCreator onCreated={() => navigate('/sweeps')} /> },
-{ path: '/sweeps/:sweepId', element: <SweepDashboardPage /> },
-{ path: '/model-registry', element: <ModelRegistryPage /> },
-{ path: '/cluster/overview', element: <ClusterDashboardPage /> },
-{ path: '/runs/:runId/reproducibility', element: <ReproducibilityPanel standalone /> },
 
-{ path: '/agent', element: <AgentChatPage /> },
-{ path: '/agent/:sessionId', element: <AgentChatPage /> },
-{ path: '/agents', element: <AgentSessionsListPage /> },
-      // ─── 404 ────────────────────────────────
-      { path: '/agents/create', element: <AgentCreator /> },
-{ path: '/agents/:sessionId', element: <AgentDashboardPage /> },
-
-      { path: '*', element: <NotFoundPage /> },
+      // Agent
       { path: '/agent', element: <AgentChatPage /> },
-{ path: '/agent/:sessionId', element: <AgentChatPage /> },
-{ path: '/agents', element: <AgentSessionsListPage /> },
-{ path: '/agent', element: <AgentChatPage /> },
-{ path: '/agent/:sessionId', element: <AgentChatPage /> },
-{ path: '/agent/sessions', element: <AgentSessionsListPage /> },
-{ path: '/agent/papers', element: <PaperLibraryPage /> },
-{ path: '/agent/prompts', element: <PromptTestingPage /> },
-// Agent routes (add to the existing children)
-{ path: '/agent', element: <AgentChatPage /> },
-{ path: '/agent/:sessionId', element: <AgentChatPage /> },
-{ path: '/agent/sessions', element: <AgentSessionsListPage /> },
-{ path: '/agent/papers', element: <PaperLibraryPage /> },
-{ path: '/agent/prompts', element: <PromptTestingPage /> },
+      { path: '/agent/:sessionId', element: <AgentChatPage /> },
+      { path: '/agent/sessions', element: <AgentSessionsListPage /> },
+      { path: '/agent/papers', element: <PaperLibraryPage /> },
+      { path: '/agent/prompts', element: <PromptTestingPage /> },
+
+      // Sweeps
+      { path: '/sweeps/create', element: <SweepCreator onCreated={() => {}} /> },
+      { path: '/sweeps/:sweepId', element: <SweepDashboardPage /> },
+
+      // 404
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ])
