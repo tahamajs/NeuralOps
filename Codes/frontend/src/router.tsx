@@ -34,6 +34,13 @@ const HPOStatusPage = lazy(() => import('./features/hpo/pages/HPOStatusPage'))
 const FederatedStatusPage = lazy(() => import('./features/federated/pages/FederatedStatusPage'))
 const UserProfilePage = lazy(() => import('./features/profile/pages/UserProfilePage'))
 const ChangePasswordPage = lazy(() => import('./features/profile/pages/ChangePasswordPage'))
+// new imports
+const MyScheduledJobsPage = lazy(() => import('./features/jobs/pages/MyScheduledJobsPage'))
+const ConfigHistoryPage = lazy(() => import('./features/jobs/pages/ConfigHistoryPage'))
+const CustomMetricsPage = lazy(() => import('./features/jobs/pages/CustomMetricsPage')) // or experiments, but use same
+const EnvironmentInfoPage = lazy(() => import('./features/jobs/pages/EnvironmentInfoPage'))
+const DashboardWidgetsConfigPage = lazy(() => import('./features/dashboard/pages/DashboardWidgetsConfigPage'))
+const StopAllJobsPage = lazy(() => import('./features/admin/pages/StopAllJobsPage'))
 
 export const router = createBrowserRouter([
   {
@@ -104,6 +111,14 @@ export const router = createBrowserRouter([
 
       // Fallback
       { path: '*', element: <NotFoundPage /> },
+      { path: '/my-jobs', element: <MyScheduledJobsPage /> },
+{ path: '/profile/change-password', element: <ChangePasswordPage /> },
+{ path: '/jobs/:jobId/environment', element: <EnvironmentInfoPage /> },
+{ path: '/runs/:runId/custom-metrics', element: <CustomMetricsPage /> },
+{ path: '/my-jobs', element: <MyScheduledJobsPage /> },
+{ path: '/jobs/:jobId/config-history', element: <ConfigHistoryPage /> },
+{ path: '/dashboard/widgets-config', element: <DashboardWidgetsConfigPage /> },
+{ path: '/admin/stop-all-jobs', element: <StopAllJobsPage /> },
     ],
   },
 ])
