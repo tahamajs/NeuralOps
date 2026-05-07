@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("proxsparse")
 class ProxSparsePruner(BaseCompressor):
     def __init__(self, model, sparsity=0.5, lambda_prox=0.01, steps=5, **kwargs):
         super().__init__(model, name="proxsparse", **kwargs)
@@ -24,3 +23,13 @@ class ProxSparsePruner(BaseCompressor):
                 module.weight.data = torch.tensor(W_prox, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+@COMPRESSOR_REGISTRY.register("proxsparse")
+def proxsparse_factory(model, comp_config):
+    sparsity = getattr(comp_config, 'proxsparse_sparsity', 0.5)
+    lambda_prox = getattr(comp_config, 'proxsparse_lambda', 0.01)
+    steps = getattr(comp_config, 'proxsparse_steps', 5)
+    compressor = ProxSparsePruner(model, sparsity=sparsity, lambda_prox=lambda_prox, steps=steps)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

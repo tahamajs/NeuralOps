@@ -67,3 +67,7 @@ class HashedLinear(nn.Module):
             if mask.any():
                 hashed.weight_table.data[b] = W[mask].mean()
         return hashed
+    
+
+
+    

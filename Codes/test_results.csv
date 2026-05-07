@@ -3,7 +3,7 @@ attention,hgrn2_layer,True,OK
 attention,gated_deltanet_block,True,OK
 attention,svd_proj_attn,True,OK
 attention,linformer,True,OK
-attention,compressed_mha,False,"RuntimeError: Expected all tensors to be on the same device, but found at least two devices, mps:0 and cpu!"
+attention,compressed_mha,False,RuntimeError: The size of tensor a (768) must match the size of tensor b (32) at non-singleton dimension 1
 attention,moba,True,OK
 attention,aegis_v4,True,OK
 attention,kda,False,"RuntimeError: Expected size for first two dimensions of batch2 tensor to be: [24, 1] but got: [24, 12]."
@@ -13,7 +13,7 @@ attention,routing,True,OK
 attention,factorised_matrix_state,True,OK
 attention,infini,True,OK
 attention,aegis_hybrid,True,OK
-attention,lsh,False,Timeout (>15s)
+attention,lsh,True,OK
 attention,leka_v2,True,OK
 attention,svd,True,OK
 attention,svd_compressed,True,OK
@@ -32,51 +32,47 @@ attention,upi_stuffed_mamba,True,OK
 attention,leka_v3,True,OK
 attention,granite_hybrid,False,TypeError: GraniteHybridBlock.forward() got an unexpected keyword argument 'attention_mask'
 attention,soa_fused_attn,True,OK
-attention,nsa,False,NameError: name 'local_indices' is not defined
+attention,nsa,False,UnboundLocalError: cannot access local variable 'local_mask' where it is not associated with a value
 attention,minimal_svd,True,OK
 attention,rala,True,OK
 attention,minimal_prism,True,OK
 attention,lora_attn,True,OK
-attention,performer,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 3.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,vig,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 3.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,svd_llm_v2,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 3.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,nexus,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 3.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,primal,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 3.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,leka_v1,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 3.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,adasplash,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 3.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,hymba_transx,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,rpc,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,adaptive_span,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,griffin_ssd,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,mla,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,mamba,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
+attention,performer,False,"ValueError: not enough values to unpack (expected 2, got 1)"
+attention,vig,False,RuntimeError: The size of tensor a (7) must match the size of tensor b (5) at non-singleton dimension 3
+attention,svd_llm_v2,True,OK
+attention,nexus,True,OK
+attention,primal,False,"ValueError: not enough values to unpack (expected 2, got 1)"
+attention,leka_v1,True,OK
+attention,adasplash,True,OK
+attention,hymba_transx,False,RuntimeError: mat1 and mat2 shapes cannot be multiplied (64x768 and 1536x768)
+attention,rpc,False,TypeError: RPCAttention.__init__() takes 1 positional argument but 3 were given
+attention,adaptive_span,True,OK
+attention,griffin_ssd,True,OK
+attention,mla,True,OK
+attention,mamba,False,TypeError: Mamba.forward() got an unexpected keyword argument 'attention_mask'
 attention,expert_choice_moe,False,TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'
 attention,jamba2,False,TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'
 attention,spectral_mamba,False,TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'
 attention,samba_m3,False,TypeError: '<=' not supported between instances of 'NoneType' and 'int'
 attention,reap_moe,False,TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'
 attention,samba_moe,False,TypeError: '<=' not supported between instances of 'NoneType' and 'int'
-attention,orion,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,wgqa,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,hla,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
+attention,orion,True,OK
+attention,wgqa,True,OK
+attention,hla,True,OK
 attention,hamming,False,AttributeError: 'DistilBertConfig' object has no attribute 'attention_probs_dropout_prob'
-attention,qcqa,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,aegis_v6,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,aegis_v2,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,minimal_aurora,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,halo_regla,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,squeezing_heads_distiller,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,nha,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,aegis_v3,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,minimal_nova,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,svd_linear_attn,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,adaptive_svd_attn,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,chela_slay,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,block_transformer_hiba,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-attention,padre,False,AttributeError: 'DistilBertConfig' object has no attribute 'attention_probs_dropout_prob'
-attention,spectra,False,AttributeError: 'DistilBertConfig' object has no attribute 'attention_probs_dropout_prob'
-attention,tlinformer,False,AttributeError: 'DistilBertConfig' object has no attribute 'attention_probs_dropout_prob'
-attention,galerkin,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
-compressor,your_compressor_name,False,AttributeError: 'YourCustomCompressor' object has no attribute 'to'
-compressor,slicegpt_pca,False,AttributeError: 'SliceGPTPCACompressor' object has no attribute 'to'
-compressor,tt,False,"RuntimeError: MPS backend out of memory (MPS allocated: 9.08 GiB, other allocations: 1.86 MiB, max allowed: 9.07 GiB). Tried to alloca"
+attention,qcqa,True,OK
+attention,aegis_v6,True,OK
+attention,aegis_v2,True,OK
+attention,minimal_aurora,True,OK
+attention,halo_regla,True,OK
+attention,squeezing_heads_distiller,True,OK
+attention,nha,True,OK
+attention,aegis_v3,True,OK
+attention,minimal_nova,True,OK
+attention,svd_linear_attn,True,OK
+attention,adaptive_svd_attn,True,OK
+attention,chela_slay,True,OK
+attention,block_transformer_hiba,True,OK
+attention,galerkin,True,OK
+compressor,your_compressor_name,False,TypeError: _forward_unimplemented() got an unexpected keyword argument 'input_ids'
+compressor,slicegpt_pca,False,NotImplementedError: slicegpt_pca requires a calibration_loader; not supported in standalone test.

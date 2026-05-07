@@ -91,7 +91,6 @@ class DeltaKVStore:
         return k_compressed, v_compressed
 
 
-@COMPRESSOR_REGISTRY.register("delta_kv")
 class DeltaKVCompressor(BaseCompressor):
     """
     Compresses attention projection weights using a DeltaKV‑inspired residual
@@ -134,3 +133,13 @@ class DeltaKVCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("delta_kv")
+def delta_kv_factory(model, comp_config):
+    rank = getattr(comp_config, 'delta_kv_rank', 16)
+    sparsity = getattr(comp_config, 'delta_kv_sparsity', 0.29)
+    compressor = DeltaKVCompressor(model, rank=rank, sparsity=sparsity)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

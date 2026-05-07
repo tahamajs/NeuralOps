@@ -6,7 +6,6 @@ from scipy.stats import entropy
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("mgie_budget")
 class MGIESVDBudgetCompressor(BaseCompressor):
     def __init__(self, model, total_rank_budget=1000, **kwargs):
         super().__init__(model, name="mgie_budget", **kwargs)
@@ -37,3 +36,12 @@ class MGIESVDBudgetCompressor(BaseCompressor):
             module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("mgie_budget")
+def mgie_budget_factory(model, comp_config):
+    total_rank_budget = getattr(comp_config, 'total_rank_budget', 1000)
+    compressor = MGIESVDBudgetCompressor(model, total_rank_budget=total_rank_budget)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

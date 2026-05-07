@@ -7,7 +7,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@COMPRESSOR_REGISTRY.register("flat_llm")
 class FLATLLMCompressor(BaseCompressor):
     """
     Prunes output dimensions of linear layers based on activation variance.
@@ -80,3 +79,15 @@ class FLATLLMCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("flat_llm")
+def flat_llm_factory(model, comp_config):
+    keep_ratio = getattr(comp_config, 'flat_llm_keep_ratio', 0.7)
+    tokenizer = getattr(model, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("flat_llm requires tokenizer attached as model.tokenizer")
+    compressor = FLATLLMCompressor(model, tokenizer, keep_ratio=keep_ratio)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

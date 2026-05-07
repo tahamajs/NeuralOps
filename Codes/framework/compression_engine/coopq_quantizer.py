@@ -4,7 +4,6 @@ import torch
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("coopq")
 class CoopQQuantizer(BaseCompressor):
     def __init__(self, model, bits=4, **kwargs):
         super().__init__(model, name="coopq", **kwargs)
@@ -37,3 +36,11 @@ class CoopQQuantizer(BaseCompressor):
                 self._quantize_layer(module, bits_layer)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+@COMPRESSOR_REGISTRY.register("coopq")
+def coopq_factory(model, comp_config):
+    bits = getattr(comp_config, 'coopq_bits', 4)
+    compressor = CoopQQuantizer(model, bits)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

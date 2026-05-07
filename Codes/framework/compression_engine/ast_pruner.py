@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("ast_pruner")
 class ASTPruner(BaseCompressor):
     def __init__(self, model, block_size=4, **kwargs):
         super().__init__(model, name="ast_pruner", **kwargs)
@@ -27,3 +26,13 @@ class ASTPruner(BaseCompressor):
                 module.weight.data = torch.tensor(W_ast, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+@COMPRESSOR_REGISTRY.register("ast_pruner")
+def ast_pruner_factory(model, comp_config):
+    block_size = getattr(comp_config, 'ast_block_size', 4)
+    compressor = ASTPruner(model, block_size)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

@@ -14,7 +14,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@COMPRESSOR_REGISTRY.register("hybridkv")
 class HybridKVCompressor(BaseCompressor):
     """
     Classifies attention heads into static/dynamic based on weight variance,
@@ -81,3 +80,11 @@ class HybridKVCompressor(BaseCompressor):
         attn_keywords = ['q_lin', 'k_lin', 'v_lin', 'q_proj', 'k_proj', 'v_proj',
                          'query', 'key', 'value', 'attention']
         return any(kw in name.lower() for kw in attn_keywords)
+    
+@COMPRESSOR_REGISTRY.register("hybridkv")
+def hybridkv_factory(model, comp_config):
+    budget = getattr(comp_config, 'hybridkv_budget', 0.3)
+    static_ratio = getattr(comp_config, 'hybridkv_static_ratio', 0.7)
+    compressor = HybridKVCompressor(model, budget=budget, static_ratio=static_ratio)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

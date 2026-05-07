@@ -5,7 +5,6 @@ import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("swift_svd")
 class SwiftSVDCompressor(BaseCompressor):
     def __init__(self, model, rank_ratio=0.5, **kwargs):
         super().__init__(model, name="swift_svd", **kwargs)
@@ -23,3 +22,10 @@ class SwiftSVDCompressor(BaseCompressor):
                 module.weight.data = (U_r * S_r) @ Vt_r
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+@COMPRESSOR_REGISTRY.register("swift_svd")
+def swift_svd_factory(model, comp_config):
+    rank_ratio = getattr(comp_config, 'swift_svd_rank_ratio', 0.5)
+    compressor = SwiftSVDCompressor(model, rank_ratio)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

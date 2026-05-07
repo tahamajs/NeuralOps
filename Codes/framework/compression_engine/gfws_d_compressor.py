@@ -6,7 +6,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("gfws")
 class GFWSCompressor(BaseCompressor):
     def __init__(self, model, rank=64, damping=0.01, **kwargs):
         super().__init__(model, name="gfws", **kwargs)
@@ -27,3 +26,13 @@ class GFWSCompressor(BaseCompressor):
                 module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("gfws")
+def gfws_factory(model, comp_config):
+    rank = getattr(comp_config, 'gfws_rank', 64)
+    damping = getattr(comp_config, 'gfws_damping', 0.01)
+    compressor = GFWSCompressor(model, rank, damping)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

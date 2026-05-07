@@ -6,7 +6,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@COMPRESSOR_REGISTRY.register("adasvd")
 class AdaSVDCompressor(BaseCompressor):
     """
     Compress a model by assigning SVD ranks proportional to each layer's
@@ -83,3 +82,12 @@ class AdaSVDCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+@COMPRESSOR_REGISTRY.register("adasvd")
+def adasvd_factory(model, comp_config):
+    target_param_ratio = getattr(comp_config, 'adasvd_target_ratio', 0.3)
+    num_iters = getattr(comp_config, 'adasvd_iters', 5)
+    compressor = AdaSVDCompressor(model, target_param_ratio=target_param_ratio, num_iters=num_iters)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

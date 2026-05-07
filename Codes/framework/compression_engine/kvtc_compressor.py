@@ -24,7 +24,6 @@ class SimpleEntropyCoder:
         return bits / max(theoretical_bits, 1e-6)
 
 
-@COMPRESSOR_REGISTRY.register("kvtc")
 class KVTCCompressor(BaseCompressor):
     """
     KVTC compresses linear layer weights using PCA decorrelation,
@@ -80,3 +79,14 @@ class KVTCCompressor(BaseCompressor):
         )
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+@COMPRESSOR_REGISTRY.register("kvtc")
+def kvtc_factory(model, comp_config):
+    bits = getattr(comp_config, 'kvtc_bits', 4)
+    pca_energy = getattr(comp_config, 'kvtc_pca_energy', 0.95)
+    compressor = KVTCCompressor(model, bits=bits, pca_energy=pca_energy)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

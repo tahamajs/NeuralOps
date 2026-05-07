@@ -33,7 +33,6 @@ class SoKALinear(nn.Module):
         return F.linear(F.linear(x, self.V), self.U.t()) + self.bias
 
 
-@COMPRESSOR_REGISTRY.register("soka")
 class SoKACompressor(BaseCompressor):
     """
     Compress a model using SoKA (Kronecker) low‑rank approximation.
@@ -95,3 +94,12 @@ class SoKACompressor(BaseCompressor):
             'rank': self.rank,
         })
         return stats
+    
+
+
+@COMPRESSOR_REGISTRY.register("soka")
+def soka_factory(model, comp_config):
+    rank = getattr(comp_config, 'soka_rank', 8)
+    compressor = SoKACompressor(model, rank=rank)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

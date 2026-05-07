@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("slim")
 class SLiMCompressor(BaseCompressor):
     def __init__(self, model, bits=4, sparsity=0.5, rank=8, **kwargs):
         super().__init__(model, name="slim", **kwargs)
@@ -45,3 +44,14 @@ class SLiMCompressor(BaseCompressor):
                 module.weight.data = torch.tensor(W_final, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("slim")
+def slim_factory(model, comp_config):
+    bits = getattr(comp_config, 'slim_bits', 4)
+    sparsity = getattr(comp_config, 'slim_sparsity', 0.5)
+    rank = getattr(comp_config, 'slim_rank', 8)
+    compressor = SLiMCompressor(model, bits=bits, sparsity=sparsity, rank=rank)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

@@ -9,7 +9,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@COMPRESSOR_REGISTRY.register("sdrm")
 class SDRMCompressor(BaseCompressor):
     def __init__(self, model, total_param_ratio=0.7, **kwargs):
         super().__init__(model, name="sdrm", **kwargs)
@@ -37,3 +36,15 @@ class SDRMCompressor(BaseCompressor):
             module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+    # ... (rest unchanged) ...
+
+@COMPRESSOR_REGISTRY.register("sdrm")
+def sdrm_compressor_factory(model, comp_config):
+    total_param_ratio = getattr(comp_config, 'total_param_ratio', 0.7)
+    compressor = SDRMCompressor(model, total_param_ratio)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

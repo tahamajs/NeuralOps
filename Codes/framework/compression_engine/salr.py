@@ -29,7 +29,6 @@ class SALRLayer(nn.Module):
         return x @ W.T + self.bias
 
 
-@COMPRESSOR_REGISTRY.register("salr")
 class SALRCompressor(BaseCompressor):
     def __init__(self, model, rank=64, sparsity=0.5, **kwargs):
         super().__init__(model, name="salr", **kwargs)
@@ -54,3 +53,13 @@ class SALRCompressor(BaseCompressor):
         for part in parts[:-1]:
             parent = getattr(parent, part, None)
         return parent
+    
+
+
+@COMPRESSOR_REGISTRY.register("salr")
+def salr_factory(model, comp_config):
+    rank = getattr(comp_config, 'salr_rank', 64)
+    sparsity = getattr(comp_config, 'salr_sparsity', 0.5)
+    compressor = SALRCompressor(model, rank=rank, sparsity=sparsity)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

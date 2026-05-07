@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("faq")
 class FAQQuantizer(BaseCompressor):
     def __init__(self, model, tokenizer, bits=8, calibration_texts=None, **kwargs):
         super().__init__(model, name="faq", **kwargs)
@@ -50,3 +49,15 @@ class FAQQuantizer(BaseCompressor):
                     module.bias.data = torch.round((module.bias.data - min_a) / scale) * scale + min_a
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("faq")
+def faq_factory(model, comp_config):
+    bits = getattr(comp_config, 'faq_bits', 8)
+    tokenizer = getattr(model, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("faq requires tokenizer attached as model.tokenizer")
+    compressor = FAQQuantizer(model, tokenizer, bits)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("enlighten")
 class ENLightenCompressor(BaseCompressor):
     def __init__(self, model, rank=64, sparsity=0.5, **kwargs):
         super().__init__(model, name="enlighten", **kwargs)
@@ -36,3 +35,14 @@ class ENLightenCompressor(BaseCompressor):
                 module.weight.data = torch.tensor(W_new, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+
+
+
+
+@COMPRESSOR_REGISTRY.register("enlighten")
+def enlighten_factory(model, comp_config):
+    rank = getattr(comp_config, 'enlighten_rank', 64)
+    sparsity = getattr(comp_config, 'enlighten_sparsity', 0.5)
+    compressor = ENLightenCompressor(model, rank=rank, sparsity=sparsity)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

@@ -1,6 +1,7 @@
 # framework/core/base.py
 import torch.nn as nn
 from typing import Optional, Any, Dict, Tuple
+from abc import abstractmethod
 
 class BaseAttention(nn.Module):
     def __init__(self, config, rank: Optional[int] = None):
@@ -11,21 +12,27 @@ class BaseAttention(nn.Module):
         self.hidden_size = getattr(config, 'hidden_size', 768)
         self.head_dim = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
 
+    @abstractmethod
     def forward(self, hidden_states, attention_mask=None, **kwargs):
-        raise NotImplementedError
+        """Forward pass – must be implemented by subclass."""
+        pass
 
     def extra_repr(self) -> str:
         return f"num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}"
 
-class BaseCompressor:
+
+class BaseCompressor(nn.Module):
     def __init__(self, model: nn.Module, name: str = "base", **kwargs):
+        super().__init__()                     # ← FIXED
         self.model = model
         self.name = name
         self.kwargs = kwargs
         self._original_params = self._count_params(model)
 
+    @abstractmethod
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        raise NotImplementedError
+        """Apply compression and return (compressed_model, stats)."""
+        pass
 
     def _count_params(self, model: nn.Module) -> int:
         return sum(p.numel() for p in model.parameters())
@@ -56,14 +63,16 @@ Reduction:            {stats['reduction_percentage']:.2f}%
 ========================================
 """
 
+
 class BaseVisualizer:
     def __init__(self, output_dir: str = "visualizations"):
         self.output_dir = output_dir
         import os
         os.makedirs(output_dir, exist_ok=True)
 
+    @abstractmethod
     def generate(self, *args, **kwargs):
-        raise NotImplementedError
+        pass
 
     def _save_figure(self, fig, filename: str, dpi: int = 150):
         import os
