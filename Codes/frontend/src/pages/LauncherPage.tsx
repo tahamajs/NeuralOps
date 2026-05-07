@@ -1,166 +1,103 @@
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
-import api from '../api/client';
-import ModelPicker from '../components/ModelPicker';
-import TaskPicker from '../components/TaskPicker';
-import AttentionPicker from '../components/AttentionPicker';
-import MethodPicker from '../components/MethodPicker';
-import HyperparameterFields from '../components/HyperparameterFields';
-import PresetSelector from '../components/PresetSelector';
-import ConfigPreviewPanel from '../components/ConfigPreviewPanel';
-import LaunchButton from '../components/LaunchButton';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
+import api from '../../../api/client'
+import { ENDPOINTS } from '../../../api/endpoints'
+import { Card } from '../../../components/ui/Card'
+import { Button } from '../../../components/ui/Button'
+import { ModelPicker } from '../components/ModelPicker'
+import { TaskPicker } from '../components/TaskPicker'
+import { AttentionPicker } from '../components/AttentionPicker'
+import { MethodPicker } from '../components/MethodPicker'
+import { HyperparameterFields } from '../components/HyperparameterFields'
+import { PresetSelector } from '../components/PresetSelector'
+import { LaunchButton } from '../components/LaunchButton'
 
-type Tab = 'training' | 'evaluation' | 'compression';
+type JobType = 'training' | 'evaluation' | 'compression'
 
-interface FormState {
-  name: string;
-  model_name: string;
-  task_name: string;
-  attention_type: string;
-  method: string;
-  compression_rank: number;
-  epochs: number;
-  batch_size: number;
-  learning_rate: number;
-  max_seq_length: number;
-  fp16: boolean;
-  seed: number;
-  target_rank: number;
-  compression_method: string;
+const initialForm = {
+  name: '',
+  model_name: 'distilbert-base-uncased',
+  task_name: 'mrpc',
+  attention_type: 'full',
+  method: 'baseline',
+  compression_rank: 64,
+  epochs: 3,
+  batch_size: 16,
+  learning_rate: 2e-5,
+  max_seq_length: 128,
+  fp16: false,
+  seed: 42,
 }
 
 export default function LauncherPage() {
-  const [tab, setTab] = useState<Tab>('training');
-  const [form, setForm] = useState<FormState>({
-    name: '',
-    model_name: 'distilbert-base-uncased',
-    task_name: 'mrpc',
-    attention_type: 'full',
-    method: 'baseline',
-    compression_rank: 64,
-    epochs: 3,
-    batch_size: 16,
-    learning_rate: 2e-5,
-    max_seq_length: 128,
-    fp16: false,
-    seed: 42,
-    target_rank: 64,
-    compression_method: 'tt',
-  });
+  const [tab, setTab] = useState<JobType>('training')
+  const [form, setForm] = useState(initialForm)
+  const navigate = useNavigate()
 
-  const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: async () => {
-      const endpoint = tab === 'training' ? '/train/' : tab === 'evaluation' ? '/evaluate/' : '/compress/';
-      const res = await api.post(endpoint, form);
-      return res.data;
+      const endpoint =
+        tab === 'training' ? ENDPOINTS.EXPERIMENTS.TRAIN :
+        tab === 'evaluation' ? ENDPOINTS.EXPERIMENTS.EVALUATE :
+        ENDPOINTS.EXPERIMENTS.COMPRESS
+      const res = await api.post(endpoint, form)
+      return res.data
     },
-    onSuccess: (data: { id: string }) => {
-      navigate(`/experiments/${data.id}`);
-    },
-  });
+    onSuccess: (data) => navigate(`/experiments/${data.id}`),
+  })
 
-  const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
+  const updateField = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }))
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Experiment Launcher</h1>
-        <p className="text-slate-500">Configure and deploy new attention compression jobs to the cluster.</p>
+    <div className="space-y-8 max-w-4xl mx-auto animate-fade-in">
+      <div>
+        <h1 className="text-3xl font-black text-white tracking-tighter">
+          LAUNCH <span className="text-neon-blue">SEQUENCE</span>
+        </h1>
+        <p className="text-slate-400 text-sm mt-1">Configure and deploy new attention compression jobs.</p>
       </div>
 
-      <div className="flex p-1 bg-slate-200/50 backdrop-blur rounded-xl w-fit">
-        {(['training', 'evaluation', 'compression'] as Tab[]).map((t) => (
+      <div className="flex p-1 bg-white/5 rounded-xl w-fit">
+        {(['training', 'evaluation', 'compression'] as JobType[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${
-              tab === t ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${
+              tab === t ? 'bg-neon-blue text-white shadow' : 'text-slate-400 hover:text-white'
             }`}
           >
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t}
           </button>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="card space-y-6">
-            <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
-              <div className="w-2 h-2 rounded-full bg-blue-600" />
-              <h2 className="font-bold text-slate-800 uppercase tracking-wider text-xs">
-                {tab === 'training'
-                  ? 'Training Configuration'
-                  : tab === 'evaluation'
-                  ? 'Evaluation Configuration'
-                  : 'Compression Configuration'}
-              </h2>
+          <Card>
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-6">Configuration</h2>
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ModelPicker value={form.model_name} onChange={(v) => updateField('model_name', v)} />
+                <TaskPicker value={form.task_name} onChange={(v) => updateField('task_name', v)} />
+              </div>
+              <AttentionPicker value={form.attention_type} onChange={(v) => updateField('attention_type', v)} />
+              <MethodPicker value={form.method} onChange={(v) => updateField('method', v)} />
+              <HyperparameterFields values={form} onChange={updateField} />
+              <LaunchButton loading={mutation.isPending} onClick={() => mutation.mutate()} />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {tab === 'training' && (
-                <>
-                  <ModelPicker value={form.model_name} onChange={(v: string) => updateField('model_name', v)} />
-                  <TaskPicker value={form.task_name} onChange={(v: string) => updateField('task_name', v)} />
-                  <div className="md:col-span-2">
-                    <AttentionPicker value={form.attention_type} onChange={(v: string) => updateField('attention_type', v)} />
-                  </div>
-                  <MethodPicker value={form.method} onChange={(v: string) => updateField('method', v)} />
-                  <HyperparameterFields values={form} onChange={updateField} />
-                </>
-              )}
-
-              {tab === 'compression' && (
-                <>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Compression Method</label>
-                    <select
-                      className="w-full border rounded px-3 py-2"
-                      value={form.compression_method}
-                      onChange={(e) => updateField('compression_method', e.target.value)}
-                    >
-                      <option value="tt">Tensor Train (tt)</option>
-                      <option value="svd">SVD</option>
-                      <option value="soka">SoKA</option>
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Target Rank</label>
-                    <input
-                      type="number"
-                      className="w-full border rounded px-3 py-2"
-                      value={form.target_rank}
-                      onChange={(e) => updateField('target_rank', parseInt(e.target.value, 10))}
-                    />
-                  </div>
-                </>
-              )}
-
-              {tab === 'evaluation' && (
-                <div className="md:col-span-2 text-slate-500 text-sm">
-                  Evaluation uses the same model and task settings. Add specific fields later.
-                </div>
-              )}
-            </div>
-
-            <div className="pt-6">
-              <LaunchButton
-                onClick={() => mutation.mutate()}
-                loading={mutation.isPending}
-                disabled={!form.name}
-              />
-            </div>
-          </div>
+          </Card>
         </div>
-
         <div className="space-y-6">
-          <ConfigPreviewPanel config={form} />
-          <PresetSelector onApply={(preset: Partial<FormState>) => setForm({ ...form, ...preset })} />
+          <Card>
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Config Preview</h3>
+            <pre className="text-xs text-slate-400 overflow-auto max-h-64 bg-white/5 p-3 rounded-lg">
+              {JSON.stringify(form, null, 2)}
+            </pre>
+          </Card>
+          <PresetSelector onApply={(preset) => setForm({ ...form, ...preset })} />
         </div>
       </div>
     </div>
-  );
+  )
 }
