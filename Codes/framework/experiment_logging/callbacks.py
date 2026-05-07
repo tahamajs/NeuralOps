@@ -36,7 +36,7 @@ class LoggingCallback(TrainerCallback):
                 else:
                     self.logger.info(f"  {key}: {value}")
             self.tracker.log(metrics, step=state.global_step)
-            self.tracker._flush()
+            self.tracker.flush()          # public method, no underscore
 
     def on_train_end(self, args, state, control, **kwargs):
         self.tracker.save()
