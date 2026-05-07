@@ -6,91 +6,59 @@ import { ENDPOINTS } from '../../../api/endpoints'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { Input } from '../../../components/ui/Input'
+import RichNoteEditor from '../components/RichNoteEditor'
+import { Save, Globe, Lock, Pin } from 'lucide-react'
 
 export default function NoteCreatePage() {
   const navigate = useNavigate()
-  const [form, setForm] = useState({
-    title: '',
-    content: '',
-    tags: '',
-    is_public: false,
-    pinned: false,
-  })
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [tags, setTags] = useState('')
+  const [isPublic, setIsPublic] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   const createMut = useMutation({
     mutationFn: async () => {
-      const tagsArray = form.tags.split(',').map((t) => t.trim()).filter(Boolean)
-      const res = await api.post(ENDPOINTS.NOTES.LIST, {
-        ...form,
-        tags: tagsArray,
-      })
+      const tagsArray = tags.split(',').map(t => t.trim()).filter(Boolean)
+      const res = await api.post(ENDPOINTS.NOTES.LIST, { title, content, tags: tagsArray, is_public: isPublic, pinned })
       return res.data
     },
     onSuccess: (data) => navigate(`/notes/${data.id}`),
-    onError: (err: any) => alert(err.response?.data?.error || 'Failed to create note'),
   })
+
+  const handleSave = async () => {
+    setSaving(true)
+    createMut.mutate()
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
-      <h1 className="text-3xl font-black text-white tracking-tighter">
-        NEW <span className="text-neon-blue">NOTE</span>
-      </h1>
-      <Card>
-        <div className="space-y-5">
-          <Input
-            label="Title"
-            value={form.title}
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-            placeholder="Give your note a title..."
-            className="text-lg font-bold"
-          />
-          <div>
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">
-              Content <span className="text-neon-blue">(Markdown supported)</span>
-            </label>
-            <textarea
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm min-h-[400px] focus:border-neon-blue/50 transition-colors scrollbar-thin font-mono"
-              value={form.content}
-              onChange={(e) => setForm({ ...form, content: e.target.value })}
-              placeholder={`# Research Notes\n\nStart writing your findings here...\n\n## Key Observations\n- ...\n\n## References\n- ...`}
-            />
-          </div>
-          <Input
-            label="Tags (comma separated)"
-            value={form.tags}
-            onChange={(e) => setForm({ ...form, tags: e.target.value })}
-            placeholder="ml, attention, transformer"
-          />
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.is_public}
-                onChange={(e) => setForm({ ...form, is_public: e.target.checked })}
-                className="accent-neon-blue"
-              />
-              <span className="text-xs text-slate-400">Public (visible to all users)</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.pinned}
-                onChange={(e) => setForm({ ...form, pinned: e.target.checked })}
-                className="accent-neon-blue"
-              />
-              <span className="text-xs text-slate-400">📌 Pin to top</span>
-            </label>
-          </div>
-          <Button
-            size="lg"
-            className="w-full mt-4"
-            onClick={() => createMut.mutate()}
-            disabled={createMut.isPending}
-          >
-            {createMut.isPending ? 'Creating...' : '✨ Create Note'}
-          </Button>
-        </div>
-      </Card>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-display font-bold text-white">New Note</h1>
+        <Button onClick={handleSave} disabled={saving || !content.trim()}>
+          <Save size={14} className="mr-1" /> {saving ? 'Saving...' : 'Save Note'}
+        </Button>
+      </div>
+
+      <Input
+        placeholder="Untitled Note"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        className="text-lg font-bold"
+      />
+
+      <RichNoteEditor content={content} onChange={setContent} placeholder="Write your research notes..." />
+
+      <div className="flex gap-4 items-center">
+        <Input placeholder="Tags (comma separated)" value={tags} onChange={e => setTags(e.target.value)} className="flex-1" />
+        <button onClick={() => setIsPublic(!isPublic)} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${isPublic ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}>
+          {isPublic ? <Globe size={14} /> : <Lock size={14} />} {isPublic ? 'Public' : 'Private'}
+        </button>
+        <button onClick={() => setPinned(!pinned)} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${pinned ? 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}>
+          <Pin size={14} /> {pinned ? 'Pinned' : 'Pin'}
+        </button>
+      </div>
     </div>
   )
 }

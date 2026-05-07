@@ -16,6 +16,9 @@ urlpatterns = [
     # Mentions
     path('v1/notes/<uuid:note_id>/mentions/', views.versioned_view(views.note_mentions)),
     path('v1/mentions/<uuid:mention_id>/read/', views.versioned_view(views.mark_mention_read)),
+path('v1/notes/<uuid:note_id>/share/', views.versioned_view(views.share_note)),
+path('v1/notes/<uuid:note_id>/unshare/', views.versioned_view(views.unshare_note)),
+path('v1/notes/shared-with-me/', views.versioned_view(views.shared_with_me)),
 
     # Replies
     path('v1/notes/<uuid:note_id>/replies/', views.versioned_view(views.note_replies)),
