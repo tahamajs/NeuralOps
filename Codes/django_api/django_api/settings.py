@@ -13,6 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # FRAMEWORK_DIR = BASE_DIR.parent / 'framework'
 # if str(FRAMEWORK_DIR) not in sys.path:
 #     sys.path.insert(0, str(FRAMEWORK_DIR))
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 # ----------------------------------------------------------------------
 # Security & Debug
