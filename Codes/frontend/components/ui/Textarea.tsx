@@ -1,0 +1,25 @@
+import { cn } from '../../lib/utils'
+
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  label?: string
+  error?: string
+}
+
+export const Textarea = ({ label, error, className, ...props }: TextareaProps) => (
+  <div className="space-y-1.5">
+    {label && (
+      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block">
+        {label}
+      </label>
+    )}
+    <textarea
+      className={cn(
+        'w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-neon-blue/50 transition-colors resize-y',
+        error && 'border-red-500',
+        className
+      )}
+      {...props}
+    />
+    {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+  </div>
+)

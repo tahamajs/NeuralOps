@@ -10,7 +10,10 @@ const RegisterPage = lazy(() => import('./features/auth/pages/RegisterPage'))
 // Dashboard
 const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'))
 const DashboardWidgetsConfigPage = lazy(() => import('./features/dashboard/pages/DashboardWidgetsConfigPage'))
-
+const AgentChatPage = lazy(() => import('./features/agent/pages/AgentChatPage'))
+const AgentSessionsListPage = lazy(() => import('./features/agent/pages/AgentSessionsListPage'))
+const PaperLibraryPage = lazy(() => import('./features/agent/pages/PaperLibraryPage'))
+const PromptTestingPage = lazy(() => import('./features/agent/pages/PromptTestingPage'))
 // Experiments
 const ExperimentListPage = lazy(() => import('./features/experiments/pages/ExperimentListPage'))
 const ExperimentDetailPage = lazy(() => import('./features/experiments/pages/ExperimentDetailPage'))
@@ -267,7 +270,17 @@ export const router = createBrowserRouter([
       { path: '/agent', element: <AgentChatPage /> },
 { path: '/agent/:sessionId', element: <AgentChatPage /> },
 { path: '/agents', element: <AgentSessionsListPage /> },
-
+{ path: '/agent', element: <AgentChatPage /> },
+{ path: '/agent/:sessionId', element: <AgentChatPage /> },
+{ path: '/agent/sessions', element: <AgentSessionsListPage /> },
+{ path: '/agent/papers', element: <PaperLibraryPage /> },
+{ path: '/agent/prompts', element: <PromptTestingPage /> },
+// Agent routes (add to the existing children)
+{ path: '/agent', element: <AgentChatPage /> },
+{ path: '/agent/:sessionId', element: <AgentChatPage /> },
+{ path: '/agent/sessions', element: <AgentSessionsListPage /> },
+{ path: '/agent/papers', element: <PaperLibraryPage /> },
+{ path: '/agent/prompts', element: <PromptTestingPage /> },
     ],
   },
 ])

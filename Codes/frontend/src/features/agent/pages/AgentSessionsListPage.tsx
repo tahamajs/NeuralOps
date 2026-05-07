@@ -32,9 +32,8 @@ export default function AgentSessionsListPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-display font-bold text-white">
-          <Bot size={24} className="inline mr-2 text-neon-blue" />
-          AI Assistant Chats
+        <h1 className="text-2xl font-display font-bold text-white flex items-center gap-2">
+          <Bot size={24} className="text-neon-blue" /> AI Assistant Chats
         </h1>
         <Button onClick={handleNewChat}>
           <Plus size={16} className="mr-1" /> New Chat
@@ -44,10 +43,10 @@ export default function AgentSessionsListPage() {
       {sessions.length === 0 ? (
         <EmptyState message="No chats yet. Start a new conversation with the AI assistant!" />
       ) : (
-        <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
           {sessions.map((session: any) => (
             <Card key={session.id} hover className="flex items-center justify-between">
-              <Link to={`/agent/${session.id}`} className="flex-1 flex items-center gap-4">
+              <Link to={`/agent/${session.id}`} className="flex-1 flex items-center gap-4 p-2">
                 <div className="w-10 h-10 rounded-full bg-neon-blue/10 flex items-center justify-center">
                   <MessageSquare size={20} className="text-neon-blue" />
                 </div>
@@ -56,11 +55,17 @@ export default function AgentSessionsListPage() {
                     {session.title || 'Untitled Chat'}
                   </h3>
                   <p className="text-xs text-slate-400">
-                    {session.message_count || 0} messages · Last active {formatDistanceToNow(new Date(session.updated_at), { addSuffix: true })}
+                    {session.message_count || 0} messages · Last active{' '}
+                    {formatDistanceToNow(new Date(session.updated_at), { addSuffix: true })}
                   </p>
                 </div>
               </Link>
-              <Button variant="ghost" size="sm" onClick={() => deleteMut.mutate(session.id)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => deleteMut.mutate(session.id)}
+                className="ml-2"
+              >
                 <Trash2 size={14} className="text-slate-400 hover:text-red-400" />
               </Button>
             </Card>
