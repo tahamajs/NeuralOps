@@ -6,10 +6,10 @@ Based on RoFormer (https://arxiv.org/abs/2104.09864)
 
 import torch
 import torch.nn as nn
-from ..core.registry import AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@AUX_REGISTRY.register("unified_rope")
+@ATTENTION_REGISTRY.register("unified_rope")
 class UnifiedRoPE(nn.Module):
     def __init__(self, dim: int, max_seq_len: int = 4096, base: float = 10000.0):
         super().__init__()

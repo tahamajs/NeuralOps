@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 def replace_attention(model, attention_key, layer_indices=None, **kwargs):
     """

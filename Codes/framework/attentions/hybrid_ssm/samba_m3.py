@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .jamba2 import Mamba   # import the stub or replace with official Mamba
-from ..core.registry import ATTENTION_REGISTRY, AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("spectral_mamba")
+@ATTENTION_REGISTRY.register("spectral_mamba")
 class SpectralMamba(nn.Module):
     """Mamba with learnable spectral scaling."""
     def __init__(self, d_model):

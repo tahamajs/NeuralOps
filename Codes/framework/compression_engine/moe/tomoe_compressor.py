@@ -6,8 +6,8 @@ Registered as 'tomoe'.
 import torch
 import numpy as np
 from sklearn.cluster import KMeans
-from ..core.base import BaseCompressor
-from ..core.registry import COMPRESSOR_REGISTRY
+from framework.core.base import BaseCompressor
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 import torch.nn as nn
 
 

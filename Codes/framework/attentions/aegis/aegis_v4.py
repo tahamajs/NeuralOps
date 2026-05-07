@@ -231,7 +231,7 @@ class AegisAttention(nn.Module):
 # ------------------------------------------------------------
 # Framework registration
 # ------------------------------------------------------------
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("aegis_v4")

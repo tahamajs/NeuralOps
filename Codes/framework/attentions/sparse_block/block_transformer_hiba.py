@@ -2,8 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from framework.attentions.core.base import BaseAttention
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("block_transformer_hiba")
 class BlockTransformerHIBA(BaseAttention):

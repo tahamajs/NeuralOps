@@ -1,3 +1,4 @@
-from .hashed_linear import HashedLinear
-from .hashed_net_compressor import HashedNetCompressor
-from .roast_hashed_linear import ROASTLinear, ROASTCompressor
+# Auto-generated __init__.py
+from . import hashed_linear
+from . import hashed_net_compressor
+from . import roast_hashed_linear

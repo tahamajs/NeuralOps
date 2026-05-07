@@ -9,8 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from dataclasses import dataclass
 from typing import Optional, Tuple
-from framework.attentions.core.base import BaseAttention
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 from framework.attentions.core.utils import transpose_for_scores
 
 

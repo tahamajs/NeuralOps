@@ -1,64 +1,113 @@
-# framework/attentions/specialized/adaptive_span_attention.py
+"""
+Adaptive Span Attention – Learns per‑head attention span.
+Paper: "Adaptive Attention Span in Transformers" (Sukhbaatar et al.)
+"""
+
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from typing import Optional, Tuple
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@ATTENTION_REGISTRY.register("adaptive_span")
+
 class AdaptiveSpanAttention(nn.Module):
     """
-    Adaptive Attention Span for Transformers.
-    Each head learns a scalar span that soft‑masks tokens far in the future.
+    Adaptive Span Attention for DistilBERT.
+    Each head learns a soft mask over the context length.
     """
-    def __init__(self, config, max_span=1024):
+    def __init__(self, model_config, rank: int = 32, dropout: float = 0.1,
+                 max_span: int = 128, pretrained_attn=None):
         super().__init__()
-        self.num_heads = config.num_attention_heads
-        self.head_dim = config.hidden_size // self.num_heads
+        if pretrained_attn is None:
+            raise ValueError("pretrained_attn required for zero‑shot init")
+
+        self.num_heads = model_config.num_attention_heads
+        self.head_dim = model_config.hidden_size // self.num_heads
+        self.all_head_size = self.num_heads * self.head_dim
+        self.hidden_size = model_config.hidden_size
         self.max_span = max_span
-        self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
-        # per‑head span parameter (softplus to ensure positivity)
-        self.span_raw = nn.Parameter(torch.zeros(self.num_heads))
 
-    def forward(self, hidden_states, attention_mask=None, **kwargs):
-        batch_size, seq_len, _ = hidden_states.shape
-        H = self.num_heads
-        d = self.head_dim
+        # Projections (copied from pretrained)
+        self.q_proj = nn.Linear(self.hidden_size, self.all_head_size)
+        self.k_proj = nn.Linear(self.hidden_size, self.all_head_size)
+        self.v_proj = nn.Linear(self.hidden_size, self.all_head_size)
+        self.out_proj = nn.Linear(self.all_head_size, self.hidden_size)
 
-        Q = self.q_proj(hidden_states).view(batch_size, seq_len, H, d).permute(0,2,1,3)
-        K = self.k_proj(hidden_states).view(batch_size, seq_len, H, d).permute(0,2,1,3)
-        V = self.v_proj(hidden_states).view(batch_size, seq_len, H, d).permute(0,2,1,3)
+        # Copy pretrained weights
+        with torch.no_grad():
+            self.q_proj.weight.data.copy_(pretrained_attn.q_lin.weight.data)
+            self.q_proj.bias.data.copy_(pretrained_attn.q_lin.bias.data)
+            self.k_proj.weight.data.copy_(pretrained_attn.k_lin.weight.data)
+            self.k_proj.bias.data.copy_(pretrained_attn.k_lin.bias.data)
+            self.v_proj.weight.data.copy_(pretrained_attn.v_lin.weight.data)
+            self.v_proj.bias.data.copy_(pretrained_attn.v_lin.bias.data)
+            self.out_proj.weight.data.copy_(pretrained_attn.out_lin.weight.data)
+            self.out_proj.bias.data.copy_(pretrained_attn.out_lin.bias.data)
 
-        # Learnable span: z = log(span - 1) -> span = softplus(z) + 1 to have minimum span = 1
-        head_span = F.softplus(self.span_raw) + 1    # (H,)
-        scale = 1.0 / math.sqrt(d)
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        # Learnable per‑head span parameters (logits)
+        self.span_logits = nn.Parameter(torch.full((self.num_heads,), float(max_span)))
+        self.dropout = nn.Dropout(dropout)
 
-        # Causal mask with per‑head soft masking
-        positions = torch.arange(seq_len, device=scores.device).float()
-        relative_dist = (positions.unsqueeze(0) - positions.unsqueeze(1)).abs()  # (L, L)
-        # For j > i (future), distance = relative_dist; for j <= i, set distance to 0 to keep.
-        distance = torch.where(relative_dist > 0, relative_dist, torch.zeros_like(relative_dist))
-        # Compute soft mask: 1 - sigmoid( (distance - span) / temp )
-        temp = 1.0
-        # shape (H, L, L)
-        mask_val = torch.sigmoid((distance - head_span.view(-1, 1, 1)) / temp)
-        # For j <= i, we want full attention (no masking), force mask_val to 0
-        mask_val = torch.where(relative_dist > 0, mask_val, torch.zeros_like(mask_val))
-        # Apply mask to scores: subtract 1e9 * mask_val
-        scores = scores - 1e9 * mask_val.unsqueeze(0)  # (1, H, L, L)
+    def _reshape(self, x: torch.Tensor, B: int) -> torch.Tensor:
+        return x.view(B, -1, self.num_heads, self.head_dim).transpose(1, 2)
 
+    def forward(self, hidden_states, attention_mask=None, head_mask=None,
+                output_attentions=False, **kwargs) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        B, N, _ = hidden_states.shape
+        H, D = self.num_heads, self.head_dim
+
+        Q = self._reshape(self.q_proj(hidden_states), B)   # (B, H, N, D)
+        K = self._reshape(self.k_proj(hidden_states), B)
+        V = self._reshape(self.v_proj(hidden_states), B)
+
+        # Compute raw scores
+        scale = D ** -0.5
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale   # (B, H, N, N)
+
+        # Adaptive span mask (soft, differentiable)
+        span = torch.sigmoid(self.span_logits) * self.max_span   # (H,)
+        pos = torch.arange(N, device=Q.device).float()
+        dist = (pos.unsqueeze(0) - pos.unsqueeze(1)).abs()       # (N, N)
+        # Span mask: 1 if within span, 0 otherwise (soft version)
+        mask_span = (dist <= span.unsqueeze(1).unsqueeze(2)).float()
+        # Apply mask (set scores outside span to -inf)
+        scores = scores.masked_fill(mask_span == 0, -1e9)
+
+        # Standard attention masking (padding)
         if attention_mask is not None:
-            scores = scores + attention_mask.unsqueeze(1)
+            if attention_mask.dim() == 2:
+                mask = attention_mask[:, None, None, :]   # (B,1,1,N)
+            else:
+                mask = attention_mask
+            # Convert boolean mask to float (True -> 1.0, False -> 0.0)
+            mask_float = mask.float()
+            scores = scores + (1.0 - mask_float) * -1e9
 
-        attn_probs = F.softmax(scores, dim=-1)
-        attn_probs = self.dropout(attn_probs)
+        attn_weights = F.softmax(scores, dim=-1)
+        attn_weights = self.dropout(attn_weights)
+        context = torch.matmul(attn_weights, V)
+        context = context.transpose(1, 2).contiguous().view(B, N, -1)
+        output = self.out_proj(context)
 
-        context = torch.matmul(attn_probs, V)  # (B, H, L, d)
-        context = context.permute(0,2,1,3).contiguous().view(batch_size, seq_len, -1)
-        out = self.out_proj(context)
-        return out, attn_probs
+        return output, attn_weights if output_attentions else None
+
+
+# ----------------------------------------------------------------------
+# Injection function – matches the framework’s required signature
+# ----------------------------------------------------------------------
+@ATTENTION_REGISTRY.register("adaptive_span")
+def inject_adaptive_span(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+    """Injection function for DistilBERT."""
+    rank = getattr(comp_config, 'adaptive_span_rank', 32)
+    dropout = getattr(comp_config, 'dropout', 0.1)
+    max_span = getattr(comp_config, 'max_span', 128)
+    new_attn = AdaptiveSpanAttention(
+        model_config=model_config,
+        rank=rank,
+        dropout=dropout,
+        max_span=max_span,
+        pretrained_attn=old_attn
+    )
+    layer.attention = new_attn
+    return new_attn

@@ -91,7 +91,7 @@ class LEKAV1Attention(nn.Module):
         return 0.0
 
 
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("leka_v1")
 def inject_leka_v1(layer, model_config, comp_config, layer_idx, total_layers, old_attn):

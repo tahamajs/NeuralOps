@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from ..core.registry import AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("compressed_attention_layer")
+@ATTENTION_REGISTRY.register("compressed_attention_layer")
 class CompressedAttentionLayer(nn.Module):
     """
     SVD compression of nn.MultiheadAttention (generic).
@@ -87,7 +87,7 @@ class CompressedAttentionLayer(nn.Module):
         return final_output, attn_weights if need_weights else None
 
 
-@AUX_REGISTRY.register("compressed_attention_layer_energy")
+@ATTENTION_REGISTRY.register("compressed_attention_layer_energy")
 class CompressedAttentionLayer2(nn.Module):
     """
     Energy‑threshold based SVD compression of nn.MultiheadAttention.
