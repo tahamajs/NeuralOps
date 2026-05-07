@@ -73,7 +73,7 @@ export default function LauncherPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2">
           <Card>
             <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-6">Configuration</h2>
             <div className="space-y-5">
@@ -91,7 +91,7 @@ export default function LauncherPage() {
         <div className="space-y-6">
           <Card>
             <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Config Preview</h3>
-            <pre className="text-xs text-slate-400 overflow-auto max-h-64 bg-white/5 p-3 rounded-lg">
+            <pre className="text-xs text-slate-400 overflow-auto max-h-64 bg-white/5 p-3 rounded-lg scrollbar-thin">
               {JSON.stringify(form, null, 2)}
             </pre>
           </Card>

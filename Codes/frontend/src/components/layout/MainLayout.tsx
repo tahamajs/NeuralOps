@@ -5,7 +5,8 @@ const navItems = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Experiments', path: '/experiments' },
   { label: 'Launcher', path: '/launcher' },
-]
+  { label: 'Notes', path: '/notes' },
+]]
 
 export const MainLayout = () => (
   <HardwareProvider>
