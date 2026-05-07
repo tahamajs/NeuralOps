@@ -5,7 +5,7 @@ from django.db import connection
 from .models import Job
 
 class DynamicPriorityManager:
-    """Adjusts priorities of queued and running jobs periodically."""
+    """Periodically adjusts priorities of queued and running jobs."""
 
     def __init__(self, scheduler, boost_wait_threshold=600, boost_amount=1,
                  reduce_runtime_threshold=3600, reduce_amount=1,
@@ -27,12 +27,8 @@ class DynamicPriorityManager:
     def _run(self):
         while not self._stop_event.is_set():
             time.sleep(self.check_interval)
-
-            # Guard against running after the database connection has been closed
-            # (e.g., during test teardown)
             if connection.connection is None:
                 continue
-
             try:
                 # Boost queued jobs that waited too long
                 for job in Job.objects.filter(status='queued'):
@@ -42,10 +38,9 @@ class DynamicPriorityManager:
                         if new_prio != job.priority:
                             job.priority = new_prio
                             job.save(update_fields=['priority'])
-                            if hasattr(self.scheduler, 'update_priority'):
-                                self.scheduler.update_priority(str(job.id), new_prio)
+                            self.scheduler.update_priority(str(job.id), new_prio)
 
-                # Reduce priority of long‑running jobs (encourage preemption)
+                # Reduce priority of long‑running jobs
                 for job in Job.objects.filter(status='running'):
                     if job.started_at is None:
                         continue
@@ -56,5 +51,4 @@ class DynamicPriorityManager:
                             job.priority = new_prio
                             job.save(update_fields=['priority'])
             except Exception:
-                # Silently ignore any DB errors during shutdown or tests
                 pass
