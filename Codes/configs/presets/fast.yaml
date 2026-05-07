@@ -1,7 +1,0 @@
-model_name: "distilbert-base-uncased"
-attention_type: "minimal_nova"
-compression_rank: 32
-batch_size: 64
-max_seq_length: 64
-fp16: true
-config_description: "Fast preset – minimal compression, high throughput"

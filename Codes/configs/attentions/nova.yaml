@@ -1,3 +1,0 @@
-attention_type: "nova"
-compression_rank: 64
-config_description: "NOVA – 8 compression techniques"
