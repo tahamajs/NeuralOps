@@ -1,17 +1,25 @@
+import os
 import torch
 import psutil
-from django.db import models
+from django.db import models as db_models
 from django.shortcuts import get_object_or_404
+from django.http import FileResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-
-from .models import Job, VersionedConfig, CustomMetricEntry
+from deepdiff import DeepDiff
+from .models import Job, VersionedConfig, CustomMetricEntry, ModelVersion
 from .serializers import JobSerializer, CustomMetricEntrySerializer
 from .scheduler import scheduler
-from .version_utils import create_config_snapshot, capture_git_info, capture_environment, capture_data_version
-from deepdiff import DeepDiff
+from .version_utils import create_config_snapshot, capture_git_info, capture_data_version
+
+# Optional distributed scheduler import
+try:
+    from framework.distributed.load_balancer.job_scheduler import DistributedJobScheduler
+except ImportError:
+    DistributedJobScheduler = None
+
 
 # ----------------------------------------------------------------------
 # 1. Job CRUD & Scheduling
@@ -31,7 +39,7 @@ def job_list(request):
                 return Response({"error": f"Missing field: {field}"}, status=400)
 
         # If load balancing is enabled, submit to distributed scheduler
-        if data.get("load_balancer", {}).get("enabled"):
+        if data.get("load_balancer", {}).get("enabled") and DistributedJobScheduler is not None:
             dist_scheduler = DistributedJobScheduler()
             job_id = dist_scheduler.submit(
                 config=data,
@@ -41,13 +49,24 @@ def job_list(request):
             )
             return Response({"job_id": job_id, "status": "submitted_to_scheduler"}, status=202)
 
-        # Original creation (unchanged)
+        # Original single‑job creation
         job = Job.objects.create(
             name=data.get('name', ''),
             model_name=data['model_name'],
-            ...
+            task_name=data['task_name'],
+            attention_type=data.get('attention_type', 'full'),
+            method=data.get('method', 'baseline'),
+            epochs=data.get('epochs', 3),
+            batch_size=data.get('batch_size', 16),
+            learning_rate=data.get('learning_rate', 2e-5),
+            max_seq_length=data.get('max_seq_length', 128),
+            compression_rank=data.get('compression_rank', 64),
+            gpu_requirements=data.get('gpu_requirements', 1),
+            memory_requirements=data.get('memory_requirements', 8),
+            priority=data.get('priority', 5),
+            estimated_duration=data.get('estimated_duration', None),
+            notes=data.get('notes', ''),
         )
-
         capture_git_info(job)
         capture_data_version(job)
         create_config_snapshot(job, "Initial configuration", request.user)
@@ -70,7 +89,7 @@ def job_detail(request, job_id):
             try:
                 new_prio = int(request.data['priority'])
             except (ValueError, TypeError):
-                return Response({"error": "Priority must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": "Priority must be an integer"}, status=400)
             new_prio = max(1, min(10, new_prio))
             job.priority = new_prio
             if job.status == 'queued':
@@ -98,7 +117,7 @@ def job_detail(request, job_id):
                             status=status.HTTP_400_BAD_REQUEST)
         job.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 # ----------------------------------------------------------------------
 # 2. Job Control Actions (pause, resume, stop, retry)
@@ -175,7 +194,6 @@ def job_notes(request, job_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_config_history(request, job_id):
-    """Return version history of a job's configuration."""
     job = get_object_or_404(Job, id=job_id)
     versions = job.config_versions.all().order_by('-version_number')
     return Response({
@@ -190,10 +208,10 @@ def get_config_history(request, job_id):
         ]
     })
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def compare_configs(request, job_id, version_a, version_b):
-    """Compare two configuration versions and return a detailed diff."""
     job = get_object_or_404(Job, id=job_id)
     v1 = get_object_or_404(VersionedConfig, run=job, version_number=version_a)
     v2 = get_object_or_404(VersionedConfig, run=job, version_number=version_b)
@@ -221,6 +239,7 @@ def log_custom_metric(request, job_id):
         serializer.save(run=job)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -282,6 +301,7 @@ def gpu_info(request):
         'type': 'cuda' if torch.cuda.is_available() else ('mps' if torch.backends.mps.is_available() else 'cpu'),
     })
 
+
 @api_view(['GET'])
 def system_status(request):
     cpu_percent = psutil.cpu_percent(interval=0.5)
@@ -293,6 +313,7 @@ def system_status(request):
         'memory_total_gb': round(memory.total / (1024**3), 1),
     })
 
+
 @api_view(['GET'])
 def scheduler_status(request):
     return Response({
@@ -302,6 +323,7 @@ def scheduler_status(request):
         'running_jobs': len(scheduler.running_jobs),
         'preempted_jobs': Job.objects.filter(status='preempted').count(),
     })
+
 
 @api_view(['GET'])
 def scheduler_metrics(request):
@@ -323,12 +345,13 @@ def job_stats(request):
     for status_code, _ in Job.STATUS_CHOICES:
         by_status[status_code] = Job.objects.filter(status=status_code).count()
     avg_duration = Job.objects.filter(status='completed', actual_duration__isnull=False).aggregate(
-        avg=models.Avg('actual_duration'))['avg']
+        avg=db_models.Avg('actual_duration'))['avg']
     return Response({
         'total': total,
         'by_status': by_status,
         'average_completion_seconds': round(avg_duration, 2) if avg_duration else None,
     })
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -343,7 +366,7 @@ def bulk_delete_jobs(request):
     return Response({"deleted": count, "skipped": len(job_ids) - count})
 
 
-# ---------- Scheduling Update (already existed but ensure correct name) ----------
+# ---------- Scheduling Update ----------
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_job_scheduling(request, job_id):
@@ -352,7 +375,7 @@ def update_job_scheduling(request, job_id):
         try:
             new_prio = int(request.data['priority'])
         except (ValueError, TypeError):
-            return Response({"error": "Priority must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Priority must be an integer"}, status=400)
         new_prio = max(1, min(10, new_prio))
         job.priority = new_prio
         if job.status == 'queued':
@@ -363,36 +386,6 @@ def update_job_scheduling(request, job_id):
         job.memory_requirements = request.data['memory_requirements']
     job.save()
     return Response({"status": "updated"})
-
-# ---------- Job Statistics ----------
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def job_stats(request):
-    total = Job.objects.count()
-    by_status = {}
-    for status_code, _ in Job.STATUS_CHOICES:
-        by_status[status_code] = Job.objects.filter(status=status_code).count()
-    avg_duration = Job.objects.filter(status='completed', actual_duration__isnull=False).aggregate(
-        avg=models.Avg('actual_duration'))['avg']
-    return Response({
-        'total': total,
-        'by_status': by_status,
-        'average_completion_seconds': round(avg_duration, 2) if avg_duration else None,
-    })
-
-
-# ---------- Bulk Delete ----------
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def bulk_delete_jobs(request):
-    job_ids = request.data.get('job_ids', [])
-    if not job_ids:
-        return Response({"error": "No job IDs provided"}, status=400)
-    jobs = Job.objects.filter(id__in=job_ids)
-    deletable = jobs.exclude(status__in=['running', 'queued'])
-    count = deletable.count()
-    deletable.delete()
-    return Response({"deleted": count, "skipped": len(job_ids) - count})
 
 
 # ---------- Model Versioning (if ModelVersion model exists) ----------
@@ -439,15 +432,17 @@ def download_model_version(request, version_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def my_scheduled_jobs(request):
-    scheduler = DistributedJobScheduler()
-    with scheduler._lock:
+    if DistributedJobScheduler is None:
+        return Response({"error": "Distributed scheduler not available"}, status=501)
+    sched = DistributedJobScheduler()
+    with sched._lock:
         pending = [
             {"job_id": j.job_id, "priority": j.priority, "num_gpus": j.num_gpus,
              "state": j.state.value}
-            for j in scheduler._queue if j.user == request.user.username
+            for j in sched._queue if j.user == request.user.username
         ]
         running = [
             {"job_id": j.job_id, "gpu_ids": str(j.gpu_ids)}
-            for j in scheduler._running.values() if j.user == request.user.username
+            for j in sched._running.values() if j.user == request.user.username
         ]
     return Response({"pending": pending, "running": running})
