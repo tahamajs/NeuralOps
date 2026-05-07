@@ -1,0 +1,61 @@
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
+from .models import ChatSession, ChatMessage
+from .serializers import ChatSessionSerializer, ChatMessageSerializer
+from .orchestrator import AgentOrchestrator
+
+class ChatSessionListCreateView(generics.ListCreateAPIView):
+    """List all chat sessions for the user, or create a new one."""
+    serializer_class = ChatSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ChatSession.objects.filter(user=self.request.user).order_by('-updated_at')
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class ChatSessionDetailView(generics.RetrieveAPIView):
+    """Get a single chat session with all messages."""
+    serializer_class = ChatSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return ChatSession.objects.filter(user=self.request.user)
+
+
+class MessageListView(generics.ListAPIView):
+    """List messages for a chat session."""
+    serializer_class = ChatMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        session_id = self.kwargs['session_id']
+        return ChatMessage.objects.filter(session_id=session_id, session__user=self.request.user).order_by('created_at')
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def send_message(request, session_id):
+    """REST fallback for sending a message (if WebSocket is unavailable)."""
+    try:
+        session = ChatSession.objects.get(id=session_id, user=request.user)
+    except ChatSession.DoesNotExist:
+        return Response({"error": "Session not found"}, status=404)
+
+    text = request.data.get('text', '')
+    if not text:
+        return Response({"error": "Message text required"}, status=400)
+
+    orchestrator = AgentOrchestrator(session)
+    result = orchestrator.process_user_message(text)
+
+    messages = ChatMessage.objects.filter(session=session).order_by('created_at')
+    serializer = ChatMessageSerializer(messages, many=True)
+
+    return Response({
+        'messages': serializer.data,
+        'agent_response': result,
+    })
