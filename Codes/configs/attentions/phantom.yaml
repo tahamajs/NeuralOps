@@ -1,3 +1,0 @@
-attention_type: "phantom"
-compression_rank: 16
-config_description: "PHANTOM – CUR + LSH, 5‑20× reduction"
