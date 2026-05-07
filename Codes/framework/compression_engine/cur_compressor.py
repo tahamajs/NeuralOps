@@ -160,3 +160,5 @@ def cur_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
     compressor = CURCompressor(model, rank=rank, method=method, target_names=target_names)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+

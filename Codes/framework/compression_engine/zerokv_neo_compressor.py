@@ -13,7 +13,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@COMPRESSOR_REGISTRY.register("zerokv_neo")
 class ZeroKVNeoCompressor(BaseCompressor):
     """
     Compresses KV caches by retaining only high‑L2‑norm tokens plus attention sinks.
@@ -60,3 +59,15 @@ class ZeroKVNeoCompressor(BaseCompressor):
         attn_keywords = ['q_lin', 'k_lin', 'v_lin', 'q_proj', 'k_proj', 'v_proj',
                          'query', 'key', 'value', 'attention']
         return any(kw in name.lower() for kw in attn_keywords)
+    
+
+@COMPRESSOR_REGISTRY.register("zerokv_neo")
+def zerokv_neo_factory(model, comp_config):
+    keep_ratio = getattr(comp_config, 'zerokv_keep_ratio', 0.3)
+    num_sinks = getattr(comp_config, 'zerokv_num_sinks', 4)
+    heavy_ratio = getattr(comp_config, 'zerokv_heavy_ratio', 0.1)
+    compressor = ZeroKVNeoCompressor(model, keep_ratio=keep_ratio,
+                                     num_attention_sinks=num_sinks,
+                                     heavy_hitter_ratio=heavy_ratio)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

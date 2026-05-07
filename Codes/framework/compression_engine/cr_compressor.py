@@ -12,7 +12,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@COMPRESSOR_REGISTRY.register("cr")
 class CRCompressor(BaseCompressor):
     """
     Compress using interpolative decomposition: W ≈ C @ proj,
@@ -45,3 +44,15 @@ class CRCompressor(BaseCompressor):
                 module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+
+
+@COMPRESSOR_REGISTRY.register("cr")
+def cr_compressor_factory(model, comp_config):
+    rank = getattr(comp_config, 'cr_rank', 64)
+    compressor = CRCompressor(model, rank)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

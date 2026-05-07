@@ -40,7 +40,6 @@ class CompressionPlanningTokens:
         return importance + 0.5   # uniform baseline
 
 
-@COMPRESSOR_REGISTRY.register("cachenotes")
 class CacheNotesCompressor(BaseCompressor):
     """
     Compresses model weights using task‑aware importance scoring inspired by
@@ -84,3 +83,13 @@ class CacheNotesCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("cachenotes")
+def cachenotes_factory(model, comp_config):
+    task_type = getattr(comp_config, 'cachenotes_task', 'qa')
+    keep_ratio = getattr(comp_config, 'cachenotes_keep_ratio', 0.3)
+    compressor = CacheNotesCompressor(model, task_type=task_type, keep_ratio=keep_ratio)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

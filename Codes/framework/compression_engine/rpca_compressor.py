@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("rpca")
 class RPCACompressor(BaseCompressor):
     def __init__(self, model, rank=64, mu=1e-3, max_iter=5, **kwargs):
         super().__init__(model, name="rpca", **kwargs)
@@ -30,3 +29,16 @@ class RPCACompressor(BaseCompressor):
                 module.weight.data = torch.tensor(L, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+
+@COMPRESSOR_REGISTRY.register("rpca")
+def rpca_compressor_factory(model, comp_config):
+    rank = getattr(comp_config, 'rpca_rank', 64)
+    mu = getattr(comp_config, 'rpca_mu', 1e-3)
+    max_iter = getattr(comp_config, 'rpca_max_iter', 5)
+    compressor = RPCACompressor(model, rank, mu, max_iter)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

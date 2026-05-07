@@ -157,3 +157,5 @@ class KroneckerLinear(nn.Module):
         if bias is not None:
             kron_layer.bias.data.copy_(bias)
         return kron_layer
+    
+

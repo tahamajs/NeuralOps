@@ -4,10 +4,9 @@ nn.MultiheadAttention layers using energy‑threshold SVD.
 """
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.attentions.Other_Attentions.compressed_attention import CompressedAttentionLayer
 
-@COMPRESSOR_REGISTRY.register("adaptive_svd")
 class AdaptiveTransformerCompressor(BaseCompressor):
     def __init__(self, model, energy_threshold=0.95, min_rank=16, **kwargs):
         super().__init__(model, name="adaptive_svd", **kwargs)
@@ -43,3 +42,12 @@ class AdaptiveTransformerCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+
+
+@COMPRESSOR_REGISTRY.register("adaptive_svd")
+def adaptive_svd_factory(model, comp_config):
+    energy_threshold = getattr(comp_config, 'energy_threshold', 0.95)
+    min_rank = getattr(comp_config, 'min_rank', 16)
+    compressor = AdaptiveTransformerCompressor(model, energy_threshold=energy_threshold, min_rank=min_rank)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

@@ -6,7 +6,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("flap")
 class FLAPCompressor(BaseCompressor):
     def __init__(self, model, tokenizer, sparsity=0.2, device="cuda", nsamples=1024, **kwargs):
         super().__init__(model, name="flap", **kwargs)
@@ -55,3 +54,16 @@ class FLAPCompressor(BaseCompressor):
                     flat_inputs = flat_inputs[:, keep_idx]
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+@COMPRESSOR_REGISTRY.register("flap")
+def flap_compressor_factory(model, comp_config):
+    sparsity = getattr(comp_config, 'flap_sparsity', 0.2)
+    tokenizer = getattr(model, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("flap requires tokenizer attached as model.tokenizer")
+    compressor = FLAPCompressor(model, tokenizer, sparsity=sparsity)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

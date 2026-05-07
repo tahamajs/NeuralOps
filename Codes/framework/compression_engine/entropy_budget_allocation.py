@@ -9,7 +9,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@COMPRESSOR_REGISTRY.register("entropy_budget")
 class EntropyBudgetCompressor(BaseCompressor):
     def __init__(self, model, calibration_loader, total_budget_ratio=0.7, **kwargs):
         super().__init__(model, name="entropy_budget", **kwargs)
@@ -70,3 +69,10 @@ class EntropyBudgetCompressor(BaseCompressor):
                 module.weight.data = W_approx.to(dtype=module.weight.dtype)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+@COMPRESSOR_REGISTRY.register("entropy_budget")
+def entropy_budget_factory(model, comp_config):
+    raise NotImplementedError(
+        "entropy_budget compressor requires a calibration_loader; not supported in standalone test."
+    )

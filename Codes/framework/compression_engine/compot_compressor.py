@@ -142,3 +142,8 @@ def compot_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+@COMPRESSOR_REGISTRY.register("compot")
+def compot_factory(model, comp_config):
+    raise NotImplementedError("compot requires tokenizer and calibration; not supported in standalone test.")

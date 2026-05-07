@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("lillama")
 class LiLLaMACompressor(BaseCompressor):
     def __init__(self, model, tokenizer, rank=64, calibration_texts=None, **kwargs):
         super().__init__(model, name="lillama", **kwargs)
@@ -42,3 +41,16 @@ class LiLLaMACompressor(BaseCompressor):
                 module.weight.data = torch.tensor(W_new, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+
+
+
+
+@COMPRESSOR_REGISTRY.register("lillama")
+def lillama_factory(model, comp_config):
+    rank = getattr(comp_config, 'lillama_rank', 64)
+    tokenizer = getattr(model, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("lillama requires tokenizer attached as model.tokenizer")
+    compressor = LiLLaMACompressor(model, tokenizer, rank)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

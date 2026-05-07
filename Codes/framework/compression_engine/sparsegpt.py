@@ -8,7 +8,6 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("sparsegpt")
 class SparseGPTCompressor(BaseCompressor):
     def __init__(self, model, tokenizer, sparsity=0.5, device="cuda", nsamples=128, **kwargs):
         super().__init__(model, name="sparsegpt", **kwargs)
@@ -42,3 +41,12 @@ class SparseGPTCompressor(BaseCompressor):
         self.model = pruned_model   # update base model
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+@COMPRESSOR_REGISTRY.register("slicegpt_pca")
+def slicegpt_pca_factory(model, comp_config):
+    # This compressor expects a calibration_loader – not available in test.
+    # For the test, we skip it; here we raise a clear error.
+    raise NotImplementedError("slicegpt_pca requires a calibration_loader; not supported in standalone test.")
