@@ -71,3 +71,20 @@ class TrainingSnapshot(models.Model):
         app_label = 'experiment'          # <-- ADD THIS LINE
         ordering = ['run', 'step']
         unique_together = [['run', 'step']]
+
+
+class ExperimentTemplate(models.Model):
+    """Reusable experiment configuration template."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='templates')
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    config = models.JSONField(default=dict)
+    category = models.CharField(max_length=100, blank=True, default="general")
+    is_public = models.BooleanField(default=False)
+    usage_count = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-usage_count', '-created_at']

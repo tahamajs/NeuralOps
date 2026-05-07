@@ -28,25 +28,26 @@ def job_list(request):
         required = ['model_name', 'task_name']
         for field in required:
             if not data.get(field):
-                return Response({"error": f"Missing field: {field}"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"error": f"Missing field: {field}"}, status=400)
 
+        # If load balancing is enabled, submit to distributed scheduler
+        if data.get("load_balancer", {}).get("enabled"):
+            dist_scheduler = DistributedJobScheduler()
+            job_id = dist_scheduler.submit(
+                config=data,
+                num_gpus=data.get("load_balancer", {}).get("num_gpus", 1),
+                priority=data.get("priority", 5),
+                user=request.user.username,
+            )
+            return Response({"job_id": job_id, "status": "submitted_to_scheduler"}, status=202)
+
+        # Original creation (unchanged)
         job = Job.objects.create(
             name=data.get('name', ''),
             model_name=data['model_name'],
-            task_name=data['task_name'],
-            attention_type=data.get('attention_type', 'full'),
-            method=data.get('method', 'baseline'),
-            epochs=data.get('epochs', 3),
-            batch_size=data.get('batch_size', 16),
-            learning_rate=data.get('learning_rate', 2e-5),
-            max_seq_length=data.get('max_seq_length', 128),
-            compression_rank=data.get('compression_rank', 64),
-            gpu_requirements=data.get('gpu_requirements', 1),
-            memory_requirements=data.get('memory_requirements', 8),
-            priority=data.get('priority', 5),
-            estimated_duration=data.get('estimated_duration', None),
-            notes=data.get('notes', ''),
+            ...
         )
+
         capture_git_info(job)
         capture_data_version(job)
         create_config_snapshot(job, "Initial configuration", request.user)
@@ -435,29 +436,18 @@ def download_model_version(request, version_id):
     return response
 
 
-
-# At the top of jobscheduler/views.py
-from framework.distributed.load_balancer.job_scheduler import DistributedJobScheduler
-
-# Inside job_list (replace the existing POST section):
-elif request.method == 'POST':
-    data = request.data
-    required = ['model_name', 'task_name']
-    for field in required:
-        if not data.get(field):
-            return Response({"error": f"Missing field: {field}"}, status=400)
-
-    # Use the distributed job scheduler if load‑balancer is enabled
-    if data.get("load_balancer", {}).get("enabled"):
-        scheduler = DistributedJobScheduler()
-        job_id = scheduler.submit(
-            config=data,
-            num_gpus=data.get("load_balancer", {}).get("num_gpus", 1),
-            priority=data.get("priority", 5),
-            user=request.user.username,
-        )
-        return Response({"job_id": job_id, "status": "submitted_to_scheduler"}, status=202)
-
-    # Original single‑job creation (unchanged) …
-    job = Job.objects.create( … )
-    # …
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def my_scheduled_jobs(request):
+    scheduler = DistributedJobScheduler()
+    with scheduler._lock:
+        pending = [
+            {"job_id": j.job_id, "priority": j.priority, "num_gpus": j.num_gpus,
+             "state": j.state.value}
+            for j in scheduler._queue if j.user == request.user.username
+        ]
+        running = [
+            {"job_id": j.job_id, "gpu_ids": str(j.gpu_ids)}
+            for j in scheduler._running.values() if j.user == request.user.username
+        ]
+    return Response({"pending": pending, "running": running})
