@@ -238,3 +238,21 @@ def compare_versions(request, run_id, version_a, version_b):
         "metrics_diff": metrics_diff,
         "size_diff_mb": round(v2.artifact_size_mb - v1.artifact_size_mb, 2)
     })
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def all_model_versions(request):
+    versions = ModelVersion.objects.select_related('run').order_by('-created_at')[:50]
+    data = [{
+        'id': str(v.id),
+        'run_id': str(v.run_id),
+        'run_name': v.run.name,
+        'version': v.version,
+        'metrics': v.metrics,
+        'artifact_size_mb': v.artifact_size_mb,
+        'is_published_to_hub': v.is_published_to_hub,
+        'created_at': v.created_at.isoformat(),
+    } for v in versions]
+    return Response(data)
