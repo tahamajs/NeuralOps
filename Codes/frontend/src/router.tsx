@@ -8,6 +8,9 @@ const ExperimentListPage = lazy(() => import('./features/experiments/pages/Exper
 const ExperimentDetailPage = lazy(() => import('./features/experiments/pages/ExperimentDetailPage'))
 const LauncherPage = lazy(() => import('./features/launcher/pages/LauncherPage'))
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage'))
+const NotesListPage = lazy(() => import('./features/notes/pages/NotesListPage'))
+const NoteDetailPage = lazy(() => import('./features/notes/pages/NoteDetailPage'))
+const NoteCreatePage = lazy(() => import('./features/notes/pages/NoteCreatePage'))
 
 export const router = createBrowserRouter([
   {
@@ -22,38 +25,13 @@ export const router = createBrowserRouter([
     element: <MainLayout />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      {
-        path: '/dashboard',
-        element: (
-          <Suspense fallback={<Spinner />}>
-            <DashboardPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: '/experiments',
-        element: (
-          <Suspense fallback={<Spinner />}>
-            <ExperimentListPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: '/experiments/:id',
-        element: (
-          <Suspense fallback={<Spinner />}>
-            <ExperimentDetailPage />
-          </Suspense>
-        ),
-      },
-      {
-        path: '/launcher',
-        element: (
-          <Suspense fallback={<Spinner />}>
-            <LauncherPage />
-          </Suspense>
-        ),
-      },
+      { path: '/dashboard', element: <DashboardPage /> },
+      { path: '/experiments', element: <ExperimentListPage /> },
+      { path: '/experiments/:id', element: <ExperimentDetailPage /> },
+      { path: '/launcher', element: <LauncherPage /> },
+      { path: '/notes', element: <NotesListPage /> },
+      { path: '/notes/new', element: <NoteCreatePage /> },
+      { path: '/notes/:id', element: <NoteDetailPage /> },
     ],
   },
 ])

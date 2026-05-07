@@ -27,18 +27,16 @@ export default function DashboardPage() {
           </h1>
           <p className="text-slate-400 text-sm mt-1">Real‑time attention compression monitoring</p>
         </div>
-        <div className="flex items-center gap-2 self-start">
-          <Card className="py-1.5 px-4 flex items-center gap-2 border-none bg-neon-blue/5" hover={false}>
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-bold text-green-400 uppercase tracking-widest">Cluster Active</span>
-          </Card>
-        </div>
+        <Card className="py-1.5 px-4 inline-flex items-center gap-2 border-none bg-neon-blue/5" hover={false}>
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-xs font-bold text-green-400 uppercase tracking-widest">Cluster Active</span>
+        </Card>
       </div>
 
       <MetricSummaryCards experiments={experiments} />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8">
           <Card>
             <h2 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-neon-blue rounded-full" />
