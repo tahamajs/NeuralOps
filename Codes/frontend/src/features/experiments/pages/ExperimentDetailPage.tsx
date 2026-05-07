@@ -20,6 +20,9 @@ import CustomMetricsDashboard from '../components/CustomMetricsDashboard'
 import ExperimentTimeline from '../components/ExperimentTimeline'
 import { Experiment } from '../../../types/experiment'
 import { useState } from 'react'
+import TrainingMonitorPanel from '../components/TrainingMonitorPanel'
+import PaperRecommendationsPanel from '../../agent/components/PaperRecommendationsPanel'
+
 
 export default function ExperimentDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -65,6 +68,8 @@ export default function ExperimentDetailPage() {
           <ProgressBar progress={progress} />
         </Card>
       )}
+<TrainingMonitorPanel runId={id!} status={status} />
+<PaperRecommendationsPanel runId={id!} />
 
       {/* Metrics & Configuration */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
