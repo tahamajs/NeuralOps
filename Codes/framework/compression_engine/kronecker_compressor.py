@@ -9,7 +9,6 @@ from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, MET
 from .kronecker_linear import KroneckerLinear
 
 
-@COMPRESSOR_REGISTRY.register("kronecker")
 class KroneckerCompressor(BaseCompressor):
     """
     Compresses a model by replacing every nn.Linear layer with a
@@ -45,3 +44,10 @@ class KroneckerCompressor(BaseCompressor):
             if parent is None:
                 return None
         return parent
+    
+
+@COMPRESSOR_REGISTRY.register("kronecker")
+def kronecker_factory(model, comp_config):
+    compressor = KroneckerCompressor(model)   # takes only model
+    compressed_model, _ = compressor.compress()
+    return compressed_model

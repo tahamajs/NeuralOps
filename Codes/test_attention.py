@@ -13,7 +13,7 @@ import os
 import inspect
 import pandas as pd
 from types import SimpleNamespace
-from transformers import AutoConfig, AutoModelForSequenceClassification
+from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
 os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
 os.environ["HF_HOME"] = os.path.join(os.getcwd(), "models")
@@ -131,13 +131,16 @@ def test_compressor(comp_name, model, device, comp_config):
     if comp_fn is None:
         return False, "Not in registry"
     compressed = comp_fn(model, comp_config)
+    if not isinstance(compressed, torch.nn.Module):
+        return False, f"Compressor returned {type(compressed)}, not a nn.Module"
     compressed.to(device)
     compressed.eval()
     input_ids = torch.randint(0, 30522, (2, 32)).to(device)
     attention_mask = torch.ones_like(input_ids).to(device)
     with torch.no_grad():
         outputs = compressed(input_ids=input_ids, attention_mask=attention_mask)
-    _ = outputs.logits
+    if not hasattr(outputs, 'logits'):
+        return False, "Output has no 'logits'"
     return True, "OK"
 
 def main():
@@ -155,8 +158,9 @@ def main():
     print("="*70)
 
     model_config = AutoConfig.from_pretrained(args.model)
-    base_model = AutoModelForSequenceClassification.from_pretrained(args.model, config=model_config)
-    fix_layernorm_naming(base_model)
+    
+    # Load tokenizer once (will be attached to each model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True, local_files_only=True)
 
     if args.device:
         device = torch.device(args.device)
@@ -185,6 +189,22 @@ def main():
         top_k=2,
         window_size=128,
         use_fp8=False,
+        # For compressors that need tokenizer
+        keep_ratio=0.5,
+        target_sparsity=0.3,
+        a3_rank=64,
+        energy_threshold=0.95,
+        sparsity=0.5,
+        quant_bits=4,
+        slicegpt_sparsity=0.25,
+        oats_sparsity=0.5,
+        oats_rank_ratio=0.2,
+        oats_num_iters=5,
+        mamba_shedder_sparsity=0.2,
+        swift_svd_act_rank=64,
+        faq_bits=8,
+        compot_rank=64,
+        lillama_rank=64,
     )
 
     results = []
@@ -199,6 +219,8 @@ def main():
             print(f"  [{i:3d}/{len(attn_keys)}] {key:<40} ", end='', flush=True)
             model = AutoModelForSequenceClassification.from_pretrained(args.model, config=model_config)
             fix_layernorm_naming(model)
+            # Attach tokenizer for any compressor that might need it (though not used in attention test)
+            model.tokenizer = tokenizer
             ok, msg = run_with_timeout(test_attention, key, model, model_config, device, comp_config)
             success = bool(ok)
             results.append({"type": "attention", "name": key, "success": success, "message": msg})
@@ -217,6 +239,8 @@ def main():
             print(f"  [{i:3d}/{len(comp_keys)}] {key:<40} ", end='', flush=True)
             model = AutoModelForSequenceClassification.from_pretrained(args.model, config=model_config)
             fix_layernorm_naming(model)
+            # Attach tokenizer to the model (required by many compressors)
+            model.tokenizer = tokenizer
             ok, msg = run_with_timeout(test_compressor, key, model, device, comp_config)
             success = bool(ok)
             results.append({"type": "compressor", "name": key, "success": success, "message": msg})

@@ -6,6 +6,8 @@ import heapq
 class HuffmanCoder:
     @staticmethod
     def encode(weights: torch.Tensor):
+        self.dropout = nn.Dropout(config.dropout)
+
         freq = {}
         flat = weights.view(-1).tolist()
         for w in flat:

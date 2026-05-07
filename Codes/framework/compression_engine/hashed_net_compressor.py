@@ -9,7 +9,6 @@ from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, MET
 from .hashed_linear import HashedLinear
 
 
-@COMPRESSOR_REGISTRY.register("hashed_net")
 class HashedNetCompressor(BaseCompressor):
     """
     Compress a model by replacing every nn.Linear layer with HashedLinear,
@@ -44,3 +43,14 @@ class HashedNetCompressor(BaseCompressor):
             if parent is None:
                 return None
         return parent
+    
+
+
+
+
+@COMPRESSOR_REGISTRY.register("hashed_net")
+def hashed_net_factory(model, comp_config):
+    n_buckets = getattr(comp_config, 'hashed_net_buckets', 1024)
+    compressor = HashedNetCompressor(model, n_buckets=n_buckets)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

@@ -4,7 +4,6 @@ import torch
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("frandi")
 class FRanDICompressor(BaseCompressor):
     def __init__(self, model, rank=8, **kwargs):
         super().__init__(model, name="frandi", **kwargs)

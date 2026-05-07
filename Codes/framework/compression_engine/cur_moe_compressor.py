@@ -10,7 +10,6 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@COMPRESSOR_REGISTRY.register("cur_moe")
 class CURMoECompressor(BaseCompressor):
     """
     Compresses MoE expert layers using CUR decomposition.
@@ -64,3 +63,13 @@ class CURMoECompressor(BaseCompressor):
                             )
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("cur_moe")
+def cur_moe_factory(model, comp_config):
+    rank = getattr(comp_config, 'cur_moe_rank', 64)
+    method = getattr(comp_config, 'cur_moe_method', 'leverage')
+    compressor = CURMoECompressor(model, rank=rank, method=method)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

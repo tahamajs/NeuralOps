@@ -6,7 +6,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("oats")
 class OATSCompressor(BaseCompressor):
     def __init__(self, model, tokenizer, sparsity=0.5, rank_ratio=0.2, num_iters=5, device="cuda", **kwargs):
         super().__init__(model, name="oats", **kwargs)
@@ -62,3 +61,19 @@ class OATSCompressor(BaseCompressor):
                 module.weight.data = W_comp
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("oats")
+def oats_compressor_factory(model, comp_config):
+    sparsity = getattr(comp_config, 'oats_sparsity', 0.5)
+    rank_ratio = getattr(comp_config, 'oats_rank_ratio', 0.2)
+    num_iters = getattr(comp_config, 'oats_num_iters', 5)
+    # Note: tokenizer must be attached to model or passed separately
+    # For the test, assume model.tokenizer is set
+    tokenizer = getattr(model, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("OATS compressor requires tokenizer attached as model.tokenizer")
+    compressor = OATSCompressor(model, tokenizer, sparsity, rank_ratio, num_iters)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

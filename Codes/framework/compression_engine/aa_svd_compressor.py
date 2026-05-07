@@ -75,3 +75,17 @@ class AASVDCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+@COMPRESSOR_REGISTRY.register("aasvd")
+def aasvd_factory(model, comp_config):
+    rank = getattr(comp_config, 'aasvd_rank', 64)
+    # tokenizer required
+    tokenizer = getattr(model, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("aasvd requires tokenizer attached as model.tokenizer")
+    compressor = AASVDCompressor(model, tokenizer, rank=rank)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

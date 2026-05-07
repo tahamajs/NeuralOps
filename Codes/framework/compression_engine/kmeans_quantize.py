@@ -26,7 +26,6 @@ class KMeansLinear(nn.Module):
         out = F.linear(x, W, self.bias)
         return out
 
-@COMPRESSOR_REGISTRY.register("kmeans")
 class KMeansCompressor(BaseCompressor):
     def __init__(self, model, n_clusters=256, **kwargs):
         super().__init__(model, name="kmeans", **kwargs)
@@ -48,3 +47,12 @@ class KMeansCompressor(BaseCompressor):
         for part in parts[:-1]:
             parent = getattr(parent, part, None)
         return parent
+    
+
+
+@COMPRESSOR_REGISTRY.register("kmeans")
+def kmeans_factory(model, comp_config):
+    n_clusters = getattr(comp_config, 'kmeans_clusters', 256)
+    compressor = KMeansCompressor(model, n_clusters=n_clusters)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

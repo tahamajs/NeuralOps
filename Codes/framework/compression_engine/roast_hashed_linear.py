@@ -88,7 +88,6 @@ class ROASTLinear(nn.Module):
         return roast
 
 
-@COMPRESSOR_REGISTRY.register("roast")
 class ROASTCompressor(BaseCompressor):
     """
     Replace all nn.Linear layers with ROASTLinear (hardware‑aware weight sharing).

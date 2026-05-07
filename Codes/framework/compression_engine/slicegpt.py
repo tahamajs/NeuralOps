@@ -11,7 +11,6 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 from framework.core.base import BaseCompressor      # note: from compression.core.base
 
-@COMPRESSOR_REGISTRY.register("slicegpt")
 class SliceGPTCompressor(BaseCompressor):   # note the inheritance
     def __init__(self, model, tokenizer, sparsity=0.25, device="cuda", use_wandb=False):
         self.model = model
@@ -58,3 +57,16 @@ class SliceGPTCompressor(BaseCompressor):   # note the inheritance
 
         shutil.rmtree(temp_path, ignore_errors=True)
         return sliced_model, sliced_tokenizer
+    
+
+
+
+@COMPRESSOR_REGISTRY.register("slicegpt")
+def slicegpt_factory(model, comp_config):
+    sparsity = getattr(comp_config, 'slicegpt_sparsity', 0.25)
+    tokenizer = getattr(model, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("slicegpt requires tokenizer attached as model.tokenizer")
+    compressor = SliceGPTCompressor(model, tokenizer, sparsity)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

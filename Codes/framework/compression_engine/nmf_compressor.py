@@ -6,7 +6,6 @@ from sklearn.decomposition import NMF as skNMF
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("nmf")
 class NMFCompressor(BaseCompressor):
     def __init__(self, model, rank=64, **kwargs):
         super().__init__(model, name="nmf", **kwargs)
@@ -24,3 +23,11 @@ class NMFCompressor(BaseCompressor):
                 module.weight.data = torch.tensor(W_comp, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+@COMPRESSOR_REGISTRY.register("nmf")
+def nmf_factory(model, comp_config):
+    rank = getattr(comp_config, 'nmf_rank', 64)
+    compressor = NMFCompressor(model, rank=rank)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

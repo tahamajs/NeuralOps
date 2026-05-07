@@ -5,7 +5,6 @@ import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("mamba_shedder")
 class MambaShedderCompressor(BaseCompressor):
     def __init__(self, model, tokenizer, sparsity=0.2, device="cuda", **kwargs):
         super().__init__(model, name="mamba_shedder", **kwargs)
@@ -62,3 +61,18 @@ class MambaShedderCompressor(BaseCompressor):
                     module.bias.data = module.bias.data[keep_idx]
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+
+
+@COMPRESSOR_REGISTRY.register("mamba_shedder")
+def mamba_shedder_factory(model, comp_config):
+    sparsity = getattr(comp_config, 'mamba_shedder_sparsity', 0.2)
+    tokenizer = getattr(model, 'tokenizer', None)
+    if tokenizer is None:
+        raise ValueError("mamba_shedder requires tokenizer attached as model.tokenizer")
+    compressor = MambaShedderCompressor(model, tokenizer, sparsity)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

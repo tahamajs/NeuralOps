@@ -63,3 +63,11 @@ class DobiSVDCompressor(BaseCompressor):
         for part in parts[:-1]:
             parent = getattr(parent, part, None)
         return parent
+
+
+@COMPRESSOR_REGISTRY.register("dobi")
+def dobi_factory(model, comp_config):
+    init_rank_ratio = getattr(comp_config, 'dobi_init_rank_ratio', 0.5)
+    compressor = DobiSVDCompressor(model, init_rank_ratio=init_rank_ratio)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

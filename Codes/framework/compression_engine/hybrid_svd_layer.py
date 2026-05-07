@@ -124,3 +124,13 @@ class DirectSVDCompressor(BaseCompressor):
             "DirectSVDCompressor needs model‑specific layer replacement. "
             "Use the DirectSVDEncoderLayer directly."
         )
+    
+
+
+
+@COMPRESSOR_REGISTRY.register("direct_svd")
+def direct_svd_factory(model, comp_config):
+    svd_rank = getattr(comp_config, 'direct_svd_rank', 20)
+    compressor = DirectSVDCompressor(model, svd_rank=svd_rank)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

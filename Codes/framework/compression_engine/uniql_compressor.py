@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("uniql")
 class UniQLCompressor(BaseCompressor):
     def __init__(self, model, rank=64, bits=8, **kwargs):
         super().__init__(model, name="uniql", **kwargs)

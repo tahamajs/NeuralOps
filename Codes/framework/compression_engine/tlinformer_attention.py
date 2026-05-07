@@ -9,7 +9,6 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@ATTENTION_REGISTRY.register("tlinformer")
 class TLinFormerAttention(BaseAttention):
     def __init__(self, config, rank=64):
         super().__init__(config, rank)

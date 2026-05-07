@@ -5,7 +5,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("mlorq")
 class MLoRQCompressor(BaseCompressor):
     def __init__(self, model, total_memory_budget_mb=500, bits_candidates=[2,4,8], **kwargs):
         super().__init__(model, name="mlorq", **kwargs)
@@ -68,3 +67,12 @@ class MLoRQCompressor(BaseCompressor):
                 info['module'].bias.data = self._quantize(info['module'].bias.data, b)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+@COMPRESSOR_REGISTRY.register("mlorq")
+def mlorq_factory(model, comp_config):
+    total_budget_mb = getattr(comp_config, 'mlorq_budget_mb', 500)
+    bits_candidates = getattr(comp_config, 'mlorq_bits_candidates', [2,4,8])
+    compressor = MLoRQCompressor(model, total_memory_budget_mb=total_budget_mb, bits_candidates=bits_candidates)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

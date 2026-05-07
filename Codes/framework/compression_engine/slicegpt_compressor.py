@@ -6,7 +6,6 @@ import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("slicegpt_pca")
 class SliceGPTPCACompressor(BaseCompressor):
     def __init__(self, model, calibration_loader, sparsity=0.3, **kwargs):
         super().__init__(model, name="slicegpt_pca", **kwargs)
@@ -48,3 +47,8 @@ class SliceGPTPCACompressor(BaseCompressor):
                     module.bias.data = module.bias.data[:keep]
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+
+    

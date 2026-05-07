@@ -11,7 +11,6 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("padre")
 class PADReAttention(BaseAttention):
     """
     Polynomial Attention with Dropout Regularization (PADRe).

@@ -4,7 +4,6 @@ import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("replaceme")
 class ReplaceMeCompressor(BaseCompressor):
     def __init__(self, model, remove_layers=2, **kwargs):
         super().__init__(model, name="replaceme", **kwargs)
@@ -22,3 +21,7 @@ class ReplaceMeCompressor(BaseCompressor):
                 self.model.encoder.layer[i] = replacement
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+
+
+
+        

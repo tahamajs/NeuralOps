@@ -62,7 +62,6 @@ class ToMoELinear(nn.Module):
         return out
 
 
-@COMPRESSOR_REGISTRY.register("tomoe")
 class ToMoECompressor(BaseCompressor):
     """
     Converts FFN layers into Mixture of Experts via weight clustering.

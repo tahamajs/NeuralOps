@@ -5,7 +5,6 @@ import torch.nn as nn
 from framework.core.base import BaseCompressor
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("mgie")
 class MGIECompressor(BaseCompressor):
     def __init__(self, model, **kwargs):
         super().__init__(model, name="mgie", **kwargs)
@@ -25,3 +24,11 @@ class MGIECompressor(BaseCompressor):
                 module.weight.data = self._compress_layer(module.weight.data)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
+
+
+@COMPRESSOR_REGISTRY.register("mgie")
+def mgie_factory(model, comp_config):
+    compressor = MGIECompressor(model)   # takes only model
+    compressed_model, _ = compressor.compress()
+    return compressed_model
