@@ -1,4 +1,0 @@
-dataset_name: "mrpc"
-num_labels: 2
-max_seq_length: 128
-config_description: "MRPC paraphrase detection – 2 classes"
