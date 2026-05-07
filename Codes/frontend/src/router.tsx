@@ -255,8 +255,19 @@ export const router = createBrowserRouter([
 { path: '/model-registry', element: <ModelRegistryPage /> },
 { path: '/cluster/overview', element: <ClusterDashboardPage /> },
 { path: '/runs/:runId/reproducibility', element: <ReproducibilityPanel standalone /> },
+
+{ path: '/agent', element: <AgentChatPage /> },
+{ path: '/agent/:sessionId', element: <AgentChatPage /> },
+{ path: '/agents', element: <AgentSessionsListPage /> },
       // ─── 404 ────────────────────────────────
+      { path: '/agents/create', element: <AgentCreator /> },
+{ path: '/agents/:sessionId', element: <AgentDashboardPage /> },
+
       { path: '*', element: <NotFoundPage /> },
+      { path: '/agent', element: <AgentChatPage /> },
+{ path: '/agent/:sessionId', element: <AgentChatPage /> },
+{ path: '/agents', element: <AgentSessionsListPage /> },
+
     ],
   },
 ])
