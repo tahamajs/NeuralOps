@@ -1,4 +1,3 @@
 from .adaptive_compressor import AdaptiveTransformerCompressor
-from .advanced_methods import AdvancedZeroShotCompressor
 from .entropy_budget_allocation import EntropyBudgetCompressor
 from .sdrm_compressor import SDRMCompressor
