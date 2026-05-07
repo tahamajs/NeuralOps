@@ -95,7 +95,22 @@ TEMPLATES = [
         },
     },
 ]
+INSTALLED_APPS += ['corsheaders']
 
+MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')  # top of list
+
+# During development, allow your React dev server
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+# REST Framework auth must allow cookies + token
+REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
+    'api.authentication.CookieTokenAuthentication',
+    'rest_framework.authentication.TokenAuthentication',
+]
 WSGI_APPLICATION = "django_api.wsgi.application"
 ASGI_APPLICATION = "django_api.asgi.application"
 

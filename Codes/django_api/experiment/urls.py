@@ -17,5 +17,13 @@ urlpatterns = [
     path("preview/<uuid:run_id>/", views.preview_paper, name="preview_paper"),
 
     path("runs/<uuid:run_id>/analysis/", views.run_analysis_overview, name="run_analysis_overview"),
+    path('compare/', views.compare_experiments, name='compare_experiments'),
+    path('runs/<uuid:run_id_a>/diff/<uuid:run_id_b>/', views.run_diff, name='run_diff'),
+    path('analytics/hp-importance/', views.hp_importance_view, name='hp_importance'),
+    path('analytics/metric-correlation/', views.metric_correlation_view, name='metric_correlation'),
+    path('runs/<uuid:run_id>/stability/', views.stability_analysis_view, name='stability_analysis'),
+    path('templates/', views.template_list, name='template_list'),
+    path('templates/<uuid:template_id>/', views.template_detail, name='template_detail'),
+    path('templates/<uuid:template_id>/use/', views.use_template, name='use_template'),
 
 ]
