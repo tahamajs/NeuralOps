@@ -5,6 +5,8 @@ Usage:
     python main.py --attn_type nexus --compressor svd --method lora --task sst2
     python main.py --attn_type spectra_v2 --compressor none --method rdrop --task mrpc
 """
+import framework.attentions        # registers all attentions
+import framework.compression_engine  # registers all compressors
 
 import argparse
 import os
@@ -45,7 +47,21 @@ from framework.experiment_logging.config import LoggingConfig
 from framework.experiment_logging.logger import setup_logging
 from framework.experiment_logging.tracker import MetricsTracker
 from framework.experiment_logging.callbacks import LoggingCallback
-
+def import_compressor_module(compressor_name):
+    possible_paths = [
+        f"framework.compression_engine.methods.{compressor_name}",
+        f"framework.compression_engine.methods.{compressor_name}_compressor",
+        f"framework.compression_engine.{compressor_name}",
+        f"framework.compression_engine.{compressor_name}_compressor",
+    ]
+    for path in possible_paths:
+        try:
+            importlib.import_module(path)
+            print(f"✅ Loaded compressor from: {path}")
+            return True
+        except ModuleNotFoundError:
+            continue
+    raise ImportError(f"Could not find compressor module for '{compressor_name}' in any of: {possible_paths}")
 
 # ---------- YAML helpers ----------
 def load_yaml_config(path):
@@ -240,42 +256,35 @@ def main():
             progressive=True,
             max_seq_len=args.max_len,
         )
+    print("After import, ATTENTION_REGISTRY keys:", ATTENTION_REGISTRY.keys())
 
     # ---------- 1. Inject attention (with lazy import) ----------
     if args.attn_type != "full":
+        import importlib
+
         # Dynamically import the attention module
+        module_path = f"framework.attentions.token_compressed"   # because the file is directly under attentions/
         try:
-            module_path = f"framework.attentions.{args.attn_type}"
-            importlib.import_module(module_path)
-            logger.debug(f"Lazy-loaded attention module: {module_path}")
-        except ImportError as e:
+            imported_module = importlib.import_module(module_path)
+            print(f"✅ Imported module: {imported_module}")
+            print(f"   Module file: {imported_module.__file__}")
+            # List all attributes to verify the decorator ran
+            print(f"   Registry keys after import: {ATTENTION_REGISTRY.keys()}")
+        except Exception as e:
             raise ImportError(f"Could not import attention module for '{args.attn_type}': {e}")
 
         inject_fn = ATTENTION_REGISTRY.get(args.attn_type)
         if inject_fn is None:
-            raise ValueError(f"Attention type '{args.attn_type}' not registered after import. Available: {list(ATTENTION_REGISTRY.keys())}")
+            # Also print what IS in the registry
+            print(f"❌ Registry contents: {list(ATTENTION_REGISTRY.keys())}")
+            raise ValueError(f"Attention type '{args.attn_type}' not registered after import.")
+        
 
-        # Locate transformer layers (DistilBERT or BERT)
-        if hasattr(model, "distilbert"):
-            layers = model.distilbert.transformer.layer
-        elif hasattr(model, "bert"):
-            layers = model.bert.encoder.layer
-        else:
-            raise ValueError("Unsupported model architecture")
-        for i, layer in enumerate(layers):
-            old_attn = layer.attention
-            inject_fn(layer, config, comp_config, i, len(layers), old_attn)
-        logger.info(f"Injected '{args.attn_type}' into {len(layers)} layers.")
-    else:
-        logger.info("Using full attention (no injection).")
 
-    # ---------- 2. Apply compressor (with lazy import) ----------
+        # ---------- 2. Apply compressor (with lazy import) ----------
     if args.compressor and args.compressor != "none":
-        # Dynamically import the compressor module
         try:
-            module_path = f"framework.compression_engine.methods.{args.compressor}"
-            importlib.import_module(module_path)
-            logger.debug(f"Lazy-loaded compressor module: {module_path}")
+            import_compressor_module(args.compressor)
         except ImportError as e:
             raise ImportError(f"Could not import compressor module for '{args.compressor}': {e}")
 
@@ -284,6 +293,7 @@ def main():
             raise ValueError(f"Unknown compressor: {args.compressor}. Available: {list(COMPRESSOR_REGISTRY.keys())}")
         model = compress_fn(model, comp_config)
         logger.info(f"Applied compressor: {args.compressor}")
+
 
     model.to(device)
 

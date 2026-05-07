@@ -9,7 +9,7 @@ import torch
 from pathlib import Path
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-from ..core.base import BaseCompressor      # note: from compression.core.base
+from framework.core.base import BaseCompressor      # note: from compression.core.base
 
 @COMPRESSOR_REGISTRY.register("slicegpt")
 class SliceGPTCompressor(BaseCompressor):   # note the inheritance
