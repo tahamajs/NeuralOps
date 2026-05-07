@@ -1,108 +1,182 @@
+# 🚀 NeuralOps – Advanced ML Experiment Platform
 
+**A complete, self‑hosted MLOps platform for attention compression research.**  
+Track experiments, optimize hyperparameters, edit papers Overleaf‑style, ask an AI research assistant, and monitor GPU clusters – all from a beautiful dark‑glass interface.
 
-# 🚀 NeuralOps Frontend
-
-**A modern, cyber‑glass experiment management platform for attention compression research.**  
-Real‑time monitoring, interactive visualizations, Overleaf‑style paper editing, hyperparameter sweeps, model registry, and GPU cluster dashboard.
-
-![Design System](https://img.shields.io/badge/design-cyber--glass-blueviolet) ![React](https://img.shields.io/badge/react-18.2-blue) ![TypeScript](https://img.shields.io/badge/typescript-5.3-3178c6) ![Vite](https://img.shields.io/badge/vite-4.5-646cff)
-
----
-
-## ✨ Features
-
-### Phase 1 (Complete)
-- **Dashboard** – KPI cards, recent experiments table, active jobs widget, system resource monitor  
-- **Experiment Management** – Create runs (training/evaluation/compression), view details, stop/retry
-- **Live Monitoring** – Real‑time loss charts, progress bar with ETA, log viewer via WebSocket
-- **Interactive Launcher** – Model picker, task selector, attention mechanism picker, hyperparameter forms
-- **Research Notebook** – Full‑featured notes with Markdown, reactions, sharing, version history, webhooks
-- **Paper Editor** – Monaco‑based LaTeX editor with PDF preview (Overleaf‑style)
-- **Terminal** – xterm.js terminal embedded in a floating window with PTY backend
-- **Model Versioning** – Browse versions, publish to HuggingFace, compare models
-- **Configuration History** – Versioned config snapshots with diff viewer
-- **Custom Metrics Dashboard** – Plotly scalars, image gallery, tables
-- **Admin Panel** – Job management, model version admin, bulk actions
-- **Global Search** – Search across all entities (experiments, notes, models, jobs)
-- **Activity Feed** – Audit log of platform actions
-- **Authentication** – Token + cookie auth, login/register, profile, password change
-
-### Phase 2 (Added)
-- **Reproducibility Snapshots** – Auto‑capture git commit, environment, seed; downloadable `reproduce.py`
-- **Run Comparison** – Side‑by‑side config diff, multi‑run metric overlay charts, parallel coordinates
-- **Hyperparameter Sweeps** – Optuna‑powered wizard, trial dashboard, parameter importance plots, Hyperband pruning
-- **Model Registry** – Lifecycle management (promote/archive), model cards, deployment stage badges
-- **GPU Cluster Dashboard** – Utilization heatmap, per‑node GPU metrics, job queue depth
-- **Enhanced WebSocket** – Reconnect with replay, batching, heartbeat, offline banner
-- **Training Control Panel** – Start/stop with immediate feedback, live progress, connection status
+![Design](https://img.shields.io/badge/design-cyber--glass-blueviolet)
+![React](https://img.shields.io/badge/react-18.2-61dafb?logo=react)
+![TypeScript](https://img.shields.io/badge/typescript-5.3-3178c6?logo=typescript)
+![Django](https://img.shields.io/badge/django-4.2-092e20?logo=django)
+![Vite](https://img.shields.io/badge/vite-4.5-646cff)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
-## 🧰 Tech Stack
+## 📖 Overview
 
-| Category | Technology |
-|----------|------------|
-| **Framework** | React 18 + TypeScript |
-| **Build Tool** | Vite 4 |
-| **Routing** | React Router 6 (lazy loading) |
-| **State Management** | Zustand (auth, live store), React Query (server state) |
-| **Styling** | Tailwind CSS 3 + custom glassmorphism components |
-| **Charts** | Plotly.js (react-plotly.js), Chart.js |
-| **Code Editor** | Monaco Editor (@monaco-editor/react) |
-| **Terminal** | xterm.js + addons (fit, web-links, search) |
-| **Markdown** | marked |
-| **Icons** | Lucide React |
-| **HTTP Client** | Axios with interceptors for token & 401 handling |
-| **WebSocket** | Custom hook with auto‑reconnect |
-| **Drag & Drop** | Floating windows (Zustand‑based) |
+NeuralOps is a **privacy‑first, on‑premise** alternative to cloud experiment trackers like W&B and MLflow.  
+It integrates the entire ML lifecycle – from literature search to model deployment – into a single Django + React application.
+
+**Why researchers choose NeuralOps:**
+
+- **Zero per‑seat cost** – self‑host on your own GPU server or cluster
+- **Real‑time collaboration** – shared notes, paper editor, integrated terminal
+- **Full reproducibility** – automatic git/DVC/environment snapshots
+- **AI‑powered** – conversational assistant helps search papers, configure experiments, and analyze training
+- **Beautiful dark UI** – cyber‑glass design with live updates and interactive charts
 
 ---
 
-## 📁 Architecture & Folder Structure
+## 🏗️ Architecture
 
 ```
-src/
-├── api/                   # Axios client & endpoint definitions
-├── assets/                # Static assets
-├── components/
-│   ├── floating/          # Floating window manager (terminal, paper, notes, monitor)
-│   ├── layout/            # MainLayout, ConnectionStatus
-│   └── ui/                # Reusable UI primitives (Button, Card, Badge, etc.)
-├── features/              # Feature‑based modules
-│   ├── admin/             # Admin dashboard, jobs, model versions, users
-│   ├── analytics/         # Advanced analytics (HP importance, metric correlation)
-│   ├── auth/              # Login, register, store
-│   ├── cluster/           # GPU cluster dashboard
-│   ├── config/            # Dynamic configuration pages
-│   ├── dashboard/         # Main dashboard (KPI, table, widgets)
-│   ├── drift/             # Drift detection
-│   ├── experiments/       # Experiment CRUD, monitoring, comparison, reproducibility
-│   ├── fairness/          # Fairness evaluation
-│   ├── hardware/          # System resource monitoring
-│   ├── hpo/               # HPO status
-│   ├── jobs/              # Job details, history, scheduling
-│   ├── launcher/          # Experiment launcher (pickers, forms)
-│   ├── modelRegistry/     # Model registry listing
-│   ├── modelVersioning/   # Model versions, lineage, publication
-│   ├── notes/             # Researcher notebook, rich text, sharing
-│   ├── paper/             # Overleaf‑style editor, project management
-│   ├── profile/           # User profile, password change
-│   ├── prompts/           # Prompt registry
-│   ├── robustness/        # Robustness evaluation
-│   ├── scheduler/         # Cluster scheduler overview
-│   ├── search/            # Global search
-│   ├── sweeps/            # Hyperparameter sweeps (creator, dashboard)
-│   ├── system/            # Health, version, system status
-│   ├── templates/         # Experiment templates
-│   └── terminal/          # Terminal panel (xterm)
-├── hooks/                 # Global hooks (useWebSocket)
-├── stores/                # Zustand stores (auth, experiment live, floating windows)
-├── providers/             # AppProviders (QueryClient, Router)
-├── types/                 # TypeScript interfaces
-├── router.tsx             # Route definitions with lazy loading
-├── App.tsx                # Root component
-├── main.tsx               # Entry point
-└── index.css              # Tailwind + custom glassmorphism styles
+┌──────────────────────┐          ┌────────────────────────────┐
+│   React Frontend     │  REST    │      Django Backend         │
+│ (Vite + TypeScript)  │◄────────►│  (DRF + Channels + Celery)  │
+│  ┌────────────────┐  │ WebSocket│  ┌──────────┬─────────────┐ │
+│  │ Floating       │◄──────────►│  │ REST API  │ WebSocket   │ │
+│  │ Windows        │  │          │  │          │ Consumers   │ │
+│  │ (terminal,     │  │          │  ├──────────┼─────────────┤ │
+│  │  paper, notes) │  │          │  │ Celery    │ Optuna      │ │
+│  └────────────────┘  │          │  │ Workers   │ Study       │ │
+│                      │          │  └──────────┴─────────────┘ │
+└──────────────────────┘          └─────────────────────────────┘
+         │                                     │
+         ▼                                     ▼
+┌──────────────────┐              ┌──────────────────────────┐
+│  PostgreSQL /    │              │   Kubernetes / Slurm     │
+│  SQLite          │              │   (GPU scheduling)       │
+└──────────────────┘              └──────────────────────────┘
+```
+
+---
+
+## 🔥 Features
+
+### Experiment Platform
+
+| Feature | Status |
+|---------|--------|
+| **Dashboard** – KPI cards, recent experiments table, active jobs widget, system monitor | ✅ |
+| **Experiment Launcher** – Model, task, attention, method pickers with presets | ✅ |
+| **Live Monitoring** – Real‑time loss charts, progress bar with ETA, log viewer via WebSocket | ✅ |
+| **Run Comparison** – Config diff table, multi‑run metric overlay, parallel coordinates | ✅ |
+| **Custom Metrics** – Plotly scalars, image gallery, tables | ✅ |
+| **Configuration History** – Versioned snapshots with diff viewer | ✅ |
+| **Hyperparameter Sweeps** – Optuna‑powered with TPE, SMAC3, Hyperband pruning | ✅ |
+
+### AI Research Assistant
+
+| Feature | Description |
+|---------|-------------|
+| **Conversational Chat** | Ask questions, get experiment suggestions, and receive real‑time help |
+| **Paper Search** | Search Semantic Scholar, arXiv, OpenAlex, and Consensus for relevant papers |
+| **Citation Graph** | Build interactive citation networks for discovered papers |
+| **Paper Library** | Save, tag, and annotate papers for future reference |
+| **Training Analysis** | Auto‑detect overfitting, plateau, divergence, and suggest fixes |
+| **Auto‑Note Generation** | Generate rich Markdown notes with loss charts at training checkpoints |
+| **Auto‑Stop** | Automatically halt diverging experiments to save GPU hours |
+| **Prompt Testing** | Test prompt templates against multiple test cases |
+
+### Collaboration & Knowledge Management
+
+| Feature | Description |
+|---------|-------------|
+| **Research Notebook** | Tiptap‑based rich text editor with Markdown, reactions, sharing, version history |
+| **Paper Editor** | Monaco‑based LaTeX editor with PDF compilation (Overleaf‑style) |
+| **Integrated Terminal** | xterm.js floating terminal with PTY backend, auto‑reconnect, quick commands |
+| **Webhooks** | Configure webhook subscriptions for note events |
+| **Activity Feed** | Platform‑wide audit log of all actions |
+
+### Model Operations
+
+| Feature | Description |
+|---------|-------------|
+| **Model Registry** | Staging → production → archive lifecycle |
+| **Model Versioning** | Automatic version creation on run completion |
+| **HuggingFace Publishing** | One‑click publish to HuggingFace Hub |
+| **Model Cards** | Auto‑generated model cards from run metadata |
+| **Lineage Graph** | Full data → code → model ancestry visualization |
+
+### Cluster & Administration
+
+| Feature | Description |
+|---------|-------------|
+| **GPU Cluster Dashboard** | Utilization heatmap, per‑node metrics, job queue depth |
+| **Job Management** | Bulk delete, stop all, priority scheduling |
+| **Admin Panel** | Django Admin integration, system health monitoring |
+| **Statistics** | Platform‑wide analytics with model and task usage |
+
+---
+
+## 🧰 Technology Stack
+
+### Backend (Python)
+
+| Component | Technology |
+|-----------|------------|
+| Framework | Django 4.2 + Django REST Framework |
+| Async server | Daphne (WebSocket support) |
+| Real‑time | Django Channels |
+| Task queue | Celery + Redis |
+| Hyperparameter optimization | Optuna 4.2 |
+| LaTeX compilation | pdflatex / xelatex / lualatex |
+| Code versioning | GitPython |
+| Database | PostgreSQL (production) / SQLite (development) |
+
+### Frontend (TypeScript)
+
+| Component | Technology |
+|-----------|------------|
+| Framework | React 18 |
+| State management | Zustand (client) + React Query (server) |
+| Routing | React Router 6 (lazy‑loaded routes) |
+| Styling | Tailwind CSS 3 + custom glassmorphism |
+| Charts | Plotly.js |
+| Code editor | Monaco Editor |
+| Terminal | xterm.js |
+| Rich text | Tiptap |
+| HTTP | Axios with interceptors |
+| WebSocket | Custom hook with auto‑reconnect |
+
+---
+
+## 📁 Project Structure
+
+```
+neuralops/
+├── backend/                     # Django project
+│   ├── api/                     # Main API (auth, config, system, mega launcher)
+│   ├── experiment/              # Experiment models, runners, comparisons
+│   ├── jobscheduler/            # Job queue, priority, scheduling, custom metrics
+│   ├── notes/                   # Research notebook (CRUD, versioning, sharing)
+│   ├── model_versioning/        # Model registry, lifecycle, publication
+│   ├── sweeps/                  # Optuna hyperparameter sweep engine
+│   ├── terminal/                # Interactive terminal (Channels consumer)
+│   ├── paper/                   # LaTeX project management & compilation
+│   ├── agents/                  # AI research assistant (tools, orchestrator, memory)
+│   ├── web_dashboard/           # Django‑rendered dashboard (fallback)
+│   ├── framework/               # Core ML framework (attention, compression, training)
+│   ├── manage.py
+│   └── requirements.txt
+│
+├── frontend/                    # React + TypeScript application
+│   ├── src/
+│   │   ├── api/                 # Axios client & endpoint definitions
+│   │   ├── components/          # Shared UI (glass cards, buttons, floating windows)
+│   │   ├── features/            # Feature modules (auth, dashboard, experiments, notes, ...)
+│   │   ├── hooks/               # Custom hooks (useWebSocket)
+│   │   ├── stores/              # Zustand stores
+│   │   ├── router.tsx           # Route definitions (lazy loaded)
+│   │   └── providers/           # AppProviders (QueryClient, Router)
+│   ├── index.html
+│   ├── package.json
+│   ├── tailwind.config.js
+│   ├── vite.config.ts
+│   └── tsconfig.json
+│
+├── docker-compose.yml           # Production deployment (optional)
+└── README.md
 ```
 
 ---
@@ -110,104 +184,121 @@ src/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js ≥ 18
-- npm ≥ 9
 
-### Installation
+- **Python** ≥ 3.10
+- **Node.js** ≥ 18
+- **Redis** (for Celery & Channels in production)
+- **pdflatex** (optional, for paper compilation)
+- **NVIDIA GPU + CUDA** (optional, for training)
+
+### Backend Setup
+
 ```bash
-cd et-frontend
+cd backend
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
 npm install
 ```
 
 ### Development
+
+Start the backend (with WebSocket support):
 ```bash
+cd backend
+daphne django_api.asgi:application
+```
+
+In a separate terminal, start the frontend:
+```bash
+cd frontend
 npm run dev
 ```
-The app will start on `http://localhost:3000` and proxy API requests to `http://localhost:8000`.
 
-### Production Build
-```bash
-npm run build
-```
-Outputs to `dist/`, ready to be served by Nginx or a CDN.
+Open **http://localhost:3000** and log in with your superuser credentials.
+
+### Production Deployment
+
+1. Set `DEBUG=False`, `SECRET_KEY`, and `ALLOWED_HOSTS`
+2. Use PostgreSQL and Redis
+3. Collect static files: `python manage.py collectstatic`
+4. Build frontend: `npm run build` → serve `dist/` via Nginx
+5. Run Celery worker: `celery -A django_api worker -l info`
+6. Run Celery beat: `celery -A django_api beat -l info`
+7. Run Daphne behind Nginx with SSL
 
 ---
 
-## ⚙️ Environment Variables
+## 🔌 API Overview
 
-Create a `.env` file in the project root (or use `.env.development` / `.env.production`).
+All endpoints are prefixed with `/api/`. Key groups:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API base URL | `http://localhost:8000/api` |
-| `VITE_WS_URL` | WebSocket base URL (ws/wss) | Automatically derived from window.location |
+| Group | Base Path | Description |
+|-------|-----------|-------------|
+| Auth | `/api/auth/` | Login, register, logout, profile, password change |
+| Experiments | `/api/experiments/` | CRUD, start/stop, compare, diff, reproducibility |
+| Jobs | `/api/jobs/` | Job queue, scheduling, config history, custom metrics |
+| Notes | `/api/notes/` | Full notebook CRUD, versioning, reactions, webhooks |
+| Agent | `/api/agents/` | Chat sessions, paper search, library, citation graph, training analysis |
+| Sweeps | `/api/sweeps/` | Create sweeps, list trials, importance plots |
+| Model Registry | `/api/model-versioning/` | Model lifecycle, download, publish |
+| Paper | `/api/paper/` | LaTeX projects, compile, output PDF/log |
+| Terminal | `/api/terminal/` | Active sessions, kill session |
+| Cluster | `/api/loadbalancer/` | GPU allocator status, scheduler queue, cluster nodes |
+| Config | `/api/config/` | Available models, tasks, attentions, compressors |
+| Health | `/api/health/` | Backend health check |
 
 ---
 
 ## 🎨 Design System
 
-The UI follows a **cyber‑glass** aesthetic:
-- **Colors:** Deep surface (`#0f172a`), neon accents (blue, purple, green), glassmorphism borders
+- **Colors:** Deep surface (`#0f172a`), neon accents (blue, purple, green, orange)
 - **Typography:** Inter (sans), JetBrains Mono (mono), Manrope (display)
-- **Components:** Reusable `glass` card, `cyber‑grid` background, `shimmer` loading effects, `card-hover-effect`
-- **Animations:** `fade-in`, `slide-up`, `scale-in`, `glow-pulse`
-
-All reusable UI primitives are in `src/components/ui/` (Button, Card, Badge, Input, Select, etc.) and use `class-variance-authority` for variants.
+- **Components:** `glass` cards, `cyber‑grid` background, `shimmer` loading, `card-hover-effect`
+- **Animations:** fade‑in, slide‑up, scale‑in, glow‑pulse, float
 
 ---
 
-## 🔌 Integration with Backend
+## 🤖 AI Agent Tools
 
-The frontend communicates with the Django backend via:
+The conversational assistant has access to these tools:
 
-- **REST API** – Axios client with `Token` authentication, auto‑logout on 401
-- **WebSocket** – Custom `useWebSocket` hook for real‑time experiment updates, terminal I/O
-- **Cookie Auth** – Token also stored in `authToken` cookie for middleware‑protected views
-
-All endpoint URLs are centralised in `src/api/endpoints.ts`.
-
----
-
-## 🔥 Phase 2 Enhancements
-
-Phase 2 transforms the platform into a **production‑grade MLOps tool**:
-
-- **Reproducibility Snapshots** – Immutable 4‑layer record (code, data, config, environment)  
-- **Run Comparison** – Compare up to 20 runs with config diff table and metric overlay charts  
-- **Hyperparameter Sweeps** – Optuna‑driven with TPE, SMAC3, CMA‑ES, Hyperband pruning  
-- **Model Registry** – Staging → production → archive lifecycle with model cards  
-- **GPU Cluster Dashboard** – DCGM + Prometheus integration, utilization heatmap, queue depths  
-- **Enhanced WebSocket** – Replay on reconnect, batched metrics, heartbeat, offline detection  
-
-All these features are accessible via the sidebar navigation and integrate seamlessly with Phase 1’s experiment workflow.
-
----
-
-## 🧪 Testing
-
-- Unit/component tests: `npm test` (Jest + React Testing Library)
-- Integration tests: `src/test/integrationTest.ts` – uses Axios to verify backend health, system status, config endpoints
-- E2E tests: Cypress (coming soon)
+| Tool | Description |
+|------|-------------|
+| `search_papers` | Search Semantic Scholar, arXiv, OpenAlex, Consensus |
+| `get_paper_details` | Get full paper metadata |
+| `get_citation_graph` | Build citation network |
+| `save_paper` | Save to library |
+| `search_library` | Search saved papers |
+| `configure_experiment` | Draft experiment configuration |
+| `launch_experiment` | Launch training (with confirmation) |
+| `analyze_training` | Detect overfitting, plateau, divergence |
+| `suggest_next_experiment` | Recommend next hyperparameters |
+| `read_latex_project` | Read LaTeX project files |
+| `edit_latex_file` | Edit LaTeX files |
+| `compile_latex` | Compile to PDF |
+| `test_prompt_template` | Test prompt templates |
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow the feature‑based folder structure and submit PRs with clear descriptions.
-
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Ensure all existing pages still load correctly
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
 ## 📄 License
 
-MIT License – see `LICENSE` file for details.
-
----
-
-**Built with ❤️ for the neural research community.**  
-For questions, open an issue or contact the maintainers.
+MIT License – see [LICENSE](./LICENSE) file for details.
