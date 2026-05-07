@@ -119,6 +119,16 @@ export const router = createBrowserRouter([
 { path: '/jobs/:jobId/config-history', element: <ConfigHistoryPage /> },
 { path: '/dashboard/widgets-config', element: <DashboardWidgetsConfigPage /> },
 { path: '/admin/stop-all-jobs', element: <StopAllJobsPage /> },
+{ path: '/jobs/:jobId', element: <JobDetailPage /> },
+{ path: '/jobs/:jobId/history', element: <JobHistoryPage /> },
+{ path: '/jobs/:jobId/scheduling', element: <JobSchedulingPage /> },
+{ path: '/statistics', element: <StatisticsPage /> },
+{ path: '/experiments/compare', element: <ExperimentComparePage /> },
+{ path: '/experiments/diff', element: <ExperimentDiffPage /> },
+{ path: '/model-versions/:versionId', element: <ModelVersionDetailPage /> },
+{ path: '/system', element: <SystemStatusPage /> },
+{ path: '/config', element: <ConfigPage /> },
+
     ],
   },
 ])
