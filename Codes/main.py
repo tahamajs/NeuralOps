@@ -355,25 +355,124 @@ def main():
             max_seq_len=args.max_len,
         )
 
-    # Attention injection
+# ---------- 1. Inject attention ----------
     if args.attn_type != "full":
-        inject_fn = ATTENTION_REGISTRY.get(args.attn_type)
-        if inject_fn is None:
+        inj = ATTENTION_REGISTRY.get(args.attn_type)
+        if inj is None:
             raise ValueError(f"Attention type '{args.attn_type}' not registered. Available: {list(ATTENTION_REGISTRY.keys())}")
 
+        # Create a unified injector that works for both classes and functions
+        import inspect
 
+
+        def make_injector(obj):
+            # If the object is a class, we need to instantiate it.
+            if inspect.isclass(obj):
+                sig = inspect.signature(obj.__init__)
+                # Count number of parameters excluding 'self'
+                params = list(sig.parameters.values())[1:]  # skip self
+                n_required = sum(1 for p in params if p.default == inspect.Parameter.empty and p.kind != p.VAR_KEYWORD)
+                n_total = len(params)
+                
+                def inject(layer, config, comp_config, layer_idx, num_layers, old_attn):
+                    # Prepare a dict of possible arguments
+                    kwargs = {}
+                    # Try to pass as many as possible based on parameter names
+                    arg_map = {
+                        'config': config,
+                        'comp_config': comp_config,
+                        'layer_idx': layer_idx,
+                        'num_layers': num_layers,
+                        'old_attn': old_attn,
+                        'attention': old_attn,  # some might expect 'attention'
+                        'model_config': config,
+                        'layer_id': layer_idx,
+                        'rank': getattr(comp_config, 'rank', None),
+                        'hidden_size': getattr(config, 'hidden_size', None),
+                        'num_heads': getattr(config, 'num_attention_heads', None),
+                    }
+                    for p in params:
+                        if p.name in arg_map:
+                            kwargs[p.name] = arg_map[p.name]
+                        elif p.kind == p.VAR_KEYWORD:
+                            # **kwargs case - pass everything
+                            kwargs.update(arg_map)
+                            break
+                    # If still missing required arguments, fallback to positional
+                    try:
+                        new_attn = obj(**kwargs)
+                    except TypeError:
+                        # Fallback: call with the first n_required positional args
+                        positional_args = []
+                        for p in params[:n_required]:
+                            if p.name in arg_map:
+                                positional_args.append(arg_map[p.name])
+                            else:
+                                # default to None or a placeholder
+                                positional_args.append(None)
+                        new_attn = obj(*positional_args)
+                    layer.attention = new_attn
+                return inject
+            else:
+                # For a function, check its signature and call with appropriate args.
+                sig = inspect.signature(obj)
+                params = list(sig.parameters.values())
+                
+                def inject(layer, config, comp_config, layer_idx, num_layers, old_attn):
+                    kwargs = {}
+                    arg_map = {
+                        'config': config, 'comp_config': comp_config, 'layer_idx': layer_idx,
+                        'num_layers': num_layers, 'old_attn': old_attn, 'attention': old_attn,
+                        'model_config': config, 'layer_id': layer_idx, 'rank': getattr(comp_config, 'rank', None),
+                        'hidden_size': getattr(config, 'hidden_size', None), 'num_heads': getattr(config, 'num_attention_heads', None),
+                    }
+                    for p in params:
+                        if p.name in arg_map:
+                            kwargs[p.name] = arg_map[p.name]
+                        elif p.kind == inspect.Parameter.VAR_KEYWORD:
+                            kwargs.update(arg_map)
+                            break
+                    # Also provide 'layer' and maybe 'layer_attention' if needed? but typical injection functions already take layer.
+                    # If the function expects the layer as first argument, we should pass it.
+                    # We can detect if the first parameter is named 'layer' and its type may be the module.
+                    if params and params[0].name == 'layer':
+                        # The registered function likely expects (layer, config, ... ) as per the original pattern.
+                        # In that case, we call it with the original arguments directly.
+                        try:
+                            obj(layer, config, comp_config, layer_idx, num_layers, old_attn)
+                        except:
+                            # fallback to kwargs
+                            obj(**kwargs)
+                    else:
+                        obj(**kwargs)
+                return inject
+            
+
+
+
+        inject_fn = make_injector(inj)
+
+        # Locate transformer layers (DistilBERT or BERT)
         if hasattr(model, "distilbert"):
             layers = model.distilbert.transformer.layer
         elif hasattr(model, "bert"):
             layers = model.bert.encoder.layer
         else:
             raise ValueError("Unsupported model architecture")
+
         for i, layer in enumerate(layers):
             old_attn = layer.attention
-            inject_fn(layer, config, comp_config, i, len(layers), old_attn)
+            try:
+                inject_fn(layer, config, comp_config, i, len(layers), old_attn)
+            except Exception as e:
+                logger.error(f"Failed to inject attention '{args.attn_type}' in layer {i}: {e}")
+                raise
+
         logger.info(f"Injected '{args.attn_type}' into {len(layers)} layers.")
     else:
         logger.info("Using full attention (no injection).")
+
+
 
     # Compressor
     if args.compressor and args.compressor != "none":
@@ -419,8 +518,8 @@ def main():
         learning_rate=args.lr,
         weight_decay=0.01,
         lr_scheduler_type="linear",
-        warmup_steps=500,
-        logging_steps=100,
+        warmup_steps=5,
+        logging_steps=2,
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,

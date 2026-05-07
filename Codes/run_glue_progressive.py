@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 GLUE experiment runner – test attentions and compressors separately.
-Supports all callbacks: attention_heatmap_steps, svd_analysis_steps, log_grad_norm, activation_stats.
+Supports all callbacks and shows live training logs.
 """
 
 import subprocess
@@ -87,7 +87,6 @@ def run_experiment(base_model, dataset, exp_type, name, method, seed, args):
         cmd.append("--use_ema")
     if args.gradient_clip_norm is not None:
         cmd += ["--gradient_clip_norm", str(args.gradient_clip_norm)]
-    # --- Forward all analysis callbacks ---
     if args.attention_heatmap_steps > 0:
         cmd += ["--attention_heatmap_steps", str(args.attention_heatmap_steps)]
     if args.svd_analysis_steps > 0:
@@ -103,8 +102,24 @@ def run_experiment(base_model, dataset, exp_type, name, method, seed, args):
     print(f"Model: {base_model}, dataset: {dataset}, {exp_type}: {name}, method: {method}")
     print(f"Command: {' '.join(cmd)}")
     start_time = time.time()
-    with open(output_dir / "run.log", "w") as logf:
-        proc = subprocess.run(cmd, stdout=logf, stderr=subprocess.STDOUT, text=True)
+
+    # ─────────────────────────────────────────────────────────────
+    #  Show live logs: use Popen and stream to terminal + log file
+    # ─────────────────────────────────────────────────────────────
+    log_file = output_dir / "run.log"
+    with open(log_file, "w") as f:
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+        for line in process.stdout:
+            print(line, end='')   # print to terminal
+            f.write(line)         # save to file
+        process.wait()
+
     end_time = time.time()
     duration = end_time - start_time
 
@@ -185,7 +200,6 @@ def main():
     parser.add_argument("--save_visuals", action="store_true", default=DEFAULT_SAVE_VISUALS)
     parser.add_argument("--use_ema", action="store_true")
     parser.add_argument("--gradient_clip_norm", type=float, default=None)
-    # Analysis callbacks
     parser.add_argument("--attention_heatmap_steps", type=int, default=0)
     parser.add_argument("--svd_analysis_steps", type=int, default=0)
     parser.add_argument("--log_grad_norm", action="store_true")
@@ -197,7 +211,7 @@ def main():
 
     attentions = ALL_ATTENTIONS[:args.limit_attentions] if args.limit_attentions else ALL_ATTENTIONS
     compressors = ALL_COMPRESSORS[:args.limit_compressors] if args.limit_compressors else ALL_COMPRESSORS
-    methods = ["baseline", "lora"]
+    methods = ["baseline"]
 
     total = len(BASE_MODELS) * len(DATASETS) * (
         len(attentions) * len(methods) + len(compressors) * len(methods)
