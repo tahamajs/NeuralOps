@@ -1,0 +1,13 @@
+{
+  "task": "sst2",
+  "num_labels": 2,
+  "is_regression": false,
+  "train_size": 1000,
+  "val_size": 872,
+  "column_names": [
+    "input_ids",
+    "token_type_ids",
+    "attention_mask",
+    "labels"
+  ]
+}

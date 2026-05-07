@@ -17,11 +17,11 @@ class ZeroSAttention(BaseAttention):
         self.W_v = nn.Linear(config.hidden_size, config.hidden_size)
         self.out = nn.Linear(config.hidden_size, config.hidden_size)
 
-    def forward(self, x, mask=None):
-        B, L, D = x.shape
-        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
+    def forward(self, hidden_states, attention_mask=None, **kwargs):
+        B, L, D = hidden_states.shape
+        q = self.W_q(hidden_states).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
+        k = self.W_k(hidden_states).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
+        v = self.W_v(hidden_states).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
 
         # Zero center keys along sequence dimension
         k_centered = k - k.mean(dim=2, keepdim=True)

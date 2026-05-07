@@ -1,36 +1,40 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("kda")
 class KDAAttention(nn.Module):
-    """Kernelised‑Dynamic‑Decay Attention: per‑head decay linear scan."""
-    def __init__(self, dim, num_heads, chunk_size=64):
+    def __init__(self, config, rank=None):
         super().__init__()
-        self.num_heads = num_heads
-        self.head_dim = dim // num_heads
-        self.q_proj = nn.Linear(dim, dim)
-        self.k_proj = nn.Linear(dim, dim)
-        self.v_proj = nn.Linear(dim, dim)
-        self.out_proj = nn.Linear(dim, dim)
-        self.beta = nn.Parameter(torch.ones(num_heads, 1))
+        self.num_heads = config.num_attention_heads
+        self.head_dim = config.hidden_size // self.num_heads
+        self.dim = config.hidden_size
+        self.q_proj = nn.Linear(self.dim, self.dim)
+        self.k_proj = nn.Linear(self.dim, self.dim)
+        self.v_proj = nn.Linear(self.dim, self.dim)
+        self.out_proj = nn.Linear(self.dim, self.dim)
+        self.beta = nn.Parameter(torch.ones(self.num_heads, 1))
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         B, L, D = x.shape
-        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim)
-        k = F.normalize(self.k_proj(x).view(B, L, self.num_heads, self.head_dim), dim=-1)
-        v = self.v_proj(x).view(B, L, self.num_heads, self.head_dim)
+        H = self.num_heads
+        d = self.head_dim
 
-        h = torch.zeros(B, self.num_heads, self.head_dim, self.head_dim, device=x.device)
+        q = self.q_proj(x).view(B, L, H, d).transpose(1,2)
+        k = F.normalize(self.k_proj(x).view(B, L, H, d).transpose(1,2), dim=-1)
+        v = self.v_proj(x).view(B, L, H, d).transpose(1,2)
+
+        h = torch.zeros(B, H, d, d, device=x.device)
         outputs = []
         for t in range(L):
-            qt = q[:, t]
-            kt = k[:, t]
-            vt = v[:, t]
-            decay = torch.sigmoid(self.beta).unsqueeze(0)   # (1, H, 1)
-            h = decay.unsqueeze(-1) * h + kt.unsqueeze(-1) @ vt.unsqueeze(1)
-            out_t = (h @ qt.unsqueeze(-1)).squeeze(-1)       # (B, H, d)
+            qt = q[:, :, t, :]
+            kt = k[:, :, t, :]
+            vt = v[:, :, t, :]
+            decay = torch.sigmoid(self.beta).view(1, H, 1, 1)
+            h = decay * h + (kt.unsqueeze(-1) @ vt.unsqueeze(1))
+            out_t = (h @ qt.unsqueeze(-1)).squeeze(-1)
             outputs.append(out_t)
-        out = torch.stack(outputs, dim=2).permute(0, 2, 1).contiguous().view(B, L, D)
-        return self.out_proj(out)
+        out = torch.stack(outputs, dim=2)
+        out = out.transpose(1,2).contiguous().view(B, L, D)
+        return self.out_proj(out), None

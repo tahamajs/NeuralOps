@@ -32,12 +32,7 @@ class RALALinearAttention(nn.Module):
         # Learnable alpha to balance the augmentation
         self.alpha = nn.Parameter(torch.tensor(0.1))
 
-        self.activation = (
-            ACT2FN[config.hidden_act]
-            if isinstance(config.hidden_act, str)
-            else config.hidden_act
-        )
-
+        self.activation = nn.GELU() 
     @staticmethod
     def _apply_linear_mask(k, attention_mask):
         if attention_mask is None:

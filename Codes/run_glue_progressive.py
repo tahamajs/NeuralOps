@@ -209,8 +209,22 @@ def main():
     parser.add_argument("--limit_compressors", type=int, default=None)
     args = parser.parse_args()
 
-    attentions = ALL_ATTENTIONS[:args.limit_attentions] if args.limit_attentions else ALL_ATTENTIONS
-    compressors = ALL_COMPRESSORS[:args.limit_compressors] if args.limit_compressors else ALL_COMPRESSORS
+    # Known broken / incompatible with DistilBERT
+    SKIP_ATTENTIONS = {
+        "compressed_attention_layer", "compressed_attention_layer_energy",
+        "lola_attn", "asvd", "bam_umoe", "cluster", "fusion_attn",
+        "mixattention_moska", "nha_compressor", "rala_compressor",
+        "jamba_info", "optimized_hybrid_attention", "spectra_v2",
+        "template_compressor", "template_attention", "adaptive_compressor",
+        "tt_compressor", "aegis_v5", "xattention", "progressive_token_pruning",
+        "eat", "phantom", "regla", "compression_unified_rope", "simple_ssm"
+    }
+
+    # Apply filter
+    attentions = [a for a in ALL_ATTENTIONS if a not in SKIP_ATTENTIONS]
+    compressors = [c for c in ALL_COMPRESSORS if c not in SKIP_ATTENTIONS]   # same list
+
+
     methods = ["baseline"]
 
     total = len(BASE_MODELS) * len(DATASETS) * (

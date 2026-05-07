@@ -4,7 +4,7 @@ import torch.nn as nn
 import math
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-
+import torch.nn.functional as F
 
 @ATTENTION_REGISTRY.register("infini")
 class InfiniAttention(BaseAttention):
@@ -19,6 +19,7 @@ class InfiniAttention(BaseAttention):
         self.head_dim = config.hidden_size // self.num_heads
         self.compress_dim = compress_dim
         self.local_window = local_window
+        self.dropout = nn.Dropout(config.dropout)   # not attention_probs_dropout_prob
 
         self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)

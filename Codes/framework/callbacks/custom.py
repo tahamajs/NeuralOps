@@ -73,7 +73,8 @@ class UnfreezeScheduleCallback(TrainerCallback):
 
 class NanCheckerCallback(TrainerCallback):
     def on_log(self, args, state, control, logs=None, **kwargs):
-        if logs and 'loss' in logs and (torch.isnan(logs['loss']) or torch.isinf(logs['loss'])):
+        import math
+        if logs and 'loss' in logs and (math.isnan(logs['loss']) or math.isinf(logs['loss'])):
             logger.error("NaN or Inf loss detected, stopping training")
             control.should_training_stop = True
 

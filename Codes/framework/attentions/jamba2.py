@@ -52,7 +52,7 @@ class Jamba2Block(nn.Module):
         self.norm2 = nn.LayerNorm(d_model)
         self.norm3 = nn.LayerNorm(d_model)
 
-    def forward(self, x):
+    def forward(self, x,**kwargs):
         x = self.norm1(x + self.mamba(x))
         attn_out, _ = self.attn(x, x, x)
         x = self.norm2(x + attn_out)

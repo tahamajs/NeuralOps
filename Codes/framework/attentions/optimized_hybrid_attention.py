@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from dataclasses import dataclass
 from typing import Optional, Tuple
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 from framework.attentions.core.utils import transpose_for_scores
 
 
@@ -28,11 +28,6 @@ class OptimizedHybridAttentionConfig:
 
 @ATTENTION_REGISTRY.register("oha")
 class OptimizedHybridAttention(BaseAttention):
-    """
-    OHA attention: local sliding‑window + low‑rank global context, fused by a
-    learned gate.
-    """
-
     def __init__(self, config: OptimizedHybridAttentionConfig):
         super().__init__(config)
         if config.hidden_size % config.num_attention_heads != 0:
@@ -45,15 +40,11 @@ class OptimizedHybridAttention(BaseAttention):
         self.compression_rank = config.compression_rank
         self.use_gate = config.use_gate
 
-        # Standard Q/K/V projections
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
-        self.key   = nn.Linear(config.hidden_size, self.all_head_size)
+        self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
-
-        # Low‑rank compression (per‑token → R)
         self.compress_k = nn.Linear(config.hidden_size, self.compression_rank, bias=False)
         self.compress_v = nn.Linear(config.hidden_size, self.compression_rank, bias=False)
-
         self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
@@ -68,22 +59,14 @@ class OptimizedHybridAttention(BaseAttention):
         nn.init.normal_(self.compress_k.weight, std=0.02)
         nn.init.normal_(self.compress_v.weight, std=0.02)
 
-    def _sliding_window_mask(self, seq_len: int, device: torch.device) -> torch.Tensor:
+    def _sliding_window_mask(self, seq_len, device):
         idx = torch.arange(seq_len, device=device)
         mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         return mask.unsqueeze(0).unsqueeze(0)
 
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        output_attentions: bool = False,
-        **kwargs,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
         B, N, _ = hidden_states.shape
-
-        Q = transpose_for_scores(self.query(hidden_states), self.num_heads, self.head_dim)  # (B, H, N, D)
+        Q = transpose_for_scores(self.query(hidden_states), self.num_heads, self.head_dim)
         K = transpose_for_scores(self.key(hidden_states), self.num_heads, self.head_dim)
         V = transpose_for_scores(self.value(hidden_states), self.num_heads, self.head_dim)
 
@@ -91,77 +74,60 @@ class OptimizedHybridAttention(BaseAttention):
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 mask_2d = attention_mask.to(dtype=hidden_states.dtype)
-                local_add = (1.0 - mask_2d[:, None, None, :]) * -10000.0   # (B,1,1,N)
-                # For compression, we need (B,N,1) mask
-                comp_add = (1.0 - mask_2d[:, :, None]) * -10000.0            # (B,N,1)
+                local_add = (1.0 - mask_2d[:, None, None, :]) * -10000.0
+                comp_add = (1.0 - mask_2d[:, :, None]) * -10000.0
             elif attention_mask.dim() == 4:
                 local_add = attention_mask
-                comp_add = attention_mask.squeeze(1).squeeze(1).unsqueeze(-1)  # (B,N,1)
+                comp_add = attention_mask.squeeze(1).squeeze(1).unsqueeze(-1)
             else:
                 raise ValueError(f"Unsupported mask shape: {attention_mask.shape}")
         else:
             local_add = None
             comp_add = None
 
-        # -----------------------------
-        # Local sliding‑window attention
-        # -----------------------------
+        # Local sliding-window attention
         scale = 1.0 / math.sqrt(self.head_dim)
         Q_s = Q * scale
-        local_scores = torch.matmul(Q_s, K.transpose(-2, -1))          # (B, H, N, N)
+        local_scores = torch.matmul(Q_s, K.transpose(-2, -1))
         win_mask = self._sliding_window_mask(N, Q.device)
         local_scores = local_scores.masked_fill(~win_mask, float("-inf"))
         if local_add is not None:
             local_scores = local_scores + local_add
         local_probs = F.softmax(local_scores, dim=-1)
         local_probs = self.dropout(local_probs)
-        local_ctx = torch.matmul(local_probs, V)                       # (B, H, N, D)
+        local_ctx = torch.matmul(local_probs, V)
 
-        # -----------------------------
         # Global low‑rank attention
-        # -----------------------------
-        # 1) Compress the sequence into R tokens via softmax aggregation
-        comp_k_raw = self.compress_k(hidden_states)                    # (B, N, R)
-        comp_v_raw = self.compress_v(hidden_states)                    # (B, N, R)
+        comp_k_raw = self.compress_k(hidden_states)
+        comp_v_raw = self.compress_v(hidden_states)
         if comp_add is not None:
             comp_k_raw = comp_k_raw + comp_add
             comp_v_raw = comp_v_raw + comp_add
-        comp_k_weights = F.softmax(comp_k_raw, dim=1)                  # (B, N, R) – softmax over N
+        comp_k_weights = F.softmax(comp_k_raw, dim=1)
         comp_v_weights = F.softmax(comp_v_raw, dim=1)
 
-        # 2) Gather full K/V but apply masking to ignore pads
-        full_k = K.permute(0, 1, 3, 2)                                 # (B, H, D, N)
-        full_v = V.permute(0, 1, 3, 2)                                 # (B, H, D, N)
-
-        # 3) Create compressed K/V: (B, H, R, D)
-        # full_k: (B,H,D,N), comp_k_weights: (B,N,R) -> matmul along N
-        ck = torch.matmul(full_k, comp_k_weights.unsqueeze(1))         # (B,H,D,R) -> need (B,H,R,D)
-        ck = ck.permute(0, 1, 3, 2)                                   # (B, H, R, D)
-        cv = torch.matmul(full_v, comp_v_weights.unsqueeze(1)).permute(0, 1, 3, 2)  # (B, H, R, D)
-
-        # 4) Global attention: Q: (B,H,N,D), ck: (B,H,R,D)
-        global_scores = torch.matmul(Q_s, ck.transpose(-2, -1))        # (B, H, N, R)
+        full_k = K.permute(0, 1, 3, 2)
+        full_v = V.permute(0, 1, 3, 2)
+        ck = torch.matmul(full_k, comp_k_weights.unsqueeze(1)).permute(0, 1, 3, 2)
+        cv = torch.matmul(full_v, comp_v_weights.unsqueeze(1)).permute(0, 1, 3, 2)
+        global_scores = torch.matmul(Q_s, ck.transpose(-2, -1))
         global_probs = F.softmax(global_scores, dim=-1)
         global_probs = self.dropout(global_probs)
-        global_ctx = torch.matmul(global_probs, cv)                    # (B, H, N, D)
+        global_ctx = torch.matmul(global_probs, cv)
 
-        # -----------------------------
         # Gated fusion
-        # -----------------------------
         if self.use_gate:
-            gate = torch.sigmoid(self.gate(hidden_states))            # (B, N, H)
-            gate = gate.permute(0, 2, 1).unsqueeze(-1)                # (B, H, N, 1)
+            gate = torch.sigmoid(self.gate(hidden_states))
+            gate = gate.permute(0, 2, 1).unsqueeze(-1)
             context = gate * local_ctx + (1.0 - gate) * global_ctx
         else:
             context = local_ctx + global_ctx
 
         context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         output = self.out_proj(context)
+        return output, (local_probs if output_attentions else None)
 
-        attn_weights = local_probs if output_attentions else None
-        return (output, attn_weights)
-
-    def get_ortho_loss(self) -> torch.Tensor:
+    def get_ortho_loss(self):
         return torch.tensor(0.0, device=self.out_proj.weight.device)
 
     @classmethod
@@ -179,9 +145,6 @@ class OptimizedHybridAttention(BaseAttention):
         return oha
 
 
-# ------------------------------------------------------------
-# Framework injection / registration
-# ------------------------------------------------------------
 @ATTENTION_REGISTRY.register("oha")
 def inject_oha(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     oha_cfg = OptimizedHybridAttentionConfig(
