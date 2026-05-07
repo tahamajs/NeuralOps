@@ -250,7 +250,11 @@ export const router = createBrowserRouter([
       { path: '/version', element: <VersionPage /> },
       { path: '/config', element: <ConfigPage /> },
       { path: '/models/search', element: <ModelSearchPage /> },
-
+{ path: '/sweeps/create', element: <SweepCreator onCreated={() => navigate('/sweeps')} /> },
+{ path: '/sweeps/:sweepId', element: <SweepDashboardPage /> },
+{ path: '/model-registry', element: <ModelRegistryPage /> },
+{ path: '/cluster/overview', element: <ClusterDashboardPage /> },
+{ path: '/runs/:runId/reproducibility', element: <ReproducibilityPanel standalone /> },
       // ─── 404 ────────────────────────────────
       { path: '*', element: <NotFoundPage /> },
     ],
