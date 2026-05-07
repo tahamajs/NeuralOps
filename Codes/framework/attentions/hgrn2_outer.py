@@ -1,10 +1,8 @@
 import torch
 import torch.nn as nn
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
-@ATTENTION_REGISTRY.register("hgrn2_outer")
 class HGRN2OuterBlock(nn.Module):
-    """Outer‑product state update for linear attention."""
     def __init__(self, dim):
         super().__init__()
         self.dim = dim
@@ -13,7 +11,7 @@ class HGRN2OuterBlock(nn.Module):
         self.W_v = nn.Linear(dim, dim)
         self.out_proj = nn.Linear(dim, dim)
 
-    def forward(self, x, state=None):
+    def forward(self, x, state=None, **kwargs):
         B, L, D = x.shape
         if state is None:
             state = torch.zeros(B, D, D, device=x.device)
@@ -27,4 +25,11 @@ class HGRN2OuterBlock(nn.Module):
             yt = (state @ xt.unsqueeze(-1)).squeeze(-1)
             outputs.append(yt)
         out = torch.stack(outputs, dim=1)
-        return self.out_proj(out), state
+        return self.out_proj(out), None
+
+@ATTENTION_REGISTRY.register("hgrn2_outer")
+def inject_hgrn2_outer(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+    dim = model_config.hidden_size
+    new_block = HGRN2OuterBlock(dim)
+    layer.attention = new_block
+    return new_block

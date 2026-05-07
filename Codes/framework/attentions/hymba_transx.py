@@ -66,7 +66,6 @@ class UnifiedRoPE(nn.Module):
     
 @ATTENTION_REGISTRY.register("hymba_transx")
 class HymbaTransXBlock(BaseAttention):
-    """Unified RoPE, differential attention, and SSM fusion."""
     def __init__(self, config, rank=64, num_heads=None):
         super().__init__(config, rank)
         self.dim = config.hidden_size
@@ -78,11 +77,11 @@ class HymbaTransXBlock(BaseAttention):
         self.W_k1 = nn.Linear(self.dim, self.dim, bias=False)
         self.W_q2 = nn.Linear(self.dim, self.dim, bias=False)
         self.W_k2 = nn.Linear(self.dim, self.dim, bias=False)
-        self.W_v  = nn.Linear(self.dim, self.dim, bias=False)
+        self.W_v  = nn.Linear(self.dim, self.dim, bias=False)  # not all_head_size
         self.mamba = SimpleSSM(self.dim)
         self.out_proj = nn.Linear(self.dim, self.dim)
         self.alpha = nn.Parameter(torch.tensor(0.5))
-
+        
     def forward(self, x, mask=None, **kwargs):
         B, L, D = x.shape
         x_rope = self.rope(x)

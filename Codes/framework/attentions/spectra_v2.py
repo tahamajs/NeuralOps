@@ -10,7 +10,6 @@ import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-from framework.attentions.core.utils import softpick   # make sure this exists; otherwise define softpick locally
 
 
 @dataclass

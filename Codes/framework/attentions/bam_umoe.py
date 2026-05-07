@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-
+import torch.nn.functional as F
 class UnifiedMoE(nn.Module):
     """
     Mixture of Experts with top-k gating.
@@ -91,7 +91,7 @@ class BAMUMoEBlock(BaseAttention):
         self.output_proj = nn.Linear(self.all_head_size, self.dim)
         self.norm1 = nn.LayerNorm(self.dim)
         self.norm2 = nn.LayerNorm(self.dim)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
 
         # store for future if needed
         self.layer_id = layer_id

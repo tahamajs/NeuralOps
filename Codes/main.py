@@ -56,7 +56,7 @@ from framework.experiment_logging.callbacks import LoggingCallback
 
 # Optional callbacks (graceful fallback)
 try:
-    from framework.callbacks.external import WandbCallback, TensorBoardCallback, WebSocketCallback
+    from framework.callbacks.monitoring import WandbCallback, TensorBoardCallback, WebSocketCallback
 except ImportError:
     WandbCallback = TensorBoardCallback = WebSocketCallback = None
 try:
@@ -201,8 +201,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--model", type=str, default="distilbert-base-uncased")
-    parser.add_argument("--attn_type", type=str, required=True)
-    parser.add_argument("--compressor", type=str, default=None)
+    # New unified component argument
+    parser.add_argument("--component", type=str, default=None,
+                        help="Specify component to test: 'attention:NAME' or 'compressor:NAME'")
+    # Legacy arguments (will be overridden by --component if provided)
+    parser.add_argument("--attn_type", type=str, default=None,
+                        help="Attention type (legacy)")
+    parser.add_argument("--compressor", type=str, default=None,
+                        help="Compressor (legacy)")
     parser.add_argument("--method", type=str, default="baseline")
     parser.add_argument("--task", "-t", type=str, default="sst2")
     parser.add_argument("--max_len", type=int, default=128)
@@ -233,7 +239,7 @@ def main():
     parser.add_argument("--gradient_checkpointing", action="store_true")
     parser.add_argument("--early_stopping_patience", type=int, default=None)
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
-    parser.add_argument("--max_train_samples", type=int, default=None)
+    parser.add_argument("--max_train_samples", type=int, default=10000)
 
     parser.add_argument("--num_landmarks", type=int, default=16)
     parser.add_argument("--feature_dim", type=int, default=128)
@@ -256,11 +262,35 @@ def main():
 
     args = parser.parse_args()
 
+    # --- Unified component handling ---
+    if args.component:
+        if ':' not in args.component:
+            raise ValueError("--component must be in format 'attention:NAME' or 'compressor:NAME'")
+        comp_type, comp_name = args.component.split(':', 1)
+        if comp_type == 'attention':
+            args.attn_type = comp_name
+            args.compressor = 'none'
+            print(f"Testing attention: {comp_name} (compressor=none)")
+        elif comp_type == 'compressor':
+            args.attn_type = 'full'
+            args.compressor = comp_name
+            print(f"Testing compressor: {comp_name} (attention=full)")
+        else:
+            raise ValueError(f"Unknown component type: {comp_type}. Use 'attention' or 'compressor'.")
+    else:
+        # Legacy mode: must have at least one of --attn_type or --compressor
+        if args.attn_type is None and (args.compressor is None or args.compressor == 'none'):
+            raise ValueError("Either --component or (--attn_type and/or --compressor) must be provided")
+        if args.attn_type is None:
+            args.attn_type = 'full'
+        if args.compressor is None:
+            args.compressor = 'none'
+
     epochs = args.num_train_epochs if args.num_train_epochs is not None else args.epochs
     start_time = time.time()
     start_time_iso = datetime.now().isoformat()
 
-    exp_name = args.exp_name or f"{args.attn_type}_{args.method}_{args.task}_{args.seed}"
+    exp_name = args.exp_name or f"{args.attn_type}_{args.compressor}_{args.method}_{args.task}_{args.seed}"
     output_dir = Path(args.output_dir) / exp_name
     log_dir = output_dir / "logs"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -296,7 +326,11 @@ def main():
     logger.info(f"Using device: {device}")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
+
+    print("Loading dataset...")
     raw_datasets = load_glue_local(args.task, "/Users/tahamajs/Documents/uni/Project/datasets/glue")
+    print("Dataset loaded")
+
     num_labels, is_regression = get_num_labels_and_is_regression(args.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
 

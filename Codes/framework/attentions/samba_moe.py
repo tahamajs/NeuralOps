@@ -18,7 +18,7 @@ class REAPMoE(nn.Module):
         ) for _ in range(n_experts)])
         self.router = nn.Linear(d_model, n_experts)
 
-    def forward(self, x):
+    def forward(self, x,**kwargs):
         B, L, D = x.shape
         scores = self.router(x)
         weights, indices = torch.topk(scores, self.top_k, dim=-1)
@@ -39,7 +39,10 @@ class SambaMoEBlock(nn.Module):
         self.moe = REAPMoE(d_model, n_experts)
         self.norm = nn.LayerNorm(d_model)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         x = self.swa_mamba(x)
         x = self.norm(x + self.moe(x))
         return x
+    
+
+

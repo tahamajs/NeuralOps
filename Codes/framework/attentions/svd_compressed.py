@@ -515,16 +515,16 @@ def main():
     trainer.save_model(os.path.join(args.output_dir, args.task))
     log.info("Training completed.")
 
-if __name__ == "__main__":
-    main()
 
 
-
-
-
-
-
-# 20:12:35 | INFO    | Train size: 67349, Eval size: 872
+@ATTENTION_REGISTRY.register("svd_compressed")
+def inject_svd_compressed(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+    rank = getattr(comp_config, 'rank', 32)
+    ranks = {'q': rank, 'k': rank, 'v': rank, 'o': rank}
+    new_attn = SVDCompressedAttention(model_config, dropout=comp_config.dropout, layer_idx=layer_idx,
+                                      pretrained_attn=old_attn, ranks=ranks)
+    layer.attention = new_attn
+    return new_attn# 20:12:35 | INFO    | Train size: 67349, Eval size: 872
 # 20:12:36 | INFO    | HTTP Request: HEAD https://hf.devneeds.ir/distilbert-base-uncased/resolve/main/adapter_config.json "HTTP/1.1 404 Remote Manually Blocked"
 # Loading weights: 100%|████████████████████████████████████████████████████| 100/100 [00:00<00:00, 4832.76it/s]
 # [transformers] DistilBertForSequenceClassification LOAD REPORT from: distilbert-base-uncased

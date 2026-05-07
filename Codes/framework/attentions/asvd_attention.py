@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import numpy as np
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-
+import torch.nn.functional as F
 
 @ATTENTION_REGISTRY.register("asvd")
 class ASVDAttention(BaseAttention):
@@ -39,7 +39,7 @@ class ASVDAttention(BaseAttention):
         self.out_proj_s = nn.Parameter(torch.empty(self.rank))
         self.out_proj_vh = nn.Parameter(torch.empty(self.rank, self.all_head_size))
 
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
 
         if activation_scales is not None:
             self.apply_activation_scales(activation_scales)

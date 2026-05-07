@@ -25,7 +25,7 @@ class YourCustomAttention(BaseAttention):
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_attention_heads
         self.head_dim = self.hidden_size // self.num_heads
-        self.dropout = config.attention_probs_dropout_prob
+        self.dropout = config.dropout
 
         self.custom_param = kwargs.get('custom_param', 0.1)
 

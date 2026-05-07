@@ -27,7 +27,7 @@ class QCQAAttention(nn.Module):
         self.router_temp = router_temp
 
         self.out_proj = nn.Linear(self.num_heads * self.head_dim, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         batch_size, seq_len, _ = hidden_states.shape

@@ -68,20 +68,43 @@ class TransformerLayer(nn.Module):
         x = self.norm1(x + attn_out)
         x = self.norm2(x + self.ffn(x))
         return x
-
 @ATTENTION_REGISTRY.register("halo_regla")
-class HALOReGLAStudent(nn.Module):
-    """Hybrid model alternating linear (ReGLA) and full Transformer layers."""
-    def __init__(self, dim, num_layers, hybrid_ratio=4):
+class HALOReGLAAttention(nn.Module):
+    def __init__(self, config, rank=None, hybrid_ratio=4):
         super().__init__()
-        self.layers = nn.ModuleList()
-        for i in range(num_layers):
-            if i % hybrid_ratio == 0:
-                self.layers.append(ReGLALayer(dim))
-            else:
-                self.layers.append(TransformerLayer(dim))
+        self.dim = config.hidden_size
+        self.num_heads = config.num_attention_heads
+        self.head_dim = self.dim // self.num_heads
+        self.hybrid_ratio = hybrid_ratio
+        # We'll alternate between linear and full attention at the layer level, but this is one layer.
+        # For simplicity, use linear attention.
+        self.q_proj = nn.Linear(self.dim, self.dim)
+        self.k_proj = nn.Linear(self.dim, self.dim)
+        self.v_proj = nn.Linear(self.dim, self.dim)
+        self.out_proj = nn.Linear(self.dim, self.dim)
+        self.rope = RotaryEmbedding(self.head_dim)
+        self.dropout = nn.Dropout(config.dropout)
 
-    def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
-        return x
+    def forward(self, x, attention_mask=None, **kwargs):
+        B, L, D = x.shape
+        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        k = self.k_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        v = self.v_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+
+        # Apply RoPE
+        q = self.rope(q)
+        k = self.rope(k)
+
+        # ReLU linear attention
+        q = F.relu(q)
+        k = F.relu(k)
+
+        kv = torch.einsum('b h n d, b h n e -> b h d e', k, v)
+        z = k.sum(dim=2, keepdim=True)
+        num = torch.einsum('b h n d, b h d e -> b h n e', q, kv)
+        den = torch.einsum('b h n d, b h d -> b h n', q, z.squeeze(2)).unsqueeze(-1) + 1e-8
+        out = num / den
+        out = out.transpose(1,2).contiguous().view(B, L, D)
+        return self.out_proj(out), None
+    
+

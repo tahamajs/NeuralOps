@@ -10,8 +10,10 @@ from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, MET
 
 @ATTENTION_REGISTRY.register("primal")
 class PrimalAttention(BaseAttention):
-    def __init__(self, config, rank=64):
+    def __init__(self, config, rank=64,pretrained_attn=None):
         super().__init__(config, rank)
+        self.rank = rank if rank is not None else 64
+    
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
@@ -21,7 +23,7 @@ class PrimalAttention(BaseAttention):
         self.key   = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
 
     def _reshape(self, x, batch_size):
         return x.view(batch_size, -1, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
