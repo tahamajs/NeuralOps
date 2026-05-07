@@ -59,3 +59,51 @@ def send_message(request, session_id):
         'messages': serializer.data,
         'agent_response': result,
     })
+
+from .tools import search_papers, save_paper, search_library, get_citation_graph
+from .models import ResearchPaper
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_search_papers(request):
+    result = search_papers(request.data)
+    return Response(result)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_save_paper(request):
+    data = {**request.data, "user_id": request.user.id}
+    result = save_paper(data)
+    return Response(result)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_search_library(request):
+    result = search_library({
+        "user_id": request.user.id,
+        "query": request.query_params.get("q", ""),
+        "tag": request.query_params.get("tag", ""),
+    })
+    return Response(result)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_citation_graph(request):
+    result = get_citation_graph({
+        "paper_ids": request.data.get("paper_ids", []),
+        "user_id": request.user.id,
+    })
+    return Response(result)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def api_saved_papers_list(request):
+    papers = ResearchPaper.objects.filter(saved_by=request.user).order_by('-created_at')
+    return Response([{
+        "id": str(p.id),
+        "title": p.title,
+        "authors": p.authors,
+        "year": p.year,
+        "tags": p.tags,
+        "citation_count": p.citation_count,
+    } for p in papers])

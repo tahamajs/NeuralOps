@@ -107,3 +107,47 @@ class AgentAction(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+
+
+class ResearchPaper(models.Model):
+    """A saved research paper discovered by the agent."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=500)
+    authors = models.JSONField(default=list, blank=True)
+    abstract = models.TextField(blank=True)
+    url = models.URLField(max_length=1000, blank=True)
+    source = models.CharField(max_length=50, default='arxiv')  # arxiv, semantic_scholar, manual
+    source_id = models.CharField(max_length=100, blank=True)
+    year = models.IntegerField(null=True, blank=True)
+    citation_count = models.IntegerField(default=0)
+    pdf_url = models.URLField(max_length=1000, blank=True)
+    keywords = models.JSONField(default=list, blank=True)
+    notes = models.TextField(blank=True)
+    tags = models.JSONField(default=list, blank=True)
+    saved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='saved_papers')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        unique_together = [['source', 'source_id']]
+
+
+class CitationEdge(models.Model):
+    """Edge in the citation graph."""
+    source_paper = models.ForeignKey(ResearchPaper, on_delete=models.CASCADE, related_name='citations_out')
+    target_paper = models.ForeignKey(ResearchPaper, on_delete=models.CASCADE, related_name='citations_in')
+    relationship = models.CharField(max_length=50, default='cites')  # cites, references, related
+    
+    class Meta:
+        unique_together = [['source_paper', 'target_paper']]
+
+
+class TrainingAnalysis(models.Model):
+    """Analysis result for a training run."""
+    run = models.OneToOneField('experiment.TrainingRun', on_delete=models.CASCADE, related_name='analysis')
+    status = models.CharField(max_length=50)  # healthy, overfitting, underfitting, plateau, diverging
+    confidence = models.FloatField(default=0.0)
+    suggestions = models.JSONField(default=list, blank=True)
+    metrics_summary = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
