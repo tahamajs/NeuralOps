@@ -6,29 +6,31 @@ Usage:
     python main.py --attn_type spectra_v2 --method rdrop --task mrpc
 """
 
-import argparse, os, torch, logging
+import argparse
+import os
+import torch
+import yaml
+import logging
 from transformers import (
-    AutoTokenizer, AutoConfig, AutoModelForSequenceClassification,
-    TrainingArguments, DataCollatorWithPadding, set_seed
+    AutoTokenizer,
+    AutoConfig,
+    AutoModelForSequenceClassification,
+    TrainingArguments,
+    DataCollatorWithPadding,
+    set_seed,
 )
 
-# ~~~~~~~~~~~~~~ Environment Setup ~~~~~~~~~~~~~~
 os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
 os.environ["HF_HOME"] = os.path.join(os.getcwd(), "models")
-
-# Disable offline mode to allow downloads from mirror
 os.environ["HF_HUB_OFFLINE"] = "0"
 os.environ["TRANSFORMERS_OFFLINE"] = "0"
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-# warnings.filterwarnings("ignore", category=UserWarning)
-# logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)-7s | %(message)s", datefmt="%H:%M:%S")
-# log = logging.getLogger(__name__)
 
-
-# Framework imports
+# ---------- Framework imports ----------
 from framework.data.glue_loader import (
-    load_glue_local, GLUE_TASK_KEYS, get_num_labels_and_is_regression
+    load_glue_local,
+    GLUE_TASK_KEYS,
+    get_num_labels_and_is_regression,
 )
 from framework.data.preprocessing import preprocess_function as build_preprocess
 from framework.attentions.core.registry import ATTENTION_REGISTRY
@@ -42,22 +44,71 @@ from framework.utils.layer_norm_fix import fix_layernorm_naming
 from framework.config import CompressionConfig
 from experiment_logging import setup_logging, MetricsTracker, LoggingCallback
 
+
+# ---------- Optional YAML helpers ----------
+def load_yaml_config(path):
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
+
+
+def build_compression_config(yaml_cfg, args):
+    """
+    Build a CompressionConfig from a YAML dict,
+    overriding any keys that also appear in the CLI args.
+    """
+    # Start with YAML values
+    cfg_dict = yaml_cfg.copy()
+    # Override with CLI args where not None
+    cli_map = {
+        'attn_type': args.attn_type,
+        'dropout': getattr(args, 'dropout', 0.1),
+        'lora_r': args.lora_r,
+        'lora_alpha': args.lora_alpha,
+        'lora_dropout': args.lora_dropout,
+        'rdrop_alpha': args.rdrop_alpha,
+        'r3f_epsilon': args.r3f_epsilon,
+        'llrd_decay': args.llrd_decay,
+        'mixout_p': args.mixout_p,
+        'dislora_beta': args.dislora_beta,
+        'dislora_capacity_factor': args.dislora_capacity_factor,
+        'fisher_num_batches': args.fisher_num_batches,
+        'fisher_sample_size': args.fisher_sample_size,
+        'gelora_margin': args.gelora_margin,
+        'gelora_min_rank': args.gelora_min_rank,
+        'gelora_max_rank': args.gelora_max_rank,
+        'fisher_scale_max': args.fisher_scale_max,
+        'use_lion': args.use_lion,
+        'gradient_checkpointing': args.gradient_checkpointing,
+        'early_stopping_patience': args.early_stopping_patience,
+        'max_grad_norm': args.max_grad_norm,
+        'num_landmarks': args.num_landmarks,
+        'feature_dim': args.feature_dim,
+        'k_early': args.k_early,
+        'k_mid': args.k_mid,
+        'k_late': args.k_late,
+        'use_gate': not args.no_gate,
+        'progressive': True,
+        'max_seq_len': args.max_len,
+    }
+    for key, val in cli_map.items():
+        if val is not None:
+            cfg_dict[key] = val
+    # Only pass keys that CompressionConfig accepts
+    valid_keys = {f.name for f in CompressionConfig.__dataclass_fields__}
+    filtered = {k: v for k, v in cfg_dict.items() if k in valid_keys}
+    return CompressionConfig(**filtered)
+
+
 # -------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description="Efficient Attention GLUE Runner")
     # Model & Data
-    parser.add_argument("--config", type=str, default=None,
-                    help="Path to YAML configuration file")
-
+    parser.add_argument("--config", type=str, default=None, help="Path to YAML configuration file")
     parser.add_argument("--model", type=str, default="distilbert-base-uncased")
-    parser.add_argument("--attn_type", type=str, required=True,
-                        help="Attention type (e.g., nexus, leka_v2, full)")
-    parser.add_argument("--method", type=str, default="baseline",
-                        help="Training method (e.g., baseline, lora, rdrop, fisher_lora)")
+    parser.add_argument("--attn_type", type=str, required=True)
+    parser.add_argument("--method", type=str, default="baseline")
     parser.add_argument("--compressor", type=str, default=None)
     parser.add_argument("--task", "-t", type=str, default="sst2")
-    parser.add_argument("--config", type=str, default=None, help="YAML configuration file")
-
     parser.add_argument("--max_len", type=int, default=128)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--epochs", type=int, default=5)
@@ -67,6 +118,7 @@ def main():
     parser.add_argument("--output_dir", type=str, default="./experiments")
     parser.add_argument("--log_dir", type=str, default="./logs")
     parser.add_argument("--exp_name", type=str, default=None)
+
     # Method‑specific parameters
     parser.add_argument("--lora_r", type=int, default=8)
     parser.add_argument("--lora_alpha", type=int, default=16)
@@ -88,13 +140,15 @@ def main():
     parser.add_argument("--early_stopping_patience", type=int, default=None)
     parser.add_argument("--max_grad_norm", type=float, default=1.0)
     parser.add_argument("--num_seeds", type=int, default=1)
-    # Attention‑specific params (passed through to CompressionConfig)
+
+    # Attention‑specific params
     parser.add_argument("--num_landmarks", type=int, default=16)
     parser.add_argument("--feature_dim", type=int, default=128)
     parser.add_argument("--k_early", type=int, default=32)
     parser.add_argument("--k_mid", type=int, default=16)
     parser.add_argument("--k_late", type=int, default=12)
     parser.add_argument("--no_gate", action="store_true")
+
     args = parser.parse_args()
 
     # Setup logging
@@ -120,7 +174,6 @@ def main():
     num_labels, is_regression = get_num_labels_and_is_regression(args.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
 
-    # Preprocess
     pre_fn = build_preprocess(tokenizer, args.task, args.max_len, sent1_key, sent2_key, is_regression)
     dataset = raw_datasets.map(pre_fn, batched=True, remove_columns=raw_datasets["train"].column_names)
 
@@ -135,31 +188,41 @@ def main():
     model = AutoModelForSequenceClassification.from_pretrained(args.model, config=config)
     fix_layernorm_naming(model)
 
-    # Build compression config (shared with attention and methods)
+    # Build compression config
     if args.config:
         yaml_cfg = load_yaml_config(args.config)
         comp_config = build_compression_config(yaml_cfg, args)
     else:
-
         comp_config = CompressionConfig(
             attn_type=args.attn_type,
             dropout=0.1,
-            # method parameters
-            lora_r=args.lora_r, lora_alpha=args.lora_alpha, lora_dropout=args.lora_dropout,
-            rdrop_alpha=args.rdrop_alpha, r3f_epsilon=args.r3f_epsilon,
-            llrd_decay=args.llrd_decay, mixout_p=args.mixout_p,
-            dislora_beta=args.dislora_beta, dislora_capacity_factor=args.dislora_capacity_factor,
-            fisher_num_batches=args.fisher_num_batches, fisher_sample_size=args.fisher_sample_size,
-            gelora_margin=args.gelora_margin, gelora_min_rank=args.gelora_min_rank,
-            gelora_max_rank=args.gelora_max_rank, fisher_scale_max=args.fisher_scale_max,
+            lora_r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            lora_dropout=args.lora_dropout,
+            rdrop_alpha=args.rdrop_alpha,
+            r3f_epsilon=args.r3f_epsilon,
+            llrd_decay=args.llrd_decay,
+            mixout_p=args.mixout_p,
+            dislora_beta=args.dislora_beta,
+            dislora_capacity_factor=args.dislora_capacity_factor,
+            fisher_num_batches=args.fisher_num_batches,
+            fisher_sample_size=args.fisher_sample_size,
+            gelora_margin=args.gelora_margin,
+            gelora_min_rank=args.gelora_min_rank,
+            gelora_max_rank=args.gelora_max_rank,
+            fisher_scale_max=args.fisher_scale_max,
             use_lion=args.use_lion,
             gradient_checkpointing=args.gradient_checkpointing,
             early_stopping_patience=args.early_stopping_patience,
             max_grad_norm=args.max_grad_norm,
-            # attention-specific fields
-            num_landmarks=args.num_landmarks, feature_dim=args.feature_dim,
-            k_early=args.k_early, k_mid=args.k_mid, k_late=args.k_late,
-            use_gate=not args.no_gate, progressive=True, max_seq_len=args.max_len,
+            num_landmarks=args.num_landmarks,
+            feature_dim=args.feature_dim,
+            k_early=args.k_early,
+            k_mid=args.k_mid,
+            k_late=args.k_late,
+            use_gate=not args.no_gate,
+            progressive=True,
+            max_seq_len=args.max_len,
         )
 
     # Inject attention
@@ -167,6 +230,7 @@ def main():
         inject_fn = ATTENTION_REGISTRY.get(args.attn_type)
         if inject_fn is None:
             raise ValueError(f"Unknown attention type: {args.attn_type}. Available: {ATTENTION_REGISTRY.keys()}")
+        # Determine transformer layers based on model architecture
         if hasattr(model, "distilbert"):
             layers = model.distilbert.transformer.layer
         elif hasattr(model, "bert"):
@@ -181,29 +245,33 @@ def main():
         logger.info("Using full attention (no injection).")
 
     model.to(device)
+
+    # Dummy ortho loss for trainers that require it
     if not hasattr(model, 'get_ortho_loss'):
         def dummy_ortho_loss():
             return torch.tensor(0.0, device=device)
         model.get_ortho_loss = dummy_ortho_loss
 
-    # Apply training method (from registry)
+    # Apply training method from registry
     if args.method != "baseline":
         if args.method not in METHOD_REGISTRY:
             raise ValueError(f"Unknown method: {args.method}. Available: {list(METHOD_REGISTRY.keys())}")
         apply_fn = METHOD_REGISTRY[args.method]
-        # Some methods need dataset/tokenizer (fisher, gelora)
         if args.method in ("fisher_lora", "fisher_gelora"):
             apply_fn(model, comp_config, dataset["train"], tokenizer, GLUE_TASK_KEYS[args.task])
         else:
             apply_fn(model, comp_config)
         logger.info(f"Applied method: {args.method}")
 
-    # Metric name
-    metric_map = {"cola": "eval_matthews_correlation", "stsb": "eval_pearson",
-                  "mrpc": "eval_f1", "qqp": "eval_f1"}
+    # Determine metric for best model
+    metric_map = {
+        "cola": "eval_matthews_correlation",
+        "stsb": "eval_pearson",
+        "mrpc": "eval_f1",
+        "qqp": "eval_f1",
+    }
     metric_for_best = metric_map.get(args.task, "eval_accuracy")
 
-    # Training arguments
     output_dir = os.path.join(args.output_dir, exp_name)
     os.makedirs(output_dir, exist_ok=True)
     training_args = TrainingArguments(
@@ -247,7 +315,6 @@ def main():
         **extra
     )
 
-    # Attach our logging callback
     trainer.add_callback(LoggingCallback(tracker, logger))
 
     logger.info("Starting training...")
@@ -259,12 +326,13 @@ def main():
         logger.info(f"{k}: {v:.4f}")
     logger.info("=" * 60)
 
-    # Save
+    # Save final model and logs
     trainer.save_model(output_dir)
     tokenizer.save_pretrained(output_dir)
     tracker.save(os.path.join(output_dir, "metrics.json"))
     logger.info(f"Model and logs saved to {output_dir}")
     logger.info("🎉 Experiment completed successfully!")
+
 
 if __name__ == "__main__":
     main()
