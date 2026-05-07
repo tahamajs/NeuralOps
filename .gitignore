@@ -19,6 +19,7 @@ venv/
 **/*.pt
 **/*.pth
 **/*.tar.gz
+*/.node_modules
 
 **/*.onnx
 **/*.data
