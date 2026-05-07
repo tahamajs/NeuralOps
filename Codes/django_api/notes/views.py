@@ -526,3 +526,5 @@ def toggle_pin(request, note_id):
     note.pinned = not note.pinned
     note.save(update_fields=['pinned'])
     return Response({"pinned": note.pinned})
+
+
