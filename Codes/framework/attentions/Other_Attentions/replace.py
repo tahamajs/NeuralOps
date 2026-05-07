@@ -1,11 +1,12 @@
 """Helper to replace attention modules in HuggingFace models."""
 
+from framework.core.registry import ATTENTION_REGISTRY
+
 def replace_attention_in_model(model, attention_name, attention_params=None):
     """
     Replace all self‑attention layers in a model with the specified attention type.
     Supports BERT, RoBERTa, DistilBERT, GPT‑2.
     """
-    from ..core.registry import ATTENTION_REGISTRY
     if attention_params is None:
         attention_params = {}
 
@@ -23,7 +24,6 @@ def replace_attention_in_model(model, attention_name, attention_params=None):
     return model
 
 def _replace_bert_attention(model, attention_name, attention_params):
-    from ..core.registry import ATTENTION_REGISTRY
     for layer in model.encoder.layer:
         old_attn = layer.attention.self
         hidden_size = old_attn.query.in_features
@@ -32,7 +32,6 @@ def _replace_bert_attention(model, attention_name, attention_params):
         layer.attention.self = new_attn
 
 def _replace_gpt_attention(model, attention_name, attention_params):
-    from ..core.registry import ATTENTION_REGISTRY
     for block in model.transformer.h:
         old_attn = block.attn
         hidden_size = old_attn.embed_dim
@@ -41,7 +40,6 @@ def _replace_gpt_attention(model, attention_name, attention_params):
         block.attn = new_attn
 
 def _replace_distilbert_attention(model, attention_name, attention_params):
-    from ..core.registry import ATTENTION_REGISTRY
     for layer in model.distilbert.transformer.layer:
         old_attn = layer.attention
         # DistilBERT attention has q_lin, k_lin, v_lin, out_lin

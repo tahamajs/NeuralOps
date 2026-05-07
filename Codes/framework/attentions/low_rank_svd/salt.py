@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..core.registry import AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("salt_linear")
+@ATTENTION_REGISTRY.register("salt_linear")
 class SALTLinear(nn.Module):
     """Singular Value Adaptation for a linear layer."""
     def __init__(self, in_features, out_features, rank=16):

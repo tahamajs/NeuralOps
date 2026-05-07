@@ -6,8 +6,8 @@ Reference: "ROAST: A Hardware‑Aware Weight Sharing Scheme for Efficient Neural
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..core.base import BaseCompressor
-from ..core.registry import COMPRESSOR_REGISTRY
+from framework.core.base import BaseCompressor
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
 class ROASTLinear(nn.Module):

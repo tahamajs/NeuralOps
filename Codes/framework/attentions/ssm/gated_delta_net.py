@@ -6,10 +6,10 @@ Based on ICLR 2025 Gated Delta Networks (simplified recurrent version).
 
 import torch
 import torch.nn as nn
-from ..core.registry import AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@AUX_REGISTRY.register("gated_delta_net")
+@ATTENTION_REGISTRY.register("gated_delta_net")
 class GatedDeltaNetLayer(nn.Module):
     def __init__(self, d_model: int, use_spectral_norm: bool = False):
         super().__init__()

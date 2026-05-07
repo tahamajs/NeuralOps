@@ -4,8 +4,8 @@ Primal‑Attention: Self‑attention through Asymmetric Kernel SVD in Primal Rep
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..core.base import BaseAttention
-from ..core.registry import ATTENTION_REGISTRY
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("primal")

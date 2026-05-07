@@ -1,7 +1,7 @@
 """Aegis-Hybrid: low‑rank projections + local window + global linear + adaptive pruning."""
 import math, torch, torch.nn as nn, torch.nn.functional as F
 from dataclasses import dataclass
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @dataclass
 class AegisHybridConfig:

@@ -1,5 +1,5 @@
 import torch, torch.nn as nn, torch.nn.functional as F
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 class AdaptiveSpanAttention(nn.Module):
     def __init__(self, config, max_span=1024,

@@ -5,8 +5,8 @@ Registered as 'cur_moe'.
 
 import torch
 import torch.nn as nn
-from ..core.base import BaseCompressor
-from ..core.registry import COMPRESSOR_REGISTRY
+from framework.core.base import BaseCompressor
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
 def cur_compress(weight, rank):

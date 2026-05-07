@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import List
-from ..core.registry import AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("squeezing_heads_distiller")
+@ATTENTION_REGISTRY.register("squeezing_heads_distiller")
 class SqueezingHeadsDistiller:
     """
     Distills teacher attention maps into a student with a different number of heads

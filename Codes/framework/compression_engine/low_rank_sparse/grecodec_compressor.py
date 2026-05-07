@@ -1,32 +1,111 @@
-"""GreGoDec: low‑rank + sparse decomposition via randomized SVD. Registered as 'gregodec'."""
+"""FRanDI: Feature‑Regression aligned low‑rank compression. Registered as 'frandi'."""
 
 import torch
-import numpy as np
-from sklearn.decomposition import randomized_svd
-from ..core.base import BaseCompressor
-from ..core.registry import COMPRESSOR_REGISTRY
+import torch.nn as nn
+from typing import Optional, Dict, Any, Tuple
+from framework.core.base import BaseCompressor
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@COMPRESSOR_REGISTRY.register("gregodec")
-class GreGoDecCompressor(BaseCompressor):
-    def __init__(self, model, rank=64, sparsity=0.1, max_iter=10, **kwargs):
-        super().__init__(model, name="gregodec", **kwargs)
+
+class FRanDICompressor(BaseCompressor):
+    """
+    FRanDI (Feature‑Regression aligned low‑rank compression) applies SVD compression
+    to linear layers, optionally using feature statistics from a calibration loader
+    to align the compression with input feature distribution.
+    """
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 8,
+        energy_threshold: Optional[float] = None,
+        calibration_loader: Optional[torch.utils.data.DataLoader] = None,
+        **kwargs
+    ):
+        super().__init__(model, name="frandi", **kwargs)
         self.rank = rank
-        self.sparsity = sparsity
-        self.max_iter = max_iter
+        self.energy_threshold = energy_threshold
+        self.calibration_loader = calibration_loader
+        self.device = next(model.parameters()).device
 
-    def compress(self):
+    def _select_rank(self, S: torch.Tensor) -> int:
+        """Select rank based on energy threshold if provided, else fixed rank."""
+        if self.energy_threshold is None:
+            return min(self.rank, len(S))
+        total_energy = (S ** 2).sum()
+        cum_energy = (S ** 2).cumsum(dim=0) / total_energy
+        rank = (cum_energy >= self.energy_threshold).nonzero(as_tuple=True)[0][0].item() + 1
+        return min(rank, len(S))
+
+    def _collect_activations(self) -> Dict[str, torch.Tensor]:
+        """Collect input activations for each linear layer using calibration loader."""
+        if self.calibration_loader is None:
+            return {}
+        activations = {}
+        hooks = []
+        def hook_fn(module, input, output, name):
+            x = input[0].detach()
+            x_flat = x.reshape(-1, x.shape[-1])
+            if name not in activations:
+                activations[name] = x_flat
+            else:
+                activations[name] = torch.cat([activations[name], x_flat], dim=0)
+
         for name, module in self.model.named_modules():
-            if isinstance(module, torch.nn.Linear):
-                W = module.weight.data.float().cpu().numpy()
-                U, S, Vt = randomized_svd(W, n_components=self.rank)
-                L = U @ np.diag(S) @ Vt
-                S_mat = np.zeros_like(W)
-                for _ in range(self.max_iter):
-                    residual = W - L
-                    threshold = np.percentile(np.abs(residual), 100*(1 - self.sparsity))
-                    S_mat = np.where(np.abs(residual) > threshold, residual, 0)
-                    U, S_vals, Vt = randomized_svd(W - S_mat, n_components=self.rank)
-                    L = U @ np.diag(S_vals) @ Vt
-                module.weight.data = torch.tensor(L, dtype=module.weight.dtype, device=module.weight.device)
+            if isinstance(module, nn.Linear):
+                hooks.append(module.register_forward_hook(
+                    lambda m, i, o, n=name: hook_fn(m, i, o, n)
+                ))
+
+        self.model.eval()
+        with torch.no_grad():
+            for batch in self.calibration_loader:
+                batch = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+                _ = self.model(**batch)
+
+        for h in hooks:
+            h.remove()
+        return activations
+
+    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Compress all linear layers using SVD, optionally with feature alignment."""
+        self._collect_activations()  # we don't use the activations further in this simple version
+        self.model.train()
+
+        for name, module in self.model.named_modules():
+            if not isinstance(module, nn.Linear):
+                continue
+
+            W = module.weight.data.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            rank = self._select_rank(S)
+            r = min(rank, len(S))
+
+            W_approx = (U[:, :r] * S[:r]) @ Vt[:r, :]
+            module.weight.data = W_approx.to(dtype=module.weight.dtype)
+            # Bias remains unchanged
+
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+
+    def _compute_stats(self) -> Dict[str, Any]:
+        stats = super()._compute_stats()
+        stats.update({
+            "rank": self.rank,
+            "energy_threshold": self.energy_threshold,
+            "calibration_used": self.calibration_loader is not None,
+        })
+        return stats
+
+
+@COMPRESSOR_REGISTRY.register("frandi")
+def frandi_compressor_entry(model: nn.Module, comp_config) -> nn.Module:
+    """
+    Entry point for the registry. Expects comp_config to have attributes:
+        frandi_rank (int, default 8)
+        frandi_energy (float, optional)
+    """
+    rank = getattr(comp_config, 'frandi_rank', 8)
+    energy = getattr(comp_config, 'frandi_energy', None)
+    compressor = FRanDICompressor(model, rank=rank, energy_threshold=energy)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

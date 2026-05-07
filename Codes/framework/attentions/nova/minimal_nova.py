@@ -93,7 +93,7 @@ class MinimalNOVAAttention(nn.Module):
 # ------------------------------------------------------------
 # Framework injection & registration
 # ------------------------------------------------------------
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("minimal_nova")
 def inject_minimal_nova(layer, model_config, comp_config, layer_idx, total_layers, old_attn):

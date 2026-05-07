@@ -4,8 +4,8 @@ Registered as 'kronecker'.
 """
 
 import torch.nn as nn
-from ..core.base import BaseCompressor
-from ..core.registry import COMPRESSOR_REGISTRY
+from framework.core.base import BaseCompressor
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 from .kronecker_linear import KroneckerLinear
 
 

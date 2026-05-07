@@ -5,8 +5,8 @@ Paper: https://arxiv.org/abs/2102.03902
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..core.base import BaseAttention
-from ..core.registry import ATTENTION_REGISTRY
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
 def _compute_moore_penrose(A, iters=6):

@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from ..core.registry import ATTENTION_REGISTRY, AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("hgrn2_layer")
+@ATTENTION_REGISTRY.register("hgrn2_layer")
 class HGRN2Layer(nn.Module):
     """HGRN‑2 linear recurrence with controlled forgetting."""
     def __init__(self, d_model):
@@ -25,7 +25,7 @@ class HGRN2Layer(nn.Module):
             outs.append(self.output(h))
         return torch.stack(outs, dim=1)
 
-@AUX_REGISTRY.register("gated_deltanet_block")
+@ATTENTION_REGISTRY.register("gated_deltanet_block")
 class GatedDeltaNetBlock(nn.Module):
     """Block with HGRN2 and optional full attention."""
     def __init__(self, d_model, n_heads, use_full_attention=False):
