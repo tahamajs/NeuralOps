@@ -31,10 +31,6 @@ class OptimizedHybridAttention(BaseAttention):
     """
     OHA attention: local sliding‑window + low‑rank global context, fused by a
     learned gate.
-
-    The global branch compresses the sequence into a fixed‑length low‑rank
-    representation (via softmax aggregation) and then performs attention
-    against this compact K/V tensor.
     """
 
     def __init__(self, config: OptimizedHybridAttentionConfig):
@@ -73,10 +69,9 @@ class OptimizedHybridAttention(BaseAttention):
         nn.init.normal_(self.compress_v.weight, std=0.02)
 
     def _sliding_window_mask(self, seq_len: int, device: torch.device) -> torch.Tensor:
-        """Boolean mask: True for positions within the window."""
         idx = torch.arange(seq_len, device=device)
         mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
-        return mask.unsqueeze(0).unsqueeze(0)  # (1, 1, N, N)
+        return mask.unsqueeze(0).unsqueeze(0)
 
     def forward(
         self,
@@ -92,36 +87,28 @@ class OptimizedHybridAttention(BaseAttention):
         K = transpose_for_scores(self.key(hidden_states), self.num_heads, self.head_dim)
         V = transpose_for_scores(self.value(hidden_states), self.num_heads, self.head_dim)
 
-        # -----------------------------
         # Convert attention_mask to additive shape
-        # -----------------------------
         if attention_mask is not None:
-            if attention_mask.dim() == 2:                 # (B, N) – 1=keep, 0=pad
+            if attention_mask.dim() == 2:
                 mask_2d = attention_mask.to(dtype=hidden_states.dtype)
-                pad_mask_3d = mask_2d[:, None, :]        # (B, 1, N)
-                # Local: (B, 1, 1, N) broadcast
-                local_add = (1.0 - pad_mask_3d.unsqueeze(1)) * -10000.0
-                # For global compression: softmax over tokens, need per‑token weight
-                comp_add = (1.0 - pad_mask_3d.permute(0, 2, 1)) * -10000.0   # (B, N, 1)
-                # Global query mask: (B, 1, 1, R) for broadcasting over low‑rank dim
-                global_q_add = (1.0 - mask_2d[:, None, :, None]) * -10000.0   # (B, 1, N, 1)
-            elif attention_mask.dim() == 4:               # (B, 1, 1, N)
-                mask_val = attention_mask.to(dtype=hidden_states.dtype)
-                local_add = mask_val
-                # For compression, we want a (B, N, 1) mask
-                comp_add = mask_val.squeeze(1).squeeze(1).unsqueeze(-1)  # (B, N, 1)
-                global_q_add = mask_val.permute(0, 1, 3, 2)               # (B, 1, R, N) – adjust later
+                local_add = (1.0 - mask_2d[:, None, None, :]) * -10000.0   # (B,1,1,N)
+                # For compression, we need (B,N,1) mask
+                comp_add = (1.0 - mask_2d[:, :, None]) * -10000.0            # (B,N,1)
+            elif attention_mask.dim() == 4:
+                local_add = attention_mask
+                comp_add = attention_mask.squeeze(1).squeeze(1).unsqueeze(-1)  # (B,N,1)
             else:
-                raise ValueError(f"Unsupported attention_mask shape: {attention_mask.shape}")
+                raise ValueError(f"Unsupported mask shape: {attention_mask.shape}")
         else:
-            local_add = comp_add = global_q_add = None
+            local_add = None
+            comp_add = None
 
         # -----------------------------
         # Local sliding‑window attention
         # -----------------------------
         scale = 1.0 / math.sqrt(self.head_dim)
         Q_s = Q * scale
-        local_scores = torch.matmul(Q_s, K.transpose(-1, -2))          # (B, H, N, N)
+        local_scores = torch.matmul(Q_s, K.transpose(-2, -1))          # (B, H, N, N)
         win_mask = self._sliding_window_mask(N, Q.device)
         local_scores = local_scores.masked_fill(~win_mask, float("-inf"))
         if local_add is not None:
@@ -137,46 +124,33 @@ class OptimizedHybridAttention(BaseAttention):
         comp_k_raw = self.compress_k(hidden_states)                    # (B, N, R)
         comp_v_raw = self.compress_v(hidden_states)                    # (B, N, R)
         if comp_add is not None:
-            comp_k_raw = comp_k_raw + comp_add                         # mask out padded tokens before softmax
+            comp_k_raw = comp_k_raw + comp_add
             comp_v_raw = comp_v_raw + comp_add
-        comp_k_weights = F.softmax(comp_k_raw, dim=1)                  # (B, N, R) – softmax over N per R
+        comp_k_weights = F.softmax(comp_k_raw, dim=1)                  # (B, N, R) – softmax over N
         comp_v_weights = F.softmax(comp_v_raw, dim=1)
 
         # 2) Gather full K/V but apply masking to ignore pads
-        full_k = K.permute(0, 2, 3, 1)                                  # (B, H, D, N) – for matmul with (B, N, R)
-        full_v = V.permute(0, 2, 3, 1)
-
-        if attention_mask is not None:
-            # Boolean mask: 1=keep, 0=drop
-            if attention_mask.dim() == 2:
-                bool_mask = attention_mask[:, :, None, None].to(full_k.dtype)   # (B, N, 1, 1)
-            else:  # 4D
-                bool_mask = (attention_mask.squeeze(1).squeeze(1).unsqueeze(-1) > -1000.0).to(full_k.dtype)
-            # Apply to K/V before mixing
-            full_k = full_k * bool_mask.permute(0, 2, 3, 1)   # (B, H, D, N)
-            full_v = full_v * bool_mask.permute(0, 2, 3, 1)
+        full_k = K.permute(0, 1, 3, 2)                                 # (B, H, D, N)
+        full_v = V.permute(0, 1, 3, 2)                                 # (B, H, D, N)
 
         # 3) Create compressed K/V: (B, H, R, D)
-        ck = torch.matmul(full_k, comp_k_weights.unsqueeze(1))   # (B, H, D, R) → need to get (B, H, R, D)
-        # Actually: full_k: (B, H, D, N), comp_k_weights: (B, N, R) → matmul gives (B, H, D, R), then transpose
-        ck = torch.matmul(full_k, comp_k_weights.unsqueeze(1)).permute(0, 1, 3, 2)  # (B, H, R, D)
-        cv = torch.matmul(full_v, comp_v_weights.unsqueeze(1)).permute(0, 1, 3, 2)
+        # full_k: (B,H,D,N), comp_k_weights: (B,N,R) -> matmul along N
+        ck = torch.matmul(full_k, comp_k_weights.unsqueeze(1))         # (B,H,D,R) -> need (B,H,R,D)
+        ck = ck.permute(0, 1, 3, 2)                                   # (B, H, R, D)
+        cv = torch.matmul(full_v, comp_v_weights.unsqueeze(1)).permute(0, 1, 3, 2)  # (B, H, R, D)
 
-        # 4) Global attention: Q is (B, H, N, D), ck is (B, H, R, D)
-        global_scores = torch.matmul(Q_s, ck.transpose(-1, -2))           # (B, H, N, R)
-        if global_q_add is not None:
-            # global_q_add needs to be broadcastable (B, 1, N, R) or appropriate
-            global_scores = global_scores + global_q_add
+        # 4) Global attention: Q: (B,H,N,D), ck: (B,H,R,D)
+        global_scores = torch.matmul(Q_s, ck.transpose(-2, -1))        # (B, H, N, R)
         global_probs = F.softmax(global_scores, dim=-1)
         global_probs = self.dropout(global_probs)
-        global_ctx = torch.matmul(global_probs, cv)                       # (B, H, N, D)
+        global_ctx = torch.matmul(global_probs, cv)                    # (B, H, N, D)
 
         # -----------------------------
         # Gated fusion
         # -----------------------------
         if self.use_gate:
-            gate = torch.sigmoid(self.gate(hidden_states))                # (B, N, H)
-            gate = gate.permute(0, 2, 1).unsqueeze(-1)                    # (B, H, N, 1)
+            gate = torch.sigmoid(self.gate(hidden_states))            # (B, N, H)
+            gate = gate.permute(0, 2, 1).unsqueeze(-1)                # (B, H, N, 1)
             context = gate * local_ctx + (1.0 - gate) * global_ctx
         else:
             context = local_ctx + global_ctx
@@ -185,14 +159,13 @@ class OptimizedHybridAttention(BaseAttention):
         output = self.out_proj(context)
 
         attn_weights = local_probs if output_attentions else None
-        return (output, attn_weights) if output_attentions else (output,)
+        return (output, attn_weights)
 
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.tensor(0.0, device=self.out_proj.weight.device)
 
     @classmethod
     def from_distilbert_pretrained(cls, distilbert_attention_layer, config: OptimizedHybridAttentionConfig):
-        """Initialise OHA by copying weights from an existing DistilBERT attention layer."""
         oha = cls(config)
         src = distilbert_attention_layer
         oha.query.weight.data.copy_(src.q_lin.weight.data)
@@ -209,12 +182,8 @@ class OptimizedHybridAttention(BaseAttention):
 # ------------------------------------------------------------
 # Framework injection / registration
 # ------------------------------------------------------------
-from framework.attentions.core.registry import ATTENTION_REGISTRY
-
-
 @ATTENTION_REGISTRY.register("oha")
 def inject_oha(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    """Create OHA from compression config and replace the layer's attention."""
     oha_cfg = OptimizedHybridAttentionConfig(
         hidden_size=model_config.hidden_size,
         num_attention_heads=model_config.num_attention_heads,

@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
+from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 
 @dataclass
@@ -135,13 +136,15 @@ class ORIONAttention(nn.Module):
         Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
         K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
 
-        # Compute linearised attention: (φ(K)^T V) then multiply by φ(Q)
+        # Correct linearised attention: (φ(K)^T V) then multiply by φ(Q)
         KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V)        # (B, Hk, F, D)
-        Z  = K_feat.sum(dim=2, keepdim=True)                   # (B, Hk, 1, F)
+        K_sum = K_feat.sum(dim=2)                             # (B, Hk, F)
+        denom = torch.einsum('bhnf,bhf->bhn', Q_feat, K_sum)  # (B, Hk, N)
+        denom = denom.unsqueeze(-1)                           # (B, Hk, N, 1)
 
-        lin_ctx = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV)  # (B, Hk, N, D)
-        lin_ctx = lin_ctx / (torch.einsum('bhnf,bhfd->bhnd', Q_feat, Z) + 1e-8)
-        return lin_ctx
+        ctx = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV)      # (B, Hk, N, D)
+        ctx = ctx / (denom + 1e-8)
+        return ctx
 
     def _full_softpick_attention(self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor,
                                  token_valid: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -212,15 +215,16 @@ class ORIONAttention(nn.Module):
 # ------------------------------------------------------------
 # Framework injection & registration
 # ------------------------------------------------------------
-from framework.attentions.core.registry import ATTENTION_REGISTRY
-
 @ATTENTION_REGISTRY.register("orion")
 def inject_orion(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     cfg = ORIONConfig(
         svd_energy=getattr(comp_config, 'svd_energy', 0.95),
-        num_kernel_heads=8,
-        num_full_heads=4,
+        svd_min_rank=getattr(comp_config, 'min_rank', 4),
+        svd_max_rank=getattr(comp_config, 'max_rank', 64),
+        num_kernel_heads=getattr(comp_config, 'num_kernel_heads', 8),
+        num_full_heads=getattr(comp_config, 'num_full_heads', 4),
         rff_features=getattr(comp_config, 'rff_features', 256),
+        softpick_temperature=getattr(comp_config, 'softpick_temperature', 1.0),
         dropout=getattr(comp_config, 'dropout', 0.1),
     )
     new_attn = ORIONAttention(model_config, cfg, pretrained_attn=old_attn)
