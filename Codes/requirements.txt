@@ -18,3 +18,9 @@ langchain
 langgraph
 langchain-community
 langchain-anthropic
+
+matplotlib
+celery
+redis
+
+

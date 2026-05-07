@@ -276,3 +276,83 @@ def api_export_conversation(request, session_id):
         "session": ChatSessionSerializer(session).data,
         "messages": serializer.data,
     })
+
+
+from .monitor import monitor_training_run
+from .paper_recommender import (
+    get_paper_recommendations_for_run,
+    get_recommendations_from_saved_papers,
+    search_papers_for_topic,
+)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def start_training_monitor(request):
+    """
+    Start the autonomous training monitor for a run.
+
+    Body:
+    {
+        "run_id": "<uuid>",
+        "check_interval_ratio": 0.25,
+        "auto_stop_enabled": true,
+        "note_generation_enabled": true
+    }
+    """
+    run_id = request.data.get("run_id")
+    if not run_id:
+        return Response({"error": "run_id required"}, status=400)
+
+    check_interval = float(request.data.get("check_interval_ratio", 0.25))
+    auto_stop = request.data.get("auto_stop_enabled", True)
+    note_gen = request.data.get("note_generation_enabled", True)
+
+    # Enqueue the Celery task
+    task = monitor_training_run.delay(
+        run_id=run_id,
+        user_id=str(request.user.id),
+        check_interval_ratio=check_interval,
+        auto_stop_enabled=auto_stop,
+        note_generation_enabled=note_gen,
+    )
+
+    return Response({
+        "status": "monitor_started",
+        "task_id": task.id,
+        "run_id": run_id,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def paper_recommendations_for_run(request, run_id):
+    """Get paper recommendations based on a run's configuration."""
+    run = get_object_or_404(TrainingRun, id=run_id)
+    recommendations = get_paper_recommendations_for_run(run, limit=10)
+    return Response({"recommendations": recommendations})
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def paper_recommendations_from_library(request):
+    """Get paper recommendations based on the user's saved papers."""
+    recommendations = get_recommendations_from_saved_papers(request.user.id, limit=10)
+    return Response({"recommendations": recommendations})
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def search_papers_for_run_topic(request, run_id):
+    """Search papers for topics related to a run."""
+    run = get_object_or_404(TrainingRun, id=run_id)
+    config = run.config or {}
+
+    topics = [
+        config.get("attention_type", "full"),
+        config.get("method", "baseline"),
+        config.get("model_name", ""),
+        config.get("task_name", ""),
+    ]
+    topic_str = " ".join(filter(None, topics))
+    results = search_papers_for_topic(topic_str, limit=10)
+    return Response({"topic": topic_str, "results": results})
