@@ -15,7 +15,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 #     sys.path.insert(0, str(FRAMEWORK_DIR))
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# agents/api_keys.py (new file) – keep API keys centralized
+import os
 
+SEMANTIC_SCHOLAR_API_KEY = os.environ.get("SEMANTIC_SCHOLAR_API_KEY", "")
+OPENALEX_API_KEY = os.environ.get("OPENALEX_API_KEY", "")  # free, get at openalex.org
+CONSENSUS_API_KEY = os.environ.get("CONSENSUS_API_KEY", "")  # apply at consensus.app
 # ----------------------------------------------------------------------
 # Security & Debug
 # ----------------------------------------------------------------------
