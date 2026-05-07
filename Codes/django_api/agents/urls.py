@@ -47,4 +47,10 @@ path('training/suggest-next/', views.api_suggest_next, name='suggest_next'),
 
 # Prompt testing
 path('prompts/test/', views.api_test_prompt, name='test_prompt'),
+
+
+path('monitor/start/', views.start_training_monitor, name='start_monitor'),
+path('papers/recommendations/<uuid:run_id>/', views.paper_recommendations_for_run, name='paper_recommendations_for_run'),
+path('papers/recommendations/library/', views.paper_recommendations_from_library, name='paper_recommendations_library'),
+path('papers/search-for-run/<uuid:run_id>/', views.search_papers_for_run_topic, name='search_papers_for_run'),
 ]
