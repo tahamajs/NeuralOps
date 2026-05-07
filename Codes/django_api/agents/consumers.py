@@ -2,7 +2,7 @@ import json
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import ChatSession
-from .orchestrator import AgentOrchestrator
+from .orchestrator import LangGraphAgent
 
 class AgentChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -18,37 +18,22 @@ class AgentChatConsumer(AsyncJsonWebsocketConsumer):
         msg_type = content.get("type", "message")
         if msg_type == "message":
             user_text = content.get("text", "")
-            # Process via orchestrator
-            orchestrator = await self._get_orchestrator()
-            result = await database_sync_to_async(orchestrator.process_user_message)(user_text)
-            # Send response back
-            await self.send_json({
-                "type": "agent_response",
-                "text": result.get("text", ""),
-                "tool_calls": result.get("tool_calls", []),
-            })
+            # Process via LangGraph agent
+            result = await self._run_agent(user_text)
             # Send updated messages
-            messages = await self._get_messages()
             await self.send_json({
                 "type": "messages_sync",
-                "messages": messages,
+                "messages": result["messages"],
+            })
+            await self.send_json({
+                "type": "agent_response",
+                "text": result["text"],
             })
 
     @database_sync_to_async
-    def _get_orchestrator(self):
-        session, _ = ChatSession.objects.get_or_create(id=self.session_id, defaults={'user': self.user})
-        return AgentOrchestrator(session)
-
-    @database_sync_to_async
-    def _get_messages(self):
-        session = ChatSession.objects.get(id=self.session_id)
-        return [
-            {
-                "id": str(m.id),
-                "role": m.role,
-                "content": m.content,
-                "metadata": m.metadata,
-                "created_at": m.created_at.isoformat(),
-            }
-            for m in session.messages.order_by('created_at')
-        ]
+    def _run_agent(self, text):
+        session, _ = ChatSession.objects.get_or_create(
+            id=self.session_id, defaults={'user': self.user}
+        )
+        agent = LangGraphAgent(str(session.id))
+        return agent.run(text)

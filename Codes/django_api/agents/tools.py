@@ -1,176 +1,41 @@
-from typing import Dict, Any, Optional
-import requests, json
+# agents/tools.py
+"""
+Unified tools for the conversational ML assistant.
+- ToolRegistry: registration, execution, and LLM function definitions.
+- LangChain tool wrappers: for use with the LangGraph agent.
+"""
+
+import os
+import json
+import subprocess
+import requests
+from typing import Dict, Any, Optional, Callable
+
 from django.conf import settings
 from experiment.models import TrainingRun, Project
 from jobscheduler.models import Job
+from paper.models import PaperProject, PaperFile
+from paper.compiler import LatexCompiler
 
 HF_API_URL = "https://huggingface.co/api"
-from typing import Dict, Any, Callable
-from django.conf import settings
-from experiment.models import TrainingRun, Project
-from jobscheduler.models import Job
-import subprocess, os, json
 
-ToolFunction = Callable[[Dict[str, Any], 'AgentSession'], Dict[str, Any]]
 
+# ====================== Tool Registry ======================
 class ToolRegistry:
-    """Minimal‑toolset design: each agent gets 3–5 tools, reducing token overhead by up to 73%."""
-    
-    _tools: Dict[str, ToolFunction] = {}
+    """Central registry for all tools the agent can call."""
+
+    _tools: Dict[str, Callable[[Dict[str, Any]], Dict[str, Any]]] = {}
 
     @classmethod
     def register(cls, name: str):
-        def decorator(func: ToolFunction):
+        def decorator(func: Callable[[Dict[str, Any]], Dict[str, Any]]):
             cls._tools[name] = func
             return func
         return decorator
 
     @classmethod
-    def get_tools(cls, agent_type: str) -> Dict[str, ToolFunction]:
-        # Each agent type gets a curated subset
-        subsets = {
-            'deep_researcher': ['run_experiment', 'analyze_results', 'compare_runs', 'read_code', 'edit_code', 'propose_hypothesis'],
-            'hpo_agent': ['run_experiment', 'analyze_results', 'compare_runs', 'suggest_hparams'],
-            'code_agent': ['read_code', 'edit_code', 'run_experiment', 'analyze_results'],
-        }
-        allowed = subsets.get(agent_type, ['run_experiment', 'analyze_results'])
-        return {name: cls._tools[name] for name in allowed if name in cls._tools}
-
-# ----- Define tools -----
-
-@ToolRegistry.register('run_experiment')
-def tool_run_experiment(params: dict, session: 'AgentSession') -> dict:
-    """Launch a training experiment with given hyperparameters."""
-    config = {
-        'model_name': params.get('model_name', 'bert-base-uncased'),
-        'task_name': params.get('task_name', 'mrpc'),
-        'attention_type': params.get('attention_type', 'full'),
-        'epochs': params.get('epochs', 3),
-        'batch_size': params.get('batch_size', 16),
-        'learning_rate': params.get('learning_rate', 2e-5),
-        **params,
-    }
-    run = TrainingRun.objects.create(
-        project=session.project,
-        job_type='training',
-        config=config,
-        status='queued',
-        name=f"agent_{session.id.hex[:8]}_cycle_{session.cycles_completed + 1}",
-    )
-    # Submit to scheduler
-    from jobscheduler.scheduler import scheduler
-    scheduler.add_job(str(run.id), priority=3, estimated_duration=config.get('estimated_duration'))
-    
-    session.experiments_run += 1
-    session.save(update_fields=['experiments_run'])
-    
-    return {'status': 'queued', 'run_id': str(run.id), 'config': config}
-
-
-@ToolRegistry.register('analyze_results')
-def tool_analyze_results(params: dict, session: 'AgentSession') -> dict:
-    """Analyze completed run results."""
-    run_id = params.get('run_id')
-    try:
-        run = TrainingRun.objects.get(id=run_id)
-        metrics = run.final_metrics or {}
-        return {
-            'run_id': str(run.id),
-            'status': run.status,
-            'metrics': {k: v for k, v in metrics.items() if isinstance(v, (int, float))},
-            'config': run.config,
-        }
-    except TrainingRun.DoesNotExist:
-        return {'error': 'Run not found'}
-
-
-@ToolRegistry.register('compare_runs')
-def tool_compare_runs(params: dict, session: 'AgentSession') -> dict:
-    """Compare two or more runs."""
-    run_ids = params.get('run_ids', [])
-    runs = TrainingRun.objects.filter(id__in=run_ids)
-    results = []
-    for run in runs:
-        m = run.final_metrics or {}
-        target = m.get(session.metric_name)
-        results.append({
-            'run_id': str(run.id),
-            'name': run.name,
-            'metric': target,
-            'config': run.config,
-        })
-    best = max(results, key=lambda r: r['metric'] or -1e9) if results and session.metric_direction == 'maximize' else (min(results, key=lambda r: r['metric'] or 1e9) if results else None)
-    return {
-        'runs': results,
-        'best_so_far': best,
-        'direction': session.metric_direction,
-    }
-
-
-@ToolRegistry.register('read_code')
-def tool_read_code(params: dict, session: 'AgentSession') -> dict:
-    """Read a file from the codebase."""
-    filepath = params.get('filepath', '')
-    if filepath not in session.codebase_files:
-        return {'error': f'File {filepath} not in allowed codebase files'}
-    try:
-        with open(filepath, 'r') as f:
-            content = f.read()
-        return {'filepath': filepath, 'content': content[:5000]}  # cap at 5K
-    except FileNotFoundError:
-        return {'error': f'File {filepath} not found on disk'}
-
-
-@ToolRegistry.register('edit_code')
-def tool_edit_code(params: dict, session: 'AgentSession') -> dict:
-    """Edit a file. Creates a git commit."""
-    filepath = params.get('filepath', '')
-    new_content = params.get('content', '')
-    if filepath not in session.codebase_files:
-        return {'error': f'File {filepath} not in allowed codebase files'}
-    
-    # Write file
-    os.makedirs(os.path.dirname(filepath) or '.', exist_ok=True)
-    with open(filepath, 'w') as f:
-        f.write(new_content)
-    
-    # Git commit
-    commit_msg = params.get('commit_message', f'Agent edit: {filepath}')
-    subprocess.run(['git', 'add', filepath], capture_output=True)
-    result = subprocess.run(['git', 'commit', '-m', commit_msg], capture_output=True, text=True)
-    
-    return {
-        'status': 'edited',
-        'filepath': filepath,
-        'commit_message': commit_msg,
-        'git_output': result.stdout + result.stderr,
-    }
-
-
-@ToolRegistry.register('propose_hypothesis')
-def tool_propose_hypothesis(params: dict, session: 'AgentSession') -> dict:
-    """Record a hypothesis for the current cycle."""
-    from .models import AgentAction
-    hypothesis = params.get('hypothesis', '')
-    session.actions.create(
-        cycle=session.cycles_completed + 1,
-        action_type='hypothesis',
-        output_summary=hypothesis,
-    )
-    return {'hypothesis': hypothesis, 'recorded': True}
-
-class ToolRegistry:
-    _tools: Dict[str, callable] = {}
-
-    @classmethod
-    def register(cls, name: str):
-        def decorator(fn):
-            cls._tools[name] = fn
-            return fn
-        return decorator
-
-    @classmethod
-    def execute(cls, name: str, params: Dict) -> Dict:
+    def execute(cls, name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute a registered tool by name with given parameters."""
         tool = cls._tools.get(name)
         if not tool:
             return {"error": f"Unknown tool: {name}"}
@@ -181,43 +46,8 @@ class ToolRegistry:
 
     @classmethod
     def get_definitions(cls) -> list:
-        """Return tool schema for LLM function calling."""
+        """Return the tool definitions in OpenAI/Anthropic function‑calling format."""
         return [
-            {
-    "name": "read_latex_project",
-    "description": "Read a LaTeX project's files.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "project_id": {"type": "string", "description": "The project UUID"}
-        },
-        "required": ["project_id"]
-    }
-},
-{
-    "name": "edit_latex_file",
-    "description": "Edit a specific file in a LaTeX project.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "project_id": {"type": "string"},
-            "filename": {"type": "string"},
-            "content": {"type": "string", "description": "New content for the file"}
-        },
-        "required": ["project_id", "filename", "content"]
-    }
-},
-{
-    "name": "compile_latex",
-    "description": "Compile a LaTeX project to PDF.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "project_id": {"type": "string"}
-        },
-        "required": ["project_id"]
-    }
-},
             {
                 "name": "search_datasets",
                 "description": "Search HuggingFace for datasets matching a query.",
@@ -314,12 +144,48 @@ class ToolRegistry:
                 "description": "List all available attention mechanisms.",
                 "parameters": {"type": "object", "properties": {}},
             },
+            {
+                "name": "read_latex_project",
+                "description": "Read all files in a LaTeX project.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "project_id": {"type": "string", "description": "The project UUID"},
+                    },
+                    "required": ["project_id"],
+                },
+            },
+            {
+                "name": "edit_latex_file",
+                "description": "Edit a specific file in a LaTeX project.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "project_id": {"type": "string"},
+                        "filename": {"type": "string"},
+                        "content": {"type": "string", "description": "New content for the file"},
+                    },
+                    "required": ["project_id", "filename", "content"],
+                },
+            },
+            {
+                "name": "compile_latex",
+                "description": "Compile a LaTeX project to PDF.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "project_id": {"type": "string"},
+                    },
+                    "required": ["project_id"],
+                },
+            },
         ]
 
-# ----- Tool Implementations -----
+
+# ====================== Tool Implementations ======================
 
 @ToolRegistry.register("search_datasets")
-def search_datasets(params: dict) -> dict:
+def search_datasets(params: Dict[str, Any]) -> Dict[str, Any]:
     query = params.get("query", "")
     limit = params.get("limit", 5)
     try:
@@ -339,7 +205,7 @@ def search_datasets(params: dict) -> dict:
         ]}
 
 @ToolRegistry.register("search_models")
-def search_models(params: dict) -> dict:
+def search_models(params: Dict[str, Any]) -> Dict[str, Any]:
     query = params.get("query", "")
     limit = params.get("limit", 5)
     try:
@@ -362,7 +228,7 @@ def search_models(params: dict) -> dict:
         return {"results": fallback, "note": "Using cached results (HuggingFace API unavailable)"}
 
 @ToolRegistry.register("get_dataset_info")
-def get_dataset_info(params: dict) -> dict:
+def get_dataset_info(params: Dict[str, Any]) -> Dict[str, Any]:
     dataset_id = params.get("dataset_id", "")
     try:
         resp = requests.get(f"{HF_API_URL}/datasets/{dataset_id}", timeout=10)
@@ -373,11 +239,11 @@ def get_dataset_info(params: dict) -> dict:
             "tags": info.get("tags", []),
             "size": info.get("size", "unknown"),
         }
-    except:
+    except Exception:
         return {"id": dataset_id, "description": f"The {dataset_id} dataset.", "note": "Limited info (API unavailable)"}
 
 @ToolRegistry.register("configure_experiment")
-def configure_experiment(params: dict) -> dict:
+def configure_experiment(params: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "status": "draft",
         "message": "Experiment configuration prepared. Review and confirm to launch.",
@@ -385,8 +251,7 @@ def configure_experiment(params: dict) -> dict:
     }
 
 @ToolRegistry.register("launch_experiment")
-def launch_experiment(params: dict) -> dict:
-    # Create the job/run
+def launch_experiment(params: Dict[str, Any]) -> Dict[str, Any]:
     job = Job.objects.create(
         name=params.get("name", ""),
         model_name=params["model_name"],
@@ -410,7 +275,7 @@ def launch_experiment(params: dict) -> dict:
     }
 
 @ToolRegistry.register("check_experiment_status")
-def check_experiment_status(params: dict) -> dict:
+def check_experiment_status(params: Dict[str, Any]) -> Dict[str, Any]:
     try:
         job = Job.objects.get(id=params["run_id"])
         return {
@@ -424,24 +289,21 @@ def check_experiment_status(params: dict) -> dict:
         return {"error": "Run not found"}
 
 @ToolRegistry.register("list_available_tasks")
-def list_available_tasks(params: dict) -> dict:
+def list_available_tasks(params: Dict[str, Any]) -> Dict[str, Any]:
     return {"tasks": ["cola", "sst2", "mrpc", "qqp", "stsb", "mnli", "qnli", "rte", "wnli"]}
 
 @ToolRegistry.register("list_attention_types")
-def list_attention_types(params: dict) -> dict:
+def list_attention_types(params: Dict[str, Any]) -> Dict[str, Any]:
     try:
         from framework.attentions.core.registry import ATTENTION_REGISTRY
         return {"attentions": list(ATTENTION_REGISTRY.keys())}
     except ImportError:
         return {"attentions": ["full", "aurora", "nova", "griffin_ssd", "linformer", "svd", "goldfinch"]}
-    
 
-
-    @ToolRegistry.register("read_latex_project")
-def read_latex_project(params: dict) -> dict:
-    from paper.models import PaperProject, PaperFile
+@ToolRegistry.register("read_latex_project")
+def read_latex_project(params: Dict[str, Any]) -> Dict[str, Any]:
     try:
-        project = PaperProject.objects.get(id=params['project_id'])
+        project = PaperProject.objects.get(id=params["project_id"])
         files = project.files.all()
         return {
             "project_name": project.name,
@@ -451,35 +313,149 @@ def read_latex_project(params: dict) -> dict:
         return {"error": "Project not found"}
 
 @ToolRegistry.register("edit_latex_file")
-def edit_latex_file(params: dict) -> dict:
-    from paper.models import PaperProject, PaperFile
+def edit_latex_file(params: Dict[str, Any]) -> Dict[str, Any]:
     try:
-        project = PaperProject.objects.get(id=params['project_id'])
-        file = PaperFile.objects.get(project=project, filename=params['filename'])
-        file.content = params['content']
+        project = PaperProject.objects.get(id=params["project_id"])
+        file = PaperFile.objects.get(project=project, filename=params["filename"])
+        file.content = params["content"]
         file.save()
         return {"status": "updated", "filename": file.filename}
     except (PaperProject.DoesNotExist, PaperFile.DoesNotExist):
         return {"error": "Project or file not found"}
 
 @ToolRegistry.register("compile_latex")
-def compile_latex(params: dict) -> dict:
-    from paper.views import compile_project  # reuse existing view logic
-    # We'll call the existing compile endpoint
-    from rest_framework.test import APIRequestFactory
-    factory = APIRequestFactory()
-    request = factory.post(f'/api/paper/projects/{params["project_id"]}/compile/')
-    request.user = None  # will be set by the view decorator
-    # Since we need authenticated request, we'll use a simpler approach:
-    from paper.compiler import LatexCompiler
-    project = PaperProject.objects.get(id=params['project_id'])
-    project_files = {f.filename: f.content for f in project.files.all()}
-    compiler = LatexCompiler(project_files, project.root_file, project.compiler)
-    result = compiler.compile()
-    return {
-        "status": result['status'],
-        "log": result.get('log', '')[:2000],
-        "error": result.get('error'),
-        "errors": result.get('errors', 0),
-        "warnings": result.get('warnings', 0),
-    }
+def compile_latex(params: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        project = PaperProject.objects.get(id=params["project_id"])
+        project_files = {f.filename: f.content for f in project.files.all()}
+        compiler = LatexCompiler(project_files, project.root_file, project.compiler)
+        result = compiler.compile()
+        return {
+            "status": result["status"],
+            "log": result.get("log", "")[:2000],
+            "error": result.get("error"),
+            "errors": result.get("errors", 0),
+            "warnings": result.get("warnings", 0),
+        }
+    except PaperProject.DoesNotExist:
+        return {"error": "Project not found"}
+
+
+# ====================== LangChain Tool Wrappers ======================
+# These use the @tool decorator from LangChain to wrap the plain functions,
+# making them callable by the LangGraph agent.
+
+from langchain_core.tools import tool  # ensure langchain-core is installed
+
+@tool
+def tool_search_datasets(query: str, limit: int = 5) -> dict:
+    """Search HuggingFace for datasets matching a query."""
+    return search_datasets({"query": query, "limit": limit})
+
+@tool
+def tool_search_models(query: str, task: Optional[str] = None, limit: int = 5) -> dict:
+    """Search HuggingFace for models matching a query."""
+    return search_models({"query": query, "task": task, "limit": limit})
+
+@tool
+def tool_get_dataset_info(dataset_id: str) -> dict:
+    """Get detailed info about a specific HuggingFace dataset."""
+    return get_dataset_info({"dataset_id": dataset_id})
+
+@tool
+def tool_configure_experiment(
+    model_name: str,
+    task_name: str,
+    attention_type: str = "full",
+    method: str = "baseline",
+    epochs: int = 3,
+    batch_size: int = 16,
+    learning_rate: float = 2e-5,
+    max_seq_length: int = 128,
+    compression_rank: int = 64,
+) -> dict:
+    """Propose an experiment configuration for review."""
+    return configure_experiment({
+        "model_name": model_name,
+        "task_name": task_name,
+        "attention_type": attention_type,
+        "method": method,
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "learning_rate": learning_rate,
+        "max_seq_length": max_seq_length,
+        "compression_rank": compression_rank,
+    })
+
+@tool
+def tool_launch_experiment(
+    model_name: str,
+    task_name: str,
+    attention_type: str = "full",
+    method: str = "baseline",
+    epochs: int = 3,
+    batch_size: int = 16,
+    learning_rate: float = 2e-5,
+    max_seq_length: int = 128,
+    compression_rank: int = 64,
+    name: Optional[str] = None,
+) -> dict:
+    """Launch the experiment. Only call after user confirmation."""
+    return launch_experiment({
+        "model_name": model_name,
+        "task_name": task_name,
+        "attention_type": attention_type,
+        "method": method,
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "learning_rate": learning_rate,
+        "max_seq_length": max_seq_length,
+        "compression_rank": compression_rank,
+        "name": name,
+    })
+
+@tool
+def tool_check_experiment_status(run_id: str) -> dict:
+    """Check the status of a running/completed experiment."""
+    return check_experiment_status({"run_id": run_id})
+
+@tool
+def tool_list_available_tasks() -> dict:
+    """List all available GLUE benchmark tasks."""
+    return list_available_tasks({})
+
+@tool
+def tool_list_attention_types() -> dict:
+    """List all available attention mechanisms."""
+    return list_attention_types({})
+
+@tool
+def tool_read_latex_project(project_id: str) -> dict:
+    """Read a LaTeX project's files."""
+    return read_latex_project({"project_id": project_id})
+
+@tool
+def tool_edit_latex_file(project_id: str, filename: str, content: str) -> dict:
+    """Edit a specific file in a LaTeX project."""
+    return edit_latex_file({"project_id": project_id, "filename": filename, "content": content})
+
+@tool
+def tool_compile_latex(project_id: str) -> dict:
+    """Compile a LaTeX project to PDF."""
+    return compile_latex({"project_id": project_id})
+
+
+# List of all LangChain tools (for agent binding)
+ALL_LANGCHAIN_TOOLS = [
+    tool_search_datasets,
+    tool_search_models,
+    tool_get_dataset_info,
+    tool_configure_experiment,
+    tool_launch_experiment,
+    tool_check_experiment_status,
+    tool_list_available_tasks,
+    tool_list_attention_types,
+    tool_read_latex_project,
+    tool_edit_latex_file,
+    tool_compile_latex,
+]
