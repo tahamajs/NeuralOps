@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
+from framework.attentions.core.registry import ATTENTION_REGISTRY
+
 
 class FactorisedLinear(nn.Module):
     """SVD‑factorised linear layer."""
@@ -30,7 +32,10 @@ class FactorisedLinear(nn.Module):
             self.up.bias.data = pretrained_bias.float()
         else:
             self.up.bias.data.zero_()
-    def forward(self, x): return self.up(self.down(x))
+
+    def forward(self, x):
+        return self.up(self.down(x))
+
 
 class MinimalPRISMAttention(nn.Module):
     """SVD‑factorised attention, full standard attention, zero‑shot."""
@@ -49,7 +54,8 @@ class MinimalPRISMAttention(nn.Module):
         self.out_proj = FactorisedLinear(pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias.data, energy)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
+    def forward(self, hidden_states, attention_mask=None, head_mask=None,
+                output_attentions=False, **kwargs) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         Q = self.q_proj(hidden_states)
@@ -82,16 +88,20 @@ class MinimalPRISMAttention(nn.Module):
         context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         output = self.out_proj(context)
-        return (output, attn_weights) if output_attentions else (output,)
+
+        # Always return a 2‑tuple: (output, attention_weights or None)
+        if output_attentions:
+            return output, attn_weights
+        else:
+            return output, None
 
     def get_ortho_loss(self):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
+
 # ------------------------------------------------------------
 # Framework injection & registration
 # ------------------------------------------------------------
-from framework.attentions.core.registry import ATTENTION_REGISTRY
-
 @ATTENTION_REGISTRY.register("minimal_prism")
 def inject_minimal_prism(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     new_attn = MinimalPRISMAttention(

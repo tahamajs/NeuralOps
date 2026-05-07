@@ -657,3 +657,33 @@ def inject_aegis_v3(model, config: AegisConfigV3):
 
 
 
+
+
+
+@ATTENTION_REGISTRY.register("aegis_v6")
+def inject_aegis_v6(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+    # Build AegisConfigV3 from comp_config and model_config
+    cfg = AegisConfigV3(
+        hidden_size=model_config.hidden_size,
+        num_heads=model_config.num_attention_heads,
+        head_dim=model_config.hidden_size // model_config.num_attention_heads,
+        window_size=getattr(comp_config, 'window_size', 64),
+        svd_rank=getattr(comp_config, 'svd_rank', 128),
+        low_rank_update=getattr(comp_config, 'low_rank_update', 16),
+        kernel_feature_dim=getattr(comp_config, 'kernel_feature_dim', 128),
+        dropout=getattr(comp_config, 'dropout', 0.1),
+        use_query_gate=getattr(comp_config, 'use_query_gate', True),
+        use_input_gate=getattr(comp_config, 'use_input_gate', True),
+        use_pre_norm=getattr(comp_config, 'use_pre_norm', True),
+        long_context_threshold=getattr(comp_config, 'long_context_threshold', 2048),
+        max_global_tokens=getattr(comp_config, 'max_global_tokens', 1024),
+        kernel_method=getattr(comp_config, 'kernel_method', 'orthogonal'),
+        kernel_clamp_min=getattr(comp_config, 'kernel_clamp_min', -20.0),
+        kernel_clamp_max=getattr(comp_config, 'kernel_clamp_max', 20.0),
+        kernel_use_float64=getattr(comp_config, 'kernel_use_float64', False),
+        kernel_seed=getattr(comp_config, 'kernel_seed', None),
+    )
+    pretrained_dict = AegisAttentionV3.init_from_pretrained(old_attn)
+    new_attn = AegisAttentionV3(config=cfg, pretrained_qkv=pretrained_dict)
+    layer.attention = new_attn
+    return new_attn

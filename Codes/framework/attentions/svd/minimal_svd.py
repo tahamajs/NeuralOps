@@ -47,7 +47,12 @@ class FactorisedLinear(nn.Module):
 
         if pretrained_bias is not None:
             self.up.bias.data = pretrained_bias.float()
-        # If bias exists (bias=True), we already set it; no need to zero otherwise.
+        else:
+            # If bias was present but is None, still ensure zero bias
+            # But if bias=False in original, the up layer has bias=False anyway.
+            # This line handles the case where bias is None but we created layer with bias=True? Not possible.
+            # Safer: only set if bias exists.
+            pass
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.up(self.down(x))
@@ -125,9 +130,12 @@ class MinimalSVDAttention(nn.Module):
         context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, -1)
         output = self.out_proj(context)
 
+        # Always return a 2‑tuple: (output, attention_weights)
+        # If attention weights not requested, return None as second element.
         if output_attentions:
             return output, attn_weights
-        return output,
+        else:
+            return output, None
 
     def get_ortho_loss(self) -> torch.Tensor:
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
