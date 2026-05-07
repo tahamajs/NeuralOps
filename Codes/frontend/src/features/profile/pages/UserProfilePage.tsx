@@ -1,32 +1,23 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../../../api/client'
+import { useAuthStore } from '../../auth/store/authStore'
 import { Card } from '../../../components/ui/Card'
 import { Button } from '../../../components/ui/Button'
 import { Input } from '../../../components/ui/Input'
 import { Spinner } from '../../../components/ui/Spinner'
-import { Badge } from '../../../components/ui/Badge'
-import { useAuthStore } from '../../auth/store/authStore'
-import { Link } from 'react-router-dom'
-import ActivityFeedPage from '../../activity/pages/ActivityFeedPage' // we can reuse part or inline stats
+import { User, Mail, Calendar, Shield, Activity } from 'lucide-react'
 
 export default function UserProfilePage() {
-  const { user } = useAuthStore()
+  const { user: authUser } = useAuthStore()
+  const queryClient = useQueryClient()
+  const [editing, setEditing] = useState(false)
   const [form, setForm] = useState({ first_name: '', last_name: '', email: '' })
 
   const { data: profile, isLoading } = useQuery({
-    queryKey: ['userInfo'],
-    queryFn: async () => (await api.get('/api/auth/user/')).data,
-  })
-
-  const { data: notesCount } = useQuery({
-    queryKey: ['notesCount'],
-    queryFn: async () => (await api.get('/api/notes/v1/notes/statistics/')).data,
-  })
-
-  const { data: experiments } = useQuery({
-    queryKey: ['experiments'],
-    queryFn: async () => (await api.get('/api/experiments/')).data,
+    queryKey: ['userProfile'],
+    queryFn: async () => (await api.get('/auth/user/')).data,
   })
 
   useEffect(() => {
@@ -39,68 +30,94 @@ export default function UserProfilePage() {
     }
   }, [profile])
 
-  const updateMutation = useMutation({
-    mutationFn: async (payload: any) => api.patch('/api/auth/profile/', payload),
-    onSuccess: () => alert('Profile updated'),
+  const updateMut = useMutation({
+    mutationFn: (data: any) => api.patch('/auth/profile/', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+      setEditing(false)
+    },
   })
 
   if (isLoading) return <Spinner />
 
   return (
-    <div className="animate-fade-in">
-      {/* Full‑screen background hero */}
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-neon-blue/20 to-purple-500/20 rounded-3xl" />
-        <div className="relative glass p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center md:items-start">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neon-blue to-purple-500 flex items-center justify-center text-4xl font-black text-white shadow-lg">
-            {profile?.username?.[0]?.toUpperCase() || 'U'}
-          </div>
-          <div className="flex-1 text-center md:text-left">
-            <h1 className="text-3xl font-black text-white">{profile?.username}</h1>
-            <p className="text-slate-400 text-sm mt-1">{profile?.email}</p>
-            <div className="flex gap-3 mt-4 justify-center md:justify-start">
-              <Link to="/profile/change-password"><Button variant="secondary" size="sm">Change Password</Button></Link>
-              <Button variant="ghost" size="sm" onClick={() => alert('Logout')}>Logout</Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-6 text-center">
-            <div>
-              <div className="text-2xl font-black text-white">{experiments?.length || 0}</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Experiments</div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-white">{notesCount?.total_notes || 0}</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Notes</div>
-            </div>
-            <div>
-              <div className="text-2xl font-black text-white">{profile?.is_staff ? 'Admin' : 'User'}</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Role</div>
-            </div>
-          </div>
+    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+      {/* Banner */}
+      <div className="glass p-8 rounded-2xl bg-gradient-to-br from-neon-blue/10 to-purple-500/10 text-center">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-neon-blue to-purple-500 flex items-center justify-center mx-auto text-3xl font-bold text-white shadow-glow-md">
+          {profile?.username?.[0]?.toUpperCase() || 'U'}
+        </div>
+        <h1 className="text-2xl font-display font-bold text-white mt-4">{profile?.username}</h1>
+        <p className="text-slate-400 text-sm">{profile?.email}</p>
+        <div className="flex justify-center gap-3 mt-4">
+          <Button size="sm" variant="ghost" onClick={() => setEditing(!editing)}>
+            {editing ? 'Cancel' : 'Edit Profile'}
+          </Button>
+          <Link to="/profile/change-password">
+            <Button size="sm" variant="ghost">Change Password</Button>
+          </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2">
-          <h2 className="text-sm font-black text-white uppercase tracking-wider mb-6">Edit Profile</h2>
+      {/* Info Cards */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="flex items-center gap-3 p-4">
+          <User size={20} className="text-neon-blue" />
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider">Username</p>
+            <p className="text-sm text-white">{profile?.username}</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-3 p-4">
+          <Mail size={20} className="text-neon-purple" />
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider">Email</p>
+            <p className="text-sm text-white">{profile?.email || '—'}</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-3 p-4">
+          <Calendar size={20} className="text-neon-green" />
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider">Joined</p>
+            <p className="text-sm text-white">{new Date(profile?.date_joined).toLocaleDateString()}</p>
+          </div>
+        </Card>
+        <Card className="flex items-center gap-3 p-4">
+          <Shield size={20} className="text-neon-orange" />
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-wider">Role</p>
+            <p className="text-sm text-white">{profile?.is_staff ? 'Admin' : 'Researcher'}</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* Edit Form (conditional) */}
+      {editing && (
+        <Card className="animate-scale-in">
+          <h2 className="text-sm font-bold text-white mb-4">Edit Profile</h2>
           <div className="space-y-4">
-            <Input label="First Name" value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} />
-            <Input label="Last Name" value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} />
-            <Input label="Email" type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-            <Button onClick={() => updateMutation.mutate(form)} disabled={updateMutation.isPending}>
+            <Input
+              label="First Name"
+              value={form.first_name}
+              onChange={e => setForm({ ...form, first_name: e.target.value })}
+            />
+            <Input
+              label="Last Name"
+              value={form.last_name}
+              onChange={e => setForm({ ...form, last_name: e.target.value })}
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={e => setForm({ ...form, email: e.target.value })}
+            />
+            <Button onClick={() => updateMut.mutate(form)} disabled={updateMut.isPending}>
               Save Changes
             </Button>
           </div>
         </Card>
-        <Card>
-          <h2 className="text-sm font-black text-white uppercase tracking-wider mb-4">Quick Links</h2>
-          <div className="space-y-2 text-sm">
-            <Link to="/my-jobs" className="block text-neon-blue hover:underline">My Scheduled Jobs</Link>
-            <Link to="/notes" className="block text-neon-blue hover:underline">My Notes</Link>
-            <Link to="/activity" className="block text-neon-blue hover:underline">Activity Feed</Link>
-          </div>
-        </Card>
-      </div>
+      )}
     </div>
   )
 }
