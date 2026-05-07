@@ -2,50 +2,142 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../../api/client'
 import { Card } from '../../../components/ui/Card'
 import { Spinner } from '../../../components/ui/Spinner'
+import { BarChart3, Clock, Cpu, Layers } from 'lucide-react'
 
 export default function StatisticsPage() {
-  // This endpoint is from web_dashboard's statistics view. Ensure it's mounted at /api/statistics/ or use the Django view that returns context.
-  // Actually, the web_dashboard views `statistics` returns a template context, not JSON.
-  // We need to call the REST API /api/jobs/stats/ and maybe additional custom endpoints.
-  // We'll use /api/jobs/stats/ for job stats and /api/experiments/ for runs.
-  const { data: jobStats } = useQuery({ queryKey: ['jobStats'], queryFn: async () => (await api.get('/api/jobs/stats/')).data })
-  const { data: experiments = [] } = useQuery({ queryKey: ['experiments'], queryFn: async () => (await api.get('/api/experiments/')).data })
+  const { data: jobStats, isLoading: jobsLoading } = useQuery({
+    queryKey: ['jobStats'],
+    queryFn: async () => (await api.get('/api/jobs/stats/')).data,
+  })
 
-  const completed = experiments.filter((e: any) => e.status === 'completed').length
-  const failed = experiments.filter((e: any) => e.status === 'failed').length
-  const running = experiments.filter((e: any) => e.status === 'running').length
+  const { data: experiments = [], isLoading: expsLoading } = useQuery({
+    queryKey: ['experiments'],
+    queryFn: async () => (await api.get('/api/experiments/')).data,
+  })
 
-  if (!jobStats) return <Spinner />
+  const isLoading = jobsLoading || expsLoading
+  if (isLoading) return <Spinner />
+
+  const completed = experiments.filter((e: any) => e.status === 'completed')
+  const running = experiments.filter((e: any) => e.status === 'running')
+  const failed = experiments.filter((e: any) => e.status === 'failed')
+
+  const avgAccuracy =
+    completed.length > 0
+      ? completed
+          .reduce((sum: number, e: any) => sum + (e.final_metrics?.eval_accuracy || 0), 0) /
+        completed.length
+      : null
+
+  const avgDuration =
+    jobStats?.average_completion_seconds || null
+
+  // Model usage
+  const modelCounts = experiments.reduce((acc: Record<string, number>, e: any) => {
+    const model = e.config?.model_name || 'unknown'
+    acc[model] = (acc[model] || 0) + 1
+    return acc
+  }, {})
+
+  const topModels = Object.entries(modelCounts)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .slice(0, 5)
+
+  // Task usage
+  const taskCounts = experiments.reduce((acc: Record<string, number>, e: any) => {
+    const task = e.config?.task_name || 'unknown'
+    acc[task] = (acc[task] || 0) + 1
+    return acc
+  }, {})
+
+  const topTasks = Object.entries(taskCounts)
+    .sort(([, a], [, b]) => (b as number) - (a as number))
+    .slice(0, 5)
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-black text-white">
-        STATISTICS <span className="text-neon-blue">OVERVIEW</span>
+      <h1 className="text-2xl font-display font-bold text-white flex items-center gap-2">
+        <BarChart3 size={24} className="text-neon-blue" /> Global Statistics
       </h1>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <div className="text-xs text-slate-500 uppercase tracking-widest">Total Jobs</div>
-          <div className="text-2xl font-bold text-white">{jobStats.total}</div>
+
+      {/* KPI Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="text-center p-5">
+          <div className="text-3xl font-bold text-white">{experiments.length}</div>
+          <div className="text-xs text-slate-400 uppercase tracking-wider mt-2">Total</div>
         </Card>
-        <Card>
-          <div className="text-xs text-slate-500 uppercase tracking-widest">Completed</div>
-          <div className="text-2xl font-bold text-green-400">{completed}</div>
+        <Card className="text-center p-5">
+          <div className="text-3xl font-bold text-green-400">{completed.length}</div>
+          <div className="text-xs text-slate-400 uppercase tracking-wider mt-2">Completed</div>
         </Card>
-        <Card>
-          <div className="text-xs text-slate-500 uppercase tracking-widest">Running</div>
-          <div className="text-2xl font-bold text-blue-400">{running}</div>
+        <Card className="text-center p-5">
+          <div className="text-3xl font-bold text-blue-400">{running.length}</div>
+          <div className="text-xs text-slate-400 uppercase tracking-wider mt-2">Running</div>
         </Card>
-        <Card>
-          <div className="text-xs text-slate-500 uppercase tracking-widest">Failed</div>
-          <div className="text-2xl font-bold text-red-400">{failed}</div>
+        <Card className="text-center p-5">
+          <div className="text-3xl font-bold text-red-400">{failed.length}</div>
+          <div className="text-xs text-slate-400 uppercase tracking-wider mt-2">Failed</div>
         </Card>
       </div>
-      {jobStats.average_completion_seconds && (
-        <Card>
-          <div className="text-xs text-slate-500 uppercase tracking-widest">Avg Completion Time</div>
-          <div className="text-xl font-bold text-white">{jobStats.average_completion_seconds} sec</div>
+
+      {/* Additional Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {avgAccuracy !== null && (
+          <Card className="flex items-center gap-3 p-4">
+            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+              <TrendingUp size={20} className="text-green-400" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Avg Accuracy</p>
+              <p className="text-xl font-bold text-white">{avgAccuracy.toFixed(4)}</p>
+            </div>
+          </Card>
+        )}
+        {avgDuration !== null && (
+          <Card className="flex items-center gap-3 p-4">
+            <div className="w-10 h-10 rounded-xl bg-neon-blue/10 flex items-center justify-center">
+              <Clock size={20} className="text-neon-blue" />
+            </div>
+            <div>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Avg Duration</p>
+              <p className="text-xl font-bold text-white">{Math.round(avgDuration)}s</p>
+            </div>
+          </Card>
+        )}
+        <Card className="flex items-center gap-3 p-4">
+          <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+            <Cpu size={20} className="text-purple-400" />
+          </div>
+          <div>
+            <p className="text-xs text-slate-400 uppercase tracking-wider">GPU Jobs</p>
+            <p className="text-xl font-bold text-white">
+              {experiments.filter((e: any) => e.config?.gpu_requirements > 0).length}
+            </p>
+          </div>
         </Card>
-      )}
+      </div>
+
+      {/* Model & Task Usage */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <h3 className="text-sm font-bold text-white mb-3">Top Models</h3>
+          {topModels.map(([model, count]) => (
+            <div key={model} className="flex justify-between text-xs py-1.5 border-b border-white/5">
+              <span className="text-slate-400">{model}</span>
+              <span className="text-white font-mono">{count}</span>
+            </div>
+          ))}
+        </Card>
+        <Card>
+          <h3 className="text-sm font-bold text-white mb-3">Top Tasks</h3>
+          {topTasks.map(([task, count]) => (
+            <div key={task} className="flex justify-between text-xs py-1.5 border-b border-white/5">
+              <span className="text-slate-400 uppercase">{task}</span>
+              <span className="text-white font-mono">{count}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
     </div>
   )
 }

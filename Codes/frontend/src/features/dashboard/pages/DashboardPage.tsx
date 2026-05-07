@@ -2,16 +2,19 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../../api/client'
 import { ENDPOINTS } from '../../../api/endpoints'
 import { Card } from '../../../components/ui/Card'
-import { Spinner } from '../../../components/ui/Spinner'
 import { Button } from '../../../components/ui/Button'
 import { Badge } from '../../../components/ui/Badge'
-import { Link } from 'react-router-dom'
+import { Spinner } from '../../../components/ui/Spinner'
+import { Link, useNavigate } from 'react-router-dom'
 import { Experiment } from '../../../types/experiment'
-import { useNavigate } from 'react-router-dom'
-import { BarChart3, TrendingUp, Cpu, Activity, Plus } from 'lucide-react'
+import {
+  BarChart3, TrendingUp, Cpu, Activity, Plus,
+  BookOpen, FileText, Bot, Layers
+} from 'lucide-react'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+
   const { data: experiments = [], isLoading } = useQuery<Experiment[]>({
     queryKey: ['experiments'],
     queryFn: async () => (await api.get(ENDPOINTS.EXPERIMENTS.LIST)).data,
@@ -24,25 +27,39 @@ export default function DashboardPage() {
     refetchInterval: 10000,
   })
 
+  const { data: jobStats } = useQuery({
+    queryKey: ['jobStats'],
+    queryFn: async () => (await api.get('/api/jobs/stats/')).data,
+    refetchInterval: 15000,
+  })
+
   const completed = experiments.filter(e => e.status === 'completed').length
   const running = experiments.filter(e => e.status === 'running').length
   const failed = experiments.filter(e => e.status === 'failed').length
   const avgAccuracy = completed > 0
-    ? (experiments.filter(e => e.status === 'completed').reduce((sum, e) => sum + (e.final_metrics?.eval_accuracy || 0), 0) / completed).toFixed(4)
+    ? (experiments
+        .filter(e => e.status === 'completed')
+        .reduce((sum, e) => sum + (e.final_metrics?.eval_accuracy || 0), 0) / completed)
+        .toFixed(4)
     : '—'
+
+  // Most recent failed run
+  const lastFailed = experiments.filter(e => e.status === 'failed')[0]
 
   if (isLoading) return <Spinner />
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Welcome Banner */}
+      {/* ── Welcome Banner ── */}
       <div className="glass p-6 rounded-2xl bg-gradient-to-r from-neon-blue/10 to-purple-500/10 border border-white/10">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-display font-bold text-white">
               Welcome back, <span className="text-neon-blue">Researcher</span>
             </h1>
-            <p className="text-slate-400 mt-1 text-sm">Here's what's happening across your experiments.</p>
+            <p className="text-slate-400 mt-1 text-sm">
+              Here's what's happening across your experiments.
+            </p>
           </div>
           <Button onClick={() => navigate('/launcher')} className="flex items-center gap-2">
             <Plus size={16} /> New Experiment
@@ -50,12 +67,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* ── KPI Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="card-hover-effect">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Total Experiments</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Total</p>
               <p className="text-3xl font-display font-bold text-white mt-1">{experiments.length}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-neon-blue/10 flex items-center justify-center">
@@ -66,7 +83,7 @@ export default function DashboardPage() {
         <Card className="card-hover-effect">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Running Jobs</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Running</p>
               <p className="text-3xl font-display font-bold text-neon-orange mt-1">{running}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-neon-orange/10 flex items-center justify-center">
@@ -98,11 +115,13 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Recent Experiments Table */}
+      {/* ── Recent Experiments Table ── */}
       <Card>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-display font-bold text-white">Recent Experiments</h2>
-          <Link to="/experiments" className="text-neon-blue text-sm hover:underline">View all →</Link>
+          <Link to="/experiments" className="text-neon-blue text-sm hover:underline">
+            View all →
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -113,19 +132,38 @@ export default function DashboardPage() {
                 <th className="py-3 px-4 font-medium">Status</th>
                 <th className="py-3 px-4 font-medium">Accuracy</th>
                 <th className="py-3 px-4 font-medium">Created</th>
-                <th className="py-3 px-4 font-medium text-right">Actions</th>
+                <th className="py-3 px-4 font-medium text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {experiments.slice(0, 5).map((exp) => (
-                <tr key={exp.id} className="hover:bg-white/5 transition-colors cursor-pointer" onClick={() => navigate(`/experiments/${exp.id}`)}>
-                  <td className="py-3 px-4 text-white">{exp.name || exp.id.slice(0,8)}</td>
+              {experiments.slice(0, 8).map(exp => (
+                <tr
+                  key={exp.id}
+                  className="hover:bg-white/5 cursor-pointer transition-colors"
+                  onClick={() => navigate(`/experiments/${exp.id}`)}
+                >
+                  <td className="py-3 px-4 text-white">{exp.name || exp.id.slice(0, 8)}</td>
                   <td className="py-3 px-4 uppercase text-xs">{exp.config?.task_name || '—'}</td>
-                  <td className="py-3 px-4"><Badge status={exp.status}>{exp.status}</Badge></td>
-                  <td className="py-3 px-4">{exp.final_metrics?.eval_accuracy?.toFixed(4) || '—'}</td>
-                  <td className="py-3 px-4 text-slate-400">{new Date(exp.created_at).toLocaleDateString()}</td>
+                  <td className="py-3 px-4">
+                    <Badge status={exp.status}>{exp.status}</Badge>
+                  </td>
+                  <td className="py-3 px-4">
+                    {exp.final_metrics?.eval_accuracy?.toFixed(4) || '—'}
+                  </td>
+                  <td className="py-3 px-4 text-slate-400">
+                    {new Date(exp.created_at).toLocaleDateString()}
+                  </td>
                   <td className="py-3 px-4 text-right">
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/experiments/${exp.id}`) }}>View</Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={e => {
+                        e.stopPropagation()
+                        navigate(`/experiments/${exp.id}`)
+                      }}
+                    >
+                      View
+                    </Button>
                   </td>
                 </tr>
               ))}
@@ -134,13 +172,13 @@ export default function DashboardPage() {
         </div>
       </Card>
 
-      {/* Quick Actions */}
+      {/* ── Quick Actions ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Link to="/analysis" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
           <BarChart3 size={24} className="text-neon-blue" />
           <span className="text-sm font-medium text-white">Analysis</span>
         </Link>
-        <Link to="/notes/notebook" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
+        <Link to="/notes" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
           <BookOpen size={24} className="text-neon-purple" />
           <span className="text-sm font-medium text-white">Notebook</span>
         </Link>
@@ -148,11 +186,35 @@ export default function DashboardPage() {
           <FileText size={24} className="text-neon-pink" />
           <span className="text-sm font-medium text-white">Papers</span>
         </Link>
-        <Link to="/cluster" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
-          <Cpu size={24} className="text-neon-green" />
-          <span className="text-sm font-medium text-white">Cluster</span>
+        <Link to="/agent" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
+          <Bot size={24} className="text-neon-cyan" />
+          <span className="text-sm font-medium text-white">AI Assistant</span>
         </Link>
       </div>
+
+      {/* ── Alerts (last failed) ── */}
+      {lastFailed && (
+        <Card className="border border-red-500/20 bg-red-500/5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-red-400">
+                ⚠️ Last failed experiment: {lastFailed.name || lastFailed.id.slice(0, 8)}
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Task: {lastFailed.config?.task_name || '—'} ·{' '}
+                {new Date(lastFailed.created_at).toLocaleString()}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/experiments/${lastFailed.id}`)}
+            >
+              Investigate
+            </Button>
+          </div>
+        </Card>
+      )}
     </div>
   )
 }
