@@ -1,0 +1,7 @@
+[
+  {
+    "name": "advanced_zero_shot",
+    "error": "'NoneType' object has no attribute 'parameters'",
+    "traceback": "Traceback (most recent call last):\n  File \"/Users/tahamajs/Documents/uni/Project/Codes/test_compressors.py\", line 97, in <module>\n    result = compressor_fn(**call_args)\n  File \"/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/advanced/advanced_methods.py\", line 19, in __init__\n    super().__init__(model=None, name=\"advanced_zero_shot\", **kwargs)\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/core/base.py\", line 29, in __init__\n    self._original_params = self._count_params(model)\n                            ~~~~~~~~~~~~~~~~~~^^^^^^^\n  File \"/Users/tahamajs/Documents/uni/Project/Codes/framework/compression_engine/core/base.py\", line 36, in _count_params\n    return sum(p.numel() for p in module.parameters() if p.requires_grad)\n                                  ^^^^^^^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'parameters'\n"
+  }
+]

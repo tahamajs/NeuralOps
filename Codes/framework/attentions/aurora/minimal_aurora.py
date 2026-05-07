@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.attentions.core.registry import ATTENTION_REGISTRY
 
-from framework.attentions.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("minimal_aurora")
 class FactorisedLinear(nn.Module):
@@ -92,7 +91,11 @@ class MinimalAURORAAttention(nn.Module):
         context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         output = self.out_proj(context)
-        return (output, attn_weights) if output_attentions else (output,)
+        # Always return a 2‑tuple: (output, attn_weights) – second element is None if not requested
+        if output_attentions:
+            return output, attn_weights
+        else:
+            return output, None
 
     def get_ortho_loss(self):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
