@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
@@ -12,15 +12,84 @@ interface TerminalPanelProps {
 export default function TerminalPanel({ onClose }: TerminalPanelProps) {
   const terminalRef = useRef<HTMLDivElement>(null)
   const terminalInstance = useRef<Terminal | null>(null)
+  const fitAddonRef = useRef<FitAddon | null>(null)
   const wsRef = useRef<WebSocket | null>(null)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const reconnectAttemptRef = useRef(0)
+
+  const [status, setStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'error'>('connecting')
+  const [reconnectCountdown, setReconnectCountdown] = useState(0)
+
+  const connectWebSocket = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return
+
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+    const token = localStorage.getItem('token')
+    const url = `${protocol}://${window.location.host}/ws/terminal/?token=${token}`
+    const ws = new WebSocket(url)
+    wsRef.current = ws
+    setStatus('connecting')
+
+    ws.onopen = () => {
+      setStatus('connected')
+      reconnectAttemptRef.current = 0
+      setReconnectCountdown(0)
+
+      const term = terminalInstance.current
+      if (term) {
+        term.writeln('\x1b[1;36m╔══════════════════════════════════════╗\x1b[0m')
+        term.writeln('\x1b[1;36m║   \x1b[1;37mNeuralOps Terminal v1.0\x1b[1;36m          ║\x1b[0m')
+        term.writeln('\x1b[1;36m║   \x1b[0;32mConnected to cluster\x1b[1;36m              ║\x1b[0m')
+        term.writeln('\x1b[1;36m╚══════════════════════════════════════╝\x1b[0m')
+        term.writeln('')
+      }
+    }
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        const term = terminalInstance.current
+        if (!term) return
+
+        if (data.type === 'output') {
+          term.write(data.data)
+        } else if (data.type === 'error') {
+          term.writeln(`\x1b[1;31m[ERROR]\x1b[0m ${data.data}`)
+        }
+      } catch {
+        // Non‑JSON message, treat as raw text
+        terminalInstance.current?.write(event.data)
+      }
+    }
+
+    ws.onerror = () => {
+      setStatus('error')
+      terminalInstance.current?.writeln('\x1b[1;31m[WebSocket Error]\x1b[0m')
+    }
+
+    ws.onclose = () => {
+      setStatus('disconnected')
+      terminalInstance.current?.writeln('\x1b[1;33m[Disconnected]\x1b[0m Terminal session closed.')
+
+      // Auto‑reconnect with exponential backoff (max 30 seconds)
+      const attempt = reconnectAttemptRef.current + 1
+      reconnectAttemptRef.current = attempt
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 30000)
+      setReconnectCountdown(Math.floor(delay / 1000))
+
+      reconnectTimerRef.current = setTimeout(() => {
+        connectWebSocket()
+      }, delay)
+    }
+  }, [])
 
   useEffect(() => {
     if (!terminalRef.current) return
 
     const term = new Terminal({
       cursorBlink: true,
-      fontSize: 13,
-      fontFamily: "'JetBrains Mono', 'Cascadia Code', monospace",
+      fontSize: import.meta.env.DEV ? 13 : 12,
+      fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
       theme: {
         background: '#0a0c10',
         foreground: '#e2e8f0',
@@ -44,7 +113,9 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
         brightWhite: '#ffffff',
       },
       allowProposedApi: true,
-      scrollback: 5000,
+      scrollback: 10000,
+      fontSize: 13,
+      lineHeight: 1.2,
     })
 
     const fitAddon = new FitAddon()
@@ -57,97 +128,84 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
 
     term.open(terminalRef.current)
     fitAddon.fit()
+    fitAddonRef.current = fitAddon
 
-    // Connect WebSocket to Django Channels terminal consumer
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const token = localStorage.getItem('token')
-    const wsUrl = `${protocol}://${window.location.host}/ws/terminal/?token=${token}`
-    const ws = new WebSocket(wsUrl)
-
-    ws.onopen = () => {
-      term.writeln('\x1b[1;36m╔══════════════════════════════════════╗\x1b[0m')
-      term.writeln('\x1b[1;36m║   \x1b[1;37mNeuralOps Terminal v1.0\x1b[1;36m          ║\x1b[0m')
-      term.writeln('\x1b[1;36m║   \x1b[0;32mConnected to cluster\x1b[1;36m              ║\x1b[0m')
-      term.writeln('\x1b[1;36m╚══════════════════════════════════════╝\x1b[0m')
-      term.writeln('')
-    }
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (data.type === 'output') {
-        term.write(data.data)
-      } else if (data.type === 'error') {
-        term.writeln(`\x1b[1;31m[ERROR]\x1b[0m ${data.data}`)
-      }
-    }
-
-    ws.onerror = () => {
-      term.writeln('\x1b[1;31m[Connection Error]\x1b[0m WebSocket connection failed.')
-    }
-
-    ws.onclose = () => {
-      term.writeln('\x1b[1;33m[Disconnected]\x1b[0m Terminal session closed.')
-    }
-
-    // Send user input to backend
+    // Forward user input to WebSocket
     term.onData((data) => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'input', data }))
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: 'input', data }))
       }
     })
 
     terminalInstance.current = term
-    wsRef.current = ws
+
+    // Connect WebSocket
+    connectWebSocket()
 
     // Resize handler
     const handleResize = () => {
       fitAddon.fit()
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: 'resize',
-            cols: term.cols,
-            rows: term.rows,
-          })
-        )
+      const ws = wsRef.current
+      if (ws?.readyState === WebSocket.OPEN && term) {
+        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }))
       }
     }
+
     window.addEventListener('resize', handleResize)
 
     return () => {
       window.removeEventListener('resize', handleResize)
-      ws.close()
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+      wsRef.current?.close()
       term.dispose()
     }
-  }, [])
+  }, [connectWebSocket])
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[#0a0c10]">
       {/* Quick Command Bar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-cyber-800 border-b border-white/5 text-[10px]">
-        <span className="text-slate-500 font-bold uppercase tracking-wider">Quick:</span>
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-cyber-800 border-b border-white/5 text-[10px] overflow-x-auto">
+        <span className="text-slate-500 font-bold uppercase tracking-wider mr-1">Quick:</span>
         {[
           { label: 'GPU', cmd: 'nvidia-smi\n' },
           { label: 'Jobs', cmd: 'python manage.py shell -c "from jobscheduler.models import Job; print(Job.objects.count())"\n' },
           { label: 'Logs', cmd: 'tail -f /var/log/neuralops/app.log\n' },
           { label: 'Clear', cmd: 'clear\n' },
-        ].map((item) => (
+        ].map(item => (
           <button
             key={item.label}
             onClick={() => {
-              const ws = wsRef.current
-              if (ws?.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'input', data: item.cmd }))
+              if (wsRef.current?.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({ type: 'input', data: item.cmd }))
               }
             }}
-            className="px-2 py-0.5 rounded bg-white/5 hover:bg-neon-blue/20 text-slate-400 hover:text-neon-blue transition-colors"
+            className="px-2 py-0.5 rounded bg-white/5 hover:bg-neon-blue/20 text-slate-400 hover:text-neon-blue transition-colors whitespace-nowrap"
           >
             {item.label}
           </button>
         ))}
       </div>
+
+      {/* Status Bar */}
+      <div className="flex items-center justify-between px-3 py-0.5 bg-cyber-800 border-b border-white/5 text-[10px]">
+        <span className="text-slate-500 font-bold uppercase tracking-wider">
+          SERIAL • BAUDRATE 115200 • 8‑N‑1
+        </span>
+        <span
+          className={`font-bold uppercase tracking-wider ${
+            status === 'connected' ? 'text-green-400' : status === 'connecting' ? 'text-yellow-400' : 'text-red-400'
+          }`}
+        >
+          {status === 'connected' && '● CONNECTED'}
+          {status === 'connecting' && '◌ CONNECTING'}
+          {status === 'disconnected' && reconnectCountdown > 0 && `⟳ RETRY IN ${reconnectCountdown}s`}
+          {status === 'error' && '⚠ ERROR'}
+          {status === 'disconnected' && reconnectCountdown === 0 && '○ OFFLINE'}
+        </span>
+      </div>
+
       {/* Terminal */}
-      <div ref={terminalRef} className="flex-1 p-2" />
+      <div ref={terminalRef} className="flex-1 p-1" />
     </div>
   )
 }

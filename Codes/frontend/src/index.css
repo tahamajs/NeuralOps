@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================================
+   LAYER: base – foundational element styles
+   ================================================================ */
 @layer base {
   body {
     @apply bg-surface text-slate-200 antialiased selection:bg-neon-blue/30;
@@ -9,7 +12,7 @@
     scroll-behavior: smooth;
   }
 
-  /* Custom scrollbar for the whole app */
+  /* Custom scrollbar (WebKit) */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -21,15 +24,23 @@
     @apply bg-white/10 rounded-full hover:bg-white/20;
   }
 
-  /* Dark scrollbar for Firefox */
+  /* Firefox scrollbar */
   * {
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
     scrollbar-width: thin;
   }
+
+  /* Focus ring for accessibility */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-neon-blue/70 rounded-lg;
+  }
 }
 
+/* ================================================================
+   LAYER: components – reusable UI building blocks
+   ================================================================ */
 @layer components {
-  /* Glassmorphism card – the backbone of the UI */
+  /* ---------- Glassmorphism ---------- */
   .glass {
     @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl;
   }
@@ -37,7 +48,7 @@
     @apply hover:bg-white/[0.07] hover:border-white/20 transition-all duration-300;
   }
 
-  /* Cyberpunk grid background (used on body or large containers) */
+  /* ---------- Cyberpunk background ---------- */
   .cyber-grid {
     background-image:
       linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
@@ -45,7 +56,7 @@
     background-size: 60px 60px;
   }
 
-  /* Subtle shimmer overlay for loading skeletons or special cards */
+  /* ---------- Shimmer loading effect ---------- */
   .shimmer {
     background-image: linear-gradient(
       90deg,
@@ -57,7 +68,7 @@
     animation: shimmer 2s linear infinite;
   }
 
-  /* Card that lifts on hover with a glow */
+  /* ---------- Card hover lift ---------- */
   .card-hover-effect {
     @apply transition-all duration-300 hover:-translate-y-1;
     box-shadow: 0 0 0 rgba(59, 130, 246, 0);
@@ -66,21 +77,117 @@
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
   }
 
-  /* Thin scrollbar utility for panels */
+  /* ---------- Scrollbar thin variant ---------- */
   .scrollbar-thin::-webkit-scrollbar {
     width: 4px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-white/10 rounded-full;
   }
+
+  /* ---------- Button variant extensions ---------- */
+  .btn-glow {
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  }
+  .btn-glow:hover {
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.5);
+  }
+
+  /* ---------- Badge pill ---------- */
+  .badge-pill {
+    @apply px-3 py-1 rounded-full text-xs font-semibold;
+  }
+
+  /* ---------- Input & textarea focus ---------- */
+  .input-focus {
+    @apply focus:outline-none focus:border-neon-blue/50 focus:ring-1 focus:ring-neon-blue/20 transition-colors;
+  }
 }
 
-/* Custom keyframe animations used by the shimmer and other components */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+/* ================================================================
+   LAYER: utilities – custom utility classes
+   ================================================================ */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
-  100% {
-    background-position: 200% 0;
+  .text-pretty {
+    text-wrap: pretty;
+  }
+}
+
+/* ================================================================
+   ANIMATIONS – keyframes + utility classes
+   ================================================================ */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(59,130,246,0.3); }
+  50%      { box-shadow: 0 0 40px rgba(59,130,246,0.6); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+
+/* Animation utility classes (use with Tailwind's arbitrary animation or these helpers) */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+.animate-glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ================================================================
+   PRINT styles – hide unnecessary elements
+   ================================================================ */
+@media print {
+  nav, header, .sidebar, .floating-windows, .floating-window-bar, button, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .glass, .card, .prose {
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
   }
 }
