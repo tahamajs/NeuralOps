@@ -1,0 +1,70 @@
+# Hardware
+device: "auto"                 # auto, mps, cuda, cpu
+force_cpu_for_svd: true
+
+# Data
+local_glue_path: "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+max_seq_length: 128
+max_train_samples: null
+
+# Available GLUE tasks (subdirectories under local_glue_path)
+glue_tasks:
+  - ax
+  - cola
+  - mnli
+  - mnli_matched
+  - mnli_mismatched
+  - mrpc
+  - qnli
+  - qqp
+  - rte
+  - sst2
+  - stsb
+  - wnli
+
+# Model
+model_name: "bert-base-uncased"   # also: roberta-base, distilbert-base-uncased, albert-base-v2
+attention_type: "svd"             # svd, full, linformer
+rank: 128
+
+# Training
+batch_size: 16
+eval_batch_size: 32
+epochs: 3
+learning_rate: 2e-5
+weight_decay: 0.01
+warmup_ratio: 0.1
+gradient_accumulation_steps: 1
+max_grad_norm: 1.0
+lr_scheduler_type: "linear"
+
+# Logging
+output_dir: "results"
+logging_steps: 50
+save_checkpoints: false
+seed: 42
+
+# Visualisation
+visualize: true
+visualizations: ["attention_heatmap", "entropy", "svd_spectrum"]
+
+# Compression methods
+compression_methods:
+  - standard_svd
+  - head_pruning
+  - layer_skipping
+  - quantized_svd
+  - blockwise_lowrank
+  - randomized_svd
+  - tensor_train_decomp
+  - cp_decomposition
+  - dynamic_token_pruning
+  - spectral_clustering_prune
+  - hash_quantization
+  - moe_sparsification
+  - hybrid_advanced
+energy_threshold_base: 0.90
+min_rank_global: 4
+limit_tasks: null
+limit_samples_per_task: 1000
+svd_rank: 32
