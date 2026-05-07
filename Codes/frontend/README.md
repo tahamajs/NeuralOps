@@ -1,220 +1,213 @@
 
 
-## 📦 Folder Structure – Feature‑Based with Shared Components
+# 🚀 NeuralOps Frontend
+
+**A modern, cyber‑glass experiment management platform for attention compression research.**  
+Real‑time monitoring, interactive visualizations, Overleaf‑style paper editing, hyperparameter sweeps, model registry, and GPU cluster dashboard.
+
+![Design System](https://img.shields.io/badge/design-cyber--glass-blueviolet) ![React](https://img.shields.io/badge/react-18.2-blue) ![TypeScript](https://img.shields.io/badge/typescript-5.3-3178c6) ![Vite](https://img.shields.io/badge/vite-4.5-646cff)
+
+---
+
+## ✨ Features
+
+### Phase 1 (Complete)
+- **Dashboard** – KPI cards, recent experiments table, active jobs widget, system resource monitor  
+- **Experiment Management** – Create runs (training/evaluation/compression), view details, stop/retry
+- **Live Monitoring** – Real‑time loss charts, progress bar with ETA, log viewer via WebSocket
+- **Interactive Launcher** – Model picker, task selector, attention mechanism picker, hyperparameter forms
+- **Research Notebook** – Full‑featured notes with Markdown, reactions, sharing, version history, webhooks
+- **Paper Editor** – Monaco‑based LaTeX editor with PDF preview (Overleaf‑style)
+- **Terminal** – xterm.js terminal embedded in a floating window with PTY backend
+- **Model Versioning** – Browse versions, publish to HuggingFace, compare models
+- **Configuration History** – Versioned config snapshots with diff viewer
+- **Custom Metrics Dashboard** – Plotly scalars, image gallery, tables
+- **Admin Panel** – Job management, model version admin, bulk actions
+- **Global Search** – Search across all entities (experiments, notes, models, jobs)
+- **Activity Feed** – Audit log of platform actions
+- **Authentication** – Token + cookie auth, login/register, profile, password change
+
+### Phase 2 (Added)
+- **Reproducibility Snapshots** – Auto‑capture git commit, environment, seed; downloadable `reproduce.py`
+- **Run Comparison** – Side‑by‑side config diff, multi‑run metric overlay charts, parallel coordinates
+- **Hyperparameter Sweeps** – Optuna‑powered wizard, trial dashboard, parameter importance plots, Hyperband pruning
+- **Model Registry** – Lifecycle management (promote/archive), model cards, deployment stage badges
+- **GPU Cluster Dashboard** – Utilization heatmap, per‑node GPU metrics, job queue depth
+- **Enhanced WebSocket** – Reconnect with replay, batching, heartbeat, offline banner
+- **Training Control Panel** – Start/stop with immediate feedback, live progress, connection status
+
+---
+
+## 🧰 Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| **Framework** | React 18 + TypeScript |
+| **Build Tool** | Vite 4 |
+| **Routing** | React Router 6 (lazy loading) |
+| **State Management** | Zustand (auth, live store), React Query (server state) |
+| **Styling** | Tailwind CSS 3 + custom glassmorphism components |
+| **Charts** | Plotly.js (react-plotly.js), Chart.js |
+| **Code Editor** | Monaco Editor (@monaco-editor/react) |
+| **Terminal** | xterm.js + addons (fit, web-links, search) |
+| **Markdown** | marked |
+| **Icons** | Lucide React |
+| **HTTP Client** | Axios with interceptors for token & 401 handling |
+| **WebSocket** | Custom hook with auto‑reconnect |
+| **Drag & Drop** | Floating windows (Zustand‑based) |
+
+---
+
+## 📁 Architecture & Folder Structure
 
 ```
 src/
-├── api/                     # API layer
-│   ├── client.ts            # Axios instance (already exists)
-│   └── endpoints.ts         # Centralised endpoint paths
-│
-├── assets/                  # Static assets (images, fonts)
-│
-├── components/              # Shared UI components (Atomic Design)
-│   ├── ui/                  # Atoms: Button, Input, Select, Badge, Card, etc.
-│   ├── widgets/             # Organisms: ActiveJobsWidget, SystemResourcesWidget…
-│   └── layout/              # Layout components: Sidebar, Header, MainLayout
-│
-├── features/                # Feature modules (each feature is self‑contained)
-│   ├── auth/
-│   │   ├── components/      # LoginForm, RegisterForm
-│   │   ├── pages/           # LoginPage, RegisterPage
-│   │   ├── hooks/           # useAuth (login/logout/register)
-│   │   ├── store/           # authStore.ts
-│   │   └── types.ts
-│   │
-│   ├── dashboard/
-│   │   ├── components/      # MetricSummaryCards, ExperimentTable (if dashboard‑specific)
-│   │   ├── pages/           # DashboardPage
-│   │   ├── hooks/           # useDashboardData
-│   │   └── types.ts
-│   │
-│   ├── experiments/
-│   │   ├── components/      # ExperimentFilters, ExperimentTable
-│   │   ├── pages/           # ExperimentListPage, ExperimentDetailPage
-│   │   ├── hooks/           # useExperimentWebSocket, useExperimentFilters
-│   │   ├── store/           # experimentStore.ts (if needed)
-│   │   └── types.ts
-│   │
-│   ├── launcher/
-│   │   ├── components/      # ModelPicker, TaskPicker, HyperparameterFields…
-│   │   ├── pages/           # LauncherPage
-│   │   ├── hooks/           # useLauncherForm
-│   │   └── types.ts
-│   │
-│   └── hardware/
-│       ├── components/      # HardwareTelemetryWidget
-│       ├── context/         # HardwareProvider (if truly global)
-│       └── hooks.ts         # useHardware
-│
-├── hooks/                   # Global hooks (useWebSocket, useDebounce)
-│   └── useWebSocket.ts
-│
-├── stores/                  # Global Zustand stores (if any cross‑feature)
-│   └── notificationStore.ts
-│
-├── providers/               # All context providers composed here
-│   └── AppProviders.tsx     # Composes QueryClient, HardwareProvider, Router, etc.
-│
-├── lib/                     # Utilities, constants, helpers
-│   ├── constants.ts
-│   ├── formatters.ts        # Date/currency formatters
-│   └── validators.ts
-│
-├── styles/
-│   ├── globals.css          # Tailwind base + custom layers
-│   └── animation.css        # Custom animations
-│
-├── types/                   # Global TypeScript types
-│   ├── api.ts               # API response shapes, request types
-│   ├── experiment.ts        # Experiment, TrainingRun interfaces
-│   └── hardware.ts          # HardwareMetrics
-│
-├── App.tsx                  # Routing and layout wrappers
-├── main.tsx                 # Entry point
-└── router.tsx               # React Router configuration (lazy‑loaded routes)
+├── api/                   # Axios client & endpoint definitions
+├── assets/                # Static assets
+├── components/
+│   ├── floating/          # Floating window manager (terminal, paper, notes, monitor)
+│   ├── layout/            # MainLayout, ConnectionStatus
+│   └── ui/                # Reusable UI primitives (Button, Card, Badge, etc.)
+├── features/              # Feature‑based modules
+│   ├── admin/             # Admin dashboard, jobs, model versions, users
+│   ├── analytics/         # Advanced analytics (HP importance, metric correlation)
+│   ├── auth/              # Login, register, store
+│   ├── cluster/           # GPU cluster dashboard
+│   ├── config/            # Dynamic configuration pages
+│   ├── dashboard/         # Main dashboard (KPI, table, widgets)
+│   ├── drift/             # Drift detection
+│   ├── experiments/       # Experiment CRUD, monitoring, comparison, reproducibility
+│   ├── fairness/          # Fairness evaluation
+│   ├── hardware/          # System resource monitoring
+│   ├── hpo/               # HPO status
+│   ├── jobs/              # Job details, history, scheduling
+│   ├── launcher/          # Experiment launcher (pickers, forms)
+│   ├── modelRegistry/     # Model registry listing
+│   ├── modelVersioning/   # Model versions, lineage, publication
+│   ├── notes/             # Researcher notebook, rich text, sharing
+│   ├── paper/             # Overleaf‑style editor, project management
+│   ├── profile/           # User profile, password change
+│   ├── prompts/           # Prompt registry
+│   ├── robustness/        # Robustness evaluation
+│   ├── scheduler/         # Cluster scheduler overview
+│   ├── search/            # Global search
+│   ├── sweeps/            # Hyperparameter sweeps (creator, dashboard)
+│   ├── system/            # Health, version, system status
+│   ├── templates/         # Experiment templates
+│   └── terminal/          # Terminal panel (xterm)
+├── hooks/                 # Global hooks (useWebSocket)
+├── stores/                # Zustand stores (auth, experiment live, floating windows)
+├── providers/             # AppProviders (QueryClient, Router)
+├── types/                 # TypeScript interfaces
+├── router.tsx             # Route definitions with lazy loading
+├── App.tsx                # Root component
+├── main.tsx               # Entry point
+└── index.css              # Tailwind + custom glassmorphism styles
 ```
 
 ---
 
-## 🧠 Key Architectural Decisions
+## 🚀 Getting Started
 
-### 1. **Server State vs. Client State**
-- **Server state** (experiments, jobs, configs) → **React Query** (`@tanstack/react-query`)  
-  - Automatic caching, background refetch, pagination/infinite scroll.
-  - No need to store fetched data in Zustand; React Query is the single source of truth.
-- **Client state** (UI toggles, launcher form, auth token) → **Zustand** or **React Context**.
-  - Zustand for complex state shared across features (e.g., auth store).
-  - Context only for truly app‑wide concerns like `HardwareProvider`.
+### Prerequisites
+- Node.js ≥ 18
+- npm ≥ 9
 
-### 2. **API Layer Abstraction**
-- All endpoint URLs are defined in `api/endpoints.ts`, e.g.:
-  ```ts
-  export const API_ROUTES = {
-    AUTH: { LOGIN: '/auth/login/', REGISTER: '/auth/register/' },
-    EXPERIMENTS: { LIST: '/experiments/', DETAIL: (id: string) => `/experiments/${id}/` },
-    // …
-  }
-  ```
-- The Axios client can be extended with typed request/response generics.
-
-### 3. **Feature‑Based Organization**
-- Every feature folder is independent and can be tested in isolation.
-- Components that are reused across features move to `components/ui/` or `components/widgets/`.
-- Pages are thin orchestrators that compose feature‑specific components.
-
-### 4. **Design System with Tailwind + CVA**
-- Define a set of reusable primitive components in `components/ui/` using `class-variance-authority` for variants:
-  ```tsx
-  // components/ui/Button.tsx
-  import { cva, type VariantProps } from 'class-variance-authority'
-  const buttonVariants = cva(
-    'inline-flex items-center justify-center rounded-xl font-semibold transition-all focus:outline-none',
-    {
-      variants: {
-        variant: {
-          primary: 'bg-blue-600 text-white hover:bg-blue-500 shadow-blue-500/20',
-          ghost: 'bg-transparent hover:bg-white/5 text-slate-400',
-        },
-        size: {
-          sm: 'px-3 py-1.5 text-xs',
-          md: 'px-6 py-2.5 text-sm',
-        },
-      },
-      defaultVariants: { variant: 'primary', size: 'md' },
-    }
-  )
-  ```
-- Use consistent glass‑morphism, cyber‑grid background, and color tokens from Tailwind config.
-
-### 5. **Real‑Time WebSocket Layer**
-- The `useWebSocket` hook should be generic and reusable, accepting a list of message handlers.
-- Store the WebSocket connection status in Zustand so any component can react to disconnections.
-- Use React Query’s `queryClient.setQueryData` to push real‑time updates into the cache (e.g., live progress) without refetching.
-
-### 6. **Routing & Code Splitting**
-- Use `React.lazy` and `Suspense` for page‑level code splitting (already partially done).
-- Create a dedicated `router.tsx` file with route definitions and lazy imports:
-  ```tsx
-  const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'))
-  ```
-- Wrap routes with a layout component (e.g., `AuthenticatedLayout` containing the top nav and `HardwareProvider`).
-
-### 7. **Error, Loading, and Empty States**
-- Every data‑fetching component should handle these three states.
-- Create reusable components: `<LoadingSpinner>`, `<ErrorAlert>`, `<EmptyState>`.
-- React Query’s `isLoading`, `isError`, `data` make this trivial.
-
-### 8. **Type Safety End‑to‑End**
-- Share TypeScript types between backend and frontend via a shared package (or at least define them in `types/api.ts`).
-- Use generics for API responses, e.g., `ApiResponse<T>`.
-- Leverage Zod (already in dependencies) for form validation and runtime type checking of WebSocket messages.
-
-### 9. **Performance Optimizations**
-- **React.memo** for expensive components (e.g., `ExperimentTable`).
-- **Virtualization** for long lists (e.g., experiment logs, metrics) – use `@tanstack/react-virtual`.
-- Lazy load heavy plotting libraries (Plotly) inside `Suspense`.
-- Use `useMemo` and `useCallback` where necessary.
-
-### 10. **Beautiful UI/UX**
-- Add smooth page transitions with `framer-motion` or CSS animations.
-- Use skeleton loaders (shimmer effect) instead of simple spinners.
-- Leverage `lucide-react` icons for consistent iconography.
-- Responsive design using Tailwind’s breakpoints; test mobile layout.
-- Add a `GlobalNotification` component for success/error toasts (use a Zustand store for notifications).
-
----
-
-## 🛠️ Refactoring Steps (How to Reach This Architecture)
-
-1. **Clean up duplicate `.js` files** – delete all JavaScript versions and keep only `.tsx`.
-2. **Create the folder structure** above.
-3. **Move existing pages** into `features/<feature>/pages/`.
-4. **Move components**:
-   - Generic UI (Button, Input, Select…) → `components/ui/`.
-   - Widgets (ActiveJobsWidget, SystemResourcesWidget…) → `components/widgets/`.
-5. **Extract a generic `useWebSocket`** and move to `hooks/useWebSocket.ts`.
-6. **Define API endpoints** in `api/endpoints.ts` and replace hard‑coded URLs.
-7. **Build shared components** (LoadingSpinner, ErrorBoundary, EmptyState).
-8. **Enhance the design system** with CVA variants.
-9. **Add route‑based code splitting** with `React.lazy`.
-10. **Write integration tests** for key user flows (using React Testing Library).
-
----
-
-## 📊 Visual Architecture Diagram (simplified)
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                     <AppProviders>                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐  │
-│  │ QueryClient │  │ HardwareCtx │  │  NotificationCtx│  │
-│  └─────────────┘  └─────────────┘  └─────────────────┘  │
-│        │                                          │       │
-│  ┌─────▼─────┐                              ┌────▼───┐  │
-│  │  Router   │                              │  Toast  │  │
-│  └─────┬─────┘                              └────────┘  │
-│        │                                                  │
-│  ┌─────▼─────────────┐                                   │
-│  │  Authenticated    │                                   │
-│  │  Layout (Nav+Side)│                                   │
-│  └─────┬─────────────┘                                   │
-│        │                                                  │
-│    Page Components (lazy loaded)                          │
-│    ┌────────────────────────────┐                         │
-│    │  Features (Dashboard,      │                         │
-│    │  Experiments, Launcher…)   │                         │
-│    └────────────────────────────┘                         │
-└─────────────────────────────────────────────────────────┘
+### Installation
+```bash
+cd et-frontend
+npm install
 ```
 
+### Development
+```bash
+npm run dev
+```
+The app will start on `http://localhost:3000` and proxy API requests to `http://localhost:8000`.
+
+### Production Build
+```bash
+npm run build
+```
+Outputs to `dist/`, ready to be served by Nginx or a CDN.
+
 ---
 
-## 🔥 Final Result
+## ⚙️ Environment Variables
 
-With this architecture, your application will be:
-- **Scalable** – adding a new feature is as simple as creating a new folder under `features/`.
-- **Maintainable** – clear separation of concerns; each module is independently testable.
-- **Beautiful** – consistent design system and smooth animations.
-- **High‑performance** – code splitting, efficient state management, and caching.
-- **Real‑time ready** – robust WebSocket layer that integrates seamlessly with React Query.
+Create a `.env` file in the project root (or use `.env.development` / `.env.production`).
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_API_URL` | Backend API base URL | `http://localhost:8000/api` |
+| `VITE_WS_URL` | WebSocket base URL (ws/wss) | Automatically derived from window.location |
+
+---
+
+## 🎨 Design System
+
+The UI follows a **cyber‑glass** aesthetic:
+- **Colors:** Deep surface (`#0f172a`), neon accents (blue, purple, green), glassmorphism borders
+- **Typography:** Inter (sans), JetBrains Mono (mono), Manrope (display)
+- **Components:** Reusable `glass` card, `cyber‑grid` background, `shimmer` loading effects, `card-hover-effect`
+- **Animations:** `fade-in`, `slide-up`, `scale-in`, `glow-pulse`
+
+All reusable UI primitives are in `src/components/ui/` (Button, Card, Badge, Input, Select, etc.) and use `class-variance-authority` for variants.
+
+---
+
+## 🔌 Integration with Backend
+
+The frontend communicates with the Django backend via:
+
+- **REST API** – Axios client with `Token` authentication, auto‑logout on 401
+- **WebSocket** – Custom `useWebSocket` hook for real‑time experiment updates, terminal I/O
+- **Cookie Auth** – Token also stored in `authToken` cookie for middleware‑protected views
+
+All endpoint URLs are centralised in `src/api/endpoints.ts`.
+
+---
+
+## 🔥 Phase 2 Enhancements
+
+Phase 2 transforms the platform into a **production‑grade MLOps tool**:
+
+- **Reproducibility Snapshots** – Immutable 4‑layer record (code, data, config, environment)  
+- **Run Comparison** – Compare up to 20 runs with config diff table and metric overlay charts  
+- **Hyperparameter Sweeps** – Optuna‑driven with TPE, SMAC3, CMA‑ES, Hyperband pruning  
+- **Model Registry** – Staging → production → archive lifecycle with model cards  
+- **GPU Cluster Dashboard** – DCGM + Prometheus integration, utilization heatmap, queue depths  
+- **Enhanced WebSocket** – Replay on reconnect, batched metrics, heartbeat, offline detection  
+
+All these features are accessible via the sidebar navigation and integrate seamlessly with Phase 1’s experiment workflow.
+
+---
+
+## 🧪 Testing
+
+- Unit/component tests: `npm test` (Jest + React Testing Library)
+- Integration tests: `src/test/integrationTest.ts` – uses Axios to verify backend health, system status, config endpoints
+- E2E tests: Cypress (coming soon)
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow the feature‑based folder structure and submit PRs with clear descriptions.
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Ensure all existing pages still load correctly
+5. Submit a pull request
+
+---
+
+## 📄 License
+
+MIT License – see `LICENSE` file for details.
+
+---
+
+**Built with ❤️ for the neural research community.**  
+For questions, open an issue or contact the maintainers.
