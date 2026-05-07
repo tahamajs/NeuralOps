@@ -8,7 +8,9 @@ import { Card } from '../../../components/ui/Card'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ username: '', email: '', password: '', confirmPassword: '' })
+  const [form, setForm] = useState({
+    username: '', email: '', password: '', confirmPassword: '',
+  })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -45,7 +47,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface cyber-grid">
       <Card className="w-full max-w-md p-8 animate-scale-in border border-white/10">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-gradient-to-br from-neon-blue to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow-md">
+          <div className="w-16 h-16 bg-gradient-to-br from-neon-blue to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow-md">
             <span className="text-white font-black text-xl">NO</span>
           </div>
           <h1 className="text-2xl font-display font-bold text-white">Create account</h1>
@@ -62,14 +64,14 @@ export default function RegisterPage() {
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
             <div className="relative">
-              <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="At least 6 characters" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-neon-blue/50 transition-colors pr-10" />
+              <input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="At least 6 characters" required className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:border-neon-blue/50 transition-colors pr-10" />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white">
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
           <Input label="Confirm Password" type="password" value={form.confirmPassword} onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })} placeholder="Repeat your password" required />
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          <Button type="submit" className="w-full" size="lg" loading={loading}>
             <UserPlus size={18} className="mr-2" />
             {loading ? 'Creating account...' : 'Create account'}
           </Button>

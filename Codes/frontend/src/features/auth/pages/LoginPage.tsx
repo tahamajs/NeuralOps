@@ -23,7 +23,6 @@ export default function LoginPage() {
     try {
       const res = await api.post('/auth/login/', { username, password })
       const { token, ...user } = res.data
-      // Save to localStorage (Zustand persist will catch it, but we also set explicitly)
       localStorage.setItem('token', token)
       document.cookie = `authToken=${token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`
       setAuth(user, token)
@@ -39,12 +38,10 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-surface cyber-grid">
       <Card className="w-full max-w-md p-8 animate-scale-in border border-white/10">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-gradient-to-br from-neon-blue to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow-md">
+          <div className="w-16 h-16 bg-gradient-to-br from-neon-blue to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow-md">
             <span className="text-white font-black text-xl">NO</span>
           </div>
-          <h1 className="text-2xl font-display font-bold text-white">
-            Welcome back
-          </h1>
+          <h1 className="text-2xl font-display font-bold text-white">Welcome back</h1>
           <p className="text-slate-400 text-sm mt-1">Sign in to your account</p>
         </div>
 
@@ -82,7 +79,7 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
-          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+          <Button type="submit" className="w-full" size="lg" loading={loading}>
             <LogIn size={18} className="mr-2" />
             {loading ? 'Signing in...' : 'Sign in'}
           </Button>
