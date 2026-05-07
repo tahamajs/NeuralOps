@@ -11,8 +11,12 @@ from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, MET
 
 @ATTENTION_REGISTRY.register("performer")
 class PerformerAttention(BaseAttention):
-    def __init__(self, config, rank=256, redraw_projection=True):
-        super().__init__(config, rank)   # rank is number of random features
+    def __init__(self, config, rank=64,redraw_projection=True):
+        if rank is None:
+            rank = 64
+        super().__init__(config, rank)
+        self.rank = rank
+        
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim
@@ -23,8 +27,7 @@ class PerformerAttention(BaseAttention):
         self.key   = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
-
+        self.dropout = nn.Dropout(config.dropout)
         # Random projection matrix (one per head) will be created on first forward
         self.register_buffer('projection', None)
 

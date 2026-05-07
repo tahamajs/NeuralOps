@@ -1,14 +1,11 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import math
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("lsh")
 class LSHAttention(nn.Module):
-    """
-    Reformer's LSH Attention.
-    Uses Angular LSH with multiple rounds to bucket queries and keys.
-    """
     def __init__(self, config, rounds=4, bucket_size=64):
         super().__init__()
         self.num_heads = config.num_attention_heads
@@ -19,63 +16,52 @@ class LSHAttention(nn.Module):
         self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
 
-    def _hash(self, vectors, random_matrices):
-        # vectors: (B, H, L, D), random_matrices: list of (D, bucket_size) tensors
-        # Return hash codes for each round.
-        codes = []
-        for rot in random_matrices:
-            proj = torch.einsum('bhnd,db->bhnb', F.normalize(vectors, dim=-1), rot)  # (B, H, L, B)
-            # Sign to bits
-            hash_int = (proj > 0).int().mul(torch.tensor([2**i for i in range(proj.size(-1))], device=vectors.device)).sum(-1)
-            codes.append(hash_int)
-        return codes
-
+    def _hash(self, vectors, proj):
+        norm = F.normalize(vectors, dim=-1)
+        dots = torch.matmul(norm, proj)
+        bits = (dots > 0).to(torch.long)   # define bits here
+        multipliers = (2 ** torch.arange(self.bucket_size, device=vectors.device)).to(torch.long)
+        hash_val = torch.sum(bits * multipliers, dim=-1)
+        return hash_val
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         B, L, D = hidden_states.shape
-        H, d = self.num_heads, self.head_dim
+        H = self.num_heads
+        d = self.head_dim
 
-        Q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1,2)  # (B, H, L, d)
-        K = self.k_proj(hidden_states).view(B, L, H, d).transpose(1,2)
-        V = self.v_proj(hidden_states).view(B, L, H, d).transpose(1,2)
-
-        # Generate random rotation matrices for each round
-        rot_mats = [torch.randn(d, self.bucket_size, device=Q.device) for _ in range(self.rounds)]
-        rot_mats = [F.normalize(rm, dim=0) for rm in rot_mats]
-
-        # Hash Q and K
-        q_codes = self._hash(Q, rot_mats)   # list of (B, H, L) per round
-        k_codes = self._hash(K, rot_mats)
+        Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
+        K = self.k_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
+        V = self.v_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
 
         out = torch.zeros_like(V)
-        for rnd in range(self.rounds):
-            q_hash = q_codes[rnd]  # (B, H, L)
-            k_hash = k_codes[rnd]
-            # For each batch and head, group queries and keys by hash code
-            # We'll compute attention per bucket.
-            # This is O(N^2) in worst case but used for bucket size control.
-            # For simplicity, we iterate over unique hash codes in each head.
+        scale = d ** -0.5
+
+        for r in range(self.rounds):
+            proj = torch.randn(d, self.bucket_size, device=Q.device)
+            proj = F.normalize(proj, dim=0)
+            q_hash = self._hash(Q, proj)  # (B, H, N)
+            k_hash = self._hash(K, proj)
+
+            # For each unique hash code, attend
             for b in range(B):
                 for h in range(H):
-                    # Find unique buckets for this round batch, head
-                    uniq = torch.unique(torch.cat([q_hash[b,h], k_hash[b,h]]))
-                    for code in uniq:
-                        q_mask = (q_hash[b,h] == code)
-                        k_mask = (k_hash[b,h] == code)
+                    qh = q_hash[b, h]
+                    kh = k_hash[b, h]
+                    unique_codes = torch.unique(torch.cat([qh, kh]))
+                    for code in unique_codes:
+                        q_mask = (qh == code)
+                        k_mask = (kh == code)
                         if q_mask.sum() == 0 or k_mask.sum() == 0:
                             continue
-                        Q_sel = Q[b,h][q_mask]  # (Nq, d)
-                        K_sel = K[b,h][k_mask]
-                        V_sel = V[b,h][k_mask]
-                        scale = d ** -0.5
-                        scores = torch.mm(Q_sel, K_sel.T) * scale
-                        # Apply mask (optional)
+                        Qs = Q[b, h][q_mask]  # (Nq, d)
+                        Ks = K[b, h][k_mask]  # (Nk, d)
+                        Vs = V[b, h][k_mask]  # (Nk, d)
+                        scores = (Qs @ Ks.T) * scale
                         attn = F.softmax(scores, dim=-1)
-                        ctx = torch.mm(attn, V_sel)
-                        # Scatter back
-                        idx = torch.nonzero(q_mask, as_tuple=True)[0]
-                        out[b,h, idx] += ctx
+                        attn = self.dropout(attn)
+                        ctx = attn @ Vs
+                        out[b, h][q_mask] += ctx
 
-        context = out.transpose(1,2).contiguous().view(B, L, D)
-        return self.out_proj(context), None
+        out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
+        return self.out_proj(out), None

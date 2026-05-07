@@ -20,7 +20,7 @@ class XAttention(nn.Module):
         self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         B, L, D = hidden_states.shape

@@ -24,7 +24,7 @@ class MLAAttention(nn.Module):
         self.v_up = nn.Linear(rank, config.hidden_size, bias=False)      # expand to value
 
         self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         batch_size, seq_len, _ = hidden_states.shape

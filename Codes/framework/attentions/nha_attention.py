@@ -25,7 +25,7 @@ class NHAAttention(BaseAttention):
         self.k_proj = nn.Linear(self.hidden_size, self.hidden_size)
         self.v_proj = nn.Linear(self.hidden_size, self.hidden_size)
         self.out_proj = nn.Linear(self.hidden_size, self.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, hidden_states, attention_mask=None, output_attentions=False, **kwargs):
         B, L, D = hidden_states.shape

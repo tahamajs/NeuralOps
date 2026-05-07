@@ -8,8 +8,8 @@ import torch.nn as nn
 import numpy as np
 from typing import Dict, Any, Tuple, Optional, List
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-from ...core.base import BaseCompressor
-
+from framework.core.base import BaseCompressor
+import torch.nn.functional as F
 
 # Simple low‑rank linear layer used for demonstration; you can replace with your own.
 class SVDLinearLayer(nn.Module):

@@ -1,0 +1,20 @@
+{
+  "start_time": "2026-05-07T20:39:15.480828",
+  "end_time": "2026-05-07T20:44:30.005802",
+  "duration_seconds": 314.5249741077423,
+  "final_accuracy": 0.0,
+  "final_loss": 0.6956930160522461,
+  "best_metric": -0.01321627582112707,
+  "num_parameters": 55551818,
+  "trainable_parameters": 55551818,
+  "model_name": "distilbert-base-uncased",
+  "attention_type": "aegis_v4",
+  "compressor": "none",
+  "method": "baseline",
+  "task": "cola",
+  "seed": 42,
+  "max_train_samples": 4000,
+  "epochs": 1,
+  "batch_size": 32,
+  "learning_rate": 1e-05
+}

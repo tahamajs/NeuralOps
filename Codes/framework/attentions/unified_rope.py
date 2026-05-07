@@ -28,7 +28,7 @@ class UnifiedRoPE(nn.Module):
         self.register_buffer("cos_cached", emb.cos())              # (seq_len, dim)
         self.register_buffer("sin_cached", emb.sin())
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, **args) -> torch.Tensor:
         """
         Args:
             x: (batch, seq_len, dim)

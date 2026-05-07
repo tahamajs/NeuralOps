@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("upi_stuffed_mamba")
 class UPIMambaBlock(nn.Module):
-    """DPLR selective scan with UPI stabilization."""
     def __init__(self, dim, d_state=16, d_conv=4, expand=2):
         super().__init__()
         self.dim = dim
@@ -20,28 +19,31 @@ class UPIMambaBlock(nn.Module):
         self.gamma = nn.Parameter(torch.zeros(1))
         self.out_proj = nn.Linear(inner_dim, dim)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         B, L, D = x.shape
-        x_proj = self.in_proj(x)                     # (B, L, 2*inner)
-        x_ssm, z = x_proj.chunk(2, dim=-1)           # each (B, L, inner)
+        x_proj = self.in_proj(x)
+        x_ssm, z = x_proj.chunk(2, dim=-1)
         x_ssm = self.conv1d(x_ssm.transpose(1,2))[..., :L].transpose(1,2)
-        dt = F.softplus(self.dt_proj(x_ssm))         # (B, L, dim)
-        A = -torch.exp(self.A_log)                   # (dim, d_state)
-
-        # Recurrent scan over the first `dim` channels (simplified)
-        x_ssm_trunc = x_ssm[:, :, :self.dim]         # use first dim channels
+        dt = F.softplus(self.dt_proj(x_ssm))
+        A = -torch.exp(self.A_log)
+        x_ssm_trunc = x_ssm[:, :, :self.dim]
         h = torch.zeros(B, self.dim, self.d_state, device=x.device, dtype=x.dtype)
         outputs = []
         for t in range(L):
-            xt = x_ssm_trunc[:, t]                    # (B, dim)
+            xt = x_ssm_trunc[:, t]
             h = h * torch.exp(dt[:, t].unsqueeze(-1) * A.unsqueeze(0)) + \
                 (xt.unsqueeze(-1) * dt[:, t].unsqueeze(-1))
-            h = h - self.gamma * h                   # UPI stabilization
-            out_t = (h * self.D.unsqueeze(-1)).sum(dim=-1)   # (B, dim)
+            h = h - self.gamma * h
+            out_t = (h * self.D.unsqueeze(-1)).sum(dim=-1)
             outputs.append(out_t)
-        out_ssm = torch.stack(outputs, dim=1)         # (B, L, dim)
-
-        # Pad ssm output back to inner_dim and combine with gate
+        out_ssm = torch.stack(outputs, dim=1)
         out_ssm_full = F.pad(out_ssm, (0, x_ssm.size(-1) - self.dim))
         out = out_ssm_full * F.silu(z)
-        return self.out_proj(out)
+        return self.out_proj(out), None
+
+@ATTENTION_REGISTRY.register("upi_stuffed_mamba")
+def inject_upi_mamba(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+    dim = model_config.hidden_size
+    new_block = UPIMambaBlock(dim=dim)
+    layer.attention = new_block
+    return new_block

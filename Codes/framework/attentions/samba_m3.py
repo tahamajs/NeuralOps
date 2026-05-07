@@ -42,3 +42,10 @@ class SAMBAM3Block(nn.Module):
         x = self.norm1(x + attn_out)
         x = self.norm2(x + self.mamba(x))
         return x
+    
+@ATTENTION_REGISTRY.register("mamba")
+def inject_mamba(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+    d_model = model_config.hidden_size
+    new_module = Mamba(d_model=d_model)
+    layer.attention = new_module
+    return new_module
