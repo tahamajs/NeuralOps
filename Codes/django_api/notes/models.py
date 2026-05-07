@@ -26,7 +26,13 @@ class ResearcherNote(models.Model):
     # Content
     title = models.CharField(max_length=200, blank=True)
     content = models.TextField()
-    
+    shared_with = models.ManyToManyField(
+        User,
+        blank=True,
+        related_name='shared_notes',
+        help_text="Users this note is shared with"
+    )
+
     # Organisation
     # REPLACE ArrayField with JSONField
     tags = models.JSONField(default=list, blank=True)   # stores list of strings

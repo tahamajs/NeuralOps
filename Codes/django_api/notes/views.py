@@ -480,3 +480,49 @@ def run_notes(request, run_id):
 
 
 
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def share_note(request, note_id):
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    if note.author != request.user:
+        return Response({"error": "Only the author can share"}, status=403)
+    username = request.data.get('username')
+    if not username:
+        return Response({"error": "username required"}, status=400)
+    try:
+        user_to_share = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+    note.shared_with.add(user_to_share)
+    return Response({"status": "shared", "shared_with": [u.username for u in note.shared_with.all()]})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unshare_note(request, note_id):
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    if note.author != request.user:
+        return Response({"error": "Only the author can unshare"}, status=403)
+    username = request.data.get('username')
+    if not username:
+        return Response({"error": "username required"}, status=400)
+    note.shared_with.remove(User.objects.get(username=username))
+    return Response({"status": "unshared"})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def shared_with_me(request):
+    notes = ResearcherNote.objects.filter(shared_with=request.user, deleted_at__isnull=True)
+    serializer = ResearcherNoteSerializer(notes, many=True)
+    return Response(serializer.data)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def toggle_pin(request, note_id):
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    if note.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    note.pinned = not note.pinned
+    note.save(update_fields=['pinned'])
+    return Response({"pinned": note.pinned})
