@@ -76,7 +76,7 @@ class TrainingSnapshot(models.Model):
 class ExperimentTemplate(models.Model):
     """Reusable experiment configuration template."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='templates')
+    # author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='templates')
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     config = models.JSONField(default=dict)

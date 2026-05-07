@@ -462,3 +462,50 @@ def template_detail(request, template_id):
 @permission_classes([IsAuthenticated])
 def use_template(request, template_id):
     return _use_template(request, template_id)
+
+
+
+from django.db.models import Prefetch
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def compare_runs(request):
+    run_ids = request.query_params.getlist('run_ids')
+    if len(run_ids) < 2:
+        return Response({"error": "Need at least 2 run IDs"}, status=400)
+
+    runs = TrainingRun.objects.filter(id__in=run_ids).prefetch_related(
+        Prefetch('snapshots', queryset=TrainingSnapshot.objects.order_by('step'))
+    )
+
+    # Build config diff table
+    configs = [run.config for run in runs]
+    all_keys = sorted(set().union(*configs))
+    config_table = []
+    for run in runs:
+        row = {"run_id": str(run.id), "name": run.name or run.id.hex[:8]}
+        for k in all_keys:
+            row[k] = run.config.get(k, None)
+        config_table.append(row)
+
+    # Build metric overlay data
+    metric_keys = ['loss', 'accuracy', 'eval_loss', 'eval_accuracy']
+    metrics = {k: {} for k in metric_keys}
+    for run in runs:
+        snapshots = run.snapshots.all()
+        for mk in metric_keys:
+            vals = []
+            for snap in snapshots:
+                val = getattr(snap, f'train_{mk}', None) or getattr(snap, f'eval_{mk}', None)
+                if val is not None:
+                    vals.append([snap.step, val])
+            metrics[mk][str(run.id)] = vals
+
+    return Response({
+        "config_diff": {
+            "keys": all_keys,
+            "runs": {str(r.id): {k: r.config.get(k, None) for k in all_keys} for r in runs}
+        },
+        "metrics": metrics,
+        "config_table": config_table,
+    })
