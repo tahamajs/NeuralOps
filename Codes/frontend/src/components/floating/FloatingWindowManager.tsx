@@ -5,7 +5,7 @@ export interface FloatingWindow {
   id: string
   title: string
   icon?: string
-  content: ReactNode | string // component type or identifier to render
+  content: string
   width?: number
   height?: number
   x?: number
@@ -15,11 +15,11 @@ export interface FloatingWindow {
 
 interface FloatingWindowState {
   windows: FloatingWindow[]
+  focusedId: string | null
   addWindow: (win: FloatingWindow) => void
   removeWindow: (id: string) => void
   toggleMinimize: (id: string) => void
   focusWindow: (id: string) => void
-  focusedId: string | null
 }
 
 export const useFloatingWindowStore = create<FloatingWindowState>((set) => ({
@@ -44,7 +44,6 @@ export const useFloatingWindowStore = create<FloatingWindowState>((set) => ({
   focusWindow: (id) => set({ focusedId: id }),
 }))
 
-// Pre-defined window types for easy launching
 export const WINDOW_TYPES = {
   TERMINAL: 'terminal',
   PAPER_EDITOR: 'paper-editor',
