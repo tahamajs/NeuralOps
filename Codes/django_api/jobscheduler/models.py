@@ -1,12 +1,7 @@
-# jobscheduler/models.py
 import uuid
 from django.db import models
 from django.conf import settings
-from django.contrib.postgres.fields import ArrayField  # optional, for tags
 
-# ----------------------------------------------------------------------
-# Metric Types (for CustomMetricEntry)
-# ----------------------------------------------------------------------
 class MetricType(models.TextChoices):
     SCALAR = 'scalar'
     IMAGE = 'image'
@@ -14,9 +9,6 @@ class MetricType(models.TextChoices):
     FIGURE = 'figure'
     TEXT = 'text'
 
-# ----------------------------------------------------------------------
-# Job Model (core)
-# ----------------------------------------------------------------------
 class Job(models.Model):
     STATUS_CHOICES = [
         ('queued', 'Queued'),
@@ -62,7 +54,7 @@ class Job(models.Model):
     # Scheduling and prediction fields
     estimated_duration = models.IntegerField(null=True, blank=True, help_text="Estimated runtime in seconds")
     actual_duration = models.IntegerField(null=True, blank=True)
-    actual_priority_outcome = models.IntegerField(null=True, blank=True, help_text="Used for training the AI priority predictor")
+    actual_priority_outcome = models.IntegerField(null=True, blank=True, help_text="For AI priority predictor training")
 
     # Code versioning (Git)
     git_commit_hash = models.CharField(max_length=40, blank=True, null=True)
@@ -93,9 +85,7 @@ class Job(models.Model):
     def __str__(self):
         return f"{self.name or str(self.id)[:8]} - {self.status}"
 
-# ----------------------------------------------------------------------
-# VersionedConfig (for configuration audit trail)
-# ----------------------------------------------------------------------
+
 class VersionedConfig(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='config_versions')
@@ -136,9 +126,7 @@ class VersionedConfig(models.Model):
     def __str__(self):
         return f"v{self.version_number} for {self.run.id}"
 
-# ----------------------------------------------------------------------
-# CustomMetricEntry (for flexible metrics logging)
-# ----------------------------------------------------------------------
+
 class CustomMetricEntry(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='custom_metrics')

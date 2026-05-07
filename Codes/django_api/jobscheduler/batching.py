@@ -1,9 +1,8 @@
-# jobscheduler/batching.py
 import threading
 import time
 
 class ShortJobBatcher:
-    """Collects short jobs and submits them together to reduce overhead."""
+    """Collects short jobs (estimated_duration <= threshold) and submits them as a batch."""
 
     def __init__(self, scheduler, threshold_seconds=60, window_seconds=10, max_batch_size=4):
         self.scheduler = scheduler
@@ -24,7 +23,7 @@ class ShortJobBatcher:
                     self._timer = threading.Timer(self.window, self._flush)
                     self._timer.start()
         else:
-            # Long job: submit directly to scheduler
+            # Long job: submit directly
             self.scheduler._submit_job(job_id, priority)
 
     def _flush(self):
@@ -36,7 +35,7 @@ class ShortJobBatcher:
                 self._timer = None
         if not batch_copy:
             return
-        # Submit the batch as individual jobs with the highest priority among them
-        max_priority = min(p for _, p in batch_copy)  # lower number = higher priority
+        # Use the highest priority (lowest number) in the batch
+        max_priority = min(p for _, p in batch_copy)
         for job_id, _ in batch_copy:
             self.scheduler._submit_job(job_id, max_priority)

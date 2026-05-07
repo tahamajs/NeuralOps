@@ -1,4 +1,3 @@
-# jobscheduler/predictive.py
 import joblib
 import pandas as pd
 import os
@@ -17,14 +16,13 @@ class PriorityPredictor:
         return None
 
     def train(self):
-        # Gather historical data
         jobs = Job.objects.exclude(actual_priority_outcome=None).values(
             'estimated_duration', 'gpu_requirements', 'memory_requirements',
             'task_name', 'actual_priority_outcome'
         )
         if len(jobs) < 50:
             return
-        df = pd.DataFrame(jobs)
+        df = pd.DataFrame(list(jobs))
         df = pd.get_dummies(df, columns=['task_name'])
         X = df.drop('actual_priority_outcome', axis=1)
         y = df['actual_priority_outcome']
@@ -36,16 +34,14 @@ class PriorityPredictor:
     def predict_priority(self, job):
         if self.model is None:
             return None
-        # Build feature vector
         features = {
             'estimated_duration': job.estimated_duration or 3600,
             'gpu_requirements': job.gpu_requirements,
             'memory_requirements': job.memory_requirements,
         }
-        # One‑hot for task_name
-        for task, _ in Job._meta.get_field('task_name').choices:
-            col = f'task_name_{task}'
-            features[col] = 1 if job.task_name == task else 0
+        for task in Job._meta.get_field('task_name').choices:
+            col = f'task_name_{task[0]}'
+            features[col] = 1 if job.task_name == task[0] else 0
         df = pd.DataFrame([features])
         if hasattr(self.model, 'feature_names_in_'):
             df = df.reindex(columns=self.model.feature_names_in_, fill_value=0)
