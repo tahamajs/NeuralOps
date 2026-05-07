@@ -8,6 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
+from framework.attentions.core.registry import ATTENTION_REGISTRY
+
 
 class LEKAv2Attention(nn.Module):
     def __init__(self, config, comp_config, layer_idx, total_layers=6, bert_mode=False):
@@ -76,9 +78,9 @@ class LEKAv2Attention(nn.Module):
         if N <= L_max:
             return K_features, V
 
-        scores = self.landmark_scorer(K_features).squeeze(-1)  # (B, H, N)
+        scores = self.landmark_scorer(K_features).squeeze(-1)
         L = L_max
-        _, idx = scores.topk(L, dim=-1)  # (B, H, L)
+        _, idx = scores.topk(L, dim=-1)
 
         K_land = torch.gather(K_features, 2, idx.unsqueeze(-1).expand(-1, -1, -1, feat_dim))
         V_land = torch.gather(V, 2, idx.unsqueeze(-1).expand(-1, -1, -1, V.shape[-1]))
@@ -111,12 +113,10 @@ class LEKAv2Attention(nn.Module):
 
         attn_weights = torch.matmul(Q_features, K_land.transpose(-2, -1))
 
-        # Mask handling
         mask = attention_mask
         if mask is None:
             mask = kwargs.get('attn_mask', None)
         if mask is not None:
-            # Convert to boolean mask (B, N) where True = keep
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
                 token_valid = mask[:, 0, 0, :] > -1e9
             elif mask.dim() == 4:
@@ -129,8 +129,6 @@ class LEKAv2Attention(nn.Module):
                 token_valid = None
 
             if token_valid is not None:
-                # For landmarks, we need to mask queries to padded positions only.
-                # attn_weights: (B, H, N, L); we mask where query position is invalid.
                 attn_weights = attn_weights.masked_fill(~token_valid.unsqueeze(1).unsqueeze(-1), -1e9)
 
         attn_weights = self.softpick(attn_weights, dim=-1)
@@ -138,7 +136,6 @@ class LEKAv2Attention(nn.Module):
 
         context_leka = torch.matmul(attn_weights, V_land_adj)
 
-        # Local window attention
         idx = torch.arange(N, device=hidden_states.device)
         dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
         window_mask = (dist <= self.local_window_size // 2).unsqueeze(0).unsqueeze(0)
@@ -160,8 +157,6 @@ class LEKAv2Attention(nn.Module):
         return 0.0
 
 
-from framework.attentions.core.registry import ATTENTION_REGISTRY
-
 @ATTENTION_REGISTRY.register("leka_v2")
 def inject_leka_v2(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     new_attn = LEKAv2Attention(
@@ -171,7 +166,7 @@ def inject_leka_v2(layer, model_config, comp_config, layer_idx, total_layers, ol
         total_layers=total_layers,
         bert_mode=False,
     )
-    # Copy pretrained weights
+    # Zero‑shot weight transfer
     new_attn.query.weight.data.copy_(old_attn.q_lin.weight.data)
     new_attn.query.bias.data.copy_(old_attn.q_lin.bias.data)
     new_attn.key.weight.data.copy_(old_attn.k_lin.weight.data)
