@@ -1,0 +1,50 @@
+import yaml
+import argparse
+from dataclasses import fields, is_dataclass
+from typing import Any, Dict, Optional, Type, TypeVar
+
+T = TypeVar('T')
+
+def load_yaml(path: str) -> dict:
+    with open(path, 'r') as f:
+        return yaml.safe_load(f)
+
+def merge_cli_args(cfg_dict: dict, args: argparse.Namespace) -> dict:
+    """Override YAML values with CLI arguments where not None."""
+    cli = vars(args)
+    for key, val in cli.items():
+        if val is not None:
+            cfg_dict[key] = val
+    return cfg_dict
+
+def _dict_to_dataclass(cls: Type[T], data: dict) -> T:
+    """Recursively convert dict → dataclass."""
+    kwargs = {}
+    for f in fields(cls):
+        key = f.name
+        if key in data:
+            val = data[key]
+            if is_dataclass(f.type) and isinstance(val, dict):
+                kwargs[key] = _dict_to_dataclass(f.type, val)
+            else:
+                kwargs[key] = val
+    return cls(**kwargs)
+
+def load_config(
+    yaml_path: Optional[str] = None,
+    cli_args: Optional[argparse.Namespace] = None,
+    config_cls: Type[T] = None,   # requires the target dataclass
+) -> T:
+    """
+    Load configuration from optional YAML + CLI overrides.
+    If config_cls is provided, returns an instance of that dataclass.
+    Otherwise returns the raw merged dict.
+    """
+    cfg = {}
+    if yaml_path:
+        cfg = load_yaml(yaml_path)
+    if cli_args:
+        cfg = merge_cli_args(cfg, cli_args)
+    if config_cls:
+        return _dict_to_dataclass(config_cls, cfg)
+    return cfg
