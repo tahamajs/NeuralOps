@@ -7,7 +7,10 @@ export interface ResearcherNote {
   tags: string[]
   is_public: boolean
   pinned: boolean
+  reactions: Record<string, string[]>
+  shared_with: string[]
+  version: number
+  parent_note_id?: string
   created_at: string
   updated_at: string
-  version: number
 }
