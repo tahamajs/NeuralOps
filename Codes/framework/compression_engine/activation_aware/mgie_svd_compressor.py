@@ -3,8 +3,8 @@
 import torch
 import numpy as np
 from scipy.stats import entropy
-from ..core.base import BaseCompressor
-from ..core.registry import COMPRESSOR_REGISTRY
+from framework.core.base import BaseCompressor
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @COMPRESSOR_REGISTRY.register("mgie_budget")
 class MGIESVDBudgetCompressor(BaseCompressor):

@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .samba_m3 import SAMBAM3Block
-from ..core.registry import ATTENTION_REGISTRY, AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("reap_moe")
+@ATTENTION_REGISTRY.register("reap_moe")
 class REAPMoE(nn.Module):
     """Token‑choice MoE with top‑2 gating."""
     def __init__(self, d_model, n_experts=8, top_k=2):

@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ..core.registry import ATTENTION_REGISTRY, AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("mamba")
+@ATTENTION_REGISTRY.register("mamba")
 class Mamba(nn.Module):
     """Trivial Mamba placeholder – replace with official implementation."""
     def __init__(self, d_model):
@@ -14,7 +14,7 @@ class Mamba(nn.Module):
     def forward(self, x):
         return self.out_proj(F.silu(self.in_proj(x)))
 
-@AUX_REGISTRY.register("expert_choice_moe")
+@ATTENTION_REGISTRY.register("expert_choice_moe")
 class ExpertChoiceMoE(nn.Module):
     """Top‑2 token‑choice MoE."""
     def __init__(self, d_model, n_experts=8, top_k=2):

@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from ..core.registry import AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("progressive_token_pruning")
+@ATTENTION_REGISTRY.register("progressive_token_pruning")
 class ProgressiveTokenPruning(nn.Module):
     """
     Learnable token pruning with a lightweight score network.

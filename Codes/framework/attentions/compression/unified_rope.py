@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-from ..core.registry import AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@AUX_REGISTRY.register("compression_unified_rope")
+@ATTENTION_REGISTRY.register("compression_unified_rope")
 class UnifiedRoPE(nn.Module):
     """
     Universal Rotary Position Embedding.

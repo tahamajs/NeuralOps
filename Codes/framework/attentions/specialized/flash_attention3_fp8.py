@@ -1,7 +1,7 @@
 # framework/attentions/specialized/flash_attention3_fp8.py
 import torch
 import torch.nn as nn
-from ..core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 try:
     from flash_attn_interface import flash_attn_func

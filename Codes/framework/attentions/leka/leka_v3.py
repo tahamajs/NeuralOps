@@ -8,8 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
-from framework.attentions.core.base import BaseAttention
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("leka_v3")
 class LEKAV3Attention(BaseAttention):
@@ -153,7 +153,7 @@ class LEKAV3Attention(BaseAttention):
         return 0.0
 
 
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("leka_v3")
 def inject_leka_v3(layer, model_config, comp_config, layer_idx, total_layers, old_attn):

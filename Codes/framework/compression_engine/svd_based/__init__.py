@@ -1,14 +1,10 @@
-from ..core.base import BaseCompressor
-from ..core.registry import COMPRESSOR_REGISTRY
-
-# Layer replacements
-from .svd_linear import SVDLinearLayer
-from .salr import SALRCompressor
-from .saes_svd_compressor import SAESCompressor
-from .mgie_svd import MGIECompressor
-from .gfws_d_compressor import GFWSCompressor
-from .erc_svd import ERCCompressor
-from .dobi_svd import DobiSVDCompressor
-from .adaptive_ranks import get_adaptive_ranks, apply_adaptive_svd
-
-# Tensor Train modules (if available)
+# Auto-generated __init__.py
+from . import adaptive_ranks
+from . import dobi_svd
+from . import erc_svd
+from . import gfws_d_compressor
+from . import mgie_svd
+from . import saes_svd_compressor
+from . import salr
+from . import svd_linear
+from . import tt_linear

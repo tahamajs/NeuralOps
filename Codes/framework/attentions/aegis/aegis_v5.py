@@ -40,7 +40,7 @@ class AegisConfigV5:
 # --------------------------------------------------------------------------
 # Factorised Linear Layer (truncated SVD)
 # --------------------------------------------------------------------------
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("aegis_v5")
 class FactorisedLinear(nn.Module):
@@ -259,7 +259,7 @@ def inject_aegis_into_distilbert(layer, model_config, aegis_cfg, old_attn):
     return new_attn
 
 
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("aegis_v5")
 def inject_aegis_v5(layer, model_config, comp_config, layer_idx, total_layers, old_attn):

@@ -2,8 +2,7 @@
 Central registry system for the Efficient Transformer Toolkit.
 
 All framework components (attentions, compressors, trainers, visualizers, etc.)
-are stored in registries, enabling dynamic discovery and plug‑and‑play integration
-with Django's API.
+are stored in registries, enabling dynamic discovery and plug‑and‑play integration.
 """
 
 from typing import Dict, Callable, Optional, List
@@ -18,7 +17,7 @@ class Registry:
 
     def register(self, key: Optional[str] = None) -> Callable:
         """
-        Decorator (or function) to register a class/factory under the given key.
+        Decorator to register a class/factory under the given key.
 
         Usage:
             @ATTENTION_REGISTRY.register("griffin")
@@ -33,18 +32,11 @@ class Registry:
         return decorator
 
     def get(self, key: str) -> Optional[Callable]:
-        """
-        Safely retrieve a registered component, or None if not found.
-        """
+        """Safely retrieve a registered component, or None if not found."""
         return self._dict.get(key.lower())
 
     def resolve(self, key: str) -> Callable:
-        """
-        Retrieve a registered component and raise a descriptive error if missing.
-
-        Raises:
-            KeyError: with available keys.
-        """
+        """Retrieve a registered component and raise a descriptive error if missing."""
         if key.lower() not in self._dict:
             raise KeyError(
                 f"Unknown {self.name.rstrip('s')} '{key}'. "
@@ -54,7 +46,6 @@ class Registry:
 
     def keys(self) -> List[str]:
         """Return a list of all registered keys (in original casing)."""
-        # Return keys as stored (could be a mix of cases if user overrode)
         return list(self._dict.keys())
 
     def __contains__(self, key: str) -> bool:
@@ -70,15 +61,17 @@ class Registry:
 # ----------------------------------------------------------------------
 # Global registries – populated by their respective packages
 # ----------------------------------------------------------------------
-ATTENTION_REGISTRY = Registry("attentions")
-COMPRESSOR_REGISTRY = Registry("compressors")
-TRAINER_REGISTRY = Registry("trainers")
-VISUALIZER_REGISTRY = Registry("visualizers")
+ATTENTION_REGISTRY = Registry("attentions")      # attention modules (Nexus, LEKA, ...)
+COMPRESSOR_REGISTRY = Registry("compressors")    # compression strategies (SVD, TT, ...)
+METHOD_REGISTRY = Registry("methods")            # training methods (LoRA, R-Drop, ...)
+AUX_REGISTRY = Registry("auxiliary")             # auxiliary modules (RoPE, SSM, token pruning, ...)
 
-# Additional registries can be added here as needed.
-# METHOD_REGISTRY, LOSS_REGISTRY, OPTIMIZER_REGISTRY, SCHEDULER_REGISTRY, etc.
-# For these, the specialised packages define their own Registry instances
-# (e.g., framework/trainer/losses.py defines LOSS_REGISTRY locally).
+# Optional registries (if needed)
+MODEL_REGISTRY = Registry("models")              # different base models
+DATASET_REGISTRY = Registry("datasets")          # GLUE, SuperGLUE, etc.
+LOSS_REGISTRY = Registry("losses")               # custom loss functions
+TRAINER_REGISTRY = Registry("trainers")          # trainer classes
+VISUALIZER_REGISTRY = Registry("visualizers")    # visualization utilities
 
 
 def list_all_components() -> dict:
@@ -86,6 +79,11 @@ def list_all_components() -> dict:
     return {
         "attentions": ATTENTION_REGISTRY.keys(),
         "compressors": COMPRESSOR_REGISTRY.keys(),
+        "methods": METHOD_REGISTRY.keys(),
+        "auxiliary": AUX_REGISTRY.keys(),
+        "models": MODEL_REGISTRY.keys(),
+        "datasets": DATASET_REGISTRY.keys(),
+        "losses": LOSS_REGISTRY.keys(),
         "trainers": TRAINER_REGISTRY.keys(),
         "visualizers": VISUALIZER_REGISTRY.keys(),
     }

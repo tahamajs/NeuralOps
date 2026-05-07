@@ -13,10 +13,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-from ..core.registry import AUX_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
-@AUX_REGISTRY.register("simple_ssm")
+@ATTENTION_REGISTRY.register("simple_ssm")
 class SimpleSSM(nn.Module):
     """
     Simplified SSM block with convolution, diagonal state, and discretisation.

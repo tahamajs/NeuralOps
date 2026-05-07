@@ -166,7 +166,7 @@ class AegisAttentionV2(nn.Module):
 # ------------------------------------------------------------
 # Registry integration
 # ------------------------------------------------------------
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("aegis_v2")
 def inject_aegis_v2(layer, model_config, comp_config, layer_idx, total_layers, old_attn):

@@ -6,8 +6,9 @@ reducing the entire model to a single linear function for extreme inference spee
 
 import torch
 import torch.nn as nn
-from ..core.base import BaseCompressor
-from ..core.registry import COMPRESSOR_REGISTRY
+from typing import Tuple, Dict, Any
+from framework.core.base import BaseCompressor
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 
 class _LinearizedGELU(nn.Module):
@@ -16,17 +17,34 @@ class _LinearizedGELU(nn.Module):
         return 0.8 * x
 
 
-class _LinearizedSoftmaxAttention(nn.Module):
+class _LinearizedAttention(nn.Module):
     """
-    Replaces softmax attention with a simple linear projection.
-    Actually just returns the mean of the values.
+    Linearized attention: replaces softmax with average over sequence dimension.
+    Preserves input/output shapes for DistilBERT compatibility.
     """
-    def forward(self, q, k, v):
-        # shape: q (B,*,L,D), k, v similar
-        return v.mean(dim=-2, keepdim=True).expand_as(v)
+    def __init__(self, original_attn):
+        super().__init__()
+        # Keep references to the original projections (they are linear)
+        self.q_lin = original_attn.q_lin
+        self.k_lin = original_attn.k_lin
+        self.v_lin = original_attn.v_lin
+        self.out_lin = original_attn.out_lin
+
+    def forward(self, hidden_states, attention_mask=None, **kwargs):
+        # Compute Q, K, V (linear projections)
+        q = self.q_lin(hidden_states)
+        k = self.k_lin(hidden_states)
+        v = self.v_lin(hidden_states)
+
+        # Linearized attention: average over sequence length
+        # shape: (B, N, D) -> mean over N -> (B, 1, D) -> expand to (B, N, D)
+        context = v.mean(dim=1, keepdim=True).expand_as(v)
+
+        # Output projection
+        output = self.out_lin(context)
+        return output, None   # no attention weights
 
 
-@COMPRESSOR_REGISTRY.register("liftr")
 class LIFTRCompressor(BaseCompressor):
     """
     Linearizes the entire model: ReLU → Identity, GELU → 0.8*x,
@@ -34,7 +52,7 @@ class LIFTRCompressor(BaseCompressor):
     at the cost of accuracy. Ideal for quick baselines or edge deployment.
 
     Args:
-        model: PyTorch model.
+        model: PyTorch model (DistilBERT or BERT).
         replace_attention: if True, also linearize attention (default True).
     """
 
@@ -42,41 +60,42 @@ class LIFTRCompressor(BaseCompressor):
         super().__init__(model, name="liftr", **kwargs)
         self.replace_attention = replace_attention
 
-    def compress(self):
+    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Apply linearization to the model and return compressed model + stats."""
         self._linearize_module(self.model)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
     def _linearize_module(self, module: nn.Module):
-        for name, child in module.named_children():
-            # Replace activations
+        """Recursively replace non‑linear layers and attention modules."""
+        for name, child in list(module.named_children()):
+            # Replace activation functions
             if isinstance(child, nn.ReLU):
                 setattr(module, name, nn.Identity())
             elif isinstance(child, nn.GELU):
                 setattr(module, name, _LinearizedGELU())
             elif isinstance(child, nn.SiLU):
-                setattr(module, name, _LinearizedGELU())  # similar
-            # Replace attention
-            elif self.replace_attention and isinstance(child, nn.MultiheadAttention):
-                # We replace the forward method by wrapping the module
-                child.forward = self._linear_attention_forward
-            # Recursively process children
+                setattr(module, name, _LinearizedGELU())
+            # Replace attention: DistilBERT attention has attribute 'attention'
+            elif self.replace_attention and name == 'attention':
+                # For DistilBERT, the child is the attention module
+                # We replace it with our linearized wrapper
+                setattr(module, name, _LinearizedAttention(child))
+            # Recurse into children
             else:
                 self._linearize_module(child)
 
-    def _linear_attention_forward(self, query, key, value, **kwargs):
-        """
-        A purely linear 'attention' – just averages the values.
-        Keeps the output shape consistent.
-        """
-        # query, key, value: (L, B, D) or (B, L, D) depending on batch_first
-        # We'll just average over the sequence dimension.
-        if query.dim() == 3:
-            # batch_first=False: (L, B, D) -> average over L
-            out = value.mean(dim=0, keepdim=True).expand_as(value)
-        elif query.dim() == 4:
-            # batch_first=True: (B, L, D) -> average over L
-            out = value.mean(dim=1, keepdim=True).expand_as(value)
-        else:
-            out = value
-        return out, None  # attention weights
+
+# ----------------------------------------------------------------------
+# Registry entry point – returns the compressed model (nn.Module)
+# ----------------------------------------------------------------------
+@COMPRESSOR_REGISTRY.register("liftr")
+def liftr_compressor_entry(model: nn.Module, comp_config) -> nn.Module:
+    """
+    Factory function called by the framework.
+    Expects comp_config to have attribute `replace_attention` (default True).
+    """
+    replace_attention = getattr(comp_config, 'replace_attention', True)
+    compressor = LIFTRCompressor(model, replace_attention=replace_attention)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

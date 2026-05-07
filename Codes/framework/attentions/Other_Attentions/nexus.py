@@ -28,9 +28,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
 from dataclasses import dataclass
-from framework.attentions.core.base import BaseAttention
-from framework.attentions.core.registry import ATTENTION_REGISTRY
-from ..core.registry import ATTENTION_REGISTRY
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 # ============================================================================
 # Configuration
@@ -471,7 +471,7 @@ def inject_nexus_into_distilbert(layer, model_config, nexus_cfg: NEXUSConfig,
 # ============================================================================
 # REGISTRATION  connects to the framework's attention registry
 # ============================================================================
-from framework.attentions.core.registry import ATTENTION_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("nexus")
 def inject_nexus(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
