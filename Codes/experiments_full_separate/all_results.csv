@@ -27,3 +27,11 @@ timestamp,base_model,dataset,exp_type,name,method,seed,accuracy,loss,duration_se
 2026-05-08T03:48:51.161836,distilbert-base-uncased,cola,attention,routing,baseline,42,,,24.27,,,
 2026-05-08T03:49:35.085870,distilbert-base-uncased,cola,attention,factorised_matrix_state,baseline,42,,,43.71,,,
 2026-05-08T04:32:59.466429,distilbert-base-uncased,cola,attention,hgrn2_layer,baseline,42,0.0,0.6952805519104004,460.09,63411458.0,2026-05-08T04:25:24.690482,2026-05-08T04:32:55.581387
+2026-05-08T04:40:59.270427,distilbert-base-uncased,cola,attention,gated_deltanet_block,baseline,42,0.0,0.6946797966957092,478.66,63420674.0,2026-05-08T04:33:07.224060,2026-05-08T04:40:55.447375
+2026-05-08T04:41:09.995634,distilbert-base-uncased,cola,attention,svd_proj_attn,baseline,42,NA,NA,10.51,NA,NA,NA
+2026-05-08T04:45:03.678608,distilbert-base-uncased,cola,attention,goldfinch_ahn,baseline,42,0.0,0.6909559965133667,233.65,70489352,2026-05-08T04:41:14.942026,2026-05-08T04:44:59.802636
+2026-05-08T04:45:13.194919,distilbert-base-uncased,cola,attention,linformer,baseline,42,NA,NA,9.35,NA,NA,NA
+2026-05-08T04:45:21.494138,distilbert-base-uncased,cola,attention,compressed_mha,baseline,42,NA,NA,8.29,NA,NA,NA
+2026-05-08T04:45:27.285276,distilbert-base-uncased,cola,attention,moba,baseline,42,NA,NA,5.77,NA,NA,NA
+2026-05-08T04:51:00.547560,distilbert-base-uncased,cola,attention,aegis_v4,baseline,42,0.0,0.6927484273910522,333.23,55355210,2026-05-08T04:45:31.069394,2026-05-08T04:50:54.803626
+2026-05-08T04:51:11.836966,distilbert-base-uncased,cola,attention,kda,baseline,42,NA,NA,11.15,NA,NA,NA
