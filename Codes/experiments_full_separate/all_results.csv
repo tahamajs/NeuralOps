@@ -78,3 +78,4 @@ timestamp,base_model,dataset,exp_type,name,method,seed,accuracy,loss,duration_se
 2026-05-08T15:23:46.511453,distilbert-base-uncased,cola,attention,soa_attn,baseline,42,0.0,0.6837660670280457,242.62,56914178,2026-05-08T15:19:51.668138,2026-05-08T15:23:42.160172
 2026-05-08T15:24:24.199730,distilbert-base-uncased,cola,attention,routing,baseline,42,NA,NA,37.42,NA,NA,NA
 2026-05-08T15:25:17.604493,distilbert-base-uncased,cola,attention,factorised_matrix_state,baseline,42,NA,NA,52.86,NA,NA,NA
+2026-05-08T15:38:15.124387,distilbert-base-uncased,cola,attention,infini,baseline,42,0.0,0.6914234757423401,777.05,67544834,2026-05-08T15:25:27.871531,2026-05-08T15:38:09.060940
