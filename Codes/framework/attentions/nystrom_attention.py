@@ -21,9 +21,13 @@ def _compute_moore_penrose(A, iters=6):
 
 @ATTENTION_REGISTRY.register("nystrom")
 class NystromAttention(BaseAttention):
-    def __init__(self, config, rank=64, pinv_iterations=6, residual=True):
+    def __init__(self, config, rank=64, pinv_iterations=6, residual=True, pretrained_attn=None, **kwargs):
         if rank is None: rank = 64
         super().__init__(config, rank)
+        self.pinv_iterations = pinv_iterations
+        self.residual = residual
+
+
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
         self.all_head_size = self.num_heads * self.head_dim

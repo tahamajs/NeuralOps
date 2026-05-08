@@ -62,4 +62,4 @@ class InfiniAttention(BaseAttention):
 
         if output_attentions:
             return out, attn_local
-        return out
+        return out, None

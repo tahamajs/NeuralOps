@@ -11,10 +11,10 @@ from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, MET
 
 @ATTENTION_REGISTRY.register("performer")
 class PerformerAttention(BaseAttention):
-    def __init__(self, config, rank=64,redraw_projection=True):
-        if rank is None:
-            rank = 64
+    def __init__(self, config, rank=256, redraw_projection=True, pretrained_attn=None, **kwargs):
         super().__init__(config, rank)
+        self.redraw_projection = redraw_projection
+
         self.rank = rank
         
         self.num_heads = config.num_attention_heads
