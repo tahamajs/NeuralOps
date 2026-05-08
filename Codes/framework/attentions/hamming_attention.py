@@ -3,14 +3,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("hamming")
 class HammingAttention(BaseAttention):
     """Hamming Attention Distillation (HAD)."""
 
-    def __init__(self, config, rank: int = None, distill_temperature=1.0, sparsity_ratio=0.5):
+    def __init__(self, config, rank: int = None, distill_temperature=1.0, sparsity_ratio=0.5, **kwargs):
         super().__init__(config, rank)
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
@@ -21,7 +21,7 @@ class HammingAttention(BaseAttention):
         self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
+        self.dropout = nn.Dropout(config.dropout)  # fixed
 
         self.q_scale = nn.Parameter(torch.ones(self.num_heads, 1))
         self.k_scale = nn.Parameter(torch.ones(self.num_heads, 1))
@@ -29,7 +29,7 @@ class HammingAttention(BaseAttention):
     @staticmethod
     def _binarize(tensor, scale):
         t = tensor * scale.view(1, -1, 1, 1)
-        return torch.tanh(t * 5.0)          # approximates sign
+        return torch.tanh(t * 5.0)  # approximates sign
 
     @staticmethod
     def _hamming_dist(q_b, k_b):
@@ -49,12 +49,17 @@ class HammingAttention(BaseAttention):
 
         scores = -self._hamming_dist(q_b, k_b) / (Dh ** 0.5)
 
+        # Mask handling (convert 2D mask to additive)
         if attention_mask is not None:
-            scores = scores + (attention_mask.float() - 1.0) * -1e9
+            if attention_mask.dim() == 2:
+                mask = attention_mask[:, None, None, :]
+            else:
+                mask = attention_mask
+            scores = scores + (1.0 - mask) * -1e9
 
         if self.sparsity_ratio > 0:
-            k = max(1, int(L * self.sparsity_ratio))
-            top_vals, top_idx = torch.topk(scores, k=k, dim=-1)
+            keep_k = max(1, int(L * self.sparsity_ratio))
+            top_vals, top_idx = torch.topk(scores, k=keep_k, dim=-1)
             mask = torch.zeros_like(scores).scatter(-1, top_idx, 1.0)
             scores = scores * mask + (1 - mask) * -1e9
 
@@ -64,11 +69,7 @@ class HammingAttention(BaseAttention):
         context = torch.matmul(probs, v)
         context = context.transpose(1, 2).contiguous().view(B, L, D)
 
-        distill_loss = None
-        if teacher_attention is not None and self.training:
-            student_log = F.log_softmax(probs / self.distill_temperature, dim=-1)
-            teacher_prob = F.softmax(teacher_attention / self.distill_temperature, dim=-1)
-            distill_loss = F.kl_div(student_log, teacher_prob, reduction='batchmean') * (self.distill_temperature ** 2)
-
         out = self.out_proj(context)
-        return (out, distill_loss) if distill_loss is not None else (out, None)
+
+        # Always return a tuple (output, attention_weights)
+        return out, None

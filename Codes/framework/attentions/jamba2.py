@@ -3,16 +3,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
-@ATTENTION_REGISTRY.register("mamba")
-class Mamba(nn.Module):
-    """Trivial Mamba placeholder – replace with official implementation."""
-    def __init__(self, d_model):
-        super().__init__()
-        self.d_model = d_model
-        self.in_proj = nn.Linear(d_model, d_model*2)
-        self.out_proj = nn.Linear(d_model, d_model)
-    def forward(self, x):
-        return self.out_proj(F.silu(self.in_proj(x)))
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("expert_choice_moe")
 class ExpertChoiceMoE(nn.Module):
@@ -41,9 +36,14 @@ class ExpertChoiceMoE(nn.Module):
                 out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
         return out
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from framework.core.registry import ATTENTION_REGISTRY
+
 @ATTENTION_REGISTRY.register("jamba2")
 class Jamba2Block(nn.Module):
-    def __init__(self, d_model, n_heads, n_experts=8, top_k=2):
+    def __init__(self, d_model, n_heads, n_experts=8, top_k=2, **kwargs):
         super().__init__()
         self.mamba = Mamba(d_model)
         self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
@@ -52,9 +52,9 @@ class Jamba2Block(nn.Module):
         self.norm2 = nn.LayerNorm(d_model)
         self.norm3 = nn.LayerNorm(d_model)
 
-    def forward(self, x,**kwargs):
+    def forward(self, x, **kwargs):
         x = self.norm1(x + self.mamba(x))
         attn_out, _ = self.attn(x, x, x)
         x = self.norm2(x + attn_out)
         x = self.norm3(x + self.moe(x))
-        return x
+        return x, None   # return tuple for attention interface
