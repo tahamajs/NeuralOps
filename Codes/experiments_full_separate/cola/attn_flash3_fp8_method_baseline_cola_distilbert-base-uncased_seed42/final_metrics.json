@@ -1,0 +1,20 @@
+{
+  "start_time": "2026-05-08T03:37:16.746368",
+  "end_time": "2026-05-08T03:43:05.513306",
+  "duration_seconds": 348.7669382095337,
+  "final_accuracy": 0.0,
+  "final_loss": 0.6790444850921631,
+  "best_metric": 0.028032915612291112,
+  "num_parameters": 66955010,
+  "trainable_parameters": 66955010,
+  "model_name": "distilbert-base-uncased",
+  "attention_type": "flash3_fp8",
+  "compressor": "none",
+  "method": "baseline",
+  "task": "cola",
+  "seed": 42,
+  "max_train_samples": 5000,
+  "epochs": 1,
+  "batch_size": 32,
+  "learning_rate": 1e-05
+}
