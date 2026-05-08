@@ -113,7 +113,7 @@ class SOAAttention(nn.Module):
         if mask is not None:
             if mask.dim() == 2:
                 mask = mask[:, None, None, :]      # (B,1,1,N)
-            scores = scores + (1.0 - mask) * -1e9
+                scores = scores + (1.0 - mask.float()) * -1e9
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)

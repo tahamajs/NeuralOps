@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 
-@ATTENTION_REGISTRY.register("upi_stuffed_mamba")
 class UPIMambaBlock(nn.Module):
     def __init__(self, dim, d_state=16, d_conv=4, expand=2):
         super().__init__()
@@ -40,6 +39,7 @@ class UPIMambaBlock(nn.Module):
         out_ssm_full = F.pad(out_ssm, (0, x_ssm.size(-1) - self.dim))
         out = out_ssm_full * F.silu(z)
         return self.out_proj(out), None
+
 
 @ATTENTION_REGISTRY.register("upi_stuffed_mamba")
 def inject_upi_mamba(layer, model_config, comp_config, layer_idx, total_layers, old_attn):

@@ -53,22 +53,13 @@ class CompressedDistilBertAttention(nn.Module):
                 self.bias_v = self.bias_v.to(device)
                 self.bias_out = self.bias_out.to(device)
 
-        B, N, D = hidden_states.shape
+        B, N, _ = hidden_states.shape
         proj = torch.matmul(hidden_states, self.Vh_qkv.t())
         qkv_comp = torch.matmul(proj, self.U_qkv.t() * self.S_qkv.view(1, -1, 1))
-        dim = self.hidden_size
+        dim = self.hidden_size          # <-- ADD THIS LINE
         q = qkv_comp[:, :, :dim]
         k = qkv_comp[:, :, dim:2*dim]
         v = qkv_comp[:, :, 2*dim:]
-
-        if self.bias_q is not None:
-            q = q + self.bias_q
-            k = k + self.bias_k
-            v = v + self.bias_v
-
-        q = q.view(B, N, self.num_heads, self.head_dim).transpose(1,2)
-        k = k.view(B, N, self.num_heads, self.head_dim).transpose(1,2)
-        v = v.view(B, N, self.num_heads, self.head_dim).transpose(1,2)
 
         scale = self.head_dim ** -0.5
         scores = torch.matmul(q, k.transpose(-2,-1)) * scale

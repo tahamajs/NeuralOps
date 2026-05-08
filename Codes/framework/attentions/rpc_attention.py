@@ -5,7 +5,7 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("rpc")
 class RPCAttention(nn.Module):
-    def __init__(self, config, rank=64):
+    def __init__(self, config, rank=64, pretrained_attn=None, **kwargs):
         super().__init__(config, rank)
         self.rank = rank if rank is not None else 64
 
@@ -19,7 +19,7 @@ class RPCAttention(nn.Module):
         self.out_proj = nn.Linear(self.dim, self.dim)
         self.register_buffer('proj', torch.randn(self.num_heads, self.head_dim, self.head_dim))
 
-    def forward(self, x, attention_mask=None, **kwargs):
+    def forward(self, x, pretrained_attn=None, **kwargs):
         B, L, D = x.shape
         q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)

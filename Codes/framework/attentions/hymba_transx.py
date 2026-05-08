@@ -66,7 +66,7 @@ class UnifiedRoPE(nn.Module):
     
 @ATTENTION_REGISTRY.register("hymba_transx")
 class HymbaTransXBlock(BaseAttention):
-    def __init__(self, config, rank=64, num_heads=None):
+    def __init__(self, config, rank=64, num_heads=None, pretrained_attn=None, **kwargs):
         super().__init__(config, rank)
         self.dim = config.hidden_size
         self.num_heads = num_heads or config.num_attention_heads
@@ -77,12 +77,14 @@ class HymbaTransXBlock(BaseAttention):
         self.W_k1 = nn.Linear(self.dim, self.dim, bias=False)
         self.W_q2 = nn.Linear(self.dim, self.dim, bias=False)
         self.W_k2 = nn.Linear(self.dim, self.dim, bias=False)
-        self.W_v  = nn.Linear(self.dim, self.dim, bias=False)  # not all_head_size
+        self.W_v  = nn.Linear(self.dim, self.dim, bias=False)
         self.mamba = SimpleSSM(self.dim)
         self.out_proj = nn.Linear(self.dim, self.dim)
         self.alpha = nn.Parameter(torch.tensor(0.5))
-        
-    def forward(self, x, mask=None, **kwargs):
+
+    def forward(self, hidden_states, attention_mask=None, **kwargs):
+        # rename x to hidden_states for consistency
+        x = hidden_states
         B, L, D = x.shape
         x_rope = self.rope(x)
 
@@ -101,4 +103,11 @@ class HymbaTransXBlock(BaseAttention):
         M_out = self.mamba(x_rope)
         alpha = torch.sigmoid(self.alpha)
         out = self.out_proj(x + alpha * A_out + (1 - alpha) * M_out)
-        return (out, None)
+        return out, None
+
+# Injection function
+def inject_hymba_transx(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+    new_attn = HymbaTransXBlock(model_config, rank=getattr(comp_config, 'rank', 64),
+                                pretrained_attn=old_attn)
+    layer.attention = new_attn
+    return new_attn

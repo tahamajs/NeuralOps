@@ -20,11 +20,9 @@ class KDAAttention(nn.Module):
         B, L, D = x.shape
         H = self.num_heads
         d = self.head_dim
-
         q = self.q_proj(x).view(B, L, H, d).transpose(1,2)
         k = F.normalize(self.k_proj(x).view(B, L, H, d).transpose(1,2), dim=-1)
         v = self.v_proj(x).view(B, L, H, d).transpose(1,2)
-
         h = torch.zeros(B, H, d, d, device=x.device)
         outputs = []
         for t in range(L):
@@ -35,6 +33,6 @@ class KDAAttention(nn.Module):
             h = decay * h + (kt.unsqueeze(-1) @ vt.unsqueeze(1))
             out_t = (h @ qt.unsqueeze(-1)).squeeze(-1)
             outputs.append(out_t)
-        out = torch.stack(outputs, dim=2)
+        out = torch.stack(outputs, dim=2)   # (B, H, L, d)
         out = out.transpose(1,2).contiguous().view(B, L, D)
         return self.out_proj(out), None

@@ -10,9 +10,9 @@ from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, MET
 
 @ATTENTION_REGISTRY.register("primal")
 class PrimalAttention(BaseAttention):
-    def __init__(self, config, rank=64,pretrained_attn=None):
+    def __init__(self, config, rank=64, pretrained_attn=None, **kwargs):
+        if rank is None: rank = 64
         super().__init__(config, rank)
-        self.rank = rank if rank is not None else 64
     
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
@@ -66,4 +66,4 @@ class PrimalAttention(BaseAttention):
         probs = self.dropout(probs)
         context = torch.matmul(probs, V)
         context = context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
-        return (self.out_proj(context), None) if kwargs.get('output_attentions') else (self.out_proj(context),)
+        return (self.out_proj(context), None) if kwargs.get('output_attentions') else (self.out_proj(context),None)

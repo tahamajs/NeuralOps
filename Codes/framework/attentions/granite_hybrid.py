@@ -7,6 +7,8 @@ class Mamba2(nn.Module):
     """Simplified Mamba‑2 stub (replace with official mamba_ssm)."""
     def __init__(self, d_model, d_state=16, d_conv=4, expand=2):
         super().__init__()
+        self.d_model = d_model
+        self.d_state = d_state          # ← add this line
 
         self.d_model = d_model
         self.expand = expand
@@ -18,7 +20,7 @@ class Mamba2(nn.Module):
         self.D = nn.Parameter(torch.ones(d_model))
         self.out_proj = nn.Linear(inner_dim, d_model)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         B, L, D = x.shape
         x_proj = self.in_proj(x)            # (B, L, 2*inner)
         x_ssm, z = x_proj.chunk(2, dim=-1)  # each (B, L, inner)
@@ -49,7 +51,7 @@ class MixtureOfExperts(nn.Module):
         ) for _ in range(num_experts)])
         self.router = nn.Linear(dim, num_experts)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         B, L, D = x.shape
         scores = self.router(x)            # (B, L, E)
         weights, indices = torch.topk(scores, self.top_k, dim=-1)
@@ -72,7 +74,7 @@ class GraniteHybridBlock(nn.Module):
         self.ratio = ratio
         self.register_buffer('counter', torch.tensor(0, dtype=torch.long))   # use buffer for state
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         self.counter += 1
         if self.counter % (self.ratio + 1) < self.ratio:
             x = self.mamba(x)
@@ -80,6 +82,19 @@ class GraniteHybridBlock(nn.Module):
             x, _ = self.attn(x, x, x)
         x = x + self.moe(x)
         return x
+
+
+@ATTENTION_REGISTRY.register("granite_hybrid")
+def inject_granite_hybrid(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+    dim = model_config.hidden_size
+    num_experts = getattr(comp_config, 'num_experts', 8)
+    top_k = getattr(comp_config, 'top_k', 2)
+    ratio = getattr(comp_config, 'ratio', 9)
+    new_block = GraniteHybridBlock(dim=dim, num_experts=num_experts, top_k=top_k, ratio=ratio)
+    layer.attention = new_block
+    return new_block
+
+
 
 
 @ATTENTION_REGISTRY.register("granite_hybrid")
