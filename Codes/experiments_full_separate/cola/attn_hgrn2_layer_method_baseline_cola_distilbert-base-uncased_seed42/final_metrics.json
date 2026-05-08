@@ -1,0 +1,20 @@
+{
+  "start_time": "2026-05-08T04:25:24.690482",
+  "end_time": "2026-05-08T04:32:55.581387",
+  "duration_seconds": 450.89090514183044,
+  "final_accuracy": 0.0,
+  "final_loss": 0.6952805519104004,
+  "best_metric": 0.0,
+  "num_parameters": 63411458,
+  "trainable_parameters": 63411458,
+  "model_name": "distilbert-base-uncased",
+  "attention_type": "hgrn2_layer",
+  "compressor": "none",
+  "method": "baseline",
+  "task": "cola",
+  "seed": 42,
+  "max_train_samples": 5000,
+  "epochs": 1,
+  "batch_size": 32,
+  "learning_rate": 1e-05
+}
