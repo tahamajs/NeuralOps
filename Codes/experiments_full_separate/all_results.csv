@@ -36,3 +36,8 @@ timestamp,base_model,dataset,exp_type,name,method,seed,accuracy,loss,duration_se
 2026-05-08T04:51:00.547560,distilbert-base-uncased,cola,attention,aegis_v4,baseline,42,0.0,0.6927484273910522,333.23,55355210,2026-05-08T04:45:31.069394,2026-05-08T04:50:54.803626
 2026-05-08T04:51:11.836966,distilbert-base-uncased,cola,attention,kda,baseline,42,NA,NA,11.15,NA,NA,NA
 2026-05-08T04:55:44.245423,distilbert-base-uncased,cola,attention,flash3_fp8,baseline,42,0.0,0.6790444850921631,272.3,66955010,2026-05-08T04:51:16.067586,2026-05-08T04:55:36.166702
+2026-05-08T05:00:03.306368,distilbert-base-uncased,cola,attention,soa_attn,baseline,42,0.0,0.6837807297706604,253.59,56914178,2026-05-08T04:55:57.507932,2026-05-08T04:59:58.191541
+2026-05-08T05:00:25.830826,distilbert-base-uncased,cola,attention,routing,baseline,42,NA,NA,22.23,NA,NA,NA
+2026-05-08T05:01:00.358488,distilbert-base-uncased,cola,attention,factorised_matrix_state,baseline,42,NA,NA,34.33,NA,NA,NA
+2026-05-08T05:06:57.018920,distilbert-base-uncased,cola,attention,infini,baseline,42,0.0,0.6914240121841431,356.25,67544834,2026-05-08T05:01:11.081094,2026-05-08T05:06:52.739270
+2026-05-08T05:29:02.354833,distilbert-base-uncased,cola,attention,aegis_hybrid,baseline,42,NA,NA,1325.14,NA,NA,NA
