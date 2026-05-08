@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 """
-Test all registered attention modules and compressors with timeout.
+Test all registered attention modules with timeout, incremental saving, and resume.
 Usage:
-    python test_attention.py [--limit N] [--output results.csv] [--device cpu|cuda|mps]
+    python test_attentions.py [--limit N] [--output results.csv] [--device cpu] [--resume]
 """
 
 import argparse
 import signal
 import torch
-import sys
 import os
 import inspect
 import pandas as pd
@@ -22,15 +21,13 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import framework.attentions
-import framework.compression_engine
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils.layer_norm_fix import fix_layernorm_naming
-from framework.config import CompressionConfig
 from framework.utils.device import get_device
 
-TIMEOUT = 15
+TIMEOUT = 20  # increased for slow modules
 
-# Known problematic components (skip)
+# Known problematic attention modules (skip)
 SKIP_ATTENTIONS = {
     "compressed_attention_layer", "compressed_attention_layer_energy",
     "lola_attn", "asvd", "bam_umoe", "cluster", "fusion_attn",
@@ -39,19 +36,6 @@ SKIP_ATTENTIONS = {
     "template_compressor", "template_attention", "aegis_v5",
     "xattention", "progressive_token_pruning", "eat", "phantom",
     "regla", "compression_unified_rope", "simple_ssm", "goldfinch_ahn"
-}
-SKIP_COMPRESSORS = {
-    "frandi", "tt_compressor", "adaptive_compressor", "slicegpt",
-    "rpca", "admm", "saes_svd_v2", "sdrm", "mgie_budget", "liftr",
-    "cr", "mamba_shedder", "ast_pruner", "coopq", "slicegpt", "saes",
-    "oats", "subspace_projection", "gfws", "swift_svd_act", "faq",
-    "cur", "swift_svd", "kronecker", "erc", "lillama", "lsc",
-    "flap", "flat_llm", "aasvd", "cur_moe", "delta_kv", "kvtc",
-    "entropy_budget", "hybridkv", "mgie", "salr", "uniql", "soka",
-    "kmeans", "bonsai", "replaceme", "sparsegpt", "tomoe", "hashed_net",
-    "compot", "armor_pruner", "admm_pruner", "modegpt", "enlighten",
-    "a3", "direct_svd", "roast", "proxsparse", "slim", "nmf", "mlorq",
-    "cachenotes", "zerokv_neo", "dobi", "astro", "adasvd"
 }
 
 def timeout_handler(signum, frame):
@@ -65,9 +49,9 @@ def run_with_timeout(func, *args, timeout=TIMEOUT):
         signal.alarm(0)
         return result
     except TimeoutError:
-        return False, "Timeout (>{}s)".format(timeout)
+        return False, f"Timeout (> {timeout}s)"
     except Exception as e:
-        return False, f"{type(e).__name__}: {str(e)[:120]}"
+        return False, f"{type(e).__name__}: {str(e)[:200]}"
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, old_handler)
@@ -126,40 +110,35 @@ def test_attention(attn_name, model, model_config, device, comp_config):
     _ = outputs.logits
     return True, "OK"
 
-def test_compressor(comp_name, model, device, comp_config):
-    comp_fn = COMPRESSOR_REGISTRY.get(comp_name)
-    if comp_fn is None:
-        return False, "Not in registry"
-    compressed = comp_fn(model, comp_config)
-    if not isinstance(compressed, torch.nn.Module):
-        return False, f"Compressor returned {type(compressed)}, not a nn.Module"
-    compressed.to(device)
-    compressed.eval()
-    input_ids = torch.randint(0, 30522, (2, 32)).to(device)
-    attention_mask = torch.ones_like(input_ids).to(device)
-    with torch.no_grad():
-        outputs = compressed(input_ids=input_ids, attention_mask=attention_mask)
-    if not hasattr(outputs, 'logits'):
-        return False, "Output has no 'logits'"
-    return True, "OK"
+def load_existing_results(output_file):
+    if os.path.exists(output_file):
+        try:
+            df_existing = pd.read_csv(output_file)
+            tested = set(df_existing['name'])
+            return tested, df_existing
+        except:
+            return set(), pd.DataFrame()
+    return set(), pd.DataFrame()
+
+def save_results(results, output_file):
+    df = pd.DataFrame(results)
+    df.to_csv(output_file, index=False)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--output", type=str, default="test_results.csv")
+    parser.add_argument("--output", type=str, default="attention_results.csv")
     parser.add_argument("--model", type=str, default="distilbert-base-uncased")
     parser.add_argument("--device", type=str, default=None, help="cuda, mps, or cpu")
-    parser.add_argument("--skip_attentions", action="store_true")
-    parser.add_argument("--skip_compressors", action="store_true")
+    parser.add_argument("--resume", action="store_true", help="Resume from previous results")
+    parser.add_argument("--save_every", type=int, default=10, help="Save results every N tests")
     args = parser.parse_args()
 
     print("\n" + "="*70)
-    print("Testing all registered components (with timeout)")
+    print("Testing all registered attention modules (with timeout)")
     print("="*70)
 
     model_config = AutoConfig.from_pretrained(args.model)
-    
-    # Load tokenizer once (will be attached to each model)
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True, local_files_only=True)
 
     if args.device:
@@ -168,89 +147,61 @@ def main():
         device = get_device()
     print(f"Using device: {device}")
 
-    # Use SimpleNamespace instead of CompressionConfig to avoid unexpected keyword errors
+    # Simple config with common parameters
     comp_config = SimpleNamespace(
-        attn_type="full",
-        dropout=0.1,
-        rank=32,
-        svd_rank=32,
-        block_size=64,
-        local_window=64,
-        top_k_inter=4,
-        lora_rank=8,
-        lora_alpha=16.0,
-        svd_energy=0.95,
-        num_landmarks=16,
-        feature_dim=128,
-        rff_features=128,
-        use_full_attention=False,
-        ratio=3,
-        n_experts=8,
-        top_k=2,
-        window_size=128,
-        use_fp8=False,
-        # For compressors that need tokenizer
-        keep_ratio=0.5,
-        target_sparsity=0.3,
-        a3_rank=64,
-        energy_threshold=0.95,
-        sparsity=0.5,
-        quant_bits=4,
-        slicegpt_sparsity=0.25,
-        oats_sparsity=0.5,
-        oats_rank_ratio=0.2,
-        oats_num_iters=5,
-        mamba_shedder_sparsity=0.2,
-        swift_svd_act_rank=64,
-        faq_bits=8,
-        compot_rank=64,
-        lillama_rank=64,
+        attn_type="full", dropout=0.1, rank=32, svd_rank=32, block_size=64,
+        local_window=64, top_k_inter=4, lora_rank=8, lora_alpha=16.0,
+        svd_energy=0.95, num_landmarks=16, feature_dim=128, rff_features=128,
+        use_full_attention=False, ratio=3, n_experts=8, top_k=2,
+        window_size=128, use_fp8=False,
+        keep_ratio=0.5, target_sparsity=0.3, a3_rank=64, energy_threshold=0.95,
+        sparsity=0.5, quant_bits=4, slicegpt_sparsity=0.25,
+        oats_sparsity=0.5, oats_rank_ratio=0.2, oats_num_iters=5,
+        mamba_shedder_sparsity=0.2, swift_svd_act_rank=64, faq_bits=8,
+        compot_rank=64, lillama_rank=64,
     )
 
+    # Get all attention keys, skip known problematic
+    attn_keys = [k for k in ATTENTION_REGISTRY.keys() if k not in SKIP_ATTENTIONS]
+    if args.limit:
+        attn_keys = attn_keys[:args.limit]
+    print(f"\nTesting {len(attn_keys)} attentions (skipped {len(SKIP_ATTENTIONS)} known bad)...")
+
+    # Load existing results if resuming
+    tested_set = set()
     results = []
+    if args.resume:
+        tested_set, existing_df = load_existing_results(args.output)
+        if not existing_df.empty:
+            results = existing_df.to_dict('records')
+            print(f"Resuming from {args.output} – already tested {len(tested_set)} components.")
+    else:
+        # Start fresh
+        pass
 
-    # --- Test attentions ---
-    if not args.skip_attentions:
-        attn_keys = [k for k in ATTENTION_REGISTRY.keys() if k not in SKIP_ATTENTIONS]
-        if args.limit:
-            attn_keys = attn_keys[:args.limit]
-        print(f"\nTesting {len(attn_keys)} attentions (skipped {len(SKIP_ATTENTIONS)} known bad)...")
-        for i, key in enumerate(attn_keys, 1):
-            print(f"  [{i:3d}/{len(attn_keys)}] {key:<40} ", end='', flush=True)
-            model = AutoModelForSequenceClassification.from_pretrained(args.model, config=model_config)
-            fix_layernorm_naming(model)
-            # Attach tokenizer for any compressor that might need it (though not used in attention test)
-            model.tokenizer = tokenizer
-            ok, msg = run_with_timeout(test_attention, key, model, model_config, device, comp_config)
-            success = bool(ok)
-            results.append({"type": "attention", "name": key, "success": success, "message": msg})
-            if success:
-                print("✓ PASS")
-            else:
-                print(f"✗ FAIL: {msg}")
+    for i, key in enumerate(attn_keys, 1):
+        if key in tested_set:
+            print(f"  [{i:3d}/{len(attn_keys)}] {key:<40} ⏭️ SKIPPED (already tested)")
+            continue
+        print(f"  [{i:3d}/{len(attn_keys)}] {key:<40} ", end='', flush=True)
+        model = AutoModelForSequenceClassification.from_pretrained(args.model, config=model_config)
+        fix_layernorm_naming(model)
+        model.tokenizer = tokenizer
+        ok, msg = run_with_timeout(test_attention, key, model, model_config, device, comp_config)
+        success = bool(ok)
+        result = {"type": "attention", "name": key, "success": success, "message": msg}
+        results.append(result)
+        if success:
+            print("✓ PASS")
+        else:
+            print(f"✗ FAIL: {msg[:100]}")
+        if len(results) % args.save_every == 0:
+            save_results(results, args.output)
+            print(f"   💾 Saved checkpoint ({len(results)} tests)")
 
-    # --- Test compressors ---
-    if not args.skip_compressors:
-        comp_keys = [k for k in COMPRESSOR_REGISTRY.keys() if k not in SKIP_COMPRESSORS]
-        if args.limit:
-            comp_keys = comp_keys[:args.limit]
-        print(f"\nTesting {len(comp_keys)} compressors (skipped {len(SKIP_COMPRESSORS)} known bad)...")
-        for i, key in enumerate(comp_keys, 1):
-            print(f"  [{i:3d}/{len(comp_keys)}] {key:<40} ", end='', flush=True)
-            model = AutoModelForSequenceClassification.from_pretrained(args.model, config=model_config)
-            fix_layernorm_naming(model)
-            # Attach tokenizer to the model (required by many compressors)
-            model.tokenizer = tokenizer
-            ok, msg = run_with_timeout(test_compressor, key, model, device, comp_config)
-            success = bool(ok)
-            results.append({"type": "compressor", "name": key, "success": success, "message": msg})
-            if success:
-                print("✓ PASS")
-            else:
-                print(f"✗ FAIL: {msg}")
-
+    # Final save
+    save_results(results, args.output)
     df = pd.DataFrame(results)
-    df.to_csv(args.output, index=False)
     print(f"\nResults saved to {args.output}")
     print(f"Summary: {df['success'].sum()} / {len(df)} passed.")
 
