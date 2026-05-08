@@ -1,0 +1,72 @@
+type,name,success,message
+attention,hgrn2_layer,True,OK
+attention,gated_deltanet_block,True,OK
+attention,svd_proj_attn,True,OK
+attention,linformer,True,OK
+attention,compressed_mha,False,RuntimeError: The size of tensor a (768) must match the size of tensor b (32) at non-singleton dimension 1
+attention,moba,True,OK
+attention,aegis_v4,True,OK
+attention,kda,False,"RuntimeError: Expected size for first two dimensions of batch2 tensor to be: [24, 1] but got: [24, 12]."
+attention,flash3_fp8,True,OK
+attention,soa_attn,True,OK
+attention,routing,True,OK
+attention,factorised_matrix_state,True,OK
+attention,infini,True,OK
+attention,aegis_hybrid,True,OK
+attention,lsh,True,OK
+attention,leka_v2,True,OK
+attention,svd,True,OK
+attention,svd_compressed,True,OK
+attention,full,True,OK
+attention,mamba,False,RuntimeError: mat1 and mat2 shapes cannot be multiplied (64x1536 and 768x768)
+attention,hgrn2_gated_deltanet,True,OK
+attention,flash3,True,OK
+attention,span_expanded,True,OK
+attention,salt_linear,True,OK
+attention,zeros,True,OK
+attention,nystrom,False,"ValueError: not enough values to unpack (expected 2, got 1)"
+attention,hgrn2_outer,True,OK
+attention,tpa,True,OK
+attention,token_compressed,True,OK
+attention,gqa,True,OK
+attention,upi_stuffed_mamba,True,OK
+attention,leka_v3,True,OK
+attention,granite_hybrid,False,RuntimeError: The size of tensor a (768) must match the size of tensor b (1536) at non-singleton dimension 2
+attention,soa_fused_attn,True,OK
+attention,nsa,True,OK
+attention,minimal_svd,True,OK
+attention,rala,True,OK
+attention,minimal_prism,True,OK
+attention,lora_attn,True,OK
+attention,performer,False,"ValueError: not enough values to unpack (expected 2, got 1)"
+attention,vig,False,RuntimeError: The size of tensor a (7) must match the size of tensor b (5) at non-singleton dimension 3
+attention,svd_llm_v2,True,OK
+attention,nexus,True,OK
+attention,primal,True,OK
+attention,leka_v1,True,OK
+attention,adasplash,True,OK
+attention,hymba_transx,False,RuntimeError: mat1 and mat2 shapes cannot be multiplied (64x768 and 1536x768)
+attention,rpc,False,TypeError: RPCAttention.__init__() takes 1 positional argument but 3 were given
+attention,adaptive_span,True,OK
+attention,griffin_ssd,True,OK
+attention,mla,True,OK
+attention,expert_choice_moe,False,TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'
+attention,jamba2,False,NameError: name 'Mamba' is not defined
+attention,orion,True,OK
+attention,wgqa,True,OK
+attention,hla,True,OK
+attention,hamming,True,OK
+attention,qcqa,True,OK
+attention,aegis_v6,True,OK
+attention,aegis_v2,True,OK
+attention,minimal_aurora,True,OK
+attention,halo_regla,True,OK
+attention,squeezing_heads_distiller,True,OK
+attention,nha,True,OK
+attention,aegis_v3,True,OK
+attention,minimal_nova,True,OK
+attention,svd_linear_attn,True,OK
+attention,adaptive_svd_attn,True,OK
+attention,chela_slay,True,OK
+attention,block_transformer_hiba,True,OK
+attention,galerkin,True,OK
