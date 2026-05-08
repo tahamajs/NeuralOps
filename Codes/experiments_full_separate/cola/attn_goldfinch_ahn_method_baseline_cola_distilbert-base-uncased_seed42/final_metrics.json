@@ -1,0 +1,20 @@
+{
+  "start_time": "2026-05-08T03:24:43.957003",
+  "end_time": "2026-05-08T03:29:49.993137",
+  "duration_seconds": 306.0361337661743,
+  "final_accuracy": 0.0,
+  "final_loss": 0.6909629702568054,
+  "best_metric": 0.0,
+  "num_parameters": 70489352,
+  "trainable_parameters": 70489352,
+  "model_name": "distilbert-base-uncased",
+  "attention_type": "goldfinch_ahn",
+  "compressor": "none",
+  "method": "baseline",
+  "task": "cola",
+  "seed": 42,
+  "max_train_samples": 5000,
+  "epochs": 1,
+  "batch_size": 32,
+  "learning_rate": 1e-05
+}
