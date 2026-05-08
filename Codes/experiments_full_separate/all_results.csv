@@ -35,3 +35,4 @@ timestamp,base_model,dataset,exp_type,name,method,seed,accuracy,loss,duration_se
 2026-05-08T04:45:27.285276,distilbert-base-uncased,cola,attention,moba,baseline,42,NA,NA,5.77,NA,NA,NA
 2026-05-08T04:51:00.547560,distilbert-base-uncased,cola,attention,aegis_v4,baseline,42,0.0,0.6927484273910522,333.23,55355210,2026-05-08T04:45:31.069394,2026-05-08T04:50:54.803626
 2026-05-08T04:51:11.836966,distilbert-base-uncased,cola,attention,kda,baseline,42,NA,NA,11.15,NA,NA,NA
+2026-05-08T04:55:44.245423,distilbert-base-uncased,cola,attention,flash3_fp8,baseline,42,0.0,0.6790444850921631,272.3,66955010,2026-05-08T04:51:16.067586,2026-05-08T04:55:36.166702
