@@ -1,9 +1,9 @@
 {
-  "start_time": "2026-05-08T04:25:24.690482",
-  "end_time": "2026-05-08T04:32:55.581387",
-  "duration_seconds": 450.89090514183044,
+  "start_time": "2026-05-08T14:50:36.016934",
+  "end_time": "2026-05-08T14:57:42.878813",
+  "duration_seconds": 426.8618791103363,
   "final_accuracy": 0.0,
-  "final_loss": 0.6952805519104004,
+  "final_loss": 0.6952633857727051,
   "best_metric": 0.0,
   "num_parameters": 63411458,
   "trainable_parameters": 63411458,
