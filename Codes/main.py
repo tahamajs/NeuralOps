@@ -1,7 +1,3 @@
-#!/usr/bin/env python
-"""
-Efficient Attention Framework – GLUE Fine‑Tuning with full logging and analysis.
-"""
 
 import framework.attentions
 import framework.compression_engine
@@ -30,11 +26,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
-os.environ["HF_HOME"] = os.path.join(os.getcwd(), "models")
-os.environ["HF_HUB_OFFLINE"] = "0"
-os.environ["TRANSFORMERS_OFFLINE"] = "0"
+# ========== FORCE OFFLINE MODE ==========
+# Point to your local cache directory (adjust path if needed)
+CACHE_DIR = "../models"   # or "../models" depending on your structure
+os.environ["HF_HOME"] = os.path.join(os.getcwd(), CACHE_DIR)
+os.environ["TRANSFORMERS_CACHE"] = os.environ["HF_HOME"]
+os.environ["HF_HUB_OFFLINE"] = "1"          # never go online
+os.environ["TRANSFORMERS_OFFLINE"] = "1"    # force transformers offline
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+# Remove the custom endpoint line entirely (do not set HF_ENDPOINT)
+# os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"   # REMOVED
 
 from framework.data.glue_loader import (
     load_glue_local,
@@ -54,9 +56,10 @@ from framework.experiment_logging.logger import setup_logging
 from framework.experiment_logging.tracker import MetricsTracker
 from framework.experiment_logging.callbacks import LoggingCallback
 
+
 # Optional callbacks (graceful fallback)
 try:
-    from framework.callbacks.monitoring import WandbCallback, TensorBoardCallback, WebSocketCallback
+    from framework.callbacks.external import WandbCallback, TensorBoardCallback, WebSocketCallback
 except ImportError:
     WandbCallback = TensorBoardCallback = WebSocketCallback = None
 try:
@@ -75,22 +78,6 @@ try:
 except ImportError:
     SVDAttentionCallback = AttentionHeatmapCallback = GradientNormCallback = None
     LayerwiseAnalysisCallback = ActivationStatsCallback = None
-
-def import_compressor_module(compressor_name):
-    possible_paths = [
-        f"framework.compression_engine.methods.{compressor_name}",
-        f"framework.compression_engine.methods.{compressor_name}_compressor",
-        f"framework.compression_engine.{compressor_name}",
-        f"framework.compression_engine.{compressor_name}_compressor",
-    ]
-    for path in possible_paths:
-        try:
-            importlib.import_module(path)
-            print(f"✅ Loaded compressor from: {path}")
-            return True
-        except ModuleNotFoundError:
-            continue
-    raise ImportError(f"Could not find compressor module for '{compressor_name}'")
 
 def load_yaml_config(path):
     with open(path, 'r') as f:
@@ -136,16 +123,30 @@ def build_compression_config(yaml_cfg, args):
     filtered = {k: v for k, v in cfg_dict.items() if k in valid_keys}
     return CompressionConfig(**filtered)
 
-def save_attention_maps(model, dataloader, device, output_dir, num_samples=1, max_heads=4):
+def save_attention_maps(model, dataloader, device, output_dir, max_heads=4):
+    """Save attention heatmaps for all layers and first few heads."""
     model.eval()
     attn_dir = Path(output_dir) / "attention_maps"
     attn_dir.mkdir(exist_ok=True, parents=True)
-    batch = next(iter(dataloader))
+    try:
+        batch = next(iter(dataloader))
+    except StopIteration:
+        model.train()
+        return None
     batch = {k: v.to(device) for k, v in batch.items()}
     with torch.no_grad():
-        outputs = model(**batch, output_attentions=True)
+        try:
+            outputs = model(**batch, output_attentions=True)
+        except Exception:
+            model.train()
+            return None
     attentions = outputs.attentions
+    if attentions is None:
+        model.train()
+        return None
     for layer_idx, attn_tensor in enumerate(attentions):
+        if attn_tensor is None:
+            continue
         attn = attn_tensor[0].cpu().numpy()
         n_heads = min(attn.shape[0], max_heads)
         fig, axes = plt.subplots(1, n_heads, figsize=(4*n_heads, 4))
@@ -201,14 +202,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--model", type=str, default="distilbert-base-uncased")
-    # New unified component argument
     parser.add_argument("--component", type=str, default=None,
                         help="Specify component to test: 'attention:NAME' or 'compressor:NAME'")
-    # Legacy arguments (will be overridden by --component if provided)
-    parser.add_argument("--attn_type", type=str, default=None,
-                        help="Attention type (legacy)")
-    parser.add_argument("--compressor", type=str, default=None,
-                        help="Compressor (legacy)")
+    parser.add_argument("--attn_type", type=str, default=None)
+    parser.add_argument("--compressor", type=str, default=None)
     parser.add_argument("--method", type=str, default="baseline")
     parser.add_argument("--task", "-t", type=str, default="sst2")
     parser.add_argument("--max_len", type=int, default=128)
@@ -262,7 +259,7 @@ def main():
 
     args = parser.parse_args()
 
-    # --- Unified component handling ---
+    # Unified component handling
     if args.component:
         if ':' not in args.component:
             raise ValueError("--component must be in format 'attention:NAME' or 'compressor:NAME'")
@@ -278,7 +275,6 @@ def main():
         else:
             raise ValueError(f"Unknown component type: {comp_type}. Use 'attention' or 'compressor'.")
     else:
-        # Legacy mode: must have at least one of --attn_type or --compressor
         if args.attn_type is None and (args.compressor is None or args.compressor == 'none'):
             raise ValueError("Either --component or (--attn_type and/or --compressor) must be provided")
         if args.attn_type is None:
@@ -325,12 +321,11 @@ def main():
     device = get_device()
     logger.info(f"Using device: {device}")
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model, use_fast=True, cache_dir=CACHE_DIR, local_files_only=True
+    )
 
-    print("Loading dataset...")
     raw_datasets = load_glue_local(args.task, "/Users/tahamajs/Documents/uni/Project/datasets/glue")
-    print("Dataset loaded")
-
     num_labels, is_regression = get_num_labels_and_is_regression(args.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
 
@@ -349,8 +344,12 @@ def main():
     logger.info(f"Train: {len(dataset['train'])}, Val: {len(dataset.get('validation', []))}")
     save_dataset_metadata(dataset, output_dir, args.task, num_labels, is_regression)
 
-    config = AutoConfig.from_pretrained(args.model, num_labels=num_labels)
-    model = AutoModelForSequenceClassification.from_pretrained(args.model, config=config)
+    config = AutoConfig.from_pretrained(
+        args.model, num_labels=num_labels, cache_dir=CACHE_DIR, local_files_only=True
+    )
+    model = AutoModelForSequenceClassification.from_pretrained(
+        args.model, config=config, cache_dir=CACHE_DIR, local_files_only=True
+    )
     fix_layernorm_naming(model)
 
     if args.config:
@@ -389,38 +388,24 @@ def main():
             max_seq_len=args.max_len,
         )
 
-# ---------- 1. Inject attention ----------
+    # ---------- 1. Inject attention ----------
     if args.attn_type != "full":
         inj = ATTENTION_REGISTRY.get(args.attn_type)
         if inj is None:
             raise ValueError(f"Attention type '{args.attn_type}' not registered. Available: {list(ATTENTION_REGISTRY.keys())}")
 
-        # Create a unified injector that works for both classes and functions
         import inspect
-
-
         def make_injector(obj):
-            # If the object is a class, we need to instantiate it.
             if inspect.isclass(obj):
                 sig = inspect.signature(obj.__init__)
-                # Count number of parameters excluding 'self'
-                params = list(sig.parameters.values())[1:]  # skip self
+                params = list(sig.parameters.values())[1:]
                 n_required = sum(1 for p in params if p.default == inspect.Parameter.empty and p.kind != p.VAR_KEYWORD)
-                n_total = len(params)
-                
                 def inject(layer, config, comp_config, layer_idx, num_layers, old_attn):
-                    # Prepare a dict of possible arguments
                     kwargs = {}
-                    # Try to pass as many as possible based on parameter names
                     arg_map = {
-                        'config': config,
-                        'comp_config': comp_config,
-                        'layer_idx': layer_idx,
-                        'num_layers': num_layers,
-                        'old_attn': old_attn,
-                        'attention': old_attn,  # some might expect 'attention'
-                        'model_config': config,
-                        'layer_id': layer_idx,
+                        'config': config, 'comp_config': comp_config, 'layer_idx': layer_idx,
+                        'num_layers': num_layers, 'old_attn': old_attn, 'attention': old_attn,
+                        'model_config': config, 'layer_id': layer_idx,
                         'rank': getattr(comp_config, 'rank', None),
                         'hidden_size': getattr(config, 'hidden_size', None),
                         'num_heads': getattr(config, 'num_attention_heads', None),
@@ -429,36 +414,27 @@ def main():
                         if p.name in arg_map:
                             kwargs[p.name] = arg_map[p.name]
                         elif p.kind == p.VAR_KEYWORD:
-                            # **kwargs case - pass everything
                             kwargs.update(arg_map)
                             break
-                    # If still missing required arguments, fallback to positional
                     try:
                         new_attn = obj(**kwargs)
                     except TypeError:
-                        # Fallback: call with the first n_required positional args
-                        positional_args = []
-                        for p in params[:n_required]:
-                            if p.name in arg_map:
-                                positional_args.append(arg_map[p.name])
-                            else:
-                                # default to None or a placeholder
-                                positional_args.append(None)
-                        new_attn = obj(*positional_args)
+                        pos_args = [arg_map.get(p.name) for p in params[:n_required] if arg_map.get(p.name) is not None]
+                        new_attn = obj(*pos_args)
                     layer.attention = new_attn
                 return inject
             else:
-                # For a function, check its signature and call with appropriate args.
                 sig = inspect.signature(obj)
                 params = list(sig.parameters.values())
-                
                 def inject(layer, config, comp_config, layer_idx, num_layers, old_attn):
                     kwargs = {}
                     arg_map = {
                         'config': config, 'comp_config': comp_config, 'layer_idx': layer_idx,
                         'num_layers': num_layers, 'old_attn': old_attn, 'attention': old_attn,
-                        'model_config': config, 'layer_id': layer_idx, 'rank': getattr(comp_config, 'rank', None),
-                        'hidden_size': getattr(config, 'hidden_size', None), 'num_heads': getattr(config, 'num_attention_heads', None),
+                        'model_config': config, 'layer_id': layer_idx,
+                        'rank': getattr(comp_config, 'rank', None),
+                        'hidden_size': getattr(config, 'hidden_size', None),
+                        'num_heads': getattr(config, 'num_attention_heads', None),
                     }
                     for p in params:
                         if p.name in arg_map:
@@ -466,27 +442,17 @@ def main():
                         elif p.kind == inspect.Parameter.VAR_KEYWORD:
                             kwargs.update(arg_map)
                             break
-                    # Also provide 'layer' and maybe 'layer_attention' if needed? but typical injection functions already take layer.
-                    # If the function expects the layer as first argument, we should pass it.
-                    # We can detect if the first parameter is named 'layer' and its type may be the module.
                     if params and params[0].name == 'layer':
-                        # The registered function likely expects (layer, config, ... ) as per the original pattern.
-                        # In that case, we call it with the original arguments directly.
                         try:
                             obj(layer, config, comp_config, layer_idx, num_layers, old_attn)
                         except:
-                            # fallback to kwargs
                             obj(**kwargs)
                     else:
                         obj(**kwargs)
                 return inject
-            
-
-
 
         inject_fn = make_injector(inj)
 
-        # Locate transformer layers (DistilBERT or BERT)
         if hasattr(model, "distilbert"):
             layers = model.distilbert.transformer.layer
         elif hasattr(model, "bert"):
@@ -501,14 +467,11 @@ def main():
             except Exception as e:
                 logger.error(f"Failed to inject attention '{args.attn_type}' in layer {i}: {e}")
                 raise
-
         logger.info(f"Injected '{args.attn_type}' into {len(layers)} layers.")
     else:
         logger.info("Using full attention (no injection).")
 
-
-
-    # Compressor
+    # ---------- 2. Apply compressor ----------
     if args.compressor and args.compressor != "none":
         compress_fn = COMPRESSOR_REGISTRY.get(args.compressor)
         if compress_fn is None:
@@ -516,15 +479,13 @@ def main():
         model = compress_fn(model, comp_config)
         logger.info(f"Applied compressor: {args.compressor}")
 
-
-
     model.to(device)
     if not hasattr(model, 'get_ortho_loss'):
         def dummy_ortho_loss():
             return torch.tensor(0.0, device=device)
         model.get_ortho_loss = dummy_ortho_loss
 
-    # Method
+    # ---------- 3. Apply training method ----------
     if args.method != "baseline":
         if args.method not in METHOD_REGISTRY:
             try:
@@ -540,6 +501,7 @@ def main():
             apply_fn(model, comp_config)
         logger.info(f"Applied method: {args.method}")
 
+    # ---------- Training arguments ----------
     metric_map = {"cola": "eval_matthews_correlation", "stsb": "eval_pearson", "mrpc": "eval_f1", "qqp": "eval_f1"}
     metric_for_best = metric_map.get(args.task, "eval_accuracy")
 
@@ -552,8 +514,8 @@ def main():
         learning_rate=args.lr,
         weight_decay=0.01,
         lr_scheduler_type="linear",
-        warmup_steps=5,
-        logging_steps=2,
+        warmup_steps=500,
+        logging_steps=100,
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
@@ -617,7 +579,7 @@ def main():
         logger.info(f"{k}: {v:.4f}")
     logger.info("="*60)
 
-    # Save full config dump
+    # ---------- Save complete artifacts ----------
     full_config = {
         "command_line": vars(args),
         "model_config": config.to_dict(),
@@ -637,12 +599,10 @@ def main():
     with open(output_dir / "full_config.json", "w") as f:
         json.dump(full_config, f, indent=2, default=str)
 
-    # Save per-step metrics
     with open(output_dir / "per_step_metrics.jsonl", "w") as f:
         for log in trainer.state.log_history:
             f.write(json.dumps(log, default=str) + "\n")
 
-    # Plot and save training curves
     history = trainer.state.log_history
     plot_training_curves(history, output_dir)
     if history:
@@ -650,9 +610,13 @@ def main():
         logger.info("Saved training history to training_history.csv")
 
     if args.save_visuals:
-        eval_loader = trainer.get_eval_dataloader()
-        attn_dir = save_attention_maps(model, eval_loader, device, output_dir)
-        logger.info(f"Attention maps saved to {attn_dir}")
+        try:
+            eval_loader = trainer.get_eval_dataloader()
+            attn_dir = save_attention_maps(model, eval_loader, device, output_dir)
+            if attn_dir:
+                logger.info(f"Attention maps saved to {attn_dir}")
+        except Exception as e:
+            logger.warning(f"Could not save attention maps: {e}")
 
     end_time = time.time()
     final_metrics = {
