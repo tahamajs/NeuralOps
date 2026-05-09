@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 GLUE experiment runner – test attentions and compressors separately.
-Supports all callbacks and shows live training logs.
+Supports all callbacks, live logs, and saves EVERYTHING.
 """
 
 import subprocess
@@ -20,13 +20,13 @@ sys.path.insert(0, os.getcwd())
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
 
 # ---------- Configuration ----------
-BASE_MODELS = ["distilbert-base-uncased", "bert-base-uncased", "roberta-base"]
+BASE_MODELS = [ "distilbert-base-uncased", ]
 DATASETS = ["cola", "mrpc", "qnli", "qqp", "rte", "sst2", "stsb", "wnli", "mnli"]
 
 ALL_ATTENTIONS = [k for k in ATTENTION_REGISTRY.keys() if k != "full"]
 ALL_COMPRESSORS = [k for k in COMPRESSOR_REGISTRY.keys()]
 
-SEEDS = [42]
+SEEDS = [42]   # you can add more
 
 DEFAULT_MAX_TRAIN_SAMPLES = 1000
 DEFAULT_NUM_EPOCHS = 1
@@ -103,9 +103,7 @@ def run_experiment(base_model, dataset, exp_type, name, method, seed, args):
     print(f"Command: {' '.join(cmd)}")
     start_time = time.time()
 
-    # ─────────────────────────────────────────────────────────────
-    #  Show live logs: use Popen and stream to terminal + log file
-    # ─────────────────────────────────────────────────────────────
+    # Stream live logs and save to run.log
     log_file = output_dir / "run.log"
     with open(log_file, "w") as f:
         process = subprocess.Popen(
@@ -116,8 +114,8 @@ def run_experiment(base_model, dataset, exp_type, name, method, seed, args):
             bufsize=1
         )
         for line in process.stdout:
-            print(line, end='')   # print to terminal
-            f.write(line)         # save to file
+            print(line, end='')
+            f.write(line)
         process.wait()
 
     end_time = time.time()
@@ -209,7 +207,7 @@ def main():
     parser.add_argument("--limit_compressors", type=int, default=None)
     args = parser.parse_args()
 
-    # Known broken / incompatible with DistilBERT
+    # Skip hard‑broken attentions/compressors
     SKIP_ATTENTIONS = {
         "compressed_attention_layer", "compressed_attention_layer_energy",
         "lola_attn", "asvd", "bam_umoe", "cluster", "fusion_attn",
@@ -220,12 +218,10 @@ def main():
         "eat", "phantom", "regla", "compression_unified_rope", "simple_ssm"
     }
 
-    # Apply filter
     attentions = [a for a in ALL_ATTENTIONS if a not in SKIP_ATTENTIONS]
-    compressors = [c for c in ALL_COMPRESSORS if c not in SKIP_ATTENTIONS]   # same list
+    compressors = [c for c in ALL_COMPRESSORS if c not in SKIP_ATTENTIONS]
 
-
-    methods = ["baseline"]
+    methods = ["baseline"]   # add "lora" etc. later
 
     total = len(BASE_MODELS) * len(DATASETS) * (
         len(attentions) * len(methods) + len(compressors) * len(methods)
@@ -284,7 +280,7 @@ def main():
                             cum_plot = BASE_DIR / f"cumulative_after_{completed_runs}_runs.png"
                             save_cumulative_plot(results_df, cum_plot, completed_runs)
 
-            # After dataset, save per‑dataset plots
+            # Per‑dataset plots after dataset finishes
             ds_df = results_df[(results_df["base_model"] == base_model) & (results_df["dataset"] == dataset)]
             if not ds_df.empty:
                 attn_plot = BASE_DIR / f"summary_{base_model}_{dataset}_attentions.png"
@@ -292,9 +288,19 @@ def main():
                 save_plot(ds_df[ds_df["exp_type"] == "attention"], "attention", attn_plot)
                 save_plot(ds_df[ds_df["exp_type"] == "compressor"], "compressor", comp_plot)
 
+    # Final cumulative and summary
     save_cumulative_plot(results_df, BASE_DIR / "final_cumulative_plot.png")
+    # Also save a pivot table for quick analysis
+    pivot = results_df.pivot_table(
+        index=["base_model", "exp_type", "name"],
+        columns="dataset",
+        values="accuracy",
+        aggfunc="mean"
+    )
+    pivot.to_csv(BASE_DIR / "pivot_summary.csv")
     print("\n🎉 ALL EXPERIMENTS FINISHED")
     print(f"Master CSV: {MASTER_CSV}")
+    print(f"Pivot summary: {BASE_DIR / 'pivot_summary.csv'}")
     print(f"All experiment folders under: {BASE_DIR}")
 
 if __name__ == "__main__":
