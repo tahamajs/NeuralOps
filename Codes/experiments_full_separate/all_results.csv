@@ -127,3 +127,6 @@ timestamp,base_model,dataset,exp_type,name,method,seed,accuracy,loss,duration_se
 2026-05-09T22:55:05.659949,distilbert-base-uncased,cola,attention,gated_deltanet_block,baseline,42,0.0,0.6946843862533569,8.18,63420674.0,2026-05-08T18:21:49.067885,2026-05-08T18:31:30.391450
 2026-05-09T22:56:11.152334,distilbert-base-uncased,cola,attention,hgrn2_layer,baseline,42,0.0,0.6868544816970825,6.8,63411458.0,2026-05-09T18:23:51.448542,2026-05-09T18:38:02.135046
 2026-05-09T23:15:46.769366,distilbert-base-uncased,cola,attention,hgrn2_layer,baseline,42,0.0,0.6943627595901489,1005.26,63411458.0,2026-05-09T22:59:07.153606,2026-05-09T23:15:42.713739
+2026-05-09T23:55:39.662934,distilbert-base-uncased,cola,attention,hgrn2_layer,baseline,42,0.0,0.6713322401046753,1928.86,63411458.0,2026-05-09T23:23:36.075691,2026-05-09T23:55:36.018846
+2026-05-10T00:23:42.844466,distilbert-base-uncased,cola,attention,gated_deltanet_block,baseline,42,0.0,0.6708100438117981,1682.53,63420674.0,2026-05-09T23:55:55.508419,2026-05-10T00:23:39.129075
+2026-05-10T00:24:02.047757,distilbert-base-uncased,cola,attention,svd_proj_attn,baseline,42,NA,NA,18.95,NA,NA,NA
