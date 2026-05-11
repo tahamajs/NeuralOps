@@ -325,7 +325,8 @@ def main():
         args.model, use_fast=True, cache_dir=CACHE_DIR, local_files_only=True
     )
 
-    raw_datasets = load_glue_local(args.task, "/Users/tahamajs/Documents/uni/Project/datasets/glue")
+    from framework.utils.paths import get_glue_dir
+    raw_datasets = load_glue_local(args.task, str(get_glue_dir()))
     num_labels, is_regression = get_num_labels_and_is_regression(args.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
 
