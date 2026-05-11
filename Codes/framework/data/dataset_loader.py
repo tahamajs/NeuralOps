@@ -20,7 +20,8 @@ class ExperimentConfig:
         self.max_seq_length = max_seq_length
         self.split_ratio = split_ratio
         self.synthetic_samples = synthetic_samples
-        self.glue_base_path = glue_base_path or "./data/glue"
+        from framework.utils.paths import get_glue_dir
+        self.glue_base_path = glue_base_path or str(get_glue_dir())
         self.kwargs = kwargs
 
 def load_dataset(config: ExperimentConfig) -> DatasetDict:
