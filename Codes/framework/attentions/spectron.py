@@ -362,7 +362,8 @@ GLUE_TASK_KEYS = {
 }
 
 def load_glue_local(task):
-    base = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+    from framework.utils.paths import get_glue_dir
+    base = str(get_glue_dir())
     path = os.path.join(base, task)
     splits = {}
     for f in os.listdir(path):

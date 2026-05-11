@@ -360,7 +360,8 @@ GLUE_TASK_KEYS = {
 }
 
 def load_glue_local(task_name: str) -> DatasetDict:
-    base_path = "/Users/tahamajs/Documents/uni/Project/datasets/glue"
+    from framework.utils.paths import get_glue_dir
+    base_path = str(get_glue_dir())
     task_path = os.path.join(base_path, task_name)
     if not os.path.exists(task_path):
         raise FileNotFoundError(f"Dataset not found: {task_path}")
