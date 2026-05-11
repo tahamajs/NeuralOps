@@ -16,8 +16,8 @@ def load_and_preprocess_data(config):
 
     """Load dataset, tokenizer, and preprocess."""
     tokenizer = AutoTokenizer.from_pretrained(config.model_name, use_fast=True)
-    glue_path = getattr(settings, 'GLUE_DATA_PATH',
-                        "/Users/tahamajs/Documents/uni/Project/datasets/glue")
+    from framework.utils.paths import get_glue_dir
+    glue_path = getattr(settings, 'GLUE_DATA_PATH', str(get_glue_dir()))
     raw_datasets = load_glue_local(config.task, glue_path)
     num_labels, is_regression = get_num_labels_and_is_regression(config.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[config.task]

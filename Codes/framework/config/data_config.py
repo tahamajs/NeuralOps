@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict
+from framework.utils.paths import get_glue_dir
 
 @dataclass
 class DataConfig:
-    local_glue_path: str = "/datasets/glue"
+    local_glue_path: str = str(get_glue_dir())
     max_seq_length: int = 128
     max_train_samples: Optional[int] = None
     max_val_samples: Optional[int] = None
