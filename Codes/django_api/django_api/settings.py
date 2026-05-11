@@ -196,9 +196,10 @@ LOGGING = {
 # Custom Settings
 # ----------------------------------------------------------------------
 # Path for GLUE datasets (used by experiment runners)
+from framework.utils.paths import get_glue_dir
 GLUE_DATA_PATH = os.environ.get(
     "GLUE_DATA_PATH",
-    "/Users/tahamajs/Documents/uni/Project/datasets/glue",
+    str(get_glue_dir()),
 )
 
 # HuggingFace credentials (for publishing models / model cards)
