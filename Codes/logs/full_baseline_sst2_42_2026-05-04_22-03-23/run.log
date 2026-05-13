@@ -1,9 +1,0 @@
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 | 🚀 Logging initialized. Run directory: ./logs/full_baseline_sst2_42_2026-05-04_22-03-23
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 | ══════════════════════════════════════
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 | 🚀 Experiment: full_baseline_sst2_42
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 |    Attention: full
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 |    Method: baseline
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 |    Task: sst2
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 |    Model: distilbert-base-uncased
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 | ══════════════════════════════════════
-2026-05-04 22:03:23 | INFO     | full_baseline_sst2_42 | Using device: mps

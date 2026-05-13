@@ -1,3 +1,0 @@
-{"timestamp": "2026-05-03T23:29:44.184877", "level": "INFO", "logger": "nova_baseline_mrpc_42", "message": "🚀 Logging initialized. Run directory: ./logs/nova_baseline_mrpc_42_2026-05-04_02-59-44", "module": "logger", "function": "setup_logging"}
-{"timestamp": "2026-05-03T23:29:44.185321", "level": "INFO", "logger": "nova_baseline_mrpc_42", "message": "Experiment: nova_baseline_mrpc_42", "module": "run", "function": "run_training"}
-{"timestamp": "2026-05-03T23:29:44.185376", "level": "INFO", "logger": "nova_baseline_mrpc_42", "message": "Model: distilbert-base-uncased, Task: mrpc, Attention: nova, Method: baseline", "module": "run", "function": "run_training"}
