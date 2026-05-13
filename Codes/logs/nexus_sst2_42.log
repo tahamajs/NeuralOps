@@ -1,9 +1,0 @@
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 | 🚀 Logging initialized – logs: ./logs
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 | ══════════════════════════════════════
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 | 🚀 Experiment: nexus_sst2_42
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 |    Attention: nexus
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 |    Compressor: none
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 |    Task: sst2
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 |    Model: distilbert-base-uncased
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 | ══════════════════════════════════════
-2026-05-02 07:41:49 | INFO     | nexus_sst2_42 | Using device: mps

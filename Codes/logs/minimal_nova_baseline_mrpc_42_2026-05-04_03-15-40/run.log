@@ -1,5 +1,0 @@
-2026-05-04 03:15:40 | INFO     | minimal_nova_baseline_mrpc_42 | 🚀 Logging initialized. Run directory: ./logs/minimal_nova_baseline_mrpc_42_2026-05-04_03-15-40
-2026-05-04 03:15:40 | INFO     | minimal_nova_baseline_mrpc_42 | Experiment: minimal_nova_baseline_mrpc_42
-2026-05-04 03:15:40 | INFO     | minimal_nova_baseline_mrpc_42 | Model: distilbert-base-uncased, Task: mrpc, Attention: minimal_nova, Method: baseline
-2026-05-04 03:15:48 | INFO     | minimal_nova_baseline_mrpc_42 | Injected 'minimal_nova' into 6 layers.
-2026-05-04 03:15:54 | INFO     | minimal_nova_baseline_mrpc_42 | Training started – dashboard runs on main thread
