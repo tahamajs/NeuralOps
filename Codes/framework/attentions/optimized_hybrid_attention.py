@@ -11,9 +11,12 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
-from framework.attentions.core.utils import transpose_for_scores
 
-
+def transpose_for_scores(x, num_attention_heads, head_dim):
+    # x shape: (batch_size, seq_len, num_heads * head_dim)
+    new_x_shape = x.size()[:-1] + (num_attention_heads, head_dim)
+    x = x.view(*new_x_shape)                 # (B, N, num_heads, head_dim)
+    return x.permute(0, 2, 1, 3)             # (B, num_heads, N, head_dim)
 @dataclass
 class OptimizedHybridAttentionConfig:
     hidden_size: int = 768

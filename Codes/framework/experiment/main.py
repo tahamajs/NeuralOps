@@ -1,61 +1,42 @@
 #!/usr/bin/env python
 """
 Efficient Attention Framework – GLUE Fine‑Tuning & Utility Functions
-Now uses:
-  - framework.core.utils       (set_seed, get_device)
-  - framework.core.registry    (ATTENTION_REGISTRY, COMPRESSOR_REGISTRY)
-  - framework.data             (task_mapper, glue_loader, preprocessing)
-  - framework.trainer          (get_trainer, callbacks, results manager)
-  - framework.analysis         (MetricsTracker, plotting, report generation)
-  - framework.utils            (layer_norm_fix, checkpoint, save_results)
-  - framework.compression_engine.core.registry (for compression)
 """
-import sys
 import os
-import json
 import logging
-import torch
-import numpy as np
 from pathlib import Path
-from transformers import Trainer, TrainerCallback, AutoTokenizer, AutoConfig, AutoModelForSequenceClassification
 
-# Core utilities (seed, device)
-from framework.core.utils import set_seed, get_device, count_parameters, format_number
+import torch
+from transformers import (
+    Trainer, TrainerCallback, AutoTokenizer,
+    AutoModelForSequenceClassification, TrainingArguments, DataCollatorWithPadding
+)
 
-# Registry (attention, compressor, trainer, visualizer)
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, TRAINER_REGISTRY
-
-# Data loading & task mapping
-from framework.data.dataset_loader import load_dataset, ExperimentConfig as data_ExperimentConfig
-from framework.data.task_mapper import get_metric_name, get_num_labels, get_text_columns
+from framework.core.utils import set_seed, get_device
+from framework.core.registry import COMPRESSOR_REGISTRY, TRAINER_REGISTRY
+from framework.data.dataset_loader import ExperimentConfig as data_ExperimentConfig
 from framework.data.glue_loader import load_glue_local, GLUE_TASK_KEYS, get_num_labels_and_is_regression
 from framework.data.preprocessing import preprocess_function as build_preprocess
-
-# Model loading & layer normalization fix
 from framework.utils.layer_norm_fix import fix_layernorm_naming
-
-# Trainer (factory + callbacks)
 from framework.trainer.trainer_factory import get_trainer
-from framework.trainer.callbacks import (
-    MemoryCallback, TimeCallback, GradientNormCallback,
-    SVDAttentionCallback, LoggingCallback as TrainerLoggingCallback
-)
-from framework.trainer.results_manager import ResultsManager
+from framework.trainer.callbacks import MemoryCallback, TimeCallback, SVDAttentionCallback
 
-# Analysis (metrics tracking, plotting)
+# ---------- Safe import of LoggingCallback ----------
+try:
+    from framework.trainer.callbacks import LoggingCallback as TrainerLoggingCallback
+except ImportError:
+    class TrainerLoggingCallback:
+        def __init__(self, *args, **kwargs):
+            pass
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            if logs:
+                logging.getLogger(__name__).info(f"Step {state.global_step}: {logs}")
+
 from framework.analysis.plotting import create_comprehensive_plots
-from framework.analysis.metrics import MetricsTracker as AnalysisMetricsTracker
-
-# Additional utils
-from framework.utils.checkpoint import CheckpointManager
-from framework.utils.save_results import save_experiment_results
 
 logger = logging.getLogger(__name__)
 
 
-# ----------------------------------------------------------------------
-# Django callback (for progress/log/metrics during training)
-# ----------------------------------------------------------------------
 class DjangoCallback(TrainerCallback):
     def __init__(self, progress_cb, log_cb, final_cb, stop_event=None):
         self.progress_cb = progress_cb
@@ -83,17 +64,13 @@ class DjangoCallback(TrainerCallback):
             self.log_cb(state.global_step, metrics)
 
 
-# ----------------------------------------------------------------------
-# Training entry point (used by Django runner)
-# ----------------------------------------------------------------------
-def run_training(config, stop_event=None,
-                 progress_callback=None, log_callback=None, final_callback=None):
-    """
-    Full training pipeline leveraging the entire framework.
-    config: dict or ExperimentConfig instance.
-    Returns evaluation metrics dict after training.
-    """
-    # Normalise config
+def run_training(
+    config,
+    stop_event=None,
+    progress_callback=None,
+    log_callback=None,
+    final_callback=None
+):
     if isinstance(config, dict):
         cfg = data_ExperimentConfig()
         for k, v in config.items():
@@ -101,64 +78,69 @@ def run_training(config, stop_event=None,
     else:
         cfg = config
 
-    # ---- Setup ----
     set_seed(cfg.seed)
     device = get_device()
     logger.info(f"Using device: {device}")
 
-    # ---- Data Loading ----
-    # Use framework.data.glue_loader for GLUE tasks
+    # Data
     raw_datasets = load_glue_local(cfg.task, cfg.glue_base_path)
     num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
     sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
     tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, use_fast=True)
 
-    preprocess_fn = build_preprocess(tokenizer, cfg.task, cfg.max_len,
-                                     sent1_key, sent2_key, is_regression)
-    dataset = raw_datasets.map(preprocess_fn, batched=True,
-                               remove_columns=raw_datasets["train"].column_names)
+    preprocess_fn = build_preprocess(
+        tokenizer, cfg.task, cfg.max_len,
+        sent1_key, sent2_key, is_regression
+    )
+    dataset = raw_datasets.map(
+        preprocess_fn, batched=True,
+        remove_columns=raw_datasets["train"].column_names
+    )
     cols = ["input_ids", "attention_mask", "labels"]
     if "token_type_ids" in dataset["train"].column_names:
         cols.append("token_type_ids")
     dataset.set_format(type="torch", columns=cols)
 
-    # ---- Model Loading ----
+    # Model
     model = AutoModelForSequenceClassification.from_pretrained(
-        cfg.model_name, num_labels=num_labels)
+        cfg.model_name, num_labels=num_labels
+    )
     fix_layernorm_naming(model)
     model.to(device)
 
-    # ---- Trainer Setup ----
-    # Use the trainer factory (supports hf, unsloth, rl, custom_loop)
-    trainer_cls = get_trainer(cfg.trainer_type if hasattr(cfg, 'trainer_type') else 'hf')
+    # Trainer
+    trainer_type = getattr(cfg, 'trainer_type', 'hf')
+    trainer_cls = get_trainer(trainer_type)
+
+    callbacks = [
+        DjangoCallback(progress_callback, log_callback, final_callback, stop_event),
+        TrainerLoggingCallback(None, logger),
+        MemoryCallback(),
+        TimeCallback(),
+    ]
+    if getattr(cfg, 'compressor', None):
+        callbacks.append(SVDAttentionCallback())
+
     trainer = trainer_cls.create(
         model=model,
         dataset=dataset,
         config=cfg,
         tokenizer=tokenizer,
         logger=logger,
-        callbacks=[
-            DjangoCallback(progress_callback, log_callback, final_callback, stop_event),
-            TrainerLoggingCallback(None, logger),  # basic logging
-            MemoryCallback(),
-            TimeCallback(),
-            SVDAttentionCallback() if cfg.compressor else None,
-        ]
+        callbacks=callbacks
     )
 
-    # ---- Training ----
     logger.info("Starting training...")
     trainer.train()
     eval_results = trainer.evaluate()
     logger.info("Training completed.")
 
-    # ---- Save outputs ----
+    # Save
     output_dir = Path(cfg.output_dir) / (cfg.exp_name or "training")
     output_dir.mkdir(parents=True, exist_ok=True)
     trainer.save_model(str(output_dir))
     tokenizer.save_pretrained(str(output_dir))
 
-    # Generate comprehensive plots using framework.analysis
     try:
         create_comprehensive_plots(
             metrics=trainer.state.log_history,
@@ -174,9 +156,6 @@ def run_training(config, stop_event=None,
     return eval_results
 
 
-# ----------------------------------------------------------------------
-# Evaluation runner (standalone)
-# ----------------------------------------------------------------------
 def run_evaluation(config, model_path):
     if isinstance(config, dict):
         cfg = data_ExperimentConfig()
@@ -188,37 +167,47 @@ def run_evaluation(config, model_path):
     set_seed(cfg.seed)
     device = get_device()
 
-    tokenizer, dataset, num_labels, is_regression = load_and_preprocess_data(cfg)
+    # Reload data (simplified)
+    raw_datasets = load_glue_local(cfg.task, cfg.glue_base_path)
+    num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, use_fast=True)
+
+    preprocess_fn = build_preprocess(
+        tokenizer, cfg.task, cfg.max_len,
+        sent1_key, sent2_key, is_regression
+    )
+    dataset = raw_datasets.map(preprocess_fn, batched=True)
+    cols = ["input_ids", "attention_mask", "labels"]
+    if "token_type_ids" in dataset["validation"].column_names:
+        cols.append("token_type_ids")
+    dataset.set_format(type="torch", columns=cols)
 
     try:
         model = AutoModelForSequenceClassification.from_pretrained(model_path)
     except Exception:
-        logger.warning(f"Could not load model from {model_path}, falling back to base model")
-        model = load_model(cfg, num_labels, device)
-
+        logger.warning(f"Could not load from {model_path}, using base model")
+        model = AutoModelForSequenceClassification.from_pretrained(
+            cfg.model_name, num_labels=num_labels
+        )
     model.to(device)
 
-    from transformers import TrainingArguments, DataCollatorWithPadding
     training_args = TrainingArguments(
         output_dir="./tmp_eval",
         per_device_eval_batch_size=cfg.batch_size * 2,
         remove_unused_columns=False,
         report_to="none",
     )
-    trainer = Trainer(
+    eval_trainer = Trainer(
         model=model,
         args=training_args,
         eval_dataset=dataset.get("validation", dataset.get("validation_matched")),
         data_collator=DataCollatorWithPadding(tokenizer),
     )
-    eval_result = trainer.evaluate()
-    cleaned = {k.replace("eval_", ""): v for k, v in eval_result.items()}
-    return cleaned
+    eval_result = eval_trainer.evaluate()
+    return {k.replace("eval_", ""): v for k, v in eval_result.items()}
 
 
-# ----------------------------------------------------------------------
-# Compression runner (using framework.compression_engine)
-# ----------------------------------------------------------------------
 def run_compression(config, output_dir):
     if isinstance(config, dict):
         cfg = data_ExperimentConfig()
@@ -261,13 +250,11 @@ def run_compression(config, output_dir):
     return stats
 
 
-# ----------------------------------------------------------------------
-# CLI entry point (unchanged)
-# ----------------------------------------------------------------------
 def main():
     from framework.experiment.config import build_config_from_args
-    cfg = build_config_from_args()
+    from experiment_logging.logger import setup_logging, MetricsTracker, LoggingConfig
 
+    cfg = build_config_from_args()
     exp_name = cfg.exp_name or f"{cfg.attn_type}_{cfg.method}_{cfg.task}_{cfg.seed}"
     if not hasattr(cfg, 'log_base_dir'):
         cfg.log_base_dir = cfg.log_dir
@@ -276,7 +263,6 @@ def main():
     if not hasattr(cfg, 'run_id'):
         cfg.run_id = None
 
-    from experiment_logging.logger import setup_logging, MetricsTracker, LoggingConfig
     log_cfg = LoggingConfig(
         log_base_dir=cfg.log_base_dir,
         experiment_name=exp_name,
@@ -298,13 +284,42 @@ def main():
     device = get_device()
     logger.info(f"Using device: {device}")
 
-    tokenizer, dataset, num_labels, is_regression = load_and_preprocess_data(cfg)
+    raw_datasets = load_glue_local(cfg.task, cfg.glue_base_path)
+    num_labels, is_regression = get_num_labels_and_is_regression(cfg.task)
+    sent1_key, sent2_key = GLUE_TASK_KEYS[cfg.task]
+    tokenizer = AutoTokenizer.from_pretrained(cfg.model_name, use_fast=True)
+
+    preprocess_fn = build_preprocess(
+        tokenizer, cfg.task, cfg.max_len,
+        sent1_key, sent2_key, is_regression
+    )
+    dataset = raw_datasets.map(preprocess_fn, batched=True)
+    cols = ["input_ids", "attention_mask", "labels"]
+    if "token_type_ids" in dataset["train"].column_names:
+        cols.append("token_type_ids")
+    dataset.set_format(type="torch", columns=cols)
+
     logger.info(f"Train: {len(dataset['train'])}, Val: {len(dataset.get('validation', []))}")
 
     model = AutoModelForSequenceClassification.from_pretrained(cfg.model_name, num_labels=num_labels)
     model.to(device)
 
-    trainer = setup_trainer(model, tokenizer, dataset, cfg, tracker, logger)
+    # Custom callback for tracker
+    class TrackerCallback(TrainerCallback):
+        def on_log(self, args, state, control, logs=None, **kwargs):
+            if logs:
+                for k, v in logs.items():
+                    tracker.log(k, v, step=state.global_step)
+
+    trainer_cls = get_trainer(getattr(cfg, 'trainer_type', 'hf'))
+    trainer = trainer_cls.create(
+        model=model,
+        dataset=dataset,
+        config=cfg,
+        tokenizer=tokenizer,
+        logger=logger,
+        callbacks=[TrackerCallback(), MemoryCallback(), TimeCallback()]
+    )
 
     logger.info("Starting training...")
     trainer.train()
@@ -323,25 +338,6 @@ def main():
     logger.info(f"Model and logs saved to {output_dir}")
     logger.info("🎉 Experiment completed successfully!")
 
+
 if __name__ == "__main__":
     main()
-
-
-
-
-    from framework.models import load_model, replace_attention_in_model
-
-def run_training(config, ...):
-    cfg = normalize_config(config)
-    model, tokenizer = load_model(
-        model_name=cfg.model_name,
-        num_labels=num_labels,
-        variant=getattr(cfg, 'model_variant', 'standard'),
-        rank=getattr(cfg, 'compression_rank', 64),
-    )
-
-    if cfg.attn_type and cfg.attn_type != "full":
-        model = replace_attention_in_model(model, cfg.attn_type, rank=cfg.compression_rank)
-
-    model.to(device)
-    # ... rest of training

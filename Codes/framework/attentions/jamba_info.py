@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-from ..ssm.simple_ssm import SimpleSSM   # assumed
+from .simple_ssm import SimpleSSM   # assumed
 
 class InfoMambaConceptBottleneck(nn.Module):
     """Minimal‑bandwidth concept bottleneck."""
