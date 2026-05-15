@@ -15,7 +15,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
-from experiment.models import Experiment, TrainingRun
+from framework.models_conf import Experiment, TrainingRun
 
 
 # ============================================================================
