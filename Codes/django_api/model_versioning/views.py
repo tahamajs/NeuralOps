@@ -1,7 +1,7 @@
+
 import os
 import csv
 import logging
-import boto3
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
@@ -53,7 +53,8 @@ def list_model_versions(request, run_id):
         queryset = queryset.filter(Q(version__icontains=search))
 
     ordering = request.query_params.get('ordering', '-version_number')
-    allowed_orders = ['version_number', 'created_at', 'artifact_size_mb', '-version_number', '-created_at', '-artifact_size_mb']
+    allowed_orders = ['version_number', 'created_at', 'artifact_size_mb',
+                      '-version_number', '-created_at', '-artifact_size_mb']
     if ordering in allowed_orders:
         queryset = queryset.order_by(ordering)
     else:
@@ -122,6 +123,7 @@ def download_model_version(request, version_id):
     version = get_object_or_404(ModelVersion, id=version_id)
     model_file = os.path.join(version.artifact_path, 'model.pth')
     if not os.path.exists(model_file):
+        # Try to find any .pth file
         import glob
         pth_files = glob.glob(os.path.join(version.artifact_path, '*.pth'))
         if pth_files:
@@ -184,6 +186,7 @@ def restore_from_cold_storage(request, version_id):
         bucket = getattr(settings, 'MODEL_ARCHIVE_BUCKET', None)
         if not bucket:
             return Response({"error": "MODEL_ARCHIVE_BUCKET not configured"}, status=501)
+        import boto3
         s3 = boto3.client('s3')
         key = f"run_{version.run.id}/v{version.version_number}/model.pth"
         local_path = os.path.join(version.artifact_path, 'model.pth')
@@ -205,14 +208,12 @@ def set_production_version(request, run_id, version_number):
     if not request.user.is_staff:
         return Response({"error": "Not allowed"}, status=403)
     run = get_object_or_404(Job, id=run_id)
-    version = get_object_or_404(ModelVersion, run=run, version_number=version_number)   # 404 is raised here
-    try:
-        run.model_versions.filter(is_production=True).update(is_production=False)
-        version.is_production = True
-        version.save(update_fields=['is_production'])
-        return Response({"status": "production version updated", "version_number": version_number})
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
+    version = get_object_or_404(ModelVersion, run=run, version_number=version_number)
+    run.model_versions.filter(is_production=True).update(is_production=False)
+    version.is_production = True
+    version.save(update_fields=['is_production'])
+    return Response({"status": "production version updated", "version_number": version_number})
+
 
 # ----------------------------------------------------------------------
 # Compare two versions
@@ -240,7 +241,9 @@ def compare_versions(request, run_id, version_a, version_b):
     })
 
 
-
+# ----------------------------------------------------------------------
+# All model versions (recent 50)
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def all_model_versions(request):

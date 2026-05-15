@@ -63,15 +63,17 @@ INSTALLED_APPS = [
     'channels',
     'django_filters',
 
-    # 'api',
-    # 'web_dashboard',
-    # 'experiment',
-    # 'jobscheduler',
-    # 'notes',
-    # 'model_versioning',
-    # 'terminal',
+    'api',
+    'web_dashboard',
+    'experiment',
+    'jobscheduler',
+    'notes',
+    'model_versioning',
+    'terminal',
+    
     'paper',
 ]
+
 
 # ----------------------------------------------------------------------
 # Middleware

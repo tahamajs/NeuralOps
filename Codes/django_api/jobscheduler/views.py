@@ -9,7 +9,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from deepdiff import DeepDiff
-from .models import Job, VersionedConfig, CustomMetricEntry, ModelVersion
+from .models import Job, VersionedConfig, CustomMetricEntry
+from model_versioning.models import ModelVersion
 from .serializers import JobSerializer, CustomMetricEntrySerializer
 from .scheduler import scheduler
 from .version_utils import create_config_snapshot, capture_git_info, capture_data_version

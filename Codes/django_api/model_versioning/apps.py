@@ -1,4 +1,3 @@
-# model_versioning/apps.py
 from django.apps import AppConfig
 
 class ModelVersioningConfig(AppConfig):

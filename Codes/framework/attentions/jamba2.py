@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
-
+from .mamba import Mamba
 
 @ATTENTION_REGISTRY.register("expert_choice_moe")
 class ExpertChoiceMoE(nn.Module):

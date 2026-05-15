@@ -45,10 +45,10 @@ from framework.distributed import (
 )
 
 # Local experiment modules
-from framework.experiment.config import ExperimentConfig
-from framework.experiment.data import load_and_preprocess_data
-from framework.experiment.model import load_model, apply_attention_to_model
-from framework.experiment.train import setup_trainer   # old helper, kept for fallback
+from framework.experiment_utils.config import ExperimentConfig
+from framework.experiment_utils.data import load_and_preprocess_data
+from framework.experiment_utils.model import load_model, apply_attention_to_model
+from framework.experiment_utils.train import setup_trainer   # old helper, kept for fallback
 from framework.callbacks.django_integration import DjangoCallback
 
 logger = logging.getLogger(__name__)
@@ -287,7 +287,7 @@ class ExperimentManager:
 
     def _apply_post_training_compression(self, output_dir):
         """Run compression after training."""
-        from framework.experiment.main import run_compression
+        from framework.experiment_utils.main import run_compression
         run_compression(self.config, output_dir)
 
     def _cleanup(self):

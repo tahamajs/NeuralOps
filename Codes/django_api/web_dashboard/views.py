@@ -9,13 +9,15 @@ from django.db.models import Count, Avg, Value as V
 from django.db.models.functions import Coalesce, TruncDate
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 
-from framework.models_conf import Experiment, TrainingRun
+from experiment.models import Experiment, TrainingRun
 
 
 # ============================================================================
@@ -131,15 +133,15 @@ def api_register(request):
 
     user = User.objects.create_user(username=username, password=password)
     token = Token.objects.create(user=user)
-    auth_login(request, user)          # optional session login
+    auth_login(request, user)
 
     response = Response({"token": token.key, "username": user.username}, status=201)
     response.set_cookie(
         key='authToken',
         value=token.key,
-        httponly=False,                # accessible from JS
+        httponly=False,
         samesite='Lax',
-        max_age=60*60*24*30,           # 30 days
+        max_age=60*60*24*30,
         path='/'
     )
     return response
@@ -153,7 +155,7 @@ def api_login(request):
     user = authenticate(request, username=username, password=password)
     if user:
         token, _ = Token.objects.get_or_create(user=user)
-        auth_login(request, user)      # optional session login
+        auth_login(request, user)
         response = Response({"token": token.key, "username": user.username})
         response.set_cookie(
             key='authToken',
@@ -170,11 +172,9 @@ def api_login(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def api_logout(request):
-    # Delete the DRF token (request.auth is the Token object when using TokenAuthentication)
     if request.auth and hasattr(request.auth, 'delete'):
         request.auth.delete()
     else:
-        # Fallback for header-based token
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Token "):
             key = auth_header[6:]
@@ -182,7 +182,7 @@ def api_logout(request):
 
     response = Response({"status": "logged out"})
     response.delete_cookie('authToken')
-    auth_logout(request)               # also clear Django session
+    auth_logout(request)
     return response
 
 
@@ -237,4 +237,98 @@ def launch_config_options(request):
         "augmentations": list(AUGMENTATION_REGISTRY.keys()),
         "model_variants": ["standard", "unsloth", "compressed", "hybrid_svd", "quantized", "lora"],
         "distributed_strategies": ["none", "ddp", "deepspeed", "fsdp"],
+    })
+
+
+# ============================================================================
+# Widget & Dashboard Helper Views (JSON endpoints)
+# ============================================================================
+
+def get_dashboard_widgets(request):
+    """Return available widget metadata."""
+    return JsonResponse({
+        "widgets": [
+            {"id": "recent_experiments", "title": "Recent Experiments", "icon": "flask", "configurable": True},
+            {"id": "running_jobs", "title": "Running Jobs", "icon": "play", "configurable": False},
+            {"id": "system_status", "title": "System Status", "icon": "desktop", "configurable": True},
+            {"id": "gpu_monitor", "title": "GPU Monitor", "icon": "chip", "configurable": False},
+        ]
+    })
+
+
+def save_dashboard_layout(request):
+    """Save user's dashboard widget layout (positions, sizes)."""
+    if request.method == "POST":
+        # Expecting JSON like {"layout": [...]}
+        # For now, just echo success.
+        return JsonResponse({"status": "ok", "message": "Layout saved"})
+    return JsonResponse({"error": "POST required"}, status=405)
+
+
+def get_dashboard_settings(request):
+    """Return dashboard user settings."""
+    return JsonResponse({
+        "settings": {
+            "theme": "dark",
+            "refresh_interval": 5,   # seconds
+            "auto_refresh": True,
+        }
+    })
+
+
+def save_dashboard_settings(request):
+    """Save dashboard user settings."""
+    if request.method == "POST":
+        return JsonResponse({"status": "ok", "message": "Settings saved"})
+    return JsonResponse({"error": "POST required"}, status=405)
+
+
+def get_widget_data(request, widget_id):
+    """Return data for a specific widget (used by refresh endpoint)."""
+    # Simple placeholder: return different data per widget type
+    if widget_id == "recent_experiments":
+        runs = TrainingRun.objects.order_by('-created_at')[:5].values('name', 'status', 'created_at')
+        data = list(runs)
+    elif widget_id == "running_jobs":
+        jobs = TrainingRun.objects.filter(status='running').count()
+        data = {"count": jobs}
+    elif widget_id == "gpu_monitor":
+        # Simulate GPU info (can be expanded with real NVIDIA/MPS stats)
+        data = {"gpu_util": 0, "memory_used": 0, "memory_total": 0}
+    else:
+        data = {}
+    return JsonResponse({"widget_id": widget_id, "data": data})
+
+
+def refresh_widget(request, widget_id):
+    """Alias for get_widget_data – used for manual refresh."""
+    return get_widget_data(request, widget_id)
+
+
+def widget_data(request, widget_id):
+    """Same as get_widget_data – URL pattern uses this name."""
+    return get_widget_data(request, widget_id)
+
+
+def widget_config(request, widget_id):
+    """Return configuration options for a widget (if configurable)."""
+    configs = {
+        "recent_experiments": {"limit": 5, "show_metrics": True},
+        "system_status": {"show_cpu": True, "show_memory": True},
+    }
+    return JsonResponse(configs.get(widget_id, {}))
+
+
+def dashboard_stats(request):
+    """Return aggregated dashboard statistics (used by some frontend components)."""
+    total = TrainingRun.objects.count()
+    running = TrainingRun.objects.filter(status='running').count()
+    completed = TrainingRun.objects.filter(status='completed').count()
+    failed = TrainingRun.objects.filter(status='failed').count()
+    return JsonResponse({
+        "total_runs": total,
+        "running": running,
+        "completed": completed,
+        "failed": failed,
+        "success_rate": round(completed / total * 100, 1) if total else 0,
     })
