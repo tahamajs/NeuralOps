@@ -2,7 +2,6 @@ import os
 import sys
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ----------------------------------------------------------------------
 # Make the framework package importable
@@ -10,6 +9,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # If your framework lives in a separate directory (e.g., a sibling "framework" package),
 # ensure it's on the Python path.
 # Uncomment the appropriate block below.
+FRAMEWORK_DIR = Path("/Users/tahamajs/Documents/uni/Project/Codes")   # parent directory
+
+# Add it to sys.path *before* any other imports
+if str(FRAMEWORK_DIR) not in sys.path:
+    sys.path.insert(0, str(FRAMEWORK_DIR))
+
+# Now this import will work
+from framework.utils.paths import get_glue_dir
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Option 1: framework is a sibling of the "Codes" directory (Project/framework)
 FRAMEWORK_DIR = BASE_DIR.parent / 'framework'
@@ -54,13 +63,13 @@ INSTALLED_APPS = [
     'channels',
     'django_filters',
 
-    'api',
-    'web_dashboard',
-    'experiment',
-    'jobscheduler',
-    'notes',
-    'model_versioning',
-    'terminal',
+    # 'api',
+    # 'web_dashboard',
+    # 'experiment',
+    # 'jobscheduler',
+    # 'notes',
+    # 'model_versioning',
+    # 'terminal',
     'paper',
 ]
 

@@ -1,4 +1,4 @@
-from ...utils import replace_attention   # adjust import path as needed
+from framework.utils import replace_attention   # adjust import path as needed
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 
 @ATTENTION_REGISTRY.register("nha_compressor")   # <-- added

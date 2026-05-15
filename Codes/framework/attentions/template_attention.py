@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-from ...core.base import BaseAttention
+from framework.core.base import BaseAttention
 
 
 @ATTENTION_REGISTRY.register("your_attention_name")
