@@ -1,42 +1,58 @@
-# experiments/views.py
 import os
 import json
 import tempfile
 import zipfile
+from pathlib import Path
+from functools import partial
+
 import psutil
 import torch
+from django.conf import settings
 from django.http import FileResponse, Http404
-from django.shortcuts import get_object_or_404
-from django.db.models import F
+from django.shortcuts import get_object_or_404, render
+from django.db.models import Prefetch
+from django.contrib.auth import authenticate
+from django.contrib.auth.models import User
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from rest_framework.pagination import PageNumberPagination
 
 from .models import Experiment, TrainingRun, TrainingSnapshot
-from .serializers import ExperimentSerializer, TrainingRunSerializer, TrainingSnapshotSerializer
+from .serializers import (
+    ExperimentSerializer, TrainingRunSerializer, TrainingSnapshotSerializer
+)
 from .jobs import start_job, stop_job, stop_all_jobs, push_update
 from .runners import run_training, run_evaluation, run_compression
 
 # ----------------------------------------------------------------------
-# Config endpoints (sample – replace with real registries)
+# Config endpoints (replace with real registry queries when ready)
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_attentions(request):
-    # Example: return a static list; replace with actual ATTENTION_REGISTRY
-    return Response({"attentions": ["full", "goldfinch_ahn", "granite_hybrid", "griffin_ssd"]})
+    return Response({
+        "attentions": ["full", "goldfinch_ahn", "granite_hybrid", "griffin_ssd"]
+    })
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_models(request):
-    return Response({"models": ["distilbert-base-uncased", "bert-base-uncased", "roberta-base", "albert-base-v2"]})
+    return Response({
+        "models": [
+            "distilbert-base-uncased", "bert-base-uncased",
+            "roberta-base", "albert-base-v2"
+        ]
+    })
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_tasks(request):
-    return Response({"tasks": ["cola", "sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli", "stsb"]})
+    return Response({
+        "tasks": ["cola", "sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli", "stsb"]
+    })
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -54,7 +70,7 @@ def list_presets(request):
     return Response({"presets": ["fast", "accurate", "extreme_compress"]})
 
 # ----------------------------------------------------------------------
-# Experiments
+# Experiment CRUD
 # ----------------------------------------------------------------------
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
@@ -86,7 +102,7 @@ def experiment_detail(request, exp_id):
     return Response(ExperimentSerializer(exp).data)
 
 # ----------------------------------------------------------------------
-# Training Runs
+# Training runs – list, status, start, stop
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -130,10 +146,6 @@ def start_train(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def start_evaluate(request, run_id=None):
-    """
-    Start evaluation for a TrainingRun.
-    If run_id is provided from the URL, use it; otherwise read from request body.
-    """
     if run_id is None:
         run_id = request.data.get('run_id')
     run = get_object_or_404(TrainingRun, id=run_id)
@@ -143,7 +155,6 @@ def start_evaluate(request, run_id=None):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def start_compress(request, run_id=None):
-    """Start compression for a TrainingRun, with optional URL argument."""
     if run_id is None:
         run_id = request.data.get('run_id')
     run = get_object_or_404(TrainingRun, id=run_id)
@@ -162,6 +173,15 @@ def stop_job_endpoint(request, run_id):
     push_update(run, {"type": "status", "status": "stopped"})
     return Response({"status": "stopped"})
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def stop_all_jobs_endpoint(request):
+    stop_all_jobs()
+    return Response({"status": "stop signals sent to all running jobs"})
+
+# ----------------------------------------------------------------------
+# Run details – history, snapshots, config update
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def training_history(request, run_id):
@@ -185,7 +205,7 @@ def update_run_config(request, run_id):
     return Response(TrainingRunSerializer(run).data)
 
 # ----------------------------------------------------------------------
-# Artifacts & Downloads
+# Artifacts & downloads
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -195,7 +215,7 @@ def run_artifacts(request, run_id):
     if not artifacts_dir or not os.path.isdir(artifacts_dir):
         return Response({"artifacts": []})
     artifacts = []
-    for root, dirs, files in os.walk(artifacts_dir):
+    for root, _, files in os.walk(artifacts_dir):
         for f in files:
             rel = os.path.relpath(os.path.join(root, f), artifacts_dir)
             artifacts.append(rel)
@@ -222,7 +242,7 @@ def run_model_download(request, run_id):
         raise Http404("Model directory not found")
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
     with zipfile.ZipFile(tmp, 'w') as zf:
-        for root, dirs, files in os.walk(model_dir):
+        for root, _, files in os.walk(model_dir):
             for f in files:
                 full = os.path.join(root, f)
                 arcname = os.path.relpath(full, model_dir)
@@ -230,11 +250,10 @@ def run_model_download(request, run_id):
     return FileResponse(open(tmp.name, 'rb'), as_attachment=True, filename=f"model_{run_id}.zip")
 
 # ----------------------------------------------------------------------
-# System & GPU information
+# System & GPU info
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 def system_status(request):
-    import psutil
     memory = psutil.virtual_memory()
     return Response({
         'cpu': psutil.cpu_percent(interval=0.5),
@@ -266,19 +285,12 @@ def gpu_info(request):
     else:
         return Response({'type': 'cpu', 'total_gpus': 0, 'available': 0, 'used': 0})
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def stop_all_jobs_endpoint(request):
-    stop_all_jobs()
-    return Response({"status": "stop signals sent to all running jobs"})
-
 # ----------------------------------------------------------------------
-# Paper generation placeholders (simplified)
+# Paper generation placeholders
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def generate_paper(request, run_id):
-    # Placeholder – implement LaTeX/PDF generation
     return Response({"message": "Paper generation not implemented"})
 
 @api_view(['GET'])
@@ -289,7 +301,7 @@ def paper_preview_pdf(request, run_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def experiment_report(request, run_id):
-    return render(request, 'web_dashboard/experiment_report.html', {'run_id': run_id})  # adjust template
+    return render(request, 'web_dashboard/experiment_report.html', {'run_id': run_id})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -310,13 +322,9 @@ def save_paper_source(request, run_id):
 def preview_paper(request, run_id):
     return Response({"html": "<div>Paper preview placeholder</div>"})
 
-
-# experiments/views.py (add these functions)
-
-from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
-
+# ----------------------------------------------------------------------
+# Authentication views (simple token auth)
+# ----------------------------------------------------------------------
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def register_view(request):
@@ -347,10 +355,9 @@ def logout_view(request):
     Token.objects.filter(user=request.user).delete()
     return Response({"status": "logged out"})
 
-
-
-
-
+# ----------------------------------------------------------------------
+# Analysis overview
+# ----------------------------------------------------------------------
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def run_analysis_overview(request, run_id):
@@ -370,14 +377,20 @@ def run_analysis_overview(request, run_id):
     }
     return Response(overview)
 
+# ----------------------------------------------------------------------
+# Comparison & diff (with safe stubs for missing dependencies)
+# ----------------------------------------------------------------------
+def compare_runs_api(run_ids, baseline_id=None):
+    """Stub – replace with real implementation later."""
+    return {"message": "Comparison not implemented", "run_ids": run_ids}
 
-
-from .comparison import compare_runs_api
+def DeepDiff(a, b, **kwargs):
+    """Stub – returns a simple dict diff."""
+    return {"diff": "not implemented"}
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def compare_experiments(request):
-    """Compare multiple training runs side-by-side."""
     run_ids = request.data.get("run_ids", [])
     baseline_id = request.data.get("baseline_id")
     if len(run_ids) < 2:
@@ -388,11 +401,9 @@ def compare_experiments(request):
     except Exception as e:
         return Response({"error": str(e)}, status=400)
 
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def run_diff(request, run_id_a, run_id_b):
-    """Deep diff between two specific runs."""
     run_a = get_object_or_404(TrainingRun, id=run_id_a)
     run_b = get_object_or_404(TrainingRun, id=run_id_b)
     config_diff = DeepDiff(run_a.config or {}, run_b.config or {}, ignore_order=True, verbose_level=2)
@@ -406,20 +417,17 @@ def run_diff(request, run_id_a, run_id_b):
         "metrics_diff_json": metrics_diff.to_dict() if hasattr(metrics_diff, 'to_dict') else str(metrics_diff),
     })
 
+# ----------------------------------------------------------------------
+# Analytics stubs (replace with real implementations)
+# ----------------------------------------------------------------------
+def hyperparameter_importance(run_ids=None, target_metric="eval_accuracy"):
+    return {"message": "Not implemented"}
 
+def metric_correlation_matrix(run_ids=None):
+    return {"message": "Not implemented"}
 
-# ---- Import the analytics functions ----
-from .analytics import (
-    hyperparameter_importance,
-    metric_correlation_matrix,
-    training_stability_analysis,
-)
-from .templates_api import (
-    template_list as _template_list,
-    template_detail as _template_detail,
-    use_template as _use_template,
-)
-
+def training_stability_analysis(run_id):
+    return {"message": "Not implemented"}
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -429,7 +437,6 @@ def hp_importance_view(request):
     result = hyperparameter_importance(run_ids=run_ids if run_ids else None, target_metric=metric)
     return Response(result)
 
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def metric_correlation_view(request):
@@ -437,36 +444,42 @@ def metric_correlation_view(request):
     result = metric_correlation_matrix(run_ids=run_ids if run_ids else None)
     return Response(result)
 
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def stability_analysis_view(request, run_id):
     result = training_stability_analysis(run_id)
     return Response(result)
 
+# ----------------------------------------------------------------------
+# Template stubs (replace with real template API)
+# ----------------------------------------------------------------------
+def template_list(request):
+    return Response({"templates": []})
 
-# Template endpoints – just forward to the imported functions
+def template_detail(request, template_id):
+    return Response({"id": template_id})
+
+def use_template(request, template_id):
+    return Response({"status": "template applied"})
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
-def template_list(request):
-    return _template_list(request)
-
+def template_list_view(request):
+    return template_list(request)
 
 @api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
-def template_detail(request, template_id):
-    return _template_detail(request, template_id)
-
+def template_detail_view(request, template_id):
+    return template_detail(request, template_id)
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def use_template(request, template_id):
-    return _use_template(request, template_id)
+def use_template_view(request, template_id):
+    return use_template(request, template_id)
 
-
-
-from django.db.models import Prefetch
-
+# ----------------------------------------------------------------------
+# Compare runs (detailed JSON)
+# ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def compare_runs(request):
@@ -478,7 +491,6 @@ def compare_runs(request):
         Prefetch('snapshots', queryset=TrainingSnapshot.objects.order_by('step'))
     )
 
-    # Build config diff table
     configs = [run.config for run in runs]
     all_keys = sorted(set().union(*configs))
     config_table = []
@@ -488,7 +500,6 @@ def compare_runs(request):
             row[k] = run.config.get(k, None)
         config_table.append(row)
 
-    # Build metric overlay data
     metric_keys = ['loss', 'accuracy', 'eval_loss', 'eval_accuracy']
     metrics = {k: {} for k in metric_keys}
     for run in runs:

@@ -242,8 +242,8 @@ class MegaOrchestrator:
         )
 
     def _load_data(self, cfg):
-        from framework.experiment.data import load_and_preprocess_data
-        from framework.experiment.config import ExperimentConfig
+        from framework.experiment_utils.data import load_and_preprocess_data
+        from framework.experiment_utils.config import ExperimentConfig
         exp_cfg = ExperimentConfig(**{k: v for k, v in cfg.items()
                                       if k in ExperimentConfig.__dataclass_fields__})
         setattr(exp_cfg, 'glue_base_path', cfg.get('glue_base_path', '/default/path'))

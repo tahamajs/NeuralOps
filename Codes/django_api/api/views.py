@@ -5,7 +5,7 @@ import logging
 import threading
 import numpy as np
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 import psutil
@@ -19,6 +19,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate, update_session_auth_hash
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.decorators.cache import cache_page
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -27,7 +28,13 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 
-# Framework imports – fall back to empty registries if not present
+# Import models from the experiment app (not from api.models)
+from experiment.models import Experiment, TrainingRun
+from experiment.serializers import ExperimentSerializer, TrainingRunSerializer   # adjust if serializers live elsewhere
+from experiment.runners import run_training, run_evaluation, run_compression
+from experiment.jobs import start_job, stop_job
+
+# Framework imports – fall back to empty dicts if missing
 try:
     from framework.attentions.core.registry import ATTENTION_REGISTRY
 except ImportError:
@@ -64,11 +71,6 @@ try:
     from framework.data.augmentation import AUGMENTATION_REGISTRY
 except ImportError:
     AUGMENTATION_REGISTRY = {}
-
-from .models import Experiment, TrainingRun
-from .serializers import ExperimentSerializer, TrainingRunSerializer
-from .runners import run_training, run_evaluation, run_compression
-from .jobs import start_job, stop_job
 
 logger = logging.getLogger(__name__)
 
@@ -506,7 +508,7 @@ def search_huggingface_models(request):
 
 
 # ----------------------------------------------------------------------
-# Experiments CRUD
+# Experiments CRUD (using models from experiment app)
 # ----------------------------------------------------------------------
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
@@ -660,7 +662,6 @@ def run_save(request, run_id):
     save_cfg = request.data.get("save_config", {})
     full_cfg = {**run.config.get("save_config", {}), **save_cfg}
 
-    # Stub: if framework not available, return a simple acknowledgment
     try:
         from framework.utils.results_saver import ResultsSaver
         saver = ResultsSaver(run.id, Path(settings.MEDIA_ROOT), full_cfg)
@@ -685,10 +686,10 @@ def run_save(request, run_id):
 
 
 # ----------------------------------------------------------------------
-# Mega Launcher
+# Mega Launcher (using renamed experiment_utils)
 # ----------------------------------------------------------------------
 try:
-    from framework.experiment.mega_orchestrator import MegaOrchestrator
+    from framework.experiment_utils.mega_orchestrator import MegaOrchestrator
 except ImportError:
     MegaOrchestrator = None
 
@@ -717,8 +718,8 @@ def launch_experiment(request):
     def _run():
         try:
             orchestrator.run()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception("MegaOrchestrator failed")
     threading.Thread(target=_run, daemon=True).start()
     return Response({
         "run_id": run_id,
@@ -864,7 +865,6 @@ def drift_report(request, run_id):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def run_drift_check(request, run_id):
-    # Stub: would use framework.drift
     return Response({"status": "drift check not implemented (framework missing)"}, status=501)
 
 
@@ -874,8 +874,6 @@ def run_drift_check(request, run_id):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def fairness_evaluation(request, run_id):
-    data = request.data
-    # Stub
     return Response({"status": "fairness evaluation not implemented (framework missing)"}, status=501)
 
 
@@ -885,8 +883,6 @@ def fairness_evaluation(request, run_id):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def robustness_evaluation(request, run_id):
-    data = request.data
-    # Stub
     return Response({"status": "robustness evaluation not implemented (framework missing)"}, status=501)
 
 
@@ -896,7 +892,6 @@ def robustness_evaluation(request, run_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def prompt_list(request):
-    # Stub
     return Response([])
 
 
@@ -934,7 +929,6 @@ def fl_status(request):
 @permission_classes([IsAuthenticated])
 def generate_model_card_view(request, run_id):
     run = get_object_or_404(TrainingRun, id=run_id)
-    # Stub
     card = f"# Model Card for {run.id}\n\nNo framework."
     return Response({"model_card_md": card})
 

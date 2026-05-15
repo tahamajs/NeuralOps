@@ -150,3 +150,5 @@ class CustomMetricEntry(models.Model):
 
     def __str__(self):
         return f"{self.name} (step {self.step}) for {self.run.id}"
+
+

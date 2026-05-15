@@ -87,4 +87,6 @@ class ExperimentTemplate(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = 'experiment'   # <-- add this line
+
         ordering = ['-usage_count', '-created_at']

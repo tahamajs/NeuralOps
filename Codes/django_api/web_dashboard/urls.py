@@ -30,11 +30,18 @@ urlpatterns = [
 
     # Dynamic config for launch page
     path('api/config/all/', views.launch_config_options, name='launch_config_options'),
+
+    # Dashboard widgets
     path('api/widgets/', views.get_dashboard_widgets, name='dashboard_widgets'),
     path('api/widgets/layout/', views.save_dashboard_layout, name='dashboard_widgets_layout'),
     path('api/widgets/<uuid:widget_id>/data/', views.widget_data, name='widget_data'),
 
-
+    # Optional extra endpoints (used by some frontend components)
+    path('api/widgets/<uuid:widget_id>/refresh/', views.refresh_widget, name='refresh_widget'),
+    path('api/widgets/<uuid:widget_id>/config/', views.widget_config, name='widget_config'),
+    path('api/dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
+    path('api/dashboard/settings/', views.get_dashboard_settings, name='dashboard_settings'),
+    path('api/dashboard/settings/save/', views.save_dashboard_settings, name='save_dashboard_settings'),
 ]
 
 # Serve static/media in development only
