@@ -1,3 +1,5 @@
+import os
+import signal
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -38,7 +40,6 @@ def kill_session(request, session_id):
     # Send signal to kill the child process
     if session.pid:
         try:
-            import signal
             os.kill(session.pid, signal.SIGKILL)
         except OSError:
             pass
@@ -46,7 +47,6 @@ def kill_session(request, session_id):
     # Close file descriptor
     if session.fd:
         try:
-            import os
             os.close(session.fd)
         except OSError:
             pass

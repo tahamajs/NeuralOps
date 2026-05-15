@@ -251,7 +251,7 @@ def run_compression(config, output_dir):
 
 
 def main():
-    from framework.experiment.config import build_config_from_args
+    from framework.experiment_utils.config import build_config_from_args
     from experiment_logging.logger import setup_logging, MetricsTracker, LoggingConfig
 
     cfg = build_config_from_args()

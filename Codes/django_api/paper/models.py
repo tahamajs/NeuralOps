@@ -1,7 +1,13 @@
 import uuid
+import os
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+
+
+def paper_file_upload_to(instance, filename):
+    """Organise uploaded files by project UUID and filename."""
+    return f'paper_files/{instance.project.id}/{filename}'
 
 
 class PaperProject(models.Model):
@@ -55,6 +61,7 @@ class PaperProject(models.Model):
     last_compiled_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
+        app_label = 'paper'          # <-- add this line
         ordering = ['-updated_at']
         indexes = [
             models.Index(fields=['owner']),
@@ -84,7 +91,7 @@ class PaperFile(models.Model):
     content = models.TextField(blank=True)
 
     # For binary files (images, etc.)
-    binary = models.FileField(upload_to='paper_files/', blank=True, null=True)
+    binary = models.FileField(upload_to=paper_file_upload_to, blank=True, null=True)
     is_binary = models.BooleanField(default=False)
 
     # Version tracking
@@ -94,6 +101,7 @@ class PaperFile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = 'paper'          # <-- add this line
         unique_together = [['project', 'filename']]
         ordering = ['filename']
         indexes = [
@@ -163,6 +171,7 @@ class PaperCompile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        app_label = 'paper'          # <-- add this line
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['project', '-created_at']),
@@ -228,6 +237,7 @@ class PaperTemplate(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        app_label = 'paper'          # <-- add this line
         ordering = ['-usage_count', 'name']
 
     def __str__(self):

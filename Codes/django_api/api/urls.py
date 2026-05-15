@@ -75,7 +75,7 @@ urlpatterns = [
     # Activity Feed
     path('activity/', views.activity_feed, name='activity_feed'),
 
-    # Sub‑apps
+    # Sub‑apps (optional, may be defined elsewhere)
     path('experiments/', include('experiment.urls')),
     path('jobs/', include('jobscheduler.urls')),
     path('notes/', include('notes.urls')),

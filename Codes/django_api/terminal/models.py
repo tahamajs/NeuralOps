@@ -1,49 +1,40 @@
 import uuid
+import os
 from django.db import models
 from django.conf import settings
 
-
 class TerminalSession(models.Model):
-    """
-    Represents an active terminal session.
+    """Represents an active terminal session (e.g., a PTY process)."""
 
-    Created when a user connects via WebSocket, deleted on disconnect.
-    Used for monitoring, resource limiting, and admin oversight.
-    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='terminal_sessions',
-    )
-    channel_name = models.CharField(max_length=255, unique=True)
-
-    # Process info
-    pid = models.IntegerField(null=True, blank=True)
-    fd = models.IntegerField(null=True, blank=True)
-
-    # Terminal dimensions (cols × rows)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='terminal_sessions')
+    pid = models.IntegerField(null=True, blank=True)          # Process ID of the underlying shell
+    fd = models.IntegerField(null=True, blank=True)           # File descriptor (if used)
     cols = models.IntegerField(default=80)
     rows = models.IntegerField(default=24)
-
-    # Status
     is_active = models.BooleanField(default=True)
-
-    # Timestamps
     connected_at = models.DateTimeField(auto_now_add=True)
     last_activity_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-connected_at']
+        app_label = 'terminal'                    # explicit app_label
+        ordering = ['-last_activity_at']
         indexes = [
-            models.Index(fields=['user']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['last_activity_at']),
+            models.Index(fields=['user', 'is_active']),
         ]
 
     def __str__(self):
-        return f"Session {self.id.hex[:8]} - {self.user.username}"
+        return f"Terminal {self.id.hex[:8]} (user={self.user.username}, active={self.is_active})"
 
     def mark_inactive(self):
+        """Mark session as inactive and release resources."""
         self.is_active = False
         self.save(update_fields=['is_active'])
+        if self.fd:
+            try:
+                os.close(self.fd)
+            except OSError:
+                pass
+        self.fd = None
+        self.pid = None
+        self.save(update_fields=['fd', 'pid'])
