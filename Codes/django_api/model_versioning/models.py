@@ -12,7 +12,7 @@ class ModelVersion(models.Model):
         ('cold', 'Cold (Archive)'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='versions')
+    run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='model_versions')
     version = models.CharField(max_length=100)
     version_number = models.IntegerField()
     artifact_path = models.CharField(max_length=500)
