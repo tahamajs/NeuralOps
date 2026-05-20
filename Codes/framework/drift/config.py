@@ -6,6 +6,7 @@ from typing import List, Optional, Dict, Any
 @dataclass
 class DriftConfig:
     """Central configuration for drift detection."""
+
     # Methods to apply (keys from METHOD_REGISTRY)
     methods: List[str] = field(default_factory=lambda: ["ks", "psi", "wasserstein"])
 
