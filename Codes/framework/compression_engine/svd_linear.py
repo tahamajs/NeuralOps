@@ -30,3 +30,4 @@ class SVDLinearLayer(nn.Module):
         if self.bias is not None:
             out = out + self.bias
         return out
+    

@@ -53,3 +53,4 @@ def swift_svd_act_factory(model, comp_config):
     compressor = SwiftSVDActivationCompressor(model, tokenizer, rank)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

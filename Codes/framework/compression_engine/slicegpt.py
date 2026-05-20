@@ -70,3 +70,4 @@ def slicegpt_factory(model, comp_config):
     compressor = SliceGPTCompressor(model, tokenizer, sparsity)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

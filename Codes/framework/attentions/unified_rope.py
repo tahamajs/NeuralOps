@@ -51,3 +51,4 @@ class UnifiedRoPE(nn.Module):
         x1 = x[..., : x.shape[-1] // 2]
         x2 = x[..., x.shape[-1] // 2 :]
         return torch.cat((-x2, x1), dim=-1)
+    

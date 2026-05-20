@@ -42,3 +42,4 @@ class UniQLCompressor(BaseCompressor):
                     module.bias.data = self._quantize(module.bias.data, self.bits)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    
