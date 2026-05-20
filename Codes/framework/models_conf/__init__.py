@@ -1,5 +1,5 @@
 """
-Universal model loading and custom compressed architectures.
+Universal model loading, custom compressed architectures, and Hub utilities.
 """
 
 from .loaders import load_model, load_hf_model, load_compressed_model, load_hybrid_svd_model, load_unsloth_model
