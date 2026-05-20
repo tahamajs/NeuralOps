@@ -1,0 +1,169 @@
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "efficient-transformer-toolkit"
+version = "0.1.0"
+description = "Model‑agnostic compression & efficient‑attention library for HuggingFace Transformers"
+readme = "README.md"
+license = "MIT"
+authors = [
+    {name = "Taha Majs", email = "tahamaj4@gmail.com"}
+]
+keywords = [
+    "transformers", "attention", "compression", "SVD", "LoRA",
+    "efficient-transformers", "distillation", "huggingface",
+    "NLP", "deep-learning", "model-compression"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.10"
+dependencies = [
+    # Core ML
+    "torch>=2.0",
+    "transformers>=4.36.0",
+    "datasets>=2.14.0",
+    "evaluate>=0.4.0",
+    "tokenizers>=0.13.0",
+    # Data & visualisation
+    "numpy>=1.24.0",
+    "pandas>=1.5.0",
+    "matplotlib>=3.7.0",
+    "seaborn>=0.12.0",
+    "scikit-learn>=1.3.0",
+    "scipy>=1.10.0",
+    "plotly>=5.10.0",
+    # Utilities
+    "tqdm>=4.65.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# GPU‑accelerated attention kernels
+gpu = [
+    "flash-attn>=2.5.0",
+    "triton>=2.1.0",
+]
+# Unsloth integration for fast training
+unsloth = ["unsloth"]
+# Experiment tracking backends
+tracking = [
+    "wandb",
+    "mlflow",
+    "tensorboard",
+    "neptune",
+    "comet-ml",
+    "aim",
+    "zenml",
+]
+# Cloud storage backends (for ResultsSaver)
+cloud = [
+    "boto3",
+    "google-cloud-storage",
+    "azure-storage-blob",
+]
+# Hyperparameter optimisation
+optuna = ["optuna>=3.0.0"]
+# Distributed training (DeepSpeed)
+deepspeed = ["deepspeed"]
+# LLM / Agent integration (for AI assistant, autonomous workflows)
+agents = [
+    "langchain",
+    "langgraph",
+    "langchain-community",
+    "langchain-anthropic",
+]
+# Task queue (for distributed job scheduling)
+tasks = [
+    "celery",
+    "redis",
+]
+# Development & testing
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "pytest-xdist",
+    "black",
+    "ruff",
+    "pre-commit",
+]
+# All extra features combined
+all = [
+    "flash-attn>=2.5.0",
+    "triton>=2.1.0",
+    "unsloth",
+    "wandb",
+    "mlflow",
+    "tensorboard",
+    "neptune",
+    "comet-ml",
+    "aim",
+    "zenml",
+    "boto3",
+    "google-cloud-storage",
+    "azure-storage-blob",
+    "optuna>=3.0.0",
+    "deepspeed",
+    "langchain",
+    "langgraph",
+    "langchain-community",
+    "langchain-anthropic",
+    "celery",
+    "redis",
+    "pytest>=7.0",
+    "pytest-cov",
+    "pytest-xdist",
+    "black",
+    "ruff",
+    "pre-commit",
+]
+
+[project.urls]
+Homepage = "https://github.com/tahamajs/efficient-transformer-toolkit"
+Documentation = "https://github.com/tahamajs/efficient-transformer-toolkit#readme"
+Repository = "https://github.com/tahamajs/efficient-transformer-toolkit"
+Issues = "https://github.com/tahamajs/efficient-transformer-toolkit/issues"
+
+# ------------------------------------------------------------------
+# Package discovery – list every subpackage that contains an __init__.py
+# ------------------------------------------------------------------
+[tool.setuptools]
+packages = [
+    "framework.core",
+    "framework.data",
+    "framework.config",
+    "framework.security",
+    "framework.callbacks",
+    "framework.analysis",
+    "framework.comparison",
+    "framework.distributed",
+    "framework.drift",
+    "framework.experiment_logging",
+    "framework.experiment_utils",
+    "framework.hyperopt",
+    "framework.router",
+    "framework.prompts",
+    "framework.tests",
+    "framework.results_saver",
+    "framework.visualization",
+    "framework.models_conf",
+    "framework.compression_engine",
+    "framework.model_versioning",
+    "framework.tracking",
+    "framework.attentions",
+    "framework.federated_learning",
+    "framework.trainer",
+    "framework.utils",
+    # Add these when you create the directories:
+    # "framework.models",
+    # "framework.training",
+]
