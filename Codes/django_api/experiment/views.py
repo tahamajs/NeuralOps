@@ -10,7 +10,6 @@ import torch
 from django.conf import settings
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404, render
-from django.db.models import Prefetch
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from rest_framework.decorators import api_view, permission_classes
@@ -18,7 +17,6 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.pagination import PageNumberPagination
 
 from .models import Experiment, TrainingRun, TrainingSnapshot
 from .serializers import (
@@ -28,7 +26,46 @@ from .jobs import start_job, stop_job, stop_all_jobs, push_update
 from .runners import run_training, run_evaluation, run_compression
 
 # ----------------------------------------------------------------------
-# Config endpoints (replace with real registry queries when ready)
+# Optional deep‑diff library – fallback to simple dict diff if missing
+# ----------------------------------------------------------------------
+try:
+    from deepdiff import DeepDiff as _DeepDiff
+except ImportError:
+    _DeepDiff = None
+
+def _deep_diff(a, b, **kwargs):
+    """Wrapper that returns a serialisable dict diff."""
+    if _DeepDiff is not None:
+        return _DeepDiff(a, b, **kwargs)
+    # Fallback: simple key‑by‑key diff
+    diff = {}
+    all_keys = set(a.keys()) | set(b.keys())
+    for k in sorted(all_keys):
+        va = a.get(k)
+        vb = b.get(k)
+        if va != vb:
+            diff[k] = {"old": va, "new": vb}
+    return diff
+
+def compare_runs_api(run_ids, baseline_id=None):
+    """Stub – replace with real implementation later."""
+    return {
+        "message": "Comparison not implemented",
+        "run_ids": run_ids,
+        "baseline_id": baseline_id,
+    }
+
+def hyperparameter_importance(run_ids=None, target_metric="eval_accuracy"):
+    return {"message": "Not implemented"}
+
+def metric_correlation_matrix(run_ids=None):
+    return {"message": "Not implemented"}
+
+def training_stability_analysis(run_id):
+    return {"message": "Not implemented"}
+
+# ----------------------------------------------------------------------
+# Config endpoints
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -106,7 +143,7 @@ def experiment_detail(request, exp_id):
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def list_runs(request, exp_id=None):
+def runs_list(request, exp_id=None):
     if exp_id:
         runs = TrainingRun.objects.filter(experiment_id=exp_id).order_by('-created_at')
     else:
@@ -323,7 +360,7 @@ def preview_paper(request, run_id):
     return Response({"html": "<div>Paper preview placeholder</div>"})
 
 # ----------------------------------------------------------------------
-# Authentication views (simple token auth)
+# Authentication views
 # ----------------------------------------------------------------------
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -378,16 +415,8 @@ def run_analysis_overview(request, run_id):
     return Response(overview)
 
 # ----------------------------------------------------------------------
-# Comparison & diff (with safe stubs for missing dependencies)
+# Comparison & diff
 # ----------------------------------------------------------------------
-def compare_runs_api(run_ids, baseline_id=None):
-    """Stub – replace with real implementation later."""
-    return {"message": "Comparison not implemented", "run_ids": run_ids}
-
-def DeepDiff(a, b, **kwargs):
-    """Stub – returns a simple dict diff."""
-    return {"diff": "not implemented"}
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def compare_experiments(request):
@@ -406,29 +435,18 @@ def compare_experiments(request):
 def run_diff(request, run_id_a, run_id_b):
     run_a = get_object_or_404(TrainingRun, id=run_id_a)
     run_b = get_object_or_404(TrainingRun, id=run_id_b)
-    config_diff = DeepDiff(run_a.config or {}, run_b.config or {}, ignore_order=True, verbose_level=2)
-    metrics_diff = DeepDiff(run_a.final_metrics or {}, run_b.final_metrics or {}, ignore_order=True)
+    config_diff = _deep_diff(run_a.config or {}, run_b.config or {}, ignore_order=True, verbose_level=2)
+    metrics_diff = _deep_diff(run_a.final_metrics or {}, run_b.final_metrics or {}, ignore_order=True)
     return Response({
         "run_a": {"id": str(run_a.id), "name": run_a.name},
         "run_b": {"id": str(run_b.id), "name": run_b.name},
-        "config_diff": config_diff,
-        "metrics_diff": metrics_diff,
-        "config_diff_json": config_diff.to_dict() if hasattr(config_diff, 'to_dict') else str(config_diff),
-        "metrics_diff_json": metrics_diff.to_dict() if hasattr(metrics_diff, 'to_dict') else str(metrics_diff),
+        "config_diff": config_diff if isinstance(config_diff, dict) else config_diff.to_dict(),
+        "metrics_diff": metrics_diff if isinstance(metrics_diff, dict) else metrics_diff.to_dict(),
     })
 
 # ----------------------------------------------------------------------
-# Analytics stubs (replace with real implementations)
+# Analytics stubs
 # ----------------------------------------------------------------------
-def hyperparameter_importance(run_ids=None, target_metric="eval_accuracy"):
-    return {"message": "Not implemented"}
-
-def metric_correlation_matrix(run_ids=None):
-    return {"message": "Not implemented"}
-
-def training_stability_analysis(run_id):
-    return {"message": "Not implemented"}
-
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def hp_importance_view(request):
@@ -451,34 +469,25 @@ def stability_analysis_view(request, run_id):
     return Response(result)
 
 # ----------------------------------------------------------------------
-# Template stubs (replace with real template API)
+# Template stubs
 # ----------------------------------------------------------------------
-def template_list(request):
-    return Response({"templates": []})
-
-def template_detail(request, template_id):
-    return Response({"id": template_id})
-
-def use_template(request, template_id):
-    return Response({"status": "template applied"})
-
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def template_list_view(request):
-    return template_list(request)
+    return Response({"templates": []})
 
 @api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
 def template_detail_view(request, template_id):
-    return template_detail(request, template_id)
+    return Response({"id": template_id})
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def use_template_view(request, template_id):
-    return use_template(request, template_id)
+    return Response({"status": "template applied"})
 
 # ----------------------------------------------------------------------
-# Compare runs (detailed JSON)
+# Compare runs (detailed)
 # ----------------------------------------------------------------------
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
