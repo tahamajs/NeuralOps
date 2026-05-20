@@ -1,9 +1,11 @@
 """
 Base classes for attention modules and compressors.
 """
+
 import torch.nn as nn
 from typing import Optional, Any, Dict, Tuple
 from abc import ABC, abstractmethod
+
 
 class BaseAttention(nn.Module):
     """Every custom attention module must inherit from this."""
