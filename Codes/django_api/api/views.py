@@ -867,3 +867,28 @@ def activity_feed(request):
         'created_at': log.created_at.isoformat(),
     } for log in logs]
     return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def run_hf_checkpoints(request, run_id):
+    """Return a list of checkpoints uploaded to HuggingFace for this run."""
+    run = get_object_or_404(TrainingRun, id=run_id)
+    # The HF repo ID is derived from run.id
+    username = getattr(settings, 'HUGGINGFACE_USERNAME', 'neuralops')
+    repo_id = f"{username}/neuralops-run-{run.id}"
+    try:
+        api = HfApi()
+        # List files under checkpoints/
+        files = api.list_repo_files(repo_id, repo_type="model")
+        checkpoints = []
+        for f in files:
+            if f.startswith("checkpoints/step_"):
+                step = int(f.split("_")[-1].split("/")[0])
+                checkpoints.append({
+                    "step": step,
+                    "url": f"https://huggingface.co/{repo_id}/resolve/main/{f}"
+                })
+        return Response({"checkpoints": checkpoints})
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
