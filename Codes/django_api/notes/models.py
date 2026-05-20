@@ -441,3 +441,103 @@ class Protocol(models.Model):
     steps = models.JSONField(default=list)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='protocols')
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+# notes/models.py — add these at the bottom of the file
+
+import secrets
+from datetime import timedelta
+
+
+class ShareableLink(models.Model):
+    """
+    Public share link for a note. Anyone with the token can view the note.
+    Supports expiration, password protection, and view counting.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, related_name='share_links')
+    token = models.CharField(max_length=64, unique=True, default=secrets.token_urlsafe)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_share_links')
+    password = models.CharField(max_length=128, blank=True, help_text="Optional password to access this link")
+    expires_at = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    view_count = models.IntegerField(default=0)
+    max_views = models.IntegerField(null=True, blank=True, help_text="Max number of views before link expires")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_accessed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Share link for note {self.note_id} ({'active' if self.is_active else 'inactive'})"
+
+    @property
+    def is_expired(self):
+        if self.expires_at and timezone.now() > self.expires_at:
+            return True
+        if self.max_views and self.view_count >= self.max_views:
+            return True
+        return False
+
+    @property
+    def public_url(self):
+        from django.conf import settings
+        base = getattr(settings, 'PUBLIC_BASE_URL', 'http://localhost:8000')
+        return f"{base}/notes/shared/{self.token}/"
+
+    def record_view(self):
+        self.view_count += 1
+        self.last_accessed_at = timezone.now()
+        self.save(update_fields=['view_count', 'last_accessed_at'])
+
+
+class Artifact(models.Model):
+    """File artifacts (checkpoints, plots, logs) associated with a note or run."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, null=True, blank=True, related_name='artifacts')
+    run = models.ForeignKey('jobscheduler.Job', on_delete=models.CASCADE, null=True, blank=True, related_name='artifacts')
+    name = models.CharField(max_length=200)
+    file = models.FileField(upload_to='artifacts/')
+    file_type = models.CharField(max_length=50, blank=True)
+    file_size_mb = models.FloatField(default=0.0)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class Protocol(models.Model):
+    """Executable experiment protocol."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    steps = models.JSONField(default=list)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='protocols')
+    is_public = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class NoteLink(models.Model):
+    """Bidirectional link between notes (knowledge graph)."""
+    source = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, related_name='outgoing_links')
+    target = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, related_name='incoming_links')
+    link_type = models.CharField(max_length=50, default='related')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['source', 'target']]
+
+    def __str__(self):
+        return f"{self.source_id} → {self.target_id} ({self.link_type})"

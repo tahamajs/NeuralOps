@@ -948,4 +948,373 @@ def create_note_link(request, version='v1'):
     )
     return Response({'status': 'created' if created else 'already_exists'})
 
-# (Add similarly for Artifact, Protocol, etc.)
+# notes/views.py — append at the bottom of the file
+
+from .hf_upload import upload_note_to_hub, upload_note_as_space, sync_note_to_hf
+from .models import ShareableLink, Artifact, Protocol, NoteLink, NoteComment
+import secrets
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 26. HuggingFace Upload — as Dataset or Space (free hosting)
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_note_to_huggingface(request, note_id, version='v1'):
+    """Upload a note to HuggingFace as a Dataset (publicly viewable)."""
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    if note.author != request.user and not request.user.is_staff:
+        return Response({"error": "Not allowed"}, status=403)
+    try:
+        make_public = request.data.get('make_public', True)
+        repo_type = request.data.get('repo_type', 'dataset')
+        result = upload_note_to_hub(note, repo_type=repo_type, make_public=make_public)
+        # Store URL in metadata
+        note.metadata = note.metadata or {}
+        note.metadata['hf_url'] = result['url']
+        note.metadata['hf_repo_id'] = result['repo_id']
+        note.save(update_fields=['metadata'])
+        return Response(result)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_note_as_hf_space(request, note_id, version='v1'):
+    """Upload a note to HuggingFace as a static Space (free web hosting)."""
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    if note.author != request.user and not request.user.is_staff:
+        return Response({"error": "Not allowed"}, status=403)
+    try:
+        result = upload_note_as_space(note)
+        note.metadata = note.metadata or {}
+        note.metadata['hf_space_url'] = result['url']
+        note.save(update_fields=['metadata'])
+        return Response(result)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def sync_note_to_hf_view(request, note_id, version='v1'):
+    """Sync updated note content to HuggingFace."""
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    if note.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    result = sync_note_to_hf(note)
+    return Response(result)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 27. Shareable Links — generate, view, revoke
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_share_link(request, note_id, version='v1'):
+    """Create a public share link for a note."""
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    if note.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+
+    expires_in_days = request.data.get('expires_in_days')
+    expires_at = timezone.now() + timedelta(days=expires_in_days) if expires_in_days else None
+
+    link = ShareableLink.objects.create(
+        note=note,
+        created_by=request.user,
+        password=request.data.get('password', ''),
+        expires_at=expires_at,
+        max_views=request.data.get('max_views'),
+    )
+    return Response({
+        "id": str(link.id),
+        "token": link.token,
+        "url": link.public_url,
+        "expires_at": link.expires_at,
+        "is_active": link.is_active,
+    }, status=201)
+
+
+@api_view(['GET'])
+def view_shared_note(request, token, version='v1'):
+    """
+    Public endpoint — view a note via share link.
+    No authentication required, but password may be needed.
+    """
+    link = get_object_or_404(ShareableLink, token=token, is_active=True)
+
+    # Check expiration
+    if link.is_expired:
+        return Response({"error": "This share link has expired"}, status=410)
+
+    # Check password
+    if link.password:
+        provided_password = request.query_params.get('password', '')
+        if provided_password != link.password:
+            return Response({"error": "Password required", "password_required": True}, status=401)
+
+    note = link.note
+    if note.deleted_at:
+        return Response({"error": "Note has been deleted"}, status=404)
+
+    # Record view
+    link.record_view()
+
+    serializer = ResearcherNoteSerializer(note)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_share_links(request, note_id, version='v1'):
+    """List all share links for a note."""
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    if note.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    links = note.share_links.all()
+    data = [{
+        "id": str(l.id),
+        "token": l.token,
+        "url": l.public_url,
+        "is_active": l.is_active,
+        "view_count": l.view_count,
+        "expires_at": l.expires_at,
+        "created_at": l.created_at,
+    } for l in links]
+    return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def revoke_share_link(request, note_id, link_id, version='v1'):
+    """Revoke a share link."""
+    link = get_object_or_404(ShareableLink, id=link_id, note_id=note_id)
+    if link.created_by != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    link.is_active = False
+    link.save(update_fields=['is_active'])
+    return Response({"status": "revoked"})
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 28. Share with Users (direct)
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def share_note(request, note_id, version='v1'):
+    """Share a note with specific users by username."""
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    if note.author != request.user:
+        return Response({"error": "Only the author can share"}, status=403)
+    username = request.data.get('username')
+    if not username:
+        return Response({"error": "username required"}, status=400)
+    try:
+        user_to_share = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+    note.shared_with.add(user_to_share)
+    Notification.objects.create(
+        recipient=user_to_share, sender=request.user, type='share',
+        note=note, content=f"{request.user.username} shared a note with you: {note.title or 'Untitled'}"
+    )
+    return Response({"status": "shared", "shared_with": [u.username for u in note.shared_with.all()]})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unshare_note(request, note_id, version='v1'):
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    if note.author != request.user:
+        return Response({"error": "Only the author can unshare"}, status=403)
+    username = request.data.get('username')
+    if not username:
+        return Response({"error": "username required"}, status=400)
+    note.shared_with.remove(User.objects.get(username=username))
+    return Response({"status": "unshared"})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def shared_with_me(request, version='v1'):
+    notes = ResearcherNote.objects.filter(shared_with=request.user, deleted_at__isnull=True)
+    serializer = ResearcherNoteSerializer(notes, many=True)
+    return Response(serializer.data)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 29. Artifact CRUD
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def artifact_list(request, note_id, version='v1'):
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    if request.method == 'GET':
+        artifacts = note.artifacts.all()
+        data = [{
+            'id': str(a.id), 'name': a.name, 'file_type': a.file_type,
+            'file_size_mb': a.file_size_mb, 'description': a.description,
+            'file_url': request.build_absolute_uri(a.file.url) if a.file else None,
+            'created_at': a.created_at,
+        } for a in artifacts]
+        return Response(data)
+    elif request.method == 'POST':
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response({"error": "file required"}, status=400)
+        size_mb = round(uploaded_file.size / (1024 * 1024), 2)
+        artifact = Artifact.objects.create(
+            note=note,
+            name=request.data.get('name', uploaded_file.name),
+            file=uploaded_file,
+            file_type=request.data.get('file_type', ''),
+            file_size_mb=size_mb,
+            description=request.data.get('description', ''),
+        )
+        return Response({'id': str(artifact.id), 'file_url': request.build_absolute_uri(artifact.file.url)}, status=201)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def artifact_delete(request, note_id, artifact_id, version='v1'):
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    artifact = get_object_or_404(Artifact, id=artifact_id, note=note)
+    if note.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    artifact.file.delete(save=False)
+    artifact.delete()
+    return Response(status=204)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def artifact_download(request, note_id, artifact_id, version='v1'):
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    artifact = get_object_or_404(Artifact, id=artifact_id, note=note)
+    if not note.is_public and note.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    response = FileResponse(artifact.file.open('rb'), as_attachment=True)
+    response['Content-Disposition'] = f'attachment; filename="{artifact.name}"'
+    return response
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 30. Protocol CRUD
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def protocol_list(request, version='v1'):
+    if request.method == 'GET':
+        protocols = Protocol.objects.filter(
+            models.Q(created_by=request.user) | models.Q(is_public=True)
+        ).order_by('-created_at')
+        data = [{
+            'id': str(p.id), 'name': p.name, 'description': p.description,
+            'steps_count': len(p.steps), 'is_public': p.is_public,
+            'created_by': p.created_by.username, 'created_at': p.created_at,
+        } for p in protocols]
+        return Response(data)
+    elif request.method == 'POST':
+        protocol = Protocol.objects.create(
+            name=request.data.get('name', 'Untitled Protocol'),
+            description=request.data.get('description', ''),
+            steps=request.data.get('steps', []),
+            created_by=request.user,
+            is_public=request.data.get('is_public', False),
+        )
+        return Response({'id': str(protocol.id), 'status': 'created'}, status=201)
+
+
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def protocol_detail(request, protocol_id, version='v1'):
+    protocol = get_object_or_404(Protocol, id=protocol_id)
+    if request.method == 'GET':
+        return Response({
+            'id': str(protocol.id), 'name': protocol.name,
+            'description': protocol.description, 'steps': protocol.steps,
+            'is_public': protocol.is_public,
+            'created_by': protocol.created_by.username,
+            'created_at': protocol.created_at, 'updated_at': protocol.updated_at,
+        })
+    if protocol.created_by != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    if request.method in ('PUT', 'PATCH'):
+        protocol.name = request.data.get('name', protocol.name)
+        protocol.description = request.data.get('description', protocol.description)
+        protocol.steps = request.data.get('steps', protocol.steps)
+        protocol.is_public = request.data.get('is_public', protocol.is_public)
+        protocol.save()
+        return Response({'status': 'updated'})
+    elif request.method == 'DELETE':
+        protocol.delete()
+        return Response(status=204)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 31. Note Links (Knowledge Graph)
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_note_link(request, version='v1'):
+    source_id = request.data.get('source_id')
+    target_id = request.data.get('target_id')
+    link_type = request.data.get('link_type', 'related')
+    source = get_object_or_404(ResearcherNote, id=source_id, author=request.user, deleted_at__isnull=True)
+    target = get_object_or_404(ResearcherNote, id=target_id, deleted_at__isnull=True)
+    link, created = NoteLink.objects.get_or_create(
+        source=source, target=target, defaults={'link_type': link_type}
+    )
+    return Response({'status': 'created' if created else 'already_exists', 'id': str(link.id)})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def note_links_graph(request, note_id, version='v1'):
+    """Return the knowledge graph centered on a note."""
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    outgoing = note.outgoing_links.select_related('target')
+    incoming = note.incoming_links.select_related('source')
+
+    nodes = {str(note.id): {'id': str(note.id), 'title': note.title or 'Untitled', 'type': 'current'}}
+    edges = []
+
+    for link in outgoing:
+        target = link.target
+        if target.deleted_at is None:
+            nodes[str(target.id)] = {'id': str(target.id), 'title': target.title or 'Untitled', 'type': 'outgoing'}
+            edges.append({'from': str(note.id), 'to': str(target.id), 'type': link.link_type})
+
+    for link in incoming:
+        source = link.source
+        if source.deleted_at is None:
+            nodes[str(source.id)] = {'id': str(source.id), 'title': source.title or 'Untitled', 'type': 'incoming'}
+            edges.append({'from': str(source.id), 'to': str(note.id), 'type': link.link_type})
+
+    return Response({'nodes': list(nodes.values()), 'edges': edges})
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_note_link(request, link_id, version='v1'):
+    link = get_object_or_404(NoteLink, id=link_id)
+    if link.source.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    link.delete()
+    return Response(status=204)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 32. Toggle Pin
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def toggle_pin(request, note_id, version='v1'):
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    if note.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+    note.pinned = not note.pinned
+    note.save(update_fields=['pinned'])
+    return Response({"pinned": note.pinned})
