@@ -24,6 +24,7 @@ urlpatterns = [
     path('config/schedulers/', views.list_schedulers, name='list_schedulers'),
     path('config/callbacks/', views.list_callbacks, name='list_callbacks'),
     path('config/augmentations/', views.list_augmentations, name='list_augmentations'),
+    path('config/variants/', views.list_model_variants, name='list_model_variants'),
     path('config/hpo/', views.hpo_options, name='hpo_options'),
     path('config/distributed/', views.distributed_options, name='distributed_options'),
     path('config/tracking/', views.tracking_options, name='tracking_options'),
@@ -75,8 +76,14 @@ urlpatterns = [
     # Activity Feed
     path('activity/', views.activity_feed, name='activity_feed'),
 
-    # Sub‑apps (optional, may be defined elsewhere)
-    path('experiments/', include('experiment.urls')),
-    path('jobs/', include('jobscheduler.urls')),
-    path('notes/', include('notes.urls')),
+    # Experiments CRUD (delegated to experiment app via this API)
+    path('experiments/', views.experiment_list, name='experiment_list'),
+    path('experiments/<uuid:pk>/', views.experiment_detail, name='experiment_detail'),
+    path('experiments/start_train/', views.start_train, name='start_train'),
+    path('experiments/start_evaluate/', views.start_evaluate, name='start_evaluate'),
+    path('experiments/start_compress/', views.start_compress, name='start_compress'),
+    path('runs/<uuid:pk>/', views.run_detail, name='run_detail'),
+    path('runs/<uuid:pk>/stop/', views.stop_run, name='stop_run'),
+    path('runs/<uuid:run_id>/results/', views.run_results, name='run_results'),
+    path('runs/<uuid:run_id>/save/', views.run_save, name='run_save'),
 ]
