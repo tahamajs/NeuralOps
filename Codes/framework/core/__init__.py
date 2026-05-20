@@ -24,3 +24,4 @@ from .compression_engine import CompressionPipeline, compress_model
 from .utils import set_seed, get_device, format_number, human_readable_time
 from .model_wrapper import UnifiedTransformerModel
 from .adapters import get_adapter, ADAPTER_MAP
+from .model_wrapper import UnifiedTransformerModel, UnifiedTransformerConfig
