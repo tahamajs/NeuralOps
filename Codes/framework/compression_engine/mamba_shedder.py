@@ -3,7 +3,8 @@
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class MambaShedderCompressor(BaseCompressor):
     def __init__(self, model, tokenizer, sparsity=0.2, device="cuda", **kwargs):
@@ -12,8 +13,18 @@ class MambaShedderCompressor(BaseCompressor):
         self.sparsity = sparsity
         self.device = device
 
-    def _collect_activations(self, calib_loader):
+    def _collect_activations(self):
+        """Use a small set of generated texts to collect input activations."""
         self.model.eval()
+        # Create a simple calibration set from a few sentences
+        calib_texts = [
+            "The quick brown fox jumps over the lazy dog.",
+            "Machine learning is a subfield of artificial intelligence.",
+            "Transformers have revolutionized natural language processing.",
+        ]
+        inputs = self.tokenizer(calib_texts, return_tensors="pt", padding=True, truncation=True)
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
         activations = {}
         hooks = []
 
@@ -29,9 +40,7 @@ class MambaShedderCompressor(BaseCompressor):
                 hooks.append(hook)
 
         with torch.no_grad():
-            for batch in calib_loader:
-                batch = {k: v.to(self.device) for k, v in batch.items()}
-                _ = self.model(**batch)
+            _ = self.model(**inputs)
 
         for hook in hooks:
             hook.remove()
@@ -45,9 +54,9 @@ class MambaShedderCompressor(BaseCompressor):
             sensitivities[name] = fisher.sqrt()
         return sensitivities
 
-    def compress(self, calib_loader):
+    def compress(self):
         print(f"✂️ Applying Mamba-Shedder (sparsity={self.sparsity})...")
-        activations = self._collect_activations(calib_loader)
+        activations = self._collect_activations()
         sensitivities = self._compute_sensitivity(activations)
 
         for name, module in self.model.named_modules():
@@ -56,15 +65,15 @@ class MambaShedderCompressor(BaseCompressor):
                 sens = sensitivities[name]
                 n_keep = int(weight.shape[1] * (1 - self.sparsity))
                 keep_idx = torch.argsort(sens, descending=True)[:n_keep]
-                module.weight.data = weight[:, keep_idx]
-                if module.bias is not None:
-                    module.bias.data = module.bias.data[keep_idx]
+
+                # Soft pruning: zero out unimportant columns
+                mask = torch.zeros(weight.shape[1], device=weight.device)
+                mask[keep_idx] = 1.0
+                module.weight.data = weight * mask.unsqueeze(0)  # broadcast over rows
+                # Bias remains unchanged
+
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
-
-
-
 
 
 @COMPRESSOR_REGISTRY.register("mamba_shedder")
@@ -76,5 +85,3 @@ def mamba_shedder_factory(model, comp_config):
     compressor = MambaShedderCompressor(model, tokenizer, sparsity)
     compressed_model, _ = compressor.compress()
     return compressed_model
-
-
