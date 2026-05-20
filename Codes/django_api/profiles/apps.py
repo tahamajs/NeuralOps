@@ -6,4 +6,6 @@ class ProfilesConfig(AppConfig):
     name = 'profiles'
 
     def ready(self):
-        import profiles.signals  # noqa
+        from allauth.socialaccount.providers import registry
+        registry.register(profiles.providers.huggingface.provider.HuggingFaceProvider)
+        import profiles.signals

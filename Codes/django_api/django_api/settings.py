@@ -81,9 +81,31 @@ INSTALLED_APPS = [
         'profiles',
     'messaging',
     'channels',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
+    'profiles.providers.huggingface',   # <-- new app
 
     'paper',
 ]
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SITE_ID = 1
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        'SCOPE': ['user:email', 'repo'],   # repo scope for pushing code
+        'VERIFIED_EMAIL': True,
+    },
+    'huggingface': {
+        'SCOPE': ['openid', 'profile', 'email'],
+    },
+}
+
+SOCIALACCOUNT_STORE_TOKENS = True   # store OAuth tokens for later API use
 
 
 # ----------------------------------------------------------------------
