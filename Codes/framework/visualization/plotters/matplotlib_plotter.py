@@ -14,7 +14,8 @@ class MatplotlibPlotter(BasePlotter):
     def line_plot(self, ax, x, y, **kwargs):
         ax.plot(x, y, **kwargs)
 
-    def finalise(self, (fig, ax), title, xlabel, ylabel):
+    def finalise(self, figure_axes, title, xlabel, ylabel):
+        fig, ax = figure_axes
         ax.set_title(title); ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
         ax.grid(True, alpha=0.3)
         return fig

@@ -11,10 +11,10 @@ from .serializers import (
     ChatSessionSerializer, ChatMessageSerializer,
     ResearchPaperSerializer, TrainingAnalysisSerializer
 )
-from .orchestrator import LangGraphAgent  # updated import
 from .tools import (
     search_papers, save_paper, search_library,
-    get_citation_graph, annotate_paper, analyze_training, suggest_next_experiment
+    get_citation_graph, annotate_paper, analyze_training, suggest_next_experiment,
+    test_prompt_template,
 )
 
 # ----------------------------------------------------------------------
@@ -36,6 +36,7 @@ class ChatSessionDetailView(generics.RetrieveDestroyAPIView):
     """Get or delete a single chat session."""
     serializer_class = ChatSessionSerializer
     permission_classes = [permissions.IsAuthenticated]
+    lookup_url_kwarg = 'session_id'
 
     def get_queryset(self):
         return ChatSession.objects.filter(user=self.request.user)
@@ -63,6 +64,19 @@ def send_message(request, session_id):
     text = request.data.get('text', '')
     if not text:
         return Response({"error": "Message text required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    ChatMessage.objects.create(session=session, role='user', content=text)
+
+    try:
+        from .orchestrator import LangGraphAgent
+    except ImportError as exc:
+        return Response(
+            {
+                "error": "Agent runtime dependencies are not installed.",
+                "detail": str(exc),
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
 
     agent = LangGraphAgent(str(session.id))
     result = agent.run(text)
@@ -356,3 +370,15 @@ def search_papers_for_run_topic(request, run_id):
     topic_str = " ".join(filter(None, topics))
     results = search_papers_for_topic(topic_str, limit=10)
     return Response({"topic": topic_str, "results": results})
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def api_test_prompt(request):
+    """Test a prompt template against provided cases."""
+    if not request.data.get("template") or not isinstance(request.data.get("test_cases"), list):
+        return Response(
+            {"error": "template and test_cases[] are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return Response(test_prompt_template(request.data))

@@ -5,6 +5,7 @@ from .search_spaces import (
     build_search_space, SearchSpace,
 )
 from .integration import run_hpo_experiment
+from .optimizer import HyperOptimizer
 
 __all__ = [
     "HPOConfig", "HPOBackend", "HPOAlgorithm", "PruningMethod",
@@ -12,4 +13,5 @@ __all__ = [
     "suggest_float", "suggest_int", "suggest_categorical",
     "build_search_space", "SearchSpace",
     "run_hpo_experiment",
+    "HyperOptimizer",
 ]
