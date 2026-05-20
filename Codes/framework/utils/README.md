@@ -1,336 +1,146 @@
-# 🧰 Utilities Package
+Below is the **cleaned, deduplicated `framework/utils` package** — every utility that the framework actually uses, with consistent interfaces, no duplication, and full integration with the rest of the toolkit.  
+The older, redundant files (`replace_attention.py`, `save_results.py`, `results_saver.py`) have been removed because the core modules already provide those capabilities.  
+The `architecture.py` helper is kept as a convenient legacy module but is superseded by `framework.core.architecture`.
 
-A comprehensive set of helper functions, managers, and profilers for the **Efficient Transformer Toolkit**.  
-These utilities support reproducibility, device handling, logging, metrics, configuration, checkpointing, profiling, model architecture detection, and more.
+---
 
-## 📁 Package Structure
+## File Structure
 
 ```
 framework/utils/
-├── __init__.py                 # Consolidated exports (including replace_attention)
-├── architecture.py            # Model architecture detection & layer patterns
-├── checkpoint.py              # CheckpointManager for resumable experiments
-├── config.py                  # YAML/JSON config loading & merging
-├── device.py                  # Automatic device selection (CUDA, MPS, CPU)
-├── helpers.py                 # General helpers: seeds, formatting, file I/O, dict flattening
-├── layer_norm_fix.py          # Fix DistilBERT LayerNorm naming
-├── logger.py                  # Simple logging setup (console + file)
-├── metrics.py                 # GLUE metrics computation
-├── profiler.py                # ModelProfiler (per‑layer timing/memory), latency/memory measurement
-├── save_results.py            # Save experiment results (JSON, CSV, plots, model, checkpoints)
-├── seed.py                    # Set all random seeds for reproducibility
-└── README.md                  # This file
+├── __init__.py              # Public API
+├── seed.py                  # Reproducibility
+├── device.py                # Auto‑select torch device
+├── helpers.py               # Common small helpers
+├── logger.py                # Logging setup
+├── metrics.py               # Accuracy, F1, Matthews, Pearson, Spearman
+├── paths.py                 # Project‑root‑relative paths
+├── profiler.py              # ModelProfiler, latency & memory measurement
+├── layer_norm_fix.py        # Fix HuggingFace LayerNorm naming
+├── config.py                # YAML / JSON config loading
+├── checkpoint.py            # Simple checkpoint manager
+├── architecture.py          # Legacy architecture detection (deprecated)
+└── README.md                # This file
 ```
 
-## 🚀 Quick Start
+---
+
+## Full README – `framework/utils`
+
+### `framework.utils` – Shared Utilities
+
+A collection of **standalone, reusable utility functions** that underpin the whole Efficient Transformer Toolkit.  
+No heavy dependencies beyond PyTorch, NumPy, and SciPy.
+
+#### Quick Start
 
 ```python
-from framework.utils import (
-    set_all_seeds,
-    get_device,
-    load_config,
-    CheckpointManager,
-    ModelProfiler,
-    replace_attention,
-    save_experiment_results,
-)
+from framework.utils import set_all_seeds, get_device, count_parameters, setup_logger
 
-# 1. Set seeds for reproducibility
 set_all_seeds(42)
-
-# 2. Get best available device
 device = get_device()
-
-# 3. Load configuration
-config = load_config("experiment.yaml")
-
-# 4. Replace attention layers in a model
-model = replace_attention(model, "goldfinch_ahn", rank=64)
-
-# 5. Profile model
-profiler = ModelProfiler(model)
-with profiler.start_profiling():
-    output = model(**batch)
-profiler.print_report()
-
-# 6. Manage checkpoints
-checkpoint_manager = CheckpointManager("./checkpoints")
-checkpoint_manager.save_checkpoint(experiment_id=1, results=[...])
-
-# 7. Save full experiment results
-save_experiment_results(run, trainer, tokenizer, history, final_metrics)
-```
-
-## 📦 Detailed Module Documentation
-
-### 1. `seed.py` – Comprehensive Random Seed Setting
-
-```python
-def set_all_seeds(seed: int) -> None
-```
-
-Sets Python (`random`), NumPy, PyTorch, and CUDA seeds. Also sets `torch.backends.cudnn.deterministic = True` and `benchmark = False` for full reproducibility.
-
-**Example:**
-```python
-from framework.utils import set_all_seeds
-set_all_seeds(42)
+model = ... # your model
+print(f"Trainable parameters: {count_parameters(model)}")
 ```
 
 ---
 
-### 2. `device.py` – Automatic Device Selection
+### Module Reference
 
-```python
-def get_device(device_str: str = "auto") -> torch.device
-```
+#### `seed.py`
+- `set_all_seeds(seed: int)` – seeds Python, NumPy, PyTorch (CPU & CUDA), and disables cuDNN auto‑tuning for determinism.
 
-Returns the best available device: `cuda` → `mps` → `cpu`, or a specific device by string.
+#### `device.py`
+- `get_device(device_str: str = "auto") -> torch.device` – returns `cuda`, `mps`, or `cpu` depending on availability. Pass `"cuda:0"` for a specific GPU.
 
-**Example:**
-```python
-from framework.utils import get_device
-device = get_device()           # auto
-device = get_device("cuda")     # explicit
-```
+#### `helpers.py`
+- `set_seed(seed, deterministic=False)` – wraps `set_all_seeds` + optional deterministic flags.
+- `format_time(seconds)` – e.g., `"1h 23m 45s"`.
+- `format_number(num)` – e.g., `"1.2M"`.
+- `count_parameters(model, trainable_only=True) -> int`.
+- `ensure_dir(path) -> Path` – creates directory.
+- `save_json(data, path)`, `load_json(path)` – JSON I/O.
+- `flatten_dict(d, sep='.')` / `unflatten_dict(d, sep='.')` – nested dict ↔ flat dict.
 
----
+#### `logger.py`
+- `setup_logger(name, level, log_file, format_string)` – returns a configured `logging.Logger` with console and optional file handler.
+- `get_logger(name)` – returns the logger for that name.
+- `set_log_level(logger_name, level)` – adjust level at runtime.
 
-### 3. `helpers.py` – General Utilities
+#### `metrics.py`
+- `compute_accuracy(preds, labels) -> float`
+- `compute_f1(preds, labels, average='weighted') -> float`
+- `compute_matthews_corrcoef(preds, labels) -> float`
+- `compute_pearson(preds, labels) -> float`
+- `compute_spearman(preds, labels) -> float`
+- `compute_precision_recall(preds, labels, average='weighted') -> Dict`
+- `compute_metrics_for_task(predictions, labels, task_name, is_regression=False) -> Dict` – automatic metric selection for GLUE tasks.
 
-| Function | Description | Example |
-|----------|-------------|---------|
-| `set_seed(seed, deterministic)` | Seeds + optional deterministic CuDNN | `set_seed(42, deterministic=True)` |
-| `format_time(seconds)` | Human‑readable time | `format_time(3665)` → `"1h 1m 5s"` |
-| `format_number(num)` | Suffix (K, M, B) | `format_number(12345)` → `"12.3K"` |
-| `count_parameters(model, trainable_only)` | Parameter count | `count_parameters(model)` |
-| `ensure_dir(path)` | Create directory if missing | `ensure_dir("logs/")` |
-| `save_json(data, path)` / `load_json(path)` | JSON I/O | `save_json({"a":1}, "file.json")` |
-| `flatten_dict(d)` / `unflatten_dict(d)` | Nested ↔ flat dict | `flatten_dict({"a":{"b":1}})` → `{"a.b":1}` |
+#### `paths.py`
+- `get_project_root() -> Path` – absolute root of the repository.
+- `get_datasets_dir() -> Path` – `root / "datasets"`.
+- `get_glue_dir() -> Path` – `datasets / "glue"`.
+- `resolve_path(relative_path) -> str` – absolute path from root.
 
----
+#### `profiler.py`
+- `ModelProfiler(model)` – registers forward hooks on attention/FFN layers and records time & memory per layer.
+  - `start_profiling()`, `stop_profiling()`, `get_report()`, `save_report(path)`, `print_report()`.
+- `measure_inference_latency(model, dataloader, device, num_samples, warmup) -> Dict` – mean, std, percentiles, throughput.
+- `measure_memory_usage(model, dataloader, device, num_samples) -> Dict` – peak GPU memory.
+- `profile_context(model, profiler=None)` – context manager that profiles a block of code.
 
-### 4. `logger.py` – Easy Logging Setup
+#### `layer_norm_fix.py`
+- `fix_layernorm_naming(model)` – renames `beta` → `bias` and `gamma` → `weight` for HuggingFace models that use alternate names.
 
-```python
-def setup_logger(name, level=logging.INFO, log_file=None, format_string=None) -> logging.Logger
-```
+#### `config.py`
+- `load_config(path) -> dict` – loads YAML or JSON.
+- `save_config(config, path)` – saves as YAML or JSON.
+- `update_config(config, updates)` – deep merge updates into config dict.
+- `merge_configs(base, override)` – returns a new merged dict.
 
-Sets up a logger with console output and optional file output.
+#### `checkpoint.py`
+- `CheckpointManager(checkpoint_dir)` – simple JSON‑based checkpoint saver/loader for experiment progress.
+  - `save_checkpoint(experiment_id, results, name, metadata)`
+  - `load_checkpoint(name) -> (experiment_id, results, metadata)`
+  - `delete_checkpoint(name)`, `list_checkpoints()`, `get_latest_checkpoint()`
 
-**Example:**
-```python
-from framework.utils import setup_logger
-logger = setup_logger("exp", log_file="logs/run.log")
-logger.info("Training started")
-```
-
----
-
-### 5. `metrics.py` – GLUE Task Metrics
-
-```python
-def compute_metrics_for_task(predictions, labels, task_name, is_regression=False) -> Dict[str, float]
-```
-
-Returns metrics appropriate for the given GLUE task.
-
-- Classification: accuracy, F1 macro/weighted. For `cola`: Matthews correlation. For `mrpc`/`qqp`: binary F1.
-- Regression (`stsb`): Pearson, Spearman, and their average.
-
-**Individual metric functions** also provided: `compute_accuracy`, `compute_f1`, `compute_matthews_corrcoef`, `compute_pearson`, `compute_spearman`, `compute_precision_recall`.
-
-**Example:**
-```python
-from framework.utils import compute_metrics_for_task
-metrics = compute_metrics_for_task(preds, labels, task_name="mrpc")
-# {'accuracy': 0.85, 'f1_macro': 0.84, 'f1_weighted': 0.85, 'f1': 0.86}
-```
+#### `architecture.py` (legacy)
+- `detect_architecture(model_name: str) -> str` – guess architecture from model name.
+- `get_layer_patterns(arch)`, `get_compression_targets(model_name, include_ffn)`, `get_model_info(model_name)`, `get_layer_count(model)`, `get_hidden_size(model)`.  
+  **Note:** The official architecture detection is in `framework.core.architecture`. This module is kept for backward compatibility but will be removed in a future version.
 
 ---
 
-### 6. `config.py` – Configuration Management
+### Changes from the Previous Mess
 
-```python
-load_config(path)     # JSON/YAML → dict
-save_config(config, path)
-update_config(config, updates)   # recursive update
-merge_configs(base, override)    # override takes precedence
-```
-
-**Example:**
-```python
-from framework.utils import load_config, merge_configs
-base = load_config("base.yaml")
-override = load_config("exp.yaml")
-config = merge_configs(base, override)
-save_config(config, "merged.yaml")
-```
+- **Removed** `replace_attention.py` – superseded by `framework.core.attention_utils.inject_attention()`.
+- **Removed** `save_results.py` and `results_saver.py` – superseded by `framework.results_saver.ResultsSaver` and `framework.training.ResultsManager`.
+- **Deduplicated** logging, metrics, and config helpers.
+- **All imports are now relative** and the package can be used as `from framework.utils import ...`.
 
 ---
 
-### 7. `checkpoint.py` – `CheckpointManager`
+### Dependencies
 
-Manages checkpoints for long‑running experiments (e.g., sweeping).
+- `torch`
+- `numpy`
+- `scipy`
+- `scikit-learn` (for Matthews, F1, precision/recall)
+- `matplotlib` (for profiler plots – optional)
+- `pyyaml` (optional, for YAML config)
 
-**Methods:**
-- `save_checkpoint(experiment_id, results, checkpoint_name, metadata) → Path`
-- `load_checkpoint(checkpoint_name) → (experiment_id, results, metadata)`
-- `delete_checkpoint()`
-- `list_checkpoints() → List[Path]`
-- `get_latest_checkpoint() → Optional[Path]`
-
-**Example:**
-```python
-from framework.utils import CheckpointManager
-manager = CheckpointManager("./checkpoints")
-manager.save_checkpoint(exp_id=1, results=partial_results)
-exp_id, results, meta = manager.load_checkpoint()
-```
+All of these are already part of the framework’s requirements.
 
 ---
 
-### 8. `profiler.py` – Model Profiling
+### Integration
 
-#### `ModelProfiler` – Per‑layer timing and memory
+Every utility is designed to be used directly by the other framework modules:
 
-```python
-profiler = ModelProfiler(model)
-profiler.start_profiling()
-output = model(**batch)
-profiler.stop_profiling()
-profiler.print_report()
-profiler.save_report("profile.json")
-```
+- `set_all_seeds` and `get_device` are called at the start of every training script.
+- `setup_logger` is used by `ResultsManager` and the Django callback.
+- `compute_metrics_for_task` is used by the training loop and the GLUE benchmark runner.
+- `ModelProfiler` is used by the `SVDProfiler` and the analysis callbacks.
+- `fix_layernorm_naming` is applied to every loaded model to prevent loading errors.
 
-The report includes average time, standard deviation, min/max time, and average memory (if CUDA) per identified layer (`attention`, `ffn`, `mlp`, `intermediate`).
 
-#### Inference latency measurement
-
-```python
-from framework.utils import measure_inference_latency
-latency_stats = measure_inference_latency(model, dataloader, device, num_samples=100, warmup=10)
-# returns mean, std, p50, p95, p99, samples/sec
-```
-
-#### Peak memory measurement
-
-```python
-from framework.utils import measure_memory_usage
-mem_stats = measure_memory_usage(model, dataloader, device, num_samples=10)
-# returns peak_memory_mb, avg_peak_memory_mb
-```
-
-#### Context manager
-
-```python
-with profile_context(model) as profiler:
-    output = model(**batch)
-# profiler automatically started and stopped
-```
-
----
-
-### 9. `architecture.py` – Model Detection & Layer Patterns
-
-Supports: `bert`, `distilbert`, `roberta`, `xlnet`, `albert`, `electra`, `deberta`, `gpt2`.
-
-**Functions:**
-- `detect_architecture(model_name) → str`
-- `get_layer_patterns(arch) → List[str]` – layer name patterns for attention/FFN replacement
-- `get_compression_targets(model_name, include_ffn) → List[str]` – target layer names for compression
-- `get_model_info(model_name) → Dict` – architecture, patterns, estimated config
-- `get_layer_count(model) → int`
-- `get_hidden_size(model) → int`
-
-**Example:**
-```python
-from framework.utils import detect_architecture, get_compression_targets
-arch = detect_architecture("distilbert-base-uncased")  # 'distilbert'
-targets = get_compression_targets("bert-base-uncased", include_ffn=False)
-# ['attention.self.query', 'attention.self.key', ...]
-```
-
----
-
-### 10. `layer_norm_fix.py` – DistilBERT LayerNorm Fix
-
-```python
-def fix_layernorm_naming(model: nn.Module) -> None
-```
-
-Renames LayerNorm parameters from `beta`/`gamma` (used in some saved checkpoints) to `bias`/`weight` (expected by Hugging Face).
-
-**Example:**
-```python
-from framework.utils import fix_layernorm_naming
-fix_layernorm_naming(model)
-```
-
----
-
-### 11. `save_results.py` – Save Full Experiment Results
-
-```python
-def save_experiment_results(run, trainer, tokenizer, history, final_metrics, output_dir="results") -> Path
-```
-
-Creates a timestamped folder containing:
-- `config.json`
-- `training_history.json`
-- `final_metrics.json`
-- `training_history.csv`, `eval_history.csv`
-- `logs.txt`
-- `loss_curve.png`
-- `model/` (saved with `trainer.save_model` and tokenizer)
-- `checkpoints/` (copied from trainer output dir)
-- `README.txt`
-
-**Example:**
-```python
-from framework.utils import save_experiment_results
-save_experiment_results(run, trainer, tokenizer, history, final_metrics)
-```
-
----
-
-### 12. `replace_attention` – Dynamic Attention Replacement
-
-Uses `ATTENTION_REGISTRY` from `framework.attentions.core.registry`.
-
-```python
-def replace_attention(model, attention_key, **kwargs) -> nn.Module
-```
-
-Replaces every module with `'attention'` or `'attn'` in its name with a registered attention block. Passes the model config and extra keyword arguments.
-
-**Example:**
-```python
-from framework.utils import replace_attention
-model = replace_attention(model, "goldfinch_ahn", rank=64, window_size=256)
-```
-
----
-
-## 🔧 Integration with the Framework
-
-All utilities are available from `framework.utils`. The `__init__.py` exports all public functions/classes.
-
-```python
-# Typical usage in a training script
-from framework.utils import set_all_seeds, get_device, load_config, get_logger, compute_metrics_for_task
-```
-
-The `replace_attention` function relies on `ATTENTION_REGISTRY`, which must be populated by importing the desired attention modules (e.g., `framework.attentions.hybrid_ssm`).
-
-## 📜 Dependencies
-
-- `torch`, `numpy`, `scipy`, `matplotlib`
-- `scikit-learn` (for metrics)
-- `pyyaml` (for YAML config)
-
-Optional: `psutil` (not used in utils, only in other modules).
-
-## 📄 License
-
-Part of the **Efficient Transformer Toolkit** – MIT License.
