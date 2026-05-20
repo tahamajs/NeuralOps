@@ -1,8 +1,12 @@
-# framework/data/custom_loader.py
+"""
+Custom dataset loading from CSV, JSON, Parquet files.
+"""
+
 import pandas as pd
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional
 from datasets import Dataset, DatasetDict
+
 
 def load_custom_dataset(
     file_path: str,
@@ -11,12 +15,11 @@ def load_custom_dataset(
     file_format: Optional[str] = None,
     **kwargs
 ) -> DatasetDict:
-    """Load a custom dataset from CSV, JSON, or Parquet file."""
+    """Load a custom dataset from a file, returning a DatasetDict with at least 'train'."""
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
 
-    # Auto-detect format from extension if not given
     if file_format is None:
         ext = path.suffix.lower()
         if ext == '.csv':
@@ -28,7 +31,6 @@ def load_custom_dataset(
         else:
             raise ValueError(f"Unknown file extension: {ext}")
 
-    # Load with pandas
     if file_format == 'csv':
         df = pd.read_csv(path, **kwargs)
     elif file_format == 'json':
@@ -38,7 +40,6 @@ def load_custom_dataset(
     else:
         raise ValueError(f"Unsupported format: {file_format}")
 
-    # Auto‑detect columns if not provided
     if text_column is None:
         text_column = _detect_text_column(df)
     if label_column is None:
@@ -53,6 +54,7 @@ def load_custom_dataset(
 
     dataset = Dataset.from_pandas(df)
     return DatasetDict({"train": dataset})
+
 
 def load_dataset_from_file(
     file_path: str,
@@ -74,12 +76,12 @@ def load_dataset_from_file(
         "validation": Dataset.from_pandas(val_df),
     })
 
+
 def _detect_text_column(df: pd.DataFrame) -> Optional[str]:
     candidates = ['text', 'sentence', 'prompt', 'question', 'content', 'body']
     for col in candidates:
         if col in df.columns:
             return col
-    # Fallback: first string column
     for col in df.columns:
         if df[col].dtype == 'object':
             sample = df[col].dropna().iloc[0] if len(df[col].dropna()) else ""
@@ -87,12 +89,12 @@ def _detect_text_column(df: pd.DataFrame) -> Optional[str]:
                 return col
     return None
 
+
 def _detect_label_column(df: pd.DataFrame) -> Optional[str]:
     candidates = ['label', 'labels', 'class', 'target', 'gold', 'answer']
     for col in candidates:
         if col in df.columns:
             return col
-    # Fallback: integer column with few unique values
     for col in df.columns:
         if df[col].dtype in ('int64', 'int32', 'float64'):
             if 2 <= df[col].nunique() <= 10:

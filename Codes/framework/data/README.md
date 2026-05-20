@@ -1,186 +1,222 @@
-# 📦 Data Module
+# `framework/data` — Universal Data Pipeline
 
-A unified dataset loading and preprocessing toolkit for the Efficient Transformer Toolkit.  
-Supports GLUE benchmarks, custom files (CSV/JSON/Parquet), multi‑choice datasets, and synthetic data generation.
+The `data` module provides a **model‑agnostic, task‑aware** data pipeline for loading, preprocessing, augmenting, and validating datasets. It supports GLUE, custom files (CSV/JSON/Parquet), synthetic text generation, multi‑choice datasets, and any other dataset available through the HuggingFace Hub. All components are designed to work with **any** HuggingFace tokenizer (BERT, Llama, Gemma, …) and seamlessly connect to the compression and training pipelines of the Efficient Transformer Toolkit.
 
-## 📁 Structure
+---
 
-```
-framework/data/
-├── __init__.py                # Consolidated exports
-├── dataset_loader.py          # Unified loader (ExperimentConfig + load_dataset)
-├── glue_loader.py             # Local GLUE Parquet loader
-├── custom_loader.py           # CSV/JSON/Parquet loader with auto‑detection
-├── multi_choice.py            # MultiChoiceDataset and utilities
-├── preprocessing.py           # Tokenization helpers
-├── synthetic_generator.py     # Synthetic text classification data
-├── task_mapper.py             # GLUE metadata (metrics, labels, columns)
-└── README.md                  # This file
-```
+## Overview
 
-## 🚀 Quick Start
+| Module | Purpose |
+|--------|---------|
+| `base.py` | `DataConfig` / `TaskType`, generic `preprocess_function`, `create_dataloader` |
+| `dataset_loader.py` | `ExperimentConfig`, unified `load_dataset()` (GLUE, custom, synthetic, hub) |
+| `glue_loader.py` | Load GLUE tasks from local Parquet files, metadata keys |
+| `task_mapper.py` | Mapping: task → metric, number of labels, text columns |
+| `multi_choice.py` | `MultiChoiceDataset` and helpers for ARC, HellaSwag, … |
+| `synthetic_generator.py` | Generate synthetic classification datasets across multiple domains |
+| `validation.py` | `DataValidator` – missing values, infinities, schema checks |
+| `augmentation.py` | Augmentation registry (random mask, back‑translation placeholder) |
+| `custom_loader.py` | Load datasets from CSV, JSON, Parquet files with automatic column detection |
+| `dataset_discovery.py` | (optional) list available local datasets |
+
+---
+
+## Quick Start
 
 ```python
-from framework.data import load_dataset, ExperimentConfig
-
-# 1. Load a GLUE task
-config = ExperimentConfig(
-    dataset_name="mrpc",
-    glue_base_path="/path/to/glue"
+from framework.data import (
+    DataConfig, TaskType, preprocess_function, create_dataloader,
+    ExperimentConfig, load_dataset, get_num_labels_and_is_regression,
+    GLUE_TASK_KEYS
 )
-dataset = load_dataset(config)
-
-# 2. Load a custom CSV file
-config = ExperimentConfig(
-    dataset_name="my_data.csv",
-    split_ratio=0.8
-)
-dataset = load_dataset(config)
-
-# 3. Generate synthetic data
-config = ExperimentConfig(
-    dataset_name="synthetic",
-    synthetic_samples=2000
-)
-dataset = load_dataset(config)
-```
-
-## 📚 Detailed Documentation
-
-### 1. `ExperimentConfig` (Configuration)
-
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `dataset_name` | str | GLUE task, file path, "synthetic", or HF hub name | required |
-| `dataset_path` | str | Path to custom dataset file (if not in `dataset_name`) | None |
-| `task_type` | str | `"single"`, `"pair"`, `"multi_choice"`, `"regression"` | `"single"` |
-| `text_columns` | list | Column names for text (auto‑detected if None) | None |
-| `label_column` | str | Column name for labels (auto‑detected) | None |
-| `num_labels` | int | Number of classes (classification) | 2 |
-| `metric` | str | Evaluation metric | `"accuracy"` |
-| `max_seq_length` | int | Tokenization max length | 128 |
-| `split_ratio` | float | Fraction for validation (custom datasets) | 0.1 |
-| `synthetic_samples` | int | Number of samples (synthetic) | 5000 |
-| `glue_base_path` | str | Base directory for GLUE Parquet files | `"./data/glue"` |
-
-### 2. `load_dataset()` – Unified Loader
-
-```python
-def load_dataset(config: ExperimentConfig) -> DatasetDict
-```
-
-Returns a Hugging Face `DatasetDict` with at least `"train"` and (if applicable) `"validation"` splits.
-
-**Supported dataset types** (auto‑detected via `dataset_name`):
-
-| Type | Name / Pattern | Behaviour |
-|------|----------------|-----------|
-| GLUE | `cola`, `sst2`, `mrpc`, `qqp`, `stsb`, `mnli`, `qnli`, `rte`, `wnli` | Loads local Parquet files from `glue_base_path`. |
-| Synthetic | `"synthetic"` | Generates synthetic data with `synthetic_samples`. |
-| Custom file | ends with `.csv`, `.json`, `.jsonl`, `.parquet` | Loads file; auto‑splits train/val using `split_ratio`. |
-| Multi‑choice | `"multi_choice"` | Loads raw dataset (use `MultiChoiceDataset` afterwards). |
-| Hugging Face hub | any other string | Downloads from `datasets` library; adds validation split if needed. |
-
-### 3. GLUE Loader (`glue_loader.py`)
-
-Handles local Parquet files named `train.parquet`, `validation.parquet`, `test.parquet`.  
-Special handling for MNLI (`validation_matched`, `validation_mismatched`).
-
-```python
-from framework.data import load_glue_local, get_num_labels_and_is_regression
-
-dataset = load_glue_local("mrpc", "/path/to/glue")
-num_labels, is_regression = get_num_labels_and_is_regression("mrpc")
-```
-
-### 4. Custom Loader (`custom_loader.py`)
-
-```python
-from framework.data import load_custom_dataset, load_dataset_from_file
-
-# Load without splitting
-dataset = load_custom_dataset("data.csv", text_column="text", label_column="label")
-
-# Load and split automatically
-dataset = load_dataset_from_file("data.csv", split_ratio=0.8)
-```
-
-**Auto‑detection**: if `text_column`/`label_column` not provided, the loader attempts to find the most suitable column by heuristics.
-
-### 5. Multi‑Choice Datasets (`multi_choice.py`)
-
-```python
-from framework.data import MultiChoiceDataset, is_multichoice_dataset
-
-df = pd.read_csv("arc.csv")
-is_mc, num_choices = is_multichoice_dataset(df)   # (True, 4)
-dataset = MultiChoiceDataset(df, tokenizer, max_length=128)
-batch = dataset[0]  # returns {'input_ids': (num_choices, seq_len), ...}
-```
-
-**Supported formats**:
-- Columns: `choices_json` (JSON list), `endings` (JSON list), or `choice_a`, `choice_b`, … columns.
-- Answer can be in `gold_answer_json` (with `choice_index`), `answer_json`, or a simple `label` column.
-
-### 6. Preprocessing (`preprocessing.py`)
-
-```python
-from framework.data import preprocess_function
-
-preprocess = preprocess_function(tokenizer, task_name="mrpc", max_seq_length=128)
-encoded_dataset = dataset.map(preprocess, batched=True)
-```
-
-For multi‑choice, use `MultiChoiceDataset` directly; the preprocessing function simply returns the examples unchanged.
-
-### 7. Synthetic Generator (`synthetic_generator.py`)
-
-```python
-from framework.data import run_universal_generation, generate_synthetic_data
-
-# Multi‑domain generation (movies, tech, restaurants, books)
-df = run_universal_generation(output_dir=Path("./synthetic"), total_samples_per_domain=5000)
-
-# Single‑domain generation
-df = generate_synthetic_data("output.csv", num_samples=10000, domain="movies")
-```
-
-The generator produces balanced positive/negative samples using configurable templates and vocabulary.
-
-### 8. Task Mapper (`task_mapper.py`)
-
-```python
-from framework.data import get_metric_name, get_num_labels, get_text_columns
-
-metric = get_metric_name("cola")          # "matthews_correlation"
-num_labels = get_num_labels("mrpc")       # 2
-text_cols = get_text_columns("mnli")      # ["premise", "hypothesis"]
-```
-
-Useful for dynamic task handling in training scripts.
-
-## 🔧 Integration with the Training Pipeline
-
-```python
-from framework.data import load_dataset, ExperimentConfig, preprocess_function
 from transformers import AutoTokenizer
 
-config = ExperimentConfig(dataset_name="mrpc", glue_base_path="./data/glue")
-raw_dataset = load_dataset(config)
+# 1. Define the data configuration
+config = DataConfig(
+    task_type=TaskType.SINGLE_CLASSIFICATION,
+    text_column_1="sentence",
+    label_column="label",
+    max_length=128,
+    batch_size=16,
+    shuffle=True,
+)
 
+# 2. Load a GLUE task
+dataset = load_dataset(ExperimentConfig(dataset_name="sst2"))
+
+# 3. Tokenize and create DataLoader
 tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
-preprocess = preprocess_function(tokenizer, task_name="mrpc")
-encoded_dataset = raw_dataset.map(preprocess, batched=True)
+train_loader = create_dataloader(dataset["train"], tokenizer, config)
 ```
 
-## 📜 Dependencies
+---
 
-- `datasets` (Hugging Face)
-- `pandas`, `numpy`
-- `torch`
-- `scikit‑learn` (for metrics, used internally)
-- `pyarrow` (for Parquet support)
+## `base.py` – Core Data Abstractions
 
-## 📄 License
+### `TaskType`
+Enum with common task types:
+- `SINGLE_CLASSIFICATION`, `PAIR_CLASSIFICATION`, `REGRESSION`
+- `QA`, `TOKEN_CLASSIFICATION`, `LANGUAGE_MODELING`, `SEQ2SEQ`
 
-Part of the **Efficient Transformer Toolkit** – MIT License.
+### `DataConfig`
+Dataclass that holds all preprocessing parameters:
+- `task_type`, `max_length`, `batch_size`, `shuffle`
+- `text_column_1` / `text_column_2` – for single or pair tasks
+- `label_column`, `question_column`, `context_column`, `answer_column` (QA)
+- `tokens_column`, `tags_column` (token classification)
+- `custom_preprocess` – optional user‑supplied function to bypass default logic
+
+### `preprocess_function(examples, tokenizer, config)`
+Handles all task types automatically:
+- **Classification/Regression**: tokenizes text(s), converts labels to int/float
+- **QA**: tokenizes question+context, computes start/end token positions from character offsets
+- **Token Classification**: tokenizes words (already split), aligns labels with word IDs
+- **Language Modeling**: simple tokenization (labels are handled by the trainer)
+
+### `create_dataloader(dataset, tokenizer, config)`
+Applies `preprocess_function` via `dataset.map()`, sets format to PyTorch tensors, returns a standard PyTorch `DataLoader`.
+
+---
+
+## `dataset_loader.py` – Unified Dataset Loading
+
+### `ExperimentConfig`
+A single configuration object for loading any dataset. Key fields:
+- `dataset_name` – GLUE task name, file path, `"synthetic"`, `"multi_choice"`, or HF hub identifier
+- `dataset_path` – path to local file (for custom/multi‑choice)
+- `task_type`, `text_columns`, `label_column`, `num_labels`, `metric`
+- `split_ratio` – how much data to reserve for validation (custom datasets)
+- `synthetic_samples` – number of samples to generate (if `dataset_name="synthetic"`)
+- `glue_base_path` – directory containing GLUE Parquet files (auto‑resolved to the framework’s glue dir if not set)
+
+### `load_dataset(config) -> DatasetDict`
+Dispatches to the appropriate loader based on `config.dataset_name`:
+- **GLUE tasks** → `_load_glue()`
+- **`"synthetic"`** → `_load_synthetic()`
+- **File extensions** (`.csv`, `.json`, `.parquet`) → `_load_custom()`
+- **`"multi_choice"`** → `_load_multi_choice()`
+- **Any other string** → HuggingFace `datasets.load_dataset()`
+
+All paths return a HuggingFace `DatasetDict` with at least a `"train"` split.
+
+---
+
+## `glue_loader.py` – GLUE Task Support
+
+- **`GLUE_TASK_KEYS`** – dictionary mapping task name to `(sentence1_key, sentence2_key)`
+- **`load_glue_local(task_name, base_path)`** – loads a GLUE task from local Parquet files (supports standard HF cache naming). Handles MNLI’s matched/mismatched splits automatically.
+- **`get_num_labels_and_is_regression(task_name)`** – returns `(num_labels, is_regression)`
+
+---
+
+## `task_mapper.py` – Task Metadata
+
+- `TASK_METRICS` – metric name per task (e.g., `"sst2"` → `"accuracy"`, `"stsb"` → `"pearson"`)
+- `TASK_NUM_LABELS` – number of classes for classification tasks
+- `TASK_COLUMNS` – list of text column names per task
+- Functions: `get_metric_name(task)`, `get_num_labels(task, dataset=None)`, `get_text_columns(task)`
+
+---
+
+## `multi_choice.py` – Multi‑Choice Datasets
+
+- **`MultiChoiceDataset(df, tokenizer, max_length, …)`** – PyTorch `Dataset` that returns a stack of tokenized inputs for each choice, suitable for models that score multiple options.
+- **`is_multichoice_dataset(df)`** – detect if a DataFrame contains multi‑choice data (based on `choices_json`, `endings`, or `choice_*` columns)
+- **`convert_to_multichoice_format(df)`** – normalise any multi‑choice DataFrame into a standard `(question, choices, label)` format
+
+---
+
+## `synthetic_generator.py` – Synthetic Data Generation
+
+- **`generate_synthetic_data(output_path, num_samples, domain, seed)`** – generates a single‑domain classification dataset (positive/negative reviews) using templates and domain‑specific vocabulary. Saves as CSV.
+- **`run_universal_generation(output_dir, total_samples_per_domain, domains, seed)`** – generates data across multiple domains (movies, tech, restaurants, books) and combines them into a master CSV.
+
+Domains are defined in `DEFAULT_DOMAINS` with positive/negative adjectives, verbs, nouns, and templates.
+
+---
+
+## `validation.py` – Data Validation
+
+- **`DataValidator(schema)`** – validates a dictionary of numpy arrays or lists for:
+  - Missing values
+  - Infinite values
+  - Zero variance
+  - Schema bounds (`min`, `max`)
+- Returns a `ValidationReport` with `checks_passed`, `checks_failed`, `issues`, and `is_valid` flag.
+
+---
+
+## `augmentation.py` – Augmentation Registry
+
+- **`AUGMENTATION_REGISTRY`** – a `Registry` instance for data augmentation functions
+- **`random_mask_augment(dataset, mask_prob=0.15)`** – replaces random tokens with `[MASK]` (id 103) for BERT‑style masking
+- **`dummy_back_translation(dataset)`** – placeholder for future back‑translation augmentation
+
+Register new augmentations using `@AUGMENTATION_REGISTRY.register("name")`.
+
+---
+
+## `custom_loader.py` – Custom File Loading
+
+- **`load_custom_dataset(file_path, text_column, label_column, file_format)`** – loads a CSV/JSON/Parquet file into a `DatasetDict`. Auto‑detects text and label columns if not specified.
+- **`load_dataset_from_file(file_path, split_ratio, shuffle, seed)`** – splits a single file into train/validation sets.
+
+---
+
+## `dataset_discovery.py` (optional)
+
+- **`list_local_datasets(base_dir)`** – returns names of subdirectories inside `base_dir`, useful for discovering GLUE datasets stored locally.
+
+---
+
+## Integration with the Rest of the Framework
+
+- **Attention Injection & Compression**: After loading a model and injecting custom attention (using `framework.core.attention_utils.inject_attention()`), you can directly use the data pipeline to prepare DataLoaders for fine‑tuning or evaluation.
+- **Training Script**: Use `DataConfig` together with `TrainingArguments` from HuggingFace. The `create_dataloader` output is ready for `Trainer`.
+- **Full Example**:
+
+```python
+from framework.core import UnifiedTransformerModel, compress_model
+from framework.data import load_dataset, DataConfig, TaskType, create_dataloader
+from transformers import AutoTokenizer, Trainer, TrainingArguments
+
+# Model
+model = UnifiedTransformerModel.from_pretrained("distilbert-base-uncased")
+model.replace_attention("galerkin", rank=32)
+
+# Data
+dataset = load_dataset(ExperimentConfig(dataset_name="sst2"))
+config = DataConfig(task_type=TaskType.SINGLE_CLASSIFICATION,
+                    text_column_1="sentence", label_column="label")
+tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
+train_loader = create_dataloader(dataset["train"], tokenizer, config)
+val_loader = create_dataloader(dataset["validation"], tokenizer, config)
+
+# Train
+training_args = TrainingArguments(...)
+trainer = Trainer(model=model, args=training_args,
+                  train_dataset=train_loader.dataset,
+                  eval_dataset=val_loader.dataset)
+trainer.train()
+```
+
+---
+
+## Supported Models & Tokenizers
+
+The data pipeline works with **any** HuggingFace tokenizer. The preprocessing function uses standard tokenizer methods (`tokenizer()`, `tokenizer.word_ids()`) and is thus independent of model architecture. Tested with:
+
+- BERT, DistilBERT, RoBERTa
+- GPT‑2
+- Llama‑2, Llama‑3, Mistral, Gemma, Phi
+
+---
+
+## Extending the Data Pipeline
+
+- **New task types**: Add an entry to `TaskType` and a corresponding branch in `preprocess_function`.
+- **New dataset source**: Implement a loader function and add a dispatch in `load_dataset`.
+- **Custom preprocessing**: Provide a `custom_preprocess` callable in `DataConfig`.
+- **New augmentations**: Decorate a function with `@AUGMENTATION_REGISTRY.register(...)`.
+
+The data module is designed to be as generic as possible—any model, any task, any data source.

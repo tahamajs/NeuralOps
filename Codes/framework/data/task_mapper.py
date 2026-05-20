@@ -1,4 +1,7 @@
-# framework/data/task_mapper.py
+"""
+Task metadata: metrics, number of labels, text columns.
+"""
+
 TASK_METRICS = {
     "cola": "matthews_correlation",
     "sst2": "accuracy",
@@ -31,6 +34,7 @@ TASK_COLUMNS = {
     "mnli": ["premise", "hypothesis"],
     "stsb": ["sentence1", "sentence2"],
 }
+
 
 def get_metric_name(task: str) -> str:
     return TASK_METRICS.get(task, "accuracy")

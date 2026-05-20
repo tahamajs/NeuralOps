@@ -1,6 +1,10 @@
-# framework/data/glue_loader.py
+"""
+GLUE data loader – local Parquet files and task metadata.
+"""
+
 import os
 from datasets import Dataset, DatasetDict
+
 
 GLUE_TASK_KEYS = {
     "cola": ("sentence", None),
@@ -14,25 +18,20 @@ GLUE_TASK_KEYS = {
     "wnli": ("sentence1", "sentence2"),
 }
 
-# framework/data/glue_loader.py
-import os
-from datasets import Dataset, DatasetDict
 
 def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
     """
-    Load a GLUE task from local Parquet files (supports Hugging Face cache naming).
-    Looks for any .parquet file in task_path and assigns split based on filename.
+    Load a GLUE task from local Parquet files.
     """
     task_path = os.path.join(base_path, task_name)
     if not os.path.exists(task_path):
         raise FileNotFoundError(f"Directory not found: {task_path}")
 
-    # Map filename substrings to split names
     split_map = {
         "train": "train",
         "validation": "validation",
         "test": "test",
-        "dev": "validation",      # in case dev appears
+        "dev": "validation",
         "valid": "validation",
     }
 
@@ -40,7 +39,6 @@ def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
     for fname in os.listdir(task_path):
         if not fname.endswith(".parquet"):
             continue
-        # Try to determine split from filename
         found_split = None
         for key, split_name in split_map.items():
             if key in fname.lower():
@@ -49,11 +47,9 @@ def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
         if found_split:
             splits[found_split] = Dataset.from_parquet(os.path.join(task_path, fname))
 
-    # If no splits found, raise error
     if not splits:
         raise RuntimeError(f"No Parquet files found in {task_path}")
 
-    # Special handling for MNLI matched/mismatched
     if task_name == "mnli":
         for special in ["validation_matched", "validation_mismatched"]:
             for fname in os.listdir(task_path):
@@ -62,7 +58,6 @@ def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
 
     if "train" not in splits:
         raise RuntimeError(f"No 'train' split found in {task_path}. Available: {list(splits.keys())}")
-
     return DatasetDict(splits)
 
 

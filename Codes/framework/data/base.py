@@ -26,38 +26,33 @@ class DataConfig:
     padding: bool = True
     truncation: bool = True
     return_tensors: str = "pt"
-    text_column: Optional[str] = None          # for single sentence tasks
-    text_column_1: Optional[str] = None        # for pair tasks
-    text_column_2: Optional[str] = None        # for pair tasks
+    text_column: Optional[str] = None
+    text_column_1: Optional[str] = None
+    text_column_2: Optional[str] = None
     label_column: Optional[str] = None
     batch_size: int = 16
     shuffle: bool = True
     num_workers: int = 0
-    # Language modeling specific
     mlm_probability: float = 0.15
-    # QA specific
     question_column: Optional[str] = None
     context_column: Optional[str] = None
     answer_column: Optional[str] = None
-    # Token classification specific
     tokens_column: Optional[str] = None
     tags_column: Optional[str] = None
-    # Custom preprocess function
     custom_preprocess: Optional[Callable] = None
 
 
 def preprocess_function(examples, tokenizer, config: DataConfig):
     """
-    Generic preprocessing function that handles all TaskTypes.
-    Returns a dictionary with 'input_ids', 'attention_mask', and 'labels'.
+    Generic preprocessing function handling all TaskTypes.
+    Returns a dictionary with 'input_ids', 'attention_mask', and appropriate labels.
     """
     if config.custom_preprocess is not None:
         return config.custom_preprocess(examples, tokenizer, config)
 
-    text1 = examples[config.text_column_1] if config.text_column_1 else None
-    text2 = examples[config.text_column_2] if config.text_column_2 else None
+    text1 = examples.get(config.text_column_1) if config.text_column_1 else None
+    text2 = examples.get(config.text_column_2) if config.text_column_2 else None
 
-    # Build tokenizer arguments
     tokenizer_kwargs = {
         "truncation": config.truncation,
         "padding": config.padding,
@@ -66,7 +61,6 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
     }
 
     if config.task_type == TaskType.LANGUAGE_MODELING:
-        # Use tokenizer for MLM or CLM; return input_ids only (labels are handled later)
         result = tokenizer(text1, **tokenizer_kwargs) if text1 else tokenizer(text2, **tokenizer_kwargs)
         return result
 
@@ -79,7 +73,6 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
             is_split_into_words=True,
             return_tensors=config.return_tensors,
         )
-        # Align labels with tokenized words
         labels = []
         for i, label_list in enumerate(examples[config.tags_column]):
             word_ids = tokenized.word_ids(batch_index=i)
@@ -102,7 +95,6 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
             tokenized = tokenizer(text1, text2, **tokenizer_kwargs)
         else:
             tokenized = tokenizer(text1 or text2, **tokenizer_kwargs)
-        # Convert labels to appropriate type
         if config.task_type == TaskType.REGRESSION:
             tokenized["labels"] = [float(l) for l in examples[config.label_column]]
         else:
@@ -119,10 +111,8 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
             return_offsets_mapping=True,
             return_tensors=config.return_tensors,
         )
-        start_positions = []
-        end_positions = []
+        start_positions, end_positions = [], []
         for i, (ans, context) in enumerate(zip(examples[config.answer_column], examples[config.context_column])):
-            # Assume answer is a dict with 'text' and 'answer_start'
             if isinstance(ans, dict):
                 start_char = ans["answer_start"]
                 end_char = start_char + len(ans["text"])
@@ -131,7 +121,6 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
                 end_char = start_char + len(examples[config.answer_column][i])
             offsets = tokenized["offset_mapping"][i]
             sequence_ids = tokenized.sequence_ids(i)
-            # Find start and end token
             start_token = end_token = None
             for j, (start, end) in enumerate(offsets):
                 if sequence_ids[j] != 1:
@@ -149,7 +138,6 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
             end_positions.append(end_token)
         tokenized["start_positions"] = start_positions
         tokenized["end_positions"] = end_positions
-        # Remove offset mapping from final output
         tokenized.pop("offset_mapping")
         return tokenized
 
@@ -160,15 +148,15 @@ def create_dataloader(dataset, tokenizer, config: DataConfig, **kwargs) -> DataL
     """
     Create a DataLoader from a HuggingFace Dataset, applying preprocessing.
     """
-    # Apply preprocessing as a map function
     processed = dataset.map(
         lambda examples: preprocess_function(examples, tokenizer, config),
         batched=True,
         remove_columns=dataset.column_names,
     )
-    processed.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"]
-                         if config.task_type != TaskType.QA
-                         else ["input_ids", "attention_mask", "start_positions", "end_positions"])
+    columns = ["input_ids", "attention_mask", "labels"]
+    if config.task_type == TaskType.QA:
+        columns = ["input_ids", "attention_mask", "start_positions", "end_positions"]
+    processed.set_format(type="torch", columns=columns)
     return DataLoader(
         processed,
         batch_size=config.batch_size,

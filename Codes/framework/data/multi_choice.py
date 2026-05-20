@@ -1,10 +1,14 @@
-# framework/data/multi_choice.py
+"""
+Multi‑choice dataset (ARC, HellaSwag, etc.) handling.
+"""
+
 import torch
 import json
 import pandas as pd
 from torch.utils.data import Dataset
 from typing import List, Dict, Tuple, Optional
 from datasets import Dataset as HFDataset
+
 
 class MultiChoiceDataset(Dataset):
     """Dataset for multi‑choice questions (ARC, HellaSwag, etc.)."""
@@ -113,7 +117,9 @@ class MultiChoiceDataset(Dataset):
             'labels': torch.tensor(label, dtype=torch.long)
         }
 
+
 def is_multichoice_dataset(df: pd.DataFrame) -> Tuple[bool, int]:
+    """Check if a DataFrame contains a multi‑choice format and return the number of choices."""
     if 'choices_json' in df.columns:
         sample = df['choices_json'].iloc[0]
         if isinstance(sample, str):
@@ -129,7 +135,9 @@ def is_multichoice_dataset(df: pd.DataFrame) -> Tuple[bool, int]:
         return True, len(choice_cols)
     return False, 0
 
+
 def convert_to_multichoice_format(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalise a DataFrame into the standard multi‑choice format (question, choices, label)."""
     rows = []
     for _, row in df.iterrows():
         q = row.get('prompt', row.get('ctx', ''))
