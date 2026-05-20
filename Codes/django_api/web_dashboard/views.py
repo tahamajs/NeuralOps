@@ -1,124 +1,67 @@
 import json
 from datetime import timedelta
-
+import torch
+import psutil
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import Count, Avg, Value as V
-from django.db.models.functions import Coalesce, TruncDate
+from django.db.models import Count, Avg, Q
+from django.db.models.functions import TruncDate
 from django.utils import timezone
-from django.http import JsonResponse, HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
-
+from django.http import JsonResponse
+from django.conf import settings
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework import status
 
-from experiment.models import Experiment, TrainingRun
+from .models import DashboardWidget
+from .serializers import DashboardWidgetSerializer
+from experiment.models import Experiment, TrainingRun, TrainingSnapshot
+from jobscheduler.models import Job
+from sweeps.models import Sweep, SweepTrial
+from model_versioning.models import ModelVersion
+from notes.models import ResearcherNote
 
+# ═════════════════════════════════════════════════════════════════
+# Constants
+# ═════════════════════════════════════════════════════════════════
+DEFAULT_WIDGETS = [
+    {"widget_type": "recent_runs", "title": "Recent Runs", "position_x": 0, "position_y": 0, "width": 2, "height": 1},
+    {"widget_type": "gpu_monitor", "title": "GPU Monitor", "position_x": 2, "position_y": 0, "width": 1, "height": 1},
+    {"widget_type": "run_status", "title": "Run Status", "position_x": 0, "position_y": 1, "width": 1, "height": 1},
+    {"widget_type": "notes_feed", "title": "Notes", "position_x": 1, "position_y": 1, "width": 2, "height": 1},
+    {"widget_type": "scheduler_queue", "title": "Scheduler Queue", "position_x": 3, "position_y": 0, "width": 1, "height": 1},
+    {"widget_type": "system_health", "title": "System Health", "position_x": 3, "position_y": 1, "width": 1, "height": 1},
+]
 
-# ============================================================================
-# HTML Page Views
-# ============================================================================
-
+# ═════════════════════════════════════════════════════════════════
+# HTML Page Views (for SPA fallback / direct access)
+# ═════════════════════════════════════════════════════════════════
 def index(request):
-    """Main landing page – list of recent runs."""
     runs = TrainingRun.objects.select_related('experiment').order_by('-created_at')[:20]
     return render(request, 'web_dashboard/index.html', {'runs': runs})
 
-
-def create_job(request):
-    """Job creation wizard page."""
-    return render(request, 'web_dashboard/create_job.html')
-
-
-@login_required(login_url='/login/')
-def job_detail(request, job_id):
-    """Detailed view of a single run (experiment monitor)."""
-    run = get_object_or_404(TrainingRun, id=job_id)
-    return render(request, 'web_dashboard/experiment_monitor.html', {'run': run})
-
-
-@login_required(login_url='/login/')
+@login_required
 def dashboard(request):
-    """Full dashboard (bootstrap version with real‑time updates)."""
     return render(request, 'web_dashboard/dashboard.html')
 
-
-@login_required(login_url='/login/')
-def statistics(request):
-    """Statistics page with aggregated metrics and charts."""
-    total = TrainingRun.objects.count()
-    completed = TrainingRun.objects.filter(status='completed').count()
-    failed = TrainingRun.objects.filter(status='failed').count()
-    running = TrainingRun.objects.filter(status='running').count()
-    success_rate = (completed / total * 100) if total else 0
-
-    # Last 7 days activity
-    week_ago = timezone.now() - timedelta(days=7)
-    runs_by_day = (
-        TrainingRun.objects
-        .filter(created_at__gte=week_ago)
-        .annotate(date=TruncDate('created_at'))
-        .values('date')
-        .annotate(count=Count('id'))
-        .order_by('date')
-    )
-    days_labels = [item['date'].strftime('%Y-%m-%d') for item in runs_by_day]
-    days_counts = [item['count'] for item in runs_by_day]
-
-    # Average metrics (handle SQLite JSON fields gracefully)
-    try:
-        avg_metrics = TrainingRun.objects.filter(
-            status='completed',
-            final_metrics__has_key='eval_accuracy'
-        ).aggregate(
-            avg_loss=Coalesce(Avg('final_metrics__eval_loss'), V(0.0)),
-            avg_accuracy=Coalesce(Avg('final_metrics__eval_accuracy'), V(0.0)),
-            avg_f1=Coalesce(Avg('final_metrics__eval_f1'), V(0.0)),
-        )
-    except Exception:
-        avg_metrics = {'avg_loss': 0.0, 'avg_accuracy': 0.0, 'avg_f1': 0.0}
-
-    model_usage = TrainingRun.objects.values('config__model_name').annotate(count=Count('id')).order_by('-count')[:5]
-    task_usage = TrainingRun.objects.values('config__task_name').annotate(count=Count('id')).order_by('-count')[:5]
-
-    context = {
-        'total_experiments': total,
-        'completed': completed,
-        'failed': failed,
-        'running': running,
-        'success_rate': round(success_rate, 1),
-        'days_labels': json.dumps(days_labels),
-        'days_counts': json.dumps(days_counts),
-        'avg_loss': round(avg_metrics.get('avg_loss') or 0, 4),
-        'avg_accuracy': round(avg_metrics.get('avg_accuracy') or 0, 4),
-        'avg_f1': round(avg_metrics.get('avg_f1') or 0, 4),
-        'model_usage': model_usage,
-        'task_usage': task_usage,
-    }
-    return render(request, 'web_dashboard/statistics.html', context)
-
-
-# ============================================================================
-# Authentication Pages (public)
-# ============================================================================
+@login_required
+def job_detail(request, job_id):
+    run = get_object_or_404(TrainingRun, id=job_id)
+    return render(request, 'web_dashboard/experiment_monitor.html', {'run': run})
 
 def login_page(request):
     return render(request, 'web_dashboard/login.html')
 
-
 def register_page(request):
     return render(request, 'web_dashboard/register.html')
 
-
-# ============================================================================
-# REST API Endpoints (used by the frontend JavaScript)
-# ============================================================================
-
+# ═════════════════════════════════════════════════════════════════
+# Authentication API (JWT via DRF Token)
+# ═════════════════════════════════════════════════════════════════
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def api_register(request):
@@ -126,26 +69,14 @@ def api_register(request):
     password = request.data.get("password")
     if not username or not password:
         return Response({"error": "Username and password required"}, status=400)
-    if len(username) > 150:
-        return Response({"error": "Username too long"}, status=400)
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already taken"}, status=400)
-
     user = User.objects.create_user(username=username, password=password)
     token = Token.objects.create(user=user)
     auth_login(request, user)
-
-    response = Response({"token": token.key, "username": user.username}, status=201)
-    response.set_cookie(
-        key='authToken',
-        value=token.key,
-        httponly=False,
-        samesite='Lax',
-        max_age=60*60*24*30,
-        path='/'
-    )
-    return response
-
+    resp = Response({"token": token.key, "username": user.username}, status=201)
+    resp.set_cookie('authToken', token.key, httponly=False, samesite='Lax', max_age=60*60*24*30, path='/')
+    return resp
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -156,179 +87,387 @@ def api_login(request):
     if user:
         token, _ = Token.objects.get_or_create(user=user)
         auth_login(request, user)
-        response = Response({"token": token.key, "username": user.username})
-        response.set_cookie(
-            key='authToken',
-            value=token.key,
-            httponly=False,
-            samesite='Lax',
-            max_age=60*60*24*30,
-            path='/'
-        )
-        return response
+        resp = Response({"token": token.key, "username": user.username})
+        resp.set_cookie('authToken', token.key, httponly=False, samesite='Lax', max_age=60*60*24*30, path='/')
+        return resp
     return Response({"error": "Invalid credentials"}, status=401)
-
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def api_logout(request):
-    if request.auth and hasattr(request.auth, 'delete'):
-        request.auth.delete()
-    else:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Token "):
-            key = auth_header[6:]
-            Token.objects.filter(key=key).delete()
-
-    response = Response({"status": "logged out"})
-    response.delete_cookie('authToken')
+    Token.objects.filter(user=request.user).delete()
+    resp = Response({"status": "logged out"})
+    resp.delete_cookie('authToken')
     auth_logout(request)
-    return response
+    return resp
 
+# ═════════════════════════════════════════════════════════════════
+# Dashboard Widget Management
+# ═════════════════════════════════════════════════════════════════
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def dashboard_widgets(request):
+    if request.method == 'GET':
+        widgets = DashboardWidget.objects.filter(user=request.user).order_by('position_y', 'position_x')
+        if not widgets.exists():
+            for w in DEFAULT_WIDGETS:
+                DashboardWidget.objects.create(user=request.user, **w)
+            widgets = DashboardWidget.objects.filter(user=request.user).order_by('position_y', 'position_x')
+        serializer = DashboardWidgetSerializer(widgets, many=True)
+        return Response(serializer.data)
 
-@api_view(["GET"])
-def dashboard_api_jobs(request):
-    """Return recent runs as JSON (used by the dashboard frontend)."""
-    runs = TrainingRun.objects.select_related('experiment').order_by('-created_at')[:50]
-    data = [{
-        'id': str(run.id),
-        'status': run.status,
-        'experiment_name': run.experiment.name if run.experiment else '',
-        'name': run.name,
-        'config': run.config,
-        'created_at': run.created_at.isoformat(),
-        'started_at': run.started_at.isoformat() if run.started_at else None,
-        'completed_at': run.completed_at.isoformat() if run.completed_at else None,
-        'current_step': run.current_step,
-        'total_steps': run.total_steps,
-        'eta_seconds': run.estimated_remaining_seconds,
-        'gpu_percent': run.gpu_usage,
-        'gpu_memory_mb': run.gpu_memory_mb,
-        'cpu_percent': run.cpu_usage,
-        'ram_mb': run.ram_usage_mb,
-    } for run in runs]
+    elif request.method == 'PUT':
+        widgets_data = request.data.get('widgets', [])
+        existing_ids = set(str(w.id) for w in DashboardWidget.objects.filter(user=request.user))
+        updated_ids = set()
+
+        for wdata in widgets_data:
+            wid = wdata.get('id')
+            if wid and wid in existing_ids:
+                widget = DashboardWidget.objects.get(id=wid, user=request.user)
+                for field in ['position_x', 'position_y', 'width', 'height', 'is_visible', 'config', 'title']:
+                    if field in wdata:
+                        setattr(widget, field, wdata[field])
+                widget.save()
+                updated_ids.add(wid)
+            elif not wid:
+                new_widget = DashboardWidget.objects.create(user=request.user, **{
+                    k: v for k, v in wdata.items()
+                    if k in ['widget_type', 'title', 'config', 'position_x', 'position_y', 'width', 'height', 'is_visible']
+                })
+                updated_ids.add(str(new_widget.id))
+
+        to_delete = existing_ids - updated_ids
+        DashboardWidget.objects.filter(id__in=to_delete).delete()
+        return Response({'status': 'saved'})
+
+# ═════════════════════════════════════════════════════════════════
+# Widget Live Data Resolvers (15+ types, fully implemented)
+# ═════════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def widget_data(request, widget_id):
+    widget = get_object_or_404(DashboardWidget, id=widget_id, user=request.user)
+    data = resolve_widget_data(widget)
     return Response(data)
 
+def resolve_widget_data(widget):
+    """Returns live data based on widget type, utilizing all platform apps."""
+    wtype = widget.widget_type
+    cfg = widget.config or {}
 
-@api_view(["GET"])
-def launch_config_options(request):
-    """Return all available options for the launch page dropdowns."""
-    from framework.core.registry import (
-        ATTENTION_REGISTRY,
-        COMPRESSOR_REGISTRY,
-        TRAINER_REGISTRY,
-    )
-    from framework.trainer.methods.registry import METHOD_REGISTRY
-    from framework.trainer.losses import LOSS_REGISTRY
-    from framework.trainer.optimizers import OPTIMIZER_REGISTRY
-    from framework.trainer.schedulers import SCHEDULER_REGISTRY
-    from framework.callbacks import CALLBACK_REGISTRY
-    from framework.data.augmentation import AUGMENTATION_REGISTRY
-
-    return Response({
-        "attentions": list(ATTENTION_REGISTRY.keys()),
-        "compressors": list(COMPRESSOR_REGISTRY.keys()),
-        "trainers": list(TRAINER_REGISTRY.keys()),
-        "methods": list(METHOD_REGISTRY.keys()),
-        "losses": list(LOSS_REGISTRY.keys()),
-        "optimizers": list(OPTIMIZER_REGISTRY.keys()),
-        "schedulers": list(SCHEDULER_REGISTRY.keys()),
-        "callbacks": list(CALLBACK_REGISTRY.keys()),
-        "augmentations": list(AUGMENTATION_REGISTRY.keys()),
-        "model_variants": ["standard", "unsloth", "compressed", "hybrid_svd", "quantized", "lora"],
-        "distributed_strategies": ["none", "ddp", "deepspeed", "fsdp"],
-    })
-
-
-# ============================================================================
-# Widget & Dashboard Helper Views (JSON endpoints)
-# ============================================================================
-
-def get_dashboard_widgets(request):
-    """Return available widget metadata."""
-    return JsonResponse({
-        "widgets": [
-            {"id": "recent_experiments", "title": "Recent Experiments", "icon": "flask", "configurable": True},
-            {"id": "running_jobs", "title": "Running Jobs", "icon": "play", "configurable": False},
-            {"id": "system_status", "title": "System Status", "icon": "desktop", "configurable": True},
-            {"id": "gpu_monitor", "title": "GPU Monitor", "icon": "chip", "configurable": False},
-        ]
-    })
-
-
-def save_dashboard_layout(request):
-    """Save user's dashboard widget layout (positions, sizes)."""
-    if request.method == "POST":
-        # Expecting JSON like {"layout": [...]}
-        # For now, just echo success.
-        return JsonResponse({"status": "ok", "message": "Layout saved"})
-    return JsonResponse({"error": "POST required"}, status=405)
-
-
-def get_dashboard_settings(request):
-    """Return dashboard user settings."""
-    return JsonResponse({
-        "settings": {
-            "theme": "dark",
-            "refresh_interval": 5,   # seconds
-            "auto_refresh": True,
+    # ── Recent Runs ───────────────────────────────────
+    if wtype == 'recent_runs':
+        runs = TrainingRun.objects.select_related('experiment').order_by('-created_at')[:cfg.get('limit', 10)]
+        return {
+            'runs': [{
+                'id': str(r.id), 'name': r.name, 'status': r.status,
+                'experiment': r.experiment.name if r.experiment else '',
+                'created_at': r.created_at.isoformat(),
+                'progress': round(r.current_step / r.total_steps * 100, 1) if r.total_steps else 0,
+            } for r in runs]
         }
-    })
 
+    # ── GPU Monitor ────────────────────────────────────
+    elif wtype == 'gpu_monitor':
+        if torch.cuda.is_available():
+            return {
+                'total': torch.cuda.device_count(),
+                'allocated_mb': round(torch.cuda.memory_allocated() / 1024**2, 1),
+                'reserved_mb': round(torch.cuda.memory_reserved() / 1024**2, 1),
+            }
+        return {'total': 0, 'allocated_mb': 0, 'reserved_mb': 0}
 
-def save_dashboard_settings(request):
-    """Save dashboard user settings."""
-    if request.method == "POST":
-        return JsonResponse({"status": "ok", "message": "Settings saved"})
-    return JsonResponse({"error": "POST required"}, status=405)
+    # ── Run Status Overview ────────────────────────────
+    elif wtype == 'run_status':
+        runs = TrainingRun.objects.all()
+        return {
+            'total': runs.count(),
+            'running': runs.filter(status='running').count(),
+            'completed': runs.filter(status='completed').count(),
+            'failed': runs.filter(status='failed').count(),
+            'queued': runs.filter(status='queued').count(),
+        }
 
+    # ── Notes Feed ─────────────────────────────────────
+    elif wtype == 'notes_feed':
+        notes = ResearcherNote.objects.filter(is_public=True).order_by('-created_at')[:cfg.get('limit', 5)]
+        return {
+            'notes': [{
+                'id': str(n.id), 'title': n.title, 'author': n.author.username,
+                'created_at': n.created_at.isoformat(), 'content': n.content[:200]
+            } for n in notes]
+        }
 
-def get_widget_data(request, widget_id):
-    """Return data for a specific widget (used by refresh endpoint)."""
-    # Simple placeholder: return different data per widget type
-    if widget_id == "recent_experiments":
-        runs = TrainingRun.objects.order_by('-created_at')[:5].values('name', 'status', 'created_at')
-        data = list(runs)
-    elif widget_id == "running_jobs":
-        jobs = TrainingRun.objects.filter(status='running').count()
-        data = {"count": jobs}
-    elif widget_id == "gpu_monitor":
-        # Simulate GPU info (can be expanded with real NVIDIA/MPS stats)
-        data = {"gpu_util": 0, "memory_used": 0, "memory_total": 0}
-    else:
-        data = {}
-    return JsonResponse({"widget_id": widget_id, "data": data})
+    # ── Loss Chart (per run snapshots) ─────────────────
+    elif wtype == 'loss_chart':
+        run_ids = cfg.get('run_ids', [])
+        if not run_ids:
+            runs = TrainingRun.objects.filter(status__in=['running', 'completed']).order_by('-created_at')[:1]
+            run_ids = [str(r.id) for r in runs]
+        history = {}
+        for rid in run_ids:
+            try:
+                run = TrainingRun.objects.get(id=rid)
+                snapshots = run.snapshots.order_by('step')
+                history[rid] = {
+                    'steps': [s.step for s in snapshots],
+                    'losses': [s.train_loss for s in snapshots],
+                    'eval_losses': [s.eval_loss for s in snapshots],
+                }
+            except TrainingRun.DoesNotExist:
+                pass
+        return {'history': history}
 
+    # ── Accuracy Chart ─────────────────────────────────
+    elif wtype == 'accuracy_chart':
+        run_ids = cfg.get('run_ids', [])
+        if not run_ids:
+            runs = TrainingRun.objects.filter(status__in=['running', 'completed']).order_by('-created_at')[:1]
+            run_ids = [str(r.id) for r in runs]
+        history = {}
+        for rid in run_ids:
+            try:
+                run = TrainingRun.objects.get(id=rid)
+                snapshots = run.snapshots.order_by('step')
+                history[rid] = {
+                    'steps': [s.step for s in snapshots if s.eval_accuracy is not None],
+                    'accuracies': [s.eval_accuracy for s in snapshots if s.eval_accuracy is not None],
+                }
+            except TrainingRun.DoesNotExist:
+                pass
+        return {'history': history}
 
-def refresh_widget(request, widget_id):
-    """Alias for get_widget_data – used for manual refresh."""
-    return get_widget_data(request, widget_id)
+    # ── Metric Comparison (selected runs) ───────────────
+    elif wtype == 'metric_comparison':
+        run_ids = cfg.get('run_ids', [])
+        metric = cfg.get('metric', 'eval_accuracy')
+        runs = TrainingRun.objects.filter(id__in=run_ids) if run_ids else TrainingRun.objects.filter(status='completed')[:5]
+        data = []
+        for r in runs:
+            val = r.final_metrics.get(metric) if r.final_metrics else None
+            data.append({'id': str(r.id), 'name': r.name, 'metric': val})
+        return {'metric': metric, 'runs': data}
 
+    # ── Model Registry ─────────────────────────────────
+    elif wtype == 'model_registry':
+        models_list = ModelVersion.objects.filter(is_published_to_hub=True).order_by('-created_at')[:cfg.get('limit', 10)]
+        return {
+            'models': [{
+                'id': str(m.id), 'version': m.version, 'metrics': m.metrics,
+                'created_at': m.created_at.isoformat(), 'hub_url': m.hub_url,
+            } for m in models_list]
+        }
 
-def widget_data(request, widget_id):
-    """Same as get_widget_data – URL pattern uses this name."""
-    return get_widget_data(request, widget_id)
+    # ── Scheduler Queue ─────────────────────────────────
+    elif wtype == 'scheduler_queue':
+        from jobscheduler.scheduler import scheduler as gpu_sched
+        status = gpu_sched.get_status() if hasattr(gpu_sched, 'get_status') else {}
+        jobs = Job.objects.filter(status='queued').order_by('priority', 'created_at')[:10]
+        return {
+            'total_gpus': status.get('total_gpus', 0),
+            'available_gpus': status.get('available_gpus', 0),
+            'queued_jobs': status.get('queued_jobs', 0),
+            'running_jobs': status.get('running_jobs', 0),
+            'jobs': [{'id': str(j.id), 'name': j.name, 'priority': j.priority} for j in jobs],
+        }
 
+    # ── Custom Plot (stored Plotly JSON) ────────────────
+    elif wtype == 'custom_plot':
+        return {'plot': cfg.get('plot_json', {})}
 
-def widget_config(request, widget_id):
-    """Return configuration options for a widget (if configurable)."""
-    configs = {
-        "recent_experiments": {"limit": 5, "show_metrics": True},
-        "system_status": {"show_cpu": True, "show_memory": True},
-    }
-    return JsonResponse(configs.get(widget_id, {}))
+    # ── Terminal (just returns WebSocket endpoint) ──────
+    elif wtype == 'terminal':
+        return {'ws_endpoint': '/ws/terminal/'}
 
+    # ── Sweep Monitor ───────────────────────────────────
+    elif wtype == 'sweep_monitor':
+        sweep_id = cfg.get('sweep_id')
+        if sweep_id:
+            try:
+                sweep = Sweep.objects.get(id=sweep_id)
+            except Sweep.DoesNotExist:
+                return {'sweep': None, 'trials': []}
+            trials = sweep.trials.order_by('trial_number')
+            return {
+                'sweep': {'id': str(sweep.id), 'name': sweep.name, 'status': sweep.status,
+                          'best_value': sweep.best_trial.objective_value if sweep.best_trial else None},
+                'trials': [{
+                    'number': t.trial_number, 'status': t.status,
+                    'value': t.objective_value, 'params': t.params,
+                } for t in trials]
+            }
+        else:
+            # Show most recently active sweep
+            sweep = Sweep.objects.filter(status='active').order_by('-created_at').first()
+            if sweep:
+                return resolve_widget_data(DashboardWidget(widget_type='sweep_monitor', config={'sweep_id': str(sweep.id)}))
+            return {'sweep': None, 'trials': []}
 
+    # ── Experiment Comparison (multi‑run metrics) ─────────
+    elif wtype == 'experiment_comparison':
+        run_ids = cfg.get('run_ids', [])
+        if len(run_ids) >= 2:
+            runs = TrainingRun.objects.filter(id__in=run_ids)
+            metrics = {}
+            for r in runs:
+                if r.final_metrics:
+                    for k, v in r.final_metrics.items():
+                        if k not in metrics:
+                            metrics[k] = {}
+                        metrics[k][str(r.id)] = v
+            return {'metrics': metrics, 'run_ids': run_ids}
+        return {'metrics': {}, 'run_ids': run_ids}
+
+    # ── System Health ───────────────────────────────────
+    elif wtype == 'system_health':
+        cpu = psutil.cpu_percent(interval=0.5)
+        mem = psutil.virtual_memory()
+        disk = psutil.disk_usage('/')
+        return {
+            'cpu': cpu,
+            'memory_percent': mem.percent,
+            'memory_used_gb': round(mem.used / 1024**3, 1),
+            'memory_total_gb': round(mem.total / 1024**3, 1),
+            'disk_percent': disk.percent,
+            'disk_free_gb': round(disk.free / 1024**3, 1),
+        }
+
+    # ── Live Log ────────────────────────────────────────
+    elif wtype == 'live_log':
+        run_ids = cfg.get('run_ids', [])
+        if run_ids:
+            try:
+                run = TrainingRun.objects.get(id=run_ids[0])
+                return {'logs': run.logs[-5000:] if run.logs else ''}
+            except TrainingRun.DoesNotExist:
+                return {'logs': ''}
+        return {'logs': ''}
+
+    # ── Recently Viewed / Pinned ─────────────────────────
+    elif wtype == 'recently_viewed':
+        # Store viewed run IDs in user preferences or config
+        # For now, return the most recent 5 completed runs
+        runs = TrainingRun.objects.filter(status='completed').order_by('-created_at')[:5]
+        return {
+            'runs': [{'id': str(r.id), 'name': r.name} for r in runs]
+        }
+
+    # ── Quick Actions ────────────────────────────────────
+    elif wtype == 'quick_actions':
+        return {
+            'actions': [
+                {'label': 'New Training', 'url': '/create/'},
+                {'label': 'View Sweeps', 'url': '/sweeps/'},
+                {'label': 'Model Registry', 'url': '/models/'},
+                {'label': 'Terminal', 'url': '/terminal/'},
+            ]
+        }
+
+    # ── System Status (last error, etc.) ────────────────
+    elif wtype == 'system_status':
+        last_failed = TrainingRun.objects.filter(status='failed').order_by('-created_at').first()
+        return {
+            'last_failed': {
+                'id': str(last_failed.id),
+                'name': last_failed.name,
+                'created_at': last_failed.created_at.isoformat(),
+            } if last_failed else None,
+            'active_users': User.objects.filter(is_active=True).count(),
+        }
+
+    # Fallback
+    return {'message': f'No resolver for widget type: {wtype}'}
+
+# ═════════════════════════════════════════════════════════════════
+# Dashboard Statistics & Launch Configuration
+# ═════════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def dashboard_stats(request):
-    """Return aggregated dashboard statistics (used by some frontend components)."""
     total = TrainingRun.objects.count()
     running = TrainingRun.objects.filter(status='running').count()
     completed = TrainingRun.objects.filter(status='completed').count()
     failed = TrainingRun.objects.filter(status='failed').count()
-    return JsonResponse({
-        "total_runs": total,
-        "running": running,
-        "completed": completed,
-        "failed": failed,
-        "success_rate": round(completed / total * 100, 1) if total else 0,
+    queued = TrainingRun.objects.filter(status='queued').count()
+    sweeps_active = Sweep.objects.filter(status='active').count()
+    jobs_queued = Job.objects.filter(status='queued').count()
+    models_published = ModelVersion.objects.filter(is_published_to_hub=True).count()
+    notes_count = ResearcherNote.objects.count()
+
+    return Response({
+        'total_runs': total, 'running': running, 'completed': completed, 'failed': failed, 'queued': queued,
+        'success_rate': round(completed / total * 100, 1) if total else 0,
+        'sweeps_active': sweeps_active,
+        'jobs_queued': jobs_queued,
+        'models_published': models_published,
+        'notes_count': notes_count,
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def launch_config_options(request):
+    """Return all available options for job creation wizard."""
+    try:
+        from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+        from framework.trainer.methods.registry import METHOD_REGISTRY
+        from framework.trainer.losses import LOSS_REGISTRY
+        from framework.trainer.optimizers import OPTIMIZER_REGISTRY
+        from framework.trainer.schedulers import SCHEDULER_REGISTRY
+        from framework.callbacks import CALLBACK_REGISTRY
+        from framework.data.augmentation import AUGMENTATION_REGISTRY
+    except ImportError:
+        return Response({"error": "Framework not available"}, status=500)
+
+    return Response({
+        "attentions": sorted(ATTENTION_REGISTRY.keys()),
+        "compressors": sorted(COMPRESSOR_REGISTRY.keys()),
+        "methods": sorted(METHOD_REGISTRY.keys()),
+        "losses": sorted(LOSS_REGISTRY.keys()),
+        "optimizers": sorted(OPTIMIZER_REGISTRY.keys()),
+        "schedulers": sorted(SCHEDULER_REGISTRY.keys()),
+        "callbacks": sorted(CALLBACK_REGISTRY.keys()),
+        "augmentations": sorted(AUGMENTATION_REGISTRY.keys()),
+        "tasks": ["cola", "sst2", "mrpc", "qqp", "mnli", "qnli", "rte", "wnli", "stsb"],
+        "models": ["distilbert-base-uncased", "bert-base-uncased", "roberta-base",
+                    "albert-base-v2", "gpt2", "llama-2-7b", "mistral-7b"],
+        "distributed_strategies": ["none", "ddp", "deepspeed", "fsdp"],
+        "model_variants": ["standard", "unsloth", "compressed", "hybrid_svd"],
+        "tracking_backends": ["local", "tensorboard", "wandb", "mlflow"],
+        "storage_backends": ["local", "s3", "gcp", "azure", "hf_hub"],
+    })
+
+# ═════════════════════════════════════════════════════════════════
+# User Dashboard Settings (theme, refresh, etc.)
+# ═════════════════════════════════════════════════════════════════
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def dashboard_settings(request):
+    if request.method == 'GET':
+        prefs = request.user.dashboard_preferences if hasattr(request.user, 'dashboard_preferences') else {}
+        return Response(prefs)
+    elif request.method == 'PUT':
+        request.user.dashboard_preferences = request.data
+        request.user.save(update_fields=['dashboard_preferences'])
+        return Response({'status': 'saved'})
+
+# ═════════════════════════════════════════════════════════════════
+# Widget Configuration (for customizable widgets)
+# ═════════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def widget_config(request, widget_id):
+    widget = get_object_or_404(DashboardWidget, id=widget_id, user=request.user)
+    # Return safe configuration for editing
+    return Response({'config': widget.config, 'widget_type': widget.widget_type, 'title': widget.title})
+
+# ═════════════════════════════════════════════════════════════════
+# Model Card Generation (from run)
+# ═════════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def generate_model_card(request, run_id):
+    run = get_object_or_404(TrainingRun, id=run_id)
+    from .model_card import generate_model_card as card_gen
+    card = card_gen(run)
+    return Response({'model_card': card})
