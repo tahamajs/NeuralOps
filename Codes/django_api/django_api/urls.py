@@ -22,6 +22,9 @@ urlpatterns = [
     path('api/', include('sweeps.urls')),
     path('api/terminal/', include('terminal.urls')),  # Terminal REST API
     path('api/paper/', include('paper.urls')),         # Paper REST API
+        path('api/profiles/', include('profiles.urls')),
+    path('api/messaging/', include('messaging.urls')),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
