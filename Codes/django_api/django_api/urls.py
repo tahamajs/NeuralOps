@@ -25,6 +25,7 @@ urlpatterns = [
     path('api/profiles/', include('profiles.urls')),
     path('api/messaging/', include('messaging.urls')),
     path('api/leaderboards/', include('leaderboards.urls')),
+path('api/portfolios/', include('portfolios.urls')),
 
 ]
 if settings.DEBUG:
