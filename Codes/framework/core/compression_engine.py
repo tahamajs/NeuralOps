@@ -1,31 +1,15 @@
 """
-Orchestrates the application of one or more compressors to a model.
-Reads a compression configuration and dispatches work to registered compressors.
+Compression pipeline – orchestrates multiple compressors sequentially.
 """
 
 import torch.nn as nn
-from typing import Optional, List, Union, Dict, Any
+from typing import Dict, Any, Optional
 from .registry import COMPRESSOR_REGISTRY
-from .base import BaseCompressor
-from .utils import get_device, set_seed
+from .utils import set_seed
 
 
 class CompressionPipeline:
-    """
-    Apply a sequence of compression steps to a model.
-
-    Usage:
-        config = {
-            'compressors': [
-                {'method': 'a3', 'a3_rank': 32},
-                {'method': 'kmeans', 'kmeans_clusters': 256},
-            ],
-            'tokenizer_attached': True,   # ensure model.tokenizer exists
-            'seed': 42,
-        }
-        pipe = CompressionPipeline(model, config)
-        compressed_model = pipe.run()
-    """
+    """Apply a sequence of compression steps to a model."""
 
     def __init__(
         self,
@@ -36,7 +20,6 @@ class CompressionPipeline:
         self.model = model
         self.config = config
         self.tokenizer = tokenizer
-        # Attach tokenizer to model if provided (many compressors expect it)
         if tokenizer is not None:
             self.model.tokenizer = tokenizer
 
@@ -46,7 +29,6 @@ class CompressionPipeline:
             print("No compressors specified. Returning original model.")
             return self.model
 
-        # Set random seed for reproducibility
         seed = self.config.get('seed')
         if seed is not None:
             set_seed(seed)
@@ -55,16 +37,9 @@ class CompressionPipeline:
             method = comp_cfg.pop('method')
             print(f"\n🔧 Step {i+1}: Applying compressor '{method}'")
             compressor_cls = COMPRESSOR_REGISTRY.resolve(method)
-
-            # Merge with global config (optional)
             merged_cfg = {**self.config, **comp_cfg}
-            # Remove the 'compressors' key if present to avoid recursion
             merged_cfg.pop('compressors', None)
-
-            # Instantiate and compress
-            compressor: BaseCompressor = compressor_cls(
-                self.model, **merged_cfg
-            )
+            compressor = compressor_cls(self.model, **merged_cfg)
             self.model, stats = compressor.compress()
             if stats:
                 print(compressor.summary())

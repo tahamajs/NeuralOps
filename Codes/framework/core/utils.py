@@ -1,4 +1,5 @@
-# framework/core/utils.py
+"""General utilities (device, seeding, formatting)."""
+
 import random
 import numpy as np
 import torch
@@ -23,7 +24,10 @@ def set_seed(seed: int, deterministic: bool = False):
         torch.backends.cudnn.benchmark = False
 
 def get_model_device(model: torch.nn.Module) -> torch.device:
-    return next(model.parameters()).device
+    try:
+        return next(model.parameters()).device
+    except StopIteration:
+        return torch.device("cpu")
 
 def count_parameters(model: torch.nn.Module, trainable_only: bool = True) -> int:
     if trainable_only:
@@ -40,12 +44,12 @@ def format_number(num: int) -> str:
 def clear_memory():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    if torch.backends.mps.is_available():
+    if hasattr(torch, 'mps') and torch.backends.mps.is_available():
         torch.mps.empty_cache()
 
 def get_memory_usage() -> Optional[float]:
     if torch.cuda.is_available():
-        return torch.cuda.memory_allocated() / 1024 / 1024
+        return torch.cuda.memory_allocated() / (1024 * 1024)
     return None
 
 def human_readable_time(seconds: float) -> str:

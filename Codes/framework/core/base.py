@@ -1,9 +1,12 @@
-# framework/core/base.py (cleaned)
+"""
+Base classes for attention modules and compressors.
+"""
 import torch.nn as nn
 from typing import Optional, Any, Dict, Tuple
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 class BaseAttention(nn.Module):
+    """Every custom attention module must inherit from this."""
     def __init__(self, config, rank: Optional[int] = None):
         super().__init__()
         self.config = config
@@ -13,7 +16,9 @@ class BaseAttention(nn.Module):
         self.head_dim = self.hidden_size // self.num_heads if self.num_heads > 0 else 64
 
     @abstractmethod
-    def forward(self, hidden_states, attention_mask=None, **kwargs):
+    def forward(self, hidden_states, attention_mask=None, head_mask=None,
+                output_attentions=False, **kwargs) -> Tuple[Any, Optional[Any]]:
+        """Must return (output, attention_weights_or_None)."""
         pass
 
     def extra_repr(self) -> str:
@@ -30,6 +35,7 @@ class BaseCompressor:
 
     @abstractmethod
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Return (compressed_model, statistics)."""
         pass
 
     def _count_params(self, model: nn.Module) -> int:
