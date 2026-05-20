@@ -1,4 +1,3 @@
-# experiment/runners.py
 import json
 import traceback
 from functools import partial
@@ -11,11 +10,11 @@ from django.utils import timezone
 from .jobs import push_update
 from .models import TrainingRun, TrainingSnapshot
 
+
 # ----------------------------------------------------------------------
 # Helpers: logging, status updates, and channel notifications
 # ----------------------------------------------------------------------
 def _log(run: TrainingRun, msg: str):
-    """Append a log line to the run and send it via channels."""
     run.logs = (run.logs or "") + msg + "\n"
     run.save(update_fields=['logs'])
     push_update(run, {"type": "log", "data": msg})
@@ -27,11 +26,10 @@ def _log(run: TrainingRun, msg: str):
             "terminal", {"type": "terminal_message", "data": msg}
         )
     except Exception:
-        pass  # channels not available
+        pass
 
 
 def _update_status(run: TrainingRun, status: str):
-    """Update run status and timestamps, then broadcast."""
     run.status = status
     now = timezone.now()
     if status == "running" and not run.started_at:
@@ -43,14 +41,12 @@ def _update_status(run: TrainingRun, status: str):
 
 
 # ----------------------------------------------------------------------
-# Training (using MegaOrchestrator)
+# Training (using MegaOrchestrator or legacy)
 # ----------------------------------------------------------------------
 def run_training(run: TrainingRun, stop_event=None):
-    """Execute training using MegaOrchestrator or fallback."""
     _update_status(run, "running")
     _log(run, "Starting training...")
 
-    # Try to import the orchestrator
     try:
         from framework.experiment_utils.mega_orchestrator import MegaOrchestrator
     except ImportError:
@@ -61,8 +57,7 @@ def run_training(run: TrainingRun, stop_event=None):
     base_dir = Path(settings.MEDIA_ROOT) / str(run.id)
     base_dir.mkdir(parents=True, exist_ok=True)
 
-    # Define callbacks that close over the run
-    def progress_callback(step: int, total: int, pct: float):
+    def progress_callback(step, total, pct):
         run.current_step = step
         run.total_steps = total
         run.estimated_remaining_seconds = (total - step) * 0.1 if total > step else 0
@@ -79,8 +74,7 @@ def run_training(run: TrainingRun, stop_event=None):
             "total_steps": total
         })
 
-    def log_callback(step: int, logs: dict):
-        # Save snapshot
+    def log_callback(step, logs):
         TrainingSnapshot.objects.create(
             run=run,
             step=step,
@@ -91,22 +85,17 @@ def run_training(run: TrainingRun, stop_event=None):
             cpu_percent=psutil.cpu_percent(),
             ram_mb=psutil.virtual_memory().used / (1024 ** 2)
         )
-        # Broadcast metrics
-        metrics = {
-            k: v for k, v in logs.items()
-            if k in ("loss", "eval_loss", "eval_accuracy", "learning_rate")
-        }
+        metrics = {k: v for k, v in logs.items()
+                   if k in ("loss", "eval_loss", "eval_accuracy", "learning_rate")}
         if metrics:
             push_update(run, {"type": "metrics", "data": metrics})
         _log(run, f"Step {step}: {logs}")
 
-    def final_callback(final_metrics: dict, history: dict):
+    def final_callback(final_metrics, history):
         run.final_metrics = final_metrics
         run.training_history = history
         run.save(update_fields=['final_metrics', 'training_history'])
         push_update(run, {"type": "final", "data": final_metrics})
-
-        # Optional persistent storage
         try:
             from framework.utils.results_saver import ResultsSaver
             saver = ResultsSaver(run.id, Path(settings.MEDIA_ROOT), run.config.get("save_config", {}))
@@ -114,8 +103,6 @@ def run_training(run: TrainingRun, stop_event=None):
             saver.save_history(history)
             saver.save_final_metrics(final_metrics)
             saver.generate_plots(history)
-            # Model saving would require the actual model object – not available here
-            # Usually the orchestrator handles it; this is just a placeholder.
             saver.handle_storage_backend()
             _log(run, "Results saved to disk.")
         except ImportError:
@@ -144,8 +131,7 @@ def run_training(run: TrainingRun, stop_event=None):
         _update_status(run, "failed")
 
 
-def _run_training_legacy(run: TrainingRun, stop_event=None):
-    """Fallback that uses the older direct framework functions (if available)."""
+def _run_training_legacy(run, stop_event=None):
     _update_status(run, "running")
     try:
         from framework.experiment_utils import run_training as fw_train
@@ -165,14 +151,14 @@ def _run_training_legacy(run: TrainingRun, stop_event=None):
         _update_status(run, "failed")
 
 
-def _legacy_progress(run: TrainingRun, step: int, total: int, pct: float):
+def _legacy_progress(run, step, total, pct):
     run.current_step = step
     run.total_steps = total
     run.save(update_fields=['current_step', 'total_steps'])
     push_update(run, {"type": "progress", "progress": pct, "step": step, "total": total})
 
 
-def _legacy_log(run: TrainingRun, step: int, logs: dict):
+def _legacy_log(run, step, logs):
     TrainingSnapshot.objects.create(
         run=run,
         step=step,
@@ -187,7 +173,7 @@ def _legacy_log(run: TrainingRun, step: int, logs: dict):
     _log(run, f"Step {step}: {logs}")
 
 
-def _legacy_final(run: TrainingRun, final_metrics: dict, history: dict):
+def _legacy_final(run, final_metrics, history):
     run.final_metrics = final_metrics
     run.training_history = history
     run.save(update_fields=['final_metrics', 'training_history'])
@@ -197,8 +183,7 @@ def _legacy_final(run: TrainingRun, final_metrics: dict, history: dict):
 # ----------------------------------------------------------------------
 # Evaluation
 # ----------------------------------------------------------------------
-def run_evaluation(run: TrainingRun, stop_event=None):
-    """Evaluate a model using the framework."""
+def run_evaluation(run, stop_event=None):
     _update_status(run, "running")
     _log(run, "Starting evaluation...")
 
@@ -208,7 +193,7 @@ def run_evaluation(run: TrainingRun, stop_event=None):
         model_path = run.config.get("model_name", "distilbert-base-uncased")
 
     try:
-        _, fw_eval, _ = _get_framework()
+        from framework.experiment_utils import run_evaluation as fw_eval
         metrics = fw_eval(run.config, str(model_path))
         run.final_metrics = metrics
         run.save(update_fields=['final_metrics'])
@@ -222,8 +207,7 @@ def run_evaluation(run: TrainingRun, stop_event=None):
 # ----------------------------------------------------------------------
 # Compression
 # ----------------------------------------------------------------------
-def run_compression(run: TrainingRun, stop_event=None):
-    """Compress a model using the framework."""
+def run_compression(run, stop_event=None):
     _update_status(run, "running")
     _log(run, "Starting compression...")
 
@@ -231,7 +215,7 @@ def run_compression(run: TrainingRun, stop_event=None):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        _, _, fw_compress = _get_framework()
+        from framework.experiment_utils import run_compression as fw_compress
         stats = fw_compress(run.config, str(output_dir))
         run.final_metrics = stats
         run.save(update_fields=['final_metrics'])
@@ -240,14 +224,3 @@ def run_compression(run: TrainingRun, stop_event=None):
     except Exception as e:
         _log(run, f"Compression failed: {str(e)}\n{traceback.format_exc()}")
         _update_status(run, "failed")
-
-
-# ----------------------------------------------------------------------
-# Internal lazy loader for framework functions
-# ----------------------------------------------------------------------
-def _get_framework():
-    """Lazy import of framework functions to avoid early import issues."""
-    from framework.experiment_utils import run_training as fw_train
-    from framework.experiment_utils import run_evaluation as fw_eval
-    from framework.experiment_utils import run_compression as fw_compress
-    return fw_train, fw_eval, fw_compress

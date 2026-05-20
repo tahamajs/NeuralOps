@@ -1,4 +1,5 @@
 import uuid
+from django.conf import settings
 from django.db import models
 
 class Experiment(models.Model):
@@ -11,7 +12,7 @@ class Experiment(models.Model):
     tags = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:
-        app_label = 'experiment'          # <-- ADD THIS LINE
+        app_label = 'experiment'
         ordering = ['-created_at']
         indexes = [models.Index(fields=['created_at']), models.Index(fields=['tags'])]
 
@@ -34,7 +35,6 @@ class TrainingRun(models.Model):
     final_metrics = models.JSONField(default=dict)
     training_history = models.JSONField(default=dict, blank=True)
     logs = models.TextField(blank=True)
-    artifacts_dir = models.CharField(max_length=500, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -47,16 +47,24 @@ class TrainingRun(models.Model):
     gpu_memory_mb = models.FloatField(null=True, blank=True)
 
     class Meta:
-        app_label = 'experiment'          # <-- ADD THIS LINE
+        app_label = 'experiment'
         ordering = ['-created_at']
-        indexes = [models.Index(fields=['experiment', 'status']), models.Index(fields=['job_type'])]
+        indexes = [
+            models.Index(fields=['experiment', 'status']),
+            models.Index(fields=['job_type']),
+        ]
+
+    @property
+    def artifacts_dir(self):
+        import os
+        return os.path.join(settings.MEDIA_ROOT, 'experiments', str(self.id), 'artifacts')
 
     def __str__(self):
         return f"{self.experiment.name} - {self.name or self.job_type}"
 
 
 class TrainingSnapshot(models.Model):
-    run = models.ForeignKey(TrainingRun, on_delete=models.CASCADE, related_name='snapshots', null=True, blank=True)
+    run = models.ForeignKey(TrainingRun, on_delete=models.CASCADE, related_name='snapshots')
     step = models.IntegerField()
     epoch = models.FloatField(null=True, blank=True)
     train_loss = models.FloatField(null=True, blank=True)
@@ -68,7 +76,7 @@ class TrainingSnapshot(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        app_label = 'experiment'          # <-- ADD THIS LINE
+        app_label = 'experiment'
         ordering = ['run', 'step']
         unique_together = [['run', 'step']]
 
@@ -76,7 +84,6 @@ class TrainingSnapshot(models.Model):
 class ExperimentTemplate(models.Model):
     """Reusable experiment configuration template."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name='templates')
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     config = models.JSONField(default=dict)
@@ -87,8 +94,7 @@ class ExperimentTemplate(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        app_label = 'experiment'   # <-- add this line
-
+        app_label = 'experiment'
         ordering = ['-usage_count', '-created_at']
 
 
@@ -162,5 +168,5 @@ class SweepTrial(models.Model):
         return f"{self.sweep.name} trial {self.trial_number}"
 
 
-# Compatibility name used by agents and sweeps modules.
+# Compatibility alias used by agents and sweeps modules.
 Project = Experiment
