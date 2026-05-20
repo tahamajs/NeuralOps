@@ -7,17 +7,19 @@ from framework.core.registry import Registry
 
 METHOD_REGISTRY = Registry("drift_methods")
 
+
 # ── Method implementations ──────────────────────────────────────────
 
 @METHOD_REGISTRY.register("ks")
-def kolmogorov_smirnov(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool, float]:
+def kolmogorov_smirnov(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool]:
     """Kolmogorov‑Smirnov test for continuous distributions."""
     stat, p = stats.ks_2samp(ref, cur)
     threshold = kwargs.get("threshold", 0.1)
     return stat, p, stat > threshold
 
+
 @METHOD_REGISTRY.register("psi")
-def population_stability_index(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool, float]:
+def population_stability_index(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool]:
     """Population Stability Index."""
     bins = np.histogram_bin_edges(np.concatenate([ref, cur]), bins='auto')
     ref_hist, _ = np.histogram(ref, bins=bins, density=True)
@@ -28,36 +30,37 @@ def population_stability_index(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tu
     threshold = kwargs.get("threshold", 0.1)
     return psi, None, psi > threshold
 
+
 @METHOD_REGISTRY.register("wasserstein")
-def wasserstein(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool, float]:
+def wasserstein(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool]:
     """Earth Mover's Distance (Wasserstein‑1)."""
     stat = stats.wasserstein_distance(ref, cur)
     threshold = kwargs.get("threshold", 0.1)
     return stat, None, stat > threshold
 
+
 @METHOD_REGISTRY.register("js")
-def jensen_shannon(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool, float]:
+def jensen_shannon(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool]:
     """Jensen‑Shannon divergence."""
     bins = np.histogram_bin_edges(np.concatenate([ref, cur]), bins='auto')
     ref_hist, _ = np.histogram(ref, bins=bins, density=True)
     cur_hist, _ = np.histogram(cur, bins=bins, density=True)
     ref_hist = ref_hist / ref_hist.sum()
     cur_hist = cur_hist / cur_hist.sum()
-    # Compute JS via KL
     m = (ref_hist + cur_hist) / 2
-    kl_ref = np.sum(ref_hist * np.log(ref_hist / (m + 1e-10) + 1e-10) )
-    kl_cur = np.sum(cur_hist * np.log(cur_hist / (m + 1e-10) + 1e-10) )
+    kl_ref = np.sum(ref_hist * np.log(ref_hist / (m + 1e-10) + 1e-10))
+    kl_cur = np.sum(cur_hist * np.log(cur_hist / (m + 1e-10) + 1e-10))
     js = (kl_ref + kl_cur) / 2
     threshold = kwargs.get("threshold", 0.1)
     return js, None, js > threshold
 
+
 @METHOD_REGISTRY.register("chi2")
-def chi_squared(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool, float]:
+def chi_squared(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool]:
     """Chi‑squared test (for categorical / binned data)."""
     bins = np.histogram_bin_edges(np.concatenate([ref, cur]), bins='auto')
     ref_counts, _ = np.histogram(ref, bins=bins)
     cur_counts, _ = np.histogram(cur, bins=bins)
-    # Normalise to same total count
     scale = ref.sum() / cur.sum() if cur.sum() > 0 else 1.0
     cur_counts = cur_counts * scale
     mask = (ref_counts > 0) | (cur_counts > 0)
@@ -65,16 +68,16 @@ def chi_squared(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Opti
     threshold = kwargs.get("threshold", 0.05)   # p‑value threshold
     return chi2, p, p < threshold
 
+
 @METHOD_REGISTRY.register("cramers_v")
-def cramers_v(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool, float]:
+def cramers_v(ref: np.ndarray, cur: np.ndarray, **kwargs) -> Tuple[float, Optional[float], bool]:
     """Cramér's V – association measure for categorical variables."""
-    # Discretise continuous variables into deciles for fair comparison
     bins = 10
     try:
         ref_binned = np.digitize(ref, np.percentile(ref, np.linspace(0, 100, bins+1)[1:-1]))
-        cur_binned = np.digitize(cur, np.percentile(ref, np.linspace(0, 100, bins+1)[1:-1]))  # use ref bins
+        cur_binned = np.digitize(cur, np.percentile(ref, np.linspace(0, 100, bins+1)[1:-1]))
     except Exception:
-        return 0.0, None, False, 0.0
+        return 0.0, None, False
     all_cats = np.union1d(ref_binned, cur_binned)
     table = np.zeros((len(all_cats), 2))
     for i, cat in enumerate(all_cats):
@@ -103,7 +106,6 @@ class DriftDetector:
         self.config = config or DriftConfig()
 
     def detect(self, current_data: Dict[str, np.ndarray]) -> "DriftReport":
-        """Run all configured methods on all features and return a DriftReport."""
         from .report import DriftReport, FeatureDriftReport
         current = {k: np.array(v) for k, v in current_data.items()}
         features = self.config.features or list(self.reference.keys())
@@ -115,8 +117,7 @@ class DriftDetector:
             ref = self.reference[feature]
             cur = current[feature]
 
-            # Skip if not numeric (basic guard – categorical handling optional)
-            if ref.dtype.kind not in 'iuf' and cur.dtype.kind not in 'iuf':
+            if ref.dtype.kind not in 'iuf' or cur.dtype.kind not in 'iuf':
                 continue
 
             method_reports = {}
@@ -143,7 +144,7 @@ class DriftDetector:
         if self.config.enable_multivariate:
             multivariate_result = self._multivariate_drift(self.reference, current)
 
-        # Concept drift (optional) – simply compare labels/predictions
+        # Concept drift
         concept_result = None
         if self.config.enable_concept_drift and "labels" in current:
             method_key = self.config.concept_metric
@@ -163,14 +164,13 @@ class DriftDetector:
         )
 
     def _multivariate_drift(self, ref: dict, cur: dict) -> Dict[str, Any]:
-        """PCA reconstruction error or domain classifier."""
         if self.config.multivariate_method == "domain_classifier":
             return self._domain_classifier_drift(ref, cur)
         return self._pca_drift(ref, cur)
 
     def _pca_drift(self, ref: dict, cur: dict) -> Dict[str, Any]:
         from sklearn.decomposition import PCA
-        features = [f for f in self.config.features or ref.keys() if f in ref and f in cur]
+        features = [f for f in (self.config.features or ref.keys()) if f in ref and f in cur]
         if len(features) < 2:
             return {"method": "pca", "error": "Not enough features"}
         X_ref = np.column_stack([ref[f] for f in features if ref[f].ndim == 1])
@@ -184,10 +184,9 @@ class DriftDetector:
                 "ratio": drift_score, "drifted": drifted}
 
     def _domain_classifier_drift(self, ref: dict, cur: dict) -> Dict[str, Any]:
-        """Train a quick classifier to distinguish ref vs cur; AUC close to 0.5 = no drift."""
         from sklearn.linear_model import LogisticRegression
         from sklearn.metrics import roc_auc_score
-        features = [f for f in self.config.features or ref.keys() if f in ref and f in cur]
+        features = [f for f in (self.config.features or ref.keys()) if f in ref and f in cur]
         if len(features) < 2:
             return {"method": "domain_classifier", "error": "Not enough features"}
         X_ref = np.column_stack([ref[f] for f in features])
@@ -197,7 +196,7 @@ class DriftDetector:
         from sklearn.model_selection import cross_val_score
         auc = np.mean(cross_val_score(LogisticRegression(max_iter=1000), X, y,
                                       cv=3, scoring='roc_auc'))
-        drift_indicator = abs(auc - 0.5) * 2   # 0 = no drift, 1 = perfect separation
+        drift_indicator = abs(auc - 0.5) * 2
         drifted = drift_indicator > self.config.threshold
         return {"method": "domain_classifier", "auc": auc,
                 "drift_score": drift_indicator, "drifted": drifted}
