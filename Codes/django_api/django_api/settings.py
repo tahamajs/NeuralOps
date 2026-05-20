@@ -78,7 +78,10 @@ INSTALLED_APPS = [
     'terminal',
     'agents',
     'sweeps',
-    
+        'profiles',
+    'messaging',
+    'channels',
+
     'paper',
 ]
 
