@@ -36,7 +36,7 @@ def start_sweep(sweep_id):
         base_config = sweep.config.get('base_config', {})
         run_config = {**base_config, **params}
         run = TrainingRun.objects.create(
-            project=sweep.project,
+            experiment=sweep.project,
             job_type='training',
             config=run_config,
             status='queued',

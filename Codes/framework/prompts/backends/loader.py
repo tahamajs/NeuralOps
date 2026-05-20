@@ -2,8 +2,8 @@
 
 import threading, time, logging
 from typing import Optional, Union
-from .registry import PromptRegistry
-from .templates import PromptTemplate, ChatPromptTemplate
+from ..registry import PromptRegistry
+from ..templates import PromptTemplate, ChatPromptTemplate
 
 logger = logging.getLogger(__name__)
 

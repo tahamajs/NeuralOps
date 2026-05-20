@@ -1,79 +1,20 @@
-from django.test import TestCase
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
-from rest_framework import status
-from .models import PaperProject, PaperFile, PaperCompile, PaperTemplate
+from django.urls import path
 
-User = get_user_model()
+from . import views
 
 
-class PaperProjectTestCase(TestCase):
-    def setUp(self):
-        self.client = APIClient()
-        self.user = User.objects.create_user(
-            username='testuser', password='testpass'
-        )
-        self.other_user = User.objects.create_user(
-            username='other', password='testpass'
-        )
-        self.client.force_authenticate(user=self.user)
-
-    def test_create_project(self):
-        resp = self.client.post('/api/paper/projects/', {
-            'name': 'My Paper',
-            'compiler': 'pdflatex',
-        }, format='json')
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(PaperProject.objects.count(), 1)
-
-    def test_list_projects(self):
-        PaperProject.objects.create(owner=self.user, name='P1')
-        PaperProject.objects.create(owner=self.other_user, name='P2')  # not visible
-        resp = self.client.get('/api/paper/projects/')
-        self.assertEqual(len(resp.data['results']), 1)
-
-    def test_add_file_to_project(self):
-        project = PaperProject.objects.create(owner=self.user, name='P1')
-        resp = self.client.post(
-            f'/api/paper/projects/{project.id}/files/',
-            {'filename': 'main.tex', 'content': r'\documentclass{article}\begin{document}Hello\end{document}'},
-            format='json',
-        )
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(project.files.count(), 1)
-
-    def test_compile_view(self):
-        project = PaperProject.objects.create(owner=self.user, name='P1')
-        PaperFile.objects.create(
-            project=project,
-            filename='main.tex',
-            content=r'\documentclass{article}\begin{document}Hello\end{document}',
-        )
-        resp = self.client.post(
-            f'/api/paper/projects/{project.id}/compile/',
-            format='json',
-        )
-        # May fail if pdflatex not installed; test still validates the endpoint
-        self.assertIn(resp.status_code, [200, 500])
-
-    def test_collaborator_access(self):
-        project = PaperProject.objects.create(owner=self.user, name='P1')
-        # Add other user as collaborator
-        project.collaborators.add(self.other_user)
-        # Switch to other user
-        self.client.force_authenticate(user=self.other_user)
-        resp = self.client.get(f'/api/paper/projects/{project.id}/')
-        self.assertEqual(resp.status_code, 200)
-
-    def test_template_create_and_use(self):
-        template = PaperTemplate.objects.create(
-            name='Test Template',
-            files={'main.tex': r'\documentclass{article}\begin{document}Hi\end{document}'},
-        )
-        resp = self.client.post(
-            f'/api/paper/templates/{template.id}/use/',
-            format='json',
-        )
-        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-        project = PaperProject.objects.first()
-        self.assertEqual(project.files.count(), 1)
+urlpatterns = [
+    path('projects/', views.project_list, name='paper_project_list'),
+    path('projects/<uuid:project_id>/', views.project_detail, name='paper_project_detail'),
+    path('projects/<uuid:project_id>/files/', views.file_list, name='paper_file_list'),
+    path('projects/<uuid:project_id>/files/<path:filename>/', views.file_detail, name='paper_file_detail'),
+    path('projects/<uuid:project_id>/compile/', views.compile_project, name='paper_compile'),
+    path('projects/<uuid:project_id>/output/pdf/', views.output_pdf, name='paper_output_pdf'),
+    path('projects/<uuid:project_id>/output/log/', views.output_log, name='paper_output_log'),
+    path('projects/<uuid:project_id>/export/', views.export_project, name='paper_export'),
+    path('projects/<uuid:project_id>/collaborators/add/', views.add_collaborator, name='paper_add_collaborator'),
+    path('projects/<uuid:project_id>/collaborators/remove/', views.remove_collaborator, name='paper_remove_collaborator'),
+    path('projects/<uuid:project_id>/compiles/', views.compile_history, name='paper_compile_history'),
+    path('templates/', views.template_list, name='paper_template_list'),
+    path('templates/<uuid:template_id>/use/', views.use_template, name='paper_use_template'),
+]

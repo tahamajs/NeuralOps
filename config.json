@@ -26,11 +26,11 @@
       "settings": {
         "vnext": [
           {
-            "address": "172.64.146.15",
+            "address": "104.18.41.241",
             "port": 443,
             "users": [
               {
-                "id": "788e0589-770e-4818-aa7b-9bfc547464c3",
+                "id": "92e6019a-24b5-4219-b9ee-21d17fde3b99",
                 "encryption": "none",
                 "flow": ""
               }
@@ -39,30 +39,23 @@
         ]
       },
       "streamSettings": {
-        "network": "xhttp",
+        "network": "ws",
         "security": "tls",
         "tlsSettings": {
-          "serverName": "vercel.ifilmino.com",
+          "serverName": "late-dream-6c72.tahamaj4.workers.dev",
           "allowInsecure": false,
           "fingerprint": "firefox"
         },
-        "xhttpSettings": {
-          "path": "/x4TNy5V0HjfhbVDUaT0"
+        "wsSettings": {
+          "path": "/",
+          "headers": {
+            "Host": "late-dream-6c72.tahamaj4.workers.dev"
+          }
         }
       },
       "mux": {
         "enabled": false
       }
     }
-  ],
-  "routing": {
-    "domainStrategy": "AsIs",
-    "rules": [
-      {
-        "type": "field",
-        "inboundTag": ["socks-in"],
-        "outboundTag": "vless-out"
-      }
-    ]
-  }
+  ]
 }

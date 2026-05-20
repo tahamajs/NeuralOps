@@ -57,7 +57,7 @@ class AgentSession(models.Model):
         choices=[('active', 'Active'), ('paused', 'Paused'), ('review', 'Awaiting Review'), ('completed', 'Completed'), ('error', 'Error')])
     
     # Project context
-    project = models.ForeignKey('experiment.Project', on_delete=models.SET_NULL, null=True, blank=True)
+    project = models.ForeignKey('experiment.Experiment', on_delete=models.SET_NULL, null=True, blank=True)
     codebase_files = models.JSONField(default=list, blank=True, help_text="List of files the agent can read/modify")
     metric_name = models.CharField(max_length=100, default='eval_accuracy')
     metric_direction = models.CharField(max_length=10, default='maximize')

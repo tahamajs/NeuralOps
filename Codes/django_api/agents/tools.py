@@ -714,7 +714,7 @@ def suggest_next_experiment(params: Dict[str, Any]) -> Dict[str, Any]:
     metric_name = params.get("metric_name", "eval_accuracy")
     direction = params.get("direction", "maximize")
 
-    runs = TrainingRun.objects.filter(project_id=project_id, status="completed").order_by("-completed_at")[:20]
+    runs = TrainingRun.objects.filter(experiment_id=project_id, status="completed").order_by("-completed_at")[:20]
     if not runs:
         return {"suggestion": "Start with a baseline: bert-base-uncased, MRPC, full attention, 3 epochs."}
 
@@ -779,11 +779,19 @@ def test_prompt_template(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # ====================== LangChain Tool Wrappers ======================
-from langchain_core.tools import tool
+try:
+    from langchain_core.tools import tool
+except ImportError:
+    def tool(func=None, **kwargs):
+        def decorate(inner):
+            inner.name = kwargs.get("name", inner.__name__)
+            inner.invoke = lambda args: inner(**args) if isinstance(args, dict) else inner(args)
+            return inner
+        return decorate(func) if func is not None else decorate
 
 ALL_LANGCHAIN_TOOLS = []
 
-def _wrap(name, func, description, param_schema):
+def _wrap(name, func, description, param_schema=None):
     t = tool(func, name=name, description=description)
     ALL_LANGCHAIN_TOOLS.append(t)
     return t
