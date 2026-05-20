@@ -1,15 +1,17 @@
-"""Utility functions to load results from various sources."""
+"""Utility to load results from various sources."""
 
-import json, os, pandas as pd, numpy as np
+import json
+import os
+import pandas as pd
+import numpy as np
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Optional
 
 def load_results_from_directories(
     dirs: List[str],
     group_names: Optional[List[str]] = None,
     metric: str = "eval_accuracy",
 ) -> Dict[str, np.ndarray]:
-    """Read final_metrics.json from multiple run directories and collect scores by group."""
     groups: Dict[str, List[float]] = {}
     for i, d in enumerate(dirs):
         name = group_names[i] if group_names else Path(d).name
@@ -29,10 +31,6 @@ def load_results_from_django(
     metric: str = "final_metrics__eval_accuracy",
     group_by: str = "config__attn_type",
 ) -> pd.DataFrame:
-    """
-    Build a DataFrame from Django TrainingRun queryset.
-    `runs` is a queryset with `final_metrics` and `config` fields.
-    """
     records = []
     for run in runs:
         metrics = run.final_metrics or {}
@@ -51,5 +49,4 @@ def load_results_from_glue_results(
     csv_path: str,
     metric: str = "accuracy",
 ) -> pd.DataFrame:
-    """Load a CSV file with columns: model, task, rank, accuracy, etc."""
     return pd.read_csv(csv_path)

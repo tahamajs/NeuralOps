@@ -1,10 +1,9 @@
-# framework/analysis/model_comparison.py
+"""Multi‑run model comparison and plotting."""
+
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import List, Optional
-
+from typing import List
 from .plotting import create_comprehensive_plots, plot_tradeoff
 
 class ModelComparison:
