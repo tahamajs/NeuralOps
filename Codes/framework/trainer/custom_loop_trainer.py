@@ -8,19 +8,9 @@ from .metrics import get_task_metrics
 
 @TrainerRegistry.register("custom_loop")
 class CustomLoopTrainer(BaseTrainer):
-    def __init__(
-        self,
-        model,
-        train_dataset,
-        eval_dataset,
-        config: Dict[str, Any],
-        results_manager,
-        device: torch.device,
-        num_labels: int,
-        is_multichoice: bool = False,
-        compute_metrics_fn=None,
-        **kwargs
-    ):
+    def __init__(self, model, train_dataset, eval_dataset, config: Dict[str, Any],
+                 results_manager, device: torch.device, num_labels: int,
+                 is_multichoice: bool = False, compute_metrics_fn=None, **kwargs):
         self.model = model
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
@@ -43,30 +33,16 @@ class CustomLoopTrainer(BaseTrainer):
     def train(self) -> Dict[str, Any]:
         train_loader = self._make_loader(self.train_dataset, shuffle=True)
         val_loader = self._make_loader(self.eval_dataset, shuffle=False)
-        # Convert config to object with attributes
-        class AttrDict:
-            def __init__(self, d): self.__dict__.update(d)
-        config_obj = AttrDict(self.config)
-        result = train_model(
-            model=self.model,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            device=self.device,
-            config=config_obj,
-            num_labels=self.num_labels,
-            is_multichoice=self.is_multichoice,
-        )
+        class AttrDict: pass
+        cfg = AttrDict()
+        cfg.learning_rate = self.config.get("learning_rate", 2e-5)
+        cfg.epochs = self.config.get("epochs", 3)
+        cfg.max_grad_norm = self.config.get("max_grad_norm", 1.0)
+        result = train_model(self.model, train_loader, val_loader, self.device, cfg, self.num_labels, self.is_multichoice)
         self.results_manager.save_final_model(self.model)
         self.results_manager.save_plots()
         return result
 
     def evaluate(self) -> Dict[str, Any]:
         val_loader = self._make_loader(self.eval_dataset, shuffle=False)
-        return evaluate_model(
-            self.model,
-            val_loader,
-            self.device,
-            self.num_labels,
-            self.is_multichoice,
-            compute_all_metrics=True,
-        )
+        return evaluate_model(self.model, val_loader, self.device, self.num_labels, self.is_multichoice, compute_all_metrics=True)

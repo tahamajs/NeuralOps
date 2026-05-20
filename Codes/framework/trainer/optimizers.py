@@ -1,4 +1,3 @@
-# framework/trainer/optimizers.py
 import torch.optim as optim
 from framework.core.registry import Registry
 
