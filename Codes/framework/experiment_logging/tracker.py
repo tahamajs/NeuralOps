@@ -1,10 +1,10 @@
-# framework/experiment_logging/tracker.py
-import json
-import os
+"""Simple in‑memory metrics tracker with JSON serialisation."""
+
+import json, os
 from typing import List, Dict, Any, Optional
 
 class MetricsTracker:
-    """Simple in‑memory metrics tracker. No circular imports."""
+    """Collects metrics during training and saves them as JSON."""
 
     def __init__(self, save_path: Optional[str] = None):
         self.save_path = save_path

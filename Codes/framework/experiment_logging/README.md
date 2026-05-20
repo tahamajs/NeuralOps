@@ -1,208 +1,157 @@
-# 📋 Experiment Logging & Metrics Tracking
+# `framework/experiment_logging` – Structured Logging & Metrics Tracking
 
-**A complete, production‑ready logging system for machine learning experiments.**  
-Every training run gets a **timestamped directory**, logs are written in **three formats** (colored console, plain text, structured JSON), and training metrics are **automatically captured** and can be exported to CSV.
+The **experiment_logging** module provides a lightweight, production‑ready logging and metrics tracking system for training experiments.  
+It supports **structured (JSON‑line) and human‑readable log formats**, **automatic metrics collection**, and a **HuggingFace Trainer callback**—all configurable via a single dataclass.  
+The module integrates seamlessly with the rest of the Efficient Transformer Toolkit (e.g., `ResultsManager`, `MegaOrchestrator`, and the training pipeline).
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```python
-from experiment_logging import setup_logging, LoggingConfig, MetricsTracker, LoggingCallback
+from framework.experiment_logging import auto_setup, LoggingCallback
 
-# 1. Configure logging
-cfg = LoggingConfig(
-    experiment_name="mrpc_aurora",
-    log_base_dir="logs",              # top‑level directory
-    use_timestamp=True,               # creates unique run folder per run
-    json_log=True,                    # structured JSON logs
-    console_level="INFO",
-    file_level="DEBUG",
+# 1. One‑call setup from a run config dictionary
+tools = auto_setup(
+    run_config={"exp_name": "my_experiment", "log_level": "INFO"},
+    run_id="run_001",
+    base_dir=Path("./runs")
 )
 
-# 2. Initialize the root logger
-logger = setup_logging(cfg)
-logger.info("Starting experiment...")
+logger = tools["logger"]
+tracker = tools["tracker"]
 
-# 3. Metrics tracker (auto‑saves to disk)
-tracker = MetricsTracker("metrics.json")   # will be inside the run directory
-
-# 4. Optional: integrate with HuggingFace Trainer
+# 2. Attach the callback to your HuggingFace Trainer
 trainer.add_callback(LoggingCallback(tracker, logger))
-```
 
-After training, your `logs/` folder will contain:
-
-```
-logs/
-  mrpc_aurora_2026-05-03_10-38-19/
-    run.log          # plain text log
-    run.jsonl        # JSON lines log
-    metrics.json     # training/evaluation metrics
-```
-
----
-
-## ⚙️ Configuration
-
-All settings are exposed via the `LoggingConfig` dataclass:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `log_base_dir` | `"logs"` | Top‑level directory for all runs |
-| `experiment_name` | `"experiment"` | Name of the experiment (used in run directory name) |
-| `use_timestamp` | `True` | Append current timestamp to the run directory |
-| `run_id` | `None` | Explicit run identifier (overrides timestamp if set) |
-| `console_level` | `"INFO"` | Minimum logging level for console output |
-| `colored_console` | `True` | Colorize console output (requires `colorlog`) |
-| `file_level` | `"DEBUG"` | Minimum level for the plain text log file |
-| `log_filename` | `"run.log"` | Name of the plain text log file inside the run directory |
-| `json_log` | `True` | Enable structured JSON logging (one JSON object per line) |
-| `json_filename` | `"run.jsonl"` | Name of the JSON log file inside the run directory |
-| `track_metrics` | `True` | Enable metrics tracking (used by `MetricsTracker`) |
-| `metrics_filename` | `"metrics.json"` | Default file name for `MetricsTracker` (if no path given) |
-| `max_log_size_mb` | `0` | Maximum size (in MB) of the text log before rotation (0 = no rotation) |
-| `backup_count` | `5` | Number of backup files when log rotation is active |
-
-You can either pass a `LoggingConfig` object to `setup_logging`, or override fields via environment variables (prefix `LOG_`):
-
-```bash
-export LOG_EXPERIMENT_NAME="my_experiment"
-export LOG_CONSOLE_LEVEL="DEBUG"
-```
-
----
-
-## 📂 Run Directory
-
-Each call to `setup_logging` creates a **unique run directory**. The naming convention is:
-
-- If `run_id` is set → `{log_base_dir}/{run_id}`
-- Else if `use_timestamp=True` → `{log_base_dir}/{experiment_name}_YYYY-MM-DD_HH-MM-SS`
-- Else → `{log_base_dir}/{experiment_name}`
-
-The directory is created automatically. We recommend using timestamps (the default) so you never accidentally overwrite previous results.
-
-Inside the run directory you will find:
-
-- **`run.log`** – plain text log with all levels. Useful for `grep` and quick inspection.
-- **`run.jsonl`** – structured log; each line is a JSON object with fields: `timestamp`, `level`, `logger`, `message`, `module`, `function`. Perfect for programmatic analysis.
-- **`metrics.json`** – optional metrics file (if `MetricsTracker` is used with that path). Each line is a JSON record containing step, loss, accuracy, etc.
-
----
-
-## 📊 MetricsTracker
-
-`MetricsTracker` records per‑step metrics and flushes them to a JSON‑lines file. It also supports CSV export and simple querying (best loss, etc.).
-
-### Basic Usage
-
-```python
-tracker = MetricsTracker("path/to/metrics.json")
-tracker.log({"loss": 2.3, "lr": 1e-4}, step=100)
-tracker.log({"loss": 2.1, "accuracy": 0.85}, step=200)
-tracker.save()                        # forces flush to disk
-tracker.to_csv("metrics.csv")         # export to CSV
-
-best = tracker.get_best("loss", mode="min")
-print(f"Best loss: {best['loss']} at step {best['step']}")
-```
-
-- `log(metrics, step, flush)` – record a dictionary, optionally with a step number. If `flush=True`, the record is immediately written to disk.
-- `save()` – flush all in‑memory records to the JSON file.
-- `to_csv(path)` – reads all records (from file + memory) and writes a CSV.
-- `get_best(metric, mode)` – returns the record with the minimum or maximum value of a given metric.
-- `clear()` – empty the in‑memory buffer without affecting the file.
-
-**Important:** The tracker stores data as JSON lines (one JSON per line). This format is easy to parse with `pandas`, `jq`, or any script.
-
----
-
-## 🔄 Integration with HuggingFace Trainer
-
-The `LoggingCallback` class automatically logs training and evaluation metrics to both the standard logger and a `MetricsTracker`.
-
-```python
-from transformers import Trainer
-from experiment_logging import LoggingCallback
-
-callback = LoggingCallback(tracker, logger)
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=train_dataset,
-    eval_dataset=eval_dataset,
-    callbacks=[callback],          # ← add the callback
-)
+# 3. Train as usual – logs and metrics are captured automatically
 trainer.train()
 ```
 
-- **on_log**: captures `loss`, `learning_rate`, etc., at each logging step.
-- **on_evaluate**: captures all evaluation metrics and prints a summary.
-- **on_train_end**: forces a final save of all metrics.
+After training, the directory `./runs/run_001/logs/` will contain:
+
+- `my_experiment_run_001.log` – rotating log file (structured JSON or human‑readable)
+- `metrics.jsonl` – all logged metrics in JSON‑line format
+
+A snapshot of the run configuration is saved to `./runs/run_001/artifacts/config.json`.
 
 ---
 
-## 🌈 Colored Console Output
+## Components
 
-If `colorlog` is installed (`pip install colorlog`), the console output uses colors for different log levels.  
-You can disable this by setting `colored_console=False` in the config, or by not installing `colorlog`.
+### 1. `LoggingConfig` (dataclass)
 
----
+Holds all logging and tracking settings.
 
-## 🧪 Usage from the CLI
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `log_level` | `str` | `"INFO"` | Log level (DEBUG, INFO, WARNING, ERROR) |
+| `log_format` | `str` | `"structured"` | `"structured"` (JSON lines) or `"human"` |
+| `log_to_console` | `bool` | `True` | Print logs to stdout |
+| `log_to_file` | `bool` | `True` | Write logs to a rotating file |
+| `log_dir` | `str` | `"./logs"` | Directory for log files |
+| `experiment_name` | `str` | `"experiment"` | Name of the experiment |
+| `run_id` | `str` (optional) | `None` | Unique run identifier |
+| `use_timestamp` | `bool` | `True` | Append timestamp to file names |
+| `metrics_enabled` | `bool` | `True` | Enable metrics tracking |
+| `metrics_flush_every` | `int` | `10` | Flush metrics file every N log calls |
+| `extra_metadata` | `dict` | `{}` | Key‑value pairs added to every log entry |
 
-The logging system is fully integrated with the Efficient Transformer Toolkit CLI. When you run:
+### 2. `setup_logging(config: LoggingConfig) -> logging.Logger`
 
-```bash
-python cli.py train --preset fast --task mrpc
-```
-
-The CLI automatically creates a run directory and starts logging. No extra code needed.
-
-You can also use the logger in standalone scripts:
+Creates the root logger with the specified configuration.  
+It returns the logger for the `"framework"` namespace, which can be used throughout your code.
 
 ```python
-from experiment_logging import setup_logging, LoggingConfig
+from framework.experiment_logging import LoggingConfig, setup_logging
 
-cfg = LoggingConfig(experiment_name="my_test")
+cfg = LoggingConfig(log_level="DEBUG", log_format="human")
 logger = setup_logging(cfg)
-logger.info("Hello world")
+logger.info("Logger ready.")
 ```
+
+### 3. `get_logger(name: str) -> logging.Logger`
+
+Convenience function to retrieve a logger by name.
+
+### 4. `MetricsTracker`
+
+A simple in‑memory metrics store that can be saved to disk.
+
+```python
+tracker = MetricsTracker("./runs/run_001/metrics.jsonl")
+tracker.log({"loss": 0.5, "accuracy": 0.8}, step=100)
+tracker.flush()  # persists to file
+tracker.save()   # explicit save
+```
+
+### 5. `LoggingCallback`
+
+A HuggingFace `TrainerCallback` that automatically captures:
+- **Training logs** (`on_log`) – logs loss, learning rate, etc. at every logging step.
+- **Evaluation metrics** (`on_evaluate`) – logs all metrics returned by `trainer.evaluate()`.
+- **Finalisation** (`on_train_end`) – saves all accumulated metrics to disk.
+
+Simply add it to your `Trainer`:
+
+```python
+trainer.add_callback(LoggingCallback(tracker, logger))
+```
+
+### 6. `auto_setup(run_config, run_id, base_dir) -> dict`
+
+A one‑call convenience that:
+- Creates a `LoggingConfig` from the given dictionary.
+- Initialises the logger.
+- Creates a `MetricsTracker` pointing to the correct log directory.
+- Saves a snapshot of the run configuration for reproducibility.
+
+Returns a dictionary with keys `"logger"`, `"tracker"`, and `"config"`.
 
 ---
 
-## 🛠️ Advanced Tips
+## Structured vs Human‑Readable Format
 
-- **Multiple loggers:** Use `get_logger(__name__)` in your submodules to create child loggers. They will inherit the handlers from the root logger.
-- **Temporary runs:** Set `use_timestamp=False` and `run_id="debug"` to always write to the same folder during development.
-- **Log rotation:** Enable `max_log_size_mb` to rotate the text log file when it exceeds that size (useful for very long runs).
-- **Programmatic analysis:** Use the JSON lines log to compute statistics, filter errors, etc.:
-  ```python
-  import json
-  with open("logs/.../run.jsonl") as f:
-      for line in f:
-          record = json.loads(line)
-          if record["level"] == "ERROR":
-              print(record["message"])
-  ```
+### Human‑readable (`"human"`)
+```
+2025-03-01 12:00:00 [INFO] framework: Training started.
+2025-03-01 12:00:10 [INFO] framework: Step 100: loss=0.5234 lr=1.85e-05
+```
+
+### Structured JSON (`"structured"`)
+```json
+{"timestamp":"2025-03-01T12:00:00Z","level":"INFO","logger":"framework","message":"Training started."}
+{"timestamp":"2025-03-01T12:00:10Z","level":"INFO","logger":"framework","message":"Step 100: loss=0.5234 lr=1.85e-05"}
+```
+
+Structured logs are ideal for ingestion into log aggregators like Elasticsearch, Datadog, or for building custom dashboards.
 
 ---
 
-## 📂 Package Structure
+## Integration with the Framework
 
-```
-experiment_logging/
-├── __init__.py          # imports public API
-├── config.py            # LoggingConfig dataclass
-├── logger.py            # setup_logging, get_logger, formatters
-├── tracker.py           # MetricsTracker
-├── callbacks.py         # LoggingCallback (for HuggingFace Trainer)
-└── README.md            # this file
-```
+The `experiment_logging` module is used internally by many framework components:
+
+- **`ResultsManager`** – can optionally initialise a `LoggingCallback` to log all metrics.
+- **`MegaOrchestrator`** – calls `auto_setup` to set up logging for each run.
+- **`run.py`** and **`batch_runner.py`** – use `auto_setup` to create a logger and tracker at the start of every experiment.
+- **Training callbacks** – the `LoggingCallback` is automatically added by `HuggingFaceTrainer` when a `ResultsManager` is provided.
+
+You rarely need to call these functions directly when using the high‑level runners.
 
 ---
 
-## 📜 License
+## Dependencies
 
-Part of the **Efficient Transformer Toolkit** – MIT License.
+- `torch` – for `TrainerCallback` (optional, only if using the callback)
+- `transformers` – (optional, for the callback)
+- Standard library: `json`, `os`, `logging`, `sys`, `datetime`
+
+No external logging libraries are required.
+
+---
+
+## Extending
+
+- **Custom log handler** – add another handler to the root logger after `setup_logging()`, e.g., for sending logs to a remote server.
+- **Custom metrics backend** – subclass `MetricsTracker` and override `log()` to send metrics to a database or cloud service.

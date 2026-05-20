@@ -1,3 +1,5 @@
+"""Structured logger setup with JSON and human‑readable formats."""
+
 import os, logging, json, sys
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
@@ -42,7 +44,10 @@ def setup_logging(config: LoggingConfig = None) -> logging.Logger:
 
     if cfg.log_to_file:
         fname = f"{cfg.experiment_name}_{cfg.run_id or ''}.log".rstrip('_').lstrip('_')
-        fh = RotatingFileHandler(os.path.join(cfg.log_dir, fname), maxBytes=5*1024*1024, backupCount=3)
+        fh = RotatingFileHandler(
+            os.path.join(cfg.log_dir, fname),
+            maxBytes=5 * 1024 * 1024, backupCount=3
+        )
         fh.setFormatter(fmt); root.addHandler(fh)
 
     logger = logging.getLogger("framework")
@@ -50,4 +55,5 @@ def setup_logging(config: LoggingConfig = None) -> logging.Logger:
     return logger
 
 def get_logger(name: str = "framework") -> logging.Logger:
+    """Return a logger for the given name."""
     return logging.getLogger(name)
