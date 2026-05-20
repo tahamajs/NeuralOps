@@ -314,3 +314,130 @@ class Notification(models.Model):
         indexes = [
             models.Index(fields=['recipient', 'is_read']),
         ]
+# notes/models.py – add these below the existing classes
+
+class Workspace(models.Model):
+    """Collaborative workspace to group notes, runs, and experiments."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workspaces')
+    members = models.ManyToManyField(User, blank=True, related_name='joined_workspaces')
+    notes = models.ManyToManyField('ResearcherNote', blank=True, related_name='workspaces')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_archived = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+
+
+class Task(models.Model):
+    """Actionable task linked to a note."""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('done', 'Done'),
+        ('blocked', 'Blocked'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_tasks')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    due_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['due_date', '-created_at']
+
+
+class ModelRegistry(models.Model):
+    """Central registry for trained models and their stages."""
+    STAGE_CHOICES = [
+        ('development', 'Development'),
+        ('staging', 'Staging'),
+        ('production', 'Production'),
+        ('archived', 'Archived'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    version = models.CharField(max_length=50)
+    run = models.ForeignKey('jobscheduler.Job', on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_models')
+    note = models.ForeignKey('ResearcherNote', on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_models')
+    stage = models.CharField(max_length=20, choices=STAGE_CHOICES, default='development')
+    description = models.TextField(blank=True)
+    file = models.FileField(upload_to='models/', blank=True, null=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='registered_models')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [['name', 'version']]
+        ordering = ['-created_at']
+
+
+class HyperparameterSet(models.Model):
+    """Snapshot of hyperparameters for a training run."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, related_name='hyperparams')
+    run = models.ForeignKey('jobscheduler.Job', on_delete=models.CASCADE, related_name='hyperparams')
+    params = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Artifact(models.Model):
+    """Any file attached to a note or run."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, null=True, blank=True, related_name='artifacts')
+    run = models.ForeignKey('jobscheduler.Job', on_delete=models.CASCADE, null=True, blank=True, related_name='artifacts')
+    name = models.CharField(max_length=200)
+    file = models.FileField(upload_to='artifacts/')
+    file_type = models.CharField(max_length=50, blank=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class NoteLink(models.Model):
+    """Bidirectional link between notes (knowledge graph)."""
+    source = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, related_name='outgoing_links')
+    target = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, related_name='incoming_links')
+    link_type = models.CharField(max_length=50, default='related')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['source', 'target']]
+
+
+class PDFAnnotation(models.Model):
+    """Annotations on uploaded PDFs."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey('ResearcherNote', on_delete=models.CASCADE, related_name='pdf_annotations')
+    pdf_file = models.FileField(upload_to='pdfs/')
+    page_number = models.IntegerField()
+    highlight_text = models.TextField(blank=True)
+    comment = models.TextField()
+    x1 = models.FloatField()
+    y1 = models.FloatField()
+    x2 = models.FloatField()
+    y2 = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Protocol(models.Model):
+    """Reusable experiment protocol."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    steps = models.JSONField(default=list)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='protocols')
+    created_at = models.DateTimeField(auto_now_add=True)

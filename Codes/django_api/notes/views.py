@@ -820,3 +820,132 @@ def toggle_pin(request, note_id):
     return Response({"pinned": note.pinned})
 
 
+# notes/views.py – add at the bottom
+
+from .hf_upload import upload_note_to_hub
+
+# ═══════════════════════════════════════════════════════════════════
+# 26. HuggingFace Upload
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_note_to_huggingface(request, note_id, version='v1'):
+    """Upload a note to HuggingFace Hub as a Markdown dataset/space."""
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    if note.author != request.user and not request.user.is_staff:
+        return Response({"error": "Not allowed"}, status=403)
+    try:
+        hub_url = upload_note_to_hub(note)
+        note.metadata['hf_url'] = hub_url
+        note.save(update_fields=['metadata'])
+        return Response({"status": "uploaded", "url": hub_url})
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 27. Workspace CRUD
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def workspace_list(request, version='v1'):
+    if request.method == 'GET':
+        workspaces = Workspace.objects.filter(
+            models.Q(created_by=request.user) | models.Q(members=request.user)
+        ).distinct()
+        data = [{'id': str(w.id), 'name': w.name, 'description': w.description,
+                 'member_count': w.members.count(), 'is_archived': w.is_archived}
+                for w in workspaces]
+        return Response(data)
+    elif request.method == 'POST':
+        workspace = Workspace.objects.create(
+            name=request.data.get('name', 'Untitled'),
+            description=request.data.get('description', ''),
+            created_by=request.user
+        )
+        return Response({'id': str(workspace.id), 'status': 'created'}, status=201)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def workspace_add_note(request, workspace_id, note_id, version='v1'):
+    workspace = get_object_or_404(Workspace, id=workspace_id)
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    workspace.notes.add(note)
+    return Response({"status": "added"})
+
+# (You can add more workspace endpoints similarly)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 28. Task CRUD
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def task_list(request, note_id, version='v1'):
+    note = get_object_or_404(ResearcherNote, id=note_id)
+    if request.method == 'GET':
+        tasks = note.tasks.all()
+        data = [{'id': str(t.id), 'title': t.title, 'status': t.status,
+                 'due_date': t.due_date, 'assigned_to': t.assigned_to.username if t.assigned_to else None}
+                for t in tasks]
+        return Response(data)
+    elif request.method == 'POST':
+        task = Task.objects.create(
+            note=note,
+            title=request.data.get('title', ''),
+            description=request.data.get('description', ''),
+            assigned_to_id=request.data.get('assigned_to'),
+            status=request.data.get('status', 'pending'),
+            due_date=request.data.get('due_date'),
+        )
+        return Response({'id': str(task.id)}, status=201)
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def task_update(request, note_id, task_id, version='v1'):
+    task = get_object_or_404(Task, id=task_id, note_id=note_id)
+    if request.data.get('status'):
+        task.status = request.data['status']
+    task.save()
+    return Response({'status': 'updated'})
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 29. Model Registry
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def model_registry_list(request, version='v1'):
+    if request.method == 'GET':
+        models_qs = ModelRegistry.objects.filter(created_by=request.user)
+        data = [{'id': str(m.id), 'name': m.name, 'version': m.version,
+                 'stage': m.stage, 'created_at': m.created_at}
+                for m in models_qs]
+        return Response(data)
+    elif request.method == 'POST':
+        registry = ModelRegistry.objects.create(
+            name=request.data['name'],
+            version=request.data['version'],
+            description=request.data.get('description', ''),
+            stage=request.data.get('stage', 'development'),
+            created_by=request.user
+        )
+        return Response({'id': str(registry.id)}, status=201)
+
+# ═══════════════════════════════════════════════════════════════════
+# 30. Note Links
+# ═══════════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_note_link(request, version='v1'):
+    source_id = request.data.get('source_id')
+    target_id = request.data.get('target_id')
+    link_type = request.data.get('link_type', 'related')
+    source = get_object_or_404(ResearcherNote, id=source_id, author=request.user)
+    target = get_object_or_404(ResearcherNote, id=target_id)
+    link, created = NoteLink.objects.get_or_create(
+        source=source, target=target, defaults={'link_type': link_type}
+    )
+    return Response({'status': 'created' if created else 'already_exists'})
+
+# (Add similarly for Artifact, Protocol, etc.)
