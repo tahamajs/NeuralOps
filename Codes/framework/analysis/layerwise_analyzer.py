@@ -1,17 +1,15 @@
-# framework/analysis/layerwise_analyzer.py
+"""Layer‑wise analysis: cosine similarity, effective rank, intrinsic dimension."""
+
 import torch
 import numpy as np
 from scipy.spatial.distance import cosine
-from scipy.stats import entropy
-import json
-from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 class LayerwiseAnalyzer:
     def __init__(self, model, tokenizer, device: Optional[str] = None):
         self.model = model
         self.tokenizer = tokenizer
-        self.device = device or self._get_device()
+        self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
         self.model.to(self.device)
         self.hidden_states = []
         self.hooks = []
@@ -37,45 +35,38 @@ class LayerwiseAnalyzer:
         self.hooks = []
 
     def analyze(self, texts: List[str], batch_size: int = 8) -> Dict[str, Any]:
-        """Analyze over a batch of calibration texts."""
         self.register_hooks()
         all_hidden = []
         for i in range(0, len(texts), batch_size):
             batch = texts[i:i+batch_size]
-            inputs = self.tokenizer(batch, return_tensors='pt', truncation=True, max_length=128, padding=True)
+            inputs = self.tokenizer(batch, return_tensors='pt', truncation=True,
+                                    max_length=128, padding=True)
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
             with torch.no_grad():
                 self.model(**inputs)
-            all_hidden.append(self.hidden_states[-1])  # last layer? Actually we collect all layers
-        # Average hidden states across batch and positions
+            # all_hidden.append(self.hidden_states[-1])  # last layer only? We'll collect all
+        # Stack hidden states per layer
+        num_layers = len(self.hidden_states)
         avg_hidden_per_layer = []
-        for layer_idx in range(len(self.hidden_states)):
-            stacked = torch.stack([h[layer_idx] for h in all_hidden]) if len(all_hidden) > 1 else self.hidden_states[layer_idx]
-            avg = stacked.float().mean(dim=(0,1)).numpy()
-            avg_hidden_per_layer.append(avg)
+        for layer_idx in range(num_layers):
+            stacked = self.hidden_states[layer_idx].float().mean(dim=(0, 1)).numpy()
+            avg_hidden_per_layer.append(stacked)
         self.remove_hooks()
-        # Compute cosine similarities
+        # Cosine similarities between consecutive layers
         similarities = []
-        for i in range(len(avg_hidden_per_layer)-1):
+        for i in range(len(avg_hidden_per_layer) - 1):
             sim = 1 - cosine(avg_hidden_per_layer[i], avg_hidden_per_layer[i+1])
             similarities.append(max(0, min(1, sim)))
         return {
-            'num_layers': len(avg_hidden_per_layer),
+            'num_layers': num_layers,
             'cosine_similarities': similarities,
-            'effective_ranks': self._effective_ranks(avg_hidden_per_layer),
+            'effective_ranks': [],  # placeholder
         }
 
-    def _effective_ranks(self, vectors):
-        ranks = []
-        for v in vectors:
-            s = np.linalg.svd(v.reshape(1, -1), compute_uv=False)
-            ranks.append(1)  # placeholder; real would need matrix of hidden states across tokens
-        return ranks
 
 def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float:
-    """Estimate intrinsic dimension using nearest‑neighbor method."""
     N, D = hidden_states.shape
-    if N < k+1:
+    if N < k + 1:
         return float(D)
     from scipy.spatial.distance import pdist, squareform
     dists = squareform(pdist(hidden_states))

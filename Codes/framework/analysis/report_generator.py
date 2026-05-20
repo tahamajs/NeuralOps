@@ -1,6 +1,8 @@
-import os, json
+"""HTML, LaTeX, interactive report generators."""
+
+import os
+import json
 import pandas as pd
-import plotly.graph_objects as go
 from pathlib import Path
 from datetime import datetime
 
@@ -14,20 +16,25 @@ def generate_html_report(df: pd.DataFrame, output_dir: str, title: str = "Analys
 <h2>Summary Table</h2>{df.to_html(index=False)}
 </body></html>"""
     out = os.path.join(output_dir, 'report.html')
-    with open(out, 'w') as f: f.write(html)
+    with open(out, 'w') as f:
+        f.write(html)
     return out
 
+
 def generate_latex_table(df: pd.DataFrame, output_path: str, caption: str = "Results") -> str:
-    lines = [r"\begin{table}[htbp]\centering", r"\caption{"+caption+"}", r"\begin{tabular}{lcccr}", r"\toprule"]
+    lines = [r"\begin{table}[htbp]\centering", r"\caption{" + caption + "}", r"\begin{tabular}{lcccr}", r"\toprule"]
     lines.append("Model & Task & Rank & Accuracy & Drop \\\\")
     lines.append(r"\midrule")
     for _, row in df.iterrows():
-        acc = row.get('accuracy',0); drop = row.get('accuracy_drop','-')
-        drop_str = f"{drop:.4f}" if isinstance(drop,(int,float)) else '-'
+        acc = row.get('accuracy', 0)
+        drop = row.get('accuracy_drop', '-')
+        drop_str = f"{drop:.4f}" if isinstance(drop, (int, float)) else '-'
         lines.append(f"{row['model']} & {row['task']} & {row['rank']} & {acc:.4f} & {drop_str} \\\\")
     lines.extend([r"\bottomrule", r"\end{tabular}", r"\end{table}"])
-    with open(output_path, 'w') as f: f.write("\n".join(lines))
+    with open(output_path, 'w') as f:
+        f.write("\n".join(lines))
     return output_path
+
 
 def generate_full_report(df: pd.DataFrame, output_dir: str, experiment_name: str = "experiment") -> str:
     os.makedirs(output_dir, exist_ok=True)
@@ -36,22 +43,23 @@ def generate_full_report(df: pd.DataFrame, output_dir: str, experiment_name: str
     create_comprehensive_plots(df, plots_dir)
     plot_tradeoff(df, plots_dir)
     generate_html_report(df, output_dir, title=f"{experiment_name} Full Report")
-    csv_path = os.path.join(output_dir, "summary.csv"); df.to_csv(csv_path, index=False)
+    csv_path = os.path.join(output_dir, "summary.csv")
+    df.to_csv(csv_path, index=False)
     generate_latex_table(df, os.path.join(output_dir, "results.tex"))
     return os.path.join(output_dir, "report.html")
 
+
 def generate_interactive_report(df: pd.DataFrame, output_dir: str) -> str:
     os.makedirs(output_dir, exist_ok=True)
-    # Rank vs Accuracy plot
+    import plotly.graph_objects as go
     fig1 = go.Figure()
     for task in df['task'].unique():
-        sub = df[df['task']==task]
+        sub = df[df['task'] == task]
         fig1.add_trace(go.Scatter(x=sub['rank'], y=sub['accuracy'], mode='lines+markers', name=task))
     fig1.update_layout(title='Accuracy vs Rank', xaxis_title='Rank', yaxis_title='Accuracy')
-    # Model comparison
     fig2 = go.Figure()
     for model in df['model'].unique():
-        sub = df[df['model']==model]
+        sub = df[df['model'] == model]
         fig2.add_trace(go.Scatter(x=sub['rank'], y=sub['accuracy'], mode='lines+markers', name=model))
     fig2.update_layout(title='Model Comparison', xaxis_title='Rank', yaxis_title='Accuracy')
     html = f"""<!DOCTYPE html>
@@ -63,5 +71,6 @@ Plotly.newPlot('rankPlot', {json.dumps(fig1.to_dict())});
 Plotly.newPlot('modelPlot', {json.dumps(fig2.to_dict())});
 </script></body></html>"""
     path = os.path.join(output_dir, 'interactive_report.html')
-    with open(path, 'w') as f: f.write(html)
+    with open(path, 'w') as f:
+        f.write(html)
     return path

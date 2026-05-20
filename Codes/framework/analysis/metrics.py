@@ -1,17 +1,19 @@
-# framework/analysis/metrics.py
+"""Metrics computation, aggregation, and tracking."""
+
 import json
 import os
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Any, Optional
-from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
-from scipy.stats import pearsonr, spearmanr
 
 def compute_metrics(predictions: np.ndarray, labels: np.ndarray, task: str = "classification") -> Dict[str, float]:
-    """Compute metrics based on task type."""
+    from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
+    from scipy.stats import pearsonr, spearmanr
+
     metrics = {}
     if task in ("regression", "stsb"):
-        pred_flat = np.squeeze(predictions); labels_flat = np.squeeze(labels)
+        pred_flat = np.squeeze(predictions)
+        labels_flat = np.squeeze(labels)
         metrics['pearson'] = pearsonr(pred_flat, labels_flat)[0]
         metrics['spearman'] = spearmanr(pred_flat, labels_flat)[0]
         metrics['pearson_spearman'] = (metrics['pearson'] + metrics['spearman']) / 2
@@ -24,8 +26,8 @@ def compute_metrics(predictions: np.ndarray, labels: np.ndarray, task: str = "cl
             metrics['matthews_corrcoef'] = matthews_corrcoef(labels, preds)
     return metrics
 
+
 def aggregate_results(results_list: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Aggregate results from multiple runs (mean, std, values)."""
     if not results_list:
         return {}
     aggregated = {}
@@ -36,6 +38,7 @@ def aggregate_results(results_list: List[Dict[str, Any]]) -> Dict[str, Any]:
             aggregated[f"{key}_std"] = np.std(values)
             aggregated[f"{key}_values"] = values
     return aggregated
+
 
 class MetricsTracker:
     """Tracks per‑step metrics and saves as JSON lines."""
@@ -68,7 +71,7 @@ class MetricsTracker:
                 for line in f:
                     try:
                         all_records.append(json.loads(line))
-                    except:
+                    except json.JSONDecodeError:
                         pass
         all_records.extend(self.records)
         return pd.DataFrame(all_records)
