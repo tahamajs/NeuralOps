@@ -1,7 +1,7 @@
 """
-Central registry system for the Efficient Transformer Toolkit.
+Central registries for the Efficient Transformer Toolkit.
 
-All framework components (attentions, compressors, trainers, visualizers, etc.)
+All framework components (attentions, compressors, trainers, etc.)
 are stored in registries, enabling dynamic discovery and plug‑and‑play integration.
 """
 
@@ -45,7 +45,6 @@ class Registry:
         return self._dict[key.lower()]
 
     def keys(self) -> List[str]:
-        """Return a list of all registered keys (in original casing)."""
         return list(self._dict.keys())
 
     def __contains__(self, key: str) -> bool:
@@ -61,26 +60,28 @@ class Registry:
 # ----------------------------------------------------------------------
 # Global registries – populated by their respective packages
 # ----------------------------------------------------------------------
-ATTENTION_REGISTRY = Registry("attentions")      # attention modules (Nexus, LEKA, ...)
-COMPRESSOR_REGISTRY = Registry("compressors")    # compression strategies (SVD, TT, ...)
-METHOD_REGISTRY = Registry("methods")            # training methods (LoRA, R-Drop, ...)
-AUX_REGISTRY = Registry("auxiliary")             # auxiliary modules (RoPE, SSM, token pruning, ...)
+ATTENTION_REGISTRY = Registry("attentions")
+COMPRESSOR_REGISTRY = Registry("compressors")   # legacy, still used by some compressors
+METHOD_REGISTRY = Registry("methods")
+AUX_REGISTRY = Registry("auxiliary")
 
-# Optional registries (if needed)
-MODEL_REGISTRY = Registry("models")              # different base models
-DATASET_REGISTRY = Registry("datasets")          # GLUE, SuperGLUE, etc.
-LOSS_REGISTRY = Registry("losses")               # custom loss functions
-TRAINER_REGISTRY = Registry("trainers")          # trainer classes
-VISUALIZER_REGISTRY = Registry("visualizers")    # visualization utilities
+# New: Unified component registry for all model parts
+COMPONENT_REGISTRY = Registry("components")     # keys like "attention:linformer", "ffn:svd", ...
+
+MODEL_REGISTRY = Registry("models")
+DATASET_REGISTRY = Registry("datasets")
+LOSS_REGISTRY = Registry("losses")
+TRAINER_REGISTRY = Registry("trainers")
+VISUALIZER_REGISTRY = Registry("visualizers")
 
 
 def list_all_components() -> dict:
-    """Convenience function that returns all global registry keys."""
     return {
         "attentions": ATTENTION_REGISTRY.keys(),
         "compressors": COMPRESSOR_REGISTRY.keys(),
         "methods": METHOD_REGISTRY.keys(),
         "auxiliary": AUX_REGISTRY.keys(),
+        "components": COMPONENT_REGISTRY.keys(),
         "models": MODEL_REGISTRY.keys(),
         "datasets": DATASET_REGISTRY.keys(),
         "losses": LOSS_REGISTRY.keys(),

@@ -1,4 +1,4 @@
-# framework/core/base.py
+# framework/core/base.py (cleaned)
 import torch.nn as nn
 from typing import Optional, Any, Dict, Tuple
 from abc import abstractmethod
@@ -14,16 +14,15 @@ class BaseAttention(nn.Module):
 
     @abstractmethod
     def forward(self, hidden_states, attention_mask=None, **kwargs):
-        """Forward pass – must be implemented by subclass."""
         pass
 
     def extra_repr(self) -> str:
         return f"num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}"
 
 
-class BaseCompressor(nn.Module):
+class BaseCompressor:
+    """Base class for all compressors. Not a nn.Module to avoid parameter storage."""
     def __init__(self, model: nn.Module, name: str = "base", **kwargs):
-        super().__init__()                     # ← FIXED
         self.model = model
         self.name = name
         self.kwargs = kwargs
@@ -31,7 +30,6 @@ class BaseCompressor(nn.Module):
 
     @abstractmethod
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
-        """Apply compression and return (compressed_model, stats)."""
         pass
 
     def _count_params(self, model: nn.Module) -> int:
@@ -50,34 +48,15 @@ class BaseCompressor(nn.Module):
         }
 
     def summary(self) -> str:
-        stats = self.get_compression_stats()
-        return f"""
-========================================
-Compression Summary: {self.name}
-========================================
-Original parameters:  {stats['original_parameters']:,}
-Compressed parameters: {stats['compressed_parameters']:,}
-Parameters saved:     {stats['saved_parameters']:,}
-Compression ratio:    {stats['compression_ratio']:.3f}
-Reduction:            {stats['reduction_percentage']:.2f}%
-========================================
-"""
-
-
-class BaseVisualizer:
-    def __init__(self, output_dir: str = "visualizations"):
-        self.output_dir = output_dir
-        import os
-        os.makedirs(output_dir, exist_ok=True)
-
-    @abstractmethod
-    def generate(self, *args, **kwargs):
-        pass
-
-    def _save_figure(self, fig, filename: str, dpi: int = 150):
-        import os
-        import matplotlib.pyplot as plt
-        path = os.path.join(self.output_dir, filename)
-        fig.savefig(path, dpi=dpi, bbox_inches='tight')
-        plt.close(fig)
-        return path
+        s = self.get_compression_stats()
+        return (
+            f"\n========================================\n"
+            f"Compression Summary: {self.name}\n"
+            f"========================================\n"
+            f"Original parameters:  {s['original_parameters']:,}\n"
+            f"Compressed parameters: {s['compressed_parameters']:,}\n"
+            f"Parameters saved:     {s['saved_parameters']:,}\n"
+            f"Compression ratio:    {s['compression_ratio']:.3f}\n"
+            f"Reduction:            {s['reduction_percentage']:.2f}%\n"
+            f"========================================\n"
+        )
