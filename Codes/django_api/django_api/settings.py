@@ -2,34 +2,40 @@ import os
 import sys
 from pathlib import Path
 
-
-# ----------------------------------------------------------------------
-# Make the framework package importable
-# ----------------------------------------------------------------------
-# If your framework lives in a separate directory (e.g., a sibling "framework" package),
-# ensure it's on the Python path.
-# Uncomment the appropriate block below.
-FRAMEWORK_DIR = Path("/Users/tahamajs/Documents/uni/Project/Codes")   # parent directory
-
-# Add it to sys.path *before* any other imports
-if str(FRAMEWORK_DIR) not in sys.path:
-    sys.path.insert(0, str(FRAMEWORK_DIR))
-
-# Now this import will work
-from framework.utils.paths import get_glue_dir
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = BASE_DIR.parent.parent
+CODES_DIR = BASE_DIR.parent
 
-# Option 1: framework is a sibling of the "Codes" directory (Project/framework)
-FRAMEWORK_DIR = BASE_DIR.parent / 'framework'
+def load_env_file(path: Path) -> None:
+    """Load simple KEY=VALUE or export KEY=VALUE lines without overriding env."""
+    if not path.exists():
+        return
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export "):].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            os.environ.setdefault(key, value)
 
-# Option 2: framework is inside the "Codes" directory (Codes/framework) – use instead:
-# FRAMEWORK_DIR = BASE_DIR / 'framework'
 
-if str(FRAMEWORK_DIR) not in sys.path:
-    sys.path.insert(0, str(FRAMEWORK_DIR))
+# ----------------------------------------------------------------------
+# Environment and import paths
+# ----------------------------------------------------------------------
+load_env_file(PROJECT_ROOT / ".env")
+load_env_file(BASE_DIR / ".env")
 
-# Now the import will work because framework/ is on sys.path
+# Make the Codes package root importable so `framework.*` resolves without
+# shadowing Django apps such as `model_versioning`.
+if str(CODES_DIR) not in sys.path:
+    sys.path.insert(0, str(CODES_DIR))
+
 from framework.utils.paths import get_glue_dir
 
 # ----------------------------------------------------------------------
@@ -70,6 +76,8 @@ INSTALLED_APPS = [
     'notes',
     'model_versioning',
     'terminal',
+    'agents',
+    'sweeps',
     
     'paper',
 ]
