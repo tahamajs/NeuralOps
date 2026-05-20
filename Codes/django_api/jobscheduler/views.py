@@ -447,3 +447,98 @@ def my_scheduled_jobs(request):
             for j in sched._running.values() if j.user == request.user.username
         ]
     return Response({"pending": pending, "running": running})
+
+# Add these views to the existing views.py:
+
+from .models import JobGroup
+from .scheduler import scheduler, SchedulerConfig, Priority
+
+
+# ── Group Management ────────────────────────────────────────────────
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def group_list(request):
+    if request.method == 'GET':
+        groups = JobGroup.objects.all()
+        return Response([{
+            'name': g.name,
+            'weight': g.weight,
+            'guarantee_gpus': g.guarantee_gpus,
+            'max_gpus': g.max_gpus,
+            'description': g.description,
+        } for g in groups])
+
+    elif request.method == 'POST':
+        data = request.data
+        group, created = JobGroup.objects.update_or_create(
+            name=data.get('name', 'default'),
+            defaults={
+                'weight': data.get('weight', 1.0),
+                'guarantee_gpus': data.get('guarantee_gpus', 0),
+                'max_gpus': data.get('max_gpus', -1),
+                'description': data.get('description', ''),
+            }
+        )
+        return Response({
+            'name': group.name,
+            'weight': group.weight,
+            'created': created,
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+
+@api_view(['GET', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def group_detail(request, group_name):
+    group = get_object_or_404(JobGroup, name=group_name)
+    if request.method == 'GET':
+        return Response({
+            'name': group.name,
+            'weight': group.weight,
+            'guarantee_gpus': group.guarantee_gpus,
+            'max_gpus': group.max_gpus,
+            'description': group.description,
+        })
+    elif request.method == 'DELETE':
+        group.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ── Scheduler Advanced Info ─────────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fair_share_status(request):
+    return Response({
+        'groups': scheduler._fair_share_snapshot(),
+        'enabled': scheduler.cfg.fair_share_enabled,
+        'decay_half_life': scheduler.cfg.fair_share_decay_half_life,
+    })
+
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def scheduler_config_view(request):
+    if request.method == 'GET':
+        cfg = scheduler.cfg
+        return Response({
+            'aging_enabled': cfg.aging_enabled,
+            'aging_grace_period': cfg.aging_grace_period,
+            'aging_interval': cfg.aging_interval,
+            'aging_max_effective': cfg.aging_max_effective,
+            'backfill_enabled': cfg.backfill_enabled,
+            'backfill_interval': cfg.backfill_interval,
+            'backfill_max_job_duration': cfg.backfill_max_job_duration,
+            'fair_share_enabled': cfg.fair_share_enabled,
+            'preempt_checkpoint_grace': cfg.preempt_checkpoint_grace,
+            'preempt_min_priority_gap': cfg.preempt_min_priority_gap,
+            'job_timeout': cfg.job_timeout,
+        })
+    elif request.method == 'PATCH':
+        # Update mutable config fields
+        for field in ('aging_enabled', 'aging_grace_period', 'aging_interval',
+                      'aging_max_effective', 'backfill_enabled', 'backfill_interval',
+                      'backfill_max_job_duration', 'fair_share_enabled',
+                      'preempt_checkpoint_grace', 'preempt_min_priority_gap',
+                      'job_timeout'):
+            if field in request.data:
+                setattr(scheduler.cfg, field, request.data[field])
+        return Response({'status': 'updated'})

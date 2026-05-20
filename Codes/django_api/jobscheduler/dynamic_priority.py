@@ -1,12 +1,9 @@
-import threading
-import time
+import threading, time
 from django.utils import timezone
 from django.db import connection
 from .models import Job
 
 class DynamicPriorityManager:
-    """Periodically adjusts priorities of queued and running jobs."""
-
     def __init__(self, scheduler, boost_wait_threshold=600, boost_amount=1,
                  reduce_runtime_threshold=3600, reduce_amount=1,
                  check_interval=30):
@@ -30,7 +27,6 @@ class DynamicPriorityManager:
             if connection.connection is None:
                 continue
             try:
-                # Boost queued jobs that waited too long
                 for job in Job.objects.filter(status='queued'):
                     wait = (timezone.now() - job.created_at).total_seconds()
                     if wait > self.boost_wait_threshold:
@@ -40,7 +36,6 @@ class DynamicPriorityManager:
                             job.save(update_fields=['priority'])
                             self.scheduler.update_priority(str(job.id), new_prio)
 
-                # Reduce priority of long‑running jobs
                 for job in Job.objects.filter(status='running'):
                     if job.started_at is None:
                         continue
