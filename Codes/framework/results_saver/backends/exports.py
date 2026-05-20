@@ -1,4 +1,5 @@
-import logging
+import logging, os
+
 logger = logging.getLogger(__name__)
 
 EXPORTERS = {}
@@ -12,7 +13,7 @@ def _register(fmt):
 @_register("onnx")
 def export_onnx(model, input_example, output_dir):
     import torch
-    path = f"{output_dir}/model.onnx"
+    path = os.path.join(output_dir, "model.onnx")
     torch.onnx.export(model, input_example, path)
     logger.info("Exported ONNX to %s", path)
 
@@ -20,7 +21,7 @@ def export_onnx(model, input_example, output_dir):
 def export_torchscript(model, input_example, output_dir):
     import torch
     traced = torch.jit.trace(model, input_example)
-    path = f"{output_dir}/model.pt"
+    path = os.path.join(output_dir, "model.pt")
     traced.save(path)
     logger.info("Exported TorchScript to %s", path)
 
