@@ -1,84 +1,120 @@
 # notes/models.py
+"""
+Complete Research Notebook System for ML Experiment Tracking.
+Supports auto-generated experiment reports, rich Markdown notes,
+version history, collaborative editing, mentions, notifications,
+full-text search, and webhook integrations.
+"""
 import uuid
 import logging
 from django.db import models
 from django.contrib.auth.models import User
-# REMOVE: from django.contrib.postgres.fields import ArrayField
 from django.utils import timezone
+from django.utils.text import slugify
 from django.urls import reverse
+from django.contrib.postgres.search import SearchVectorField, SearchVector
 from jobscheduler.models import Job
 
 logger = logging.getLogger(__name__)
 
-# ----------------------------------------------------------------------
-# 1. ResearcherNote – Main model with all features
-# ----------------------------------------------------------------------
+
 class ResearcherNote(models.Model):
     """
-    Comprehensive research notebook entry with versioning, threading,
-    mentions, reactions, attachments, tags, public/private, and soft delete.
+    Comprehensive ML research notebook entry.
+    Inspired by W&B Reports, MLflow notes, and Benchling ELN.
     """
+    NOTE_TYPES = [
+        ('general', 'General Note'),
+        ('experiment_log', 'Experiment Log'),
+        ('training_report', 'Training Report'),
+        ('compression_report', 'Compression Report'),
+        ('literature_review', 'Literature Review'),
+        ('hypothesis', 'Hypothesis / Idea'),
+        ('meeting_notes', 'Meeting Notes'),
+        ('code_snippet', 'Code Snippet'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # CHANGE related_name to avoid clash with a field named 'notes' in Job model
-    run = models.ForeignKey(Job, on_delete=models.CASCADE, null=True, blank=True, related_name='researcher_notes')
+    
+    # ── Relationships ──────────────────────────────────────────
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notes')
-    
-    # Content
-    title = models.CharField(max_length=200, blank=True)
-    content = models.TextField()
-    shared_with = models.ManyToManyField(
-        User,
-        blank=True,
-        related_name='shared_notes',
-        help_text="Users this note is shared with"
+    run = models.ForeignKey(
+        Job, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='researcher_notes',
+        help_text="Training run this note is linked to"
     )
-
-    # Organisation
-    # REPLACE ArrayField with JSONField
-    tags = models.JSONField(default=list, blank=True)   # stores list of strings
-    is_public = models.BooleanField(default=False, help_text="If public, visible to all users")
-    pinned = models.BooleanField(default=False, help_text="Pin to top of notes list")
+    linked_runs = models.ManyToManyField(
+        Job, blank=True, related_name='linked_notes',
+        help_text="Additional runs referenced in this note"
+    )
+    parent_note = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, blank=True,
+        related_name='replies'
+    )
     
-    # Versioning & threading
-    version = models.IntegerField(default=1, help_text="Note version number (increments on edit)")
-    parent_note = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    # ── Content ────────────────────────────────────────────────
+    note_type = models.CharField(
+        max_length=30, choices=NOTE_TYPES, default='general',
+        help_text="Type of research note"
+    )
+    title = models.CharField(max_length=300, blank=True)
+    content = models.TextField(blank=True, help_text="Markdown content with LaTeX support")
     
-    # Mentions (explicit many-to-many, plus separate model for tracking)
-    mentioned_users = models.ManyToManyField(User, blank=True, related_name='mentioned_in_notes')
+    # ── Metadata ───────────────────────────────────────────────
+    tags = models.JSONField(default=list, blank=True)
+    metadata = models.JSONField(default=dict, blank=True, help_text="""
+        Flexible metadata: {
+            "hyperparameters": {...},
+            "metrics_snapshot": {...},
+            "model_version": "v3",
+            "dataset": "glue-mrpc",
+            "git_commit": "abc123",
+            "linked_artifacts": ["/path/to/model.pth"],
+            "charts": [{"name": "loss_curve", "data": [...]}]
+        }
+    """)
     
-    # Reactions (like, important, etc.)
+    # ── Visibility ─────────────────────────────────────────────
+    is_public = models.BooleanField(default=False)
+    is_pinned = models.BooleanField(default=False)
+    is_favorite = models.BooleanField(default=False)
+    shared_with = models.ManyToManyField(User, blank=True, related_name='shared_notes')
+    
+    # ── Reactions ──────────────────────────────────────────────
     reactions = models.JSONField(default=dict, blank=True)
     
-    # Attachments and images
+    # ── Attachments ────────────────────────────────────────────
     attachment = models.FileField(upload_to='note_attachments/', blank=True, null=True)
     image = models.ImageField(upload_to='note_images/', blank=True, null=True)
     
-    # Metadata (can store snapshot of run metrics, hyperparameters, etc.)
-    metadata = models.JSONField(default=dict, blank=True)
+    # ── Versioning ─────────────────────────────────────────────
+    version = models.IntegerField(default=1)
+    slug = models.SlugField(max_length=300, blank=True)
     
-    # URL-friendly slug (auto-generated from title)
-    slug = models.SlugField(max_length=255, blank=True, unique=False, help_text="Auto-generated from title")
+    # ── Full-Text Search ───────────────────────────────────────
+    search_vector = SearchVectorField(null=True, blank=True)
     
-    # Timestamps and soft delete
+    # ── Timestamps ─────────────────────────────────────────────
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(null=True, blank=True, help_text="Soft delete timestamp")
+    deleted_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        ordering = ['-pinned', '-created_at']
+        ordering = ['-is_pinned', '-created_at']
         indexes = [
             models.Index(fields=['run']),
             models.Index(fields=['author']),
+            models.Index(fields=['note_type']),
             models.Index(fields=['created_at']),
-            models.Index(fields=['slug']),
             models.Index(fields=['is_public']),
-            models.Index(fields=['pinned']),
+            models.Index(fields=['is_pinned']),
+            models.Index(fields=['is_favorite']),
             models.Index(fields=['deleted_at']),
-            models.Index(fields=['parent_note']),
+            models.Index(fields=['slug']),
         ]
     
     def __str__(self):
-        return f"Note by {self.author.username}: {self.title[:50] or 'Untitled'}"
+        return f"[{self.note_type}] {self.title[:60] or 'Untitled'} by {self.author.username}"
     
     def get_absolute_url(self):
         return reverse('note_detail', kwargs={'note_id': self.id})
@@ -86,72 +122,75 @@ class ResearcherNote(models.Model):
     def soft_delete(self):
         self.deleted_at = timezone.now()
         self.save(update_fields=['deleted_at'])
-        # Trigger webhook event (if configured)
-        from .webhook_utils import trigger_webhook_event
-        trigger_webhook_event('note.deleted', self)
     
-    def increment_version(self):
-        self.version += 1
-        self.save(update_fields=['version'])
+    def toggle_favorite(self):
+        self.is_favorite = not self.is_favorite
+        self.save(update_fields=['is_favorite'])
     
-    @property
-    def is_deleted(self):
-        return self.deleted_at is not None
+    def toggle_pin(self):
+        self.is_pinned = not self.is_pinned
+        self.save(update_fields=['is_pinned'])
     
     @property
     def reply_count(self):
-        return self.replies.count()
+        return self.replies.filter(deleted_at__isnull=True).count()
+    
+    @property
+    def word_count(self):
+        return len(self.content.split()) if self.content else 0
+    
+    @property
+    def reading_time_minutes(self):
+        words = self.word_count
+        return max(1, round(words / 200))  # 200 wpm
     
     def save(self, *args, **kwargs):
         is_new = self.pk is None
         old_content = None
+        
         if not is_new:
             try:
-                old_content = ResearcherNote.objects.get(pk=self.pk).content
+                old = ResearcherNote.objects.only('content').get(pk=self.pk)
+                old_content = old.content
             except ResearcherNote.DoesNotExist:
                 pass
         
-        # Auto-generate slug from title if not provided
+        # Auto-slug
         if not self.slug and self.title:
-            from django.utils.text import slugify
-            base_slug = slugify(self.title)
-            unique_slug = base_slug
-            counter = 1
-            while ResearcherNote.objects.filter(slug=unique_slug).exclude(pk=self.pk).exists():
-                unique_slug = f"{base_slug}-{counter}"
-                counter += 1
-            self.slug = unique_slug
+            self.slug = self._unique_slug()
         
         super().save(*args, **kwargs)
         
-        # If content changed, create a version record
+        # Version tracking
         if not is_new and old_content is not None and old_content != self.content:
             NoteVersion.objects.create(
                 note=self,
-                version_number=self.version,          # was self.version - 1
+                version_number=self.version,
                 content_snapshot=old_content,
+                title_snapshot=getattr(self, '_old_title', self.title),
                 changed_by=self.author,
-                change_reason="auto"
             )
-            self.increment_version()                # now version becomes self.version + 1
-        
-        # Trigger webhook events
-        from .webhook_utils import trigger_webhook_event
-        if is_new:
-            trigger_webhook_event('note.created', self)
-        elif old_content != self.content:
-            trigger_webhook_event('note.updated', self)
+            self.version += 1
+            # Save again to update version (avoid recursion)
+            ResearcherNote.objects.filter(pk=self.pk).update(version=self.version)
+    
+    def _unique_slug(self):
+        base = slugify(self.title)[:250]
+        unique = base
+        counter = 1
+        while ResearcherNote.objects.filter(slug=unique).exclude(pk=self.pk).exists():
+            unique = f"{base}-{counter}"
+            counter += 1
+        return unique
 
-# ----------------------------------------------------------------------
-# 2. NoteVersion – Full version history (optional but recommended)
-# ----------------------------------------------------------------------
+
 class NoteVersion(models.Model):
-    """Stores full snapshot of note content for version history."""
+    """Full snapshot of a note at a point in time."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     note = models.ForeignKey(ResearcherNote, on_delete=models.CASCADE, related_name='versions')
     version_number = models.IntegerField()
     content_snapshot = models.TextField()
-    title_snapshot = models.CharField(max_length=200, blank=True)
+    title_snapshot = models.CharField(max_length=300, blank=True)
     changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     change_reason = models.CharField(max_length=200, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -161,31 +200,24 @@ class NoteVersion(models.Model):
         unique_together = [['note', 'version_number']]
     
     def __str__(self):
-        return f"Version {self.version_number} of {self.note.id}"
+        return f"v{self.version_number} of {self.note_id}"
 
-# ----------------------------------------------------------------------
-# 3. NoteImage – Embedded images (with ordering)
-# ----------------------------------------------------------------------
+
 class NoteImage(models.Model):
-    """Images embedded directly into note content (drag-and-drop)."""
+    """Embedded images in notes."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     note = models.ForeignKey(ResearcherNote, on_delete=models.CASCADE, related_name='embedded_images')
     image = models.ImageField(upload_to='note_embedded/')
-    caption = models.CharField(max_length=200, blank=True)
-    order = models.PositiveIntegerField(default=0, help_text="Display order within the note")
+    caption = models.CharField(max_length=300, blank=True)
+    order = models.PositiveIntegerField(default=0)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         ordering = ['order', 'uploaded_at']
-    
-    def __str__(self):
-        return f"Image for {self.note.id}: {self.image.name}"
 
-# ----------------------------------------------------------------------
-# 4. NoteMention – Explicit mention tracking (who was mentioned where)
-# ----------------------------------------------------------------------
+
 class NoteMention(models.Model):
-    """Tracks when a user is mentioned in a note."""
+    """User mentioned in a note."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     note = models.ForeignKey(ResearcherNote, on_delete=models.CASCADE, related_name='mentions')
     mentioned_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='note_mentions')
@@ -196,51 +228,82 @@ class NoteMention(models.Model):
         unique_together = [['note', 'mentioned_user']]
         indexes = [
             models.Index(fields=['mentioned_user', 'is_read']),
-            models.Index(fields=['note']),
         ]
+
+
+class NoteComment(models.Model):
+    """Threaded comments on notes."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    note = models.ForeignKey(ResearcherNote, on_delete=models.CASCADE, related_name='comments')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='note_comments')
+    parent_comment = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    content = models.TextField()
+    is_resolved = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['created_at']
+
+
+class NoteTemplate(models.Model):
+    """Pre-defined templates for different types of research notes."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    note_type = models.CharField(max_length=30, choices=ResearcherNote.NOTE_TYPES)
+    content_template = models.TextField(
+        help_text="Markdown template with {{variable}} placeholders"
+    )
+    variables_schema = models.JSONField(
+        default=dict, blank=True,
+        help_text='{"model_name": "string", "task_name": "string", ...}'
+    )
+    is_default = models.BooleanField(default=False)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['note_type', 'name']
     
     def __str__(self):
-        return f"Mention of {self.mentioned_user.username} in {self.note.id}"
+        return f"[{self.note_type}] {self.name}"
+    
+    def render(self, variables: dict) -> str:
+        """Render template with given variables."""
+        content = self.content_template
+        for key, value in variables.items():
+            content = content.replace(f"{{{{{key}}}}}", str(value))
+        return content
 
-# ----------------------------------------------------------------------
-# 5. WebhookSubscription – For external integrations
-# ----------------------------------------------------------------------
+
 class WebhookSubscription(models.Model):
-    """Store webhook endpoints that external services register."""
+    """External webhook endpoints."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='webhooks')
     url = models.URLField(max_length=500)
-    # REPLACE ArrayField with JSONField
-    events = models.JSONField(default=list, blank=True, help_text="List of event types to trigger on")
-    secret = models.CharField(max_length=100, blank=True, help_text="HMAC secret for signing")
+    events = models.JSONField(default=list, blank=True)
+    secret = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     last_triggered_at = models.DateTimeField(null=True, blank=True)
-    
-    class Meta:
-        indexes = [
-            models.Index(fields=['user', 'is_active']),
-        ]
-    
-    def __str__(self):
-        return f"Webhook {self.url} for {self.user.username}"
 
-# ----------------------------------------------------------------------
-# 6. Notification – User notifications (mentions, replies, etc.)
-# ----------------------------------------------------------------------
+
 class Notification(models.Model):
-    NOTIFICATION_TYPES = [
+    """User notifications system."""
+    TYPES = [
         ('mention', 'Mention'),
-        ('reply', 'Reply to your note'),
-        ('reaction', 'Reaction on your note'),
-        ('webhook', 'Webhook delivery'),
-        ('system', 'System notification'),
+        ('reply', 'Reply'),
+        ('reaction', 'Reaction'),
+        ('comment', 'Comment'),
+        ('share', 'Shared with you'),
+        ('run_complete', 'Training Complete'),
+        ('system', 'System'),
     ]
-    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     sender = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='sent_notifications')
-    type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    type = models.CharField(max_length=20, choices=TYPES)
     note = models.ForeignKey(ResearcherNote, on_delete=models.CASCADE, null=True, blank=True)
     content = models.TextField()
     is_read = models.BooleanField(default=False)
@@ -250,8 +313,4 @@ class Notification(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['recipient', 'is_read']),
-            models.Index(fields=['created_at']),
         ]
-    
-    def __str__(self):
-        return f"Notification to {self.recipient.username}: {self.type}"
