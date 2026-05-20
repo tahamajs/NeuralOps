@@ -80,3 +80,4 @@ class ViGAttention(BaseAttention):
         if pad_len > 0:
             out = out[:, :N, :]
         return self.out_proj(out), None
+    

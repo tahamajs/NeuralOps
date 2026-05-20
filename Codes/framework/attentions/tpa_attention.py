@@ -53,3 +53,4 @@ class TPAttention(nn.Module):
         out = out.transpose(1, 2).contiguous().view(B, L, H * hd)
         out = self.out_proj(out)
         return out, None
+    

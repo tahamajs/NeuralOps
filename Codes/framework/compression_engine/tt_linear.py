@@ -411,3 +411,4 @@ class TTLinearLayer(nn.Module):
         if self.bias is not None:
             y += self.bias
         return y.view(*orig_shape[:-1], self.out_features)
+    

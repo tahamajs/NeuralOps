@@ -61,3 +61,4 @@ class TLinFormerAttention(BaseAttention):
         context = torch.matmul(probs, V_proj)   # (B, H, N, D)
         context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         return (self.out_proj(context), None)
+    

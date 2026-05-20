@@ -30,3 +30,4 @@ class SqueezingHeadsDistiller(nn.Module):
         attn = self.dropout(attn)
         out = torch.matmul(attn, v).transpose(1,2).contiguous().view(B, L, D)
         return self.out_proj(out), None
+    
