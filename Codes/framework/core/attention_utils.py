@@ -4,9 +4,9 @@ Uses architecture helpers and weight copying to swap attention modules.
 """
 
 import torch.nn as nn
-from typing import Optional, Dict, Any
+from typing import Optional
 from .registry import ATTENTION_REGISTRY
-from .architecture import get_attention_modules, detect_architecture
+from .architecture import get_attention_modules
 from .model_utils import copy_attention_weights, replace_module
 
 
@@ -19,18 +19,6 @@ def inject_attention(
 ) -> nn.Module:
     """
     Replace all attention modules in the model with the specified variant.
-
-    Parameters
-    ----------
-    attention_type : str
-        Registered key in ATTENTION_REGISTRY (e.g., 'galerkin', 'linformer').
-    rank : int, optional
-        Low‑rank dimension (if applicable).
-    copy_weights : bool
-        If True, copy pretrained weights from the original attention layer.
-    **kwargs : passed to the attention constructor.
-
-    Returns the modified model.
     """
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     config = getattr(model, 'config', None)
@@ -44,19 +32,15 @@ def inject_attention(
             else:
                 new_attn = attn_class(rank=rank, **kwargs)
         except TypeError:
-            # Some attention classes do not accept 'config' or 'pretrained_attn'
             new_attn = attn_class(rank=rank, **kwargs)
 
-        # Copy weights if requested and if the new module has a weight‑copy method
+        # Copy weights if requested
         if copy_weights:
-            # Try generic weight copying using our mapping table
             try:
                 copy_attention_weights(old_attn, new_attn)
             except Exception as e:
                 print(f"  ⚠️ Could not copy weights for '{name}': {e}")
-                print(f"     The new attention will start from random initialization.")
 
-        # Replace in model
         replace_module(model, name, new_attn)
         replaced += 1
 
