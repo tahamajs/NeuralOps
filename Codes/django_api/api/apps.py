@@ -1,4 +1,3 @@
-# api/apps.py
 from django.apps import AppConfig
 
 class ApiConfig(AppConfig):
@@ -6,5 +5,5 @@ class ApiConfig(AppConfig):
     name = 'api'
 
     def ready(self):
-        # Optional: startup tasks (e.g., mark stale jobs as stopped)
+        # Optional startup tasks (e.g., mark stale jobs as stopped)
         pass
