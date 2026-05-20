@@ -36,3 +36,4 @@ def admm_pruner_factory(model, comp_config):
     compressor = ADMMPruner(model, sparsity=sparsity, rho=rho, max_iter=max_iter)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
