@@ -29,3 +29,4 @@ class ProgressiveTokenPruning(nn.Module):
         top_indices, _ = torch.sort(top_indices, dim=-1)
         pruned_x = torch.gather(x, 1, top_indices.unsqueeze(-1).expand(-1, -1, D))
         return pruned_x, top_indices
+    

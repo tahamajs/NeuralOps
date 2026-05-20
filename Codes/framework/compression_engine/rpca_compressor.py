@@ -42,3 +42,5 @@ def rpca_compressor_factory(model, comp_config):
     compressor = RPCACompressor(model, rank, mu, max_iter)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+

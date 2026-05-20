@@ -22,3 +22,4 @@ class FRanDICompressor(BaseCompressor):
                 module.weight.data = W_approx.to(dtype=module.weight.dtype)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    

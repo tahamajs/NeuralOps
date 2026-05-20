@@ -37,3 +37,4 @@ def inject_salt_linear(layer, model_config, comp_config, layer_idx, total_layers
     new_linear = SALTLinear(in_features, out_features, rank)
     layer.attention = new_linear
     return new_linear
+

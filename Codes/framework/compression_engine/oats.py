@@ -77,3 +77,4 @@ def oats_compressor_factory(model, comp_config):
     compressor = OATSCompressor(model, tokenizer, sparsity, rank_ratio, num_iters)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

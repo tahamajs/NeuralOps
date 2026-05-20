@@ -53,3 +53,4 @@ class SpanExpandedAttention(BaseAttention):
 
         out = self.out_proj(out)
         return out, None   # return tuple as required by attention interface
+    

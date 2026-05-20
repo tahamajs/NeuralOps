@@ -57,3 +57,4 @@ def modegpt_factory(model, comp_config):
     compressor = MoDeGPTCompressor(model, rank=rank, method=method)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

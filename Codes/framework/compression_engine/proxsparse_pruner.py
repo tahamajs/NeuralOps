@@ -33,3 +33,4 @@ def proxsparse_factory(model, comp_config):
     compressor = ProxSparsePruner(model, sparsity=sparsity, lambda_prox=lambda_prox, steps=steps)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

@@ -22,3 +22,4 @@ class SAESCompressor(BaseCompressor):
                 module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+    

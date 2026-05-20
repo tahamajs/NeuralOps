@@ -65,3 +65,4 @@ class LSHAttention(nn.Module):
 
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         return self.out_proj(out), None
+    

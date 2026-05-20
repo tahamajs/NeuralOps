@@ -46,3 +46,4 @@ class ReGLAAttention(BaseAttention):
         # Local depthwise conv enhancement
         loc = self.conv(x.permute(0,2,1)).permute(0,2,1)
         return self.out_proj(out + loc), None
+    

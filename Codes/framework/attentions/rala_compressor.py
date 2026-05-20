@@ -49,3 +49,4 @@ class RALALinearAttention(nn.Module):
         output = output.transpose(1, 2).contiguous().view(batch_size, seq_len, self.hidden_size)
         output = self.out_proj(output)
         return output, None
+    

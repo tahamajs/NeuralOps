@@ -36,3 +36,4 @@ class KDAAttention(nn.Module):
         out = torch.stack(outputs, dim=2)   # (B, H, L, d)
         out = out.transpose(1,2).contiguous().view(B, L, D)
         return self.out_proj(out), None
+    

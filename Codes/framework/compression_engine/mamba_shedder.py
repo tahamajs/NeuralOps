@@ -76,3 +76,5 @@ def mamba_shedder_factory(model, comp_config):
     compressor = MambaShedderCompressor(model, tokenizer, sparsity)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+

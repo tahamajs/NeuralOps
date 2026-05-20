@@ -61,3 +61,4 @@ class CURLinear(nn.Module):
         if self.bias is not None:
             y = y + self.bias
         return y
+    

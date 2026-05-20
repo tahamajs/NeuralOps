@@ -90,3 +90,4 @@ def kvtc_factory(model, comp_config):
     compressor = KVTCCompressor(model, bits=bits, pca_energy=pca_energy)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

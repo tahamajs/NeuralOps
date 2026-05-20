@@ -94,3 +94,4 @@ class SimpleSSM(nn.Module):
         # 5. Gate and output
         out = out_ssm * self.act(z[:, :, :d_model])   # gate with first d_model channels of z
         return self.out_proj(out)
+    
