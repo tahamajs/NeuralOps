@@ -1,4 +1,7 @@
-# framework/data/synthetic_generator.py
+"""
+Synthetic text generation for multiple domains (movies, tech, restaurants, books).
+"""
+
 import random
 import re
 import string
@@ -6,7 +9,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Optional
 
-# Default domains and templates (kept concise)
+
 DEFAULT_DOMAINS = {
     "movies": {
         "pos_adj": ["exceptional", "phenomenal", "brilliant", "masterful", "captivating"],
@@ -48,6 +51,7 @@ TEMPLATES_NEG = [
     "What a {adj} {noun}! It {verb} {adv}."
 ]
 
+
 def _clean_text(text: str) -> str:
     text = re.sub(r'\s+', ' ', text).strip()
     text = text[0].upper() + text[1:] if text else text
@@ -55,19 +59,20 @@ def _clean_text(text: str) -> str:
         text += "."
     return text
 
+
 def _generate_batch(domain_key: str, size: int, label: int, is_positive: bool) -> list:
     vocab = DEFAULT_DOMAINS.get(domain_key, DEFAULT_DOMAINS["movies"])
     templates = TEMPLATES_POS if is_positive else TEMPLATES_NEG
-    prep_phrases = [
-        "with remarkable precision", "with incredible attention to detail", "in every aspect"
-    ] if is_positive else [
-        "with terrible execution", "with poor craftsmanship", "in many ways"
-    ]
+    prep_phrases = (
+        ["with remarkable precision", "with incredible attention to detail", "in every aspect"]
+        if is_positive else
+        ["with terrible execution", "with poor craftsmanship", "in many ways"]
+    )
     intensifiers = ["extremely", "highly", "deeply", "profoundly", "remarkably"]
 
     data = []
     for _ in range(size):
-        adj = random.choice(vocab["pos_adj"] if is_positive else vocab["neg_adj"])
+        adj = random.choice(vocab["pos_adj" if is_positive else "neg_adj"])
         noun = random.choice(vocab["nouns"])
         verb = random.choice(vocab["verbs"])
         adv = "perfectly" if is_positive else "terribly"
@@ -75,10 +80,30 @@ def _generate_batch(domain_key: str, size: int, label: int, is_positive: bool) -
         intens = random.choice(intensifiers) if random.random() > 0.7 else ""
         if intens:
             adj = f"{intens} {adj}"
-        text = random.choice(templates).format(adj=adj, noun=noun, verb=verb, adv=adv, prep_phrase=prep)
+        text = random.choice(templates).format(
+            adj=adj, noun=noun, verb=verb, adv=adv, prep_phrase=prep
+        )
         text = _clean_text(text)
         data.append({"text": text, "label": label})
     return data
+
+
+def generate_synthetic_data(
+    output_path: str,
+    num_samples: int = 10000,
+    domain: str = "movies",
+    seed: int = 42
+) -> pd.DataFrame:
+    """Generate a single‑domain synthetic classification dataset."""
+    random.seed(seed)
+    half = num_samples // 2
+    pos = _generate_batch(domain, half, label=1, is_positive=True)
+    neg = _generate_batch(domain, half, label=0, is_positive=False)
+    df = pd.DataFrame(pos + neg).sample(frac=1).reset_index(drop=True)
+    df.to_csv(output_path, index=False)
+    print(f"Generated {len(df)} samples to {output_path}")
+    return df
+
 
 def run_universal_generation(
     output_dir: Path,
@@ -86,7 +111,7 @@ def run_universal_generation(
     domains: Optional[Dict] = None,
     seed: int = 42
 ) -> pd.DataFrame:
-    """Generate synthetic dataset across multiple domains."""
+    """Generate synthetic dataset across multiple domains and combine them."""
     random.seed(seed)
     domains = domains or DEFAULT_DOMAINS
     output_dir = Path(output_dir)
@@ -106,19 +131,3 @@ def run_universal_generation(
     final_df.to_csv(output_dir / "combined_master_dataset.csv", index=False)
     print(f"Total: {len(final_df)} samples")
     return final_df
-
-def generate_synthetic_data(
-    output_path: str,
-    num_samples: int = 10000,
-    domain: str = "movies",
-    seed: int = 42
-) -> pd.DataFrame:
-    """Generate synthetic dataset for a single domain."""
-    random.seed(seed)
-    half = num_samples // 2
-    pos = _generate_batch(domain, half, label=1, is_positive=True)
-    neg = _generate_batch(domain, half, label=0, is_positive=False)
-    df = pd.DataFrame(pos + neg).sample(frac=1).reset_index(drop=True)
-    df.to_csv(output_path, index=False)
-    print(f"Generated {len(df)} samples to {output_path}")
-    return df
