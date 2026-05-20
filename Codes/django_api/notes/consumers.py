@@ -175,3 +175,16 @@ class NoteCollaborationConsumer(AsyncWebsocketConsumer):
                 note.save()
         except ResearcherNote.DoesNotExist:
             pass
+
+@database_sync_to_async
+def _check_note_access(self):
+    try:
+        note = ResearcherNote.objects.get(id=self.note_id, deleted_at__isnull=True)
+        return (
+            note.author == self.user
+            or note.is_public
+            or note.shared_with.filter(id=self.user.id).exists()
+            or self.user.is_staff
+        )
+    except ResearcherNote.DoesNotExist:
+        return False
