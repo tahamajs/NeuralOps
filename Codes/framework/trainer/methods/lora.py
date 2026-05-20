@@ -1,17 +1,16 @@
-# framework/trainer/methods/lora.py
+"""
+LoRA, DoRA, DisLoRA implementations.
+"""
 import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.init import kaiming_uniform_, zeros_, constant_
-from .registry import register_method
+from torch.nn.init import kaiming_uniform_, zeros_
 import logging
+from .registry import register_method
 
 logger = logging.getLogger(__name__)
 
-# ----------------------------------------------------------------------
-# Base LoRA linear layer
-# ----------------------------------------------------------------------
 class LoRALinear(nn.Module):
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float):
         super().__init__()
@@ -33,14 +32,12 @@ class LoRALinear(nn.Module):
             self.dropout = nn.Identity()
 
     def forward(self, x):
+        base = self.linear(x)
         if self.r > 0:
             lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
-            return self.linear(x) + lora
-        return self.linear(x)
+            return base + lora
+        return base
 
-# ----------------------------------------------------------------------
-# DoRA (Weight‑decomposed Low‑Rank Adaptation)
-# ----------------------------------------------------------------------
 class DoRALinear(nn.Module):
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float):
         super().__init__()
@@ -50,9 +47,7 @@ class DoRALinear(nn.Module):
             linear.bias.requires_grad = False
         self.r = r
         if r > 0:
-            # Magnitude vector (scalar per output dimension)
             self.m = nn.Parameter(torch.ones(linear.out_features))
-            # Low‑rank matrices
             self.lora_A = nn.Linear(linear.in_features, r, bias=False)
             self.lora_B = nn.Linear(r, linear.out_features, bias=False)
             kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
@@ -69,17 +64,12 @@ class DoRALinear(nn.Module):
         base_out = self.linear(x)
         if self.r > 0:
             lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
-            # Normalise base weight direction
             weight_norm = self.linear.weight.norm(p=2, dim=1, keepdim=True)
             direction = self.linear.weight / (weight_norm + 1e-8)
-            # Magnitude‑scaled direction + LoRA
             delta = self.m.unsqueeze(1) * direction + lora
             return F.linear(x, delta, self.linear.bias)
         return base_out
 
-# ----------------------------------------------------------------------
-# DisLoRA (Dissimilarity‑based LoRA)
-# ----------------------------------------------------------------------
 class DisLoRALinear(nn.Module):
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float,
                  beta: float = 0.5, capacity_factor: float = 1.0):
@@ -98,7 +88,6 @@ class DisLoRALinear(nn.Module):
             zeros_(self.lora_B.weight)
             self.scaling = alpha / r
             self.dropout = nn.Dropout(dropout)
-            # Orthogonal regularisation (optional)
             self.register_buffer("_eye", torch.eye(r))
         else:
             self.lora_A = self.lora_B = None
@@ -109,7 +98,6 @@ class DisLoRALinear(nn.Module):
         base = self.linear(x)
         if self.r > 0:
             lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
-            # Additional regularisation (implement in loss if needed)
             return base + lora
         return base
 
@@ -118,13 +106,9 @@ class DisLoRALinear(nn.Module):
             return 0.0
         A = self.lora_A.weight
         B = self.lora_B.weight
-        # Encourage orthogonality of A and B
         reg = (A @ A.T - self._eye).pow(2).sum() + (B.T @ B - self._eye).pow(2).sum()
         return self.beta * reg
 
-# ----------------------------------------------------------------------
-# Apply functions that replace linear layers
-# ----------------------------------------------------------------------
 def _apply_adapters(model, r, alpha, dropout, method_type='lora', **kwargs):
     target_substrings = ["query", "key", "value", "dense", "intermediate.dense", "output.dense"]
     for name, module in list(model.named_modules()):

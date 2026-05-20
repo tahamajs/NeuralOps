@@ -1,4 +1,6 @@
-# framework/trainer/methods/fisher.py
+"""
+Fisher information based importance scoring for adaptive rank allocation.
+"""
 import numpy as np
 import torch
 import logging
@@ -68,12 +70,6 @@ def compute_fisher_importance(model, dataset, tokenizer, task_keys, config,
     return fisher
 
 @register_method("fisher_lora")
-def apply_fisher_lora(model, config, dataset, tokenizer, task_keys):
-    logger.info("Fisher‑LoRA method called – computing Fisher importance...")
-    fisher = compute_fisher_importance(model, dataset, tokenizer, task_keys, config)
-    if fisher is None:
-        logger.warning("Fisher importance returned None; falling back to uniform ranks.")
-        return
-    # Here you would use the fisher scores to assign adaptive ranks.
-    # For demonstration, we set each LoRA layer's rank proportionally.
-    logger.info(f"Fisher importance computed for {len(fisher)} modules.")
+def apply_fisher_lora(model, config):
+    logger.info("Fisher‑LoRA method called – but requires dataset, tokenizer, task_keys. "
+                "Use a wrapper in training script to call compute_fisher_importance with actual data.")
