@@ -572,3 +572,34 @@ class ModelVersionTests(TestCase):
         url = f'/api/model-versioning/runs/{uuid.uuid4()}/versions/1/set_production/'
         resp = self.staff_client.post(url)
         self.assertEqual(resp.status_code, 404)
+
+
+    def test_create_diff(self):
+        v2 = ModelVersion.objects.create(run=self.job, version='v2', version_number=2,
+                                        artifact_path='/tmp/v2', artifact_size_mb=100)
+        diff = create_diff(self.version, v2)
+        self.assertIsNotNone(diff.id)
+        self.assertTrue(diff.diff_size_mb > 0)
+
+    @patch('model_versioning.services.load_model')
+    def test_load_version_from_diff(self, mock_load):
+        # Setup mocks
+        mock_base = MagicMock()
+        mock_base.state_dict.return_value = {'weight': torch.zeros(10)}
+        mock_load.return_value = mock_base
+        # Create a dummy diff file
+        import tempfile, tarfile, torch
+        with tempfile.NamedTemporaryFile(suffix='.tar.gz') as f:
+            diff_state = {'weight': torch.ones(10)}
+            with tarfile.open(f.name, 'w:gz') as tar:
+                tmpdir = tempfile.mkdtemp()
+                diff_path = os.path.join(tmpdir, 'diff.pt')
+                torch.save(diff_state, diff_path)
+                tar.add(diff_path, arcname='diff.pt')
+                shutil.rmtree(tmpdir)
+            diff = ModelVersionDiff.objects.create(
+                from_version=self.version, to_version=self.version,
+                diff_artifact=f.name, diff_size_mb=0.1
+            )
+            model = load_version_from_diff(self.version, diff)
+            mock_base.load_state_dict.assert_called_once()
