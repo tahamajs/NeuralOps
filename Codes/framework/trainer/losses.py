@@ -1,4 +1,3 @@
-# framework/trainer/losses.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,7 +10,6 @@ class CrossEntropyLoss(nn.Module):
     def __init__(self, weight=None, ignore_index=-100, **kwargs):
         super().__init__()
         self.loss = nn.CrossEntropyLoss(weight=weight, ignore_index=ignore_index)
-
     def forward(self, logits, labels):
         return self.loss(logits, labels)
 
@@ -21,12 +19,10 @@ class FocalLoss(nn.Module):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
-
     def forward(self, logits, labels):
         ce_loss = F.cross_entropy(logits, labels, reduction='none')
         p_t = torch.exp(-ce_loss)
-        loss = self.alpha * (1 - p_t) ** self.gamma * ce_loss
-        return loss.mean()
+        return (self.alpha * (1 - p_t) ** self.gamma * ce_loss).mean()
 
 @LOSS_REGISTRY.register("label_smoothing")
 class LabelSmoothingLoss(nn.Module):
@@ -34,20 +30,17 @@ class LabelSmoothingLoss(nn.Module):
         super().__init__()
         self.smoothing = smoothing
         self.confidence = 1.0 - smoothing
-
     def forward(self, logits, labels):
         log_probs = F.log_softmax(logits, dim=-1)
-        nll_loss = -log_probs.gather(dim=-1, index=labels.unsqueeze(1))
-        smooth_loss = -log_probs.mean(dim=-1)
-        loss = self.confidence * nll_loss + self.smoothing * smooth_loss
-        return loss.mean()
+        nll = -log_probs.gather(dim=-1, index=labels.unsqueeze(1))
+        smooth = -log_probs.mean(dim=-1)
+        return (self.confidence * nll + self.smoothing * smooth).mean()
 
 @LOSS_REGISTRY.register("dice")
 class DiceLoss(nn.Module):
     def __init__(self, smooth=1.0, **kwargs):
         super().__init__()
         self.smooth = smooth
-
     def forward(self, logits, labels):
         probs = F.softmax(logits, dim=-1)
         one_hot = F.one_hot(labels, num_classes=probs.shape[-1]).float()
@@ -61,7 +54,6 @@ class PolyLoss(nn.Module):
     def __init__(self, epsilon=1.0, **kwargs):
         super().__init__()
         self.epsilon = epsilon
-
     def forward(self, logits, labels):
         ce = F.cross_entropy(logits, labels)
         pt = torch.exp(-ce)
@@ -72,9 +64,7 @@ class ContrastiveLoss(nn.Module):
     def __init__(self, margin=1.0, **kwargs):
         super().__init__()
         self.margin = margin
-
     def forward(self, embeddings, labels):
-        # Assumes embeddings and labels for pairs
         dist = F.pairwise_distance(embeddings[0], embeddings[1])
         loss = (1 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(self.margin - dist, min=0).pow(2)
         return loss.mean()

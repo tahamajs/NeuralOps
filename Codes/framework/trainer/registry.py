@@ -1,4 +1,3 @@
-# framework/training/registry.py
 import logging
 from typing import Dict, Type
 from .base_trainer import BaseTrainer
@@ -11,7 +10,6 @@ class TrainerRegistry:
 
     @classmethod
     def register(cls, name: str):
-        """Decorator to register a trainer class."""
         def decorator(klass: Type[BaseTrainer]) -> Type[BaseTrainer]:
             if not issubclass(klass, BaseTrainer):
                 raise TypeError(f"{klass.__name__} must inherit from BaseTrainer")
@@ -23,7 +21,7 @@ class TrainerRegistry:
     @classmethod
     def get(cls, name: str) -> Type[BaseTrainer]:
         if name not in cls._registry:
-            raise ValueError(f"Unknown trainer '{name}'. Available: {cls.list()}")
+            raise ValueError(f"Unknown trainer '{name}'. Available: {list(cls._registry.keys())}")
         return cls._registry[name]
 
     @classmethod

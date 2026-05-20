@@ -1,5 +1,5 @@
-# framework/trainer/schedulers.py
-import torch.optim.lr_scheduler as lr_scheduler
+import torch
+from torch.optim import lr_scheduler
 from framework.core.registry import Registry
 
 SCHEDULER_REGISTRY = Registry("scheduler")

@@ -1,22 +1,12 @@
-# framework/training/hf_trainer.py
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from .base_trainer import BaseTrainer
 from .registry import TrainerRegistry
 from .trainer import SVDAwareTrainer, create_trainer
-from transformers import Trainer as HFTrainer
 
 @TrainerRegistry.register("hf")
 class HuggingFaceTrainer(BaseTrainer):
-    def __init__(
-        self,
-        model,
-        train_dataset,
-        eval_dataset,
-        config: Dict[str, Any],
-        results_manager,
-        compute_metrics=None,
-        **kwargs
-    ):
+    def __init__(self, model, train_dataset, eval_dataset, config: Dict[str, Any],
+                 results_manager, compute_metrics=None, **kwargs):
         self.model = model
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
@@ -56,7 +46,6 @@ class HuggingFaceTrainer(BaseTrainer):
             **self.kwargs
         )
         self._trainer = self.results_manager.wrap_trainer(self._trainer)
-        # Hook to save final model after training
         original_train = self._trainer.train
         def train_and_save(*args, **train_kwargs):
             result = original_train(*args, **train_kwargs)
