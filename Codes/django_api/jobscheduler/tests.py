@@ -1,28 +1,11 @@
-import json
-import uuid
+import json, uuid
 from unittest.mock import patch, MagicMock
-
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
-from sympy import python
-
 from .models import Job, VersionedConfig, CustomMetricEntry
-from .serializers import JobSerializer
-
-from .models import Job, VersionedConfig, CustomMetricEntry
-from .serializers import JobSerializer
-
-import json
-import uuid
-from unittest.mock import patch, MagicMock
-
-from django.test import TestCase, override_settings
-from django.contrib.auth.models import User
-from rest_framework.test import APIClient
-from rest_framework import status
 
 # ----------------------------------------------------------------------
 # Helper
@@ -548,3 +531,11 @@ class JobschedulerTests(TestCase):
         resp = self.client.get('/api/scheduler/metrics/')
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.data, [])
+from celery import shared_task
+from .predictive import PriorityPredictor
+
+@shared_task
+def retrain_priority_model():
+    predictor = PriorityPredictor()
+    predictor.train()
+    return {"status": "retrained", "model_path": predictor.model_path}
