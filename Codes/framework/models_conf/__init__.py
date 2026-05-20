@@ -1,22 +1,22 @@
-# framework/models_conf/loaders/__init__.py
-import torch.nn as nn
-from transformers import AutoModel, AutoConfig
+"""
+Universal model loading and custom compressed architectures.
+"""
 
-# Registry (can be empty or extended later)
-MODEL_LOADER_REGISTRY = {}
+from .loaders import load_model, load_hf_model, load_compressed_model, load_hybrid_svd_model, load_unsloth_model
+from .custom_models import CompressedBertModel, HybridBertForSequenceClassification
+from .hub_utils import search_models, get_model_info, POPULAR_MODELS
+from .unsloth_loader import load_unsloth_model_with_attention
 
-def load_model(model_name: str, device: str = "cuda", **kwargs) -> nn.Module:
-    """
-    Load a HuggingFace model – simple fallback implementation.
-    """
-    config = AutoConfig.from_pretrained(model_name, **kwargs)
-    # Heuristic: if it's a decoder-only model (GPT, LLaMA, etc.)
-    if getattr(config, "is_decoder", False):
-        from transformers import AutoModelForCausalLM
-        model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
-    else:
-        model = AutoModel.from_pretrained(model_name, **kwargs)
-    return model.to(device)
-
-# Optional: register the default loader
-MODEL_LOADER_REGISTRY["auto"] = load_model   # or a class, but this is fine
+__all__ = [
+    "load_model",
+    "load_hf_model",
+    "load_compressed_model",
+    "load_hybrid_svd_model",
+    "load_unsloth_model",
+    "load_unsloth_model_with_attention",
+    "CompressedBertModel",
+    "HybridBertForSequenceClassification",
+    "search_models",
+    "get_model_info",
+    "POPULAR_MODELS",
+]
