@@ -49,7 +49,7 @@ from framework.experiment_utils.config import ExperimentConfig
 from framework.experiment_utils.data import load_and_preprocess_data
 from framework.experiment_utils.model import load_model, apply_attention_to_model
 from framework.experiment_utils.train import setup_trainer   # old helper, kept for fallback
-from framework.callbacks.django_integration import DjangoCallback
+from Codes.framework.callbacks.django import DjangoCallback
 
 logger = logging.getLogger(__name__)
 

@@ -1,5 +1,6 @@
+"""Django integration callback (unchanged)."""
 from transformers import TrainerCallback
-from typing import Optional, Callable
+
 
 class DjangoCallback(TrainerCallback):
     def __init__(self, progress_cb=None, log_cb=None, final_cb=None, stop_event=None):
