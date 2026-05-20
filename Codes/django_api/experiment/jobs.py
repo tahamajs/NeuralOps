@@ -1,4 +1,3 @@
-# experiments/jobs.py
 import threading
 from .models import TrainingRun
 from channels.layers import get_channel_layer

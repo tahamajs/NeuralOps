@@ -1,4 +1,3 @@
-# experiment/apps.py
 from django.apps import AppConfig
 import logging
 
@@ -9,19 +8,15 @@ class ExperimentConfig(AppConfig):
     name = 'experiment'
 
     def ready(self):
-        """
-        Startup tasks: register signals, pre-load registries, etc.
-        """
-        # Import signals (if you have a signals.py file)
+        # Import signals if any
         try:
             from . import signals
         except ImportError:
-            pass  # No signals module yet
+            pass
 
-        # Optional: warm up framework registries (lazy-loaded later)
+        # Optional: warm up framework registries
         try:
             from framework.core.registry import ATTENTION_REGISTRY
-            # Just touch it to load – not strictly necessary
             _ = len(ATTENTION_REGISTRY)
         except ImportError:
             logger.debug("Framework not available – some features disabled")
