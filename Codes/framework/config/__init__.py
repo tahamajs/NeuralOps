@@ -1,27 +1,43 @@
-# framework/config/__init__.py
 """
-Configuration package for the Efficient Attention Framework.
-All config classes are importable directly from `framework.config`.
+Unified configuration system for the Efficient Transformer Toolkit.
+
+Load a complete configuration from YAML + CLI:
+    from framework.config import load_config
+    cfg = load_config("config.yaml", cli_args=args)
 """
 
-from .compression_config import CompressionConfig
-from .experiment_config import ExperimentConfig, DatasetConfig
-from .hardware_config import HardwareConfig
-from .data_config import DataConfig
-from .model_config import ModelConfig
-from .method_config import MethodConfig, LoRAConfig, RDropConfig, R3FConfig, FisherConfig, GeLoRAConfig, LLRDConfig, MixoutConfig, DisLoRAConfig
-from .training_config import TrainingConfig
-from .sweep_config import SweepConfig
-from .loader import load_config, load_yaml, merge_cli_args
+from .config import (
+    Config,
+    ModelConfig,
+    DataConfig,
+    TrainingConfig,
+    CompressionConfig,
+    MethodConfig,
+    HardwareConfig,
+    SweepConfig,
+    ExperimentConfig,
+    LoRAConfig,
+    RDropConfig,
+    R3FConfig,
+    FisherConfig,
+    GeLoRAConfig,
+    LLRDConfig,
+    MixoutConfig,
+    DisLoRAConfig,
+    DatasetConfig,
+)
+from .loader import load_config
 
 __all__ = [
-    "CompressionConfig",
-    "ExperimentConfig",
-    "DatasetConfig",
-    "HardwareConfig",
-    "DataConfig",
+    "Config",
     "ModelConfig",
+    "DataConfig",
+    "TrainingConfig",
+    "CompressionConfig",
     "MethodConfig",
+    "HardwareConfig",
+    "SweepConfig",
+    "ExperimentConfig",
     "LoRAConfig",
     "RDropConfig",
     "R3FConfig",
@@ -30,9 +46,6 @@ __all__ = [
     "LLRDConfig",
     "MixoutConfig",
     "DisLoRAConfig",
-    "TrainingConfig",
-    "SweepConfig",
+    "DatasetConfig",
     "load_config",
-    "load_yaml",
-    "merge_cli_args",
 ]

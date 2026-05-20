@@ -1,7 +1,13 @@
+"""
+Configuration loader: YAML + CLI overrides → Config dataclass.
+"""
+
 import yaml
 import argparse
 from dataclasses import fields, is_dataclass
 from typing import Any, Dict, Optional, Type, TypeVar
+
+from .config import Config
 
 T = TypeVar('T')
 
@@ -13,7 +19,7 @@ def merge_cli_args(cfg_dict: dict, args: argparse.Namespace) -> dict:
     """Override YAML values with CLI arguments where not None."""
     cli = vars(args)
     for key, val in cli.items():
-        if val is not None:
+        if val is not None and key in cfg_dict:
             cfg_dict[key] = val
     return cfg_dict
 
@@ -33,18 +39,16 @@ def _dict_to_dataclass(cls: Type[T], data: dict) -> T:
 def load_config(
     yaml_path: Optional[str] = None,
     cli_args: Optional[argparse.Namespace] = None,
-    config_cls: Type[T] = None,   # requires the target dataclass
-) -> T:
+) -> Config:
     """
-    Load configuration from optional YAML + CLI overrides.
-    If config_cls is provided, returns an instance of that dataclass.
-    Otherwise returns the raw merged dict.
+    Load configuration from optional YAML file + CLI overrides.
+    Always returns a fully populated Config dataclass with defaults.
     """
-    cfg = {}
+    cfg_dict: Dict[str, Any] = {}
     if yaml_path:
-        cfg = load_yaml(yaml_path)
+        cfg_dict = load_yaml(yaml_path)
     if cli_args:
-        cfg = merge_cli_args(cfg, cli_args)
-    if config_cls:
-        return _dict_to_dataclass(config_cls, cfg)
-    return cfg
+        cfg_dict = merge_cli_args(cfg_dict, cli_args)
+
+    # Convert the flat dict to nested Config using the top‑level Config dataclass
+    return _dict_to_dataclass(Config, cfg_dict)
