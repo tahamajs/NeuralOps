@@ -52,3 +52,4 @@ class JambaInfoBlock(BaseAttention):
         else:
             out = x + self.ssm(self.bottleneck(x))
         return self.out_proj(out), None
+    

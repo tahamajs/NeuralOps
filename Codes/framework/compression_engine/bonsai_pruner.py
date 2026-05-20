@@ -38,3 +38,4 @@ def bonsai_factory(model, comp_config):
     compressor = BonsaiPruner(model, sparsity=sparsity, steps=steps)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

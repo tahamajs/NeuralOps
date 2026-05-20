@@ -58,3 +58,4 @@ class Jamba2Block(nn.Module):
         x = self.norm2(x + attn_out)
         x = self.norm3(x + self.moe(x))
         return x, None   # return tuple for attention interface
+    
