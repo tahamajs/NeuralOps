@@ -24,7 +24,8 @@ urlpatterns = [
     path('v1/notes/<uuid:note_id>/share/', views.versioned_view(views.share_note)),
     path('v1/notes/<uuid:note_id>/unshare/', views.versioned_view(views.unshare_note)),
     path('v1/notes/shared-with-me/', views.versioned_view(views.shared_with_me)),
-
+path('v1/notes/from-paper/', views.versioned_view(views.create_note_from_paper)),
+path('v1/notes/<uuid:note_id>/bibliography/', views.versioned_view(views.note_bibliography)),
     # ── Sharing: Public Link ──────────────────────────────────
     path('v1/notes/<uuid:note_id>/share-link/', views.versioned_view(views.create_share_link)),
     path('v1/notes/<uuid:note_id>/share-links/', views.versioned_view(views.list_share_links)),
@@ -36,7 +37,7 @@ urlpatterns = [
     path('v1/notes/<uuid:note_id>/upload-hf/', views.versioned_view(views.upload_note_to_huggingface)),
     path('v1/notes/<uuid:note_id>/upload-hf-space/', views.versioned_view(views.upload_note_as_hf_space)),
     path('v1/notes/<uuid:note_id>/sync-hf/', views.versioned_view(views.sync_note_to_hf_view)),
-
+path('v1/notes/search-paper/', views.versioned_view(views.search_and_format_paper)),
     # ── Artifacts ─────────────────────────────────────────────
     path('v1/notes/<uuid:note_id>/artifacts/', views.versioned_view(views.artifact_list)),
     path('v1/notes/<uuid:note_id>/artifacts/<uuid:artifact_id>/', views.versioned_view(views.artifact_delete)),
