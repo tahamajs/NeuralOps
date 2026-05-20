@@ -1,162 +1,211 @@
-# 🧩 Core Package
 
-The `framework/core` package provides the foundational building blocks for the Efficient Transformer Toolkit – including registries, base classes, model wrappers, architecture detection, experiment tracking, and compression utilities.
+## Overview
 
-## 📁 Structure
+The **Efficient Transformer Toolkit Core** provides a model‑agnostic foundation for compressing and injecting custom attention modules into **any HuggingFace model**—from DistilBERT to Llama, Gemma, Mistral, and beyond.  
+It detects architectures automatically, handles weight copying between different naming conventions, manages grouped‑query attention (GQA) and RoPE, and offers a sequential compression pipeline.
+
+---
+
+## Directory Structure
 
 ```
 framework/core/
-├── __init__.py               # Public API
-├── utils.py                  # Device, seed, parameter counting, memory utilities
-├── registry.py               # Centralised registries (ATTENTION, COMPRESSOR, TRAINER, VISUALIZER)
-├── base.py                   # Concrete base classes (BaseAttention, BaseCompressor, BaseVisualizer)
-├── interfaces.py             # Abstract interfaces for pluggable components
-├── model_wrapper.py          # UnifiedTransformerModel – universal HF model wrapper
-├── architecture.py           # Architecture detection and attention replacement
-├── experiment_tracker.py     # ExperimentTracker for logging metrics and checkpoints
-├── config.py                 # Simple YAML/JSON config loader
-├── attention_utils.py        # Standalone attention replacement helpers
-└── README.md
-```
-
-## 🚀 Quick Start
-
-```python
-from framework.core import (
-    get_device, set_seed,
-    ATTENTION_REGISTRY,
-    BaseAttention,
-    UnifiedTransformerModel,
-    ExperimentTracker,
-    replace_attention_in_model
-)
-
-# 1. Set device and seed
-device = get_device()
-set_seed(42)
-
-# 2. Wrap a Hugging Face model
-model = UnifiedTransformerModel.from_pretrained("bert-base-uncased")
-
-# 3. Replace attention modules
-model.replace_attention("goldfinch_ahn", rank=64)
-
-# 4. Track experiment
-tracker = ExperimentTracker("results", "exp1")
-tracker.log_metric("accuracy", 0.92, step=100)
-tracker.save_config({"model": "bert", "rank": 64})
-
-# 5. Count parameters
-print(model.get_parameter_count())
-```
-
-## 📦 Modules
-
-### `utils.py` – Essential helpers
-
-| Function | Description |
-|----------|-------------|
-| `get_device(device_str="auto")` | Returns best available device (cuda/mps/cpu). |
-| `set_seed(seed, deterministic=False)` | Sets all random seeds for reproducibility. |
-| `count_parameters(model, trainable_only)` | Parameter count. |
-| `format_number(num)` | Human‑readable formatting (1.2M, 45K). |
-| `clear_memory()` | Empties GPU/MPS cache. |
-| `human_readable_time(seconds)` | `"1h 23m 45s"`. |
-
-### `registry.py` – Central registries
-
-Registries allow dynamic component lookup:
-
-- `ATTENTION_REGISTRY` – for attention mechanisms.
-- `COMPRESSOR_REGISTRY` – for compression methods.
-- `TRAINER_REGISTRY` – for custom trainers.
-- `VISUALIZER_REGISTRY` – for visualizers.
-
-```python
-@ATTENTION_REGISTRY.register("my_attn")
-class MyAttention(BaseAttention):
-    pass
-
-attn_class = ATTENTION_REGISTRY.get("my_attn")
-```
-
-### `base.py` – Concrete base classes
-
-- **`BaseAttention`** – all attention modules inherit from this (handles config, num_heads, head_dim).
-- **`BaseCompressor`** – for compression algorithms. Provides parameter counting and summary.
-- **`BaseVisualizer`** – base for visualizers (output directory management).
-
-### `interfaces.py` – Abstract interfaces
-
-Defines the **contracts** for pluggable components:
-
-- `AttentionInterface`
-- `CompressorInterface`
-- `TrainerInterface`
-- `VisualizerInterface`
-- `DataLoaderInterface`
-
-These are used for type checking and enforcing method signatures.
-
-### `model_wrapper.py` – `UnifiedTransformerModel`
-
-Universal wrapper for any Hugging Face transformer model. Features:
-
-- Auto‑detect architecture (BERT, RoBERTa, DistilBERT, GPT‑2, etc.)
-- `replace_attention(attention_type, rank, **kwargs)`
-- `freeze_layers(num_layers)` / `unfreeze_all()`
-- `get_attention_maps()`, `get_hidden_states()`
-- `get_parameter_count()`
-- `save_pretrained()` and `from_pretrained()` (task‑aware)
-
-### `architecture.py` – Detection & replacement
-
-- `detect_architecture(model)` → `'bert'`, `'roberta'`, `'gpt2'`, etc.
-- `get_attention_modules(model)` → list of (name, module) for attention layers.
-- `replace_attention_module(model, new_class, rank, **kwargs)` – replaces all attentions.
-
-### `experiment_tracker.py` – `ExperimentTracker`
-
-Logs metrics, saves config, checkpoints, and generates basic HTML reports.
-
-```python
-tracker = ExperimentTracker("results", "run1")
-tracker.log_metrics({"loss": 0.23, "acc": 0.91}, step=10)
-tracker.save_checkpoint(model, optimizer, epoch=3)
-tracker.generate_report()
-```
-
-### `config.py` – Config loader
-
-```python
-config = load_config("experiment.yaml")
-```
-
-### `attention_utils.py` – Standalone attention helpers
-
-- `replace_attention_in_model(model, attention_type, rank, copy_weights)`
-- `get_attention_module_names(model)`
-- `count_attention_modules(model)`
-
-## 🔧 Integration with the Rest of the Toolkit
-
-The `core` package is used by all other modules:
-- `framework.attentions` registers attention classes via `ATTENTION_REGISTRY`.
-- `framework.compression` registers compressors via `COMPRESSOR_REGISTRY`.
-- Training scripts use `UnifiedTransformerModel` and `ExperimentTracker`.
-- Architecture‑specific logic (layer freezing, attention replacement) uses `architecture.py`.
-
-## 📜 Dependencies
-
-- `torch`, `transformers`, `numpy`, `pandas`, `pyyaml`
-
-## 📄 License
-
-Part of the **Efficient Transformer Toolkit** – MIT License.
+├── __init__.py                  # Re‑exports all public symbols
+├── registry.py                 # Global component registries (attention, compressors, etc.)
+├── base.py                     # BaseAttention and BaseCompressor abstract classes
+├── architecture.py             # Model‑agnostic layer/attention/FFN/embedding access
+├── model_utils.py              # Calibration, weight copying, activation hooks
+├── adapters.py                 # Model‑family specific helpers (weight names, GQA, RoPE)
+├── attention_utils.py          # Unified attention injection (uses adapters)
+├── compression_engine.py       # Multi‑step compression pipeline
+├── model_wrapper.py            # High‑level UnifiedTransformerModel wrapper
+├── utils.py                    # Device, seeding, formatting utilities
+└── config.py                   # YAML config loader
 ```
 
 ---
 
-## 📝 Commit Message
+## Key Concepts
 
+### 1. Architecture Detection (`architecture.py`)
+`detect_architecture(model)` returns a canonical string (`'distilbert'`, `'llama'`, `'bert'`, …).  
+Other functions provide access to transformer layers, attention modules, FFN blocks, embeddings, and classifier heads **without hard‑coded paths**.
+
+### 2. Model‑Family Adapters (`adapters.py`)
+Each adapter knows:
+- how to get the original Q/K/V/O weight tensors (and biases) from the old attention module,
+- whether the model uses rotary embeddings (RoPE),
+- the number of key‑value heads for grouped‑query attention (GQA).
+
+Supported architectures: DistilBERT, BERT/RoBERTa, Llama, Mistral, Gemma, Phi.
+
+### 3. Unified Attention Injection (`attention_utils.py`)
+`inject_attention(model, "attention_type", rank=…)` replaces **every** attention module in the model with a variant registered in `ATTENTION_REGISTRY`.  
+It automatically copies pretrained weights using the appropriate adapter.
+
+### 4. Compression Pipeline (`compression_engine.py`)
+`CompressionPipeline` applies a sequence of compressors (from `COMPRESSOR_REGISTRY`) one by one.  
+Each compressor receives the model and a configuration dict.
+
+### 5. Base Classes (`base.py`)
+- `BaseAttention` – every custom attention must implement `forward(hidden_states, attention_mask, …)` and return `(output, attn_weights_or_None)`.
+- `BaseCompressor` – defines `compress()` → `(compressed_model, stats)`.
+
+### 6. Model Utilities (`model_utils.py`)
+- `run_calibration_forward` – runs a forward pass on calibration texts.
+- `copy_attention_weights` – generic weight‑copying across naming conventions.
+- `replace_module` / `get_parent_and_child_name` – safe module replacement.
+- `activation_hooks` – context manager to collect activations for activation‑aware compressors.
+
+---
+
+## Quick Start
+
+### 1. Load any HuggingFace model
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
 ```
+
+### 2. Replace attention with a custom variant
+
+```python
+from framework.core import inject_attention
+inject_attention(model, "galerkin", rank=32)
+# or use the wrapper
+from framework.core import UnifiedTransformerModel
+wrapper = UnifiedTransformerModel(model)
+wrapper.replace_attention("linformer", rank=64, copy_weights=True)
+```
+
+### 3. Compress the model sequentially
+
+```python
+from framework.core import compress_model
+
+config = {
+    "compressors": [
+        {"method": "aasvd", "aasvd_rank": 64},
+        {"method": "kmeans", "kmeans_clusters": 256},
+    ],
+    "seed": 42,
+}
+compressed_model = compress_model(model, config, tokenizer=tokenizer)
+```
+
+---
+
+## Creating a Custom Attention Module
+
+1. Inherit from `BaseAttention`.
+2. Implement `forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs)` → `(output, None)`.
+3. Accept `config` (and optionally `rank`, `pretrained_attn`, `rotary_emb`, etc.).
+4. Register it with `@ATTENTION_REGISTRY.register("my_attention")`.
+
+```python
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
+@ATTENTION_REGISTRY.register("my_attention")
+class MyAttention(BaseAttention):
+    def __init__(self, config, rank=None, pretrained_attn=None):
+        super().__init__(config, rank)
+        self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        # … initialise from pretrained_attn if given …
+    def forward(self, hidden_states, attention_mask=None, **kwargs):
+        # … compute …
+        return output, None
+```
+
+Now `inject_attention(model, "my_attention")` will find and replace all attention layers.
+
+---
+
+## Creating a Custom Compressor
+
+1. Inherit from `BaseCompressor`.
+2. Implement `compress(self)` → `(compressed_model, stats_dict)`.
+3. Register with `@COMPRESSOR_REGISTRY.register("my_compressor")`.
+
+```python
+from framework.core.base import BaseCompressor
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+@COMPRESSOR_REGISTRY.register("my_compressor")
+class MyCompressor(BaseCompressor):
+    def __init__(self, model, **kwargs):
+        super().__init__(model, name="my_compressor", **kwargs)
+    def compress(self):
+        # modify self.model …
+        return self.model, self.get_compression_stats()
+```
+
+Then use it in the pipeline:
+
+```python
+compress_model(model, {"compressors": [{"method": "my_compressor", "param": value}]})
+```
+
+---
+
+## Available Registries
+
+| Registry | Purpose |
+|----------|---------|
+| `ATTENTION_REGISTRY` | Attention variants (Galerkin, Linformer, Performer, …) |
+| `COMPRESSOR_REGISTRY` | Compression strategies (A3, AASVD, KMeans, FRanDI, …) |
+| `METHOD_REGISTRY` | Training methods (LoRA, R‑Drop, …) |
+| `AUX_REGISTRY` | Auxiliary modules (RoPE, SSM, token pruning, …) |
+| `MODEL_REGISTRY` | Base model classes |
+| `DATASET_REGISTRY` | Datasets (GLUE, SuperGLUE, …) |
+| `LOSS_REGISTRY` | Custom loss functions |
+| `TRAINER_REGISTRY` | Trainer classes |
+| `VISUALIZER_REGISTRY` | Visualization utilities |
+
+Use `ATTENTION_REGISTRY.keys()` or `list_all_components()` to see all registered items.
+
+---
+
+## Handling Masking Convention
+
+All attention modules in this framework expect a **2D binary mask** of shape `(batch, length)` where `1` = keep, `0` = pad.  
+The modules internally convert it to additive form `(1 - mask) * -1e9`.  
+If your model already passes a 4D additive mask, the modules will still work because they check `mask.dim() == 2` before converting.
+
+---
+
+## Model‑Agnostic Helpers
+
+- `detect_architecture(model)` – returns `'distilbert'`, `'llama'`, etc.
+- `get_transformer_layers(model)` – list of transformer blocks (works for Llama, BERT, …).
+- `get_attention_modules(model)` – list of `(name, module)` for all attention sub‑layers.
+- `get_ffn_modules(model)` – same for feed‑forward networks.
+- `get_embedding_module(model)` – returns the input word embedding layer.
+- `get_classifier_head(model)` – returns the final classification layer (if present).
+
+---
+
+## Dependencies
+
+- `torch`
+- `transformers` (HuggingFace)
+- `numpy`
+- `pyyaml`
+- `scipy` (for some compressors like SVD)
+
+---
+
+## Compatibility
+
+Tested with:
+- **DistilBERT**, **BERT**, **RoBERTa**
+- **GPT‑2**
+- **Llama‑2**, **Llama‑3**
+- **Mistral**
+- **Gemma**
+- **Phi‑1.5**, **Phi‑3**
+
+The framework automatically adapts to the naming differences among these architectures.
+
