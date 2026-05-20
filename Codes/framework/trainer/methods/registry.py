@@ -1,17 +1,21 @@
-# framework/trainer/methods/registry.py
+"""
+Central registry for training methods (LoRA, Fisher, etc.).
+Each entry maps a string name to a callable (model, config, ...).
+"""
+
 METHOD_REGISTRY = {}
 
-def register_method(name):
-    """Decorator to register a method (e.g., @register_method('lora'))."""
+def register_method(name: str):
+    """Decorator to register a method callable."""
     def decorator(fn):
         METHOD_REGISTRY[name] = fn
         return fn
     return decorator
 
-def get_method(name):
-    """Return the method function by name."""
+def get_method(name: str):
+    """Return the method function by name, or None if not found."""
     return METHOD_REGISTRY.get(name)
 
 def available_methods():
-    """Return list of registered method names."""
+    """Return list of all registered method names."""
     return list(METHOD_REGISTRY.keys())

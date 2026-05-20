@@ -1,8 +1,9 @@
-# framework/trainer/methods/gelora.py
+"""
+GeLoRA: Intrinsic dimension estimation for adaptive rank selection.
+"""
 import torch
 import torch.nn as nn
 import logging
-from torch.utils.data import DataLoader
 from .registry import register_method
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,7 @@ def estimate_intrinsic_dimension_pytorch(hidden_states, k=5):
     if N > 1000:
         idx = torch.randperm(N)[:1000]
         hidden_states = hidden_states[idx]
-    dist = torch.cdist(hidden_states, hidden_states, compute_mode='donot_use_mm_for_euclid_dist')
+    dist = torch.cdist(hidden_states, hidden_states)
     dist.fill_diagonal_(float('inf'))
     topk_dist, _ = torch.topk(dist, k, dim=1, largest=False)
     d_k = topk_dist[:, -1:]
@@ -28,12 +29,12 @@ def estimate_intrinsic_dimension_pytorch(hidden_states, k=5):
     return max(1.0, id_global)
 
 def get_encoder_layers(model):
+    if hasattr(model, 'distilbert') and hasattr(model.distilbert, 'transformer'):
+        return model.distilbert.transformer.layer
     if hasattr(model, 'bert') and hasattr(model.bert, 'encoder'):
         return model.bert.encoder.layer
     if hasattr(model, 'roberta') and hasattr(model.roberta, 'encoder'):
         return model.roberta.encoder.layer
-    if hasattr(model, 'distilbert') and hasattr(model.distilbert, 'transformer'):
-        return model.distilbert.transformer.layer
     if hasattr(model, 'encoder') and hasattr(model.encoder, 'layer'):
         return model.encoder.layer
     layers = []
@@ -76,7 +77,10 @@ def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800):
     for hook in hooks:
         hook.remove()
     for i in range(num_layers):
-        hidden_states_per_layer[i] = torch.cat(hidden_states_per_layer[i], dim=0) if hidden_states_per_layer[i] else torch.empty(0)
+        if hidden_states_per_layer[i]:
+            hidden_states_per_layer[i] = torch.cat(hidden_states_per_layer[i], dim=0)
+        else:
+            hidden_states_per_layer[i] = torch.empty(0)
     return hidden_states_per_layer
 
 def compute_gelora_base_ranks(model, dataloader, config):
@@ -109,7 +113,5 @@ def compute_gelora_base_ranks(model, dataloader, config):
     return rank_dict
 
 @register_method("fisher_gelora")
-def apply_fisher_gelora(model, config, dataset, tokenizer, task_keys):
-    logger.info("Fisher‑GeLoRA method called – placeholder.")
-    # Full implementation would compute ranks via intrinsic dimension estimation
-    # and then apply adaptive LoRA using those ranks.
+def apply_fisher_gelora(model, config):
+    logger.info("Fisher‑GeLoRA registered. Use compute_gelora_base_ranks in training script.")
