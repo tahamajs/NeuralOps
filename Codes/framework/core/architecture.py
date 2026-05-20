@@ -7,6 +7,7 @@ across all common HuggingFace architectures.
 import torch.nn as nn
 from typing import List, Tuple, Optional
 
+
 def detect_architecture(model: nn.Module) -> str:
     """Return canonical architecture name."""
     config = getattr(model, 'config', None)
