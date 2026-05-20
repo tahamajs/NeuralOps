@@ -10,27 +10,32 @@ from .callbacks import MemoryCallback, TimeCallback, GradientNormCallback
 from .utils import plot_training_curves
 
 class ResultsManager:
-    """Manages per‑run result directories and coordinates training, logging, and saving."""
-    def __init__(self, experiment_name: str, base_dir: str = "results", config: Optional[Dict[str, Any]] = None,
-                 log_to_file: bool = True):
+    """Manages per‑run result directories, logging, metrics, and trainer wrapping."""
+    def __init__(self, experiment_name: str, base_dir: str = "results",
+                 config: Optional[Dict[str, Any]] = None, log_to_file: bool = True):
         self.experiment_name = experiment_name
         self.base_dir = Path(base_dir)
         self.config = config or {}
         self.log_to_file = log_to_file
+
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.run_dir = self.base_dir / f"{experiment_name}_{timestamp}"
         self.run_dir.mkdir(parents=True, exist_ok=True)
+
         self.checkpoint_dir = self.run_dir / "checkpoints"
         self.log_dir = self.run_dir / "logs"
         self.final_model_dir = self.run_dir / "final_model"
         for d in [self.checkpoint_dir, self.log_dir, self.final_model_dir]:
             d.mkdir(parents=True, exist_ok=True)
+
         self.logger = self._setup_logger()
         self.metrics_path = self.run_dir / "metrics.jsonl"
         self.history: List[Dict[str, Any]] = []
+
         if config:
             with open(self.run_dir / "config.yaml", "w") as f:
                 yaml.dump(config, f, default_flow_style=False)
+
         self.logger.info(f"Results directory: {self.run_dir}")
 
     def _setup_logger(self) -> logging.Logger:
@@ -77,6 +82,7 @@ class ResultsManager:
             trainer.add_callback(GradientNormCallback(log_every_n_steps=100))
         except Exception as e:
             self.logger.warning(f"Could not add callbacks: {e}")
+
         original_log = trainer.log
         def custom_log(logs):
             original_log(logs)
