@@ -66,4 +66,25 @@ urlpatterns = [
     path('v1/webhooks/', views.versioned_view(views.webhook_list)),
     path('v1/webhooks/<uuid:webhook_id>/', views.versioned_view(views.webhook_delete)),
     path('v1/webhooks/<uuid:webhook_id>/test/', views.versioned_view(views.test_webhook)),
+
+
+
+    # Notes/urls.py – add these patterns
+
+    # HuggingFace upload
+    path('v1/notes/<uuid:note_id>/upload-hf/', views.versioned_view(views.upload_note_to_huggingface)),
+
+    # Workspaces
+    path('v1/workspaces/', views.versioned_view(views.workspace_list)),
+    path('v1/workspaces/<uuid:workspace_id>/add-note/<uuid:note_id>/', views.versioned_view(views.workspace_add_note)),
+
+    # Tasks
+    path('v1/notes/<uuid:note_id>/tasks/', views.versioned_view(views.task_list)),
+    path('v1/notes/<uuid:note_id>/tasks/<uuid:task_id>/', views.versioned_view(views.task_update)),
+
+    # Model Registry
+    path('v1/models/', views.versioned_view(views.model_registry_list)),
+
+    # Note Links
+    path('v1/notes/links/', views.versioned_view(views.create_note_link)),
 ]
