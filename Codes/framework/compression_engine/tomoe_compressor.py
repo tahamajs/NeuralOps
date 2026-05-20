@@ -95,3 +95,4 @@ class ToMoECompressor(BaseCompressor):
             if parent is None:
                 return None
         return parent
+    

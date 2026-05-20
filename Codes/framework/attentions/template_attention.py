@@ -96,3 +96,4 @@ class YourCustomAttention(BaseAttention):
 
     def extra_repr(self) -> str:
         return f"num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}"
+    

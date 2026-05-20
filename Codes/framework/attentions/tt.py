@@ -12,3 +12,4 @@ class TokenCompressedAttention(nn.Module):
 @ATTENTION_REGISTRY.register("token_compressed")
 def inject_token_compressed(layer, config, comp_config, layer_idx, num_layers, old_attn):
     layer.attention = TokenCompressedAttention(config, comp_config, layer_idx, num_layers, old_attn)
+

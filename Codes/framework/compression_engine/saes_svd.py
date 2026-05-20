@@ -28,3 +28,4 @@ def saes_svd_v2_factory(model, comp_config):
     compressor = SAESSVDCompressorV2(model, rank_ratio)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
