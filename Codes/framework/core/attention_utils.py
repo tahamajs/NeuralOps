@@ -6,8 +6,9 @@ Uses architecture helpers and weight copying to swap attention modules.
 import torch.nn as nn
 from typing import Optional
 from .registry import ATTENTION_REGISTRY
-from .architecture import get_attention_modules
+from .architecture import detect_architecture, get_attention_modules
 from .model_utils import copy_attention_weights, replace_module
+from .adapters import get_adapter
 
 
 def inject_attention(
@@ -19,11 +20,14 @@ def inject_attention(
 ) -> nn.Module:
     """
     Replace all attention modules in the model with the specified variant.
+    Automatically copies pretrained weights using the appropriate adapter.
     """
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     config = getattr(model, 'config', None)
-    replaced = 0
+    arch = detect_architecture(model)
+    adapter = get_adapter(arch)
 
+    replaced = 0
     for name, old_attn in get_attention_modules(model):
         # Create new attention instance
         try:
@@ -34,12 +38,22 @@ def inject_attention(
         except TypeError:
             new_attn = attn_class(rank=rank, **kwargs)
 
-        # Copy weights if requested
+        # Copy pretrained weights
         if copy_weights:
-            try:
-                copy_attention_weights(old_attn, new_attn)
-            except Exception as e:
-                print(f"  ⚠️ Could not copy weights for '{name}': {e}")
+            for proj in ['q', 'k', 'v', 'o']:
+                try:
+                    src_weight, src_bias = adapter.get_weight_bias(old_attn, proj)
+                except ValueError:
+                    continue  # skip if projection not found
+                target_proj = getattr(new_attn, f'{proj}_proj', None)
+                if target_proj is None:
+                    target_proj = getattr(new_attn, proj, None)
+                if target_proj is not None:
+                    target_proj.weight.data.copy_(src_weight)
+                    if src_bias is not None and target_proj.bias is not None:
+                        target_proj.bias.data.copy_(src_bias)
+                    elif src_bias is None and target_proj.bias is not None:
+                        nn.init.zeros_(target_proj.bias)
 
         replace_module(model, name, new_attn)
         replaced += 1
@@ -49,5 +63,4 @@ def inject_attention(
 
 
 def available_attention_types() -> list:
-    """Return all registered attention variant keys."""
     return ATTENTION_REGISTRY.keys()
