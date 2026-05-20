@@ -1,7 +1,12 @@
+"""
+ResultsSaver – central orchestrator for result persistence.
+Integrates with framework.analysis, framework.tracking, and all backends.
+"""
+
 import os, json, logging, tarfile, tempfile, shutil
 from pathlib import Path
 from datetime import datetime
-from typing import Type, Optional, Dict, Any
+from typing import Optional, Dict, Any
 
 from .config import SaveConfig
 
@@ -9,17 +14,16 @@ logger = logging.getLogger(__name__)
 
 class ResultsSaver:
     """
-    Central orchestrator for result persistence.
     Usage:
         saver = ResultsSaver(run_id, base_dir, save_config_dict)
-        saver.save_all(model, config, history, metrics, tokenizer, input_example)
+        saver.save_all(model, config, history, final_metrics, tokenizer, input_example)
         saver.push_all()
     """
 
     def __init__(self, run_id: str, base_dir: Path, config: Optional[Dict[str, Any]] = None):
         self.run_id = run_id
         self.base_dir = Path(base_dir)
-        self.run_dir = self.base_dir / str(run_id)
+        self.run_dir = self.base_dir / run_id
         self.cfg = SaveConfig.from_dict(config or {})
         self._init_dirs()
         self.saved_paths: Dict[str, str] = {}
@@ -29,11 +33,14 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     def _init_dirs(self):
         dirs = [self.run_dir]
-        if self.cfg.save_logs:      dirs.append(self.run_dir / "logs")
-        if self.cfg.save_plots:     dirs.append(self.run_dir / "plots")
+        if self.cfg.save_logs:
+            dirs.append(self.run_dir / "logs")
+        if self.cfg.save_plots:
+            dirs.append(self.run_dir / "plots")
         if self.cfg.save_artifacts or self.cfg.save_model or self.cfg.model_export_formats:
             dirs.append(self.run_dir / "artifacts")
-        if self.cfg.save_checkpoints:  dirs.append(self.run_dir / "checkpoints")
+        if self.cfg.save_checkpoints:
+            dirs.append(self.run_dir / "checkpoints")
         for d in dirs:
             d.mkdir(parents=True, exist_ok=True)
 
@@ -45,7 +52,7 @@ class ResultsSaver:
         return metric >= threshold
 
     # ------------------------------------------------------------------
-    # Core save operations
+    # Main save entry point
     # ------------------------------------------------------------------
     def save_all(self, model, config, history, final_metrics,
                  tokenizer=None, input_example=None) -> None:
@@ -60,24 +67,50 @@ class ResultsSaver:
         if self.cfg.save_checkpoints:
             self._save_checkpoint(model, "final")
         if self.cfg.save_plots:
-            self._generate_plots(history)
+            self._generate_plots(history, final_metrics)
         if self.cfg.save_model and self.should_save_heavy(final_metrics):
             for fmt in self.cfg.model_export_formats:
                 self._export_format(fmt, model, input_example)
         self._save_archive()
         self._save_model_card(config, final_metrics)
 
+        # Automatically track to experiment trackers (wandb, mlflow, etc.)
+        if self.cfg.experiment_trackers:
+            # Delegate to the unified tracking module if available, else use legacy backends
+            try:
+                from framework.tracking import ExperimentTracker
+                tracker = ExperimentTracker(backend=self.cfg.experiment_trackers[0],  # supports one primary
+                                            log_dir=str(self.run_dir / "tracking"),
+                                            experiment_name=self.run_id)
+                for k, v in final_metrics.items():
+                    tracker.log_metric(k, v)
+                tracker.log_params(self._flatten_config(config))
+                tracker.finalize()
+            except ImportError:
+                self.track_all(final_metrics, self._flatten_config(config))
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
     def _write_json(self, rel_path: str, obj):
-        fp = self.run_dir / rel_path; fp.parent.mkdir(exist_ok=True)
-        with open(fp, 'w') as f: json.dump(obj, f, indent=2)
+        fp = self.run_dir / rel_path
+        fp.parent.mkdir(exist_ok=True)
+        with open(fp, 'w') as f:
+            json.dump(obj, f, indent=2)
 
     def _write_text(self, rel_path: str, text: str):
-        fp = self.run_dir / rel_path; fp.parent.mkdir(exist_ok=True)
-        with open(fp, 'w') as f: f.write(text)
+        fp = self.run_dir / rel_path
+        fp.parent.mkdir(exist_ok=True)
+        with open(fp, 'w') as f:
+            f.write(text)
+
+    def _flatten_config(self, config) -> Dict[str, Any]:
+        if hasattr(config, '__dict__'):
+            return vars(config)
+        return config
 
     def _save_config(self, config):
-        d = vars(config) if hasattr(config, '__dict__') else config
-        self._write_json("artifacts/config.json", d)
+        self._write_json("artifacts/config.json", self._flatten_config(config))
 
     def _save_history(self, history):
         self._write_json("artifacts/history.json", history)
@@ -91,37 +124,125 @@ class ResultsSaver:
                 f.write(json.dumps(entry) + "\n")
 
     def _save_model(self, model, tokenizer=None):
-        p = self.run_dir / "artifacts" / "model"; p.mkdir(exist_ok=True)
+        p = self.run_dir / "artifacts" / "model"
+        p.mkdir(exist_ok=True)
         model.save_pretrained(str(p))
-        if tokenizer: tokenizer.save_pretrained(str(p))
+        if tokenizer:
+            tokenizer.save_pretrained(str(p))
         if self.cfg.save_optimizer:
             import torch
             torch.save(model.state_dict(), p / "optimizer.pt")
 
     def _save_checkpoint(self, model, name="best"):
-        p = self.run_dir / "checkpoints" / name; p.mkdir(exist_ok=True)
+        p = self.run_dir / "checkpoints" / name
+        p.mkdir(exist_ok=True)
         model.save_pretrained(str(p))
 
     def _save_archive(self):
         with tarfile.open(self.run_dir / "results.tar.gz", "w:gz") as tar:
             for sub in ["artifacts", "logs", "plots"]:
                 sp = self.run_dir / sub
-                if sp.exists(): tar.add(sp, arcname=sub)
+                if sp.exists():
+                    tar.add(sp, arcname=sub)
 
-    def _generate_plots(self, history):
+    # ------------------------------------------------------------------
+    # Plots – delegates to framework.analysis.plotting
+    # ------------------------------------------------------------------
+    def _generate_plots(self, history, final_metrics):
         try:
-            from framework.analysis.plotting import create_comprehensive_plots
-            create_comprehensive_plots(history, str(self.run_dir / "plots"))
+            import matplotlib.pyplot as plt
+            from framework.analysis.plotting import (
+                plot_loss_curves, plot_accuracy_curves, plot_lr_schedule,
+                plot_training_time, plot_gpu_memory, plot_gradient_flow,
+                plot_confusion_matrix, plot_attention_heatmap,
+                plot_radar_chart, plot_rank_allocation,
+            )
+            opts = self.cfg.plot_options
+            dpi = opts.get("dpi", 150)
+
+            def save_fig(name, fig):
+                fig.savefig(self.run_dir / "plots" / f"{name}.png", dpi=dpi, bbox_inches='tight')
+                plt.close(fig)
+
+            if opts.get("loss_curve", True):
+                fig = plot_loss_curves(history, smooth=opts.get("loss_smooth", 0.6),
+                                       figsize=tuple(opts.get("figsize", [10, 6])))
+                save_fig("loss_curve", fig)
+
+            if opts.get("accuracy_curve", True):
+                fig = plot_accuracy_curves(history, figsize=tuple(opts.get("figsize", [10, 6])))
+                save_fig("accuracy_curve", fig)
+
+            if opts.get("lr_schedule", True):
+                fig = plot_lr_schedule(history, figsize=tuple(opts.get("figsize", [10, 6])))
+                save_fig("lr_schedule", fig)
+
+            if opts.get("training_time", True):
+                fig = plot_training_time(history, figsize=tuple(opts.get("figsize", [10, 6])))
+                save_fig("training_time", fig)
+
+            if opts.get("gpu_memory", False):
+                if any("gpu_mem" in e for e in history):
+                    fig = plot_gpu_memory(history, figsize=tuple(opts.get("figsize", [10, 6])))
+                    save_fig("gpu_memory", fig)
+
+            if opts.get("gradient_flow", False):
+                if any("grad_norm" in e for e in history):
+                    fig = plot_gradient_flow(history, figsize=tuple(opts.get("figsize", [10, 6])))
+                    save_fig("gradient_flow", fig)
+
+            if opts.get("confusion_matrix", False):
+                preds_path = self.run_dir / "artifacts" / "eval_predictions.json"
+                if preds_path.exists():
+                    with open(preds_path) as f:
+                        data = json.load(f)
+                    fig = plot_confusion_matrix(data["labels"], data["predictions"],
+                                                class_names=opts.get("class_names"),
+                                                figsize=tuple(opts.get("figsize", [10, 8])))
+                    save_fig("confusion_matrix", fig)
+
+            if opts.get("radar_chart", False):
+                fig = plot_radar_chart(final_metrics, figsize=tuple(opts.get("figsize", [8, 8])))
+                save_fig("radar_chart", fig)
+
+            if opts.get("rank_allocation", False):
+                rank_path = self.run_dir / "artifacts" / "rank_allocation.json"
+                if rank_path.exists():
+                    with open(rank_path) as f:
+                        rank_data = json.load(f)
+                    fig = plot_rank_allocation(rank_data, figsize=tuple(opts.get("figsize", [10, 4])))
+                    save_fig("rank_allocation", fig)
+
+            if opts.get("attention_heatmap", False):
+                logger.info("Attention heatmap requested but model not available in saver context; "
+                            "use framework.callbacks.AttentionHeatmapCallback during training.")
+
         except Exception:
             logger.exception("Plot generation failed")
 
+    # ------------------------------------------------------------------
+    # Model card
+    # ------------------------------------------------------------------
     def _save_model_card(self, config, metrics):
-        card = f"# {config.get('model_name','Model')} – {config.get('task_name','Task')}\n\n"
-        card += f"**Accuracy:** {metrics.get('eval_accuracy','N/A')}\n"
-        card += f"**Loss:** {metrics.get('eval_loss','N/A')}\n\n"
-        card += f"**Run ID:** {self.run_id}\n**Date:** {datetime.now()}\n"
+        cfg_dict = self._flatten_config(config) if hasattr(config, '__dict__') else config
+        model_name = cfg_dict.get('model_name', 'Model')
+        task_name = cfg_dict.get('task_name', 'Task')
+        acc = metrics.get('eval_accuracy', 'N/A')
+        loss = metrics.get('eval_loss', 'N/A')
+        card = f"""# {model_name} – {task_name}
+
+**Accuracy:** {acc}
+**Loss:** {loss}
+
+**Run ID:** {self.run_id}
+**Date:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+**Compression:** {cfg_dict.get('attention_type', 'full')} (rank={cfg_dict.get('rank', 'N/A')})
+"""
         self._write_text("artifacts/model_card.md", card)
 
+    # ------------------------------------------------------------------
+    # Export formats
+    # ------------------------------------------------------------------
     def _export_format(self, fmt: str, model, input_example):
         try:
             from .backends.exports import EXPORTERS
@@ -140,8 +261,9 @@ class ResultsSaver:
 
     def _push_backend(self, name: str):
         try:
-            if name == "local": return
-            mod = __import__(f".backends.{name}", fromlist=["push"], package=__package__)
+            if name == "local":
+                return
+            mod = __import__(f"framework.results_saver.backends.{name}", fromlist=["push"])
             mod.push(self.run_dir, self.cfg)
         except ImportError:
             logger.warning(f"Backend '{name}' not available, skipping")
@@ -152,22 +274,24 @@ class ResultsSaver:
     # Git / DVC
     # ------------------------------------------------------------------
     def git_commit_and_push(self) -> None:
-        if not self.cfg.git_options.get("commit_results"): return
+        if not self.cfg.git_options.get("commit_results"):
+            return
         from .backends.git import git_commit_and_push
         git_commit_and_push(self.run_dir, self.cfg)
 
     def dvc_track(self) -> None:
-        if not self.cfg.dvc_options.get("track_model"): return
+        if not self.cfg.dvc_options.get("track_model"):
+            return
         from .backends.dvc import dvc_track
         dvc_track(self.run_dir, self.cfg)
 
     # ------------------------------------------------------------------
-    # Experiment trackers
+    # Experiment trackers (legacy backends – prefer framework.tracking)
     # ------------------------------------------------------------------
     def track_all(self, metrics: Dict[str, Any], params: Dict[str, Any]) -> None:
         for t in self.cfg.experiment_trackers:
             try:
-                mod = __import__(f".backends.{t}", fromlist=["track"], package=__package__)
+                mod = __import__(f"framework.results_saver.backends.{t}_tracker", fromlist=["track"])
                 mod.track(self.run_id, self.run_dir, metrics, params, self.cfg)
             except ImportError:
                 logger.warning(f"Tracker '{t}' not available, skipping")
@@ -180,7 +304,7 @@ class ResultsSaver:
     def push_to_registries(self) -> None:
         for r in self.cfg.model_registries:
             try:
-                mod = __import__(f".backends.{r}", fromlist=["push"], package=__package__)
+                mod = __import__(f"framework.results_saver.backends.{r}", fromlist=["push"])
                 mod.push(self.run_id, self.run_dir, self.cfg)
             except ImportError:
                 logger.warning(f"Registry '{r}' not available")
@@ -191,22 +315,10 @@ class ResultsSaver:
     # GitHub Release
     # ------------------------------------------------------------------
     def create_github_release(self, metrics: Dict[str, Any]) -> Optional[str]:
-        if not self.cfg.release_options.get("create_github_release"): return None
+        if not self.cfg.release_options.get("create_github_release"):
+            return None
         from .backends.github_release import create_release
         return create_release(self.run_id, self.run_dir, metrics, self.cfg)
-
-    # ------------------------------------------------------------------
-    # Model version (DB)
-    # ------------------------------------------------------------------
-    def create_version(self, run, metrics: Dict[str, Any]) -> None:
-        if not self.cfg.create_model_version: return
-        from model_versioning.services import ModelVersionService
-        p = self.run_dir / "artifacts" / "model" / "pytorch_model.bin"
-        if p.exists():
-            import torch
-            state = torch.load(p, map_location='cpu')
-            ModelVersionService.create_version(run=run, model_state=state,
-                                               metrics=metrics, artifact_base=str(self.base_dir))
 
     # ------------------------------------------------------------------
     # Notifications
@@ -214,116 +326,3 @@ class ResultsSaver:
     def notify(self, success: bool, metrics: Dict[str, Any]) -> None:
         from .backends.notification import notify
         notify(self.run_id, success, metrics, self.cfg)
-
-# framework/results_saver/saver.py (inside ResultsSaver class)
-
-    def _generate_plots(self, history):
-        if not self.cfg.save_plots:
-            return
-        opts = self.cfg.plot_options   # guaranteed to exist as a dict
-
-        # Global style settings
-        import matplotlib.pyplot as plt
-        plt.style.use('seaborn-v0_8-darkgrid')
-        figsize = tuple(opts.get("figsize", [10, 6]))
-        dpi = opts.get("dpi", 150)
-
-        # Helper to save a single figure
-        def _save_figure(name, fig):
-            fig.savefig(self.run_dir / "plots" / f"{name}.png", dpi=dpi, bbox_inches='tight')
-            plt.close(fig)
-
-        # ----- Loss curves -----
-        if opts.get("loss_curve", True):
-            from framework.analysis.plotting import plot_loss_curves
-            fig = plot_loss_curves(history, smooth=opts.get("loss_smooth", 0.6), figsize=figsize)
-            _save_figure("loss_curve", fig)
-
-        # ----- Accuracy curves -----
-        if opts.get("accuracy_curve", True):
-            from framework.analysis.plotting import plot_accuracy_curves
-            fig = plot_accuracy_curves(history, figsize=figsize)
-            _save_figure("accuracy_curve", fig)
-
-        # ----- Confusion matrix -----
-        if opts.get("confusion_matrix", False):
-            from framework.analysis.plotting import plot_confusion_matrix
-            # Requires evaluation predictions + labels – must be passed separately
-            # We store them in the run directory if available
-            preds_path = self.run_dir / "artifacts" / "eval_predictions.json"
-            if preds_path.exists():
-                import json
-                with open(preds_path) as f:
-                    data = json.load(f)
-                fig = plot_confusion_matrix(data["labels"], data["predictions"],
-                                            class_names=opts.get("class_names"),
-                                            figsize=figsize)
-                _save_figure("confusion_matrix", fig)
-            else:
-                logger.info("Confusion matrix requested but no evaluation predictions found.")
-
-        # ----- Attention heatmap -----
-        if opts.get("attention_heatmap", False):
-            from framework.analysis.plotting import plot_attention_heatmap
-            # Requires the actual model – we don't have it here; skip gracefully
-            logger.info("Attention heatmap requested but model not available in saver context. "
-                        "To enable this, save the model first and call a separate analysis job.")
-
-        # ----- Gradient flow -----
-        if opts.get("gradient_flow", False):
-            from framework.analysis.plotting import plot_gradient_flow
-            # Requires gradient norms logged during training – can be extracted from history
-            if any("grad_norm" in entry for entry in history):
-                fig = plot_gradient_flow(history, figsize=figsize)
-                _save_figure("gradient_flow", fig)
-
-        # ----- Learning rate schedule -----
-        if opts.get("lr_schedule", True):
-            from framework.analysis.plotting import plot_lr_schedule
-            if any("learning_rate" in entry for entry in history):
-                fig = plot_lr_schedule(history, figsize=figsize)
-                _save_figure("lr_schedule", fig)
-
-        # ----- GPU memory / utilisation -----
-        if opts.get("gpu_memory", False):
-            from framework.analysis.plotting import plot_gpu_memory
-            if any("gpu_mem" in entry for entry in history):
-                fig = plot_gpu_memory(history, figsize=figsize)
-                _save_figure("gpu_memory", fig)
-
-        # ----- Training time vs steps -----
-        if opts.get("training_time", True):
-            from framework.analysis.plotting import plot_training_time
-            fig = plot_training_time(history, figsize=figsize)
-            _save_figure("training_time", fig)
-
-        # ----- Parameter count (static) -----
-        if opts.get("parameter_count", False):
-            from framework.analysis.plotting import plot_parameter_distribution
-            # This would need the model object; we skip with a warning
-            logger.info("Parameter count plot requested but model not available.")
-
-        # ----- Rank allocation (SVD) -----
-        if opts.get("rank_allocation", False):
-            from framework.analysis.plotting import plot_rank_allocation
-            if any("rank" in entry for entry in history):
-                fig = plot_rank_allocation(history, figsize=figsize)
-                _save_figure("rank_allocation", fig)
-
-        # ----- Pareto front -----
-        if opts.get("pareto_front", False):
-            from framework.analysis.plotting import plot_pareto_front
-            # Needs multiple runs data; not available in single run context
-            logger.info("Pareto front requires multiple runs comparison – skipped.")
-
-        # ----- Radar chart -----
-        if opts.get("radar_chart", False):
-            from framework.analysis.plotting import plot_radar_chart
-            # Requires multiple metrics; use final_metrics
-            metrics_path = self.run_dir / "artifacts" / "final_metrics.json"
-            if metrics_path.exists():
-                import json
-                with open(metrics_path) as f:
-                    metrics = json.load(f)
-                fig = plot_radar_chart(metrics, figsize=figsize)
-                _save_figure("radar_chart", fig)
