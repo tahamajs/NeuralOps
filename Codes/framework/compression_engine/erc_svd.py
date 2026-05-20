@@ -32,3 +32,4 @@ def erc_factory(model, comp_config):
     compressor = ERCCompressor(model, allowed_error)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

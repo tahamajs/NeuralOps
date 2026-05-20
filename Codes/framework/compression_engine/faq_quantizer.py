@@ -61,3 +61,4 @@ def faq_factory(model, comp_config):
     compressor = FAQQuantizer(model, tokenizer, bits)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

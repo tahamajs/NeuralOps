@@ -52,3 +52,4 @@ class NativeSparseAttention(nn.Module):
         attn = self.dropout(attn)
         context = torch.matmul(attn, V).permute(0,2,1,3).contiguous().view(B, L, D)
         return self.out_proj(context), None
+    

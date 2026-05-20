@@ -115,3 +115,4 @@ def inject_soa_fused_attn(layer, model_config, comp_config, layer_idx, total_lay
     new_attn = SOAFusedAttention(model_config, k_rank, dropout, old_attn)
     layer.attention = new_attn
     return new_attn
+

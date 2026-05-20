@@ -49,3 +49,4 @@ def inject_mamba(layer, model_config, comp_config, layer_idx, total_layers, old_
     new_module = Mamba(d_model=d_model)
     layer.attention = new_module
     return new_module
+

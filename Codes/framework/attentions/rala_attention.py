@@ -78,3 +78,4 @@ class RALALinearAttention(nn.Module):
         if output_attentions:
             return (output, None)
         return output
+    

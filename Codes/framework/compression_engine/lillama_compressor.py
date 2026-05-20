@@ -54,3 +54,4 @@ def lillama_factory(model, comp_config):
     compressor = LiLLaMACompressor(model, tokenizer, rank)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

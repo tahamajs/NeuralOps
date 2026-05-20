@@ -134,3 +134,5 @@ def direct_svd_factory(model, comp_config):
     compressor = DirectSVDCompressor(model, svd_rank=svd_rank)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+

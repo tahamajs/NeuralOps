@@ -93,3 +93,4 @@ def cachenotes_factory(model, comp_config):
     compressor = CacheNotesCompressor(model, task_type=task_type, keep_ratio=keep_ratio)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
