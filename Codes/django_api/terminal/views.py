@@ -10,7 +10,6 @@ from .models import TerminalSession
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_sessions(request):
-    """List active terminal sessions for the current user."""
     sessions = TerminalSession.objects.filter(
         user=request.user, is_active=True
     ).order_by('-last_activity_at')
@@ -28,23 +27,19 @@ def list_sessions(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def kill_session(request, session_id):
-    """Kill a specific terminal session (own or admin)."""
     try:
         session = TerminalSession.objects.get(id=session_id)
     except TerminalSession.DoesNotExist:
-        return Response({'error': 'Session not found'}, status=404)
+        return Response({'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
 
     if session.user != request.user and not request.user.is_staff:
-        return Response({'error': 'Not allowed'}, status=403)
+        return Response({'error': 'Not allowed'}, status=status.HTTP_403_FORBIDDEN)
 
-    # Send signal to kill the child process
     if session.pid:
         try:
             os.kill(session.pid, signal.SIGKILL)
         except OSError:
             pass
-
-    # Close file descriptor
     if session.fd:
         try:
             os.close(session.fd)

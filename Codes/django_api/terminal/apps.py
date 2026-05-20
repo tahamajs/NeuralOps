@@ -8,8 +8,7 @@ class TerminalConfig(AppConfig):
     name = 'terminal'
 
     def ready(self):
-        # Import signals only if the module exists
         try:
             import terminal.signals  # noqa
         except ImportError:
-            logger.debug("terminal.signals not found – signals disabled")
+            logger.debug('terminal.signals not found – signals disabled')
