@@ -1,58 +1,63 @@
-"""Multi‑node launcher – wraps torchrun for distributed training."""
+"""Unified launcher — single‑node torchrun or elastic launch."""
 
-import subprocess
-import os
-import sys
-import pickle
-import tempfile
+import os, sys, subprocess, tempfile, pickle, logging
 from pathlib import Path
 from typing import Callable
+from .config import DistributedConfig
 
-def launch_distributed(config, train_fn: Callable[[], None], job_id: str) -> int:
+logger = logging.getLogger(__name__)
+
+
+def launch_distributed(config: DistributedConfig, train_fn: Callable, job_id: str = "local") -> int:
     """
-    Launch distributed training using torchrun (or mp.spawn for single node).
-
-    Args:
-        config: DistributedConfig
-        train_fn: a callable that contains the training loop
-        job_id: unique job identifier
-
-    Returns:
-        subprocess return code
+    Launch distributed training.  Uses torchrun for multi‑GPU / multi‑node.
+    For single GPU, runs inline.
     """
-    # Single GPU – no launcher needed
-    if config.num_nodes == 1 and config.num_gpus == 1:
-        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(
-            map(str, config.gpu_ids or [0]))
+    # Single GPU — no launcher
+    if config.num_nodes == 1 and config.num_gpus == 1 and not config.elastic:
+        os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, config.gpu_ids or [0]))
         try:
             train_fn()
             return 0
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).exception("Training failed")
+        except Exception:
+            logger.exception("Training failed")
             return 1
 
-    nnodes = config.num_nodes
-    nproc_per_node = config.num_gpus
-    master_addr = config.master_addr
-    master_port = config.master_port
-    node_rank = config.node_rank
+    # Build torchrun command
+    target = _make_script(train_fn, job_id)
 
-    target_script = _make_training_script(train_fn, job_id)
-    cmd = [
-        sys.executable, "-m", "torch.distributed.run",
-        f"--nnodes={nnodes}",
-        f"--nproc_per_node={nproc_per_node}",
-        f"--master_addr={master_addr}",
-        f"--master_port={master_port}",
-        f"--node_rank={node_rank}",
-        target_script,
-    ]
+    if config.elastic:
+        cmd = [
+            sys.executable, "-m", "torch.distributed.run",
+            f"--nnodes={config.elastic_min_nodes}:{config.elastic_max_nodes}",
+            f"--nproc_per_node={config.num_gpus}",
+            f"--rdzv_backend={config.elastic_rdzv_backend}",
+            f"--rdzv_endpoint={config.elastic_rdzv_endpoint}",
+            f"--rdzv_id={config.elastic_run_id}",
+            f"--max_restarts={config.elastic_max_restarts}",
+            target,
+        ]
+    else:
+        cmd = [
+            sys.executable, "-m", "torch.distributed.run",
+            f"--nnodes={config.num_nodes}",
+            f"--nproc_per_node={config.num_gpus}",
+            f"--master_addr={config.master_addr}",
+            f"--master_port={config.master_port}",
+            f"--node_rank={config.node_rank}",
+            target,
+        ]
     return subprocess.call(cmd)
 
 
-def _make_training_script(train_fn: Callable, job_id: str) -> str:
-    """Create a temporary Python script that calls train_fn()."""
+def launch_elastic(config: DistributedConfig, train_fn: Callable, job_id: str = "elastic") -> int:
+    """Shortcut for elastic launch."""
+    config.elastic = True
+    return launch_distributed(config, train_fn, job_id)
+
+
+def _make_script(train_fn: Callable, job_id: str) -> str:
+    """Pickle the training function into a temporary script for torchrun."""
     fn_path = Path(tempfile.gettempdir()) / f"train_fn_{job_id}.pkl"
     script_path = Path(tempfile.gettempdir()) / f"launch_{job_id}.py"
 
@@ -62,10 +67,9 @@ def _make_training_script(train_fn: Callable, job_id: str) -> str:
     script = f"""
 import pickle, sys
 from pathlib import Path
-fn_path = Path("{fn_path}")
-with open(fn_path, "rb") as f:
-    train_fn = pickle.load(f)
-train_fn()
+with open("{fn_path}", "rb") as f:
+    fn = pickle.load(f)
+fn()
 """
     with open(script_path, "w") as f:
         f.write(script)
