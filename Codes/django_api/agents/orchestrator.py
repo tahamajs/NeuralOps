@@ -313,3 +313,49 @@ class LangGraphAgent:
                 for m in self.session.messages.order_by('created_at')
             ],
         }
+    
+
+import os, json
+import requests
+
+
+def _call_anthropic(messages, tools):
+    headers = {
+        "x-api-key": os.environ["ANTHROPIC_API_KEY"],
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json"
+    }
+    body = {
+        "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
+        "max_tokens": 1024,
+        "messages": messages,
+        "tools": tools,
+    }
+    resp = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=body, timeout=30)
+    return resp.json()
+
+def _call_openai(messages, tools):
+    # implement similar for OpenAI
+    pass
+
+import os, json, requests
+
+def get_llm_response(messages: list, tools: list = None) -> dict:
+    provider = os.environ.get("LLM_PROVIDER", "anthropic")
+    if provider == "openai":
+        # Implement OpenAI call (left as exercise)
+        return {"content": "", "tool_calls": []}
+    else:
+        headers = {
+            "x-api-key": os.environ["ANTHROPIC_API_KEY"],
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json"
+        }
+        body = {
+            "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
+            "max_tokens": 1024,
+            "messages": messages,
+            "tools": tools or [],
+        }
+        resp = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=body, timeout=30)
+        return resp.json()

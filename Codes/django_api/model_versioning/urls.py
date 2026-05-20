@@ -2,7 +2,10 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # ── Global version listing ─────────────────────────────────
     path('versions/', views.all_model_versions, name='all_model_versions'),
+
+    # ── Per‑run versions ───────────────────────────────────────
     path('runs/<uuid:run_id>/versions/', views.list_model_versions, name='list_model_versions'),
     path('runs/<uuid:run_id>/versions/cleanup/', views.cleanup_versions, name='cleanup_versions'),
     path(
@@ -15,9 +18,32 @@ urlpatterns = [
         views.compare_versions,
         name='compare_versions',
     ),
+
+    # ── Single version actions ─────────────────────────────────
     path('versions/<uuid:version_id>/', views.model_version_detail, name='model_version_detail'),
     path('versions/<uuid:version_id>/publish/', views.publish_to_hub, name='publish_to_hub'),
     path('versions/<uuid:version_id>/download/', views.download_model_version, name='download_model_version'),
     path('versions/<uuid:version_id>/archive/', views.archive_to_cold_storage, name='archive_to_cold_storage'),
     path('versions/<uuid:version_id>/restore/', views.restore_from_cold_storage, name='restore_from_cold_storage'),
+
+    # ── Diff creation & reconstruction ─────────────────────────
+    path(
+        'versions/diff/<uuid:from_version_id>/<uuid:to_version_id>/',
+        views.create_diff_view,
+        name='create_diff',
+    ),
+    path(
+        'versions/reconstruct/<uuid:base_version_id>/<uuid:diff_id>/',
+        views.reconstruct_version,
+        name='reconstruct_version',
+    ),
+
+    # ── Lineage graph ──────────────────────────────────────────
+    path('versions/<uuid:version_id>/lineage/', views.lineage_graph, name='lineage_graph'),
+
+    # ── Compression methods catalog ────────────────────────────
+    path('compression-methods/', views.list_compression_methods, name='list_compression_methods'),
+
+    # ── Lifecycle migration (staff only) ───────────────────────
+    path('versions/migrate-lifecycle/', views.run_lifecycle_migration, name='run_lifecycle_migration'),
 ]
