@@ -1,11 +1,12 @@
-"""Training‑related callbacks: logging, metrics, early stopping, checkpoint."""
+"""Training‑related callbacks: logging, metrics, early stopping, checkpoint, LR."""
 import os
-import logging
 import json
+import logging
 from transformers import TrainerCallback
 from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
+
 
 class LoggingCallback(TrainerCallback):
     """Logs training events to a Python logger."""
@@ -80,9 +81,11 @@ class CheckpointCallback(TrainerCallback):
 
     def on_step_end(self, args, state, control, **kwargs):
         if state.global_step % self.save_every_steps == 0:
-            path = os.path.join(self.output_dir, f"checkpoint-{state.global_step}")
-            kwargs.get('model').save_pretrained(path)
-            logger.info(f"Checkpoint saved to {path}")
+            model = kwargs.get('model')
+            if model is not None:
+                path = os.path.join(self.output_dir, f"checkpoint-{state.global_step}")
+                model.save_pretrained(path)
+                logger.info(f"Checkpoint saved to {path}")
 
 
 class LRSchedulerCallback(TrainerCallback):
@@ -90,12 +93,14 @@ class LRSchedulerCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):
         if 'lr_scheduler' in kwargs:
             lr = kwargs['lr_scheduler'].get_last_lr()[0]
-            logger.debug(f"Learning rate: {lr}")
+            logger.debug(f"Learning rate: {lr:.2e}")
+
 
 class MetricsLoggerCallback(TrainerCallback):
-    def __init__(self, saver: ResultsSaver):
-        self.saver = saver
+    """Persists metrics using a ResultsSaver."""
+    def __init__(self, saver):
+        self.saver = saver  # Expects an object with save_metrics(dict, step)
 
     def on_log(self, args, state, control, logs=None, **kwargs):
-        if logs:
+        if logs and self.saver:
             self.saver.save_metrics(logs, state.global_step)
