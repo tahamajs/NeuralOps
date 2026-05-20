@@ -1,6 +1,6 @@
 """
-Generic helpers for model‑agnostic compression:
-calibration, weight copying between naming conventions, safe forward pass.
+Generic helpers: calibration, weight‑copying, safe module replacement,
+activation collection.
 """
 
 import torch
@@ -9,9 +9,6 @@ from typing import List, Optional, Dict, Any
 from contextlib import contextmanager
 
 
-# ------------------------------------------------------------------ #
-# Calibration forward pass
-# ------------------------------------------------------------------ #
 def run_calibration_forward(
     model: nn.Module,
     tokenizer,
@@ -19,7 +16,7 @@ def run_calibration_forward(
     device: Optional[torch.device] = None,
     max_length: int = 128,
 ) -> nn.Module:
-    """Run a single forward pass on calibration texts and return the model (still eval)."""
+    """Run a single forward pass on calibration texts; return model (in eval)."""
     model.eval()
     inputs = tokenizer(
         texts, return_tensors="pt", padding=True,
@@ -37,13 +34,11 @@ def run_calibration_forward(
 # Weight‑copying for attention modules
 # ------------------------------------------------------------------ #
 ATTENTION_WEIGHT_MAP = {
-    # (target_attribute, [possible source attributes])
     'query':    ['q_lin', 'q_proj', 'query'],
     'key':      ['k_lin', 'k_proj', 'key'],
     'value':    ['v_lin', 'v_proj', 'value'],
     'out_proj': ['out_lin', 'o_proj', 'output', 'dense'],
 }
-
 
 def copy_attention_weights(
     src_module: nn.Module,
@@ -51,12 +46,11 @@ def copy_attention_weights(
     source_map: Optional[Dict[str, List[str]]] = None,
 ) -> None:
     """
-    Copy pretrained attention weights from src_module to dst_module.
-    The mapping tries multiple possible attribute names.
+    Copy pretrained attention weights from src to dst.
+    Tries multiple possible attribute names for each projection.
     """
     if source_map is None:
         source_map = ATTENTION_WEIGHT_MAP
-
     for target_attr, src_attrs in source_map.items():
         src = None
         for attr in src_attrs:
@@ -66,8 +60,7 @@ def copy_attention_weights(
         if src is None:
             raise ValueError(
                 f"Cannot find source for '{target_attr}' in "
-                f"{src_module.__class__.__name__}. "
-                f"Tried: {src_attrs}"
+                f"{src_module.__class__.__name__}. Tried: {src_attrs}"
             )
         dst = getattr(dst_module, target_attr)
         dst.weight.data.copy_(src.weight.data)
@@ -77,14 +70,7 @@ def copy_attention_weights(
             nn.init.zeros_(dst.bias)
 
 
-# ------------------------------------------------------------------ #
-# Generic module replacement with parent navigation
-# ------------------------------------------------------------------ #
-def replace_module(
-    model: nn.Module,
-    full_name: str,
-    new_module: nn.Module,
-) -> None:
+def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -> None:
     """Replace a sub‑module identified by its dotted name."""
     parts = full_name.split('.')
     parent = model
@@ -102,18 +88,12 @@ def get_parent_and_child_name(model: nn.Module, full_name: str):
     return parent, parts[-1]
 
 
-# ------------------------------------------------------------------ #
-# Parameter counting (consistent across compressors)
-# ------------------------------------------------------------------ #
 def count_parameters(model: nn.Module, trainable_only: bool = False) -> int:
     if trainable_only:
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
     return sum(p.numel() for p in model.parameters())
 
 
-# ------------------------------------------------------------------ #
-# Hook‑based activation collection (for activation‑aware compressors)
-# ------------------------------------------------------------------ #
 @contextmanager
 def activation_hooks(
     model: nn.Module,
@@ -121,10 +101,7 @@ def activation_hooks(
     collect_input: bool = True,
     collect_output: bool = False,
 ):
-    """
-    Context manager that collects activations for all modules of a given type.
-    Yields a dict that is populated with tensors.
-    """
+    """Context manager that collects activations for all modules of a given type."""
     activations: Dict[str, Any] = {}
     hooks = []
 
