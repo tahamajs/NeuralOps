@@ -12,19 +12,19 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('web_dashboard.urls')),         # Dashboard HTML pages
-    path('api/', include('api.urls')),               # All API endpoints
+    path('', include('web_dashboard.urls')),
+    path('api/', include('api.urls')),
     path('api/notes/', include('notes.urls')),
     path('api/model-versioning/', include('model_versioning.urls')),
     path('api/experiments/', include('experiment.urls')),
     path('api/jobs/', include('jobscheduler.urls')),
     path('api/agents/', include('agents.urls')),
     path('api/', include('sweeps.urls')),
-    path('api/terminal/', include('terminal.urls')),  # Terminal REST API
-    path('api/paper/', include('paper.urls')),         # Paper REST API
-        path('api/profiles/', include('profiles.urls')),
+    path('api/terminal/', include('terminal.urls')),
+    path('api/paper/', include('paper.urls')),        
+    path('api/profiles/', include('profiles.urls')),
     path('api/messaging/', include('messaging.urls')),
-path('api/leaderboards/', include('leaderboards.urls')),
+    path('api/leaderboards/', include('leaderboards.urls')),
 
 ]
 if settings.DEBUG:
