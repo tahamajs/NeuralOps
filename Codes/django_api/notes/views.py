@@ -788,6 +788,15 @@ def share_note(request, note_id):
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=404)
     note.shared_with.add(user_to_share)
+    # After note.shared_with.add(user_to_share)
+    from experiment.activity import log_activity
+    log_activity(
+        user=request.user,
+        action_type='share',
+        description=f'Shared note "{note.title or "Untitled"}" with {user_to_share.username}',
+        content_object=note,
+        metadata={'note_id': str(note.id), 'shared_with': user_to_share.username}
+    )
     return Response({"status": "shared", "shared_with": [u.username for u in note.shared_with.all()]})
 
 @api_view(['POST'])
@@ -1318,3 +1327,152 @@ def toggle_pin(request, note_id, version='v1'):
     note.pinned = not note.pinned
     note.save(update_fields=['pinned'])
     return Response({"pinned": note.pinned})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_note_from_paper(request, version='v1'):
+    """
+    Save a paper and create a note with its details.
+    Body: { paper_id, source, note_title (optional) }
+    """
+    paper_id = request.data.get('paper_id')
+    source = request.data.get('source', 'semantic_scholar')
+    if not paper_id:
+        return Response({"error": "paper_id required"}, status=400)
+
+    # Fetch paper details
+    from agents.tools import get_paper_details, save_paper
+    result = get_paper_details(paper_id=paper_id, source=source)
+    if result.get('status') != 'success':
+        return Response(result, status=404)
+
+    paper = result['paper']
+    # Save to user's library
+    save_result = save_paper(
+        title=paper.get('title',''), source=source, source_id=paper_id,
+        authors=paper.get('authors',[]), abstract=paper.get('abstract',''),
+        url=paper.get('url',''), year=paper.get('year'),
+        citation_count=paper.get('citation_count',0),
+        pdf_url=paper.get('pdf_url',''),
+        user_id=request.user.id
+    )
+
+    # Create a rich note
+    note = ResearcherNote.objects.create(
+        author=request.user,
+        note_type='literature_review',
+        title=request.data.get('note_title') or paper.get('title', 'Untitled'),
+        content=f"""## 📄 {paper.get('title','Untitled')}
+
+**Authors:** {', '.join(paper.get('authors',[]))}
+**Year:** {paper.get('year','N/A')}
+**Citations:** {paper.get('citation_count',0)}
+**Source:** [{paper.get('source','')}]({paper.get('url','')})
+
+### Abstract
+{paper.get('abstract','')}
+
+### Notes
+*(Add your notes here)*
+""",
+        tags=['paper-review', source],
+        metadata={'paper': paper},
+    )
+    serializer = ResearcherNoteSerializer(note)
+    return Response(serializer.data, status=201)
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def note_bibliography(request, note_id, version='v1'):
+    """
+    Return a formatted bibliography (BibTeX or APA) for all papers linked to a note.
+    """
+    note = get_object_or_404(ResearcherNote, id=note_id, deleted_at__isnull=True)
+    if not note.is_public and note.author != request.user:
+        return Response({"error": "Not allowed"}, status=403)
+
+    papers = note.metadata.get('papers', [])
+    if not papers:
+        return Response({"references": [], "bibtex": ""})
+
+    format_type = request.query_params.get('format', 'apa')
+
+    references = []
+    bibtex_entries = []
+    for paper in papers:
+        title = paper.get('title', '')
+        authors = paper.get('authors', [])
+        year = paper.get('year', '')
+        source = paper.get('source', '')
+        source_id = paper.get('source_id', '')
+        first_author = authors[0].split()[-1] if authors else 'Unknown'
+        ref_key = f"{first_author.lower()}{year}"
+
+        # APA style
+        if len(authors) == 1:
+            author_str = authors[0]
+        elif len(authors) == 2:
+            author_str = f"{authors[0]} & {authors[1]}"
+        elif len(authors) > 2:
+            author_str = f"{authors[0]} et al."
+        else:
+            author_str = 'Unknown'
+
+        apa_ref = f"{author_str} ({year}). {title}."
+        references.append(apa_ref)
+
+        # BibTeX
+        bibtex = f"""@article{{{ref_key},
+  title = {{{title}}},
+  author = {{{' and '.join(authors)}}},
+  year = {{{year}}},
+  url = {{https://api.semanticscholar.org/CorpusID:{source_id}}}
+}}"""
+        bibtex_entries.append(bibtex)
+
+    bibtex_all = '\n\n'.join(bibtex_entries)
+
+    return Response({
+        "references": references,
+        "bibtex": bibtex_all,
+        "count": len(references),
+    })
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def search_and_format_paper(request, version='v1'):
+    """Search for a paper and return a formatted Markdown snippet for insertion into a note."""
+    query = request.query_params.get('q', '')
+    source = request.query_params.get('source', 'semantic_scholar')
+    if not query:
+        return Response({"results": []})
+
+    from agents.tools import search_papers
+    result = search_papers(query=query, limit=5, source=source)
+    papers = result.get('results', [])
+
+    formatted = []
+    for paper in papers:
+        md = f"""### [{paper.get('title','Untitled')}]({paper.get('url','')})
+- **Authors:** {', '.join(paper.get('authors',[]))}
+- **Year:** {paper.get('year','N/A')} | **Citations:** {paper.get('citation_count',0)}
+- **Abstract:** {paper.get('abstract','')[:300]}...
+
+```bibtex
+@article{{{paper.get('authors',[['Unknown']])[0].split()[-1].lower()}{paper.get('year','')},
+  title = {{{paper.get('title','')}}},
+  author = {{{' and '.join(paper.get('authors',[]))}}},
+  year = {{{paper.get('year','')}}}
+}}
+```"""
+        formatted.append({
+            "source_id": paper.get('source_id'),
+            "source": paper.get('source'),
+            "markdown": md,
+        })
+    return Response({"results": formatted})

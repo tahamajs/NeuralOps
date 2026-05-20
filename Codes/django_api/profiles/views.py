@@ -1,15 +1,183 @@
+# profiles/views.py
+"""
+User profile management, social authentication, avatar upload, and user search.
+"""
+
+import logging
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
+from django.db.models import Q
+from django.conf import settings
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.authtoken.models import Token
+from allauth.socialaccount.models import SocialApp, SocialAccount, SocialToken
+from .models import Profile
+from .serializers import (
+    ProfileSerializer,
+    ProfileUpdateSerializer,
+    UserSearchSerializer,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class StandardPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+# ═══════════════════════════════════════════════════════════════
+# My Profile
+# ═══════════════════════════════════════════════════════════════
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def my_profile(request):
+    """Retrieve or update the authenticated user's profile."""
+    profile, created = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'GET':
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data)
+
+    elif request.method == 'PATCH':
+        serializer = ProfileUpdateSerializer(
+            profile, data=request.data, partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            # Return the full updated profile
+            return Response(ProfileSerializer(profile).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ═══════════════════════════════════════════════════════════════
+# View Any User's Profile
+# ═══════════════════════════════════════════════════════════════
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_profile(request, user_id):
+    """View the profile of any user by their ID."""
+    profile = get_object_or_404(Profile, user_id=user_id)
+    serializer = ProfileSerializer(profile)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_profile_by_username(request, username):
+    """View the profile of any user by their username."""
+    profile = get_object_or_404(Profile, user__username=username)
+    serializer = ProfileSerializer(profile)
+    return Response(serializer.data)
+
+
+# ═══════════════════════════════════════════════════════════════
+# User Search
+# ═══════════════════════════════════════════════════════════════
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def search_users(request):
+    """Search users by username, display name, affiliation, or bio."""
+    q = request.query_params.get('q', '').strip()
+    if len(q) < 2:
+        return Response({"results": [], "total": 0})
+
+    # Search in User model fields
+    user_qs = User.objects.filter(
+        Q(username__icontains=q) |
+        Q(first_name__icontains=q) |
+        Q(last_name__icontains=q) |
+        Q(email__icontains=q)
+    ).distinct()[:30]
+
+    # Also search in Profile fields
+    profile_qs = Profile.objects.filter(
+        Q(display_name__icontains=q) |
+        Q(affiliation__icontains=q) |
+        Q(bio__icontains=q)
+    ).select_related('user')[:30]
+
+    # Collect unique results
+    results = []
+    seen_ids = set()
+    for u in user_qs:
+        if u.id not in seen_ids:
+            seen_ids.add(u.id)
+            results.append(UserSearchSerializer(u).data)
+    for p in profile_qs:
+        if p.user_id not in seen_ids:
+            seen_ids.add(p.user_id)
+            results.append(UserSearchSerializer(p.user).data)
+
+    return Response({"results": results, "total": len(results)})
+
+
+# ═══════════════════════════════════════════════════════════════
+# Avatar Management
+# ═══════════════════════════════════════════════════════════════
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_avatar(request):
+    """Upload a new avatar for the authenticated user."""
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    uploaded_file = request.FILES.get('avatar')
+    if not uploaded_file:
+        return Response({"error": "avatar file required"}, status=400)
+
+    # Delete old avatar if exists
+    if profile.avatar:
+        profile.avatar.delete(save=False)
+
+    profile.avatar = uploaded_file
+    profile.save(update_fields=['avatar'])
+
+    return Response({
+        "avatar_url": request.build_absolute_uri(profile.avatar.url)
+    })
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def remove_avatar(request):
+    """Remove the avatar of the authenticated user."""
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+    if profile.avatar:
+        profile.avatar.delete(save=False)
+        profile.avatar = None
+        profile.save(update_fields=['avatar'])
+    return Response({"status": "removed"})
+
+
+# ═══════════════════════════════════════════════════════════════
+# Social Authentication Endpoints
+# ═══════════════════════════════════════════════════════════════
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def social_login_urls(request):
-    """Return OAuth login URLs for GitHub and HuggingFace."""
-    from allauth.socialaccount.models import SocialApp
+    """
+    Return OAuth login URLs for GitHub and HuggingFace.
+    Used by the frontend to display social login buttons.
+    """
     from django.urls import reverse
     providers = {}
     for provider in ['github', 'huggingface']:
         try:
+            # Ensure a SocialApp exists for the provider
             app = SocialApp.objects.get(provider=provider)
-            url = reverse(f'{provider}_login')
-            providers[provider] = request.build_absolute_uri(url)
+            url_name = f'{provider}_login'
+            providers[provider] = request.build_absolute_uri(
+                reverse(url_name)
+            )
         except SocialApp.DoesNotExist:
             pass
     return Response(providers)
@@ -19,7 +187,7 @@ def social_login_urls(request):
 @permission_classes([AllowAny])
 def social_callback(request):
     """
-    Exchange OAuth authorization code for a DRF token.
+    Exchange an OAuth authorization code for a DRF token.
     Body: { "provider": "github", "code": "...", "redirect_uri": "..." }
     """
     import requests
@@ -27,13 +195,22 @@ def social_callback(request):
     code = request.data.get('code')
     redirect_uri = request.data.get('redirect_uri')
 
+    if not provider or not code or not redirect_uri:
+        return Response(
+            {"error": "provider, code, and redirect_uri are required"},
+            status=400
+        )
+
+    user = None
+
+    # ── GitHub ──────────────────────────────────────────────────
     if provider == 'github':
         # Exchange code for access token
         token_resp = requests.post(
             'https://github.com/login/oauth/access_token',
             data={
-                'client_id': settings.GITHUB_CLIENT_ID,
-                'client_secret': settings.GITHUB_CLIENT_SECRET,
+                'client_id': getattr(settings, 'GITHUB_CLIENT_ID', ''),
+                'client_secret': getattr(settings, 'GITHUB_CLIENT_SECRET', ''),
                 'code': code,
                 'redirect_uri': redirect_uri,
             },
@@ -41,161 +218,102 @@ def social_callback(request):
         ).json()
         access_token = token_resp.get('access_token')
         if not access_token:
-            return Response({'error': 'Invalid code'}, status=400)
-        # Get user info
-        user_resp = requests.get('https://api.github.com/user', headers={
-            'Authorization': f'token {access_token}'
-        }).json()
+            return Response(
+                {"error": "Invalid GitHub code", "details": token_resp},
+                status=400
+            )
+
+        # Get GitHub user info
+        user_resp = requests.get(
+            'https://api.github.com/user',
+            headers={'Authorization': f'token {access_token}'}
+        ).json()
+        github_id = str(user_resp.get('id'))
         username = user_resp.get('login')
-        email = user_resp.get('email')
-        # Find or create user
-        user, _ = User.objects.get_or_create(username=username, defaults={'email': email})
-        # Create/update social token
-        from allauth.socialaccount.models import SocialApp, SocialAccount, SocialToken
-        app = SocialApp.objects.get(provider='github')
-        account, _ = SocialAccount.objects.get_or_create(user=user, provider='github', defaults={'uid': str(user_resp['id'])})
-        SocialToken.objects.update_or_create(account=account, app=app, defaults={'token': access_token})
-    elif provider == 'huggingface':
-        # similar flow using HF OAuth
-        pass
-    else:
-        return Response({'error': 'Unknown provider'}, status=400)
+        email = user_resp.get('email') or f'{username}@github.local'
 
-    # Generate DRF token
-    from rest_framework.authtoken.models import Token
-    token, _ = Token.objects.get_or_create(user=user)
-    return Response({
-        'token': token.key,
-        'username': user.username,
-        'user_id': user.id,
-    })
-
-
-# ── GitHub Integration ─────────────────────────────────────────
-import base64, json
-from github import Github, GithubException
-
-def _get_github_client(user):
-    """Return a PyGithub client authenticated with the user's GitHub token."""
-    from allauth.socialaccount.models import SocialToken
-    token = SocialToken.objects.filter(account__user=user, app__provider='github').first()
-    if not token:
-        raise PermissionError("GitHub not connected. Please log in with GitHub.")
-    return Github(token.token)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def github_repos(request):
-    """List the user's GitHub repositories."""
-    try:
-        g = _get_github_client(request.user)
-        repos = g.get_user().get_repos()
-        return Response([{'full_name': r.full_name, 'private': r.private} for r in repos])
-    except PermissionError as e:
-        return Response({'error': str(e)}, status=403)
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def github_push(request, project_id):
-    """Push project files to a GitHub repository using the GitHub API."""
-    project = _get_accessible_project(project_id, request.user)
-    if project.owner != request.user:
-        return Response({"error": "Only the owner can push"}, status=403)
-
-    repo_full_name = request.data.get('repo')  # e.g., "username/repo"
-    branch = request.data.get('branch', 'main')
-    commit_message = request.data.get('message', f'Update from NeuralOps at {timezone.now().isoformat()}')
-
-    if not repo_full_name:
-        return Response({"error": "repo (full_name) required"}, status=400)
-
-    try:
-        g = _get_github_client(request.user)
-        repo = g.get_repo(repo_full_name)
-    except GithubException as e:
-        return Response({'error': f'Repository not accessible: {e}'}, status=404)
-
-    # Get the current HEAD commit SHA of the branch
-    try:
-        ref = repo.get_git_ref(f'heads/{branch}')
-        sha_latest_commit = ref.object.sha
-        base_tree = repo.get_git_commit(sha_latest_commit).tree
-    except GithubException:
-        # If branch doesn't exist, create it from default branch or empty
-        try:
-            default_branch = repo.default_branch
-            ref = repo.get_git_ref(f'heads/{default_branch}')
-            sha_latest_commit = ref.object.sha
-            base_tree = repo.get_git_commit(sha_latest_commit).tree
-            # Create new branch
-            repo.create_git_ref(f'refs/heads/{branch}', sha_latest_commit)
-        except:
-            # Empty repo? We'll create initial commit
-            base_tree = None
-
-    # Build tree from project files
-    tree_list = []
-    for f in project.files.all():
-        content = f.content.encode('utf-8') if not f.is_binary else ''
-        blob = repo.create_git_blob(content, 'utf-8')
-        tree_list.append({
-            'path': f.filename,
-            'mode': '100644',
-            'type': 'blob',
-            'sha': blob.sha,
-        })
-
-    if tree_list:
-        new_tree = repo.create_git_tree(tree_list, base_tree=base_tree)
-        parent_commits = [repo.get_git_commit(sha_latest_commit)] if sha_latest_commit else []
-        new_commit = repo.create_git_commit(
-            message=commit_message,
-            tree=new_tree,
-            parents=parent_commits,
+        # Get or create Django user
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={'email': email}
         )
-        # Update the ref to point to the new commit
+
+        # Store social account and token
+        app = SocialApp.objects.get(provider='github')
+        account, _ = SocialAccount.objects.get_or_create(
+            user=user,
+            provider='github',
+            defaults={'uid': github_id}
+        )
+        SocialToken.objects.update_or_create(
+            account=account,
+            app=app,
+            defaults={'token': access_token}
+        )
+
+    # ── HuggingFace ────────────────────────────────────────────
+    elif provider == 'huggingface':
+        # Exchange code for token
+        token_resp = requests.post(
+            'https://huggingface.co/oauth/token',
+            data={
+                'client_id': getattr(settings, 'HF_CLIENT_ID', ''),
+                'client_secret': getattr(settings, 'HF_CLIENT_SECRET', ''),
+                'code': code,
+                'grant_type': 'authorization_code',
+                'redirect_uri': redirect_uri,
+            },
+        ).json()
+        access_token = token_resp.get('access_token')
+        if not access_token:
+            return Response(
+                {"error": "Invalid HF code", "details": token_resp},
+                status=400
+            )
+
+        # Get HF user info
+        user_resp = requests.get(
+            'https://huggingface.co/oauth/userinfo',
+            headers={'Authorization': f'Bearer {access_token}'}
+        ).json()
+        hf_sub = user_resp.get('sub')
+        username = user_resp.get('preferred_username') or f'hf_{hf_sub}'
+        email = user_resp.get('email') or f'{username}@hf.local'
+
+        # Get or create Django user
+        user, created = User.objects.get_or_create(
+            username=username,
+            defaults={'email': email}
+        )
+
+        # Store social account and token
         try:
-            ref.edit(sha=new_commit.sha)
-        except:
-            repo.create_git_ref(f'refs/heads/{branch}', new_commit.sha)
-        return Response({"status": "pushed", "commit": new_commit.sha})
+            app = SocialApp.objects.get(provider='huggingface')
+        except SocialApp.DoesNotExist:
+            # If not configured as a SocialApp, skip storing token
+            pass
+        else:
+            account, _ = SocialAccount.objects.get_or_create(
+                user=user,
+                provider='huggingface',
+                defaults={'uid': hf_sub}
+            )
+            SocialToken.objects.update_or_create(
+                account=account,
+                app=app,
+                defaults={'token': access_token}
+            )
     else:
-        return Response({"status": "no files to push"})
+        return Response({"error": "Unknown provider"}, status=400)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def github_pull(request, project_id):
-    """Pull files from a GitHub repository and update the project."""
-    project = _get_accessible_project(project_id, request.user)
-    if project.owner != request.user:
-        return Response({"error": "Only the owner can pull"}, status=403)
-
-    repo_full_name = request.data.get('repo')
-    branch = request.data.get('branch', 'main')
-    if not repo_full_name:
-        return Response({"error": "repo required"}, status=400)
-
-    try:
-        g = _get_github_client(request.user)
-        repo = g.get_repo(repo_full_name)
-        contents = repo.get_contents('', ref=branch)
-        updated = 0
-        for content_file in contents:
-            if content_file.type == 'file':
-                try:
-                    file_content = content_file.decoded_content.decode('utf-8')
-                except:
-                    file_content = ''
-                PaperFile.objects.update_or_create(
-                    project=project,
-                    filename=content_file.path,
-                    defaults={'content': file_content},
-                )
-                updated += 1
-        project.version += 1
-        project.save(update_fields=['version', 'updated_at'])
-        return Response({"status": "pulled", "files_updated": updated})
-    except GithubException as e:
-        return Response({'error': str(e)}, status=500)
+    # ── Generate DRF token ────────────────────────────────────
+    if user is not None:
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'username': user.username,
+            'user_id': user.id,
+            'email': user.email,
+        })
+    else:
+        return Response({"error": "Failed to authenticate user"}, status=500)
