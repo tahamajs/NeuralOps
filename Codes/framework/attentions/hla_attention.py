@@ -50,3 +50,5 @@ class HLAAttention(BaseAttention):
         out = torch.stack(outputs, dim=2)   # (B, H, L, Dh)
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         return self.out_proj(out), None
+    
+    

@@ -36,3 +36,4 @@ def ast_pruner_factory(model, comp_config):
     compressor = ASTPruner(model, block_size)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

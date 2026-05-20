@@ -111,3 +111,4 @@ def inject_hymba_transx(layer, model_config, comp_config, layer_idx, total_layer
                                 pretrained_attn=old_attn)
     layer.attention = new_attn
     return new_attn
+
