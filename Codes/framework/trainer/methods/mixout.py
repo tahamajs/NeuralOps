@@ -1,4 +1,6 @@
-# framework/trainer/methods/mixout.py
+"""
+Mixout: Regularisation by mixing weights with a frozen copy.
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

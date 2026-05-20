@@ -1,4 +1,6 @@
-# framework/trainer/methods/llrd.py
+"""
+LLRD: Layer‑wise Learning Rate Decay.
+"""
 import logging
 from .registry import register_method
 

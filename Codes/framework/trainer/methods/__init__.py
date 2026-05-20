@@ -1,8 +1,40 @@
-# Auto-generated __init__.py
-from . import fisher
-from . import gelora
-from . import llrd
-from . import lora
-from . import mixout
-from . import rdrop_r3f
-from . import registry
+"""
+Training method plugins: LoRA, DoRA, DisLoRA, Fisher, GeLoRA, LLRD, Mixout, R‑Drop, R3F.
+All methods are registered via the METHOD_REGISTRY and can be applied by name.
+"""
+
+from .registry import METHOD_REGISTRY, register_method, get_method, available_methods
+from .lora import apply_lora, apply_dora, apply_dislora, LoRALinear, DoRALinear, DisLoRALinear
+from .fisher import compute_fisher_importance, apply_fisher_lora
+from .gelora import estimate_intrinsic_dimension_pytorch, collect_hidden_states, compute_gelora_base_ranks, apply_fisher_gelora
+from .llrd import get_llrd_param_groups, apply_llrd
+from .mixout import MixoutLinear, apply_mixout
+from .rdrop_r3f import rdrop_loss, r3f_forward, MethodTrainer, apply_rdrop, apply_r3f
+
+__all__ = [
+    "METHOD_REGISTRY",
+    "register_method",
+    "get_method",
+    "available_methods",
+    "apply_lora",
+    "apply_dora",
+    "apply_dislora",
+    "LoRALinear",
+    "DoRALinear",
+    "DisLoRALinear",
+    "compute_fisher_importance",
+    "apply_fisher_lora",
+    "estimate_intrinsic_dimension_pytorch",
+    "collect_hidden_states",
+    "compute_gelora_base_ranks",
+    "apply_fisher_gelora",
+    "get_llrd_param_groups",
+    "apply_llrd",
+    "MixoutLinear",
+    "apply_mixout",
+    "rdrop_loss",
+    "r3f_forward",
+    "MethodTrainer",
+    "apply_rdrop",
+    "apply_r3f",
+]

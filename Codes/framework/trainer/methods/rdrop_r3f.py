@@ -1,4 +1,6 @@
-# framework/trainer/methods/rdrop_r3f.py
+"""
+R‑Drop and R3F (regularised dropout / robust representation learning).
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
