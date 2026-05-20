@@ -50,3 +50,4 @@ class MixAttentionMoSKA(BaseAttention):
         attn = F.softmax(attn, dim=-1)
         out = torch.matmul(attn, v_p).permute(0,2,1,3).contiguous().view(B, L, D)
         return self.out_proj(out), None
+    

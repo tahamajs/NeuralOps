@@ -177,3 +177,4 @@ def inject_leka_v2(layer, model_config, comp_config, layer_idx, total_layers, ol
     new_attn.out_proj.bias.data.copy_(old_attn.out_lin.bias.data)
     layer.attention = new_attn
     return new_attn
+

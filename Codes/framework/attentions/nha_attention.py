@@ -76,3 +76,4 @@ class NHAAttention(BaseAttention):
         if output_attentions:
             return out, attn_full
         return out
+    

@@ -30,3 +30,4 @@ class HuffmanCoder:
     def decode(encoded, code_map):
         reverse_map = {v: k for k, v in code_map.items()}
         return [reverse_map[bits] for bits in encoded]
+    

@@ -67,3 +67,5 @@ class PrimalAttention(BaseAttention):
         context = torch.matmul(probs, V)
         context = context.permute(0, 2, 1, 3).contiguous().view(batch_size, seq_len, self.all_head_size)
         return (self.out_proj(context), None) if kwargs.get('output_attentions') else (self.out_proj(context),None)
+    
+    

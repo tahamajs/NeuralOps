@@ -56,3 +56,4 @@ def cr_compressor_factory(model, comp_config):
     compressor = CRCompressor(model, rank)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

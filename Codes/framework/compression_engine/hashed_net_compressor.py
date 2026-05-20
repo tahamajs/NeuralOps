@@ -54,3 +54,4 @@ def hashed_net_factory(model, comp_config):
     compressor = HashedNetCompressor(model, n_buckets=n_buckets)
     compressed_model, _ = compressor.compress()
     return compressed_model
+

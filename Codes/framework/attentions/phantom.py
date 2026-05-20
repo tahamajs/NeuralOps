@@ -281,3 +281,4 @@ def inject_phantom(layer, model_config, comp_config, layer_idx, total_layers, ol
     new_attn = PHANTOMAttention(model_config, cfg, pretrained_attn=old_attn)
     layer.attention = new_attn
     return new_attn
+

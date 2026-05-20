@@ -30,3 +30,4 @@ class NLISoftmaxFunction(torch.autograd.Function):
 
 def nli_softmax(x):
     return NLISoftmaxFunction.apply(x)
+
