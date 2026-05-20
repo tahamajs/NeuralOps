@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class FLAPCompressor(BaseCompressor):
     def __init__(self, model, tokenizer, sparsity=0.2, device="cuda", nsamples=1024, **kwargs):
@@ -30,6 +31,7 @@ class FLAPCompressor(BaseCompressor):
     def compress(self):
         print(f"✂️ Applying FLAP (sparsity={self.sparsity})...")
         self.model.eval()
+        # Simple calibration set
         calib_texts = [
             "The quick brown fox jumps over the lazy dog.",
             "Machine learning is a subfield of artificial intelligence.",
@@ -48,14 +50,15 @@ class FLAPCompressor(BaseCompressor):
                     scores = self._compute_fluctuation_metric(weight, flat_inputs)
                     n_keep = int(weight.shape[1] * (1 - self.sparsity))
                     keep_idx = np.argsort(scores)[-n_keep:]
-                    module.weight.data = weight[:, keep_idx]
-                    if module.bias is not None:
-                        module.bias.data = module.bias.data[keep_idx]
+                    # Soft pruning: zero out unimportant columns
+                    mask = torch.zeros(weight.shape[1], device=weight.device)
+                    mask[keep_idx] = 1.0
+                    module.weight.data = weight * mask.unsqueeze(0)  # broadcast over rows
+                    # Bias remains untouched (no pruning)
+                    # Update flat_inputs to reflect the pruned feature distribution (optional)
                     flat_inputs = flat_inputs[:, keep_idx]
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
-
 
 
 @COMPRESSOR_REGISTRY.register("flap")
