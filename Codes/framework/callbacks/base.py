@@ -4,8 +4,9 @@ Base callback classes following the HuggingFace TrainerCallback pattern.
 from transformers import TrainerCallback
 from typing import Optional, List, Dict, Any
 
+
 class BaseCallback(TrainerCallback):
-    """Extended base callback with event hooks for all training phases."""
+    """Extended base callback with extra event hooks."""
     def on_init_end(self, args, state, control, **kwargs):
         pass
 

@@ -281,7 +281,7 @@ class MegaOrchestrator:
 
     def _build_callbacks(self):
         cbs = []
-        from framework.callbacks.django_integration import DjangoCallback
+        from Codes.framework.callbacks.django import DjangoCallback
         cbs.append(DjangoCallback(
             progress_cb=self.progress_cb,
             log_cb=self.log_cb,
