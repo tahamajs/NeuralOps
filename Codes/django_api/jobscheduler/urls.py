@@ -23,4 +23,13 @@ urlpatterns = [
     path('api/system/gpu/', views.gpu_info, name='gpu_info'),
     path('api/system/status/', views.system_status, name='system_status'),
     path('api/my-jobs/', views.my_scheduled_jobs, name='my_scheduled_jobs'),
+    # Add these to the existing urlpatterns:
+
+    # Fair share groups
+    path('api/groups/', views.group_list, name='group_list'),
+    path('api/groups/<str:group_name>/', views.group_detail, name='group_detail'),
+
+    # Advanced scheduler info
+    path('api/scheduler/fairshare/', views.fair_share_status, name='fair_share_status'),
+    path('api/scheduler/config/', views.scheduler_config_view, name='scheduler_config'),
 ]

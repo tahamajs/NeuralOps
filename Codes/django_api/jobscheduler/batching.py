@@ -1,15 +1,12 @@
-import threading
-import time
+import threading, time
 
 class ShortJobBatcher:
-    """Collects short jobs (estimated_duration <= threshold) and submits them as a batch."""
-
     def __init__(self, scheduler, threshold_seconds=60, window_seconds=10, max_batch_size=4):
         self.scheduler = scheduler
         self.threshold = threshold_seconds
         self.window = window_seconds
         self.max_batch = max_batch_size
-        self.batch = []   # list of (job_id, priority)
+        self.batch = []
         self.lock = threading.Lock()
         self._timer = None
 
@@ -23,7 +20,6 @@ class ShortJobBatcher:
                     self._timer = threading.Timer(self.window, self._flush)
                     self._timer.start()
         else:
-            # Long job: submit directly
             self.scheduler._submit_job(job_id, priority)
 
     def _flush(self):
@@ -35,7 +31,6 @@ class ShortJobBatcher:
                 self._timer = None
         if not batch_copy:
             return
-        # Use the highest priority (lowest number) in the batch
         max_priority = min(p for _, p in batch_copy)
         for job_id, _ in batch_copy:
             self.scheduler._submit_job(job_id, max_priority)

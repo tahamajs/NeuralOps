@@ -2,13 +2,6 @@ import uuid
 from django.db import models
 from django.conf import settings
 
-class MetricType(models.TextChoices):
-    SCALAR = 'scalar'
-    IMAGE = 'image'
-    TABLE = 'table'
-    FIGURE = 'figure'
-    TEXT = 'text'
-
 class Job(models.Model):
     STATUS_CHOICES = [
         ('queued', 'Queued'),
@@ -74,6 +67,21 @@ class Job(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    # Fair‑share group
+    group = models.CharField(max_length=100, default='default',
+                             help_text='Fair‑share scheduling group')
+
+    # Preemption control
+    preemptible = models.BooleanField(default=True,
+                                      help_text='Can this job be preempted?')
+
+    # Effective priority after aging (computed by scheduler, not user‑set)
+    aging_priority = models.IntegerField(default=5,
+                                         help_text='Effective priority after aging')
+
+    # Checkpoint before preempt
+    checkpoint_before_preempt = models.BooleanField(default=True,
+        help_text='Save checkpoint before being preempted')
 
     class Meta:
         ordering = ['priority', 'created_at']
@@ -90,27 +98,20 @@ class VersionedConfig(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='config_versions')
 
-    # Configuration snapshot (full JSON)
     config_snapshot = models.JSONField()
-
-    # Version metadata
     version_number = models.IntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
     change_description = models.TextField(blank=True)
 
-    # Link to previous version for efficient diffing
     previous_version = models.ForeignKey(
         'self', on_delete=models.SET_NULL, null=True, blank=True,
         related_name='next_version'
     )
-
-    # Who made the change
     changed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         null=True, blank=True
     )
 
-    # Optional: capture versioning metadata at snapshot time
     git_commit_hash = models.CharField(max_length=40, blank=True, null=True)
     git_branch = models.CharField(max_length=100, blank=True, null=True)
     git_repository = models.URLField(max_length=500, blank=True, null=True)
@@ -128,17 +129,23 @@ class VersionedConfig(models.Model):
 
 
 class CustomMetricEntry(models.Model):
+    class MetricType(models.TextChoices):
+        SCALAR = 'scalar'
+        IMAGE = 'image'
+        TABLE = 'table'
+        FIGURE = 'figure'
+        TEXT = 'text'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     run = models.ForeignKey(Job, on_delete=models.CASCADE, related_name='custom_metrics')
 
     step = models.IntegerField()
     epoch = models.FloatField(null=True, blank=True)
-    name = models.CharField(max_length=100)          # e.g., 'train_loss', 'accuracy_per_class'
+    name = models.CharField(max_length=100)
     type = models.CharField(max_length=20, choices=MetricType.choices, default=MetricType.SCALAR)
 
-    # The actual data – flexible JSON
     value = models.JSONField()
-    media_url = models.URLField(max_length=500, blank=True, null=True)  # for images stored on disk
+    media_url = models.URLField(max_length=500, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -150,5 +157,35 @@ class CustomMetricEntry(models.Model):
 
     def __str__(self):
         return f"{self.name} (step {self.step}) for {self.run.id}"
+    
 
 
+
+
+
+
+
+
+
+
+# Add these fields to the existing Job model:
+
+
+
+# New model for fair‑share groups
+class JobGroup(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    weight = models.FloatField(default=1.0,
+                               help_text='Fair‑share weight (higher = more resources)')
+    guarantee_gpus = models.IntegerField(default=0,
+                                         help_text='Minimum GPUs guaranteed')
+    max_gpus = models.IntegerField(default=-1,
+                                    help_text='Maximum GPUs (-1 = unlimited)')
+    description = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Job Group'
+        verbose_name_plural = 'Job Groups'
+
+    def __str__(self):
+        return f"{self.name} (weight={self.weight})"
