@@ -77,6 +77,8 @@ INSTALLED_APPS = [
     'model_versioning',
     'terminal',
     'agents',
+    'portfolios',
+
     'sweeps',
         'profiles',
     'messaging',
