@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/paper/', include('paper.urls')),         # Paper REST API
         path('api/profiles/', include('profiles.urls')),
     path('api/messaging/', include('messaging.urls')),
+path('api/leaderboards/', include('leaderboards.urls')),
 
 ]
 if settings.DEBUG:
