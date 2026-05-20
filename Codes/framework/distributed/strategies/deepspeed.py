@@ -2,12 +2,18 @@
 
 import os
 import torch
-import deepspeed
 from .base import BaseStrategy, STRATEGY_REGISTRY
+
+try:
+    import deepspeed
+except ImportError:
+    deepspeed = None
 
 @STRATEGY_REGISTRY.register("deepspeed")
 class DeepSpeedStrategy(BaseStrategy):
     def wrap_model(self, model, **kwargs):
+        if deepspeed is None:
+            raise ImportError("DeepSpeedStrategy requires the optional 'deepspeed' package.")
         ds_config = self.config.deepspeed_config or {}
         ds_config.setdefault("train_batch_size", "auto")
         ds_config.setdefault("train_micro_batch_size_per_gpu", "auto")

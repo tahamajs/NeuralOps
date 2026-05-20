@@ -7,7 +7,7 @@ class TerminalSessionAdmin(admin.ModelAdmin):
     list_display = ['id', 'user', 'is_active', 'connected_at', 'last_activity_at']
     list_filter = ['is_active']
     search_fields = ['user__username']
-    readonly_fields = ['id', 'user', 'channel_name', 'pid', 'fd',
+    readonly_fields = ['id', 'user', 'pid', 'fd',
                        'cols', 'rows', 'is_active', 'connected_at', 'last_activity_at']
     actions = ['kill_sessions']
 

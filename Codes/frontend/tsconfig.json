@@ -8,16 +8,15 @@
         ],
         "jsx": "react-jsx",
         "module": "ESNext",
-        "moduleResolution": "Node",
+        "moduleResolution": "Bundler",
         "resolveJsonModule": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "strict": false,
-        "baseUrl": ".",
         "paths": {
             "~/*": [
-                "src/*"
+                "./src/*"
             ]
         }
     },
