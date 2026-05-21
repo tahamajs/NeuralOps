@@ -9,6 +9,16 @@ export default function Settings() {
     autoUpdate: true,
     theme: 'dark',
   });
+  const [autoStart, setAutoStart] = useState(false);
+  const [theme, setThemeState] = useState('dark');
+  const { toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (window.neuralopsAPI) {
+      window.neuralopsAPI.getStore('autoStart').then(v => setAutoStart(v));
+      window.neuralopsAPI.getStore('theme').then(v => setThemeState(v || 'dark'));
+    }
+  }, []);
 
   const handleSave = () => {
     // Save to local config file via IPC or API
@@ -16,7 +26,49 @@ export default function Settings() {
   };
 
   return (
+    
     <div className="space-y-6 max-w-2xl">
+
+                {/* Auto‑Start */}
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-gray-300">Launch on Startup</span>
+            <p className="text-gray-500 text-xs mt-0.5">Agent starts automatically when you log in</p>
+          </div>
+          <button onClick={() => { const nv = !autoStart; setAutoStart(nv); window.neuralopsAPI?.setAutoStart(nv); }}
+            className={`w-12 h-6 rounded-full transition-colors ${autoStart ? 'bg-primary-600' : 'bg-dark-border'}`}>
+            <div className={`w-5 h-5 rounded-full bg-white transform transition-transform ${autoStart ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+
+        {/* Theme */}
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-gray-300">Dark Mode</span>
+            <p className="text-gray-500 text-xs mt-0.5">Toggle dark/light theme</p>
+          </div>
+          <button onClick={() => { toggleTheme(); setThemeState(theme === 'dark' ? 'light' : 'dark'); }}
+            className={`w-12 h-6 rounded-full transition-colors ${theme === 'dark' ? 'bg-primary-600' : 'bg-dark-border'}`}>
+            <div className={`w-5 h-5 rounded-full bg-white transform transition-transform ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+
+        {/* Start Minimized */}
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-gray-300">Start Minimized</span>
+            <p className="text-gray-500 text-xs mt-0.5">Start agent minimized to system tray</p>
+          </div>
+          <button onClick={() => { const nv = !startMinimized; setStartMinimized(nv); window.neuralopsAPI?.setStore('startMinimized', nv); }}
+            className={`w-12 h-6 rounded-full transition-colors ${startMinimized ? 'bg-primary-600' : 'bg-dark-border'}`}>
+            <div className={`w-5 h-5 rounded-full bg-white transform transition-transform ${startMinimized ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+
+
+
+
+
       <div className="flex items-center gap-2">
         <SettingsIcon size={24} />
         <h2 className="text-2xl font-bold">Settings</h2>
