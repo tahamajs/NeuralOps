@@ -1,0 +1,31 @@
+# NeuralOps GPU Provider Agent Configuration
+api_base_url: https://api.neuralops.com
+# api_key is set via CLI argument or NEURALOPS_API_KEY env var
+
+listing:
+  base_price_per_hour: 0.50          # USD
+  listing_type: on_demand            # on_demand | spot | reserved
+  location: "us-east-1"              # optional
+  supports_ssh: true
+  supports_jupyter: false
+
+resources:
+  max_concurrent_jobs: 2
+  gpu_memory_fraction: 0.90
+  storage_gb: 100
+
+network:
+  speed_test_interval_hours: 24
+  heartbeat_interval_seconds: 30
+
+paths:
+  data_dir: ~/.neuralops-agent
+  job_dir: ~/.neuralops-agent/jobs
+  log_dir: ~/.neuralops-agent/logs
+
+updates:
+  auto_update: true
+  channel: stable
+
+logging:
+  level: INFO
