@@ -156,3 +156,44 @@ class DockerManager:
                     c.remove()
         except Exception:
             pass
+
+    def run_job_with_pre_script(self, job_id: str, image: str, command: str,
+                             env_vars: dict = None, pre_script: str = None) -> str:
+        """
+        Run a container with a pre‑script that downloads model/data before the main command.
+        """
+        job_dir = f'/tmp/neuralops-jobs/{job_id}'
+        os.makedirs(job_dir, exist_ok=True)
+
+        # Write pre‑script to a shared volume
+        if pre_script:
+            script_path = os.path.join(job_dir, 'entrypoint.sh')
+            with open(script_path, 'w') as f:
+                f.write(pre_script)
+            os.chmod(script_path, 0o755)
+            # If command is not empty, append it to the script
+            if command:
+                with open(script_path, 'a') as f:
+                    f.write('\n' + command)
+            actual_command = '/workspace/entrypoint.sh'
+            # Copy script into workspace via volume mount (already mounted)
+        else:
+            actual_command = command if command else '/bin/bash'
+
+        container = self.client.containers.run(
+            image=image,
+            command=actual_command,
+            detach=True,
+            name=f'neuralops-job-{job_id[:12]}',
+            environment=env_vars or {},
+            volumes={job_dir: {'bind': '/workspace', 'mode': 'rw'}},
+            device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[['gpu']])],
+            read_only=True,
+            tmpfs={'/tmp': 'size=512M'},
+            network_mode='bridge',
+            auto_remove=True,
+            mem_limit='8g',
+            nano_cpus=int(4 * 1e9),
+            shm_size='1g',
+        )
+        return container.id
