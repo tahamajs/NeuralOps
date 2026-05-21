@@ -1,28 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clock, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { api } from '../services/api';
 
-const jobStatusIcon = {
-  completed: CheckCircle,
-  running: Loader,
-  failed: XCircle,
-  queued: Clock,
-};
-const jobStatusColor = {
-  completed: 'text-green-400',
-  running: 'text-blue-400 animate-spin',
-  failed: 'text-red-400',
-  queued: 'text-gray-400',
-};
-
-const sampleJobs = [
-  { id: 'job-001', status: 'running', model: 'ResNet-50', earnings: '$0.45', duration: '12 min' },
-  { id: 'job-002', status: 'completed', model: 'BERT-Base', earnings: '$1.20', duration: '45 min' },
-  { id: 'job-003', status: 'failed', model: 'GPT-2', earnings: '$0.00', duration: '2 min' },
-  { id: 'job-004', status: 'queued', model: 'Llama-2-7B', earnings: '--', duration: '--' },
-];
+const jobStatusIcon = { completed: CheckCircle, running: Loader, failed: XCircle, queued: Clock };
+const jobStatusColor = { completed: 'text-green-400', running: 'text-blue-400 animate-spin', failed: 'text-red-400', queued: 'text-gray-400' };
 
 export default function Jobs() {
-  const [jobs] = useState(sampleJobs);
+  const [jobs, setJobs] = useState([]);
+
+  useEffect(() => {
+    const fetchJobs = () => api.getJobs({}).then(d => setJobs(d.results || []));
+    fetchJobs();
+    const t = setInterval(fetchJobs, 10000);
+    return () => clearInterval(t);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -32,31 +23,30 @@ export default function Jobs() {
           <thead>
             <tr className="border-b border-dark-border text-left text-gray-400 text-sm">
               <th className="py-3 px-4">Job ID</th>
-              <th className="py-3 px-4">Status</th>
               <th className="py-3 px-4">Model</th>
-              <th className="py-3 px-4">Earnings</th>
+              <th className="py-3 px-4">Price/hr</th>
               <th className="py-3 px-4">Duration</th>
+              <th className="py-3 px-4">Earnings</th>
+              <th className="py-3 px-4">Status</th>
             </tr>
           </thead>
           <tbody>
-            {jobs.map((job) => {
-              const Icon = jobStatusIcon[job.status];
+            {jobs.map(job => {
+              const Icon = jobStatusIcon[job.status] || Clock;
               return (
-                <tr key={job.id} className="border-b border-dark-border hover:bg-dark-border/50 transition-colors">
-                  <td className="py-3 px-4 font-mono text-sm">{job.id}</td>
-                  <td className="py-3 px-4">
-                    <span className={`flex items-center gap-2 ${jobStatusColor[job.status]}`}>
-                      <Icon size={16} /> {job.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">{job.model}</td>
-                  <td className="py-3 px-4">{job.earnings}</td>
-                  <td className="py-3 px-4">{job.duration}</td>
+                <tr key={job.id} className="border-b border-dark-border hover:bg-dark-border/30 transition-colors">
+                  <td className="py-3 px-4 font-mono text-xs">{job.id.slice(0,8)}</td>
+                  <td className="py-3 px-4">{job.listing_gpu_model || 'N/A'}</td>
+                  <td className="py-3 px-4">${job.price_per_hour}</td>
+                  <td className="py-3 px-4">{job.hours_consumed?.toFixed(2) || '—'}h</td>
+                  <td className="py-3 px-4">${job.total_cost_usd || '0.00'}</td>
+                  <td className="py-3 px-4"><span className={`flex items-center gap-1 ${jobStatusColor[job.status]}`}><Icon size={14} />{job.status}</span></td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        {jobs.length === 0 && <p className="p-4 text-center text-gray-500">No jobs yet</p>}
       </div>
     </div>
   );

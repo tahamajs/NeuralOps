@@ -1,14 +1,6 @@
+# agent/job_executor.py
 """
-Job lifecycle manager — handles the full lifecycle of a compute job.
-
-Sequence:
-  1. Receive job from WebSocket
-  2. Pull Docker image
-  3. Run container
-  4. Monitor container (logs, status)
-  5. On completion: upload results, verify, report
-  6. On failure: capture logs, report
-  7. Cleanup
+Job lifecycle manager – pull image, download model & data, run, monitor, report.
 """
 import logging, threading, time, os, hashlib
 from pathlib import Path
@@ -19,7 +11,7 @@ class JobExecutor:
     def __init__(self, docker_manager, api_client):
         self.docker = docker_manager
         self.api = api_client
-        self._active_jobs: dict = {}  # job_id -> container_id
+        self._active_jobs: dict = {}
         self._lock = threading.Lock()
 
     def execute(self, job_data: dict):
@@ -37,13 +29,11 @@ class JobExecutor:
         thread.start()
 
     def cancel(self, job_id: str):
-        """Cancel a running job."""
         with self._lock:
             container_id = self._active_jobs.pop(job_id, None)
         if container_id:
             self.docker.stop_container(container_id)
             self.api.report_job_failed(job_id, 'Cancelled by user')
-            logger.info("Job %s cancelled", job_id)
 
     def _run_job(self, job_data: dict):
         """Run a single compute job to completion."""
@@ -51,6 +41,7 @@ class JobExecutor:
         image = job_data.get('docker_image', 'pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime')
         command = job_data.get('command', '')
         input_url = job_data.get('input_data_url', '')
+        model_id = job_data.get('model_id', '')
         env_vars = job_data.get('env_vars', {})
 
         try:
@@ -58,16 +49,19 @@ class JobExecutor:
             self.api.report_job_status(job_id, 'provisioning')
             self.docker.pull_image(image)
 
-            # 2. Run container
+            # 2. Prepare download script
+            download_script = self._build_download_script(model_id, input_url)
+
+            # 3. Run container
             self.api.report_job_status(job_id, 'running')
-            container_id = self.docker.run_job(
+            container_id = self.docker.run_job_with_pre_script(
                 job_id=job_id, image=image, command=command,
-                env_vars=env_vars, input_data_url=input_url
+                env_vars=env_vars, pre_script=download_script
             )
             with self._lock:
                 self._active_jobs[job_id] = container_id
 
-            # 3. Monitor until completion
+            # 4. Monitor until completion
             self._monitor(job_id, container_id)
 
         except Exception as e:
@@ -77,6 +71,28 @@ class JobExecutor:
             with self._lock:
                 self._active_jobs.pop(job_id, None)
 
+    def _build_download_script(self, model_id: str, input_url: str) -> str:
+        """Generate a bash script that downloads the model and data inside the container."""
+        script = "#!/bin/bash\nset -e\n"
+        if model_id:
+            script += f"""
+echo "Downloading model {model_id} from HuggingFace..."
+python -c "
+from transformers import AutoModel, AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained('{model_id}')
+model = AutoModel.from_pretrained('{model_id}')
+print('Model downloaded.')
+"
+"""
+        if input_url:
+            script += f"""
+echo "Downloading dataset from {input_url}..."
+wget -q -O /workspace/dataset.tar.gz "{input_url}"
+tar -xzf /workspace/dataset.tar.gz -C /workspace/
+echo "Dataset ready."
+"""
+        return script
+
     def _monitor(self, job_id: str, container_id: str):
         """Monitor a container until it exits."""
         last_log_tail = 0
@@ -84,16 +100,12 @@ class JobExecutor:
             try:
                 status = self.docker.get_container_status(container_id)
                 if status == 'exited':
-                    # Get full logs
                     logs = self.docker.get_container_logs(container_id, tail=0)
                     exit_code = self._get_exit_code(container_id)
 
                     if exit_code == 0:
-                        # Success: compute hash of outputs for verification
                         output_hash = self._compute_output_hash(job_id)
-                        self.api.report_job_completed(
-                            job_id, output_hash=output_hash, logs=logs
-                        )
+                        self.api.report_job_completed(job_id, output_hash=output_hash, logs=logs)
                         logger.info("Job %s completed successfully", job_id)
                     else:
                         self.api.report_job_failed(
@@ -106,7 +118,7 @@ class JobExecutor:
                     self.api.report_job_failed(job_id, 'Container disappeared')
                     break
 
-                # Stream recent logs
+                # Stream logs
                 logs = self.docker.get_container_logs(container_id, tail=50)
                 if logs and len(logs) > last_log_tail:
                     self.api.report_job_logs(job_id, logs[last_log_tail:])
@@ -126,7 +138,6 @@ class JobExecutor:
             return -1
 
     def _compute_output_hash(self, job_id: str) -> str:
-        """Compute SHA-256 hash of job output directory for verification."""
         job_dir = f'/tmp/neuralops-jobs/{job_id}'
         sha = hashlib.sha256()
         for root, _, files in os.walk(job_dir):
