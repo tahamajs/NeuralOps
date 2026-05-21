@@ -32,7 +32,7 @@ urlpatterns = [
     path('api/federation/', include('gpu_federation.urls')),  # federation app
     path('api/reputation/', include('gpu_reputation.urls')),  # reputation app
     path('api/validator/', include('gpu_validator.urls')),    # validator app
-
+path('api/orgs/', include('organizations.urls')),
 path('api/portfolios/', include('portfolios.urls')),
 
 ]
