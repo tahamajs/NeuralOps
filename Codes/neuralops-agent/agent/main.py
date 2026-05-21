@@ -15,6 +15,8 @@ Usage:
 """
 import argparse, signal, sys, logging, time, os, yaml
 from pathlib import Path
+from agent.gpu_monitor import LiveGPUMonitor
+from agent.container_controller import ContainerController
 
 from agent.config import AgentConfig
 from agent.gpu_detector import GPUDetector
@@ -43,6 +45,14 @@ class GPUProviderAgent:
         self.monitor = SystemMonitor(self.gpu)
         self.updater = AutoUpdater(config, self.api)
         self._running = False
+        self.gpu_monitor = LiveGPUMonitor(interval_seconds=1.0)
+        self.container_ctrl = ContainerController()
+        self.gpu_monitor.on_snapshot(self._on_gpu_snapshot)
+
+    def _on_gpu_snapshot(self, snap):
+        """Called every second by the GPU monitor thread."""
+        if self.ws and self.ws.connected:
+            self.ws.send_gpu_snapshot(snap)
 
     def startup(self):
         """Run full startup sequence."""
@@ -84,6 +94,7 @@ class GPUProviderAgent:
         # 9. Signal ready
         self.api.update_listing_status('online')
         logger.info("Agent ready — listing is now ONLINE")
+        self.gpu_monitor.start()
 
     def _register(self):
         """Register (or update) this provider's listing on the server."""

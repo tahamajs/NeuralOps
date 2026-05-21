@@ -162,3 +162,37 @@ class NeuralOpsWebSocket:
     def _handle_config_update(self, data):
         """Server pushes updated configuration."""
         pass
+
+
+
+# Inside class NeuralOpsWebSocket, add:
+
+    def send_gpu_snapshot(self, snapshot: dict):
+        """Push a full GPU snapshot to the server (and relayed to GUI)."""
+        self._send({
+            'type': 'gpu_snapshot',
+            'data': snapshot,
+        })
+
+    def send_container_stats(self, job_id: str, stats: dict):
+        """Push container stats (CPU/RAM/network) to the server."""
+        self._send({
+            'type': 'container_stats',
+            'job_id': job_id,
+            'data': stats,
+        })
+
+    def send_container_logs(self, job_id: str, logs: str):
+        self._send({
+            'type': 'container_logs',
+            'job_id': job_id,
+            'data': logs,
+        })
+
+    def _send(self, data: dict):
+        """Helper to send JSON over the WebSocket."""
+        if self._ws and self._connected:
+            try:
+                self._ws.send(json.dumps(data))
+            except Exception:
+                pass
