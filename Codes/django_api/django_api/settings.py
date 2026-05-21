@@ -122,6 +122,21 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
+CELERY_BEAT_SCHEDULE.update({
+    'daily-index-calculation': {
+        'task': 'gpu_finance.tasks.daily_index_calculation',
+        'schedule': crontab(hour=0, minute=5),
+    },
+    'settle-expired-futures': {
+        'task': 'gpu_finance.tasks.settle_expired_futures',
+        'schedule': crontab(hour=0, minute=15),
+    },
+    'generate-monthly-invoices': {
+        'task': 'gpu_finance.tasks.generate_monthly_invoices',
+        'schedule': crontab(day_of_month=1, hour=1, minute=0),
+    },
+})
+
 
 
 AUTHENTICATION_BACKENDS = [
