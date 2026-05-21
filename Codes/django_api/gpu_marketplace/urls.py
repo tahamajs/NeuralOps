@@ -37,4 +37,12 @@ urlpatterns = [
     # ── Stats ─────────────────────────────────────────────────
     path('stats/', views.marketplace_stats, name='marketplace_stats'),
     path('dashboard/provider/', views.provider_dashboard, name='provider_dashboard'),
+
+
+
+    # ── Cross-app integration ──────────────────────────────────
+    path('listings/<uuid:listing_id>/experiments/', views.listing_linked_experiments),
+    path('listings/<uuid:listing_id>/notes/', views.listing_linked_notes),
+    path('listings/<uuid:listing_id>/portfolio/', views.provider_portfolio),
+    path('notifications/', views.marketplace_notifications),
 ]

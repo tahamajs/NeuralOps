@@ -26,6 +26,12 @@ urlpatterns = [
     path('api/messaging/', include('messaging.urls')),
     path('api/leaderboards/', include('leaderboards.urls')),
     path('api/gpu/', include('gpu_marketplace.urls')),
+    path('api/gpu/', include('gpu_marketplace.urls')),
+    path('api/escrow/', include('gpu_escrow.urls')),           # escrow app
+    path('api/benchmarks/', include('gpu_benchmark.urls')),   # benchmark app
+    path('api/federation/', include('gpu_federation.urls')),  # federation app
+    path('api/reputation/', include('gpu_reputation.urls')),  # reputation app
+    path('api/validator/', include('gpu_validator.urls')),    # validator app
 
 path('api/portfolios/', include('portfolios.urls')),
 

@@ -409,3 +409,85 @@ def provider_dashboard(request):
             listings.aggregate(a=Avg('reliability_score'))['a'] or 0, 2
         ),
     })
+
+# gpu_marketplace/views.py — ADDITIONAL VIEWS
+
+# ── Import other apps (optional, wrap in try/except) ──────────
+try:
+    from experiment.models import Notification
+except ImportError:
+    Notification = None
+
+try:
+    from portfolios.models import Portfolio, ShowcaseItem
+except ImportError:
+    Portfolio = ShowcaseItem = None
+
+try:
+    from notes.models import ResearcherNote
+except ImportError:
+    ResearcherNote = None
+
+# ═══════════════════════════════════════════════════════════════
+# LINKED RESOURCES — Show related experiments/notes
+# ═══════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def listing_linked_experiments(request, listing_id):
+    """Get experiments (TrainingRuns) associated with this listing."""
+    listing = get_object_or_404(GPUListing, id=listing_id)
+    from jobscheduler.models import Job
+    jobs = Job.objects.filter(
+        provider=listing.provider,
+        benchmark_submissions__isnull=False,   # jobs that are part of benchmarks
+    ).order_by('-created_at')[:10]
+    return Response([{'id': str(j.id), 'name': j.name, 'status': j.status} for j in jobs])
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def listing_linked_notes(request, listing_id):
+    """Get researcher notes about this GPU."""
+    listing = get_object_or_404(GPUListing, id=listing_id)
+    if ResearcherNote:
+        notes = ResearcherNote.objects.filter(
+            tags__contains=[listing.gpu_model],
+            deleted_at__isnull=True,
+        ).order_by('-created_at')[:10]
+        return Response([{'id': str(n.id), 'title': n.title} for n in notes])
+    return Response([])
+
+
+# ═══════════════════════════════════════════════════════════════
+# PORTFOLIO INTEGRATION — Show provider's showcase items
+# ═══════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def provider_portfolio(request, listing_id):
+    """Get the provider's public portfolio."""
+    listing = get_object_or_404(GPUListing, id=listing_id)
+    if Portfolio:
+        portfolio = Portfolio.objects.filter(user=listing.provider).first()
+        if portfolio:
+            from portfolios.serializers import PortfolioSerializer
+            return Response(PortfolioSerializer(portfolio).data)
+    return Response({"error": "Portfolio not available"}, status=404)
+
+
+# ═══════════════════════════════════════════════════════════════
+# NOTIFICATIONS — List marketplace-related notifications
+# ═══════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def marketplace_notifications(request):
+    """List marketplace-related notifications for the current user."""
+    if Notification:
+        notifs = Notification.objects.filter(
+            recipient=request.user,
+            type__in=['job_matched', 'job_completed', 'job_failed', 'payment_released', 'dispute_raised']
+        ).order_by('-created_at')[:50]
+        return Response([{
+            'id': str(n.id), 'type': n.type, 'content': n.content,
+            'is_read': n.is_read, 'created_at': n.created_at,
+        } for n in notifs])
+    return Response([])
