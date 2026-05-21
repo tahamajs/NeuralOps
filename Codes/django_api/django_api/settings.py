@@ -140,6 +140,24 @@ CELERY_BEAT_SCHEDULE.update({
 })
 
 
+# settings.py
+INSTALLED_APPS += ['gpu_reputation']
+
+# Celery beat
+CELERY_BEAT_SCHEDULE.update({
+    'compute-daily-trust-graph': {
+        'task': 'gpu_reputation.tasks.compute_daily_trust_graph',
+        'schedule': crontab(hour=2, minute=0),
+    },
+    'auto-award-badges': {
+        'task': 'gpu_reputation.tasks.auto_award_badges',
+        'schedule': crontab(hour=1, minute=0),
+    },
+    'expire-stale-disputes': {
+        'task': 'gpu_reputation.tasks.expire_stale_disputes',
+        'schedule': crontab(hour=0, minute=30),
+    },
+})
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
