@@ -79,6 +79,12 @@ INSTALLED_APPS = [
     'agents',
     'portfolios',
 'gpu_marketplace',
+    'gpu_escrow',
+    'gpu_validator',      # placeholder
+    'gpu_benchmark',      # placeholder
+    'gpu_federation',     # placeholder
+    'gpu_finance',        # placeholder
+    'gpu_reputation',     # placeholder
 
     'sweeps',
         'profiles',
@@ -92,6 +98,32 @@ INSTALLED_APPS = [
 
     'paper',
 ]
+
+
+# settings.py — Celery Beat schedule for marketplace tasks
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'match-orders-every-30s': {
+        'task': 'gpu_marketplace.tasks.run_matching_cycle',
+        'schedule': 30.0,
+    },
+    'update-dynamic-pricing-every-5min': {
+        'task': 'gpu_marketplace.tasks.update_dynamic_pricing',
+        'schedule': crontab(minute='*/5'),
+    },
+    'expire-stale-orders-hourly': {
+        'task': 'gpu_marketplace.tasks.expire_stale_orders',
+        'schedule': crontab(minute=0, hour='*'),
+    },
+    'update-reliability-scores-daily': {
+        'task': 'gpu_marketplace.tasks.update_reliability_scores',
+        'schedule': crontab(minute=0, hour=3),
+    },
+}
+
+
+
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
