@@ -30,4 +30,28 @@ contextBridge.exposeInMainWorld('neuralopsAPI', {
   onAgentError: (cb) => { ipcRenderer.on('agent-error', (_, m) => cb(m)); return () => ipcRenderer.removeAllListeners('agent-error'); },
   onAgentExit: (cb) => { ipcRenderer.on('agent-exit', (_, c) => cb(c)); return () => ipcRenderer.removeAllListeners('agent-exit'); },
   onEarningsUpdate: (cb) => { ipcRenderer.on('earnings-update', (_, d) => cb(d)); return () => ipcRenderer.removeAllListeners('earnings-update'); },
+    // ── REST API ──────────────────────────────────────────────────
+  apiRequest: (method, path, body) =>
+    ipcRenderer.invoke('api-request', {
+      method,
+      path,
+      body,
+      token: localStorage.getItem('neuralops_token'),
+    }),
+
+  // ── WebSocket ─────────────────────────────────────────────────
+  wsConnect: (token, serverUrl) => ipcRenderer.invoke('ws-connect', { token, serverUrl }),
+  wsSend: (data) => ipcRenderer.invoke('ws-send', data),
+  wsDisconnect: () => ipcRenderer.invoke('ws-disconnect'),
+  onWsMessage: (callback) => {
+    const handler = (_, data) => callback(data);
+    ipcRenderer.on('ws-message', handler);
+    return () => ipcRenderer.removeListener('ws-message', handler);
+  },
+  onWsClosed: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('ws-closed', handler);
+    return () => ipcRenderer.removeListener('ws-closed', handler);
+  },
+
 });

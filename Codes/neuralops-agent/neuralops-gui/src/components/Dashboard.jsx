@@ -1,19 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import { Cpu, HardDrive, TrendingUp, Clock, Play, Pause } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { api } from '../services/api';
+import { wsClient } from '../services/websocket';
+import { usePolling } from '../hooks/useApi';
 
 export default function Dashboard() {
   const [agentRunning, setAgentRunning] = useState(false);
-  const [stats, setStats] = useState({ gpuTemp: 58, gpuUsage: 64, ramUsage: 42, earningsToday: 12.50, uptime: '3h 24m' });
-  const [chartData, setChartData] = useState([
-    { time: '00:00', usage: 30 }, { time: '01:00', usage: 45 }, { time: '02:00', usage: 60 }, { time: '03:00', usage: 55 },
-  ]);
+  const [balance, setBalance] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [chartData, setChartData] = useState([]);
+
+  // Fetch balance and stats
+  const fetchData = async () => {
+    try {
+      const [balanceResp, statsResp, scoresResp] = await Promise.all([
+        api.getBalance(),
+        api.getMarketStats(),
+        api.getMyScores(),
+      ]);
+      setBalance(balanceResp);
+      setStats({
+        ...statsResp,
+        ...scoresResp,
+        earningsToday: balanceResp?.today_earnings || 0,
+      });
+    } catch (e) { /* use mock data */ }
+  };
+
+  useEffect(() => { fetchData(); const t = setInterval(fetchData, 15000); return () => clearInterval(t); }, []);
+
+  // Listen to real-time job updates
+  useEffect(() => {
+    const handleJobUpdate = (data) => {
+      if (data.status === 'completed') {
+        fetchData();
+        api.getBalance().then(b => setBalance(b));
+      }
+    };
+    wsClient.on('job_update', handleJobUpdate);
+    return () => wsClient.off('job_update', handleJobUpdate);
+  }, []);
 
   const toggleAgent = async () => {
     if (agentRunning) {
-      await window.neuralopsAPI.stopAgent();
+      await api.toggleListing(listingId); // need listing ID from state
     } else {
-      await window.neuralopsAPI.startAgent();
+      // Start agent via IPC
     }
     setAgentRunning(!agentRunning);
   };
@@ -34,31 +67,28 @@ export default function Dashboard() {
       {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { icon: Cpu, label: 'GPU Usage', value: `${stats.gpuUsage}%`, color: 'text-blue-400' },
-          { icon: HardDrive, label: 'RAM Usage', value: `${stats.ramUsage}%`, color: 'text-purple-400' },
-          { icon: TrendingUp, label: 'Earnings Today', value: `$${stats.earningsToday}`, color: 'text-green-400' },
-          { icon: Clock, label: 'Uptime', value: stats.uptime, color: 'text-orange-400' },
+          { icon: Cpu, label: 'GPU Usage', value: `${stats?.active_jobs || 0} jobs`, color: 'text-blue-400' },
+          { icon: TrendingUp, label: 'Earnings Today', value: `$${(stats?.earningsToday || 0).toFixed(2)}`, color: 'text-green-400' },
+          { icon: HardDrive, label: 'Available Balance', value: `$${(balance?.balance_usd || 0).toFixed(2)}`, color: 'text-purple-400' },
+          { icon: Clock, label: 'Avg Price/hr', value: `$${stats?.avg_price_per_hour || '0.00'}`, color: 'text-orange-400' },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="bg-dark-card border border-dark-border rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Icon size={20} className={color} />
-              <span className="text-gray-400 text-sm">{label}</span>
-            </div>
+            <div className="flex items-center gap-2 mb-2"><Icon size={20} className={color} /><span className="text-gray-400 text-sm">{label}</span></div>
             <p className="text-2xl font-bold">{value}</p>
           </div>
         ))}
       </div>
 
-      {/* Chart */}
+      {/* Market Price Chart */}
       <div className="bg-dark-card border border-dark-border rounded-xl p-4">
-        <h3 className="text-lg font-semibold mb-4">GPU Utilization (24h)</h3>
+        <h3 className="text-lg font-semibold mb-4">Market Price Trend (24h)</h3>
         <ResponsiveContainer width="100%" height={300}>
           <AreaChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
             <XAxis dataKey="time" stroke="#94a3b8" />
             <YAxis stroke="#94a3b8" />
             <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
-            <Area type="monotone" dataKey="usage" stroke="#5c7cfa" fill="#5c7cfa" fillOpacity={0.2} />
+            <Area type="monotone" dataKey="price" stroke="#5c7cfa" fill="#5c7cfa" fillOpacity={0.2} />
           </AreaChart>
         </ResponsiveContainer>
       </div>

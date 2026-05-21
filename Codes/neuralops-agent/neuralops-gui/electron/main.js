@@ -126,3 +126,72 @@ app.whenReady().then(() => { createTray(); createWindow(); setAutoStart(store.ge
 app.on('before-quit', () => { app.isQuitting = true; stopAgent(); });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); else mainWindow?.show(); });
+
+
+// In electron/main.js, add after the existing IPC handlers:
+
+const http = require('http');
+const https = require('https');
+const { URL } = require('url');
+
+// ── REST API Proxy (so renderer can call Django without CORS) ──
+ipcMain.handle('api-request', async (event, { method, path, body, token }) => {
+  return new Promise((resolve, reject) => {
+    const serverUrl = store.get('serverUrl') || 'http://localhost:8000';
+    const url = new URL(serverUrl + '/api' + path);
+    const isHttps = url.protocol === 'https:';
+    const transport = isHttps ? https : http;
+
+    const options = {
+      method: method || 'GET',
+      hostname: url.hostname,
+      port: url.port,
+      path: url.pathname + url.search,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Token ${token}` } : {}),
+      },
+    };
+
+    const req = transport.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch { resolve(data); }
+      });
+    });
+    req.on('error', (err) => reject(err.message));
+    if (body) req.write(JSON.stringify(body));
+    req.end();
+  });
+});
+
+// ── WebSocket Proxy ─────────────────────────────────────────────
+let wsClient = null;
+ipcMain.handle('ws-connect', (event, { token, serverUrl }) => {
+  return new Promise((resolve) => {
+    const wsUrl = serverUrl.replace('http', 'ws') + '/ws/provider/?token=' + token;
+    wsClient = new WebSocket(wsUrl);
+    wsClient.on('open', () => resolve(true));
+    wsClient.on('message', (data) => {
+      mainWindow?.webContents.send('ws-message', data.toString());
+    });
+    wsClient.on('close', () => mainWindow?.webContents.send('ws-closed'));
+    wsClient.on('error', (err) => mainWindow?.webContents.send('ws-error', err.message));
+  });
+});
+
+ipcMain.handle('ws-send', (event, data) => {
+  if (wsClient && wsClient.readyState === WebSocket.OPEN) {
+    wsClient.send(JSON.stringify(data));
+    return true;
+  }
+  return false;
+});
+
+ipcMain.handle('ws-disconnect', () => {
+  if (wsClient) wsClient.close();
+  wsClient = null;
+  return true;
+});
