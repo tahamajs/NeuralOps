@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/validator/', include('gpu_validator.urls')),    # validator app
 path('api/orgs/', include('organizations.urls')),
 path('api/portfolios/', include('portfolios.urls')),
+path('api/community/', include('community.urls')),
 
 ]
 if settings.DEBUG:
