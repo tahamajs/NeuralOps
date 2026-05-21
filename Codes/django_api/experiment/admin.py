@@ -11,7 +11,7 @@ class TrainingRunAdmin(admin.ModelAdmin):
     list_display = ['name', 'experiment', 'status', 'job_type', 'created_at']
     list_filter = ['status', 'job_type']
     search_fields = ['name', 'experiment__name']
-    readonly_fields = ['id', 'created_at', 'started_at', 'completed_at', 'pid', 'logs', 'training_history']
+    readonly_fields = ['id', 'created_at', 'started_at', 'completed_at', 'id', 'logs', 'training_history']
 
 @admin.register(TrainingSnapshot)
 class TrainingSnapshotAdmin(admin.ModelAdmin):

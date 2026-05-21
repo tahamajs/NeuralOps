@@ -1,7 +1,7 @@
 import uuid
 from django.db import models
 from django.conf import settings
-
+from experiment.models import Experiment
 class Sweep(models.Model):
     class Status(models.TextChoices):
         ACTIVE = 'active', 'Active'
@@ -14,10 +14,7 @@ class Sweep(models.Model):
         MINIMIZE = 'minimize', 'Minimize'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    project = models.ForeignKey(
-        'experiment.Experiment', on_delete=models.CASCADE,
-        related_name='sweeps'
-    )
+    project = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name='sweep_set')
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     config = models.JSONField(default=dict, blank=True,

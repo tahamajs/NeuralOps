@@ -1,4 +1,7 @@
 from django.core.management.base import BaseCommand
+from decimal import Decimal
+from django.contrib import admin
+
 from gpu_finance.models import ComputeIndex, BillingPlan
 
 INDICES = [

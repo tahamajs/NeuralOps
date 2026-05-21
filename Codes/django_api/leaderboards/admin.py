@@ -28,7 +28,7 @@ class BenchmarkAdmin(admin.ModelAdmin):
     list_filter = ('status', 'visibility')
     search_fields = ('name', 'description')
     prepopulated_fields = {'slug': ('name',)}
-    filter_horizontal = ('collaborators', 'tasks', 'datasets', 'metrics')
+    filter_horizontal = ('collaborators',)
 
 @admin.register(Submission)
 class SubmissionAdmin(admin.ModelAdmin):

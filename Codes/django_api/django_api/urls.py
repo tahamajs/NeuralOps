@@ -18,7 +18,7 @@ urlpatterns = [
     path('api/model-versioning/', include('model_versioning.urls')),
     path('api/experiments/', include('experiment.urls')),
     path('api/jobs/', include('jobscheduler.urls')),
-    path('api/agents/', include('agents.urls')),
+    # path('api/agents/', include('agents.urls')),
     path('api/', include('sweeps.urls')),
     path('api/terminal/', include('terminal.urls')),
     path('api/paper/', include('paper.urls')),        
