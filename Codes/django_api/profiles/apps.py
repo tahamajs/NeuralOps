@@ -1,6 +1,6 @@
 # profiles/apps.py
 from django.apps import AppConfig
-
+import allauth 
 class ProfilesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'profiles'
