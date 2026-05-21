@@ -54,4 +54,5 @@ urlpatterns = [
     path('jobs/<uuid:job_id>/status/', views.job_update_status, name='job_update_status'),
     path('jobs/<uuid:job_id>/logs/', views.job_update_logs, name='job_update_logs'),
     path('agent/check-update/', views.agent_check_update, name='agent_check_update'),
+    path('agent/latest/', views.agent_latest_version, name='agent_latest_version'),
 ]

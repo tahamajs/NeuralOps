@@ -1,25 +1,30 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""Build standalone executable for the NeuralOps GPU Provider Agent."""
+"""PyInstaller spec for the NeuralOps GPU Provider Agent."""
 import sys
 from pathlib import Path
 
 block_cipher = None
 
+_here = Path(__file__).parent
+
 a = Analysis(
     ['agent/main.py'],
-    pathex=[str(Path(__file__).parent)],
+    pathex=[str(_here)],
     binaries=[],
     datas=[
         ('agent-config.yaml', '.'),
     ],
     hiddenimports=[
         'pynvml', 'docker', 'websocket', 'psutil',
-        'speedtest', 'yaml', 'packaging',
+        'speedtest', 'yaml', 'packaging', 'requests',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        'tkinter', 'matplotlib', 'notebook', 'jupyter',
+        'IPython', 'sqlalchemy', 'pandas',
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -44,7 +49,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,
+    icon=str(_here / 'resources' / 'icon.ico') if (sys.platform == 'win32') else None,
 )
 
 coll = COLLECT(
