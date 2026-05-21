@@ -26,6 +26,14 @@ const RunArtifactsPage = lazy(() => import('./features/experiments/pages/RunArti
 const ModelDownloadPage = lazy(() => import('./features/experiments/pages/ModelDownloadPage'))
 const TrainingSnapshotsPage = lazy(() => import('./features/experiments/pages/TrainingSnapshotsPage'))
 const UpdateRunConfigPage = lazy(() => import('./features/experiments/pages/UpdateRunConfigPage'))
+const MarketplacePage = lazy(() => import('./features/marketplace/pages/MarketplacePage'))
+const MyOrdersPage = lazy(() => import('./features/marketplace/pages/MyOrdersPage'))
+const MyJobsPage = lazy(() => import('./features/marketplace/pages/MyJobsPage'))
+const JobDetailPage = lazy(() => import('./features/marketplace/pages/JobDetailPage'))
+const BillingPage = lazy(() => import('./features/marketplace/pages/BillingPage'))
+const UsagePage = lazy(() => import('./features/marketplace/pages/UsagePage'))
+const LeaderboardPage = lazy(() => import('./features/marketplace/pages/LeaderboardPage'))
+const ReputationPage = lazy(() => import('./features/marketplace/pages/ReputationPage'))
 
 // Launcher
 const LauncherPage = lazy(() => import('./features/launcher/pages/LauncherPage'))
@@ -263,6 +271,14 @@ export const router = createBrowserRouter([
       // Sweeps
       { path: '/sweeps/create', element: <SweepCreator onCreated={() => {}} /> },
       { path: '/sweeps/:sweepId', element: <SweepDashboardPage /> },
+      { path: '/marketplace', element: <MarketplacePage /> },
+      { path: '/marketplace/orders', element: <MyOrdersPage /> },
+      { path: '/marketplace/jobs', element: <MyJobsPage /> },
+      { path: '/marketplace/jobs/:jobId', element: <JobDetailPage /> },
+      { path: '/marketplace/billing', element: <BillingPage /> },
+      { path: '/marketplace/usage', element: <UsagePage /> },
+      { path: '/marketplace/leaderboard', element: <LeaderboardPage /> },
+      { path: '/marketplace/reputation', element: <ReputationPage /> },
 
       // 404
       { path: '*', element: <NotFoundPage /> },

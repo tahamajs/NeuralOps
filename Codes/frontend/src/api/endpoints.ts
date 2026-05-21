@@ -43,3 +43,18 @@ export const ENDPOINTS = {
   HEALTH: '/health/',
   VERSION: '/version/',
 }
+
+
+// src/api/endpoints.ts  (add inside the exported ENDPOINTS object)
+
+MARKETPLACE: {
+  LISTINGS: '/marketplace/listings/',
+  ORDERS: '/marketplace/orders/',
+  JOBS: '/marketplace/jobs/',
+  JOB_DETAIL: (id: string) => `/marketplace/jobs/${id}/`,
+  BALANCE: '/marketplace/balance/',
+  INVOICES: '/marketplace/invoices/',
+  USAGE: '/marketplace/usage/',
+  LEADERBOARD: '/marketplace/leaderboard/',
+  REPUTATION: '/marketplace/reputation/',
+},
