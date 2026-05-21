@@ -1,12 +1,33 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('neuralopsAPI', {
+  // Agent lifecycle
   getAgentStatus: () => ipcRenderer.invoke('get-agent-status'),
   startAgent: () => ipcRenderer.invoke('start-agent'),
   stopAgent: () => ipcRenderer.invoke('stop-agent'),
+
+  // App
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
-  onAgentLog: (callback) => ipcRenderer.on('agent-log', (_, msg) => callback(msg)),
-  onAgentError: (callback) => ipcRenderer.on('agent-error', (_, msg) => callback(msg)),
-  onAgentExit: (callback) => ipcRenderer.on('agent-exit', (_, code) => callback(code)),
+  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+  maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
+  closeWindow: () => ipcRenderer.invoke('close-window'),
+  getPlatform: () => ipcRenderer.invoke('get-platform'),
+
+  // Settings store
+  getStore: (key) => ipcRenderer.invoke('get-store', key),
+  setStore: (key, val) => ipcRenderer.invoke('set-store', key, val),
+  setAutoStart: (enabled) => ipcRenderer.invoke('set-auto-start', enabled),
+
+  // Earnings notification
+  showEarningsNotification: (amount, jobName) => ipcRenderer.invoke('show-earnings-notification', amount, jobName),
+
+  // GPU detection
+  getGpuInfo: () => ipcRenderer.invoke('get-gpu-info'),
+
+  // Log streaming
+  onAgentLog: (cb) => { ipcRenderer.on('agent-log', (_, m) => cb(m)); return () => ipcRenderer.removeAllListeners('agent-log'); },
+  onAgentError: (cb) => { ipcRenderer.on('agent-error', (_, m) => cb(m)); return () => ipcRenderer.removeAllListeners('agent-error'); },
+  onAgentExit: (cb) => { ipcRenderer.on('agent-exit', (_, c) => cb(c)); return () => ipcRenderer.removeAllListeners('agent-exit'); },
+  onEarningsUpdate: (cb) => { ipcRenderer.on('earnings-update', (_, d) => cb(d)); return () => ipcRenderer.removeAllListeners('earnings-update'); },
 });
