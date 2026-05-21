@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'terminal',
     'agents',
     'portfolios',
+'gpu_marketplace',
 
     'sweeps',
         'profiles',

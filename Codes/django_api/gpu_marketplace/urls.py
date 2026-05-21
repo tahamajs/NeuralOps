@@ -1,0 +1,40 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Reference Data ────────────────────────────────────────
+    path('gpu-models/', views.gpu_model_list, name='gpu_model_list'),
+
+    # ── Listings (Offers) ─────────────────────────────────────
+    path('listings/', views.listing_list, name='listing_list'),
+    path('listings/mine/', views.my_listings, name='my_listings'),
+    path('listings/<uuid:listing_id>/', views.listing_detail, name='listing_detail'),
+    path('listings/<uuid:listing_id>/toggle/', views.listing_toggle_online, name='listing_toggle'),
+    path('listings/<uuid:listing_id>/favorite/', views.favorite_listing, name='favorite_listing'),
+    path('listings/<uuid:listing_id>/unfavorite/', views.unfavorite_listing, name='unfavorite_listing'),
+
+    # ── Orders ────────────────────────────────────────────────
+    path('orders/', views.order_list, name='order_list'),
+    path('orders/mine/', views.my_orders, name='my_orders'),
+    path('orders/<uuid:order_id>/', views.order_detail, name='order_detail'),
+    path('orders/<uuid:order_id>/bids/', views.order_bids, name='order_bids'),
+    path('orders/<uuid:order_id>/bid/', views.place_bid, name='place_bid'),
+
+    # ── Jobs ──────────────────────────────────────────────────
+    path('jobs/', views.job_list, name='job_list'),
+    path('jobs/<uuid:job_id>/', views.job_detail, name='job_detail'),
+    path('jobs/<uuid:job_id>/complete/', views.job_complete, name='job_complete'),
+    path('jobs/<uuid:job_id>/fail/', views.job_fail, name='job_fail'),
+    path('jobs/<uuid:job_id>/dispute/', views.job_dispute, name='job_dispute'),
+    path('jobs/<uuid:job_id>/provision/', views.provision_job_view, name='job_provision'),
+
+    # ── Favorites ─────────────────────────────────────────────
+    path('favorites/', views.my_favorites, name='my_favorites'),
+
+    # ── Pricing ───────────────────────────────────────────────
+    path('pricing/', views.pricing_rule_list, name='pricing_rule_list'),
+
+    # ── Stats ─────────────────────────────────────────────────
+    path('stats/', views.marketplace_stats, name='marketplace_stats'),
+    path('dashboard/provider/', views.provider_dashboard, name='provider_dashboard'),
+]
