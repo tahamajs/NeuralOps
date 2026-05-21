@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLiveStore } from '../stores/experimentStore'
 
-export type WSStatus = 'connecting' | 'open' | 'closed' | 'error'
-
-export function useWebSocket(experimentId: string | undefined) {
+export function useWebSocket(experimentId) {
   const store = useLiveStore()
-  const [wsStatus, setWsStatus] = useState<WSStatus>('closed')
-  const wsRef = useRef<WebSocket | null>(null)
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [wsStatus, setWsStatus] = useState('closed')  // 'connecting' | 'open' | 'closed' | 'error'
+  const wsRef = useRef(null)
+  const reconnectTimerRef = useRef(null)
 
   useEffect(() => {
     if (!experimentId) return
@@ -50,7 +48,6 @@ export function useWebSocket(experimentId: string | undefined) {
       socket.onclose = () => {
         setWsStatus('closed')
         store.addLog('Connection closed. Reconnecting in 3s...')
-        // Attempt to reconnect after 3 seconds
         if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
         reconnectTimerRef.current = setTimeout(connect, 3000)
       }
