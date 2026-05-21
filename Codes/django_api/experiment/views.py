@@ -529,3 +529,24 @@ def compare_runs(request):
         "metrics": metrics,
         "config_table": config_table,
     })
+
+
+
+
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from .models import TrainingRun
+from .serializers import TrainingRunSerializer
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_runs(request):
+    """List all training runs, with optional filters."""
+    runs = TrainingRun.objects.all().order_by('-created_at')
+    # Optional: filter by status, job_type, etc. from query params
+    status_filter = request.query_params.get('status')
+    if status_filter:
+        runs = runs.filter(status=status_filter)
+    serializer = TrainingRunSerializer(runs, many=True)
+    return Response(serializer.data)

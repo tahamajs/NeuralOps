@@ -92,7 +92,7 @@ class ResearcherNote(models.Model):
     slug = models.SlugField(max_length=300, blank=True)
     
     # ── Full-Text Search ───────────────────────────────────────
-    search_vector = SearchVectorField(null=True, blank=True)
+    # search_vector = SearchVectorField(null=True, blank=True)
     
     # ── Timestamps ─────────────────────────────────────────────
     created_at = models.DateTimeField(auto_now_add=True)

@@ -2,17 +2,10 @@
 HuggingFace integration for notes – upload as Dataset or Space.
 Supports: free public hosting, sharing via link, and sync.
 """
-import os
-import json
-import tempfile
-import logging
-from pathlib import Path
+import os, json, tempfile, logging
 from django.conf import settings
 from django.utils import timezone
-from huggingface_hub import (
-    HfApi, create_repo, upload_folder, upload_file,
-    whoami, login, HfFolder
-)
+from huggingface_hub import HfApi, create_repo, upload_folder, whoami
 
 logger = logging.getLogger(__name__)
 
@@ -22,42 +15,28 @@ HF_USERNAME = getattr(settings, 'HUGGINGFACE_USERNAME', None)
 
 def _get_api() -> HfApi:
     """Get authenticated HF API instance."""
-    token = HF_TOKEN or HfFolder.get_token()
+    token = HF_TOKEN
     if not token:
-        raise ValueError("HUGGINGFACE_TOKEN not set. Run `huggingface-cli login` or set HUGGINGFACE_TOKEN in settings.")
+        raise ValueError("HUGGINGFACE_TOKEN not set. Set HUGGINGFACE_TOKEN or run `huggingface-cli login`.")
     return HfApi(token=token)
 
 
 def upload_note_to_hub(note, repo_type: str = "dataset", make_public: bool = True):
-    """
-    Upload a note to HuggingFace Hub as a Dataset (recommended for sharing).
-    
-    Args:
-        note: ResearcherNote instance
-        repo_type: "dataset" or "space"
-        make_public: if True, anyone can view the note
-    
-    Returns:
-        dict with url, repo_id, and status
-    """
+    """Upload a note to HuggingFace Hub as a Dataset."""
     api = _get_api()
     username = HF_USERNAME or whoami(token=HF_TOKEN)['name']
     repo_id = f"{username}/neuralops-note-{note.id}"
 
-    # Create repo
     try:
         create_repo(repo_id, token=HF_TOKEN, repo_type=repo_type, exist_ok=True, private=not make_public)
     except Exception:
-        # Already exists
         pass
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Write README.md (this is what HF displays)
         readme_path = os.path.join(tmpdir, "README.md")
         with open(readme_path, "w") as f:
             f.write(_note_to_markdown(note))
 
-        # Write metadata.json
         meta_path = os.path.join(tmpdir, "metadata.json")
         with open(meta_path, "w") as f:
             json.dump({
@@ -70,63 +49,40 @@ def upload_note_to_hub(note, repo_type: str = "dataset", make_public: bool = Tru
                 "version": note.version,
             }, f, indent=2)
 
-        # Upload
-        upload_folder(
-            folder_path=tmpdir,
-            repo_id=repo_id,
-            repo_type=repo_type,
-            token=HF_TOKEN,
-        )
+        upload_folder(folder_path=tmpdir, repo_id=repo_id, repo_type=repo_type, token=HF_TOKEN)
 
-    # Make public if requested (for sharing)
     if make_public:
         try:
             api.update_repo_visibility(repo_id=repo_id, repo_type=repo_type, private=False, token=HF_TOKEN)
         except Exception:
             pass
 
-    url = f"https://huggingface.co/{repo_type}s/{repo_id}"
-    return {
-        "status": "uploaded",
-        "url": url,
-        "repo_id": repo_id,
-        "repo_type": repo_type,
-    }
+    return {"status": "uploaded", "url": f"https://huggingface.co/{repo_type}s/{repo_id}", "repo_id": repo_id, "repo_type": repo_type}
 
 
 def upload_note_as_space(note):
-    """
-    Upload a note as a static HuggingFace Space (HTML page, free hosting).
-    The Space renders the note as a styled web page.
-    """
+    """Upload a note as a static HTML Space on HuggingFace (free hosting)."""
     api = _get_api()
     username = HF_USERNAME or whoami(token=HF_TOKEN)['name']
     repo_id = f"{username}/neuralops-note-{note.id}"
 
     try:
-        create_repo(repo_id, token=HF_TOKEN, repo_type="space", exist_ok=True, private=False,
-                    space_sdk="static")
+        create_repo(repo_id, token=HF_TOKEN, repo_type="space", exist_ok=True, private=False, space_sdk="static")
     except Exception:
         pass
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        # Write index.html
         html = _note_to_html(note)
         with open(os.path.join(tmpdir, "index.html"), "w") as f:
             f.write(html)
 
         upload_folder(folder_path=tmpdir, repo_id=repo_id, repo_type="space", token=HF_TOKEN)
 
-    url = f"https://huggingface.co/spaces/{repo_id}"
-    return {"status": "uploaded", "url": url, "repo_id": repo_id, "repo_type": "space"}
+    return {"status": "uploaded", "url": f"https://huggingface.co/spaces/{repo_id}", "repo_id": repo_id, "repo_type": "space"}
 
 
 def sync_note_to_hf(note):
-    """
-    Sync a note to HuggingFace. Creates/updates the dataset with latest content.
-    Call this on every note save if auto-sync is enabled.
-    """
-    # Check if note was previously uploaded
+    """Sync a note to HuggingFace. Re‑uploads if a previous URL exists."""
     existing_url = (note.metadata or {}).get('hf_url', '')
     if existing_url:
         try:
@@ -134,13 +90,12 @@ def sync_note_to_hf(note):
         except Exception as e:
             logger.warning(f"HF sync failed: {e}")
             return {"status": "error", "error": str(e)}
-    return {"status": "skipped", "reason": "no existing HF upload; use upload endpoint first"}
+    return {"status": "skipped", "reason": "no existing HF upload"}
 
 
 def _note_to_markdown(note) -> str:
     """Convert a ResearcherNote to a rich Markdown string."""
-    config = note.metadata or {}
-    md = f"""---
+    return f"""---
 title: "{note.title}"
 author: "{note.author.username}"
 type: "{note.note_type}"
@@ -163,7 +118,6 @@ version: {note.version}
 ---
 *Generated by NeuralOps — {timezone.now().strftime('%Y-%m-%d %H:%M UTC')}*
 """
-    return md
 
 
 def _note_to_html(note) -> str:
@@ -171,7 +125,7 @@ def _note_to_html(note) -> str:
     import html as html_mod
     try:
         import markdown as md_lib
-        content_html = md_lib.markdown(note.content or '', extensions=['fenced_code', 'tables', 'codehilite'])
+        content_html = md_lib.markdown(note.content or '', extensions=['fenced_code', 'tables'])
     except ImportError:
         content_html = f"<pre>{html_mod.escape(note.content or '')}</pre>"
 
@@ -190,8 +144,7 @@ def _note_to_html(note) -> str:
                 border-radius: 12px; font-size: 0.8rem; margin-right: 0.3rem; }}
         pre {{ background: #f4f4f4; padding: 1rem; border-radius: 8px; overflow-x: auto; }}
         code {{ font-family: 'Fira Code', monospace; }}
-        .footer {{ margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ddd;
-                   font-size: 0.8rem; color: #999; }}
+        .footer {{ margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #ddd; font-size: 0.8rem; color: #999; }}
     </style>
 </head>
 <body>

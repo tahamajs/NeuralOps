@@ -78,34 +78,59 @@ INSTALLED_APPS = [
     'terminal',
     'agents',
     'portfolios',
-'gpu_marketplace',
-    'gpu_escrow',
-    'gpu_validator',      # placeholder
-    'gpu_benchmark',      # placeholder
-    'gpu_federation',     # placeholder
-    'gpu_finance',        # placeholder
-    'gpu_reputation',     # placeholder
-'organizations',
-'community',
 
+    'gpu_marketplace',
+    'gpu_escrow',
+    'gpu_validator',
+    'gpu_benchmark',
+    'gpu_federation',
+    'gpu_finance',
+    'gpu_reputation',
+
+    'organizations',
+    'community',
+    'leaderboards',
+    'reviews',
     'sweeps',
-        'profiles',
-    'messaging',
-    'channels',
+    'django.contrib.sites',        # required by allauth
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'allauth.socialaccount.providers.github',
-    'profiles.providers.huggingface',   # <-- new app
+    'allauth.socialaccount.providers.github',   # optional
+
+    'profiles',
+    'messaging',
 
     'paper',
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
 
-# settings.py — Celery Beat schedule for marketplace tasks
+SITE_ID = 1
+SOCIALACCOUNT_PROVIDERS = {
+    'github': {
+        'SCOPE': ['user:email', 'repo'],
+        'VERIFIED_EMAIL': True,
+    },
+    'huggingface': {
+        'SCOPE': ['openid', 'profile', 'email'],
+    },
+}
+SOCIALACCOUNT_STORE_TOKENS = True
+
+# ----------------------------------------------
+# 
+# 
+# ------------------------
+# Celery Beat schedule (all combined)
+# ----------------------------------------------------------------------
 from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
+    # Marketplace
     'match-orders-every-30s': {
         'task': 'gpu_marketplace.tasks.run_matching_cycle',
         'schedule': 30.0,
@@ -122,9 +147,8 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'gpu_marketplace.tasks.update_reliability_scores',
         'schedule': crontab(minute=0, hour=3),
     },
-}
 
-CELERY_BEAT_SCHEDULE.update({
+    # Finance
     'daily-index-calculation': {
         'task': 'gpu_finance.tasks.daily_index_calculation',
         'schedule': crontab(hour=0, minute=5),
@@ -137,14 +161,8 @@ CELERY_BEAT_SCHEDULE.update({
         'task': 'gpu_finance.tasks.generate_monthly_invoices',
         'schedule': crontab(day_of_month=1, hour=1, minute=0),
     },
-})
 
-
-# settings.py
-INSTALLED_APPS += ['gpu_reputation']
-
-# Celery beat
-CELERY_BEAT_SCHEDULE.update({
+    # Reputation
     'compute-daily-trust-graph': {
         'task': 'gpu_reputation.tasks.compute_daily_trust_graph',
         'schedule': crontab(hour=2, minute=0),
@@ -157,34 +175,33 @@ CELERY_BEAT_SCHEDULE.update({
         'task': 'gpu_reputation.tasks.expire_stale_disputes',
         'schedule': crontab(hour=0, minute=30),
     },
-})
-
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
-]
-
-SITE_ID = 1
-SOCIALACCOUNT_PROVIDERS = {
-    'github': {
-        'SCOPE': ['user:email', 'repo'],   # repo scope for pushing code
-        'VERIFIED_EMAIL': True,
-    },
-    'huggingface': {
-        'SCOPE': ['openid', 'profile', 'email'],
-    },
 }
 
-SOCIALACCOUNT_STORE_TOKENS = True   # store OAuth tokens for later API use
+# Social auth backends — uncomment after installing django-allauth
+# AUTHENTICATION_BACKENDS = [
+#     'django.contrib.auth.backends.ModelBackend',
+#     'allauth.account.auth_backends.AuthenticationBackend',
+# ]
 
+# SITE_ID = 1
+# SOCIALACCOUNT_PROVIDERS = {
+#     'github': {
+#         'SCOPE': ['user:email', 'repo'],
+#         'VERIFIED_EMAIL': True,
+#     },
+#     'huggingface': {
+#         'SCOPE': ['openid', 'profile', 'email'],
+#     },
+# }
+# SOCIALACCOUNT_STORE_TOKENS = True
 
 # ----------------------------------------------------------------------
 # Middleware
-# ----------------------------------------------------------------------
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'allauth.account.middleware.AccountMiddleware',         # ← add this
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

@@ -308,7 +308,7 @@ class UserBadge(models.Model):
     """A badge awarded to a user."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name='badges')
+                            related_name='community_badges')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.SET_NULL, null=True, blank=True)
     answer = models.ForeignKey(Answer, on_delete=models.SET_NULL, null=True, blank=True)

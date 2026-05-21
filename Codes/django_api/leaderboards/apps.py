@@ -6,4 +6,7 @@ class LeaderboardsConfig(AppConfig):
     name = 'leaderboards'
 
     def ready(self):
-        import leaderboards.signals  # noqa
+        try:
+            import leaderboards.signals  # noqa
+        except Exception:
+            pass
