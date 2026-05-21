@@ -195,3 +195,74 @@ ipcMain.handle('ws-disconnect', () => {
   wsClient = null;
   return true;
 });
+
+
+// In electron/main.js, add:
+
+const { ContainerController } = require('./container_ctrl_bridge');
+// We need a small Node.js bridge that calls the Python agent via HTTP or
+// directly manages Docker.  For simplicity we expose the operations and
+// have the Python agent handle them, then relay via WebSocket.
+// But for a desktop app that has Docker installed locally, we can use
+// dockerode directly from Node.js.
+
+let dockerode = null;
+try { dockerode = require('dockerode'); } catch {}
+
+const docker = dockerode ? new dockerode() : null;
+
+// ── Container Control ───────────────────────────────────────────
+ipcMain.handle('container-pause', async (_, containerId) => {
+  if (!docker) return { error: 'dockerode not installed' };
+  const c = docker.getContainer(containerId);
+  await c.pause();
+  return { status: 'paused' };
+});
+
+ipcMain.handle('container-unpause', async (_, containerId) => {
+  if (!docker) return { error: 'dockerode not installed' };
+  const c = docker.getContainer(containerId);
+  await c.unpause();
+  return { status: 'unpaused' };
+});
+
+ipcMain.handle('container-stop', async (_, containerId) => {
+  if (!docker) return { error: 'dockerode not installed' };
+  const c = docker.getContainer(containerId);
+  await c.stop({ t: 10 });
+  return { status: 'stopped' };
+});
+
+ipcMain.handle('container-restart', async (_, containerId) => {
+  if (!docker) return { error: 'dockerode not installed' };
+  const c = docker.getContainer(containerId);
+  await c.restart({ t: 10 });
+  return { status: 'restarted' };
+});
+
+ipcMain.handle('container-stats', async (_, containerId) => {
+  if (!docker) return { error: 'dockerode not installed' };
+  const c = docker.getContainer(containerId);
+  const stats = await c.stats({ stream: false });
+  return stats;
+});
+
+ipcMain.handle('container-logs', async (_, containerId, tail) => {
+  if (!docker) return { error: 'dockerode not installed' };
+  const c = docker.getContainer(containerId);
+  const logs = await c.logs({ stdout: true, stderr: true, tail: tail || 200 });
+  return logs.toString('utf-8');
+});
+
+ipcMain.handle('container-list', async () => {
+  if (!docker) return [];
+  const containers = await docker.listContainers({ all: true });
+  return containers.map(c => ({
+    id: c.Id,
+    name: c.Names[0]?.replace(/^\//, ''),
+    image: c.Image,
+    state: c.State,
+    status: c.Status,
+    created: c.Created,
+  }));
+});

@@ -12,6 +12,7 @@ import GPUDetails from './components/GPUDetails';
 import OnboardingWizard from './components/OnboardingWizard';
 import About from './components/About';
 import Notifications from './components/Notifications';
+import LiveGPUMonitor from './components/LiveGPUMonitor';
 
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -52,6 +53,8 @@ export default function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/gpu" element={<GPUDetails />} />
                   <Route path="/about" element={<About />} />
+                  <Route path="/live" element={<LiveGPUMonitor />} />
+
                 </Routes>
               </div>
             </main>

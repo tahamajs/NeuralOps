@@ -30,6 +30,14 @@ contextBridge.exposeInMainWorld('neuralopsAPI', {
   onAgentError: (cb) => { ipcRenderer.on('agent-error', (_, m) => cb(m)); return () => ipcRenderer.removeAllListeners('agent-error'); },
   onAgentExit: (cb) => { ipcRenderer.on('agent-exit', (_, c) => cb(c)); return () => ipcRenderer.removeAllListeners('agent-exit'); },
   onEarningsUpdate: (cb) => { ipcRenderer.on('earnings-update', (_, d) => cb(d)); return () => ipcRenderer.removeAllListeners('earnings-update'); },
+    // ── Container Control ─────────────────────────────────────────
+  containerPause: (id) => ipcRenderer.invoke('container-pause', id),
+  containerUnpause: (id) => ipcRenderer.invoke('container-unpause', id),
+  containerStop: (id) => ipcRenderer.invoke('container-stop', id),
+  containerRestart: (id) => ipcRenderer.invoke('container-restart', id),
+  containerStats: (id) => ipcRenderer.invoke('container-stats', id),
+  containerLogs: (id, tail) => ipcRenderer.invoke('container-logs', id, tail),
+  containerList: () => ipcRenderer.invoke('container-list'),
     // ── REST API ──────────────────────────────────────────────────
   apiRequest: (method, path, body) =>
     ipcRenderer.invoke('api-request', {
