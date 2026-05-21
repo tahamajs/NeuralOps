@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     'gpu_federation',     # placeholder
     'gpu_finance',        # placeholder
     'gpu_reputation',     # placeholder
+'organizations',
 
     'sweeps',
         'profiles',
