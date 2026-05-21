@@ -25,6 +25,15 @@ from sweeps.models import Sweep, SweepTrial
 from model_versioning.models import ModelVersion
 from notes.models import ResearcherNote
 
+
+
+class StandardPagination(PageNumberPagination):
+    page_size = 25
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
+    
 # ═════════════════════════════════════════════════════════════════
 # Constants
 # ═════════════════════════════════════════════════════════════════
@@ -471,3 +480,225 @@ def generate_model_card(request, run_id):
     from .model_card import generate_model_card as card_gen
     card = card_gen(run)
     return Response({'model_card': card})
+
+
+
+# ======================== CONSUMER MARKETPLACE VIEWS ========================
+
+# -------------------------------------------------------------------------
+# Marketplace Listings (browse & filter)
+# -------------------------------------------------------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def marketplace_listings(request):
+    """
+    Browse available GPU listings with full filtering.
+    This is the main "Marketplace" page for consumers.
+    """
+    from gpu_marketplace.models import GPUListing
+
+    qs = GPUListing.objects.filter(status='online').select_related('provider')
+
+    # ---- Filters ----
+    gpu_model = request.query_params.get('gpu_model')
+    if gpu_model:
+        qs = qs.filter(gpu_model__icontains=gpu_model)
+
+    min_vram = request.query_params.get('min_vram')
+    if min_vram:
+        qs = qs.filter(vram_gb__gte=int(min_vram))
+
+    max_price = request.query_params.get('max_price')
+    if max_price:
+        qs = qs.filter(current_price_per_hour__lte=float(max_price))
+
+    min_reliability = request.query_params.get('min_reliability')
+    if min_reliability:
+        qs = qs.filter(reliability_score__gte=float(min_reliability))
+
+    listing_type = request.query_params.get('listing_type')
+    if listing_type:
+        qs = qs.filter(listing_type=listing_type)
+
+    location = request.query_params.get('location')
+    if location:
+        qs = qs.filter(location__icontains=location)
+
+    # ---- Sorting ----
+    sort = request.query_params.get('sort', 'reliability')
+    sort_map = {
+        'price_asc': 'current_price_per_hour',
+        'price_desc': '-current_price_per_hour',
+        'reliability': '-reliability_score',
+        'dlperf': '-dlperf_score',
+        'newest': '-created_at',
+    }
+    qs = qs.order_by(sort_map.get(sort, '-reliability_score'))
+
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(qs, request)
+    serializer = GPUListingSerializer(page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+
+# -------------------------------------------------------------------------
+# Orders – list & place
+# -------------------------------------------------------------------------
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def consumer_orders(request):
+    """
+    GET: list the authenticated user's buy orders.
+    POST: place a new buy order.
+    """
+    from gpu_marketplace.models import ComputeOrder
+
+    if request.method == 'GET':
+        qs = ComputeOrder.objects.filter(user=request.user).order_by('-created_at')
+        serializer = ComputeOrderSerializer(qs, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = ComputeOrderSerializer(data=request.data)
+        if serializer.is_valid():
+            order = ComputeOrder.objects.create(
+                user=request.user,
+                order_type='buy',
+                **serializer.validated_data
+            )
+            return Response(ComputeOrderSerializer(order).data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+# -------------------------------------------------------------------------
+# Jobs – list & detail
+# -------------------------------------------------------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def consumer_jobs(request):
+    """
+    List the authenticated user's compute jobs (as a consumer).
+    """
+    from gpu_marketplace.models import ComputeJob
+
+    qs = ComputeJob.objects.filter(consumer=request.user).order_by('-created_at')
+    serializer = ComputeJobSerializer(qs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def consumer_job_detail(request, job_id):
+    """
+    Get detailed info about a single job (including logs, events).
+    """
+    from gpu_marketplace.models import ComputeJob, JobEvent
+
+    job = get_object_or_404(ComputeJob, id=job_id, consumer=request.user)
+    data = ComputeJobSerializer(job).data
+    events = JobEvent.objects.filter(job=job).order_by('created_at')
+    data['events'] = [{'type': e.event_type, 'description': e.description,
+                       'created_at': e.created_at} for e in events]
+    return Response(data)
+
+
+# -------------------------------------------------------------------------
+# Billing / Usage for the consumer
+# -------------------------------------------------------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def consumer_balance(request):
+    """
+    Get the consumer's escrow balance.
+    """
+    from gpu_escrow.models import EscrowAccount
+
+    account, _ = EscrowAccount.objects.get_or_create(user=request.user)
+    return Response({
+        'balance_usd': account.balance_usd,
+        'locked_balance_usd': account.locked_balance_usd,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def consumer_invoices(request):
+    """
+    List the consumer's invoices.
+    """
+    from gpu_finance.models import Invoice
+
+    qs = Invoice.objects.filter(user=request.user).order_by('-created_at')
+    serializer = InvoiceSerializer(qs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def consumer_usage(request):
+    """
+    Get the consumer's usage records (GPU hours consumed, cost).
+    """
+    from gpu_finance.models import UsageRecord
+
+    records = UsageRecord.objects.filter(user=request.user).order_by('-recorded_at')
+    total_hours = records.aggregate(s=models.Sum('hours_consumed'))['s'] or 0
+    total_cost = records.aggregate(s=models.Sum('cost_usd'))['s'] or 0
+    data = {
+        'records': [{
+            'job_id': str(r.job_id),
+            'gpu_model': r.gpu_model,
+            'hours': r.hours_consumed,
+            'cost': r.cost_usd,
+        } for r in records[:50]],
+        'total_hours': total_hours,
+        'total_cost': total_cost,
+    }
+    return Response(data)
+
+
+# -------------------------------------------------------------------------
+# Benchmark Leaderboard (global GPU comparison)
+# -------------------------------------------------------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def consumer_leaderboard(request):
+    """
+    GPU performance leaderboard – useful for choosing a GPU.
+    """
+    from gpu_benchmark.models import ListingBenchmarkScore
+
+    qs = ListingBenchmarkScore.objects.select_related('listing__provider') \
+        .filter(composite_score__isnull=False).order_by('-composite_score')[:50]
+
+    data = [{
+        'rank': i+1,
+        'gpu_model': score.listing.gpu_model,
+        'composite_score': score.composite_score,
+        'training_score': score.training_score,
+        'inference_score': score.inference_score,
+        'price_per_hour': str(score.listing.current_price_per_hour),
+        'provider': score.listing.provider.username,
+    } for i, score in enumerate(qs)]
+    return Response(data)
+
+
+# -------------------------------------------------------------------------
+# Consumer Reputation / Disputes
+# -------------------------------------------------------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def consumer_reputation(request):
+    """
+    Consumer's own reputation score and badges.
+    """
+    from gpu_reputation.models import ReputationScore, UserReputationBadge
+
+    score, _ = ReputationScore.objects.get_or_create(user=request.user)
+    badges = UserReputationBadge.objects.filter(user=request.user).select_related('badge')
+    return Response({
+        'consumer_score': score.consumer_score,
+        'provider_score': score.provider_score,
+        'total_jobs_completed': score.total_jobs_completed,
+        'badges': [{'name': b.badge.name, 'tier': b.badge.tier, 'icon': b.badge.icon} for b in badges],
+    })

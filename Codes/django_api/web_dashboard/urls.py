@@ -25,4 +25,16 @@ urlpatterns = [
 
     # ─── Model Card Generation ─────────────────────────────────
     path('api/runs/<uuid:run_id>/model-card/', views.generate_model_card, name='generate_model_card'),
+
+
+    # ─── Consumer GPU Marketplace ────────────────────────────
+    path('api/marketplace/listings/', views.marketplace_listings, name='marketplace_listings'),
+    path('api/marketplace/orders/', views.consumer_orders, name='consumer_orders'),
+    path('api/marketplace/jobs/', views.consumer_jobs, name='consumer_jobs'),
+    path('api/marketplace/jobs/<uuid:job_id>/', views.consumer_job_detail, name='consumer_job_detail'),
+    path('api/marketplace/balance/', views.consumer_balance, name='consumer_balance'),
+    path('api/marketplace/invoices/', views.consumer_invoices, name='consumer_invoices'),
+    path('api/marketplace/usage/', views.consumer_usage, name='consumer_usage'),
+    path('api/marketplace/leaderboard/', views.consumer_leaderboard, name='consumer_leaderboard'),
+    path('api/marketplace/reputation/', views.consumer_reputation, name='consumer_reputation'),
 ]
