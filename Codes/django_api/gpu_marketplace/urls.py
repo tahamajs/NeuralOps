@@ -45,4 +45,13 @@ urlpatterns = [
     path('listings/<uuid:listing_id>/notes/', views.listing_linked_notes),
     path('listings/<uuid:listing_id>/portfolio/', views.provider_portfolio),
     path('notifications/', views.marketplace_notifications),
+
+    
+    # ── Provider Agent Endpoints ────────────────────────────────
+    path('listings/register/', views.register_listing, name='register_listing'),
+    path('listings/update-status/', views.agent_update_status, name='agent_update_status'),
+    path('listings/heartbeat/', views.agent_heartbeat, name='agent_heartbeat'),
+    path('jobs/<uuid:job_id>/status/', views.job_update_status, name='job_update_status'),
+    path('jobs/<uuid:job_id>/logs/', views.job_update_logs, name='job_update_logs'),
+    path('agent/check-update/', views.agent_check_update, name='agent_check_update'),
 ]
