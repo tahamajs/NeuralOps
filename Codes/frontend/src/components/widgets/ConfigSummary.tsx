@@ -1,16 +1,18 @@
-import { Code2 } from 'lucide-react'
+export function ConfigSummary({ config }: { config?: Record<string, any> }) {
+  if (!config) return <div className="text-sm text-slate-500">No configuration available.</div>
 
-export const ConfigSummary = ({ config }: { config: Record<string, any> }) => (
-  <div>
-    {!config || Object.keys(config).length === 0 ? (
-      <div className="flex items-center gap-2 text-slate-500 text-xs py-2">
-        <Code2 size={14} />
-        No configuration available
-      </div>
-    ) : (
-      <pre className="text-xs text-slate-400 overflow-auto max-h-64 bg-white/5 rounded-lg p-3 scrollbar-thin">
-        {JSON.stringify(config, null, 2)}
-      </pre>
-    )}
-  </div>
-)
+  const entries = Object.entries(config).slice(0, 10)
+  return (
+    <div className="space-y-1">
+      <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+        Configuration
+      </h3>
+      {entries.map(([key, value]) => (
+        <div key={key} className="flex justify-between text-xs">
+          <span className="text-slate-500">{key}</span>
+          <span className="text-white font-mono">{String(value)}</span>
+        </div>
+      ))}
+    </div>
+  )
+}

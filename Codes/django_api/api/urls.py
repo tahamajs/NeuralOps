@@ -86,4 +86,8 @@ urlpatterns = [
     path('runs/<uuid:pk>/stop/', views.stop_run, name='stop_run'),
     path('runs/<uuid:run_id>/results/', views.run_results, name='run_results'),
     path('runs/<uuid:run_id>/save/', views.run_save, name='run_save'),
+
+    path('system/status/', views.system_status, name='system_status'),
+    path('system/gpu/', views.gpu_info, name='gpu_info'),
+
 ]

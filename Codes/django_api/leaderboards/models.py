@@ -294,7 +294,7 @@ class UserBadge(models.Model):
     """A badge awarded to a specific user."""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
-                             related_name='badges')
+                            related_name='leaderboard_badges')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
     submission = models.ForeignKey(Submission, on_delete=models.CASCADE, null=True, blank=True)
     awarded_at = models.DateTimeField(auto_now_add=True)

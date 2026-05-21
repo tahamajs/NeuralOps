@@ -892,3 +892,55 @@ def run_hf_checkpoints(request, run_id):
         return Response({"checkpoints": checkpoints})
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+    
+
+
+
+# ── System Status (CPU, memory, disk) ───────────────────────────
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def system_status(request):
+    import psutil
+    mem = psutil.virtual_memory()
+    disk = psutil.disk_usage('/')
+    return Response({
+        "cpu": {
+            "percent": psutil.cpu_percent(interval=0.5),
+            "count": psutil.cpu_count(),
+        },
+        "memory": {
+            "percent": mem.percent,
+            "used_gb": round(mem.used / (1024**3), 1),
+            "total_gb": round(mem.total / (1024**3), 1),
+        },
+        "disk": {
+            "percent": disk.percent,
+            "free_gb": round(disk.free / (1024**3), 1),
+            "total_gb": round(disk.total / (1024**3), 1),
+        },
+    })
+
+# ── GPU Info ────────────────────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def gpu_info(request):
+    try:
+        import torch
+        if torch.cuda.is_available():
+            devices = []
+            for i in range(torch.cuda.device_count()):
+                props = torch.cuda.get_device_properties(i)
+                devices.append({
+                    "index": i,
+                    "name": props.name,
+                    "memory_total_mb": round(props.total_memory / (1024**2), 1),
+                    "memory_allocated_mb": round(torch.cuda.memory_allocated(i) / (1024**2), 1),
+                    "memory_reserved_mb": round(torch.cuda.memory_reserved(i) / (1024**2), 1),
+                })
+            return Response({"type": "cuda", "total_gpus": len(devices), "devices": devices})
+        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            return Response({"type": "mps", "total_gpus": 1})
+        else:
+            return Response({"type": "cpu", "total_gpus": 0})
+    except ImportError:
+        return Response({"type": "cpu", "total_gpus": 0})
