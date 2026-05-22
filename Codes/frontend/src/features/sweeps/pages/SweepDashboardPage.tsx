@@ -1,125 +1,95 @@
-import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useParams, Link } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Spinner } from '../../../components/ui/Spinner'
-import { Button } from '../../../components/ui/Button'
+import { Card, Button, Spinner, Badge, Table, Tabs, TabList, Tab, TabPanel } from '../../../components/ui'
+import { BarChart3, TrendingUp, GitBranch, Download } from 'lucide-react'
 import Plot from 'react-plotly.js'
-import { Badge } from '../../../components/ui/Badge'
 
 export default function SweepDashboardPage() {
-  const { sweepId } = useParams<{ sweepId: string }>()
+  const { sweepId } = useParams()
+  const queryClient = useQueryClient()
   const { data: sweep, isLoading } = useQuery({
     queryKey: ['sweep', sweepId],
-    queryFn: async () => (await api.get(`/api/sweeps/${sweepId}/`)).data,
-    refetchInterval: 5000,
+    queryFn: async () => (await api.get(`/sweeps/${sweepId}/`)).data,
+    enabled: !!sweepId,
   })
-
+  const { data: trials } = useQuery({
+    queryKey: ['sweep-trials', sweepId],
+    queryFn: async () => (await api.get(`/sweeps/${sweepId}/trials/`)).data,
+    enabled: !!sweepId,
+  })
   const { data: importance } = useQuery({
-    queryKey: ['sweepImportance', sweepId],
-    queryFn: async () => (await api.get(`/api/sweeps/${sweepId}/importance/`)).data,
-    enabled: !!sweep,
+    queryKey: ['sweep-importance', sweepId],
+    queryFn: async () => (await api.get(`/sweeps/${sweepId}/importance/`)).data,
+    enabled: !!sweepId,
+  })
+  const { data: pareto } = useQuery({
+    queryKey: ['sweep-pareto', sweepId],
+    queryFn: async () => (await api.get(`/sweeps/${sweepId}/pareto/`)).data,
+    enabled: !!sweepId,
   })
 
-  if (isLoading || !sweep) return <Spinner />
+  const stopSweep = useMutation({
+    mutationFn: () => api.post(`/sweeps/${sweepId}/stop/`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sweep', sweepId] }),
+  })
 
-  const trials = sweep.trials || []
-  const bestTrial = trials.filter((t: any) => t.status === 'completed').sort((a: any, b: any) => b.objective_value - a.objective_value)[0]
-
-  // Parallel coordinates data
-  const paramNames = Object.keys(trials[0]?.params || {})
-  const pcData = paramNames.map((param) => ({
-    type: 'parcoords' as const,
-    line: {
-      color: trials.map((t: any) => t.objective_value || 0),
-      colorscale: 'Jet',
-      showscale: true,
-      cmin: Math.min(...trials.map((t: any) => t.objective_value || 0)),
-      cmax: Math.max(...trials.map((t: any) => t.objective_value || 1)),
-    },
-    dimensions: [{
-      range: [0, Math.max(...trials.map((t: any) => t.objective_value || 0))],
-      label: 'Objective',
-      values: trials.map((t: any) => t.objective_value || 0),
-    }, ...paramNames.map((param) => {
-      const values = trials.map((t: any) => t.params[param])
-      const isNum = values.every((v: any) => typeof v === 'number')
-      return isNum
-        ? { range: [Math.min(...values), Math.max(...values)], label: param, values }
-        : { tickvals: [...new Set(values)], ticktext: [...new Set(values)], label: param, values }
-    })],
-  }))
+  if (isLoading) return <Spinner />
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-display font-bold text-white">{sweep.name}</h1>
-          <p className="text-slate-400 text-sm">{sweep.trials.length} trials · Status: {sweep.status}</p>
+          <h1 className="text-2xl font-bold text-white">{sweep?.name || 'Sweep'}</h1>
+          <p className="text-sm text-slate-400">{sweep?.algorithm} · {sweep?.objective}</p>
         </div>
-        <Button size="sm" onClick={() => api.post(`/api/sweeps/${sweepId}/`, { status: sweep.status === 'active' ? 'paused' : 'active' })}>
-          {sweep.status === 'active' ? 'Pause' : 'Resume'}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="danger" size="sm" onClick={() => stopSweep.mutate()}>Stop Sweep</Button>
+          <Link to={`/sweeps/${sweepId}/export`}><Button size="sm" variant="ghost"><Download size={14} /></Button></Link>
+        </div>
       </div>
 
-      {bestTrial && (
-        <Card>
-          <h3 className="text-sm font-bold text-white mb-2">Best Trial</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-            <div><span className="text-slate-400">Trial #</span> <span className="text-white">#{bestTrial.trial_number}</span></div>
-            <div><span className="text-slate-400">Objective</span> <span className="text-green-400 font-bold">{bestTrial.objective_value?.toFixed(4)}</span></div>
-            <div><span className="text-slate-400">Status</span> <Badge status={bestTrial.status}>{bestTrial.status}</Badge></div>
-            <div><span className="text-slate-400">Params</span> <span className="text-white text-[10px]">{JSON.stringify(bestTrial.params)}</span></div>
-          </div>
-        </Card>
-      )}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="text-center"><div className="text-2xl">{sweep?.total_trials || 0}</div><div className="text-xs">Total Trials</div></Card>
+        <Card className="text-center"><div className="text-2xl text-green-400">{sweep?.completed_trials || 0}</div><div className="text-xs">Completed</div></Card>
+        <Card className="text-center"><div className="text-2xl text-blue-400">{sweep?.running_trials || 0}</div><div className="text-xs">Running</div></Card>
+        <Card className="text-center"><div className="text-2xl text-yellow-400">{sweep?.best_score?.toFixed(4) || '-'}</div><div className="text-xs">Best Score</div></Card>
+      </div>
 
-      {trials.length > 1 && (
-        <Card>
-          <h3 className="text-sm font-bold text-white mb-3">Parallel Coordinates</h3>
-          <Plot data={pcData} layout={{ autosize: true, height: 400, margin: { t: 20, r: 20, b: 40, l: 60 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: '#94a3b8' } }} useResizeHandler style={{ width: '100%' }} />
-        </Card>
-      )}
-
-      {importance && Object.keys(importance).length > 0 && (
-        <Card>
-          <h3 className="text-sm font-bold text-white mb-3">Parameter Importance</h3>
-          <Plot
-            data={[{ x: Object.values(importance), y: Object.keys(importance), type: 'bar', orientation: 'h', marker: { color: '#3b82f6' } }]}
-            layout={{ autosize: true, height: 200 + Object.keys(importance).length * 20, margin: { t: 10, r: 20, b: 30, l: 100 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: '#94a3b8' } }}
-            useResizeHandler
-            style={{ width: '100%' }}
-          />
-        </Card>
-      )}
-
-      <Card>
-        <h3 className="text-sm font-bold text-white mb-3">Trials</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-left text-slate-400">
-                <th className="py-2 px-2">#</th>
-                <th className="py-2 px-2">Status</th>
-                <th className="py-2 px-2">Objective</th>
-                <th className="py-2 px-2">Params</th>
-                <th className="py-2 px-2">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {trials.map((trial: any) => (
-                <tr key={trial.id}>
-                  <td className="py-2 px-2">{trial.trial_number}</td>
-                  <td className="py-2 px-2"><Badge status={trial.status}>{trial.status}</Badge></td>
-                  <td className="py-2 px-2">{trial.objective_value?.toFixed(4) || '—'}</td>
-                  <td className="py-2 px-2 text-[10px]">{JSON.stringify(trial.params)}</td>
-                  <td className="py-2 px-2 text-slate-500">{new Date(trial.created_at).toLocaleString()}</td>
+      <Tabs defaultValue="trials">
+        <TabList><Tab value="trials">Trials</Tab><Tab value="importance">HP Importance</Tab><Tab value="pareto">Pareto Front</Tab><Tab value="parallel">Parallel Coords</Tab></TabList>
+        <TabPanel value="trials">
+          <Table>
+            <thead><tr><th>#</th><th>State</th><th>Score</th><th>Params</th><th>Duration</th></tr></thead>
+            <tbody>
+              {trials?.map((t: any) => (
+                <tr key={t.number}>
+                  <td>{t.number}</td>
+                  <td><Badge variant={t.state}>{t.state}</Badge></td>
+                  <td>{t.score?.toFixed(4) || '-'}</td>
+                  <td className="font-mono text-xs">{Object.entries(t.params || {}).slice(0,3).map(([k,v]) => `${k}=${v}`).join(', ')}</td>
+                  <td>{t.duration_seconds}s</td>
                 </tr>
               ))}
             </tbody>
-          </table>
-        </div>
-      </Card>
+          </Table>
+        </TabPanel>
+        <TabPanel value="importance">
+          {importance?.map((hp: any) => (
+            <div key={hp.name} className="mb-3">
+              <div className="flex justify-between text-sm"><span>{hp.name}</span><span>{hp.importance.toFixed(1)}%</span></div>
+              <div className="w-full bg-white/10 h-2 rounded"><div className="bg-neon-blue h-2 rounded" style={{ width: `${hp.importance}%` }} /></div>
+            </div>
+          ))}
+        </TabPanel>
+        <TabPanel value="pareto">
+          {pareto && <Plot data={[{ x: pareto.x, y: pareto.y, type: 'scatter', mode: 'markers', marker: { color: 'cyan' } }]} layout={{ height: 400 }} />}
+        </TabPanel>
+        <TabPanel value="parallel">
+          {/* parallel coordinates plot would go here */}
+          <div className="text-center text-slate-500">Parallel coordinates plot coming soon.</div>
+        </TabPanel>
+      </Tabs>
     </div>
   )
 }
