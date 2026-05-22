@@ -1,23 +1,15 @@
-"""
-Unified LLM Gateway – normalizes access to 10+ providers.
-Supports: OpenAI, Anthropic, Together AI, Cohere, Groq, Mistral, Google, Replicate, HuggingFace Inference, Ollama.
-"""
 import os, time, json, logging
 from typing import Optional
-from django.conf import settings
-from .models import LLMModel, LLMProvider, UsageRecord
+from .models import LLMModel, UsageRecord
 
 logger = logging.getLogger(__name__)
 
+
 class LLMGateway:
-    """Central gateway for all LLM API calls."""
+    """Unified gateway to 10+ LLM providers."""
 
     @classmethod
     def complete(cls, model_id: str, messages: list, **kwargs) -> dict:
-        """
-        Send a chat completion request to the specified model.
-        Returns a normalized dict: { content, tool_calls, tokens_input, tokens_output, latency_ms, cost_usd }
-        """
         try:
             model = LLMModel.objects.select_related('provider').get(model_id=model_id, is_active=True)
         except LLMModel.DoesNotExist:
@@ -45,7 +37,11 @@ class LLMGateway:
 
         elapsed_ms = (time.perf_counter() - start) * 1000
         result['latency_ms'] = round(elapsed_ms, 1)
-        result['cost_usd'] = cls._compute_cost(model, result.get('tokens_input', 0), result.get('tokens_output', 0))
+        result['cost_usd'] = cls._compute_cost(
+            model,
+            result.get('tokens_input', 0),
+            result.get('tokens_output', 0)
+        )
         return result
 
     @classmethod
@@ -71,7 +67,6 @@ class LLMGateway:
     def _call_anthropic(cls, model, messages, **kwargs):
         import anthropic
         client = anthropic.Anthropic(api_key=os.environ.get(model.provider.api_key_env))
-        # Convert messages to Anthropic format
         system_msg = ''
         anthropic_messages = []
         for m in messages:
@@ -97,7 +92,8 @@ class LLMGateway:
     @classmethod
     def _call_together(cls, model, messages, **kwargs):
         from openai import OpenAI
-        client = OpenAI(api_key=os.environ.get(model.provider.api_key_env), base_url='https://api.together.xyz/v1')
+        client = OpenAI(api_key=os.environ.get(model.provider.api_key_env),
+                        base_url='https://api.together.xyz/v1')
         response = client.chat.completions.create(
             model=model.model_id,
             messages=messages,
@@ -115,7 +111,8 @@ class LLMGateway:
     @classmethod
     def _call_groq(cls, model, messages, **kwargs):
         from openai import OpenAI
-        client = OpenAI(api_key=os.environ.get(model.provider.api_key_env), base_url='https://api.groq.com/openai/v1')
+        client = OpenAI(api_key=os.environ.get(model.provider.api_key_env),
+                        base_url='https://api.groq.com/openai/v1')
         response = client.chat.completions.create(
             model=model.model_id,
             messages=messages,
@@ -134,7 +131,6 @@ class LLMGateway:
     def _call_cohere(cls, model, messages, **kwargs):
         import cohere
         co = cohere.Client(api_key=os.environ.get(model.provider.api_key_env))
-        # Extract last user message for Cohere's chat
         chat_history = [{'role': m['role'], 'message': m['content']} for m in messages[:-1]]
         last_message = messages[-1]['content']
         response = co.chat(
@@ -155,10 +151,10 @@ class LLMGateway:
     def _call_google(cls, model, messages, **kwargs):
         import google.generativeai as genai
         genai.configure(api_key=os.environ.get(model.provider.api_key_env))
-        # Convert messages to Google's format
         contents = []
         for m in messages:
-            contents.append({'role': 'user' if m['role'] == 'user' else 'model', 'parts': [m['content']]})
+            contents.append({'role': 'user' if m['role'] == 'user' else 'model',
+                             'parts': [m['content']]})
         gemini = genai.GenerativeModel(model.model_id)
         response = gemini.generate_content(contents)
         return {
