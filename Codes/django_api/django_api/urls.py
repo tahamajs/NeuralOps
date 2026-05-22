@@ -89,6 +89,7 @@ urlpatterns = [
 path('api/live-dash/', include('live_dashboard.urls')),
 path('api/model-hub/', include('model_hub.urls')),
 path('api/lab/', include('lab_assistant.urls')),
+path('api/health-monitor/', include('health_monitor.urls')),
 
 ]
 

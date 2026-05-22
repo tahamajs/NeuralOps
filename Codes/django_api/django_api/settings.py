@@ -75,6 +75,7 @@ INSTALLED_APPS = [
 'live_dashboard',
 'model_hub',
 'lab_assistant',
+'health_monitor',
 
     # Your custom apps
     'computational_discovery',
@@ -424,3 +425,11 @@ JOB_TIMEOUT_SECONDS = int(os.environ.get("JOB_TIMEOUT_SECONDS", 0))
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 ML_TOKEN = os.environ.get("ML_TOKEN", "")
 LOGIN_URL = "/login/"
+
+
+CELERY_BEAT_SCHEDULE.update({
+    'run-scheduled-drift-checks': {
+        'task': 'health_monitor.tasks.run_scheduled_drift_checks',
+        'schedule': crontab(minute='*/15'),
+    },
+})
