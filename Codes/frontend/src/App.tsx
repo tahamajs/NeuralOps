@@ -294,3 +294,11 @@ const componentMap = {
   hpo: HPODashboard,
   sweep_detail: SweepDetailPage,
 }
+
+
+import RecommendationListPage from './features/recommender/pages/RecommendationListPage'
+
+const componentMap = {
+  // ...
+  recommendations: RecommendationListPage,
+}
