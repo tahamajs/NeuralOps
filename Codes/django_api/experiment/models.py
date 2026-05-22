@@ -170,3 +170,26 @@ class SweepTrial(models.Model):
 
 # Compatibility alias used by agents and sweeps modules.
 Project = Experiment
+
+
+
+# experiment/models.py — add these
+
+class HyperparameterSnapshot(models.Model):
+    """A snapshot of all hyperparameters for a training run at a point in time."""
+    run = models.ForeignKey(TrainingRun, on_delete=models.CASCADE, related_name='hp_snapshots')
+    params = models.JSONField()  # {"learning_rate": 2e-5, "batch_size": 32, ...}
+    metrics = models.JSONField()  # {"eval_accuracy": 0.92, "eval_loss": 0.35}
+    step = models.IntegerField(null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class ParameterInteraction(models.Model):
+    """Cached interaction scores between pairs of hyperparameters."""
+    param_a = models.CharField(max_length=100)
+    param_b = models.CharField(max_length=100)
+    interaction_strength = models.FloatField()  # mutual information or SHAP
+    direction = models.CharField(max_length=20)  # positive / negative / non‑linear
+    computed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [['param_a', 'param_b']]

@@ -541,3 +541,18 @@ class NoteLink(models.Model):
 
     def __str__(self):
         return f"{self.source_id} → {self.target_id} ({self.link_type})"
+    
+
+# notes/models.py — add this
+
+class DataApp(models.Model):
+    """An interactive web app built from a notebook or script."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    source_notebook = models.FileField(upload_to='data_apps/', null=True, blank=True)
+    source_script = models.TextField(blank=True)
+    generated_html = models.TextField(blank=True)
+    hugginface_space_url = models.URLField(blank=True)
+    is_public = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)

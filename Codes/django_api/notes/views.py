@@ -1476,3 +1476,53 @@ def search_and_format_paper(request, version='v1'):
             "markdown": md,
         })
     return Response({"results": formatted})
+
+
+# notes/views.py — add this
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_data_app(request):
+    """Convert a notebook/script into an interactive web app."""
+    import nbformat
+    from nbconvert import HTMLExporter
+
+    uploaded = request.FILES.get('notebook')
+    if not uploaded:
+        return Response({'error': 'Notebook file required'}, status=400)
+
+    # Convert notebook to HTML
+    notebook = nbformat.read(uploaded, as_version=4)
+    html_exporter = HTMLExporter()
+    html_exporter.theme = 'dark'
+    (body, _) = html_exporter.from_notebook_node(notebook)
+
+    app = DataApp.objects.create(
+        user=request.user,
+        title=request.data.get('title', uploaded.name),
+        source_notebook=uploaded,
+        generated_html=body,
+        is_public=request.data.get('is_public', False),
+    )
+
+    # Optional: deploy to HuggingFace Space
+    if request.data.get('deploy_to_hf'):
+        from notes.hf_upload import upload_data_app_to_hf
+        space_url = upload_data_app_to_hf(app)
+        app.hugginface_space_url = space_url
+        app.save(update_fields=['hugginface_space_url'])
+
+    return Response({
+        'app_id': str(app.id),
+        'html_url': f'/api/notes/data-apps/{app.id}/render/',
+        'hugginface_space_url': app.hugginface_space_url,
+    }, status=201)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def render_data_app(request, app_id):
+    """Render a data app as a standalone HTML page."""
+    app = get_object_or_404(DataApp, id=app_id)
+    if not app.is_public and app.user != request.user:
+        return Response({'error': 'Not allowed'}, status=403)
+    return HttpResponse(app.generated_html)
