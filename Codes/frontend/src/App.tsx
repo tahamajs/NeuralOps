@@ -254,3 +254,15 @@ function App() {
 }
 
 export default App
+
+
+
+// src/App.tsx (partial)
+import LabsListPage from './features/communityLab/pages/LabsListPage'
+import LabDetailPage from './features/communityLab/pages/LabDetailPage'
+
+const componentMap = {
+  // ...
+  labs: LabsListPage,
+  lab_detail: LabDetailPage,
+}
