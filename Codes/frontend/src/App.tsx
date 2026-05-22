@@ -393,3 +393,13 @@ const componentMap = {
   'expert-directory': ExpertDirectoryPage,
   'project-application': ProjectApplicationPanel,
 }
+
+
+import StreakHeatmapPage from './features/streaks/pages/StreakHeatmapPage'
+import WeeklySummaryViewer from './features/streaks/pages/WeeklySummaryViewer'
+
+const componentMap = {
+  // ...
+  'streak-heatmap': StreakHeatmapPage,
+  'weekly-summary': WeeklySummaryViewer,
+}
