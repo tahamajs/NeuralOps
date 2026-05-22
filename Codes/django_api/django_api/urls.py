@@ -91,6 +91,7 @@ path('api/model-hub/', include('model_hub.urls')),
 path('api/lab/', include('lab_assistant.urls')),
 path('api/health-monitor/', include('health_monitor.urls')),
 path('api/community-lab/', include('community_lab.urls')),
+path('api/playground/', include('playground.urls')),
 
 ]
 
