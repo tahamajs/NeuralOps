@@ -266,3 +266,38 @@ const componentMap = {
   labs: LabsListPage,
   lab_detail: LabDetailPage,
 }
+
+
+import DatasetListPage from './features/datasets/pages/DatasetListPage'
+import DatasetDetailPage from './features/datasets/pages/DatasetDetailPage'
+
+const componentMap = {
+  // ...
+  datasets: DatasetListPage,
+  dataset_detail: DatasetDetailPage,
+}
+
+
+
+import LLMProviderList from './features/llmHub/pages/LLMProviderList'
+import LLMPlayground from './features/llmHub/pages/LLMPlayground'
+import PromptLibrary from './features/llmHub/pages/PromptLibrary'
+import EvaluationSuiteRunner from './features/llmHub/pages/EvaluationSuiteRunner'
+import CostDashboard from './features/llmHub/pages/CostDashboard'
+import MemoryManager from './features/llmHub/pages/MemoryManager'
+import ToolCatalog from './features/llmHub/pages/ToolCatalog'
+import ArenaBattlePage from './features/llmHub/pages/ArenaBattlePage'
+import GuardrailEditor from './features/llmHub/pages/GuardrailEditor'
+
+const componentMap = {
+  // ...
+  'llm-providers': LLMProviderList,
+  'playground': LLMPlayground,
+  'prompts': PromptLibrary,
+  'evaluations': EvaluationSuiteRunner,
+  'costs': CostDashboard,
+  'memory': MemoryManager,
+  'tools': ToolCatalog,
+  'arena': ArenaBattlePage,
+  'guardrails': GuardrailEditor,
+}
