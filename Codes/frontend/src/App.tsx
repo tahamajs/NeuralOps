@@ -257,3 +257,13 @@ const AVAILABLE_WINDOWS = [
   // ...
   { type: 'model3d', title: '3D Model Explorer', icon: '🧊' },
 ];
+
+
+import ModelViewerPage from './features/modelViewer/pages/ModelViewerPage';
+import FLRunPage from './features/federated/pages/FLRunPage';
+
+const componentMap: Record<string, React.ComponentType<any>> = {
+  // ... existing
+  model3d: ModelViewerPage,
+  federated: FLRunPage,
+};
