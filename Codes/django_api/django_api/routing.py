@@ -9,3 +9,6 @@ application = ProtocolTypeRouter({
         messaging_ws + notes_ws + api_ws
     ),
 })
+
+from research_agent.routing import websocket_urlpatterns as agent_ws
+websocket_urlpatterns += agent_ws
