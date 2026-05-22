@@ -243,3 +243,17 @@ const componentMap = {
   research: DeepResearchPage,
   // ...
 };
+
+// In src/App.tsx
+import { Model3DViewer } from './features/modelViewer/components/Model3DViewer';
+
+const componentMap = {
+  // ...
+  model3d: Model3DViewer,
+};
+
+// In src/components/WindowLauncher.tsx
+const AVAILABLE_WINDOWS = [
+  // ...
+  { type: 'model3d', title: '3D Model Explorer', icon: '🧊' },
+];
