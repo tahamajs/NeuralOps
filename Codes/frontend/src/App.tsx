@@ -301,3 +301,18 @@ const componentMap = {
   'arena': ArenaBattlePage,
   'guardrails': GuardrailEditor,
 }
+
+
+
+import FeatureStoreBrowser from './features/mlops/pages/FeatureStoreBrowser'
+import DriftMonitorList from './features/mlops/pages/DriftMonitorList'
+import AlertDashboard from './features/mlops/pages/AlertDashboard'
+import PerformanceSnapshotView from './features/mlops/pages/PerformanceSnapshotView'
+
+const componentMap = {
+  // ...
+  'feature-store': FeatureStoreBrowser,
+  'drift-monitors': DriftMonitorList,
+  'alerts': AlertDashboard,
+  'performance': PerformanceSnapshotView,
+}

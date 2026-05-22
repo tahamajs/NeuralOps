@@ -154,3 +154,12 @@ const AVAILABLE_WINDOWS = [
   { type: 'arena', title: 'Arena Battles', icon: '🏆' },
   { type: 'guardrails', title: 'Guardrail Editor', icon: '🛡️' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'feature-store', title: 'Feature Store Browser', icon: '🗄️' },
+  { type: 'drift-monitors', title: 'Drift Monitors', icon: '📈' },
+  { type: 'alerts', title: 'Alert Dashboard', icon: '🔔' },
+  { type: 'performance', title: 'Performance Snapshots', icon: '📸' },
+]
