@@ -1,21 +1,72 @@
+// src/components/WindowLauncher.tsx
 import { useState, useEffect } from 'react'
 import { useWindowStore } from '../store/windowStore'
 
 const AVAILABLE_WINDOWS = [
+  // Core / Communication
   { type: 'terminal', title: 'Terminal', icon: '>_' },
   { type: 'chat', title: 'AI Chat', icon: '💬' },
   { type: 'notes', title: 'Notes', icon: '📝' },
   { type: 'paper-editor', title: 'Paper Editor', icon: '📄' },
-  { type: 'marketplace', title: 'GPU Marketplace', icon: '🖥️' },
-  { type: 'experiments', title: 'Experiments', icon: '🔬' },
   { type: 'community', title: 'Q&A Forum', icon: '❓' },
-  { type: 'profile', title: 'Profile', icon: '👤' },
+  { type: 'support', title: 'AI Support Hub', icon: '🎓' },
+
+  // Marketplace & Trading
+  { type: 'marketplace', title: 'GPU Marketplace', icon: '🖥️' },
+  { type: 'gpumarket', title: 'GPU Stock Market', icon: '📈' },
+  { type: 'marketplace-ai', title: 'AI Agent Marketplace', icon: '🤖' },
+  { type: 'comparison-builder', title: 'Comparison Builder', icon: '📊' },
+
+  // Experiments & Analysis
+  { type: 'experiments', title: 'Experiments', icon: '🔬' },
   { type: 'analysis', title: 'Research Analysis', icon: '📊' },
   { type: 'analytics', title: 'Advanced Analytics', icon: '📈' },
+  { type: 'accelerator', title: 'Experiment Accelerator', icon: '⚡' },
+  { type: 'recommendations', title: 'Experiment Recommendations', icon: '💡' },
+  { type: 'forensics', title: 'Failure Forensics', icon: '🛡️' },
+  { type: 'anomaly', title: 'Anomaly Detection', icon: '⚠️' },
+
+  // Hyperparameter Optimization
+  { type: 'hpo', title: 'HPO Dashboard', icon: '🎯' },
+  { type: 'sweeps', title: 'Sweeps', icon: '🎯' },
+
+  // AI Co‑Scientist & Research
+  { type: 'tournament', title: 'Idea Tournament', icon: '🏆' },
+  { type: 'hypotheses', title: 'Hypothesis Browser', icon: '🔬' },
+  { type: 'research', title: 'Deep Research', icon: '🔍' },
+  { type: 'coding-assistant', title: 'AI Coding Assistant', icon: '</>' },
+  { type: 'pipeline-monitor', title: 'Pipeline Monitor', icon: '📊' },
+  { type: 'step-editor', title: 'Step Editor', icon: '✏️' },
+
+  // Literature & Discovery
+  { type: 'literature-map', title: 'Literature Map', icon: '🗺️' },
+  { type: 'citation-graph', title: 'Citation Graph Viewer', icon: '🔗' },
+
+  // Impact & Leaderboards
+  { type: 'impact-score', title: 'Impact Score', icon: '📈' },
+  { type: 'project-leaderboard', title: 'Project Leaderboard', icon: '🏆' },
+  { type: 'leaderboard', title: 'Contribution Leaderboard', icon: '🏆' },
+
+  // Collaboration & Experts
+  { type: 'collaborator-suggestions', title: 'Collaborator Suggestions', icon: '👥' },
+  { type: 'match-history', title: 'Collaboration History', icon: '📜' },
+  { type: 'expert-directory', title: 'Expert Directory', icon: '👥' },
+  { type: 'project-application', title: 'Apply to Project', icon: '📝' },
+
+  // Gamification & Streaks
+  { type: 'streak-heatmap', title: 'Activity Streaks', icon: '🔥' },
+  { type: 'weekly-summary', title: 'Weekly Summary', icon: '📊' },
+  { type: 'badge-wall', title: 'Badge Wall', icon: '🏅' },
+
+  // Visualisation & Advanced
+  { type: 'model3d', title: '3D Model Explorer', icon: '🧊' },
+  { type: 'federated', title: 'Federated Learning Dashboard', icon: '🔗' },
+
+  // Administration & Organisation
   { type: 'admin', title: 'Admin Dashboard', icon: '⚙️' },
   { type: 'cluster', title: 'Cluster Overview', icon: '🌐' },
   { type: 'organizations', title: 'Organizations', icon: '🏢' },
-  { type: 'sweeps', title: 'Sweeps', icon: '🎯' },
+  { type: 'profile', title: 'Profile', icon: '👤' },
 ]
 
 export function WindowLauncher() {
@@ -36,15 +87,23 @@ export function WindowLauncher() {
 
   if (!open) return null
 
-  const filtered = AVAILABLE_WINDOWS.filter(w => w.title.toLowerCase().includes(query.toLowerCase()))
+  const filtered = AVAILABLE_WINDOWS.filter(w =>
+    w.title.toLowerCase().includes(query.toLowerCase())
+  )
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm flex items-start justify-center pt-20" onClick={() => setOpen(false)}>
-      <div className="glass-terminal w-full max-w-md rounded-xl shadow-2xl" onClick={e => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm flex items-start justify-center pt-20"
+      onClick={() => setOpen(false)}
+    >
+      <div
+        className="glass-terminal w-full max-w-md rounded-xl shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
         <input
           autoFocus
           type="text"
-          placeholder="Open a window... (Terminal, Chat, Notes)"
+          placeholder="Open a window... (Terminal, Chat, Notes, ...)"
           className="w-full bg-transparent border-b border-white/10 p-4 outline-none text-white"
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -68,110 +127,3 @@ export function WindowLauncher() {
     </div>
   )
 }
-
-const AVAILABLE_WINDOWS = [
-  // ... existing
-  { type: 'model3d', title: '3D Model Explorer', icon: '🧊' },
-  { type: 'federated', title: 'Federated Learning Dashboard', icon: '🔗' },
-];
-
-// In WindowLauncher.tsx
-const AVAILABLE_WINDOWS = [
-  // ... existing entries
-  { type: 'support', title: 'AI Support Hub', icon: '🎓' },
-];
-
-
-const AVAILABLE_WINDOWS = [
-  // ... existing entries
-  { type: 'gpumarket', title: 'GPU Stock Market', icon: '📈', component: GPUTradingTerminal },
-];
-
-
-
-const AVAILABLE_WINDOWS = [
-  // ... existing
-  { type: 'anomaly', title: 'Anomaly Detection', icon: '⚠️' },
-  { type: 'hpo', title: 'HPO Sweeps', icon: '🎯' },
-]
-
-
-const AVAILABLE_WINDOWS = [
-  // ... existing
-  { type: 'hpo', title: 'HPO Dashboard', icon: '🎯' },
-]
-
-
-const AVAILABLE_WINDOWS = [
-  // ...
-  { type: 'recommendations', title: 'Experiment Recommendations', icon: '💡' },
-]
-
-
-const AVAILABLE_WINDOWS = [
-  // ... existing
-  { type: 'forensics', title: 'Failure Forensics', icon: '🛡️' },
-]
-
-
-
-// src/components/WindowLauncher.tsx
-const AVAILABLE_WINDOWS = [
-  // ... existing
-  { type: 'tournament', title: 'Idea Tournament', icon: '🏆' },
-  { type: 'hypotheses', title: 'Hypothesis Browser', icon: '🔬' },
-]
-
-
-// WindowLauncher.tsx
-const AVAILABLE_WINDOWS = [
-  { type: 'literature-map', title: 'Literature Map', icon: '🗺️' },
-  { type: 'citation-graph', title: 'Citation Graph Viewer', icon: '🔗' },
-]
-const AVAILABLE_WINDOWS = [
-  { type: 'marketplace-ai', title: 'AI Agent Marketplace', icon: '🤖' },
-  { type: 'comparison-builder', title: 'Comparison Builder', icon: '📊' },
-]
-// WindowLauncher.tsx
-const AVAILABLE_WINDOWS = [
-  { type: 'coding-assistant', title: 'AI Coding Assistant', icon: '&lt;/&gt;' },
-]
-
-const AVAILABLE_WINDOWS = [
-  // ...
-  { type: 'accelerator', title: 'Experiment Accelerator', icon: '⚡' },
-]
-
-
-const AVAILABLE_WINDOWS = [
-  { type: 'pipeline-monitor', title: 'Pipeline Monitor', icon: '📊' },
-  { type: 'step-editor', title: 'Step Editor', icon: '✏️' },
-]
-
-
-const AVAILABLE_WINDOWS = [
-  // ... existing
-  { type: 'impact-score', title: 'Impact Score', icon: '📈' },
-  { type: 'project-leaderboard', title: 'Project Leaderboard', icon: '🏆' },
-]
-
-
-const AVAILABLE_WINDOWS = [
-  { type: 'collaborator-suggestions', title: 'Collaborator Suggestions', icon: '👥' },
-  { type: 'match-history', title: 'Collaboration History', icon: '📜' },
-]
-
-
-const AVAILABLE_WINDOWS = [
-  // ... existing
-  { type: 'expert-directory', title: 'Expert Directory', icon: '👥' },
-  { type: 'project-application', title: 'Apply to Project', icon: '📝' },
-]
-
-
-
-const AVAILABLE_WINDOWS = [
-  // ... existing
-  { type: 'streak-heatmap', title: 'Activity Streaks', icon: '🔥' },
-  { type: 'weekly-summary', title: 'Weekly Summary', icon: '📊' },
-]
