@@ -231,3 +231,12 @@ const AVAILABLE_WINDOWS = [
   { type: 'alert-history', title: 'Alert History', icon: '🔔' },
   { type: 'health-dashboard', title: 'Health Dashboard', icon: '🏥' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'annotation-projects', title: 'Annotation Projects', icon: '🏷️' },
+  { type: 'labeling', title: 'Labeling Interface', icon: '✏️' },
+  { type: 'pre-label', title: 'AI Pre‑labeling', icon: '🤖' },
+  { type: 'review-queue', title: 'Review Queue', icon: '✓' },
+]
