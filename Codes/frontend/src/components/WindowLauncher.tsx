@@ -94,3 +94,9 @@ const AVAILABLE_WINDOWS = [
   { type: 'anomaly', title: 'Anomaly Detection', icon: '⚠️' },
   { type: 'hpo', title: 'HPO Sweeps', icon: '🎯' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'hpo', title: 'HPO Dashboard', icon: '🎯' },
+]
