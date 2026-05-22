@@ -249,3 +249,10 @@ const AVAILABLE_WINDOWS = [
   { type: 'distillation', title: 'Model Distillation', icon: '⚗️' },
   { type: 'multi-node-training', title: 'Multi‑Node Training', icon: '🌐' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'protocols', title: 'Research Protocols', icon: '📋' },
+  { type: 'protocol-builder', title: 'Protocol Builder', icon: '✍️' },
+]

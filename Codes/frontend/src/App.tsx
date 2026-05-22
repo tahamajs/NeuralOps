@@ -454,3 +454,13 @@ const componentMap = {
   'distillation': ModelDistillationWizard,
   'multi-node-training': MultiNodeTrainingLauncher,
 }
+
+
+import ProtocolListPage from './features/protocols/pages/ProtocolListPage'
+import ProtocolBuilder from './features/protocols/pages/ProtocolBuilder'
+
+const componentMap = {
+  // ...
+  protocols: ProtocolListPage,
+  'protocol-builder': ProtocolBuilder,
+}
