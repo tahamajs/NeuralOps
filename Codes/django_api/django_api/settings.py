@@ -116,6 +116,7 @@ INSTALLED_APPS = [
 'marketplace_ai',
 'coding_assistant',
 'experiment_recommender',
+'failure_forensics',
 
     'profiles',
     'messaging',
