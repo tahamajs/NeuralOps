@@ -550,3 +550,29 @@ def list_runs(request):
         runs = runs.filter(status=status_filter)
     serializer = TrainingRunSerializer(runs, many=True)
     return Response(serializer.data)
+
+
+# experiment/views.py — add this
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def export_experiment_report_pdf(request, run_id):
+    """Generate and download a PDF report for a training run."""
+    run = get_object_or_404(TrainingRun, id=run_id)
+    from notes.report_generator import generate_experiment_report
+    from weasyprint import HTML
+
+    note = generate_experiment_report(run_id=str(run.id), author=request.user, save=False)
+    html_content = f"""
+    <html><head><style>
+        body {{ font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }}
+        h1 {{ border-bottom: 2px solid #333; }}
+        table {{ border-collapse: collapse; width: 100%; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background: #f5f5f5; }}
+    </style></head><body>{note.content}</body></html>
+    """
+    pdf = HTML(string=html_content).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="experiment-report-{run_id}.pdf"'
+    return response

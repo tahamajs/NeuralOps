@@ -151,3 +151,37 @@ class TrainingAnalysis(models.Model):
     suggestions = models.JSONField(default=list, blank=True)
     metrics_summary = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+
+# agents/models.py — add these
+
+class ResearchPlan(models.Model):
+    """A structured research plan with objectives and steps."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    title = models.CharField(max_length=300)
+    objective = models.TextField()
+    steps = models.JSONField(default=list)  # list of {"task": "...", "status": "...", "findings": "..."}
+    status = models.CharField(max_length=20, default='draft',
+        choices=[('draft','Draft'),('in_progress','In Progress'),('completed','Completed')])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class ResearchFinding(models.Model):
+    """A sourced finding with credibility score."""
+    plan = models.ForeignKey(ResearchPlan, on_delete=models.CASCADE, related_name='findings')
+    source_url = models.URLField()
+    source_title = models.CharField(max_length=300)
+    source_type = models.CharField(max_length=50)  # 'arxiv', 'semantic_scholar', 'web'
+    credibility_score = models.FloatField(default=0.5)  # 0-1
+    summary = models.TextField()
+    relevance_score = models.FloatField(default=0.5)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class ResearchReport(models.Model):
+    """A synthesized research report."""
+    plan = models.OneToOneField(ResearchPlan, on_delete=models.CASCADE)
+    content_markdown = models.TextField()
+    references_json = models.JSONField(default=list)
+    generated_at = models.DateTimeField(auto_now_add=True)

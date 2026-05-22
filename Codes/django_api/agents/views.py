@@ -293,3 +293,41 @@ def stop_agent_session(request, session_id):
         session.status = 'paused'
         session.save()
     return Response({"status": session.status})
+
+
+# agents/views.py — add these
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_research_plan(request):
+    """Create a research plan and start async execution."""
+    plan = ResearchPlan.objects.create(
+        user=request.user,
+        title=request.data.get('title', ''),
+        objective=request.data.get('objective', ''),
+        steps=request.data.get('steps', []),
+        status='in_progress',
+    )
+    # Trigger Celery task
+    from agents.tasks import execute_research_plan
+    execute_research_plan.delay(str(plan.id))
+    return Response({'plan_id': str(plan.id)}, status=201)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def research_plan_status(request, plan_id):
+    """Get the current status of a research plan."""
+    plan = get_object_or_404(ResearchPlan, id=plan_id, user=request.user)
+    findings = plan.findings.order_by('-relevance_score')
+    return Response({
+        'plan_id': str(plan.id),
+        'status': plan.status,
+        'steps': plan.steps,
+        'findings': [{
+            'title': f.source_title,
+            'url': f.source_url,
+            'credibility': f.credibility_score,
+            'summary': f.summary,
+        } for f in findings],
+        'report': plan.researchreport.content_markdown if hasattr(plan, 'researchreport') else None,
+    })
