@@ -146,6 +146,12 @@ const InviteAcceptPage = lazy(() => import('../features/organizations/pages/Invi
 const UserProfilePage = lazy(() => import('../features/profile/pages/UserProfilePage'))
 const ProfileSettingsPage = lazy(() => import('../features/profile/pages/ProfileSettingsPage'))
 const ChangePasswordPage = lazy(() => import('../features/profile/pages/ChangePasswordPage'))
+const QuestionListPage = lazy(() => import('../features/community/pages/QuestionListPage'))
+const QuestionDetailPage = lazy(() => import('../features/community/pages/QuestionDetailPage'))
+const AskQuestionPage = lazy(() => import('../features/community/pages/AskQuestionPage'))
+const TagDetailPage = lazy(() => import('../features/community/pages/TagDetailPage'))
+const LeaderboardPage = lazy(() => import('../features/community/pages/LeaderboardPage'))
+const BadgesPage = lazy(() => import('../features/community/pages/BadgesPage'))
 
 // In the router children array:
 // Fallback
@@ -308,6 +314,12 @@ export const router = createBrowserRouter([
 { path: '/profile/:username', element: <UserProfilePage /> },
 { path: '/profile/settings', element: <ProfileSettingsPage /> },
 { path: '/profile/change-password', element: <ChangePasswordPage /> },
+{ path: 'questions', element: <QuestionListPage /> },
+{ path: 'questions/ask', element: <AskQuestionPage /> },
+{ path: 'questions/:questionId', element: <QuestionDetailPage /> },
+{ path: 'tags/:tagName', element: <TagDetailPage /> },
+{ path: 'leaderboard', element: <LeaderboardPage /> },
+{ path: 'badges', element: <BadgesPage /> },
 
 
       // 404
