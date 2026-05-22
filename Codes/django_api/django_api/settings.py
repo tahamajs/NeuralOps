@@ -119,7 +119,8 @@ INSTALLED_APPS = [
 'failure_forensics',
 'social',
 'research',
-
+'support',
+'channels',
     'profiles',
     'messaging',
 'reputation',
