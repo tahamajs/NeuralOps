@@ -128,3 +128,10 @@ export function WindowLauncher() {
     </div>
   )
 }
+
+
+// src/components/WindowLauncher.tsx (partial)
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'labs', title: 'Research Labs', icon: '🧪' },
+]
