@@ -1,4 +1,3 @@
-// src/api/client.ts
 import axios, { AxiosError, AxiosResponse } from 'axios'
 
 const apiBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
@@ -10,34 +9,21 @@ const api = axios.create({
   withCredentials: true,
 })
 
-// ── Request interceptor: attach DRF Token ───────────────────────
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      // Django REST Framework expects "Token abc123", NOT "Bearer abc123"
-      config.headers.Authorization = `Token ${token}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) config.headers.Authorization = `Token ${token}`
+  return config
+})
 
-// ── Response interceptor: store token + handle 401 ──────────────
 api.interceptors.response.use(
-  (response: AxiosResponse) => {
-    // Login / register endpoints return { token: "..." }
-    if (response.data?.token) {
-      localStorage.setItem('token', response.data.token)
-    }
+  (response) => {
+    if (response.data?.token) localStorage.setItem('token', response.data.token)
     return response
   },
-  (error: AxiosError) => {
+  (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login'
-      }
+      if (typeof window !== 'undefined') window.location.href = '/login'
     }
     return Promise.reject(error)
   }

@@ -24,7 +24,6 @@ interface FloatingWindowState {
   bringToFront: (id: string) => void
 }
 
-// Default positions for each window type to avoid stacking on top of each other
 const defaultPositions: Record<string, { x: number; y: number }> = {
   terminal: { x: 80, y: 80 },
   'paper-editor': { x: 320, y: 120 },
@@ -39,12 +38,9 @@ export const useFloatingWindowStore = create<FloatingWindowState>((set, get) => 
 
   addWindow: (win, avoidDuplicate = true) => {
     const state = get()
-
-    // If we want to avoid duplicates, check if a window with the same content type already exists
     if (avoidDuplicate) {
       const existing = state.windows.find((w) => w.id === win.id && !w.minimized)
       if (existing) {
-        // Just focus it
         set({
           focusedId: win.id,
           windows: state.windows.map((w) =>
@@ -54,7 +50,6 @@ export const useFloatingWindowStore = create<FloatingWindowState>((set, get) => 
         })
         return
       }
-      // If minimized, restore it
       const minimized = state.windows.find((w) => w.id === win.id && w.minimized)
       if (minimized) {
         set({
@@ -67,10 +62,7 @@ export const useFloatingWindowStore = create<FloatingWindowState>((set, get) => 
         return
       }
     }
-
-    // Use default position if none provided
     const defaults = defaultPositions[win.id] || { x: 100, y: 100 }
-
     const newZ = state.maxZIndex + 1
     set({
       windows: [...state.windows.filter((w) => w.id !== win.id), { ...win, x: win.x ?? defaults.x, y: win.y ?? defaults.y, zIndex: newZ }],
@@ -87,9 +79,7 @@ export const useFloatingWindowStore = create<FloatingWindowState>((set, get) => 
 
   toggleMinimize: (id) =>
     set((state) => ({
-      windows: state.windows.map((w) =>
-        w.id === id ? { ...w, minimized: !w.minimized } : w
-      ),
+      windows: state.windows.map((w) => (w.id === id ? { ...w, minimized: !w.minimized } : w)),
       focusedId: state.windows.find((w) => w.id === id)?.minimized ? state.focusedId : id,
     })),
 
@@ -99,9 +89,7 @@ export const useFloatingWindowStore = create<FloatingWindowState>((set, get) => 
     const state = get()
     const newZ = state.maxZIndex + 1
     set({
-      windows: state.windows.map((w) =>
-        w.id === id ? { ...w, zIndex: newZ } : w
-      ),
+      windows: state.windows.map((w) => (w.id === id ? { ...w, zIndex: newZ } : w)),
       maxZIndex: newZ,
       focusedId: id,
     })

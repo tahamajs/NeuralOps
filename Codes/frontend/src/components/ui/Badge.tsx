@@ -29,21 +29,9 @@ interface BadgeProps extends VariantProps<typeof badgeVariants> {
   dot?: boolean
 }
 
-export const Badge = ({ variant, children, className, dot }: BadgeProps) => {
-  return (
-    <span className={cn(badgeVariants({ variant }), className)}>
-      {dot && (
-        <span
-          className={cn(
-            'w-1.5 h-1.5 rounded-full mr-1',
-            variant === 'running' && 'bg-blue-400 animate-pulse',
-            variant === 'completed' && 'bg-green-400',
-            variant === 'failed' && 'bg-red-400',
-            variant === 'queued' && 'bg-yellow-400'
-          )}
-        />
-      )}
-      {children || variant}
-    </span>
-  )
-}
+export const Badge = ({ variant, children, className, dot }: BadgeProps) => (
+  <span className={cn(badgeVariants({ variant }), className)}>
+    {dot && <span className={cn('w-1.5 h-1.5 rounded-full mr-1', variant === 'running' && 'animate-pulse bg-blue-400')} />}
+    {children || variant}
+  </span>
+)

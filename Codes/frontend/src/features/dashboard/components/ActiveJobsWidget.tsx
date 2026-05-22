@@ -5,18 +5,24 @@ import { Button } from '../../../components/ui/Button'
 import { Box, ArrowRight } from 'lucide-react'
 import { Experiment } from '../../../types/experiment'
 
-export const ActiveJobsWidget = ({ experiments }: { experiments: Experiment[] }) => {
-  const nav = useNavigate()
+interface ActiveJobsWidgetProps {
+  experiments: Experiment[]
+}
+
+export const ActiveJobsWidget = ({ experiments }: ActiveJobsWidgetProps) => {
+  const navigate = useNavigate()
   const active = experiments.filter(e => e.status === 'running' || e.status === 'queued')
 
   return (
-    <Card>
+    <Card className="h-full">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-display font-bold text-white flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-neon-orange animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
           Active Jobs
         </h3>
-        <span className="text-[10px] text-slate-400">{active.length} job{active.length !== 1 ? 's' : ''}</span>
+        <span className="text-[10px] text-slate-400">
+          {active.length} job{active.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
       {active.length === 0 ? (
@@ -25,12 +31,12 @@ export const ActiveJobsWidget = ({ experiments }: { experiments: Experiment[] })
           <p className="text-xs">No active jobs</p>
         </div>
       ) : (
-        <div className="space-y-1">
+        <div className="space-y-2">
           {active.map(job => (
             <div
               key={job.id}
               className="flex items-center justify-between py-2 px-2 -mx-2 rounded-lg cursor-pointer hover:bg-white/5 transition-colors group"
-              onClick={() => nav(`/experiments/${job.id}`)}
+              onClick={() => navigate(`/experiments/${job.id}`)}
             >
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-white truncate">
@@ -40,14 +46,14 @@ export const ActiveJobsWidget = ({ experiments }: { experiments: Experiment[] })
                   {job.config?.task_name?.toUpperCase() || '—'}
                 </p>
               </div>
-              <Badge status={job.status}>{job.status}</Badge>
+              <Badge variant={job.status}>{job.status}</Badge>
               <Button
                 variant="ghost"
                 size="sm"
                 className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={e => {
                   e.stopPropagation()
-                  nav(`/experiments/${job.id}`)
+                  navigate(`/experiments/${job.id}`)
                 }}
               >
                 <ArrowRight size={14} />

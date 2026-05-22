@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { marked } from 'marked'
 import api from '../../../api/client'
@@ -11,6 +11,7 @@ import { Badge } from '../../../components/ui/Badge'
 import { Spinner } from '../../../components/ui/Spinner'
 import { EmptyState } from '../../../components/ui/EmptyState'
 import { useAuthStore } from '../../auth/store/authStore'
+import { ResearcherNote } from '../types'
 
 // ---------- Types ----------
 interface Note {

@@ -1,6 +1,6 @@
+import { useEffect, useState } from 'react'  // ← add useEffect
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
 import api from '../../../api/client'
 import { ENDPOINTS } from '../../../api/endpoints'
 import { Card } from '../../../components/ui/Card'
@@ -9,9 +9,11 @@ import { Input } from '../../../components/ui/Input'
 import { Badge } from '../../../components/ui/Badge'
 import { Spinner } from '../../../components/ui/Spinner'
 import RichNoteEditor from '../components/RichNoteEditor'
-import PaperRecommendationsPanel from '../../agent/components/PaperRecommendationsPanel'
 import { ResearcherNote } from '../types'
 import { Save, Trash2, Pin, Globe, Lock, Users, Share2, History, Reply, Eye, EyeOff } from 'lucide-react'
+
+// Optional: lazy load paper recommendations to avoid circular
+const PaperRecommendationsPanel = React.lazy(() => import('../../agent/components/PaperRecommendationsPanel'))
 
 export default function NoteDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -34,8 +36,8 @@ export default function NoteDetailPage() {
 
   useEffect(() => {
     if (note && editing) {
-      setEditTitle(note.title)
-      setEditContent(note.content)
+      setEditTitle(note.title || '')
+      setEditContent(note.content || '')
       setEditTags((note.tags || []).join(', '))
       setEditPublic(note.is_public)
       setEditPinned(note.pinned)
@@ -59,7 +61,7 @@ export default function NoteDetailPage() {
   })
 
   const shareMut = useMutation({
-    mutationFn: (username: string) => api.post(`/api/notes/v1/notes/${id}/share/`, { username }),
+    mutationFn: (username: string) => api.post(ENDPOINTS.NOTES.SHARE(id!), { username }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['note', id] }),
   })
 
@@ -103,10 +105,12 @@ export default function NoteDetailPage() {
             <Input placeholder="Username" value={shareUsername} onChange={e => setShareUsername(e.target.value)} />
             <Button size="sm" onClick={() => shareMut.mutate(shareUsername)}>Share</Button>
           </div>
-          {note.shared_with?.length > 0 && (
+          {note.shared_with && note.shared_with.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
               <span className="text-xs text-slate-400">Shared with:</span>
-              {note.shared_with.map(u => <span key={u} className="px-2 py-1 bg-neon-blue/10 text-neon-blue rounded text-xs">{u}</span>)}
+              {note.shared_with.map(u => (
+                <span key={u} className="px-2 py-1 bg-neon-blue/10 text-neon-blue rounded text-xs">{u}</span>
+              ))}
             </div>
           )}
         </Card>
@@ -140,7 +144,6 @@ export default function NoteDetailPage() {
           <div className="prose prose-invert max-w-none text-slate-300" dangerouslySetInnerHTML={{ __html: note.content }} />
           <div className="mt-6 flex justify-between items-center text-xs text-slate-500 border-t border-white/5 pt-4">
             <span>By {note.author_username} · Updated {new Date(note.updated_at).toLocaleString()}</span>
-            {/* Reactions */}
             <div className="flex gap-1">
               {['👍', '❤️', '🔥', '💡', '❓'].map(emoji => (
                 <button key={emoji} onClick={() => reactMut.mutate(emoji)} className={`px-2 py-1 rounded hover:bg-white/10 ${(note.reactions?.[emoji] || []).length > 0 ? 'text-yellow-400' : 'text-slate-500'}`}>
@@ -152,8 +155,12 @@ export default function NoteDetailPage() {
         </Card>
       )}
 
-      {/* Related Papers (from agent) */}
-      {note.metadata?.run_id && <PaperRecommendationsPanel runId={note.metadata.run_id} />}
+      {/* Related Papers (if run_id exists) */}
+      {note.metadata?.run_id && (
+        <React.Suspense fallback={<Spinner />}>
+          <PaperRecommendationsPanel runId={note.metadata.run_id} />
+        </React.Suspense>
+      )}
     </div>
   )
 }

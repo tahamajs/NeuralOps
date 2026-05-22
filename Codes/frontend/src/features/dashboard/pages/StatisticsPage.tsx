@@ -2,21 +2,35 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../../../api/client'
 import { Card } from '../../../components/ui/Card'
 import { Spinner } from '../../../components/ui/Spinner'
-import { BarChart3, Clock, Cpu, Layers } from 'lucide-react'
+import { BarChart3, Clock, Cpu, Layers, TrendingUp } from 'lucide-react' // Added TrendingUp
+
+interface JobStats {
+  total_jobs: number
+  average_completion_seconds: number | null
+  // ... add other fields as needed
+}
 
 export default function StatisticsPage() {
-  const { data: jobStats, isLoading: jobsLoading } = useQuery({
+  const { data: jobStats, isLoading: jobsLoading, error: jobsError } = useQuery<JobStats>({
     queryKey: ['jobStats'],
-    queryFn: async () => (await api.get('/api/jobs/stats/')).data,
+    queryFn: async () => (await api.get('/jobs/stats/')).data,
   })
 
-  const { data: experiments = [], isLoading: expsLoading } = useQuery({
+  const { data: experiments = [], isLoading: expsLoading, error: expsError } = useQuery({
     queryKey: ['experiments'],
-    queryFn: async () => (await api.get('/api/experiments/')).data,
+    queryFn: async () => (await api.get('/experiments/')).data,
   })
 
   const isLoading = jobsLoading || expsLoading
   if (isLoading) return <Spinner />
+
+  if (jobsError || expsError) {
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-red-400">Failed to load statistics. Please refresh.</p>
+      </Card>
+    )
+  }
 
   const completed = experiments.filter((e: any) => e.status === 'completed')
   const running = experiments.filter((e: any) => e.status === 'running')
@@ -24,13 +38,11 @@ export default function StatisticsPage() {
 
   const avgAccuracy =
     completed.length > 0
-      ? completed
-          .reduce((sum: number, e: any) => sum + (e.final_metrics?.eval_accuracy || 0), 0) /
+      ? completed.reduce((sum: number, e: any) => sum + (e.final_metrics?.eval_accuracy || 0), 0) /
         completed.length
       : null
 
-  const avgDuration =
-    jobStats?.average_completion_seconds || null
+  const avgDuration = jobStats?.average_completion_seconds || null
 
   // Model usage
   const modelCounts = experiments.reduce((acc: Record<string, number>, e: any) => {
@@ -54,17 +66,20 @@ export default function StatisticsPage() {
     .sort(([, a], [, b]) => (b as number) - (a as number))
     .slice(0, 5)
 
+  const gpuJobs = experiments.filter((e: any) => (e.config?.gpu_requirements || 0) > 0).length
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-display font-bold text-white flex items-center gap-2">
-        <BarChart3 size={24} className="text-neon-blue" /> Global Statistics
-      </h1>
+      <div className="flex items-center gap-3">
+        <BarChart3 size={24} className="text-neon-blue" />
+        <h1 className="text-2xl font-display font-bold text-white">Global Statistics</h1>
+      </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="text-center p-5">
           <div className="text-3xl font-bold text-white">{experiments.length}</div>
-          <div className="text-xs text-slate-400 uppercase tracking-wider mt-2">Total</div>
+          <div className="text-xs text-slate-400 uppercase tracking-wider mt-2">Total Runs</div>
         </Card>
         <Card className="text-center p-5">
           <div className="text-3xl font-bold text-green-400">{completed.length}</div>
@@ -110,9 +125,7 @@ export default function StatisticsPage() {
           </div>
           <div>
             <p className="text-xs text-slate-400 uppercase tracking-wider">GPU Jobs</p>
-            <p className="text-xl font-bold text-white">
-              {experiments.filter((e: any) => e.config?.gpu_requirements > 0).length}
-            </p>
+            <p className="text-xl font-bold text-white">{gpuJobs}</p>
           </div>
         </Card>
       </div>
@@ -121,21 +134,29 @@ export default function StatisticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <h3 className="text-sm font-bold text-white mb-3">Top Models</h3>
-          {topModels.map(([model, count]) => (
-            <div key={model} className="flex justify-between text-xs py-1.5 border-b border-white/5">
-              <span className="text-slate-400">{model}</span>
-              <span className="text-white font-mono">{count}</span>
-            </div>
-          ))}
+          {topModels.length ? (
+            topModels.map(([model, count]) => (
+              <div key={model} className="flex justify-between text-xs py-1.5 border-b border-white/5">
+                <span className="text-slate-400">{model}</span>
+                <span className="text-white font-mono">{count}</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-slate-500 text-sm">No models used yet.</p>
+          )}
         </Card>
         <Card>
           <h3 className="text-sm font-bold text-white mb-3">Top Tasks</h3>
-          {topTasks.map(([task, count]) => (
-            <div key={task} className="flex justify-between text-xs py-1.5 border-b border-white/5">
-              <span className="text-slate-400 uppercase">{task}</span>
-              <span className="text-white font-mono">{count}</span>
-            </div>
-          ))}
+          {topTasks.length ? (
+            topTasks.map(([task, count]) => (
+              <div key={task} className="flex justify-between text-xs py-1.5 border-b border-white/5">
+                <span className="text-slate-400 uppercase">{task}</span>
+                <span className="text-white font-mono">{count}</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-slate-500 text-sm">No tasks yet.</p>
+          )}
         </Card>
       </div>
     </div>
