@@ -6,13 +6,7 @@ import FloatingWindowBar from '../components/floating/FloatingWindowBar'
 import { router } from '../router'
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-      staleTime: 10_000,
-    },
-  },
+  defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1, staleTime: 10000 } },
 })
 
 export default function AppProviders() {
@@ -20,7 +14,6 @@ export default function AppProviders() {
     <QueryClientProvider client={queryClient}>
       <HardwareProvider>
         <RouterProvider router={router} />
-        {/* Persistent floating windows – available everywhere */}
         <FloatingWindowRenderer />
         <FloatingWindowBar />
       </HardwareProvider>

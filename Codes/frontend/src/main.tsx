@@ -1,10 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import AppProviders from './providers/AppProviders'
-import './index.css'
+import './index.css'   // ← must be here
+import App from './App'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AppProviders />
+    <App />
   </React.StrictMode>
 )

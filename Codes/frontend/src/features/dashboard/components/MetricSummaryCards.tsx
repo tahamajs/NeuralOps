@@ -1,6 +1,10 @@
 import { Card } from '../../../components/ui/Card'
 import { Experiment } from '../../../types/experiment'
 
+interface MetricSummaryCardsProps {
+  experiments: Experiment[]
+}
+
 const METRICS = [
   { key: 'queued', label: 'Queued', color: 'text-yellow-400' },
   { key: 'running', label: 'Running', color: 'text-blue-400' },
@@ -8,7 +12,7 @@ const METRICS = [
   { key: 'failed', label: 'Failed', color: 'text-red-400' },
 ] as const
 
-export const MetricSummaryCards = ({ experiments }: { experiments: Experiment[] }) => {
+export const MetricSummaryCards = ({ experiments }: MetricSummaryCardsProps) => {
   const counts = {
     queued: experiments.filter(e => e.status === 'queued').length,
     running: experiments.filter(e => e.status === 'running').length,

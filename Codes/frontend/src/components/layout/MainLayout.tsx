@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { HardwareProvider } from '../../features/hardware/context/HardwareContext'
 import { useAuthStore } from '../../features/auth/store/authStore'
 import ConnectionStatus from './ConnectionStatus'
 import {
@@ -25,9 +24,9 @@ export const MainLayout = () => {
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
     { label: 'Experiments', path: '/experiments', icon: <FlaskConical size={18} /> },
     { label: 'Launcher', path: '/launcher', icon: <Rocket size={18} /> },
-    { label: 'Notes', path: '/notes/notebook', icon: <BookOpen size={18} /> },
+    { label: 'Notes', path: '/notes', icon: <BookOpen size={18} /> },
     { label: 'Analysis', path: '/analysis', icon: <BarChart3 size={18} /> },
-    { label: 'Papers', path: '/paper/new', icon: <FileText size={18} /> },
+    { label: 'Papers', path: '/paper/editor', icon: <FileText size={18} /> },
   ]
 
   const quickActions = [
@@ -36,25 +35,22 @@ export const MainLayout = () => {
   ]
 
   return (
-    <HardwareProvider>
-      {/* Connection/offline banner */}
+    <>
       <ConnectionStatus />
-
       <div className={`min-h-screen flex ${darkMode ? 'bg-surface' : 'bg-gray-50'}`}>
-        {/* ────────── SIDEBAR ────────── */}
+        {/* Sidebar */}
         <aside
           className={`${
             sidebarCollapsed ? 'w-20' : 'w-64'
           } glass border-r border-white/5 flex flex-col transition-all duration-300 sticky top-0 h-screen z-40`}
         >
-          {/* Logo & collapse toggle */}
           <div className="p-4 flex items-center justify-between">
             {!sidebarCollapsed && (
               <NavLink to="/dashboard" className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-neon-blue to-purple-500 rounded-lg flex items-center justify-center shadow-glow-sm">
+                <div className="w-8 h-8 bg-gradient-to-br from-neon-blue to-purple-500 rounded-lg flex items-center justify-center">
                   <span className="text-white font-black text-xs">NO</span>
                 </div>
-                <span className="font-display font-bold text-white tracking-tight">NeuralOps</span>
+                <span className="font-bold text-white tracking-tight">NeuralOps</span>
               </NavLink>
             )}
             <button
@@ -65,7 +61,6 @@ export const MainLayout = () => {
             </button>
           </div>
 
-          {/* Main navigation */}
           <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
             {navItems.map((item) => (
               <NavLink
@@ -74,7 +69,7 @@ export const MainLayout = () => {
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                     isActive
-                      ? 'bg-neon-blue/10 text-neon-blue shadow-glow-sm'
+                      ? 'bg-neon-blue/10 text-neon-blue'
                       : 'text-slate-400 hover:text-white hover:bg-white/5'
                   } ${sidebarCollapsed ? 'justify-center' : ''}`
                 }
@@ -86,7 +81,6 @@ export const MainLayout = () => {
             ))}
           </nav>
 
-          {/* Quick actions */}
           {!sidebarCollapsed && (
             <div className="px-3 pb-3">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">Quick</p>
@@ -105,7 +99,6 @@ export const MainLayout = () => {
             </div>
           )}
 
-          {/* User section at bottom */}
           <div className="p-4 border-t border-white/5">
             <div className={`flex items-center gap-3 ${sidebarCollapsed ? 'justify-center' : ''}`}>
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-neon-blue to-purple-500 flex items-center justify-center text-white text-xs font-bold">
@@ -121,16 +114,14 @@ export const MainLayout = () => {
           </div>
         </aside>
 
-        {/* ────────── MAIN CONTENT ────────── */}
+        {/* Main content */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
           <header
             className={`sticky top-0 z-30 ${
               darkMode ? 'bg-surface/80' : 'bg-white/80'
             } backdrop-blur-xl border-b border-white/5`}
           >
             <div className="px-6 py-3 flex items-center justify-between gap-4">
-              {/* Global Search */}
               <div className="flex-1 max-w-xl relative">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -153,7 +144,6 @@ export const MainLayout = () => {
                   {darkMode ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
 
-                {/* Notifications */}
                 <div className="relative">
                   <button
                     onClick={() => setShowNotifications(!showNotifications)}
@@ -165,7 +155,7 @@ export const MainLayout = () => {
                     )}
                   </button>
                   {showNotifications && (
-                    <div className="absolute right-0 top-12 w-80 glass border border-white/10 rounded-2xl shadow-2xl p-4 z-50 animate-scale-in">
+                    <div className="absolute right-0 top-12 w-80 glass border border-white/10 rounded-2xl shadow-2xl p-4 z-50">
                       <h3 className="text-sm font-bold text-white mb-3">Notifications</h3>
                       {notifications.map((n) => (
                         <div key={n.id} className={`py-2 border-b border-white/5 last:border-0 ${n.read ? 'opacity-60' : ''}`}>
@@ -177,7 +167,6 @@ export const MainLayout = () => {
                   )}
                 </div>
 
-                {/* User Menu */}
                 <div className="relative group">
                   <button className="flex items-center gap-2 glass py-1.5 px-3 rounded-xl">
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-neon-blue to-purple-500 flex items-center justify-center text-white text-xs font-bold">
@@ -202,12 +191,11 @@ export const MainLayout = () => {
             </div>
           </header>
 
-          {/* Page Content */}
-          <main className="flex-1 p-6 md:p-8 animate-fade-in">
+          <main className="flex-1 p-6 md:p-8">
             <Outlet />
           </main>
         </div>
       </div>
-    </HardwareProvider>
+    </>
   )
 }

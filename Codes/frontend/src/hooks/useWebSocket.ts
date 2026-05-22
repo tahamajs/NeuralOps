@@ -1,6 +1,5 @@
-// src/hooks/useWebSocket.ts
 import { useEffect, useRef, useState } from 'react'
-import { useLiveStore } from '../stores/experimentStore'
+import { useLiveStore } from '../features/experiments/stores/experimentStore'
 
 export type WSStatus = 'connecting' | 'open' | 'closed' | 'error'
 
@@ -57,7 +56,6 @@ export function useWebSocket(experimentId: string | undefined) {
     }
 
     connect()
-
     return () => {
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
       wsRef.current?.close()

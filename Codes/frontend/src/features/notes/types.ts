@@ -8,9 +8,11 @@ export interface ResearcherNote {
   is_public: boolean
   pinned: boolean
   reactions: Record<string, string[]>
-  shared_with: string[]
   version: number
   parent_note_id?: string
+  reply_count: number
   created_at: string
   updated_at: string
+  shared_with?: string[]
+  metadata?: Record<string, any>
 }

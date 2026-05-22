@@ -1,43 +1,81 @@
-import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import MainLayout from './components/layout/MainLayout'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { HardwareProvider } from './features/hardware/context/HardwareContext'
+import { MainLayout } from './components/layout/MainLayout'
+import FloatingWindowRenderer from './components/floating/FloatingWindow'
+import FloatingWindowBar from './components/floating/FloatingWindowBar'
 
-function Dashboard() {
+// Pages
+import LoginPage from './features/auth/pages/LoginPage'
+import RegisterPage from './features/auth/pages/RegisterPage'
+import DashboardPage from './features/dashboard/pages/DashboardPage'
+import ExperimentListPage from './features/experiments/pages/ExperimentListPage'
+import ExperimentDetailPage from './features/experiments/pages/ExperimentDetailPage'
+import LauncherPage from './features/launcher/pages/LauncherPage'
+import MarketplacePage from './features/marketplace/pages/MarketplacePage'
+import MyOrdersPage from './features/marketplace/pages/MyOrdersPage'
+import MyJobsPage from './features/marketplace/pages/MyJobsPage'
+import JobDetailPage from './features/marketplace/pages/JobDetailPage'
+import BillingPage from './features/marketplace/pages/BillingPage'
+import UsagePage from './features/marketplace/pages/UsagePage'
+import LeaderboardPage from './features/marketplace/pages/LeaderboardPage'
+import ReputationPage from './features/marketplace/pages/ReputationPage'
+import NotesListPage from './features/notes/pages/NotesListPage'
+import NoteDetailPage from './features/notes/pages/NoteDetailPage'
+import NoteCreatePage from './features/notes/pages/NoteCreatePage'
+import PaperEditorPage from './features/paper/pages/PaperEditorPage'
+import UserProfilePage from './features/profile/pages/UserProfilePage'
+import SystemStatusPage from './features/system/pages/SystemStatusPage'
+import NotFoundPage from './features/NotFoundPage'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 10000,
+    },
+  },
+})
+
+function App() {
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {['Experiments', 'GPU Marketplace', 'Notes', 'Papers', 'Profile'].map((item) => (
-          <div key={item} className="glass p-5 card-hover-effect text-white font-bold">
-            {item}
-          </div>
-        ))}
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <HardwareProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route element={<MainLayout />}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/experiments" element={<ExperimentListPage />} />
+              <Route path="/experiments/:id" element={<ExperimentDetailPage />} />
+              <Route path="/launcher" element={<LauncherPage />} />
+              <Route path="/marketplace" element={<MarketplacePage />} />
+              <Route path="/marketplace/orders" element={<MyOrdersPage />} />
+              <Route path="/marketplace/jobs" element={<MyJobsPage />} />
+              <Route path="/marketplace/jobs/:jobId" element={<JobDetailPage />} />
+              <Route path="/marketplace/billing" element={<BillingPage />} />
+              <Route path="/marketplace/usage" element={<UsagePage />} />
+              <Route path="/marketplace/leaderboard" element={<LeaderboardPage />} />
+              <Route path="/marketplace/reputation" element={<ReputationPage />} />
+              <Route path="/notes" element={<NotesListPage />} />
+              <Route path="/notes/new" element={<NoteCreatePage />} />
+              <Route path="/notes/:id" element={<NoteDetailPage />} />
+              <Route path="/paper/editor" element={<PaperEditorPage />} />
+              <Route path="/profile" element={<UserProfilePage />} />
+              <Route path="/system" element={<SystemStatusPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+        {/* Floating windows – always on top */}
+        <FloatingWindowRenderer />
+        <FloatingWindowBar />
+      </HardwareProvider>
+    </QueryClientProvider>
   )
 }
 
-function Login() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-surface">
-      <div className="glass p-8 w-full max-w-md text-center">
-        <h1 className="text-2xl font-bold text-white mb-4">Login</h1>
-        <a href="/dashboard" className="text-neon-blue hover:underline">Go to Dashboard</a>
-      </div>
-    </div>
-  )
-}
-
-export default function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route element={<MainLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  )
-}
+export default App

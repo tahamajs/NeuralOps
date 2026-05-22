@@ -37,11 +37,13 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
 
       const term = terminalInstance.current
       if (term) {
+        term.clear()
         term.writeln('\x1b[1;36m╔══════════════════════════════════════╗\x1b[0m')
-        term.writeln('\x1b[1;36m║   \x1b[1;37mNeuralOps Terminal v1.0\x1b[1;36m          ║\x1b[0m')
+        term.writeln('\x1b[1;36m║   \x1b[1;37mNeuralOps Terminal v2.0\x1b[1;36m          ║\x1b[0m')
         term.writeln('\x1b[1;36m║   \x1b[0;32mConnected to cluster\x1b[1;36m              ║\x1b[0m')
         term.writeln('\x1b[1;36m╚══════════════════════════════════════╝\x1b[0m')
         term.writeln('')
+        term.writeln('Type \x1b[1;33mhelp\x1b[0m for available commands.')
       }
     }
 
@@ -71,7 +73,6 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
       setStatus('disconnected')
       terminalInstance.current?.writeln('\x1b[1;33m[Disconnected]\x1b[0m Terminal session closed.')
 
-      // Auto‑reconnect with exponential backoff (max 30 seconds)
       const attempt = reconnectAttemptRef.current + 1
       reconnectAttemptRef.current = attempt
       const delay = Math.min(1000 * Math.pow(2, attempt - 1), 30000)
@@ -88,7 +89,7 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
 
     const term = new Terminal({
       cursorBlink: true,
-      fontSize: import.meta.env.DEV ? 13 : 12,
+      fontSize: 13,
       fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
       theme: {
         background: '#0a0c10',
@@ -114,7 +115,6 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
       },
       allowProposedApi: true,
       scrollback: 10000,
-      fontSize: 13,
       lineHeight: 1.2,
     })
 
@@ -130,47 +130,86 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
     fitAddon.fit()
     fitAddonRef.current = fitAddon
 
-    // Forward user input to WebSocket
+    // Send input to WebSocket
     term.onData((data) => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ type: 'input', data }))
       }
     })
 
-    terminalInstance.current = term
+    // Ctrl+Shift+C (copy) and Ctrl+Shift+V (paste)
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        const selection = term.getSelection()
+        if (selection) navigator.clipboard.writeText(selection)
+        return false
+      }
+      if (e.ctrlKey && e.shiftKey && e.key === 'V') {
+        navigator.clipboard.readText().then(text => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ type: 'input', data: text }))
+          }
+        })
+        return false
+      }
+      return true
+    })
 
-    // Connect WebSocket
+    terminalInstance.current = term
     connectWebSocket()
 
-    // Resize handler
-    const handleResize = () => {
+    // Resize observer for container size changes (e.g., floating window resize)
+    const resizeObserver = new ResizeObserver(() => {
+      fitAddon.fit()
+      const ws = wsRef.current
+      if (ws?.readyState === WebSocket.OPEN && term) {
+        ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }))
+      }
+    })
+    resizeObserver.observe(terminalRef.current)
+
+    // Also listen to window resize (for good measure)
+    const handleWindowResize = () => {
       fitAddon.fit()
       const ws = wsRef.current
       if (ws?.readyState === WebSocket.OPEN && term) {
         ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }))
       }
     }
-
-    window.addEventListener('resize', handleResize)
+    window.addEventListener('resize', handleWindowResize)
 
     return () => {
-      window.removeEventListener('resize', handleResize)
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', handleWindowResize)
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
       wsRef.current?.close()
       term.dispose()
     }
   }, [connectWebSocket])
 
+  // Handle right‑click context menu for copy/paste
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const term = terminalInstance.current
+    if (!term) return
+    const selection = term.getSelection()
+    if (selection) {
+      navigator.clipboard.writeText(selection)
+      // Optionally show a small notification
+    }
+  }
+
   return (
-    <div className="flex flex-col h-full bg-[#0a0c10]">
-      {/* Quick Command Bar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 bg-cyber-800 border-b border-white/5 text-[10px] overflow-x-auto">
+    <div className="flex flex-col h-full bg-[#0a0c10]" onContextMenu={handleContextMenu}>
+      {/* Quick Command Toolbar */}
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1f2e] border-b border-white/10 text-[10px] overflow-x-auto">
         <span className="text-slate-500 font-bold uppercase tracking-wider mr-1">Quick:</span>
         {[
           { label: 'GPU', cmd: 'nvidia-smi\n' },
           { label: 'Jobs', cmd: 'python manage.py shell -c "from jobscheduler.models import Job; print(Job.objects.count())"\n' },
           { label: 'Logs', cmd: 'tail -f /var/log/neuralops/app.log\n' },
           { label: 'Clear', cmd: 'clear\n' },
+          { label: 'Help', cmd: 'help\n' },
         ].map(item => (
           <button
             key={item.label}
@@ -187,9 +226,9 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-3 py-0.5 bg-cyber-800 border-b border-white/5 text-[10px]">
+      <div className="flex items-center justify-between px-3 py-0.5 bg-[#1a1f2e] border-b border-white/10 text-[10px]">
         <span className="text-slate-500 font-bold uppercase tracking-wider">
-          SERIAL • BAUDRATE 115200 • 8‑N‑1
+          TERMINAL • PID $$
         </span>
         <span
           className={`font-bold uppercase tracking-wider ${
@@ -204,8 +243,17 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
         </span>
       </div>
 
-      {/* Terminal */}
+      {/* xterm.js container */}
       <div ref={terminalRef} className="flex-1 p-1" />
+
+      {/* Optional: Close button if needed (already in window title bar) */}
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-slate-400 hover:text-white text-xs"
+          style={{ display: 'none' }} // hidden because window title bar has close button
+        />
+      )}
     </div>
   )
 }
