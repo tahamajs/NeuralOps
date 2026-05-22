@@ -383,3 +383,13 @@ const componentMap = {
   'collaborator-suggestions': CollaboratorSuggestionPage,
   'match-history': MatchHistoryList,
 }
+
+
+import ExpertDirectoryPage from './features/expertWall/pages/ExpertDirectoryPage'
+import ProjectApplicationPanel from './features/expertWall/pages/ProjectApplicationPanel'
+
+const componentMap = {
+  // ...
+  'expert-directory': ExpertDirectoryPage,
+  'project-application': ProjectApplicationPanel,
+}
