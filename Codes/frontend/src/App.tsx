@@ -316,3 +316,19 @@ const componentMap = {
   'alerts': AlertDashboard,
   'performance': PerformanceSnapshotView,
 }
+
+
+import AuditLogDashboard from './features/governance/pages/AuditLogDashboard'
+import ComplianceReportView from './features/governance/pages/ComplianceReportView'
+import ContractSigningUI from './features/governance/pages/ContractSigningUI'
+import SecurityScanResults from './features/governance/pages/SecurityScanResults'
+import AccessPolicyEditor from './features/governance/pages/AccessPolicyEditor'
+
+const componentMap = {
+  // ...
+  'audit-logs': AuditLogDashboard,
+  'compliance': ComplianceReportView,
+  'contracts': ContractSigningUI,
+  'security-scans': SecurityScanResults,
+  'access-policies': AccessPolicyEditor,
+}
