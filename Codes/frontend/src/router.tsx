@@ -122,6 +122,14 @@ const VersionPage = lazy(() => import('./features/system/pages/VersionPage'))
 const ConfigPage = lazy(() => import('./features/config/pages/ConfigPage'))
 const ModelSearchPage = lazy(() => import('./features/config/pages/ModelSearchPage'))
 
+
+const QuestionListPage = lazy(() => import('../features/community/pages/QuestionListPage'))
+const QuestionDetailPage = lazy(() => import('../features/community/pages/QuestionDetailPage'))
+const AskQuestionPage = lazy(() => import('../features/community/pages/AskQuestionPage'))
+const TagDetailPage = lazy(() => import('../features/community/pages/TagDetailPage'))
+const LeaderboardPage = lazy(() => import('../features/community/pages/LeaderboardPage'))
+const BadgesPage = lazy(() => import('../features/community/pages/BadgesPage'))
+
 // Agent
 const AgentChatPage = lazy(() => import('./features/agent/pages/AgentChatPage'))
 const AgentSessionsListPage = lazy(() => import('./features/agent/pages/AgentSessionsListPage'))
@@ -285,6 +293,14 @@ export const router = createBrowserRouter([
 { path: '/organizations', element: <OrganizationListPage /> },
 { path: '/orgs/:orgId', element: <OrganizationDetailPage /> },
 { path: '/invite/:token', element: <InviteAcceptPage /> },
+
+
+{ path: 'questions', element: <QuestionListPage /> },
+{ path: 'questions/ask', element: <AskQuestionPage /> },
+{ path: 'questions/:questionId', element: <QuestionDetailPage /> },
+{ path: 'tags/:tagName', element: <TagDetailPage /> },
+{ path: 'leaderboard', element: <LeaderboardPage /> },
+{ path: 'badges', element: <BadgesPage /> },
 
       // 404
       { path: '*', element: <NotFoundPage /> },
