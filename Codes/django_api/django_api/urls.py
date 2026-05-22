@@ -51,6 +51,7 @@ path('api/anomaly-hpo/', include('anomaly_hpo.urls')),
 path('api/research/', include('autonomous_research.urls')),
 path('api/marketplace-ai/', include('marketplace_ai.urls')),
 path('api/code/', include('coding_assistant.urls')),
+path('api/recommender/', include('experiment_recommender.urls')),
 
     path('api/social/', include('social_network.urls')),
 
