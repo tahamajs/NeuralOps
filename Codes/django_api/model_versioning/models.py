@@ -4,7 +4,8 @@ import shutil
 from django.db import models
 from django.conf import settings
 from jobscheduler.models import Job 
-
+from django.conf import settings
+from django.utils import timezone
 class ModelVersion(models.Model):
     STORAGE_TIERS = [
         ('hot', 'Hot (Local)'),
@@ -172,3 +173,175 @@ def get_lineage_graph(model_version_id: str, direction: str = 'both', max_depth:
         traverse_descendants(model_version_id)
 
     return {'nodes': nodes, 'edges': edges}
+
+
+
+
+# model_versioning/models.py — add these classes after the existing ModelLineage class
+
+
+class ModelApproval(models.Model):
+    """
+    Governance approval workflow for a model version.
+    pending → approved → rejected (or back to pending for re‑review)
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('in_review', 'In Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('changes_requested', 'Changes Requested'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    version = models.OneToOneField(
+        ModelVersion, on_delete=models.CASCADE, related_name='approval'
+    )
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='pending')
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='approval_requests'
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='approval_reviews'
+    )
+    notes = models.TextField(blank=True)
+    review_notes = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Approval for {self.version}: {self.status}"
+
+    def approve(self, reviewer, notes=''):
+        self.status = 'approved'
+        self.reviewer = reviewer
+        self.review_notes = notes
+        self.save()
+        self.version.is_published_to_hub = True
+        self.version.save(update_fields=['is_published_to_hub'])
+
+    def reject(self, reviewer, notes=''):
+        self.status = 'rejected'
+        self.reviewer = reviewer
+        self.review_notes = notes
+        self.save()
+
+
+class ModelAccessControl(models.Model):
+    """
+    Fine‑grained access control for a model version.
+    """
+    ACCESS_LEVELS = [
+        ('read', 'Read'),
+        ('download', 'Download'),
+        ('deploy', 'Deploy'),
+        ('manage', 'Manage'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    version = models.ForeignKey(
+        ModelVersion, on_delete=models.CASCADE, related_name='access_controls'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='model_access'
+    )
+    access_level = models.CharField(max_length=20, choices=ACCESS_LEVELS, default='read')
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='granted_access'
+    )
+    granted_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = [['version', 'user']]
+        ordering = ['-granted_at']
+
+    def __str__(self):
+        return f"{self.user.username} → {self.access_level} on {self.version}"
+
+    @property
+    def is_expired(self):
+        if self.expires_at and timezone.now() > self.expires_at:
+            return True
+        return False
+
+
+class ModelSecurityScan(models.Model):
+    """
+    Security scan result for a model version.
+    Inspired by JFrog's AI Catalogue security scanning.
+    """
+    SEVERITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+    SCAN_TYPES = [
+        ('vulnerability', 'Vulnerability Scan'),
+        ('license', 'License Compliance'),
+        ('malware', 'Malware Scan'),
+        ('secrets', 'Secrets Detection'),
+        ('dependency', 'Dependency Scan'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    version = models.ForeignKey(
+        ModelVersion, on_delete=models.CASCADE, related_name='security_scans'
+    )
+    scan_type = models.CharField(max_length=30, choices=SCAN_TYPES, default='vulnerability')
+    status = models.CharField(max_length=30, default='pending',
+                               choices=[('pending','Pending'),('running','Running'),
+                                        ('completed','Completed'),('failed','Failed')])
+    severity = models.CharField(max_length=20, choices=SEVERITY_CHOICES, null=True, blank=True)
+    findings = models.JSONField(default=dict, blank=True)
+    passed = models.BooleanField(default=False)
+    report_url = models.URLField(blank=True, max_length=500)
+    scanned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-scanned_at']
+
+    def __str__(self):
+        return f"Scan {self.scan_type} for {self.version}: {self.status}"
+
+
+class ModelUsageLog(models.Model):
+    """
+    Audit trail for model usage — downloads, deployments, API calls.
+    """
+    ACTION_TYPES = [
+        ('downloaded', 'Downloaded'),
+        ('deployed', 'Deployed'),
+        ('inference', 'Inference API Call'),
+        ('viewed', 'Viewed'),
+        ('shared', 'Shared'),
+        ('exported', 'Exported'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    version = models.ForeignKey(
+        ModelVersion, on_delete=models.CASCADE, related_name='usage_logs'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='model_usage'
+    )
+    action = models.CharField(max_length=20, choices=ACTION_TYPES)
+    metadata = models.JSONField(default=dict, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['version', '-created_at']),
+            models.Index(fields=['user', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} {self.action} {self.version}"

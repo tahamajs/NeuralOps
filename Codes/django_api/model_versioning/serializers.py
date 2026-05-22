@@ -110,3 +110,64 @@ class ModelVersionDiffSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['id', 'created_at']
+
+# Add to model_versioning/serializers.py
+
+from .models import (
+    ModelVersion, ModelVersionDiff, ModelLineage,
+    ModelApproval, ModelAccessControl, ModelSecurityScan, ModelUsageLog
+)
+
+
+class ModelApprovalSerializer(serializers.ModelSerializer):
+    requested_by_username = serializers.CharField(source='requested_by.username', read_only=True)
+    reviewer_username = serializers.CharField(source='reviewer.username', read_only=True)
+    version_number = serializers.IntegerField(source='version.version_number', read_only=True)
+    model_name = serializers.CharField(source='version.version', read_only=True)
+
+    class Meta:
+        model = ModelApproval
+        fields = [
+            'id', 'version', 'version_number', 'model_name',
+            'status', 'requested_by', 'requested_by_username',
+            'reviewer', 'reviewer_username',
+            'notes', 'review_notes', 'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'requested_by', 'created_at', 'updated_at']
+
+
+class ModelAccessControlSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    granted_by_username = serializers.CharField(source='granted_by.username', read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = ModelAccessControl
+        fields = [
+            'id', 'version', 'user', 'username', 'access_level',
+            'granted_by', 'granted_by_username', 'granted_at',
+            'expires_at', 'is_expired',
+        ]
+        read_only_fields = ['id', 'granted_by', 'granted_at']
+
+
+class ModelSecurityScanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ModelSecurityScan
+        fields = [
+            'id', 'version', 'scan_type', 'status', 'severity',
+            'findings', 'passed', 'report_url', 'scanned_at',
+        ]
+        read_only_fields = ['id', 'scanned_at']
+
+
+class ModelUsageLogSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = ModelUsageLog
+        fields = [
+            'id', 'version', 'user', 'username', 'action',
+            'metadata', 'ip_address', 'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']

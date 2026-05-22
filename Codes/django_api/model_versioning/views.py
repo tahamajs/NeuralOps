@@ -460,3 +460,186 @@ def run_lifecycle_migration(request):
     except Exception as e:
         logger.exception("Lifecycle migration failed")
         return Response({"error": str(e)}, status=500)
+    
+
+# ═══════════════════════════════════════════════════════════════
+# GOVERNANCE — Approval Workflow
+# ═══════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def request_approval(request, version_id):
+    """Submit a model version for approval."""
+    version = get_object_or_404(ModelVersion, id=version_id)
+
+    if ModelApproval.objects.filter(version=version).exists():
+        return Response({"error": "Approval already requested for this version"}, status=400)
+
+    approval = ModelApproval.objects.create(
+        version=version,
+        requested_by=request.user,
+        notes=request.data.get('notes', ''),
+    )
+    return Response(ModelApprovalSerializer(approval).data, status=201)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def review_approval(request, approval_id):
+    """Approve or reject a model version (staff / reviewer)."""
+    approval = get_object_or_404(ModelApproval, id=approval_id)
+    action = request.data.get('action')
+
+    if action == 'approve':
+        approval.approve(request.user, request.data.get('notes', ''))
+    elif action == 'reject':
+        approval.reject(request.user, request.data.get('notes', ''))
+    else:
+        return Response({"error": "action must be 'approve' or 'reject'"}, status=400)
+
+    return Response(ModelApprovalSerializer(approval).data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def pending_approvals(request):
+    """List all pending approval requests."""
+    qs = ModelApproval.objects.filter(status='pending').order_by('-created_at')
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(ModelApprovalSerializer(page, many=True).data)
+
+
+# ═══════════════════════════════════════════════════════════════
+# GOVERNANCE — Access Control
+# ═══════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def grant_access(request, version_id):
+    """Grant access to a model version."""
+    version = get_object_or_404(ModelVersion, id=version_id)
+    user_id = request.data.get('user_id')
+    access_level = request.data.get('access_level', 'read')
+
+    user = get_object_or_404(User, id=user_id)
+
+    access, created = ModelAccessControl.objects.update_or_create(
+        version=version, user=user,
+        defaults={
+            'access_level': access_level,
+            'granted_by': request.user,
+        }
+    )
+    return Response(ModelAccessControlSerializer(access).data,
+                    status=201 if created else 200)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def revoke_access(request, access_id):
+    """Revoke access to a model version."""
+    access = get_object_or_404(ModelAccessControl, id=access_id)
+    access.delete()
+    return Response(status=204)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def version_access_list(request, version_id):
+    """List all access grants for a model version."""
+    version = get_object_or_404(ModelVersion, id=version_id)
+    qs = version.access_controls.select_related('user', 'granted_by').order_by('-granted_at')
+    return Response(ModelAccessControlSerializer(qs, many=True).data)
+
+
+# ═══════════════════════════════════════════════════════════════
+# GOVERNANCE — Security Scans
+# ═══════════════════════════════════════════════════════════════
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def trigger_security_scan(request, version_id):
+    """Trigger a security scan for a model version."""
+    version = get_object_or_404(ModelVersion, id=version_id)
+    scan_type = request.data.get('scan_type', 'vulnerability')
+
+    scan = ModelSecurityScan.objects.create(
+        version=version,
+        scan_type=scan_type,
+        status='pending',
+    )
+
+    # In production, trigger a Celery task to run the actual scan
+    from .tasks import run_security_scan
+    run_security_scan.delay(str(scan.id))
+
+    return Response(ModelSecurityScanSerializer(scan).data, status=201)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def security_scan_results(request, version_id):
+    """List security scan results for a model version."""
+    version = get_object_or_404(ModelVersion, id=version_id)
+    qs = version.security_scans.order_by('-scanned_at')
+    return Response(ModelSecurityScanSerializer(qs, many=True).data)
+
+
+# ═══════════════════════════════════════════════════════════════
+# GOVERNANCE — Usage Audit Log
+# ═══════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def usage_log(request, version_id):
+    """Get usage audit logs for a model version."""
+    version = get_object_or_404(ModelVersion, id=version_id)
+    qs = version.usage_logs.select_related('user').order_by('-created_at')
+
+    action = request.query_params.get('action')
+    if action:
+        qs = qs.filter(action=action)
+
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(qs, request)
+    return paginator.get_paginated_response(ModelUsageLogSerializer(page, many=True).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def log_usage(request, version_id):
+    """Log a model usage event."""
+    version = get_object_or_404(ModelVersion, id=version_id)
+    action = request.data.get('action', 'viewed')
+
+    log_entry = ModelUsageLog.objects.create(
+        version=version,
+        user=request.user,
+        action=action,
+        metadata=request.data.get('metadata', {}),
+        ip_address=request.META.get('REMOTE_ADDR'),
+    )
+    return Response(ModelUsageLogSerializer(log_entry).data, status=201)
+
+
+# ═══════════════════════════════════════════════════════════════
+# GOVERNANCE — Dashboard
+# ═══════════════════════════════════════════════════════════════
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def governance_dashboard(request):
+    """Governance dashboard showing all models, approvals, and security status."""
+    total_models = ModelVersion.objects.count()
+    pending = ModelApproval.objects.filter(status='pending').count()
+    approved = ModelApproval.objects.filter(status='approved').count()
+    rejected = ModelApproval.objects.filter(status='rejected').count()
+    high_severity = ModelSecurityScan.objects.filter(severity__in=['high', 'critical']).count()
+    recent_usage = ModelUsageLog.objects.order_by('-created_at')[:20]
+
+    return Response({
+        'total_models': total_models,
+        'approvals': {
+            'pending': pending,
+            'approved': approved,
+            'rejected': rejected,
+        },
+        'high_severity_issues': high_severity,
+        'recent_usage': ModelUsageLogSerializer(recent_usage, many=True).data,
+    })
