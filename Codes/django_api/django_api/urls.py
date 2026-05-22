@@ -44,6 +44,8 @@ urlpatterns = [
     path('api/literature/', include('literature_review.urls')),
 path('api/discovery/', include('literature_discovery.urls')),
 path('api/coscientist/', include('ai_coscientist.urls')),
+path('api/ideas/', include('idea_tournament.urls')),
+path('api/discovery/', include('computational_discovry.urls')),
 
     path('api/social/', include('social_network.urls')),
 
