@@ -47,6 +47,7 @@ path('api/coscientist/', include('ai_coscientist.urls')),
 path('api/ideas/', include('idea_tournament.urls')),
 path('api/discovery/', include('computational_discovry.urls')),
 path('api/accelerator/', include('experiment_accelerator.urls')),
+path('api/anomaly-hpo/', include('anomaly_hpo.urls')),
 
     path('api/social/', include('social_network.urls')),
 
