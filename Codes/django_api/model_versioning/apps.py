@@ -5,4 +5,4 @@ class ModelVersioningConfig(AppConfig):
     name = 'model_versioning'
 
     def ready(self):
-        import model_versioning.signals  # noqa: wire all signal receivers
+        import model_versioning.signals  # noqa

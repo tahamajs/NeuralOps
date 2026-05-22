@@ -1,7 +1,12 @@
 from django.contrib import admin
-from .models import ModelVersion, ModelVersionDiff, ModelLineage
+from .models import (
+    ModelVersion, ModelVersionDiff, ModelLineage,
+    ModelApproval, ModelAccessControl, ModelSecurityScan,
+    ModelUsageLog, ModelBranch, ModelCommit
+)
 
 
+# ----------------------------- Inlines -----------------------------
 class ModelVersionDiffInline(admin.TabularInline):
     model = ModelVersionDiff
     fk_name = 'from_version'
@@ -18,6 +23,36 @@ class ModelLineageInline(admin.TabularInline):
     readonly_fields = fields
 
 
+class ModelAccessControlInline(admin.TabularInline):
+    model = ModelAccessControl
+    extra = 0
+    fields = ('user', 'access_level', 'granted_at', 'expires_at')
+    readonly_fields = ('granted_at',)
+
+
+class ModelSecurityScanInline(admin.TabularInline):
+    model = ModelSecurityScan
+    extra = 0
+    fields = ('scan_type', 'status', 'severity', 'passed')
+    readonly_fields = fields
+
+
+class ModelUsageLogInline(admin.TabularInline):
+    model = ModelUsageLog
+    extra = 0
+    fields = ('user', 'action', 'created_at')
+    readonly_fields = fields
+
+
+class ModelCommitInline(admin.TabularInline):
+    model = ModelCommit
+    fk_name = 'branch'
+    extra = 0
+    fields = ('version', 'parent', 'merge_parent', 'message')
+    readonly_fields = ('created_at',)
+
+
+# ----------------------------- Admins ------------------------------
 @admin.register(ModelVersion)
 class ModelVersionAdmin(admin.ModelAdmin):
     list_display = (
@@ -32,7 +67,13 @@ class ModelVersionAdmin(admin.ModelAdmin):
     )
     search_fields = ('version', 'run__name', 'hub_repo_url')
     readonly_fields = ('id', 'created_at', 'updated_at')
-    inlines = [ModelVersionDiffInline, ModelLineageInline]
+    inlines = [
+        ModelVersionDiffInline,
+        ModelLineageInline,
+        ModelAccessControlInline,
+        ModelSecurityScanInline,
+        ModelUsageLogInline,
+    ]
     fieldsets = (
         (None, {
             'fields': (
@@ -72,3 +113,47 @@ class ModelLineageAdmin(admin.ModelAdmin):
     list_filter = ('relationship_type',)
     search_fields = ('parent__version', 'child__version')
     readonly_fields = ('id', 'created_at')
+
+
+@admin.register(ModelApproval)
+class ModelApprovalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'version', 'status', 'requested_by', 'reviewer', 'created_at')
+    list_filter = ('status',)
+    search_fields = ('version__version', 'requested_by__username')
+    readonly_fields = ('created_at', 'updated_at')
+
+
+@admin.register(ModelAccessControl)
+class ModelAccessControlAdmin(admin.ModelAdmin):
+    list_display = ('id', 'version', 'user', 'access_level', 'granted_by', 'granted_at', 'expires_at')
+    list_filter = ('access_level',)
+    search_fields = ('user__username', 'version__version')
+    readonly_fields = ('granted_at',)
+
+
+@admin.register(ModelSecurityScan)
+class ModelSecurityScanAdmin(admin.ModelAdmin):
+    list_display = ('id', 'version', 'scan_type', 'status', 'severity', 'passed', 'scanned_at')
+    list_filter = ('scan_type', 'status', 'severity')
+    search_fields = ('version__version',)
+    readonly_fields = ('scanned_at',)
+
+
+@admin.register(ModelUsageLog)
+class ModelUsageLogAdmin(admin.ModelAdmin):
+    list_display = ('id', 'version', 'user', 'action', 'created_at')
+    list_filter = ('action',)
+    search_fields = ('user__username', 'version__version')
+    readonly_fields = ('created_at',)
+
+
+@admin.register(ModelBranch)
+class ModelBranchAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'root_version', 'created_by', 'created_at')
+    search_fields = ('name', 'root_version__version')
+
+
+@admin.register(ModelCommit)
+class ModelCommitAdmin(admin.ModelAdmin):
+    list_display = ('id', 'branch', 'version', 'parent', 'merge_parent', 'created_by', 'created_at')
+    search_fields = ('branch__name', 'version__version')

@@ -1,5 +1,4 @@
-import json
-import logging
+import json, logging
 from django.dispatch import Signal
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
@@ -7,14 +6,20 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 
-from .models import ModelVersion, ModelVersionDiff
+from .models import ModelVersion, ModelVersionDiff, ModelUsageLog
 from .services import migrate_storage_tier
 
 logger = logging.getLogger(__name__)
-"""Auto-log model usage on download."""
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from .models import ModelUsageLog
+
+# Custom signals
+version_created = Signal()
+version_published = Signal()
+version_archived = Signal()
+version_restored = Signal()
+version_set_production = Signal()
+version_diff_created = Signal()
+
+User = get_user_model()
 
 # This signal already exists for cleanup; we add usage logging separately.
 # The actual logging happens in the views (log_usage endpoint) and when
