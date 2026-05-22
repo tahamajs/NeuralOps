@@ -86,3 +86,11 @@ const AVAILABLE_WINDOWS = [
   // ... existing entries
   { type: 'gpumarket', title: 'GPU Stock Market', icon: '📈', component: GPUTradingTerminal },
 ];
+
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'anomaly', title: 'Anomaly Detection', icon: '⚠️' },
+  { type: 'hpo', title: 'HPO Sweeps', icon: '🎯' },
+]
