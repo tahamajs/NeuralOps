@@ -56,7 +56,7 @@ path('api/forensics/', include('failure_forensics.urls')),
 path('api/social/', include('social.urls')),
 path('api/research/', include('research.urls')),
 path('api/support/', include('support.urls')),
-
+path('api/agent/', include('research_agent.urls')),
     path('api/social/', include('social_network.urls')),
 
 ]

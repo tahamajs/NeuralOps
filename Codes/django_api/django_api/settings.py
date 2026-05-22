@@ -128,6 +128,16 @@ INSTALLED_APPS = [
     'paper',
 ]
 
+
+
+CELERY_BEAT_SCHEDULE.update({
+    'generate-ideas-weekly': {
+        'task': 'research_agent.tasks.generate_ideas_for_all_users',
+        'schedule': crontab(hour=9, minute=0, day_of_week=1),
+    },
+})
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o')
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
