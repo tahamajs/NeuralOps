@@ -43,6 +43,7 @@ urlpatterns = [
     path('api/impact/', include('impact_predictor.urls')),
     path('api/literature/', include('literature_review.urls')),
 path('api/discovery/', include('literature_discovery.urls')),
+path('api/coscientist/', include('ai_coscientist.urls')),
 
     path('api/social/', include('social_network.urls')),
 
