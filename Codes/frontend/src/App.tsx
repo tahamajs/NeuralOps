@@ -322,3 +322,13 @@ const componentMap = {
   tournament: IdeaTournamentPage,
   hypotheses: HypothesisBrowser,
 }
+
+
+// App.tsx
+import LiteratureMapPage from './features/literature/pages/LiteratureMapPage'
+import CitationGraphViewer from './features/literature/pages/CitationGraphViewer'
+
+const componentMap = {
+  'literature-map': LiteratureMapPage,
+  'citation-graph': CitationGraphViewer,
+}

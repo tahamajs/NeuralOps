@@ -121,3 +121,10 @@ const AVAILABLE_WINDOWS = [
   { type: 'tournament', title: 'Idea Tournament', icon: '🏆' },
   { type: 'hypotheses', title: 'Hypothesis Browser', icon: '🔬' },
 ]
+
+
+// WindowLauncher.tsx
+const AVAILABLE_WINDOWS = [
+  { type: 'literature-map', title: 'Literature Map', icon: '🗺️' },
+  { type: 'citation-graph', title: 'Citation Graph Viewer', icon: '🔗' },
+]
