@@ -599,3 +599,162 @@ def reproduce_experiment(request, run_id):
     provision_job_with_env.delay(str(new_run.id), env.docker_image, env.requirements_txt)
 
     return Response({'new_run_id': str(new_run.id), 'status': 'queued'}, status=201)
+
+
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def hyperparam_3d(request):
+    """Return 3D coordinates for all completed runs using PCA on hyperparameters."""
+    runs = TrainingRun.objects.filter(status='completed').select_related('experiment')
+    param_keys = set()
+    run_data = []
+    for run in runs:
+        cfg = run.config or {}
+        # Only numeric values
+        numeric_params = {k: float(v) for k, v in cfg.items() if isinstance(v, (int, float))}
+        run_data.append({
+            'run_id': str(run.id),
+            'params': numeric_params,
+            'metrics': run.final_metrics or {},
+        })
+        param_keys.update(numeric_params.keys())
+
+    param_keys = sorted(param_keys)
+    if len(runs) < 3:
+        return Response({'error': 'Need at least 3 completed runs'}, status=400)
+
+    import numpy as np
+    from sklearn.decomposition import PCA
+
+    X = np.zeros((len(runs), len(param_keys)))
+    for i, rd in enumerate(run_data):
+        for j, key in enumerate(param_keys):
+            X[i, j] = rd['params'].get(key, 0.0)
+
+    pca = PCA(n_components=3)
+    coords = pca.fit_transform(X)
+
+    result = []
+    for i, rd in enumerate(run_data):
+        result.append({
+            'run_id': rd['run_id'],
+            'x': float(coords[i, 0]),
+            'y': float(coords[i, 1]),
+            'z': float(coords[i, 2]),
+            'accuracy': rd['metrics'].get('eval_accuracy', 0),
+            'loss': rd['metrics'].get('eval_loss', 0),
+            'hyperparameters': rd['params'],
+        })
+    return Response(result)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def explain_benchmark(request):
+    """Return a decision tree explanation for why one model outperformed another."""
+    run_ids = request.data.get('run_ids', [])
+    if len(run_ids) < 2:
+        return Response({'error': 'At least 2 run IDs required'}, status=400)
+    runs = TrainingRun.objects.filter(id__in=run_ids, status='completed')
+    if runs.count() < 2:
+        return Response({'error': 'Not enough completed runs'}, status=400)
+
+    # Build feature matrix from hyperparameters and target metric
+    param_keys = set()
+    data = []
+    for run in runs:
+        cfg = run.config or {}
+        numeric_params = {k: float(v) for k, v in cfg.items() if isinstance(v, (int, float))}
+        target = (run.final_metrics or {}).get('eval_accuracy', 0)
+        data.append({'params': numeric_params, 'target': target})
+        param_keys.update(numeric_params.keys())
+
+    param_keys = sorted(param_keys)
+    import numpy as np
+    from sklearn.tree import DecisionTreeRegressor, export_text
+
+    X = np.zeros((len(data), len(param_keys)))
+    y = np.zeros(len(data))
+    for i, d in enumerate(data):
+        for j, key in enumerate(param_keys):
+            X[i, j] = d['params'].get(key, 0.0)
+        y[i] = d['target']
+
+    tree = DecisionTreeRegressor(max_depth=3, random_state=42)
+    tree.fit(X, y)
+    rules = export_text(tree, feature_names=param_keys)
+    importances = tree.feature_importances_
+    # Return the most important features and the tree text
+    important_features = sorted(zip(param_keys, importances), key=lambda x: x[1], reverse=True)[:5]
+    return Response({
+        'tree_rules': rules,
+        'important_features': [{'name': name, 'importance': float(imp)} for name, imp in important_features],
+    })
+
+
+import os, io, tarfile, tempfile
+from django.http import FileResponse
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def export_experiment_capsule(request, run_id):
+    """Generate a Docker capsule (Dockerfile + requirements + code snapshot + metadata)."""
+    run = get_object_or_404(TrainingRun, id=run_id)
+    config = run.config or {}
+    model_name = config.get('model_name', 'model')
+    task_name = config.get('task_name', 'task')
+
+    # Build a Dockerfile
+    dockerfile_content = f"""FROM pytorch/pytorch:2.1.0-cuda12.1-cudnn8-runtime
+WORKDIR /workspace
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+ENV MODEL_NAME={model_name}
+ENV TASK_NAME={task_name}
+ENV EXPERIMENT_ID={run_id}
+CMD ["python", "train.py"]
+"""
+
+    # Collect current pip requirements
+    import subprocess
+    try:
+        reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze']).decode()
+    except Exception:
+        reqs = "transformers\ntorch\ndatasets\n"
+
+    # Create a tar.gz containing Dockerfile, requirements.txt, and a placeholder train.py
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode='w:gz') as tar:
+        tarinfo = tarfile.TarInfo(name='Dockerfile')
+        tarinfo.size = len(dockerfile_content)
+        tar.addfile(tarinfo, io.BytesIO(dockerfile_content.encode()))
+
+        tarinfo = tarfile.TarInfo(name='requirements.txt')
+        tarinfo.size = len(reqs)
+        tar.addfile(tarinfo, io.BytesIO(reqs.encode()))
+
+        train_script = "# Placeholder training script – replace with your actual code\nimport os\nprint('Training...')\n"
+        tarinfo = tarfile.TarInfo(name='train.py')
+        tarinfo.size = len(train_script)
+        tar.addfile(tarinfo, io.BytesIO(train_script.encode()))
+
+        # Add metadata JSON with run config
+        metadata = {
+            'run_id': str(run.id),
+            'model_name': model_name,
+            'task_name': task_name,
+            'metrics': run.final_metrics,
+            'created_at': run.created_at.isoformat(),
+        }
+        metadata_bytes = json.dumps(metadata, indent=2).encode()
+        tarinfo = tarfile.TarInfo(name='experiment_metadata.json')
+        tarinfo.size = len(metadata_bytes)
+        tar.addfile(tarinfo, io.BytesIO(metadata_bytes))
+
+    buffer.seek(0)
+    response = FileResponse(buffer, content_type='application/gzip')
+    response['Content-Disposition'] = f'attachment; filename="experiment-capsule-{run_id}.tar.gz"'
+    return response

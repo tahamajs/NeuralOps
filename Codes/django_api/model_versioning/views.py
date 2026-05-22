@@ -643,3 +643,87 @@ def governance_dashboard(request):
         'high_severity_issues': high_severity,
         'recent_usage': ModelUsageLogSerializer(recent_usage, many=True).data,
     })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_branch(request):
+    """Create a new branch from a specific model version."""
+    version_id = request.data.get('version_id')
+    name = request.data.get('name')
+    if not version_id or not name:
+        return Response({'error': 'version_id and name required'}, status=400)
+    version = get_object_or_404(ModelVersion, id=version_id)
+    branch, created = ModelBranch.objects.get_or_create(
+        name=name, root_version=version, defaults={'created_by': request.user}
+    )
+    return Response({'branch_id': str(branch.id), 'name': branch.name}, status=201)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def commit_to_branch(request, branch_id):
+    """Create a new commit on a branch, linking a model version."""
+    branch = get_object_or_404(ModelBranch, id=branch_id)
+    version_id = request.data.get('version_id')
+    message = request.data.get('message', '')
+    version = get_object_or_404(ModelVersion, id=version_id)
+    last_commit = branch.commits.order_by('-created_at').first()
+    commit = ModelCommit.objects.create(
+        branch=branch, version=version, parent=last_commit, message=message, created_by=request.user
+    )
+    return Response({'commit_id': str(commit.id)}, status=201)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def merge_branches(request):
+    """Merge two branches into a new commit on the target branch."""
+    source_branch_id = request.data.get('source_branch_id')
+    target_branch_id = request.data.get('target_branch_id')
+    message = request.data.get('message', 'Merge')
+    source = get_object_or_404(ModelBranch, id=source_branch_id)
+    target = get_object_or_404(ModelBranch, id=target_branch_id)
+    # The merge result is a new version that is the combination of the two branch tips.
+    # In practice, you'd need a merging algorithm; here we just create a commit with two parents.
+    target_last = target.commits.order_by('-created_at').first()
+    source_last = source.commits.order_by('-created_at').first()
+    if not target_last or not source_last:
+        return Response({'error': 'Both branches must have at least one commit'}, status=400)
+    # For simplicity, the new version is the target's latest version (could be a custom merged version)
+    merge_commit = ModelCommit.objects.create(
+        branch=target,
+        version=target_last.version,  # placeholder
+        parent=target_last,
+        merge_parent=source_last,
+        message=message,
+        created_by=request.user
+    )
+    return Response({'commit_id': str(merge_commit.id)}, status=201)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def model_timeline(request):
+    """Return all commits across all branches for a root model, ordered by time."""
+    root_version_id = request.query_params.get('root_version_id')
+    if not root_version_id:
+        return Response({'error': 'root_version_id required'}, status=400)
+    # Find all branches that share this root
+    branches = ModelBranch.objects.filter(root_version_id=root_version_id)
+    commits = ModelCommit.objects.filter(branch__in=branches).select_related(
+        'version', 'branch', 'parent', 'merge_parent'
+    ).order_by('created_at')
+    data = []
+    for c in commits:
+        data.append({
+            'id': str(c.id),
+            'branch': c.branch.name,
+            'version_id': str(c.version.id),
+            'version_number': c.version.version_number,
+            'message': c.message,
+            'parent': str(c.parent_id) if c.parent_id else None,
+            'merge_parent': str(c.merge_parent_id) if c.merge_parent_id else None,
+            'created_at': c.created_at.isoformat(),
+        })
+    return Response(data)
