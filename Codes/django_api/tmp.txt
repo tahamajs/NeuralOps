@@ -1,0 +1,1526 @@
+from django.urls import path, include
+from api import views
+
+urlpatterns = [
+    # Auth
+    path('auth/register/', views.register, name='register'),
+    path('auth/login/', views.login, name='login'),
+    path('auth/logout/', views.logout, name='logout'),
+    path('auth/user/', views.user_info, name='user_info'),
+    path('auth/profile/', views.update_profile, name='update_profile'),
+    path('auth/change-password/', views.change_password, name='change_password'),
+    path('auth/refresh-token/', views.refresh_token, name='refresh_token'),
+
+    # Configuration
+    path('config/attentions/', views.list_attentions, name='list_attentions'),
+    path('config/compressors/', views.list_compressors, name='list_compressors'),
+    path('config/trainers/', views.list_trainers, name='list_trainers'),
+    path('config/methods/', views.list_methods, name='list_methods'),
+    path('config/models/', views.list_models, name='list_models'),
+    path('config/tasks/', views.list_tasks, name='list_tasks'),
+    path('config/presets/', views.list_presets, name='list_presets'),
+    path('config/losses/', views.list_losses, name='list_losses'),
+    path('config/optimizers/', views.list_optimizers, name='list_optimizers'),
+    path('config/schedulers/', views.list_schedulers, name='list_schedulers'),
+    path('config/callbacks/', views.list_callbacks, name='list_callbacks'),
+    path('config/augmentations/', views.list_augmentations, name='list_augmentations'),
+    path('config/hpo/', views.hpo_options, name='hpo_options'),
+    path('config/distributed/', views.distributed_options, name='distributed_options'),
+    path('config/tracking/', views.tracking_options, name='tracking_options'),
+    path('config/deployment/', views.deployment_options, name='deployment_options'),
+    path('config/search-models/', views.search_huggingface_models, name='search_huggingface_models'),
+
+    # Mega Launcher
+    path('launch/', views.launch_experiment, name='launch_experiment'),
+
+    # Agent Chat
+    path('chats/', views.ChatSessionListCreateView.as_view(), name='chat_sessions'),
+    path('chats/<uuid:session_id>/', views.ChatSessionDetailView.as_view(), name='chat_session_detail'),
+    path('chats/<uuid:session_id>/messages/', views.MessageListView.as_view(), name='chat_messages'),
+    path('chats/<uuid:session_id>/send/', views.send_message, name='send_message'),
+    path('chats/<uuid:session_id>/summary/', views.api_conversation_summary, name='conversation_summary'),
+    path('chats/<uuid:session_id>/export/', views.api_export_conversation, name='export_conversation'),
+
+    # Paper Research
+    path('papers/search/', views.api_search_papers, name='search_papers'),
+    path('papers/save/', views.api_save_paper, name='save_paper'),
+    path('papers/saved/', views.api_saved_papers_list, name='saved_papers'),
+    path('papers/saved/<uuid:paper_id>/', views.api_paper_detail, name='paper_detail'),
+    path('papers/saved/<uuid:paper_id>/annotate/', views.api_annotate_paper, name='annotate_paper'),
+    path('papers/saved/<uuid:paper_id>/delete/', views.api_delete_paper, name='delete_paper'),
+    path('papers/library/', views.api_search_library, name='search_library'),
+    path('papers/citation-graph/', views.api_citation_graph, name='citation_graph'),
+    path('papers/bulk-import/', views.api_bulk_import_papers, name='bulk_import_papers'),
+    path('papers/recommendations/<uuid:run_id>/', views.paper_recommendations_for_run, name='paper_recommendations_for_run'),
+    path('papers/recommendations/library/', views.paper_recommendations_from_library, name='paper_recommendations_library'),
+    path('papers/search-for-run/<uuid:run_id>/', views.search_papers_for_run_topic, name='search_papers_for_run'),
+
+    # Training Analysis
+    path('training/analyze/', views.api_analyze_run, name='analyze_run'),
+    path('training/analysis/<uuid:run_id>/', views.api_run_analysis, name='run_analysis'),
+    path('training/suggest-next/', views.api_suggest_next, name='suggest_next'),
+
+    # Monitor
+    path('monitor/start/', views.start_training_monitor, name='start_monitor'),
+
+    # Prompt Testing
+    path('prompts/test/', views.api_test_prompt, name='test_prompt'),
+
+    # Experiments
+    path('experiments/', views.experiment_list, name='experiment_list'),
+    path('experiments/<uuid:pk>/', views.experiment_detail, name='experiment_detail'),
+
+    # Runs
+    path('runs/start-train/', views.start_train, name='start_train'),
+    path('runs/start-evaluate/', views.start_evaluate, name='start_evaluate'),
+    path('runs/start-compress/', views.start_compress, name='start_compress'),
+    path('runs/<uuid:pk>/', views.run_detail, name='run_detail'),
+    path('runs/<uuid:pk>/stop/', views.stop_run, name='stop_run'),
+    path('runs/<uuid:run_id>/results/', views.run_results, name='run_results'),
+    path('runs/<uuid:run_id>/save/', views.run_save, name='run_save'),
+
+    # System
+    path('health/', views.health_check, name='health_check'),
+    path('version/', views.version, name='version'),
+    path('system/status/', views.system_status, name='system_status'),
+    path('system/gpu/', views.gpu_info, name='gpu_info'),
+
+    # Search & Activity
+    path('search/', views.global_search, name='global_search'),
+    path('activity/', views.activity_feed, name='activity_feed'),
+
+    # Sub‑apps
+    path('', include('experiment.urls')),
+    path('', include('jobscheduler.urls')),
+    path('', include('notes.urls')),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('sessions/', views.session_list, name='session_list'),
+    path('sessions/create/', views.create_session, name='session_create'),
+    path('sessions/<uuid:session_id>/', views.session_detail, name='session_detail'),
+    path('sessions/<uuid:session_id>/tournament/', views.tournament_history, name='tournament_history'),
+    path('hypotheses/<uuid:hypothesis_id>/', views.hypothesis_detail, name='hypothesis_detail'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Anomaly Detection
+    path('anomalies/', views.anomaly_list, name='anomaly_list'),
+    path('anomalies/detect/<uuid:run_id>/', views.trigger_anomaly_detection, name='anomaly_detect'),
+    path('anomalies/summary/', views.anomaly_summary, name='anomaly_summary'),
+
+    # HPO Runs
+    path('hpo/', views.hpo_run_list, name='hpo_run_list'),
+    path('hpo/<uuid:hpo_run_id>/', views.hpo_run_detail, name='hpo_run_detail'),
+    path('hpo/<uuid:hpo_run_id>/best/', views.hpo_best_result, name='hpo_best_result'),
+    path('hpo/trials/<uuid:trial_id>/', views.hpo_trial_detail, name='hpo_trial_detail'),
+    path('hpo/schema/', views.hpo_search_space_schema, name='hpo_schema'),
+]from django.urls import path, include
+from api import views
+
+urlpatterns = [
+    # Auth
+    path('auth/register/', views.register, name='register'),
+    path('auth/login/', views.login, name='login'),
+    path('auth/logout/', views.logout, name='logout'),
+    path('auth/user/', views.user_info, name='user_info'),
+    path('auth/profile/', views.update_profile, name='update_profile'),
+    path('auth/change-password/', views.change_password, name='change_password'),
+    path('auth/refresh-token/', views.refresh_token, name='refresh_token'),
+
+    # Configuration
+    path('config/attentions/', views.list_attentions, name='list_attentions'),
+    path('config/compressors/', views.list_compressors, name='list_compressors'),
+    path('config/trainers/', views.list_trainers, name='list_trainers'),
+    path('config/methods/', views.list_methods, name='list_methods'),
+    path('config/models/', views.list_models, name='list_models'),
+    path('config/tasks/', views.list_tasks, name='list_tasks'),
+    path('config/presets/', views.list_presets, name='list_presets'),
+    path('config/losses/', views.list_losses, name='list_losses'),
+    path('config/optimizers/', views.list_optimizers, name='list_optimizers'),
+    path('config/schedulers/', views.list_schedulers, name='list_schedulers'),
+    path('config/callbacks/', views.list_callbacks, name='list_callbacks'),
+    path('config/augmentations/', views.list_augmentations, name='list_augmentations'),
+    path('config/variants/', views.list_model_variants, name='list_model_variants'),
+    path('config/hpo/', views.hpo_options, name='hpo_options'),
+    path('config/distributed/', views.distributed_options, name='distributed_options'),
+    path('config/tracking/', views.tracking_options, name='tracking_options'),
+    path('config/deployment/', views.deployment_options, name='deployment_options'),
+    path('config/search-models/', views.search_huggingface_models, name='search_huggingface_models'),
+
+    # Mega Launcher
+    path('launch/', views.launch_experiment, name='launch_experiment'),
+
+    # Load Balancer / GPU
+    path('loadbalancer/gpu/status/', views.gpu_allocator_status, name='gpu_allocator_status'),
+    path('loadbalancer/gpu/nodes/', views.gpu_nodes_detail, name='gpu_nodes_detail'),
+    path('loadbalancer/scheduler/status/', views.scheduler_status, name='scheduler_status'),
+    path('loadbalancer/scheduler/queue/', views.scheduler_queue, name='scheduler_queue'),
+    path('loadbalancer/scheduler/history/', views.scheduler_history, name='scheduler_history'),
+    path('loadbalancer/cluster/nodes/', views.cluster_nodes, name='cluster_nodes'),
+    path('loadbalancer/cluster/gpu-check/', views.cluster_gpu_availability, name='cluster_gpu_availability'),
+
+    # Drift / Fairness / Robustness
+    path('runs/<uuid:run_id>/drift/', views.drift_report, name='drift_report'),
+    path('runs/<uuid:run_id>/drift/check/', views.run_drift_check, name='run_drift_check'),
+    path('runs/<uuid:run_id>/fairness/', views.fairness_evaluation, name='fairness_evaluation'),
+    path('runs/<uuid:run_id>/robustness/', views.robustness_evaluation, name='robustness_evaluation'),
+
+    # Prompts
+    path('prompts/', views.prompt_list, name='prompt_list'),
+    path('prompts/<str:name>/', views.prompt_detail, name='prompt_detail'),
+    path('prompts/<str:name>/history/', views.prompt_history, name='prompt_history'),
+
+    # HPO / FL status
+    path('hpo/status/', views.hpo_status, name='hpo_status'),
+    path('federated/status/', views.fl_status, name='fl_status'),
+
+    # Health & System
+    path('health/', views.health_check, name='health_check'),
+    path('version/', views.version, name='version'),
+
+    # Model Cards
+    path('runs/<uuid:run_id>/model-card/', views.generate_model_card_view, name='model_card'),
+    path('runs/<uuid:run_id>/model-card/push/', views.push_model_card_view, name='push_model_card'),
+
+    # Lineage
+    path('runs/<uuid:run_id>/lineage/', views.data_lineage_view, name='data_lineage'),
+    path('models/<uuid:version_id>/lineage/', views.model_lineage_view, name='model_lineage_graph'),
+
+    # Global Search
+    path('search/', views.global_search, name='global_search'),
+
+    # Activity Feed
+    path('activity/', views.activity_feed, name='activity_feed'),
+
+    # Experiments CRUD (delegated to experiment app via this API)
+    path('experiments/', views.experiment_list, name='experiment_list'),
+    path('experiments/<uuid:pk>/', views.experiment_detail, name='experiment_detail'),
+    path('experiments/start_train/', views.start_train, name='start_train'),
+    path('experiments/start_evaluate/', views.start_evaluate, name='start_evaluate'),
+    path('experiments/start_compress/', views.start_compress, name='start_compress'),
+    path('runs/<uuid:pk>/', views.run_detail, name='run_detail'),
+    path('runs/<uuid:pk>/stop/', views.stop_run, name='stop_run'),
+    path('runs/<uuid:run_id>/results/', views.run_results, name='run_results'),
+    path('runs/<uuid:run_id>/save/', views.run_save, name='run_save'),
+
+    path('system/status/', views.system_status, name='system_status'),
+    path('system/gpu/', views.gpu_info, name='gpu_info'),
+
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Pipelines
+    path('pipelines/', views.pipeline_list, name='pipeline_list'),
+    path('pipelines/<uuid:pipeline_id>/', views.pipeline_detail, name='pipeline_detail'),
+    path('pipelines/<uuid:pipeline_id>/launch/', views.launch_pipeline, name='launch_pipeline'),
+    path('pipelines/<uuid:pipeline_id>/pause/', views.pause_pipeline, name='pause_pipeline'),
+    path('pipelines/<uuid:pipeline_id>/resume/', views.resume_pipeline, name='resume_pipeline'),
+
+    # Steps
+    path('pipelines/<uuid:pipeline_id>/steps/', views.step_list, name='step_list'),
+    path('steps/<uuid:step_id>/update/', views.update_step, name='update_step'),
+
+    # Artifacts
+    path('pipelines/<uuid:pipeline_id>/artifacts/', views.artifact_list, name='artifact_list'),
+    path('artifacts/<uuid:artifact_id>/', views.artifact_detail, name='artifact_detail'),
+
+    # Templates
+    path('templates/', views.template_list, name='pipeline_template_list'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Sessions
+    path('sessions/', views.session_list, name='code_sessions'),
+    path('sessions/<uuid:session_id>/', views.session_detail, name='code_session_detail'),
+    path('sessions/<uuid:session_id>/send/', views.send_message, name='code_send_message'),
+    path('sessions/<uuid:session_id>/stream/', views.stream_message, name='code_stream_message'),
+
+    # Generated Code
+    path('sessions/<uuid:session_id>/files/', views.save_generated_code, name='code_save_file'),
+    path('files/<uuid:file_id>/', views.generated_code_detail, name='code_file_detail'),
+
+    # Code Review
+    path('files/<uuid:file_id>/review/', views.request_review, name='code_review'),
+    path('files/<uuid:file_id>/reviews/', views.get_review, name='code_get_reviews'),
+
+    # Test Generation
+    path('files/<uuid:file_id>/tests/', views.generate_test, name='code_generate_test'),
+    path('files/<uuid:file_id>/tests/get/', views.get_test, name='code_get_test'),
+
+    # Documentation
+    path('files/<uuid:file_id>/document/', views.generate_documentation, name='code_generate_documentation'),
+
+    # Experiment Config
+    path('generate-config/', views.generate_experiment_config, name='code_generate_config'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Interest Profile
+    path('profile/', views.my_interest_profile, name='interest_profile'),
+    path('profile/regenerate/', views.regenerate_interest_profile, name='regenerate_profile'),
+
+    # Matches
+    path('suggestions/', views.suggested_matches, name='suggested_matches'),
+    path('suggestions/<uuid:match_id>/accept/', views.accept_match, name='accept_match'),
+    path('suggestions/<uuid:match_id>/dismiss/', views.dismiss_match, name='dismiss_match'),
+    path('history/', views.match_history, name='match_history'),
+
+    # Interdisciplinary
+    path('interdisciplinary/', views.interdisciplinary_matches, name='interdisciplinary_matches'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Questions ───────────────────────────────────────────
+    path('questions/', views.question_list, name='question_list'),
+    path('questions/<uuid:question_id>/', views.question_detail, name='question_detail'),
+    path('questions/<uuid:question_id>/close/', views.close_question, name='close_question'),
+    path('questions/<uuid:question_id>/related/', views.related_questions, name='related_questions'),
+
+    # ── Answers ────────────────────────────────────────────
+    path('questions/<uuid:question_id>/answer/', views.post_answer, name='post_answer'),
+    path('answers/<uuid:answer_id>/', views.answer_detail, name='answer_detail'),
+    path('answers/<uuid:answer_id>/accept/', views.accept_answer, name='accept_answer'),
+
+    # ── Voting ─────────────────────────────────────────────
+    path('questions/<uuid:question_id>/vote/', views.vote_question, name='vote_question'),
+    path('answers/<uuid:answer_id>/vote/', views.vote_answer, name='vote_answer'),
+
+    # ── Comments ───────────────────────────────────────────
+    path('questions/<uuid:question_id>/comment/', views.post_comment, name='comment_question'),
+    path('answers/<uuid:answer_id>/comment/', views.post_comment, name='comment_answer'),
+
+    # ── Bounty ─────────────────────────────────────────────
+    path('questions/<uuid:question_id>/bounty/', views.start_bounty, name='start_bounty'),
+
+    # ── Bookmarks ──────────────────────────────────────────
+    path('questions/<uuid:question_id>/bookmark/', views.bookmark_question, name='bookmark'),
+    path('questions/<uuid:question_id>/unbookmark/', views.unbookmark_question, name='unbookmark'),
+
+    # ── Tags ──────────────────────────────────────────────
+    path('tags/', views.tag_list, name='tag_list'),
+    path('tags/<slug:slug>/', views.tag_detail, name='tag_detail'),
+
+    # ── User Profile ──────────────────────────────────────
+    path('user/<str:username>/reputation/', views.user_reputation, name='user_reputation'),
+    path('user/<str:username>/activity/', views.activity_graph, name='activity_graph'),
+
+    # ── Leaderboard ────────────────────────────────────────
+    path('leaderboard/', views.leaderboard, name='leaderboard'),
+
+    # ── Badges ─────────────────────────────────────────────
+    path('badges/', views.badge_list, name='badge_list'),
+    path('badges/mine/', views.my_badges, name='my_badges'),
+
+    # ── Privileges ─────────────────────────────────────────
+    path('privileges/', views.privilege_list, name='privilege_list'),
+
+    # ── Trust Level ───────────────────────────────────────
+    path('trust-level/', views.my_trust_level, name='my_trust_level'),
+
+    # ── Digest ────────────────────────────────────────────
+    path('digest/', views.digest_settings, name='digest_settings'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Experiments
+    path('experiments/', views.experiment_list, name='code_experiment_list'),
+    path('experiments/<uuid:experiment_id>/', views.experiment_detail, name='code_experiment_detail'),
+    path('experiments/<uuid:experiment_id>/launch/', views.launch_experiment, name='launch_experiment'),
+    path('experiments/<uuid:experiment_id>/pause/', views.pause_experiment, name='pause_experiment'),
+
+    # Variants
+    path('experiments/<uuid:experiment_id>/variants/', views.variant_list, name='variant_list'),
+    path('variants/<uuid:variant_id>/', views.variant_detail, name='variant_detail'),
+
+    # Runs
+    path('variants/<uuid:variant_id>/runs/', views.run_list, name='run_list'),
+    path('runs/<uuid:run_id>/', views.run_detail, name='run_detail'),
+
+    # Leaderboard
+    path('leaderboard/', views.global_leaderboard, name='code_leaderboard'),
+]from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from django.http import HttpResponse
+
+# ----------------------------------------------------------------------
+# Helper view for well‑known (if needed)
+# ----------------------------------------------------------------------
+def well_known_ignore(request):
+    return HttpResponse(status=204)
+
+# ----------------------------------------------------------------------
+# URL Patterns
+# ----------------------------------------------------------------------
+urlpatterns = [
+    # Admin
+    path('admin/', admin.site.urls),
+
+    # Dashboard (main UI)
+    path('', include('web_dashboard.urls')),
+
+    # API root
+    path('api/', include('api.urls')),
+
+    # ------------------------------
+    # Core NeuralOps Apps
+    # ------------------------------
+    path('api/notes/', include('notes.urls')),
+    path('api/model-versioning/', include('model_versioning.urls')),
+    path('api/experiments/', include('experiment.urls')),
+    path('api/jobs/', include('jobscheduler.urls')),
+    path('api/terminal/', include('terminal.urls')),
+    path('api/paper/', include('paper.urls')),
+    path('api/profiles/', include('profiles.urls')),
+    path('api/messaging/', include('messaging.urls')),
+    path('api/leaderboards/', include('leaderboards.urls')),
+    path('api/orgs/', include('organizations.urls')),
+    path('api/portfolios/', include('portfolios.urls')),
+    path('api/community/', include('community.urls')),
+    path('api/social/', include('social.urls')),
+    path('api/social/', include('social_network.urls')),          # if separate
+    path('api/research/', include('research.urls')),
+    path('api/support/', include('support.urls')),
+
+    # ------------------------------
+    # GPU Marketplace & Finance
+    # ------------------------------
+    path('api/gpu/', include('gpu_marketplace.urls')),
+    path('api/escrow/', include('gpu_escrow.urls')),
+    path('api/benchmarks/', include('gpu_benchmark.urls')),
+    path('api/federation/', include('gpu_federation.urls')),
+    path('api/reputation/', include('gpu_reputation.urls')),
+    path('api/validator/', include('gpu_validator.urls')),
+
+    # ------------------------------
+    # Gamification & Engagement
+    # ------------------------------
+    path('api/gamification/', include('gamification.urls')),
+    path('api/streaks/', include('streaks.urls')),
+    path('api/experts/', include('expert_wall.urls')),
+    path('api/reputation/', include('reputation.urls')),
+
+    # ------------------------------
+    # AI & Research Agents
+    # ------------------------------
+    path('api/collaborators/', include('collaborator_matching.urls')),
+    path('api/impact/', include('impact_predictor.urls')),
+    path('api/literature/', include('literature_review.urls')),
+    path('api/discovery/', include('literature_discovery.urls')),
+    path('api/coscientist/', include('ai_coscientist.urls')),
+    path('api/ideas/', include('idea_tournament.urls')),
+    path('api/discovery/comp/', include('computational_discovery.urls')),  # fixed typo
+    path('api/accelerator/', include('experiment_accelerator.urls')),
+    path('api/anomaly-hpo/', include('anomaly_hpo.urls')),
+    path('api/research/', include('autonomous_research.urls')),
+    path('api/marketplace-ai/', include('marketplace_ai.urls')),
+    path('api/code/', include('coding_assistant.urls')),
+    path('api/recommender/', include('experiment_recommender.urls')),
+    path('api/forensics/', include('failure_forensics.urls')),
+    path('api/coach/', include('research_coach.urls')),
+    path('api/agent/', include('research_agent.urls')),
+
+    # ------------------------------
+    # Sweeps (Hyperparameter Optimization)
+    # ------------------------------
+    path('api/sweeps/', include('sweeps.urls')),   # was previously under api/ directly – fixed
+]
+
+# ----------------------------------------------------------------------
+# Static & media serving in development
+# ----------------------------------------------------------------------
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)from django.urls import path, re_path
+from . import views
+
+urlpatterns = [
+    # Experiment CRUD
+    path('experiments/', views.list_experiments, name='list_experiments'),
+    path('experiments/create/', views.create_experiment, name='create_experiment'),
+    path('experiments/<uuid:exp_id>/', views.experiment_detail, name='experiment_detail'),
+
+    # Runs
+    path('runs/', views.list_runs, name='list_runs'),
+    path('runs/<uuid:run_id>/status/', views.job_status, name='job_status'),
+    path('runs/<uuid:run_id>/history/', views.training_history, name='training_history'),
+    path('runs/<uuid:run_id>/snapshots/', views.training_snapshots, name='training_snapshots'),
+    path('runs/<uuid:run_id>/config/', views.update_run_config, name='update_run_config'),
+    path('runs/<uuid:run_id>/artifacts/', views.run_artifacts, name='run_artifacts'),
+    path('runs/<uuid:run_id>/model/', views.run_model_download, name='run_model_download'),
+    re_path(r'^runs/(?P<run_id>[0-9a-f-]+)/artifacts/(?P<artifact_path>.+)$',
+            views.run_artifact_download, name='run_artifact_download'),
+    path('runs/<uuid:run_id>/analysis/', views.run_analysis_overview, name='run_analysis_overview'),
+    path('runs/<uuid:run_id>/stability/', views.stability_analysis_view, name='stability_analysis'),
+
+    # Start jobs
+    path('start_train/', views.start_train, name='start_train'),
+    path('start_evaluate/<uuid:run_id>/', views.start_evaluate, name='start_evaluate'),
+    path('start_compress/<uuid:run_id>/', views.start_compress, name='start_compress'),
+    path('stop/<uuid:run_id>/', views.stop_job_endpoint, name='stop_job'),
+    path('stop_all/', views.stop_all_jobs_endpoint, name='stop_all_jobs'),
+
+    # Paper / report
+    path('runs/<uuid:run_id>/paper/', views.generate_paper, name='generate_paper'),
+    path('runs/<uuid:run_id>/paper_preview/', views.paper_preview_pdf, name='paper_preview_pdf'),
+    path('runs/<uuid:run_id>/report/', views.experiment_report, name='experiment_report'),
+    path('runs/<uuid:run_id>/editor/', views.paper_editor, name='paper_editor'),
+    path('runs/<uuid:run_id>/paper_source/', views.save_paper_source, name='save_paper_source'),
+    path('preview/<uuid:run_id>/', views.preview_paper, name='preview_paper'),
+
+    # Comparison & diff
+    path('compare/', views.compare_experiments, name='compare_experiments'),
+    path('runs/<uuid:run_id_a>/diff/<uuid:run_id_b>/', views.run_diff, name='run_diff'),
+    path('compare_runs/', views.compare_runs, name='compare_runs'),
+
+    # Analytics
+    path('analytics/hp-importance/', views.hp_importance_view, name='hp_importance'),
+    path('analytics/metric-correlation/', views.metric_correlation_view, name='metric_correlation'),
+
+    # Templates
+    path('templates/', views.template_list_view, name='template_list'),
+    path('templates/<uuid:template_id>/', views.template_detail_view, name='template_detail'),
+    path('templates/<uuid:template_id>/use/', views.use_template_view, name='use_template'),
+
+    # Config endpoints (static lists)
+    path('config/attentions/', views.list_attentions, name='list_attentions'),
+    path('config/models/', views.list_models, name='list_models'),
+    path('config/tasks/', views.list_tasks, name='list_tasks'),
+    path('config/compressors/', views.list_compressors, name='list_compressors'),
+    path('config/methods/', views.list_methods, name='list_methods'),
+    path('config/presets/', views.list_presets, name='list_presets'),
+
+    # Auth (if you want separate auth endpoints)
+    path('auth/register/', views.register_view, name='register'),
+    path('auth/login/', views.login_view, name='login'),
+    path('auth/logout/', views.logout_view, name='logout'),
+
+    # System status
+    path('system/status/', views.system_status, name='system_status'),
+    path('system/gpu/', views.gpu_info, name='gpu_info'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Insights
+    path('insights/', views.my_insights, name='my_insights'),
+    path('insights/generate/', views.generate_insights, name='generate_insights'),
+    path('insights/<uuid:insight_id>/read/', views.mark_insight_read, name='mark_insight_read'),
+    path('insights/mark-all-read/', views.mark_all_insights_read, name='mark_all_insights_read'),
+
+    # Recommendations
+    path('recommendations/', views.recommendations, name='recommendations'),
+    path('recommendations/<uuid:recommendation_id>/launch/', views.launch_recommendation, name='launch_recommendation'),
+    path('recommendations/<uuid:recommendation_id>/dismiss/', views.dismiss_recommendation, name='dismiss_recommendation'),
+
+    # Summaries
+    path('summaries/', views.summaries, name='summaries'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Templates
+    path('templates/', views.template_list, name='recommender_templates'),
+    path('templates/<uuid:template_id>/use/', views.use_template, name='use_template'),
+
+    # Opportunity Index
+    path('opportunity/', views.opportunity_index, name='opportunity_index'),
+    path('opportunity/recalculate/', views.recalculate_opportunity, name='recalculate_opportunity'),
+
+    # Recommendations
+    path('suggestions/', views.recommendation_list, name='recommendation_list'),
+    path('suggestions/<uuid:recommendation_id>/accept/', views.accept_recommendation, name='accept_recommendation'),
+    path('suggestions/<uuid:recommendation_id>/dismiss/', views.dismiss_recommendation, name='dismiss_recommendation'),
+    path('suggestions/regenerate/', views.regenerate_recommendations, name='regenerate_recommendations'),
+
+    # Creative Variants
+    path('variants/<uuid:run_id>/', views.creative_variants, name='creative_variants'),
+    path('variants/accept/<uuid:variant_id>/', views.accept_variant, name='accept_variant'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Expert Profiles
+    path('profile/', views.my_expert_profile, name='expert_profile'),
+    path('profile/regenerate/', views.regenerate_expert_profile, name='regenerate_profile'),
+    path('profile/<int:user_id>/', views.expert_profile_detail, name='expert_profile_detail'),
+    path('directory/', views.expert_directory, name='expert_directory'),
+
+    # Projects
+    path('projects/', views.project_list, name='project_list'),
+    path('projects/<uuid:project_id>/', views.project_detail, name='project_detail'),
+    path('projects/<uuid:project_id>/apply/', views.apply_to_project, name='apply_to_project'),
+    path('projects/<uuid:project_id>/applications/<uuid:application_id>/', views.handle_application, name='handle_application'),
+
+    # Expert Reviews
+    path('reviews/', views.review_list, name='review_list'),
+    path('reviews/open/', views.review_requests_for_me, name='review_requests_for_me'),
+    path('reviews/<uuid:review_id>/accept/', views.accept_review, name='accept_review'),
+    path('reviews/<uuid:review_id>/complete/', views.complete_review, name='complete_review'),
+
+    # Matching
+    path('projects/<uuid:project_id>/matched-experts/', views.matched_experts_for_project, name='matched_experts_for_project'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Failure Analysis
+    path('analyze/<uuid:run_id>/', views.analyze_failure, name='analyze_failure'),
+    path('analyses/<uuid:analysis_id>/', views.analysis_detail, name='analysis_detail'),
+    path('analyses/', views.my_analyses, name='my_analyses'),
+    path('runs/<uuid:run_id>/analysis/', views.run_analysis, name='run_analysis'),
+
+    # Fix Actions
+    path('fixes/<uuid:fix_id>/apply/', views.apply_fix, name='apply_fix'),
+
+    # Error Patterns
+    path('patterns/', views.error_pattern_list, name='error_pattern_list'),
+    path('patterns/create/', views.error_pattern_create, name='error_pattern_create'),
+
+    # Stats
+    path('stats/', views.failure_stats, name='failure_stats'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Badges
+    path('badges/', views.badge_list, name='badge_list'),
+    path('badges/mine/', views.my_badges, name='my_badges'),
+
+    # Contributions
+    path('contributions/', views.my_contributions, name='my_contributions'),
+    path('points/', views.my_points_summary, name='my_points_summary'),
+
+    # Streaks
+    path('streak/', views.my_streak, name='my_streak'),
+
+    # Leaderboard
+    path('leaderboard/', views.leaderboard, name='leaderboard'),
+
+    # Achievements & Premium Features
+    path('unlocks/', views.my_unlocks, name='my_unlocks'),
+    path('features/', views.premium_features, name='premium_features'),
+    path('features/<str:feature_name>/access/', views.check_feature_access, name='check_feature_access'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Benchmark Suites & Tests ──────────────────────────────
+    path('suites/', views.suite_list, name='benchmark_suite_list'),
+    path('suites/<uuid:suite_id>/', views.suite_detail, name='benchmark_suite_detail'),
+    path('tests/', views.test_list, name='benchmark_test_list'),
+
+    # ── Benchmark Runs ────────────────────────────────────────
+    path('runs/', views.run_list, name='benchmark_run_list'),
+    path('runs/<uuid:run_id>/', views.run_detail, name='benchmark_run_detail'),
+    path('listings/<uuid:listing_id>/run/', views.start_benchmark, name='start_benchmark'),
+
+    # ── Scores & Leaderboard ──────────────────────────────────
+    path('scores/', views.score_list, name='benchmark_score_list'),
+    path('scores/<uuid:listing_id>/', views.score_detail, name='benchmark_score_detail'),
+    path('scores/<uuid:listing_id>/recalculate/', views.recalculate_score, name='recalculate_score'),
+    path('leaderboard/', views.gpu_leaderboard, name='gpu_leaderboard'),
+
+    # ── Provider Dashboard ───────────────────────────────────
+    path('dashboard/', views.my_benchmark_dashboard, name='my_benchmark_dashboard'),
+]# gpu_escrow/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('balance/', views.balance, name='escrow_balance'),
+    path('deposit/', views.deposit, name='escrow_deposit'),
+    path('withdraw/', views.withdraw, name='escrow_withdraw'),
+    path('transactions/', views.transaction_list, name='escrow_transactions'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Clusters ────────────────────────────────────────────────
+    path('clusters/', views.cluster_list, name='cluster_list'),
+    path('clusters/<uuid:cluster_id>/', views.cluster_detail, name='cluster_detail'),
+
+    # ── Nodes ───────────────────────────────────────────────────
+    path('clusters/<uuid:cluster_id>/nodes/', views.add_node, name='add_node'),
+    path('clusters/<uuid:cluster_id>/nodes/<uuid:node_id>/', views.remove_node, name='remove_node'),
+    path('clusters/<uuid:cluster_id>/nodes/<uuid:node_id>/heartbeat/', views.node_heartbeat, name='node_heartbeat'),
+
+    # ── Tasks ───────────────────────────────────────────────────
+    path('clusters/<uuid:cluster_id>/tasks/', views.task_list, name='task_list'),
+    path('tasks/<uuid:task_id>/', views.task_detail, name='task_detail'),
+    path('tasks/<uuid:task_id>/launch/', views.launch_task, name='launch_task'),
+    path('tasks/<uuid:task_id>/cancel/', views.task_cancel, name='task_cancel'),
+    path('tasks/<uuid:task_id>/result/', views.task_result, name='task_result'),
+
+    # ── Provider Dashboard ──────────────────────────────────────
+    path('dashboard/provider/', views.provider_federation_dashboard, name='provider_federation_dashboard'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Compute Indices ──────────────────────────────────────
+    path('indices/', views.index_list, name='index_list'),
+    path('indices/<uuid:index_id>/', views.index_detail, name='index_detail'),
+    path('indices/<uuid:index_id>/chart/', views.index_chart, name='index_chart'),
+    path('indices/recalculate/', views.recalculate_indices, name='recalculate_indices'),
+
+    # ── Futures Contracts ────────────────────────────────────
+    path('futures/', views.futures_list, name='futures_list'),
+    path('futures/<uuid:contract_id>/', views.futures_detail, name='futures_detail'),
+    path('futures/<uuid:contract_id>/order/', views.place_futures_order, name='place_futures_order'),
+
+    # ── Futures Orders & Positions ───────────────────────────
+    path('futures/orders/mine/', views.my_futures_orders, name='my_futures_orders'),
+    path('futures/positions/mine/', views.my_futures_positions, name='my_futures_positions'),
+    path('futures/orders/<uuid:order_id>/cancel/', views.cancel_futures_order, name='cancel_futures_order'),
+
+    # ── Invoices ─────────────────────────────────────────────
+    path('invoices/', views.invoice_list, name='invoice_list'),
+    path('invoices/<uuid:invoice_id>/', views.invoice_detail, name='invoice_detail'),
+
+    # ── Payouts ──────────────────────────────────────────────
+    path('payouts/', views.payout_list, name='payout_list'),
+    path('payouts/request/', views.request_payout, name='request_payout'),
+
+    # ── Payment Methods ──────────────────────────────────────
+    path('payment-methods/', views.payment_method_list, name='payment_method_list'),
+    path('payment-methods/<uuid:method_id>/', views.payment_method_delete, name='payment_method_delete'),
+
+    # ── Subscriptions & Plans ────────────────────────────────
+    path('plans/', views.plan_list, name='plan_list'),
+    path('subscription/', views.my_subscription, name='my_subscription'),
+    path('subscription/change/<uuid:plan_id>/', views.change_plan, name='change_plan'),
+
+    # ── Usage ────────────────────────────────────────────────
+    path('usage/', views.my_usage, name='my_usage'),
+
+    # ── Dashboards ───────────────────────────────────────────
+    path('dashboard/consumer/', views.consumer_finance_dashboard, name='consumer_finance_dashboard'),
+    path('dashboard/provider/', views.provider_finance_dashboard, name='provider_finance_dashboard'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Reference Data ────────────────────────────────────────
+    path('gpu-models/', views.gpu_model_list, name='gpu_model_list'),
+
+    # ── Listings (Offers) ─────────────────────────────────────
+    path('listings/', views.listing_list, name='listing_list'),
+    path('listings/mine/', views.my_listings, name='my_listings'),
+    path('listings/<uuid:listing_id>/', views.listing_detail, name='listing_detail'),
+    path('listings/<uuid:listing_id>/toggle/', views.listing_toggle_online, name='listing_toggle'),
+    path('listings/<uuid:listing_id>/favorite/', views.favorite_listing, name='favorite_listing'),
+    path('listings/<uuid:listing_id>/unfavorite/', views.unfavorite_listing, name='unfavorite_listing'),
+
+    # ── Orders ────────────────────────────────────────────────
+    path('orders/', views.order_list, name='order_list'),
+    path('orders/mine/', views.my_orders, name='my_orders'),
+    path('orders/<uuid:order_id>/', views.order_detail, name='order_detail'),
+    path('orders/<uuid:order_id>/bids/', views.order_bids, name='order_bids'),
+    path('orders/<uuid:order_id>/bid/', views.place_bid, name='place_bid'),
+
+    # ── Jobs ──────────────────────────────────────────────────
+    path('jobs/', views.job_list, name='job_list'),
+    path('jobs/<uuid:job_id>/', views.job_detail, name='job_detail'),
+    path('jobs/<uuid:job_id>/complete/', views.job_complete, name='job_complete'),
+    path('jobs/<uuid:job_id>/fail/', views.job_fail, name='job_fail'),
+    path('jobs/<uuid:job_id>/dispute/', views.job_dispute, name='job_dispute'),
+    path('jobs/<uuid:job_id>/provision/', views.provision_job_view, name='job_provision'),
+
+    # ── Favorites ─────────────────────────────────────────────
+    path('favorites/', views.my_favorites, name='my_favorites'),
+
+    # ── Pricing ───────────────────────────────────────────────
+    path('pricing/', views.pricing_rule_list, name='pricing_rule_list'),
+
+    # ── Stats ─────────────────────────────────────────────────
+    path('stats/', views.marketplace_stats, name='marketplace_stats'),
+    path('dashboard/provider/', views.provider_dashboard, name='provider_dashboard'),
+
+
+
+    # ── Cross-app integration ──────────────────────────────────
+    path('listings/<uuid:listing_id>/experiments/', views.listing_linked_experiments),
+    path('listings/<uuid:listing_id>/notes/', views.listing_linked_notes),
+    path('listings/<uuid:listing_id>/portfolio/', views.provider_portfolio),
+    path('notifications/', views.marketplace_notifications),
+
+    
+    # ── Provider Agent Endpoints ────────────────────────────────
+    path('listings/register/', views.register_listing, name='register_listing'),
+    path('listings/update-status/', views.agent_update_status, name='agent_update_status'),
+    path('listings/heartbeat/', views.agent_heartbeat, name='agent_heartbeat'),
+    path('jobs/<uuid:job_id>/status/', views.job_update_status, name='job_update_status'),
+    path('jobs/<uuid:job_id>/logs/', views.job_update_logs, name='job_update_logs'),
+    path('agent/check-update/', views.agent_check_update, name='agent_check_update'),
+    path('agent/latest/', views.agent_latest_version, name='agent_latest_version'),
+
+
+
+    
+]
+
+
+from .trading_views import TradeOrderViewSet, PortfolioViewSet
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'trading/orders', TradeOrderViewSet, basename='trading-order')
+router.register(r'trading/portfolio', PortfolioViewSet, basename='trading-portfolio')
+urlpatterns += router.urlsfrom django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Reputation Scores ────────────────────────────────────
+    path('scores/<str:username>/', views.score_detail, name='score_detail'),
+    path('leaderboard/', views.reputation_leaderboard, name='reputation_leaderboard'),
+
+    # ── Staking ──────────────────────────────────────────────
+    path('stakes/', views.my_stakes, name='my_stakes'),
+    path('stakes/stake/', views.stake_tokens, name='stake_tokens'),
+    path('stakes/<uuid:stake_id>/unbond/', views.start_unbonding, name='start_unbonding'),
+    path('stakes/<uuid:stake_id>/withdraw/', views.withdraw_stake, name='withdraw_stake'),
+
+    # ── Slashing ─────────────────────────────────────────────
+    path('slashing/history/', views.slashing_history, name='slashing_history'),
+    path('slashing/conditions/', views.slashing_condition_list, name='slashing_condition_list'),
+
+    # ── Disputes ─────────────────────────────────────────────
+    path('disputes/', views.my_disputes, name='my_disputes'),
+    path('disputes/raise/<uuid:job_id>/', views.raise_dispute, name='raise_dispute'),
+    path('disputes/<uuid:dispute_id>/', views.dispute_detail, name='dispute_detail'),
+    path('disputes/<uuid:dispute_id>/jury/', views.select_jury, name='select_jury'),
+    path('disputes/<uuid:dispute_id>/vote/', views.cast_jury_vote, name='cast_jury_vote'),
+
+    # ── Badges ───────────────────────────────────────────────
+    path('badges/', views.badge_list, name='badge_list'),
+    path('badges/mine/', views.my_badges, name='my_badges'),
+
+    # ── Trust Graph ──────────────────────────────────────────
+    path('trust/compute/', views.compute_trust_graph, name='compute_trust_graph'),
+    path('trust/ranking/', views.trust_ranking, name='trust_ranking'),
+
+    # ── Dashboard ────────────────────────────────────────────
+    path('dashboard/', views.my_reputation_dashboard, name='my_reputation_dashboard'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Validator Nodes ────────────────────────────────────────
+    path('validators/register/', views.register_validator, name='register_validator'),
+    path('validators/me/', views.my_validator_status, name='my_validator_status'),
+    path('validators/me/update/', views.update_validator, name='update_validator'),
+    path('validators/', views.validator_list, name='validator_list'),
+    path('validators/<uuid:node_id>/', views.validator_detail, name='validator_detail'),
+
+    # ── Verification Tasks ────────────────────────────────────
+    path('tasks/', views.verification_task_list, name='verification_task_list'),
+    path('tasks/<uuid:task_id>/', views.verification_task_detail, name='verification_task_detail'),
+    path('tasks/<uuid:task_id>/submit/', views.submit_verification, name='submit_verification'),
+    path('tasks/<uuid:task_id>/finalize/', views.finalize_consensus, name='finalize_consensus'),
+    path('tasks/mine/', views.my_verification_tasks, name='my_verification_tasks'),
+
+    # ── Proof of Compute ─────────────────────────────────────
+    path('proofs/<uuid:job_id>/', views.proof_of_compute_detail, name='proof_of_compute_detail'),
+    path('proofs/<uuid:job_id>/generate/', views.generate_proof, name='generate_proof'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('tournaments/', views.tournament_list, name='tournament_list'),
+    path('tournaments/<uuid:tournament_id>/', views.tournament_detail, name='tournament_detail'),
+    path('tournaments/<uuid:tournament_id>/start/', views.start_tournament, name='start_tournament'),
+    path('tournaments/<uuid:tournament_id>/hypotheses/', views.hypothesis_list, name='hypothesis_list'),
+    path('tournaments/<uuid:tournament_id>/winners/', views.tournament_winners, name='tournament_winners'),
+    path('hypotheses/<uuid:hypothesis_id>/', views.hypothesis_detail, name='hypothesis_detail'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Projects
+    path('projects/', views.project_list, name='impact_project_list'),
+    path('projects/<uuid:project_id>/', views.project_detail, name='impact_project_detail'),
+    path('projects/<uuid:project_id>/rescore/', views.rescore_project, name='impact_project_rescore'),
+
+    # Predict (without saving)
+    path('predict/', views.predict_impact, name='predict_impact'),
+
+    # Leaderboard
+    path('leaderboard/', views.project_leaderboard, name='impact_leaderboard'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('api/jobs/', views.job_list, name='job_list'),
+    path('api/jobs/<uuid:job_id>/', views.job_detail, name='job_detail'),
+    path('api/jobs/<uuid:job_id>/pause/', views.job_pause, name='job_pause'),
+    path('api/jobs/<uuid:job_id>/resume/', views.job_resume, name='job_resume'),
+    path('api/jobs/<uuid:job_id>/stop/', views.job_stop, name='job_stop'),
+    path('api/jobs/<uuid:job_id>/retry/', views.job_retry, name='job_retry'),
+    path('api/jobs/<uuid:job_id>/history/', views.job_history, name='job_history'),
+    path('api/jobs/<uuid:job_id>/notes/', views.job_notes, name='job_notes'),
+    path('api/jobs/<uuid:job_id>/config/history/', views.get_config_history, name='config_history'),
+    path('api/jobs/<uuid:job_id>/config/compare/<int:version_a>/<int:version_b>/', views.compare_configs, name='compare_configs'),
+    path('api/jobs/<uuid:job_id>/metrics/', views.get_custom_metrics, name='get_custom_metrics'),
+    path('api/jobs/<uuid:job_id>/metrics/log/', views.log_custom_metric, name='log_custom_metric'),
+    path('api/jobs/<uuid:job_id>/environment/', views.get_environment, name='get_environment'),
+    path('api/jobs/<uuid:job_id>/scheduling/', views.update_job_scheduling, name='update_job_scheduling'),
+    path('api/jobs/stats/', views.job_stats, name='job_stats'),
+    path('api/jobs/bulk-delete/', views.bulk_delete_jobs, name='bulk_delete_jobs'),
+    path('api/scheduler/status/', views.scheduler_status, name='scheduler_status'),
+    path('api/scheduler/metrics/', views.scheduler_metrics, name='scheduler_metrics'),
+    path('api/system/gpu/', views.gpu_info, name='gpu_info'),
+    path('api/system/status/', views.system_status, name='system_status'),
+    path('api/my-jobs/', views.my_scheduled_jobs, name='my_scheduled_jobs'),
+    # Add these to the existing urlpatterns:
+
+    # Fair share groups
+    path('api/groups/', views.group_list, name='group_list'),
+    path('api/groups/<str:group_name>/', views.group_detail, name='group_detail'),
+
+    # Advanced scheduler info
+    path('api/scheduler/fairshare/', views.fair_share_status, name='fair_share_status'),
+    path('api/scheduler/config/', views.scheduler_config_view, name='scheduler_config'),
+]# leaderboards/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Benchmarks ───────────────────────────────────────────
+    path('benchmarks/', views.benchmark_list, name='benchmark_list'),
+    path('benchmarks/<uuid:benchmark_id>/', views.benchmark_detail, name='benchmark_detail'),
+    path('benchmarks/<uuid:benchmark_id>/leaderboard/', views.leaderboard_view, name='leaderboard'),
+    path('benchmarks/<uuid:benchmark_id>/my-rank/', views.my_rank, name='my_rank'),
+
+    # ── Submissions ──────────────────────────────────────────
+    path('benchmarks/<uuid:benchmark_id>/submissions/', views.submission_list, name='submission_list'),
+    path('benchmarks/<uuid:benchmark_id>/submissions/<uuid:submission_id>/', views.submission_detail, name='submission_detail'),
+
+    # ── Voting ──────────────────────────────────────────────
+    path('benchmarks/<uuid:benchmark_id>/submissions/<uuid:submission_id>/vote/', views.vote_submission, name='vote'),
+    path('benchmarks/<uuid:benchmark_id>/submissions/<uuid:submission_id>/vote/remove/', views.remove_vote, name='remove_vote'),
+
+    # ── Badges ──────────────────────────────────────────────
+    path('badges/', views.badge_list, name='badge_list'),
+    path('badges/mine/', views.my_badges, name='my_badges'),
+
+    # ── Follow ──────────────────────────────────────────────
+    path('benchmarks/<uuid:benchmark_id>/follow/', views.follow_benchmark, name='follow'),
+    path('benchmarks/<uuid:benchmark_id>/unfollow/', views.unfollow_benchmark, name='unfollow'),
+
+    # ── Reference data ──────────────────────────────────────
+    path('tasks/', views.task_list, name='task_list'),
+    path('datasets/', views.dataset_list, name='dataset_list'),
+    path('metrics/', views.metric_list, name='metric_list'),
+
+    # ── Global stats ────────────────────────────────────────
+    path('stats/', views.global_stats, name='global_stats'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Citation Graph
+    path('graph/<uuid:paper_id>/', views.paper_graph, name='paper_graph'),
+    path('graph/<uuid:paper_id>/visualise/', views.paper_graph_visualisation, name='paper_graph_visualise'),
+
+    # Pathfinding
+    path('find-path/', views.find_path, name='find_citation_path'),
+    path('paths/', views.saved_paths, name='saved_paths'),
+
+    # Recommendations
+    path('recommendations/', views.recommendations, name='paper_recommendations'),
+    path('recommendations/generate/', views.generate_recommendations, name='generate_recommendations'),
+    path('recommendations/<uuid:rec_id>/dismiss/', views.dismiss_recommendation, name='dismiss_recommendation'),
+    path('recommendations/<uuid:rec_id>/save/', views.save_recommendation, name='save_recommendation'),
+
+    # Landscapes
+    path('landscapes/', views.landscape_list, name='landscape_list'),
+    path('landscapes/<uuid:landscape_id>/', views.landscape_detail, name='landscape_detail'),
+    path('landscapes/generate/', views.generate_landscape, name='generate_landscape'),
+
+    # Feed
+    path('feed/', views.paper_feed, name='paper_feed'),
+    path('feed/<uuid:feed_id>/seen/', views.mark_feed_seen, name='mark_feed_seen'),
+    path('feed/<uuid:feed_id>/clicked/', views.mark_feed_clicked, name='mark_feed_clicked'),
+]# literature_review/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('projects/', views.project_list, name='lit_project_list'),
+    path('projects/<uuid:project_id>/', views.project_detail, name='lit_project_detail'),
+    path('projects/<uuid:project_id>/topic-finder/', views.start_topic_finder, name='topic_finder'),
+    path('projects/<uuid:project_id>/notebook/', views.generate_notebook, name='generate_notebook'),
+    path('projects/<uuid:project_id>/deep-review/', views.start_deep_review, name='deep_review'),
+    path('projects/<uuid:project_id>/sections/', views.notebook_section_list, name='notebook_sections'),
+    path('sections/<uuid:section_id>/', views.notebook_section_detail, name='notebook_section_detail'),
+    path('projects/<uuid:project_id>/reviews/', views.deep_review_list, name='deep_reviews'),
+    path('reviews/<uuid:review_id>/', views.deep_review_detail, name='deep_review_detail'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Agent Mode
+    path('query/', views.agent_query, name='agent_query'),
+
+    # Comparisons
+    path('compare/', views.comparison_list, name='comparison_list'),
+    path('compare/<uuid:comparison_id>/', views.comparison_detail, name='comparison_detail'),
+
+    # Compliance
+    path('compliance/<uuid:listing_id>/', views.check_compliance_view, name='check_compliance'),
+    path('compliance/history/', views.compliance_history, name='compliance_history'),
+
+    # Recommendations
+    path('recommendations/', views.smart_recommendations, name='smart_recommendations'),
+    path('recommendations/generate/', views.generate_recommendations, name='generate_recommendations'),
+    path('recommendations/<uuid:recommendation_id>/dismiss/', views.dismiss_recommendation, name='dismiss_recommendation'),
+]# messaging/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('chats/', views.chat_list, name='chat_list'),
+    path('chats/start/', views.start_chat, name='start_chat'),
+    path('chats/<uuid:room_id>/', views.chat_detail, name='chat_detail'),
+    path('chats/<uuid:room_id>/send/', views.send_message, name='send_message'),
+    path('chats/<uuid:room_id>/read/', views.mark_read, name='mark_read'),
+    path('chats/<uuid:room_id>/delete/', views.delete_chat, name='delete_chat'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Global version listing ─────────────────────────────────
+    path('versions/', views.all_model_versions, name='all_model_versions'),
+
+    # ── Per‑run versions ───────────────────────────────────────
+    path('runs/<uuid:run_id>/versions/', views.list_model_versions, name='list_model_versions'),
+    path('runs/<uuid:run_id>/versions/cleanup/', views.cleanup_versions, name='cleanup_versions'),
+    path(
+        'runs/<uuid:run_id>/versions/<int:version_number>/set_production/',
+        views.set_production_version,
+        name='set_production_version',
+    ),
+    path(
+        'runs/<uuid:run_id>/versions/compare/<int:version_a>/<int:version_b>/',
+        views.compare_versions,
+        name='compare_versions',
+    ),
+
+    # ── Single version actions ─────────────────────────────────
+    path('versions/<uuid:version_id>/', views.model_version_detail, name='model_version_detail'),
+    path('versions/<uuid:version_id>/publish/', views.publish_to_hub, name='publish_to_hub'),
+    path('versions/<uuid:version_id>/download/', views.download_model_version, name='download_model_version'),
+    path('versions/<uuid:version_id>/archive/', views.archive_to_cold_storage, name='archive_to_cold_storage'),
+    path('versions/<uuid:version_id>/restore/', views.restore_from_cold_storage, name='restore_from_cold_storage'),
+
+    # ── Diff creation & reconstruction ─────────────────────────
+    path(
+        'versions/diff/<uuid:from_version_id>/<uuid:to_version_id>/',
+        views.create_diff_view,
+        name='create_diff',
+    ),
+    path(
+        'versions/reconstruct/<uuid:base_version_id>/<uuid:diff_id>/',
+        views.reconstruct_version,
+        name='reconstruct_version',
+    ),
+
+    # ── Lineage graph ──────────────────────────────────────────
+    path('versions/<uuid:version_id>/lineage/', views.lineage_graph, name='lineage_graph'),
+
+    # ── Compression methods catalog ────────────────────────────
+    path('compression-methods/', views.list_compression_methods, name='list_compression_methods'),
+
+    # ── Lifecycle migration (staff only) ───────────────────────
+    path('versions/migrate-lifecycle/', views.run_lifecycle_migration, name='run_lifecycle_migration'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Core CRUD ─────────────────────────────────────────────
+    path('v1/notes/', views.versioned_view(views.note_list)),
+    path('v1/notes/<uuid:note_id>/', views.versioned_view(views.note_detail)),
+    path('v1/notes/<uuid:note_id>/react/', views.versioned_view(views.note_reaction)),
+    path('v1/notes/<uuid:note_id>/upload-image/', views.versioned_view(views.upload_note_image)),
+    path('v1/notes/<uuid:note_id>/favorite/', views.versioned_view(views.toggle_favorite)),
+    path('v1/notes/<uuid:note_id>/comments/', views.versioned_view(views.note_comments)),
+    path('v1/notes/<uuid:note_id>/pin/', views.versioned_view(views.toggle_pin)),
+    path('v1/notes/runs/<uuid:run_id>/', views.versioned_view(views.run_notes)),
+
+    # ── Version History ───────────────────────────────────────
+    path('v1/notes/<uuid:note_id>/versions/', views.versioned_view(views.note_versions)),
+    path('v1/notes/<uuid:note_id>/versions/<int:version_number>/', views.versioned_view(views.note_version_detail)),
+
+    # ── Mentions ──────────────────────────────────────────────
+    path('v1/notes/<uuid:note_id>/mentions/', views.versioned_view(views.note_mentions)),
+    path('v1/mentions/<uuid:mention_id>/read/', views.versioned_view(views.mark_mention_read)),
+
+    # ── Sharing: Direct User Share ────────────────────────────
+    path('v1/notes/<uuid:note_id>/share/', views.versioned_view(views.share_note)),
+    path('v1/notes/<uuid:note_id>/unshare/', views.versioned_view(views.unshare_note)),
+    path('v1/notes/shared-with-me/', views.versioned_view(views.shared_with_me)),
+path('v1/notes/from-paper/', views.versioned_view(views.create_note_from_paper)),
+path('v1/notes/<uuid:note_id>/bibliography/', views.versioned_view(views.note_bibliography)),
+    # ── Sharing: Public Link ──────────────────────────────────
+    path('v1/notes/<uuid:note_id>/share-link/', views.versioned_view(views.create_share_link)),
+    path('v1/notes/<uuid:note_id>/share-links/', views.versioned_view(views.list_share_links)),
+    path('v1/notes/<uuid:note_id>/share-links/<uuid:link_id>/revoke/', views.versioned_view(views.revoke_share_link)),
+    # Public (no auth):
+    path('shared/<str:token>/', views.view_shared_note, name='view_shared_note'),
+
+    # ── HuggingFace Upload ────────────────────────────────────
+    path('v1/notes/<uuid:note_id>/upload-hf/', views.versioned_view(views.upload_note_to_huggingface)),
+    path('v1/notes/<uuid:note_id>/upload-hf-space/', views.versioned_view(views.upload_note_as_hf_space)),
+    path('v1/notes/<uuid:note_id>/sync-hf/', views.versioned_view(views.sync_note_to_hf_view)),
+path('v1/notes/search-paper/', views.versioned_view(views.search_and_format_paper)),
+    # ── Artifacts ─────────────────────────────────────────────
+    path('v1/notes/<uuid:note_id>/artifacts/', views.versioned_view(views.artifact_list)),
+    path('v1/notes/<uuid:note_id>/artifacts/<uuid:artifact_id>/', views.versioned_view(views.artifact_delete)),
+    path('v1/notes/<uuid:note_id>/artifacts/<uuid:artifact_id>/download/', views.versioned_view(views.artifact_download)),
+
+    # ── Protocols ─────────────────────────────────────────────
+    path('v1/protocols/', views.versioned_view(views.protocol_list)),
+    path('v1/protocols/<uuid:protocol_id>/', views.versioned_view(views.protocol_detail)),
+
+    # ── Note Links (Knowledge Graph) ──────────────────────────
+    path('v1/notes/links/', views.versioned_view(views.create_note_link)),
+    path('v1/notes/links/<uuid:link_id>/', views.versioned_view(views.delete_note_link)),
+    path('v1/notes/<uuid:note_id>/links-graph/', views.versioned_view(views.note_links_graph)),
+
+    # ── Replies ───────────────────────────────────────────────
+    path('v1/notes/<uuid:note_id>/replies/', views.versioned_view(views.note_replies)),
+
+    # ── Restore ───────────────────────────────────────────────
+    path('v1/notes/<uuid:note_id>/restore/', views.versioned_view(views.restore_note)),
+
+    # ── Export ────────────────────────────────────────────────
+    path('v1/notes/<uuid:note_id>/export/pdf/', views.versioned_view(views.export_note_pdf)),
+    path('v1/notes/<uuid:note_id>/export/md/', views.versioned_view(views.export_note_markdown)),
+
+    # ── Auto-Generate Reports ─────────────────────────────────
+    path('v1/notes/generate-report/<uuid:run_id>/', views.versioned_view(views.generate_run_report)),
+
+    # ── Templates ─────────────────────────────────────────────
+    path('v1/templates/', views.versioned_view(views.note_templates)),
+    path('v1/templates/<uuid:template_id>/render/', views.versioned_view(views.render_template)),
+
+    # ── Favorites ─────────────────────────────────────────────
+    path('v1/notes/favorites/', views.versioned_view(views.favorite_notes)),
+
+    # ── Full-Text Search ──────────────────────────────────────
+    path('v1/search/', views.versioned_view(views.fulltext_search)),
+
+    # ── Notifications ─────────────────────────────────────────
+    path('v1/notifications/', views.versioned_view(views.my_notifications)),
+    path('v1/notifications/read-all/', views.versioned_view(views.mark_all_notifications_read)),
+
+    # ── Dashboard ─────────────────────────────────────────────
+    path('v1/dashboard/', views.versioned_view(views.notes_dashboard)),
+
+    # ── Bulk Operations ───────────────────────────────────────
+    path('v1/notes/bulk/', views.versioned_view(views.bulk_notes)),
+    path('v1/notes/bulk/tags/', views.versioned_view(views.bulk_tags)),
+
+    # ── Statistics ────────────────────────────────────────────
+    path('v1/notes/statistics/', views.versioned_view(views.notes_statistics)),
+    path('v1/notes/recent/', views.versioned_view(views.recent_notes)),
+
+    # ── Webhooks ──────────────────────────────────────────────
+    path('v1/webhooks/', views.versioned_view(views.webhook_list)),
+    path('v1/webhooks/<uuid:webhook_id>/', views.versioned_view(views.webhook_delete)),
+    path('v1/webhooks/<uuid:webhook_id>/test/', views.versioned_view(views.test_webhook)),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Organizations ─────────────────────────────────────────
+    path('orgs/', views.organization_list, name='org_list'),
+    path('orgs/<uuid:org_id>/', views.organization_detail, name='org_detail'),
+
+    # ── Members ───────────────────────────────────────────────
+    path('orgs/<uuid:org_id>/members/', views.member_list, name='member_list'),
+    path('orgs/<uuid:org_id>/members/<int:user_id>/role/', views.change_member_role, name='change_member_role'),
+    path('orgs/<uuid:org_id>/members/<int:user_id>/remove/', views.remove_member, name='remove_member'),
+    path('orgs/<uuid:org_id>/leave/', views.leave_organization, name='leave_org'),
+
+    # ── Invitations ───────────────────────────────────────────
+    path('orgs/<uuid:org_id>/invite/', views.invite_member, name='invite_member'),
+    path('invitations/', views.my_invitations, name='my_invitations'),
+    path('invitations/<uuid:invitation_id>/accept/', views.accept_invitation, name='accept_invitation'),
+
+    # ── Teams ─────────────────────────────────────────────────
+    path('orgs/<uuid:org_id>/teams/', views.team_list, name='team_list'),
+    path('orgs/<uuid:org_id>/teams/<uuid:team_id>/', views.team_detail, name='team_detail'),
+    path('orgs/<uuid:org_id>/teams/<uuid:team_id>/members/', views.add_team_member, name='add_team_member'),
+    path('orgs/<uuid:org_id>/teams/<uuid:team_id>/members/<int:user_id>/', views.remove_team_member, name='remove_team_member'),
+
+    # ── Experiments ───────────────────────────────────────────
+    path('orgs/<uuid:org_id>/experiments/', views.org_experiments, name='org_experiments'),
+
+    # ── Audit Log ─────────────────────────────────────────────
+    path('orgs/<uuid:org_id>/audit-log/', views.audit_log, name='audit_log'),
+
+    # ── Resource Groups (Enterprise) ──────────────────────────
+    path('orgs/<uuid:org_id>/resource-groups/', views.resource_group_list, name='resource_group_list'),
+
+    # ── Roles ─────────────────────────────────────────────────
+    path('orgs/<uuid:org_id>/roles/', views.role_list, name='role_list'),
+
+    # ── Billing ───────────────────────────────────────────────
+    path('orgs/<uuid:org_id>/subscription/', views.subscription_detail, name='subscription_detail'),
+    path('plans/', views.plan_list, name='plan_list'),
+]# paper/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Projects
+    path('projects/', views.project_list, name='paper_project_list'),
+    path('projects/<uuid:project_id>/', views.project_detail, name='paper_project_detail'),
+    path('projects/<uuid:project_id>/clone/', views.clone_project, name='paper_clone_project'),
+
+    # Files
+    path('projects/<uuid:project_id>/files/', views.file_list, name='paper_file_list'),
+    path('projects/<uuid:project_id>/files/<path:filename>/', views.file_detail, name='paper_file_detail'),
+    path('projects/<uuid:project_id>/files/<path:filename>/rename/', views.rename_file, name='paper_rename_file'),
+
+    # Compilation
+    path('projects/<uuid:project_id>/compile/', views.compile_project, name='paper_compile'),
+    path('projects/<uuid:project_id>/output/pdf/', views.output_pdf, name='paper_output_pdf'),
+    path('projects/<uuid:project_id>/output/log/', views.output_log, name='paper_output_log'),
+    path('projects/<uuid:project_id>/preview/pdf/', views.preview_pdf, name='paper_preview_pdf'),
+
+    # Templates
+    path('templates/', views.template_list, name='paper_template_list'),
+    path('templates/<uuid:template_id>/use/', views.use_template, name='paper_use_template'),
+
+    # Export
+    path('projects/<uuid:project_id>/export/', views.export_project, name='paper_export'),
+
+    # Word Count
+    path('projects/<uuid:project_id>/wordcount/', views.word_count, name='paper_word_count'),
+
+    # Collaboration
+    path('projects/<uuid:project_id>/collaborators/add/', views.add_collaborator, name='paper_add_collaborator'),
+    path('projects/<uuid:project_id>/collaborators/remove/', views.remove_collaborator, name='paper_remove_collaborator'),
+
+    # Share Links (Public)
+    path('projects/<uuid:project_id>/share-links/', views.create_share_link, name='paper_create_share_link'),
+    path('projects/<uuid:project_id>/share-links/list/', views.list_share_links, name='paper_list_share_links'),
+    path('projects/<uuid:project_id>/share-links/<uuid:link_id>/revoke/', views.revoke_share_link, name='paper_revoke_share_link'),
+    # Public (no auth):
+    path('shared/<str:token>/', views.view_shared_project, name='paper_view_shared'),
+    path('shared/<str:token>/pdf/', views.shared_project_pdf, name='paper_shared_pdf'),
+
+    # Git Sync
+    path('projects/<uuid:project_id>/git/push/', views.git_push, name='paper_git_push'),
+    path('projects/<uuid:project_id>/git/pull/', views.git_pull, name='paper_git_pull'),
+
+    # Comments
+    path('projects/<uuid:project_id>/comments/', views.comment_list, name='paper_comment_list'),
+    path('projects/<uuid:project_id>/comments/<uuid:comment_id>/', views.comment_detail, name='paper_comment_detail'),
+
+    # Snapshots (Version History)
+    path('projects/<uuid:project_id>/snapshots/', views.snapshot_list, name='paper_snapshot_list'),
+    path('projects/<uuid:project_id>/snapshots/<int:version_number>/', views.snapshot_detail, name='paper_snapshot_detail'),
+    path('projects/<uuid:project_id>/snapshots/<int:version_number>/restore/', views.restore_snapshot, name='paper_restore_snapshot'),
+
+    # Compile History
+    path('projects/<uuid:project_id>/compiles/', views.compile_history, name='paper_compile_history'),
+
+    # HuggingFace Upload
+    path('projects/<uuid:project_id>/upload-hf/', views.upload_to_huggingface, name='paper_upload_hf'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Public portfolio
+    path('user/<str:username>/', views.public_portfolio, name='public_portfolio'),
+    path('user/<str:username>/activity/', views.activity_graph, name='activity_graph'),
+    path('user/<str:username>/embed/', views.embed_widget, name='embed_widget'),
+
+    # Authenticated
+    path('me/', views.my_portfolio, name='my_portfolio'),
+    path('me/items/', views.add_showcase_item, name='add_showcase_item'),
+    path('me/items/<uuid:item_id>/', views.remove_showcase_item, name='remove_item'),
+    path('me/items/<uuid:item_id>/pin/', views.toggle_pin_item, name='toggle_pin'),
+    path('me/widget/', views.create_widget, name='create_widget'),
+
+    # Endorsements
+    path('user/<str:username>/endorse/', views.endorse_skill, name='endorse'),
+    path('user/<str:username>/endorse/<str:skill>/', views.remove_endorsement, name='remove_endorsement'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('login/', views.oauth2_login, name='huggingface_login'),
+    path('callback/', views.oauth2_callback, name='huggingface_callback'),
+]# profiles/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('me/', views.my_profile, name='my_profile'),
+    path('me/avatar/', views.upload_avatar, name='upload_avatar'),
+    path('me/avatar/remove/', views.remove_avatar, name='remove_avatar'),
+    path('search/', views.search_users, name='search_users'),
+    path('user/<int:user_id>/', views.user_profile, name='user_profile'),
+    path('username/<str:username>/', views.user_profile_by_username, name='user_profile_by_username'),
+    path('social-login/', views.social_login_urls, name='social_login_urls'),
+path('social-callback/', views.social_callback, name='social_callback'),
+
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Weights
+    path('weights/', views.get_weights, name='reputation_weights'),
+    path('weights/update/', views.update_weights, name='reputation_weights_update'),
+
+    # Scores & Leaderboard
+    path('me/', views.my_reputation, name='my_reputation'),
+    path('user/<str:username>/', views.user_reputation, name='user_reputation'),
+    path('leaderboard/', views.reputation_leaderboard, name='reputation_leaderboard'),
+
+    # Events
+    path('events/', views.my_events, name='reputation_events'),
+    path('events/record/', views.record_event, name='reputation_event_record'),
+
+    # Recommendations
+    path('recommendations/', views.my_recommendations, name='reputation_recommendations'),
+    path('recommendations/generate/', views.generate_recommendations, name='reputation_generate_recommendations'),
+    path('recommendations/<uuid:recommendation_id>/dismiss/', views.dismiss_recommendation, name='reputation_dismiss_recommendation'),
+
+    # Snapshots
+    path('snapshots/', views.my_snapshots, name='reputation_snapshots'),
+    path('snapshots/take/', views.take_snapshot, name='reputation_take_snapshot'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('publications/', views.publication_list, name='publication_list'),
+    path('publications/<uuid:pub_id>/', views.publication_detail, name='publication_detail'),
+    path('citations/', views.add_citation, name='add_citation'),
+    path('publications/<uuid:pub_id>/reviews/', views.review_list, name='review_list'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('sessions/', views.session_list, name='agent_session_list'),
+    path('sessions/<uuid:session_id>/', views.session_detail, name='agent_session_detail'),
+    path('ideas/generate/', views.generate_ideas, name='generate_ideas'),
+    path('ideas/', views.my_ideas, name='my_ideas'),
+    path('ideas/<uuid:idea_id>/save/', views.save_idea, name='save_idea'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Analysis
+    path('analysis/', views.analysis_list, name='analysis_list'),
+    path('analysis/<uuid:analysis_id>/read/', views.mark_analysis_read, name='mark_analysis_read'),
+    path('analysis/<uuid:analysis_id>/archive/', views.archive_analysis, name='archive_analysis'),
+    path('analysis/trigger/', views.trigger_analysis, name='trigger_analysis'),
+
+    # Recommendations
+    path('recommendations/', views.recommendation_list, name='recommendation_list'),
+    path('recommendations/<uuid:recommendation_id>/apply/', views.apply_recommendation, name='apply_recommendation'),
+    path('recommendations/<uuid:recommendation_id>/dismiss/', views.dismiss_recommendation, name='dismiss_recommendation'),
+
+    # Chat
+    path('chat/', views.chat_session_list, name='chat_session_list'),
+    path('chat/<uuid:session_id>/', views.chat_session_detail, name='chat_session_detail'),
+    path('chat/<uuid:session_id>/delete/', views.chat_session_delete, name='chat_session_delete'),
+]# reviews/urls.py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ── Review Requests ──────────────────────────────────────
+    path('requests/', views.review_request_list, name='review_request_list'),
+    path('requests/<uuid:request_id>/', views.review_request_detail, name='review_request_detail'),
+    path('requests/<uuid:request_id>/submit/', views.submit_for_review, name='submit_for_review'),
+    path('requests/<uuid:request_id>/open/', views.open_for_review, name='open_for_review'),
+    path('requests/<uuid:request_id>/complete/', views.complete_review_round, name='complete_review_round'),
+    path('requests/<uuid:request_id>/summary/', views.review_summary, name='review_summary'),
+
+    # ── Reviews ──────────────────────────────────────────────
+    path('requests/<uuid:request_id>/review/', views.write_review, name='write_review'),
+    path('my-reviews/', views.my_reviews_given, name='my_reviews_given'),
+
+    # ── Comments ─────────────────────────────────────────────
+    path('reviews/<uuid:review_id>/comment/', views.add_review_comment, name='add_review_comment'),
+    path('comments/<uuid:comment_id>/resolve/', views.resolve_comment, name='resolve_comment'),
+
+    # ── Helpfulness Voting ──────────────────────────────────
+    path('reviews/<uuid:review_id>/vote/', views.vote_review_helpful, name='vote_review_helpful'),
+
+    # ── Templates ────────────────────────────────────────────
+    path('templates/', views.template_list, name='review_template_list'),
+
+    # ── Badges ───────────────────────────────────────────────
+    path('badges/', views.badge_list, name='review_badge_list'),
+    path('badges/mine/', views.my_badges, name='my_reviewer_badges'),
+
+    # ── Stats ────────────────────────────────────────────────
+    path('stats/', views.global_stats, name='review_stats'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('follow/<int:user_id>/', views.follow_user, name='follow_user'),
+    path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
+    path('followers/<int:user_id>/', views.followers_list, name='followers_list'),
+    path('following/<int:user_id>/', views.following_list, name='following_list'),
+    path('feed/', views.activity_feed, name='activity_feed'),
+    path('groups/', views.group_list, name='group_list'),
+    path('groups/<uuid:group_id>/', views.group_detail, name='group_detail'),
+    path('groups/<uuid:group_id>/join/', views.join_group, name='join_group'),
+    path('groups/<uuid:group_id>/leave/', views.leave_group, name='leave_group'),
+    path('groups/<uuid:group_id>/discussions/', views.discussion_list, name='discussion_list'),
+    path('discussions/<uuid:discussion_id>/', views.discussion_detail, name='discussion_detail'),
+    path('discussions/<uuid:discussion_id>/reply/', views.reply_to_discussion, name='reply_to_discussion'),
+    path('alerts/', views.my_alerts, name='my_alerts'),
+    path('alerts/<uuid:alert_id>/read/', views.mark_alert_read, name='mark_alert_read'),
+    path('alerts/mark-all-read/', views.mark_all_alerts_read, name='mark_all_alerts_read'),
+    path('suggested/', views.suggested_researchers, name='suggested_researchers'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Follow
+    path('follow/<int:user_id>/', views.follow_user, name='follow_user'),
+    path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
+    path('following/', views.my_following, name='my_following'),
+    path('followers/', views.my_followers, name='my_followers'),
+
+    # Activity Feed
+    path('feed/', views.activity_feed, name='activity_feed'),
+
+    # Groups
+    path('groups/', views.group_list, name='group_list'),
+    path('groups/<uuid:group_id>/', views.group_detail, name='group_detail'),
+    path('groups/<uuid:group_id>/join/', views.join_group, name='join_group'),
+    path('groups/<uuid:group_id>/leave/', views.leave_group, name='leave_group'),
+
+    # Discussions
+    path('groups/<uuid:group_id>/discussions/', views.discussion_list, name='discussion_list'),
+    path('discussions/<uuid:discussion_id>/', views.discussion_detail, name='discussion_detail'),
+    path('discussions/<uuid:discussion_id>/reply/', views.reply_to_discussion, name='reply_to_discussion'),
+
+    # Alerts
+    path('alerts/', views.my_alerts, name='my_alerts'),
+    path('alerts/<uuid:alert_id>/read/', views.mark_alert_read, name='mark_alert_read'),
+    path('alerts/mark-all-read/', views.mark_all_alerts_read, name='mark_all_alerts_read'),
+
+    # Suggestions
+    path('suggested/', views.suggested_researchers, name='suggested_researchers'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Heatmap
+    path('heatmap/<str:username>/', views.heatmap_data, name='heatmap_data'),
+
+    # Streaks
+    path('streak/<str:username>/', views.streak_info, name='streak_info'),
+    path('streak/me/', views.my_streak, name='my_streak'),
+    path('leaderboard/', views.streak_leaderboard, name='streak_leaderboard'),
+
+    # Weekly Summaries
+    path('weekly/me/', views.my_weekly_summaries, name='my_weekly_summaries'),
+    path('weekly/<str:username>/', views.weekly_summaries, name='weekly_summaries'),
+    path('weekly/generate/', views.generate_weekly_summary, name='generate_weekly_summary'),
+
+    # Daily Activities
+    path('daily/me/', views.my_daily_activities, name='my_daily_activities'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # Tickets
+    path('tickets/', views.ticket_list, name='ticket_list'),
+    path('tickets/<uuid:ticket_id>/', views.ticket_detail, name='ticket_detail'),
+    path('tickets/<uuid:ticket_id>/messages/', views.ticket_messages, name='ticket_messages'),
+    path('tickets/<uuid:ticket_id>/feedback/', views.submit_feedback, name='ticket_feedback'),
+
+    # Solutions
+    path('solutions/', views.solution_list, name='solution_list'),
+    path('solutions/<uuid:solution_id>/upvote/', views.upvote_solution, name='upvote_solution'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('sweeps/', views.sweep_list, name='sweep_list'),
+    path('sweeps/<uuid:sweep_id>/', views.sweep_detail, name='sweep_detail'),
+    path('sweeps/<uuid:sweep_id>/trials/', views.sweep_trials, name='sweep_trials'),
+    path('sweeps/<uuid:sweep_id>/trials/<int:trial_number>/', views.trial_detail, name='trial_detail'),
+    path('sweeps/<uuid:sweep_id>/trials/<int:trial_number>/update/', views.trial_update, name='trial_update'),
+    path('sweeps/<uuid:sweep_id>/trials/<int:trial_number>/intermediate/', views.report_intermediate_value, name='report_intermediate'),
+    path('sweeps/<uuid:sweep_id>/preference/', views.submit_preference, name='submit_preference'),
+    path('sweeps/<uuid:sweep_id>/importance/', views.sweep_importance, name='sweep_importance'),
+    path('sweeps/<uuid:sweep_id>/pareto/', views.sweep_pareto, name='sweep_pareto'),
+    path('sweeps/<uuid:sweep_id>/contour/', views.sweep_contour, name='sweep_contour'),
+    path('sweeps/<uuid:sweep_id>/history/', views.sweep_history, name='sweep_history'),
+    path('sweeps/<uuid:sweep_id>/slice/', views.sweep_slice, name='sweep_slice'),
+    path('sweeps/<uuid:sweep_id>/parallel/', views.sweep_parallel, name='sweep_parallel'),
+    path('sweeps/<uuid:sweep_id>/edf/', views.sweep_edf, name='sweep_edf'),
+    path('sweeps/<uuid:sweep_id>/warm-start/', views.sweep_warm_start, name='sweep_warm_start'),
+    path('sweeps/<uuid:sweep_id>/dataframe/', views.sweep_dataframe, name='sweep_dataframe'),
+    path('sweeps/<uuid:sweep_id>/export/', views.sweep_export, name='sweep_export'),
+    path('sweeps/import/', views.sweep_import, name='sweep_import'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('sessions/', views.list_sessions, name='terminal_sessions'),
+    path('sessions/<uuid:session_id>/kill/', views.kill_session, name='terminal_kill'),
+]from django.urls import path
+from . import views
+
+urlpatterns = [
+    # ─── HTML Pages (SPA fallback / direct access) ─────────────
+    path('', views.index, name='dashboard_index'),
+    path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/job/<uuid:job_id>/', views.job_detail, name='dashboard_job_detail'),
+
+    # ─── Authentication API ────────────────────────────────────
+    path('api/register/', views.api_register, name='api_register'),
+    path('api/login/', views.api_login, name='api_login'),
+    path('api/logout/', views.api_logout, name='api_logout'),
+
+    # ─── Widget Management ─────────────────────────────────────
+    path('api/widgets/', views.dashboard_widgets, name='dashboard_widgets'),
+    path('api/widgets/layout/', views.dashboard_widgets, name='dashboard_widgets_layout'),
+    path('api/widgets/<uuid:widget_id>/data/', views.widget_data, name='widget_data'),
+    path('api/widgets/<uuid:widget_id>/config/', views.widget_config, name='widget_config'),
+
+    # ─── Dashboard Statistics & Config ─────────────────────────
+    path('api/dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
+    path('api/dashboard/settings/', views.dashboard_settings, name='dashboard_settings'),
+    path('api/config/all/', views.launch_config_options, name='launch_config_options'),
+
+    # ─── Model Card Generation ─────────────────────────────────
+    path('api/runs/<uuid:run_id>/model-card/', views.generate_model_card, name='generate_model_card'),
+
+
+    # ─── Consumer GPU Marketplace ────────────────────────────
+    path('api/marketplace/listings/', views.marketplace_listings, name='marketplace_listings'),
+    path('api/marketplace/orders/', views.consumer_orders, name='consumer_orders'),
+    path('api/marketplace/jobs/', views.consumer_jobs, name='consumer_jobs'),
+    path('api/marketplace/jobs/<uuid:job_id>/', views.consumer_job_detail, name='consumer_job_detail'),
+    path('api/marketplace/balance/', views.consumer_balance, name='consumer_balance'),
+    path('api/marketplace/invoices/', views.consumer_invoices, name='consumer_invoices'),
+    path('api/marketplace/usage/', views.consumer_usage, name='consumer_usage'),
+    path('api/marketplace/leaderboard/', views.consumer_leaderboard, name='consumer_leaderboard'),
+    path('api/marketplace/reputation/', views.consumer_reputation, name='consumer_reputation'),
+]
