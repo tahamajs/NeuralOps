@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 'computational_discovery',
+'experiment_accelerator',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -176,7 +177,12 @@ CELERY_BEAT_SCHEDULE.update({
     },
 })
 SOCIALACCOUNT_STORE_TOKENS = True
-
+CELERY_BEAT_SCHEDULE.update({
+    'weekly-experiment-summary': {
+        'task': 'experiment_accelerator.tasks.generate_weekly_summary',
+        'schedule': crontab(hour=9, minute=0, day_of_week=1),  # Monday 9 AM
+    },
+})
 # ----------------------------------------------
 # 
 # 
