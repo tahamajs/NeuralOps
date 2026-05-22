@@ -215,3 +215,11 @@ const AVAILABLE_WINDOWS = [
   { type: 'access-manager', title: 'Model Access Manager', icon: '🔐' },
   { type: 'catalog', title: 'Model Catalog', icon: '🔍' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'prompt-playground', title: 'Prompt Playground', icon: '🎮' },
+  { type: 'model-comparison', title: 'Model Comparison', icon: '⚖️' },
+  { type: 'tool-test-console', title: 'Tool Test Console', icon: '🔧' },
+]
