@@ -4,6 +4,24 @@ import { HardwareProvider } from './features/hardware/context/HardwareContext'
 import { MainLayout } from './components/layout/MainLayout'
 import FloatingWindowRenderer from './components/floating/FloatingWindow'
 import FloatingWindowBar from './components/floating/FloatingWindowBar'
+import { useWindowStore } from './store/windowStore'
+import { DockableWindow } from './components/DockableWindow'
+import { WindowLauncher } from './components/WindowLauncher'
+import { TerminalPanel } from './features/terminal/components/TerminalPanel'
+import { PaperEditorPanel } from './features/paper/components/PaperEditorPanel'
+import { FloatingNotesEditor } from './features/notes/components/FloatingNotesEditor'
+import { GPUMarketplacePage } from './features/marketplace/pages/GPUMarketplacePage'
+const componentMap: Record<string, React.ComponentType<any>> = {
+  terminal: TerminalPanel,
+  'paper-editor': PaperEditorPanel,
+  notes: FloatingNotesEditor,
+  marketplace: GPUMarketplacePage,
+  experiments: ExperimentListPage,
+  analysis: ResearchAnalysisPage,
+  profile: UserProfilePage,
+  community: QuestionListPage,
+  // add all others
+}
 
 // Pages
 import LoginPage from './features/auth/pages/LoginPage'
@@ -27,6 +45,29 @@ import PaperEditorPage from './features/paper/pages/PaperEditorPage'
 import UserProfilePage from './features/profile/pages/UserProfilePage'
 import SystemStatusPage from './features/system/pages/SystemStatusPage'
 import NotFoundPage from './features/NotFoundPage'
+function App() {
+  const { windows } = useWindowStore()
+
+  return (
+    <div className="relative w-screen h-screen overflow-hidden bg-surface">
+      {windows.map(win => {
+        const Component = componentMap[win.type]
+        if (!Component) return null
+        return (
+          <DockableWindow key={win.id} window={win}>
+            <Component />
+          </DockableWindow>
+        )
+      })}
+      <WindowLauncher />
+      {/* Optional: keep a minimal sidebar with quick actions */}
+      <div className="fixed bottom-4 left-4 z-[100] flex gap-2">
+        <button className="glass p-2 rounded-full" onClick={() => useWindowStore.getState().addWindow('terminal', 'Terminal', '>_')}>Terminal</button>
+        <button className="glass p-2 rounded-full" onClick={() => useWindowStore.getState().addWindow('notes', 'Notes', '📝')}>Notes</button>
+      </div>
+    </div>
+  )
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
