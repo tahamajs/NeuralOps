@@ -143,6 +143,9 @@ const SweepCreator = lazy(() => import('./features/sweeps/components/SweepCreato
 const OrganizationListPage = lazy(() => import('../features/organizations/pages/OrganizationListPage'))
 const OrganizationDetailPage = lazy(() => import('../features/organizations/pages/OrganizationDetailPage'))
 const InviteAcceptPage = lazy(() => import('../features/organizations/pages/InviteAcceptPage'))
+const UserProfilePage = lazy(() => import('../features/profile/pages/UserProfilePage'))
+const ProfileSettingsPage = lazy(() => import('../features/profile/pages/ProfileSettingsPage'))
+const ChangePasswordPage = lazy(() => import('../features/profile/pages/ChangePasswordPage'))
 
 // In the router children array:
 // Fallback
@@ -301,6 +304,11 @@ export const router = createBrowserRouter([
 { path: 'tags/:tagName', element: <TagDetailPage /> },
 { path: 'leaderboard', element: <LeaderboardPage /> },
 { path: 'badges', element: <BadgesPage /> },
+{ path: '/profile', element: <UserProfilePage /> },
+{ path: '/profile/:username', element: <UserProfilePage /> },
+{ path: '/profile/settings', element: <ProfileSettingsPage /> },
+{ path: '/profile/change-password', element: <ChangePasswordPage /> },
+
 
       // 404
       { path: '*', element: <NotFoundPage /> },
