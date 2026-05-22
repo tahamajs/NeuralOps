@@ -141,3 +141,9 @@ const AVAILABLE_WINDOWS = [
   // ...
   { type: 'accelerator', title: 'Experiment Accelerator', icon: '⚡' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  { type: 'pipeline-monitor', title: 'Pipeline Monitor', icon: '📊' },
+  { type: 'step-editor', title: 'Step Editor', icon: '✏️' },
+]
