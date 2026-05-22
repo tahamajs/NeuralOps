@@ -2,12 +2,16 @@ import os
 import sys
 from pathlib import Path
 
+from celery.schedules import crontab
+
+# ----------------------------------------------------------------------
+# Paths & Environment
+# ----------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent.parent
 CODES_DIR = BASE_DIR.parent
 
 def load_env_file(path: Path) -> None:
-    """Load simple KEY=VALUE or export KEY=VALUE lines without overriding env."""
     if not path.exists():
         return
     for raw_line in path.read_text().splitlines():
@@ -24,37 +28,28 @@ def load_env_file(path: Path) -> None:
         if key:
             os.environ.setdefault(key, value)
 
-
-# ----------------------------------------------------------------------
-# Environment and import paths
-# ----------------------------------------------------------------------
 load_env_file(PROJECT_ROOT / ".env")
 load_env_file(BASE_DIR / ".env")
 
-# Make the Codes package root importable so `framework.*` resolves without
-# shadowing Django apps such as `model_versioning`.
+# Make the Codes package root importable
 if str(CODES_DIR) not in sys.path:
     sys.path.insert(0, str(CODES_DIR))
 
-from framework.utils.paths import get_glue_dir
+try:
+    from framework.utils.paths import get_glue_dir
+except ImportError:
+    def get_glue_dir() -> str:
+        return str(BASE_DIR / "glue_data")
 
 # ----------------------------------------------------------------------
-# Celery & Redis
-# ----------------------------------------------------------------------
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-
-# ----------------------------------------------------------------------
-# Security & Debug
+# Core Django Settings
 # ----------------------------------------------------------------------
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"] if DEBUG else os.environ.get("ALLOWED_HOSTS", "").split(",")
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
-OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL', None)  # Optional, for compatible APIs
 
 # ----------------------------------------------------------------------
-# Application definition
+# Installed Apps
 # ----------------------------------------------------------------------
 INSTALLED_APPS = [
     'daphne',
@@ -64,16 +59,43 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-'computational_discovery',
-'experiment_accelerator',
+    'django.contrib.sites',          # required by allauth
 
+    # Third‑party
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
     'channels',
     'django_filters',
-'idea_tournament',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.github',
 
+    # Your custom apps
+    'computational_discovery',
+    'experiment_accelerator',
+    'idea_tournament',
+    'gamification',
+    'streaks',
+    'social_network',
+    'collaborator_matching',
+    'expert_wall',
+    'impact_predictor',
+    'literature_review',
+    'literature_discovery',
+    'ai_coscientist',
+    'anomaly_hpo',
+    'autonomous_research',
+    'marketplace_ai',
+    'coding_assistant',
+    'experiment_recommender',
+    'failure_forensics',
+    'social',
+    'research',
+    'support',
+    'reputation',
+    'research_coach',
     'api',
     'web_dashboard',
     'experiment',
@@ -83,8 +105,6 @@ INSTALLED_APPS = [
     'terminal',
     'agents',
     'portfolios',
-'gamification',
-
     'gpu_marketplace',
     'gpu_escrow',
     'gpu_validator',
@@ -92,58 +112,61 @@ INSTALLED_APPS = [
     'gpu_federation',
     'gpu_finance',
     'gpu_reputation',
-'streaks',
-
     'organizations',
     'community',
     'leaderboards',
     'reviews',
     'sweeps',
-    'django.contrib.sites',        # required by allauth
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.github',   # optional
-'social_network',
-'collaborator_matching',
-'expert_wall',
-'impact_predictor',
-'literature_review',
-'literature_discovery',
-'ai_coscientist',
-'anomaly_hpo',
-'autonomous_research',
-'marketplace_ai',
-'coding_assistant',
-'experiment_recommender',
-'failure_forensics',
-'social',
-'research',
-'support',
-'channels',
     'profiles',
     'messaging',
-'reputation',
-'research_coach',
-
     'paper',
 ]
 
-CELERY_BEAT_SCHEDULE.update({
-    'periodic-research-analysis': {
-        'task': 'research_coach.tasks.run_periodic_analysis',
-        'schedule': crontab(hour=8, minute=0),  # Daily at 8 AM
-    },
-})
+# ----------------------------------------------------------------------
+# Middleware
+# ----------------------------------------------------------------------
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'web_dashboard.middleware.TokenAuthMiddleware',
+]
 
-CELERY_BEAT_SCHEDULE.update({
-    'generate-ideas-weekly': {
-        'task': 'research_agent.tasks.generate_ideas_for_all_users',
-        'schedule': crontab(hour=9, minute=0, day_of_week=1),
+# ----------------------------------------------------------------------
+# URLs & ASGI/WSGI
+# ----------------------------------------------------------------------
+ROOT_URLCONF = "django_api.urls"
+WSGI_APPLICATION = "django_api.wsgi.application"
+ASGI_APPLICATION = "django_api.asgi.application"
+
+# ----------------------------------------------------------------------
+# Channels (WebSocket)
+# ----------------------------------------------------------------------
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Use Redis for production
     },
-})
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
-OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o')
+}
+
+# ----------------------------------------------------------------------
+# Database
+# ----------------------------------------------------------------------
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
+
+# ----------------------------------------------------------------------
+# Authentication & Allauth
+# ----------------------------------------------------------------------
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
@@ -159,63 +182,80 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['openid', 'profile', 'email'],
     },
 }
-
-
-CELERY_BEAT_SCHEDULE.update({
-    'regenerate-all-interest-profiles': {
-        'task': 'collaborator_matching.tasks.regenerate_all_profiles',
-        'schedule': crontab(hour=3, minute=0, day_of_week=1),  # Every Monday
-    },
-    'generate-all-matches': {
-        'task': 'collaborator_matching.tasks.generate_all_matches',
-        'schedule': crontab(hour=4, minute=0, day_of_week=1),
-    },
-})
-
-CELERY_BEAT_SCHEDULE.update({
-    'reset-weekly-points': {
-        'task': 'gamification.tasks.reset_weekly_points',
-        'schedule': crontab(hour=0, minute=0, day_of_week=1),  # Every Monday
-    },
-    'check-streak-decay': {
-        'task': 'gamification.tasks.check_streak_decay',
-        'schedule': crontab(hour=0, minute=10),
-    },
-    'take-leaderboard-snapshot': {
-        'task': 'gamification.tasks.take_leaderboard_snapshot',
-        'schedule': crontab(hour=0, minute=20),
-    },
-    'award-streak-bonus': {
-        'task': 'gamification.tasks.award_streak_bonus',
-        'schedule': crontab(hour=0, minute=30, day_of_week=1),  # Every Monday
-    },
-})
-
-CELERY_BEAT_SCHEDULE.update({
-    'generate-weekly-summaries': {
-        'task': 'streaks.tasks.generate_weekly_summaries',
-        'schedule': crontab(hour=8, minute=0, day_of_week=1),  # Every Monday 8 AM
-    },
-    'check-broken-streaks': {
-        'task': 'streaks.tasks.check_and_reset_broken_streaks',
-        'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
-    },
-})
 SOCIALACCOUNT_STORE_TOKENS = True
-CELERY_BEAT_SCHEDULE.update({
-    'weekly-experiment-summary': {
-        'task': 'experiment_accelerator.tasks.generate_weekly_summary',
-        'schedule': crontab(hour=9, minute=0, day_of_week=1),  # Monday 9 AM
-    },
-})
-# ----------------------------------------------
-# 
-# 
-# ------------------------
-# Celery Beat schedule (all combined)
-# ----------------------------------------------------------------------
-from celery.schedules import crontab
 
+# ----------------------------------------------------------------------
+# Templates
+# ----------------------------------------------------------------------
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+# ----------------------------------------------------------------------
+# REST Framework
+# ----------------------------------------------------------------------
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'api.authentication.CookieTokenAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+}
+
+# ----------------------------------------------------------------------
+# CORS
+# ----------------------------------------------------------------------
+CORS_ALLOW_CREDENTIALS = True
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = []
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+# ----------------------------------------------------------------------
+# Static & Media
+# ----------------------------------------------------------------------
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# ----------------------------------------------------------------------
+# Internationalization
+# ----------------------------------------------------------------------
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "UTC"
+USE_I18N = True
+USE_TZ = True
+
+# ----------------------------------------------------------------------
+# Celery & Redis
+# ----------------------------------------------------------------------
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULE = {
     # Marketplace
     'match-orders-every-30s': {
@@ -262,8 +302,6 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'gpu_reputation.tasks.expire_stale_disputes',
         'schedule': crontab(hour=0, minute=30),
     },
-}
-CELERY_BEAT_SCHEDULE.update({
     'daily-reputation-snapshot': {
         'task': 'reputation.tasks.daily_snapshot',
         'schedule': crontab(hour=1, minute=0),
@@ -272,130 +310,61 @@ CELERY_BEAT_SCHEDULE.update({
         'task': 'reputation.tasks.generate_daily_recommendations',
         'schedule': crontab(hour=2, minute=0),
     },
-})
-# Social auth backends — uncomment after installing django-allauth
-# AUTHENTICATION_BACKENDS = [
-#     'django.contrib.auth.backends.ModelBackend',
-#     'allauth.account.auth_backends.AuthenticationBackend',
-# ]
 
-# SITE_ID = 1
-# SOCIALACCOUNT_PROVIDERS = {
-#     'github': {
-#         'SCOPE': ['user:email', 'repo'],
-#         'VERIFIED_EMAIL': True,
-#     },
-#     'huggingface': {
-#         'SCOPE': ['openid', 'profile', 'email'],
-#     },
-# }
-# SOCIALACCOUNT_STORE_TOKENS = True
+    # Collaborator Matching
+    'regenerate-all-interest-profiles': {
+        'task': 'collaborator_matching.tasks.regenerate_all_profiles',
+        'schedule': crontab(hour=3, minute=0, day_of_week=1),
+    },
+    'generate-all-matches': {
+        'task': 'collaborator_matching.tasks.generate_all_matches',
+        'schedule': crontab(hour=4, minute=0, day_of_week=1),
+    },
 
-# ----------------------------------------------------------------------
-# Middleware
-MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'allauth.account.middleware.AccountMiddleware',         # ← add this
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'web_dashboard.middleware.TokenAuthMiddleware',
-]
+    # Gamification
+    'reset-weekly-points': {
+        'task': 'gamification.tasks.reset_weekly_points',
+        'schedule': crontab(hour=0, minute=0, day_of_week=1),
+    },
+    'check-streak-decay': {
+        'task': 'gamification.tasks.check_streak_decay',
+        'schedule': crontab(hour=0, minute=10),
+    },
+    'take-leaderboard-snapshot': {
+        'task': 'gamification.tasks.take_leaderboard_snapshot',
+        'schedule': crontab(hour=0, minute=20),
+    },
+    'award-streak-bonus': {
+        'task': 'gamification.tasks.award_streak_bonus',
+        'schedule': crontab(hour=0, minute=30, day_of_week=1),
+    },
 
-# ----------------------------------------------------------------------
-# URL & WSGI / ASGI
-# ----------------------------------------------------------------------
-ROOT_URLCONF = "django_api.urls"
-WSGI_APPLICATION = "django_api.wsgi.application"
-ASGI_APPLICATION = "django_api.asgi.application"
+    # Streaks
+    'generate-weekly-summaries': {
+        'task': 'streaks.tasks.generate_weekly_summaries',
+        'schedule': crontab(hour=8, minute=0, day_of_week=1),
+    },
+    'check-broken-streaks': {
+        'task': 'streaks.tasks.check_and_reset_broken_streaks',
+        'schedule': crontab(hour=2, minute=0),
+    },
 
-# ----------------------------------------------------------------------
-# Channels
-# ----------------------------------------------------------------------
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    # Experiment Accelerator
+    'weekly-experiment-summary': {
+        'task': 'experiment_accelerator.tasks.generate_weekly_summary',
+        'schedule': crontab(hour=9, minute=0, day_of_week=1),
+    },
+
+    # Research Coach
+    'periodic-research-analysis': {
+        'task': 'research_coach.tasks.run_periodic_analysis',
+        'schedule': crontab(hour=8, minute=0),
+    },
+    'generate-ideas-weekly': {
+        'task': 'research_agent.tasks.generate_ideas_for_all_users',
+        'schedule': crontab(hour=9, minute=0, day_of_week=1),
     },
 }
-
-# ----------------------------------------------------------------------
-# Templates
-# ----------------------------------------------------------------------
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-            ],
-        },
-    },
-]
-
-# ----------------------------------------------------------------------
-# Database
-# ----------------------------------------------------------------------
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
-
-# ----------------------------------------------------------------------
-# REST Framework
-# ----------------------------------------------------------------------
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'api.authentication.CookieTokenAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
-    ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
-}
-
-# ----------------------------------------------------------------------
-# CORS
-# ----------------------------------------------------------------------
-CORS_ALLOW_CREDENTIALS = True
-if DEBUG:
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
-
-# ----------------------------------------------------------------------
-# Static & Media
-# ----------------------------------------------------------------------
-STATIC_URL = "/static/"
-STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
-# ----------------------------------------------------------------------
-# Internationalization
-# ----------------------------------------------------------------------
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
-USE_I18N = True
-USE_TZ = True
 
 # ----------------------------------------------------------------------
 # Logging
@@ -428,14 +397,12 @@ LOGGING = {
 # ----------------------------------------------------------------------
 # Custom Settings
 # ----------------------------------------------------------------------
-GLUE_DATA_PATH = os.environ.get(
-    "GLUE_DATA_PATH",
-    str(get_glue_dir()),
-)
-
+GLUE_DATA_PATH = os.environ.get("GLUE_DATA_PATH", str(get_glue_dir()))
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL', None)
+OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o')
 HUGGINGFACE_TOKEN = os.environ.get("HF_TOKEN")
 HUGGINGFACE_USERNAME = os.environ.get("HF_USERNAME")
-
 MODEL_ARCHIVE_BUCKET = os.environ.get("MODEL_ARCHIVE_BUCKET")
 
 SCHEDULER_TOTAL_GPUS = int(os.environ.get("SCHEDULER_TOTAL_GPUS", 1))
@@ -446,5 +413,4 @@ JOB_TIMEOUT_SECONDS = int(os.environ.get("JOB_TIMEOUT_SECONDS", 0))
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 ML_TOKEN = os.environ.get("ML_TOKEN", "")
-
 LOGIN_URL = "/login/"
