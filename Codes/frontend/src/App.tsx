@@ -10,6 +10,8 @@ import { DockableWindow } from './components/DockableWindow'
 import { WindowLauncher } from './components/WindowLauncher'
 import { WorkspaceManager } from './components/WorkspaceManager'
 import { Toaster } from './components/ui/Toast'
+import { ChatPanel } from './features/chat/components/ChatPanel'
+
 
 // ========================
 // 1. Core / Layout Pages (used in Router)
@@ -112,6 +114,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   // Core
   terminal: TerminalPanel,
   chat: ChatPanel,
+
   notes: FloatingNotesEditor,
   'paper-editor': PaperEditorPanel,
   marketplace: GPUMarketplacePage,

@@ -37,6 +37,7 @@ const AVAILABLE_WINDOWS = [
   { type: 'coding-assistant', title: 'AI Coding Assistant', icon: '</>' },
   { type: 'pipeline-monitor', title: 'Pipeline Monitor', icon: '📊' },
   { type: 'step-editor', title: 'Step Editor', icon: '✏️' },
+  { type: 'chat', title: 'Research Assistant', icon: '💬' },
 
   // Literature & Discovery
   { type: 'literature-map', title: 'Literature Map', icon: '🗺️' },
