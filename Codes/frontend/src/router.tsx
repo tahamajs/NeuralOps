@@ -553,3 +553,8 @@ export const router = createBrowserRouter([
 
 { path: '/datasets', element: <DatasetListPage /> },
 { path: '/datasets/:datasetId', element: <DatasetDetailPage /> },
+
+
+
+{ path: '/dashboards', element: <LiveDashboardList /> },
+{ path: '/dashboards/:dashboardId', element: <DashboardBuilder /> },
