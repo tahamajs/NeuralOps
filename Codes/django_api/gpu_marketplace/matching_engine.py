@@ -150,3 +150,91 @@ def match_all_orders():
     """Convenience function for Celery task."""
     engine = MatchingEngine()
     return engine.run()
+
+
+import logging
+from django.db import transaction
+from .models import TradeOrder, Trade, Portfolio, Candlestick
+
+logger = logging.getLogger(__name__)
+
+
+def match_order(order):
+    """Match a buy/sell order against the order book."""
+    with transaction.atomic():
+        opposite_side = 'sell' if order.side == 'buy' else 'buy'
+        # Find matching orders
+        candidates = TradeOrder.objects.filter(
+            gpu_model=order.gpu_model,
+            side=opposite_side,
+            status__in=['open', 'partially_filled']
+        ).order_by('price' if order.side == 'buy' else '-price')
+
+        remaining = order.quantity
+        for match in candidates:
+            if remaining <= 0:
+                break
+            # Determine if price matches
+            if order.order_type == 'limit' and order.price:
+                if order.side == 'buy' and match.price > order.price:
+                    break
+                if order.side == 'sell' and match.price < order.price:
+                    break
+
+            trade_qty = min(remaining, match.quantity - match.filled_quantity)
+            if trade_qty <= 0:
+                continue
+
+            # Execute trade
+            trade_price = match.price if match.order_type == 'limit' else order.price
+            Trade.objects.create(
+                gpu_model=order.gpu_model,
+                price=trade_price,
+                quantity=trade_qty,
+                buyer=order.user if order.side == 'buy' else match.user,
+                seller=match.user if order.side == 'sell' else order.user,
+                buy_order=order if order.side == 'buy' else match,
+                sell_order=match if order.side == 'sell' else order,
+            )
+
+            # Update portfolio for both parties
+            update_portfolio(order.user, order.gpu_model, trade_qty if order.side == 'buy' else -trade_qty)
+            update_portfolio(match.user, order.gpu_model, -trade_qty if match.side == 'buy' else trade_qty)
+
+            # Update order fill status
+            order.filled_quantity += trade_qty
+            order.status = 'filled' if order.filled_quantity >= order.quantity else 'partially_filled'
+            order.save()
+
+            match.filled_quantity += trade_qty
+            match.status = 'filled' if match.filled_quantity >= match.quantity else 'partially_filled'
+            match.save()
+
+            remaining -= trade_qty
+
+        # Update candlestick (simplified: use last trade price)
+        if remaining < order.quantity:
+            last_trade = Trade.objects.filter(gpu_model=order.gpu_model).order_by('-created_at').first()
+            if last_trade:
+                update_candlestick(order.gpu_model, float(last_trade.price), trade_qty)
+
+
+def update_portfolio(user, gpu_model, delta):
+    portfolio, _ = Portfolio.objects.get_or_create(user=user, gpu_model=gpu_model)
+    portfolio.quantity += delta
+    portfolio.save()
+
+
+def update_candlestick(gpu_model, price, volume):
+    from django.utils import timezone
+    now = timezone.now()
+    minute_start = now.replace(second=0, microsecond=0)
+    candle, _ = Candlestick.objects.get_or_create(
+        gpu_model=gpu_model, interval_start=minute_start,
+        defaults={'open_price': price, 'high_price': price, 'low_price': price, 'close_price': price}
+    )
+    candle.high_price = max(candle.high_price, price)
+    candle.low_price = min(candle.low_price, price)
+    candle.close_price = price
+    candle.volume += volume
+    candle.save()

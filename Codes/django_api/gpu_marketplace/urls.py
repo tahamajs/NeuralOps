@@ -55,4 +55,17 @@ urlpatterns = [
     path('jobs/<uuid:job_id>/logs/', views.job_update_logs, name='job_update_logs'),
     path('agent/check-update/', views.agent_check_update, name='agent_check_update'),
     path('agent/latest/', views.agent_latest_version, name='agent_latest_version'),
+
+
+
+    
 ]
+
+
+from .trading_views import TradeOrderViewSet, PortfolioViewSet
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'trading/orders', TradeOrderViewSet, basename='trading-order')
+router.register(r'trading/portfolio', PortfolioViewSet, basename='trading-portfolio')
+urlpatterns += router.urls
