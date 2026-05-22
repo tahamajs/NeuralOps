@@ -365,3 +365,12 @@ const componentMap = {
   'pipeline-monitor': AutonomousPipelineMonitor,
   'step-editor': StepEditor,
 }
+
+import ImpactScorePage from './features/impactPredictor/pages/ImpactScorePage'
+import ProjectLeaderboard from './features/impactPredictor/pages/ProjectLeaderboard'
+
+const componentMap = {
+  // ...
+  'impact-score': ImpactScorePage,
+  'project-leaderboard': ProjectLeaderboard,
+}

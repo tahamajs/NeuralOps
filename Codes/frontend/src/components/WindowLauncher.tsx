@@ -147,3 +147,10 @@ const AVAILABLE_WINDOWS = [
   { type: 'pipeline-monitor', title: 'Pipeline Monitor', icon: '📊' },
   { type: 'step-editor', title: 'Step Editor', icon: '✏️' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'impact-score', title: 'Impact Score', icon: '📈' },
+  { type: 'project-leaderboard', title: 'Project Leaderboard', icon: '🏆' },
+]
