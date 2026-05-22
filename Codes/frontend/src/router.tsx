@@ -366,6 +366,7 @@ export const router = createBrowserRouter([
       { path: '/paper/editor/:projectId', element: <OverleafEditorPage /> },
       { path: '/paper/new', element: <NewPaperProjectPage /> },
       { path: '/paper', element: <PaperProjectsPage /> },
+{ path: '/chat', element: <ChatPanel /> },
 
       // Model Versioning
       { path: '/runs/:runId/model-versions', element: <ModelVersionsPage /> },
