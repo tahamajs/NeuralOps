@@ -51,7 +51,63 @@ class ModelVersion(models.Model):
         if self.compressed_artifact_path and os.path.exists(self.compressed_artifact_path):
             os.remove(self.compressed_artifact_path)
 
+    def archive_to_cold_storage(self, bucket_name: str):
+        """
+        Move the artifact (and compressed artifact) to an S3 bucket,
+        update storage tier to 'cold', and remove local copies.
+        """
+        import boto3
+        s3 = boto3.client('s3')
+        # Upload original artifact directory as a tar.gz
+        import tarfile, io, os
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode='w:gz') as tar:
+            tar.add(self.artifact_path, arcname=os.path.basename(self.artifact_path))
+        tar_buffer.seek(0)
+        key = f"run_{self.run_id}/v{self.version_number}/artifact.tar.gz"
+        s3.upload_fileobj(tar_buffer, bucket_name, key)
 
+        # If compressed artifact exists and is separate, also upload it
+        if self.compressed_artifact_path and os.path.exists(self.compressed_artifact_path):
+            comp_key = f"run_{self.run_id}/v{self.version_number}/{os.path.basename(self.compressed_artifact_path)}"
+            with open(self.compressed_artifact_path, 'rb') as f:
+                s3.upload_fileobj(f, bucket_name, comp_key)
+
+        # Delete local artifacts
+        self.delete_local_artifact()
+        self.storage_tier = 'cold'
+        self.save(update_fields=['storage_tier'])
+
+    def restore_from_cold_storage(self, bucket_name: str):
+        """
+        Download the artifact from cold storage (S3) back to local disk,
+        set storage tier to 'hot'.
+        """
+        import boto3, os
+        s3 = boto3.client('s3')
+        # Restore the original artifact
+        artifact_key = f"run_{self.run_id}/v{self.version_number}/artifact.tar.gz"
+        local_tar = os.path.join(self.artifact_path, 'artifact.tar.gz')
+        os.makedirs(self.artifact_path, exist_ok=True)
+        s3.download_file(bucket_name, artifact_key, local_tar)
+
+        # Extract
+        import tarfile
+        with tarfile.open(local_tar, 'r:gz') as tar:
+            tar.extractall(self.artifact_path)
+        os.remove(local_tar)
+
+        # Restore compressed artifact if it existed
+        if self.compressed_artifact_path:
+            comp_filename = os.path.basename(self.compressed_artifact_path)
+            comp_key = f"run_{self.run_id}/v{self.version_number}/{comp_filename}"
+            try:
+                s3.download_file(bucket_name, comp_key, self.compressed_artifact_path)
+            except Exception:
+                pass   # compressed artifact may be missing, ignore
+
+        self.storage_tier = 'hot'
+        self.save(update_fields=['storage_tier'])
 class ModelVersionDiff(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     from_version = models.ForeignKey(
