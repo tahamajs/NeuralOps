@@ -310,3 +310,15 @@ const componentMap = {
   // ...
   forensics: FailureAnalysisPage,
 }
+
+
+
+// src/App.tsx
+import IdeaTournamentPage from './features/coscientist/pages/IdeaTournamentPage'
+import HypothesisBrowser from './features/coscientist/pages/HypothesisBrowser'
+
+const componentMap = {
+  // ...
+  tournament: IdeaTournamentPage,
+  hypotheses: HypothesisBrowser,
+}
