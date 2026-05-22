@@ -131,7 +131,12 @@ const PromptTestingPage = lazy(() => import('./features/agent/pages/PromptTestin
 // Sweeps
 const SweepDashboardPage = lazy(() => import('./features/sweeps/pages/SweepDashboardPage'))
 const SweepCreator = lazy(() => import('./features/sweeps/components/SweepCreator'))
+// Organizations
+const OrganizationListPage = lazy(() => import('../features/organizations/pages/OrganizationListPage'))
+const OrganizationDetailPage = lazy(() => import('../features/organizations/pages/OrganizationDetailPage'))
+const InviteAcceptPage = lazy(() => import('../features/organizations/pages/InviteAcceptPage'))
 
+// In the router children array:
 // Fallback
 const NotFoundPage = lazy(() => import('./features/NotFoundPage'))
 
@@ -277,6 +282,9 @@ export const router = createBrowserRouter([
       { path: '/marketplace/usage', element: <UsagePage /> },
       { path: '/marketplace/leaderboard', element: <LeaderboardPage /> },
       { path: '/marketplace/reputation', element: <ReputationPage /> },
+{ path: '/organizations', element: <OrganizationListPage /> },
+{ path: '/orgs/:orgId', element: <OrganizationDetailPage /> },
+{ path: '/invite/:token', element: <InviteAcceptPage /> },
 
       // 404
       { path: '*', element: <NotFoundPage /> },
