@@ -22,7 +22,16 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   community: QuestionListPage,
   // add all others
 }
+import AnomalyListPage from './features/anomaly/pages/AnomalyListPage'
+import AnomalyDetailPage from './features/anomaly/pages/AnomalyDetailPage'
+import HPORunsPage from './features/hpo/pages/HPORunsPage'
 
+const componentMap = {
+  // ...
+  anomaly: AnomalyListPage,
+  anomaly_detail: AnomalyDetailPage,
+  hpo: HPORunsPage,
+}
 // Pages
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
