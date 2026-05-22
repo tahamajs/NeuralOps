@@ -59,3 +59,31 @@
 @keyframes ripple {
   to { transform: scale(4); opacity: 0; }
 }
+
+
+/* src/index.css - Design Tokens */
+:root {
+  /* Core Colors - A deep, technical palette */
+  --color-primary: #3b82f6;
+  --color-primary-glow: rgba(59, 130, 246, 0.5);
+  --color-surface: #05070a;
+  --color-surface-elevated: #0a0f18;
+  --color-surface-higher: #111827;
+  
+  /* Accents for different data types */
+  --color-accent-compute: #8b5cf6;
+  --color-accent-storage: #10b981;
+  --color-accent-network: #f59e0b;
+  
+  /* Typography - Monospace for data, sans-serif for UI */
+  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  
+  /* Spacing (8px grid system) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+}
