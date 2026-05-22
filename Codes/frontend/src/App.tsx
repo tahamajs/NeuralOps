@@ -411,3 +411,15 @@ const componentMap = {
   'model-comparison': ModelComparisonView,
   'tool-test-console': ToolTestConsole,
 }
+
+
+import DriftMonitorSetup from './features/healthMonitor/pages/DriftMonitorSetup'
+import AlertHistory from './features/healthMonitor/pages/AlertHistory'
+import HealthDashboard from './features/healthMonitor/pages/HealthDashboard'
+
+const componentMap = {
+  // ...
+  'drift-monitor': DriftMonitorSetup,
+  'alert-history': AlertHistory,
+  'health-dashboard': HealthDashboard,
+}
