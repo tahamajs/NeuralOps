@@ -50,6 +50,8 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-secret-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["*"] if DEBUG else os.environ.get("ALLOWED_HOSTS", "").split(",")
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL', None)  # Optional, for compatible APIs
 
 # ----------------------------------------------------------------------
 # Application definition
@@ -105,6 +107,7 @@ INSTALLED_APPS = [
 'impact_predictor',
 'literature_review',
 'literature_discovery',
+'ai_coscientist',
 
     'profiles',
     'messaging',
