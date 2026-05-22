@@ -464,3 +464,20 @@ const componentMap = {
   protocols: ProtocolListPage,
   'protocol-builder': ProtocolBuilder,
 }
+
+
+
+import FuturesTradingPage from './features/gpuFinance/pages/FuturesTradingPage'
+import ComputeIndexPage from './features/gpuFinance/pages/ComputeIndexPage'
+import InvoiceManager from './features/gpuFinance/pages/InvoiceManager'
+import PayoutRequestsPage from './features/gpuFinance/pages/PayoutRequestsPage'
+import SubscriptionPlansPage from './features/gpuFinance/pages/SubscriptionPlansPage'
+
+const componentMap = {
+  // ...
+  'futures': FuturesTradingPage,
+  'compute-index': ComputeIndexPage,
+  'invoices': InvoiceManager,
+  'payouts': PayoutRequestsPage,
+  'subscriptions': SubscriptionPlansPage,
+}

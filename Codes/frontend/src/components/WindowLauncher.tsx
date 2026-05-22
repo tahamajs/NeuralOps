@@ -256,3 +256,13 @@ const AVAILABLE_WINDOWS = [
   { type: 'protocols', title: 'Research Protocols', icon: '📋' },
   { type: 'protocol-builder', title: 'Protocol Builder', icon: '✍️' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'futures', title: 'Futures Trading', icon: '📈' },
+  { type: 'compute-index', title: 'Compute Index', icon: '📊' },
+  { type: 'invoices', title: 'Invoices', icon: '🧾' },
+  { type: 'payouts', title: 'Payout Requests', icon: '💰' },
+  { type: 'subscriptions', title: 'Subscription Plans', icon: '💳' },
+]
