@@ -114,6 +114,7 @@ INSTALLED_APPS = [
 'anomaly_hpo',
 'autonomous_research',
 'marketplace_ai',
+'coding_assistant',
 
     'profiles',
     'messaging',
