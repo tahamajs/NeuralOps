@@ -182,3 +182,11 @@ const AVAILABLE_WINDOWS = [
   { type: 'sandbox', title: 'Secure Sandbox', icon: '🖥️' },
   { type: 'plugins', title: 'Plugin Marketplace', icon: '🧩' },
 ]
+
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'literature-synthesizer', title: 'Literature Synthesizer', icon: '📖' },
+  { type: 'hypothesis-generator', title: 'Hypothesis Generator', icon: '🧠' },
+  { type: 'database-explorer', title: 'Research Database Explorer', icon: '🔍' },
+  { type: 'grant-matcher', title: 'Grant Matcher', icon: '🏆' },
+]
