@@ -128,7 +128,14 @@ const AVAILABLE_WINDOWS = [
   { type: 'literature-map', title: 'Literature Map', icon: '🗺️' },
   { type: 'citation-graph', title: 'Citation Graph Viewer', icon: '🔗' },
 ]
-
+const AVAILABLE_WINDOWS = [
+  { type: 'marketplace-ai', title: 'AI Agent Marketplace', icon: '🤖' },
+  { type: 'comparison-builder', title: 'Comparison Builder', icon: '📊' },
+]
+// WindowLauncher.tsx
+const AVAILABLE_WINDOWS = [
+  { type: 'coding-assistant', title: 'AI Coding Assistant', icon: '&lt;/&gt;' },
+]
 
 const AVAILABLE_WINDOWS = [
   // ...
