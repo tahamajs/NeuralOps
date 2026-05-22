@@ -40,6 +40,7 @@ path('api/collaborators/', include('collaborator_matching.urls')),
 path('api/gamification/', include('gamification.urls')),
 path('api/streaks/', include('streaks.urls')),
 path('api/experts/', include('expert_wall.urls')),
+path('api/impact/', include('impact_predictor.urls')),
 
 path('api/social/', include('social_network.urls')),
 
