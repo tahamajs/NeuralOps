@@ -52,6 +52,7 @@ path('api/research/', include('autonomous_research.urls')),
 path('api/marketplace-ai/', include('marketplace_ai.urls')),
 path('api/code/', include('coding_assistant.urls')),
 path('api/recommender/', include('experiment_recommender.urls')),
+path('api/forensics/', include('failure_forensics.urls')),
 
     path('api/social/', include('social_network.urls')),
 
