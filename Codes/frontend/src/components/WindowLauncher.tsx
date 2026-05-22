@@ -80,3 +80,9 @@ const AVAILABLE_WINDOWS = [
   // ... existing entries
   { type: 'support', title: 'AI Support Hub', icon: '🎓' },
 ];
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'gpumarket', title: 'GPU Stock Market', icon: '📈', component: GPUTradingTerminal },
+];

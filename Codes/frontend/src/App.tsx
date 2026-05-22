@@ -267,3 +267,11 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   model3d: ModelViewerPage,
   federated: FLRunPage,
 };
+
+
+import GPUTradingTerminal from './features/marketplace/pages/GPUTradingTerminal';
+import { useWindowStore } from './store/windowStore';
+const componentMap = {
+  // ...
+  gpumarket: GPUTradingTerminal,
+};
