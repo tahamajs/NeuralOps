@@ -112,3 +112,12 @@ const AVAILABLE_WINDOWS = [
   // ... existing
   { type: 'forensics', title: 'Failure Forensics', icon: '🛡️' },
 ]
+
+
+
+// src/components/WindowLauncher.tsx
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'tournament', title: 'Idea Tournament', icon: '🏆' },
+  { type: 'hypotheses', title: 'Hypothesis Browser', icon: '🔬' },
+]
