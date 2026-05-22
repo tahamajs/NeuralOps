@@ -15,27 +15,46 @@ import {
 export default function DashboardPage() {
   const navigate = useNavigate()
 
-  const { data: experiments = [], isLoading } = useQuery<Experiment[]>({
+  // Fetch experiments
+  const { data: experiments = [], isLoading: expsLoading, error: expsError } = useQuery<Experiment[]>({
     queryKey: ['experiments'],
     queryFn: async () => (await api.get(ENDPOINTS.EXPERIMENTS.LIST)).data,
     refetchInterval: 5000,
   })
 
-  const { data: system } = useQuery({
+  // Fetch system status
+  const { data: system, isLoading: sysLoading } = useQuery({
     queryKey: ['systemStatus'],
-    queryFn: async () => (await api.get('/api/system/status/')).data,
+    queryFn: async () => (await api.get('/system/status/')).data,
     refetchInterval: 10000,
   })
 
+  // Fetch job stats (optional, if endpoint exists)
   const { data: jobStats } = useQuery({
     queryKey: ['jobStats'],
-    queryFn: async () => (await api.get('/api/jobs/stats/')).data,
+    queryFn: async () => (await api.get('/jobs/stats/')).data,
     refetchInterval: 15000,
+    retry: 1,
   })
+
+  const isLoading = expsLoading || sysLoading
+  if (isLoading) return <Spinner />
+
+  if (expsError) {
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-red-400">Failed to load experiments. Please try again later.</p>
+        <Button variant="primary" className="mt-4" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </Card>
+    )
+  }
 
   const completed = experiments.filter(e => e.status === 'completed').length
   const running = experiments.filter(e => e.status === 'running').length
   const failed = experiments.filter(e => e.status === 'failed').length
+
   const avgAccuracy = completed > 0
     ? (experiments
         .filter(e => e.status === 'completed')
@@ -43,16 +62,13 @@ export default function DashboardPage() {
         .toFixed(4)
     : '—'
 
-  // Most recent failed run
-  const lastFailed = experiments.filter(e => e.status === 'failed')[0]
-
-  if (isLoading) return <Spinner />
+  const lastFailed = experiments.find(e => e.status === 'failed')
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* ── Welcome Banner ── */}
+      {/* Welcome Banner */}
       <div className="glass p-6 rounded-2xl bg-gradient-to-r from-neon-blue/10 to-purple-500/10 border border-white/10">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-display font-bold text-white">
               Welcome back, <span className="text-neon-blue">Researcher</span>
@@ -67,12 +83,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── KPI Cards ── */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="card-hover-effect">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Total</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">Total Runs</p>
               <p className="text-3xl font-display font-bold text-white mt-1">{experiments.length}</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-neon-blue/10 flex items-center justify-center">
@@ -84,10 +100,10 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-400 uppercase tracking-wider">Running</p>
-              <p className="text-3xl font-display font-bold text-neon-orange mt-1">{running}</p>
+              <p className="text-3xl font-display font-bold text-orange-400 mt-1">{running}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-neon-orange/10 flex items-center justify-center">
-              <Activity size={20} className="text-neon-orange" />
+            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
+              <Activity size={20} className="text-orange-400" />
             </div>
           </div>
         </Card>
@@ -95,29 +111,29 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-400 uppercase tracking-wider">Avg Accuracy</p>
-              <p className="text-3xl font-display font-bold text-neon-green mt-1">{avgAccuracy}</p>
+              <p className="text-3xl font-display font-bold text-green-400 mt-1">{avgAccuracy}</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-neon-green/10 flex items-center justify-center">
-              <TrendingUp size={20} className="text-neon-green" />
+            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
+              <TrendingUp size={20} className="text-green-400" />
             </div>
           </div>
         </Card>
         <Card className="card-hover-effect">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-wider">CPU Usage</p>
-              <p className="text-3xl font-display font-bold text-neon-purple mt-1">{system?.cpu?.percent || 0}%</p>
+              <p className="text-xs text-slate-400 uppercase tracking-wider">CPU Load</p>
+              <p className="text-3xl font-display font-bold text-purple-400 mt-1">{system?.cpu?.percent || 0}%</p>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-neon-purple/10 flex items-center justify-center">
-              <Cpu size={20} className="text-neon-purple" />
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+              <Cpu size={20} className="text-purple-400" />
             </div>
           </div>
         </Card>
       </div>
 
-      {/* ── Recent Experiments Table ── */}
+      {/* Recent Experiments Table */}
       <Card>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
           <h2 className="text-lg font-display font-bold text-white">Recent Experiments</h2>
           <Link to="/experiments" className="text-neon-blue text-sm hover:underline">
             View all →
@@ -133,7 +149,7 @@ export default function DashboardPage() {
                 <th className="py-3 px-4 font-medium">Accuracy</th>
                 <th className="py-3 px-4 font-medium">Created</th>
                 <th className="py-3 px-4 font-medium text-right">Action</th>
-              </tr>
+               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {experiments.slice(0, 8).map(exp => (
@@ -143,14 +159,16 @@ export default function DashboardPage() {
                   onClick={() => navigate(`/experiments/${exp.id}`)}
                 >
                   <td className="py-3 px-4 text-white">{exp.name || exp.id.slice(0, 8)}</td>
-                  <td className="py-3 px-4 uppercase text-xs">{exp.config?.task_name || '—'}</td>
-                  <td className="py-3 px-4">
-                    <Badge status={exp.status}>{exp.status}</Badge>
+                  <td className="py-3 px-4 uppercase text-xs text-slate-300">
+                    {exp.config?.task_name || '—'}
                   </td>
                   <td className="py-3 px-4">
+                    <Badge variant={exp.status}>{exp.status}</Badge>
+                  </td>
+                  <td className="py-3 px-4 font-mono">
                     {exp.final_metrics?.eval_accuracy?.toFixed(4) || '—'}
                   </td>
-                  <td className="py-3 px-4 text-slate-400">
+                  <td className="py-3 px-4 text-slate-400 text-xs">
                     {new Date(exp.created_at).toLocaleDateString()}
                   </td>
                   <td className="py-3 px-4 text-right">
@@ -167,38 +185,45 @@ export default function DashboardPage() {
                   </td>
                 </tr>
               ))}
+              {experiments.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-slate-500">
+                    No experiments found. Start one from the Launcher.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
       </Card>
 
-      {/* ── Quick Actions ── */}
+      {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Link to="/analysis" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
           <BarChart3 size={24} className="text-neon-blue" />
           <span className="text-sm font-medium text-white">Analysis</span>
         </Link>
         <Link to="/notes" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
-          <BookOpen size={24} className="text-neon-purple" />
+          <BookOpen size={24} className="text-purple-400" />
           <span className="text-sm font-medium text-white">Notebook</span>
         </Link>
         <Link to="/paper/new" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
-          <FileText size={24} className="text-neon-pink" />
+          <FileText size={24} className="text-pink-400" />
           <span className="text-sm font-medium text-white">Papers</span>
         </Link>
         <Link to="/agent" className="glass p-4 rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
-          <Bot size={24} className="text-neon-cyan" />
+          <Bot size={24} className="text-cyan-400" />
           <span className="text-sm font-medium text-white">AI Assistant</span>
         </Link>
       </div>
 
-      {/* ── Alerts (last failed) ── */}
+      {/* Failed Alert */}
       {lastFailed && (
         <Card className="border border-red-500/20 bg-red-500/5">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
             <div>
-              <p className="text-sm text-red-400">
-                ⚠️ Last failed experiment: {lastFailed.name || lastFailed.id.slice(0, 8)}
+              <p className="text-sm text-red-400 font-medium">
+                ⚠️ Last failed: {lastFailed.name || lastFailed.id.slice(0, 8)}
               </p>
               <p className="text-xs text-slate-400 mt-1">
                 Task: {lastFailed.config?.task_name || '—'} ·{' '}
