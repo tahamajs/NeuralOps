@@ -95,7 +95,9 @@ const PaperPreviewPage = lazy(() => import('./features/paper/pages/PaperPreviewP
 // Analysis / Stats
 const AdvancedAnalyticsPage = lazy(() => import('./features/analytics/pages/AdvancedAnalyticsPage'))
 const ResearchAnalysisPage = lazy(() => import('./features/analysis/pages/ResearchAnalysisPage'))
-
+{ path: '/anomalies', element: <AnomalyListPage /> },
+{ path: '/anomalies/:anomalyId', element: <AnomalyDetailPage /> },
+{ path: '/hpo', element: <HPORunsPage /> },
 // Templates
 const TemplatesListPage = lazy(() => import('./features/templates/pages/TemplatesListPage'))
 const TemplateDetailPage = lazy(() => import('./features/templates/pages/TemplateDetailPage'))
