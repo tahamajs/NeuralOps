@@ -32,18 +32,19 @@ urlpatterns = [
     path('api/federation/', include('gpu_federation.urls')),  # federation app
     path('api/reputation/', include('gpu_reputation.urls')),  # reputation app
     path('api/validator/', include('gpu_validator.urls')),    # validator app
-path('api/orgs/', include('organizations.urls')),
-path('api/portfolios/', include('portfolios.urls')),
-path('api/community/', include('community.urls')),
-path('api/reputation/', include('reputation.urls')),
-path('api/collaborators/', include('collaborator_matching.urls')),
-path('api/gamification/', include('gamification.urls')),
-path('api/streaks/', include('streaks.urls')),
-path('api/experts/', include('expert_wall.urls')),
-path('api/impact/', include('impact_predictor.urls')),
-path('api/literature/', include('literature_review.urls')),
+    path('api/orgs/', include('organizations.urls')),
+    path('api/portfolios/', include('portfolios.urls')),
+    path('api/community/', include('community.urls')),
+    path('api/reputation/', include('reputation.urls')),
+    path('api/collaborators/', include('collaborator_matching.urls')),
+    path('api/gamification/', include('gamification.urls')),
+    path('api/streaks/', include('streaks.urls')),
+    path('api/experts/', include('expert_wall.urls')),
+    path('api/impact/', include('impact_predictor.urls')),
+    path('api/literature/', include('literature_review.urls')),
+path('api/discovery/', include('literature_discovery.urls')),
 
-path('api/social/', include('social_network.urls')),
+    path('api/social/', include('social_network.urls')),
 
 ]
 if settings.DEBUG:
