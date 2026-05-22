@@ -253,3 +253,35 @@ const ActivityItem = ({ activity }: { activity: UserActivity }) => {
     </div>
   )
 }
+
+
+
+// src/features/profile/pages/UserProfilePage.tsx 核心布局
+import React, { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ProfileHeader } from '@/components/ProfileHeader';
+import { PapersGrid } from '@/components/PapersGrid';
+import { ActivityFeed } from '@/components/ActivityFeed';
+import { useUserProfile } from '@/hooks/useUserProfile';
+
+export default function UserProfilePage() {
+  const { profile, isLoading } = useUserProfile();
+  if (isLoading) return <div>Loading researcher profile...</div>;
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-surface to-surface-elevated">
+      <ProfileHeader profile={profile} />
+      <div className="container mx-auto px-4 -mt-16 relative z-10">
+        <Tabs defaultValue="papers" className="w-full">
+          <TabsList className="bg-white/5 rounded-xl p-1">
+            <TabsTrigger value="papers">📄 Papers & Impact</TabsTrigger>
+            <TabsTrigger value="activity">📈 Activity</TabsTrigger>
+            <TabsTrigger value="network">🤝 Research Network</TabsTrigger>
+          </TabsList>
+          <TabsContent value="papers"><PapersGrid papers={profile.publications} /></TabsContent>
+          <TabsContent value="activity"><ActivityFeed activities={profile.activities} /></TabsContent>
+          <TabsContent value="network"><NetworkGraph connections={profile.connections} /></TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
