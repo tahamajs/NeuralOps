@@ -1,3 +1,10 @@
+"""
+Django settings for the main project.
+
+This file has been restructured for clarity and consistency. All app
+installations, Celery schedules, and configuration options are in one place.
+"""
+
 import os
 import sys
 from pathlib import Path
@@ -7,11 +14,13 @@ from celery.schedules import crontab
 # ----------------------------------------------------------------------
 # Paths & Environment
 # ----------------------------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parent.parent
-PROJECT_ROOT = BASE_DIR.parent.parent
-CODES_DIR = BASE_DIR.parent
+BASE_DIR = Path(__file__).resolve().parent.parent          # e.g. .../project/src/settings
+PROJECT_ROOT = BASE_DIR.parent.parent                      # e.g. .../project
+CODES_DIR = BASE_DIR.parent                                # e.g. .../project/src
+
 
 def load_env_file(path: Path) -> None:
+    """Load KEY=VALUE pairs from a .env file into os.environ (does not overwrite)."""
     if not path.exists():
         return
     for raw_line in path.read_text().splitlines():
@@ -28,6 +37,7 @@ def load_env_file(path: Path) -> None:
         if key:
             os.environ.setdefault(key, value)
 
+
 load_env_file(PROJECT_ROOT / ".env")
 load_env_file(BASE_DIR / ".env")
 
@@ -35,6 +45,7 @@ load_env_file(BASE_DIR / ".env")
 if str(CODES_DIR) not in sys.path:
     sys.path.insert(0, str(CODES_DIR))
 
+# Try to import get_glue_dir from framework.utils.paths, fall back to a sensible default
 try:
     from framework.utils.paths import get_glue_dir
 except ImportError:
@@ -52,6 +63,7 @@ ALLOWED_HOSTS = ["*"] if DEBUG else os.environ.get("ALLOWED_HOSTS", "").split(",
 # Installed Apps
 # ----------------------------------------------------------------------
 INSTALLED_APPS = [
+    # Django channels & core
     'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -71,19 +83,22 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
-'experiment_explorer',
-'live_dashboard',
-'model_hub',
-'lab_assistant',
-'health_monitor',
-'community_lab',
-'playground',
-'datasets',
-'llm_hub',
-'projects',
- 'protocols',
+    # 'allauth.socialaccount.providers.huggingface',  # uncomment if package exists
 
-    # Your custom apps
+    # Experiment & research
+    'experiment_explorer',
+    'live_dashboard',
+    'model_hub',
+    'lab_assistant',
+    'health_monitor',
+    'community_lab',
+    'playground',
+    'datasets',
+    'llm_hub',
+    'projects',
+    'protocols',
+
+    # Core research apps
     'computational_discovery',
     'experiment_accelerator',
     'idea_tournament',
@@ -102,11 +117,15 @@ INSTALLED_APPS = [
     'coding_assistant',
     'experiment_recommender',
     'failure_forensics',
+    'research_discovery',
+
+    # Social & community
     'social',
     'research',
     'support',
     'reputation',
     'research_coach',
+    'research_agent',                # referenced in celery schedule
     'api',
     'web_dashboard',
     'experiment',
@@ -116,6 +135,8 @@ INSTALLED_APPS = [
     'terminal',
     'agents',
     'portfolios',
+
+    # GPU marketplace & finance
     'gpu_marketplace',
     'gpu_escrow',
     'gpu_validator',
@@ -123,6 +144,8 @@ INSTALLED_APPS = [
     'gpu_federation',
     'gpu_finance',
     'gpu_reputation',
+
+    # Organisations & governance
     'organizations',
     'community',
     'leaderboards',
@@ -131,8 +154,12 @@ INSTALLED_APPS = [
     'profiles',
     'messaging',
     'paper',
+    'governance',
+
+    # MLOps & integrations
+    'mlops',                         # data quality, monitoring, etc.
+    'integrations',
 ]
-INSTALLED_APPS += ['governance']
 
 # ----------------------------------------------------------------------
 # Middleware
@@ -268,8 +295,9 @@ USE_TZ = True
 # ----------------------------------------------------------------------
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+
 CELERY_BEAT_SCHEDULE = {
-    # Marketplace
+    # --- GPU Marketplace ---
     'match-orders-every-30s': {
         'task': 'gpu_marketplace.tasks.run_matching_cycle',
         'schedule': 30.0,
@@ -287,7 +315,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute=0, hour=3),
     },
 
-    # Finance
+    # --- GPU Finance ---
     'daily-index-calculation': {
         'task': 'gpu_finance.tasks.daily_index_calculation',
         'schedule': crontab(hour=0, minute=5),
@@ -301,7 +329,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(day_of_month=1, hour=1, minute=0),
     },
 
-    # Reputation
+    # --- GPU Reputation ---
     'compute-daily-trust-graph': {
         'task': 'gpu_reputation.tasks.compute_daily_trust_graph',
         'schedule': crontab(hour=2, minute=0),
@@ -314,6 +342,8 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'gpu_reputation.tasks.expire_stale_disputes',
         'schedule': crontab(hour=0, minute=30),
     },
+
+    # --- Reputation (general) ---
     'daily-reputation-snapshot': {
         'task': 'reputation.tasks.daily_snapshot',
         'schedule': crontab(hour=1, minute=0),
@@ -323,7 +353,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=2, minute=0),
     },
 
-    # Collaborator Matching
+    # --- Collaborator Matching ---
     'regenerate-all-interest-profiles': {
         'task': 'collaborator_matching.tasks.regenerate_all_profiles',
         'schedule': crontab(hour=3, minute=0, day_of_week=1),
@@ -333,7 +363,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=4, minute=0, day_of_week=1),
     },
 
-    # Gamification
+    # --- Gamification ---
     'reset-weekly-points': {
         'task': 'gamification.tasks.reset_weekly_points',
         'schedule': crontab(hour=0, minute=0, day_of_week=1),
@@ -351,7 +381,7 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=0, minute=30, day_of_week=1),
     },
 
-    # Streaks
+    # --- Streaks ---
     'generate-weekly-summaries': {
         'task': 'streaks.tasks.generate_weekly_summaries',
         'schedule': crontab(hour=8, minute=0, day_of_week=1),
@@ -361,13 +391,13 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=2, minute=0),
     },
 
-    # Experiment Accelerator
+    # --- Experiment Accelerator ---
     'weekly-experiment-summary': {
         'task': 'experiment_accelerator.tasks.generate_weekly_summary',
         'schedule': crontab(hour=9, minute=0, day_of_week=1),
     },
 
-    # Research Coach
+    # --- Research Coach & Agent ---
     'periodic-research-analysis': {
         'task': 'research_coach.tasks.run_periodic_analysis',
         'schedule': crontab(hour=8, minute=0),
@@ -376,14 +406,14 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'research_agent.tasks.generate_ideas_for_all_users',
         'schedule': crontab(hour=9, minute=0, day_of_week=1),
     },
-}
-CELERY_BEAT_SCHEDULE.update({
+
+    # --- Lab Assistant ---
     'auto-pre-label-new-tasks': {
         'task': 'lab_assistant.tasks.auto_pre_label_new_tasks',
         'schedule': crontab(minute='*/30'),
     },
-})
-CELERY_BEAT_SCHEDULE.update({
+
+    # --- Governance ---
     'run-drift-checks-hourly': {
         'task': 'governance.tasks.run_drift_checks_for_all',
         'schedule': crontab(minute=0),
@@ -392,8 +422,29 @@ CELERY_BEAT_SCHEDULE.update({
         'task': 'governance.tasks.generate_weekly_compliance_report',
         'schedule': crontab(day_of_week='monday', hour=8),
     },
-})
-INSTALLED_APPS += ['research_discovery']
+
+    # --- Health Monitor ---
+    'run-scheduled-drift-checks': {
+        'task': 'health_monitor.tasks.run_scheduled_drift_checks',
+        'schedule': crontab(minute='*/15'),
+    },
+
+    # --- MLOps ---
+    'run-data-quality-checks': {
+        'task': 'mlops.tasks.run_data_quality_checks',
+        'schedule': crontab(hour=6, minute=0),
+    },
+    'monitor-all-endpoints': {
+        'task': 'mlops.tasks.monitor_all_endpoints',
+        'schedule': 300.0,  # every 5 minutes
+    },
+
+    # --- Integrations ---
+    'daily-sandbox-cleanup': {
+        'task': 'integrations.tasks.cleanup_stale_sandboxes',
+        'schedule': crontab(hour=3, minute=0),
+    },
+}
 
 # ----------------------------------------------------------------------
 # Logging
@@ -407,7 +458,8 @@ LOGGING = {
             "style": "{",
         },
         "json": {
-            "format": '{"time": "%(asctime)s", "level": "%(levelname)s", "name": "%(name)s", "message": "%(message)s"}',
+            "format": '{"time": "%(asctime)s", "level": "%(levelname)s", '
+                      '"name": "%(name)s", "message": "%(message)s"}',
         },
     },
     "handlers": {
@@ -434,34 +486,14 @@ HUGGINGFACE_TOKEN = os.environ.get("HF_TOKEN")
 HUGGINGFACE_USERNAME = os.environ.get("HF_USERNAME")
 MODEL_ARCHIVE_BUCKET = os.environ.get("MODEL_ARCHIVE_BUCKET")
 
+# Scheduler options
 SCHEDULER_TOTAL_GPUS = int(os.environ.get("SCHEDULER_TOTAL_GPUS", 1))
 SCHEDULER_BOOST_WAIT_THRESHOLD = int(os.environ.get("SCHEDULER_BOOST_WAIT_THRESHOLD", 600))
 SCHEDULER_SHORT_JOB_THRESHOLD = int(os.environ.get("SCHEDULER_SHORT_JOB_THRESHOLD", 60))
 SCHEDULER_PREEMPT_TIMEOUT = int(os.environ.get("SCHEDULER_PREEMPT_TIMEOUT", 10))
 JOB_TIMEOUT_SECONDS = int(os.environ.get("JOB_TIMEOUT_SECONDS", 0))
 
+# API / auth
 API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
 ML_TOKEN = os.environ.get("ML_TOKEN", "")
 LOGIN_URL = "/login/"
-
-
-CELERY_BEAT_SCHEDULE.update({
-    'run-scheduled-drift-checks': {
-        'task': 'health_monitor.tasks.run_scheduled_drift_checks',
-        'schedule': crontab(minute='*/15'),
-    },
-})
-CELERY_BEAT_SCHEDULE['run-data-quality-checks'] = {
-    'task': 'mlops.tasks.run_data_quality_checks',
-    'schedule': crontab(hour=6, minute=0),
-}
-CELERY_BEAT_SCHEDULE['monitor-all-endpoints'] = {
-    'task': 'mlops.tasks.monitor_all_endpoints',
-    'schedule': 300.0,  # every 5 minutes
-}
-CELERY_BEAT_SCHEDULE['daily-sandbox-cleanup'] = {
-    'task': 'integrations.tasks.cleanup_stale_sandboxes',
-    'schedule': crontab(hour=3, minute=0),
-}
-
-INSTALLED_APPS += ['integrations']
