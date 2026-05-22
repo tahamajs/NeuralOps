@@ -74,3 +74,9 @@ const AVAILABLE_WINDOWS = [
   { type: 'model3d', title: '3D Model Explorer', icon: '🧊' },
   { type: 'federated', title: 'Federated Learning Dashboard', icon: '🔗' },
 ];
+
+// In WindowLauncher.tsx
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'support', title: 'AI Support Hub', icon: '🎓' },
+];
