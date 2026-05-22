@@ -132,6 +132,7 @@ INSTALLED_APPS = [
     'messaging',
     'paper',
 ]
+INSTALLED_APPS += ['governance']
 
 # ----------------------------------------------------------------------
 # Middleware
@@ -380,6 +381,16 @@ CELERY_BEAT_SCHEDULE.update({
     'auto-pre-label-new-tasks': {
         'task': 'lab_assistant.tasks.auto_pre_label_new_tasks',
         'schedule': crontab(minute='*/30'),
+    },
+})
+CELERY_BEAT_SCHEDULE.update({
+    'run-drift-checks-hourly': {
+        'task': 'governance.tasks.run_drift_checks_for_all',
+        'schedule': crontab(minute=0),
+    },
+    'generate-weekly-compliance-report': {
+        'task': 'governance.tasks.generate_weekly_compliance_report',
+        'schedule': crontab(day_of_week='monday', hour=8),
     },
 })
 
