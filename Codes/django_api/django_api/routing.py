@@ -1,14 +1,12 @@
-from channels.routing import ProtocolTypeRouter, URLRouter
-from messaging.routing import websocket_urlpatterns as messaging_ws
-from notes.routing import websocket_urlpatterns as notes_ws
-from api.routing import websocket_urlpatterns as api_ws
+"""
+WSGI config for the project.
 
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": URLRouter(
-        messaging_ws + notes_ws + api_ws
-    ),
-})
+It exposes the WSGI callable as a module-level variable named ``application``.
+"""
 
-from research_agent.routing import websocket_urlpatterns as agent_ws
-websocket_urlpatterns += agent_ws
+import os
+from django.core.wsgi import get_wsgi_application
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_api.settings")
+
+application = get_wsgi_application()
