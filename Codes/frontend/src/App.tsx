@@ -383,3 +383,19 @@ const componentMap = {
   'live-dashboards': LiveDashboardList,
   'dashboard-builder': DashboardBuilder,
 }
+
+
+import ModelRegistryList from './features/modelHub/pages/ModelRegistryList'
+import ApprovalRequestView from './features/modelHub/pages/ApprovalRequestView'
+import PromotionPanel from './features/modelHub/pages/PromotionPanel'
+import ModelAccessManager from './features/modelHub/pages/ModelAccessManager'
+import ModelCatalogSearch from './features/modelHub/pages/ModelCatalogSearch'
+
+const componentMap = {
+  // ...
+  'model-registry': ModelRegistryList,
+  'approvals': ApprovalRequestView,
+  'promotions': PromotionPanel,
+  'access-manager': ModelAccessManager,
+  'catalog': ModelCatalogSearch,
+}
