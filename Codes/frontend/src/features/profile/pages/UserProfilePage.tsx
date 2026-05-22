@@ -1,123 +1,255 @@
+import { useState, useEffect, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import api from '../../../api/client'
 import { useAuthStore } from '../../auth/store/authStore'
-import { Card } from '../../../components/ui/Card'
-import { Button } from '../../../components/ui/Button'
-import { Input } from '../../../components/ui/Input'
-import { Spinner } from '../../../components/ui/Spinner'
-import { User, Mail, Calendar, Shield, Activity } from 'lucide-react'
+import { profileAPI, UserProfile, UserStats, UserActivity, PinnedItem, Badge, OrganizationMembership } from '../services/api'
+import { Card, Tabs, TabList, Tab, TabPanel, Spinner, Button, Avatar } from '../../../components/ui'
+import { ProfileHeader } from '../components/ProfileHeader'
+import { ContributionHeatmap } from '../components/ContributionHeatmap'
+import { formatDistanceToNow } from 'date-fns'
+import { GitBranch, FileText, StickyNote, MessageSquare, Award, Users, Activity, Pin, ExternalLink, Star, ThumbsUp } from 'lucide-react'
 
 export default function UserProfilePage() {
-  const { user: authUser } = useAuthStore()
+  const { username } = useParams<{ username?: string }>()
+  const { user: currentUser } = useAuthStore()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '' })
+  const [activeTab, setActiveTab] = useState('overview')
+  const [activityPage, setActivityPage] = useState(1)
 
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: async () => (await api.get('/auth/user/')).data,
+  const isOwnProfile = !username || username === currentUser?.username
+
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['profile', username || 'me'],
+    queryFn: () => profileAPI.getProfile(username),
   })
 
-  useEffect(() => {
-    if (profile) {
-      setForm({
-        first_name: profile.first_name || '',
-        last_name: profile.last_name || '',
-        email: profile.email || '',
-      })
-    }
-  }, [profile])
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['profile-stats', profile?.id],
+    queryFn: () => profileAPI.getUserStats(profile.id),
+    enabled: !!profile?.id,
+  })
 
-  const updateMut = useMutation({
-    mutationFn: (data: any) => api.patch('/auth/profile/', data),
+  const { data: activity, isLoading: activityLoading } = useQuery({
+    queryKey: ['profile-activity', profile?.id, activityPage],
+    queryFn: () => profileAPI.getUserActivity(profile.id, activityPage),
+    enabled: !!profile?.id,
+  })
+
+  const { data: pinnedItems } = useQuery({
+    queryKey: ['profile-pins', profile?.id],
+    queryFn: () => profileAPI.getPinnedItems(profile.id),
+    enabled: !!profile?.id,
+  })
+
+  const { data: badges } = useQuery({
+    queryKey: ['profile-badges', profile?.id],
+    queryFn: () => profileAPI.getBadges(profile.id),
+    enabled: !!profile?.id,
+  })
+
+  const { data: orgs } = useQuery({
+    queryKey: ['profile-orgs', profile?.id],
+    queryFn: () => profileAPI.getOrganizationMemberships(profile.id),
+    enabled: !!profile?.id,
+  })
+
+  const updateProfile = useMutation({
+    mutationFn: (data: Partial<UserProfile>) => profileAPI.updateProfile(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['userProfile'] })
-      setEditing(false)
+      queryClient.invalidateQueries({ queryKey: ['profile', username || 'me'] })
     },
   })
 
-  if (isLoading) return <Spinner />
+  const uploadAvatar = useMutation({
+    mutationFn: (file: File) => profileAPI.uploadAvatar(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile', username || 'me'] })
+    },
+  })
+
+  if (profileLoading || statsLoading) return <Spinner />
+
+  if (!profile && !profileLoading) {
+    return <div className="text-center py-12 text-red-400">User not found.</div>
+  }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-      {/* Banner */}
-      <div className="glass p-8 rounded-2xl bg-gradient-to-br from-neon-blue/10 to-purple-500/10 text-center">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-neon-blue to-purple-500 flex items-center justify-center mx-auto text-3xl font-bold text-white shadow-glow-md">
-          {profile?.username?.[0]?.toUpperCase() || 'U'}
-        </div>
-        <h1 className="text-2xl font-display font-bold text-white mt-4">{profile?.username}</h1>
-        <p className="text-slate-400 text-sm">{profile?.email}</p>
-        <div className="flex justify-center gap-3 mt-4">
-          <Button size="sm" variant="ghost" onClick={() => setEditing(!editing)}>
-            {editing ? 'Cancel' : 'Edit Profile'}
-          </Button>
-          <Link to="/profile/change-password">
-            <Button size="sm" variant="ghost">Change Password</Button>
-          </Link>
+    <div className="space-y-6 animate-fade-in">
+      {/* Profile Header */}
+      <ProfileHeader
+        profile={profile}
+        stats={stats}
+        isOwnProfile={isOwnProfile}
+        onEdit={() => navigate('/profile/settings')}
+        onAvatarUpload={(file) => uploadAvatar.mutate(file)}
+      />
+
+      {/* Tabs */}
+      <Tabs defaultValue="overview" onValueChange={setActiveTab}>
+        <TabList>
+          <Tab value="overview">Overview</Tab>
+          <Tab value="activity">Activity</Tab>
+          <Tab value="badges">Badges</Tab>
+          <Tab value="organizations">Organizations</Tab>
+        </TabList>
+
+        {/* Overview Tab */}
+        <TabPanel value="overview">
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Left Column: Pinned Items */}
+            <div className="lg:col-span-2 space-y-4">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Pin size={16} className="text-neon-blue" /> Pinned Items
+              </h3>
+              {pinnedItems?.length ? (
+                pinnedItems.map((item: PinnedItem) => (
+                  <PinnedItemCard key={item.id} item={item} />
+                ))
+              ) : (
+                <Card className="text-center text-slate-500 py-8">No pinned items yet.</Card>
+              )}
+
+              {/* Contribution Heatmap */}
+              <div className="pt-4">
+                <h3 className="text-sm font-bold text-white mb-3">Contribution Calendar</h3>
+                <Card className="p-4">
+                  <ContributionHeatmap userId={profile.id} />
+                </Card>
+              </div>
+            </div>
+
+            {/* Right Column: Stats & Badges */}
+            <div className="space-y-4">
+              {/* Top Reputation */}
+              <Card>
+                <h3 className="text-sm font-bold text-white mb-2">Top 10% Reputation</h3>
+                <div className="flex items-center gap-2">
+                  <Award size={24} className="text-yellow-400" />
+                  <div>
+                    <div className="text-2xl font-bold text-white">{stats.reputation_score}</div>
+                    <div className="text-xs text-slate-400">Rank #{stats.rank}</div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Badge Highlights */}
+              <Card>
+                <h3 className="text-sm font-bold text-white mb-2">Recent Badges</h3>
+                {badges?.slice(0, 5).map((badge: Badge) => (
+                  <div key={badge.id} className="flex items-center gap-2 py-2 border-b border-white/5">
+                    <img src={badge.icon_url} alt={badge.name} className="w-6 h-6" />
+                    <div>
+                      <div className="text-sm text-white">{badge.name}</div>
+                      <div className="text-xs text-slate-500">{badge.description}</div>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            </div>
+          </div>
+        </TabPanel>
+
+        {/* Activity Tab */}
+        <TabPanel value="activity">
+          <Card>
+            <div className="space-y-4">
+              {(activity?.results || []).map((act: UserActivity) => (
+                <ActivityItem key={act.id} activity={act} />
+              ))}
+              {activity?.next && (
+                <Button variant="ghost" size="sm" onClick={() => setActivityPage(p => p + 1)}>
+                  Load More
+                </Button>
+              )}
+            </div>
+          </Card>
+        </TabPanel>
+
+        {/* Badges Tab */}
+        <TabPanel value="badges">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {badges?.map((badge: Badge) => (
+              <Card key={badge.id} className="text-center p-4">
+                <img src={badge.icon_url} alt={badge.name} className="w-12 h-12 mx-auto mb-2" />
+                <div className="font-bold text-white text-sm">{badge.name}</div>
+                <div className="text-xs text-slate-400">{badge.description}</div>
+              </Card>
+            ))}
+          </div>
+        </TabPanel>
+
+        {/* Organizations Tab */}
+        <TabPanel value="organizations">
+          <div className="grid md:grid-cols-2 gap-4">
+            {orgs?.map((org: OrganizationMembership) => (
+              <Card key={org.id} className="flex items-center gap-3 p-4">
+                <Avatar src={org.avatar_url} size="md" />
+                <div>
+                  <div className="font-bold text-white">{org.name}</div>
+                  <div className="text-xs text-slate-400 capitalize">{org.role}</div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </TabPanel>
+      </Tabs>
+    </div>
+  )
+}
+
+// Subcomponents
+const PinnedItemCard = ({ item }: { item: PinnedItem }) => {
+  const Icon = item.type === 'experiment' ? GitBranch : item.type === 'paper' ? FileText : StickyNote
+  return (
+    <Card hover>
+      <div className="flex items-start gap-3">
+        <Icon size={20} className="text-neon-blue shrink-0 mt-0.5" />
+        <div>
+          <div className="font-semibold text-white">{item.title}</div>
+          <div className="text-sm text-slate-400 line-clamp-2">{item.description}</div>
+          <div className="text-xs text-slate-500 mt-1">{formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}</div>
         </div>
       </div>
+    </Card>
+  )
+}
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="flex items-center gap-3 p-4">
-          <User size={20} className="text-neon-blue" />
-          <div>
-            <p className="text-[10px] text-slate-400 uppercase tracking-wider">Username</p>
-            <p className="text-sm text-white">{profile?.username}</p>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-3 p-4">
-          <Mail size={20} className="text-neon-purple" />
-          <div>
-            <p className="text-[10px] text-slate-400 uppercase tracking-wider">Email</p>
-            <p className="text-sm text-white">{profile?.email || '—'}</p>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-3 p-4">
-          <Calendar size={20} className="text-neon-green" />
-          <div>
-            <p className="text-[10px] text-slate-400 uppercase tracking-wider">Joined</p>
-            <p className="text-sm text-white">{new Date(profile?.date_joined).toLocaleDateString()}</p>
-          </div>
-        </Card>
-        <Card className="flex items-center gap-3 p-4">
-          <Shield size={20} className="text-neon-orange" />
-          <div>
-            <p className="text-[10px] text-slate-400 uppercase tracking-wider">Role</p>
-            <p className="text-sm text-white">{profile?.is_staff ? 'Admin' : 'Researcher'}</p>
-          </div>
-        </Card>
+const ActivityItem = ({ activity }: { activity: UserActivity }) => {
+  let icon = null
+  let link = ''
+  switch (activity.target_type) {
+    case 'experiment':
+      icon = <GitBranch size={16} className="text-green-400" />
+      link = `/experiments/${activity.target_id}`
+      break
+    case 'note':
+      icon = <StickyNote size={16} className="text-yellow-400" />
+      link = `/notes/${activity.target_id}`
+      break
+    case 'paper':
+      icon = <FileText size={16} className="text-purple-400" />
+      link = `/paper/editor/${activity.target_id}`
+      break
+    case 'question':
+      icon = <MessageSquare size={16} className="text-blue-400" />
+      link = `/questions/${activity.target_id}`
+      break
+    case 'answer':
+      icon = <ThumbsUp size={16} className="text-orange-400" />
+      link = `/questions/${activity.target_id}`
+      break
+    default:
+      icon = <Activity size={16} className="text-slate-400" />
+  }
+  return (
+    <div className="flex items-center gap-3 py-3 border-b border-white/5">
+      {icon}
+      <div className="flex-1">
+        <div className="text-sm text-white">{activity.action}</div>
+        <div className="text-xs text-slate-500">{formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}</div>
       </div>
-
-      {/* Edit Form (conditional) */}
-      {editing && (
-        <Card className="animate-scale-in">
-          <h2 className="text-sm font-bold text-white mb-4">Edit Profile</h2>
-          <div className="space-y-4">
-            <Input
-              label="First Name"
-              value={form.first_name}
-              onChange={e => setForm({ ...form, first_name: e.target.value })}
-            />
-            <Input
-              label="Last Name"
-              value={form.last_name}
-              onChange={e => setForm({ ...form, last_name: e.target.value })}
-            />
-            <Input
-              label="Email"
-              type="email"
-              value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })}
-            />
-            <Button onClick={() => updateMut.mutate(form)} disabled={updateMut.isPending}>
-              Save Changes
-            </Button>
-          </div>
-        </Card>
-      )}
+      <a href={link} className="text-neon-blue hover:underline"><ExternalLink size={14} /></a>
     </div>
   )
 }
