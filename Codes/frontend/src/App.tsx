@@ -357,3 +357,11 @@ const componentMap = {
   'marketplace-ai': AgenticMarketplacePage,
   'comparison-builder': ComparisonBuilder,
 }
+
+import AutonomousPipelineMonitor from './features/autonomous/pages/AutonomousPipelineMonitor'
+import StepEditor from './features/autonomous/pages/StepEditor'
+
+const componentMap = {
+  'pipeline-monitor': AutonomousPipelineMonitor,
+  'step-editor': StepEditor,
+}
