@@ -558,3 +558,8 @@ export const router = createBrowserRouter([
 
 { path: '/dashboards', element: <LiveDashboardList /> },
 { path: '/dashboards/:dashboardId', element: <DashboardBuilder /> },
+
+
+{ path: '/health/drift', element: <DriftMonitorSetup /> },
+{ path: '/health/alerts', element: <AlertHistory /> },
+{ path: '/health/dashboard', element: <HealthDashboard /> },

@@ -223,3 +223,11 @@ const AVAILABLE_WINDOWS = [
   { type: 'model-comparison', title: 'Model Comparison', icon: '⚖️' },
   { type: 'tool-test-console', title: 'Tool Test Console', icon: '🔧' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'drift-monitor', title: 'Drift Monitor Setup', icon: '📉' },
+  { type: 'alert-history', title: 'Alert History', icon: '🔔' },
+  { type: 'health-dashboard', title: 'Health Dashboard', icon: '🏥' },
+]
