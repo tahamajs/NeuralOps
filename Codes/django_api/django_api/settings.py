@@ -393,6 +393,7 @@ CELERY_BEAT_SCHEDULE.update({
         'schedule': crontab(day_of_week='monday', hour=8),
     },
 })
+INSTALLED_APPS += ['research_discovery']
 
 # ----------------------------------------------------------------------
 # Logging
@@ -450,3 +451,11 @@ CELERY_BEAT_SCHEDULE.update({
         'schedule': crontab(minute='*/15'),
     },
 })
+CELERY_BEAT_SCHEDULE['run-data-quality-checks'] = {
+    'task': 'mlops.tasks.run_data_quality_checks',
+    'schedule': crontab(hour=6, minute=0),
+}
+CELERY_BEAT_SCHEDULE['monitor-all-endpoints'] = {
+    'task': 'mlops.tasks.monitor_all_endpoints',
+    'schedule': 300.0,  # every 5 minutes
+}
