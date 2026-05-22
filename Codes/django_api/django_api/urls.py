@@ -58,6 +58,7 @@ path('api/research/', include('research.urls')),
 path('api/support/', include('support.urls')),
 path('api/agent/', include('research_agent.urls')),
     path('api/social/', include('social_network.urls')),
+path('api/coach/', include('research_coach.urls')),
 
 ]
 if settings.DEBUG:
