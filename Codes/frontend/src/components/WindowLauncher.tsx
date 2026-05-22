@@ -160,3 +160,10 @@ const AVAILABLE_WINDOWS = [
   { type: 'collaborator-suggestions', title: 'Collaborator Suggestions', icon: '👥' },
   { type: 'match-history', title: 'Collaboration History', icon: '📜' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'expert-directory', title: 'Expert Directory', icon: '👥' },
+  { type: 'project-application', title: 'Apply to Project', icon: '📝' },
+]
