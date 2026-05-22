@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',
+'experiment_explorer',
+'live_dashboard',
 
     # Your custom apps
     'computational_discovery',
