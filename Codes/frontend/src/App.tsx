@@ -374,3 +374,12 @@ const componentMap = {
   'impact-score': ImpactScorePage,
   'project-leaderboard': ProjectLeaderboard,
 }
+
+
+import CollaboratorSuggestionPage from './features/collaborator/pages/CollaboratorSuggestionPage'
+import MatchHistoryList from './features/collaborator/pages/MatchHistoryList'
+
+const componentMap = {
+  'collaborator-suggestions': CollaboratorSuggestionPage,
+  'match-history': MatchHistoryList,
+}
