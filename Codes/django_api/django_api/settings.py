@@ -76,6 +76,7 @@ INSTALLED_APPS = [
 'model_hub',
 'lab_assistant',
 'health_monitor',
+'community_lab',
 
     # Your custom apps
     'computational_discovery',
