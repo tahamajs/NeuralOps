@@ -403,3 +403,25 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.organization.name} → {self.plan.name if self.plan else 'Free'}"
+    
+
+class LabProfile(models.Model):
+    """Public‑facing lab profile."""
+    organization = models.OneToOneField(Organization, on_delete=models.CASCADE, related_name='lab_profile')
+    banner_image = models.ImageField(upload_to='lab_banners/', blank=True)
+    research_focus = models.TextField(blank=True)
+    publications_count = models.PositiveIntegerField(default=0)
+    active_members_count = models.PositiveIntegerField(default=0)
+    total_compute_hours = models.FloatField(default=0)
+    showcase_experiments = models.ManyToManyField('experiment.TrainingRun', blank=True, related_name='lab_showcases')
+    showcase_papers = models.ManyToManyField('paper.PaperProject', blank=True, related_name='lab_showcases')
+    is_public = models.BooleanField(default=False)
+
+class LabMetrics(models.Model):
+    """Aggregated metrics for a lab."""
+    lab = models.OneToOneField(LabProfile, on_delete=models.CASCADE, related_name='metrics')
+    weekly_active_users = models.PositiveIntegerField(default=0)
+    monthly_experiments = models.PositiveIntegerField(default=0)
+    total_gpu_hours = models.FloatField(default=0)
+    avg_reputation = models.FloatField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)

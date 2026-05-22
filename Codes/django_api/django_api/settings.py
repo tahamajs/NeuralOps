@@ -79,6 +79,9 @@ INSTALLED_APPS = [
 'community_lab',
 'playground',
 'datasets',
+'llm_hub',
+'projects',
+ 'protocols',
 
     # Your custom apps
     'computational_discovery',

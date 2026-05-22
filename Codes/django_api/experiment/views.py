@@ -576,3 +576,26 @@ def export_experiment_report_pdf(request, run_id):
     response = HttpResponse(pdf, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="experiment-report-{run_id}.pdf"'
     return response
+
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reproduce_experiment(request, run_id):
+    """Re‑run an experiment in the exact same Docker environment."""
+    original_run = get_object_or_404(TrainingRun, id=run_id)
+    env = get_object_or_404(ExperimentEnvironment, run=original_run)
+
+    # Create a new run with the same config
+    new_run = TrainingRun.objects.create(
+        experiment=original_run.experiment,
+        config=original_run.config,
+        status='queued',
+    )
+
+    # Rebuild Docker image and launch
+    from gpu_marketplace.tasks import provision_job_with_env
+    provision_job_with_env.delay(str(new_run.id), env.docker_image, env.requirements_txt)
+
+    return Response({'new_run_id': str(new_run.id), 'status': 'queued'}, status=201)

@@ -322,3 +322,19 @@ def _auto_assign_reviewers(rr):
         reviews_given__review_request__tags__contains=rr.tags
     ).distinct()[:rr.reviewers_required]
     rr.reviewers.add(*similar_reviewers)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ai_review_assist(request, review_request_id):
+    """Generate AI-assisted review for a paper."""
+    review_request = get_object_or_404(ReviewRequest, id=review_request_id)
+    paper_content = request.data.get('paper_content', review_request.abstract or '')
+
+    assistant = AIReviewAssistant()
+    review = assistant.generate_review(paper_content)
+    soundness = assistant.check_argument_soundness(paper_content)
+
+    return Response({
+        'review': review,
+        'soundness_issues': soundness,
+    })
