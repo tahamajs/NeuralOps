@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',   # optional
 'social_network',
+'collaborator_matching',
 
     'profiles',
     'messaging',
@@ -121,6 +122,18 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['openid', 'profile', 'email'],
     },
 }
+
+
+CELERY_BEAT_SCHEDULE.update({
+    'regenerate-all-interest-profiles': {
+        'task': 'collaborator_matching.tasks.regenerate_all_profiles',
+        'schedule': crontab(hour=3, minute=0, day_of_week=1),  # Every Monday
+    },
+    'generate-all-matches': {
+        'task': 'collaborator_matching.tasks.generate_all_matches',
+        'schedule': crontab(hour=4, minute=0, day_of_week=1),
+    },
+})
 SOCIALACCOUNT_STORE_TOKENS = True
 
 # ----------------------------------------------
