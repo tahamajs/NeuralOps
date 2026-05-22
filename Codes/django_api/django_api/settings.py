@@ -102,6 +102,7 @@ INSTALLED_APPS = [
 'social_network',
 'collaborator_matching',
 'expert_wall',
+'impact_predictor',
 
     'profiles',
     'messaging',
