@@ -332,3 +332,8 @@ export const router = createBrowserRouter([
     ],
   },
 ])
+
+
+const GPUTradingTerminal = lazy(() => import('./features/trading/components/GPUTradingTerminal'));
+// Inside children:
+{ path: '/trading', element: <GPUTradingTerminal /> },

@@ -150,3 +150,50 @@ def on_listing_created(sender, instance, created, **kwargs):
 def _try_immediate_match(order):
     from .matching_engine import MatchingEngine
     MatchingEngine().run()
+
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .models import Trade, TradeOrder
+
+@receiver(post_save, sender=Trade)
+def broadcast_trade(sender, instance, created, **kwargs):
+    if created:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'trading_{instance.gpu_model}',
+            {
+                'type': 'trade_update',
+                'data': {
+                    'price': float(instance.price),
+                    'quantity': instance.quantity,
+                    'buyer': instance.buyer.username,
+                    'seller': instance.seller.username,
+                    'timestamp': instance.created_at.isoformat(),
+                }
+            }
+        )
+
+@receiver(post_save, sender=TradeOrder)
+def broadcast_order_book(sender, instance, **kwargs):
+    if instance.status in ['open', 'partially_filled', 'filled', 'canceled']:
+        channel_layer = get_channel_layer()
+        # Recompute order book snapshot and send
+        from .trading_views import _aggregate_levels
+        bids = TradeOrder.objects.filter(
+            gpu_model=instance.gpu_model, side='buy', status__in=['open', 'partially_filled']
+        ).order_by('-price').values('price', 'quantity')
+        asks = TradeOrder.objects.filter(
+            gpu_model=instance.gpu_model, side='sell', status__in=['open', 'partially_filled']
+        ).order_by('price').values('price', 'quantity')
+        data = {
+            'bids': _aggregate_levels(bids),
+            'asks': _aggregate_levels(asks),
+        }
+        async_to_sync(channel_layer.group_send)(
+            f'trading_{instance.gpu_model}',
+            {'type': 'order_book_update', 'data': data}
+        )
