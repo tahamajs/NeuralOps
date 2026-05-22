@@ -100,3 +100,9 @@ const AVAILABLE_WINDOWS = [
   // ... existing
   { type: 'hpo', title: 'HPO Dashboard', icon: '🎯' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ...
+  { type: 'recommendations', title: 'Experiment Recommendations', icon: '💡' },
+]
