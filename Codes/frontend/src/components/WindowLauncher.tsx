@@ -68,3 +68,9 @@ export function WindowLauncher() {
     </div>
   )
 }
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'model3d', title: '3D Model Explorer', icon: '🧊' },
+  { type: 'federated', title: 'Federated Learning Dashboard', icon: '🔗' },
+];
