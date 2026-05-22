@@ -167,3 +167,11 @@ const AVAILABLE_WINDOWS = [
   { type: 'expert-directory', title: 'Expert Directory', icon: '👥' },
   { type: 'project-application', title: 'Apply to Project', icon: '📝' },
 ]
+
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'streak-heatmap', title: 'Activity Streaks', icon: '🔥' },
+  { type: 'weekly-summary', title: 'Weekly Summary', icon: '📊' },
+]
