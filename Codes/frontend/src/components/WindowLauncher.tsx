@@ -154,3 +154,9 @@ const AVAILABLE_WINDOWS = [
   { type: 'impact-score', title: 'Impact Score', icon: '📈' },
   { type: 'project-leaderboard', title: 'Project Leaderboard', icon: '🏆' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  { type: 'collaborator-suggestions', title: 'Collaborator Suggestions', icon: '👥' },
+  { type: 'match-history', title: 'Collaboration History', icon: '📜' },
+]
