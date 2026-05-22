@@ -4,17 +4,12 @@ Covers version listing, detail, diffing, reconstruction, compression catalog,
 lineage graph, lifecycle migration, download, publish, archive/restore, cleanup,
 and production flagging.
 """
-
-import os
-import csv
-import io
-import tarfile
-import tempfile
-import logging
+import os, io, csv, tarfile, tempfile, logging
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.conf import settings
+from django.contrib.auth.models import User                # add this
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -22,13 +17,20 @@ from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 
 from jobscheduler.models import Job
-from .models import ModelVersion, ModelVersionDiff
-from .serializers import ModelVersionSerializer
+from .models import (
+    ModelVersion, ModelVersionDiff, ModelLineage,
+    ModelApproval, ModelAccessControl, ModelSecurityScan,
+    ModelUsageLog, ModelBranch, ModelCommit           # add these
+)
+from .serializers import (
+    ModelVersionSerializer,
+    ModelApprovalSerializer, ModelAccessControlSerializer,
+    ModelSecurityScanSerializer, ModelUsageLogSerializer   # add these
+)
 from .utils import cleanup_old_versions, HuggingFacePublisher
 from .services import create_diff, load_version_from_diff, migrate_storage_tier
 
 logger = logging.getLogger(__name__)
-
 
 class StandardPagination(PageNumberPagination):
     page_size = 20
