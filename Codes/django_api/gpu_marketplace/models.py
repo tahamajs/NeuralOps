@@ -394,3 +394,87 @@ class FavoriteListing(models.Model):
 
     class Meta:
         unique_together = [['user', 'listing']]
+
+
+# gpu_marketplace/models.py – ADD BELOW EXISTING MODELS
+
+class TradeOrder(models.Model):
+    """A buy or sell order placed on the trading exchange."""
+    ORDER_SIDE = [('buy', 'Buy'), ('sell', 'Sell')]
+    ORDER_TYPE = [('limit', 'Limit'), ('market', 'Market')]
+    STATUS = [('open', 'Open'), ('filled', 'Filled'), ('partially_filled', 'Partially Filled'),
+              ('canceled', 'Canceled')]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trade_orders')
+    gpu_model = models.CharField(max_length=100)
+    side = models.CharField(max_length=10, choices=ORDER_SIDE)
+    order_type = models.CharField(max_length=10, choices=ORDER_TYPE, default='limit')
+    quantity = models.PositiveIntegerField(help_text="Number of GPU-hours")
+    price = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True,
+                                help_text="Price per GPU-hour (required for limit orders)")
+    filled_quantity = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS, default='open')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['gpu_model', 'status']),
+            models.Index(fields=['user', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.side.upper()} {self.quantity}h {self.gpu_model} @ {self.price}"
+
+
+class Trade(models.Model):
+    """A completed trade between a buyer and seller."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    gpu_model = models.CharField(max_length=100)
+    price = models.DecimalField(max_digits=10, decimal_places=4)
+    quantity = models.PositiveIntegerField()
+    buyer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trades_bought')
+    seller = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='trades_sold')
+    buy_order = models.ForeignKey(TradeOrder, on_delete=models.SET_NULL, null=True, blank=True,
+                                  related_name='trades_as_buyer')
+    sell_order = models.ForeignKey(TradeOrder, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='trades_as_seller')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['gpu_model', '-created_at']),
+        ]
+
+
+class Candlestick(models.Model):
+    """OHLCV candlestick data for a GPU model (1-minute intervals)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    gpu_model = models.CharField(max_length=100)
+    interval_start = models.DateTimeField(db_index=True)
+    open_price = models.DecimalField(max_digits=10, decimal_places=4)
+    high_price = models.DecimalField(max_digits=10, decimal_places=4)
+    low_price = models.DecimalField(max_digits=10, decimal_places=4)
+    close_price = models.DecimalField(max_digits=10, decimal_places=4)
+    volume = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = [['gpu_model', 'interval_start']]
+        ordering = ['interval_start']
+
+
+class Portfolio(models.Model):
+    """A user's holdings of GPU-hours for a specific GPU model."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='portfolios')
+    gpu_model = models.CharField(max_length=100)
+    quantity = models.IntegerField(default=0, help_text="Net GPU-hours held (positive = long)")
+
+    class Meta:
+        unique_together = [['user', 'gpu_model']]
+
+    def __str__(self):
+        return f"{self.user.username} holds {self.quantity}h of {self.gpu_model}"

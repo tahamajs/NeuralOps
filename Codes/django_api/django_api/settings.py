@@ -117,6 +117,8 @@ INSTALLED_APPS = [
 'coding_assistant',
 'experiment_recommender',
 'failure_forensics',
+'social',
+'research',
 
     'profiles',
     'messaging',
