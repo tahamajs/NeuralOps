@@ -345,3 +345,39 @@ class ModelUsageLog(models.Model):
 
     def __str__(self):
         return f"{self.user.username} {self.action} {self.version}"
+    
+class ModelBranch(models.Model):
+    """A named branch for model versions (like git branch)."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=150)
+    root_version = models.ForeignKey('ModelVersion', on_delete=models.CASCADE,
+                                     related_name='branches')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['name', 'root_version']]
+
+    def __str__(self):
+        return f"{self.name} (from {self.root_version})"
+
+
+class ModelCommit(models.Model):
+    """A snapshot commit in a branch, linking versions with parent/merge info."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    branch = models.ForeignKey(ModelBranch, on_delete=models.CASCADE, related_name='commits')
+    version = models.ForeignKey('ModelVersion', on_delete=models.CASCADE,
+                                related_name='commits')
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
+                               related_name='children')
+    merge_parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='merge_children',
+                                     help_text="Second parent for merge commits")
+    message = models.TextField(blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+        
