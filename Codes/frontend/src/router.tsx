@@ -563,3 +563,9 @@ export const router = createBrowserRouter([
 { path: '/health/drift', element: <DriftMonitorSetup /> },
 { path: '/health/alerts', element: <AlertHistory /> },
 { path: '/health/dashboard', element: <HealthDashboard /> },
+
+
+
+{ path: '/protocols', element: <ProtocolListPage /> },
+{ path: '/protocols/new', element: <ProtocolBuilder /> },
+{ path: '/protocols/:protocolId', element: <ProtocolBuilder /> },
