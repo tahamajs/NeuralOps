@@ -399,3 +399,15 @@ const componentMap = {
   'access-manager': ModelAccessManager,
   'catalog': ModelCatalogSearch,
 }
+
+
+import PromptPlayground from './features/playground/pages/PromptPlayground'
+import ModelComparisonView from './features/playground/pages/ModelComparisonView'
+import ToolTestConsole from './features/playground/pages/ToolTestConsole'
+
+const componentMap = {
+  // ...
+  'prompt-playground': PromptPlayground,
+  'model-comparison': ModelComparisonView,
+  'tool-test-console': ToolTestConsole,
+}
