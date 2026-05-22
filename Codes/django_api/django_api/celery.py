@@ -1,30 +1,39 @@
+"""
+Celery application for the Django project.
+
+Start the worker with:
+    celery -A django_api worker -l info
+
+Start the beat scheduler with:
+    celery -A django_api beat -l info
+"""
+
 import os
 from celery import Celery
 
-# Set the default Django settings module for the 'celery' program.
+# Set the default Django settings module for Celery
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_api.settings')
 
 app = Celery('django_api')
 
-# Using a string here means the worker doesn't have to serialize
-# the configuration object to child processes.
+# Load configuration from Django settings, prefixed with CELERY_
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-# Load task modules from all registered Django apps.
+# Auto-discover tasks from all registered Django apps
 app.autodiscover_tasks()
 
 
-# Optional: define a debug task (useful for testing Celery is working)
+# ----------------------------------------------------------------------
+# Optional: a simple debug task to verify Celery is working
+# ----------------------------------------------------------------------
 @app.task(bind=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
 
 
-# Optional: if you use Celery Beat, you can define the schedule here
-# (or keep it in settings.CELERY_BEAT_SCHEDULE – your choice)
-app.conf.beat_schedule = {
-    'debug-every-10-seconds': {
-        'task': 'django_api.celery.debug_task',
-        'schedule': 10.0,
-    },
-}
+# ----------------------------------------------------------------------
+# Note: The periodic schedule is defined in settings.CELERY_BEAT_SCHEDULE.
+# You can also override or extend it here via:
+#     app.conf.beat_schedule = { ... }
+# but the settings file is the recommended single source of truth.
+# ----------------------------------------------------------------------
