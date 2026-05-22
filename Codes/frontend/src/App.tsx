@@ -232,3 +232,14 @@ function App() {
   )
 }
 export default App
+
+
+
+
+import DeepResearchPage from './features/research/pages/DeepResearchPage';
+// ...
+const componentMap = {
+  // ...
+  research: DeepResearchPage,
+  // ...
+};
