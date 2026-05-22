@@ -41,6 +41,7 @@ path('api/gamification/', include('gamification.urls')),
 path('api/streaks/', include('streaks.urls')),
 path('api/experts/', include('expert_wall.urls')),
 path('api/impact/', include('impact_predictor.urls')),
+path('api/literature/', include('literature_review.urls')),
 
 path('api/social/', include('social_network.urls')),
 
