@@ -87,6 +87,8 @@ urlpatterns = [
     path('api/sweeps/', include('sweeps.urls')),   # was previously under api/ directly – fixed
     path('api/explorer/', include('experiment_explorer.urls')),
 path('api/live-dash/', include('live_dashboard.urls')),
+path('api/model-hub/', include('model_hub.urls')),
+
 ]
 
 # ----------------------------------------------------------------------
