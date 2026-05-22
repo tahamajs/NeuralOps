@@ -284,3 +284,13 @@ const componentMap = {
   // ...
   gpumarket: GPUTradingTerminal,
 };
+
+
+import HPODashboard from './features/hpo/pages/HPODashboard'
+import SweepDetailPage from './features/hpo/pages/SweepDetailPage'
+
+const componentMap = {
+  // ...
+  hpo: HPODashboard,
+  sweep_detail: SweepDetailPage,
+}
