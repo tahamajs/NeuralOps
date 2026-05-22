@@ -112,6 +112,7 @@ INSTALLED_APPS = [
 'literature_discovery',
 'ai_coscientist',
 'anomaly_hpo',
+'autonomous_research',
 
     'profiles',
     'messaging',
