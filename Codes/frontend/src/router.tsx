@@ -549,3 +549,7 @@ export const router = createBrowserRouter([
     ],
   },
 ])
+
+
+{ path: '/datasets', element: <DatasetListPage /> },
+{ path: '/datasets/:datasetId', element: <DatasetDetailPage /> },

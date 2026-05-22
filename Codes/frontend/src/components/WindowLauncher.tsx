@@ -135,3 +135,22 @@ const AVAILABLE_WINDOWS = [
   // ... existing entries
   { type: 'labs', title: 'Research Labs', icon: '🧪' },
 ]
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'datasets', title: 'Datasets', icon: '🗄️' },
+]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'llm-providers', title: 'LLM Providers', icon: '🔌' },
+  { type: 'playground', title: 'LLM Playground', icon: '🎮' },
+  { type: 'prompts', title: 'Prompt Library', icon: '📝' },
+  { type: 'evaluations', title: 'Evaluation Suite', icon: '📊' },
+  { type: 'costs', title: 'Cost Dashboard', icon: '💰' },
+  { type: 'memory', title: 'Memory Manager', icon: '🧠' },
+  { type: 'tools', title: 'Tool Catalog', icon: '🔧' },
+  { type: 'arena', title: 'Arena Battles', icon: '🏆' },
+  { type: 'guardrails', title: 'Guardrail Editor', icon: '🛡️' },
+]
