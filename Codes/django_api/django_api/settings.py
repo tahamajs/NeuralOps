@@ -78,6 +78,7 @@ INSTALLED_APPS = [
 'health_monitor',
 'community_lab',
 'playground',
+'datasets',
 
     # Your custom apps
     'computational_discovery',
