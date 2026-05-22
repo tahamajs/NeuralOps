@@ -218,3 +218,42 @@ class ReviewVote(models.Model):
 
     class Meta:
         unique_together = [['review', 'voter']]
+
+
+class AIReviewAssistant:
+    @staticmethod
+    def generate_review(paper_content: str, model_id: str = 'gpt-4o') -> dict:
+        prompt = f"""You are a peer reviewer for a machine learning conference. Review the following paper and provide:
+1. Summary (2-3 sentences)
+2. Strengths (bullet points)
+3. Weaknesses (bullet points)
+4. Missing citations (list of papers that should be cited)
+5. Soundness score (1-10)
+6. Presentation score (1-10)
+7. Overall recommendation (accept / weak accept / weak reject / reject)
+
+Paper:
+{paper_content[:8000]}
+
+Return JSON with keys: summary, strengths, weaknesses, missing_citations, soundness_score, presentation_score, recommendation"""
+
+        result = LLMGateway.complete(model_id, [{'role': 'user', 'content': prompt}], temperature=0.2)
+        try:
+            return json.loads(result.get('content', '{}'))
+        except:
+            return {'error': 'Failed to parse AI review'}
+
+    @staticmethod
+    def check_argument_soundness(paper_content: str) -> list:
+        """Identify logical fallacies or unsupported claims."""
+        prompt = f"""Analyze the following paper for logical fallacies, unsupported claims, or argument weaknesses. Return a JSON list of issues found.
+
+Paper:
+{paper_content[:5000]}
+
+Return: [{{"issue": "...", "location": "...", "severity": "high/medium/low"}}]"""
+        result = LLMGateway.complete('gpt-4o', [{'role': 'user', 'content': prompt}], temperature=0.1)
+        try:
+            return json.loads(result.get('content', '[]'))
+        except:
+            return []

@@ -96,6 +96,10 @@ path('api/datasets/', include('datasets.urls')),
 path('parameter-interactions/', views.parameter_interactions, name='parameter_interactions'),
 path('parameter-scatter/', views.run_parameter_scatter, name='parameter_scatter'),
 path('runs/<uuid:run_id>/export-report-pdf/', views.export_experiment_report_pdf, name='export_report_pdf'),
+path('api/llm/', include('llm_hub.urls')),
+path('api/projects/', include('projects.urls')),
+path('api/protocols/', include('protocols.urls')),
+path('ws/collab/<uuid:project_id>/', CollaborationConsumer.as_asgi()),
 
 ]
 

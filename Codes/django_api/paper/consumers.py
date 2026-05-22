@@ -82,3 +82,42 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
             f.save(update_fields=['content', 'version', 'updated_at'])
         except PaperFile.DoesNotExist:
             pass
+
+
+class CollaborationConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.project_id = self.scope['url_route']['kwargs']['project_id']
+        self.room_group_name = f'collab_{self.project_id}'
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()
+
+    async def receive_json(self, content):
+        msg_type = content.get('type')
+        if msg_type == 'file_edit':
+            await self.channel_layer.group_send(self.room_group_name, {
+                'type': 'broadcast_edit',
+                'file': content['file'],
+                'content': content['content'],
+                'user': self.scope['user'].username,
+            })
+        elif msg_type == 'cursor_move':
+            await self.channel_layer.group_send(self.room_group_name, {
+                'type': 'broadcast_cursor',
+                'file': content['file'],
+                'line': content['line'],
+                'col': content['col'],
+                'user': self.scope['user'].username,
+            })
+        elif msg_type == 'chat':
+            await self.channel_layer.group_send(self.room_group_name, {
+                'type': 'broadcast_chat',
+                'message': content['message'],
+                'user': self.scope['user'].username,
+            })
+
+    async def broadcast_edit(self, event):
+        await self.send_json({'type': 'edit', 'file': event['file'], 'content': event['content'], 'user': event['user']})
+    async def broadcast_cursor(self, event):
+        await self.send_json({'type': 'cursor', 'file': event['file'], 'line': event['line'], 'col': event['col'], 'user': event['user']})
+    async def broadcast_chat(self, event):
+        await self.send_json({'type': 'chat', 'message': event['message'], 'user': event['user']})

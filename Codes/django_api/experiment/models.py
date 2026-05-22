@@ -193,3 +193,18 @@ class ParameterInteraction(models.Model):
 
     class Meta:
         unique_together = [['param_a', 'param_b']]
+
+
+# experiment/models.py — add
+
+class ExperimentEnvironment(models.Model):
+    """A snapshot of the computational environment for reproducibility."""
+    run = models.OneToOneField(TrainingRun, on_delete=models.CASCADE, related_name='environment')
+    docker_image = models.CharField(max_length=300)
+    dockerfile_content = models.TextField(blank=True)
+    requirements_txt = models.TextField(blank=True)
+    conda_env_yml = models.TextField(blank=True)
+    system_packages = models.JSONField(default=list, blank=True)
+    gpu_driver_version = models.CharField(max_length=50, blank=True)
+    cuda_version = models.CharField(max_length=50, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
