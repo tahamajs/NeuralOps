@@ -101,6 +101,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.github',   # optional
 'social_network',
 'collaborator_matching',
+'expert_wall',
 
     'profiles',
     'messaging',
