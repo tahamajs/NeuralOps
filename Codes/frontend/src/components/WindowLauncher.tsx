@@ -163,3 +163,13 @@ const AVAILABLE_WINDOWS = [
   { type: 'alerts', title: 'Alert Dashboard', icon: '🔔' },
   { type: 'performance', title: 'Performance Snapshots', icon: '📸' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'audit-logs', title: 'Audit Log Dashboard', icon: '📜' },
+  { type: 'compliance', title: 'Compliance Report View', icon: '✓' },
+  { type: 'contracts', title: 'Contract Signing', icon: '✍️' },
+  { type: 'security-scans', title: 'Security Scan Results', icon: '🔒' },
+  { type: 'access-policies', title: 'Access Policy Editor', icon: '🔐' },
+]
