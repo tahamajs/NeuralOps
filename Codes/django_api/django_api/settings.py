@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     'gpu_federation',
     'gpu_finance',
     'gpu_reputation',
+'streaks',
 
     'organizations',
     'community',
@@ -152,6 +153,17 @@ CELERY_BEAT_SCHEDULE.update({
     'award-streak-bonus': {
         'task': 'gamification.tasks.award_streak_bonus',
         'schedule': crontab(hour=0, minute=30, day_of_week=1),  # Every Monday
+    },
+})
+
+CELERY_BEAT_SCHEDULE.update({
+    'generate-weekly-summaries': {
+        'task': 'streaks.tasks.generate_weekly_summaries',
+        'schedule': crontab(hour=8, minute=0, day_of_week=1),  # Every Monday 8 AM
+    },
+    'check-broken-streaks': {
+        'task': 'streaks.tasks.check_and_reset_broken_streaks',
+        'schedule': crontab(hour=2, minute=0),  # Daily at 2 AM
     },
 })
 SOCIALACCOUNT_STORE_TOKENS = True
