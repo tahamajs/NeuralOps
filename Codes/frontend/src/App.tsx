@@ -346,3 +346,18 @@ const componentMap = {
   'sandbox': SandboxSessionView,
   'plugins': PluginMarketplace,
 }
+
+
+
+import LiteratureSynthesizer from './features/researchDiscovery/pages/LiteratureSynthesizer'
+import HypothesisGenerator from './features/researchDiscovery/pages/HypothesisGenerator'
+import ResearchDatabaseExplorer from './features/researchDiscovery/pages/ResearchDatabaseExplorer'
+import GrantMatcher from './features/researchDiscovery/pages/GrantMatcher'
+
+const componentMap = {
+  // ...
+  'literature-synthesizer': LiteratureSynthesizer,
+  'hypothesis-generator': HypothesisGenerator,
+  'database-explorer': ResearchDatabaseExplorer,
+  'grant-matcher': GrantMatcher,
+}
