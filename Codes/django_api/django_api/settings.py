@@ -124,11 +124,17 @@ INSTALLED_APPS = [
     'profiles',
     'messaging',
 'reputation',
+'research_coach',
 
     'paper',
 ]
 
-
+CELERY_BEAT_SCHEDULE.update({
+    'periodic-research-analysis': {
+        'task': 'research_coach.tasks.run_periodic_analysis',
+        'schedule': crontab(hour=8, minute=0),  # Daily at 8 AM
+    },
+})
 
 CELERY_BEAT_SCHEDULE.update({
     'generate-ideas-weekly': {
