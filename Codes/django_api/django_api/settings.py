@@ -97,6 +97,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.github',   # optional
+'social_network',
 
     'profiles',
     'messaging',
