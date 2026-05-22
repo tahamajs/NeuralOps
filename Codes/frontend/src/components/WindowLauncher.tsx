@@ -198,3 +198,10 @@ const AVAILABLE_WINDOWS = [
   { type: 'dashboard-builder', title: 'Custom Dashboard Builder', icon: '🎛️' },
   { type: 'sql-editor', title: 'SQL Query Editor', icon: '🗄️' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'live-dashboards', title: 'Live Dashboards', icon: '📈' },
+  { type: 'dashboard-builder', title: 'Dashboard Builder', icon: '✏️' },
+]

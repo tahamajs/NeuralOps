@@ -373,3 +373,13 @@ const componentMap = {
   'dashboard-builder': CustomDashboardBuilder,
   'sql-editor': SQLQueryEditor,
 }
+
+
+import LiveDashboardList from './features/liveDashboards/pages/LiveDashboardList'
+import DashboardBuilder from './features/liveDashboards/pages/DashboardBuilder'
+
+const componentMap = {
+  // ...
+  'live-dashboards': LiveDashboardList,
+  'dashboard-builder': DashboardBuilder,
+}
