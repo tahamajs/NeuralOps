@@ -173,3 +173,12 @@ const AVAILABLE_WINDOWS = [
   { type: 'security-scans', title: 'Security Scan Results', icon: '🔒' },
   { type: 'access-policies', title: 'Access Policy Editor', icon: '🔐' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'cloud-connection', title: 'Cloud Connection Wizard', icon: '☁️' },
+  { type: 'webhooks', title: 'Webhook Management', icon: '🔌' },
+  { type: 'sandbox', title: 'Secure Sandbox', icon: '🖥️' },
+  { type: 'plugins', title: 'Plugin Marketplace', icon: '🧩' },
+]
