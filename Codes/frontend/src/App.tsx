@@ -171,3 +171,64 @@ function App() {
 }
 
 export default App
+
+
+import { useWindowStore } from './store/windowStore'
+import { DockableWindow } from './components/DockableWindow'
+import { WindowLauncher } from './components/WindowLauncher'
+import { WorkspaceManager } from './components/WorkspaceManager'
+import { Toaster } from './components/ui/Toast'
+
+// Import all windowable panels
+import { TerminalPanel } from './features/terminal/components/TerminalPanel'
+import { ChatPanel } from './features/chat/components/ChatPanel'
+import { FloatingNotesEditor } from './features/notes/components/FloatingNotesEditor'
+import { PaperEditorPanel } from './features/paper/components/PaperEditorPanel'
+import { GPUMarketplacePage } from './features/marketplace/pages/GPUMarketplacePage'
+import { ExperimentListPage } from './features/experiments/pages/ExperimentListPage'
+import { UserProfilePage } from './features/profile/pages/UserProfilePage'
+import { QuestionListPage } from './features/community/pages/QuestionListPage'
+import { ResearchAnalysisPage } from './features/analysis/pages/ResearchAnalysisPage'
+import { AdvancedAnalyticsPage } from './features/analytics/pages/AdvancedAnalyticsPage'
+import { AdminDashboard } from './features/admin/pages/AdminDashboard'
+import { ClusterOverviewPage } from './features/cluster/pages/ClusterOverviewPage'
+import { OrganizationListPage } from './features/organizations/pages/OrganizationListPage'
+import { SweepDashboardPage } from './features/sweeps/pages/SweepDashboardPage'
+
+const componentMap: Record<string, React.ComponentType<any>> = {
+  terminal: TerminalPanel,
+  chat: ChatPanel,
+  notes: FloatingNotesEditor,
+  'paper-editor': PaperEditorPanel,
+  marketplace: GPUMarketplacePage,
+  experiments: ExperimentListPage,
+  profile: UserProfilePage,
+  community: QuestionListPage,
+  analysis: ResearchAnalysisPage,
+  analytics: AdvancedAnalyticsPage,
+  admin: AdminDashboard,
+  cluster: ClusterOverviewPage,
+  organizations: OrganizationListPage,
+  sweeps: SweepDashboardPage,
+}
+
+function App() {
+  const { windows } = useWindowStore()
+  return (
+    <div className="relative w-screen h-screen overflow-hidden bg-surface">
+      {windows.map(win => {
+        const Component = componentMap[win.type]
+        if (!Component) return null
+        return (
+          <DockableWindow key={win.id} window={win}>
+            <Component onClose={() => useWindowStore.getState().removeWindow(win.id)} />
+          </DockableWindow>
+        )
+      })}
+      <WindowLauncher />
+      <WorkspaceManager />
+      <Toaster />
+    </div>
+  )
+}
+export default App
