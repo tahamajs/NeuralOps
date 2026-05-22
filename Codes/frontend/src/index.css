@@ -22,3 +22,16 @@
 .font-display {
   font-family: 'Inter', system-ui, sans-serif;
 }
+
+
+@keyframes glowPulse {
+  0%, 100% { text-shadow: 0 0 10px rgba(234, 179, 8, 0.5); }
+  50% { text-shadow: 0 0 20px rgba(234, 179, 8, 0.8); }
+}
+.drop-shadow-glow {
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.3));
+  animation: glowPulse 2s ease-in-out infinite;
+}
+.shadow-glow {
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
