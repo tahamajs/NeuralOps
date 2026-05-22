@@ -423,3 +423,17 @@ const componentMap = {
   'alert-history': AlertHistory,
   'health-dashboard': HealthDashboard,
 }
+
+
+import AnnotationProjectList from './features/annotation/pages/AnnotationProjectList'
+import LabelingInterface from './features/annotation/pages/LabelingInterface'
+import AIPreLabelingPanel from './features/annotation/pages/AIPreLabelingPanel'
+import ReviewQueue from './features/annotation/pages/ReviewQueue'
+
+const componentMap = {
+  // ...
+  'annotation-projects': AnnotationProjectList,
+  'labeling': LabelingInterface,
+  'pre-label': AIPreLabelingPanel,
+  'review-queue': ReviewQueue,
+}
