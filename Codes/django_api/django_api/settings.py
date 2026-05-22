@@ -103,6 +103,7 @@ INSTALLED_APPS = [
 'collaborator_matching',
 'expert_wall',
 'impact_predictor',
+'literature_review',
 
     'profiles',
     'messaging',
