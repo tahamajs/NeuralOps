@@ -361,3 +361,15 @@ const componentMap = {
   'database-explorer': ResearchDatabaseExplorer,
   'grant-matcher': GrantMatcher,
 }
+
+
+import HyperparameterExplorer from './features/experimentExplorer/pages/HyperparameterExplorer'
+import CustomDashboardBuilder from './features/experimentExplorer/pages/CustomDashboardBuilder'
+import SQLQueryEditor from './features/experimentExplorer/pages/SQLQueryEditor'
+
+const componentMap = {
+  // ...
+  'hyperparameter-explorer': HyperparameterExplorer,
+  'dashboard-builder': CustomDashboardBuilder,
+  'sql-editor': SQLQueryEditor,
+}

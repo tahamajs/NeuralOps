@@ -190,3 +190,11 @@ const AVAILABLE_WINDOWS = [
   { type: 'database-explorer', title: 'Research Database Explorer', icon: '🔍' },
   { type: 'grant-matcher', title: 'Grant Matcher', icon: '🏆' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'hyperparameter-explorer', title: 'Hyperparameter Explorer', icon: '📊' },
+  { type: 'dashboard-builder', title: 'Custom Dashboard Builder', icon: '🎛️' },
+  { type: 'sql-editor', title: 'SQL Query Editor', icon: '🗄️' },
+]
