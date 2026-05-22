@@ -1,4 +1,3 @@
-// src/components/WorkspaceManager.tsx
 import { useState } from 'react'
 import { useWindowStore } from '../store/windowStore'
 import { Save, FolderOpen } from 'lucide-react'

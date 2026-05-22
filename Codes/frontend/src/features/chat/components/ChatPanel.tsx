@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useChatStore } from '../store/chatStore'
 import { useToast } from '../../../components/ui/Toast'
+import api from '../../../api/client'
 import { Send, Plus } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 
@@ -23,18 +24,19 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
     const convId = activeId || conversations[0]?.id
     if (!convId) return
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: input, createdAt: new Date() }
+    const userMsg = { id: crypto.randomUUID(), role: 'user', content: input, createdAt: new Date() }
     addMessage(convId, userMsg)
     setInput('')
     setIsLoading(true)
 
     try {
-      // Simulate AI response (replace with real WebSocket/API)
-      const assistantMsg: Message = { id: crypto.randomUUID(), role: 'assistant', content: 'I received your message. I can help with notes, experiments, or just chat.', createdAt: new Date() }
+      // Call your real AI endpoint here
+      const res = await api.post('/chat/send/', { conversation_id: convId, message: input })
+      const assistantMsg = { id: crypto.randomUUID(), role: 'assistant', content: res.data.reply, createdAt: new Date() }
       addMessage(convId, assistantMsg)
       success('AI responded')
     } catch (err) {
-      error('Failed to get response')
+      error('Failed to get AI response')
     } finally {
       setIsLoading(false)
     }
@@ -81,13 +83,14 @@ export function ChatPanel({ onClose }: { onClose?: () => void }) {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-          placeholder="Ask me anything, or say 'create note from last'"
+          placeholder="Ask me anything, or type 'create note from last'"
           className="flex-1 bg-black/30 border border-white/10 rounded px-3 py-2 text-sm resize-none"
           rows={2}
         />
         <button onClick={sendMessage} disabled={isLoading} className="px-3 py-2 bg-neon-mint/20 rounded hover:bg-neon-mint/30">
           <Send size={16} />
         </button>
+        <button onClick={createNoteFromLast} className="px-2 py-2 bg-white/5 rounded hover:bg-white/10" title="Create note from last AI response">📝</button>
       </div>
     </div>
   )
