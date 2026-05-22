@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'terminal',
     'agents',
     'portfolios',
+'gamification',
 
     'gpu_marketplace',
     'gpu_escrow',
@@ -132,6 +133,25 @@ CELERY_BEAT_SCHEDULE.update({
     'generate-all-matches': {
         'task': 'collaborator_matching.tasks.generate_all_matches',
         'schedule': crontab(hour=4, minute=0, day_of_week=1),
+    },
+})
+
+CELERY_BEAT_SCHEDULE.update({
+    'reset-weekly-points': {
+        'task': 'gamification.tasks.reset_weekly_points',
+        'schedule': crontab(hour=0, minute=0, day_of_week=1),  # Every Monday
+    },
+    'check-streak-decay': {
+        'task': 'gamification.tasks.check_streak_decay',
+        'schedule': crontab(hour=0, minute=10),
+    },
+    'take-leaderboard-snapshot': {
+        'task': 'gamification.tasks.take_leaderboard_snapshot',
+        'schedule': crontab(hour=0, minute=20),
+    },
+    'award-streak-bonus': {
+        'task': 'gamification.tasks.award_streak_bonus',
+        'schedule': crontab(hour=0, minute=30, day_of_week=1),  # Every Monday
     },
 })
 SOCIALACCOUNT_STORE_TOKENS = True

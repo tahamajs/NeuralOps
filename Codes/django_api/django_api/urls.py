@@ -37,6 +37,7 @@ path('api/portfolios/', include('portfolios.urls')),
 path('api/community/', include('community.urls')),
 path('api/reputation/', include('reputation.urls')),
 path('api/collaborators/', include('collaborator_matching.urls')),
+path('api/gamification/', include('gamification.urls')),
 
 path('api/social/', include('social_network.urls')),
 
