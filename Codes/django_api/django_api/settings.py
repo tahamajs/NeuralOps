@@ -74,6 +74,7 @@ INSTALLED_APPS = [
 'experiment_explorer',
 'live_dashboard',
 'model_hub',
+'lab_assistant',
 
     # Your custom apps
     'computational_discovery',
@@ -368,6 +369,12 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=9, minute=0, day_of_week=1),
     },
 }
+CELERY_BEAT_SCHEDULE.update({
+    'auto-pre-label-new-tasks': {
+        'task': 'lab_assistant.tasks.auto_pre_label_new_tasks',
+        'schedule': crontab(minute='*/30'),
+    },
+})
 
 # ----------------------------------------------------------------------
 # Logging
