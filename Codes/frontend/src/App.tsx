@@ -437,3 +437,20 @@ const componentMap = {
   'pre-label': AIPreLabelingPanel,
   'review-queue': ReviewQueue,
 }
+
+
+
+import InferenceEndpointManager from './features/inference/pages/InferenceEndpointManager'
+import PipelineRunner from './features/inference/pages/PipelineRunner'
+import CTCDTrigger from './features/inference/pages/CTCDTrigger'
+import ModelDistillationWizard from './features/inference/pages/ModelDistillationWizard'
+import MultiNodeTrainingLauncher from './features/inference/pages/MultiNodeTrainingLauncher'
+
+const componentMap = {
+  // ...
+  'inference-endpoints': InferenceEndpointManager,
+  'pipeline-runner': PipelineRunner,
+  'ctc-triggers': CTCDTrigger,
+  'distillation': ModelDistillationWizard,
+  'multi-node-training': MultiNodeTrainingLauncher,
+}

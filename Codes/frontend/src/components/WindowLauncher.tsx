@@ -240,3 +240,12 @@ const AVAILABLE_WINDOWS = [
   { type: 'pre-label', title: 'AI Pre‑labeling', icon: '🤖' },
   { type: 'review-queue', title: 'Review Queue', icon: '✓' },
 ]
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'inference-endpoints', title: 'Inference Endpoints', icon: '🚀' },
+  { type: 'pipeline-runner', title: 'Pipeline Runner', icon: '⏯️' },
+  { type: 'ctc-triggers', title: 'CTC/CD Triggers', icon: '🔄' },
+  { type: 'distillation', title: 'Model Distillation', icon: '⚗️' },
+  { type: 'multi-node-training', title: 'Multi‑Node Training', icon: '🌐' },
+]
