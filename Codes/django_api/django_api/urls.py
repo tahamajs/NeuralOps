@@ -102,6 +102,7 @@ path('api/protocols/', include('protocols.urls')),
 path('ws/collab/<uuid:project_id>/', CollaborationConsumer.as_asgi()),
 path('api/governance/', include('governance.urls')),
 path('api/discovery/', include('research_discovery.urls')),
+path('api/integrations/', include('integrations.urls')),
 
 ]
 

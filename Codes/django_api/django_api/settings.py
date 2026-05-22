@@ -459,3 +459,9 @@ CELERY_BEAT_SCHEDULE['monitor-all-endpoints'] = {
     'task': 'mlops.tasks.monitor_all_endpoints',
     'schedule': 300.0,  # every 5 minutes
 }
+CELERY_BEAT_SCHEDULE['daily-sandbox-cleanup'] = {
+    'task': 'integrations.tasks.cleanup_stale_sandboxes',
+    'schedule': crontab(hour=3, minute=0),
+}
+
+INSTALLED_APPS += ['integrations']
