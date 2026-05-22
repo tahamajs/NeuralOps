@@ -122,6 +122,8 @@ const VersionPage = lazy(() => import('./features/system/pages/VersionPage'))
 const ConfigPage = lazy(() => import('./features/config/pages/ConfigPage'))
 const ModelSearchPage = lazy(() => import('./features/config/pages/ModelSearchPage'))
 
+const PaperProjectsPage = lazy(() => import('../features/paper/pages/PaperProjectsPage'))
+const PaperEditorPage = lazy(() => import('../features/paper/pages
 
 const QuestionListPage = lazy(() => import('../features/community/pages/QuestionListPage'))
 const QuestionDetailPage = lazy(() => import('../features/community/pages/QuestionDetailPage'))
@@ -320,6 +322,9 @@ export const router = createBrowserRouter([
 { path: 'tags/:tagName', element: <TagDetailPage /> },
 { path: 'leaderboard', element: <LeaderboardPage /> },
 { path: 'badges', element: <BadgesPage /> },
+{ path: '/paper', element: <PaperProjectsPage /> },
+{ path: '/paper/editor/:projectId', element: <PaperEditorPage /> },
+{ path: '/paper/new', element: <PaperProjectsPage /> }, // opens create modal
 
 
       // 404
