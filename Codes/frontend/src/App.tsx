@@ -481,3 +481,23 @@ const componentMap = {
   'payouts': PayoutRequestsPage,
   'subscriptions': SubscriptionPlansPage,
 }
+
+
+import ProviderDashboardPage from './features/marketplace/pages/ProviderDashboardPage'
+import DisputeHandlingPage from './features/marketplace/pages/DisputeHandlingPage'
+
+const componentMap = {
+  // ...
+  'provider-dashboard': ProviderDashboardPage,
+  'disputes': DisputeHandlingPage,
+}
+
+
+import GroupDiscussionPage from './features/social/pages/GroupDiscussionPage'
+import SuggestedResearchersPage from './features/social/pages/SuggestedResearchersPage'
+
+const componentMap = {
+  // ...
+  'group-discussions': GroupDiscussionPage,
+  'suggested-researchers': SuggestedResearchersPage,
+}
