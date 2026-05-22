@@ -332,3 +332,17 @@ const componentMap = {
   'security-scans': SecurityScanResults,
   'access-policies': AccessPolicyEditor,
 }
+
+
+import CloudConnectionWizard from './features/integrations/pages/CloudConnectionWizard'
+import WebhookListPage from './features/integrations/pages/WebhookListPage'
+import SandboxSessionView from './features/integrations/pages/SandboxSessionView'
+import PluginMarketplace from './features/integrations/pages/PluginMarketplace'
+
+const componentMap = {
+  // ...
+  'cloud-connection': CloudConnectionWizard,
+  'webhooks': WebhookListPage,
+  'sandbox': SandboxSessionView,
+  'plugins': PluginMarketplace,
+}
