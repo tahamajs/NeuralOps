@@ -332,3 +332,11 @@ const componentMap = {
   'literature-map': LiteratureMapPage,
   'citation-graph': CitationGraphViewer,
 }
+
+
+import AcceleratorDashboard from './features/accelerator/pages/AcceleratorDashboard'
+
+const componentMap = {
+  // ...
+  accelerator: AcceleratorDashboard,
+}
