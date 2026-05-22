@@ -266,3 +266,17 @@ const AVAILABLE_WINDOWS = [
   { type: 'payouts', title: 'Payout Requests', icon: '💰' },
   { type: 'subscriptions', title: 'Subscription Plans', icon: '💳' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing entries
+  { type: 'provider-dashboard', title: 'Provider Dashboard', icon: '📊' },
+  { type: 'disputes', title: 'Dispute Center', icon: '⚖️' },
+]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'group-discussions', title: 'Group Discussions', icon: '💬' },
+  { type: 'suggested-researchers', title: 'Suggested Researchers', icon: '🤝' },
+]
