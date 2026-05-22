@@ -55,6 +55,7 @@ path('api/recommender/', include('experiment_recommender.urls')),
 path('api/forensics/', include('failure_forensics.urls')),
 path('api/social/', include('social.urls')),
 path('api/research/', include('research.urls')),
+path('api/support/', include('support.urls')),
 
     path('api/social/', include('social_network.urls')),
 
