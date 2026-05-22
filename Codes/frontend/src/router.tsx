@@ -1,311 +1,341 @@
 // src/router/index.tsx
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { MainLayout } from './components/layout/MainLayout'
-import { Spinner } from './components/ui/Spinner'
+import { MainLayout } from '../components/layout/MainLayout'
+import { Spinner } from '../components/ui/Spinner'
 
 // ========================
 // Auth
 // ========================
-const LoginPage = lazy(() => import('./features/auth/pages/LoginPage'))
-const RegisterPage = lazy(() => import('./features/auth/pages/RegisterPage'))
+const LoginPage = lazy(() => import('../features/auth/pages/LoginPage'))
+const RegisterPage = lazy(() => import('../features/auth/pages/RegisterPage'))
 
 // ========================
 // Dashboard
 // ========================
-const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'))
-const DashboardWidgetsConfigPage = lazy(() => import('./features/dashboard/pages/DashboardWidgetsConfigPage'))
+const DashboardPage = lazy(() => import('../features/dashboard/pages/DashboardPage'))
+const DashboardWidgetsConfigPage = lazy(() => import('../features/dashboard/pages/DashboardWidgetsConfigPage'))
 
 // ========================
 // Experiments
 // ========================
-const ExperimentListPage = lazy(() => import('./features/experiments/pages/ExperimentListPage'))
-const ExperimentDetailPage = lazy(() => import('./features/experiments/pages/ExperimentDetailPage'))
-const ExperimentComparePage = lazy(() => import('./features/experiments/pages/ExperimentComparePage'))
-const ExperimentDiffPage = lazy(() => import('./features/experiments/pages/ExperimentDiffPage'))
-const ExperimentMonitorPage = lazy(() => import('./features/experiments/pages/ExperimentMonitorPage'))
-const ExperimentReportPage = lazy(() => import('./features/experiments/pages/ExperimentReportPage'))
-const CustomMetricsPage = lazy(() => import('./features/experiments/pages/CustomMetricsPage'))
-const DataLineagePage = lazy(() => import('./features/experiments/pages/DataLineagePage'))
-const ModelCardPage = lazy(() => import('./features/experiments/pages/ModelCardPage'))
-const RunAnalysisOverviewPage = lazy(() => import('./features/experiments/pages/RunAnalysisOverviewPage'))
-const RunArtifactsPage = lazy(() => import('./features/experiments/pages/RunArtifactsPage'))
-const ModelDownloadPage = lazy(() => import('./features/experiments/pages/ModelDownloadPage'))
-const TrainingSnapshotsPage = lazy(() => import('./features/experiments/pages/TrainingSnapshotsPage'))
-const UpdateRunConfigPage = lazy(() => import('./features/experiments/pages/UpdateRunConfigPage'))
+const ExperimentListPage = lazy(() => import('../features/experiments/pages/ExperimentListPage'))
+const ExperimentDetailPage = lazy(() => import('../features/experiments/pages/ExperimentDetailPage'))
+const ExperimentComparePage = lazy(() => import('../features/experiments/pages/ExperimentComparePage'))
+const ExperimentDiffPage = lazy(() => import('../features/experiments/pages/ExperimentDiffPage'))
+const ExperimentMonitorPage = lazy(() => import('../features/experiments/pages/ExperimentMonitorPage'))
+const ExperimentReportPage = lazy(() => import('../features/experiments/pages/ExperimentReportPage'))
+const CustomMetricsPage = lazy(() => import('../features/experiments/pages/CustomMetricsPage'))
+const DataLineagePage = lazy(() => import('../features/experiments/pages/DataLineagePage'))
+const ModelCardPage = lazy(() => import('../features/experiments/pages/ModelCardPage'))
+const RunAnalysisOverviewPage = lazy(() => import('../features/experiments/pages/RunAnalysisOverviewPage'))
+const RunArtifactsPage = lazy(() => import('../features/experiments/pages/RunArtifactsPage'))
+const ModelDownloadPage = lazy(() => import('../features/experiments/pages/ModelDownloadPage'))
+const TrainingSnapshotsPage = lazy(() => import('../features/experiments/pages/TrainingSnapshotsPage'))
+const UpdateRunConfigPage = lazy(() => import('../features/experiments/pages/UpdateRunConfigPage'))
 
 // ========================
 // Marketplace (basic)
 // ========================
-const MarketplacePage = lazy(() => import('./features/marketplace/pages/MarketplacePage'))
-const MyOrdersPage = lazy(() => import('./features/marketplace/pages/MyOrdersPage'))
-const MyJobsPage = lazy(() => import('./features/marketplace/pages/MyJobsPage'))
-const BillingPage = lazy(() => import('./features/marketplace/pages/BillingPage'))
-const UsagePage = lazy(() => import('./features/marketplace/pages/UsagePage'))
-const LeaderboardPage = lazy(() => import('./features/marketplace/pages/LeaderboardPage'))
-const ReputationPage = lazy(() => import('./features/marketplace/pages/ReputationPage'))
+const MarketplacePage = lazy(() => import('../features/marketplace/pages/MarketplacePage'))
+const MyOrdersPage = lazy(() => import('../features/marketplace/pages/MyOrdersPage'))
+const MyJobsPage = lazy(() => import('../features/marketplace/pages/MyJobsPage'))
+const BillingPage = lazy(() => import('../features/marketplace/pages/BillingPage'))
+const UsagePage = lazy(() => import('../features/marketplace/pages/UsagePage'))
+const LeaderboardPage = lazy(() => import('../features/marketplace/pages/LeaderboardPage'))
+const ReputationPage = lazy(() => import('../features/marketplace/pages/ReputationPage'))
 
 // ========================
 // Launcher
 // ========================
-const LauncherPage = lazy(() => import('./features/launcher/pages/LauncherPage'))
+const LauncherPage = lazy(() => import('../features/launcher/pages/LauncherPage'))
 
 // ========================
 // Notes
 // ========================
-const NotesListPage = lazy(() => import('./features/notes/pages/NotesListPage'))
-const NoteDetailPage = lazy(() => import('./features/notes/pages/NoteDetailPage'))
-const NoteCreatePage = lazy(() => import('./features/notes/pages/NoteCreatePage'))
-const NoteStatisticsPage = lazy(() => import('./features/notes/pages/NoteStatisticsPage'))
-const RecentNotesPage = lazy(() => import('./features/notes/pages/RecentNotesPage'))
-const BulkNotesPage = lazy(() => import('./features/notes/pages/BulkNotesPage'))
-const WebhookManagerPage = lazy(() => import('./features/notes/pages/WebhookManagerPage'))
-const NoteVersionsPage = lazy(() => import('./features/notes/pages/NoteVersionsPage'))
-const NoteVersionDetailPage = lazy(() => import('./features/notes/pages/NoteVersionDetailPage'))
-const NoteRepliesPage = lazy(() => import('./features/notes/pages/NoteRepliesPage'))
-const NoteMentionsPage = lazy(() => import('./features/notes/pages/NoteMentionsPage'))
+const NotesListPage = lazy(() => import('../features/notes/pages/NotesListPage'))
+const NoteDetailPage = lazy(() => import('../features/notes/pages/NoteDetailPage'))
+const NoteCreatePage = lazy(() => import('../features/notes/pages/NoteCreatePage'))
+const NoteStatisticsPage = lazy(() => import('../features/notes/pages/NoteStatisticsPage'))
+const RecentNotesPage = lazy(() => import('../features/notes/pages/RecentNotesPage'))
+const BulkNotesPage = lazy(() => import('../features/notes/pages/BulkNotesPage'))
+const WebhookManagerPage = lazy(() => import('../features/notes/pages/WebhookManagerPage'))
+const NoteVersionsPage = lazy(() => import('../features/notes/pages/NoteVersionsPage'))
+const NoteVersionDetailPage = lazy(() => import('../features/notes/pages/NoteVersionDetailPage'))
+const NoteRepliesPage = lazy(() => import('../features/notes/pages/NoteRepliesPage'))
+const NoteMentionsPage = lazy(() => import('../features/notes/pages/NoteMentionsPage'))
 
 // ========================
 // Jobs
 // ========================
-const JobDetailPage = lazy(() => import('./features/jobs/pages/JobDetailPage'))
-const JobHistoryPage = lazy(() => import('./features/jobs/pages/JobHistoryPage'))
-const JobSchedulingPage = lazy(() => import('./features/jobs/pages/JobSchedulingPage'))
-const ConfigHistoryPage = lazy(() => import('./features/jobs/pages/ConfigHistoryPage'))
-const EnvironmentInfoPage = lazy(() => import('./features/jobs/pages/EnvironmentInfoPage'))
-const MyScheduledJobsPage = lazy(() => import('./features/jobs/pages/MyScheduledJobsPage'))
-const JobConfigComparePage = lazy(() => import('./features/jobs/pages/JobConfigComparePage'))
+const JobDetailPage = lazy(() => import('../features/jobs/pages/JobDetailPage'))
+const JobHistoryPage = lazy(() => import('../features/jobs/pages/JobHistoryPage'))
+const JobSchedulingPage = lazy(() => import('../features/jobs/pages/JobSchedulingPage'))
+const ConfigHistoryPage = lazy(() => import('../features/jobs/pages/ConfigHistoryPage'))
+const EnvironmentInfoPage = lazy(() => import('../features/jobs/pages/EnvironmentInfoPage'))
+const MyScheduledJobsPage = lazy(() => import('../features/jobs/pages/MyScheduledJobsPage'))
+const JobConfigComparePage = lazy(() => import('../features/jobs/pages/JobConfigComparePage'))
 
 // ========================
 // Model Versioning
 // ========================
-const ModelVersionsPage = lazy(() => import('./features/modelVersioning/pages/ModelVersionsPage'))
-const ModelVersionDetailPage = lazy(() => import('./features/modelVersioning/pages/ModelVersionDetailPage'))
-const ModelVersionCompareFromRunPage = lazy(() => import('./features/modelVersioning/pages/ModelVersionCompareFromRunPage'))
-const ModelLineagePage = lazy(() => import('./features/modelVersioning/pages/ModelLineagePage'))
-const ModelVersionCleanupPage = lazy(() => import('./features/modelVersioning/pages/ModelVersionCleanupPage'))
-const PublishModelPage = lazy(() => import('./features/modelVersioning/pages/PublishModelPage'))
-const ArchiveModelPage = lazy(() => import('./features/modelVersioning/pages/ArchiveModelPage'))
-const SetProductionVersionPage = lazy(() => import('./features/modelVersioning/pages/SetProductionVersionPage'))
+const ModelVersionsPage = lazy(() => import('../features/modelVersioning/pages/ModelVersionsPage'))
+const ModelVersionDetailPage = lazy(() => import('../features/modelVersioning/pages/ModelVersionDetailPage'))
+const ModelVersionCompareFromRunPage = lazy(() => import('../features/modelVersioning/pages/ModelVersionCompareFromRunPage'))
+const ModelLineagePage = lazy(() => import('../features/modelVersioning/pages/ModelLineagePage'))
+const ModelVersionCleanupPage = lazy(() => import('../features/modelVersioning/pages/ModelVersionCleanupPage'))
+const PublishModelPage = lazy(() => import('../features/modelVersioning/pages/PublishModelPage'))
+const ArchiveModelPage = lazy(() => import('../features/modelVersioning/pages/ArchiveModelPage'))
+const SetProductionVersionPage = lazy(() => import('../features/modelVersioning/pages/SetProductionVersionPage'))
 
 // ========================
 // Drift / Fairness / Robustness
 // ========================
-const DriftCheckPage = lazy(() => import('./features/drift/pages/DriftCheckPage'))
-const FairnessPage = lazy(() => import('./features/fairness/pages/FairnessPage'))
-const RobustnessPage = lazy(() => import('./features/robustness/pages/RobustnessPage'))
+const DriftCheckPage = lazy(() => import('../features/drift/pages/DriftCheckPage'))
+const FairnessPage = lazy(() => import('../features/fairness/pages/FairnessPage'))
+const RobustnessPage = lazy(() => import('../features/robustness/pages/RobustnessPage'))
 
 // ========================
 // Prompts
 // ========================
-const PromptsListPage = lazy(() => import('./features/prompts/pages/PromptsListPage'))
-const PromptDetailPage = lazy(() => import('./features/prompts/pages/PromptDetailPage'))
-const PromptHistoryPage = lazy(() => import('./features/prompts/pages/PromptHistoryPage'))
+const PromptsListPage = lazy(() => import('../features/prompts/pages/PromptsListPage'))
+const PromptDetailPage = lazy(() => import('../features/prompts/pages/PromptDetailPage'))
+const PromptHistoryPage = lazy(() => import('../features/prompts/pages/PromptHistoryPage'))
 
 // ========================
 // Cluster / Scheduler
 // ========================
-const ClusterOverviewPage = lazy(() => import('./features/scheduler/pages/ClusterOverviewPage'))
+const ClusterOverviewPage = lazy(() => import('../features/scheduler/pages/ClusterOverviewPage'))
 
 // ========================
 // Search / Activity
 // ========================
-const GlobalSearchPage = lazy(() => import('./features/search/pages/GlobalSearchPage'))
-const ActivityFeedPage = lazy(() => import('./features/activity/pages/ActivityFeedPage'))
+const GlobalSearchPage = lazy(() => import('../features/search/pages/GlobalSearchPage'))
+const ActivityFeedPage = lazy(() => import('../features/activity/pages/ActivityFeedPage'))
 
 // ========================
 // Paper
 // ========================
-const PaperEditorPage = lazy(() => import('./features/paper/pages/PaperEditorPage'))
-const OverleafEditorPage = lazy(() => import('./features/paper/pages/OverleafEditorPage'))
-const NewPaperProjectPage = lazy(() => import('./features/paper/pages/NewPaperProjectPage'))
-const PaperPreviewPage = lazy(() => import('./features/paper/pages/PaperPreviewPage'))
-const PaperProjectsPage = lazy(() => import('./features/paper/pages/PaperProjectsPage'))
+const PaperEditorPage = lazy(() => import('../features/paper/pages/PaperEditorPage'))
+const OverleafEditorPage = lazy(() => import('../features/paper/pages/OverleafEditorPage'))
+const NewPaperProjectPage = lazy(() => import('../features/paper/pages/NewPaperProjectPage'))
+const PaperPreviewPage = lazy(() => import('../features/paper/pages/PaperPreviewPage'))
+const PaperProjectsPage = lazy(() => import('../features/paper/pages/PaperProjectsPage'))
 
 // ========================
 // Analysis / Stats
 // ========================
-const AdvancedAnalyticsPage = lazy(() => import('./features/analytics/pages/AdvancedAnalyticsPage'))
-const ResearchAnalysisPage = lazy(() => import('./features/analysis/pages/ResearchAnalysisPage'))
+const AdvancedAnalyticsPage = lazy(() => import('../features/analytics/pages/AdvancedAnalyticsPage'))
+const ResearchAnalysisPage = lazy(() => import('../features/analysis/pages/ResearchAnalysisPage'))
 
 // ========================
 // Templates
 // ========================
-const TemplatesListPage = lazy(() => import('./features/templates/pages/TemplatesListPage'))
-const TemplateDetailPage = lazy(() => import('./features/templates/pages/TemplateDetailPage'))
+const TemplatesListPage = lazy(() => import('../features/templates/pages/TemplatesListPage'))
+const TemplateDetailPage = lazy(() => import('../features/templates/pages/TemplateDetailPage'))
 
 // ========================
 // HPO / Federated
 // ========================
-const HPOStatusPage = lazy(() => import('./features/hpo/pages/HPOStatusPage'))
-const FederatedStatusPage = lazy(() => import('./features/federated/pages/FederatedStatusPage'))
+const HPOStatusPage = lazy(() => import('../features/hpo/pages/HPOStatusPage'))
+const FederatedStatusPage = lazy(() => import('../features/federated/pages/FederatedStatusPage'))
 
 // ========================
 // Profile
 // ========================
-const UserProfilePage = lazy(() => import('./features/profile/pages/UserProfilePage'))
-const ProfileSettingsPage = lazy(() => import('./features/profile/pages/ProfileSettingsPage'))
-const ChangePasswordPage = lazy(() => import('./features/profile/pages/ChangePasswordPage'))
+const UserProfilePage = lazy(() => import('../features/profile/pages/UserProfilePage'))
+const ProfileSettingsPage = lazy(() => import('../features/profile/pages/ProfileSettingsPage'))
+const ChangePasswordPage = lazy(() => import('../features/profile/pages/ChangePasswordPage'))
 
 // ========================
 // Admin
 // ========================
-const AdminDashboard = lazy(() => import('./features/admin/pages/AdminDashboard'))
-const AdminJobsPage = lazy(() => import('./features/admin/pages/AdminJobsPage'))
-const AdminModelVersionsPage = lazy(() => import('./features/admin/pages/AdminModelVersionsPage'))
-const AdminUsersPage = lazy(() => import('./features/admin/pages/AdminUsersPage'))
-const StopAllJobsPage = lazy(() => import('./features/admin/pages/StopAllJobsPage'))
+const AdminDashboard = lazy(() => import('../features/admin/pages/AdminDashboard'))
+const AdminJobsPage = lazy(() => import('../features/admin/pages/AdminJobsPage'))
+const AdminModelVersionsPage = lazy(() => import('../features/admin/pages/AdminModelVersionsPage'))
+const AdminUsersPage = lazy(() => import('../features/admin/pages/AdminUsersPage'))
+const StopAllJobsPage = lazy(() => import('../features/admin/pages/StopAllJobsPage'))
 
 // ========================
 // System
 // ========================
-const SystemStatusPage = lazy(() => import('./features/system/pages/SystemStatusPage'))
-const HealthPage = lazy(() => import('./features/system/pages/HealthPage'))
-const VersionPage = lazy(() => import('./features/system/pages/VersionPage'))
-const ConfigPage = lazy(() => import('./features/config/pages/ConfigPage'))
-const ModelSearchPage = lazy(() => import('./features/config/pages/ModelSearchPage'))
+const SystemStatusPage = lazy(() => import('../features/system/pages/SystemStatusPage'))
+const HealthPage = lazy(() => import('../features/system/pages/HealthPage'))
+const VersionPage = lazy(() => import('../features/system/pages/VersionPage'))
+const ConfigPage = lazy(() => import('../features/config/pages/ConfigPage'))
+const ModelSearchPage = lazy(() => import('../features/config/pages/ModelSearchPage'))
 
 // ========================
 // Community (Q&A)
 // ========================
-const QuestionListPage = lazy(() => import('./features/community/pages/QuestionListPage'))
-const QuestionDetailPage = lazy(() => import('./features/community/pages/QuestionDetailPage'))
-const AskQuestionPage = lazy(() => import('./features/community/pages/AskQuestionPage'))
-const TagDetailPage = lazy(() => import('./features/community/pages/TagDetailPage'))
-const CommunityLeaderboardPage = lazy(() => import('./features/community/pages/LeaderboardPage'))
-const BadgesPage = lazy(() => import('./features/community/pages/BadgesPage'))
+const QuestionListPage = lazy(() => import('../features/community/pages/QuestionListPage'))
+const QuestionDetailPage = lazy(() => import('../features/community/pages/QuestionDetailPage'))
+const AskQuestionPage = lazy(() => import('../features/community/pages/AskQuestionPage'))
+const TagDetailPage = lazy(() => import('../features/community/pages/TagDetailPage'))
+const CommunityLeaderboardPage = lazy(() => import('../features/community/pages/LeaderboardPage'))
+const BadgesPage = lazy(() => import('../features/community/pages/BadgesPage'))
 
 // ========================
 // Agent
 // ========================
-const AgentChatPage = lazy(() => import('./features/agent/pages/AgentChatPage'))
-const AgentSessionsListPage = lazy(() => import('./features/agent/pages/AgentSessionsListPage'))
-const PaperLibraryPage = lazy(() => import('./features/agent/pages/PaperLibraryPage'))
-const PromptTestingPage = lazy(() => import('./features/agent/pages/PromptTestingPage'))
+const AgentChatPage = lazy(() => import('../features/agent/pages/AgentChatPage'))
+const AgentSessionsListPage = lazy(() => import('../features/agent/pages/AgentSessionsListPage'))
+const PaperLibraryPage = lazy(() => import('../features/agent/pages/PaperLibraryPage'))
+const PromptTestingPage = lazy(() => import('../features/agent/pages/PromptTestingPage'))
 
 // ========================
 // Sweeps
 // ========================
-const SweepDashboardPage = lazy(() => import('./features/sweeps/pages/SweepDashboardPage'))
-const SweepCreator = lazy(() => import('./features/sweeps/components/SweepCreator'))
+const SweepDashboardPage = lazy(() => import('../features/sweeps/pages/SweepDashboardPage'))
+const SweepCreator = lazy(() => import('../features/sweeps/components/SweepCreator'))
 
 // ========================
 // Organizations
 // ========================
-const OrganizationListPage = lazy(() => import('./features/organizations/pages/OrganizationListPage'))
-const OrganizationDetailPage = lazy(() => import('./features/organizations/pages/OrganizationDetailPage'))
-const InviteAcceptPage = lazy(() => import('./features/organizations/pages/InviteAcceptPage'))
+const OrganizationListPage = lazy(() => import('../features/organizations/pages/OrganizationListPage'))
+const OrganizationDetailPage = lazy(() => import('../features/organizations/pages/OrganizationDetailPage'))
+const InviteAcceptPage = lazy(() => import('../features/organizations/pages/InviteAcceptPage'))
 
 // ========================
 // Anomaly Detection
 // ========================
-const AnomalyListPage = lazy(() => import('./features/anomaly/pages/AnomalyListPage'))
-const AnomalyDetailPage = lazy(() => import('./features/anomaly/pages/AnomalyDetailPage'))
+const AnomalyListPage = lazy(() => import('../features/anomaly/pages/AnomalyListPage'))
+const AnomalyDetailPage = lazy(() => import('../features/anomaly/pages/AnomalyDetailPage'))
 
 // ========================
 // HPO (Hyperparameter Optimization)
 // ========================
-const HPORunsPage = lazy(() => import('./features/hpo/pages/HPORunsPage'))
+const HPORunsPage = lazy(() => import('../features/hpo/pages/HPORunsPage'))
 
 // ========================
 // Recommender (Experiment Recommendations)
 // ========================
-const RecommendationListPage = lazy(() => import('./features/recommender/pages/RecommendationListPage'))
+const RecommendationListPage = lazy(() => import('../features/recommender/pages/RecommendationListPage'))
 
 // ========================
 // Failure Forensics
 // ========================
-const FailureAnalysisPage = lazy(() => import('./features/forensics/pages/FailureAnalysisPage'))
+const FailureAnalysisPage = lazy(() => import('../features/forensics/pages/FailureAnalysisPage'))
 
 // ========================
 // AI Co‑Scientist
 // ========================
-const IdeaTournamentPage = lazy(() => import('./features/coscientist/pages/IdeaTournamentPage'))
-const HypothesisBrowser = lazy(() => import('./features/coscientist/pages/HypothesisBrowser'))
+const IdeaTournamentPage = lazy(() => import('../features/coscientist/pages/IdeaTournamentPage'))
+const HypothesisBrowser = lazy(() => import('../features/coscientist/pages/HypothesisBrowser'))
 
 // ========================
 // Literature Discovery
 // ========================
-const LiteratureMapPage = lazy(() => import('./features/literature/pages/LiteratureMapPage'))
-const CitationGraphViewer = lazy(() => import('./features/literature/pages/CitationGraphViewer'))
+const LiteratureMapPage = lazy(() => import('../features/literature/pages/LiteratureMapPage'))
+const CitationGraphViewer = lazy(() => import('../features/literature/pages/CitationGraphViewer'))
 
 // ========================
 // Experiment Accelerator
 // ========================
-const AcceleratorDashboard = lazy(() => import('./features/accelerator/pages/AcceleratorDashboard'))
+const AcceleratorDashboard = lazy(() => import('../features/accelerator/pages/AcceleratorDashboard'))
 
 // ========================
 // Coding Assistant
 // ========================
-const CodeAssistantPage = lazy(() => import('./features/codingAssistant/pages/CodeAssistantPage'))
+const CodeAssistantPage = lazy(() => import('../features/codingAssistant/pages/CodeAssistantPage'))
 
 // ========================
 // Marketplace AI
 // ========================
-const AgenticMarketplacePage = lazy(() => import('./features/marketplaceAI/pages/AgenticMarketplacePage'))
-const ComparisonBuilder = lazy(() => import('./features/marketplaceAI/pages/ComparisonBuilder'))
+const AgenticMarketplacePage = lazy(() => import('../features/marketplaceAI/pages/AgenticMarketplacePage'))
+const ComparisonBuilder = lazy(() => import('../features/marketplaceAI/pages/ComparisonBuilder'))
 
 // ========================
 // Autonomous Research
 // ========================
-const AutonomousPipelineMonitor = lazy(() => import('./features/autonomous/pages/AutonomousPipelineMonitor'))
-const StepEditor = lazy(() => import('./features/autonomous/pages/StepEditor'))
+const AutonomousPipelineMonitor = lazy(() => import('../features/autonomous/pages/AutonomousPipelineMonitor'))
+const StepEditor = lazy(() => import('../features/autonomous/pages/StepEditor'))
 
 // ========================
 // Impact Predictor
 // ========================
-const ImpactScorePage = lazy(() => import('./features/impactPredictor/pages/ImpactScorePage'))
-const ProjectLeaderboardPage = lazy(() => import('./features/impactPredictor/pages/ProjectLeaderboard'))
+const ImpactScorePage = lazy(() => import('../features/impactPredictor/pages/ImpactScorePage'))
+const ProjectLeaderboardPage = lazy(() => import('../features/impactPredictor/pages/ProjectLeaderboard'))
 
 // ========================
 // Collaborator Matching
 // ========================
-const CollaboratorSuggestionPage = lazy(() => import('./features/collaborator/pages/CollaboratorSuggestionPage'))
-const MatchHistoryList = lazy(() => import('./features/collaborator/pages/MatchHistoryList'))
+const CollaboratorSuggestionPage = lazy(() => import('../features/collaborator/pages/CollaboratorSuggestionPage'))
+const MatchHistoryList = lazy(() => import('../features/collaborator/pages/MatchHistoryList'))
 
 // ========================
 // Expert Wall
 // ========================
-const ExpertDirectoryPage = lazy(() => import('./features/expertWall/pages/ExpertDirectoryPage'))
-const ProjectApplicationPanel = lazy(() => import('./features/expertWall/pages/ProjectApplicationPanel'))
+const ExpertDirectoryPage = lazy(() => import('../features/expertWall/pages/ExpertDirectoryPage'))
+const ProjectApplicationPanel = lazy(() => import('../features/expertWall/pages/ProjectApplicationPanel'))
 
 // ========================
 // Streaks
 // ========================
-const StreakHeatmapPage = lazy(() => import('./features/streaks/pages/StreakHeatmapPage'))
-const WeeklySummaryViewer = lazy(() => import('./features/streaks/pages/WeeklySummaryViewer'))
+const StreakHeatmapPage = lazy(() => import('../features/streaks/pages/StreakHeatmapPage'))
+const WeeklySummaryViewer = lazy(() => import('../features/streaks/pages/WeeklySummaryViewer'))
 
 // ========================
 // Gamification
 // ========================
-const BadgeWallPage = lazy(() => import('./features/gamification/pages/BadgeWallPage'))
-const ContributionLeaderboard = lazy(() => import('./features/gamification/pages/ContributionLeaderboard'))
+const BadgeWallPage = lazy(() => import('../features/gamification/pages/BadgeWallPage'))
+const ContributionLeaderboard = lazy(() => import('../features/gamification/pages/ContributionLeaderboard'))
 
 // ========================
 // Trading / GPU Stock Market
 // ========================
-const GPUTradingTerminal = lazy(() => import('./features/trading/components/GPUTradingTerminal'))
+const GPUTradingTerminal = lazy(() => import('../features/trading/components/GPUTradingTerminal'))
 
 // ========================
 // Deep Research
 // ========================
-const DeepResearchPage = lazy(() => import('./features/research/pages/DeepResearchPage'))
+const DeepResearchPage = lazy(() => import('../features/research/pages/DeepResearchPage'))
 
 // ========================
 // 3D Model Viewer & Federated
 // ========================
-const ModelViewerPage = lazy(() => import('./features/modelViewer/pages/ModelViewerPage'))
-const FLRunPage = lazy(() => import('./features/federated/pages/FLRunPage'))
+const ModelViewerPage = lazy(() => import('../features/modelViewer/pages/ModelViewerPage'))
+const FLRunPage = lazy(() => import('../features/federated/pages/FLRunPage'))
+
+// ========================
+// Chat (full‑page assistant)
+// ========================
+const ChatPanel = lazy(() => import('../features/chat/components/ChatPanel'))
 
 // ========================
 // Support Hub
 // ========================
-const SupportHubPage = lazy(() => import('./features/support/pages/SupportHubPage')) // if exists
+const SupportHubPage = lazy(() => import('../features/support/pages/SupportHubPage')) // if exists
+
+// ========================
+// Datasets
+// ========================
+const DatasetListPage = lazy(() => import('../features/datasets/pages/DatasetListPage'))
+const DatasetDetailPage = lazy(() => import('../features/datasets/pages/DatasetDetailPage'))
+
+// ========================
+// Live Dashboards
+// ========================
+const LiveDashboardList = lazy(() => import('../features/liveDashboards/pages/LiveDashboardList'))
+const DashboardBuilder = lazy(() => import('../features/liveDashboards/pages/DashboardBuilder'))
+
+// ========================
+// Health Monitor
+// ========================
+const DriftMonitorSetup = lazy(() => import('../features/healthMonitor/pages/DriftMonitorSetup'))
+const AlertHistory = lazy(() => import('../features/healthMonitor/pages/AlertHistory'))
+const HealthDashboard = lazy(() => import('../features/healthMonitor/pages/HealthDashboard'))
+
+// ========================
+// Protocols
+// ========================
+const ProtocolListPage = lazy(() => import('../features/protocols/pages/ProtocolListPage'))
+const ProtocolBuilder = lazy(() => import('../features/protocols/pages/ProtocolBuilder'))
 
 // ========================
 // Fallback
 // ========================
-const NotFoundPage = lazy(() => import('./features/NotFoundPage'))
+const NotFoundPage = lazy(() => import('../features/NotFoundPage'))
 
 // ========================
 // Router Definition
@@ -366,7 +396,7 @@ export const router = createBrowserRouter([
       { path: '/paper/editor/:projectId', element: <OverleafEditorPage /> },
       { path: '/paper/new', element: <NewPaperProjectPage /> },
       { path: '/paper', element: <PaperProjectsPage /> },
-{ path: '/chat', element: <ChatPanel /> },
+      { path: '/chat', element: <ChatPanel /> }, // full‑page chat
 
       // Model Versioning
       { path: '/runs/:runId/model-versions', element: <ModelVersionsPage /> },
@@ -544,28 +574,26 @@ export const router = createBrowserRouter([
       // Support Hub (if exists)
       { path: '/support', element: <SupportHubPage /> },
 
-      // 404
+      // Datasets
+      { path: '/datasets', element: <DatasetListPage /> },
+      { path: '/datasets/:datasetId', element: <DatasetDetailPage /> },
+
+      // Live Dashboards
+      { path: '/dashboards', element: <LiveDashboardList /> },
+      { path: '/dashboards/:dashboardId', element: <DashboardBuilder /> },
+
+      // Health Monitor
+      { path: '/health/drift', element: <DriftMonitorSetup /> },
+      { path: '/health/alerts', element: <AlertHistory /> },
+      { path: '/health/dashboard', element: <HealthDashboard /> },
+
+      // Protocols
+      { path: '/protocols', element: <ProtocolListPage /> },
+      { path: '/protocols/new', element: <ProtocolBuilder /> },
+      { path: '/protocols/:protocolId', element: <ProtocolBuilder /> },
+
+      // 404 – must be last
       { path: '*', element: <NotFoundPage /> },
     ],
   },
 ])
-
-
-{ path: '/datasets', element: <DatasetListPage /> },
-{ path: '/datasets/:datasetId', element: <DatasetDetailPage /> },
-
-
-
-{ path: '/dashboards', element: <LiveDashboardList /> },
-{ path: '/dashboards/:dashboardId', element: <DashboardBuilder /> },
-
-
-{ path: '/health/drift', element: <DriftMonitorSetup /> },
-{ path: '/health/alerts', element: <AlertHistory /> },
-{ path: '/health/dashboard', element: <HealthDashboard /> },
-
-
-
-{ path: '/protocols', element: <ProtocolListPage /> },
-{ path: '/protocols/new', element: <ProtocolBuilder /> },
-{ path: '/protocols/:protocolId', element: <ProtocolBuilder /> },
