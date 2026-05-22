@@ -111,6 +111,7 @@ INSTALLED_APPS = [
 'literature_review',
 'literature_discovery',
 'ai_coscientist',
+'anomaly_hpo',
 
     'profiles',
     'messaging',
