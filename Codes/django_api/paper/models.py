@@ -210,3 +210,24 @@ class PaperVersion(models.Model):
         app_label = 'paper'
         unique_together = [['project', 'version_number']]
         ordering = ['-version_number']
+
+
+class CollaborationSession(models.Model):
+    """An active co‑authoring session on a paper project."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(PaperProject, on_delete=models.CASCADE, related_name='collab_sessions')
+    started_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    active_users = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='active_collab_sessions')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+
+class CursorPosition(models.Model):
+    """Real‑time cursor position of a collaborator."""
+    session = models.ForeignKey(CollaborationSession, on_delete=models.CASCADE, related_name='cursors')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    file = models.ForeignKey(PaperFile, on_delete=models.CASCADE)
+    line = models.IntegerField()
+    column = models.IntegerField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta: unique_together = [['session', 'user', 'file']]
