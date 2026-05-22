@@ -14,6 +14,7 @@ export default function FloatingWindowBar() {
     const existing = windows.find((w) => w.id === item.id)
     if (existing) {
       if (existing.minimized) toggleMinimize(item.id)
+      else toggleMinimize(item.id) // or just focus: we can bring to front
     } else {
       addWindow({
         id: item.id,
