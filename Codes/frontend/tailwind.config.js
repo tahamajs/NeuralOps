@@ -14,3 +14,22 @@ export default {
   },
   plugins: [],
 }
+
+module.exports = {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        'neon-mint': '#00ff9d',
+        'neon-blue': '#3b82f6',
+        'surface': '#03050b',
+        'surface-elevated': '#0a0f1a',
+      },
+      fontFamily: {
+        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+    },
+  },
+  plugins: [],
+}

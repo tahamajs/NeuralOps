@@ -127,3 +127,81 @@
     @apply bg-white/10 rounded-full hover:bg-white/20;
   }
 }
+
+
+/* src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary: #00ff9d;      /* neon mint */
+    --color-primary-glow: rgba(0,255,157,0.3);
+    --color-secondary: #3b82f6;    /* electric blue */
+    --color-surface: #03050b;
+    --color-surface-elevated: #0a0f1a;
+    --color-border: rgba(255,255,255,0.08);
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-sans: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    background-image: 
+      linear-gradient(rgba(0,255,157,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,157,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    color: #e2e8f0;
+    font-family: var(--font-sans);
+  }
+
+  /* Custom scrollbar – ultra thin */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0,255,157,0.3);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,255,157,0.6);
+  }
+
+  /* Glass with neon border */
+  .glass-terminal {
+    background: rgba(10,15,26,0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0,255,157,0.2);
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,255,157,0.05);
+    transition: all 0.2s;
+  }
+  .glass-terminal:hover {
+    border-color: rgba(0,255,157,0.4);
+    box-shadow: 0 0 20px rgba(0,255,157,0.1);
+  }
+
+  /* Terminal-style heading */
+  .terminal-heading {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #00ff9d;
+    border-left: 2px solid #00ff9d;
+    padding-left: 0.75rem;
+  }
+
+  /* Data grid row hover */
+  .data-row {
+    transition: background 0.1s;
+  }
+  .data-row:hover {
+    background: rgba(0,255,157,0.05);
+  }
+}

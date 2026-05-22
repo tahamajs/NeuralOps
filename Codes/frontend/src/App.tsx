@@ -120,3 +120,54 @@ function App() {
 }
 
 export default App
+
+
+
+// src/App.tsx
+import { useWindowStore } from './store/windowStore'
+import { DockableWindow } from './components/DockableWindow'
+import { WindowLauncher } from './components/WindowLauncher'
+import { WorkspaceManager } from './components/WorkspaceManager'
+import { ChatPanel } from './features/chat/components/ChatPanel'
+import { TerminalPanel } from './features/terminal/components/TerminalPanel'
+import { PaperEditorPanel } from './features/paper/components/PaperEditorPanel'
+import { FloatingNotesEditor } from './features/notes/components/FloatingNotesEditor'
+import { GPUMarketplacePage } from './features/marketplace/pages/GPUMarketplacePage'
+import { ExperimentListPage } from './features/experiments/pages/ExperimentListPage'
+import { UserProfilePage } from './features/profile/pages/UserProfilePage'
+import { QuestionListPage } from './features/community/pages/QuestionListPage'
+// import all other components you need
+
+const componentMap: Record<string, React.ComponentType<any>> = {
+  terminal: TerminalPanel,
+  'paper-editor': PaperEditorPanel,
+  notes: FloatingNotesEditor,
+  marketplace: GPUMarketplacePage,
+  experiments: ExperimentListPage,
+  profile: UserProfilePage,
+  community: QuestionListPage,
+  chat: ChatPanel,
+  // add more as needed
+}
+
+function App() {
+  const { windows } = useWindowStore()
+
+  return (
+    <div className="relative w-screen h-screen overflow-hidden bg-surface">
+      {windows.map(win => {
+        const Component = componentMap[win.type]
+        if (!Component) return null
+        return (
+          <DockableWindow key={win.id} window={win}>
+            <Component onClose={() => useWindowStore.getState().removeWindow(win.id)} />
+          </DockableWindow>
+        )
+      })}
+      <WindowLauncher />
+      <WorkspaceManager />
+    </div>
+  )
+}
+
+export default App
