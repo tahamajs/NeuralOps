@@ -205,3 +205,13 @@ const AVAILABLE_WINDOWS = [
   { type: 'live-dashboards', title: 'Live Dashboards', icon: '📈' },
   { type: 'dashboard-builder', title: 'Dashboard Builder', icon: '✏️' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'model-registry', title: 'Model Registry', icon: '📦' },
+  { type: 'approvals', title: 'Approval Requests', icon: '✓' },
+  { type: 'promotions', title: 'Promotion Panel', icon: '⬆️' },
+  { type: 'access-manager', title: 'Model Access Manager', icon: '🔐' },
+  { type: 'catalog', title: 'Model Catalog', icon: '🔍' },
+]
