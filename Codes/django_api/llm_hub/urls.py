@@ -17,4 +17,10 @@ urlpatterns = [
     path('memory/context/', views.memory_context, name='memory_context'),
     path('tools/', views.tool_list, name='tool_list'),
     path('schemas/', views.schema_list, name='schema_list'),
+    path('arena/battle/', views.get_battle, name='arena_battle'),
+    path('arena/battle/<uuid:battle_id>/vote/', views.submit_vote, name='arena_vote'),
+    path('arena/leaderboard/', views.arena_leaderboard, name='arena_leaderboard'),
+    path('guardrails/', views.create_guardrail, name='create_guardrail'),
+    path('guardrails/attach/<uuid:session_id>/', views.attach_guardrail, name='attach_guardrail'),
+    path('guardrails/test/<uuid:guardrail_id>/', views.test_guardrail, name='test_guardrail'),
 ]

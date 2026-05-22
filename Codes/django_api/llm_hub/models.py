@@ -202,3 +202,54 @@ class UsageRecord(models.Model):
     cost_usd = models.DecimalField(max_digits=10, decimal_places=6, default=0)
     source = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+
+class ArenaBattle(models.Model):
+    """A single battle between two anonymous models."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    model_a = models.ForeignKey(LLMModel, on_delete=models.CASCADE, related_name='battles_as_a')
+    model_b = models.ForeignKey(LLMModel, on_delete=models.CASCADE, related_name='battles_as_b')
+    prompt = models.TextField()
+    response_a = models.TextField()
+    response_b = models.TextField()
+    # The models are presented anonymously; the user picks a winner.
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class ArenaVote(models.Model):
+    """A user's vote in a battle."""
+    battle = models.ForeignKey(ArenaBattle, on_delete=models.CASCADE, related_name='votes')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
+    winner = models.CharField(max_length=1, choices=[('A', 'Model A'), ('B', 'Model B'), ('tie', 'Tie')])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class ModelElo(models.Model):
+    """ELO rating for a model in the arena."""
+    model = models.OneToOneField(LLMModel, on_delete=models.CASCADE, related_name='elo')
+    rating = models.FloatField(default=1500.0)
+    matches_played = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class Guardrail(models.Model):
+    """A pre-built guardrail rule."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    guardrail_type = models.CharField(max_length=50, choices=[
+        ('toxicity_filter', 'Toxicity Filter'),
+        ('pii_redaction', 'PII Redaction'),
+        ('keyword_block', 'Keyword Block'),
+        ('custom_regex', 'Custom Regex'),
+    ])
+    config = models.JSONField(default=dict, help_text="Configuration for the guardrail")
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class GuardrailAttachment(models.Model):
+    """Attaches one or more guardrails to a playground session or inference endpoint."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    guardrail = models.ForeignKey(Guardrail, on_delete=models.CASCADE)
+    # Polymorphic: can attach to a session or model
+    session = models.ForeignKey(PlaygroundSession, on_delete=models.CASCADE, null=True, blank=True, related_name='guardrails')
+    model = models.ForeignKey(LLMModel, on_delete=models.CASCADE, null=True, blank=True, related_name='guardrails')

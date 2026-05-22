@@ -272,3 +272,112 @@ def schema_list(request):
             serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+    
+import random
+from django.db.models import Q
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_battle(request):
+    """Get a random battle between two models. If not enough, create new ones."""
+    # Try to find an existing battle with no votes yet
+    battles = ArenaBattle.objects.annotate(vote_count=models.Count('votes')).filter(vote_count=0)
+    if battles.exists():
+        battle = random.choice(battles)
+        serializer = ArenaBattleSerializer(battle)
+        return Response(serializer.data)
+    # If none, we can create synthetic ones? Or require admin to seed.
+    # For now, we'll create a new battle on the fly if we have at least two active models.
+    models = LLMModel.objects.filter(is_active=True)
+    if models.count() < 2:
+        return Response({'error': 'Not enough models for battle'}, status=400)
+    model_a, model_b = random.sample(list(models), 2)
+    prompt = "Explain the concept of blockchain in simple terms."  # could be from a pool
+    # Call the gateway to get responses
+    from .gateway import LLMGateway
+    resp_a = LLMGateway.complete(model_a.model_id, [{'role': 'user', 'content': prompt}])
+    resp_b = LLMGateway.complete(model_b.model_id, [{'role': 'user', 'content': prompt}])
+    battle = ArenaBattle.objects.create(
+        model_a=model_a, model_b=model_b, prompt=prompt,
+        response_a=resp_a.get('content', ''), response_b=resp_b.get('content', '')
+    )
+    serializer = ArenaBattleSerializer(battle)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def submit_vote(request, battle_id):
+    """Submit a vote for a battle."""
+    battle = get_object_or_404(ArenaBattle, id=battle_id)
+    winner = request.data.get('winner')
+    if winner not in ('A', 'B', 'tie'):
+        return Response({'error': 'Invalid winner'}, status=400)
+    ArenaVote.objects.create(battle=battle, user=request.user if request.user.is_authenticated else None, winner=winner)
+    # Update ELO ratings
+    _update_elo(battle)
+    return Response({'status': 'vote recorded'})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def arena_leaderboard(request):
+    """Get the arena leaderboard sorted by ELO rating."""
+    elos = ModelElo.objects.select_related('model').order_by('-rating')
+    data = [{'model_id': e.model.model_id, 'display_name': e.model.display_name, 'rating': e.rating, 'matches': e.matches_played} for e in elos]
+    return Response(data)
+
+def _update_elo(battle):
+    """Update ELO ratings based on battle votes."""
+    votes = battle.votes.all()
+    if not votes:
+        return
+    # Simple: for each vote, adjust ELO (K=32)
+    K = 32
+    for vote in votes:
+        elo_a, _ = ModelElo.objects.get_or_create(model=battle.model_a)
+        elo_b, _ = ModelElo.objects.get_or_create(model=battle.model_b)
+        if vote.winner == 'A':
+            expected_a = 1 / (1 + 10 ** ((elo_b.rating - elo_a.rating) / 400))
+            elo_a.rating += K * (1 - expected_a)
+            elo_b.rating += K * (0 - (1 - expected_a))
+            elo_a.matches_played += 1
+            elo_b.matches_played += 1
+        elif vote.winner == 'B':
+            expected_b = 1 / (1 + 10 ** ((elo_a.rating - elo_b.rating) / 400))
+            elo_a.rating += K * (0 - expected_b)
+            elo_b.rating += K * (1 - expected_b)
+            elo_a.matches_played += 1
+            elo_b.matches_played += 1
+        # tie: small adjustment towards each other
+        else:
+            elo_a.rating = elo_a.rating + K * (0.5 - 1 / (1 + 10 ** ((elo_b.rating - elo_a.rating) / 400)))
+            elo_b.rating = elo_b.rating + K * (0.5 - 1 / (1 + 10 ** ((elo_a.rating - elo_b.rating) / 400)))
+            elo_a.matches_played += 1
+            elo_b.matches_played += 1
+        elo_a.save()
+        elo_b.save()
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_guardrail(request):
+    serializer = GuardrailSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(created_by=request.user)
+        return Response(serializer.data, status=201)
+    return Response(serializer.errors, status=400)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def attach_guardrail(request, session_id):
+    session = get_object_or_404(PlaygroundSession, id=session_id, user=request.user)
+    guardrail_id = request.data.get('guardrail_id')
+    guardrail = get_object_or_404(Guardrail, id=guardrail_id)
+    GuardrailAttachment.objects.get_or_create(guardrail=guardrail, session=session)
+    return Response({'status': 'attached'})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def test_guardrail(request, guardrail_id):
+    guardrail = get_object_or_404(Guardrail, id=guardrail_id)
+    text = request.data.get('text', '')
+    result = GuardrailEngine.apply(text, guardrail)
+    return Response({'original': text, 'filtered': result})
