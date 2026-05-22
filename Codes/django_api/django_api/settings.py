@@ -104,6 +104,7 @@ INSTALLED_APPS = [
 'expert_wall',
 'impact_predictor',
 'literature_review',
+'literature_discovery',
 
     'profiles',
     'messaging',
