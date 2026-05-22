@@ -100,6 +100,7 @@ INSTALLED_APPS = [
 
     'profiles',
     'messaging',
+'reputation',
 
     'paper',
 ]
@@ -176,7 +177,16 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=0, minute=30),
     },
 }
-
+CELERY_BEAT_SCHEDULE.update({
+    'daily-reputation-snapshot': {
+        'task': 'reputation.tasks.daily_snapshot',
+        'schedule': crontab(hour=1, minute=0),
+    },
+    'generate-daily-recommendations': {
+        'task': 'reputation.tasks.generate_daily_recommendations',
+        'schedule': crontab(hour=2, minute=0),
+    },
+})
 # Social auth backends — uncomment after installing django-allauth
 # AUTHENTICATION_BACKENDS = [
 #     'django.contrib.auth.backends.ModelBackend',
