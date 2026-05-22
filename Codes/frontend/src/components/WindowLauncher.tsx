@@ -106,3 +106,9 @@ const AVAILABLE_WINDOWS = [
   // ...
   { type: 'recommendations', title: 'Experiment Recommendations', icon: '💡' },
 ]
+
+
+const AVAILABLE_WINDOWS = [
+  // ... existing
+  { type: 'forensics', title: 'Failure Forensics', icon: '🛡️' },
+]
