@@ -340,3 +340,20 @@ const componentMap = {
   // ...
   accelerator: AcceleratorDashboard,
 }
+
+
+// App.tsx
+import CodeAssistantPage from './features/codingAssistant/pages/CodeAssistantPage'
+
+const componentMap = {
+  'coding-assistant': CodeAssistantPage,
+}
+
+
+import AgenticMarketplacePage from './features/marketplaceAI/pages/AgenticMarketplacePage'
+import ComparisonBuilder from './features/marketplaceAI/pages/ComparisonBuilder'
+
+const componentMap = {
+  'marketplace-ai': AgenticMarketplacePage,
+  'comparison-builder': ComparisonBuilder,
+}
