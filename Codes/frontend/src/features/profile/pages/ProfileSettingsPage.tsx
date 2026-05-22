@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { profileAPI } from '../services/api'
 import { Card, Input, Textarea, Button, Spinner, Switch } from '../../../components/ui'
 import { Save, X } from 'lucide-react'
+import { ProxySettings } from '../../settings/components/ProxySettings'
 
 export default function ProfileSettingsPage() {
   const queryClient = useQueryClient()
@@ -60,7 +61,10 @@ export default function ProfileSettingsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold text-white">Profile Settings</h1>
+      <ProxySettings />
+
       <Card>
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <Input
             label="Full Name"
