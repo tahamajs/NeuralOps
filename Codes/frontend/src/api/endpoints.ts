@@ -1,3 +1,4 @@
+// src/api/endpoints.ts
 export const ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login/',
@@ -32,7 +33,7 @@ export const ENDPOINTS = {
 
   LAUNCHER: {
     LAUNCH: '/launch/',
-    CONFIG_OPTIONS: '/config/all/',  // from web_dashboard
+    CONFIG_OPTIONS: '/config/all/',
   },
 
   AGENT: {
