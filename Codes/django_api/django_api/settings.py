@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'channels',
     'django_filters',
+'idea_tournament',
 
     'api',
     'web_dashboard',
