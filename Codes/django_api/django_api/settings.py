@@ -113,6 +113,7 @@ INSTALLED_APPS = [
 'ai_coscientist',
 'anomaly_hpo',
 'autonomous_research',
+'marketplace_ai',
 
     'profiles',
     'messaging',
