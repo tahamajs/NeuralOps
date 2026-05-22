@@ -302,3 +302,11 @@ const componentMap = {
   // ...
   recommendations: RecommendationListPage,
 }
+
+
+import FailureAnalysisPage from './features/forensics/pages/FailureAnalysisPage'
+
+const componentMap = {
+  // ...
+  forensics: FailureAnalysisPage,
+}
