@@ -93,6 +93,9 @@ path('api/health-monitor/', include('health_monitor.urls')),
 path('api/community-lab/', include('community_lab.urls')),
 path('api/playground/', include('playground.urls')),
 path('api/datasets/', include('datasets.urls')),
+path('parameter-interactions/', views.parameter_interactions, name='parameter_interactions'),
+path('parameter-scatter/', views.run_parameter_scatter, name='parameter_scatter'),
+path('runs/<uuid:run_id>/export-report-pdf/', views.export_experiment_report_pdf, name='export_report_pdf'),
 
 ]
 

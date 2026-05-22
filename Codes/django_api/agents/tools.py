@@ -776,3 +776,76 @@ def _deduplicate_papers(papers: List[Dict]) -> List[Dict]:
             seen.add(key)
             unique.append(p)
     return unique
+
+
+
+
+
+# agents/tools.py — add these tool definitions
+
+@ToolRegistry.register(
+    name="launch_experiment",
+    description="Launch a training experiment. Requires user confirmation.",
+    category="experiment",
+    requires_confirmation=True,
+)
+def launch_experiment_tool(
+    model_name: str,
+    task_name: str,
+    attention_type: str = "full",
+    epochs: int = 3,
+    batch_size: int = 16,
+    learning_rate: float = 2e-5,
+    user_id: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Launch a training run with safeguards."""
+    from experiment.models import Experiment, TrainingRun
+
+    experiment = Experiment.objects.create(name=f"{model_name} → {task_name}")
+    run = TrainingRun.objects.create(
+        experiment=experiment,
+        status='queued',
+        config={
+            'model_name': model_name,
+            'task_name': task_name,
+            'attention_type': attention_type,
+            'epochs': epochs,
+            'batch_size': batch_size,
+            'learning_rate': learning_rate,
+        },
+    )
+    from experiment.tasks import run_training_task
+    task = run_training_task.delay(str(run.id))
+    return {'status': 'launched', 'run_id': str(run.id), 'celery_task_id': task.id}
+
+@ToolRegistry.register(
+    name="stop_experiment",
+    description="Stop a running experiment. Requires user confirmation.",
+    category="experiment",
+    requires_confirmation=True,
+)
+def stop_experiment_tool(run_id: str) -> Dict[str, Any]:
+    """Stop a running training job."""
+    run = TrainingRun.objects.get(id=run_id)
+    if run.status == 'running':
+        from jobscheduler.scheduler import scheduler
+        scheduler.stop_job(run_id)
+        run.status = 'stopped'
+        run.save(update_fields=['status'])
+        return {'status': 'stopped', 'run_id': run_id}
+    return {'status': 'not_running', 'run_id': run_id}
+
+@ToolRegistry.register(
+    name="edit_configuration",
+    description="Edit a training configuration. Requires user confirmation.",
+    category="experiment",
+    requires_confirmation=True,
+)
+def edit_configuration_tool(run_id: str, key: str, value: Any) -> Dict[str, Any]:
+    """Edit a specific configuration parameter of a training run."""
+    run = TrainingRun.objects.get(id=run_id)
+    config = run.config or {}
+    config[key] = value
+    run.config = config
+    run.save(update_fields=['config'])
+    return {'status': 'updated', 'run_id': run_id, 'key': key, 'value': value}

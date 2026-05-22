@@ -125,3 +125,61 @@ def run_autonomous_agent(self, session_id: str, user_id: int):
             break
     session.status = 'completed' if session.status == 'active' else session.status
     session.save()
+
+
+
+
+
+
+
+# agents/tasks.py — add this
+
+@shared_task(bind=True, max_retries=2)
+def execute_research_plan(self, plan_id: str):
+    """Execute a research plan step by step."""
+    plan = ResearchPlan.objects.get(id=plan_id)
+    try:
+        for step in plan.steps:
+            # Search for papers
+            results = search_papers(query=step['task'], limit=5)
+            for paper in results:
+                ResearchFinding.objects.create(
+                    plan=plan,
+                    source_url=paper['url'],
+                    source_title=paper['title'],
+                    source_type=paper.get('source', 'web'),
+                    credibility_score=_evaluate_source(paper),
+                    summary=paper.get('abstract', '')[:500],
+                    relevance_score=0.7,
+                )
+            step['status'] = 'completed'
+            plan.steps = plan.steps  # trigger save
+            plan.save()
+
+        # Synthesize report
+        findings = plan.findings.all()
+        report_md = _synthesize_report(plan.objective, findings)
+        ResearchReport.objects.create(plan=plan, content_markdown=report_md)
+        plan.status = 'completed'
+        plan.save()
+    except Exception as e:
+        plan.status = 'failed'
+        plan.save()
+        raise self.retry(exc=e)
+
+def _evaluate_source(paper: dict) -> float:
+    """Score source credibility (citation count, venue, etc.)."""
+    citations = paper.get('citation_count', 0)
+    venue = paper.get('venue', '')
+    score = min(1.0, citations / 1000.0)
+    if 'nature' in venue.lower() or 'neurips' in venue.lower():
+        score += 0.2
+    return min(1.0, score)
+
+def _synthesize_report(objective: str, findings) -> str:
+    """Use LLM to synthesize findings into a structured report."""
+    # In production: call OpenAI / Anthropic API
+    report = f"# Research Report: {objective}\n\n"
+    for f in findings:
+        report += f"## {f.source_title}\n- Credibility: {f.credibility_score:.2f}\n- Summary: {f.summary}\n\n"
+    return report
