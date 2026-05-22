@@ -100,6 +100,7 @@ path('api/llm/', include('llm_hub.urls')),
 path('api/projects/', include('projects.urls')),
 path('api/protocols/', include('protocols.urls')),
 path('ws/collab/<uuid:project_id>/', CollaborationConsumer.as_asgi()),
+path('api/governance/', include('governance.urls')),
 
 ]
 
