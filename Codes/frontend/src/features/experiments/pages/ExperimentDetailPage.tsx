@@ -171,3 +171,16 @@ export default function ExperimentDetailPage() {
     </div>
   )
 }
+
+
+import { VariantSelector } from '../../recommender/components/VariantSelector'
+
+// Inside the page, add a tab or section:
+<Tabs defaultValue="details">
+  {/* existing tabs */}
+  <Tab value="variants">Variants</Tab>
+  {/* ... */}
+  <TabPanel value="variants">
+    <VariantSelector runId={runId} />
+  </TabPanel>
+</Tabs>
