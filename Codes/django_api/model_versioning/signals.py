@@ -11,7 +11,14 @@ from .models import ModelVersion, ModelVersionDiff
 from .services import migrate_storage_tier
 
 logger = logging.getLogger(__name__)
+"""Auto-log model usage on download."""
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from .models import ModelUsageLog
 
+# This signal already exists for cleanup; we add usage logging separately.
+# The actual logging happens in the views (log_usage endpoint) and when
+# users download a model, the download endpoint calls log_usage internally.
 # ------------------------------------------------------------------
 # Custom signals
 # ------------------------------------------------------------------

@@ -51,3 +51,4 @@ class HuggingFacePublisher:
         self.version.hub_repo_url = f"https://huggingface.co/{repo_name}"
         self.version.save(update_fields=['is_published_to_hub', 'hub_repo_url'])
         return self.version.hub_repo_url
+
