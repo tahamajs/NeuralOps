@@ -1,17 +1,24 @@
+// src/router/index.tsx
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { MainLayout } from './components/layout/MainLayout'
 import { Spinner } from './components/ui/Spinner'
 
+// ========================
 // Auth
+// ========================
 const LoginPage = lazy(() => import('./features/auth/pages/LoginPage'))
 const RegisterPage = lazy(() => import('./features/auth/pages/RegisterPage'))
 
+// ========================
 // Dashboard
+// ========================
 const DashboardPage = lazy(() => import('./features/dashboard/pages/DashboardPage'))
 const DashboardWidgetsConfigPage = lazy(() => import('./features/dashboard/pages/DashboardWidgetsConfigPage'))
 
+// ========================
 // Experiments
+// ========================
 const ExperimentListPage = lazy(() => import('./features/experiments/pages/ExperimentListPage'))
 const ExperimentDetailPage = lazy(() => import('./features/experiments/pages/ExperimentDetailPage'))
 const ExperimentComparePage = lazy(() => import('./features/experiments/pages/ExperimentComparePage'))
@@ -26,6 +33,10 @@ const RunArtifactsPage = lazy(() => import('./features/experiments/pages/RunArti
 const ModelDownloadPage = lazy(() => import('./features/experiments/pages/ModelDownloadPage'))
 const TrainingSnapshotsPage = lazy(() => import('./features/experiments/pages/TrainingSnapshotsPage'))
 const UpdateRunConfigPage = lazy(() => import('./features/experiments/pages/UpdateRunConfigPage'))
+
+// ========================
+// Marketplace (basic)
+// ========================
 const MarketplacePage = lazy(() => import('./features/marketplace/pages/MarketplacePage'))
 const MyOrdersPage = lazy(() => import('./features/marketplace/pages/MyOrdersPage'))
 const MyJobsPage = lazy(() => import('./features/marketplace/pages/MyJobsPage'))
@@ -34,10 +45,14 @@ const UsagePage = lazy(() => import('./features/marketplace/pages/UsagePage'))
 const LeaderboardPage = lazy(() => import('./features/marketplace/pages/LeaderboardPage'))
 const ReputationPage = lazy(() => import('./features/marketplace/pages/ReputationPage'))
 
+// ========================
 // Launcher
+// ========================
 const LauncherPage = lazy(() => import('./features/launcher/pages/LauncherPage'))
 
+// ========================
 // Notes
+// ========================
 const NotesListPage = lazy(() => import('./features/notes/pages/NotesListPage'))
 const NoteDetailPage = lazy(() => import('./features/notes/pages/NoteDetailPage'))
 const NoteCreatePage = lazy(() => import('./features/notes/pages/NoteCreatePage'))
@@ -50,7 +65,9 @@ const NoteVersionDetailPage = lazy(() => import('./features/notes/pages/NoteVers
 const NoteRepliesPage = lazy(() => import('./features/notes/pages/NoteRepliesPage'))
 const NoteMentionsPage = lazy(() => import('./features/notes/pages/NoteMentionsPage'))
 
+// ========================
 // Jobs
+// ========================
 const JobDetailPage = lazy(() => import('./features/jobs/pages/JobDetailPage'))
 const JobHistoryPage = lazy(() => import('./features/jobs/pages/JobHistoryPage'))
 const JobSchedulingPage = lazy(() => import('./features/jobs/pages/JobSchedulingPage'))
@@ -59,7 +76,9 @@ const EnvironmentInfoPage = lazy(() => import('./features/jobs/pages/Environment
 const MyScheduledJobsPage = lazy(() => import('./features/jobs/pages/MyScheduledJobsPage'))
 const JobConfigComparePage = lazy(() => import('./features/jobs/pages/JobConfigComparePage'))
 
+// ========================
 // Model Versioning
+// ========================
 const ModelVersionsPage = lazy(() => import('./features/modelVersioning/pages/ModelVersionsPage'))
 const ModelVersionDetailPage = lazy(() => import('./features/modelVersioning/pages/ModelVersionDetailPage'))
 const ModelVersionCompareFromRunPage = lazy(() => import('./features/modelVersioning/pages/ModelVersionCompareFromRunPage'))
@@ -69,106 +88,244 @@ const PublishModelPage = lazy(() => import('./features/modelVersioning/pages/Pub
 const ArchiveModelPage = lazy(() => import('./features/modelVersioning/pages/ArchiveModelPage'))
 const SetProductionVersionPage = lazy(() => import('./features/modelVersioning/pages/SetProductionVersionPage'))
 
+// ========================
 // Drift / Fairness / Robustness
+// ========================
 const DriftCheckPage = lazy(() => import('./features/drift/pages/DriftCheckPage'))
 const FairnessPage = lazy(() => import('./features/fairness/pages/FairnessPage'))
 const RobustnessPage = lazy(() => import('./features/robustness/pages/RobustnessPage'))
 
+// ========================
 // Prompts
+// ========================
 const PromptsListPage = lazy(() => import('./features/prompts/pages/PromptsListPage'))
 const PromptDetailPage = lazy(() => import('./features/prompts/pages/PromptDetailPage'))
 const PromptHistoryPage = lazy(() => import('./features/prompts/pages/PromptHistoryPage'))
 
+// ========================
 // Cluster / Scheduler
+// ========================
 const ClusterOverviewPage = lazy(() => import('./features/scheduler/pages/ClusterOverviewPage'))
 
+// ========================
 // Search / Activity
+// ========================
 const GlobalSearchPage = lazy(() => import('./features/search/pages/GlobalSearchPage'))
 const ActivityFeedPage = lazy(() => import('./features/activity/pages/ActivityFeedPage'))
 
+// ========================
 // Paper
+// ========================
 const PaperEditorPage = lazy(() => import('./features/paper/pages/PaperEditorPage'))
 const OverleafEditorPage = lazy(() => import('./features/paper/pages/OverleafEditorPage'))
 const NewPaperProjectPage = lazy(() => import('./features/paper/pages/NewPaperProjectPage'))
 const PaperPreviewPage = lazy(() => import('./features/paper/pages/PaperPreviewPage'))
+const PaperProjectsPage = lazy(() => import('./features/paper/pages/PaperProjectsPage'))
 
+// ========================
 // Analysis / Stats
+// ========================
 const AdvancedAnalyticsPage = lazy(() => import('./features/analytics/pages/AdvancedAnalyticsPage'))
 const ResearchAnalysisPage = lazy(() => import('./features/analysis/pages/ResearchAnalysisPage'))
-{ path: '/anomalies', element: <AnomalyListPage /> },
-{ path: '/anomalies/:anomalyId', element: <AnomalyDetailPage /> },
-{ path: '/hpo', element: <HPORunsPage /> },
+
+// ========================
 // Templates
+// ========================
 const TemplatesListPage = lazy(() => import('./features/templates/pages/TemplatesListPage'))
 const TemplateDetailPage = lazy(() => import('./features/templates/pages/TemplateDetailPage'))
 
+// ========================
 // HPO / Federated
+// ========================
 const HPOStatusPage = lazy(() => import('./features/hpo/pages/HPOStatusPage'))
 const FederatedStatusPage = lazy(() => import('./features/federated/pages/FederatedStatusPage'))
 
+// ========================
 // Profile
+// ========================
 const UserProfilePage = lazy(() => import('./features/profile/pages/UserProfilePage'))
+const ProfileSettingsPage = lazy(() => import('./features/profile/pages/ProfileSettingsPage'))
 const ChangePasswordPage = lazy(() => import('./features/profile/pages/ChangePasswordPage'))
 
+// ========================
 // Admin
+// ========================
 const AdminDashboard = lazy(() => import('./features/admin/pages/AdminDashboard'))
 const AdminJobsPage = lazy(() => import('./features/admin/pages/AdminJobsPage'))
 const AdminModelVersionsPage = lazy(() => import('./features/admin/pages/AdminModelVersionsPage'))
 const AdminUsersPage = lazy(() => import('./features/admin/pages/AdminUsersPage'))
 const StopAllJobsPage = lazy(() => import('./features/admin/pages/StopAllJobsPage'))
 
+// ========================
 // System
+// ========================
 const SystemStatusPage = lazy(() => import('./features/system/pages/SystemStatusPage'))
 const HealthPage = lazy(() => import('./features/system/pages/HealthPage'))
 const VersionPage = lazy(() => import('./features/system/pages/VersionPage'))
 const ConfigPage = lazy(() => import('./features/config/pages/ConfigPage'))
 const ModelSearchPage = lazy(() => import('./features/config/pages/ModelSearchPage'))
 
-const PaperProjectsPage = lazy(() => import('../features/paper/pages/PaperProjectsPage'))
-const PaperEditorPage = lazy(() => import('../features/paper/pages
+// ========================
+// Community (Q&A)
+// ========================
+const QuestionListPage = lazy(() => import('./features/community/pages/QuestionListPage'))
+const QuestionDetailPage = lazy(() => import('./features/community/pages/QuestionDetailPage'))
+const AskQuestionPage = lazy(() => import('./features/community/pages/AskQuestionPage'))
+const TagDetailPage = lazy(() => import('./features/community/pages/TagDetailPage'))
+const CommunityLeaderboardPage = lazy(() => import('./features/community/pages/LeaderboardPage'))
+const BadgesPage = lazy(() => import('./features/community/pages/BadgesPage'))
 
-const QuestionListPage = lazy(() => import('../features/community/pages/QuestionListPage'))
-const QuestionDetailPage = lazy(() => import('../features/community/pages/QuestionDetailPage'))
-const AskQuestionPage = lazy(() => import('../features/community/pages/AskQuestionPage'))
-const TagDetailPage = lazy(() => import('../features/community/pages/TagDetailPage'))
-const LeaderboardPage = lazy(() => import('../features/community/pages/LeaderboardPage'))
-const BadgesPage = lazy(() => import('../features/community/pages/BadgesPage'))
-
+// ========================
 // Agent
+// ========================
 const AgentChatPage = lazy(() => import('./features/agent/pages/AgentChatPage'))
 const AgentSessionsListPage = lazy(() => import('./features/agent/pages/AgentSessionsListPage'))
 const PaperLibraryPage = lazy(() => import('./features/agent/pages/PaperLibraryPage'))
 const PromptTestingPage = lazy(() => import('./features/agent/pages/PromptTestingPage'))
 
+// ========================
 // Sweeps
+// ========================
 const SweepDashboardPage = lazy(() => import('./features/sweeps/pages/SweepDashboardPage'))
 const SweepCreator = lazy(() => import('./features/sweeps/components/SweepCreator'))
-// Organizations
-const OrganizationListPage = lazy(() => import('../features/organizations/pages/OrganizationListPage'))
-const OrganizationDetailPage = lazy(() => import('../features/organizations/pages/OrganizationDetailPage'))
-const InviteAcceptPage = lazy(() => import('../features/organizations/pages/InviteAcceptPage'))
-const UserProfilePage = lazy(() => import('../features/profile/pages/UserProfilePage'))
-const ProfileSettingsPage = lazy(() => import('../features/profile/pages/ProfileSettingsPage'))
-const ChangePasswordPage = lazy(() => import('../features/profile/pages/ChangePasswordPage'))
-const QuestionListPage = lazy(() => import('../features/community/pages/QuestionListPage'))
-const QuestionDetailPage = lazy(() => import('../features/community/pages/QuestionDetailPage'))
-const AskQuestionPage = lazy(() => import('../features/community/pages/AskQuestionPage'))
-const TagDetailPage = lazy(() => import('../features/community/pages/TagDetailPage'))
-const LeaderboardPage = lazy(() => import('../features/community/pages/LeaderboardPage'))
-const BadgesPage = lazy(() => import('../features/community/pages/BadgesPage'))
 
-// In the router children array:
+// ========================
+// Organizations
+// ========================
+const OrganizationListPage = lazy(() => import('./features/organizations/pages/OrganizationListPage'))
+const OrganizationDetailPage = lazy(() => import('./features/organizations/pages/OrganizationDetailPage'))
+const InviteAcceptPage = lazy(() => import('./features/organizations/pages/InviteAcceptPage'))
+
+// ========================
+// Anomaly Detection
+// ========================
+const AnomalyListPage = lazy(() => import('./features/anomaly/pages/AnomalyListPage'))
+const AnomalyDetailPage = lazy(() => import('./features/anomaly/pages/AnomalyDetailPage'))
+
+// ========================
+// HPO (Hyperparameter Optimization)
+// ========================
+const HPORunsPage = lazy(() => import('./features/hpo/pages/HPORunsPage'))
+
+// ========================
+// Recommender (Experiment Recommendations)
+// ========================
+const RecommendationListPage = lazy(() => import('./features/recommender/pages/RecommendationListPage'))
+
+// ========================
+// Failure Forensics
+// ========================
+const FailureAnalysisPage = lazy(() => import('./features/forensics/pages/FailureAnalysisPage'))
+
+// ========================
+// AI Co‑Scientist
+// ========================
+const IdeaTournamentPage = lazy(() => import('./features/coscientist/pages/IdeaTournamentPage'))
+const HypothesisBrowser = lazy(() => import('./features/coscientist/pages/HypothesisBrowser'))
+
+// ========================
+// Literature Discovery
+// ========================
+const LiteratureMapPage = lazy(() => import('./features/literature/pages/LiteratureMapPage'))
+const CitationGraphViewer = lazy(() => import('./features/literature/pages/CitationGraphViewer'))
+
+// ========================
+// Experiment Accelerator
+// ========================
+const AcceleratorDashboard = lazy(() => import('./features/accelerator/pages/AcceleratorDashboard'))
+
+// ========================
+// Coding Assistant
+// ========================
+const CodeAssistantPage = lazy(() => import('./features/codingAssistant/pages/CodeAssistantPage'))
+
+// ========================
+// Marketplace AI
+// ========================
+const AgenticMarketplacePage = lazy(() => import('./features/marketplaceAI/pages/AgenticMarketplacePage'))
+const ComparisonBuilder = lazy(() => import('./features/marketplaceAI/pages/ComparisonBuilder'))
+
+// ========================
+// Autonomous Research
+// ========================
+const AutonomousPipelineMonitor = lazy(() => import('./features/autonomous/pages/AutonomousPipelineMonitor'))
+const StepEditor = lazy(() => import('./features/autonomous/pages/StepEditor'))
+
+// ========================
+// Impact Predictor
+// ========================
+const ImpactScorePage = lazy(() => import('./features/impactPredictor/pages/ImpactScorePage'))
+const ProjectLeaderboardPage = lazy(() => import('./features/impactPredictor/pages/ProjectLeaderboard'))
+
+// ========================
+// Collaborator Matching
+// ========================
+const CollaboratorSuggestionPage = lazy(() => import('./features/collaborator/pages/CollaboratorSuggestionPage'))
+const MatchHistoryList = lazy(() => import('./features/collaborator/pages/MatchHistoryList'))
+
+// ========================
+// Expert Wall
+// ========================
+const ExpertDirectoryPage = lazy(() => import('./features/expertWall/pages/ExpertDirectoryPage'))
+const ProjectApplicationPanel = lazy(() => import('./features/expertWall/pages/ProjectApplicationPanel'))
+
+// ========================
+// Streaks
+// ========================
+const StreakHeatmapPage = lazy(() => import('./features/streaks/pages/StreakHeatmapPage'))
+const WeeklySummaryViewer = lazy(() => import('./features/streaks/pages/WeeklySummaryViewer'))
+
+// ========================
+// Gamification
+// ========================
+const BadgeWallPage = lazy(() => import('./features/gamification/pages/BadgeWallPage'))
+const ContributionLeaderboard = lazy(() => import('./features/gamification/pages/ContributionLeaderboard'))
+
+// ========================
+// Trading / GPU Stock Market
+// ========================
+const GPUTradingTerminal = lazy(() => import('./features/trading/components/GPUTradingTerminal'))
+
+// ========================
+// Deep Research
+// ========================
+const DeepResearchPage = lazy(() => import('./features/research/pages/DeepResearchPage'))
+
+// ========================
+// 3D Model Viewer & Federated
+// ========================
+const ModelViewerPage = lazy(() => import('./features/modelViewer/pages/ModelViewerPage'))
+const FLRunPage = lazy(() => import('./features/federated/pages/FLRunPage'))
+
+// ========================
+// Support Hub
+// ========================
+const SupportHubPage = lazy(() => import('./features/support/pages/SupportHubPage')) // if exists
+
+// ========================
 // Fallback
+// ========================
 const NotFoundPage = lazy(() => import('./features/NotFoundPage'))
 
+// ========================
+// Router Definition
+// ========================
 export const router = createBrowserRouter([
   {
     path: '/login',
-    element: <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface"><Spinner /></div>}><LoginPage /></Suspense>,
+    element: (
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface"><Spinner /></div>}>
+        <LoginPage />
+      </Suspense>
+    ),
   },
   {
     path: '/register',
-    element: <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface"><Spinner /></div>}><RegisterPage /></Suspense>,
+    element: (
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-surface"><Spinner /></div>}>
+        <RegisterPage />
+      </Suspense>
+    ),
   },
   {
     element: <MainLayout />,
@@ -208,6 +365,7 @@ export const router = createBrowserRouter([
       { path: '/paper/editor/:runId', element: <PaperEditorPage /> },
       { path: '/paper/editor/:projectId', element: <OverleafEditorPage /> },
       { path: '/paper/new', element: <NewPaperProjectPage /> },
+      { path: '/paper', element: <PaperProjectsPage /> },
 
       // Model Versioning
       { path: '/runs/:runId/model-versions', element: <ModelVersionsPage /> },
@@ -267,9 +425,12 @@ export const router = createBrowserRouter([
       // HPO / Federated
       { path: '/hpo-status', element: <HPOStatusPage /> },
       { path: '/federated-status', element: <FederatedStatusPage /> },
+      { path: '/hpo', element: <HPORunsPage /> },
 
       // Profile
       { path: '/profile', element: <UserProfilePage /> },
+      { path: '/profile/:username', element: <UserProfilePage /> },
+      { path: '/profile/settings', element: <ProfileSettingsPage /> },
       { path: '/profile/change-password', element: <ChangePasswordPage /> },
 
       // Admin
@@ -296,6 +457,8 @@ export const router = createBrowserRouter([
       // Sweeps
       { path: '/sweeps/create', element: <SweepCreator onCreated={() => {}} /> },
       { path: '/sweeps/:sweepId', element: <SweepDashboardPage /> },
+
+      // Marketplace (basic)
       { path: '/marketplace', element: <MarketplacePage /> },
       { path: '/marketplace/orders', element: <MyOrdersPage /> },
       { path: '/marketplace/jobs', element: <MyJobsPage /> },
@@ -303,39 +466,85 @@ export const router = createBrowserRouter([
       { path: '/marketplace/usage', element: <UsagePage /> },
       { path: '/marketplace/leaderboard', element: <LeaderboardPage /> },
       { path: '/marketplace/reputation', element: <ReputationPage /> },
-{ path: '/organizations', element: <OrganizationListPage /> },
-{ path: '/orgs/:orgId', element: <OrganizationDetailPage /> },
-{ path: '/invite/:token', element: <InviteAcceptPage /> },
+      { path: '/trading', element: <GPUTradingTerminal /> },
 
+      // Organizations
+      { path: '/organizations', element: <OrganizationListPage /> },
+      { path: '/orgs/:orgId', element: <OrganizationDetailPage /> },
+      { path: '/invite/:token', element: <InviteAcceptPage /> },
 
-{ path: 'questions', element: <QuestionListPage /> },
-{ path: 'questions/ask', element: <AskQuestionPage /> },
-{ path: 'questions/:questionId', element: <QuestionDetailPage /> },
-{ path: 'tags/:tagName', element: <TagDetailPage /> },
-{ path: 'leaderboard', element: <LeaderboardPage /> },
-{ path: 'badges', element: <BadgesPage /> },
-{ path: '/profile', element: <UserProfilePage /> },
-{ path: '/profile/:username', element: <UserProfilePage /> },
-{ path: '/profile/settings', element: <ProfileSettingsPage /> },
-{ path: '/profile/change-password', element: <ChangePasswordPage /> },
-{ path: 'questions', element: <QuestionListPage /> },
-{ path: 'questions/ask', element: <AskQuestionPage /> },
-{ path: 'questions/:questionId', element: <QuestionDetailPage /> },
-{ path: 'tags/:tagName', element: <TagDetailPage /> },
-{ path: 'leaderboard', element: <LeaderboardPage /> },
-{ path: 'badges', element: <BadgesPage /> },
-{ path: '/paper', element: <PaperProjectsPage /> },
-{ path: '/paper/editor/:projectId', element: <PaperEditorPage /> },
-{ path: '/paper/new', element: <PaperProjectsPage /> }, // opens create modal
+      // Community (Q&A)
+      { path: 'questions', element: <QuestionListPage /> },
+      { path: 'questions/ask', element: <AskQuestionPage /> },
+      { path: 'questions/:questionId', element: <QuestionDetailPage /> },
+      { path: 'tags/:tagName', element: <TagDetailPage /> },
+      { path: 'leaderboard', element: <CommunityLeaderboardPage /> },
+      { path: 'badges', element: <BadgesPage /> },
 
+      // Anomaly Detection
+      { path: '/anomalies', element: <AnomalyListPage /> },
+      { path: '/anomalies/:anomalyId', element: <AnomalyDetailPage /> },
+
+      // Recommender
+      { path: '/recommendations', element: <RecommendationListPage /> },
+
+      // Forensics
+      { path: '/forensics', element: <FailureAnalysisPage /> },
+
+      // AI Co‑Scientist
+      { path: '/tournament', element: <IdeaTournamentPage /> },
+      { path: '/hypotheses', element: <HypothesisBrowser /> },
+
+      // Literature Discovery
+      { path: '/literature-map', element: <LiteratureMapPage /> },
+      { path: '/citation-graph', element: <CitationGraphViewer /> },
+
+      // Experiment Accelerator
+      { path: '/accelerator', element: <AcceleratorDashboard /> },
+
+      // Coding Assistant
+      { path: '/coding-assistant', element: <CodeAssistantPage /> },
+
+      // Marketplace AI
+      { path: '/marketplace-ai', element: <AgenticMarketplacePage /> },
+      { path: '/comparison-builder', element: <ComparisonBuilder /> },
+
+      // Autonomous Research
+      { path: '/pipeline-monitor', element: <AutonomousPipelineMonitor /> },
+      { path: '/step-editor', element: <StepEditor /> },
+
+      // Impact Predictor
+      { path: '/impact-score', element: <ImpactScorePage /> },
+      { path: '/project-leaderboard', element: <ProjectLeaderboardPage /> },
+
+      // Collaborator Matching
+      { path: '/collaborator-suggestions', element: <CollaboratorSuggestionPage /> },
+      { path: '/match-history', element: <MatchHistoryList /> },
+
+      // Expert Wall
+      { path: '/expert-directory', element: <ExpertDirectoryPage /> },
+      { path: '/project-application', element: <ProjectApplicationPanel /> },
+
+      // Streaks
+      { path: '/streak-heatmap', element: <StreakHeatmapPage /> },
+      { path: '/weekly-summary', element: <WeeklySummaryViewer /> },
+
+      // Gamification
+      { path: '/badge-wall', element: <BadgeWallPage /> },
+      { path: '/leaderboard-gamification', element: <ContributionLeaderboard /> },
+
+      // Deep Research
+      { path: '/deep-research', element: <DeepResearchPage /> },
+
+      // 3D Model Viewer & Federated
+      { path: '/model3d', element: <ModelViewerPage /> },
+      { path: '/federated', element: <FLRunPage /> },
+
+      // Support Hub (if exists)
+      { path: '/support', element: <SupportHubPage /> },
 
       // 404
       { path: '*', element: <NotFoundPage /> },
     ],
   },
 ])
-
-
-const GPUTradingTerminal = lazy(() => import('./features/trading/components/GPUTradingTerminal'));
-// Inside children:
-{ path: '/trading', element: <GPUTradingTerminal /> },
