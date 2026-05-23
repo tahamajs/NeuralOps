@@ -1,97 +1,78 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import api from '../../../api/client'
-import { useAuthStore } from '../store/authStore'
-import { Button } from '../../../components/ui/Button'
-import { Input } from '../../../components/ui/Input'
-import { Card } from '../../../components/ui/Card'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
+// src/features/auth/pages/LoginPage.tsx
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/Toast';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const setAuth = useAuthStore((s) => s.setAuth)
-  const navigate = useNavigate()
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuthStore();
+  const navigate = useNavigate();
+  const { success, error } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    setLoading(true);
     try {
-      const res = await api.post('/auth/login/', { username, password })
-      const { token, ...user } = res.data
-      localStorage.setItem('token', token)
-      document.cookie = `authToken=${token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`
-      setAuth(user, token)
-      navigate('/dashboard')
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Invalid credentials')
+      await login(username, password);
+      success('Login successful', 'Redirecting to dashboard...');
+      navigate('/dashboard');
+    } catch (err) {
+      error('Login failed', 'Invalid credentials');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface cyber-grid">
-      <Card className="w-full max-w-md p-8 animate-scale-in border border-white/10">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-neon-blue to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow-md">
-            <span className="text-white font-black text-xl">NO</span>
-          </div>
-          <h1 className="text-2xl font-display font-bold text-white">Welcome back</h1>
-          <p className="text-slate-400 text-sm mt-1">Sign in to your account</p>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <Input
-            label="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Enter your username"
-            required
-          />
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
+    <div className="min-h-screen flex items-center justify-center bg-surface">
+      <Card className="glass-terminal w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-white">Login</CardTitle>
+          <CardDescription>Enter your credentials to access NeuralOps</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="your_username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
                 required
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-neon-blue/50 transition-colors pr-10"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
             </div>
-          </div>
-          <Button type="submit" className="w-full" size="lg" loading={loading}>
-            <LogIn size={18} className="mr-2" />
-            {loading ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center text-xs text-slate-500">
-          Don't have an account?{' '}
-          <Link to="/register" className="text-neon-blue hover:text-neon-blue/80 font-semibold transition-colors">
-            Create one
-          </Link>
-        </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
+            </Button>
+            <div className="text-center text-sm text-slate-400">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-neon-blue hover:underline">
+                Register
+              </Link>
+            </div>
+          </form>
+        </CardContent>
       </Card>
     </div>
-  )
+  );
 }
