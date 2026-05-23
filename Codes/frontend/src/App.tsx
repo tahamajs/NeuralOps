@@ -388,6 +388,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <HardwareProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
         {/* Main Router for full‑page routes (authentication, dashboard, etc.) */}
         <BrowserRouter>
           <Routes>
@@ -437,6 +438,8 @@ function App() {
             <Toaster />
           </div>
         </div>
+        </ThemeProvider>
+
       </HardwareProvider>
     </QueryClientProvider>
   )

@@ -13,6 +13,8 @@ import { Spinner } from '../../../components/ui/Spinner'
 import { Tabs, TabList, Tab, TabPanel } from '../../../components/ui/Tabs'
 import { Brain, Sparkles, BarChart3, Lightbulb, RefreshCw } from 'lucide-react'
 import { useToast } from '../../../components/ui/Toast'
+import { Card, Metric, Text, AreaChart, Flex, Grid, Title } from '@tremor/react';
+import { TerminalCard } from '../../../components/ui/TerminalCard';
 
 export default function AcceleratorDashboard({ onClose }: { onClose?: () => void }) {
   const [selectedExperimentIds, setSelectedExperimentIds] = useState<string[]>([])
