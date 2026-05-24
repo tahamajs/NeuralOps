@@ -1,7 +1,4 @@
 {
-  "log": {
-    "loglevel": "warning"
-  },
   "inbounds": [
     {
       "tag": "socks-in",
@@ -14,8 +11,7 @@
         "ip": "127.0.0.1"
       },
       "sniffing": {
-        "enabled": true,
-        "destOverride": ["http", "tls"]
+        "enabled": false
       }
     }
   ],
@@ -26,8 +22,8 @@
       "settings": {
         "vnext": [
           {
-            "address": "104.18.41.241",
-            "port": 443,
+            "address": "188.213.197.110",
+            "port": 40443,
             "users": [
               {
                 "id": "92e6019a-24b5-4219-b9ee-21d17fde3b99",
@@ -59,3 +55,5 @@
     }
   ]
 }
+
+
