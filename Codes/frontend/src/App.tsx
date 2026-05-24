@@ -1,6 +1,7 @@
 // src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ThemeProvider } from 'next-themes'
 import { HardwareProvider } from './features/hardware/context/HardwareContext'
 import { MainLayout } from './components/layout/MainLayout'
 import FloatingWindowRenderer from './components/floating/FloatingWindow'
@@ -40,13 +41,13 @@ import NotFoundPage from './features/NotFoundPage'
 // 2. Floating Windows (used in DockableWindow componentMap)
 // ========================
 // Terminal & Chat
-import { TerminalPanel } from './features/terminal/components/TerminalPanel'
-import { ChatPanel } from './features/chat/components/ChatPanel'
-import { FloatingNotesEditor } from './features/notes/components/FloatingNotesEditor'
-import { PaperEditorPanel } from './features/paper/components/PaperEditorPanel'
+import TerminalPanel from './features/terminal/components/TerminalPanel'
+import ChatPanel from './features/chat/components/ChatPanel'
+import FloatingNotesEditor from './features/notes/components/FloatingNotesEditor'
+import PaperEditorPanel from './features/paper/components/PaperEditorPanel'
 
 // Marketplace & GPU
-import { GPUMarketplacePage } from './features/marketplace/pages/GPUMarketplacePage'
+import GPUMarketplacePage from './features/marketplace/pages/GPUMarketplacePage'
 import GPUTradingTerminal from './features/marketplace/pages/GPUTradingTerminal'
 import AgenticMarketplacePage from './features/marketplaceAI/pages/AgenticMarketplacePage'
 import ComparisonBuilder from './features/marketplaceAI/pages/ComparisonBuilder'
@@ -54,9 +55,9 @@ import ProviderDashboardPage from './features/marketplace/pages/ProviderDashboar
 import DisputeHandlingPage from './features/marketplace/pages/DisputeHandlingPage'
 
 // Experiments & Analysis
-import { ExperimentListPage as ExperimentListWindow } from './features/experiments/pages/ExperimentListPage'
-import { ResearchAnalysisPage } from './features/analysis/pages/ResearchAnalysisPage'
-import { AdvancedAnalyticsPage } from './features/analytics/pages/AdvancedAnalyticsPage'
+import ExperimentListPage as ExperimentListWindow from './features/experiments/pages/ExperimentListPage'
+import ResearchAnalysisPage from './features/analysis/pages/ResearchAnalysisPage'
+import AdvancedAnalyticsPage from './features/analytics/pages/AdvancedAnalyticsPage'
 import AcceleratorDashboard from './features/accelerator/pages/AcceleratorDashboard'
 import HPODashboard from './features/hpo/pages/HPODashboard'
 import SweepDetailPage from './features/hpo/pages/SweepDetailPage'
@@ -96,11 +97,11 @@ import BadgeWallPage from './features/gamification/pages/BadgeWallPage'
 import ContributionLeaderboard from './features/gamification/pages/ContributionLeaderboard'
 
 // Admin, Organizations, Community (Floating versions – reuse pages)
-import { AdminDashboard } from './features/admin/pages/AdminDashboard'
-import { ClusterOverviewPage } from './features/cluster/pages/ClusterOverviewPage'
-import { OrganizationListPage } from './features/organizations/pages/OrganizationListPage'
-import { QuestionListPage } from './features/community/pages/QuestionListPage'
-import { UserProfilePage as UserProfileWindow } from './features/profile/pages/UserProfilePage'
+import AdminDashboard from './features/admin/pages/AdminDashboard'
+import ClusterOverviewPage from './features/cluster/pages/ClusterOverviewPage'
+import OrganizationListPage from './features/organizations/pages/OrganizationListPage'
+import QuestionListPage from './features/community/pages/QuestionListPage'
+import UserProfilePage as UserProfileWindow from './features/profile/pages/UserProfilePage'
 
 // 3D Model Viewer & Federated Learning
 import ModelViewerPage from './features/modelViewer/pages/ModelViewerPage'
@@ -389,57 +390,56 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <HardwareProvider>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-        {/* Main Router for full‑page routes (authentication, dashboard, etc.) */}
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route element={<MainLayout />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/experiments" element={<ExperimentListPage />} />
-              <Route path="/experiments/:id" element={<ExperimentDetailPage />} />
-              <Route path="/launcher" element={<LauncherPage />} />
-              <Route path="/marketplace" element={<MarketplacePage />} />
-              <Route path="/marketplace/orders" element={<MyOrdersPage />} />
-              <Route path="/marketplace/jobs" element={<MyJobsPage />} />
-              <Route path="/marketplace/jobs/:jobId" element={<JobDetailPage />} />
-              <Route path="/marketplace/billing" element={<BillingPage />} />
-              <Route path="/marketplace/usage" element={<UsagePage />} />
-              <Route path="/marketplace/leaderboard" element={<LeaderboardPage />} />
-              <Route path="/marketplace/reputation" element={<ReputationPage />} />
-              <Route path="/notes" element={<NotesListPage />} />
-              <Route path="/notes/new" element={<NoteCreatePage />} />
-              <Route path="/notes/:id" element={<NoteDetailPage />} />
-              <Route path="/paper/editor" element={<PaperEditorPage />} />
-              <Route path="/profile" element={<UserProfilePage />} />
-              <Route path="/system" element={<SystemStatusPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+          {/* Main Router for full‑page routes (authentication, dashboard, etc.) */}
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route element={<MainLayout />}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/experiments" element={<ExperimentListPage />} />
+                <Route path="/experiments/:id" element={<ExperimentDetailPage />} />
+                <Route path="/launcher" element={<LauncherPage />} />
+                <Route path="/marketplace" element={<MarketplacePage />} />
+                <Route path="/marketplace/orders" element={<MyOrdersPage />} />
+                <Route path="/marketplace/jobs" element={<MyJobsPage />} />
+                <Route path="/marketplace/jobs/:jobId" element={<JobDetailPage />} />
+                <Route path="/marketplace/billing" element={<BillingPage />} />
+                <Route path="/marketplace/usage" element={<UsagePage />} />
+                <Route path="/marketplace/leaderboard" element={<LeaderboardPage />} />
+                <Route path="/marketplace/reputation" element={<ReputationPage />} />
+                <Route path="/notes" element={<NotesListPage />} />
+                <Route path="/notes/new" element={<NoteCreatePage />} />
+                <Route path="/notes/:id" element={<NoteDetailPage />} />
+                <Route path="/paper/editor" element={<PaperEditorPage />} />
+                <Route path="/profile" element={<UserProfilePage />} />
+                <Route path="/system" element={<SystemStatusPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
 
-        {/* Floating window system (always on top, independent of router) */}
-        <div className="relative w-screen h-screen overflow-hidden bg-surface pointer-events-none">
-          <div className="pointer-events-auto">
-            {windows.map((win) => {
-              const Component = componentMap[win.type]
-              if (!Component) return null
-              return (
-                <DockableWindow key={win.id} window={win}>
-                  <Component onClose={() => useWindowStore.getState().removeWindow(win.id)} />
-                </DockableWindow>
-              )
-            })}
-            <WindowLauncher />
-            <WorkspaceManager />
-            <FloatingWindowRenderer />
-            <FloatingWindowBar />
-            <Toaster />
+          {/* Floating window system (always on top, independent of router) */}
+          <div className="relative w-screen h-screen overflow-hidden bg-surface pointer-events-none">
+            <div className="pointer-events-auto">
+              {windows.map((win) => {
+                const Component = componentMap[win.type]
+                if (!Component) return null
+                return (
+                  <DockableWindow key={win.id} window={win}>
+                    <Component onClose={() => useWindowStore.getState().removeWindow(win.id)} />
+                  </DockableWindow>
+                )
+              })}
+              <WindowLauncher />
+              <WorkspaceManager />
+              <FloatingWindowRenderer />
+              <FloatingWindowBar />
+              <Toaster />
+            </div>
           </div>
-        </div>
         </ThemeProvider>
-
       </HardwareProvider>
     </QueryClientProvider>
   )

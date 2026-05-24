@@ -19,12 +19,6 @@ interface ApiErrorResponse {
 // ----------------------------------------------------------------------
 // Proxy helpers (runtime toggle)
 // ----------------------------------------------------------------------
-const getProxyUrl = (): string => {
-  const stored = localStorage.getItem('proxy_url')
-  if (stored) return stored
-  return import.meta.env.VITE_API_PROXY_URL || ''
-}
-
 export const setProxyUrl = (url: string): void => {
   if (url) localStorage.setItem('proxy_url', url)
   else localStorage.removeItem('proxy_url')
