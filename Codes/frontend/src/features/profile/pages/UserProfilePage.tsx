@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+// src/features/profile/pages/UserProfilePage.tsx
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../auth/store/authStore'
@@ -76,7 +77,6 @@ export default function UserProfilePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Profile Header */}
       <ProfileHeader
         profile={profile}
         stats={stats}
@@ -85,7 +85,6 @@ export default function UserProfilePage() {
         onAvatarUpload={(file) => uploadAvatar.mutate(file)}
       />
 
-      {/* Tabs */}
       <Tabs defaultValue="overview" onValueChange={setActiveTab}>
         <TabList>
           <Tab value="overview">Overview</Tab>
@@ -94,10 +93,8 @@ export default function UserProfilePage() {
           <Tab value="organizations">Organizations</Tab>
         </TabList>
 
-        {/* Overview Tab */}
         <TabPanel value="overview">
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Left Column: Pinned Items */}
             <div className="lg:col-span-2 space-y-4">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Pin size={16} className="text-neon-blue" /> Pinned Items
@@ -109,8 +106,6 @@ export default function UserProfilePage() {
               ) : (
                 <Card className="text-center text-slate-500 py-8">No pinned items yet.</Card>
               )}
-
-              {/* Contribution Heatmap */}
               <div className="pt-4">
                 <h3 className="text-sm font-bold text-white mb-3">Contribution Calendar</h3>
                 <Card className="p-4">
@@ -118,22 +113,17 @@ export default function UserProfilePage() {
                 </Card>
               </div>
             </div>
-
-            {/* Right Column: Stats & Badges */}
             <div className="space-y-4">
-              {/* Top Reputation */}
               <Card>
                 <h3 className="text-sm font-bold text-white mb-2">Top 10% Reputation</h3>
                 <div className="flex items-center gap-2">
                   <Award size={24} className="text-yellow-400" />
                   <div>
-                    <div className="text-2xl font-bold text-white">{stats.reputation_score}</div>
-                    <div className="text-xs text-slate-400">Rank #{stats.rank}</div>
+                    <div className="text-2xl font-bold text-white">{stats?.reputation_score}</div>
+                    <div className="text-xs text-slate-400">Rank #{stats?.rank}</div>
                   </div>
                 </div>
               </Card>
-
-              {/* Badge Highlights */}
               <Card>
                 <h3 className="text-sm font-bold text-white mb-2">Recent Badges</h3>
                 {badges?.slice(0, 5).map((badge: Badge) => (
@@ -150,7 +140,6 @@ export default function UserProfilePage() {
           </div>
         </TabPanel>
 
-        {/* Activity Tab */}
         <TabPanel value="activity">
           <Card>
             <div className="space-y-4">
@@ -166,7 +155,6 @@ export default function UserProfilePage() {
           </Card>
         </TabPanel>
 
-        {/* Badges Tab */}
         <TabPanel value="badges">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {badges?.map((badge: Badge) => (
@@ -179,7 +167,6 @@ export default function UserProfilePage() {
           </div>
         </TabPanel>
 
-        {/* Organizations Tab */}
         <TabPanel value="organizations">
           <div className="grid md:grid-cols-2 gap-4">
             {orgs?.map((org: OrganizationMembership) => (
@@ -198,7 +185,7 @@ export default function UserProfilePage() {
   )
 }
 
-// Subcomponents
+// Helper components (same as before)
 const PinnedItemCard = ({ item }: { item: PinnedItem }) => {
   const Icon = item.type === 'experiment' ? GitBranch : item.type === 'paper' ? FileText : StickyNote
   return (
@@ -252,36 +239,4 @@ const ActivityItem = ({ activity }: { activity: UserActivity }) => {
       <a href={link} className="text-neon-blue hover:underline"><ExternalLink size={14} /></a>
     </div>
   )
-}
-
-
-
-// src/features/profile/pages/UserProfilePage.tsx 核心布局
-import React, { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ProfileHeader } from '@/components/ProfileHeader';
-import { PapersGrid } from '@/components/PapersGrid';
-import { ActivityFeed } from '@/components/ActivityFeed';
-import { useUserProfile } from '@/hooks/useUserProfile';
-
-export default function UserProfilePage() {
-  const { profile, isLoading } = useUserProfile();
-  if (isLoading) return <div>Loading researcher profile...</div>;
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-surface to-surface-elevated">
-      <ProfileHeader profile={profile} />
-      <div className="container mx-auto px-4 -mt-16 relative z-10">
-        <Tabs defaultValue="papers" className="w-full">
-          <TabsList className="bg-white/5 rounded-xl p-1">
-            <TabsTrigger value="papers">📄 Papers & Impact</TabsTrigger>
-            <TabsTrigger value="activity">📈 Activity</TabsTrigger>
-            <TabsTrigger value="network">🤝 Research Network</TabsTrigger>
-          </TabsList>
-          <TabsContent value="papers"><PapersGrid papers={profile.publications} /></TabsContent>
-          <TabsContent value="activity"><ActivityFeed activities={profile.activities} /></TabsContent>
-          <TabsContent value="network"><NetworkGraph connections={profile.connections} /></TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
 }
