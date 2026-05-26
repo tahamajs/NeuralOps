@@ -147,4 +147,36 @@ desktop.ini
 *.tmp
 *.temp
 
+# ============================================================
+# LaTeX
+# ============================================================
+*.aux
+*.lof
+*.log
+*.lot
+*.flg
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+*.bbl
+*.blg
+*.brf
+*.run.xml
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.synctex(busy)
+*.xdv
+*.pdf
+*.dvi
+*.ps
+*.synctex.gz\.fls
+
+
 Codes/MasterHttpRelayVPN
+
+
+
