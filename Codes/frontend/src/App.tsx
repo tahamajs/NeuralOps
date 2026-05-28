@@ -55,7 +55,7 @@ import ProviderDashboardPage from './features/marketplace/pages/ProviderDashboar
 import DisputeHandlingPage from './features/marketplace/pages/DisputeHandlingPage'
 
 // Experiments & Analysis
-import ExperimentListPage as ExperimentListWindow from './features/experiments/pages/ExperimentListPage'
+import { default as ExperimentListWindow } from './features/experiments/pages/ExperimentListPage'
 import ResearchAnalysisPage from './features/analysis/pages/ResearchAnalysisPage'
 import AdvancedAnalyticsPage from './features/analytics/pages/AdvancedAnalyticsPage'
 import AcceleratorDashboard from './features/accelerator/pages/AcceleratorDashboard'
@@ -101,7 +101,7 @@ import AdminDashboard from './features/admin/pages/AdminDashboard'
 import ClusterOverviewPage from './features/cluster/pages/ClusterOverviewPage'
 import OrganizationListPage from './features/organizations/pages/OrganizationListPage'
 import QuestionListPage from './features/community/pages/QuestionListPage'
-import UserProfilePage as UserProfileWindow from './features/profile/pages/UserProfilePage'
+import { default as UserProfileWindow } from './features/profile/pages/UserProfilePage'
 
 // 3D Model Viewer & Federated Learning
 import ModelViewerPage from './features/modelViewer/pages/ModelViewerPage'
