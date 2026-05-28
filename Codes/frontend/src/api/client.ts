@@ -29,7 +29,12 @@ export const getProxyUrl = (): string => localStorage.getItem('proxy_url') || ''
 // ----------------------------------------------------------------------
 // API base URL
 // ----------------------------------------------------------------------
-const apiBaseURL: string = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const normalizeApiBase = (raw: string): string => {
+  const trimmed = raw.replace(/\/+$/, '')
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`
+}
+
+const apiBaseURL: string = normalizeApiBase(import.meta.env.VITE_API_URL || 'http://localhost:8000')
 
 // ----------------------------------------------------------------------
 // Create axios instance
@@ -48,6 +53,10 @@ const api: AxiosInstance = axios.create({
 // ----------------------------------------------------------------------
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    if (typeof config.url === 'string' && config.baseURL?.endsWith('/api') && config.url.startsWith('/api/')) {
+      config.url = config.url.replace(/^\/api/, '')
+    }
+
     // Proxy handling (prepend proxy URL)
     const proxyUrl = getProxyUrl()
     if (proxyUrl) {

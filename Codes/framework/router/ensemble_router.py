@@ -1,3 +1,9 @@
+"""
+Ensemble router – combines multiple routers for improved routing decisions.
+
+Aggregates predictions from multiple routing strategies.
+"""
+
 # framework/routing/ensemble_router.py
 import numpy as np
 from collections import defaultdict
