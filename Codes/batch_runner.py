@@ -21,7 +21,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 # Ensure framework is on the path
 sys.path.insert(0, os.getcwd())
 from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-from framework.training.methods import available_methods
+from framework.trainer.methods import available_methods
 
 # ---------------------------------------------------------------------------
 # Configuration
