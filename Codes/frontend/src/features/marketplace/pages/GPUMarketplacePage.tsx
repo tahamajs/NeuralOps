@@ -13,19 +13,24 @@ import {
 // --- Types ---
 interface GPUMarketplaceListing {
   id: string
-  name: string
+  name?: string
   provider_username: string
   gpu_model: string
   gpu_count: number
-  memory_gb: number
-  price_per_hour: number
+  memory_gb?: number
+  vram_gb?: number
+  price_per_hour?: number
+  current_price_per_hour?: number
   status: string
-  region: string
+  region?: string
+  location?: string
   created_at: string
   reliability_score: number
-  performance_score: number
-  availability_percentage: number
-  verified: boolean
+  performance_score?: number
+  availability_percentage?: number
+  uptime_percentage?: number
+  verified?: boolean
+  verification_level?: string
 }
 
 interface MarketDepth {
@@ -62,13 +67,13 @@ const ListingCard = ({ listing, onSelect, onAddToWatchlist }: any) => {
           <div className="font-medium text-white">{listing.name}</div>
           <div className="text-xs text-slate-400">{listing.provider_username} · {listing.gpu_model} x{listing.gpu_count}</div>
           <div className="flex flex-wrap gap-1 mt-1">
-            <Badge variant="info">{listing.region}</Badge>
+            <Badge variant="info">{listing.region || listing.location || 'Unknown'}</Badge>
             {listing.verified && <Badge variant="success">Verified</Badge>}
           </div>
         </div>
         <div className="text-right">
-          <div className="text-neon-blue font-bold">${listing.price_per_hour.toFixed(4)} USD/hr</div>
-          <div className="text-[10px] text-green-400">{listing.availability_percentage}% avail</div>
+          <div className="text-neon-blue font-bold">${(listing.price_per_hour || listing.current_price_per_hour || 0).toFixed(4)} USD/hr</div>
+          <div className="text-[10px] text-green-400">{(listing.availability_percentage || listing.uptime_percentage || 0)}% avail</div>
           <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onAddToWatchlist(); }} className="mt-1">
             Add to Watchlist
           </Button>
@@ -201,7 +206,15 @@ export default function GPUMarketplacePage() {
     enabled: !!user,
   })
 
-  const listings = listingsData?.results || []
+  const listings = (listingsData?.results || []).map((listing: GPUMarketplaceListing) => ({
+    ...listing,
+    name: listing.name || `${listing.gpu_model} x${listing.gpu_count}`,
+    memory_gb: listing.memory_gb ?? listing.vram_gb ?? 0,
+    price_per_hour: listing.price_per_hour ?? listing.current_price_per_hour ?? 0,
+    region: listing.region || listing.location || 'Unknown',
+    availability_percentage: listing.availability_percentage ?? listing.uptime_percentage ?? 0,
+    verified: listing.verified ?? listing.verification_level === 'enterprise' || listing.verification_level === 'basic',
+  }))
   const gpuModels = [...new Set(listings.map((l: GPUMarketplaceListing) => l.gpu_model))]
   const regions = [...new Set(listings.map((l: GPUMarketplaceListing) => l.region))]
 
