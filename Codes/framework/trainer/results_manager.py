@@ -51,7 +51,7 @@ class ResultsManager:
             logger.addHandler(fh)
         return logger
 
-    def log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None):
+    def log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None) -> None:
         record = {"step": step} if step is not None else {}
         record.update(metrics)
         record["timestamp"] = datetime.now().isoformat()
@@ -59,13 +59,13 @@ class ResultsManager:
         with open(self.metrics_path, "a") as f:
             f.write(json.dumps(record) + "\n")
 
-    def save_plots(self):
+    def save_plots(self) -> None:
         if self.history:
             plot_path = self.run_dir / "training_history.png"
             plot_training_curves(self.history, str(plot_path))
             self.logger.info(f"Saved training plot to {plot_path}")
 
-    def save_final_model(self, model, tokenizer=None):
+    def save_final_model(self, model: Any, tokenizer: Optional[Any] = None) -> None:
         model.save_pretrained(self.final_model_dir)
         if tokenizer:
             tokenizer.save_pretrained(self.final_model_dir)
@@ -74,7 +74,7 @@ class ResultsManager:
     def get_checkpoint_dir(self) -> str:
         return str(self.checkpoint_dir)
 
-    def wrap_trainer(self, trainer):
+    def wrap_trainer(self, trainer: Any) -> None:
         """Add standard callbacks and metrics logging to a Hugging Face Trainer."""
         try:
             trainer.add_callback(MemoryCallback())
