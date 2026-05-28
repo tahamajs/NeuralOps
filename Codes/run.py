@@ -31,8 +31,8 @@ from framework.data import (
     ExperimentConfig,
 )
 from framework.models import load_model
-from framework.training import HuggingFaceTrainer, ResultsManager, get_task_metrics
-from framework.training.methods import get_method as get_method_fn
+from framework.trainer import HuggingFaceTrainer, ResultsManager, get_task_metrics
+from framework.trainer.methods import get_method as get_method_fn
 from framework.results_saver import ResultsSaver, SaveConfig
 from framework.tracking import ExperimentTracker, TrackingBackend
 from framework.core.utils import set_seed, get_device
