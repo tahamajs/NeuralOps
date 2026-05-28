@@ -1,30 +1,38 @@
 import os
-from django.core.asgi import get_asgi_application
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
-from channels.security.websocket import AllowedHostsOriginValidator
+from importlib import import_module
 
-# Set Django settings module before any other import
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
+from django.core.asgi import get_asgi_application
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_api.settings')
 
-# Import WebSocket URL patterns from each app
-from messaging.routing import websocket_urlpatterns as messaging_ws
-from notes.routing import websocket_urlpatterns as notes_ws
-from api.routing import websocket_urlpatterns as api_ws
-from research_agent.routing import websocket_urlpatterns as agent_ws
-from support.routing import websocket_urlpatterns as support_ws  # if exists
-from community.routing import websocket_urlpatterns as community_ws  # if exists
+websocket_urlpatterns = []
+for module_name in [
+    'messaging.routing',
+    'notes.routing',
+    'api.routing',
+    'research_agent.routing',
+    'support.routing',
+    'agents.routing',
+    'web_dashboard.routing',
+    'coding_assistant.routing',
+    'terminal.routing',
+    'gpu_marketplace.routing',
+    'llm_hub.routing',
+    'research_coach.routing',
+    'experiment.routing',
+]:
+    try:
+        module = import_module(module_name)
+        websocket_urlpatterns += getattr(module, 'websocket_urlpatterns', [])
+    except ModuleNotFoundError:
+        continue
 
-# Combine all WebSocket patterns
-websocket_urlpatterns = (
-    messaging_ws + notes_ws + api_ws + agent_ws + support_ws + community_ws
+application = ProtocolTypeRouter(
+    {
+        'http': get_asgi_application(),
+        'websocket': AllowedHostsOriginValidator(AuthMiddlewareStack(URLRouter(websocket_urlpatterns))),
+    }
 )
-
-application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": AllowedHostsOriginValidator(
-        AuthMiddlewareStack(
-            URLRouter(websocket_urlpatterns)
-        )
-    ),
-})
