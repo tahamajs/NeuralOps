@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional, Callable
 from framework.config import Config, load_config
 from framework.models import load_model
 from framework.data import load_dataset, DataConfig, TaskType, preprocess_function, create_dataloader
-from framework.training import HuggingFaceTrainer, ResultsManager, get_task_metrics
+from framework.trainer import HuggingFaceTrainer, ResultsManager, get_task_metrics
 from framework.results_saver import ResultsSaver, SaveConfig
 from framework.tracking import ExperimentTracker
 from framework.core.utils import set_seed, get_device
@@ -84,7 +84,7 @@ class MegaOrchestrator:
 
             # 2. Apply training method (if any)
             if self.cfg.method.method != "baseline":
-                from framework.training.methods import get_method
+                from framework.trainer.methods import get_method
                 method_fn = get_method(self.cfg.method.method)
                 if method_fn:
                     method_fn(self.model, self.cfg.compression)
