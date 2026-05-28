@@ -5,7 +5,6 @@ from .report_generator import (
     generate_csv_summary, generate_html_report, generate_latex_table,
     plot_accuracy_vs_rank, plot_radar_chart
 )
-from .plots import *  # convenience so all plots are importable
 
 # Auto-register all built‑in plots
 register_default_plots()

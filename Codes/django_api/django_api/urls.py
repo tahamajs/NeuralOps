@@ -81,6 +81,7 @@ urlpatterns = [
     # GPU marketplace & finance
     # ------------------------------------------------------------------
     path('api/gpu/', include('gpu_marketplace.urls')),
+    path('api/marketplace/', include('django_api.marketplace_urls')),
     path('api/gpu/escrow/', include('gpu_escrow.urls')),
     path('api/gpu/benchmarks/', include('gpu_benchmark.urls')),
     path('api/gpu/federation/', include('gpu_federation.urls')),
