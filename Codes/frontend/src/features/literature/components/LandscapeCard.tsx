@@ -12,7 +12,7 @@ export function LandscapeCard({ landscape }: { landscape: ResearchLandscape }) {
   }[landscape.trend];
   return (
     <Link to={`/literature/landscapes/${landscape.id}`}>
-      <TerminalCard hover className="p-4">
+      <TerminalCard className="p-4">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="font-bold text-white">{landscape.name}</h3>

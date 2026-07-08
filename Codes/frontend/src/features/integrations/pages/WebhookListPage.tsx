@@ -8,7 +8,8 @@ import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Button } from "../../../components/ui/Button";
 import { Modal } from "../../../components/ui/Modal";
 import { Spinner } from "../../../components/ui/Spinner";
-import { Webhook, Plus, RefreshCw, Activity } from "lucide-react";
+import { Webhook as WebhookIcon, Plus, RefreshCw, Activity } from "lucide-react";
+import type { Webhook } from "../types";
 import { useToast } from "../../../components/ui/Toast";
 
 export default function WebhookListPage({ onClose }: { onClose?: () => void }) {
@@ -47,7 +48,7 @@ export default function WebhookListPage({ onClose }: { onClose?: () => void }) {
       <div className="flex justify-between items-center p-4 border-b border-white/10">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <Webhook size={20} className="text-neon-mint" /> Webhook Management
+            <WebhookIcon size={20} className="text-neon-mint" /> Webhook Management
           </h1>
           <p className="text-xs text-slate-400">
             Configure outgoing event notifications

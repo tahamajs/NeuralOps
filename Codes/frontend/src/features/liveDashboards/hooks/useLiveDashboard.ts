@@ -9,6 +9,8 @@ interface WebSocketMessage {
   data: LiveDataPoint[];
 }
 
+import { liveDashboardsAPI } from "../services/api";
+
 export function useLiveDashboard(
   dashboardId: string | null,
   widgets: Widget[],
@@ -21,7 +23,7 @@ export function useLiveDashboard(
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );
-  const { token } = useAuthStore();
+  const { token } = useAuthStore() as any;
 
   const connect = useCallback(() => {
     if (!dashboardId) return;
