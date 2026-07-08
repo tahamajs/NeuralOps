@@ -56,11 +56,11 @@ export default function ExperimentListPage() {
       ) : (
         <>
           <ExperimentTable experiments={paged} />
-          <PaginationControls
-            page={page}
-            total={totalPages}
-            onChange={setPage}
-          />
+          {(PaginationControls as any)({
+            page,
+            total: totalPages,
+            onChange: setPage
+          })}
         </>
       )}
     </div>

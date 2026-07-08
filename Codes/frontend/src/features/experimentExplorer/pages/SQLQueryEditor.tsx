@@ -32,11 +32,11 @@ export default function SQLQueryEditor({ onClose }: { onClose?: () => void }) {
   const executeMutation = useMutation({
     mutationFn: () =>
       experimentExplorerAPI.executeSQL(selectedConnection, query),
-    onSuccess: (res) => {
-      setResult(res.data);
+    onSuccess: (res: any) => {
+      setResult(res);
       success(
         "Query executed",
-        `${res.data.rowCount} rows returned in ${res.data.executionTimeMs}ms`,
+        `${res.rowCount} rows returned in ${res.executionTimeMs}ms`,
       );
     },
     onError: () => error("Query failed", "Please check your syntax"),
