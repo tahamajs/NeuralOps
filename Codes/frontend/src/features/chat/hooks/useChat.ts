@@ -10,7 +10,7 @@ export function useChat() {
     addMessage,
     updateMessage,
     setIsConnected,
-  } = useChatStore();
+  } = useChatStore() as any;
   const { success, error: showError } = useToast();
 
   const activeConversation = conversations.find(
