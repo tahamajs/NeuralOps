@@ -1,11 +1,14 @@
-import { Timer } from 'lucide-react'
+import { Timer } from "lucide-react";
 
 export const ProgressBar = ({
   progress,
 }: {
-  progress: { current: number; total: number; eta: number }
+  progress: { current: number; total: number; eta: number };
 }) => {
-  const pct = progress.total > 0 ? Math.min(100, (progress.current / progress.total) * 100) : 0
+  const pct =
+    progress.total > 0
+      ? Math.min(100, (progress.current / progress.total) * 100)
+      : 0;
 
   return (
     <div className="space-y-1.5">
@@ -27,5 +30,5 @@ export const ProgressBar = ({
         />
       </div>
     </div>
-  )
-}
+  );
+};

@@ -1,94 +1,114 @@
-import { useState, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { ENDPOINTS } from '../../../api/endpoints'
-import { Button } from '../../../components/ui/Button'
-import { Input } from '../../../components/ui/Input'
-import { Select } from '../../../components/ui/Select'
-import { Spinner } from '../../../components/ui/Spinner'
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { ENDPOINTS } from "../../../api/endpoints";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
+import { Select } from "../../../components/ui/Select";
+import { Spinner } from "../../../components/ui/Spinner";
 
 interface FloatingNotesEditorProps {
-  onClose?: () => void
+  onClose?: () => void;
 }
 
-export default function FloatingNotesEditor({ onClose }: FloatingNotesEditorProps) {
-  const queryClient = useQueryClient()
-  const [selectedNoteId, setSelectedNoteId] = useState<string>('')
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [tags, setTags] = useState('')
+export default function FloatingNotesEditor({
+  onClose,
+}: FloatingNotesEditorProps) {
+  const queryClient = useQueryClient();
+  const [selectedNoteId, setSelectedNoteId] = useState<string>("");
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [tags, setTags] = useState("");
 
   // List of notes for selector
   const { data: notesData, isLoading: listLoading } = useQuery({
-    queryKey: ['notes', 'floating'],
+    queryKey: ["notes", "floating"],
     queryFn: async () => (await api.get(ENDPOINTS.NOTES.LIST)).data,
-  })
-  const notes = notesData?.results || []
+  });
+  const notes = notesData?.results || [];
 
   // Load selected note
   const { data: note, isLoading: noteLoading } = useQuery({
-    queryKey: ['note', selectedNoteId],
-    queryFn: async () => (await api.get(ENDPOINTS.NOTES.DETAIL(selectedNoteId))).data,
+    queryKey: ["note", selectedNoteId],
+    queryFn: async () =>
+      (await api.get(ENDPOINTS.NOTES.DETAIL(selectedNoteId))).data,
     enabled: !!selectedNoteId,
-  })
+  });
 
   useEffect(() => {
     if (note) {
-      setTitle(note.title || '')
-      setContent(note.content || '')
-      setTags((note.tags || []).join(', '))
+      setTitle(note.title || "");
+      setContent(note.content || "");
+      setTags((note.tags || []).join(", "));
     } else if (!selectedNoteId) {
-      setTitle('')
-      setContent('')
-      setTags('')
+      setTitle("");
+      setContent("");
+      setTags("");
     }
-  }, [note, selectedNoteId])
+  }, [note, selectedNoteId]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const tagsArray = tags.split(',').map(t => t.trim()).filter(Boolean)
+      const tagsArray = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
       if (selectedNoteId) {
-        return api.patch(ENDPOINTS.NOTES.DETAIL(selectedNoteId), { title, content, tags: tagsArray })
+        return api.patch(ENDPOINTS.NOTES.DETAIL(selectedNoteId), {
+          title,
+          content,
+          tags: tagsArray,
+        });
       } else {
-        return api.post(ENDPOINTS.NOTES.LIST, { title, content, tags: tagsArray })
+        return api.post(ENDPOINTS.NOTES.LIST, {
+          title,
+          content,
+          tags: tagsArray,
+        });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notes'] })
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
       if (!selectedNoteId) {
-        setTitle('')
-        setContent('')
-        setTags('')
+        setTitle("");
+        setContent("");
+        setTags("");
       }
     },
-  })
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (selectedNoteId) {
-        await api.delete(ENDPOINTS.NOTES.DETAIL(selectedNoteId))
-        setSelectedNoteId('')
-        setTitle('')
-        setContent('')
-        setTags('')
+        await api.delete(ENDPOINTS.NOTES.DETAIL(selectedNoteId));
+        setSelectedNoteId("");
+        setTitle("");
+        setContent("");
+        setTags("");
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notes'] }),
-  })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notes"] }),
+  });
 
-  if (listLoading) return <Spinner />
+  if (listLoading) return <Spinner />;
 
   const noteOptions = [
-    { value: '', label: '➕ New Note...' },
-    ...notes.map((n: any) => ({ value: n.id, label: n.title || `Note ${n.id.slice(0, 8)}` })),
-  ]
+    { value: "", label: "➕ New Note..." },
+    ...notes.map((n: any) => ({
+      value: n.id,
+      label: n.title || `Note ${n.id.slice(0, 8)}`,
+    })),
+  ];
 
   return (
     <div className="flex flex-col h-full bg-cyber-900 p-4 space-y-4 overflow-y-auto">
       <div className="flex justify-between items-center">
         <h2 className="text-white font-bold text-sm">✏️ Quick Note</h2>
         {onClose && (
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xs">
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white text-xs"
+          >
             ✕
           </button>
         )}
@@ -149,5 +169,5 @@ export default function FloatingNotesEditor({ onClose }: FloatingNotesEditorProp
         <p className="text-red-400 text-xs">Failed to save note.</p>
       )}
     </div>
-  )
+  );
 }

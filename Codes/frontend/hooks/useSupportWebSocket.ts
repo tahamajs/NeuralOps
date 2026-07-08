@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface WebSocketMessage {
-  type: 'thinking_start' | 'response' | 'problem_status' | 'error';
+  type: "thinking_start" | "response" | "problem_status" | "error";
   content?: string;
   intermediate_steps?: any[];
   status?: string;
@@ -11,14 +11,16 @@ interface WebSocketMessage {
 
 export function useSupportWebSocket(sessionId?: string) {
   const [isConnected, setIsConnected] = useState(false);
-  const [response, setResponse] = useState('');
+  const [response, setResponse] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [steps, setSteps] = useState<any[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
-    const token = localStorage.getItem('token');
-    const ws = new WebSocket(`ws://localhost:8000/ws/support/${sessionId || ''}?token=${token}`);
+    const token = localStorage.getItem("token");
+    const ws = new WebSocket(
+      `ws://localhost:8000/ws/support/${sessionId || ""}?token=${token}`,
+    );
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -27,18 +29,18 @@ export function useSupportWebSocket(sessionId?: string) {
 
     ws.onmessage = (event) => {
       const data: WebSocketMessage = JSON.parse(event.data);
-      
-      if (data.type === 'thinking_start') {
+
+      if (data.type === "thinking_start") {
         setIsThinking(true);
-        setResponse('');
-      } else if (data.type === 'response') {
+        setResponse("");
+      } else if (data.type === "response") {
         setIsThinking(false);
-        setResponse(data.content || '');
+        setResponse(data.content || "");
         setSteps(data.intermediate_steps || []);
-      } else if (data.type === 'problem_status') {
-        console.log('Problem status:', data.status, data.problem_id);
-      } else if (data.type === 'error') {
-        console.error('WebSocket error:', data.message);
+      } else if (data.type === "problem_status") {
+        console.log("Problem status:", data.status, data.problem_id);
+      } else if (data.type === "error") {
+        console.error("WebSocket error:", data.message);
         setIsThinking(false);
       }
     };
@@ -47,18 +49,21 @@ export function useSupportWebSocket(sessionId?: string) {
     ws.onerror = () => setIsConnected(false);
   }, [sessionId]);
 
-  const sendMessage = useCallback((message: string) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'chat', message }));
-    } else {
-      connect();
-      setTimeout(() => sendMessage(message), 500);
-    }
-  }, [connect]);
+  const sendMessage = useCallback(
+    (message: string) => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ type: "chat", message }));
+      } else {
+        connect();
+        setTimeout(() => sendMessage(message), 500);
+      }
+    },
+    [connect],
+  );
 
   const submitProblem = useCallback((problemData: any) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'problem', ...problemData }));
+      wsRef.current.send(JSON.stringify({ type: "problem", ...problemData }));
     }
   }, []);
 
@@ -71,5 +76,12 @@ export function useSupportWebSocket(sessionId?: string) {
     return () => disconnect();
   }, [connect, disconnect]);
 
-  return { isConnected, response, isThinking, steps, sendMessage, submitProblem };
+  return {
+    isConnected,
+    response,
+    isThinking,
+    steps,
+    sendMessage,
+    submitProblem,
+  };
 }

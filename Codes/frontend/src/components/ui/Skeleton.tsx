@@ -1,8 +1,16 @@
-import { cn } from '../../lib/utils'
+import { cn } from "../../lib/utils";
 
-export const Skeleton = ({ className, animated = true }: { className?: string; animated?: boolean }) => (
-  <div className={cn('rounded bg-white/10', animated && 'shimmer', className)} />
-)
+export const Skeleton = ({
+  className,
+  animated = true,
+}: {
+  className?: string;
+  animated?: boolean;
+}) => (
+  <div
+    className={cn("rounded bg-white/10", animated && "shimmer", className)}
+  />
+);
 
 // Grid skeleton for cards
 export const CardSkeleton = () => (
@@ -15,4 +23,4 @@ export const CardSkeleton = () => (
       <Skeleton className="h-8 w-24 rounded-full" />
     </div>
   </div>
-)
+);

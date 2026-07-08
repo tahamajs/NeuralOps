@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
-import type { ModelArchitecture } from '../types';
+import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import {
+  CSS2DRenderer,
+  CSS2DObject,
+} from "three/examples/jsm/renderers/CSS2DRenderer.js";
+import type { ModelArchitecture } from "../types";
 
 interface Props {
   modelData: ModelArchitecture | null;
@@ -11,7 +14,9 @@ interface Props {
 
 export function Model3DViewer({ modelData, onClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [status, setStatus] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -28,26 +33,33 @@ export function Model3DViewer({ modelData, onClose }: Props) {
 
         const camera = new THREE.PerspectiveCamera(
           45,
-          containerRef.current!.clientWidth / containerRef.current!.clientHeight,
+          containerRef.current!.clientWidth /
+            containerRef.current!.clientHeight,
           0.1,
-          1000
+          1000,
         );
         camera.position.set(5, 5, 10);
         camera.lookAt(0, 0, 0);
         cameraRef.current = camera;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(containerRef.current!.clientWidth, containerRef.current!.clientHeight);
+        renderer.setSize(
+          containerRef.current!.clientWidth,
+          containerRef.current!.clientHeight,
+        );
         renderer.setPixelRatio(window.devicePixelRatio);
         containerRef.current!.appendChild(renderer.domElement);
         rendererRef.current = renderer;
 
         const labelRenderer = new CSS2DRenderer();
-        labelRenderer.setSize(containerRef.current!.clientWidth, containerRef.current!.clientHeight);
-        labelRenderer.domElement.style.position = 'absolute';
-        labelRenderer.domElement.style.top = '0px';
-        labelRenderer.domElement.style.left = '0px';
-        labelRenderer.domElement.style.pointerEvents = 'none';
+        labelRenderer.setSize(
+          containerRef.current!.clientWidth,
+          containerRef.current!.clientHeight,
+        );
+        labelRenderer.domElement.style.position = "absolute";
+        labelRenderer.domElement.style.top = "0px";
+        labelRenderer.domElement.style.left = "0px";
+        labelRenderer.domElement.style.pointerEvents = "none";
         containerRef.current!.appendChild(labelRenderer.domElement);
         labelRendererRef.current = labelRenderer;
 
@@ -74,20 +86,34 @@ export function Model3DViewer({ modelData, onClose }: Props) {
         gridHelper.position.y = -1.5;
         scene.add(gridHelper);
 
-        setStatus('ready');
+        setStatus("ready");
 
         const animate = () => {
           requestAnimationFrame(animate);
           controls.update();
-          if (rendererRef.current && sceneRef.current && cameraRef.current && labelRendererRef.current) {
+          if (
+            rendererRef.current &&
+            sceneRef.current &&
+            cameraRef.current &&
+            labelRendererRef.current
+          ) {
             rendererRef.current.render(sceneRef.current, cameraRef.current);
-            labelRendererRef.current.render(sceneRef.current, cameraRef.current);
+            labelRendererRef.current.render(
+              sceneRef.current,
+              cameraRef.current,
+            );
           }
         };
         animate();
 
         const handleResize = () => {
-          if (!containerRef.current || !cameraRef.current || !rendererRef.current || !labelRendererRef.current) return;
+          if (
+            !containerRef.current ||
+            !cameraRef.current ||
+            !rendererRef.current ||
+            !labelRendererRef.current
+          )
+            return;
           const width = containerRef.current.clientWidth;
           const height = containerRef.current.clientHeight;
           cameraRef.current.aspect = width / height;
@@ -95,32 +121,32 @@ export function Model3DViewer({ modelData, onClose }: Props) {
           rendererRef.current.setSize(width, height);
           labelRendererRef.current.setSize(width, height);
         };
-        window.addEventListener('resize', handleResize);
+        window.addEventListener("resize", handleResize);
         return () => {
-          window.removeEventListener('resize', handleResize);
+          window.removeEventListener("resize", handleResize);
           if (rendererRef.current) rendererRef.current.dispose();
         };
       } catch (err) {
         console.error(err);
-        setStatus('error');
+        setStatus("error");
       }
     };
     init();
   }, []);
 
   useEffect(() => {
-    if (status !== 'ready' || !sceneRef.current) return;
+    if (status !== "ready" || !sceneRef.current) return;
     if (!modelData?.layers) {
-      setStatus('error');
+      setStatus("error");
       return;
     }
 
     // Remove previous model layers
     const toRemove: THREE.Object3D[] = [];
-    sceneRef.current.traverse(obj => {
+    sceneRef.current.traverse((obj) => {
       if (obj.userData?.isModelLayer) toRemove.push(obj);
     });
-    toRemove.forEach(obj => sceneRef.current!.remove(obj));
+    toRemove.forEach((obj) => sceneRef.current!.remove(obj));
 
     const layerSpacing = 1.2;
     const totalWidth = (modelData.layers.length - 1) * layerSpacing;
@@ -133,7 +159,7 @@ export function Model3DViewer({ modelData, onClose }: Props) {
         color: layer.color ? parseInt(layer.color, 16) : 0x3b82f6,
         emissive: 0x0a0f1a,
         metalness: 0.7,
-        roughness: 0.3
+        roughness: 0.3,
       });
       const cube = new THREE.Mesh(geometry, material);
       cube.position.set(x, 0, 0);
@@ -141,23 +167,23 @@ export function Model3DViewer({ modelData, onClose }: Props) {
       sceneRef.current!.add(cube);
 
       // Label
-      const div = document.createElement('div');
+      const div = document.createElement("div");
       div.textContent = `${layer.name}\n${layer.params.toLocaleString()} params`;
-      div.style.color = '#00ff9d';
-      div.style.fontSize = '12px';
-      div.style.fontFamily = 'monospace';
-      div.style.backgroundColor = 'rgba(0,0,0,0.7)';
-      div.style.padding = '2px 6px';
-      div.style.borderRadius = '4px';
-      div.style.borderLeft = `3px solid ${layer.color ? '#' + layer.color : '#3b82f6'}`;
-      div.style.pointerEvents = 'none';
+      div.style.color = "#00ff9d";
+      div.style.fontSize = "12px";
+      div.style.fontFamily = "monospace";
+      div.style.backgroundColor = "rgba(0,0,0,0.7)";
+      div.style.padding = "2px 6px";
+      div.style.borderRadius = "4px";
+      div.style.borderLeft = `3px solid ${layer.color ? "#" + layer.color : "#3b82f6"}`;
+      div.style.pointerEvents = "none";
       const label = new CSS2DObject(div);
       label.position.set(x, -0.6, 0);
       label.userData = { isModelLayer: true };
       sceneRef.current!.add(label);
     });
 
-    setStatus('ready');
+    setStatus("ready");
   }, [status, modelData]);
 
   return (
@@ -165,11 +191,21 @@ export function Model3DViewer({ modelData, onClose }: Props) {
       <div className="p-3 border-b border-white/10 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <span className="text-sm text-neon-mint">🧊 3D Model Viewer</span>
-          <span className={`text-xs ${status === 'ready' ? 'text-green-400' : 'text-yellow-400'}`}>
-            {status === 'ready' ? '● Active' : status === 'loading' ? '○ Loading...' : '⚠ Error'}
+          <span
+            className={`text-xs ${status === "ready" ? "text-green-400" : "text-yellow-400"}`}
+          >
+            {status === "ready"
+              ? "● Active"
+              : status === "loading"
+                ? "○ Loading..."
+                : "⚠ Error"}
           </span>
         </div>
-        {onClose && <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>}
+        {onClose && (
+          <button onClick={onClose} className="text-slate-400 hover:text-white">
+            ✕
+          </button>
+        )}
       </div>
       <div ref={containerRef} className="flex-1 relative" />
       <div className="p-2 border-t border-white/10 text-xs text-slate-500 text-center">

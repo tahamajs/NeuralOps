@@ -1,26 +1,35 @@
-import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Spinner } from '../../../components/ui/Spinner'
-import { Shield, Activity, Cpu, Layers, Server, Box, Wrench, Database } from 'lucide-react'
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Spinner } from "../../../components/ui/Spinner";
+import {
+  Shield,
+  Activity,
+  Cpu,
+  Layers,
+  Server,
+  Box,
+  Wrench,
+  Database,
+} from "lucide-react";
 
 export default function AdminDashboard() {
   const { data: health, isLoading: healthLoading } = useQuery({
-    queryKey: ['health'],
-    queryFn: async () => (await api.get('/api/health/')).data,
-  })
+    queryKey: ["health"],
+    queryFn: async () => (await api.get("/api/health/")).data,
+  });
   const { data: version, isLoading: versionLoading } = useQuery({
-    queryKey: ['version'],
-    queryFn: async () => (await api.get('/api/version/')).data,
-  })
+    queryKey: ["version"],
+    queryFn: async () => (await api.get("/api/version/")).data,
+  });
   const { data: jobStats, isLoading: jobsLoading } = useQuery({
-    queryKey: ['jobStats'],
-    queryFn: async () => (await api.get('/api/jobs/stats/')).data,
-  })
+    queryKey: ["jobStats"],
+    queryFn: async () => (await api.get("/api/jobs/stats/")).data,
+  });
 
-  const isLoading = healthLoading || versionLoading || jobsLoading
-  if (isLoading) return <Spinner />
+  const isLoading = healthLoading || versionLoading || jobsLoading;
+  if (isLoading) return <Spinner />;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -33,22 +42,34 @@ export default function AdminDashboard() {
         <Card className="flex items-center gap-4 p-5">
           <Activity size={28} className="text-green-400" />
           <div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider">System</div>
-            <div className="text-xl font-bold text-white">{health?.status || 'Unknown'}</div>
+            <div className="text-xs text-slate-400 uppercase tracking-wider">
+              System
+            </div>
+            <div className="text-xl font-bold text-white">
+              {health?.status || "Unknown"}
+            </div>
           </div>
         </Card>
         <Card className="flex items-center gap-4 p-5">
           <Layers size={28} className="text-neon-purple" />
           <div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider">API Version</div>
-            <div className="text-xl font-bold text-white">{version?.api_version || '—'}</div>
+            <div className="text-xs text-slate-400 uppercase tracking-wider">
+              API Version
+            </div>
+            <div className="text-xl font-bold text-white">
+              {version?.api_version || "—"}
+            </div>
           </div>
         </Card>
         <Card className="flex items-center gap-4 p-5">
           <Server size={28} className="text-neon-blue" />
           <div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider">Total Jobs</div>
-            <div className="text-xl font-bold text-white">{jobStats?.total || 0}</div>
+            <div className="text-xs text-slate-400 uppercase tracking-wider">
+              Total Jobs
+            </div>
+            <div className="text-xl font-bold text-white">
+              {jobStats?.total || 0}
+            </div>
           </div>
         </Card>
       </div>
@@ -88,10 +109,15 @@ export default function AdminDashboard() {
       {/* Job Breakdown */}
       {jobStats?.by_status && (
         <Card>
-          <h2 className="text-sm font-display font-bold text-white mb-4">Job Breakdown</h2>
+          <h2 className="text-sm font-display font-bold text-white mb-4">
+            Job Breakdown
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-xs">
             {Object.entries(jobStats.by_status).map(([status, count]: any) => (
-              <div key={status} className="bg-cyber-800 p-3 rounded-xl border border-white/5">
+              <div
+                key={status}
+                className="bg-cyber-800 p-3 rounded-xl border border-white/5"
+              >
                 <div className="text-xl font-bold text-white">{count}</div>
                 <div className="text-slate-400 capitalize mt-1">{status}</div>
               </div>
@@ -100,5 +126,5 @@ export default function AdminDashboard() {
         </Card>
       )}
     </div>
-  )
+  );
 }

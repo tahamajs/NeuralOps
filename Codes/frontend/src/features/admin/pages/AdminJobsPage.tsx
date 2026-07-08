@@ -1,51 +1,58 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Button } from '../../../components/ui/Button'
-import { Badge } from '../../../components/ui/Badge'
-import { Input } from '../../../components/ui/Input'
-import { Spinner } from '../../../components/ui/Spinner'
-import { Search, Trash2, StopCircle } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Badge } from "../../../components/ui/Badge";
+import { Input } from "../../../components/ui/Input";
+import { Spinner } from "../../../components/ui/Spinner";
+import { Search, Trash2, StopCircle } from "lucide-react";
 
 export default function AdminJobsPage() {
-  const queryClient = useQueryClient()
-  const [selected, setSelected] = useState<string[]>([])
-  const [filter, setFilter] = useState('')
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [filter, setFilter] = useState("");
 
   const { data: jobs = [], isLoading } = useQuery({
-    queryKey: ['jobs'],
-    queryFn: async () => (await api.get('/api/jobs/')).data,
+    queryKey: ["jobs"],
+    queryFn: async () => (await api.get("/api/jobs/")).data,
     refetchInterval: 5000,
-  })
+  });
 
   const deleteMutation = useMutation({
-    mutationFn: async (ids: string[]) => api.post('/api/jobs/bulk-delete/', { job_ids: ids }),
+    mutationFn: async (ids: string[]) =>
+      api.post("/api/jobs/bulk-delete/", { job_ids: ids }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['jobs'] })
-      setSelected([])
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      setSelected([]);
     },
-  })
+  });
 
   const stopAllMutation = useMutation({
-    mutationFn: async () => api.post('/api/runs/stop_all/'),
-    onSuccess: () => alert('All jobs stopped'),
-  })
+    mutationFn: async () => api.post("/api/runs/stop_all/"),
+    onSuccess: () => alert("All jobs stopped"),
+  });
 
   const filtered = jobs.filter(
     (j: any) =>
-      (j.name || '').toLowerCase().includes(filter.toLowerCase()) ||
-      j.id.toLowerCase().includes(filter.toLowerCase())
-  )
+      (j.name || "").toLowerCase().includes(filter.toLowerCase()) ||
+      j.id.toLowerCase().includes(filter.toLowerCase()),
+  );
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <Spinner />;
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-display font-bold text-white">Jobs Admin</h1>
+        <h1 className="text-2xl font-display font-bold text-white">
+          Jobs Admin
+        </h1>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setSelected(filtered.map((j: any) => j.id))}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelected(filtered.map((j: any) => j.id))}
+          >
             Select All
           </Button>
           <Button
@@ -56,7 +63,11 @@ export default function AdminJobsPage() {
           >
             <Trash2 size={14} className="mr-1" /> Delete ({selected.length})
           </Button>
-          <Button variant="secondary" size="sm" onClick={() => stopAllMutation.mutate()}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => stopAllMutation.mutate()}
+          >
             <StopCircle size={14} className="mr-1" /> Stop All
           </Button>
         </div>
@@ -93,14 +104,16 @@ export default function AdminJobsPage() {
                         setSelected((prev) =>
                           prev.includes(job.id)
                             ? prev.filter((id) => id !== job.id)
-                            : [...prev, job.id]
+                            : [...prev, job.id],
                         )
                       }
                       className="accent-neon-blue"
                     />
                   </td>
-                  <td className="py-3 px-2 font-mono text-neon-blue text-xs">{job.id.slice(0, 8)}</td>
-                  <td className="py-3 px-2 text-white">{job.name || '—'}</td>
+                  <td className="py-3 px-2 font-mono text-neon-blue text-xs">
+                    {job.id.slice(0, 8)}
+                  </td>
+                  <td className="py-3 px-2 text-white">{job.name || "—"}</td>
                   <td className="py-3 px-2">
                     <Badge status={job.status}>{job.status}</Badge>
                   </td>
@@ -110,11 +123,13 @@ export default function AdminJobsPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => window.open(`/experiments/${job.id}`, '_blank')}
+                        onClick={() =>
+                          window.open(`/experiments/${job.id}`, "_blank")
+                        }
                       >
                         Detail
                       </Button>
-                      {job.status === 'running' && (
+                      {job.status === "running" && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -132,5 +147,5 @@ export default function AdminJobsPage() {
         </div>
       </Card>
     </div>
-  )
+  );
 }

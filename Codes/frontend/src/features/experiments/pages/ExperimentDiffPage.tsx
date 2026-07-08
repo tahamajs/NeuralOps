@@ -1,25 +1,25 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Spinner } from '../../../components/ui/Spinner'
-import { Button } from '../../../components/ui/Button'
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Spinner } from "../../../components/ui/Spinner";
+import { Button } from "../../../components/ui/Button";
 
 export default function ExperimentDiffPage() {
-  const [runA, setRunA] = useState('')
-  const [runB, setRunB] = useState('')
-  const [diff, setDiff] = useState<any>(null)
+  const [runA, setRunA] = useState("");
+  const [runB, setRunB] = useState("");
+  const [diff, setDiff] = useState<any>(null);
 
   const { data: experiments = [] } = useQuery({
-    queryKey: ['experiments'],
-    queryFn: async () => (await api.get('/api/experiments/')).data,
-  })
+    queryKey: ["experiments"],
+    queryFn: async () => (await api.get("/api/experiments/")).data,
+  });
 
   const handleDiff = async () => {
-    if (!runA || !runB) return
-    const res = await api.get(`/api/experiments/runs/${runA}/diff/${runB}/`)
-    setDiff(res.data)
-  }
+    if (!runA || !runB) return;
+    const res = await api.get(`/api/experiments/runs/${runA}/diff/${runB}/`);
+    setDiff(res.data);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -28,13 +28,29 @@ export default function ExperimentDiffPage() {
       </h1>
       <Card>
         <div className="flex gap-4 mb-4">
-          <select className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white flex-1" value={runA} onChange={e => setRunA(e.target.value)}>
+          <select
+            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white flex-1"
+            value={runA}
+            onChange={(e) => setRunA(e.target.value)}
+          >
             <option value="">Run A</option>
-            {experiments.map((e: any) => <option key={e.id} value={e.id}>{e.name || e.id.slice(0,8)}</option>)}
+            {experiments.map((e: any) => (
+              <option key={e.id} value={e.id}>
+                {e.name || e.id.slice(0, 8)}
+              </option>
+            ))}
           </select>
-          <select className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white flex-1" value={runB} onChange={e => setRunB(e.target.value)}>
+          <select
+            className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white flex-1"
+            value={runB}
+            onChange={(e) => setRunB(e.target.value)}
+          >
             <option value="">Run B</option>
-            {experiments.map((e: any) => <option key={e.id} value={e.id}>{e.name || e.id.slice(0,8)}</option>)}
+            {experiments.map((e: any) => (
+              <option key={e.id} value={e.id}>
+                {e.name || e.id.slice(0, 8)}
+              </option>
+            ))}
           </select>
           <Button onClick={handleDiff}>Compare</Button>
         </div>
@@ -56,5 +72,5 @@ export default function ExperimentDiffPage() {
         )}
       </Card>
     </div>
-  )
+  );
 }
