@@ -32,7 +32,7 @@ export default function MultiNodeTrainingLauncher({
   const launchTraining = useMutation({
     mutationFn: () => inferenceAPI.launchMultiNodeTraining(config),
     onSuccess: (res) => {
-      setRunId(res.data.id);
+      setRunId(res.id);
       success("Training launched");
     },
   });

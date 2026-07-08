@@ -107,7 +107,7 @@ export default function ProviderDashboardPage({
           </TerminalCard>
           <TerminalCard className="p-4">
             <h3 className="text-sm font-bold text-white mb-2">Usage Heatmap</h3>
-            <UsageHeatmap data={usage} />
+            <UsageChart usage={usage} />
           </TerminalCard>
         </div>
         <TerminalCard className="p-4">
