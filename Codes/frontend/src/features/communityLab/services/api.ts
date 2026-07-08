@@ -6,8 +6,8 @@ export const communityLabAPI = {
   getLab: (labId: string) => api.get(`/community-lab/labs/${labId}/`).then(res => res.data),
   getLabAgents: (labId: string) => api.get(`/community-lab/labs/${labId}/agents/`).then(res => res.data),
   createAgent: (labId: string, data: any) => api.post(`/community-lab/labs/${labId}/agents/`, data).then(res => res.data),
-  startAgent: (labId: string, agentId: string) => Promise.resolve({ status: "active" }),
-  stopAgent: (labId: string, agentId: string) => Promise.resolve({ status: "inactive" }),
+  startAgent: (labId: string, agentId: string) => api.post(`/community-lab/labs/${labId}/agents/${agentId}/start/`).then(res => res.data),
+  stopAgent: (labId: string, agentId: string) => api.post(`/community-lab/labs/${labId}/agents/${agentId}/stop/`).then(res => res.data),
   getChatrooms: (labId: string) => api.get(`/community-lab/labs/${labId}/chatrooms/`).then(res => res.data),
   createChatroom: (labId: string, name: string) => api.post(`/community-lab/labs/${labId}/chatrooms/`, { name }).then(res => res.data),
   getDiscoveries: (labId: string | null, params: any = {}) => {
