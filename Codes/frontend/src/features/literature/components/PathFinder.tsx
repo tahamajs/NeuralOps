@@ -19,7 +19,7 @@ export function PathFinder() {
 
   const findMutation = useMutation({
     mutationFn: () => literatureAPI.findPath(fromId, toId),
-    onSuccess: (res) => setResult(res.data),
+    onSuccess: (res) => setResult(res as any),
     onError: () => error("Failed to find path"),
   });
 

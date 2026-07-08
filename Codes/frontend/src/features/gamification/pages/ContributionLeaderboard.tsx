@@ -69,7 +69,7 @@ export default function ContributionLeaderboard({
     return <Minus size={12} className="text-slate-500" />;
   };
 
-  const currentUserEntry = leaderboard?.find((e) => e.user_id === user?.id);
+  const userEntry = leaderboard?.find((entry: any) => entry.user_id === (user as any)?.id);
 
   return (
     <div className="flex flex-col h-full">
@@ -156,9 +156,7 @@ export default function ContributionLeaderboard({
                   <tr
                     key={entry.user_id}
                     className={
-                      entry.user_id === user?.id
-                        ? "bg-neon-blue/10"
-                        : "hover:bg-white/5"
+                      entry.user_id === (user as any)?.id ? "bg-neon-blue/5 border-neon-blue/30" : "hover:bg-white/5"
                     }
                   >
                     <td className="px-4 py-3 font-mono">
@@ -199,7 +197,7 @@ export default function ContributionLeaderboard({
                       {getChangeIcon(entry.change)}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {entry.user_id === user?.id && (
+                      {entry.user_id === (user as any)?.id && (
                         <span className="text-xs text-neon-mint">You</span>
                       )}
                     </td>
