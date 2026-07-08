@@ -207,3 +207,18 @@ def trial_update(request, sweep_id, trial_number):
         trial.user_attrs = {**trial.user_attrs, **request.data["user_attrs"]}
     trial.save()
     return Response(SweepTrialSerializer(trial).data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def parameter_interactions(request):
+    """Placeholder for parameter interactions visualization data."""
+    return Response([])
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def run_parameter_scatter(request):
+    """Placeholder for parameter scatter visualization data."""
+    return Response([])
+
