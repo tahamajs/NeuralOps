@@ -43,7 +43,6 @@ export function FileBrowser({
         {showNewInput && (
           <div className="flex gap-1 p-1">
             <Input
-              size="sm"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
               placeholder="filename.py"
