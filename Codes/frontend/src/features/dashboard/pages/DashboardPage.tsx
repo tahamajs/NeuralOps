@@ -214,7 +214,7 @@ export default function DashboardPage() {
                     <Badge variant={exp.status}>{exp.status}</Badge>
                   </td>
                   <td className="py-3 px-4 font-mono">
-                    {exp.final_metrics?.eval_accuracy?.toFixed(4) || "—"}
+                    {(exp as any).final_metrics?.eval_accuracy?.toFixed(4) || "—"}
                   </td>
                   <td className="py-3 px-4 text-slate-400 text-xs">
                     {new Date(exp.created_at).toLocaleDateString()}

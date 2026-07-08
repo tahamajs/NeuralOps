@@ -99,7 +99,7 @@ export default function AccessPolicyEditor({
                       </span>
                       <span className="font-bold text-white">{p.name}</span>
                       <Badge
-                        variant={p.effect === "allow" ? "success" : "danger"}
+                        variant={p.effect === "allow" ? "success" : "failed"}
                       >
                         {p.effect}
                       </Badge>
