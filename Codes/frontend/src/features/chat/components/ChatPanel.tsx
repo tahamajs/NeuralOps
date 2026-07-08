@@ -40,7 +40,7 @@ export function ChatPanel({
     addMessage,
     updateLastAssistantMessage,
     getCurrentMessages,
-  } = useChatStore();
+  } = useChatStore() as any;
 
   // Use external sessionId or the active one from store
   const currentSessionId = externalSessionId || activeConversationId;
@@ -218,11 +218,11 @@ export function ChatPanel({
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeHighlight]}
                   components={{
-                    code({ node, inline, className, children, ...props }) {
+                    code({ node, inline, className, children, ...props }: any) {
                       const match = /language-(\w+)/.exec(className || "");
                       return !inline && match ? (
                         <SyntaxHighlighter
-                          style={vscDarkPlus}
+                          style={vscDarkPlus as any}
                           language={match[1]}
                           PreTag="div"
                           {...props}
