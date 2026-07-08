@@ -7,10 +7,10 @@ import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Button } from "../../../components/ui/Button";
 import { Select } from "../../../components/ui/Select";
 import { Spinner } from "../../../components/ui/Spinner";
-import { FileText, Download, Filter } from "lucide-react";
+import { FileText, Download, ExternalLink, Filter, CheckCircle, RefreshCw } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
 
-export default function InvoiceManager({ onClose }: { onClose?: () => void }) {
+const InvoiceCard = ({ invoice, onDownload }: any) => {
   const [statusFilter, setStatusFilter] = useState("");
   const {
     data: invoices,

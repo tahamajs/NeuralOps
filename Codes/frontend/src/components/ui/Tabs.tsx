@@ -52,9 +52,11 @@ export const TabList = ({
 export const Tab = ({
   value,
   children,
+  className,
 }: {
   value: string;
   children: React.ReactNode;
+  className?: string;
 }) => {
   const { active, setActive } = useContext(TabsContext);
   return (
