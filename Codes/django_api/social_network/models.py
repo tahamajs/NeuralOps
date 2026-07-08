@@ -48,12 +48,12 @@ class ResearchGroup(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="created_groups",
+        related_name="created_groups_network",
     )
     members = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through="GroupMembership",
-        related_name="research_groups",
+        related_name="research_groups_network",
     )
     visibility = models.CharField(
         max_length=20, choices=VISIBILITY_CHOICES, default="public"
@@ -82,7 +82,7 @@ class GroupMembership(models.Model):
         ("member", "Member"),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="groupmembership_network")
     group = models.ForeignKey(ResearchGroup, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="member")
     joined_at = models.DateTimeField(auto_now_add=True)
@@ -104,7 +104,7 @@ class Discussion(models.Model):
         ResearchGroup, on_delete=models.CASCADE, related_name="discussions"
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="discussions"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="discussions_network"
     )
     title = models.CharField(max_length=300)
     content = models.TextField(blank=True)
@@ -134,7 +134,7 @@ class DiscussionReply(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="discussion_replies",
+        related_name="discussion_replies_network",
     )
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -167,7 +167,7 @@ class ActivityFeed(models.Model):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activities"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activities_network"
     )
     activity_type = models.CharField(max_length=30, choices=ACTIVITY_TYPES)
     title = models.CharField(max_length=300)
@@ -196,12 +196,12 @@ class PublicationAlert(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="publication_alerts",
+        related_name="publication_alerts_network",
     )
     follower = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="received_alerts",
+        related_name="received_alerts_network",
     )
     alert_type = models.CharField(max_length=30, choices=ActivityFeed.ACTIVITY_TYPES)
     content = models.TextField()
