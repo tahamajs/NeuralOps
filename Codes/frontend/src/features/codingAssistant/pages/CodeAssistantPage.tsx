@@ -66,7 +66,9 @@ export default function CodeAssistantPage({
     suggestions,
     sendMessage,
     applySuggestion,
-  } = useCodingAssistantWebSocket(sessionId) as any;
+  } = (useCodingAssistantWebSocket as any)();
+
+  const ChatPanelCast = ChatPanel as any;
 
   useEffect(() => {
     createSession.mutate();
@@ -138,7 +140,7 @@ export default function CodeAssistantPage({
             />
           </div>
           <div className="lg:col-span-3 h-full">
-            <ChatPanel
+            <ChatPanelCast
               messages={messages as any}
               onSendMessage={handleSendMessage as any}
               isStreaming={false}

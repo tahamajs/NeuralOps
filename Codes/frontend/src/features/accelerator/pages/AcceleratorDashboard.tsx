@@ -111,7 +111,7 @@ export default function AcceleratorDashboard({
             enabled={autoRefresh.enabled}
             interval={autoRefresh.interval_seconds}
             onSave={(enabled, interval) =>
-              autoRefreshMutation.mutate({ enabled, interval })
+              autoRefreshMutation.mutate({ enabled, interval_seconds: interval })
             }
           />
           <Button size="sm" variant="ghost" onClick={handleRefresh}>

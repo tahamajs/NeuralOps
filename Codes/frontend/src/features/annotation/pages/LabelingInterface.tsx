@@ -37,17 +37,19 @@ export default function LabelingInterface({
     queryFn: () => annotationAPI.getProject(projectId!),
     enabled: !!projectId,
   });
-
   const { data: itemsData, isLoading: itemsLoading } = useQuery({
     queryKey: ["annotation-items", projectId],
     queryFn: () => annotationAPI.getItems(projectId!, { status: "pending" }),
     enabled: !!projectId,
   });
 
+  const projectData = (project as any)?.data || project;
+  const items = (itemsData as any)?.data || itemsData;
+
   const saveAnnotation = useMutation({
     mutationFn: (annotation: any) =>
       annotationAPI.saveAnnotation(
-        itemsData?.results[currentIndex]?.id,
+        items?.results[currentIndex]?.id,
         annotation,
       ),
     onSuccess: () => success("Annotation saved"),
@@ -55,16 +57,16 @@ export default function LabelingInterface({
 
   const submitItem = useMutation({
     mutationFn: () =>
-      annotationAPI.submitItem(itemsData?.results[currentIndex]?.id),
+      annotationAPI.submitItem(items?.results[currentIndex]?.id),
     onSuccess: () => {
       success("Item submitted");
-      if (currentIndex + 1 < (itemsData?.results.length || 0))
+      if (currentIndex + 1 < (items?.results?.length || 0))
         setCurrentIndex((prev) => prev + 1);
       else success("All items completed!");
     },
   });
 
-  const currentItem = itemsData?.results[currentIndex];
+  const currentItem = items?.results[currentIndex];
 
   const handleSave = () => {
     if (annotations.length === 0) return error("No annotations to save");
@@ -78,21 +80,21 @@ export default function LabelingInterface({
   };
 
   if (projLoading || itemsLoading) return <Spinner />;
-  if (!project)
+  if (!projectData)
     return <div className="p-4 text-red-400">Project not found</div>;
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center p-4 border-b border-white/10">
         <div>
-          <h1 className="text-xl font-bold text-white">{project.name}</h1>
+          <h1 className="text-xl font-bold text-white">{projectData.name}</h1>
           <p className="text-xs text-slate-400">
-            Item {currentIndex + 1} of {itemsData?.count || 0} · {project.type}
+            Item {currentIndex + 1} of {items?.count || 0} · {projectData.type}
           </p>
         </div>
         <div className="flex gap-2">
           <Badge variant="info" className="capitalize">
-            {project.type}
+            {projectData.type}
           </Badge>
           {onClose && (
             <Button size="sm" variant="ghost" onClick={onClose}>
@@ -108,7 +110,7 @@ export default function LabelingInterface({
               <BoundingBoxCanvas
                 imageUrl={currentItem.data.image_url}
                 onAnnotationsChange={setAnnotations}
-                labels={project.labels}
+                labels={projectData.labels}
               />
             ) : currentItem?.data.text ? (
               <TerminalCard className="p-4 w-full">
@@ -118,7 +120,7 @@ export default function LabelingInterface({
                 <p className="text-slate-300">{currentItem.data.text}</p>
                 <div className="mt-4">
                   <LabelSelector
-                    labels={project.labels}
+                    labels={projectData.labels}
                     selected={selectedLabelId}
                     onSelect={setSelectedLabelId}
                   />
@@ -131,7 +133,7 @@ export default function LabelingInterface({
           <div className="space-y-4">
             <TerminalCard className="p-4">
               <LabelSelector
-                labels={project.labels}
+                labels={projectData.labels}
                 selected={selectedLabelId}
                 onSelect={setSelectedLabelId}
               />
@@ -184,7 +186,7 @@ export default function LabelingInterface({
               </Button>
               <Button
                 variant="ghost"
-                disabled={currentIndex + 1 >= (itemsData?.results.length || 0)}
+                disabled={currentIndex + 1 >= (items?.results?.length || 0)}
                 onClick={() => setCurrentIndex((prev) => prev + 1)}
               >
                 Next <ChevronRight size={16} />

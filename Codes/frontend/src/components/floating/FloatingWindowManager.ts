@@ -12,6 +12,10 @@ export interface FloatingWindow {
   minimized?: boolean;
   maximized?: boolean;
   zIndex?: number;
+  prevWidth?: number;
+  prevHeight?: number;
+  prevX?: number;
+  prevY?: number;
 }
 
 interface FloatingWindowState {

@@ -1,4 +1,5 @@
 import { Progress } from "../../../components/ui/Progress";
+import { TerminalCard } from "../../../components/ui/TerminalCard";
 
 export function PreLabelProgress({ progress, status }: any) {
   if (!status) return null;

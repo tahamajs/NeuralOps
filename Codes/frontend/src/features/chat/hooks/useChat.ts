@@ -20,7 +20,7 @@ export function useChat() {
   const sendMessage = useCallback(
     async (content: string) => {
       if (!activeConversationId) return;
-      const userMessage: Message = {
+      const userMessage: any = {
         id: crypto.randomUUID(),
         role: "user",
         content,

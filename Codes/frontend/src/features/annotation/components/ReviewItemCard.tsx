@@ -13,7 +13,7 @@ export function ReviewItemCard({ item, onSelect, selected }: any) {
         <Badge
           variant={
             item.priority === "high"
-              ? "danger"
+              ? "failed"
               : item.priority === "medium"
                 ? "warning"
                 : "secondary"
