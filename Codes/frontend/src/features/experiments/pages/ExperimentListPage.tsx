@@ -52,7 +52,7 @@ export default function ExperimentListPage() {
       {isLoading ? (
         <Spinner />
       ) : filtered.length === 0 ? (
-        <EmptyState message="No experiments match your filters." />
+        <EmptyState title="No experiments match your filters." />
       ) : (
         <>
           <ExperimentTable experiments={paged} />

@@ -78,7 +78,7 @@ export default function DashboardPage() {
           experiments
             .filter((e) => e.status === "completed")
             .reduce(
-              (sum, e) => sum + (e.final_metrics?.eval_accuracy || 0),
+              (sum, e) => sum + ((e as any).final_metrics?.eval_accuracy || 0),
               0,
             ) / completed
         ).toFixed(4)
