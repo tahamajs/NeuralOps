@@ -91,7 +91,7 @@ class PlaygroundSession(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="playground_sessions",
+        related_name="llm_playground_sessions",
     )
     name = models.CharField(max_length=200, blank=True)
     input_text = models.TextField(blank=True)
@@ -125,7 +125,7 @@ class ToolDefinition(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="tool_definitions",
+        related_name="llm_tool_definitions",
     )
     name = models.CharField(max_length=100)
     description = models.TextField()
@@ -268,7 +268,7 @@ class ArenaVote(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True
     )
     winner = models.CharField(
-        max_length=1, choices=[("A", "Model A"), ("B", "Model B"), ("tie", "Tie")]
+        max_length=10, choices=[("A", "Model A"), ("B", "Model B"), ("tie", "Tie")]
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

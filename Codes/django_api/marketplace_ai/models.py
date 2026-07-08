@@ -48,7 +48,7 @@ class ComparisonSet(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="comparison_sets",
+        related_name="marketplace_comparison_sets",
     )
     name = models.CharField(max_length=200, blank=True)
     listings = models.ManyToManyField(

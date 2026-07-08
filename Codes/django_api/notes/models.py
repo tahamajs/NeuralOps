@@ -320,7 +320,7 @@ class WebhookSubscription(models.Model):
     """External webhook endpoints."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="webhooks")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notes_webhooks")
     url = models.URLField(max_length=500)
     events = models.JSONField(default=list, blank=True)
     secret = models.CharField(max_length=100, blank=True)
@@ -498,11 +498,12 @@ class Artifact(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True,
-        related_name="artifacts",
+        related_name="notes_artifacts",
     )
     name = models.CharField(max_length=200)
     file = models.FileField(upload_to="artifacts/")
     file_type = models.CharField(max_length=50, blank=True)
+    file_size_mb = models.FloatField(default=0.0)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -554,7 +555,15 @@ class Protocol(models.Model):
     created_by = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="protocols"
     )
+    is_public = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.name
 
 
 # notes/models.py — add these at the bottom of the file
@@ -615,76 +624,7 @@ class ShareableLink(models.Model):
         self.save(update_fields=["view_count", "last_accessed_at"])
 
 
-class Artifact(models.Model):
-    """File artifacts (checkpoints, plots, logs) associated with a note or run."""
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    note = models.ForeignKey(
-        "ResearcherNote",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="artifacts",
-    )
-    run = models.ForeignKey(
-        "jobscheduler.Job",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name="artifacts",
-    )
-    name = models.CharField(max_length=200)
-    file = models.FileField(upload_to="artifacts/")
-    file_type = models.CharField(max_length=50, blank=True)
-    file_size_mb = models.FloatField(default=0.0)
-    description = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return self.name
-
-
-class Protocol(models.Model):
-    """Executable experiment protocol."""
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    steps = models.JSONField(default=list)
-    created_by = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="protocols"
-    )
-    is_public = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return self.name
-
-
-class NoteLink(models.Model):
-    """Bidirectional link between notes (knowledge graph)."""
-
-    source = models.ForeignKey(
-        "ResearcherNote", on_delete=models.CASCADE, related_name="outgoing_links"
-    )
-    target = models.ForeignKey(
-        "ResearcherNote", on_delete=models.CASCADE, related_name="incoming_links"
-    )
-    link_type = models.CharField(max_length=50, default="related")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = [["source", "target"]]
-
-    def __str__(self):
-        return f"{self.source_id} → {self.target_id} ({self.link_type})"
+# Share links and other classes
 
 
 # notes/models.py — add this

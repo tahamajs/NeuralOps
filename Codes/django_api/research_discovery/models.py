@@ -148,7 +148,7 @@ class CodeExperiment(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="code_experiments",
+        related_name="discovery_code_experiments",
     )
     problem_description = models.TextField()
     domain = models.CharField(max_length=200, blank=True)

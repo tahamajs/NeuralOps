@@ -156,7 +156,7 @@ class ExpertReview(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="assigned_reviews",
+        related_name="expert_assigned_reviews",
     )
     review_type = models.CharField(max_length=20, choices=REVIEW_TYPE_CHOICES)
     title = models.CharField(max_length=300)

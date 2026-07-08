@@ -44,7 +44,7 @@ class ReputationScore(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="reputation_score",
+        related_name="gpu_reputation_score",
     )
     # Provider score: how reliable you are as a GPU supplier
     provider_score = models.FloatField(
