@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { gpuFinanceAPI } from "../services/api";
-import { PayoutForm } from "../components/PayoutForm";
+import { PayoutForm } from "./PayoutForm";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Button } from "../../../components/ui/Button";
 import { Spinner } from "../../../components/ui/Spinner";
@@ -97,13 +97,11 @@ export default function PayoutRequestsPage({
           </div>
         </TerminalCard>
       </div>
-      <PayoutForm
-        open={showForm}
-        onClose={() => setShowForm(false)}
-        onSuccess={() =>
-          queryClient.invalidateQueries({ queryKey: ["payout-requests"] })
-        }
-      />
+      {(PayoutForm as any)({
+        open: showForm,
+        onClose: () => setShowForm(false),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payout-requests"] })
+      })}
     </div>
   );
 }

@@ -158,7 +158,7 @@ export default function ComplianceReportView({
                                 ? "success"
                                 : control.status === "partial"
                                   ? "warning"
-                                  : "danger"
+                                  : "failed"
                             }
                           >
                             {control.status}

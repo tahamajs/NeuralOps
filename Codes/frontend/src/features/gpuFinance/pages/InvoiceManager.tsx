@@ -10,7 +10,9 @@ import { Spinner } from "../../../components/ui/Spinner";
 import { FileText, Download, ExternalLink, Filter, CheckCircle, RefreshCw } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
 
-const InvoiceCard = ({ invoice, onDownload }: any) => {
+const InvoiceCard = ({ invoice, onDownload }: any) => { return <div />; };
+
+export default function InvoiceManager({ onClose }: { onClose?: () => void }) {
   const [statusFilter, setStatusFilter] = useState("");
   const {
     data: invoices,

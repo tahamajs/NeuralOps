@@ -186,7 +186,7 @@ const TasksList = ({
       case "completed":
         return <Badge variant="success">Completed</Badge>;
       case "failed":
-        return <Badge variant="danger">Failed</Badge>;
+        return <Badge variant="failed">Failed</Badge>;
       case "disputed":
         return <Badge variant="warning">Disputed</Badge>;
       default:
