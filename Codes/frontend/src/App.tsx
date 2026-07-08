@@ -424,7 +424,7 @@ function App() {
           </BrowserRouter>
 
           {/* Floating window system (always on top, independent of router) */}
-          <div className="relative w-screen h-screen overflow-hidden bg-surface pointer-events-none">
+          <div className="fixed inset-0 z-50 overflow-hidden pointer-events-none">
             <div className="pointer-events-auto">
               {windows.map((win) => {
                 const Component = componentMap[win.type]
