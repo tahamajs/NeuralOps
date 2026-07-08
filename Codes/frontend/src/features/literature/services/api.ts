@@ -1,4 +1,4 @@
-import api from "../../../api/client";
+import { request as api } from "../../../api/client";
 import type {
   CitationGraph,
   PathResult,
@@ -47,7 +47,7 @@ export const literatureAPI = {
   getLandscapes: () =>
     api.get<ResearchLandscape[]>("/literature/discovery/landscapes/"),
   getLandscapeDetail: (landscapeId: string) =>
-    api.get<LandscapeDetail>(
+    api.get<any>(
       `/literature/discovery/landscapes/${landscapeId}/`,
     ),
   generateLandscape: (topic: string) =>
