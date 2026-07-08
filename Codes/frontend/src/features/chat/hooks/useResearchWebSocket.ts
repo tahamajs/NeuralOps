@@ -28,7 +28,7 @@ export function useResearchWebSocket(
     maxReconnectDelay = 30000,
   } = options
 
-  const { token } = useAuthStore()
+  const { token } = useAuthStore() as any
   const wsRef = useRef<WebSocket | null>(null)
   const reconnectAttemptsRef = useRef(0)
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

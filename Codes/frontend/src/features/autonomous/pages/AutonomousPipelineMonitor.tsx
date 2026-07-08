@@ -42,7 +42,7 @@ export default function AutonomousPipelineMonitor({
     isConnected,
     error: wsError,
   } = usePipelineWebSocket(urlRunId || null);
-  const pipeline = wsPipeline || pipelineData;
+  const pipeline = (wsPipeline as any) || pipelineData;
 
   const pauseMutation = useMutation({
     mutationFn: () => autonomousAPI.pausePipeline(urlRunId!),

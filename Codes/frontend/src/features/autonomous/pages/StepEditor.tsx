@@ -24,8 +24,13 @@ export default function StepEditor({ onClose }: { onClose?: () => void }) {
     queryKey: ["workflow-definition", definitionId],
     queryFn: () => autonomousAPI.getWorkflowDefinition(definitionId!),
     enabled: !!definitionId,
-    onSuccess: (data) => setDefinition(data),
-  });
+  } as any);
+
+  useEffect(() => {
+    if (existingDef) {
+      setDefinition(existingDef);
+    }
+  }, [existingDef]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
