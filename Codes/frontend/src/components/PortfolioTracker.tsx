@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { marketplaceApi } from "@/api/marketplace";
-import { TerminalCard } from "@/components/ui/TerminalCard";
+import { marketplaceApi } from "../api/marketplace";
+import { TerminalCard } from "./ui/TerminalCard";
 import { TrendingUp, TrendingDown, Wallet } from "lucide-react";
 
 export function PortfolioTracker() {

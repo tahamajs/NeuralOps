@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { useToast } from "@/components/ui/Toast";
-import { marketplaceApi } from "@/api/marketplace";
+import { Button } from "./ui/Button";
+import { Input } from "./ui/Input";
+import { useToast } from "./ui/Toast";
+import { marketplaceApi } from "../api/marketplace";
 
 interface PlaceOrderFormProps {
   listingId: string;
