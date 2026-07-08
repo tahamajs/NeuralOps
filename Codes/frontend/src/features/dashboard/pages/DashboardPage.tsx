@@ -29,7 +29,7 @@ import {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { openWindow } = useWindowStore();
+  const { addWindow } = useWindowStore();
 
   // Fetch multiple metrics for the CEO dashboard
   const { data: experiments = [], isLoading: expsLoading } = useQuery({
@@ -62,7 +62,7 @@ export default function DashboardPage() {
   const running = Array.isArray(experiments) ? experiments.filter((e: any) => e.status === "running").length : 0;
   
   const launchFeature = (type: string) => {
-    openWindow(type, { title: type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ') });
+    addWindow(type, type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' '));
   };
 
   if (isLoading) return <Spinner />;
