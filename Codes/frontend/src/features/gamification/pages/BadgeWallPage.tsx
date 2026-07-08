@@ -25,7 +25,7 @@ const rarityColors: Record<BadgeRarity, string> = {
 };
 
 export default function BadgeWallPage({ onClose }: { onClose?: () => void }) {
-  const [category, setCategory] = useState<BadgeCategory | "all">("all");
+  const [category, setCategory] = useState<any>("all");
   const [showLocked, setShowLocked] = useState(false);
 
   const { data: allBadges, isLoading: badgesLoading } = useQuery({

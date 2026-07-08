@@ -127,7 +127,7 @@ export default function FailureAnalysisPage({
         <div className="flex gap-2">
           <button
             onClick={() => {
-              setSelectedAnalysis(row.original);
+              setSelectedFailure(row.original);
               setShowFixPanel(true);
             }}
           >
@@ -217,13 +217,13 @@ export default function FailureAnalysisPage({
           </TabPanel>
         </Tabs>
       </div>
-      {selectedAnalysis && (
+      {selectedFailure && (
         <FixApplicationPanel
-          analysis={selectedAnalysis}
+          analysis={selectedFailure}
           open={showFixPanel}
           onClose={() => {
             setShowFixPanel(false);
-            setSelectedAnalysis(null);
+            setSelectedFailure(null);
           }}
         />
       )}
