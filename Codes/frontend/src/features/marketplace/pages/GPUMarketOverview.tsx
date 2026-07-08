@@ -23,8 +23,8 @@ export function GPUMarketOverview() {
   const { lastMessage } = useWebSocket("/ws/market/");
 
   useEffect(() => {
-    if (lastMessage) {
-      const data = JSON.parse(lastMessage.data);
+    if ((lastMessage as any)?.data) {
+      const data = JSON.parse((lastMessage as any).data);
       setMarketData((prev) =>
         prev.map((item) => (item.symbol === data.symbol ? data : item)),
       );

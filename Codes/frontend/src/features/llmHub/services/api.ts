@@ -1,4 +1,4 @@
-import api from "../../../api/client";
+import { request } from "../../../api/client";
 import {
   LLMProviderConfig,
   Prompt,
@@ -10,21 +10,23 @@ import {
   GuardrailRule,
 } from "../types";
 
+export type EvaluationResult = any;
+
 export const llmHubAPI = {
   // Providers
-  getProviders: () => api.get<LLMProviderConfig[]>("/llm/providers/"),
+  getProviders: () => request.get<LLMProviderConfig[]>("/llm/providers/"),
   updateProvider: (id: string, data: Partial<LLMProviderConfig>) =>
-    api.patch(`/llm/providers/${id}/`, data),
-  testProvider: (id: string) => api.post(`/llm/providers/${id}/test/`),
+    request.patch(`/llm/providers/${id}/`, data),
+  testProvider: (id: string) => request.post(`/llm/providers/${id}/test/`),
 
   // Prompts
-  getPrompts: () => api.get<Prompt[]>("/llm/prompts/"),
-  getPrompt: (id: string) => api.get<Prompt>(`/llm/prompts/${id}/`),
+  getPrompts: () => request.get<Prompt[]>("/llm/prompts/"),
+  getPrompt: (id: string) => request.get<Prompt>(`/llm/prompts/${id}/`),
   createPrompt: (data: Partial<Prompt>) =>
-    api.post<Prompt>("/llm/prompts/", data),
+    request.post<Prompt>("/llm/prompts/", data),
   updatePrompt: (id: string, data: Partial<Prompt>) =>
-    api.patch(`/llm/prompts/${id}/`, data),
-  deletePrompt: (id: string) => api.delete(`/llm/prompts/${id}/`),
+    request.patch(`/llm/prompts/${id}/`, data),
+  deletePrompt: (id: string) => request.delete(`/llm/prompts/${id}/`),
 
   // Playground / Chat
   chatCompletion: (
@@ -33,47 +35,47 @@ export const llmHubAPI = {
     messages: any[],
     params?: any,
   ) =>
-    api.post(
+    request.post(
       "/llm/chat/",
       { provider, model, messages, params },
       { responseType: "stream" },
     ),
 
   // Evaluations
-  getEvaluationRuns: () => api.get<EvaluationRun[]>("/llm/evaluations/"),
+  getEvaluationRuns: () => request.get<EvaluationRun[]>("/llm/evaluations/"),
   createEvaluation: (data: Partial<EvaluationRun>) =>
-    api.post<EvaluationRun>("/llm/evaluations/", data),
+    request.post<EvaluationRun>("/llm/evaluations/", data),
   getEvaluationResults: (runId: string) =>
-    api.get<EvaluationResult[]>(`/llm/evaluations/${runId}/results/`),
+    request.get<EvaluationResult[]>(`/llm/evaluations/${runId}/results/`),
 
   // Cost Tracking
   getCostEntries: (params?: { start_date?: string; end_date?: string }) =>
-    api.get<CostEntry[]>("/llm/costs/", { params }),
-  getCostSummary: () => api.get("/llm/costs/summary/"),
+    request.get<CostEntry[]>("/llm/costs/", { params }),
+  getCostSummary: () => request.get("/llm/costs/summary/"),
 
   // Memory
-  getMemoryEntries: () => api.get<MemoryEntry[]>("/llm/memory/"),
+  getMemoryEntries: () => request.get<MemoryEntry[]>("/llm/memory/"),
   createMemoryEntry: (data: Partial<MemoryEntry>) =>
-    api.post<MemoryEntry>("/llm/memory/", data),
-  deleteMemoryEntry: (id: string) => api.delete(`/llm/memory/${id}/`),
+    request.post<MemoryEntry>("/llm/memory/", data),
+  deleteMemoryEntry: (id: string) => request.delete(`/llm/memory/${id}/`),
 
   // Tools
-  getTools: () => api.get<ToolDefinition[]>("/llm/tools/"),
+  getTools: () => request.get<ToolDefinition[]>("/llm/tools/"),
   updateTool: (name: string, enabled: boolean) =>
-    api.patch(`/llm/tools/${name}/`, { enabled }),
+    request.patch(`/llm/tools/${name}/`, { enabled }),
 
   // Arena
-  getArenaBattles: () => api.get<ArenaBattle[]>("/llm/arena/"),
+  getArenaBattles: () => request.get<ArenaBattle[]>("/llm/arena/"),
   submitVote: (battleId: string, winner: "A" | "B" | "tie") =>
-    api.post(`/llm/arena/${battleId}/vote/`, { winner }),
+    request.post(`/llm/arena/${battleId}/vote/`, { winner }),
 
   // Guardrails
-  getGuardrails: () => api.get<GuardrailRule[]>("/llm/guardrails/"),
+  getGuardrails: () => request.get<GuardrailRule[]>("/llm/guardrails/"),
   createGuardrail: (data: Partial<GuardrailRule>) =>
-    api.post<GuardrailRule>("/llm/guardrails/", data),
+    request.post<GuardrailRule>("/llm/guardrails/", data),
   updateGuardrail: (id: string, data: Partial<GuardrailRule>) =>
-    api.patch(`/llm/guardrails/${id}/`, data),
-  deleteGuardrail: (id: string) => api.delete(`/llm/guardrails/${id}/`),
+    request.patch(`/llm/guardrails/${id}/`, data),
+  deleteGuardrail: (id: string) => request.delete(`/llm/guardrails/${id}/`),
   testGuardrail: (id: string, text: string) =>
-    api.post(`/llm/guardrails/${id}/test/`, { text }),
+    request.post(`/llm/guardrails/${id}/test/`, { text }),
 };

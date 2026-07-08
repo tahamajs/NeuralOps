@@ -43,7 +43,7 @@ export default function LLMPlayground({ onClose }: { onClose?: () => void }) {
         [{ role: "user", content: prompt }],
         parameters,
       );
-      const reader = response.data.getReader();
+      const reader = (response as any).data ? (response as any).data.getReader() : (response as any).getReader();
       const decoder = new TextDecoder();
       let fullText = "";
       while (true) {

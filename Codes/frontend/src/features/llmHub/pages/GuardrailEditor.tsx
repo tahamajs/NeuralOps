@@ -10,6 +10,7 @@ import { Modal } from "../../../components/ui/Modal";
 import { Spinner } from "../../../components/ui/Spinner";
 import { Badge } from "../../../components/ui/Badge";
 import { Switch } from "../../../components/ui/Switch";
+import { Select } from "../../../components/ui/Select";
 import { Shield, Plus, Trash2, TestTube } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
 
@@ -17,6 +18,13 @@ export default function GuardrailEditor({ onClose }: { onClose?: () => void }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [testText, setTestText] = useState("");
   const [testResult, setTestResult] = useState<any>(null);
+  
+  const [newName, setNewName] = useState("");
+  const [type, setType] = useState("input");
+  const [action, setAction] = useState("block");
+  const [pattern, setPattern] = useState("");
+  const [severity, setSeverity] = useState("medium");
+
   const queryClient = useQueryClient();
   const { success, error } = useToast();
 
@@ -74,12 +82,12 @@ export default function GuardrailEditor({ onClose }: { onClose?: () => void }) {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-white">{g.name}</h3>
-                  <Badge variant={g.type}>{g.type}</Badge>
-                  <Badge variant={g.action === "block" ? "danger" : "warning"}>
+                  <Badge variant={g.type as any}>{g.type}</Badge>
+                  <Badge variant={g.action === "block" ? "failed" : "warning"}>
                     {g.action}
                   </Badge>
                   <Badge
-                    variant={g.severity === "high" ? "danger" : "secondary"}
+                    variant={g.severity === "high" ? "failed" : "secondary"}
                   >
                     {g.severity}
                   </Badge>

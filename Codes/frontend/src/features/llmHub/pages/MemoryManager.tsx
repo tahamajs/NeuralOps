@@ -8,6 +8,7 @@ import { Input } from "../../../components/ui/Input";
 import { Modal } from "../../../components/ui/Modal";
 import { Spinner } from "../../../components/ui/Spinner";
 import { Badge } from "../../../components/ui/Badge";
+import { Select } from "../../../components/ui/Select";
 import { Brain, Plus, Trash2, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useToast } from "../../../components/ui/Toast";
