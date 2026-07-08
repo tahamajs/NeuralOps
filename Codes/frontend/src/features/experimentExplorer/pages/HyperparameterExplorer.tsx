@@ -146,7 +146,7 @@ export default function HyperparameterExplorer({
           <TabPanel value="correlation">
             <TerminalCard className="p-2" style={{ height: "500px" }}>
               <CorrelationMatrix
-                correlations={correlations || []}
+                correlations={(correlations as any) || []}
                 targetMetric={selectedMetric}
               />
             </TerminalCard>
