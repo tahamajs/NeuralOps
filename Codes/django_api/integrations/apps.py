@@ -1,9 +1,5 @@
 # integrations/apps.py
 from django.apps import AppConfig
-try:
-    from django_api.urls import urlpatterns
-except ImportError:
-    urlpatterns = []
 
 class IntegrationsConfig(AppConfig):
     name = "integrations"
