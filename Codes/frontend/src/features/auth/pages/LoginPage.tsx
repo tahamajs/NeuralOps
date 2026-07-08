@@ -8,10 +8,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Button,
-  Input,
-  useToast,
-} from "@/components/ui";
+} from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
+import { useToast } from "../../../components/ui/Toast";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -47,7 +47,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <label className="text-sm font-medium text-slate-200" htmlFor="username">Username</label>
               <Input
                 id="username"
                 type="text"
@@ -58,7 +58,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <label className="text-sm font-medium text-slate-200" htmlFor="password">Password</label>
               <Input
                 id="password"
                 type="password"
