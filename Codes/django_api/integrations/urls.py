@@ -1,3 +1,6 @@
+from django.urls import path
+from . import views
+
 urlpatterns = [
     # Git & Cloud
     path("cloud/connect/", views.connect_cloud, name="cloud_connect"),
