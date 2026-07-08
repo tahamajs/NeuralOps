@@ -41,14 +41,12 @@ class MLoRQCompressor(BaseCompressor):
         total_cost = 0
         for info in layers:
             best = None
-            best_mem = 0
             max_rank = min(info["shape"])
             for bits in sorted(self.bits_candidates, reverse=True):
                 for rank in range(max_rank, 0, -1):
                     mem = (info["shape"][0] * rank + rank * info["shape"][1]) * bits
                     if total_cost + mem <= self.total_budget:
                         best = (rank, bits, mem)
-                        best_mem = mem
                         break
                 if best is not None:
                     break

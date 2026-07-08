@@ -28,7 +28,7 @@ class ROASTLinear(nn.Module):
         # Number of tiles along each dimension (padded)
         self.tiles_out = (out_features + tile_size - 1) // tile_size
         self.tiles_in = (in_features + tile_size - 1) // tile_size
-        total_tiles = self.tiles_out * self.tiles_in
+        self.tiles_out * self.tiles_in
 
         # Weight table: one scalar per bucket, but each tile repeats that scalar
         # To have unique per-tile scaling, we can also store a full tile pattern

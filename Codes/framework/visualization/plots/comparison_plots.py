@@ -33,7 +33,7 @@ def plot_rank_comparison(
     accuracies = []
     for k, v in results_dict.items():
         if k.lower() == "none":
-            full_acc = v.get("accuracy")
+            v.get("accuracy")
         try:
             r = int(k)
             if "accuracy" in v:

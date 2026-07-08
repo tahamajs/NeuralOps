@@ -36,7 +36,7 @@ class SimpleSSM(nn.Module):
 
     def forward(self, x: torch.Tensor, attention_mask=None) -> torch.Tensor:
         batch, seq_len, d_model = x.shape
-        inner_dim = d_model * (self.in_proj.out_features // (2 * d_model))
+        d_model * (self.in_proj.out_features // (2 * d_model))
 
         x_proj = self.in_proj(x)
         x_ssm, z = x_proj.chunk(2, dim=-1)

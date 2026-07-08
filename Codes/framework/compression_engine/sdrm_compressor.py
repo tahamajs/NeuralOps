@@ -23,7 +23,7 @@ class SDRMCompressor(BaseCompressor):
                 params = n * m
                 layer_params[name] = (module, params, n, m)
                 total_params += params
-        target_params = total_params * self.total_param_ratio
+        total_params * self.total_param_ratio
 
         for name, (module, p, n, m) in layer_params.items():
             allowed = p * self.total_param_ratio

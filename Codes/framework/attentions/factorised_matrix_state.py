@@ -16,7 +16,7 @@ class FactorisedMatrixState(nn.Module):
         # This is a stateful module; for simplicity, we ignore k,v and use hidden_states as query
         B, N, D = hidden_states.shape
         # We'll process each token sequentially (simplified)
-        H = self.L @ self.R.T  # (D, D)
+        self.L @ self.R.T  # (D, D)
         outputs = []
         state = torch.zeros(B, D, D, device=hidden_states.device)
         for t in range(N):

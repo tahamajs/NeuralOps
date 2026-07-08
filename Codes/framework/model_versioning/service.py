@@ -81,7 +81,7 @@ class ModelVersionService:
                 shutil.copy2(src_path, os.path.join(artifact_dir, fname))
 
         # Environment snapshot & model card
-        env_info = capture_environment(artifact_dir)
+        capture_environment(artifact_dir)
         if cfg.generate_model_card:
             generate_model_card(
                 run,
@@ -239,7 +239,7 @@ class ModelVersionService:
         tiers = version.storage_tier.split(",") if version.storage_tier else []
         for tier in tiers:
             try:
-                backend = StorageBackend(tier)
+                StorageBackend(tier)
                 local_dir = os.path.join(
                     os.path.dirname(version.artifact_path), version.version
                 )

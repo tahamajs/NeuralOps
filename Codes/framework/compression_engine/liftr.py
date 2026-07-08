@@ -34,8 +34,8 @@ class _LinearizedAttention(nn.Module):
 
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         # Compute Q, K, V (linear projections)
-        q = self.q_lin(hidden_states)
-        k = self.k_lin(hidden_states)
+        self.q_lin(hidden_states)
+        self.k_lin(hidden_states)
         v = self.v_lin(hidden_states)
 
         # Linearized attention: average over sequence length

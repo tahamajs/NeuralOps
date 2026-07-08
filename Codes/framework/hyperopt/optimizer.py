@@ -18,7 +18,7 @@ class HyperOptimizer:
         # Minimal grid search
         best_score = -1e9
         best_params = {}
-        keys = list(self.search_space.keys())
+        list(self.search_space.keys())
         # generate simple combinations (limited)
         for trial_idx in range(self.num_trials):
             current = {}

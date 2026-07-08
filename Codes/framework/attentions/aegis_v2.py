@@ -125,7 +125,8 @@ class AegisAttentionV2(nn.Module):
         local_out = torch.einsum("bhnm,bmhd->bnhd", attn_local, V)  # (B,N,h,d)
 
         # ---- Global linear attention ----
-        phi = lambda x: F.elu(x) + 1
+        def phi(x):
+            return F.elu(x) + 1
 
         if self.prune_gate is not None:
             keep = torch.sigmoid(self.prune_gate(hidden_states))  # (B,N,h)

@@ -37,7 +37,7 @@ class TaskAwareAttention(nn.Module):
             weighted_logits: (batch_size, num_labels)
         """
         device = all_logits.device
-        num_models = all_logits.shape[0]
+        all_logits.shape[0]
 
         # Current task embedding
         cur_id = torch.tensor([task_id], device=device)

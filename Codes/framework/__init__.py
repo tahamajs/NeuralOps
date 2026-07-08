@@ -1,24 +1,23 @@
-import importlib
-import warnings
+"""
+NeuralOps Core ML Framework
 
-warnings.filterwarnings("ignore")
+A unified, modular, and highly efficient toolkit for custom attention mechanisms,
+distributed training, hyperparameter optimization, and federated learning.
+"""
 
+__version__ = "0.1.0"
 
-def _safe_import_modules():
-    # List the modules that are OK to fail
-    modules = [
-        "framework.trainer.registry",
-        "framework.core.registry",
-        "framework.attentions.core.registry",
-        "framework.compression_engine.core.registry",
-        # ... add any others you want to auto-import,
-        # but it's fine to leave this list empty – the lazy imports in main.py will work
-    ]
-    for m in modules:
-        try:
-            importlib.import_module(m)
-        except Exception:
-            pass
+# Expose core functionality at the top level for easy imports
+try:
+    from .models import BaseModel
+    from .training import BaseTrainer
+except ImportError:
+    pass
 
+# We explicitly do not import all submodules here to avoid circular dependencies
+# and unnecessary heavy imports (like PyTorch) unless specifically requested.
 
-_safe_import_modules()
+__all__ = [
+    "BaseModel",
+    "BaseTrainer",
+]
