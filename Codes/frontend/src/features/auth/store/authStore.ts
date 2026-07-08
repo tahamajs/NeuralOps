@@ -12,6 +12,7 @@ interface AuthState {
     email: string,
     password: string,
   ) => Promise<void>;
+  setAuth: (user: any, token: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -31,5 +32,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   register: async (username, email, password) => {
     await api.post(ENDPOINTS.AUTH.REGISTER, { username, email, password });
+  },
+  setAuth: (user, token) => {
+    set({ user, isAuthenticated: true });
   },
 }));
