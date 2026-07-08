@@ -3,7 +3,7 @@
  * Verify backend and frontend communication
  */
 
-import api from "./api/client";
+import api from "../api/client";
 
 interface TestResult {
   name: string;
