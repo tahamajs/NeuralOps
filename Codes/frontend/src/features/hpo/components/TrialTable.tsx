@@ -24,7 +24,7 @@ export function TrialTable({ sweepId }: { sweepId: string }) {
               ? "success"
               : row.original.status === "running"
                 ? "info"
-                : "danger"
+                : "failed"
           }
         >
           {row.original.status}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../../../features/auth/store/authStore";
-import { communityAPI } from "../services/api";
+import { communityAPI } from "../../community/services/api";
 import {
   Card,
   Button,

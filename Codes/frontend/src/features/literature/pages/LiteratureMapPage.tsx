@@ -89,10 +89,10 @@ export default function LiteratureMapPage({
             <TerminalCard className="p-2" style={{ height: "600px" }}>
               {isLoading ? (
                 <Spinner />
-              ) : graph?.data ? (
+              ) : graph ? (
                 <ForceGraph
-                  nodes={graph.data.nodes}
-                  links={graph.data.links}
+                  nodes={graph.nodes}
+                  links={graph.links}
                   onNodeClick={(node) => setPaperId(node.id)}
                   height={560}
                 />

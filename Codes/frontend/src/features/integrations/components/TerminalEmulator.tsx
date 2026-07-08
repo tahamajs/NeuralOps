@@ -29,7 +29,10 @@ export function TerminalEmulator({ sessionId }: { sessionId: string }) {
         const ws = new WebSocket(wsUrl);
         ws.onopen = () =>
           term.write("\r\n\x1b[32mConnected to sandbox\x1b[0m\r\n$ ");
-        ws.onmessage = (e) => term.write(e.data);
+        ws.onmessage = (msg) => {
+          const messageData = (msg as any).data || msg;
+          term.write(typeof messageData === "string" ? messageData : JSON.stringify(messageData));
+        };
         wsRef.current = ws;
         term.onData((data) => ws.send(JSON.stringify({ type: "input", data })));
       });

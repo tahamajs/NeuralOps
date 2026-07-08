@@ -1,4 +1,4 @@
-import api from "../../../api/client";
+import { request as api } from "../../../api/client";
 import { Sweep, Trial, SweepStats, ParameterImportance } from "../types";
 
 export const hpoAPI = {

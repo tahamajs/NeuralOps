@@ -151,19 +151,12 @@ export default function HealthDashboard({ onClose }: { onClose?: () => void }) {
             </div>
             <div className="p-2 space-y-2">
               {systemHealth?.services &&
-                Object.entries(systemHealth.services).map(([name, service]) => (
+                Object.entries(systemHealth.services).map(([name, s]) => (
                   <div key={name} className="flex justify-between items-center">
                     <span className="capitalize">{name}</span>
-                    <Badge
-                      variant={
-                        service.status === "healthy" ? "success" : "danger"
-                      }
-                    >
-                      {service.status}
+                    <Badge variant={(s as any).status === "healthy" ? "success" : "failed"}>
+                      {(s as any).status}
                     </Badge>
-                    <span className="text-xs text-slate-400">
-                      {service.response_time_ms}ms
-                    </span>
                   </div>
                 ))}
             </div>

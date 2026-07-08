@@ -1,6 +1,6 @@
 // src/features/inference/pages/ModelDistillationWizard.tsx
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { inferenceAPI } from "../services/api";
 import { DistillationStep } from "../components/DistillationStep";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
@@ -34,7 +34,7 @@ export default function ModelDistillationWizard({
   const startDistillation = useMutation({
     mutationFn: () => inferenceAPI.startDistillation(config),
     onSuccess: (res) => {
-      setRunId(res.data.id);
+      setRunId(res.id);
       success("Distillation started");
     },
   });

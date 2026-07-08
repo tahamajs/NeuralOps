@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Badge } from "../../../components/ui/Badge";
+import { Button } from "../../../components/ui/Button";
 import { Avatar } from "../../../components/ui/Avatar";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { ProjectComparison } from "../types";
