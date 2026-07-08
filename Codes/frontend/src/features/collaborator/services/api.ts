@@ -6,7 +6,7 @@ import {
   PaginatedResponse,
 } from "../types";
 
-export const collaboratorAPI = {
+export const collaboratorAPI: any = {
   // Suggestion endpoints
   getSuggestions: (params?: MatchFilters) =>
     api.get<PaginatedResponse<SuggestedCollaborator>>(

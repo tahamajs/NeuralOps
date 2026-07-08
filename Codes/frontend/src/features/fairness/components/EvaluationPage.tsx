@@ -1,1 +1,1 @@
-import React from "react"; export const EvaluationPage = () => <div/>;
+import React from "react"; export const EvaluationPage = (props: any) => <div/>;

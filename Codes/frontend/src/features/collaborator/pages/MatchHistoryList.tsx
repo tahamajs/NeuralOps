@@ -27,8 +27,8 @@ export default function MatchHistoryList({
       }),
   });
 
-  const matches = data?.results || [];
-  const totalPages = Math.ceil((data?.count || 0) / 20);
+  const matches = (data as any)?.results || [];
+  const totalPages = Math.ceil(((data as any)?.count || 0) / 20);
 
   return (
     <div className="flex flex-col h-full">

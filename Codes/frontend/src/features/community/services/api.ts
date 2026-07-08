@@ -1,7 +1,8 @@
 import api from "../../../api/client";
-import type { Question, Answer, Comment, Tag } from "../types";
+import { Question, Answer, Comment } from "../types";
+type VoteType = any;
 
-export const communityAPI = {
+export const communityAPI: any = {
   // Questions
   getQuestions: (params?: Record<string, unknown>) =>
     api.get("/questions/", { params }).then((res) => res.data),

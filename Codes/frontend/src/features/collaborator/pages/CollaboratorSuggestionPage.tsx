@@ -15,7 +15,7 @@ export default function CollaboratorSuggestionPage({
 }: {
   onClose?: () => void;
 }) {
-  const [filters, setFilters] = useState<MatchFilters>({});
+  const [filters, setFilters] = useState<any>({});
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const queryClient = useQueryClient();
@@ -38,8 +38,8 @@ export default function CollaboratorSuggestionPage({
     onError: () => toastError("Failed to refresh suggestions"),
   });
 
-  const suggestions = data?.results || [];
-  const totalPages = Math.ceil((data?.count || 0) / 20);
+  const suggestions = (data as any)?.results || [];
+  const totalPages = Math.ceil(((data as any)?.count || 0) / 20);
 
   return (
     <div className="flex flex-col h-full">
