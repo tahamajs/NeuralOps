@@ -4,6 +4,7 @@ Impact scoring engine.
 Currently uses a weighted formula as a placeholder.
 Replace the `predict()` function with a real ML model later.
 """
+
 import numpy as np
 
 
@@ -21,11 +22,14 @@ def extract_features(project):
     if project.institution_location:
         # Simplified: assign region weights (can be replaced with a lookup)
         location = project.institution_location.lower()
-        if any(x in location for x in ['stanford', 'mit', 'cambridge', 'oxford', 'berkeley']):
+        if any(
+            x in location
+            for x in ["stanford", "mit", "cambridge", "oxford", "berkeley"]
+        ):
             inst_score += 25
-        elif any(x in location for x in ['usa', 'uk', 'germany', 'canada']):
+        elif any(x in location for x in ["usa", "uk", "germany", "canada"]):
             inst_score += 10
-    features['institution_score'] = min(inst_score, 100)
+    features["institution_score"] = min(inst_score, 100)
 
     # 2. Investigator quality (0–100)
     inv_score = 30.0
@@ -35,7 +39,7 @@ def extract_features(project):
         inv_score += min(project.investigator_publications, 200) * 0.1
     if project.investigator_previous_grants:
         inv_score += min(project.investigator_previous_grants, 10) * 2.0
-    features['investigator_score'] = min(inv_score, 100)
+    features["investigator_score"] = min(inv_score, 100)
 
     # 3. Digital traction (0–100)
     digi_score = 10.0
@@ -45,7 +49,7 @@ def extract_features(project):
         digi_score += min(project.preprint_views, 5000) * 0.01
     if project.online_mentions:
         digi_score += min(project.online_mentions, 100) * 0.3
-    features['digital_traction'] = min(digi_score, 100)
+    features["digital_traction"] = min(digi_score, 100)
 
     # 4. Funding history (0–100)
     fund_score = 20.0
@@ -53,7 +57,7 @@ def extract_features(project):
         fund_score += min(float(project.previous_funding_total), 1000000) * 0.00005
     if project.previous_grants_count:
         fund_score += min(project.previous_grants_count, 20) * 2.0
-    features['funding_history'] = min(fund_score, 100)
+    features["funding_history"] = min(fund_score, 100)
 
     return features
 
@@ -69,10 +73,10 @@ def predict(features):
     - Funding history: 30%
     """
     weights = {
-        'institution_score': 0.20,
-        'investigator_score': 0.35,
-        'digital_traction': 0.15,
-        'funding_history': 0.30,
+        "institution_score": 0.20,
+        "investigator_score": 0.35,
+        "digital_traction": 0.15,
+        "funding_history": 0.30,
     }
 
     score = sum(features[k] * weights[k] for k in weights)
@@ -91,21 +95,21 @@ def predict(features):
 
     # Publication tier
     if score >= 85:
-        tier = 'Top 5%'
+        tier = "Top 5%"
     elif score >= 65:
-        tier = 'Top 15%'
+        tier = "Top 15%"
     elif score >= 40:
-        tier = 'Top 35%'
+        tier = "Top 35%"
     else:
-        tier = 'Average'
+        tier = "Average"
 
     return {
-        'impact_score': round(score, 2),
-        'confidence_lower': round(lower, 2),
-        'confidence_upper': round(upper, 2),
-        'percentile': round(percentile, 2),
-        'funding_probability': funding_prob,
-        'publication_tier': tier,
-        'comparison_text': f"Top {int(100 - percentile)}% of similar projects",
-        'factor_scores': features,
+        "impact_score": round(score, 2),
+        "confidence_lower": round(lower, 2),
+        "confidence_upper": round(upper, 2),
+        "percentile": round(percentile, 2),
+        "funding_probability": funding_prob,
+        "publication_tier": tier,
+        "comparison_text": f"Top {int(100 - percentile)}% of similar projects",
+        "factor_scores": features,
     }

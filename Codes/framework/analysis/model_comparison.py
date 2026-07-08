@@ -1,13 +1,18 @@
 """Multi‑run model comparison and plotting."""
 
 import os
-import pandas as pd
 from pathlib import Path
 from typing import List
+
+import pandas as pd
+
 from .plotting import create_comprehensive_plots, plot_tradeoff
 
+
 class ModelComparison:
-    def __init__(self, results_dirs: List[str], output_dir: str = "./results/comparison"):
+    def __init__(
+        self, results_dirs: List[str], output_dir: str = "./results/comparison"
+    ):
         self.results_dirs = results_dirs
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -32,6 +37,7 @@ class ModelComparison:
         create_comprehensive_plots(self.df_all, str(plots_dir))
         plot_tradeoff(self.df_all, str(plots_dir))
         print(f"Plots saved to {plots_dir}")
+
 
 def quick_compare(results_dirs: List[str], output_dir: str = "./results/comparison"):
     comparator = ModelComparison(results_dirs, output_dir)

@@ -3,10 +3,10 @@ SDRM: rank assignment proportional to parameter budget for edge inference.
 Registered as 'sdrm'.
 """
 
-import torch
 import numpy as np
+import torch
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class SDRMCompressor(BaseCompressor):
@@ -33,18 +33,18 @@ class SDRMCompressor(BaseCompressor):
             U, S, Vt = np.linalg.svd(W, full_matrices=False)
             r = min(rank, len(S))
             W_approx = U[:, :r] @ np.diag(S[:r]) @ Vt[:r, :]
-            module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
+            module.weight.data = torch.tensor(
+                W_approx, dtype=module.weight.dtype, device=module.weight.device
+            )
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
-
-
 
     # ... (rest unchanged) ...
 
+
 @COMPRESSOR_REGISTRY.register("sdrm")
 def sdrm_compressor_factory(model, comp_config):
-    total_param_ratio = getattr(comp_config, 'total_param_ratio', 0.7)
+    total_param_ratio = getattr(comp_config, "total_param_ratio", 0.7)
     compressor = SDRMCompressor(model, total_param_ratio)
     compressed_model, _ = compressor.compress()
     return compressed_model

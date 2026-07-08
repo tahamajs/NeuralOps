@@ -6,7 +6,6 @@ Routing Attention: K‑means clustering of queries for sparse attention.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -17,8 +16,13 @@ class RoutingAttention(nn.Module):
     intra‑cluster attention. Clustering is separate per head.
     """
 
-    def __init__(self, config, num_clusters: int = 32, n_iters: int = 3,
-                 pretrained_attn: nn.Module = None):
+    def __init__(
+        self,
+        config,
+        num_clusters: int = 32,
+        n_iters: int = 3,
+        pretrained_attn: nn.Module = None,
+    ):
         super().__init__()
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
@@ -51,11 +55,17 @@ class RoutingAttention(nn.Module):
 
     def _kmeans_assign(self, Q, centroids):
         # Q: (B, H, L, d), centroids: (B, H, K, d)
-        dist = torch.cdist(Q, centroids)   # (B, H, L, K)
+        dist = torch.cdist(Q, centroids)  # (B, H, L, K)
         return torch.argmin(dist, dim=-1)  # (B, H, L)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
         Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
@@ -65,11 +75,11 @@ class RoutingAttention(nn.Module):
         # Pad mask for valid tokens
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                valid = attention_mask.bool().to(Q.device)   # (B, L)
+                valid = attention_mask.bool().to(Q.device)  # (B, L)
             else:
                 valid = attention_mask.squeeze(1).squeeze(1).bool()
             # Set queries/keys/values of padding tokens to zero
-            valid_4d = valid.unsqueeze(1).unsqueeze(-1).to(Q.dtype)   # (B, 1, L, 1)
+            valid_4d = valid.unsqueeze(1).unsqueeze(-1).to(Q.dtype)  # (B, 1, L, 1)
             Q = Q * valid_4d
             K = K * valid_4d
             V = V * valid_4d
@@ -78,25 +88,25 @@ class RoutingAttention(nn.Module):
 
         num_clusters = min(self.num_clusters, L)
         # Initial centroids from first K queries
-        centroids = Q[:, :, :num_clusters, :]   # (B, H, K, d)
+        centroids = Q[:, :, :num_clusters, :]  # (B, H, K, d)
 
         for _ in range(self.n_iters):
             cluster_ids = self._kmeans_assign(Q, centroids)
             # Update centroids
             new_centroids = torch.zeros_like(centroids)
             for k in range(num_clusters):
-                mask = (cluster_ids == k).unsqueeze(-1)   # (B, H, L, 1)
+                mask = (cluster_ids == k).unsqueeze(-1)  # (B, H, L, 1)
                 sum_q = (Q * mask).sum(dim=2)
                 count = mask.sum(dim=2).clamp(min=1)
                 new_centroids[:, :, k, :] = sum_q / count
             centroids = new_centroids
 
-        cluster_ids = self._kmeans_assign(Q, centroids)   # (B, H, L)
+        cluster_ids = self._kmeans_assign(Q, centroids)  # (B, H, L)
         out = torch.zeros_like(V)
-        scale = d ** -0.5
+        scale = d**-0.5
 
         for k in range(num_clusters):
-            mask = (cluster_ids == k).unsqueeze(-1)   # (B, H, L, 1)
+            mask = (cluster_ids == k).unsqueeze(-1)  # (B, H, L, 1)
             if mask.sum() == 0:
                 continue
             # Zero out non‑members
@@ -106,7 +116,9 @@ class RoutingAttention(nn.Module):
             scores = torch.matmul(Qk, Kk.transpose(-2, -1)) * scale
             # Mask padding in keys (already zero, but softmax may still see zero scores)
             if valid is not None:
-                key_valid = valid.unsqueeze(1).unsqueeze(-2).to(scores.dtype)   # (B, 1, 1, L)
+                key_valid = (
+                    valid.unsqueeze(1).unsqueeze(-2).to(scores.dtype)
+                )  # (B, 1, 1, L)
                 scores = scores.masked_fill(key_valid == 0, -1e9)
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
@@ -116,14 +128,18 @@ class RoutingAttention(nn.Module):
         out = self.out_proj(out)
 
         if output_attentions:
-            return out, None   # We don't return full attention (could be added)
+            return out, None  # We don't return full attention (could be added)
         return out, None
 
 
 def inject_routing(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    num_clusters = getattr(comp_config, 'num_clusters', 32)
-    n_iters = getattr(comp_config, 'n_iters', 3)
-    new_attn = RoutingAttention(config=model_config, num_clusters=num_clusters,
-                                n_iters=n_iters, pretrained_attn=old_attn)
+    num_clusters = getattr(comp_config, "num_clusters", 32)
+    n_iters = getattr(comp_config, "n_iters", 3)
+    new_attn = RoutingAttention(
+        config=model_config,
+        num_clusters=num_clusters,
+        n_iters=n_iters,
+        pretrained_attn=old_attn,
+    )
     layer.attention = new_attn
     return new_attn

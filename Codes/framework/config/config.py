@@ -8,13 +8,14 @@ Usage:
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any
-from framework.utils.paths import get_glue_dir
+from typing import Any, Dict, List, Optional
 
+from framework.utils.paths import get_glue_dir
 
 # ---------------------------------------------------------------------------
 #  Sub-configs for specific components
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class LoRAConfig:
@@ -22,13 +23,16 @@ class LoRAConfig:
     alpha: int = 16
     dropout: float = 0.1
 
+
 @dataclass
 class RDropConfig:
     alpha: float = 5.0
 
+
 @dataclass
 class R3FConfig:
     epsilon: float = 1e-5
+
 
 @dataclass
 class FisherConfig:
@@ -36,29 +40,37 @@ class FisherConfig:
     sample_size: int = 200
     scale_max: float = 2.0
 
+
 @dataclass
 class GeLoRAConfig:
     margin: float = 1.0
     min_rank: int = 2
     max_rank: int = 32
 
+
 @dataclass
 class LLRDConfig:
     decay: float = 0.95
 
+
 @dataclass
 class MixoutConfig:
     p: float = 0.9
+
 
 @dataclass
 class DisLoRAConfig:
     beta: float = 0.5
     capacity_factor: float = 1.0
 
+
 @dataclass
 class MethodConfig:
     """Training method selection and its sub‑configs."""
-    method: str = "baseline"              # baseline, lora, dora, dislora, rdrop, r3f, fisher, gelora, llrd, mixout
+
+    method: str = (
+        "baseline"  # baseline, lora, dora, dislora, rdrop, r3f, fisher, gelora, llrd, mixout
+    )
     lora: LoRAConfig = field(default_factory=LoRAConfig)
     rdrop: RDropConfig = field(default_factory=RDropConfig)
     r3f: R3FConfig = field(default_factory=R3FConfig)
@@ -71,7 +83,7 @@ class MethodConfig:
 
 @dataclass
 class HardwareConfig:
-    device: str = "auto"                 # auto, cuda, mps, cpu
+    device: str = "auto"  # auto, cuda, mps, cpu
     force_cpu_for_svd: bool = True
     enable_fp16: bool = False
     enable_bf16: bool = False
@@ -84,29 +96,34 @@ class HardwareConfig:
 @dataclass
 class DatasetConfig:
     """Description of a single dataset for an experiment sweep."""
+
     name: str
     path: str
-    task_type: str = "single"             # single, pair, regression, mc
-    num_choices: int = 0                  # for multi‑choice
+    task_type: str = "single"  # single, pair, regression, mc
+    num_choices: int = 0  # for multi‑choice
     num_labels: int = 2
 
 
 @dataclass
 class ModelConfig:
     """Model loading configuration."""
+
     name: str = "distilbert-base-uncased"
     num_labels: int = 2
-    attention_type: str = "full"          # registry key
+    attention_type: str = "full"  # registry key
     use_fast_tokenizer: bool = True
     trust_remote_code: bool = False
     cache_dir: str = "./cache"
     fix_layernorm_naming: bool = True
-    variants: List[str] = field(default_factory=list)   # e.g., ["standard", "compressed"]
+    variants: List[str] = field(
+        default_factory=list
+    )  # e.g., ["standard", "compressed"]
 
 
 @dataclass
 class DataConfig:
     """Data loading and preprocessing configuration."""
+
     local_glue_path: str = str(get_glue_dir())
     max_seq_length: int = 128
     max_train_samples: Optional[int] = None
@@ -114,17 +131,20 @@ class DataConfig:
     num_proc: int = 4
     streaming: bool = False
     remove_columns: List[str] = field(default_factory=lambda: ["label"])
-    split_mapping: Dict[str, str] = field(default_factory=lambda: {
-        "train": "train",
-        "validation": "validation",
-        "validation_matched": "validation_matched",
-        "validation_mismatched": "validation_mismatched",
-    })
+    split_mapping: Dict[str, str] = field(
+        default_factory=lambda: {
+            "train": "train",
+            "validation": "validation",
+            "validation_matched": "validation_matched",
+            "validation_mismatched": "validation_mismatched",
+        }
+    )
 
 
 @dataclass
 class TrainingConfig:
     """Training hyperparameters."""
+
     batch_size: int = 16
     eval_batch_size: int = 32
     epochs: int = 3
@@ -158,12 +178,13 @@ class CompressionConfig:
     sparsity, hybrid heads, etc.
     These fields are read by the injection functions via getattr(comp_config, …).
     """
+
     # ── General ────────────────────────────────────────
     attn_type: str = "full"
     dropout: float = 0.1
-    rank: int = 32                       # generic rank (used by many modules)
-    svd_rank: int = 32                   # SVD rank
-    svd_energy: float = 0.95             # energy retention for SVD truncation
+    rank: int = 32  # generic rank (used by many modules)
+    svd_rank: int = 32  # SVD rank
+    svd_energy: float = 0.95  # energy retention for SVD truncation
     min_rank: int = 4
     max_rank: int = 64
 
@@ -197,8 +218,8 @@ class CompressionConfig:
     use_gate: bool = True
     progressive: bool = True
     max_seq_len: int = 512
-    low_rank_cache_size: int = 16       # LoLA
-    cur_rank: int = 16                  # PHANTOM
+    low_rank_cache_size: int = 16  # LoLA
+    cur_rank: int = 16  # PHANTOM
     lsh_rounds: int = 4
     lsh_bucket_size: int = 32
     window_size: int = 128
@@ -221,7 +242,7 @@ class CompressionConfig:
     num_global_heads: int = 4
     num_experts: int = 8
     top_k: int = 2
-    ratio: int = 9                      # hybrid attention / Mamba ratio
+    ratio: int = 9  # hybrid attention / Mamba ratio
     n_heads: Optional[int] = None
     n_layers: Optional[int] = None
     use_full_attention: bool = False
@@ -237,8 +258,9 @@ class CompressionConfig:
 @dataclass
 class SweepConfig:
     """Hyperparameter sweep configuration."""
+
     name: str = "sweep"
-    algorithm: str = "tpe"              # tpe, random, grid, cmaes
+    algorithm: str = "tpe"  # tpe, random, grid, cmaes
     direction: str = "maximize"
     metric: str = "eval_accuracy"
     max_trials: int = 20
@@ -251,7 +273,10 @@ class SweepConfig:
 @dataclass
 class ExperimentConfig:
     """Multi‑run experiment grid (SVD ranks, datasets, models)."""
-    base_models: Dict[str, str] = field(default_factory=lambda: {"bert": "bert-base-uncased"})
+
+    base_models: Dict[str, str] = field(
+        default_factory=lambda: {"bert": "bert-base-uncased"}
+    )
     svd_ranks: List[int] = field(default_factory=lambda: [8, 16, 32])
     datasets: List[DatasetConfig] = field(default_factory=list)
     min_samples: int = 10
@@ -278,6 +303,7 @@ class ExperimentConfig:
 @dataclass
 class Config:
     """Master configuration that holds all sub‑configs."""
+
     model: ModelConfig = field(default_factory=ModelConfig)
     data: DataConfig = field(default_factory=DataConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)

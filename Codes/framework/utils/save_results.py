@@ -1,12 +1,16 @@
 # framework/utils/save_results.py
-import json
 import csv
+import json
 import shutil
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 
-def save_experiment_results(run, trainer, tokenizer, history, final_metrics, output_dir="results"):
+
+def save_experiment_results(
+    run, trainer, tokenizer, history, final_metrics, output_dir="results"
+):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     exp_name = f"{run.config.get('task_name', 'task')}_{run.config.get('model_name', 'model')}_{str(run.id)[:8]}_{timestamp}"
     save_path = Path(output_dir) / exp_name
@@ -20,18 +24,22 @@ def save_experiment_results(run, trainer, tokenizer, history, final_metrics, out
         json.dump(final_metrics, f, indent=2)
 
     if history.get("steps") and history.get("losses"):
-        with open(save_path / "training_history.csv", "w", newline='') as f:
+        with open(save_path / "training_history.csv", "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["step", "train_loss"])
             for step, loss in zip(history["steps"], history["losses"]):
                 writer.writerow([step, loss])
         if history.get("eval_steps") and history.get("eval_losses"):
-            with open(save_path / "eval_history.csv", "w", newline='') as f:
+            with open(save_path / "eval_history.csv", "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(["epoch", "eval_loss", "eval_accuracy"])
                 for i, epoch in enumerate(history["eval_steps"]):
                     eval_loss = history["eval_losses"][i]
-                    acc = history["eval_metrics"][i].get("eval_accuracy", "") if i < len(history["eval_metrics"]) else ""
+                    acc = (
+                        history["eval_metrics"][i].get("eval_accuracy", "")
+                        if i < len(history["eval_metrics"])
+                        else ""
+                    )
                     writer.writerow([epoch, eval_loss, acc])
 
     if run.logs:
@@ -42,7 +50,9 @@ def save_experiment_results(run, trainer, tokenizer, history, final_metrics, out
         plt.figure(figsize=(10, 6))
         plt.plot(history["steps"], history["losses"], label="Train Loss")
         if history.get("eval_steps") and history.get("eval_losses"):
-            plt.plot(history["eval_steps"], history["eval_losses"], 'ro-', label="Eval Loss")
+            plt.plot(
+                history["eval_steps"], history["eval_losses"], "ro-", label="Eval Loss"
+            )
         plt.xlabel("Step")
         plt.ylabel("Loss")
         plt.title("Training Loss Curve")

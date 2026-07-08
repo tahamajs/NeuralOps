@@ -1,4 +1,5 @@
-from .base import BaseServer, SERVER_REGISTRY
+from .base import SERVER_REGISTRY, BaseServer
+
 
 @SERVER_REGISTRY.register("triton")
 class TritonServer(BaseServer):
@@ -8,4 +9,6 @@ class TritonServer(BaseServer):
         except ImportError:
             raise ImportError("Install tritonclient for Triton Inference Server")
         # Placeholder – would configure a Triton server instance
-        return "Triton server not yet fully integrated (requires model repository setup)"
+        return (
+            "Triton server not yet fully integrated (requires model repository setup)"
+        )

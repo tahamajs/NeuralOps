@@ -1,8 +1,9 @@
 """Ray Tune backend – supports ASHA, BOHB, HyperBand, PBT, etc."""
 
 import logging
-from typing import Callable, Dict, Any, Tuple
-from ..base import BaseOptimizer, HPO_REGISTRY
+from typing import Any, Callable, Dict, Tuple
+
+from ..base import HPO_REGISTRY, BaseOptimizer
 from ..config import HPOConfig
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class RayTuneOptimizer(BaseOptimizer):
         try:
             from ray import tune
             from ray.tune.search import ConcurrencyLimiter
+
             self.tune = tune
         except ImportError:
             raise ImportError("Ray Tune not installed. Run: pip install 'ray[tune]'")
@@ -48,7 +50,8 @@ class RayTuneOptimizer(BaseOptimizer):
         if algo_str == "OptunaSearch":
             from ray.tune.search.optuna import OptunaSearch as SearchAlgo
         elif algo_str == "RandomSearch":
-            from ray.tune.search.basic_variant import BasicVariantGenerator as SearchAlgo
+            from ray.tune.search.basic_variant import \
+                BasicVariantGenerator as SearchAlgo
         else:
             SearchAlgo = None
 

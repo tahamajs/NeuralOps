@@ -6,12 +6,13 @@ in a ``.sig`` file next to the model. Verification checks the signature
 against the corresponding public key.
 """
 
-import hashlib
 from pathlib import Path
-from cryptography.hazmat.primitives.asymmetric import ed25519
+
 from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric import ed25519
 
 from .hashes import compute_file_hash
+
 
 def sign_model(model_file: str, private_key: ed25519.Ed25519PrivateKey) -> None:
     """
@@ -25,14 +26,13 @@ def sign_model(model_file: str, private_key: ed25519.Ed25519PrivateKey) -> None:
     """
     digest = compute_file_hash(model_file, "sha256")
     signature_bytes = private_key.sign(digest.encode("utf-8"))
-    signature_str = signature_bytes.hex()   # safe for file storage
+    signature_str = signature_bytes.hex()  # safe for file storage
 
     sig_path = model_file + ".sig"
     Path(sig_path).write_text(signature_str)
 
 
-def verify_signature(model_file: str,
-                     public_key: ed25519.Ed25519PublicKey) -> bool:
+def verify_signature(model_file: str, public_key: ed25519.Ed25519PublicKey) -> bool:
     """
     Verify the signature of a model artifact.
 
@@ -64,4 +64,5 @@ def generate_keypair(save_to: str = None) -> tuple:
     Convenience wrapper around :func:`framework.security.keys.generate_ed25519_keypair`.
     """
     from .keys import generate_ed25519_keypair
+
     return generate_ed25519_keypair(save_to)

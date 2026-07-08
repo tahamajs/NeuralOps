@@ -1,11 +1,11 @@
 """SliceGPT PCA‑based slicing compressor. Registered as 'slicegpt_pca'."""
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-from sklearn.decomposition import PCA
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
+from sklearn.decomposition import PCA
 
 
 class SliceGPTPCACompressor(BaseCompressor):
@@ -19,8 +19,15 @@ class SliceGPTPCACompressor(BaseCompressor):
         slicegpt_pca_calib_texts : list of str, optional – if tokenizer available
     """
 
-    def __init__(self, model, calibration_loader=None, sparsity=0.3,
-                 tokenizer=None, calibration_texts=None, **kwargs):
+    def __init__(
+        self,
+        model,
+        calibration_loader=None,
+        sparsity=0.3,
+        tokenizer=None,
+        calibration_texts=None,
+        **kwargs
+    ):
         super().__init__(model, name="slicegpt_pca", **kwargs)
         self.calibration_loader = calibration_loader
         self.sparsity = sparsity
@@ -37,7 +44,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         handle = None
         # Prefer the first encoder layer; fallback to first Linear
         for name, module in self.model.named_modules():
-            if 'encoder.layer.0' in name:
+            if "encoder.layer.0" in name:
                 handle = module.register_forward_hook(
                     lambda m, i, o: activations.append(o.detach().cpu().numpy())
                 )
@@ -56,8 +63,10 @@ class SliceGPTPCACompressor(BaseCompressor):
         if self.calibration_loader is not None:
             with torch.no_grad():
                 for batch in self.calibration_loader:
-                    batch = {k: v.to(next(self.model.parameters()).device)
-                             for k, v in batch.items()}
+                    batch = {
+                        k: v.to(next(self.model.parameters()).device)
+                        for k, v in batch.items()
+                    }
                     _ = self.model(**batch)
         else:
             # Use tokenizer to create a simple calibration set
@@ -66,11 +75,14 @@ class SliceGPTPCACompressor(BaseCompressor):
                     "SliceGPT PCA needs either calibration_loader or tokenizer"
                 )
             inputs = self.tokenizer(
-                self.calibration_texts, return_tensors="pt", padding=True,
-                truncation=True
+                self.calibration_texts,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
             )
-            inputs = {k: v.to(next(self.model.parameters()).device)
-                      for k, v in inputs.items()}
+            inputs = {
+                k: v.to(next(self.model.parameters()).device) for k, v in inputs.items()
+            }
             with torch.no_grad():
                 _ = self.model(**inputs)
 
@@ -89,8 +101,7 @@ class SliceGPTPCACompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 # Zero out columns beyond `keep`
-                mask = torch.zeros(module.weight.shape[1],
-                                   device=module.weight.device)
+                mask = torch.zeros(module.weight.shape[1], device=module.weight.device)
                 mask[:keep] = 1.0
                 module.weight.data = module.weight.data * mask.unsqueeze(0)
                 # Bias is left unchanged (pruning input features, not output)
@@ -101,14 +112,14 @@ class SliceGPTPCACompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("slicegpt_pca")
 def slicegpt_pca_factory(model, comp_config):
-    sparsity = getattr(comp_config, 'slicegpt_pca_sparsity', 0.3)
-    calibration_texts = getattr(comp_config, 'slicegpt_pca_calib_texts', None)
-    tokenizer = getattr(model, 'tokenizer', None)
+    sparsity = getattr(comp_config, "slicegpt_pca_sparsity", 0.3)
+    calibration_texts = getattr(comp_config, "slicegpt_pca_calib_texts", None)
+    tokenizer = getattr(model, "tokenizer", None)
     compressor = SliceGPTPCACompressor(
         model,
         sparsity=sparsity,
         tokenizer=tokenizer,
-        calibration_texts=calibration_texts
+        calibration_texts=calibration_texts,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model

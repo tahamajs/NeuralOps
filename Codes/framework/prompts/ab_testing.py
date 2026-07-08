@@ -1,27 +1,33 @@
 """A/B testing with traffic splitting and gradual rollout."""
 
-import random
 import logging
-from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, field
+import random
+from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
 
 @dataclass
 class ABTestConfig:
     """Configuration for an A/B test on a prompt."""
+
     prompt_name: str
-    variants: Dict[str, float]     # alias → traffic percentage (must total 100)
+    variants: Dict[str, float]  # alias → traffic percentage (must total 100)
     metric: str = "accuracy"
     min_sample_size: int = 100
-    auto_promote: bool = False      # automatically promote winner to production
+    auto_promote: bool = False  # automatically promote winner to production
     auto_promote_threshold: float = 0.95  # confidence threshold for auto‑promote
+
 
 @dataclass
 class ABTestResult:
-    variant: str; requests: int
-    avg_score: float; confidence_interval: tuple
+    variant: str
+    requests: int
+    avg_score: float
+    confidence_interval: tuple
     is_winner: bool = False
+
 
 class ABTestRouter:
     """
@@ -38,16 +44,23 @@ class ABTestRouter:
 
     def __init__(self):
         self._tests: Dict[str, ABTestConfig] = {}
-        self._counters: Dict[str, Dict[str, int]] = {}   # prompt → {variant → requests}
+        self._counters: Dict[str, Dict[str, int]] = {}  # prompt → {variant → requests}
         self._scores: Dict[str, Dict[str, List[float]]] = {}
 
-    def create_test(self, prompt_name: str, variants: Dict[str, float],
-                    metric: str = "accuracy", **kwargs) -> ABTestConfig:
+    def create_test(
+        self,
+        prompt_name: str,
+        variants: Dict[str, float],
+        metric: str = "accuracy",
+        **kwargs,
+    ) -> ABTestConfig:
         """Set up a new A/B test. Variants is a dict of alias → percentage."""
         total = sum(variants.values())
         if abs(total - 100.0) > 0.01:
             raise ValueError(f"Variant percentages must total 100, got {total}")
-        cfg = ABTestConfig(prompt_name=prompt_name, variants=variants, metric=metric, **kwargs)
+        cfg = ABTestConfig(
+            prompt_name=prompt_name, variants=variants, metric=metric, **kwargs
+        )
         self._tests[prompt_name] = cfg
         self._counters[prompt_name] = {v: 0 for v in variants}
         self._scores[prompt_name] = {v: [] for v in variants}
@@ -58,7 +71,7 @@ class ABTestRouter:
         """Return the alias (variant) to use for this request."""
         cfg = self._tests.get(prompt_name)
         if cfg is None:
-            return "production"   # fallback
+            return "production"  # fallback
         r = random.uniform(0, 100)
         cumulative = 0.0
         for variant, pct in cfg.variants.items():
@@ -66,7 +79,7 @@ class ABTestRouter:
             if r <= cumulative:
                 self._counters[prompt_name][variant] += 1
                 return variant
-        return list(cfg.variants.keys())[-1]   # fallback
+        return list(cfg.variants.keys())[-1]  # fallback
 
     def record_result(self, prompt_name: str, variant: str, score: float):
         """Record an outcome for statistical analysis."""
@@ -79,21 +92,33 @@ class ABTestRouter:
         if cfg is None:
             return []
         import numpy as np
-        from scipy import stats
+
         results = []
         best_score, best_variant = -1, None
         for variant in cfg.variants:
             scores = self._scores.get(prompt_name, {}).get(variant, [])
             requests = self._counters.get(prompt_name, {}).get(variant, 0)
             if len(scores) < 2:
-                results.append(ABTestResult(variant=variant, requests=requests,
-                                            avg_score=0, confidence_interval=(0, 0)))
+                results.append(
+                    ABTestResult(
+                        variant=variant,
+                        requests=requests,
+                        avg_score=0,
+                        confidence_interval=(0, 0),
+                    )
+                )
                 continue
             mean = np.mean(scores)
             se = np.std(scores, ddof=1) / np.sqrt(len(scores))
             ci = (mean - 1.96 * se, mean + 1.96 * se)
-            results.append(ABTestResult(variant=variant, requests=requests,
-                                        avg_score=mean, confidence_interval=ci))
+            results.append(
+                ABTestResult(
+                    variant=variant,
+                    requests=requests,
+                    avg_score=mean,
+                    confidence_interval=ci,
+                )
+            )
             if mean > best_score:
                 best_score, best_variant = mean, variant
         if best_variant:
@@ -109,6 +134,8 @@ class ABTestRouter:
         if not winners:
             return None
         winner = winners[0].variant
-        registry.set_alias(prompt_name, "production", registry.get_alias(prompt_name, winner))
+        registry.set_alias(
+            prompt_name, "production", registry.get_alias(prompt_name, winner)
+        )
         logger.info("A/B test winner promoted: '%s' → %s", prompt_name, winner)
         return winner

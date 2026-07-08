@@ -1,7 +1,7 @@
 """FedProx – Proximal term to handle heterogeneity (Li et al. 2020)."""
 
-from .base import BaseAggregator, AGGREGATOR_REGISTRY
-import numpy as np
+from .base import AGGREGATOR_REGISTRY, BaseAggregator
+
 
 @AGGREGATOR_REGISTRY.register("fedprox")
 class FedProxAggregator(BaseAggregator):

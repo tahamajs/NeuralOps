@@ -1,50 +1,67 @@
 # framework/utils/metrics.py
+from typing import Dict
+
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
-from typing import Dict
+
 
 def compute_accuracy(preds: np.ndarray, labels: np.ndarray) -> float:
     return np.mean(preds == labels)
 
+
 def compute_matthews_corrcoef(preds: np.ndarray, labels: np.ndarray) -> float:
     from sklearn.metrics import matthews_corrcoef
+
     return matthews_corrcoef(labels, preds)
+
 
 def compute_pearson(preds: np.ndarray, labels: np.ndarray) -> float:
     return pearsonr(preds, labels)[0]
 
+
 def compute_spearman(preds: np.ndarray, labels: np.ndarray) -> float:
     return spearmanr(preds, labels)[0]
 
-def compute_f1(preds: np.ndarray, labels: np.ndarray, average: str = 'weighted') -> float:
+
+def compute_f1(
+    preds: np.ndarray, labels: np.ndarray, average: str = "weighted"
+) -> float:
     from sklearn.metrics import f1_score
+
     return f1_score(labels, preds, average=average, zero_division=0)
 
-def compute_precision_recall(preds: np.ndarray, labels: np.ndarray, average: str = 'weighted') -> Dict[str, float]:
+
+def compute_precision_recall(
+    preds: np.ndarray, labels: np.ndarray, average: str = "weighted"
+) -> Dict[str, float]:
     from sklearn.metrics import precision_recall_fscore_support
-    precision, recall, _, _ = precision_recall_fscore_support(labels, preds, average=average, zero_division=0)
-    return {'precision': precision, 'recall': recall}
+
+    precision, recall, _, _ = precision_recall_fscore_support(
+        labels, preds, average=average, zero_division=0
+    )
+    return {"precision": precision, "recall": recall}
+
 
 def compute_metrics_for_task(
     predictions: np.ndarray,
     labels: np.ndarray,
     task_name: str,
-    is_regression: bool = False
+    is_regression: bool = False,
 ) -> Dict[str, float]:
     metrics = {}
-    if is_regression or task_name == 'stsb':
+    if is_regression or task_name == "stsb":
         pred_flat = np.squeeze(predictions)
         labels_flat = np.squeeze(labels)
-        metrics['pearson'] = compute_pearson(pred_flat, labels_flat)
-        metrics['spearman'] = compute_spearman(pred_flat, labels_flat)
-        metrics['pearson_spearman'] = (metrics['pearson'] + metrics['spearman']) / 2
+        metrics["pearson"] = compute_pearson(pred_flat, labels_flat)
+        metrics["spearman"] = compute_spearman(pred_flat, labels_flat)
+        metrics["pearson_spearman"] = (metrics["pearson"] + metrics["spearman"]) / 2
     else:
         preds = np.argmax(predictions, axis=-1) if predictions.ndim > 1 else predictions
-        metrics['accuracy'] = compute_accuracy(preds, labels)
-        metrics['f1_macro'] = compute_f1(preds, labels, average='macro')
-        metrics['f1_weighted'] = compute_f1(preds, labels, average='weighted')
-        if task_name == 'cola':
-            metrics['matthews_correlation'] = compute_matthews_corrcoef(preds, labels)
-        if task_name in ('mrpc', 'qqp'):
-            metrics['f1'] = compute_f1(preds, labels, average='binary')
+        metrics["accuracy"] = compute_accuracy(preds, labels)
+        metrics["f1_macro"] = compute_f1(preds, labels, average="macro")
+        metrics["f1_weighted"] = compute_f1(preds, labels, average="weighted")
+        if task_name == "cola":
+            metrics["matthews_correlation"] = compute_matthews_corrcoef(preds, labels)
+        if task_name in ("mrpc", "qqp"):
+            metrics["f1"] = compute_f1(preds, labels, average="binary")
     return metrics

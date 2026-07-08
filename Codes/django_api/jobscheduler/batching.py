@@ -1,7 +1,10 @@
-import threading, time
+import threading
+
 
 class ShortJobBatcher:
-    def __init__(self, scheduler, threshold_seconds=60, window_seconds=10, max_batch_size=4):
+    def __init__(
+        self, scheduler, threshold_seconds=60, window_seconds=10, max_batch_size=4
+    ):
         self.scheduler = scheduler
         self.threshold = threshold_seconds
         self.window = window_seconds

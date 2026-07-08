@@ -1,1 +1,1 @@
-default_app_config = 'jobscheduler.apps.JobschedulerConfig'
+default_app_config = "jobscheduler.apps.JobschedulerConfig"

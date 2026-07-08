@@ -1,14 +1,14 @@
 """Feature registry and serving."""
-import hashlib
-from .models import FeatureGroup, FeatureRecord, FeatureDriftLog
+
+from .models import FeatureGroup, FeatureRecord
+
 
 class FeatureStore:
     @staticmethod
     def ingest(group_name: str, entity_id: str, values: dict):
         group, _ = FeatureGroup.objects.get_or_create(name=group_name)
         FeatureRecord.objects.update_or_create(
-            group=group, entity_id=entity_id,
-            defaults={'values': values}
+            group=group, entity_id=entity_id, defaults={"values": values}
         )
 
     @staticmethod

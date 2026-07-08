@@ -1,6 +1,7 @@
 # framework/utils/device.py
 import torch
 
+
 def get_device(device_str: str = "auto") -> torch.device:
     if device_str == "auto":
         if torch.cuda.is_available():

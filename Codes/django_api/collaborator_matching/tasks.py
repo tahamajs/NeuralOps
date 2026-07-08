@@ -1,7 +1,9 @@
 """
 Celery tasks for embedding generation and match finding.
 """
+
 import logging
+
 from celery import shared_task
 from django.contrib.auth import get_user_model
 
@@ -31,8 +33,8 @@ def update_user_embedding(user_id):
 def generate_matches_for_user(user_id):
     """Find collaborator matches for a single user."""
     user = User.objects.get(id=user_id)
-    from .models import ResearcherInterestProfile, CollaboratorMatch
     from .embedding import cosine_similarity
+    from .models import CollaboratorMatch, ResearcherInterestProfile
 
     # Ensure the user has a profile
     profile, _ = ResearcherInterestProfile.objects.get_or_create(user=user)
@@ -46,11 +48,11 @@ def generate_matches_for_user(user_id):
     user_emb = profile.embedding
 
     # Find other users with profiles
-    other_profiles = ResearcherInterestProfile.objects.exclude(
-        user=user
-    ).exclude(
-        embedding__exact=[]
-    ).select_related('user')
+    other_profiles = (
+        ResearcherInterestProfile.objects.exclude(user=user)
+        .exclude(embedding__exact=[])
+        .select_related("user")
+    )
 
     matches_created = 0
     for other in other_profiles:
@@ -75,10 +77,14 @@ def generate_matches_for_user(user_id):
             user=user,
             matched_user=other.user,
             defaults={
-                'score': round(score, 4),
-                'common_interests': common,
-                'explanation': f"Based on similar research interests ({len(common)} common tags)" if common else "Based on semantic similarity of research outputs",
-            }
+                "score": round(score, 4),
+                "common_interests": common,
+                "explanation": (
+                    f"Based on similar research interests ({len(common)} common tags)"
+                    if common
+                    else "Based on semantic similarity of research outputs"
+                ),
+            },
         )
         if created:
             matches_created += 1

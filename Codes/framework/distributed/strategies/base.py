@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+
 from framework.core.registry import Registry
 
 STRATEGY_REGISTRY = Registry("distributed_strategies")
+
 
 class BaseStrategy(ABC):
     def __init__(self, config):

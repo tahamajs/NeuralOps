@@ -1,5 +1,7 @@
 import torch
-from .base import BaseExporter, EXPORTER_REGISTRY
+
+from .base import EXPORTER_REGISTRY, BaseExporter
+
 
 @EXPORTER_REGISTRY.register("tensorrt")
 class TensorRTExporter(BaseExporter):
@@ -10,6 +12,8 @@ class TensorRTExporter(BaseExporter):
             raise ImportError("Install torch-tensorrt for TensorRT export")
         if input_example is None:
             input_example = torch.randint(0, 1000, (1, 128))
-        trt_model = torch_tensorrt.compile(model, inputs=[torch_tensorrt.Input(shape=input_example.shape)])
+        trt_model = torch_tensorrt.compile(
+            model, inputs=[torch_tensorrt.Input(shape=input_example.shape)]
+        )
         torch.jit.save(trt_model, output_path)
         return output_path

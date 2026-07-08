@@ -1,20 +1,27 @@
 """Integration with MegaOrchestrator for distributed training."""
 
 import os
+from typing import Any, Dict
+
 import torch
-from pathlib import Path
-from typing import Dict, Any
+
 from .config import DistributedConfig
-from .strategies import STRATEGY_REGISTRY
 from .manager import GPUManager
+from .strategies import STRATEGY_REGISTRY
+
 
 def wrap_with_distributed(
     config_dict: Dict[str, Any],
     model: torch.nn.Module,
     job_id: str,
 ) -> torch.nn.Module:
-    cfg = DistributedConfig(**{k: v for k, v in config_dict.items()
-                               if k in DistributedConfig.__dataclass_fields__})
+    cfg = DistributedConfig(
+        **{
+            k: v
+            for k, v in config_dict.items()
+            if k in DistributedConfig.__dataclass_fields__
+        }
+    )
     if cfg.strategy == "none":
         return model
 
@@ -34,9 +41,9 @@ def wrap_with_distributed(
 
 
 def cleanup_distributed(model: torch.nn.Module, job_id: str) -> None:
-    cfg = getattr(model, '_dist_cfg', None)
+    cfg = getattr(model, "_dist_cfg", None)
     if cfg and cfg.gpu_ids:
         GPUManager().release(job_id)
-    strategy = getattr(model, '_dist_strategy', None)
+    strategy = getattr(model, "_dist_strategy", None)
     if strategy:
         strategy.cleanup()

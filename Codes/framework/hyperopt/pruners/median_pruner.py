@@ -1,5 +1,7 @@
 import numpy as np
+
 from ..base import BasePruner
+
 
 class MedianPruner(BasePruner):
     def __init__(self, config, n_startup_trials=5, n_warmup_steps=3):

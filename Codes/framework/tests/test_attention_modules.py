@@ -14,12 +14,7 @@ Tests:
 
 import pytest
 import torch
-import copy
-from conftest import (
-    build_attention, get_testable_attention_keys,
-    ATTENTION_REGISTRY,
-)
-
+from conftest import build_attention, get_testable_attention_keys
 
 # ----------------------------------------------------------------------
 # Mark all tests in this module as "attention"
@@ -33,8 +28,12 @@ pytestmark = pytest.mark.attention
 class TestShapeCorrectness:
     """Verify that every attention module produces output of shape (B, L, D)."""
 
-    @pytest.mark.parametrize("key", get_testable_attention_keys(
-        DistilBertConfig(hidden_size=768, num_attention_heads=12)))
+    @pytest.mark.parametrize(
+        "key",
+        get_testable_attention_keys(
+            DistilBertConfig(hidden_size=768, num_attention_heads=12)
+        ),
+    )
     def test_output_shape_basic(self, key, hidden_states, model_config):
         """Output shape must be (B, L, D) for a standard forward pass."""
         attn = build_attention(key, model_config)
@@ -44,8 +43,9 @@ class TestShapeCorrectness:
             output_tensor = out[0]
         else:
             output_tensor = out
-        assert output_tensor.shape == hidden_states.shape, \
-            f"{key}: expected {hidden_states.shape}, got {output_tensor.shape}"
+        assert (
+            output_tensor.shape == hidden_states.shape
+        ), f"{key}: expected {hidden_states.shape}, got {output_tensor.shape}"
 
 
 # ----------------------------------------------------------------------
@@ -54,8 +54,12 @@ class TestShapeCorrectness:
 class TestOutputFiniteness:
     """Every module must produce finite outputs (no NaN, no Inf)."""
 
-    @pytest.mark.parametrize("key", get_testable_attention_keys(
-        DistilBertConfig(hidden_size=768, num_attention_heads=12)))
+    @pytest.mark.parametrize(
+        "key",
+        get_testable_attention_keys(
+            DistilBertConfig(hidden_size=768, num_attention_heads=12)
+        ),
+    )
     def test_output_is_finite(self, key, hidden_states, model_config):
         attn = build_attention(key, model_config)
         out = attn(hidden_states)
@@ -63,8 +67,7 @@ class TestOutputFiniteness:
             output_tensor = out[0]
         else:
             output_tensor = out
-        assert torch.isfinite(output_tensor).all(), \
-            f"{key}: output contains NaN or Inf"
+        assert torch.isfinite(output_tensor).all(), f"{key}: output contains NaN or Inf"
 
 
 # ----------------------------------------------------------------------
@@ -77,16 +80,23 @@ class TestZeroShotFidelity:
     """
 
     @pytest.mark.zero_shot
-    @pytest.mark.parametrize("key", get_testable_attention_keys(
-        DistilBertConfig(hidden_size=768, num_attention_heads=12)))
-    def test_zero_shot_fidelity(self, key, hidden_states, model_config,
-                                distilbert_attention):
+    @pytest.mark.parametrize(
+        "key",
+        get_testable_attention_keys(
+            DistilBertConfig(hidden_size=768, num_attention_heads=12)
+        ),
+    )
+    def test_zero_shot_fidelity(
+        self, key, hidden_states, model_config, distilbert_attention
+    ):
         if distilbert_attention is None:
             pytest.skip("No pretrained DistilBERT attention available")
 
         # Build the custom attention with pretrained weight transfer
         try:
-            attn = build_attention(key, model_config, pretrained_attn=distilbert_attention)
+            attn = build_attention(
+                key, model_config, pretrained_attn=distilbert_attention
+            )
         except Exception:
             pytest.skip(f"{key} does not support pretrained_attn")
 
@@ -102,8 +112,9 @@ class TestZeroShotFidelity:
 
         # Compare within a generous tolerance
         diff = (orig_out - new_out).abs().mean().item()
-        assert diff < 0.5, \
-            f"{key}: zero‑shot fidelity too low (mean abs diff = {diff:.4f})"
+        assert (
+            diff < 0.5
+        ), f"{key}: zero‑shot fidelity too low (mean abs diff = {diff:.4f})"
 
 
 # ----------------------------------------------------------------------
@@ -113,8 +124,12 @@ class TestGradientFlow:
     """Gradients must flow back through the attention module."""
 
     @pytest.mark.grad
-    @pytest.mark.parametrize("key", get_testable_attention_keys(
-        DistilBertConfig(hidden_size=768, num_attention_heads=12)))
+    @pytest.mark.parametrize(
+        "key",
+        get_testable_attention_keys(
+            DistilBertConfig(hidden_size=768, num_attention_heads=12)
+        ),
+    )
     def test_gradient_flow(self, key, small_hidden_states, model_config):
         attn = build_attention(key, model_config)
         x = small_hidden_states.clone().requires_grad_(True)
@@ -141,9 +156,15 @@ class TestGradientFlow:
 class TestPaddingMask:
     """Padding positions must produce zero output after masking."""
 
-    @pytest.mark.parametrize("key", get_testable_attention_keys(
-        DistilBertConfig(hidden_size=768, num_attention_heads=12)))
-    def test_padding_mask_output(self, key, hidden_states, attention_mask, model_config):
+    @pytest.mark.parametrize(
+        "key",
+        get_testable_attention_keys(
+            DistilBertConfig(hidden_size=768, num_attention_heads=12)
+        ),
+    )
+    def test_padding_mask_output(
+        self, key, hidden_states, attention_mask, model_config
+    ):
         attn = build_attention(key, model_config)
         # Pass the binary mask; modules should internally convert it
         try:
@@ -160,8 +181,9 @@ class TestPaddingMask:
 
         # Padding positions (columns 24:32) should have small values
         pad_region = output_tensor[:, 24:, :]
-        assert pad_region.abs().max().item() < 10.0, \
-            f"{key}: padding positions are not masked"
+        assert (
+            pad_region.abs().max().item() < 10.0
+        ), f"{key}: padding positions are not masked"
 
 
 # ----------------------------------------------------------------------
@@ -170,8 +192,12 @@ class TestPaddingMask:
 class TestMultiHeadCompatibility:
     """Modules must handle the multi‑head reshape correctly."""
 
-    @pytest.mark.parametrize("key", get_testable_attention_keys(
-        DistilBertConfig(hidden_size=768, num_attention_heads=12)))
+    @pytest.mark.parametrize(
+        "key",
+        get_testable_attention_keys(
+            DistilBertConfig(hidden_size=768, num_attention_heads=12)
+        ),
+    )
     def test_multi_head_no_error(self, key, small_hidden_states, model_config):
         attn = build_attention(key, model_config)
         try:
@@ -186,12 +212,14 @@ class TestMultiHeadCompatibility:
 class TestReturnFormat:
     """Modules must return a tuple (output, attention_weights_or_None)."""
 
-    @pytest.mark.parametrize("key", get_testable_attention_keys(
-        DistilBertConfig(hidden_size=768, num_attention_heads=12)))
+    @pytest.mark.parametrize(
+        "key",
+        get_testable_attention_keys(
+            DistilBertConfig(hidden_size=768, num_attention_heads=12)
+        ),
+    )
     def test_returns_tuple(self, key, small_hidden_states, model_config):
         attn = build_attention(key, model_config)
         out = attn(small_hidden_states)
-        assert isinstance(out, tuple), \
-            f"{key}: must return a tuple, got {type(out)}"
-        assert len(out) == 2, \
-            f"{key}: tuple must have 2 elements, got {len(out)}"
+        assert isinstance(out, tuple), f"{key}: must return a tuple, got {type(out)}"
+        assert len(out) == 2, f"{key}: tuple must have 2 elements, got {len(out)}"

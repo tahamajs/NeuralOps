@@ -1,6 +1,8 @@
 import importlib
 import warnings
+
 warnings.filterwarnings("ignore")
+
 
 def _safe_import_modules():
     # List the modules that are OK to fail
@@ -17,5 +19,6 @@ def _safe_import_modules():
             importlib.import_module(m)
         except Exception:
             pass
+
 
 _safe_import_modules()

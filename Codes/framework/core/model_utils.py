@@ -3,10 +3,11 @@ Generic helpers: calibration, weight‑copying, safe module replacement,
 activation collection.
 """
 
+from contextlib import contextmanager
+from typing import Any, Dict, List, Optional
+
 import torch
 import torch.nn as nn
-from typing import List, Optional, Dict, Any
-from contextlib import contextmanager
 
 
 def run_calibration_forward(
@@ -19,8 +20,7 @@ def run_calibration_forward(
     """Run a single forward pass on calibration texts; return model (in eval)."""
     model.eval()
     inputs = tokenizer(
-        texts, return_tensors="pt", padding=True,
-        truncation=True, max_length=max_length
+        texts, return_tensors="pt", padding=True, truncation=True, max_length=max_length
     )
     if device is None:
         device = next(model.parameters()).device
@@ -34,11 +34,12 @@ def run_calibration_forward(
 # Weight‑copying for attention modules
 # ------------------------------------------------------------------ #
 ATTENTION_WEIGHT_MAP = {
-    'query':    ['q_lin', 'q_proj', 'query'],
-    'key':      ['k_lin', 'k_proj', 'key'],
-    'value':    ['v_lin', 'v_proj', 'value'],
-    'out_proj': ['out_lin', 'o_proj', 'output', 'dense'],
+    "query": ["q_lin", "q_proj", "query"],
+    "key": ["k_lin", "k_proj", "key"],
+    "value": ["v_lin", "v_proj", "value"],
+    "out_proj": ["out_lin", "o_proj", "output", "dense"],
 }
+
 
 def copy_attention_weights(
     src_module: nn.Module,
@@ -72,7 +73,7 @@ def copy_attention_weights(
 
 def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -> None:
     """Replace a sub‑module identified by its dotted name."""
-    parts = full_name.split('.')
+    parts = full_name.split(".")
     parent = model
     for part in parts[:-1]:
         parent = getattr(parent, part)
@@ -81,7 +82,7 @@ def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -> N
 
 def get_parent_and_child_name(model: nn.Module, full_name: str):
     """Return (parent_module, child_attribute_name)."""
-    parts = full_name.split('.')
+    parts = full_name.split(".")
     parent = model
     for part in parts[:-1]:
         parent = getattr(parent, part)
@@ -109,10 +110,15 @@ def activation_hooks(
         def hook(module, input, output):
             data = {}
             if collect_input:
-                data['input'] = input[0].detach()
+                data["input"] = input[0].detach()
             if collect_output:
-                data['output'] = output.detach() if isinstance(output, torch.Tensor) else output[0].detach()
+                data["output"] = (
+                    output.detach()
+                    if isinstance(output, torch.Tensor)
+                    else output[0].detach()
+                )
             activations[name] = data
+
         return hook
 
     for name, module in model.named_modules():

@@ -1,12 +1,13 @@
 """GPU Manager – discovers devices and allocates GPUs to jobs."""
 
-import torch
-import os
-import threading
 import logging
-from typing import Dict, List, Optional
+import threading
+from typing import Dict, List
+
+import torch
 
 logger = logging.getLogger(__name__)
+
 
 class GPUManager:
     """
@@ -18,6 +19,7 @@ class GPUManager:
         # … run training …
         mgr.release(gpu_ids)
     """
+
     _instance = None
     _lock = threading.Lock()
 
@@ -31,7 +33,7 @@ class GPUManager:
         if self._initialised:
             return
         self.total_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
-        self._allocated: Dict[int, str] = {}   # gpu_id → job_id
+        self._allocated: Dict[int, str] = {}  # gpu_id → job_id
         self._initialised = True
         logger.info("GPUManager initialised: %d GPU(s) available", self.total_gpus)
 

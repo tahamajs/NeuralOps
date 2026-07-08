@@ -1,14 +1,22 @@
 """Unified launcher — single‑node torchrun or elastic launch."""
 
-import os, sys, subprocess, tempfile, pickle, logging
+import logging
+import os
+import pickle
+import subprocess
+import sys
+import tempfile
 from pathlib import Path
 from typing import Callable
+
 from .config import DistributedConfig
 
 logger = logging.getLogger(__name__)
 
 
-def launch_distributed(config: DistributedConfig, train_fn: Callable, job_id: str = "local") -> int:
+def launch_distributed(
+    config: DistributedConfig, train_fn: Callable, job_id: str = "local"
+) -> int:
     """
     Launch distributed training.  Uses torchrun for multi‑GPU / multi‑node.
     For single GPU, runs inline.
@@ -28,7 +36,9 @@ def launch_distributed(config: DistributedConfig, train_fn: Callable, job_id: st
 
     if config.elastic:
         cmd = [
-            sys.executable, "-m", "torch.distributed.run",
+            sys.executable,
+            "-m",
+            "torch.distributed.run",
             f"--nnodes={config.elastic_min_nodes}:{config.elastic_max_nodes}",
             f"--nproc_per_node={config.num_gpus}",
             f"--rdzv_backend={config.elastic_rdzv_backend}",
@@ -39,7 +49,9 @@ def launch_distributed(config: DistributedConfig, train_fn: Callable, job_id: st
         ]
     else:
         cmd = [
-            sys.executable, "-m", "torch.distributed.run",
+            sys.executable,
+            "-m",
+            "torch.distributed.run",
             f"--nnodes={config.num_nodes}",
             f"--nproc_per_node={config.num_gpus}",
             f"--master_addr={config.master_addr}",
@@ -50,7 +62,9 @@ def launch_distributed(config: DistributedConfig, train_fn: Callable, job_id: st
     return subprocess.call(cmd)
 
 
-def launch_elastic(config: DistributedConfig, train_fn: Callable, job_id: str = "elastic") -> int:
+def launch_elastic(
+    config: DistributedConfig, train_fn: Callable, job_id: str = "elastic"
+) -> int:
     """Shortcut for elastic launch."""
     config.elastic = True
     return launch_distributed(config, train_fn, job_id)

@@ -39,6 +39,7 @@ TASK_COLUMNS = {
 def get_metric_name(task: str) -> str:
     return TASK_METRICS.get(task, "accuracy")
 
+
 def get_num_labels(task: str, dataset=None) -> int:
     if task == "stsb":
         return 1
@@ -47,6 +48,7 @@ def get_num_labels(task: str, dataset=None) -> int:
     if dataset and "label" in dataset["train"].column_names:
         return len(dataset["train"].unique("label"))
     return 2
+
 
 def get_text_columns(task: str) -> list:
     return TASK_COLUMNS.get(task, ["sentence"])

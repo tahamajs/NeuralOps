@@ -1,9 +1,9 @@
 """Bonsai: Iterative Magnitude Pruning (IMP). Registered as 'bonsai'."""
 
 import torch
-import numpy as np
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class BonsaiPruner(BaseCompressor):
     def __init__(self, model, sparsity=0.5, steps=10, **kwargs):
@@ -28,14 +28,12 @@ class BonsaiPruner(BaseCompressor):
                 module.weight.data = (W * final_mask).to(dtype=module.weight.dtype)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
 
 
 @COMPRESSOR_REGISTRY.register("bonsai")
 def bonsai_factory(model, comp_config):
-    sparsity = getattr(comp_config, 'bonsai_sparsity', 0.5)
-    steps = getattr(comp_config, 'bonsai_steps', 10)
+    sparsity = getattr(comp_config, "bonsai_sparsity", 0.5)
+    steps = getattr(comp_config, "bonsai_steps", 10)
     compressor = BonsaiPruner(model, sparsity=sparsity, steps=steps)
     compressed_model, _ = compressor.compress()
     return compressed_model
-

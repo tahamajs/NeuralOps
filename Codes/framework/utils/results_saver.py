@@ -2,12 +2,14 @@ import json
 import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
-import torch
 
 logger = logging.getLogger(__name__)
 
+
 class ResultsSaver:
-    def __init__(self, run_id: str, base_dir: Path, config: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self, run_id: str, base_dir: Path, config: Optional[Dict[str, Any]] = None
+    ):
         self.run_id = run_id
         self.base_dir = base_dir / str(run_id)
         self.config = config or {}

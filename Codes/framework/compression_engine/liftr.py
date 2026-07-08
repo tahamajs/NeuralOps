@@ -4,15 +4,16 @@ Replaces non‑linear activations and softmax attention with linear approximatio
 reducing the entire model to a single linear function for extreme inference speed.
 """
 
-import torch
+from typing import Any, Dict, Tuple
+
 import torch.nn as nn
-from typing import Tuple, Dict, Any
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class _LinearizedGELU(nn.Module):
     """Linear approximation of GELU: 0.5 * x + 0.5 * sqrt(2/π) * x ≈ 0.8 * x"""
+
     def forward(self, x):
         return 0.8 * x
 
@@ -22,6 +23,7 @@ class _LinearizedAttention(nn.Module):
     Linearized attention: replaces softmax with average over sequence dimension.
     Preserves input/output shapes for DistilBERT compatibility.
     """
+
     def __init__(self, original_attn):
         super().__init__()
         # Keep references to the original projections (they are linear)
@@ -42,7 +44,7 @@ class _LinearizedAttention(nn.Module):
 
         # Output projection
         output = self.out_lin(context)
-        return output, None   # no attention weights
+        return output, None  # no attention weights
 
 
 class LIFTRCompressor(BaseCompressor):
@@ -77,7 +79,7 @@ class LIFTRCompressor(BaseCompressor):
             elif isinstance(child, nn.SiLU):
                 setattr(module, name, _LinearizedGELU())
             # Replace attention: DistilBERT attention has attribute 'attention'
-            elif self.replace_attention and name == 'attention':
+            elif self.replace_attention and name == "attention":
                 # For DistilBERT, the child is the attention module
                 # We replace it with our linearized wrapper
                 setattr(module, name, _LinearizedAttention(child))
@@ -95,7 +97,7 @@ def liftr_compressor_entry(model: nn.Module, comp_config) -> nn.Module:
     Factory function called by the framework.
     Expects comp_config to have attribute `replace_attention` (default True).
     """
-    replace_attention = getattr(comp_config, 'replace_attention', True)
+    replace_attention = getattr(comp_config, "replace_attention", True)
     compressor = LIFTRCompressor(model, replace_attention=replace_attention)
     compressed_model, _ = compressor.compress()
     return compressed_model

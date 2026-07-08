@@ -1,9 +1,9 @@
 """Prompt template engine – simple strings and chat conversations."""
 
 import re
-import json
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
+from typing import Any, Dict, List
+
 
 @dataclass
 class PromptTemplate:
@@ -17,13 +17,14 @@ class PromptTemplate:
         t = PromptTemplate("You are a {{role}}. Answer: {{question}}")
         result = t.render(role="helpful assistant", question="What is ML?")
     """
+
     template: str
     variables: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         # Extract variable names from the template
-        self._var_names = re.findall(r'\{\{(\w+)(?::[^}]*)?\}\}', self.template)
+        self._var_names = re.findall(r"\{\{(\w+)(?::[^}]*)?\}\}", self.template)
 
     def render(self, **kwargs) -> str:
         """Render the template by substituting all provided values."""
@@ -32,14 +33,18 @@ class PromptTemplate:
         for var in self._var_names:
             if var in merged:
                 val = str(merged[var])
-                result = re.sub(r'\{\{' + var + r'(?::[^}]*)?\}\}', val, result)
+                result = re.sub(r"\{\{" + var + r"(?::[^}]*)?\}\}", val, result)
         # Apply defaults for missing variables
-        result = re.sub(r'\{\{(\w+):([^}]*)\}\}', r'\2', result)
+        result = re.sub(r"\{\{(\w+):([^}]*)\}\}", r"\2", result)
         return result
 
     def to_dict(self) -> dict:
-        return {"type": "simple", "template": self.template,
-                "variables": self.variables, "metadata": self.metadata}
+        return {
+            "type": "simple",
+            "template": self.template,
+            "variables": self.variables,
+            "metadata": self.metadata,
+        }
 
 
 @dataclass
@@ -55,6 +60,7 @@ class ChatPromptTemplate:
         ])
         msgs = t.render(role="assistant", question="Hi")
     """
+
     messages: List[Dict[str, str]]
     variables: Dict[str, Any] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -70,5 +76,9 @@ class ChatPromptTemplate:
         return output
 
     def to_dict(self) -> dict:
-        return {"type": "chat", "messages": self.messages,
-                "variables": self.variables, "metadata": self.metadata}
+        return {
+            "type": "chat",
+            "messages": self.messages,
+            "variables": self.variables,
+            "metadata": self.metadata,
+        }

@@ -2,16 +2,17 @@
 Multi‑choice dataset (ARC, HellaSwag, etc.) handling.
 """
 
-import torch
 import json
+from typing import List, Optional, Tuple
+
 import pandas as pd
+import torch
 from torch.utils.data import Dataset
-from typing import List, Dict, Tuple, Optional
-from datasets import Dataset as HFDataset
 
 
 class MultiChoiceDataset(Dataset):
     """Dataset for multi‑choice questions (ARC, HellaSwag, etc.)."""
+
     def __init__(
         self,
         df: pd.DataFrame,
@@ -19,7 +20,7 @@ class MultiChoiceDataset(Dataset):
         max_length: int = 128,
         question_column: Optional[str] = None,
         choices_column: Optional[str] = None,
-        answer_column: Optional[str] = None
+        answer_column: Optional[str] = None,
     ):
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -35,24 +36,26 @@ class MultiChoiceDataset(Dataset):
             choices = self._extract_choices(row, c_col)
             label = self._extract_label(row, a_col, len(choices))
             if 2 <= len(choices) and 0 <= label < len(choices):
-                self.samples.append({'question': question, 'choices': choices, 'label': label})
+                self.samples.append(
+                    {"question": question, "choices": choices, "label": label}
+                )
                 valid += 1
         print(f"Multi‑choice dataset: {valid} valid samples")
 
     def _detect_question_column(self, df) -> str:
-        for col in ['question', 'prompt', 'ctx', 'ctx_a', 'text', 'sentence']:
+        for col in ["question", "prompt", "ctx", "ctx_a", "text", "sentence"]:
             if col in df.columns:
                 return col
         return df.columns[0]
 
     def _detect_choices_column(self, df) -> Optional[str]:
-        for col in ['choices_json', 'choices', 'endings', 'options']:
+        for col in ["choices_json", "choices", "endings", "options"]:
             if col in df.columns:
                 return col
         return None
 
     def _detect_answer_column(self, df) -> Optional[str]:
-        for col in ['gold_answer_json', 'answer_json', 'label', 'answer', 'gold']:
+        for col in ["gold_answer_json", "answer_json", "label", "answer", "gold"]:
             if col in df.columns:
                 return col
         return None
@@ -62,7 +65,7 @@ class MultiChoiceDataset(Dataset):
 
     def _extract_choices(self, row, c_col) -> List[str]:
         if c_col is None:
-            choice_cols = [col for col in row.index if col.startswith('choice_')]
+            choice_cols = [col for col in row.index if col.startswith("choice_")]
             if choice_cols:
                 return [str(row[col]) for col in sorted(choice_cols)]
             return []
@@ -80,15 +83,15 @@ class MultiChoiceDataset(Dataset):
 
     def _extract_label(self, row, a_col, num_choices) -> int:
         if a_col is None:
-            return row.get('label', 0)
+            return row.get("label", 0)
         val = row[a_col]
         if isinstance(val, str):
             try:
                 obj = json.loads(val)
-                if 'choice_index' in obj:
-                    return int(obj['choice_index'])
-                if 'label' in obj:
-                    return int(obj['label'])
+                if "choice_index" in obj:
+                    return int(obj["choice_index"])
+                if "label" in obj:
+                    return int(obj["label"])
             except json.JSONDecodeError:
                 pass
         if isinstance(val, (int, float)):
@@ -100,37 +103,43 @@ class MultiChoiceDataset(Dataset):
 
     def __getitem__(self, idx):
         sample = self.samples[idx]
-        q = sample['question']
-        choices = sample['choices']
-        label = sample['label']
+        q = sample["question"]
+        choices = sample["choices"]
+        label = sample["label"]
 
         input_ids, attn_masks = [], []
         for choice in choices:
             text = f"{q} {choice}" if q else choice
-            enc = self.tokenizer(text, truncation=True, padding='max_length',
-                                 max_length=self.max_length, return_tensors='pt')
-            input_ids.append(enc['input_ids'].squeeze(0))
-            attn_masks.append(enc['attention_mask'].squeeze(0))
+            enc = self.tokenizer(
+                text,
+                truncation=True,
+                padding="max_length",
+                max_length=self.max_length,
+                return_tensors="pt",
+            )
+            input_ids.append(enc["input_ids"].squeeze(0))
+            attn_masks.append(enc["attention_mask"].squeeze(0))
         return {
-            'input_ids': torch.stack(input_ids),
-            'attention_mask': torch.stack(attn_masks),
-            'labels': torch.tensor(label, dtype=torch.long)
+            "input_ids": torch.stack(input_ids),
+            "attention_mask": torch.stack(attn_masks),
+            "labels": torch.tensor(label, dtype=torch.long),
         }
 
 
 def is_multichoice_dataset(df: pd.DataFrame) -> Tuple[bool, int]:
     """Check if a DataFrame contains a multi‑choice format and return the number of choices."""
-    if 'choices_json' in df.columns:
-        sample = df['choices_json'].iloc[0]
+    if "choices_json" in df.columns:
+        sample = df["choices_json"].iloc[0]
         if isinstance(sample, str):
             try:
                 choices = json.loads(sample)
                 if isinstance(choices, list) and len(choices) >= 2:
                     return True, len(choices)
-            except: pass
-    if 'endings' in df.columns:
+            except:
+                pass
+    if "endings" in df.columns:
         return True, 4
-    choice_cols = [c for c in df.columns if c.startswith('choice_')]
+    choice_cols = [c for c in df.columns if c.startswith("choice_")]
     if len(choice_cols) >= 2:
         return True, len(choice_cols)
     return False, 0
@@ -140,25 +149,35 @@ def convert_to_multichoice_format(df: pd.DataFrame) -> pd.DataFrame:
     """Normalise a DataFrame into the standard multi‑choice format (question, choices, label)."""
     rows = []
     for _, row in df.iterrows():
-        q = row.get('prompt', row.get('ctx', ''))
+        q = row.get("prompt", row.get("ctx", ""))
         choices = []
-        if 'choices_json' in row:
-            try: choices = json.loads(str(row['choices_json']))
-            except: pass
-        elif 'endings' in row:
-            try: choices = json.loads(str(row['endings']))
-            except: pass
+        if "choices_json" in row:
+            try:
+                choices = json.loads(str(row["choices_json"]))
+            except:
+                pass
+        elif "endings" in row:
+            try:
+                choices = json.loads(str(row["endings"]))
+            except:
+                pass
         else:
-            choice_cols = [c for c in df.columns if c.startswith('choice_')]
+            choice_cols = [c for c in df.columns if c.startswith("choice_")]
             choices = [str(row[c]) for c in sorted(choice_cols)]
         label = 0
-        if 'gold_answer_json' in row:
-            try: ans = json.loads(str(row['gold_answer_json'])); label = ans.get('choice_index', 0)
-            except: pass
-        elif 'answer_json' in row:
-            try: ans = json.loads(str(row['answer_json'])); label = ans.get('choice_index', 0)
-            except: pass
-        elif 'label' in row:
-            label = int(row['label'])
-        rows.append({'question': str(q), 'choices': choices, 'label': label})
+        if "gold_answer_json" in row:
+            try:
+                ans = json.loads(str(row["gold_answer_json"]))
+                label = ans.get("choice_index", 0)
+            except:
+                pass
+        elif "answer_json" in row:
+            try:
+                ans = json.loads(str(row["answer_json"]))
+                label = ans.get("choice_index", 0)
+            except:
+                pass
+        elif "label" in row:
+            label = int(row["label"])
+        rows.append({"question": str(q), "choices": choices, "label": label})
     return pd.DataFrame(rows)

@@ -1,12 +1,22 @@
-from typing import Dict, Any
+from typing import Any, Dict
+
 from .base_trainer import BaseTrainer
 from .registry import TrainerRegistry
-from .trainer import SVDAwareTrainer, create_trainer
+from .trainer import create_trainer
+
 
 @TrainerRegistry.register("hf")
 class HuggingFaceTrainer(BaseTrainer):
-    def __init__(self, model, train_dataset, eval_dataset, config: Dict[str, Any],
-                 results_manager, compute_metrics=None, **kwargs):
+    def __init__(
+        self,
+        model,
+        train_dataset,
+        eval_dataset,
+        config: Dict[str, Any],
+        results_manager,
+        compute_metrics=None,
+        **kwargs
+    ):
         self.model = model
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
@@ -31,7 +41,9 @@ class HuggingFaceTrainer(BaseTrainer):
             "save_strategy": self.config.get("save_strategy", "epoch"),
             "save_total_limit": self.config.get("save_total_limit", 2),
             "load_best_model_at_end": self.config.get("load_best_model_at_end", True),
-            "metric_for_best_model": self.config.get("metric_for_best_model", "eval_loss"),
+            "metric_for_best_model": self.config.get(
+                "metric_for_best_model", "eval_loss"
+            ),
             "fp16": self.config.get("fp16", False),
             "logging_dir": str(self.results_manager.log_dir),
             "logging_steps": self.config.get("logging_steps", 50),
@@ -47,11 +59,13 @@ class HuggingFaceTrainer(BaseTrainer):
         )
         self._trainer = self.results_manager.wrap_trainer(self._trainer)
         original_train = self._trainer.train
+
         def train_and_save(*args, **train_kwargs):
             result = original_train(*args, **train_kwargs)
             self.results_manager.save_final_model(self.model)
             self.results_manager.save_plots()
             return result
+
         self._trainer.train = train_and_save
 
     def train(self):

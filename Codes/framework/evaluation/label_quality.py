@@ -5,9 +5,10 @@ data‑centric AI.  Finds label errors, outliers, and near‑duplicates.
 Reference: https://github.com/cleanlab/cleanlab
 """
 
-import numpy as np
-from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 from framework.core.registry import Registry
 
 LABEL_QUALITY_REGISTRY = Registry("label_quality_methods")
@@ -16,12 +17,15 @@ LABEL_QUALITY_REGISTRY = Registry("label_quality_methods")
 @dataclass
 class LabelQualityReport:
     """Complete label quality analysis for a dataset."""
+
     n_samples: int
     n_label_issues: int
     issue_rate: float
     label_issue_indices: np.ndarray
-    label_quality_scores: np.ndarray          # per‑sample confidence (0 = bad, 1 = perfect)
-    suggested_labels: Optional[np.ndarray] = None   # what cleanlab thinks the label should be
+    label_quality_scores: np.ndarray  # per‑sample confidence (0 = bad, 1 = perfect)
+    suggested_labels: Optional[np.ndarray] = (
+        None  # what cleanlab thinks the label should be
+    )
     per_class_issues: Dict[int, int] = field(default_factory=dict)
     outlier_indices: np.ndarray = field(default_factory=lambda: np.array([]))
     near_duplicate_pairs: List[Tuple[int, int]] = field(default_factory=list)
@@ -158,11 +162,13 @@ class LabelQualityDetector:
         issue_mask = np.zeros(n_samples, dtype=bool)
         for k in range(n_classes):
             mask_k = labels == k
-            issue_mask[mask_k] = self_confidence[mask_k] < (thresholds[k] * (1 - self.threshold))
+            issue_mask[mask_k] = self_confidence[mask_k] < (
+                thresholds[k] * (1 - self.threshold)
+            )
 
         # Suggested labels: what the model predicts instead
         suggested = np.argmax(pred_probs, axis=1)
-        suggested[~issue_mask] = labels[~issue_mask]   # keep original if not an issue
+        suggested[~issue_mask] = labels[~issue_mask]  # keep original if not an issue
 
         return issue_mask, quality_scores, suggested
 
@@ -172,6 +178,7 @@ class LabelQualityDetector:
     ) -> List[Tuple[int, int]]:
         """Find pairs of samples whose prediction vectors are nearly identical."""
         from sklearn.metrics.pairwise import cosine_similarity
+
         n = pred_probs.shape[0]
         if n > 5000:
             # Subsample for performance

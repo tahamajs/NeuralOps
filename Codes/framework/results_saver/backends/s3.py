@@ -1,5 +1,8 @@
-import logging, os
+import logging
+import os
+
 logger = logging.getLogger(__name__)
+
 
 def push(run_dir, cfg):
     try:
@@ -11,7 +14,7 @@ def push(run_dir, cfg):
     if not bucket:
         logger.warning("No S3 bucket configured")
         return
-    s3 = boto3.client('s3')
+    s3 = boto3.client("s3")
     for root, _, files in os.walk(run_dir):
         for f in files:
             local = os.path.join(root, f)

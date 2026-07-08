@@ -4,7 +4,8 @@ Supports GLUE, custom CSV/JSON/Parquet, multi‑choice, synthetic, and HuggingFa
 """
 
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import List, Optional
+
 from datasets import DatasetDict
 
 
@@ -26,6 +27,7 @@ class ExperimentConfig:
         glue_base_path: Base directory for local GLUE Parquet files.
         **kwargs: Additional arguments passed to underlying loaders.
     """
+
     def __init__(
         self,
         dataset_name: str,
@@ -52,6 +54,7 @@ class ExperimentConfig:
         self.split_ratio = split_ratio
         self.synthetic_samples = synthetic_samples
         from framework.utils.paths import get_glue_dir
+
         self.glue_base_path = glue_base_path or str(get_glue_dir())
         self.kwargs = kwargs
 
@@ -86,17 +89,20 @@ def load_dataset(config: ExperimentConfig) -> DatasetDict:
 
 def _load_glue(config: ExperimentConfig) -> DatasetDict:
     from .glue_loader import load_glue_local
+
     return load_glue_local(config.dataset_name, config.glue_base_path)
 
 
 def _load_synthetic(config: ExperimentConfig) -> DatasetDict:
-    from .synthetic_generator import run_universal_generation
     import tempfile
+
     from datasets import Dataset
+
+    from .synthetic_generator import run_universal_generation
+
     with tempfile.TemporaryDirectory() as tmpdir:
         df = run_universal_generation(
-            output_dir=Path(tmpdir),
-            total_samples_per_domain=config.synthetic_samples
+            output_dir=Path(tmpdir), total_samples_per_domain=config.synthetic_samples
         )
         dataset = Dataset.from_pandas(df)
         splits = dataset.train_test_split(test_size=config.split_ratio)
@@ -105,6 +111,7 @@ def _load_synthetic(config: ExperimentConfig) -> DatasetDict:
 
 def _load_custom(config: ExperimentConfig) -> DatasetDict:
     from .custom_loader import load_dataset_from_file
+
     file_path = config.dataset_path or config.dataset_name
     text_col = config.text_columns[0] if config.text_columns else None
     return load_dataset_from_file(
@@ -118,12 +125,14 @@ def _load_custom(config: ExperimentConfig) -> DatasetDict:
 
 def _load_multi_choice(config: ExperimentConfig) -> DatasetDict:
     from .custom_loader import load_custom_dataset
+
     # Multi‑choice datasets are loaded as raw; conversion to MultiChoiceDataset is done later.
     return load_custom_dataset(config.dataset_path or config.dataset_name)
 
 
 def _load_hub(config: ExperimentConfig) -> DatasetDict:
     from datasets import load_dataset as hf_load
+
     dataset = hf_load(config.dataset_name, **config.kwargs)
     if "validation" not in dataset and "test" not in dataset:
         dataset = dataset["train"].train_test_split(test_size=config.split_ratio)

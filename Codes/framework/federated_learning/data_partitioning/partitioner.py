@@ -1,13 +1,16 @@
 """Data partitioning for federated learning – IID and Non‑IID (label skew, quantity skew)."""
 
-import numpy as np
-from typing import List, Dict, Any, Tuple, Optional
 from enum import Enum
+from typing import Any, List
+
+import numpy as np
+
 
 class PartitionType(Enum):
     IID = "iid"
     NON_IID_LABEL_SKEW = "non_iid_label_skew"
     NON_IID_QUANTITY_SKEW = "non_iid_quantity_skew"
+
 
 class DataPartitioner:
     """
@@ -57,7 +60,9 @@ class DataPartitioner:
         """
         labels = self._get_labels(dataset)
         # Dirichlet distribution: shape (num_clients, num_classes)
-        proportions = np.random.dirichlet([self.alpha] * self.num_classes, self.num_clients)
+        proportions = np.random.dirichlet(
+            [self.alpha] * self.num_classes, self.num_clients
+        )
         # For each class, distribute samples to clients according to proportions
         class_indices = [np.where(labels == c)[0] for c in range(self.num_classes)]
         client_indices = [[] for _ in range(self.num_clients)]
@@ -65,14 +70,16 @@ class DataPartitioner:
             c_idx = class_indices[c]
             np.random.shuffle(c_idx)
             # Split class c across clients
-            client_counts = np.maximum(1, np.round(proportions[:, c] * len(c_idx)).astype(int))
+            client_counts = np.maximum(
+                1, np.round(proportions[:, c] * len(c_idx)).astype(int)
+            )
             # Adjust to ensure total matches
             diff = len(c_idx) - np.sum(client_counts)
             client_counts[0] += diff
             start = 0
             for i in range(self.num_clients):
                 cnt = client_counts[i]
-                client_indices[i].extend(c_idx[start:start+cnt])
+                client_indices[i].extend(c_idx[start : start + cnt])
                 start += cnt
         return [self._subset(dataset, np.array(idx)) for idx in client_indices]
 
@@ -92,18 +99,18 @@ class DataPartitioner:
         client_data = []
         start = 0
         for sz in sizes:
-            client_data.append(self._subset(dataset, indices[start:start+sz]))
+            client_data.append(self._subset(dataset, indices[start : start + sz]))
             start += sz
         return client_data
 
     def _get_labels(self, dataset):
         """Extract labels from dataset. Override for custom datasets."""
-        if hasattr(dataset, 'targets'):
+        if hasattr(dataset, "targets"):
             return np.array(dataset.targets)
-        elif hasattr(dataset, 'labels'):
+        elif hasattr(dataset, "labels"):
             return np.array(dataset.labels)
-        elif isinstance(dataset, dict) and 'y' in dataset:
-            return dataset['y'].numpy()
+        elif isinstance(dataset, dict) and "y" in dataset:
+            return dataset["y"].numpy()
         # Fallback: assume the dataset yields (x, y) pairs
         labels = []
         for _, y in dataset:
@@ -114,6 +121,7 @@ class DataPartitioner:
         """Return a subset of the dataset."""
         try:
             from torch.utils.data import Subset
+
             return Subset(dataset, indices)
         except ImportError:
             return [dataset[i] for i in indices]

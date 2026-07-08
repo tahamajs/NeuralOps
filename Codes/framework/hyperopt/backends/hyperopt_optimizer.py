@@ -1,9 +1,11 @@
 """Hyperopt backend – TPE, Random, Adaptive TPE."""
 
 import logging
-from typing import Callable, Dict, Any, Tuple
-from hyperopt import fmin, tpe, hp, Trials, rand
-from ..base import BaseOptimizer, HPO_REGISTRY
+from typing import Any, Callable, Dict, Tuple
+
+from hyperopt import Trials, fmin, hp, rand, tpe
+
+from ..base import HPO_REGISTRY, BaseOptimizer
 from ..config import HPOConfig
 
 logger = logging.getLogger(__name__)
@@ -36,6 +38,7 @@ class HyperoptOptimizer(BaseOptimizer):
                 space[name] = hp.choice(name, spec["choices"])
 
         algo = self.ALGO_MAP.get(self.config.algorithm.value, tpe.suggest)
+
         # Direction
         def wrapped(params):
             score = objective_fn(params)
@@ -49,7 +52,7 @@ class HyperoptOptimizer(BaseOptimizer):
             max_evals=self.config.num_trials,
             trials=trials,
         )
-        best_score = min([t['result']['loss'] for t in trials.trials])
+        best_score = min([t["result"]["loss"] for t in trials.trials])
         if self.config.direction == "maximize":
             best_score = -best_score
         logger.info("Hyperopt finished: best score=%f, params=%s", best_score, best)

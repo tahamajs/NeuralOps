@@ -9,10 +9,10 @@ Supports:
 """
 
 from .config import DriftConfig
-from .detectors import DriftDetector, METHOD_REGISTRY
+from .detectors import METHOD_REGISTRY, DriftDetector
+from .integration import auto_drift_check
 from .report import DriftReport, FeatureDriftReport
 from .visualization import generate_drift_plots
-from .integration import auto_drift_check
 
 __all__ = [
     "DriftConfig",

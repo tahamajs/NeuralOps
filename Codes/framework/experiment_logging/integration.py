@@ -4,9 +4,11 @@ Call `auto_setup(run_config)` once at the start of training.
 """
 
 from pathlib import Path
+
 from .config import LoggingConfig
 from .logger import setup_logging
 from .tracker import MetricsTracker
+
 
 def auto_setup(
     run_config: dict,
@@ -44,9 +46,10 @@ def auto_setup(
 
     # Save config snapshot for reproducibility
     import json
+
     config_dir = base_dir / run_id / "artifacts"
     config_dir.mkdir(parents=True, exist_ok=True)
-    with open(config_dir / "config.json", 'w') as f:
+    with open(config_dir / "config.json", "w") as f:
         json.dump(run_config, f, indent=2, default=str)
 
     logger.info("Auto‑setup complete. Run ID: %s", run_id)

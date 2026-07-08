@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+
 from framework.core.registry import Registry
 
 QUANTIZER_REGISTRY = Registry("quantizers")
+
 
 class BaseQuantizer(ABC):
     @abstractmethod

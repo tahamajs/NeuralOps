@@ -1,11 +1,12 @@
 """Utility to load results from various sources."""
 
 import json
-import os
-import pandas as pd
-import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional
+
+import numpy as np
+import pandas as pd
+
 
 def load_results_from_directories(
     dirs: List[str],
@@ -35,13 +36,15 @@ def load_results_from_django(
     for run in runs:
         metrics = run.final_metrics or {}
         config = run.config or {}
-        value = metrics.get(metric.split('__')[-1], None)
+        value = metrics.get(metric.split("__")[-1], None)
         if value is not None:
-            records.append({
-                "run_id": str(run.id),
-                "group": config.get(group_by.split('__')[-1], "unknown"),
-                metric: float(value),
-            })
+            records.append(
+                {
+                    "run_id": str(run.id),
+                    "group": config.get(group_by.split("__")[-1], "unknown"),
+                    metric: float(value),
+                }
+            )
     return pd.DataFrame(records)
 
 

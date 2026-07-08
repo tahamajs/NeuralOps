@@ -6,6 +6,7 @@ any external prompt storage system (e.g., Redis, Postgres, REST API).
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 
+
 class CustomPromptBackend(ABC):
     """Interface for custom prompt storage backends."""
 
@@ -13,14 +14,16 @@ class CustomPromptBackend(ABC):
         self.config = config or {}
 
     @abstractmethod
-    def save(self, name: str, template: str, version: int,
-             commit_message: str = "") -> bool:
+    def save(
+        self, name: str, template: str, version: int, commit_message: str = ""
+    ) -> bool:
         """Persist a prompt version. Return True on success."""
         pass
 
     @abstractmethod
-    def load(self, name: str, version: Optional[int] = None,
-             alias: str = "production") -> Optional[Tuple[str, int]]:
+    def load(
+        self, name: str, version: Optional[int] = None, alias: str = "production"
+    ) -> Optional[Tuple[str, int]]:
         """Retrieve a prompt. Return (template, version) or None."""
         pass
 

@@ -1,7 +1,11 @@
 """Pluggable distributed strategies — DDP, FSDP, DeepSpeed."""
 
-import os, logging, torch, torch.distributed as dist
+import logging
+import os
 from abc import ABC, abstractmethod
+
+import torch
+import torch.distributed as dist
 from framework.core.registry import Registry
 
 STRATEGY_REGISTRY = Registry("distributed_strategies")
@@ -9,17 +13,23 @@ logger = logging.getLogger(__name__)
 
 
 class BaseStrategy(ABC):
-    def __init__(self, config): self.config = config
+    def __init__(self, config):
+        self.config = config
+
     @abstractmethod
     def wrap_model(self, model, **kw): ...
-    def setup(self): pass
+    def setup(self):
+        pass
+
     def cleanup(self):
-        if dist.is_initialized(): dist.destroy_process_group()
+        if dist.is_initialized():
+            dist.destroy_process_group()
 
 
 @STRATEGY_REGISTRY.register("none")
 class NoStrategy(BaseStrategy):
-    def wrap_model(self, model, **kw): return model
+    def wrap_model(self, model, **kw):
+        return model
 
 
 @STRATEGY_REGISTRY.register("ddp")
@@ -48,6 +58,7 @@ class FSDPStrategy(BaseStrategy):
         from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
         from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
         from transformers.models.bert.modeling_bert import BertLayer
+
         return FSDP(model, auto_wrap_policy=transformer_auto_wrap_policy(BertLayer))
 
 
@@ -62,5 +73,7 @@ class DeepSpeedStrategy(BaseStrategy):
         ds_cfg.setdefault("train_batch_size", "auto")
         ds_cfg.setdefault("train_micro_batch_size_per_gpu", "auto")
         ds_cfg.setdefault("optimizer", {"type": "AdamW", "params": {"lr": "auto"}})
-        engine, _, _, _ = deepspeed.initialize(model=model, model_parameters=model.parameters(), config_params=ds_cfg)
+        engine, _, _, _ = deepspeed.initialize(
+            model=model, model_parameters=model.parameters(), config_params=ds_cfg
+        )
         return engine

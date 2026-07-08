@@ -3,8 +3,8 @@ Celery tasks for model versioning app.
 """
 
 import logging
+
 from celery import shared_task
-from django.utils import timezone
 
 from .models import ModelSecurityScan, ModelUsageLog
 
@@ -23,8 +23,8 @@ def run_security_scan(scan_id: str):
         logger.error(f"Security scan {scan_id} not found")
         return
 
-    scan.status = 'running'
-    scan.save(update_fields=['status'])
+    scan.status = "running"
+    scan.save(update_fields=["status"])
 
     try:
         # ------------------------------------------------------------
@@ -45,13 +45,13 @@ def run_security_scan(scan_id: str):
             "secrets_found": False,
         }
         scan.findings = findings
-        scan.severity = 'low'   # or derive from findings
+        scan.severity = "low"  # or derive from findings
         scan.passed = True
-        scan.status = 'completed'
-        scan.report_url = ""    # set if you generate a report
+        scan.status = "completed"
+        scan.report_url = ""  # set if you generate a report
     except Exception as e:
         logger.exception(f"Scan {scan_id} failed: {e}")
-        scan.status = 'failed'
+        scan.status = "failed"
         scan.findings = {"error": str(e)}
         scan.passed = False
 
@@ -59,10 +59,18 @@ def run_security_scan(scan_id: str):
 
 
 @shared_task
-def log_model_usage_async(version_id: str, user_id: int, action: str, metadata: dict = None, ip_address: str = None):
+def log_model_usage_async(
+    version_id: str,
+    user_id: int,
+    action: str,
+    metadata: dict = None,
+    ip_address: str = None,
+):
     """Async wrapper to log model usage (useful for high‑traffic endpoints)."""
-    from .models import ModelVersion, ModelUsageLog
     from django.contrib.auth import get_user_model
+
+    from .models import ModelVersion
+
     User = get_user_model()
 
     try:

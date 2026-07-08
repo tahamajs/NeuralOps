@@ -1,14 +1,16 @@
 """FLAP: Fluctuation-based Adaptive Structured Pruning. Registered as 'flap'."""
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class FLAPCompressor(BaseCompressor):
-    def __init__(self, model, tokenizer, sparsity=0.2, device="cuda", nsamples=1024, **kwargs):
+    def __init__(
+        self, model, tokenizer, sparsity=0.2, device="cuda", nsamples=1024, **kwargs
+    ):
         super().__init__(model, name="flap", **kwargs)
         self.tokenizer = tokenizer
         self.sparsity = sparsity
@@ -23,7 +25,9 @@ class FLAPCompressor(BaseCompressor):
         elif metric_type == "WIFV":
             scores = inp_var * torch.sum(weight.pow(2), dim=0)
         elif metric_type == "WIFN":
-            scores = (torch.abs(weight) * torch.sqrt(inp_var.reshape(1, -1))).mean(dim=0)
+            scores = (torch.abs(weight) * torch.sqrt(inp_var.reshape(1, -1))).mean(
+                dim=0
+            )
         else:
             raise ValueError(f"Unknown metric: {metric_type}")
         return scores.cpu().numpy()
@@ -37,7 +41,9 @@ class FLAPCompressor(BaseCompressor):
             "Machine learning is a subfield of artificial intelligence.",
             "Transformers have revolutionized natural language processing.",
         ] * (self.nsamples // 3)
-        inputs = self.tokenizer(calib_texts, return_tensors="pt", padding=True, truncation=True)
+        inputs = self.tokenizer(
+            calib_texts, return_tensors="pt", padding=True, truncation=True
+        )
         input_ids = inputs.input_ids.to(self.device)
         with torch.no_grad():
             embeds = self.model.get_input_embeddings()(input_ids)
@@ -53,7 +59,9 @@ class FLAPCompressor(BaseCompressor):
                     # Soft pruning: zero out unimportant columns
                     mask = torch.zeros(weight.shape[1], device=weight.device)
                     mask[keep_idx] = 1.0
-                    module.weight.data = weight * mask.unsqueeze(0)  # broadcast over rows
+                    module.weight.data = weight * mask.unsqueeze(
+                        0
+                    )  # broadcast over rows
                     # Bias remains untouched (no pruning)
                     # Update flat_inputs to reflect the pruned feature distribution (optional)
                     flat_inputs = flat_inputs[:, keep_idx]
@@ -63,8 +71,8 @@ class FLAPCompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("flap")
 def flap_compressor_factory(model, comp_config):
-    sparsity = getattr(comp_config, 'flap_sparsity', 0.2)
-    tokenizer = getattr(model, 'tokenizer', None)
+    sparsity = getattr(comp_config, "flap_sparsity", 0.2)
+    tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:
         raise ValueError("flap requires tokenizer attached as model.tokenizer")
     compressor = FLAPCompressor(model, tokenizer, sparsity=sparsity)

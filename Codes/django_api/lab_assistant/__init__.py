@@ -1,1 +1,1 @@
-default_app_config = 'lab_assistant.apps.LabAssistantConfig'
+default_app_config = "lab_assistant.apps.LabAssistantConfig"

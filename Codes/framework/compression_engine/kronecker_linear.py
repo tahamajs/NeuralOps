@@ -3,10 +3,11 @@ Kronecker Linear Layer: weight matrix represented as Kronecker product A ⊗ B.
 """
 
 import math
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
 
 
 def factorize_dim(dim: int) -> Tuple[int, int]:
@@ -48,7 +49,9 @@ class KroneckerLinear(nn.Module):
         # Try to factorise dimensions
         in_a, in_b = factorize_dim(in_features)
         out_a, out_b = factorize_dim(out_features)
-        self.can_decompose = (in_a * in_b == in_features) and (out_a * out_b == out_features)
+        self.can_decompose = (in_a * in_b == in_features) and (
+            out_a * out_b == out_features
+        )
 
         if self.can_decompose:
             self.in_a, self.in_b = in_a, in_b
@@ -66,11 +69,13 @@ class KroneckerLinear(nn.Module):
             nn.init.uniform_(self.B, -bound, bound)
 
             if bias:
-                self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+                self.bias = nn.Parameter(
+                    torch.empty(out_features, dtype=dtype, device=device)
+                )
                 bound = 1 / math.sqrt(fan_in)
                 nn.init.uniform_(self.bias, -bound, bound)
             else:
-                self.register_parameter('bias', None)
+                self.register_parameter("bias", None)
         else:
             # Fallback: use low‑rank SVD with the same number of parameters
             # We'll allocate two matrices that together have the same parameter count
@@ -82,18 +87,24 @@ class KroneckerLinear(nn.Module):
                 # square: choose a=sqrt, b=sqrt
                 a = int(math.sqrt(in_features))
                 if a * a == in_features:
-                    max_kron_params = a*a + a*a  # but not needed
+                    max_kron_params = a * a + a * a  # but not needed
             # We'll just fall back to SVD with a fixed rank that gives roughly similar compression.
             self.rank = max(1, min(in_features, out_features) // 4)
-            self.U = nn.Parameter(torch.empty(out_features, self.rank, dtype=dtype, device=device))
-            self.V = nn.Parameter(torch.empty(self.rank, in_features, dtype=dtype, device=device))
+            self.U = nn.Parameter(
+                torch.empty(out_features, self.rank, dtype=dtype, device=device)
+            )
+            self.V = nn.Parameter(
+                torch.empty(self.rank, in_features, dtype=dtype, device=device)
+            )
             nn.init.xavier_uniform_(self.U)
             nn.init.xavier_uniform_(self.V)
             if bias:
-                self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+                self.bias = nn.Parameter(
+                    torch.empty(out_features, dtype=dtype, device=device)
+                )
                 nn.init.zeros_(self.bias)
             else:
-                self.register_parameter('bias', None)
+                self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.can_decompose:
@@ -103,7 +114,7 @@ class KroneckerLinear(nn.Module):
             # (A ⊗ B) x = vec(B X A^T), but we have a batch of vectors.
             # We'll just compute the full kronecker product once per forward.
             # For moderate dimensions (e.g., 768), the kronecker product is cheap.
-            W = torch.kron(self.A, self.B)   # (out_a*out_b, in_a*in_b)
+            W = torch.kron(self.A, self.B)  # (out_a*out_b, in_a*in_b)
             out = F.linear(x, W, self.bias)
         else:
             # Fallback: low‑rank SVD
@@ -136,11 +147,15 @@ class KroneckerLinear(nn.Module):
             # Algorithm: flatten each block, compute SVD to get A, then B.
             # First, compute A: reshape to (out_a, out_b * in_a * in_b) -> SVD
             # Actually the standard method: reshape W to (out_a * in_a, out_b * in_b) and take SVD.
-            W_unfold = W_reshaped.permute(0, 2, 1, 3).contiguous().view(out_a * in_a, out_b * in_b)
+            W_unfold = (
+                W_reshaped.permute(0, 2, 1, 3)
+                .contiguous()
+                .view(out_a * in_a, out_b * in_b)
+            )
             U, S, Vt = torch.linalg.svd(W_unfold, full_matrices=False)
             # Keep rank 1 to get Kronecker factors
-            U1 = U[:, 0:1]            # (out_a * in_a, 1)
-            V1 = Vt[0:1, :]           # (1, out_b * in_b)
+            U1 = U[:, 0:1]  # (out_a * in_a, 1)
+            V1 = Vt[0:1, :]  # (1, out_b * in_b)
             # Reshape back
             A_approx = U1.view(out_a, in_a)
             B_approx = V1.view(out_b, in_b)
@@ -157,6 +172,3 @@ class KroneckerLinear(nn.Module):
         if bias is not None:
             kron_layer.bias.data.copy_(bias)
         return kron_layer
-    
-
-

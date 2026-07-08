@@ -1,5 +1,7 @@
-from peft import get_peft_model, IA3Config, TaskType
-from .base import BasePEFT, PEFT_REGISTRY
+from peft import IA3Config, TaskType, get_peft_model
+
+from .base import PEFT_REGISTRY, BasePEFT
+
 
 @PEFT_REGISTRY.register("ia3")
 class IA3PEFT(BasePEFT):

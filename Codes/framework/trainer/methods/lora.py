@@ -1,15 +1,19 @@
 """
 LoRA, DoRA, DisLoRA implementations.
 """
+
+import logging
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.init import kaiming_uniform_, zeros_
-import logging
+
 from .registry import register_method
 
 logger = logging.getLogger(__name__)
+
 
 class LoRALinear(nn.Module):
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float):
@@ -37,6 +41,7 @@ class LoRALinear(nn.Module):
             lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
             return base + lora
         return base
+
 
 class DoRALinear(nn.Module):
     def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float):
@@ -70,9 +75,17 @@ class DoRALinear(nn.Module):
             return F.linear(x, delta, self.linear.bias)
         return base_out
 
+
 class DisLoRALinear(nn.Module):
-    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float,
-                 beta: float = 0.5, capacity_factor: float = 1.0):
+    def __init__(
+        self,
+        linear: nn.Linear,
+        r: int,
+        alpha: float,
+        dropout: float,
+        beta: float = 0.5,
+        capacity_factor: float = 1.0,
+    ):
         super().__init__()
         self.linear = linear
         self.linear.weight.requires_grad = False
@@ -109,37 +122,63 @@ class DisLoRALinear(nn.Module):
         reg = (A @ A.T - self._eye).pow(2).sum() + (B.T @ B - self._eye).pow(2).sum()
         return self.beta * reg
 
-def _apply_adapters(model, r, alpha, dropout, method_type='lora', **kwargs):
-    target_substrings = ["query", "key", "value", "dense", "intermediate.dense", "output.dense"]
+
+def _apply_adapters(model, r, alpha, dropout, method_type="lora", **kwargs):
+    target_substrings = [
+        "query",
+        "key",
+        "value",
+        "dense",
+        "intermediate.dense",
+        "output.dense",
+    ]
     for name, module in list(model.named_modules()):
         if not isinstance(module, nn.Linear):
             continue
         if any(ts in name for ts in target_substrings):
-            parent = model.get_submodule('.'.join(name.split('.')[:-1]) or '')
-            child = name.split('.')[-1]
+            parent = model.get_submodule(".".join(name.split(".")[:-1]) or "")
+            child = name.split(".")[-1]
             try:
-                if method_type == 'dora':
+                if method_type == "dora":
                     new_module = DoRALinear(module, r, alpha, dropout)
-                elif method_type == 'dislora':
-                    new_module = DisLoRALinear(module, r, alpha, dropout,
-                                               beta=kwargs.get('dislora_beta', 0.5),
-                                               capacity_factor=kwargs.get('dislora_capacity_factor', 1.0))
+                elif method_type == "dislora":
+                    new_module = DisLoRALinear(
+                        module,
+                        r,
+                        alpha,
+                        dropout,
+                        beta=kwargs.get("dislora_beta", 0.5),
+                        capacity_factor=kwargs.get("dislora_capacity_factor", 1.0),
+                    )
                 else:
                     new_module = LoRALinear(module, r, alpha, dropout)
                 setattr(parent, child, new_module)
             except Exception as e:
                 logger.warning(f"Failed to replace {name}: {e}")
 
+
 @register_method("lora")
 def apply_lora(model, config):
-    _apply_adapters(model, config.lora_r, config.lora_alpha, config.lora_dropout, 'lora')
+    _apply_adapters(
+        model, config.lora_r, config.lora_alpha, config.lora_dropout, "lora"
+    )
+
 
 @register_method("dora")
 def apply_dora(model, config):
-    _apply_adapters(model, config.lora_r, config.lora_alpha, config.lora_dropout, 'dora')
+    _apply_adapters(
+        model, config.lora_r, config.lora_alpha, config.lora_dropout, "dora"
+    )
+
 
 @register_method("dislora")
 def apply_dislora(model, config):
-    _apply_adapters(model, config.lora_r, config.lora_alpha, config.lora_dropout, 'dislora',
-                    dislora_beta=config.dislora_beta,
-                    dislora_capacity_factor=config.dislora_capacity_factor)
+    _apply_adapters(
+        model,
+        config.lora_r,
+        config.lora_alpha,
+        config.lora_dropout,
+        "dislora",
+        dislora_beta=config.dislora_beta,
+        dislora_capacity_factor=config.dislora_capacity_factor,
+    )

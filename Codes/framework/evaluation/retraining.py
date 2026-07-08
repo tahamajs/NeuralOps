@@ -6,10 +6,11 @@ Inspired by: Vertex AI Model Monitoring, Azure ML pipelines, ClearML, and AutoDr
 """
 
 import logging
-from enum import Enum
-from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional
+
 from framework.core.registry import Registry
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,10 @@ class TriggerType(Enum):
 @dataclass
 class RetrainPolicy:
     """Configuration for when and how to retrain."""
-    trigger_types: List[TriggerType] = field(default_factory=lambda: [TriggerType.DRIFT])
+
+    trigger_types: List[TriggerType] = field(
+        default_factory=lambda: [TriggerType.DRIFT]
+    )
 
     # Drift trigger
     drift_threshold: float = 0.3
@@ -38,7 +42,7 @@ class RetrainPolicy:
     max_accuracy_degradation: float = 0.05
 
     # Schedule trigger
-    schedule_cron: Optional[str] = None      # "0 2 * * 1" for every Monday 2 AM
+    schedule_cron: Optional[str] = None  # "0 2 * * 1" for every Monday 2 AM
     max_days_since_last_train: int = 30
 
     # Data volume trigger
@@ -57,10 +61,11 @@ class RetrainPolicy:
 @dataclass
 class RetrainDecision:
     """Output of the retraining decision engine."""
+
     should_retrain: bool
     reason: str
     trigger_type: Optional[TriggerType] = None
-    urgency: str = "low"           # "low", "medium", "high", "critical"
+    urgency: str = "low"  # "low", "medium", "high", "critical"
     details: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -105,19 +110,26 @@ class RetrainingOrchestrator:
 
         if self._retrain_count_today >= self.policy.max_retrains_per_day:
             return RetrainDecision(
-                should_retrain=False, reason="Max daily retrains reached",
-                details={"retrains_today": self._retrain_count_today}
+                should_retrain=False,
+                reason="Max daily retrains reached",
+                details={"retrains_today": self._retrain_count_today},
             )
 
         # 1. Manual trigger
         if manual_request and TriggerType.MANUAL in self.policy.trigger_types:
             return RetrainDecision(
-                should_retrain=True, reason="Manual retraining requested",
-                trigger_type=TriggerType.MANUAL, urgency="high"
+                should_retrain=True,
+                reason="Manual retraining requested",
+                trigger_type=TriggerType.MANUAL,
+                urgency="high",
             )
 
         # 2. Performance degradation
-        if TriggerType.PERFORMANCE in self.policy.trigger_types and current_metrics and reference_metrics:
+        if (
+            TriggerType.PERFORMANCE in self.policy.trigger_types
+            and current_metrics
+            and reference_metrics
+        ):
             decision = self._check_performance(current_metrics, reference_metrics)
             if decision.should_retrain:
                 return decision
@@ -156,7 +168,11 @@ class RetrainingOrchestrator:
                 reason=f"Accuracy {curr_acc:.3f} below minimum {self.policy.min_accuracy}",
                 trigger_type=TriggerType.PERFORMANCE,
                 urgency="critical" if degradation > 0.1 else "high",
-                details={"current_accuracy": curr_acc, "reference_accuracy": ref_acc, "degradation": degradation},
+                details={
+                    "current_accuracy": curr_acc,
+                    "reference_accuracy": ref_acc,
+                    "degradation": degradation,
+                },
             )
 
         if degradation > self.policy.max_accuracy_degradation:
@@ -168,7 +184,9 @@ class RetrainingOrchestrator:
                 details={"degradation": degradation},
             )
 
-        return RetrainDecision(should_retrain=False, reason="Performance within acceptable range")
+        return RetrainDecision(
+            should_retrain=False, reason="Performance within acceptable range"
+        )
 
     def _check_drift(self, drift_report) -> RetrainDecision:
         n_drifted = getattr(drift_report, "n_features_drifted", 0)
@@ -183,7 +201,9 @@ class RetrainingOrchestrator:
                 urgency="high" if ratio > 0.5 else "medium",
                 details={"drifted_features": n_drifted, "total_features": n_total},
             )
-        return RetrainDecision(should_retrain=False, reason="Drift within acceptable range")
+        return RetrainDecision(
+            should_retrain=False, reason="Drift within acceptable range"
+        )
 
     def _check_data_volume(self, new_count: int) -> RetrainDecision:
         if new_count >= self.policy.min_new_samples:
@@ -220,8 +240,11 @@ class RetrainingOrchestrator:
 
         try:
             result = training_fn(**training_kwargs)
-            logger.info("Retraining completed for %s. Metrics: %s", run_id,
-                         {k: v for k, v in result.items() if isinstance(v, (int, float))})
+            logger.info(
+                "Retraining completed for %s. Metrics: %s",
+                run_id,
+                {k: v for k, v in result.items() if isinstance(v, (int, float))},
+            )
         except Exception as e:
             logger.exception("Retraining failed for %s: %s", run_id, e)
             return {"status": "failed", "error": str(e)}

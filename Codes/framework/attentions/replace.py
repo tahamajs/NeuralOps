@@ -2,6 +2,7 @@
 
 from framework.core.registry import ATTENTION_REGISTRY
 
+
 def replace_attention_in_model(model, attention_name, attention_params=None):
     """
     Replace all self‑attention layers in a model with the specified attention type.
@@ -23,21 +24,28 @@ def replace_attention_in_model(model, attention_name, attention_params=None):
 
     return model
 
+
 def _replace_bert_attention(model, attention_name, attention_params):
     for layer in model.encoder.layer:
         old_attn = layer.attention.self
         hidden_size = old_attn.query.in_features
         num_heads = old_attn.num_attention_heads
-        new_attn = build_attention(attention_name, hidden_size, num_heads, **attention_params)
+        new_attn = build_attention(
+            attention_name, hidden_size, num_heads, **attention_params
+        )
         layer.attention.self = new_attn
+
 
 def _replace_gpt_attention(model, attention_name, attention_params):
     for block in model.transformer.h:
         old_attn = block.attn
         hidden_size = old_attn.embed_dim
         num_heads = old_attn.num_heads
-        new_attn = build_attention(attention_name, hidden_size, num_heads, **attention_params)
+        new_attn = build_attention(
+            attention_name, hidden_size, num_heads, **attention_params
+        )
         block.attn = new_attn
+
 
 def _replace_distilbert_attention(model, attention_name, attention_params):
     for layer in model.distilbert.transformer.layer:
@@ -50,7 +58,15 @@ def _replace_distilbert_attention(model, attention_name, attention_params):
         inject_fn = ATTENTION_REGISTRY.get(attention_name)
         if inject_fn is None:
             raise ValueError(f"Attention '{attention_name}' not registered.")
-        inject_fn(layer, model.config, None, 0, len(model.distilbert.transformer.layer), old_attn)
+        inject_fn(
+            layer,
+            model.config,
+            None,
+            0,
+            len(model.distilbert.transformer.layer),
+            old_attn,
+        )
+
 
 def build_attention(attention_name, hidden_size, num_heads, **kwargs):
     """Helper to instantiate an attention class (not injection)."""

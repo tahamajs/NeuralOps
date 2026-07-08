@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import CodeGenerationSession, CodeMessage, GeneratedCode, CodeReview, TestGeneration
+
+from .models import (CodeGenerationSession, CodeMessage, CodeReview,
+                     GeneratedCode, TestGeneration)
 
 admin.site.register(CodeGenerationSession)
 admin.site.register(CodeMessage)

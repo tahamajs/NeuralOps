@@ -1,13 +1,17 @@
 """Per‑version evaluation tracking for prompts."""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional, Union
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 
 @dataclass
 class EvalMetric:
-    name: str; value: float; unit: str = ""
+    name: str
+    value: float
+    unit: str = ""
     metadata: Dict[str, Any] = field(default_factory=dict)
+
 
 @dataclass
 class PromptEvaluation:
@@ -17,6 +21,7 @@ class PromptEvaluation:
 
     Modeled after: PromptForge, Datadog LLM Observability, LangSmith evaluations.
     """
+
     prompt_name: str
     version: int
     # Standard metrics
@@ -45,8 +50,9 @@ class PromptEvaluation:
         total = self.user_feedback_positive + self.user_feedback_negative
         return self.user_feedback_positive / total if total > 0 else 0.0
 
-    def log_request(self, latency_ms: float, tokens: int, cost: float,
-                    feedback: int = 0):
+    def log_request(
+        self, latency_ms: float, tokens: int, cost: float, feedback: int = 0
+    ):
         """Log a single request's statistics."""
         self.requests += 1
         self.avg_latency_ms = (
@@ -56,8 +62,10 @@ class PromptEvaluation:
         self.avg_tokens_per_request = self.total_tokens / self.requests
         self.total_cost_usd += cost
         self.avg_cost_per_request = self.total_cost_usd / self.requests
-        if feedback > 0: self.user_feedback_positive += 1
-        elif feedback < 0: self.user_feedback_negative += 1
+        if feedback > 0:
+            self.user_feedback_positive += 1
+        elif feedback < 0:
+            self.user_feedback_negative += 1
         self.last_evaluated_at = datetime.now().isoformat()
 
     def add_custom_metric(self, name: str, value: float, unit: str = ""):
@@ -65,11 +73,16 @@ class PromptEvaluation:
 
     def to_dict(self) -> dict:
         return {
-            "prompt_name": self.prompt_name, "version": self.version,
-            "requests": self.requests, "accuracy": self.accuracy,
-            "consistency": self.consistency, "relevance": self.relevance,
-            "coherence": self.coherence, "avg_latency_ms": self.avg_latency_ms,
-            "p50_latency_ms": self.p50_latency_ms, "p95_latency_ms": self.p95_latency_ms,
+            "prompt_name": self.prompt_name,
+            "version": self.version,
+            "requests": self.requests,
+            "accuracy": self.accuracy,
+            "consistency": self.consistency,
+            "relevance": self.relevance,
+            "coherence": self.coherence,
+            "avg_latency_ms": self.avg_latency_ms,
+            "p50_latency_ms": self.p50_latency_ms,
+            "p95_latency_ms": self.p95_latency_ms,
             "total_tokens": self.total_tokens,
             "avg_tokens_per_request": self.avg_tokens_per_request,
             "total_cost_usd": self.total_cost_usd,
@@ -77,8 +90,10 @@ class PromptEvaluation:
             "user_feedback_positive": self.user_feedback_positive,
             "user_feedback_negative": self.user_feedback_negative,
             "feedback_ratio": self.feedback_ratio,
-            "custom_metrics": [{"name": m.name, "value": m.value, "unit": m.unit}
-                               for m in self.custom_metrics],
+            "custom_metrics": [
+                {"name": m.name, "value": m.value, "unit": m.unit}
+                for m in self.custom_metrics
+            ],
             "last_evaluated_at": self.last_evaluated_at,
             "dataset_name": self.dataset_name,
             "evaluator_model": self.evaluator_model,

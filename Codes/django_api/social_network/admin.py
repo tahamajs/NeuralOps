@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Follow, ResearchGroup, GroupMembership, Discussion, DiscussionReply, ActivityFeed, PublicationAlert
+
+from .models import (ActivityFeed, Discussion, DiscussionReply, Follow,
+                     GroupMembership, PublicationAlert, ResearchGroup)
 
 admin.site.register(Follow)
 admin.site.register(ResearchGroup)

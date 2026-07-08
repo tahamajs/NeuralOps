@@ -20,6 +20,7 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         def make_hook(name):
             def hook(module, input, output):
                 activations[name] = (input[0].detach(), output.detach())
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -60,8 +61,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("swift_svd_act")
 def swift_svd_act_factory(model, comp_config):
-    rank = getattr(comp_config, 'swift_svd_act_rank', 64)
-    tokenizer = getattr(model, 'tokenizer', None)
+    rank = getattr(comp_config, "swift_svd_act_rank", 64)
+    tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:
         raise ValueError("swift_svd_act requires tokenizer attached as model.tokenizer")
     compressor = SwiftSVDActivationCompressor(model, tokenizer, rank)

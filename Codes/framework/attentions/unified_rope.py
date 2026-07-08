@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("compression_unified_rope")
 class UnifiedRoPE(nn.Module):
@@ -9,6 +10,7 @@ class UnifiedRoPE(nn.Module):
     Applies the same rotation to attention and SSM branches,
     guaranteeing positional consistency in hybrid architectures.
     """
+
     def __init__(self, dim: int, max_seq_len: int = 4096, base: int = 10000):
         super().__init__()
         self.dim = dim
@@ -23,9 +25,9 @@ class UnifiedRoPE(nn.Module):
     def _build_cache(self, seq_len: int):
         """Precompute cos & sin tables for positions up to seq_len."""
         t = torch.arange(seq_len, device=self.inv_freq.device)
-        freqs = torch.einsum("i,j->ij", t, self.inv_freq)          # (seq_len, dim/2)
-        emb = torch.cat((freqs, freqs), dim=-1)                    # (seq_len, dim)
-        self.register_buffer("cos_cached", emb.cos())              # (seq_len, dim)
+        freqs = torch.einsum("i,j->ij", t, self.inv_freq)  # (seq_len, dim/2)
+        emb = torch.cat((freqs, freqs), dim=-1)  # (seq_len, dim)
+        self.register_buffer("cos_cached", emb.cos())  # (seq_len, dim)
         self.register_buffer("sin_cached", emb.sin())
 
     def forward(self, x: torch.Tensor, **args) -> torch.Tensor:
@@ -39,7 +41,7 @@ class UnifiedRoPE(nn.Module):
         if seq_len > self.max_seq_len:
             self._build_cache(seq_len)
 
-        cos = self.cos_cached[:seq_len].unsqueeze(0).unsqueeze(2)   # (1, L, 1, D)
+        cos = self.cos_cached[:seq_len].unsqueeze(0).unsqueeze(2)  # (1, L, 1, D)
         sin = self.sin_cached[:seq_len].unsqueeze(0).unsqueeze(2)
 
         x_rot = x * cos + self._rotate_half(x) * sin
@@ -51,4 +53,3 @@ class UnifiedRoPE(nn.Module):
         x1 = x[..., : x.shape[-1] // 2]
         x2 = x[..., x.shape[-1] // 2 :]
         return torch.cat((-x2, x1), dim=-1)
-    

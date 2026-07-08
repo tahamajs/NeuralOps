@@ -1,12 +1,15 @@
 """
 Base callback classes following the HuggingFace TrainerCallback pattern.
 """
+
+from typing import List, Optional
+
 from transformers import TrainerCallback
-from typing import Optional, List, Dict, Any
 
 
 class BaseCallback(TrainerCallback):
     """Extended base callback with extra event hooks."""
+
     def on_init_end(self, args, state, control, **kwargs):
         pass
 
@@ -22,6 +25,7 @@ class BaseCallback(TrainerCallback):
 
 class CallbackList:
     """Container that calls each callback in order."""
+
     def __init__(self, callbacks: Optional[List[TrainerCallback]] = None):
         self._callbacks = callbacks or []
 

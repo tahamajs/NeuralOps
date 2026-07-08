@@ -1,7 +1,11 @@
 """
 Core AI Co‑Scientist Engine – multi‑agent tournament workflow.
 """
-import json, logging, random
+
+import json
+import logging
+import random
+
 from django.utils import timezone
 from openai import OpenAI
 
@@ -15,13 +19,14 @@ def get_llm_client():
     global _client
     if _client is None:
         from django.conf import settings
-        api_key = getattr(settings, 'OPENAI_API_KEY', '')
-        base_url = getattr(settings, 'OPENAI_BASE_URL', None)
+
+        api_key = getattr(settings, "OPENAI_API_KEY", "")
+        base_url = getattr(settings, "OPENAI_BASE_URL", None)
         _client = OpenAI(api_key=api_key, base_url=base_url)
     return _client
 
 
-def call_llm(messages, model='gpt-4o-mini', temperature=0.7, max_tokens=2000):
+def call_llm(messages, model="gpt-4o-mini", temperature=0.7, max_tokens=2000):
     """Call the LLM with the given messages and return the response text."""
     client = get_llm_client()
     try:
@@ -46,14 +51,13 @@ class AIScientistFramework:
     def __init__(
         self,
         session,
-        model_name='gpt-4o-mini',
+        model_name="gpt-4o-mini",
         max_iterations=3,
         hypotheses_per_generation=10,
         tournament_size=8,
         evolution_top_k=3,
         verbose=True,
     ):
-        from .models import Hypothesis
 
         self.session = session
         self.model_name = model_name
@@ -67,8 +71,8 @@ class AIScientistFramework:
         """Execute the full research workflow."""
         from .models import Hypothesis
 
-        self.session.status = 'running'
-        self.session.save(update_fields=['status'])
+        self.session.status = "running"
+        self.session.save(update_fields=["status"])
 
         try:
             # ── Generation Phase ──────────────────────────────
@@ -86,11 +90,12 @@ class AIScientistFramework:
                 for h in hypotheses:
                     review = self._reflect(h)
                     HypothesisReview.objects.create(
-                        hypothesis=h, agent='Reflection',
-                        strengths=review.get('strengths', ''),
-                        weaknesses=review.get('weaknesses', ''),
-                        score=review.get('score', 5),
-                        suggestions=review.get('suggestions', ''),
+                        hypothesis=h,
+                        agent="Reflection",
+                        strengths=review.get("strengths", ""),
+                        weaknesses=review.get("weaknesses", ""),
+                        score=review.get("score", 5),
+                        suggestions=review.get("suggestions", ""),
                     )
 
                 # ── Ranking Phase (Elo tournament) ───────────
@@ -109,7 +114,9 @@ class AIScientistFramework:
                 # ── Evolution Phase ───────────────────────────
                 if iteration < self.max_iterations - 1:
                     self._log("🧬 Evolution Agent: Refining top hypotheses...")
-                    top_k = sorted(hypotheses, key=lambda h: h.elo_score, reverse=True)[:self.evolution_top_k]
+                    top_k = sorted(hypotheses, key=lambda h: h.elo_score, reverse=True)[
+                        : self.evolution_top_k
+                    ]
                     new_hypotheses = []
                     for h in top_k:
                         new_h = self._evolve(h)
@@ -120,30 +127,34 @@ class AIScientistFramework:
 
             # ── Final selection ───────────────────────────────
             best = max(hypotheses, key=lambda h: h.elo_score)
-            best.status = 'finalist'
-            best.save(update_fields=['status'])
+            best.status = "finalist"
+            best.save(update_fields=["status"])
             self.session.final_hypothesis_id = best.id
-            self.session.status = 'completed'
+            self.session.status = "completed"
             self.session.completed_at = timezone.now()
-            self.session.save(update_fields=['final_hypothesis_id', 'status', 'completed_at'])
+            self.session.save(
+                update_fields=["final_hypothesis_id", "status", "completed_at"]
+            )
 
             self._log(f"\n🏁 Final best hypothesis: {best.title}")
             self._log(f"   Elo score: {best.elo_score:.0f}")
             return {
-                'status': 'completed',
-                'final_hypothesis_id': str(best.id),
-                'title': best.title,
-                'content': best.content,
-                'elo_score': best.elo_score,
-                'total_hypotheses': Hypothesis.objects.filter(session=self.session).count(),
+                "status": "completed",
+                "final_hypothesis_id": str(best.id),
+                "title": best.title,
+                "content": best.content,
+                "elo_score": best.elo_score,
+                "total_hypotheses": Hypothesis.objects.filter(
+                    session=self.session
+                ).count(),
             }
 
         except Exception as e:
-            self.session.status = 'failed'
+            self.session.status = "failed"
             self.session.error_message = str(e)
-            self.session.save(update_fields=['status', 'error_message'])
+            self.session.save(update_fields=["status", "error_message"])
             logger.exception("Research workflow failed")
-            return {'status': 'failed', 'error': str(e)}
+            return {"status": "failed", "error": str(e)}
 
     # ── Agent Implementations ─────────────────────────────────────
 
@@ -164,7 +175,7 @@ For each hypothesis, provide:
 Return your response as a JSON array with objects containing "title" and "content" fields."""
 
         response = call_llm(
-            [{'role': 'user', 'content': prompt}],
+            [{"role": "user", "content": prompt}],
             model=self.model_name,
             temperature=0.8,
             max_tokens=4000,
@@ -176,19 +187,19 @@ Return your response as a JSON array with objects containing "title" and "conten
         except json.JSONDecodeError:
             # Fallback: split by numbered items
             data = []
-            for line in response.split('\n'):
-                if line.startswith('#'):
-                    title = line.lstrip('#').strip()
-                    data.append({'title': title, 'content': ''})
+            for line in response.split("\n"):
+                if line.startswith("#"):
+                    title = line.lstrip("#").strip()
+                    data.append({"title": title, "content": ""})
 
         hypotheses = []
-        for item in data[:self.hypotheses_per_generation]:
+        for item in data[: self.hypotheses_per_generation]:
             h = Hypothesis.objects.create(
                 session=self.session,
                 generation=1,
-                title=item.get('title', 'Untitled Hypothesis')[:300],
-                content=item.get('content', ''),
-                status='proposed',
+                title=item.get("title", "Untitled Hypothesis")[:300],
+                content=item.get("content", ""),
+                status="proposed",
             )
             hypotheses.append(h)
 
@@ -208,7 +219,7 @@ Provide your review in JSON format with these fields:
 - "suggestions": How could it be improved?"""
 
         response = call_llm(
-            [{'role': 'user', 'content': prompt}],
+            [{"role": "user", "content": prompt}],
             model=self.model_name,
             temperature=0.3,
             max_tokens=1000,
@@ -218,10 +229,10 @@ Provide your review in JSON format with these fields:
             return json.loads(response)
         except json.JSONDecodeError:
             return {
-                'strengths': 'Unable to parse review',
-                'weaknesses': '',
-                'score': 5,
-                'suggestions': '',
+                "strengths": "Unable to parse review",
+                "weaknesses": "",
+                "score": 5,
+                "suggestions": "",
             }
 
     def _run_tournament(self, hypotheses):
@@ -241,13 +252,13 @@ HYPOTHESIS B: {b.title}
 Which is stronger? Reply with just "A" or "B", then briefly explain why."""
 
             response = call_llm(
-                [{'role': 'user', 'content': prompt}],
+                [{"role": "user", "content": prompt}],
                 model=self.model_name,
                 temperature=0.2,
                 max_tokens=300,
             )
 
-            winner = a if response.strip().upper().startswith('A') else b
+            winner = a if response.strip().upper().startswith("A") else b
 
             # Update Elo ratings
             k = 32
@@ -263,14 +274,15 @@ Which is stronger? Reply with just "A" or "B", then briefly explain why."""
 
             a.comparisons_count += 1
             b.comparisons_count += 1
-            a.save(update_fields=['elo_score', 'comparisons_count'])
-            b.save(update_fields=['elo_score', 'comparisons_count'])
+            a.save(update_fields=["elo_score", "comparisons_count"])
+            b.save(update_fields=["elo_score", "comparisons_count"])
 
             TournamentMatch.objects.create(
                 session=self.session,
                 generation=self.session.hypotheses.aggregate(
-                    max_gen=models.Max('generation')
-                )['max_gen'] or 1,
+                    max_gen=models.Max("generation")
+                )["max_gen"]
+                or 1,
                 hypothesis_a=a,
                 hypothesis_b=b,
                 winner=winner,
@@ -282,7 +294,7 @@ Which is stronger? Reply with just "A" or "B", then briefly explain why."""
         from .models import MetaReview
 
         reviews = hypothesis.reviews.all()
-        reviews_text = '\n'.join(
+        reviews_text = "\n".join(
             f"Reviewer: {r.agent}\nStrengths: {r.strengths}\nWeaknesses: {r.weaknesses}\nScore: {r.score}\n"
             for r in reviews
         )
@@ -303,7 +315,7 @@ Provide:
 Return as JSON with fields "synthesis", "final_score", and "recommendation"."""
 
         response = call_llm(
-            [{'role': 'user', 'content': prompt}],
+            [{"role": "user", "content": prompt}],
             model=self.model_name,
             temperature=0.3,
             max_tokens=800,
@@ -312,13 +324,17 @@ Return as JSON with fields "synthesis", "final_score", and "recommendation"."""
         try:
             data = json.loads(response)
         except json.JSONDecodeError:
-            data = {'synthesis': 'Synthesis unavailable', 'final_score': 5, 'recommendation': 'revise'}
+            data = {
+                "synthesis": "Synthesis unavailable",
+                "final_score": 5,
+                "recommendation": "revise",
+            }
 
         MetaReview.objects.create(
             hypothesis=hypothesis,
-            synthesis=data.get('synthesis', ''),
-            final_score=data.get('final_score', 5),
-            recommendation=data.get('recommendation', 'revise'),
+            synthesis=data.get("synthesis", ""),
+            final_score=data.get("final_score", 5),
+            recommendation=data.get("recommendation", "revise"),
         )
 
     def _filter_diverse(self, hypotheses):
@@ -337,7 +353,7 @@ Return as JSON with fields "synthesis", "final_score", and "recommendation"."""
         from .models import Hypothesis
 
         reviews = hypothesis.reviews.all()
-        suggestions = ' '.join(r.suggestions for r in reviews if r.suggestions)
+        suggestions = " ".join(r.suggestions for r in reviews if r.suggestions)
 
         prompt = f"""Refine the following research hypothesis based on reviewer feedback:
 
@@ -349,7 +365,7 @@ REVIEWER SUGGESTIONS: {suggestions[:500]}
 Provide an improved version with a new title and detailed content. Return as JSON with "title" and "content"."""
 
         response = call_llm(
-            [{'role': 'user', 'content': prompt}],
+            [{"role": "user", "content": prompt}],
             model=self.model_name,
             temperature=0.6,
             max_tokens=2000,
@@ -358,15 +374,18 @@ Provide an improved version with a new title and detailed content. Return as JSO
         try:
             data = json.loads(response)
         except json.JSONDecodeError:
-            data = {'title': f"Refined: {hypothesis.title}", 'content': hypothesis.content}
+            data = {
+                "title": f"Refined: {hypothesis.title}",
+                "content": hypothesis.content,
+            }
 
         new_h = Hypothesis.objects.create(
             session=self.session,
             generation=hypothesis.generation + 1,
-            title=data.get('title', hypothesis.title)[:300],
-            content=data.get('content', hypothesis.content),
+            title=data.get("title", hypothesis.title)[:300],
+            content=data.get("content", hypothesis.content),
             parent_hypothesis=hypothesis,
-            status='refined',
+            status="refined",
         )
         return new_h
 

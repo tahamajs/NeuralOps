@@ -3,9 +3,10 @@ Integration with MegaOrchestrator – automatically decides whether to
 train locally or dispatch to remote workers.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from .coordinator import RemoteCoordinator
-from .rendezvous import InternetRendezvous
+
 
 def launch_remote_training(
     config: Dict[str, Any],
@@ -27,7 +28,7 @@ def launch_remote_training(
     num_gpus = remote_cfg.get("num_gpus_needed", 1)
     coord = RemoteCoordinator()
     if coord.total_available_gpus < num_gpus:
-        return None   # caller should fall back to single‑node
+        return None  # caller should fall back to single‑node
 
     job_id = coord.launch_job(config, num_gpus_needed=num_gpus)
     return job_id

@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict
+
 
 @dataclass
 class SweepConfig:
     name: str = "sweep"
-    algorithm: str = "tpe"              # tpe, random, grid, cmaes
+    algorithm: str = "tpe"  # tpe, random, grid, cmaes
     direction: str = "maximize"
     metric: str = "eval_accuracy"
     max_trials: int = 20

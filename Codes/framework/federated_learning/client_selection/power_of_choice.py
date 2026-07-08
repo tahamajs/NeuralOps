@@ -1,7 +1,9 @@
 """Power‑of‑choice client selection – pick the best among a random subset."""
 
 import random
-from .base import BaseSelector, SELECTOR_REGISTRY
+
+from .base import SELECTOR_REGISTRY, BaseSelector
+
 
 @SELECTOR_REGISTRY.register("power_of_choice")
 class PowerOfChoiceSelector(BaseSelector):
@@ -18,7 +20,9 @@ class PowerOfChoiceSelector(BaseSelector):
             pool = random.sample(client_ids, min(self.candidates, len(client_ids)))
             # Pick the client with the best recent performance (if history available)
             if round_history:
-                best = max(pool, key=lambda cid: round_history[-1].get(f"client_{cid}_acc", 0))
+                best = max(
+                    pool, key=lambda cid: round_history[-1].get(f"client_{cid}_acc", 0)
+                )
             else:
                 best = random.choice(pool)
             selected.append(best)

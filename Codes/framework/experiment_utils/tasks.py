@@ -3,12 +3,14 @@ Background training task (Django integration) with WebSocket broadcasting
 and AI assistant.
 """
 
-import json, traceback, threading, psutil, os
+import json
+import threading
+import traceback
 from pathlib import Path
-from datetime import datetime
+
+import psutil
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-
 from django.conf import settings
 from framework.experiment.orchestrator import MegaOrchestrator
 
@@ -21,8 +23,7 @@ def broadcast_terminal(msg: str):
     try:
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
-            "terminal",
-            {"type": "terminal_message", "data": msg}
+            "terminal", {"type": "terminal_message", "data": msg}
         )
     except Exception as e:
         print(f"WS broadcast error: {e}")
@@ -30,6 +31,7 @@ def broadcast_terminal(msg: str):
 
 class WSMessageQueue:
     """Thread‑safe WebSocket message sender."""
+
     _instance = None
 
     def __new__(cls):
@@ -42,8 +44,7 @@ class WSMessageQueue:
         try:
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
-                f"job_{experiment_id}",
-                {"type": "job_update", "data": data}
+                f"job_{experiment_id}", {"type": "job_update", "data": data}
             )
         except Exception as e:
             print(f"WS send error: {e}")
@@ -82,16 +83,24 @@ def run_training_async(experiment, stop_event: threading.Event):
         experiment.estimated_remaining_seconds = (total - current) * 0.1  # crude
         experiment.cpu_usage = psutil.cpu_percent()
         experiment.ram_usage_mb = psutil.virtual_memory().used / 1024**2
-        experiment.save(update_fields=[
-            "current_step", "total_steps", "estimated_remaining_seconds",
-            "cpu_usage", "ram_usage_mb"
-        ])
-        WSMessageQueue.send(run_id, {
-            "type": "progress",
-            "progress": pct,
-            "current_step": current,
-            "total_steps": total,
-        })
+        experiment.save(
+            update_fields=[
+                "current_step",
+                "total_steps",
+                "estimated_remaining_seconds",
+                "cpu_usage",
+                "ram_usage_mb",
+            ]
+        )
+        WSMessageQueue.send(
+            run_id,
+            {
+                "type": "progress",
+                "progress": pct,
+                "current_step": current,
+                "total_steps": total,
+            },
+        )
 
     def log_callback(msg: str):
         # Called by the orchestrator for log messages
@@ -136,7 +145,6 @@ def save_artifacts(experiment, final_metrics: dict):
 
     # History is saved by the saver inside orchestrator, we just add a few extra things
     import matplotlib.pyplot as plt
-    import pandas as pd
 
     # Loss plot from training history (if available)
     history = experiment.config.get("history", [])
@@ -144,19 +152,30 @@ def save_artifacts(experiment, final_metrics: dict):
         steps = [h.get("step", i) for i, h in enumerate(history) if "loss" in h]
         losses = [h["loss"] for h in history if "loss" in h]
         if steps:
-            plt.figure(figsize=(10,6))
+            plt.figure(figsize=(10, 6))
             plt.plot(steps, losses, label="Train Loss")
-            plt.xlabel("Step"); plt.ylabel("Loss"); plt.legend(); plt.grid(True)
-            plt.savefig(output_dir / "loss_curve.png", dpi=150); plt.close()
+            plt.xlabel("Step")
+            plt.ylabel("Loss")
+            plt.legend()
+            plt.grid(True)
+            plt.savefig(output_dir / "loss_curve.png", dpi=150)
+            plt.close()
 
     # Final metrics JSON
     with open(output_dir / "final_metrics.json", "w") as f:
         json.dump(final_metrics, f, indent=2)
 
     # Copy model if present
-    model_src = Path(settings.MEDIA_ROOT) / "experiments" / str(experiment.id) / "artifacts" / "model"
+    model_src = (
+        Path(settings.MEDIA_ROOT)
+        / "experiments"
+        / str(experiment.id)
+        / "artifacts"
+        / "model"
+    )
     if model_src.exists():
         import shutil
+
         shutil.copytree(model_src, output_dir / "model", dirs_exist_ok=True)
 
 
@@ -174,13 +193,14 @@ class AIAssistant:
 
     def monitor(self, exp_id: str, metrics_history: list):
         last_losses = [m.get("loss") for m in metrics_history[-5:] if "loss" in m]
-        if len(last_losses) >= 5 and all(abs(last_losses[i] - last_losses[i-1]) < 0.01 for i in range(1,5)):
+        if len(last_losses) >= 5 and all(
+            abs(last_losses[i] - last_losses[i - 1]) < 0.01 for i in range(1, 5)
+        ):
             suggestion = "early_stop"
             reason = "Loss plateau detected"
-            WSMessageQueue.send(exp_id, {
-                "type": "ai_suggestion",
-                "suggestion": suggestion,
-                "reason": reason
-            })
+            WSMessageQueue.send(
+                exp_id,
+                {"type": "ai_suggestion", "suggestion": suggestion, "reason": reason},
+            )
             # Optionally trigger early stop
             # stop_event.set()

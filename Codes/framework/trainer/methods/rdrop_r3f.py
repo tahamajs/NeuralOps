@@ -1,14 +1,18 @@
 """
 R‑Drop and R3F (regularised dropout / robust representation learning).
 """
+
+import logging
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from transformers import Trainer
+
 from .registry import register_method
-import logging
 
 logger = logging.getLogger(__name__)
+
 
 def rdrop_loss(logits1, logits2, labels, is_regression, alpha):
     if is_regression:
@@ -17,9 +21,11 @@ def rdrop_loss(logits1, logits2, labels, is_regression, alpha):
         loss2 = loss_fn(logits2.view(-1), labels.view(-1))
         p = torch.distributions.Normal(logits1, torch.ones_like(logits1))
         q = torch.distributions.Normal(logits2, torch.ones_like(logits2))
-        kl = (torch.distributions.kl_divergence(p, q).mean() +
-              torch.distributions.kl_divergence(q, p).mean()) / 2.0
-        loss = (loss1 + loss2)/2.0 + alpha * kl
+        kl = (
+            torch.distributions.kl_divergence(p, q).mean()
+            + torch.distributions.kl_divergence(q, p).mean()
+        ) / 2.0
+        loss = (loss1 + loss2) / 2.0 + alpha * kl
     else:
         ce = nn.CrossEntropyLoss()
         loss1 = ce(logits1.view(-1, logits1.size(-1)), labels.view(-1))
@@ -30,12 +36,19 @@ def rdrop_loss(logits1, logits2, labels, is_regression, alpha):
         p2 = torch.softmax(logits2, dim=-1)
         kl1 = F.kl_div(logp1, p2, reduction="batchmean")
         kl2 = F.kl_div(logp2, p1, reduction="batchmean")
-        kl = (kl1 + kl2)/2.0
-        loss = (loss1 + loss2)/2.0 + alpha * kl
+        kl = (kl1 + kl2) / 2.0
+        loss = (loss1 + loss2) / 2.0 + alpha * kl
     return loss
 
-def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilon, is_regression):
-    base_kwargs = {"input_ids": input_ids, "attention_mask": attention_mask, "labels": labels}
+
+def r3f_forward(
+    model, input_ids, attention_mask, token_type_ids, labels, epsilon, is_regression
+):
+    base_kwargs = {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "labels": labels,
+    }
     if token_type_ids is not None:
         base_kwargs["token_type_ids"] = token_type_ids
     out_clean = model(**base_kwargs)
@@ -44,7 +57,11 @@ def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilo
     embed = model.get_input_embeddings()
     inputs_embeds = embed(input_ids)
     noise = torch.randn_like(inputs_embeds) * epsilon
-    noise_kwargs = {"inputs_embeds": inputs_embeds + noise, "attention_mask": attention_mask, "labels": labels}
+    noise_kwargs = {
+        "inputs_embeds": inputs_embeds + noise,
+        "attention_mask": attention_mask,
+        "labels": labels,
+    }
     if token_type_ids is not None:
         noise_kwargs["token_type_ids"] = token_type_ids
     out_noisy = model(**noise_kwargs)
@@ -57,7 +74,7 @@ def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilo
         p = torch.distributions.Normal(logits_clean, torch.ones_like(logits_clean))
         q = torch.distributions.Normal(logits_noisy, torch.ones_like(logits_noisy))
         kl = torch.distributions.kl_divergence(p, q).mean()
-        loss = (loss_clean + loss_noisy)/2.0 + kl
+        loss = (loss_clean + loss_noisy) / 2.0 + kl
     else:
         ce = nn.CrossEntropyLoss()
         loss_clean = ce(logits_clean.view(-1, logits_clean.size(-1)), labels.view(-1))
@@ -68,11 +85,14 @@ def r3f_forward(model, input_ids, attention_mask, token_type_ids, labels, epsilo
         q = torch.softmax(logits_noisy, dim=-1)
         kl1 = F.kl_div(logp_clean, q, reduction="batchmean")
         kl2 = F.kl_div(logp_noisy, p, reduction="batchmean")
-        loss = (loss_clean + loss_noisy)/2.0 + (kl1+kl2)/2.0
+        loss = (loss_clean + loss_noisy) / 2.0 + (kl1 + kl2) / 2.0
     return loss, logits_clean
 
+
 class MethodTrainer(Trainer):
-    def __init__(self, method, rdrop_alpha, r3f_epsilon, is_regression, *args, **kwargs):
+    def __init__(
+        self, method, rdrop_alpha, r3f_epsilon, is_regression, *args, **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.method = method
         self.rdrop_alpha = rdrop_alpha
@@ -83,8 +103,13 @@ class MethodTrainer(Trainer):
         if "rdrop" in self.method.lower():
             outputs1 = model(**inputs)
             outputs2 = model(**inputs)
-            loss = rdrop_loss(outputs1.logits, outputs2.logits, inputs["labels"],
-                              self.is_regression, self.rdrop_alpha)
+            loss = rdrop_loss(
+                outputs1.logits,
+                outputs2.logits,
+                inputs["labels"],
+                self.is_regression,
+                self.rdrop_alpha,
+            )
             return (loss, outputs1) if return_outputs else loss
         elif "r3f" in self.method.lower():
             loss, logits = r3f_forward(
@@ -99,9 +124,11 @@ class MethodTrainer(Trainer):
             return (loss, logits) if return_outputs else loss
         return super().compute_loss(model, inputs, return_outputs, **kwargs)
 
+
 @register_method("rdrop")
 def apply_rdrop(model, config):
     pass
+
 
 @register_method("r3f")
 def apply_r3f(model, config):

@@ -1,10 +1,12 @@
-from .base import BaseQuantizer, QUANTIZER_REGISTRY
+from .base import QUANTIZER_REGISTRY, BaseQuantizer
+
 
 @QUANTIZER_REGISTRY.register("fp8")
 class FP8Quantizer(BaseQuantizer):
     def apply(self, model, **kwargs):
         try:
             import transformer_engine.pytorch as te
+
             # Wrap model with FP8 – simplified placeholder
             model = te.fp8_autocast(enabled=True)(model)
         except ImportError:

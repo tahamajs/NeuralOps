@@ -3,10 +3,12 @@
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class SALRLayer(nn.Module):
     """Low-rank + sparse mask layer."""
+
     def __init__(self, linear: nn.Linear, rank: int, sparsity: float):
         super().__init__()
         self.in_features = linear.in_features
@@ -18,13 +20,17 @@ class SALRLayer(nn.Module):
         self.U = nn.Parameter(U[:, :r].float())
         self.S = nn.Parameter(S[:r].float())
         self.Vt = nn.Parameter(Vt[:r, :].float())
-        self.bias = nn.Parameter(linear.bias.data.clone() if linear.bias is not None else torch.zeros(linear.out_features))
+        self.bias = nn.Parameter(
+            linear.bias.data.clone()
+            if linear.bias is not None
+            else torch.zeros(linear.out_features)
+        )
         # sparse mask: randomly keep a fraction of elements in the core
         mask = (torch.rand(r, r) < (1 - sparsity)).float()
-        self.register_buffer('mask', mask)
+        self.register_buffer("mask", mask)
 
     def forward(self, x):
-        S_sparse = self.S * self.mask[:self.rank, :self.rank]
+        S_sparse = self.S * self.mask[: self.rank, : self.rank]
         W = self.U @ torch.diag(S_sparse) @ self.Vt
         return x @ W.T + self.bias
 
@@ -42,24 +48,23 @@ class SALRCompressor(BaseCompressor):
                 new_layer = SALRLayer(module, self.rank, self.sparsity)
                 parent = self._get_parent(name)
                 if parent is not None:
-                    setattr(parent, name.split('.')[-1], new_layer)
+                    setattr(parent, name.split(".")[-1], new_layer)
                 self.compressed_layers.append(name)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
     def _get_parent(self, full_name):
-        parts = full_name.split('.')
+        parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
             parent = getattr(parent, part, None)
         return parent
-    
 
 
 @COMPRESSOR_REGISTRY.register("salr")
 def salr_factory(model, comp_config):
-    rank = getattr(comp_config, 'salr_rank', 64)
-    sparsity = getattr(comp_config, 'salr_sparsity', 0.5)
+    rank = getattr(comp_config, "salr_rank", 64)
+    sparsity = getattr(comp_config, "salr_sparsity", 0.5)
     compressor = SALRCompressor(model, rank=rank, sparsity=sparsity)
     compressed_model, _ = compressor.compress()
     return compressed_model

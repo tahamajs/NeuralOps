@@ -1,25 +1,23 @@
 # ----------------------------------------------------------------------
 # Configuration
 # ----------------------------------------------------------------------
-from dataclasses import dataclass
 import math
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from dataclasses import dataclass
-from typing import Optional, Tuple, Literal
+from typing import Literal, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @dataclass
 class AegisConfigV3:
     hidden_size: int = 768
     num_heads: int = 12
     head_dim: int = 64
-    window_size: int = 64          # half‑window (total context = 2*window)
+    window_size: int = 64  # half‑window (total context = 2*window)
     svd_rank: int = 128
     low_rank_update: int = 16
     kernel_feature_dim: int = 128  # m
@@ -27,14 +25,13 @@ class AegisConfigV3:
     use_query_gate: bool = True
     use_input_gate: bool = True
     use_pre_norm: bool = True
-    long_context_threshold: int = 2048   # apply top‑k reduction beyond this length
+    long_context_threshold: int = 2048  # apply top‑k reduction beyond this length
     max_global_tokens: int = 1024
-    kernel_method: str = "orthogonal"      # "orthogonal", "random", "cosine", "custom"
+    kernel_method: str = "orthogonal"  # "orthogonal", "random", "cosine", "custom"
     kernel_clamp_min: float = -20.0
     kernel_clamp_max: float = 20.0
     kernel_use_float64: bool = False
     kernel_seed: Optional[int] = None
-
 
 
 # ----------------------------------------------------------------------
@@ -46,9 +43,15 @@ class FactorisedLowRankProjection(nn.Module):
         y = x V diag(S) U^T + (x B^T) A^T
     without ever materialising the full weight.
     """
-    def __init__(self, in_features: int, out_features: int,
-                 svd_rank: int, lora_rank: int,
-                 pretrained_weight: Optional[torch.Tensor] = None):
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        svd_rank: int,
+        lora_rank: int,
+        pretrained_weight: Optional[torch.Tensor] = None,
+    ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -59,15 +62,15 @@ class FactorisedLowRankProjection(nn.Module):
             # Note: torch.svd returns V (not V^T), shape (H, H)
             U = U[:, :svd_rank].clone()
             S = S[:svd_rank].clone()
-            V = V[:, :svd_rank].clone()   # V (in, rank)
+            V = V[:, :svd_rank].clone()  # V (in, rank)
         else:
             U = torch.randn(out_features, svd_rank) * 0.02
             S = torch.ones(svd_rank)
             V = torch.randn(in_features, svd_rank) * 0.02
 
-        self.register_buffer('U', U)
+        self.register_buffer("U", U)
         self.S = nn.Parameter(S)
-        self.register_buffer('V', V)
+        self.register_buffer("V", V)
 
         # LoRA factors
         self.A = nn.Parameter(torch.zeros(out_features, lora_rank))
@@ -77,13 +80,13 @@ class FactorisedLowRankProjection(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (B, N, in_features)
         # SVD path: x V diag(S) U^T
-        xV = torch.matmul(x, self.V)                   # (B,N, r_svd)
-        xV_S = xV * self.S.unsqueeze(0).unsqueeze(0)   # broadcast S
-        out_svd = torch.matmul(xV_S, self.U.t())       # (B,N, out)
+        xV = torch.matmul(x, self.V)  # (B,N, r_svd)
+        xV_S = xV * self.S.unsqueeze(0).unsqueeze(0)  # broadcast S
+        out_svd = torch.matmul(xV_S, self.U.t())  # (B,N, out)
 
         # LoRA path: x B^T A^T
-        xB = torch.matmul(x, self.B.t())               # (B,N, r_lora)
-        out_lora = torch.matmul(xB, self.A.t())        # (B,N, out)
+        xB = torch.matmul(x, self.B.t())  # (B,N, r_lora)
+        out_lora = torch.matmul(xB, self.A.t())  # (B,N, out)
 
         return out_svd + out_lora
 
@@ -116,9 +119,8 @@ Stability features:
     - Optional float64 upcast for exp (disabled by default for speed)
     - Safe initialisation of projection matrix with fallbacks
 """
-import math
 from dataclasses import dataclass
-from typing import Optional, Literal
+from typing import Optional
 
 import torch
 import torch.nn as nn
@@ -129,16 +131,16 @@ import torch.nn as nn
 # -------------------------------------------------------------------------
 @dataclass
 class KernelFeatureConfig:
-    head_dim: int            # d (e.g. 64)
-    num_features: int        # m (e.g. 128)
+    head_dim: int  # d (e.g. 64)
+    num_features: int  # m (e.g. 128)
     method: Literal["orthogonal", "random", "cosine", "custom"] = "orthogonal"
     clamp_min: float = -20.0
     clamp_max: float = 20.0
     use_float64_exp: bool = False
     eps: float = 1e-8
-    scaling: Optional[float] = None   # if None, auto‑set to 1/√m
+    scaling: Optional[float] = None  # if None, auto‑set to 1/√m
     projection_scale: Optional[float] = None  # if None, auto‑set to √d
-    seed: Optional[int] = None        # reproducibility
+    seed: Optional[int] = None  # reproducibility
     # For custom method only:
     custom_proj: Optional[torch.Tensor] = None
 
@@ -169,11 +171,13 @@ class StableKernelFeatureMap(nn.Module):
 
         # ---- 2. Build projection matrix ----
         proj = self._build_projection()
-        self.register_buffer('proj', proj)
+        self.register_buffer("proj", proj)
 
         # ---- 3. Validate final shape ----
-        assert self.proj.shape == (self.head_dim, self.m), \
-            f"Projection matrix shape {self.proj.shape} != ({self.head_dim}, {self.m})"
+        assert self.proj.shape == (
+            self.head_dim,
+            self.m,
+        ), f"Projection matrix shape {self.proj.shape} != ({self.head_dim}, {self.m})"
 
     # ------------------------------------------------------------------
     # Projection initialisation strategies
@@ -289,7 +293,9 @@ class StableKernelFeatureMap(nn.Module):
     # ------------------------------------------------------------------
     # Utility: compute full kernel matrix (for debugging)
     # ------------------------------------------------------------------
-    def kernel_matrix(self, x: torch.Tensor, y: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def kernel_matrix(
+        self, x: torch.Tensor, y: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         """
         Compute the approximate kernel matrix φ(x) φ(y)ᵀ.
         If y is None, computes φ(x) φ(x)ᵀ.
@@ -298,8 +304,8 @@ class StableKernelFeatureMap(nn.Module):
         """
         if y is None:
             y = x
-        phi_x = self(x)   # (..., N, m)
-        phi_y = self(y)   # (..., M, m)
+        phi_x = self(x)  # (..., N, m)
+        phi_y = self(y)  # (..., M, m)
         return torch.matmul(phi_x, phi_y.transpose(-2, -1))
 
     # ------------------------------------------------------------------
@@ -313,8 +319,9 @@ class StableKernelFeatureMap(nn.Module):
 # -------------------------------------------------------------------------
 # Convenience constructors
 # -------------------------------------------------------------------------
-def kernel_feature_map_orthogonal(head_dim: int, num_features: int,
-                                  clamp_range=(-20.0, 20.0), seed=None) -> StableKernelFeatureMap:
+def kernel_feature_map_orthogonal(
+    head_dim: int, num_features: int, clamp_range=(-20.0, 20.0), seed=None
+) -> StableKernelFeatureMap:
     """Factory for orthogonal random features."""
     config = KernelFeatureConfig(
         head_dim=head_dim,
@@ -322,7 +329,7 @@ def kernel_feature_map_orthogonal(head_dim: int, num_features: int,
         method="orthogonal",
         clamp_min=clamp_range[0],
         clamp_max=clamp_range[1],
-        seed=seed
+        seed=seed,
     )
     return StableKernelFeatureMap(config)
 
@@ -334,8 +341,14 @@ def kernel_feature_map_orthogonal(head_dim: int, num_features: int,
 # Gating Module
 # ----------------------------------------------------------------------
 class GatingModule(nn.Module):
-    def __init__(self, hidden_size: int, num_heads: int, head_dim: int,
-                 use_query: bool, use_input: bool):
+    def __init__(
+        self,
+        hidden_size: int,
+        num_heads: int,
+        head_dim: int,
+        use_query: bool,
+        use_input: bool,
+    ):
         super().__init__()
         self.use_query = use_query
         self.use_input = use_input
@@ -345,15 +358,16 @@ class GatingModule(nn.Module):
             self.input_gate = nn.Linear(hidden_size, num_heads, bias=True)
             nn.init.constant_(self.input_gate.bias, 2.0)
 
-    def forward(self, hidden_states: torch.Tensor,
-                Q: torch.Tensor) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
+    def forward(
+        self, hidden_states: torch.Tensor, Q: torch.Tensor
+    ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
         q_gate = None
         in_gate = None
         if self.use_query:
-            q_gate = torch.sigmoid(self.query_gate(Q))   # (B,h,N,1)
+            q_gate = torch.sigmoid(self.query_gate(Q))  # (B,h,N,1)
         if self.use_input:
-            logits = self.input_gate(hidden_states)       # (B,N,h)
-            in_gate = torch.sigmoid(logits).permute(0,2,1).unsqueeze(-1)  # (B,h,N,1)
+            logits = self.input_gate(hidden_states)  # (B,N,h)
+            in_gate = torch.sigmoid(logits).permute(0, 2, 1).unsqueeze(-1)  # (B,h,N,1)
         return q_gate, in_gate
 
 
@@ -369,16 +383,24 @@ class ContextFusionGate(nn.Module):
         self.proj = nn.Linear(hidden_size // num_heads + 2 * head_dim, 1, bias=True)
         nn.init.constant_(self.proj.bias, 1.0)
 
-    def forward(self, hidden_states: torch.Tensor,
-                local_out: torch.Tensor, global_out: torch.Tensor) -> torch.Tensor:
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        local_out: torch.Tensor,
+        global_out: torch.Tensor,
+    ) -> torch.Tensor:
         # hidden_states: (B,N,H)
         # local_out, global_out: (B,h,N,d)
         B, h, N, d = local_out.shape
         H = hidden_states.size(-1)
         # Split hidden into per-head features: (B,N,H) -> (B,N,h,d) -> (B,h,N,d)
-        hidden_per_head = hidden_states.view(B, N, h, d).permute(0,2,1,3)  # (B,h,N,d)
-        concat = torch.cat([hidden_per_head, local_out, global_out], dim=-1)  # (B,h,N, H/h+2d)
-        logits = self.proj(concat)            # (B,h,N,1)
+        hidden_per_head = hidden_states.view(B, N, h, d).permute(
+            0, 2, 1, 3
+        )  # (B,h,N,d)
+        concat = torch.cat(
+            [hidden_per_head, local_out, global_out], dim=-1
+        )  # (B,h,N, H/h+2d)
+        logits = self.proj(concat)  # (B,h,N,1)
         return torch.sigmoid(logits)
 
 
@@ -388,8 +410,7 @@ class ContextFusionGate(nn.Module):
 # ----------------------------------------------------------------------
 @ATTENTION_REGISTRY.register("aegis_v6")
 class AegisAttentionV3(BaseAttention):
-    def __init__(self, config: AegisConfigV3,
-                 pretrained_qkv: Optional[dict] = None):
+    def __init__(self, config: AegisConfigV3, pretrained_qkv: Optional[dict] = None):
         super().__init__(config)
         self.cfg = config
         self.h = config.num_heads
@@ -398,23 +419,39 @@ class AegisAttentionV3(BaseAttention):
         self.window = config.window_size
 
         # Factorised low‑rank projections
-        Qp = pretrained_qkv['q'] if pretrained_qkv else None
-        Kp = pretrained_qkv['k'] if pretrained_qkv else None
-        Vp = pretrained_qkv['v'] if pretrained_qkv else None
-        Op = pretrained_qkv['o'] if pretrained_qkv else None
+        Qp = pretrained_qkv["q"] if pretrained_qkv else None
+        Kp = pretrained_qkv["k"] if pretrained_qkv else None
+        Vp = pretrained_qkv["v"] if pretrained_qkv else None
+        Op = pretrained_qkv["o"] if pretrained_qkv else None
 
         self.q_proj = FactorisedLowRankProjection(
-            config.hidden_size, self.all_head_size,
-            config.svd_rank, config.low_rank_update, Qp)
+            config.hidden_size,
+            self.all_head_size,
+            config.svd_rank,
+            config.low_rank_update,
+            Qp,
+        )
         self.k_proj = FactorisedLowRankProjection(
-            config.hidden_size, self.all_head_size,
-            config.svd_rank, config.low_rank_update, Kp)
+            config.hidden_size,
+            self.all_head_size,
+            config.svd_rank,
+            config.low_rank_update,
+            Kp,
+        )
         self.v_proj = FactorisedLowRankProjection(
-            config.hidden_size, self.all_head_size,
-            config.svd_rank, config.low_rank_update, Vp)
+            config.hidden_size,
+            self.all_head_size,
+            config.svd_rank,
+            config.low_rank_update,
+            Vp,
+        )
         self.out_proj = FactorisedLowRankProjection(
-            self.all_head_size, config.hidden_size,
-            config.svd_rank, config.low_rank_update, Op)
+            self.all_head_size,
+            config.hidden_size,
+            config.svd_rank,
+            config.low_rank_update,
+            Op,
+        )
 
         # Pre‑normalisation
         self.pre_norm = config.use_pre_norm
@@ -434,15 +471,20 @@ class AegisAttentionV3(BaseAttention):
         self.kernel_map = StableKernelFeatureMap(kernel_cfg)
 
         # Gates
-        self.gates = GatingModule(config.hidden_size, self.h, self.d,
-                                  config.use_query_gate, config.use_input_gate)
+        self.gates = GatingModule(
+            config.hidden_size,
+            self.h,
+            self.d,
+            config.use_query_gate,
+            config.use_input_gate,
+        )
 
         # Fusion gate
         self.fusion = ContextFusionGate(config.hidden_size, self.h, self.d)
 
     def _reshape(self, x: torch.Tensor) -> torch.Tensor:
         B, N, _ = x.shape
-        return x.view(B, N, self.h, self.d).permute(0,2,1,3)
+        return x.view(B, N, self.h, self.d).permute(0, 2, 1, 3)
 
     def _tiled_sliding_window_attention(self, Q, K, V, pad_mask_1d, square_mask=None):
         """
@@ -465,36 +507,44 @@ class AegisAttentionV3(BaseAttention):
             start = i * step
             end = min(start + W, N)
             k_start = max(0, start - W)
-            k_end   = min(N, end + W)
+            k_end = min(N, end + W)
 
-            q_tile = Q[:, :, start:end, :]          # (B, h, qlen, d)
+            q_tile = Q[:, :, start:end, :]  # (B, h, qlen, d)
             k_tile = K[:, :, k_start:k_end, :]
             v_tile = V[:, :, k_start:k_end, :]
 
             # Build additive mask for this tile
             # 1. padding mask from 1D pad_mask_1d
-            kv_mask = pad_mask_1d[:, :, :, k_start:k_end].to(q_tile.dtype)   # (B,1,1,kvlen)
-            attn_mask = (1.0 - kv_mask) * -1e9                                 # pad → -inf
+            kv_mask = pad_mask_1d[:, :, :, k_start:k_end].to(
+                q_tile.dtype
+            )  # (B,1,1,kvlen)
+            attn_mask = (1.0 - kv_mask) * -1e9  # pad → -inf
 
             # 2. add square mask slice, if provided
             if square_mask is not None:
                 # square_mask shape (B, 1, N, N)
-                tile_sq_mask = square_mask[:, :, start:end, k_start:k_end]   # (B,1,qlen,kvlen)
+                tile_sq_mask = square_mask[
+                    :, :, start:end, k_start:k_end
+                ]  # (B,1,qlen,kvlen)
                 attn_mask = attn_mask + tile_sq_mask.to(q_tile.dtype)
 
             # 3. sliding window mask (band)
-            win_mask = self._sliding_window_mask_local(q_tile.size(2), k_tile.size(2), start, k_start, N)
+            win_mask = self._sliding_window_mask_local(
+                q_tile.size(2), k_tile.size(2), start, k_start, N
+            )
             attn_mask = attn_mask + win_mask
 
             # 4. query padding mask
-            q_mask = pad_mask_1d[:, :, :, start:end].to(q_tile.dtype)       # (B,1,1,qlen)
+            q_mask = pad_mask_1d[:, :, :, start:end].to(q_tile.dtype)  # (B,1,1,qlen)
             q_mask_inv = (1.0 - q_mask) * -1e9
             attn_mask = attn_mask + q_mask_inv.transpose(-2, -1)
 
             tile_out = F.scaled_dot_product_attention(
-                q_tile, k_tile, v_tile,
+                q_tile,
+                k_tile,
+                v_tile,
                 attn_mask=attn_mask,
-                dropout_p=self.cfg.dropout if self.training else 0.0
+                dropout_p=self.cfg.dropout if self.training else 0.0,
             )
             out[:, :, start:end, :] = tile_out
         return out
@@ -506,7 +556,7 @@ class AegisAttentionV3(BaseAttention):
         dist = (q_idx.unsqueeze(-1) - kv_idx.unsqueeze(-2)).abs()
         win = (dist < self.window).float()
         return (1.0 - win) * -1e9
-        
+
     def _global_linear_attention(self, Q, K, V, pad_mask_1d, q_gate, in_gate):
         """
         pad_mask_1d : (B, N) or (B,1,1,N) – 1=valid, 0=pad.
@@ -538,19 +588,19 @@ class AegisAttentionV3(BaseAttention):
             V_val = V_val * in_gate
 
         # Apply 1D padding mask
-        K_feat = K_feat * pad.transpose(-2, -1)   # (B,1,1,N) → (B,1,N,1) broadcast to (B,h,N,m)
-        V_val  = V_val  * pad.transpose(-2, -1)
+        K_feat = K_feat * pad.transpose(
+            -2, -1
+        )  # (B,1,1,N) → (B,1,N,1) broadcast to (B,h,N,m)
+        V_val = V_val * pad.transpose(-2, -1)
 
-        KV = torch.matmul(K_feat.transpose(-2, -1), V_val)   # (B,h,m,d)
-        Z  = K_feat.sum(dim=-2, keepdim=True)               # (B,h,1,m)
+        KV = torch.matmul(K_feat.transpose(-2, -1), V_val)  # (B,h,m,d)
+        Z = K_feat.sum(dim=-2, keepdim=True)  # (B,h,1,m)
 
-        num   = torch.matmul(Q_feat, KV)
+        num = torch.matmul(Q_feat, KV)
         denom = torch.matmul(Q_feat, Z.transpose(-2, -1))
-        safe  = denom > 1e-6
-        out   = torch.where(safe, num / denom, torch.zeros_like(num))
+        safe = denom > 1e-6
+        out = torch.where(safe, num / denom, torch.zeros_like(num))
         return out
-
-
 
     @staticmethod
     def _convert_attention_mask(attention_mask, B, N, device):
@@ -567,7 +617,7 @@ class AegisAttentionV3(BaseAttention):
         if attention_mask.dim() == 4:
             if attention_mask.shape[-2] == attention_mask.shape[-1]:
                 # extended additive mask (B,1,N,N): row 0 tells us valid key positions
-                return attention_mask[:, 0, 0, :] > -1e9      # True where valid
+                return attention_mask[:, 0, 0, :] > -1e9  # True where valid
             else:
                 # typical padding mask (B,1,1,N)
                 return attention_mask.squeeze(1).squeeze(1) > -1e9
@@ -579,25 +629,32 @@ class AegisAttentionV3(BaseAttention):
         # Determine mask type and create both 1D padding mask and optional square mask
         if attention_mask is not None:
             mask_tensor = attention_mask.to(hidden_states.dtype)
-            if mask_tensor.dim() == 2:                 # standard (B, N)
-                pad_mask_1d = mask_tensor.unsqueeze(1).unsqueeze(2)   # (B,1,1,N)
+            if mask_tensor.dim() == 2:  # standard (B, N)
+                pad_mask_1d = mask_tensor.unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
                 square_mask = None
             elif mask_tensor.dim() == 3:
                 # Could be (B, N, N) or (B, 1, N) – assume square if last two dims equal
                 if mask_tensor.size(1) == mask_tensor.size(2):
-                    square_mask = mask_tensor.unsqueeze(1)            # (B,1,N,N)
+                    square_mask = mask_tensor.unsqueeze(1)  # (B,1,N,N)
                     # extract 1D padding: any row that is all -inf? use max> -1e9
-                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -1e9).to(dtype=hidden_states.dtype)
-                    pad_mask_1d = pad_1d.unsqueeze(1).unsqueeze(2)    # (B,1,1,N)
-                else:   # treat as (B, 1, N)
-                    pad_mask_1d = mask_tensor.unsqueeze(2)            # (B,1,1,N)
+                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -1e9).to(
+                        dtype=hidden_states.dtype
+                    )
+                    pad_mask_1d = pad_1d.unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
+                else:  # treat as (B, 1, N)
+                    pad_mask_1d = mask_tensor.unsqueeze(2)  # (B,1,1,N)
                     square_mask = None
-            elif mask_tensor.dim() == 4:                # (B,1,N,N) or (B,1,1,N)
-                if mask_tensor.size(-1) == mask_tensor.size(-2) and mask_tensor.size(-1) > 1:
-                    square_mask = mask_tensor                           # (B,1,N,N)
-                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -1e9).to(dtype=hidden_states.dtype)
+            elif mask_tensor.dim() == 4:  # (B,1,N,N) or (B,1,1,N)
+                if (
+                    mask_tensor.size(-1) == mask_tensor.size(-2)
+                    and mask_tensor.size(-1) > 1
+                ):
+                    square_mask = mask_tensor  # (B,1,N,N)
+                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -1e9).to(
+                        dtype=hidden_states.dtype
+                    )
                     pad_mask_1d = pad_1d.unsqueeze(1).unsqueeze(2)
-                else:   # (B,1,1,N)
+                else:  # (B,1,1,N)
                     pad_mask_1d = mask_tensor
                     square_mask = None
             else:
@@ -605,7 +662,9 @@ class AegisAttentionV3(BaseAttention):
                 pad_mask_1d = mask_tensor.view(B, -1).unsqueeze(1).unsqueeze(2)
                 square_mask = None
         else:
-            pad_mask_1d = torch.ones(B, 1, 1, N, device=hidden_states.device, dtype=hidden_states.dtype)
+            pad_mask_1d = torch.ones(
+                B, 1, 1, N, device=hidden_states.device, dtype=hidden_states.dtype
+            )
             square_mask = None
 
         Q = self._reshape(self.q_proj(hidden_states))
@@ -614,34 +673,35 @@ class AegisAttentionV3(BaseAttention):
 
         q_gate, in_gate = self.gates(hidden_states, Q)
 
-        local_out = self._tiled_sliding_window_attention(Q, K, V, pad_mask_1d, square_mask)
-        global_out = self._global_linear_attention(Q, K, V, pad_mask_1d, q_gate, in_gate)
+        local_out = self._tiled_sliding_window_attention(
+            Q, K, V, pad_mask_1d, square_mask
+        )
+        global_out = self._global_linear_attention(
+            Q, K, V, pad_mask_1d, q_gate, in_gate
+        )
 
         fuse_gate = self.fusion(hidden_states, local_out, global_out)
         fused = (1.0 - fuse_gate) * local_out + fuse_gate * global_out
-        fused = fused.permute(0,2,1,3).contiguous().view(B, N, self.all_head_size)
+        fused = fused.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
         out = self.out_proj(fused)
         return out, None
 
-
-
-
     def get_ortho_loss(self):
         return torch.tensor(0.0, device=self.out_proj.A.device)
-        
-        
+
     @staticmethod
     def init_from_pretrained(layer):
         return {
-            'q': layer.q_lin.weight.data.clone().detach(),
-            'k': layer.k_lin.weight.data.clone().detach(),
-            'v': layer.v_lin.weight.data.clone().detach(),
-            'o': layer.out_lin.weight.data.clone().detach()
+            "q": layer.q_lin.weight.data.clone().detach(),
+            "k": layer.k_lin.weight.data.clone().detach(),
+            "v": layer.v_lin.weight.data.clone().detach(),
+            "o": layer.out_lin.weight.data.clone().detach(),
         }
 
 
 def inject_aegis_v3(model, config: AegisConfigV3):
     from transformers import DistilBertAttention
+
     for name, module in model.named_children():
         if isinstance(module, DistilBertAttention):
             pretrained = AegisAttentionV3.init_from_pretrained(module)
@@ -651,37 +711,30 @@ def inject_aegis_v3(model, config: AegisConfigV3):
             inject_aegis_v3(module, config)
 
 
-
-
-
-
-
-
-
-
-
 @ATTENTION_REGISTRY.register("aegis_v6")
-def inject_aegis_v6(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_aegis_v6(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
     # Build AegisConfigV3 from comp_config and model_config
     cfg = AegisConfigV3(
         hidden_size=model_config.hidden_size,
         num_heads=model_config.num_attention_heads,
         head_dim=model_config.hidden_size // model_config.num_attention_heads,
-        window_size=getattr(comp_config, 'window_size', 64),
-        svd_rank=getattr(comp_config, 'svd_rank', 128),
-        low_rank_update=getattr(comp_config, 'low_rank_update', 16),
-        kernel_feature_dim=getattr(comp_config, 'kernel_feature_dim', 128),
-        dropout=getattr(comp_config, 'dropout', 0.1),
-        use_query_gate=getattr(comp_config, 'use_query_gate', True),
-        use_input_gate=getattr(comp_config, 'use_input_gate', True),
-        use_pre_norm=getattr(comp_config, 'use_pre_norm', True),
-        long_context_threshold=getattr(comp_config, 'long_context_threshold', 2048),
-        max_global_tokens=getattr(comp_config, 'max_global_tokens', 1024),
-        kernel_method=getattr(comp_config, 'kernel_method', 'orthogonal'),
-        kernel_clamp_min=getattr(comp_config, 'kernel_clamp_min', -20.0),
-        kernel_clamp_max=getattr(comp_config, 'kernel_clamp_max', 20.0),
-        kernel_use_float64=getattr(comp_config, 'kernel_use_float64', False),
-        kernel_seed=getattr(comp_config, 'kernel_seed', None),
+        window_size=getattr(comp_config, "window_size", 64),
+        svd_rank=getattr(comp_config, "svd_rank", 128),
+        low_rank_update=getattr(comp_config, "low_rank_update", 16),
+        kernel_feature_dim=getattr(comp_config, "kernel_feature_dim", 128),
+        dropout=getattr(comp_config, "dropout", 0.1),
+        use_query_gate=getattr(comp_config, "use_query_gate", True),
+        use_input_gate=getattr(comp_config, "use_input_gate", True),
+        use_pre_norm=getattr(comp_config, "use_pre_norm", True),
+        long_context_threshold=getattr(comp_config, "long_context_threshold", 2048),
+        max_global_tokens=getattr(comp_config, "max_global_tokens", 1024),
+        kernel_method=getattr(comp_config, "kernel_method", "orthogonal"),
+        kernel_clamp_min=getattr(comp_config, "kernel_clamp_min", -20.0),
+        kernel_clamp_max=getattr(comp_config, "kernel_clamp_max", 20.0),
+        kernel_use_float64=getattr(comp_config, "kernel_use_float64", False),
+        kernel_seed=getattr(comp_config, "kernel_seed", None),
     )
     pretrained_dict = AegisAttentionV3.init_from_pretrained(old_attn)
     new_attn = AegisAttentionV3(config=cfg, pretrained_qkv=pretrained_dict)

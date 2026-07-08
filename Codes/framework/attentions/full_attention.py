@@ -1,7 +1,8 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
-import torch
+
 
 @ATTENTION_REGISTRY.register("full")
 class FullAttention(nn.Module):
@@ -18,10 +19,22 @@ class FullAttention(nn.Module):
 
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         B, N, D = hidden_states.shape
-        q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        k = self.k_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        v = self.v_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
-        scores = torch.matmul(q, k.transpose(-2, -1)) / (self.head_dim ** 0.5)
+        q = (
+            self.q_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+        )
+        k = (
+            self.k_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+        )
+        v = (
+            self.v_proj(hidden_states)
+            .view(B, N, self.num_heads, self.head_dim)
+            .transpose(1, 2)
+        )
+        scores = torch.matmul(q, k.transpose(-2, -1)) / (self.head_dim**0.5)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 mask = attention_mask.unsqueeze(1).unsqueeze(2)

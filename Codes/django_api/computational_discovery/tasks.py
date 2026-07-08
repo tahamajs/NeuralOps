@@ -1,11 +1,16 @@
 """
 Celery tasks for running computational discovery experiments.
 """
-import logging, time, random
+
+import logging
+import random
+import time
+
 from celery import shared_task
 from django.utils import timezone
-from .models import CodeVariant, CodeExperiment, ExperimentRun
-from .code_generator import generate_variant, evaluate_variant
+
+from .code_generator import evaluate_variant, generate_variant
+from .models import CodeExperiment, CodeVariant, ExperimentRun
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +26,7 @@ def run_computational_experiment(self, experiment_id: str):
     except CodeExperiment.DoesNotExist:
         return
 
-    if experiment.status not in ('generating', 'testing'):
+    if experiment.status not in ("generating", "testing"):
         return
 
     start_time = time.time()
@@ -29,11 +34,11 @@ def run_computational_experiment(self, experiment_id: str):
 
     for iteration in range(experiment.max_iterations):
         experiment.refresh_from_db()
-        if experiment.status == 'paused':
+        if experiment.status == "paused":
             return
 
-        experiment.status = 'generating'
-        experiment.save(update_fields=['status'])
+        experiment.status = "generating"
+        experiment.save(update_fields=["status"])
 
         variants_this_round = max(1, experiment.parallel_workers)
 
@@ -47,75 +52,86 @@ def run_computational_experiment(self, experiment_id: str):
                 experiment=experiment,
                 created_by=experiment.owner,
                 version_number=experiment.variants.count() + 1,
-                code=gen['code'],
-                description='; '.join(gen['modifications']),
-                hyperparameters=gen['hyperparameters'],
-                status='queued',
+                code=gen["code"],
+                description="; ".join(gen["modifications"]),
+                hyperparameters=gen["hyperparameters"],
+                status="queued",
                 iteration=iteration,
             )
 
         # Test variants
-        experiment.status = 'testing'
-        experiment.save(update_fields=['status'])
+        experiment.status = "testing"
+        experiment.save(update_fields=["status"])
 
-        queued = experiment.variants.filter(status='queued')
+        queued = experiment.variants.filter(status="queued")
         for variant in queued:
             # Run the test
-            run = ExperimentRun.objects.create(variant=variant, status='running')
+            run = ExperimentRun.objects.create(variant=variant, status="running")
             try:
                 metrics = evaluate_variant(variant)
                 run.metrics = metrics
-                run.status = 'completed'
+                run.status = "completed"
                 run.completed_at = timezone.now()
 
                 variant.metrics = metrics
-                variant.score = metrics.get('accuracy', 0)
-                variant.status = 'completed'
-                variant.save(update_fields=['metrics', 'score', 'status'])
+                variant.score = metrics.get("accuracy", 0)
+                variant.status = "completed"
+                variant.save(update_fields=["metrics", "score", "status"])
 
                 # Update best variant
                 if experiment.best_variant is None or (
-                    (experiment.metric_direction == 'maximize' and variant.score > experiment.best_variant.score)
-                    or (experiment.metric_direction == 'minimize' and variant.score < experiment.best_variant.score)
+                    (
+                        experiment.metric_direction == "maximize"
+                        and variant.score > experiment.best_variant.score
+                    )
+                    or (
+                        experiment.metric_direction == "minimize"
+                        and variant.score < experiment.best_variant.score
+                    )
                 ):
                     experiment.best_variant = variant
-                    experiment.save(update_fields=['best_variant'])
+                    experiment.save(update_fields=["best_variant"])
 
             except Exception as e:
-                run.status = 'failed'
+                run.status = "failed"
                 run.error_message = str(e)
-                variant.status = 'failed'
-                variant.save(update_fields=['status'])
+                variant.status = "failed"
+                variant.save(update_fields=["status"])
             finally:
                 run.completed_at = timezone.now()
                 run.duration_seconds = random.uniform(10, 60)
                 run.save()
 
             experiment.total_variants_tested = experiment.variants.filter(
-                status__in=['completed', 'failed']
+                status__in=["completed", "failed"]
             ).count()
-            experiment.save(update_fields=['total_variants_tested'])
+            experiment.save(update_fields=["total_variants_tested"])
 
         experiment.total_iterations = iteration + 1
-        experiment.save(update_fields=['total_iterations'])
+        experiment.save(update_fields=["total_iterations"])
 
         # Check if target is met
         if experiment.target_score and experiment.best_variant:
-            if (experiment.metric_direction == 'maximize' and experiment.best_variant.score >= experiment.target_score) or \
-               (experiment.metric_direction == 'minimize' and experiment.best_variant.score <= experiment.target_score):
+            if (
+                experiment.metric_direction == "maximize"
+                and experiment.best_variant.score >= experiment.target_score
+            ) or (
+                experiment.metric_direction == "minimize"
+                and experiment.best_variant.score <= experiment.target_score
+            ):
                 break
 
         # Small delay between iterations
         time.sleep(2)
 
-    experiment.status = 'completed'
+    experiment.status = "completed"
     experiment.elapsed_seconds = time.time() - start_time
     experiment.completed_at = timezone.now()
-    experiment.save(update_fields=['status', 'elapsed_seconds', 'completed_at'])
+    experiment.save(update_fields=["status", "elapsed_seconds", "completed_at"])
 
 
 def _default_base_code() -> str:
-    return '''import torch
+    return """import torch
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments
 
 model_name = "bert-base-uncased"
@@ -140,4 +156,4 @@ trainer = Trainer(
 )
 
 trainer.train()
-'''
+"""

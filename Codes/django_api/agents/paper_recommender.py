@@ -3,9 +3,10 @@
 Paper recommendation engine using Semantic Scholar Recommendations API.
 Given a training run, finds related papers based on the task, model, and approach.
 """
-import requests
-from typing import List, Dict, Optional
 
+from typing import Dict, List
+
+import requests
 from experiment.models import TrainingRun
 
 SEMANTIC_SCHOLAR_API = "https://api.semanticscholar.org"
@@ -19,7 +20,7 @@ def search_papers_for_topic(topic: str, limit: int = 5) -> List[Dict]:
             params={
                 "query": topic,
                 "limit": limit,
-                "fields": "title,authors,abstract,year,citationCount,url,externalIds"
+                "fields": "title,authors,abstract,year,citationCount,url,externalIds",
             },
             timeout=15,
         )
@@ -50,7 +51,10 @@ def get_paper_recommendations(positive_ids: List[str], limit: int = 10) -> List[
     try:
         resp = requests.post(
             f"{SEMANTIC_SCHOLAR_API}/recommendations/v1/papers",
-            params={"limit": limit, "fields": "title,authors,abstract,year,citationCount,url"},
+            params={
+                "limit": limit,
+                "fields": "title,authors,abstract,year,citationCount,url",
+            },
             json={"positivePaperIds": positive_ids},
             timeout=20,
         )
@@ -64,7 +68,10 @@ def get_paper_recommendations(positive_ids: List[str], limit: int = 10) -> List[
                     "abstract": p.get("abstract", "") or "",
                     "year": p.get("year"),
                     "citationCount": p.get("citationCount", 0),
-                    "url": p.get("url", f"https://www.semanticscholar.org/paper/{p.get('paperId', '')}"),
+                    "url": p.get(
+                        "url",
+                        f"https://www.semanticscholar.org/paper/{p.get('paperId', '')}",
+                    ),
                 }
                 for p in data.get("recommendedPapers", [])
             ]
@@ -112,8 +119,12 @@ def get_recommendations_from_saved_papers(user_id: int, limit: int = 5) -> List[
     """
     from agents.models import ResearchPaper
 
-    saved = ResearchPaper.objects.filter(saved_by_id=user_id).order_by('-created_at')[:20]
-    positive_ids = [p.source_id for p in saved if p.source == "semantic_scholar" and p.source_id]
+    saved = ResearchPaper.objects.filter(saved_by_id=user_id).order_by("-created_at")[
+        :20
+    ]
+    positive_ids = [
+        p.source_id for p in saved if p.source == "semantic_scholar" and p.source_id
+    ]
 
     if not positive_ids:
         return []

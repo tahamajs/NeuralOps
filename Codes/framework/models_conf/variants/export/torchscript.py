@@ -1,5 +1,7 @@
 import torch
-from .base import BaseExporter, EXPORTER_REGISTRY
+
+from .base import EXPORTER_REGISTRY, BaseExporter
+
 
 @EXPORTER_REGISTRY.register("torchscript")
 class TorchScriptExporter(BaseExporter):

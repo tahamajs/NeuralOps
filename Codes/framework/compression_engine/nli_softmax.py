@@ -17,7 +17,7 @@ class NLISoftmaxFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        x, = ctx.saved_tensors
+        (x,) = ctx.saved_tensors
         # Simplified gradient: sigmoid(x) * (1 - sigmoid(x))
         sig = torch.sigmoid(x)
         grad_input = grad_output * sig * (1 - sig)

@@ -1,9 +1,10 @@
-import os
 import logging
-import torch
-from typing import Optional, Dict, Any, List
+import os
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ class CleanupPolicy(Enum):
 @dataclass
 class VersioningConfig:
     """Controls how versions are created and managed."""
+
     keep_best_k: int = 5
     keep_tags: List[str] = field(default_factory=lambda: ["production", "staging"])
     max_versions: Optional[int] = None
@@ -47,7 +49,9 @@ class _DummyManager:
     def __getattr__(self, name):
         def dummy(*args, **kwargs):
             return None
+
         return dummy
+
 
 class _DummyModelVersion:
     objects = _DummyManager()
@@ -58,6 +62,7 @@ class _DummyModelVersion:
 # ----------------------------------------------------------------------
 class VersioningStrategy:
     """Decides which versions to keep / delete."""
+
     def __init__(self, config: VersioningConfig):
         self.config = config
 
@@ -70,25 +75,28 @@ class BestKStrategy(VersioningStrategy):
         if not all_versions:
             return []
         sorted_versions = sorted(
-            all_versions,
-            key=lambda v: v.metrics.get('eval_accuracy', 0),
-            reverse=True
+            all_versions, key=lambda v: v.metrics.get("eval_accuracy", 0), reverse=True
         )
-        return sorted_versions[self.config.keep_best_k:]
+        return sorted_versions[self.config.keep_best_k :]
 
 
 class TaggedStrategy(VersioningStrategy):
     def select_versions_to_delete(self, all_versions):
-        protected = [v for v in all_versions if any(
-            t in (v.tags or []) for t in self.config.keep_tags
-        )]
+        protected = [
+            v
+            for v in all_versions
+            if any(t in (v.tags or []) for t in self.config.keep_tags)
+        ]
         return [v for v in all_versions if v not in protected]
 
 
 class TimeBasedStrategy(VersioningStrategy):
     def select_versions_to_delete(self, all_versions):
         import datetime
-        cutoff = datetime.datetime.now() - datetime.timedelta(days=self.config.keep_best_k)
+
+        cutoff = datetime.datetime.now() - datetime.timedelta(
+            days=self.config.keep_best_k
+        )
         return [v for v in all_versions if v.created_at < cutoff]
 
 
@@ -102,6 +110,7 @@ class ModelVersionService:
     def _get_model():
         try:
             from model_versioning.models import ModelVersion
+
             return ModelVersion
         except (ImportError, RuntimeError) as e:
             logger.debug("ModelVersion not available: %s", e)
@@ -121,7 +130,7 @@ class ModelVersionService:
         if ModelVersion is _DummyModelVersion:
             return None
 
-        latest = run.model_versions.order_by('-version_number').first()
+        latest = run.model_versions.order_by("-version_number").first()
         new_num = (latest.version_number + 1) if latest else 1
         version_str = version or f"v{new_num}"
 
@@ -136,9 +145,11 @@ class ModelVersionService:
         cfg = config or VersioningConfig()
         if cfg.storage_backend == StorageBackend.S3:
             from .backends.s3 import upload_to_s3
+
             upload_to_s3(model_file, cfg.s3_bucket, cfg.s3_region)
         elif cfg.storage_backend == StorageBackend.HUGGINGFACE:
             from .backends.huggingface import push_to_hub
+
             push_to_hub(artifact_path, repo_name=cfg.hub_repo_prefix)
 
         record = ModelVersion.objects.create(
@@ -165,6 +176,7 @@ class ModelVersionService:
             if not os.path.exists(model_file):
                 if version_obj.storage_tier == StorageBackend.S3.value:
                     from .backends.s3 import download_from_s3
+
                     download_from_s3(model_file)  # populate local file
                 else:
                     raise FileNotFoundError(f"Model file not found: {model_file}")
@@ -192,6 +204,7 @@ class ModelVersionService:
         for version_obj in to_delete:
             if os.path.exists(version_obj.artifact_path):
                 import shutil
+
                 shutil.rmtree(version_obj.artifact_path, ignore_errors=True)
             version_obj.delete()
         logger.info("Deleted %d versions for run %s", len(to_delete), run.id)

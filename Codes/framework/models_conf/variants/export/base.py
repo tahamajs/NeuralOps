@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+
 from framework.core.registry import Registry
 
 EXPORTER_REGISTRY = Registry("exporters")
+
 
 class BaseExporter(ABC):
     @abstractmethod

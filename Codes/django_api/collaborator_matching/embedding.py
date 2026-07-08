@@ -1,7 +1,9 @@
 """
 Compute embeddings for research interests using sentence-transformers.
 """
+
 import logging
+
 import numpy as np
 from django.conf import settings
 from sentence_transformers import SentenceTransformer
@@ -11,10 +13,11 @@ logger = logging.getLogger(__name__)
 # Load model once
 _model = None
 
+
 def get_model():
     global _model
     if _model is None:
-        model_name = getattr(settings, 'EMBEDDING_MODEL', 'all-MiniLM-L6-v2')
+        model_name = getattr(settings, "EMBEDDING_MODEL", "all-MiniLM-L6-v2")
         logger.info("Loading embedding model: %s", model_name)
         _model = SentenceTransformer(model_name)
     return _model
@@ -26,6 +29,7 @@ def generate_user_embedding(user):
     Returns a list of floats.
     """
     from agents.models import ResearchPaper
+
     papers = ResearchPaper.objects.filter(saved_by=user)
     if not papers.exists():
         return None

@@ -1,7 +1,9 @@
 import os
-import matplotlib.pyplot as plt
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
+
+import matplotlib.pyplot as plt
+
 
 class Registry:
     def __init__(self, name: str):
@@ -15,6 +17,7 @@ class Registry:
                 key = obj.__name__
             self._dict[key] = obj
             return obj
+
         return decorator
 
     def get(self, key: str):
@@ -22,7 +25,9 @@ class Registry:
 
     def resolve(self, key: str):
         if key.lower() not in self._dict:
-            raise KeyError(f"Unknown {self.name} '{key}'. Available: {list(self._dict.keys())}")
+            raise KeyError(
+                f"Unknown {self.name} '{key}'. Available: {list(self._dict.keys())}"
+            )
         return self._dict[key.lower()]
 
     def keys(self):
@@ -37,7 +42,9 @@ class Registry:
     def __repr__(self):
         return f"Registry({self.name!r}, {len(self)} items)"
 
+
 VISUALIZER_REGISTRY = Registry("visualizers")
+
 
 class BaseVisualizer(ABC):
     def __init__(self, output_dir: str = "visualizations"):
@@ -48,7 +55,9 @@ class BaseVisualizer(ABC):
     def generate(self, *args, **kwargs):
         pass
 
-    def _save_figure(self, fig, filename: str, dpi: int = 150, bbox_inches: str = "tight") -> str:
+    def _save_figure(
+        self, fig, filename: str, dpi: int = 150, bbox_inches: str = "tight"
+    ) -> str:
         path = os.path.join(self.output_dir, filename)
         fig.savefig(path, dpi=dpi, bbox_inches=bbox_inches)
         plt.close(fig)

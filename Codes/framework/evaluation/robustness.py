@@ -8,9 +8,10 @@ Reference: https://github.com/QData/TextAttack
 """
 
 import random
-import numpy as np
-from typing import Dict, List, Any, Tuple, Optional, Callable
 from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
+
+import numpy as np
 from framework.core.registry import Registry
 
 ROBUSTNESS_REGISTRY = Registry("robustness_attacks")
@@ -19,9 +20,10 @@ ROBUSTNESS_REGISTRY = Registry("robustness_attacks")
 @dataclass
 class RobustnessReport:
     """Complete adversarial robustness analysis."""
+
     baseline_accuracy: float
     attack_results: List[Dict[str, Any]]
-    overall_robustness_score: float          # 0 = fragile, 1 = robust
+    overall_robustness_score: float  # 0 = fragile, 1 = robust
     successful_attacks: int
     total_samples_tested: int
     worst_attack: str
@@ -57,8 +59,14 @@ class TextAdversarialTester:
     ) -> RobustnessReport:
         """Run all requested attacks and return a robustness report."""
         if attacks is None:
-            attacks = ["char_swap", "char_delete", "word_substitute",
-                       "word_delete", "word_swap", "add_typo"]
+            attacks = [
+                "char_swap",
+                "char_delete",
+                "word_substitute",
+                "word_delete",
+                "word_swap",
+                "add_typo",
+            ]
 
         # Use at most max_samples
         if len(texts) > max_samples:
@@ -72,14 +80,20 @@ class TextAdversarialTester:
 
         all_results = []
         for attack_name in attacks:
-            result = self._run_attack(attack_name, predict_fn, texts, labels, baseline_preds)
+            result = self._run_attack(
+                attack_name, predict_fn, texts, labels, baseline_preds
+            )
             all_results.append(result)
 
         # Compute overall robustness score
         success_rates = [r.get("success_rate", 0) for r in all_results]
         overall = 1.0 - np.mean(success_rates) if success_rates else 1.0
 
-        worst = max(all_results, key=lambda r: r.get("success_rate", 0)) if all_results else {}
+        worst = (
+            max(all_results, key=lambda r: r.get("success_rate", 0))
+            if all_results
+            else {}
+        )
         recs = self._generate_recommendations(all_results)
 
         return RobustnessReport(
@@ -103,10 +117,9 @@ class TextAdversarialTester:
         success_rate = n_flipped / len(texts)
 
         # Average confidence drop on flipped samples
-        avg_perturbations = np.mean([
-            self._perturbation_distance(o, p)
-            for o, p in zip(texts, perturbed)
-        ])
+        avg_perturbations = np.mean(
+            [self._perturbation_distance(o, p) for o, p in zip(texts, perturbed)]
+        )
 
         return {
             "attack": name,
@@ -161,7 +174,20 @@ class TextAdversarialTester:
             if len(words) > 0:
                 idx = random.randint(0, len(words) - 1)
                 # Simple substitution: replace with a common word
-                words[idx] = random.choice(["the", "a", "is", "are", "was", "were", "very", "really", "some", "any"])
+                words[idx] = random.choice(
+                    [
+                        "the",
+                        "a",
+                        "is",
+                        "are",
+                        "was",
+                        "were",
+                        "very",
+                        "really",
+                        "some",
+                        "any",
+                    ]
+                )
         return " ".join(words)
 
     def _word_delete(self, text: str) -> str:
@@ -182,8 +208,14 @@ class TextAdversarialTester:
     def _add_typo(self, text: str) -> str:
         """Replace characters with keyboard‑adjacent keys."""
         keyboard_adjacent = {
-            'a': 'qwsz', 'b': 'vghn', 'c': 'xdfv', 'd': 'serfcx',
-            'e': 'wsdfr', 't': 'rfghy', 's': 'awedxz', 'l': 'kop',
+            "a": "qwsz",
+            "b": "vghn",
+            "c": "xdfv",
+            "d": "serfcx",
+            "e": "wsdfr",
+            "t": "rfghy",
+            "s": "awedxz",
+            "l": "kop",
         }
         chars = list(text)
         n = max(1, int(len(chars) * self.max_perturbation_ratio * 0.3))

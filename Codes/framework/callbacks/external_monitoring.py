@@ -1,5 +1,7 @@
 """External monitoring callbacks: Wandb, TensorBoard, Terminal, WebSocket."""
+
 import logging
+
 from transformers import TrainerCallback
 
 logger = logging.getLogger(__name__)
@@ -13,6 +15,7 @@ class WandbCallback(TrainerCallback):
     def on_train_begin(self, args, state, control, **kwargs):
         try:
             import wandb
+
             wandb.init(project=self.project)
             self._wandb = wandb
         except ImportError:
@@ -31,6 +34,7 @@ class TensorBoardCallback(TrainerCallback):
     def on_train_begin(self, args, state, control, **kwargs):
         try:
             from torch.utils.tensorboard import SummaryWriter
+
             self._writer = SummaryWriter(log_dir=self.log_dir)
         except ImportError:
             logger.warning("tensorboard not installed")
@@ -62,9 +66,8 @@ class WebSocketCallback(TrainerCallback):
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         if self.channel_layer and logs:
-            import asyncio
             from asgiref.sync import async_to_sync
+
             async_to_sync(self.channel_layer.group_send)(
-                self.group_name,
-                {"type": "training_update", "data": logs}
+                self.group_name, {"type": "training_update", "data": logs}
             )

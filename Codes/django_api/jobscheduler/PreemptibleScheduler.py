@@ -1,19 +1,23 @@
 # jobscheduler/preemptible_scheduler.py
 import os
-import time
-import signal
-import threading
 import queue
+import signal
 import subprocess
+import threading
+import time
+
 import torch
 from django.utils import timezone
+
 from .models import Job
+
 
 class PreemptibleScheduler:
     """
     A priority-based GPU scheduler with preemption support.
     Lower numeric priority = higher priority.
     """
+
     _instance = None
 
     def __new__(cls, total_gpus=None):
@@ -30,8 +34,8 @@ class PreemptibleScheduler:
         self.total_gpus = total_gpus
         self.available_gpus = total_gpus
         self.task_queue = queue.PriorityQueue()
-        self.running_jobs = {}          # job_id -> subprocess.Popen
-        self.job_gpu_map = {}           # job_id -> allocated GPUs
+        self.running_jobs = {}  # job_id -> subprocess.Popen
+        self.job_gpu_map = {}  # job_id -> allocated GPUs
         self.lock = threading.Lock()
         self._stop_event = threading.Event()
         self._preempt_flag_dir = "/tmp/preempt_flags"
@@ -49,7 +53,7 @@ class PreemptibleScheduler:
         # Optionally refine priority using a predictor (can be added later)
         final_prio = priority
         self.task_queue.put((final_prio, time.time(), str(job_id)))
-        Job.objects.filter(id=job_id).update(status='queued')
+        Job.objects.filter(id=job_id).update(status="queued")
 
     def _try_preempt(self, incoming_prio):
         """
@@ -59,11 +63,11 @@ class PreemptibleScheduler:
         with self.lock:
             for job_id, proc in list(self.running_jobs.items()):
                 job = Job.objects.get(id=job_id)
-                if job.priority > incoming_prio:   # lower numeric = higher priority
+                if job.priority > incoming_prio:  # lower numeric = higher priority
                     # Signal the job to save checkpoint and exit
                     flag_file = os.path.join(self._preempt_flag_dir, str(job_id))
-                    with open(flag_file, 'w') as f:
-                        f.write('preempt')
+                    with open(flag_file, "w") as f:
+                        f.write("preempt")
                     # Wait up to 10 seconds for graceful termination
                     start = time.time()
                     while proc.poll() is None and (time.time() - start) < 10:
@@ -73,14 +77,14 @@ class PreemptibleScheduler:
                     # Free GPUs
                     self.available_gpus += self.job_gpu_map.pop(job_id, 1)
                     self.running_jobs.pop(job_id, None)
-                    Job.objects.filter(id=job_id).update(status='preempted')
+                    Job.objects.filter(id=job_id).update(status="preempted")
                     return True
         return False
 
     def _run_job(self, job_id):
         """Launch a training job as a subprocess."""
         job = Job.objects.get(id=job_id)
-        job.status = 'running'
+        job.status = "running"
         job.started_at = timezone.now()
         job.save()
         # Clear any pre-existing preempt flag
@@ -89,9 +93,13 @@ class PreemptibleScheduler:
             os.remove(flag_file)
         # Build command
         cmd = [
-            'python', 'manage.py', 'run_training_job',
-            '--job-id', str(job_id),
-            '--checkpoint-dir', job.checkpoint_path or ''
+            "python",
+            "manage.py",
+            "run_training_job",
+            "--job-id",
+            str(job_id),
+            "--checkpoint-dir",
+            job.checkpoint_path or "",
         ]
         proc = subprocess.Popen(cmd)
         with self.lock:
@@ -104,7 +112,7 @@ class PreemptibleScheduler:
             self.running_jobs.pop(job_id, None)
         # If job was preempted, re-queue it
         job.refresh_from_db()
-        if job.status == 'preempted':
+        if job.status == "preempted":
             self.add_job(job_id, job.priority, job.estimated_duration)
 
     def _worker(self):
@@ -146,14 +154,14 @@ class PreemptibleScheduler:
         proc = self.running_jobs.get(str(job_id))
         if proc:
             proc.send_signal(signal.SIGSTOP)
-            Job.objects.filter(id=job_id).update(status='paused')
+            Job.objects.filter(id=job_id).update(status="paused")
 
     def resume_job(self, job_id):
         """Resume a paused job (send SIGCONT) or re‑queue if not running."""
         proc = self.running_jobs.get(str(job_id))
         if proc:
             proc.send_signal(signal.SIGCONT)
-            Job.objects.filter(id=job_id).update(status='running')
+            Job.objects.filter(id=job_id).update(status="running")
         else:
             job = Job.objects.get(id=job_id)
             self.add_job(job_id, job.priority, job.estimated_duration)
@@ -163,13 +171,14 @@ class PreemptibleScheduler:
         proc = self.running_jobs.get(str(job_id))
         if proc:
             proc.terminate()
-        Job.objects.filter(id=job_id).update(status='stopped')
+        Job.objects.filter(id=job_id).update(status="stopped")
         with self.lock:
             self.available_gpus += self.job_gpu_map.pop(job_id, 1)
 
     def update_priority(self, job_id, new_priority):
         """Update priority of a queued job (only affects DB; re‑queue not implemented)."""
         Job.objects.filter(id=job_id).update(priority=new_priority)
+
 
 # Singleton instance
 scheduler = PreemptibleScheduler()

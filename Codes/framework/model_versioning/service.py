@@ -1,23 +1,33 @@
-import os, json, logging, shutil, torch
-from typing import Optional, Dict, Any, List
-from pathlib import Path
+import logging
+import os
+import shutil
+from typing import Any, Dict, List, Optional
 
-from .config import VersioningConfig, StorageBackend, BackendMode, CleanupPolicy
-from .strategies import STRATEGY_REGISTRY
+import torch
+
+from .config import BackendMode, StorageBackend, VersioningConfig
 from .environment import capture_environment
 from .metadata import generate_model_card
-from .utils import compute_checksum, compress_directory, extract_archive
+from .strategies import STRATEGY_REGISTRY
+from .utils import compress_directory, extract_archive
 
 logger = logging.getLogger(__name__)
+
 
 # Dummy fallback
 class _DummyManager:
     def __getattr__(self, name):
-        def dummy(*args, **kwargs): return None
+        def dummy(*args, **kwargs):
+            return None
+
         return dummy
+
+
 class _DummyModelVersion:
     objects = _DummyManager()
-    class DoesNotExist(Exception): pass
+
+    class DoesNotExist(Exception):
+        pass
 
 
 class ModelVersionService:
@@ -27,6 +37,7 @@ class ModelVersionService:
     def _get_model():
         try:
             from model_versioning.models import ModelVersion
+
             return ModelVersion
         except (ImportError, RuntimeError) as e:
             logger.debug("ModelVersion not available: %s", e)
@@ -42,13 +53,14 @@ class ModelVersionService:
         artifact_base: str = "/models",
         tags: Optional[List[str]] = None,
         config: Optional[VersioningConfig] = None,
-        extra_files: Optional[Dict[str, str]] = None,   # {filename: path}
+        extra_files: Optional[Dict[str, str]] = None,  # {filename: path}
     ) -> Optional[Any]:
         ModelVersion = ModelVersionService._get_model()
-        if ModelVersion is _DummyModelVersion: return None
+        if ModelVersion is _DummyModelVersion:
+            return None
 
         cfg = config or VersioningConfig()
-        latest = run.model_versions.order_by('-version_number').first()
+        latest = run.model_versions.order_by("-version_number").first()
         new_num = (latest.version_number + 1) if latest else 1
         version_str = version or f"v{new_num}"
 
@@ -71,8 +83,12 @@ class ModelVersionService:
         # Environment snapshot & model card
         env_info = capture_environment(artifact_dir)
         if cfg.generate_model_card:
-            generate_model_card(run, metrics, os.path.join(artifact_dir, "README.md"),
-                                fmt=cfg.model_card_format)
+            generate_model_card(
+                run,
+                metrics,
+                os.path.join(artifact_dir, "README.md"),
+                fmt=cfg.model_card_format,
+            )
 
         # Compression (optional)
         if cfg.compression:
@@ -104,31 +120,34 @@ class ModelVersionService:
     @staticmethod
     def get_latest(run):
         ModelVersion = ModelVersionService._get_model()
-        if ModelVersion is _DummyModelVersion: return None
-        return run.model_versions.order_by('-version_number').first()
+        if ModelVersion is _DummyModelVersion:
+            return None
+        return run.model_versions.order_by("-version_number").first()
 
     @staticmethod
     def list_versions(run, only_tags=None, metric_gt=None):
         ModelVersion = ModelVersionService._get_model()
-        if ModelVersion is _DummyModelVersion: return []
+        if ModelVersion is _DummyModelVersion:
+            return []
         qs = run.model_versions.all()
         if only_tags:
             qs = [v for v in qs if any(t in (v.tags or []) for t in only_tags)]
             return qs
         if metric_gt:
             qs = qs.filter(metrics__eval_accuracy__gt=metric_gt)
-        return qs.order_by('-version_number')
+        return qs.order_by("-version_number")
 
     @staticmethod
     def load_version(version_id, map_location="cpu"):
         ModelVersion = ModelVersionService._get_model()
-        if ModelVersion is _DummyModelVersion: return None
+        if ModelVersion is _DummyModelVersion:
+            return None
         try:
             vo = ModelVersion.objects.get(id=version_id)
             local_path = vo.artifact_path
             if not os.path.exists(local_path):
                 local_path = ModelVersionService._pull_from_backends(vo)
-            if local_path.endswith('.tar.gz'):
+            if local_path.endswith(".tar.gz"):
                 model_file = extract_archive(local_path, os.path.dirname(local_path))
             else:
                 model_file = os.path.join(local_path, "model.pth")
@@ -140,11 +159,15 @@ class ModelVersionService:
     @staticmethod
     def apply_cleanup(run, config: VersioningConfig):
         ModelVersion = ModelVersionService._get_model()
-        if ModelVersion is _DummyModelVersion: return
+        if ModelVersion is _DummyModelVersion:
+            return
         versions = list(run.model_versions.all())
         strategy_cls = STRATEGY_REGISTRY.get(config.cleanup_policy.value)
-        if strategy_cls is None: return
-        strategy = strategy_cls(config) if callable(strategy_cls) else strategy_cls(config)
+        if strategy_cls is None:
+            return
+        strategy = (
+            strategy_cls(config) if callable(strategy_cls) else strategy_cls(config)
+        )
         to_delete = strategy.select_versions_to_delete(versions)
         for v in to_delete:
             ModelVersionService.delete_version(v, config)
@@ -174,14 +197,37 @@ class ModelVersionService:
     def _push_to_backends(artifact_path, cfg):
         for backend in cfg.storage_backends:
             try:
-                {StorageBackend.S3: lambda: __import__('.backends.s3', fromlist=['push_to_s3']).push_to_s3(artifact_path, cfg.s3_bucket, cfg.s3_region),
-                 StorageBackend.GCP: lambda: __import__('.backends.gcp', fromlist=['push_to_gcp']).push_to_gcp(artifact_path, cfg.gcp_bucket),
-                 StorageBackend.AZURE: lambda: __import__('.backends.azure', fromlist=['push_to_azure']).push_to_azure(artifact_path, cfg.azure_conn_str, cfg.azure_container),
-                 StorageBackend.HUGGINGFACE: lambda: __import__('.backends.huggingface', fromlist=['push_to_hub']).push_to_hub(artifact_path, cfg.hf_repo_name, cfg.hf_token),
-                 StorageBackend.MLFLOW: lambda: __import__('.backends.mlflow', fromlist=['push_to_mlflow']).push_to_mlflow(artifact_path, cfg.mlflow_tracking_uri, cfg.mlflow_experiment_name),
-                 StorageBackend.DVC: lambda: __import__('.backends.dvc', fromlist=['push_to_dvc']).push_to_dvc(artifact_path, cfg.dvc_remote, cfg.dvc_remote_url),
-                 StorageBackend.GIT_LFS: lambda: __import__('.backends.git_lfs', fromlist=['push_to_git_lfs']).push_to_git_lfs(artifact_path, cfg.git_lfs_remote),
-                 StorageBackend.CUSTOM_HTTP: lambda: __import__('.backends.http', fromlist=['push_to_http']).push_to_http(artifact_path, cfg.http_endpoint, cfg.http_headers),
+                {
+                    StorageBackend.S3: lambda: __import__(
+                        ".backends.s3", fromlist=["push_to_s3"]
+                    ).push_to_s3(artifact_path, cfg.s3_bucket, cfg.s3_region),
+                    StorageBackend.GCP: lambda: __import__(
+                        ".backends.gcp", fromlist=["push_to_gcp"]
+                    ).push_to_gcp(artifact_path, cfg.gcp_bucket),
+                    StorageBackend.AZURE: lambda: __import__(
+                        ".backends.azure", fromlist=["push_to_azure"]
+                    ).push_to_azure(
+                        artifact_path, cfg.azure_conn_str, cfg.azure_container
+                    ),
+                    StorageBackend.HUGGINGFACE: lambda: __import__(
+                        ".backends.huggingface", fromlist=["push_to_hub"]
+                    ).push_to_hub(artifact_path, cfg.hf_repo_name, cfg.hf_token),
+                    StorageBackend.MLFLOW: lambda: __import__(
+                        ".backends.mlflow", fromlist=["push_to_mlflow"]
+                    ).push_to_mlflow(
+                        artifact_path,
+                        cfg.mlflow_tracking_uri,
+                        cfg.mlflow_experiment_name,
+                    ),
+                    StorageBackend.DVC: lambda: __import__(
+                        ".backends.dvc", fromlist=["push_to_dvc"]
+                    ).push_to_dvc(artifact_path, cfg.dvc_remote, cfg.dvc_remote_url),
+                    StorageBackend.GIT_LFS: lambda: __import__(
+                        ".backends.git_lfs", fromlist=["push_to_git_lfs"]
+                    ).push_to_git_lfs(artifact_path, cfg.git_lfs_remote),
+                    StorageBackend.CUSTOM_HTTP: lambda: __import__(
+                        ".backends.http", fromlist=["push_to_http"]
+                    ).push_to_http(artifact_path, cfg.http_endpoint, cfg.http_headers),
                 }.get(backend, lambda: None)()
             except Exception as e:
                 logger.exception("Push to %s failed: %s", backend, e)
@@ -190,11 +236,13 @@ class ModelVersionService:
     def _pull_from_backends(version) -> Optional[str]:
         # Try to restore the artifact from any configured backend
         # (simplified; uses the version's stored storage_tier)
-        tiers = version.storage_tier.split(',') if version.storage_tier else []
+        tiers = version.storage_tier.split(",") if version.storage_tier else []
         for tier in tiers:
             try:
                 backend = StorageBackend(tier)
-                local_dir = os.path.join(os.path.dirname(version.artifact_path), version.version)
+                local_dir = os.path.join(
+                    os.path.dirname(version.artifact_path), version.version
+                )
                 os.makedirs(local_dir, exist_ok=True)
                 # implement download per backend (similar to push)
                 return local_dir

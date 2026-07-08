@@ -1,7 +1,7 @@
 """Leaderboard generator."""
 
 import pandas as pd
-from typing import Optional
+
 
 def generate_leaderboard(
     group_stats: pd.DataFrame,
@@ -18,5 +18,7 @@ def generate_leaderboard(
     df["Medal"] = df.index.map(medals).fillna("")
     cols = ["group", "mean", "std", "ci95", "n", "Medal"]
     df = df[[c for c in cols if c in df.columns]]
-    df.columns = ["Model / Method", "Mean", "Std", "CI95", "N", "Medal"][:len(df.columns)]
+    df.columns = ["Model / Method", "Mean", "Std", "CI95", "N", "Medal"][
+        : len(df.columns)
+    ]
     return df

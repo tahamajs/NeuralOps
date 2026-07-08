@@ -1,19 +1,21 @@
 # profiles/models.py
 import uuid
-from django.db import models
+
 from django.conf import settings
+from django.db import models
 
 
 def avatar_upload_to(instance, filename):
-    ext = filename.rsplit('.', 1)[-1]
-    return f'avatars/{instance.user.id}.{ext}'
+    ext = filename.rsplit(".", 1)[-1]
+    return f"avatars/{instance.user.id}.{ext}"
 
 
 class Profile(models.Model):
     """Extended user profile – one-to-one with Django User."""
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="profile"
     )
 
     # Basic info
@@ -44,7 +46,7 @@ class Profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['user__username']
+        ordering = ["user__username"]
 
     def __str__(self):
         return f"Profile of {self.user.username}"

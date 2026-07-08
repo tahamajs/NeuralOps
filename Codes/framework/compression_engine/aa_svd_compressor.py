@@ -1,9 +1,9 @@
 """AASVD: Anchored and Adaptive SVD using input activation directions."""
 
-import torch
 import numpy as np
+import torch
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 @COMPRESSOR_REGISTRY.register("aasvd")
@@ -19,6 +19,7 @@ class AASVDCompressor(BaseCompressor):
         rank: target rank for SVD.
         calibration_texts: list of strings to extract activations.
     """
+
     def __init__(self, model, tokenizer, rank=64, calibration_texts=None, **kwargs):
         super().__init__(model, name="aasvd", **kwargs)
         self.tokenizer = tokenizer
@@ -35,6 +36,7 @@ class AASVDCompressor(BaseCompressor):
         def make_hook(name):
             def hook(module, input, output):
                 activations[name] = input[0].detach()  # (batch, seq_len, in_features)
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -57,7 +59,7 @@ class AASVDCompressor(BaseCompressor):
                 inp = activations[name].view(-1, activations[name].size(-1)).float()
                 # Anchor directions from input SVD
                 U_inp, _, _ = torch.linalg.svd(inp, full_matrices=False)
-                anchor = U_inp[:, :self.rank].cpu().numpy()  # (in_features, rank)
+                anchor = U_inp[:, : self.rank].cpu().numpy()  # (in_features, rank)
 
                 W = module.weight.data.float().cpu().numpy()
                 # Project W onto anchor space
@@ -75,15 +77,13 @@ class AASVDCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
-
 
 
 @COMPRESSOR_REGISTRY.register("aasvd")
 def aasvd_factory(model, comp_config):
-    rank = getattr(comp_config, 'aasvd_rank', 64)
+    rank = getattr(comp_config, "aasvd_rank", 64)
     # tokenizer required
-    tokenizer = getattr(model, 'tokenizer', None)
+    tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:
         raise ValueError("aasvd requires tokenizer attached as model.tokenizer")
     compressor = AASVDCompressor(model, tokenizer, rank=rank)

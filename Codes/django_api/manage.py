@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+
 import os
-import sys
 import signal
-from django.core.management import execute_from_command_line
+import sys
+
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_api.settings')
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_api.settings")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -21,6 +22,7 @@ def main():
         print("\nShutting down – stopping all training jobs...")
         try:
             from api.jobs import stop_all_jobs
+
             stop_all_jobs()
         except Exception as e:
             print(f"Could not stop jobs: {e}")
@@ -31,5 +33,6 @@ def main():
 
     execute_from_command_line(sys.argv)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

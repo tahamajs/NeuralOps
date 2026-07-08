@@ -3,17 +3,19 @@ MegaOrchestrator – single entry point that executes the full experiment pipeli
 Uses the core framework for all ML logic.
 """
 
-import os, json, threading, logging, traceback
+import logging
+import threading
+import traceback
 from pathlib import Path
-from typing import Dict, Any, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 
 from framework.config import Config, load_config
+from framework.data import (DataConfig, TaskType, load_dataset,
+                            preprocess_function)
 from framework.models import load_model
-from framework.data import load_dataset, DataConfig, TaskType, preprocess_function, create_dataloader
-from framework.training import HuggingFaceTrainer, ResultsManager, get_task_metrics
 from framework.results_saver import ResultsSaver, SaveConfig
-from framework.tracking import ExperimentTracker
-from framework.core.utils import set_seed, get_device
+from framework.training import (HuggingFaceTrainer, ResultsManager,
+                                get_task_metrics)
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +59,11 @@ class MegaOrchestrator:
         self.stop_event = stop_event or threading.Event()
 
         # Convert dict to unified Config
-        self.cfg = load_config(None)   # start with defaults
+        self.cfg = load_config(None)  # start with defaults
         if config:
-            self.cfg = Config(**{k: v for k, v in config.items() if k in Config.__dataclass_fields__})
+            self.cfg = Config(
+                **{k: v for k, v in config.items() if k in Config.__dataclass_fields__}
+            )
 
         self.model = None
         self.tokenizer = None
@@ -85,6 +89,7 @@ class MegaOrchestrator:
             # 2. Apply training method (if any)
             if self.cfg.method.method != "baseline":
                 from framework.training.methods import get_method
+
                 method_fn = get_method(self.cfg.method.method)
                 if method_fn:
                     method_fn(self.model, self.cfg.compression)
@@ -115,7 +120,9 @@ class MegaOrchestrator:
             trainer.train()
             eval_metrics = trainer.evaluate()
             self.final_metrics = eval_metrics
-            self.trainer_state = trainer.state.log_history if hasattr(trainer, 'state') else []
+            self.trainer_state = (
+                trainer.state.log_history if hasattr(trainer, "state") else []
+            )
 
             # 6. Save everything
             self._log("Saving results…")
@@ -124,7 +131,13 @@ class MegaOrchestrator:
                 base_dir=self.base_dir,
                 config=SaveConfig(save_model=True, save_plots=True),
             )
-            saver.save_all(self.model, self.cfg.__dict__, self.trainer_state, eval_metrics, self.tokenizer)
+            saver.save_all(
+                self.model,
+                self.cfg.__dict__,
+                self.trainer_state,
+                eval_metrics,
+                self.tokenizer,
+            )
             saver.push_all()
 
             self._log("Experiment completed.")
@@ -137,25 +150,38 @@ class MegaOrchestrator:
 
     def _build_experiment_config(self):
         from framework.data.dataset_loader import ExperimentConfig
+
         return ExperimentConfig(dataset_name=self.cfg.training.task)
 
     def _preprocess_dataset(self, dataset):
-        from framework.data import DataConfig, TaskType, preprocess_function, create_dataloader
         task = self.cfg.training.task
         s1, s2 = None, None
         from framework.data.glue_loader import GLUE_TASK_KEYS
+
         if task in GLUE_TASK_KEYS:
             s1, s2 = GLUE_TASK_KEYS[task]
         data_cfg = DataConfig(
-            task_type=TaskType.SINGLE_CLASSIFICATION if s2 is None else TaskType.PAIR_CLASSIFICATION,
+            task_type=(
+                TaskType.SINGLE_CLASSIFICATION
+                if s2 is None
+                else TaskType.PAIR_CLASSIFICATION
+            ),
             max_length=self.cfg.data.max_seq_length,
             batch_size=self.cfg.training.batch_size,
-            text_column_1=s1, text_column_2=s2, label_column="label",
+            text_column_1=s1,
+            text_column_2=s2,
+            label_column="label",
         )
+
         def preprocess(examples):
             return preprocess_function(examples, self.tokenizer, data_cfg)
-        tokenized = dataset.map(preprocess, batched=True, remove_columns=dataset["train"].column_names)
-        tokenized.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+
+        tokenized = dataset.map(
+            preprocess, batched=True, remove_columns=dataset["train"].column_names
+        )
+        tokenized.set_format(
+            type="torch", columns=["input_ids", "attention_mask", "labels"]
+        )
         return tokenized
 
     def _log(self, msg: str):

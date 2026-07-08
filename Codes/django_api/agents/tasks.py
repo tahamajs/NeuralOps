@@ -3,15 +3,15 @@ Celery task definitions for asynchronous training, evaluation, and compression.
 Replaces raw threading with production‑grade task queue.
 """
 
-import json, traceback, os
+import os
+import traceback
 from pathlib import Path
 
-import psutil
 from celery import shared_task
-from django.utils import timezone
 from django.conf import settings
+from django.utils import timezone
 
-from .models import TrainingRun, TrainingSnapshot
+from .models import TrainingRun
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=60)
@@ -93,7 +93,9 @@ def auto_create_model_version(self, run_id: str):
         if pth_files:
             size_mb = os.path.getsize(pth_files[0]) / 1e6
 
-        latest = ModelVersion.objects.filter(run=run).order_by('-version_number').first()
+        latest = (
+            ModelVersion.objects.filter(run=run).order_by("-version_number").first()
+        )
         new_num = (latest.version_number + 1) if latest else 1
         ModelVersion.objects.create(
             run=run,
@@ -106,33 +108,32 @@ def auto_create_model_version(self, run_id: str):
         return {"status": "created", "version": f"v{new_num}"}
     except Exception as e:
         return {"status": "error", "error": str(e)}
-    
-from celery import shared_task
+
+
 from agents.models import AgentSession
+from celery import shared_task
+
 
 @shared_task(bind=True, max_retries=0)
 def run_autonomous_agent(self, session_id: str, user_id: int):
     session = AgentSession.objects.get(id=session_id)
-    session.status = 'active'
+    session.status = "active"
     session.save()
-    while session.cycles_completed < session.max_cycles and session.status == 'active':
+    while session.cycles_completed < session.max_cycles and session.status == "active":
         from agents.agent_runner import run_agent_cycle
+
         run_agent_cycle(session, user_id)
         session.refresh_from_db()
         if session.total_llm_cost_cents >= session.max_llm_cost_cents:
-            session.status = 'review'
+            session.status = "review"
             session.save()
             break
-    session.status = 'completed' if session.status == 'active' else session.status
+    session.status = "completed" if session.status == "active" else session.status
     session.save()
 
 
-
-
-
-
-
 # agents/tasks.py — add this
+
 
 @shared_task(bind=True, max_retries=2)
 def execute_research_plan(self, plan_id: str):
@@ -141,18 +142,18 @@ def execute_research_plan(self, plan_id: str):
     try:
         for step in plan.steps:
             # Search for papers
-            results = search_papers(query=step['task'], limit=5)
+            results = search_papers(query=step["task"], limit=5)
             for paper in results:
                 ResearchFinding.objects.create(
                     plan=plan,
-                    source_url=paper['url'],
-                    source_title=paper['title'],
-                    source_type=paper.get('source', 'web'),
+                    source_url=paper["url"],
+                    source_title=paper["title"],
+                    source_type=paper.get("source", "web"),
                     credibility_score=_evaluate_source(paper),
-                    summary=paper.get('abstract', '')[:500],
+                    summary=paper.get("abstract", "")[:500],
                     relevance_score=0.7,
                 )
-            step['status'] = 'completed'
+            step["status"] = "completed"
             plan.steps = plan.steps  # trigger save
             plan.save()
 
@@ -160,21 +161,23 @@ def execute_research_plan(self, plan_id: str):
         findings = plan.findings.all()
         report_md = _synthesize_report(plan.objective, findings)
         ResearchReport.objects.create(plan=plan, content_markdown=report_md)
-        plan.status = 'completed'
+        plan.status = "completed"
         plan.save()
     except Exception as e:
-        plan.status = 'failed'
+        plan.status = "failed"
         plan.save()
         raise self.retry(exc=e)
 
+
 def _evaluate_source(paper: dict) -> float:
     """Score source credibility (citation count, venue, etc.)."""
-    citations = paper.get('citation_count', 0)
-    venue = paper.get('venue', '')
+    citations = paper.get("citation_count", 0)
+    venue = paper.get("venue", "")
     score = min(1.0, citations / 1000.0)
-    if 'nature' in venue.lower() or 'neurips' in venue.lower():
+    if "nature" in venue.lower() or "neurips" in venue.lower():
         score += 0.2
     return min(1.0, score)
+
 
 def _synthesize_report(objective: str, findings) -> str:
     """Use LLM to synthesize findings into a structured report."""

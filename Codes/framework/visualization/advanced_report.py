@@ -1,8 +1,10 @@
 # framework/visualization/advanced_report.py
 import os
-import plotly.graph_objects as go
-import pandas as pd
 from datetime import datetime
+
+import pandas as pd
+import plotly.graph_objects as go
+
 
 class AdvancedReportGenerator:
     def __init__(self, output_dir: str):
@@ -13,18 +15,28 @@ class AdvancedReportGenerator:
         fig = go.Figure()
         for task in df["task"].unique():
             sub = df[df["task"] == task]
-            fig.add_trace(go.Scatter(x=sub["rank"], y=sub["accuracy"],
-                                     mode="lines+markers", name=task))
-        fig.update_layout(title="Performance vs Rank", xaxis_title="Rank", yaxis_title="Accuracy")
+            fig.add_trace(
+                go.Scatter(
+                    x=sub["rank"], y=sub["accuracy"], mode="lines+markers", name=task
+                )
+            )
+        fig.update_layout(
+            title="Performance vs Rank", xaxis_title="Rank", yaxis_title="Accuracy"
+        )
         return fig
 
     def create_model_comparison_plot(self, df: pd.DataFrame) -> go.Figure:
         fig = go.Figure()
         for model in df["model"].unique():
             sub = df[df["model"] == model]
-            fig.add_trace(go.Scatter(x=sub["rank"], y=sub["accuracy"],
-                                     mode="lines+markers", name=model))
-        fig.update_layout(title="Model Comparison", xaxis_title="Rank", yaxis_title="Accuracy")
+            fig.add_trace(
+                go.Scatter(
+                    x=sub["rank"], y=sub["accuracy"], mode="lines+markers", name=model
+                )
+            )
+        fig.update_layout(
+            title="Model Comparison", xaxis_title="Rank", yaxis_title="Accuracy"
+        )
         return fig
 
     def generate_full_report(self, df: pd.DataFrame, output_path: str) -> str:

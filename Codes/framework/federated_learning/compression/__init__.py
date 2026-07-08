@@ -1,13 +1,18 @@
-from .base import BaseCompressor, COMPRESSION_REGISTRY
+from .base import COMPRESSION_REGISTRY, BaseCompressor
 from .none import NoCompression
-from .topk import TopKCompressor
-from .random_sparsification import RandomSparsifier
 from .qsgd import QSGDCompressor
-from .stc import STCCompressor
+from .random_sparsification import RandomSparsifier
 from .sign_sgd import SignSGDCompressor
+from .stc import STCCompressor
+from .topk import TopKCompressor
 
 __all__ = [
-    "BaseCompressor", "COMPRESSION_REGISTRY",
-    "NoCompression", "TopKCompressor", "RandomSparsifier",
-    "QSGDCompressor", "STCCompressor", "SignSGDCompressor",
+    "BaseCompressor",
+    "COMPRESSION_REGISTRY",
+    "NoCompression",
+    "TopKCompressor",
+    "RandomSparsifier",
+    "QSGDCompressor",
+    "STCCompressor",
+    "SignSGDCompressor",
 ]
