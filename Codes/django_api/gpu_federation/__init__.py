@@ -1,1 +1,1 @@
-default_app_config = 'gpu_federation.apps.GpuFederationConfig'
+default_app_config = "gpu_federation.apps.GpuFederationConfig"

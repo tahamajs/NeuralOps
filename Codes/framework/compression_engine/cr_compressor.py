@@ -4,12 +4,12 @@ Decomposes W ≈ C @ V^T, where C are actual columns of W.
 Registered as 'cr'.
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-from scipy.linalg import interpolative
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+from scipy.linalg import interpolative
 
 
 class CRCompressor(BaseCompressor):
@@ -21,6 +21,7 @@ class CRCompressor(BaseCompressor):
         model: PyTorch model.
         rank: rank of the decomposition (number of columns to keep).
     """
+
     def __init__(self, model, rank=64, **kwargs):
         super().__init__(model, name="cr", **kwargs)
         self.rank = rank
@@ -33,7 +34,9 @@ class CRCompressor(BaseCompressor):
                 try:
                     idx, proj = interpolative.interp_decomp(W, r)
                     C = W[:, idx[:r]]
-                    W_approx = C @ proj[:r, :]   # proj is (r, N) or (r, M)? Depends on axis.
+                    W_approx = (
+                        C @ proj[:r, :]
+                    )  # proj is (r, N) or (r, M)? Depends on axis.
                     # Actually scipy's interp_decomp returns idx (columns to keep) and proj such that
                     # W ≈ W[:, idx] @ proj. Correct.
                 except Exception:
@@ -41,19 +44,16 @@ class CRCompressor(BaseCompressor):
                     U, S, Vt = np.linalg.svd(W, full_matrices=False)
                     C = U[:, :r] * S[:r]
                     W_approx = C @ Vt[:r, :]
-                module.weight.data = torch.tensor(W_approx, dtype=module.weight.dtype, device=module.weight.device)
+                module.weight.data = torch.tensor(
+                    W_approx, dtype=module.weight.dtype, device=module.weight.device
+                )
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
-
-
-
 
 
 @COMPRESSOR_REGISTRY.register("cr")
 def cr_compressor_factory(model, comp_config):
-    rank = getattr(comp_config, 'cr_rank', 64)
+    rank = getattr(comp_config, "cr_rank", 64)
     compressor = CRCompressor(model, rank)
     compressed_model, _ = compressor.compress()
     return compressed_model
-

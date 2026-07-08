@@ -4,14 +4,15 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+
 def setup_logger(
     name: str,
     level: int = logging.INFO,
     log_file: Optional[str] = None,
-    format_string: Optional[str] = None
+    format_string: Optional[str] = None,
 ) -> logging.Logger:
     if format_string is None:
-        format_string = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format_string = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logger = logging.getLogger(name)
     logger.setLevel(level)
     logger.handlers.clear()
@@ -25,8 +26,10 @@ def setup_logger(
         logger.addHandler(file_handler)
     return logger
 
+
 def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
+
 
 def set_log_level(logger_name: str, level: int):
     logging.getLogger(logger_name).setLevel(level)

@@ -1,11 +1,13 @@
 """Auto‑drift check integration – called by MegaOrchestrator post‑training."""
 
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
+
 import numpy as np
-import json
+
 from .config import DriftConfig
 from .detectors import DriftDetector
+
 
 def auto_drift_check(
     run_id: str,
@@ -23,7 +25,9 @@ def auto_drift_check(
         report.save(str(output_dir / "drift_report.json"))
         if cfg.generate_plots:
             from .visualization import generate_drift_plots
-            generate_drift_plots(report, reference_data, current_data,
-                                str(output_dir / "drift_plots"))
+
+            generate_drift_plots(
+                report, reference_data, current_data, str(output_dir / "drift_plots")
+            )
 
     return report

@@ -4,12 +4,11 @@ Auto‑discovers all registered attention variants and provides
 standard test inputs (hidden states, masks, configs).
 """
 
+from typing import List
+
 import pytest
 import torch
-import copy
-from typing import List, Optional, Dict, Any
-from dataclasses import dataclass, field
-from transformers import DistilBertConfig, AutoTokenizer, AutoModel
+from transformers import AutoModel, DistilBertConfig
 
 # ----------------------------------------------------------------------
 # Ensure the framework registries are populated before tests run.
@@ -102,7 +101,9 @@ def distilbert_attention():
     This gives us the pretrained q_lin, k_lin, v_lin, out_lin weights.
     """
     try:
-        model = AutoModel.from_pretrained("distilbert-base-uncased", local_files_only=True)
+        model = AutoModel.from_pretrained(
+            "distilbert-base-uncased", local_files_only=True
+        )
         attn = model.distilbert.transformer.layer[0].attention
         return attn
     except Exception:

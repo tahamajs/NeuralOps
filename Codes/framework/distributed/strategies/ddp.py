@@ -1,10 +1,13 @@
 """PyTorch DistributedDataParallel – single machine, multi‑GPU."""
 
 import os
+
 import torch
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
-from .base import BaseStrategy, STRATEGY_REGISTRY
+
+from .base import STRATEGY_REGISTRY, BaseStrategy
+
 
 @STRATEGY_REGISTRY.register("ddp")
 class DDPStrategy(BaseStrategy):

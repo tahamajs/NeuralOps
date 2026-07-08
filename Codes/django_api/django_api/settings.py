@@ -14,9 +14,9 @@ from celery.schedules import crontab
 # ----------------------------------------------------------------------
 # Paths & Environment
 # ----------------------------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parent.parent          # e.g. .../project/src/settings
-PROJECT_ROOT = BASE_DIR.parent.parent                      # e.g. .../project
-CODES_DIR = BASE_DIR.parent                                # e.g. .../project/src
+BASE_DIR = Path(__file__).resolve().parent.parent  # e.g. .../project/src/settings
+PROJECT_ROOT = BASE_DIR.parent.parent  # e.g. .../project
+CODES_DIR = BASE_DIR.parent  # e.g. .../project/src
 
 
 def load_env_file(path: Path) -> None:
@@ -28,7 +28,7 @@ def load_env_file(path: Path) -> None:
         if not line or line.startswith("#"):
             continue
         if line.startswith("export "):
-            line = line[len("export "):].strip()
+            line = line[len("export ") :].strip()
         if "=" not in line:
             continue
         key, value = line.split("=", 1)
@@ -49,8 +49,10 @@ if str(CODES_DIR) not in sys.path:
 try:
     from framework.utils.paths import get_glue_dir
 except ImportError:
+
     def get_glue_dir() -> str:
         return str(BASE_DIR / "glue_data")
+
 
 # ----------------------------------------------------------------------
 # Core Django Settings
@@ -64,117 +66,110 @@ ALLOWED_HOSTS = ["*"] if DEBUG else os.environ.get("ALLOWED_HOSTS", "").split(",
 # ----------------------------------------------------------------------
 INSTALLED_APPS = [
     # Django channels & core
-    'daphne',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'django.contrib.sites',          # required by allauth
-
+    "daphne",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django.contrib.sites",  # required by allauth
     # Third‑party
-    'rest_framework',
-    'rest_framework.authtoken',
-    'corsheaders',
-    'channels',
-    'django_filters',
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.github',
+    "rest_framework",
+    "rest_framework.authtoken",
+    "corsheaders",
+    "channels",
+    "django_filters",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.github",
     # 'allauth.socialaccount.providers.huggingface',  # uncomment if package exists
-
     # Experiment & research
-    'experiment_explorer',
-    'live_dashboard',
-    'model_hub',
-    'lab_assistant',
-    'health_monitor',
-    'community_lab',
-    'playground',
-    'datasets',
-    'llm_hub',
-    'projects',
-    'protocols',
-
+    "experiment_explorer",
+    "live_dashboard",
+    "model_hub",
+    "lab_assistant",
+    "health_monitor",
+    "community_lab",
+    "playground",
+    "dataset_app",
+    "llm_hub",
+    
+    
     # Core research apps
-    'computational_discovery',
-    'experiment_accelerator',
-    'idea_tournament',
-    'gamification',
-    'streaks',
-    'social_network',
-    'collaborator_matching',
-    'expert_wall',
-    'impact_predictor',
-    'literature_review',
-    'literature_discovery',
-    'ai_coscientist',
-    'anomaly_hpo',
-    'autonomous_research',
-    'marketplace_ai',
-    'coding_assistant',
-    'experiment_recommender',
-    'failure_forensics',
-    'research_discovery',
-
+    "computational_discovery",
+    "experiment_accelerator",
+    "idea_tournament",
+    "gamification",
+    "streaks",
+    "social_network",
+    "collaborator_matching",
+    "expert_wall",
+    "impact_predictor",
+    "literature_review",
+    "literature_discovery",
+    "ai_coscientist",
+    "anomaly_hpo",
+    "autonomous_research",
+    "marketplace_ai",
+    "coding_assistant",
+    "experiment_recommender",
+    "failure_forensics",
+    "research_discovery",
     # Social & community
-    'social',
-    'research',
-    'support',
-    'reputation',
-    'research_coach',
-    'research_agent',                # referenced in celery schedule
-    'api',
-    'web_dashboard',
-    'experiment',
-    'jobscheduler',
-    'notes',
-    'model_versioning',
-    'terminal',
-    'agents',
-    'portfolios',
-
+    "social",
+    "research",
+    "support",
+    "reputation",
+    "research_coach",
+    "research_agent",  # referenced in celery schedule
+    "api",
+    "web_dashboard",
+    "experiment",
+    "jobscheduler",
+    "notes",
+    "model_versioning",
+    "terminal",
+    "agents",
+    "portfolios",
     # GPU marketplace & finance
-    'gpu_marketplace',
-    'gpu_escrow',
-    'gpu_validator',
-    'gpu_benchmark',
-    'gpu_federation',
-    'gpu_finance',
-    'gpu_reputation',
-
+    "gpu_marketplace",
+    "gpu_escrow",
+    "gpu_validator",
+    "gpu_benchmark",
+    "gpu_federation",
+    "gpu_finance",
+    "gpu_reputation",
     # Organisations & governance
-    'organizations',
-    'community',
-    'leaderboards',
-    'reviews',
-    'sweeps',
-    'profiles',
-    'messaging',
-    'paper',
-    'governance',
-
+    "organizations",
+    "community",
+    "leaderboards",
+    "reviews",
+    "sweeps",
+    "profiles",
+    "messaging",
+    "paper",
+    "governance",
     # MLOps & integrations
-    'mlops',                         # data quality, monitoring, etc.
-    'integrations',
+    "mlops",  # data quality, monitoring, etc.
+    "integrations",
 ]
 
 # ----------------------------------------------------------------------
 # Middleware
 # ----------------------------------------------------------------------
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'web_dashboard.middleware.TokenAuthMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "web_dashboard.middleware.TokenAuthMiddleware",
 ]
 
 # ----------------------------------------------------------------------
@@ -188,8 +183,8 @@ ASGI_APPLICATION = "django_api.asgi.application"
 # Channels (WebSocket)
 # ----------------------------------------------------------------------
 CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Use Redis for production
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use Redis for production
     },
 }
 
@@ -207,18 +202,18 @@ DATABASES = {
 # Authentication & Allauth
 # ----------------------------------------------------------------------
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
 SITE_ID = 1
 SOCIALACCOUNT_PROVIDERS = {
-    'github': {
-        'SCOPE': ['user:email', 'repo'],
-        'VERIFIED_EMAIL': True,
+    "github": {
+        "SCOPE": ["user:email", "repo"],
+        "VERIFIED_EMAIL": True,
     },
-    'huggingface': {
-        'SCOPE': ['openid', 'profile', 'email'],
+    "huggingface": {
+        "SCOPE": ["openid", "profile", "email"],
     },
 }
 SOCIALACCOUNT_STORE_TOKENS = True
@@ -228,15 +223,15 @@ SOCIALACCOUNT_STORE_TOKENS = True
 # ----------------------------------------------------------------------
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -246,18 +241,18 @@ TEMPLATES = [
 # REST Framework
 # ----------------------------------------------------------------------
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'api.authentication.CookieTokenAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "api.authentication.CookieTokenAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
     ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
 }
 
 # ----------------------------------------------------------------------
@@ -293,156 +288,143 @@ USE_TZ = True
 # ----------------------------------------------------------------------
 # Celery & Redis
 # ----------------------------------------------------------------------
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 
 CELERY_BEAT_SCHEDULE = {
     # --- GPU Marketplace ---
-    'match-orders-every-30s': {
-        'task': 'gpu_marketplace.tasks.run_matching_cycle',
-        'schedule': 30.0,
+    "match-orders-every-30s": {
+        "task": "gpu_marketplace.tasks.run_matching_cycle",
+        "schedule": 30.0,
     },
-    'update-dynamic-pricing-every-5min': {
-        'task': 'gpu_marketplace.tasks.update_dynamic_pricing',
-        'schedule': crontab(minute='*/5'),
+    "update-dynamic-pricing-every-5min": {
+        "task": "gpu_marketplace.tasks.update_dynamic_pricing",
+        "schedule": crontab(minute="*/5"),
     },
-    'expire-stale-orders-hourly': {
-        'task': 'gpu_marketplace.tasks.expire_stale_orders',
-        'schedule': crontab(minute=0, hour='*'),
+    "expire-stale-orders-hourly": {
+        "task": "gpu_marketplace.tasks.expire_stale_orders",
+        "schedule": crontab(minute=0, hour="*"),
     },
-    'update-reliability-scores-daily': {
-        'task': 'gpu_marketplace.tasks.update_reliability_scores',
-        'schedule': crontab(minute=0, hour=3),
+    "update-reliability-scores-daily": {
+        "task": "gpu_marketplace.tasks.update_reliability_scores",
+        "schedule": crontab(minute=0, hour=3),
     },
-
     # --- GPU Finance ---
-    'daily-index-calculation': {
-        'task': 'gpu_finance.tasks.daily_index_calculation',
-        'schedule': crontab(hour=0, minute=5),
+    "daily-index-calculation": {
+        "task": "gpu_finance.tasks.daily_index_calculation",
+        "schedule": crontab(hour=0, minute=5),
     },
-    'settle-expired-futures': {
-        'task': 'gpu_finance.tasks.settle_expired_futures',
-        'schedule': crontab(hour=0, minute=15),
+    "settle-expired-futures": {
+        "task": "gpu_finance.tasks.settle_expired_futures",
+        "schedule": crontab(hour=0, minute=15),
     },
-    'generate-monthly-invoices': {
-        'task': 'gpu_finance.tasks.generate_monthly_invoices',
-        'schedule': crontab(day_of_month=1, hour=1, minute=0),
+    "generate-monthly-invoices": {
+        "task": "gpu_finance.tasks.generate_monthly_invoices",
+        "schedule": crontab(day_of_month=1, hour=1, minute=0),
     },
-
     # --- GPU Reputation ---
-    'compute-daily-trust-graph': {
-        'task': 'gpu_reputation.tasks.compute_daily_trust_graph',
-        'schedule': crontab(hour=2, minute=0),
+    "compute-daily-trust-graph": {
+        "task": "gpu_reputation.tasks.compute_daily_trust_graph",
+        "schedule": crontab(hour=2, minute=0),
     },
-    'auto-award-badges': {
-        'task': 'gpu_reputation.tasks.auto_award_badges',
-        'schedule': crontab(hour=1, minute=0),
+    "auto-award-badges": {
+        "task": "gpu_reputation.tasks.auto_award_badges",
+        "schedule": crontab(hour=1, minute=0),
     },
-    'expire-stale-disputes': {
-        'task': 'gpu_reputation.tasks.expire_stale_disputes',
-        'schedule': crontab(hour=0, minute=30),
+    "expire-stale-disputes": {
+        "task": "gpu_reputation.tasks.expire_stale_disputes",
+        "schedule": crontab(hour=0, minute=30),
     },
-
     # --- Reputation (general) ---
-    'daily-reputation-snapshot': {
-        'task': 'reputation.tasks.daily_snapshot',
-        'schedule': crontab(hour=1, minute=0),
+    "daily-reputation-snapshot": {
+        "task": "reputation.tasks.daily_snapshot",
+        "schedule": crontab(hour=1, minute=0),
     },
-    'generate-daily-recommendations': {
-        'task': 'reputation.tasks.generate_daily_recommendations',
-        'schedule': crontab(hour=2, minute=0),
+    "generate-daily-recommendations": {
+        "task": "reputation.tasks.generate_daily_recommendations",
+        "schedule": crontab(hour=2, minute=0),
     },
-
     # --- Collaborator Matching ---
-    'regenerate-all-interest-profiles': {
-        'task': 'collaborator_matching.tasks.regenerate_all_profiles',
-        'schedule': crontab(hour=3, minute=0, day_of_week=1),
+    "regenerate-all-interest-profiles": {
+        "task": "collaborator_matching.tasks.regenerate_all_profiles",
+        "schedule": crontab(hour=3, minute=0, day_of_week=1),
     },
-    'generate-all-matches': {
-        'task': 'collaborator_matching.tasks.generate_all_matches',
-        'schedule': crontab(hour=4, minute=0, day_of_week=1),
+    "generate-all-matches": {
+        "task": "collaborator_matching.tasks.generate_all_matches",
+        "schedule": crontab(hour=4, minute=0, day_of_week=1),
     },
-
     # --- Gamification ---
-    'reset-weekly-points': {
-        'task': 'gamification.tasks.reset_weekly_points',
-        'schedule': crontab(hour=0, minute=0, day_of_week=1),
+    "reset-weekly-points": {
+        "task": "gamification.tasks.reset_weekly_points",
+        "schedule": crontab(hour=0, minute=0, day_of_week=1),
     },
-    'check-streak-decay': {
-        'task': 'gamification.tasks.check_streak_decay',
-        'schedule': crontab(hour=0, minute=10),
+    "check-streak-decay": {
+        "task": "gamification.tasks.check_streak_decay",
+        "schedule": crontab(hour=0, minute=10),
     },
-    'take-leaderboard-snapshot': {
-        'task': 'gamification.tasks.take_leaderboard_snapshot',
-        'schedule': crontab(hour=0, minute=20),
+    "take-leaderboard-snapshot": {
+        "task": "gamification.tasks.take_leaderboard_snapshot",
+        "schedule": crontab(hour=0, minute=20),
     },
-    'award-streak-bonus': {
-        'task': 'gamification.tasks.award_streak_bonus',
-        'schedule': crontab(hour=0, minute=30, day_of_week=1),
+    "award-streak-bonus": {
+        "task": "gamification.tasks.award_streak_bonus",
+        "schedule": crontab(hour=0, minute=30, day_of_week=1),
     },
-
     # --- Streaks ---
-    'generate-weekly-summaries': {
-        'task': 'streaks.tasks.generate_weekly_summaries',
-        'schedule': crontab(hour=8, minute=0, day_of_week=1),
+    "generate-weekly-summaries": {
+        "task": "streaks.tasks.generate_weekly_summaries",
+        "schedule": crontab(hour=8, minute=0, day_of_week=1),
     },
-    'check-broken-streaks': {
-        'task': 'streaks.tasks.check_and_reset_broken_streaks',
-        'schedule': crontab(hour=2, minute=0),
+    "check-broken-streaks": {
+        "task": "streaks.tasks.check_and_reset_broken_streaks",
+        "schedule": crontab(hour=2, minute=0),
     },
-
     # --- Experiment Accelerator ---
-    'weekly-experiment-summary': {
-        'task': 'experiment_accelerator.tasks.generate_weekly_summary',
-        'schedule': crontab(hour=9, minute=0, day_of_week=1),
+    "weekly-experiment-summary": {
+        "task": "experiment_accelerator.tasks.generate_weekly_summary",
+        "schedule": crontab(hour=9, minute=0, day_of_week=1),
     },
-
     # --- Research Coach & Agent ---
-    'periodic-research-analysis': {
-        'task': 'research_coach.tasks.run_periodic_analysis',
-        'schedule': crontab(hour=8, minute=0),
+    "periodic-research-analysis": {
+        "task": "research_coach.tasks.run_periodic_analysis",
+        "schedule": crontab(hour=8, minute=0),
     },
-    'generate-ideas-weekly': {
-        'task': 'research_agent.tasks.generate_ideas_for_all_users',
-        'schedule': crontab(hour=9, minute=0, day_of_week=1),
+    "generate-ideas-weekly": {
+        "task": "research_agent.tasks.generate_ideas_for_all_users",
+        "schedule": crontab(hour=9, minute=0, day_of_week=1),
     },
-
     # --- Lab Assistant ---
-    'auto-pre-label-new-tasks': {
-        'task': 'lab_assistant.tasks.auto_pre_label_new_tasks',
-        'schedule': crontab(minute='*/30'),
+    "auto-pre-label-new-tasks": {
+        "task": "lab_assistant.tasks.auto_pre_label_new_tasks",
+        "schedule": crontab(minute="*/30"),
     },
-
     # --- Governance ---
-    'run-drift-checks-hourly': {
-        'task': 'governance.tasks.run_drift_checks_for_all',
-        'schedule': crontab(minute=0),
+    "run-drift-checks-hourly": {
+        "task": "governance.tasks.run_drift_checks_for_all",
+        "schedule": crontab(minute=0),
     },
-    'generate-weekly-compliance-report': {
-        'task': 'governance.tasks.generate_weekly_compliance_report',
-        'schedule': crontab(day_of_week='monday', hour=8),
+    "generate-weekly-compliance-report": {
+        "task": "governance.tasks.generate_weekly_compliance_report",
+        "schedule": crontab(day_of_week="monday", hour=8),
     },
-
     # --- Health Monitor ---
-    'run-scheduled-drift-checks': {
-        'task': 'health_monitor.tasks.run_scheduled_drift_checks',
-        'schedule': crontab(minute='*/15'),
+    "run-scheduled-drift-checks": {
+        "task": "health_monitor.tasks.run_scheduled_drift_checks",
+        "schedule": crontab(minute="*/15"),
     },
-
     # --- MLOps ---
-    'run-data-quality-checks': {
-        'task': 'mlops.tasks.run_data_quality_checks',
-        'schedule': crontab(hour=6, minute=0),
+    "run-data-quality-checks": {
+        "task": "mlops.tasks.run_data_quality_checks",
+        "schedule": crontab(hour=6, minute=0),
     },
-    'monitor-all-endpoints': {
-        'task': 'mlops.tasks.monitor_all_endpoints',
-        'schedule': 300.0,  # every 5 minutes
+    "monitor-all-endpoints": {
+        "task": "mlops.tasks.monitor_all_endpoints",
+        "schedule": 300.0,  # every 5 minutes
     },
-
     # --- Integrations ---
-    'daily-sandbox-cleanup': {
-        'task': 'integrations.tasks.cleanup_stale_sandboxes',
-        'schedule': crontab(hour=3, minute=0),
+    "daily-sandbox-cleanup": {
+        "task": "integrations.tasks.cleanup_stale_sandboxes",
+        "schedule": crontab(hour=3, minute=0),
     },
 }
 
@@ -459,7 +441,7 @@ LOGGING = {
         },
         "json": {
             "format": '{"time": "%(asctime)s", "level": "%(levelname)s", '
-                      '"name": "%(name)s", "message": "%(message)s"}',
+            '"name": "%(name)s", "message": "%(message)s"}',
         },
     },
     "handlers": {
@@ -479,16 +461,18 @@ LOGGING = {
 # Custom Settings
 # ----------------------------------------------------------------------
 GLUE_DATA_PATH = os.environ.get("GLUE_DATA_PATH", str(get_glue_dir()))
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
-OPENAI_BASE_URL = os.environ.get('OPENAI_BASE_URL', None)
-OPENAI_MODEL = os.environ.get('OPENAI_MODEL', 'gpt-4o')
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", None)
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
 HUGGINGFACE_TOKEN = os.environ.get("HF_TOKEN")
 HUGGINGFACE_USERNAME = os.environ.get("HF_USERNAME")
 MODEL_ARCHIVE_BUCKET = os.environ.get("MODEL_ARCHIVE_BUCKET")
 
 # Scheduler options
 SCHEDULER_TOTAL_GPUS = int(os.environ.get("SCHEDULER_TOTAL_GPUS", 1))
-SCHEDULER_BOOST_WAIT_THRESHOLD = int(os.environ.get("SCHEDULER_BOOST_WAIT_THRESHOLD", 600))
+SCHEDULER_BOOST_WAIT_THRESHOLD = int(
+    os.environ.get("SCHEDULER_BOOST_WAIT_THRESHOLD", 600)
+)
 SCHEDULER_SHORT_JOB_THRESHOLD = int(os.environ.get("SCHEDULER_SHORT_JOB_THRESHOLD", 60))
 SCHEDULER_PREEMPT_TIMEOUT = int(os.environ.get("SCHEDULER_PREEMPT_TIMEOUT", 10))
 JOB_TIMEOUT_SECONDS = int(os.environ.get("JOB_TIMEOUT_SECONDS", 0))

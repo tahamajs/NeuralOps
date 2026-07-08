@@ -1,9 +1,8 @@
 # framework/attentions/specialized/hla_attention.py
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("hla")
@@ -32,7 +31,7 @@ class HLAAttention(BaseAttention):
         k = self.k_proj(x).view(B, L, H, Dh)
         v = self.v_proj(x).view(B, L, H, Dh)
 
-        q = q.permute(0, 2, 1, 3)   # (B, H, L, Dh)
+        q = q.permute(0, 2, 1, 3)  # (B, H, L, Dh)
         k = k.permute(0, 2, 1, 3)
         v = v.permute(0, 2, 1, 3)
 
@@ -40,15 +39,13 @@ class HLAAttention(BaseAttention):
         h = torch.zeros(B, H, Dh, Dh, device=x.device)
         outputs = []
         for t in range(L):
-            qt = q[:, :, t, :]      # (B, H, Dh)
-            kt = k[:, :, t, :]      # (B, H, Dh)
-            vt = v[:, :, t, :]      # (B, H, Dh)
-            h = h + torch.einsum('bhd,bhe->bhde', kt, vt)
-            out_t = torch.einsum('bhd,bhde->bhe', qt, h)
+            qt = q[:, :, t, :]  # (B, H, Dh)
+            kt = k[:, :, t, :]  # (B, H, Dh)
+            vt = v[:, :, t, :]  # (B, H, Dh)
+            h = h + torch.einsum("bhd,bhe->bhde", kt, vt)
+            out_t = torch.einsum("bhd,bhde->bhe", qt, h)
             outputs.append(out_t)
 
-        out = torch.stack(outputs, dim=2)   # (B, H, L, Dh)
+        out = torch.stack(outputs, dim=2)  # (B, H, L, Dh)
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         return self.out_proj(out), None
-    
-    

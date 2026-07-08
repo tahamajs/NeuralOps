@@ -1,7 +1,9 @@
 """Simple in‑memory metrics tracker with JSON serialisation."""
 
-import json, os
-from typing import List, Dict, Any, Optional
+import json
+import os
+from typing import Any, Dict, List, Optional
+
 
 class MetricsTracker:
     """Collects metrics during training and saves them as JSON."""
@@ -18,13 +20,14 @@ class MetricsTracker:
 
     def to_dataframe(self):
         import pandas as pd
+
         return pd.DataFrame(self.records)
 
     def save(self, path: Optional[str] = None):
         p = path or self.save_path
         if p:
             os.makedirs(os.path.dirname(p), exist_ok=True)
-            with open(p, 'w') as f:
+            with open(p, "w") as f:
                 json.dump(self.records, f, indent=2)
 
     def flush(self):

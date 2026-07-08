@@ -1,10 +1,12 @@
 """Base class for communication compression strategies."""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Tuple
+from typing import Any, Dict
+
 from framework.core.registry import Registry
 
 COMPRESSION_REGISTRY = Registry("fl_compression")
+
 
 class BaseCompressor(ABC):
     def __init__(self, config):

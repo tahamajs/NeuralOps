@@ -11,20 +11,21 @@ Usage:
     python SpectronAttention.py --task sst2 --epochs 5 --batch_size 16 --lr 1e-5 --budget_ratio 0.2 --add_sparse
 """
 
-import os, argparse, logging, warnings, copy
-from typing import Optional, Tuple, Dict, List
+import argparse
+import logging
+import os
+import warnings
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.linalg import svd
+from transformers import (AutoConfig, AutoModelForSequenceClassification,
+                          AutoTokenizer, EarlyStoppingCallback, Trainer,
+                          TrainerCallback, TrainingArguments, set_seed)
 
-from transformers import (
-    AutoConfig, AutoTokenizer, AutoModelForSequenceClassification,
-    Trainer, TrainingArguments, EarlyStoppingCallback, TrainerCallback,
-    set_seed,
-)
 from datasets import Dataset, DatasetDict
 
 # --------------------- environment ---------------------------------
@@ -43,6 +44,7 @@ log = logging.getLogger(__name__)
 # 1. Spectral utilities
 # ======================================================================
 
+
 def spectral_entropy(singular_values: np.ndarray) -> float:
     """Normalised entropy of *squared* singular values."""
     s2 = singular_values.astype(np.float64) ** 2
@@ -53,6 +55,7 @@ def spectral_entropy(singular_values: np.ndarray) -> float:
     prob = prob[prob > 1e-12]
     return float(-np.sum(prob * np.log(prob)))
 
+
 def cumulative_entropy_fraction(s: np.ndarray, max_rank: int) -> np.ndarray:
     """Return array of length max_rank: fraction of total entropy retained by top k values."""
     s2 = s.astype(np.float64) ** 2
@@ -62,9 +65,11 @@ def cumulative_entropy_fraction(s: np.ndarray, max_rank: int) -> np.ndarray:
     cum = np.cumsum(s2[:max_rank]) / total
     return cum
 
+
 # ======================================================================
 # 2. Lagrangian rank allocator (importance‑aware)
 # ======================================================================
+
 
 def allocate_ranks_spectron(
     weight_matrices: List[np.ndarray],
@@ -88,7 +93,9 @@ def allocate_ranks_spectron(
         cum_ent = cumulative_entropy_fraction(s, max_r)
         cost = 1.0 - cum_ent
         cost_tables.append(cost)
-        param_tables.append((np.arange(1, max_r + 1) * (d_in + d_out)).astype(np.float64))
+        param_tables.append(
+            (np.arange(1, max_r + 1) * (d_in + d_out)).astype(np.float64)
+        )
 
     low, high = lambda_range
     best_ranks = None
@@ -111,20 +118,28 @@ def allocate_ranks_spectron(
         log.warning("Budget too tight, fallback to rank=1 everywhere.")
     return {n: r for n, r in zip(names, best_ranks)}
 
+
 # ======================================================================
 # 3. Low‑Rank + Sparse linear layer
 # ======================================================================
+
 
 class LowRankSparseLinear(nn.Module):
     """
     Composite linear layer: output = (up @ down + sparse_weight) @ x + bias.
     sparse_weight is a dense parameter that is periodically pruned to stay sparse.
     """
-    def __init__(self, down: nn.Linear, up: nn.Linear,
-                 sparse_weight: torch.Tensor, bias: Optional[torch.Tensor] = None):
+
+    def __init__(
+        self,
+        down: nn.Linear,
+        up: nn.Linear,
+        sparse_weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+    ):
         super().__init__()
-        self.down = down          # nn.Linear(in, rank, bias=False)
-        self.up = up              # nn.Linear(rank, out, bias=True)
+        self.down = down  # nn.Linear(in, rank, bias=False)
+        self.up = up  # nn.Linear(rank, out, bias=True)
         self.sparse_weight = nn.Parameter(sparse_weight)
         self.bias = bias
         # store original up bias (already inside up)
@@ -132,9 +147,9 @@ class LowRankSparseLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # low‑rank path
-        x_lr = self.up(self.down(x))                    # (B, N, out)
+        x_lr = self.up(self.down(x))  # (B, N, out)
         # sparse path
-        x_sp = F.linear(x, self.sparse_weight)          # sparse_weight is (out, in)
+        x_sp = F.linear(x, self.sparse_weight)  # sparse_weight is (out, in)
         return x_lr + x_sp
 
     def prune_sparse(self, sparsity: float):
@@ -143,22 +158,25 @@ class LowRankSparseLinear(nn.Module):
             w = self.sparse_weight.data.abs()
             if w.numel() == 0:
                 return
-            k = int(w.numel() * (1 - sparsity))        # keep top-k
+            k = int(w.numel() * (1 - sparsity))  # keep top-k
             if k >= w.numel():
                 return
             threshold = torch.kthvalue(w.view(-1), w.numel() - k).values
             mask = w >= threshold
             self.sparse_weight.data *= mask
 
+
 # ======================================================================
 # 4. SpectronAttention module
 # ======================================================================
+
 
 class SpectronAttention(nn.Module):
     """
     Importance‑aware SVD‑compressed attention with optional sparse residual.
     Replaces DistilBERT's multi‑head attention.
     """
+
     def __init__(
         self,
         model_config,
@@ -179,12 +197,12 @@ class SpectronAttention(nn.Module):
 
         # factorise all projections with given ranks
         proj_weights = {
-            'q': (pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias),
-            'k': (pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias),
-            'v': (pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias),
-            'o': (pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias),
+            "q": (pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias),
+            "k": (pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias),
+            "v": (pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias),
+            "o": (pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias),
         }
-        for proj in ['q','k','v','o']:
+        for proj in ["q", "k", "v", "o"]:
             W, bias = proj_weights[proj]
             down, up = self._factorise(W, bias, ranks[proj])
             setattr(self, f"{proj}_down", down)
@@ -205,8 +223,8 @@ class SpectronAttention(nn.Module):
         S_r = np.diag(s[:rank])
         VT_r = VT[:rank, :]
 
-        down_weight = torch.from_numpy(VT_r).float()            # (rank, d_in)
-        up_weight = torch.from_numpy(U_r @ S_r).float()         # (d_out, rank)
+        down_weight = torch.from_numpy(VT_r).float()  # (rank, d_in)
+        up_weight = torch.from_numpy(U_r @ S_r).float()  # (d_out, rank)
 
         down = nn.Linear(d_in, rank, bias=False)
         up = nn.Linear(rank, d_out, bias=True)
@@ -215,15 +233,18 @@ class SpectronAttention(nn.Module):
         up.bias.data = bias.float() if bias is not None else torch.zeros(d_out)
         return down, up
 
-    def _create_sparse_residual(self, W: torch.Tensor, down: nn.Linear,
-                                up: nn.Linear, sparsity: float) -> nn.Parameter:
+    def _create_sparse_residual(
+        self, W: torch.Tensor, down: nn.Linear, up: nn.Linear, sparsity: float
+    ) -> nn.Parameter:
         with torch.no_grad():
-            low_rank = up.weight @ down.weight     # (d_out, d_in)
+            low_rank = up.weight @ down.weight  # (d_out, d_in)
             residual = W - low_rank
             residual_abs = residual.abs()
             k = int(residual.numel() * (1 - sparsity))
             if k > 0 and k < residual.numel():
-                threshold = torch.kthvalue(residual_abs.view(-1), residual.numel() - k).values
+                threshold = torch.kthvalue(
+                    residual_abs.view(-1), residual.numel() - k
+                ).values
                 residual[residual_abs < threshold] = 0.0
         return nn.Parameter(residual)
 
@@ -242,23 +263,23 @@ class SpectronAttention(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
-        **kwargs
+        **kwargs,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        Q = self._linear_proj(hidden_states, 'q')
-        K = self._linear_proj(hidden_states, 'k')
-        V = self._linear_proj(hidden_states, 'v')
+        Q = self._linear_proj(hidden_states, "q")
+        K = self._linear_proj(hidden_states, "k")
+        V = self._linear_proj(hidden_states, "v")
 
         # split heads
         Q = Q.view(B, N, H, d).transpose(1, 2).contiguous()
         K = K.view(B, N, H, d).transpose(1, 2).contiguous()
         V = V.view(B, N, H, d).transpose(1, 2).contiguous()
 
-        scale = d ** -0.5
+        scale = d**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-        
+
         if attention_mask is not None:
             # اصلاح این بخش:
             # اگر ماسک ۲ بعدی است (B, N)، آن را به (B, 1, 1, N) تبدیل کن
@@ -280,14 +301,16 @@ class SpectronAttention(nn.Module):
         context = context.transpose(1, 2).contiguous().reshape(bs, sl, hh * hd)
         assert context.shape[-1] == self.all_head_size
 
-        output = self._linear_proj(context, 'o')
+        output = self._linear_proj(context, "o")
         if output_attentions:
             return (output, attn_weights)
         return (output, None)
 
+
 # ======================================================================
 # 5. Injector & weight gathering
 # ======================================================================
+
 
 def gather_attention_weights(model) -> Tuple[List[np.ndarray], List[str]]:
     """Return flattened list of all Q/K/V/Out weight matrices and their names."""
@@ -295,18 +318,24 @@ def gather_attention_weights(model) -> Tuple[List[np.ndarray], List[str]]:
     names = []
     for lid in range(6):
         attn = model.distilbert.transformer.layer[lid].attention
-        for proj, attr in [('q','q_lin'), ('k','k_lin'), ('v','v_lin'), ('out','out_lin')]:
+        for proj, attr in [
+            ("q", "q_lin"),
+            ("k", "k_lin"),
+            ("v", "v_lin"),
+            ("out", "out_lin"),
+        ]:
             w = getattr(attn, attr).weight.data.cpu().numpy()
             weights.append(w)
             names.append(f"layer{lid}_{proj}")
     return weights, names
+
 
 def inject_spectron(model, rank_dict: Dict[str, int], args, config):
     for lid in range(6):
         distil_layer = model.distilbert.transformer.layer[lid]
         old_attn = distil_layer.attention
         ranks = {}
-        for p, key in [('q','q'), ('k','k'), ('v','v'), ('o','out')]:
+        for p, key in [("q", "q"), ("k", "k"), ("v", "v"), ("o", "out")]:
             ranks[p] = rank_dict[f"layer{lid}_{key}"]
         new_attn = SpectronAttention(
             model_config=config,
@@ -319,12 +348,15 @@ def inject_spectron(model, rank_dict: Dict[str, int], args, config):
         )
         distil_layer.attention = new_attn
 
+
 # ======================================================================
 # 6. Sparse pruning callback (applied during training)
 # ======================================================================
 
+
 class SparsePruningCallback(TrainerCallback):
     """Periodically prune sparse weights to maintain target sparsity."""
+
     def __init__(self, model, prune_freq: int = 200, final_sparsity: float = 0.7):
         self.model = model
         self.prune_freq = prune_freq
@@ -335,15 +367,19 @@ class SparsePruningCallback(TrainerCallback):
             for layer in self.model.distilbert.transformer.layer:
                 attn = layer.attention
                 if isinstance(attn, SpectronAttention) and attn.add_sparse:
-                    for proj in ['q','k','v','o']:
+                    for proj in ["q", "k", "v", "o"]:
                         sparse = getattr(attn, f"{proj}_sparse", None)
                         if sparse is not None:
                             with torch.no_grad():
                                 w = sparse.data
                                 k = int(w.numel() * (1 - self.final_sparsity))
-                                if k >= w.numel(): continue
-                                threshold = torch.kthvalue(w.abs().view(-1), w.numel() - k).values
+                                if k >= w.numel():
+                                    continue
+                                threshold = torch.kthvalue(
+                                    w.abs().view(-1), w.numel() - k
+                                ).values
                                 w[w.abs() < threshold] = 0.0
+
 
 # ======================================================================
 # 7. GLUE data (unchanged)
@@ -361,8 +397,10 @@ GLUE_TASK_KEYS = {
     "wnli": ("sentence1", "sentence2"),
 }
 
+
 def load_glue_local(task):
     from framework.utils.paths import get_glue_dir
+
     base = str(get_glue_dir())
     path = os.path.join(base, task)
     splits = {}
@@ -372,27 +410,42 @@ def load_glue_local(task):
             splits[s] = Dataset.from_parquet(os.path.join(path, f))
     return DatasetDict(splits)
 
+
 def get_num_labels_and_type(task):
-    if task == "stsb": return 1, True
-    if task == "cola": return 2, False
-    m = {"sst2":2,"mrpc":2,"qqp":2,"mnli":3,"qnli":2,"rte":2,"wnli":2}
+    if task == "stsb":
+        return 1, True
+    if task == "cola":
+        return 2, False
+    m = {"sst2": 2, "mrpc": 2, "qqp": 2, "mnli": 3, "qnli": 2, "rte": 2, "wnli": 2}
     return m[task], False
+
 
 def preprocess(examples, tokenizer, s1, s2, max_len, is_reg):
     if s2 is None:
-        t = tokenizer(examples[s1], truncation=True, padding="max_length", max_length=max_len)
+        t = tokenizer(
+            examples[s1], truncation=True, padding="max_length", max_length=max_len
+        )
     else:
-        t = tokenizer(examples[s1], examples[s2], truncation=True, padding="max_length", max_length=max_len)
+        t = tokenizer(
+            examples[s1],
+            examples[s2],
+            truncation=True,
+            padding="max_length",
+            max_length=max_len,
+        )
     t["labels"] = [float(l) for l in examples["label"]] if is_reg else examples["label"]
     return t
+
 
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
     return {"accuracy": (logits.argmax(-1) == labels).mean().item()}
 
+
 # ======================================================================
 # 8. Main
 # ======================================================================
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -416,23 +469,32 @@ def main():
 
     # Data
     raw = load_glue_local(args.task)
-    tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True, local_files_only=True)
+    tokenizer = AutoTokenizer.from_pretrained(
+        args.model, use_fast=True, local_files_only=True
+    )
     num_labels, is_reg = get_num_labels_and_type(args.task)
     s1, s2 = GLUE_TASK_KEYS[args.task]
-    tokenized = raw.map(lambda x: preprocess(x, tokenizer, s1, s2, args.max_len, is_reg),
-                        batched=True, remove_columns=raw["train"].column_names)
+    tokenized = raw.map(
+        lambda x: preprocess(x, tokenizer, s1, s2, args.max_len, is_reg),
+        batched=True,
+        remove_columns=raw["train"].column_names,
+    )
     train_ds = tokenized["train"]
     eval_ds = tokenized.get("validation", tokenized.get("validation_matched"))
     log.info(f"Train: {len(train_ds)}, Eval: {len(eval_ds)}")
 
     # Model + rank allocation
     config = AutoConfig.from_pretrained(args.model, local_files_only=True)
-    model = AutoModelForSequenceClassification.from_pretrained(args.model, config=config, local_files_only=True)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        args.model, config=config, local_files_only=True
+    )
 
     all_weights, all_names = gather_attention_weights(model)
     original_total = sum(w.size for w in all_weights)
     target = int(original_total * args.budget_ratio)
-    log.info(f"Original attention params: {original_total:,} → target {args.budget_ratio*100:.0f}% = {target:,}")
+    log.info(
+        f"Original attention params: {original_total:,} → target {args.budget_ratio*100:.0f}% = {target:,}"
+    )
 
     rank_dict = allocate_ranks_spectron(all_weights, target, all_names)
     avg_rank = np.mean(list(rank_dict.values()))
@@ -467,7 +529,11 @@ def main():
 
     callbacks = [EarlyStoppingCallback(early_stopping_patience=3)]
     if args.add_sparse:
-        callbacks.append(SparsePruningCallback(model, prune_freq=args.prune_freq, final_sparsity=args.sparsity))
+        callbacks.append(
+            SparsePruningCallback(
+                model, prune_freq=args.prune_freq, final_sparsity=args.sparsity
+            )
+        )
 
     trainer = Trainer(
         model=model,
@@ -483,6 +549,6 @@ def main():
     trainer.save_model(os.path.join(args.output_dir, args.task))
     log.info("Training complete.")
 
+
 if __name__ == "__main__":
     main()
-    

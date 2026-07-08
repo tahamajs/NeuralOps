@@ -3,10 +3,11 @@ Key generation, serialization, and loading utilities.
 Uses the `cryptography` library for strong, standardised operations.
 """
 
-import os
 from pathlib import Path
-from cryptography.hazmat.primitives.asymmetric import ed25519
+
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519
+
 
 def generate_ed25519_keypair(save_to: str = None) -> tuple:
     """

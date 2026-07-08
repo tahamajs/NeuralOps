@@ -4,15 +4,17 @@ Pure kernel‑based linear attention (no landmarks).
 """
 
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
+
 
 class LEKAV1Attention(nn.Module):
     """
     Simple linear attention using random Fourier features + Softpick.
     """
+
     def __init__(self, config, comp_config, layer_idx, total_layers=6, bert_mode=False):
         super().__init__()
         self.num_attention_heads = config.num_attention_heads
@@ -22,18 +24,18 @@ class LEKAV1Attention(nn.Module):
         self.bert_mode = bert_mode
         self.layer_idx = layer_idx
 
-        self.feature_dim = getattr(comp_config, 'feature_dim', 256)
+        self.feature_dim = getattr(comp_config, "feature_dim", 256)
 
-        self.query  = nn.Linear(config.hidden_size, self.all_head_size)
-        self.key    = nn.Linear(config.hidden_size, self.all_head_size)
-        self.value  = nn.Linear(config.hidden_size, self.all_head_size)
+        self.query = nn.Linear(config.hidden_size, self.all_head_size)
+        self.key = nn.Linear(config.hidden_size, self.all_head_size)
+        self.value = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
-        self.dropout = nn.Dropout(getattr(comp_config, 'dropout', 0.1))
+        self.dropout = nn.Dropout(getattr(comp_config, "dropout", 0.1))
 
         # Random projection matrix (one per head, shared)
         self.register_buffer(
-            'proj',
-            torch.randn(self.num_attention_heads, self.head_dim, self.feature_dim)
+            "proj",
+            torch.randn(self.num_attention_heads, self.head_dim, self.feature_dim),
         )
 
     def transpose_for_scores(self, x):
@@ -42,8 +44,8 @@ class LEKAV1Attention(nn.Module):
 
     def kernel_feature_map(self, x):
         # x: (B, H, N, D)
-        proj = self.proj.to(x.device)   # (H, D, F)
-        x_proj = torch.einsum('bhnd,hdf->bhnf', x, proj)  # (B, H, N, F)
+        proj = self.proj.to(x.device)  # (H, D, F)
+        x_proj = torch.einsum("bhnd,hdf->bhnf", x, proj)  # (B, H, N, F)
         phi = torch.cat([torch.cos(x_proj), torch.sin(x_proj)], dim=-1)  # (B, H, N, 2F)
         phi = phi / math.sqrt(self.feature_dim)
         return phi
@@ -56,21 +58,31 @@ class LEKAV1Attention(nn.Module):
         p = F.relu(denom)
         return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ):
         B, N, D = hidden_states.shape
         Q = self.transpose_for_scores(self.query(hidden_states))
         K = self.transpose_for_scores(self.key(hidden_states))
         V = self.transpose_for_scores(self.value(hidden_states))
 
-        Q_features = self.kernel_feature_map(Q)   # (B, H, N, 2F)
+        Q_features = self.kernel_feature_map(Q)  # (B, H, N, 2F)
         K_features = self.kernel_feature_map(K)
 
         # Linear attention
-        KV = torch.einsum('bhnf,bhnd->bhfd', K_features, V)   # (B, H, F, D)
-        K_sum = K_features.sum(dim=2, keepdim=True)           # (B, H, 1, F)
+        KV = torch.einsum("bhnf,bhnd->bhfd", K_features, V)  # (B, H, F, D)
+        K_sum = K_features.sum(dim=2, keepdim=True)  # (B, H, 1, F)
 
-        num = torch.einsum('bhnf,bhfd->bhnd', Q_features, KV)
-        denom = torch.einsum('bhnf,bhf->bhn', Q_features, K_sum.squeeze(2)).unsqueeze(-1) + 1e-8
+        num = torch.einsum("bhnf,bhfd->bhnd", Q_features, KV)
+        denom = (
+            torch.einsum("bhnf,bhf->bhn", Q_features, K_sum.squeeze(2)).unsqueeze(-1)
+            + 1e-8
+        )
         context = num / denom
 
         if attention_mask is not None:
@@ -83,7 +95,9 @@ class LEKAV1Attention(nn.Module):
                 mask = attention_mask
             context = context * mask
 
-        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        context = (
+            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        )
         out = self.out_proj(context)
         return out, None
 
@@ -91,7 +105,8 @@ class LEKAV1Attention(nn.Module):
         return 0.0
 
 
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("leka_v1")
 def inject_leka_v1(layer, model_config, comp_config, layer_idx, total_layers, old_attn):

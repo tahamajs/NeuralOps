@@ -1,11 +1,13 @@
 from rest_framework import serializers
+
 from .models import DashboardWidget
+
 
 class DashboardWidgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = DashboardWidget
-        fields = '__all__'
-        read_only_fields = ['id', 'user', 'created_at']
+        fields = "__all__"
+        read_only_fields = ["id", "user", "created_at"]
 
 
 # web_dashboard/serializers.py – append after the existing DashboardWidgetSerializer
@@ -14,8 +16,10 @@ from rest_framework import serializers
 
 # ── GPU Marketplace Serializers (for consumer dashboard) ─────────
 
+
 class GPUListingSerializer(serializers.Serializer):
     """Lightweight listing for the consumer marketplace."""
+
     id = serializers.UUIDField()
     gpu_model = serializers.CharField()
     gpu_count = serializers.IntegerField()
@@ -30,8 +34,8 @@ class GPUListingSerializer(serializers.Serializer):
     reliability_score = serializers.FloatField()
     dlperf_score = serializers.FloatField()
     total_rentals = serializers.IntegerField()
-    provider = serializers.CharField(source='provider.username')
-    provider_id = serializers.IntegerField(source='provider.id')
+    provider = serializers.CharField(source="provider.username")
+    provider_id = serializers.IntegerField(source="provider.id")
 
 
 class ComputeOrderSerializer(serializers.Serializer):
@@ -40,7 +44,9 @@ class ComputeOrderSerializer(serializers.Serializer):
     order_mode = serializers.CharField()
     gpu_model_preference = serializers.CharField(required=False, allow_blank=True)
     min_vram_gb = serializers.IntegerField(required=False)
-    max_price_per_hour = serializers.DecimalField(max_digits=10, decimal_places=4, required=False)
+    max_price_per_hour = serializers.DecimalField(
+        max_digits=10, decimal_places=4, required=False
+    )
     required_hours = serializers.IntegerField(required=False)
     docker_image = serializers.CharField(required=False, allow_blank=True)
     command = serializers.CharField(required=False, allow_blank=True)
@@ -50,7 +56,7 @@ class ComputeOrderSerializer(serializers.Serializer):
 class ComputeJobSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     status = serializers.CharField()
-    listing_gpu_model = serializers.CharField(source='listing.gpu_model')
+    listing_gpu_model = serializers.CharField(source="listing.gpu_model")
     price_per_hour = serializers.DecimalField(max_digits=10, decimal_places=4)
     hours_consumed = serializers.FloatField()
     total_cost_usd = serializers.DecimalField(max_digits=10, decimal_places=2)

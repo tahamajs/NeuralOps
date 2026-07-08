@@ -1,8 +1,14 @@
 """Parallel coordinates for hyperparameter optimization runs."""
-import json, logging, numpy as np, matplotlib.pyplot as plt, pandas as pd
+
+import json
+import logging
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+import pandas as pd
+
 logger = logging.getLogger(__name__)
+
 
 def plot_parallel_coords(history, metrics, config, output_dir, opts):
     """Reads all runs from the parent directory and plots parallel coordinates."""
@@ -45,15 +51,24 @@ def plot_parallel_coords(history, metrics, config, output_dir, opts):
     fig, ax = plt.subplots(figsize=opts.get("figsize", [14, 6]))
     cols = ["lr", "batch_size", "epochs", "max_len", "accuracy"]
     for i, row in df.iterrows():
-        ax.plot(range(len(cols)), [row[c] for c in cols], 'o-', color=colors[i],
-                linewidth=1, markersize=6, alpha=0.7)
-    ax.set_xticks(range(len(cols))); ax.set_xticklabels(cols)
-    ax.set_title('Parallel Coordinates – Hyperparameter Runs')
-    sm = plt.cm.ScalarMappable(cmap='viridis', norm=norm); sm.set_array([])
+        ax.plot(
+            range(len(cols)),
+            [row[c] for c in cols],
+            "o-",
+            color=colors[i],
+            linewidth=1,
+            markersize=6,
+            alpha=0.7,
+        )
+    ax.set_xticks(range(len(cols)))
+    ax.set_xticklabels(cols)
+    ax.set_title("Parallel Coordinates – Hyperparameter Runs")
+    sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+    sm.set_array([])
     plt.colorbar(sm, ax=ax, label=metric_col)
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     out = str(Path(output_dir) / "parallel_coordinates.png")
-    fig.savefig(out, dpi=opts.get("dpi", 150), bbox_inches='tight')
+    fig.savefig(out, dpi=opts.get("dpi", 150), bbox_inches="tight")
     plt.close(fig)
     return [out]

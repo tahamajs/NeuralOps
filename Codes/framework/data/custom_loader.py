@@ -2,9 +2,11 @@
 Custom dataset loading from CSV, JSON, Parquet files.
 """
 
-import pandas as pd
 from pathlib import Path
 from typing import Optional
+
+import pandas as pd
+
 from datasets import Dataset, DatasetDict
 
 
@@ -13,7 +15,7 @@ def load_custom_dataset(
     text_column: Optional[str] = None,
     label_column: Optional[str] = None,
     file_format: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> DatasetDict:
     """Load a custom dataset from a file, returning a DatasetDict with at least 'train'."""
     path = Path(file_path)
@@ -22,20 +24,20 @@ def load_custom_dataset(
 
     if file_format is None:
         ext = path.suffix.lower()
-        if ext == '.csv':
-            file_format = 'csv'
-        elif ext in ('.json', '.jsonl'):
-            file_format = 'json'
-        elif ext == '.parquet':
-            file_format = 'parquet'
+        if ext == ".csv":
+            file_format = "csv"
+        elif ext in (".json", ".jsonl"):
+            file_format = "json"
+        elif ext == ".parquet":
+            file_format = "parquet"
         else:
             raise ValueError(f"Unknown file extension: {ext}")
 
-    if file_format == 'csv':
+    if file_format == "csv":
         df = pd.read_csv(path, **kwargs)
-    elif file_format == 'json':
+    elif file_format == "json":
         df = pd.read_json(path, **kwargs)
-    elif file_format == 'parquet':
+    elif file_format == "parquet":
         df = pd.read_parquet(path, **kwargs)
     else:
         raise ValueError(f"Unsupported format: {file_format}")
@@ -61,7 +63,7 @@ def load_dataset_from_file(
     split_ratio: float = 0.8,
     shuffle: bool = True,
     seed: int = 42,
-    **kwargs
+    **kwargs,
 ) -> DatasetDict:
     """Load a file and split into train/validation."""
     dataset = load_custom_dataset(file_path, **kwargs)
@@ -71,19 +73,21 @@ def load_dataset_from_file(
     n_train = int(len(df) * split_ratio)
     train_df = df[:n_train]
     val_df = df[n_train:]
-    return DatasetDict({
-        "train": Dataset.from_pandas(train_df),
-        "validation": Dataset.from_pandas(val_df),
-    })
+    return DatasetDict(
+        {
+            "train": Dataset.from_pandas(train_df),
+            "validation": Dataset.from_pandas(val_df),
+        }
+    )
 
 
 def _detect_text_column(df: pd.DataFrame) -> Optional[str]:
-    candidates = ['text', 'sentence', 'prompt', 'question', 'content', 'body']
+    candidates = ["text", "sentence", "prompt", "question", "content", "body"]
     for col in candidates:
         if col in df.columns:
             return col
     for col in df.columns:
-        if df[col].dtype == 'object':
+        if df[col].dtype == "object":
             sample = df[col].dropna().iloc[0] if len(df[col].dropna()) else ""
             if isinstance(sample, str) and len(sample) > 10:
                 return col
@@ -91,12 +95,12 @@ def _detect_text_column(df: pd.DataFrame) -> Optional[str]:
 
 
 def _detect_label_column(df: pd.DataFrame) -> Optional[str]:
-    candidates = ['label', 'labels', 'class', 'target', 'gold', 'answer']
+    candidates = ["label", "labels", "class", "target", "gold", "answer"]
     for col in candidates:
         if col in df.columns:
             return col
     for col in df.columns:
-        if df[col].dtype in ('int64', 'int32', 'float64'):
+        if df[col].dtype in ("int64", "int32", "float64"):
             if 2 <= df[col].nunique() <= 10:
                 return col
     return None

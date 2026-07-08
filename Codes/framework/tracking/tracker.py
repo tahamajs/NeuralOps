@@ -4,17 +4,10 @@ Provides a single, consistent API: log_metric, log_params, log_artifact, finaliz
 """
 
 from typing import Any, Dict, Optional
-from .backends import (
-    TrackingBackend,
-    LOCAL_BACKEND,
-    TENSORBOARD_BACKEND,
-    WANDB_BACKEND,
-    MLFLOW_BACKEND,
-    LocalTracker,
-    TensorBoardTracker,
-    WandBTracker,
-    MLflowTracker,
-)
+
+from .backends import (LOCAL_BACKEND, MLFLOW_BACKEND, TENSORBOARD_BACKEND,
+                       WANDB_BACKEND, LocalTracker, MLflowTracker,
+                       TensorBoardTracker, WandBTracker)
 
 
 class ExperimentTracker:
@@ -54,7 +47,9 @@ class ExperimentTracker:
         """
         backend = backend.lower()
         if backend not in self.BACKEND_MAP:
-            raise ValueError(f"Unknown backend '{backend}'. Available: {list(self.BACKEND_MAP.keys())}")
+            raise ValueError(
+                f"Unknown backend '{backend}'. Available: {list(self.BACKEND_MAP.keys())}"
+            )
 
         self.backend_name = backend
         self.experiment_name = experiment_name
@@ -65,14 +60,23 @@ class ExperimentTracker:
 
         # Instantiate the backend
         if backend == LOCAL_BACKEND:
-            self._tracker = LocalTracker(log_dir=log_dir, experiment_name=experiment_name)
+            self._tracker = LocalTracker(
+                log_dir=log_dir, experiment_name=experiment_name
+            )
         elif backend == TENSORBOARD_BACKEND:
-            self._tracker = TensorBoardTracker(log_dir=log_dir, experiment_name=experiment_name)
+            self._tracker = TensorBoardTracker(
+                log_dir=log_dir, experiment_name=experiment_name
+            )
         elif backend == WANDB_BACKEND:
-            self._tracker = WandBTracker(project=project or "default", experiment_name=experiment_name,
-                                         config_dict=self.config_dict)
+            self._tracker = WandBTracker(
+                project=project or "default",
+                experiment_name=experiment_name,
+                config_dict=self.config_dict,
+            )
         elif backend == MLFLOW_BACKEND:
-            self._tracker = MLflowTracker(experiment_name=experiment_name, tracking_uri=tracking_uri)
+            self._tracker = MLflowTracker(
+                experiment_name=experiment_name, tracking_uri=tracking_uri
+            )
         else:
             raise NotImplementedError(f"Backend '{backend}' not implemented")
 
@@ -80,7 +84,9 @@ class ExperimentTracker:
         """Log a single metric (scalar)."""
         self._tracker.log_metric(name, value, step)
 
-    def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None) -> None:
+    def log_metrics(
+        self, metrics: Dict[str, float], step: Optional[int] = None
+    ) -> None:
         """Log multiple metrics at once."""
         for k, v in metrics.items():
             self._tracker.log_metric(k, v, step)

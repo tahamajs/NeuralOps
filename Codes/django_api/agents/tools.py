@@ -4,26 +4,26 @@ Uses official Python clients for Semantic Scholar, OpenAlex, and arXiv.
 All tools return structured Pydantic‑validated responses.
 """
 
-import os, json, requests, time
-from typing import Dict, Any, List, Optional, Callable
-from dataclasses import dataclass, field
+import json
+import os
+import time
 from datetime import datetime
 from functools import wraps
+from typing import Any, Callable, Dict, List, Optional
 
-import backoff
-from django.conf import settings
 from django.core.cache import cache
-from django.utils import timezone
 
 # ── Official API Clients ──────────────────────────────────────────
 try:
     from semanticscholar import SemanticScholar
+
     _sch = SemanticScholar(timeout=30)
 except ImportError:
     _sch = None
 
 try:
     import pyalex
+
     pyalex.config.email = os.environ.get("OPENALEX_EMAIL", "admin@neuralops.dev")
     _openalex_available = True
 except ImportError:
@@ -31,18 +31,19 @@ except ImportError:
 
 try:
     import arxiv
+
     _arxiv_client = arxiv.Client()
 except ImportError:
     _arxiv_client = None
 
 # ── Database Models ───────────────────────────────────────────────
-from experiment.models import TrainingRun, Experiment, Project
-from paper.models import PaperProject, PaperFile
-from notes.models import ResearcherNote
+from experiment.models import Experiment, TrainingRun
+
 
 # ── Retry Configuration ───────────────────────────────────────────
 def with_retry(max_tries=3, base_delay=1.0):
     """Decorator for retrying failed API calls with exponential backoff."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -53,10 +54,12 @@ def with_retry(max_tries=3, base_delay=1.0):
                 except Exception as e:
                     last_exc = e
                     if attempt < max_tries - 1:
-                        delay = base_delay * (2 ** attempt)
+                        delay = base_delay * (2**attempt)
                         time.sleep(delay)
             raise last_exc
+
         return wrapper
+
     return decorator
 
 
@@ -64,14 +67,24 @@ def with_retry(max_tries=3, base_delay=1.0):
 # Tool Registry (Enhanced)
 # ═══════════════════════════════════════════════════════════════════
 
+
 class ToolRegistry:
     """Central registry for all agent tools with metadata."""
+
     _tools: Dict[str, Dict[str, Any]] = {}
 
     @classmethod
-    def register(cls, *, name: str, description: str, category: str = "general",
-                 requires_confirmation: bool = False, cache_ttl: int = 0):
+    def register(
+        cls,
+        *,
+        name: str,
+        description: str,
+        category: str = "general",
+        requires_confirmation: bool = False,
+        cache_ttl: int = 0,
+    ):
         """Register a tool with full metadata."""
+
         def decorator(func):
             cls._tools[name] = {
                 "function": func,
@@ -82,11 +95,13 @@ class ToolRegistry:
                 "cache_ttl": cache_ttl,
             }
             return func
+
         return decorator
 
     @classmethod
-    def execute(cls, name: str, params: Dict[str, Any],
-                user_id: Optional[int] = None) -> Dict[str, Any]:
+    def execute(
+        cls, name: str, params: Dict[str, Any], user_id: Optional[int] = None
+    ) -> Dict[str, Any]:
         """Execute a tool by name, with caching support."""
         tool = cls._tools.get(name)
         if not tool:
@@ -117,13 +132,27 @@ class ToolRegistry:
         """Return OpenAI‑compatible tool definitions, filtered by role permissions."""
         role_permissions = {
             "admin": ["*"],
-            "researcher": ["search_papers", "get_paper_details", "save_paper",
-                          "search_library", "analyze_training", "suggest_next_experiment",
-                          "configure_experiment", "launch_experiment",
-                          "check_experiment_status", "read_latex_project",
-                          "edit_latex_file", "compile_latex", "test_prompt_template"],
-            "viewer": ["search_papers", "get_paper_details", "search_library",
-                       "check_experiment_status"],
+            "researcher": [
+                "search_papers",
+                "get_paper_details",
+                "save_paper",
+                "search_library",
+                "analyze_training",
+                "suggest_next_experiment",
+                "configure_experiment",
+                "launch_experiment",
+                "check_experiment_status",
+                "read_latex_project",
+                "edit_latex_file",
+                "compile_latex",
+                "test_prompt_template",
+            ],
+            "viewer": [
+                "search_papers",
+                "get_paper_details",
+                "search_library",
+                "check_experiment_status",
+            ],
         }
         allowed = role_permissions.get(user_role, role_permissions["viewer"])
         if "*" in allowed:
@@ -133,18 +162,20 @@ class ToolRegistry:
         for name, tool in cls._tools.items():
             if name not in allowed:
                 continue
-            definitions.append({
-                "type": "function",
-                "function": {
-                    "name": name,
-                    "description": tool["description"],
-                    "parameters": {
-                        "type": "object",
-                        "properties": _infer_schema(tool["function"]),
-                        "required": _infer_required(tool["function"]),
+            definitions.append(
+                {
+                    "type": "function",
+                    "function": {
+                        "name": name,
+                        "description": tool["description"],
+                        "parameters": {
+                            "type": "object",
+                            "properties": _infer_schema(tool["function"]),
+                            "required": _infer_required(tool["function"]),
+                        },
                     },
-                },
-            })
+                }
+            )
         return definitions
 
     @classmethod
@@ -160,6 +191,7 @@ class ToolRegistry:
 def _infer_schema(func: Callable) -> Dict[str, Any]:
     """Infer JSON Schema from function type hints."""
     import inspect
+
     hints = inspect.signature(func).parameters
     schema = {}
     for name, param in hints.items():
@@ -188,6 +220,7 @@ def _infer_schema(func: Callable) -> Dict[str, Any]:
 def _infer_required(func: Callable) -> List[str]:
     """Infer required parameters from function signature."""
     import inspect
+
     hints = inspect.signature(func).parameters
     required = []
     for name, param in hints.items():
@@ -201,6 +234,7 @@ def _infer_required(func: Callable) -> List[str]:
 # ═══════════════════════════════════════════════════════════════════
 # Paper Search & Discovery Tools
 # ═══════════════════════════════════════════════════════════════════
+
 
 @ToolRegistry.register(
     name="search_papers",
@@ -223,9 +257,21 @@ def search_papers(
 
     if source in ("semantic_scholar", "all") and _sch is not None:
         try:
-            ss_results = _sch.search_paper(query, limit=limit,
-                fields=["title","authors","abstract","year","citationCount","url",
-                        "externalIds","openAccessPdf","publicationTypes"])
+            ss_results = _sch.search_paper(
+                query,
+                limit=limit,
+                fields=[
+                    "title",
+                    "authors",
+                    "abstract",
+                    "year",
+                    "citationCount",
+                    "url",
+                    "externalIds",
+                    "openAccessPdf",
+                    "publicationTypes",
+                ],
+            )
             for p in ss_results:
                 results.append(_normalize_paper(p, "semantic_scholar"))
         except Exception as e:
@@ -233,8 +279,9 @@ def search_papers(
 
     if source in ("arxiv", "all") and _arxiv_client is not None:
         try:
-            search = arxiv.Search(query=query, max_results=limit,
-                                  sort_by=arxiv.SortCriterion.Relevance)
+            search = arxiv.Search(
+                query=query, max_results=limit, sort_by=arxiv.SortCriterion.Relevance
+            )
             for result in _arxiv_client.results(search):
                 results.append(_normalize_arxiv_result(result))
         except Exception as e:
@@ -243,6 +290,7 @@ def search_papers(
     if source in ("openalex", "all") and _openalex_available:
         try:
             from pyalex import Works
+
             pager = Works().search(query).per_page(min(limit, 200))
             if year_from:
                 pager = pager.filter(publication_year=">" + str(year_from - 1))
@@ -270,24 +318,45 @@ def search_papers(
     category="research",
     cache_ttl=600,
 )
-def get_paper_details(paper_id: str, source: str = "semantic_scholar") -> Dict[str, Any]:
+def get_paper_details(
+    paper_id: str, source: str = "semantic_scholar"
+) -> Dict[str, Any]:
     """Get comprehensive paper details."""
     if source == "semantic_scholar" and _sch is not None:
-        paper = _sch.get_paper(paper_id, fields=[
-            "title","authors","abstract","year","citationCount","url",
-            "references","citations","externalIds","openAccessPdf","tldr",
-            "publicationVenue","fieldsOfStudy","publicationTypes"
-        ])
+        paper = _sch.get_paper(
+            paper_id,
+            fields=[
+                "title",
+                "authors",
+                "abstract",
+                "year",
+                "citationCount",
+                "url",
+                "references",
+                "citations",
+                "externalIds",
+                "openAccessPdf",
+                "tldr",
+                "publicationVenue",
+                "fieldsOfStudy",
+                "publicationTypes",
+            ],
+        )
         return {
             "status": "success",
-            "paper": _normalize_paper(paper, "semantic_scholar", include_relations=True),
+            "paper": _normalize_paper(
+                paper, "semantic_scholar", include_relations=True
+            ),
         }
 
     if source == "arxiv" and _arxiv_client is not None:
         search = arxiv.Search(id_list=[paper_id])
         result = next(_arxiv_client.results(search), None)
         if result:
-            return {"status": "success", "paper": _normalize_arxiv_result(result, detailed=True)}
+            return {
+                "status": "success",
+                "paper": _normalize_arxiv_result(result, detailed=True),
+            }
         return {"status": "error", "error": "Paper not found on arXiv"}
 
     return {"status": "error", "error": f"Source {source} not available"}
@@ -311,7 +380,7 @@ def get_citation_graph(paper_id: str, depth: int = 1) -> Dict[str, Any]:
         if current_depth > depth or pid in nodes:
             return
         try:
-            paper = _sch.get_paper(pid, fields=["title","citations","references"])
+            paper = _sch.get_paper(pid, fields=["title", "citations", "references"])
             nodes[pid] = {"id": pid, "title": (paper.title or "")[:100]}
             for ref in (paper.references or [])[:20]:
                 rid = ref.get("paperId")
@@ -340,29 +409,40 @@ def get_citation_graph(paper_id: str, depth: int = 1) -> Dict[str, Any]:
 # Paper Library Management
 # ═══════════════════════════════════════════════════════════════════
 
+
 @ToolRegistry.register(
     name="save_paper",
     description="Save a paper to the user's research library.",
     category="library",
 )
 def save_paper(
-    title: str, source: str, source_id: str,
-    authors: Optional[List[str]] = None, abstract: str = "",
-    url: str = "", year: Optional[int] = None,
-    citation_count: int = 0, pdf_url: str = "",
+    title: str,
+    source: str,
+    source_id: str,
+    authors: Optional[List[str]] = None,
+    abstract: str = "",
+    url: str = "",
+    year: Optional[int] = None,
+    citation_count: int = 0,
+    pdf_url: str = "",
     user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Save or update a paper in the library."""
     from agents.models import ResearchPaper
+
     paper, created = ResearchPaper.objects.update_or_create(
-        source=source, source_id=source_id,
+        source=source,
+        source_id=source_id,
         defaults={
-            "title": title, "authors": authors or [],
-            "abstract": abstract, "url": url,
-            "year": year, "citation_count": citation_count,
+            "title": title,
+            "authors": authors or [],
+            "abstract": abstract,
+            "url": url,
+            "year": year,
+            "citation_count": citation_count,
             "pdf_url": pdf_url,
             "saved_by_id": user_id,
-        }
+        },
     )
     return {
         "status": "saved" if created else "updated",
@@ -376,23 +456,33 @@ def save_paper(
     category="library",
 )
 def search_library(
-    query: str = "", tag: str = "", limit: int = 20,
+    query: str = "",
+    tag: str = "",
+    limit: int = 20,
     user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Search saved papers."""
     from agents.models import ResearchPaper
+
     papers = ResearchPaper.objects.filter(saved_by_id=user_id)
     if query:
         from django.db.models import Q
+
         papers = papers.filter(Q(title__icontains=query) | Q(abstract__icontains=query))
     if tag:
         papers = papers.filter(tags__contains=[tag])
     return {
         "status": "success",
         "results": [
-            {"id": str(p.id), "title": p.title, "authors": p.authors,
-             "year": p.year, "citation_count": p.citation_count,
-             "tags": p.tags, "abstract": (p.abstract or "")[:300]}
+            {
+                "id": str(p.id),
+                "title": p.title,
+                "authors": p.authors,
+                "year": p.year,
+                "citation_count": p.citation_count,
+                "tags": p.tags,
+                "abstract": (p.abstract or "")[:300],
+            }
             for p in papers.order_by("-created_at")[:limit]
         ],
     }
@@ -404,10 +494,13 @@ def search_library(
     category="library",
 )
 def annotate_paper(
-    paper_id: str, notes: str = "", tags: Optional[List[str]] = None,
+    paper_id: str,
+    notes: str = "",
+    tags: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """Annotate a paper."""
     from agents.models import ResearchPaper
+
     paper = ResearchPaper.objects.get(id=paper_id)
     if notes:
         paper.notes = notes
@@ -421,6 +514,7 @@ def annotate_paper(
 # Experiment Management Tools
 # ═══════════════════════════════════════════════════════════════════
 
+
 @ToolRegistry.register(
     name="configure_experiment",
     description="Propose a training experiment configuration for user review.",
@@ -428,18 +522,26 @@ def annotate_paper(
     requires_confirmation=True,
 )
 def configure_experiment(
-    model_name: str, task_name: str,
-    attention_type: str = "full", method: str = "baseline",
-    epochs: int = 3, batch_size: int = 16,
-    learning_rate: float = 2e-5, max_seq_length: int = 128,
+    model_name: str,
+    task_name: str,
+    attention_type: str = "full",
+    method: str = "baseline",
+    epochs: int = 3,
+    batch_size: int = 16,
+    learning_rate: float = 2e-5,
+    max_seq_length: int = 128,
     compression_rank: int = 64,
 ) -> Dict[str, Any]:
     """Generate an experiment draft configuration."""
     config = {
-        "model_name": model_name, "task_name": task_name,
-        "attention_type": attention_type, "method": method,
-        "epochs": epochs, "batch_size": batch_size,
-        "learning_rate": learning_rate, "max_seq_length": max_seq_length,
+        "model_name": model_name,
+        "task_name": task_name,
+        "attention_type": attention_type,
+        "method": method,
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "learning_rate": learning_rate,
+        "max_seq_length": max_seq_length,
         "compression_rank": compression_rank,
         "created_at": datetime.utcnow().isoformat(),
     }
@@ -453,11 +555,16 @@ def configure_experiment(
     requires_confirmation=True,
 )
 def launch_experiment(
-    model_name: str, task_name: str,
-    attention_type: str = "full", method: str = "baseline",
-    epochs: int = 3, batch_size: int = 16,
-    learning_rate: float = 2e-5, max_seq_length: int = 128,
-    compression_rank: int = 64, name: Optional[str] = None,
+    model_name: str,
+    task_name: str,
+    attention_type: str = "full",
+    method: str = "baseline",
+    epochs: int = 3,
+    batch_size: int = 16,
+    learning_rate: float = 2e-5,
+    max_seq_length: int = 128,
+    compression_rank: int = 64,
+    name: Optional[str] = None,
     user_id: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Create and launch a training run via Celery."""
@@ -469,10 +576,14 @@ def launch_experiment(
         job_type="training",
         status="queued",
         config={
-            "model_name": model_name, "task_name": task_name,
-            "attention_type": attention_type, "method": method,
-            "epochs": epochs, "batch_size": batch_size,
-            "learning_rate": learning_rate, "max_seq_length": max_seq_length,
+            "model_name": model_name,
+            "task_name": task_name,
+            "attention_type": attention_type,
+            "method": method,
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "max_seq_length": max_seq_length,
             "compression_rank": compression_rank,
         },
         name=exp_name,
@@ -480,6 +591,7 @@ def launch_experiment(
 
     # Dispatch to Celery
     from experiment.tasks import run_training_task
+
     task = run_training_task.delay(str(run.id))
 
     return {
@@ -513,6 +625,7 @@ def check_experiment_status(run_id: str) -> Dict[str, Any]:
 # Training Analysis Tools
 # ═══════════════════════════════════════════════════════════════════
 
+
 @ToolRegistry.register(
     name="analyze_training",
     description="Analyze a training run for overfitting, plateau, divergence, and suggest fixes.",
@@ -527,7 +640,9 @@ def analyze_training(run_id: str) -> Dict[str, Any]:
     eval_accuracies = history.get("eval_accuracies", [])
 
     analysis = {
-        "status": "healthy", "issues": [], "suggestions": [],
+        "status": "healthy",
+        "issues": [],
+        "suggestions": [],
         "metrics_summary": {},
     }
 
@@ -537,44 +652,56 @@ def analyze_training(run_id: str) -> Dict[str, Any]:
         eval_trend = eval_losses[-1] - eval_losses[0] if len(eval_losses) >= 2 else 0
         if train_trend < -0.01 and eval_trend > 0.01:
             analysis["issues"].append("overfitting")
-            analysis["suggestions"].extend([
-                "Increase dropout rate or weight decay",
-                "Use early stopping (patience=3)",
-                "Reduce model rank or try lower compression_rank",
-            ])
+            analysis["suggestions"].extend(
+                [
+                    "Increase dropout rate or weight decay",
+                    "Use early stopping (patience=3)",
+                    "Reduce model rank or try lower compression_rank",
+                ]
+            )
             analysis["status"] = "overfitting"
 
     # ── Plateau Detection ──
     if len(losses) >= 20:
         recent = losses[-20:]
-        loss_std = (sum((x - sum(recent)/len(recent))**2 for x in recent) / len(recent))**0.5
+        loss_std = (
+            sum((x - sum(recent) / len(recent)) ** 2 for x in recent) / len(recent)
+        ) ** 0.5
         if loss_std < 0.001 and min(recent) > 0.1:
             analysis["issues"].append("plateau")
-            analysis["suggestions"].extend([
-                "Reduce learning rate by 50%",
-                "Try cosine annealing scheduler",
-                "Increase batch size",
-            ])
-            analysis["status"] = "plateau" if analysis["status"] == "healthy" else analysis["status"]
+            analysis["suggestions"].extend(
+                [
+                    "Reduce learning rate by 50%",
+                    "Try cosine annealing scheduler",
+                    "Increase batch size",
+                ]
+            )
+            analysis["status"] = (
+                "plateau" if analysis["status"] == "healthy" else analysis["status"]
+            )
 
     # ── Divergence ──
     if len(losses) >= 5 and losses[-1] > 2 * max(losses[:-5]):
         analysis["issues"].append("diverging")
-        analysis["suggestions"].extend([
-            "Reduce learning rate by 10x",
-            "Add gradient clipping (max_norm=1.0)",
-            "Verify data preprocessing",
-        ])
+        analysis["suggestions"].extend(
+            [
+                "Reduce learning rate by 10x",
+                "Add gradient clipping (max_norm=1.0)",
+                "Verify data preprocessing",
+            ]
+        )
         analysis["status"] = "diverging"
 
     # ── Underfitting ──
     if len(losses) >= 50 and losses[-1] > 1.0:
         analysis["issues"].append("underfitting")
-        analysis["suggestions"].extend([
-            "Increase model capacity (higher rank)",
-            "Train for more epochs",
-            "Try a more powerful attention mechanism",
-        ])
+        analysis["suggestions"].extend(
+            [
+                "Increase model capacity (higher rank)",
+                "Train for more epochs",
+                "Try a more powerful attention mechanism",
+            ]
+        )
         if analysis["status"] == "healthy":
             analysis["status"] = "underfitting"
 
@@ -583,13 +710,16 @@ def analyze_training(run_id: str) -> Dict[str, Any]:
         "best_loss": round(min(losses), 6) if losses else None,
         "best_accuracy": round(max(eval_accuracies), 6) if eval_accuracies else None,
         "total_steps": len(losses),
-        "trend": ("improving" if len(losses) >= 5 and losses[-1] < losses[0]
-                  else "worsening" if len(losses) >= 5
-                  else "unknown"),
+        "trend": (
+            "improving"
+            if len(losses) >= 5 and losses[-1] < losses[0]
+            else "worsening" if len(losses) >= 5 else "unknown"
+        ),
     }
 
     # Persist analysis
     from agents.models import TrainingAnalysis
+
     TrainingAnalysis.objects.update_or_create(
         run=run,
         defaults={
@@ -607,7 +737,8 @@ def analyze_training(run_id: str) -> Dict[str, Any]:
     category="analysis",
 )
 def suggest_next_experiment(
-    project_id: str, metric_name: str = "eval_accuracy",
+    project_id: str,
+    metric_name: str = "eval_accuracy",
     direction: str = "maximize",
 ) -> Dict[str, Any]:
     """Bayesian‑inspired next‑experiment suggestion."""
@@ -622,39 +753,50 @@ def suggest_next_experiment(
             "suggestions": [],
         }
 
-    best = (max(runs, key=lambda r: (r.final_metrics or {}).get(metric_name, -1))
-            if direction == "maximize"
-            else min(runs, key=lambda r: (r.final_metrics or {}).get(metric_name, float("inf"))))
+    best = (
+        max(runs, key=lambda r: (r.final_metrics or {}).get(metric_name, -1))
+        if direction == "maximize"
+        else min(
+            runs, key=lambda r: (r.final_metrics or {}).get(metric_name, float("inf"))
+        )
+    )
 
     config = best.config or {}
     suggestions = []
 
     # LR variation
     lr = config.get("learning_rate", 2e-5)
-    suggestions.append({
-        "type": "lr", "description": f"Try learning_rate = {lr*0.5:.1e}",
-        "params": {"learning_rate": lr * 0.5},
-    })
+    suggestions.append(
+        {
+            "type": "lr",
+            "description": f"Try learning_rate = {lr*0.5:.1e}",
+            "params": {"learning_rate": lr * 0.5},
+        }
+    )
 
     # Attention variation
     attn = config.get("attention_type", "full")
     for a in ["galerkin", "linformer", "spectraformer", "padre"]:
         if a != attn:
-            suggestions.append({
-                "type": "attention",
-                "description": f"Try attention_type = '{a}'",
-                "params": {"attention_type": a},
-            })
+            suggestions.append(
+                {
+                    "type": "attention",
+                    "description": f"Try attention_type = '{a}'",
+                    "params": {"attention_type": a},
+                }
+            )
             break
 
     # Method variation
     method = config.get("method", "baseline")
     if method == "baseline":
-        suggestions.append({
-            "type": "method",
-            "description": "Try method = 'lora' (rank=8)",
-            "params": {"method": "lora", "lora_r": 8},
-        })
+        suggestions.append(
+            {
+                "type": "method",
+                "description": "Try method = 'lora' (rank=8)",
+                "params": {"method": "lora", "lora_r": 8},
+            }
+        )
 
     return {
         "status": "success",
@@ -668,13 +810,15 @@ def suggest_next_experiment(
 # Prompt Testing
 # ═══════════════════════════════════════════════════════════════════
 
+
 @ToolRegistry.register(
     name="test_prompt_template",
     description="Test a prompt template against multiple test cases.",
     category="evaluation",
 )
 def test_prompt_template(
-    template: str, test_cases: List[Dict[str, Any]],
+    template: str,
+    test_cases: List[Dict[str, Any]],
     metric: str = "contains",
 ) -> Dict[str, Any]:
     """Evaluate a prompt template."""
@@ -684,18 +828,21 @@ def test_prompt_template(
         for key, val in case.items():
             if key != "expected":
                 prompt = prompt.replace(f"{{{{{key}}}}}", str(val))
-        results.append({
-            "test_case": i + 1,
-            "substituted_prompt": prompt[:500],
-            "expected": case.get("expected", ""),
-            "variables": {k: v for k, v in case.items() if k != "expected"},
-        })
+        results.append(
+            {
+                "test_case": i + 1,
+                "substituted_prompt": prompt[:500],
+                "expected": case.get("expected", ""),
+                "variables": {k: v for k, v in case.items() if k != "expected"},
+            }
+        )
     return {"status": "success", "template": template, "results": results}
 
 
 # ═══════════════════════════════════════════════════════════════════
 # Helpers
 # ═══════════════════════════════════════════════════════════════════
+
 
 def _normalize_paper(p, source: str, include_relations: bool = False) -> Dict[str, Any]:
     """Normalize Semantic Scholar paper object to dict."""
@@ -754,7 +901,10 @@ def _normalize_openalex(w) -> Dict[str, Any]:
     return {
         "id": w.get("id", "").split("/")[-1],
         "title": (w.get("title") or "")[:300],
-        "authors": [a.get("author", {}).get("display_name", "") for a in w.get("authorships", [])],
+        "authors": [
+            a.get("author", {}).get("display_name", "")
+            for a in w.get("authorships", [])
+        ],
         "abstract": (w.get("abstract") or "")[:1000] if w.get("abstract") else "",
         "year": w.get("publication_year"),
         "citation_count": w.get("cited_by_count", 0),
@@ -778,10 +928,8 @@ def _deduplicate_papers(papers: List[Dict]) -> List[Dict]:
     return unique
 
 
-
-
-
 # agents/tools.py — add these tool definitions
+
 
 @ToolRegistry.register(
     name="launch_experiment",
@@ -804,19 +952,21 @@ def launch_experiment_tool(
     experiment = Experiment.objects.create(name=f"{model_name} → {task_name}")
     run = TrainingRun.objects.create(
         experiment=experiment,
-        status='queued',
+        status="queued",
         config={
-            'model_name': model_name,
-            'task_name': task_name,
-            'attention_type': attention_type,
-            'epochs': epochs,
-            'batch_size': batch_size,
-            'learning_rate': learning_rate,
+            "model_name": model_name,
+            "task_name": task_name,
+            "attention_type": attention_type,
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
         },
     )
     from experiment.tasks import run_training_task
+
     task = run_training_task.delay(str(run.id))
-    return {'status': 'launched', 'run_id': str(run.id), 'celery_task_id': task.id}
+    return {"status": "launched", "run_id": str(run.id), "celery_task_id": task.id}
+
 
 @ToolRegistry.register(
     name="stop_experiment",
@@ -827,13 +977,15 @@ def launch_experiment_tool(
 def stop_experiment_tool(run_id: str) -> Dict[str, Any]:
     """Stop a running training job."""
     run = TrainingRun.objects.get(id=run_id)
-    if run.status == 'running':
+    if run.status == "running":
         from jobscheduler.scheduler import scheduler
+
         scheduler.stop_job(run_id)
-        run.status = 'stopped'
-        run.save(update_fields=['status'])
-        return {'status': 'stopped', 'run_id': run_id}
-    return {'status': 'not_running', 'run_id': run_id}
+        run.status = "stopped"
+        run.save(update_fields=["status"])
+        return {"status": "stopped", "run_id": run_id}
+    return {"status": "not_running", "run_id": run_id}
+
 
 @ToolRegistry.register(
     name="edit_configuration",
@@ -847,5 +999,5 @@ def edit_configuration_tool(run_id: str, key: str, value: Any) -> Dict[str, Any]
     config = run.config or {}
     config[key] = value
     run.config = config
-    run.save(update_fields=['config'])
-    return {'status': 'updated', 'run_id': run_id, 'key': key, 'value': value}
+    run.save(update_fields=["config"])
+    return {"status": "updated", "run_id": run_id, "key": key, "value": value}

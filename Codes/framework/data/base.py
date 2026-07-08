@@ -2,11 +2,11 @@
 Base data utilities: configuration, task‑aware preprocessing, DataLoader creation.
 """
 
-import torch
-from torch.utils.data import DataLoader
-from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any, Callable, Union
+from dataclasses import dataclass
 from enum import Enum
+from typing import Callable, Optional
+
+from torch.utils.data import DataLoader
 
 
 class TaskType(Enum):
@@ -61,7 +61,11 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
     }
 
     if config.task_type == TaskType.LANGUAGE_MODELING:
-        result = tokenizer(text1, **tokenizer_kwargs) if text1 else tokenizer(text2, **tokenizer_kwargs)
+        result = (
+            tokenizer(text1, **tokenizer_kwargs)
+            if text1
+            else tokenizer(text2, **tokenizer_kwargs)
+        )
         return result
 
     if config.task_type == TaskType.TOKEN_CLASSIFICATION:
@@ -90,7 +94,11 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
         tokenized["labels"] = labels
         return tokenized
 
-    if config.task_type in (TaskType.SINGLE_CLASSIFICATION, TaskType.PAIR_CLASSIFICATION, TaskType.REGRESSION):
+    if config.task_type in (
+        TaskType.SINGLE_CLASSIFICATION,
+        TaskType.PAIR_CLASSIFICATION,
+        TaskType.REGRESSION,
+    ):
         if text1 is not None and text2 is not None:
             tokenized = tokenizer(text1, text2, **tokenizer_kwargs)
         else:
@@ -112,7 +120,9 @@ def preprocess_function(examples, tokenizer, config: DataConfig):
             return_tensors=config.return_tensors,
         )
         start_positions, end_positions = [], []
-        for i, (ans, context) in enumerate(zip(examples[config.answer_column], examples[config.context_column])):
+        for i, (ans, context) in enumerate(
+            zip(examples[config.answer_column], examples[config.context_column])
+        ):
             if isinstance(ans, dict):
                 start_char = ans["answer_start"]
                 end_char = start_char + len(ans["text"])

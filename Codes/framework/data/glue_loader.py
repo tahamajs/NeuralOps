@@ -3,8 +3,8 @@ GLUE data loader – local Parquet files and task metadata.
 """
 
 import os
-from datasets import Dataset, DatasetDict
 
+from datasets import Dataset, DatasetDict
 
 GLUE_TASK_KEYS = {
     "cola": ("sentence", None),
@@ -54,10 +54,14 @@ def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
         for special in ["validation_matched", "validation_mismatched"]:
             for fname in os.listdir(task_path):
                 if special in fname and fname.endswith(".parquet"):
-                    splits[special] = Dataset.from_parquet(os.path.join(task_path, fname))
+                    splits[special] = Dataset.from_parquet(
+                        os.path.join(task_path, fname)
+                    )
 
     if "train" not in splits:
-        raise RuntimeError(f"No 'train' split found in {task_path}. Available: {list(splits.keys())}")
+        raise RuntimeError(
+            f"No 'train' split found in {task_path}. Available: {list(splits.keys())}"
+        )
     return DatasetDict(splits)
 
 
@@ -66,6 +70,14 @@ def get_num_labels_and_is_regression(task_name: str):
     t = task_name.lower()
     if t == "stsb":
         return 1, True
-    mapping = {"cola": 2, "sst2": 2, "mrpc": 2, "qqp": 2, "mnli": 3,
-               "qnli": 2, "rte": 2, "wnli": 2}
+    mapping = {
+        "cola": 2,
+        "sst2": 2,
+        "mrpc": 2,
+        "qqp": 2,
+        "mnli": 3,
+        "qnli": 2,
+        "rte": 2,
+        "wnli": 2,
+    }
     return mapping.get(t, 2), False

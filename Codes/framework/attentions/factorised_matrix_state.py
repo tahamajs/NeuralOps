@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
 
+
 @ATTENTION_REGISTRY.register("factorised_matrix_state")
 class FactorisedMatrixState(nn.Module):
     def __init__(self, config, rank=32):

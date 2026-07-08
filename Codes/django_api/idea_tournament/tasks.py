@@ -1,6 +1,9 @@
 """Celery tasks for running the idea tournament."""
+
 import logging
+
 from celery import shared_task
+
 from .models import IdeaTournament, TournamentLog
 
 logger = logging.getLogger(__name__)
@@ -14,13 +17,11 @@ def run_tournament(self, tournament_id: str):
     except IdeaTournament.DoesNotExist:
         return
 
-    if tournament.status != 'running':
+    if tournament.status != "running":
         return
 
-    from .agents import (
-        GenerationAgent, ProximityAgent, ReflectionAgent,
-        RankingAgent, EvolutionAgent, MetaReviewAgent
-    )
+    from .agents import (EvolutionAgent, GenerationAgent, MetaReviewAgent,
+                         ProximityAgent, RankingAgent, ReflectionAgent)
 
     gen_agent = GenerationAgent()
     prox_agent = ProximityAgent()
@@ -34,9 +35,10 @@ def run_tournament(self, tournament_id: str):
     gen_agent.generate(tournament, tournament.num_hypotheses)
 
     TournamentLog.objects.create(
-        tournament=tournament, round_number=1,
-        agent='generation',
-        action=f'Generated {tournament.num_hypotheses} initial hypotheses',
+        tournament=tournament,
+        round_number=1,
+        agent="generation",
+        action=f"Generated {tournament.num_hypotheses} initial hypotheses",
     )
 
     # ── Review Round 1 ────────────────────────────────────────
@@ -46,18 +48,20 @@ def run_tournament(self, tournament_id: str):
         meta_agent.review(hyp, 1)
 
     TournamentLog.objects.create(
-        tournament=tournament, round_number=1,
-        agent='proximity,reflection,meta_review',
-        action='Completed first round reviews',
+        tournament=tournament,
+        round_number=1,
+        agent="proximity,reflection,meta_review",
+        action="Completed first round reviews",
     )
 
     # ── Rank Round 1 ──────────────────────────────────────────
     rank_agent.rank(tournament, 1)
 
     TournamentLog.objects.create(
-        tournament=tournament, round_number=1,
-        agent='ranking',
-        action=f'Top {tournament.top_k} hypotheses shortlisted',
+        tournament=tournament,
+        round_number=1,
+        agent="ranking",
+        action=f"Top {tournament.top_k} hypotheses shortlisted",
     )
 
     # ── Rounds 2..N: Evolve, Review, Rank ─────────────────────
@@ -65,9 +69,10 @@ def run_tournament(self, tournament_id: str):
         evol_agent.evolve(tournament, round_num)
 
         TournamentLog.objects.create(
-            tournament=tournament, round_number=round_num,
-            agent='evolution',
-            action=f'Evolved top hypotheses for round {round_num}',
+            tournament=tournament,
+            round_number=round_num,
+            agent="evolution",
+            action=f"Evolved top hypotheses for round {round_num}",
         )
 
         for hyp in tournament.hypotheses.filter(round_created=round_num):
@@ -78,28 +83,33 @@ def run_tournament(self, tournament_id: str):
         rank_agent.rank(tournament, round_num)
 
         TournamentLog.objects.create(
-            tournament=tournament, round_number=round_num,
-            agent='ranking',
-            action=f'Round {round_num} ranking complete',
+            tournament=tournament,
+            round_number=round_num,
+            agent="ranking",
+            action=f"Round {round_num} ranking complete",
         )
 
     # ── Final: Mark top hypothesis as winner ───────────────────
-    winner = tournament.hypotheses.filter(
-        round_created=tournament.num_rounds, status='shortlisted'
-    ).order_by('rank').first()
+    winner = (
+        tournament.hypotheses.filter(
+            round_created=tournament.num_rounds, status="shortlisted"
+        )
+        .order_by("rank")
+        .first()
+    )
 
     if winner:
-        winner.status = 'winner'
-        winner.save(update_fields=['status'])
+        winner.status = "winner"
+        winner.save(update_fields=["status"])
 
-    tournament.status = 'completed'
+    tournament.status = "completed"
     tournament.completed_at = timezone.now()
-    tournament.save(update_fields=['status', 'completed_at'])
+    tournament.save(update_fields=["status", "completed_at"])
 
     TournamentLog.objects.create(
         tournament=tournament,
         round_number=tournament.num_rounds,
-        agent='system',
+        agent="system",
         action=f'Tournament completed. Winner: {winner.title if winner else "N/A"}',
     )
 

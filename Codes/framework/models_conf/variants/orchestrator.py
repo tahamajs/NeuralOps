@@ -7,12 +7,14 @@ Orchestrator that applies multiple variants in the correct order:
 5. Export
 6. Serving (optional)
 """
-from .loaders import LOADER_REGISTRY
-from .quantization import QUANTIZER_REGISTRY
-from .peft import PEFT_REGISTRY
+
 from .compression import COMPRESSOR_REGISTRY
 from .export import EXPORTER_REGISTRY
+from .loaders import LOADER_REGISTRY
+from .peft import PEFT_REGISTRY
+from .quantization import QUANTIZER_REGISTRY
 from .serving import SERVER_REGISTRY
+
 
 def apply_variants(
     model_name: str,
@@ -48,7 +50,9 @@ def apply_variants(
     exported_path = None
     if exporter:
         e_cls = EXPORTER_REGISTRY.resolve(exporter)
-        exported_path = e_cls().export(model, kwargs.get("output_path", "model_export"), **kwargs)
+        exported_path = e_cls().export(
+            model, kwargs.get("output_path", "model_export"), **kwargs
+        )
 
     # 6. Serve (optional)
     server_instance = None

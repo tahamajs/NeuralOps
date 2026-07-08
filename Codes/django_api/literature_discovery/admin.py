@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import PaperGraphCache, CitationPath, PaperRecommendation, ResearchLandscape, PaperFeedItem
+
+from .models import (CitationPath, PaperFeedItem, PaperGraphCache,
+                     PaperRecommendation, ResearchLandscape)
 
 admin.site.register(PaperGraphCache)
 admin.site.register(CitationPath)

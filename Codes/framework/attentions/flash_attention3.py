@@ -2,14 +2,16 @@
 import torch
 import torch.nn as nn
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 # Try to import FlashAttention kernels
 try:
     from flash_attn import flash_attn_func
+
     FLASH_ATTN_AVAILABLE = True
 except ImportError:
     FLASH_ATTN_AVAILABLE = False
+
 
 @ATTENTION_REGISTRY.register("flash3")
 class FlashAttention3(BaseAttention):
@@ -34,7 +36,9 @@ class FlashAttention3(BaseAttention):
         B, L, D = hidden_states.shape
         H, D_head = self.num_heads, self.head_dim
 
-        q = self.q_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)  # (B, H, L, D_head)
+        q = (
+            self.q_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)
+        )  # (B, H, L, D_head)
         k = self.k_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, H, D_head).transpose(1, 2)
 
@@ -54,8 +58,14 @@ class FlashAttention3(BaseAttention):
         else:
             # Fallback to PyTorch SDPA
             out = torch.nn.functional.scaled_dot_product_attention(
-                q, k, v,
-                attn_mask=(1 - attention_mask).to(q.dtype) * -1e9 if attention_mask is not None else None,
+                q,
+                k,
+                v,
+                attn_mask=(
+                    (1 - attention_mask).to(q.dtype) * -1e9
+                    if attention_mask is not None
+                    else None
+                ),
                 is_causal=False,
             )
 

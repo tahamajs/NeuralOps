@@ -3,13 +3,16 @@ MegaOrchestrator – single entry point for the entire platform.
 Receives one config dictionary and executes the full pipeline.
 """
 
-import os, json, threading, logging, traceback
-from pathlib import Path
-from typing import Dict, Any, Optional, Callable
-from dataclasses import dataclass, field
+import json
+import logging
+import threading
+import traceback
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Callable, Dict, Optional
 
 logger = logging.getLogger(__name__)
+
 
 class MegaOrchestrator:
     """
@@ -71,7 +74,9 @@ class MegaOrchestrator:
             if self.config.get("hpo", {}).get("enabled"):
                 self._log("Starting HPO…")
                 self.config = self._run_hpo()
-                self._log(f"HPO finished. Best params: {self.config.get('hpo_best_params', {})}")
+                self._log(
+                    f"HPO finished. Best params: {self.config.get('hpo_best_params', {})}"
+                )
 
             # Phase 2 – Federated Learning (optional)
             if self.config.get("federated_learning", {}).get("enabled"):
@@ -108,6 +113,7 @@ class MegaOrchestrator:
         from framework.hyperopt.integration import run_hpo_experiment
 
         hpo_cfg = self.config.get("hpo", {})
+
         def trial_objective(trial_params: Dict[str, Any]) -> float:
             """Run one HPO trial. Returns a score to maximize."""
             merged = {**self.config, **trial_params}
@@ -120,7 +126,9 @@ class MegaOrchestrator:
             metrics = trial_orch._run_single_training()
             return metrics.get("eval_accuracy", 0)
 
-        result = run_hpo_experiment(hpo_cfg, trial_objective, output_dir=self.run_dir / "hpo")
+        result = run_hpo_experiment(
+            hpo_cfg, trial_objective, output_dir=self.run_dir / "hpo"
+        )
         self.config["hpo_best_params"] = result["best_params"]
         self.config.update(result["best_params"])
         return self.config
@@ -129,7 +137,8 @@ class MegaOrchestrator:
     # Phase 2 – Federated Learning
     # ════════════════════════════════════════════════════════════════
     def _run_federated(self) -> Dict[str, Any]:
-        from framework.federated_learning.integration import run_federated_experiment
+        from framework.federated_learning.integration import \
+            run_federated_experiment
 
         fl_cfg = self.config.get("federated_learning", {})
 
@@ -137,9 +146,11 @@ class MegaOrchestrator:
             return self._load_model()
 
         # User must provide a dataset or a dataset loader function
-        dataset = self.config.get("_dataset")   # injected by Django view
+        dataset = self.config.get("_dataset")  # injected by Django view
         result = run_federated_experiment(
-            fl_cfg, model_builder, dataset,
+            fl_cfg,
+            model_builder,
+            dataset,
             output_dir=self.run_dir / "fl",
         )
         return result
@@ -157,11 +168,13 @@ class MegaOrchestrator:
         # 3b. Inject attention
         if cfg.get("attn_type") and cfg.get("attn_type") != "full":
             from framework.models import replace_attention_in_model
+
             self.model = replace_attention_in_model(self.model, cfg["attn_type"])
 
         # 3c. Apply training method (LoRA, R-Drop, etc.)
         if cfg.get("method") and cfg.get("method") != "baseline":
             from framework.trainer.methods.registry import METHOD_REGISTRY
+
             method = METHOD_REGISTRY.resolve(cfg["method"])
             if method:
                 self.model = method.apply(self.model, cfg)
@@ -169,6 +182,7 @@ class MegaOrchestrator:
         # 3d. Distributed wrapping (optional)
         if cfg.get("distributed", {}).get("strategy", "none") != "none":
             from framework.distributed.integration import wrap_with_distributed
+
             self.model = wrap_with_distributed(
                 cfg.get("distributed", {}), self.model, self.run_id
             )
@@ -180,7 +194,9 @@ class MegaOrchestrator:
         train_dataset, eval_dataset, num_labels = self._load_data(cfg)
 
         # 3g. Create trainer
-        trainer = self._create_trainer(cfg, train_dataset, eval_dataset, num_labels, callbacks)
+        trainer = self._create_trainer(
+            cfg, train_dataset, eval_dataset, num_labels, callbacks
+        )
 
         # 3h. Train
         self._log("Training started…")
@@ -188,7 +204,9 @@ class MegaOrchestrator:
         eval_result = trainer.evaluate()
 
         # 3i. Store state
-        self.trainer_state = trainer.state.log_history if hasattr(trainer, 'state') else []
+        self.trainer_state = (
+            trainer.state.log_history if hasattr(trainer, "state") else []
+        )
         self.final_metrics = eval_result
 
         # 3j. Save everything
@@ -200,6 +218,7 @@ class MegaOrchestrator:
         # 3l. Cleanup distributed
         if cfg.get("distributed", {}).get("strategy", "none") != "none":
             from framework.distributed.integration import cleanup_distributed
+
             cleanup_distributed(self.model, self.run_id)
 
         return eval_result
@@ -228,11 +247,13 @@ class MegaOrchestrator:
         # Notifications
         if cfg.get("save_config", {}).get("notification"):
             from framework.results_saver.backends.notification import notify
+
             notify(self.run_id, True, self.final_metrics, cfg["save_config"])
 
     # ── Helpers ─────────────────────────────────────────────────────
     def _load_model(self):
         from framework.models import load_model
+
         cfg = self.config
         return load_model(
             model_name=cfg.get("model_name", "bert-base-uncased"),
@@ -242,16 +263,22 @@ class MegaOrchestrator:
         )
 
     def _load_data(self, cfg):
-        from framework.experiment_utils.data import load_and_preprocess_data
         from framework.experiment_utils.config import ExperimentConfig
-        exp_cfg = ExperimentConfig(**{k: v for k, v in cfg.items()
-                                      if k in ExperimentConfig.__dataclass_fields__})
-        setattr(exp_cfg, 'glue_base_path', cfg.get('glue_base_path', '/default/path'))
+        from framework.experiment_utils.data import load_and_preprocess_data
+
+        exp_cfg = ExperimentConfig(
+            **{
+                k: v
+                for k, v in cfg.items()
+                if k in ExperimentConfig.__dataclass_fields__
+            }
+        )
+        setattr(exp_cfg, "glue_base_path", cfg.get("glue_base_path", "/default/path"))
         return load_and_preprocess_data(exp_cfg)
 
     def _create_trainer(self, cfg, train_ds, eval_ds, num_labels, callbacks):
-        from transformers import TrainingArguments, DataCollatorWithPadding
         from framework.trainer.trainer_factory import get_trainer
+        from transformers import DataCollatorWithPadding, TrainingArguments
 
         training_args = TrainingArguments(
             output_dir=str(self.run_dir / "checkpoints"),
@@ -282,21 +309,28 @@ class MegaOrchestrator:
     def _build_callbacks(self):
         cbs = []
         from Codes.framework.callbacks.django import DjangoCallback
-        cbs.append(DjangoCallback(
-            progress_cb=self.progress_cb,
-            log_cb=self.log_cb,
-            final_cb=self.final_cb,
-            stop_event=self.stop_event,
-        ))
+
+        cbs.append(
+            DjangoCallback(
+                progress_cb=self.progress_cb,
+                log_cb=self.log_cb,
+                final_cb=self.final_cb,
+                stop_event=self.stop_event,
+            )
+        )
         # Add more callbacks based on config…
         return cbs
 
     def _save_results(self, metrics):
         from framework.results_saver import ResultsSaver
+
         save_cfg = self.config.get("save_config", {})
         saver = ResultsSaver(self.run_id, self.base_dir, save_cfg)
         saver.save_all(
-            self.model, self.config, self.trainer_state, metrics,
+            self.model,
+            self.config,
+            self.trainer_state,
+            metrics,
             tokenizer=self.tokenizer,
         )
         saver.push_all()
@@ -304,7 +338,9 @@ class MegaOrchestrator:
         saver.track_all(metrics, self.config)
 
     def _create_model_version(self, metrics):
-        from framework.model_versioning import ModelVersionService, VersioningConfig
+        from framework.model_versioning import (ModelVersionService,
+                                                VersioningConfig)
+
         save_cfg = self.config.get("save_config", {})
         vc = VersioningConfig(**save_cfg.get("versioning", {}))
         ModelVersionService.create_version(
@@ -318,6 +354,7 @@ class MegaOrchestrator:
 
     def _run_drift(self):
         from framework.drift.integration import auto_drift_check
+
         auto_drift_check(
             self.run_id,
             self.config.get("drift", {}).get("reference", {}),
@@ -326,8 +363,11 @@ class MegaOrchestrator:
         )
 
     def _run_fairness(self):
+        import json
+
+        import numpy as np
         from framework.evaluation.fairness import FairnessEvaluator
-        import numpy as np, json
+
         eval_preds = self.run_dir / "artifacts" / "eval_predictions.json"
         if eval_preds.exists():
             with open(eval_preds) as f:
@@ -339,12 +379,15 @@ class MegaOrchestrator:
                 groups=data.get("groups", {}),
             )
             path = self.run_dir / "fairness_report.json"
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 json.dump(report.__dict__, f, indent=2, default=str)
 
     def _run_robustness(self):
+        import json
+
+        import numpy as np
         from framework.evaluation.robustness import TextAdversarialTester
-        import numpy as np, json
+
         eval_preds = self.run_dir / "artifacts" / "eval_predictions.json"
         if eval_preds.exists():
             with open(eval_preds) as f:
@@ -357,11 +400,11 @@ class MegaOrchestrator:
                 labels=np.array(data.get("labels", [])),
             )
             path = self.run_dir / "robustness_report.json"
-            with open(path, 'w') as f:
+            with open(path, "w") as f:
                 json.dump(report.__dict__, f, indent=2, default=str)
 
     def _save_config(self):
-        with open(self.run_dir / "config.json", 'w') as f:
+        with open(self.run_dir / "config.json", "w") as f:
             json.dump(self.config, f, indent=2, default=str)
 
     def _log(self, msg: str):

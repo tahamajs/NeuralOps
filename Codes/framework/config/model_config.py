@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List
 
+
 @dataclass
 class ModelConfig:
     name: str = "distilbert-base-uncased"

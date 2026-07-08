@@ -2,8 +2,9 @@
 from django.core.management.base import BaseCommand
 from jobscheduler.predictive import PriorityPredictor
 
+
 class Command(BaseCommand):
-    help = 'Retrain the priority prediction model using historical job data'
+    help = "Retrain the priority prediction model using historical job data"
 
     def handle(self, *args, **options):
         self.stdout.write("Starting priority model retraining...")

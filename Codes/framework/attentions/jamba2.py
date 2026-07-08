@@ -1,26 +1,29 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
+
 from .mamba import Mamba
+
 
 @ATTENTION_REGISTRY.register("expert_choice_moe")
 class ExpertChoiceMoE(nn.Module):
     """Top‑2 token‑choice MoE."""
+
     def __init__(self, d_model, n_experts=8, top_k=2):
         super().__init__()
         self.n_experts = n_experts
         self.top_k = top_k
-        self.experts = nn.ModuleList([nn.Sequential(
-            nn.Linear(d_model, d_model*4),
-            nn.GELU(),
-            nn.Linear(d_model*4, d_model)
-        ) for _ in range(n_experts)])
+        self.experts = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(d_model, d_model * 4),
+                    nn.GELU(),
+                    nn.Linear(d_model * 4, d_model),
+                )
+                for _ in range(n_experts)
+            ]
+        )
         self.router = nn.Linear(d_model, n_experts)
 
     def forward(self, x):
@@ -32,14 +35,16 @@ class ExpertChoiceMoE(nn.Module):
         for e in range(self.n_experts):
             mask = (indices == e).any(dim=-1)
             if mask.any():
-                selected_weights = (weights * (indices == e).float()).sum(dim=-1, keepdim=True)
+                selected_weights = (weights * (indices == e).float()).sum(
+                    dim=-1, keepdim=True
+                )
                 out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
         return out
 
-import torch
+
 import torch.nn as nn
-import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("jamba2")
 class Jamba2Block(nn.Module):
@@ -57,5 +62,4 @@ class Jamba2Block(nn.Module):
         attn_out, _ = self.attn(x, x, x)
         x = self.norm2(x + attn_out)
         x = self.norm3(x + self.moe(x))
-        return x, None   # return tuple for attention interface
-    
+        return x, None  # return tuple for attention interface

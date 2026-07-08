@@ -1,7 +1,9 @@
 """Random sparsification – keep a random fraction of elements."""
 
 import numpy as np
-from .base import BaseCompressor, COMPRESSION_REGISTRY
+
+from .base import COMPRESSION_REGISTRY, BaseCompressor
+
 
 @COMPRESSION_REGISTRY.register("random_sparsification")
 class RandomSparsifier(BaseCompressor):

@@ -7,11 +7,12 @@ using a random sketching matrix, reducing the complexity from O(N²) to O(N·ran
 """
 
 import math
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("galerkin")
@@ -20,8 +21,10 @@ class GalerkinAttention(nn.Module):
     Galerkin attention with low‑rank projection of keys/values.
     Supports zero‑shot initialisation from a pretrained DistilBERT attention layer.
     """
-    def __init__(self, model_config, rank: int = 64, dropout: float = 0.1,
-                 pretrained_attn=None):
+
+    def __init__(
+        self, model_config, rank: int = 64, dropout: float = 0.1, pretrained_attn=None
+    ):
         super().__init__()
         if pretrained_attn is None:
             raise ValueError("pretrained_attn required for zero‑shot init")
@@ -34,7 +37,7 @@ class GalerkinAttention(nn.Module):
 
         # Linear projections (copied from pretrained)
         self.query = nn.Linear(self.hidden_size, self.all_head_size)
-        self.key   = nn.Linear(self.hidden_size, self.all_head_size)
+        self.key = nn.Linear(self.hidden_size, self.all_head_size)
         self.value = nn.Linear(self.hidden_size, self.all_head_size)
         self.out_proj = nn.Linear(self.all_head_size, self.hidden_size)
 
@@ -55,12 +58,18 @@ class GalerkinAttention(nn.Module):
         """(B, N, H*D) -> (B, H, N, D)"""
         return x.view(batch_size, -1, self.num_heads, self.head_dim).transpose(1, 2)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
 
-        Q = self._reshape(self.query(hidden_states), B)   # (B, H, N, D)
+        Q = self._reshape(self.query(hidden_states), B)  # (B, H, N, D)
         K = self._reshape(self.key(hidden_states), B)
         V = self._reshape(self.value(hidden_states), B)
 
@@ -69,11 +78,11 @@ class GalerkinAttention(nn.Module):
         sketch = torch.randn(N, self.rank, device=hidden_states.device) / math.sqrt(N)
 
         # Project keys and values onto low‑rank subspace (B, H, rank, D)
-        K_sketch = torch.einsum('bhnd,nr->bhrd', K, sketch)
-        V_sketch = torch.einsum('bhnd,nr->bhrd', V, sketch)
+        K_sketch = torch.einsum("bhnd,nr->bhrd", K, sketch)
+        V_sketch = torch.einsum("bhnd,nr->bhrd", V, sketch)
 
         # Attention scores: (B, H, N, rank)
-        scale = D ** -0.5
+        scale = D**-0.5
         scores = torch.matmul(Q, K_sketch.transpose(-2, -1)) * scale
 
         # Mask handling – attention_mask is (B, N) or (B, 1, 1, N)
@@ -101,10 +110,12 @@ class GalerkinAttention(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("galerkin")
-def inject_galerkin(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_galerkin(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
     """Injection function for DistilBERT."""
-    rank = getattr(comp_config, 'galerkin_rank', 64)
-    dropout = getattr(comp_config, 'dropout', 0.1)
+    rank = getattr(comp_config, "galerkin_rank", 64)
+    dropout = getattr(comp_config, "dropout", 0.1)
     new_attn = GalerkinAttention(model_config, rank, dropout, old_attn)
     layer.attention = new_attn
     return new_attn

@@ -1,9 +1,11 @@
 """General utilities (device, seeding, formatting)."""
 
 import random
+from typing import Optional
+
 import numpy as np
 import torch
-from typing import Optional
+
 
 def get_device(device_str: str = "auto") -> torch.device:
     if device_str == "auto":
@@ -14,6 +16,7 @@ def get_device(device_str: str = "auto") -> torch.device:
         return torch.device("cpu")
     return torch.device(device_str)
 
+
 def set_seed(seed: int, deterministic: bool = False):
     random.seed(seed)
     np.random.seed(seed)
@@ -23,16 +26,19 @@ def set_seed(seed: int, deterministic: bool = False):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
+
 def get_model_device(model: torch.nn.Module) -> torch.device:
     try:
         return next(model.parameters()).device
     except StopIteration:
         return torch.device("cpu")
 
+
 def count_parameters(model: torch.nn.Module, trainable_only: bool = True) -> int:
     if trainable_only:
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
     return sum(p.numel() for p in model.parameters())
+
 
 def format_number(num: int) -> str:
     if num >= 1_000_000:
@@ -41,16 +47,19 @@ def format_number(num: int) -> str:
         return f"{num/1_000:.0f}K"
     return str(num)
 
+
 def clear_memory():
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
-    if hasattr(torch, 'mps') and torch.backends.mps.is_available():
+    if hasattr(torch, "mps") and torch.backends.mps.is_available():
         torch.mps.empty_cache()
+
 
 def get_memory_usage() -> Optional[float]:
     if torch.cuda.is_available():
         return torch.cuda.memory_allocated() / (1024 * 1024)
     return None
+
 
 def human_readable_time(seconds: float) -> str:
     hours = int(seconds // 3600)

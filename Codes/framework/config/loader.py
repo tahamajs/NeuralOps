@@ -2,18 +2,21 @@
 Configuration loader: YAML + CLI overrides → Config dataclass.
 """
 
-import yaml
 import argparse
 from dataclasses import fields, is_dataclass
 from typing import Any, Dict, Optional, Type, TypeVar
 
+import yaml
+
 from .config import Config
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 def load_yaml(path: str) -> dict:
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         return yaml.safe_load(f)
+
 
 def merge_cli_args(cfg_dict: dict, args: argparse.Namespace) -> dict:
     """Override YAML values with CLI arguments where not None."""
@@ -22,6 +25,7 @@ def merge_cli_args(cfg_dict: dict, args: argparse.Namespace) -> dict:
         if val is not None and key in cfg_dict:
             cfg_dict[key] = val
     return cfg_dict
+
 
 def _dict_to_dataclass(cls: Type[T], data: dict) -> T:
     """Recursively convert dict → dataclass."""
@@ -35,6 +39,7 @@ def _dict_to_dataclass(cls: Type[T], data: dict) -> T:
             else:
                 kwargs[key] = val
     return cls(**kwargs)
+
 
 def load_config(
     yaml_path: Optional[str] = None,

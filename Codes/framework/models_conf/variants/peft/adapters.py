@@ -1,5 +1,8 @@
-from peft import get_peft_model, AdaLoraConfig   # using AdaLoRA as a modern adapter proxy
-from .base import BasePEFT, PEFT_REGISTRY
+from peft import (AdaLoraConfig,  # using AdaLoRA as a modern adapter proxy
+                  get_peft_model)
+
+from .base import PEFT_REGISTRY, BasePEFT
+
 
 @PEFT_REGISTRY.register("adapters")
 class AdapterH(BasePEFT):

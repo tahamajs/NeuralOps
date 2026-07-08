@@ -1,54 +1,31 @@
 # framework/experiment/manager.py
-import os
-import sys
-import time
 import logging
-import traceback
-from typing import Optional, Any, Dict
+import os
 from dataclasses import dataclass, field
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Dict, Optional
 
-import torch
-from torch.utils.data import DataLoader
-from transformers import (
-    AutoTokenizer,
-    AutoConfig,
-    AutoModelForSequenceClassification,
-    TrainingArguments,
-    DataCollatorWithPadding,
-)
-
-# Core registry and utilities
-from framework.core.registry import (
-    ATTENTION_REGISTRY,
-    COMPRESSOR_REGISTRY,
-    TRAINER_REGISTRY,
-)
-from framework.core.utils import set_seed, get_device
-
-# Extended registries
-from framework.trainer.methods.registry import METHOD_REGISTRY
-from framework.trainer.losses import LOSS_REGISTRY
-from framework.trainer.optimizers import OPTIMIZER_REGISTRY
-from framework.trainer.schedulers import SCHEDULER_REGISTRY
 from framework.callbacks import CALLBACK_REGISTRY
+# Core registry and utilities
+from framework.core.registry import TRAINER_REGISTRY
+from framework.core.utils import get_device, set_seed
 from framework.data.augmentation import AUGMENTATION_REGISTRY
-
-# High‑level services
-from framework.hyperopt import HyperOptimizer
-from framework.tracking import ExperimentTracker
-from framework.model_registry import ModelRegistry
-from framework.distributed import (
-    DistributedConfig,
-    wrap_model_with_distributed,
-    cleanup_distributed,
-)
-
+from framework.distributed import (DistributedConfig, cleanup_distributed,
+                                   wrap_model_with_distributed)
 # Local experiment modules
 from framework.experiment_utils.config import ExperimentConfig
 from framework.experiment_utils.data import load_and_preprocess_data
-from framework.experiment_utils.model import load_model, apply_attention_to_model
-from framework.experiment_utils.train import setup_trainer   # old helper, kept for fallback
+from framework.experiment_utils.model import apply_attention_to_model
+# High‑level services
+from framework.hyperopt import HyperOptimizer
+from framework.model_registry import ModelRegistry
+from framework.tracking import ExperimentTracker
+from framework.trainer.losses import LOSS_REGISTRY
+# Extended registries
+from framework.trainer.methods.registry import METHOD_REGISTRY
+from framework.trainer.optimizers import OPTIMIZER_REGISTRY
+from transformers import (AutoModelForSequenceClassification,
+                          DataCollatorWithPadding, TrainingArguments)
+
 from Codes.framework.callbacks.django import DjangoCallback
 
 logger = logging.getLogger(__name__)
@@ -57,6 +34,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FullExperimentConfig(ExperimentConfig):
     """Extended configuration with all optional sub‑configs."""
+
     hpo_config: Dict[str, Any] = field(default_factory=dict)
     distributed_config: Dict[str, Any] = field(default_factory=dict)
     tracking_config: Dict[str, Any] = field(default_factory=dict)
@@ -130,7 +108,7 @@ class ExperimentManager:
         def objective(trial_params: Dict[str, Any]) -> float:
             """Single trial – merge HPO‑suggested params into config."""
             trial_cfg = FullExperimentConfig(**{**self.config.__dict__, **trial_params})
-            trial_cfg.hpo_config["enabled"] = False   # prevent recursion
+            trial_cfg.hpo_config["enabled"] = False  # prevent recursion
             manager = ExperimentManager(trial_cfg)
             result = manager._run_single()
             # Return the metric to maximize (e.g., eval_accuracy)
@@ -173,7 +151,11 @@ class ExperimentManager:
         model.to(device)
 
         # ---- Distributed training (optional) ----
-        dist_config = DistributedConfig(**cfg.distributed_config) if cfg.distributed_config else None
+        dist_config = (
+            DistributedConfig(**cfg.distributed_config)
+            if cfg.distributed_config
+            else None
+        )
         if dist_config:
             model = wrap_model_with_distributed(model, dist_config)
 
@@ -240,13 +222,15 @@ class ExperimentManager:
             if cb_cls:
                 cbs.append(cb_cls(**getattr(self.config, f"{name}_kwargs", {})))
         # Always include DjangoCallback if progress/log/final are provided
-        if hasattr(self, 'progress_cb'):
-            cbs.append(DjangoCallback(
-                progress_cb=self.progress_cb,
-                log_cb=self.log_cb,
-                final_cb=self.final_cb,
-                stop_event=self.stop_event,
-            ))
+        if hasattr(self, "progress_cb"):
+            cbs.append(
+                DjangoCallback(
+                    progress_cb=self.progress_cb,
+                    log_cb=self.log_cb,
+                    final_cb=self.final_cb,
+                    stop_event=self.stop_event,
+                )
+            )
         return cbs
 
     def _build_training_args(self, cfg, output_dir):
@@ -288,6 +272,7 @@ class ExperimentManager:
     def _apply_post_training_compression(self, output_dir):
         """Run compression after training."""
         from framework.experiment_utils.main import run_compression
+
         run_compression(self.config, output_dir)
 
     def _cleanup(self):
@@ -300,4 +285,5 @@ class ExperimentManager:
     @staticmethod
     def _dummy_event():
         import threading
+
         return threading.Event()

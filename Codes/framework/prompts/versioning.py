@@ -1,20 +1,21 @@
 """Prompt version history, diff, and rollback."""
 
 import difflib
-import json
 import hashlib
-from datetime import datetime
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 
 @dataclass
 class PromptVersion:
     """A single immutable snapshot of a prompt."""
-    id: str                      # unique hash
-    version_number: int          # auto‑incrementing integer
+
+    id: str  # unique hash
+    version_number: int  # auto‑incrementing integer
     prompt_name: str
-    template: str               # serialised template content
-    template_type: str          # "simple" or "chat"
+    template: str  # serialised template content
+    template_type: str  # "simple" or "chat"
     commit_message: str
     author: str = "system"
     tags: List[str] = field(default_factory=list)
@@ -36,7 +37,9 @@ class VersionHistory:
         self._current_number: int = 0
 
     def add(self, version: PromptVersion) -> None:
-        version.parent_version = self._current_number if self._current_number > 0 else None
+        version.parent_version = (
+            self._current_number if self._current_number > 0 else None
+        )
         self._current_number += 1
         version.version_number = self._current_number
         self.versions.append(version)
@@ -58,9 +61,14 @@ class VersionHistory:
             return "Version not found."
         a_lines = a.template.splitlines(keepends=True)
         b_lines = b.template.splitlines(keepends=True)
-        return "".join(difflib.unified_diff(a_lines, b_lines,
-                                            fromfile=f"v{a.version_number}",
-                                            tofile=f"v{b.version_number}"))
+        return "".join(
+            difflib.unified_diff(
+                a_lines,
+                b_lines,
+                fromfile=f"v{a.version_number}",
+                tofile=f"v{b.version_number}",
+            )
+        )
 
     def rollback_targets(self, version_number: int) -> List[PromptVersion]:
         """Return versions that could be rolled back to (all before this one)."""
@@ -68,9 +76,14 @@ class VersionHistory:
 
     def to_list(self) -> List[dict]:
         return [
-            {"version_number": v.version_number, "id": v.id,
-             "commit_message": v.commit_message, "author": v.author,
-             "tags": v.tags, "created_at": v.created_at,
-             "parent_version": v.parent_version}
+            {
+                "version_number": v.version_number,
+                "id": v.id,
+                "commit_message": v.commit_message,
+                "author": v.author,
+                "tags": v.tags,
+                "created_at": v.created_at,
+                "parent_version": v.parent_version,
+            }
             for v in self.versions
         ]

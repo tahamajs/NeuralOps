@@ -1,12 +1,14 @@
-from framework.utils import replace_attention   # adjust import path as needed
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+from framework.utils import replace_attention  # adjust import path as needed
 
-@ATTENTION_REGISTRY.register("nha_compressor")   # <-- added
+
+@ATTENTION_REGISTRY.register("nha_compressor")  # <-- added
 class NHACompressor:
     """
     Replaces every attention layer with the 'nha' variant (Native Hybrid Attention).
     The replacement is performed via your framework's replace_attention utility.
     """
+
     def __init__(self, model, tokenizer, full_ratio: float = 0.1, device: str = "cuda"):
         self.model = model
         self.tokenizer = tokenizer

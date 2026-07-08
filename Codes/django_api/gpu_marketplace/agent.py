@@ -7,7 +7,10 @@ It registers with the platform, polls for new jobs, and executes them.
 Usage:
     python -m gpu_marketplace.agent --api-key <key> --api-url <url>
 """
-import time, subprocess, json, os
+
+import subprocess
+import time
+
 import requests
 
 
@@ -16,16 +19,18 @@ class GPUProviderAgent:
 
     def __init__(self, api_key: str, api_url: str, listing_id: str):
         self.api_key = api_key
-        self.api_url = api_url.rstrip('/')
+        self.api_url = api_url.rstrip("/")
         self.listing_id = listing_id
-        self.headers = {'Authorization': f'Token {api_key}'}
+        self.headers = {"Authorization": f"Token {api_key}"}
 
     def heartbeat(self):
         """Send heartbeat to platform."""
         try:
             requests.post(
-                f'{self.api_url}/api/gpu/listings/{self.listing_id}/heartbeat/',
-                headers=self.headers, json={'status': 'online'}, timeout=5
+                f"{self.api_url}/api/gpu/listings/{self.listing_id}/heartbeat/",
+                headers=self.headers,
+                json={"status": "online"},
+                timeout=5,
             )
         except Exception:
             pass
@@ -33,39 +38,52 @@ class GPUProviderAgent:
     def poll_jobs(self):
         """Poll for pending jobs assigned to this listing."""
         resp = requests.get(
-            f'{self.api_url}/api/gpu/jobs/',
+            f"{self.api_url}/api/gpu/jobs/",
             headers=self.headers,
-            params={'status': 'queued', 'listing': self.listing_id},
-            timeout=10
+            params={"status": "queued", "listing": self.listing_id},
+            timeout=10,
         )
         if resp.status_code == 200:
             data = resp.json()
-            for job in data.get('results', []):
+            for job in data.get("results", []):
                 self.execute_job(job)
 
     def execute_job(self, job: dict):
         """Execute a compute job using Docker."""
-        job_id = job['id']
-        image = job.get('docker_image', 'pytorch/pytorch:latest')
-        command = job.get('command', '')
+        job_id = job["id"]
+        image = job.get("docker_image", "pytorch/pytorch:latest")
+        command = job.get("command", "")
 
         # Pull image
-        subprocess.run(['docker', 'pull', image], check=False)
+        subprocess.run(["docker", "pull", image], check=False)
 
         # Run container
-        container_id = subprocess.check_output([
-            'docker', 'run', '-d',
-            '--gpus', 'all',
-            '--name', f'neuralops-job-{job_id}',
-            image, 'bash', '-c', command,
-        ]).decode().strip()
+        container_id = (
+            subprocess.check_output(
+                [
+                    "docker",
+                    "run",
+                    "-d",
+                    "--gpus",
+                    "all",
+                    "--name",
+                    f"neuralops-job-{job_id}",
+                    image,
+                    "bash",
+                    "-c",
+                    command,
+                ]
+            )
+            .decode()
+            .strip()
+        )
 
         # Mark running
         requests.post(
-            f'{self.api_url}/api/gpu/jobs/{job_id}/start/',
+            f"{self.api_url}/api/gpu/jobs/{job_id}/start/",
             headers=self.headers,
-            json={'container_id': container_id},
-            timeout=5
+            json={"container_id": container_id},
+            timeout=5,
         )
 
     def run(self, poll_interval: int = 30):

@@ -4,9 +4,11 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 try:
     from flash_attn_interface import flash_attn_func
+
     FLASH_ATTN_AVAILABLE = True
 except ImportError:
     FLASH_ATTN_AVAILABLE = False
+
 
 @ATTENTION_REGISTRY.register("flash3_fp8")
 class FlashAttention3FP8(nn.Module):
@@ -32,12 +34,20 @@ class FlashAttention3FP8(nn.Module):
             out = flash_attn_func(q, k, v, causal=False).to(x.dtype)
         else:
             from torch.nn.functional import scaled_dot_product_attention
+
             out = scaled_dot_product_attention(q, k, v, is_causal=False)
         return self.out_proj(out.reshape(B, L, D))
 
+
 @ATTENTION_REGISTRY.register("flash3_fp8")
-def inject_flash3_fp8(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    use_fp8 = getattr(comp_config, 'use_fp8', True)
-    new_attn = FlashAttention3FP8(d_model=model_config.hidden_size, n_heads=model_config.num_attention_heads, use_fp8=use_fp8)
+def inject_flash3_fp8(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
+    use_fp8 = getattr(comp_config, "use_fp8", True)
+    new_attn = FlashAttention3FP8(
+        d_model=model_config.hidden_size,
+        n_heads=model_config.num_attention_heads,
+        use_fp8=use_fp8,
+    )
     # optionally copy weights from old_attn
     return new_attn

@@ -1,8 +1,10 @@
+import math
+
 import torch
 import torch.nn as nn
-import math
-from framework.core.registry import ATTENTION_REGISTRY
 import torch.nn.functional as F
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("gqa")
 class GroupedQueryAttention(nn.Module):
@@ -16,6 +18,7 @@ class GroupedQueryAttention(nn.Module):
         self.v_proj = nn.Linear(config.hidden_size, self.num_kv_heads * self.head_dim)
         self.out_proj = nn.Linear(self.num_heads * self.head_dim, config.hidden_size)
         self.dropout = nn.Dropout(config.dropout)
+
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         B, L, _ = hidden_states.shape
         q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim)

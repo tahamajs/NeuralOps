@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import ExperimentTemplate, OpportunityIndex, ExperimentRecommendation, CreativeVariant
+
+from .models import (CreativeVariant, ExperimentRecommendation,
+                     ExperimentTemplate, OpportunityIndex)
 
 admin.site.register(ExperimentTemplate)
 admin.site.register(OpportunityIndex)

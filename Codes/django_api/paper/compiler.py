@@ -8,21 +8,26 @@ Handles:
 - Output file collection
 - Timeout enforcement
 """
-import subprocess
-import tempfile
+
 import os
 import re
-from pathlib import Path
-from typing import Tuple, Optional
-from django.conf import settings
+import subprocess
+import tempfile
+from typing import Tuple
 
 
 class LatexCompiler:
     """Compiles a LaTeX project and returns structured results."""
 
-    def __init__(self, project_files: dict, root_file: str, compiler: str = 'pdflatex',
-                 draft_mode: bool = False, stop_on_first_error: bool = False,
-                 timeout: int = 60):
+    def __init__(
+        self,
+        project_files: dict,
+        root_file: str,
+        compiler: str = "pdflatex",
+        draft_mode: bool = False,
+        stop_on_first_error: bool = False,
+        timeout: int = 60,
+    ):
         """
         Args:
             project_files: dict of filename -> content
@@ -47,18 +52,18 @@ class LatexCompiler:
             self._write_project_files(tmpdir)
 
             tex_path = os.path.join(tmpdir, self.root_file)
-            pdf_path = os.path.join(tmpdir, 'output.pdf')
-            log_path = os.path.join(tmpdir, 'output.log')
+            pdf_path = os.path.join(tmpdir, "output.pdf")
+            log_path = os.path.join(tmpdir, "output.log")
 
             # Build command
             cmd = [self.compiler]
-            cmd.extend(['-interaction=nonstopmode'])
-            cmd.extend(['-output-directory', tmpdir])
-            cmd.extend(['-jobname', 'output'])
+            cmd.extend(["-interaction=nonstopmode"])
+            cmd.extend(["-output-directory", tmpdir])
+            cmd.extend(["-jobname", "output"])
             if self.draft_mode:
-                cmd.append('-draftmode')
+                cmd.append("-draftmode")
             if self.stop_on_first_error:
-                cmd.append('-halt-on-error')
+                cmd.append("-halt-on-error")
             cmd.append(tex_path)
 
             # If .bib files exist, we should run bibtex too. For simplicity,
@@ -76,23 +81,23 @@ class LatexCompiler:
                 )
             except subprocess.TimeoutExpired:
                 return {
-                    'success': False,
-                    'error': f'Compilation timed out after {self.timeout}s',
-                    'log': '',
-                    'pdf_path': None,
-                    'errors': 0,
-                    'warnings': 0,
-                    'status': 'timed_out',
+                    "success": False,
+                    "error": f"Compilation timed out after {self.timeout}s",
+                    "log": "",
+                    "pdf_path": None,
+                    "errors": 0,
+                    "warnings": 0,
+                    "status": "timed_out",
                 }
             except FileNotFoundError:
                 return {
-                    'success': False,
-                    'error': f"Compiler '{self.compiler}' not found. Install TeX Live.",
-                    'log': '',
-                    'pdf_path': None,
-                    'errors': 0,
-                    'warnings': 0,
-                    'status': 'failed',
+                    "success": False,
+                    "error": f"Compiler '{self.compiler}' not found. Install TeX Live.",
+                    "log": "",
+                    "pdf_path": None,
+                    "errors": 0,
+                    "warnings": 0,
+                    "status": "failed",
                 }
 
             # Parse the log
@@ -102,23 +107,23 @@ class LatexCompiler:
 
             if not pdf_exists:
                 return {
-                    'success': False,
-                    'error': 'PDF generation failed – check log for details',
-                    'log': log_text,
-                    'pdf_path': None,
-                    'errors': errors,
-                    'warnings': warnings,
-                    'status': 'failed',
+                    "success": False,
+                    "error": "PDF generation failed – check log for details",
+                    "log": log_text,
+                    "pdf_path": None,
+                    "errors": errors,
+                    "warnings": warnings,
+                    "status": "failed",
                 }
 
             return {
-                'success': True,
-                'error': None,
-                'log': log_text,
-                'pdf_path': pdf_path,
-                'errors': errors,
-                'warnings': warnings,
-                'status': 'completed',
+                "success": True,
+                "error": None,
+                "log": log_text,
+                "pdf_path": pdf_path,
+                "errors": errors,
+                "warnings": warnings,
+                "status": "completed",
             }
 
     def _write_project_files(self, tmpdir: str):
@@ -128,10 +133,10 @@ class LatexCompiler:
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             # If content is bytes, write binary; otherwise text
             if isinstance(content, bytes):
-                with open(filepath, 'wb') as f:
+                with open(filepath, "wb") as f:
                     f.write(content)
             else:
-                with open(filepath, 'w', encoding='utf-8') as f:
+                with open(filepath, "w", encoding="utf-8") as f:
                     f.write(content)
 
     def _read_log(self, log_path: str, result: subprocess.CompletedProcess) -> str:
@@ -142,9 +147,9 @@ class LatexCompiler:
         if result.stderr:
             log_parts.append(result.stderr)
         if os.path.exists(log_path):
-            with open(log_path, 'r', encoding='utf-8', errors='replace') as f:
+            with open(log_path, "r", encoding="utf-8", errors="replace") as f:
                 log_parts.append(f.read())
-        return '\n'.join(log_parts)
+        return "\n".join(log_parts)
 
     def _parse_log(self, log_text: str) -> Tuple[int, int]:
         """
@@ -154,7 +159,7 @@ class LatexCompiler:
 
         Detects:
         - Lines starting with '!' (errors)
-        - Lines containing 'Error:' 
+        - Lines containing 'Error:'
         - Lines containing 'Warning:'
         - 'LaTeX Warning:' pattern
         - 'Overfull' / 'Underfull' boxes (warnings)
@@ -164,24 +169,24 @@ class LatexCompiler:
         warning_count = 0
 
         error_patterns = [
-            r'^! ',                          # Standard TeX error
-            r'^.*Error:',                    # Generic error
-            r'Fatal error',                  # Fatal error
+            r"^! ",  # Standard TeX error
+            r"^.*Error:",  # Generic error
+            r"Fatal error",  # Fatal error
         ]
         warning_patterns = [
-            r'Warning:',                    # Generic warning
-            r'LaTeX Warning:',              # LaTeX specific
-            r'Package \w+ Warning:',        # Package warnings
-            r'Overfull \\hbox',             # Overfull hbox
-            r'Underfull \\hbox',            # Underfull hbox
-            r'Overfull \\vbox',             # Overfull vbox
-            r'Underfull \\vbox',            # Underfull vbox
-            r'No file ',                    # Missing file references
-            r'Citation .* undefined',       # Missing citations
-            r'Reference .* undefined',      # Missing references
+            r"Warning:",  # Generic warning
+            r"LaTeX Warning:",  # LaTeX specific
+            r"Package \w+ Warning:",  # Package warnings
+            r"Overfull \\hbox",  # Overfull hbox
+            r"Underfull \\hbox",  # Underfull hbox
+            r"Overfull \\vbox",  # Overfull vbox
+            r"Underfull \\vbox",  # Underfull vbox
+            r"No file ",  # Missing file references
+            r"Citation .* undefined",  # Missing citations
+            r"Reference .* undefined",  # Missing references
         ]
 
-        for line in log_text.split('\n'):
+        for line in log_text.split("\n"):
             for pattern in error_patterns:
                 if re.search(pattern, line):
                     error_count += 1

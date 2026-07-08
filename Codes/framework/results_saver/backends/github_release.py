@@ -1,5 +1,8 @@
-import logging, os
+import logging
+import os
+
 logger = logging.getLogger(__name__)
+
 
 def create_release(run_id, run_dir, metrics, cfg):
     try:
@@ -14,8 +17,12 @@ def create_release(run_id, run_dir, metrics, cfg):
         return None
     g = Github(token)
     repo = g.get_repo(repo_name)
-    tag = cfg.release_options.get("tag_pattern", "v{run_id}").format(run_id=run_id, **metrics)
-    notes = cfg.release_options.get("release_notes_template", "Results for {run_id}").format(run_id=run_id, **metrics)
+    tag = cfg.release_options.get("tag_pattern", "v{run_id}").format(
+        run_id=run_id, **metrics
+    )
+    notes = cfg.release_options.get(
+        "release_notes_template", "Results for {run_id}"
+    ).format(run_id=run_id, **metrics)
     release = repo.create_git_release(tag, tag, notes)
     for art in cfg.release_options.get("attach_artifacts", []):
         fp = run_dir / "artifacts" / art

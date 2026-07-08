@@ -1,7 +1,9 @@
 # framework/utils/seed.py
 import random
+
 import numpy as np
 import torch
+
 
 def set_all_seeds(seed: int):
     random.seed(seed)

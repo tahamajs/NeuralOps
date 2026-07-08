@@ -2,7 +2,10 @@
 LLM-powered log analyzer using the SemiSMAC approach.
 Uses an LLM to parse experiment logs, detect anomalies, and suggest fixes.
 """
-import json, logging
+
+import json
+import logging
+
 import requests
 from django.conf import settings
 
@@ -14,10 +17,13 @@ class LLMLogAnalyzer:
     Uses an LLM (Anthropic Claude, OpenAI GPT, or local model) to analyze
     experiment logs and detect anomalies with suggested fixes.
     """
+
     def __init__(self):
-        self.model = getattr(settings, 'LLM_MODEL', 'claude-sonnet-4-20250514')
-        self.provider = getattr(settings, 'LLM_PROVIDER', 'anthropic')
-        self.api_key = getattr(settings, 'ANTHROPIC_API_KEY', '') or getattr(settings, 'OPENAI_API_KEY', '')
+        self.model = getattr(settings, "LLM_MODEL", "claude-sonnet-4-20250514")
+        self.provider = getattr(settings, "LLM_PROVIDER", "anthropic")
+        self.api_key = getattr(settings, "ANTHROPIC_API_KEY", "") or getattr(
+            settings, "OPENAI_API_KEY", ""
+        )
 
     def analyze_logs(self, logs: str, metrics: dict = None) -> list:
         """
@@ -79,9 +85,9 @@ Return ONLY valid JSON array. No other text.
     def _call_llm(self, prompt: str) -> str:
         """Call the LLM API."""
         try:
-            if self.provider == 'anthropic':
+            if self.provider == "anthropic":
                 return self._call_anthropic(prompt)
-            elif self.provider == 'openai':
+            elif self.provider == "openai":
                 return self._call_openai(prompt)
             else:
                 logger.warning("Unknown LLM provider: %s", self.provider)
@@ -92,41 +98,51 @@ Return ONLY valid JSON array. No other text.
 
     def _call_anthropic(self, prompt: str) -> str:
         headers = {
-            'x-api-key': self.api_key,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json',
+            "x-api-key": self.api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
         }
         body = {
-            'model': self.model,
-            'max_tokens': 1024,
-            'messages': [{'role': 'user', 'content': prompt}],
+            "model": self.model,
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": prompt}],
         }
-        resp = requests.post('https://api.anthropic.com/v1/messages', headers=headers, json=body, timeout=30)
+        resp = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers=headers,
+            json=body,
+            timeout=30,
+        )
         data = resp.json()
-        return data.get('content', [{}])[0].get('text', '')
+        return data.get("content", [{}])[0].get("text", "")
 
     def _call_openai(self, prompt: str) -> str:
         headers = {
-            'Authorization': f'Bearer {self.api_key}',
-            'Content-Type': 'application/json',
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
         }
         body = {
-            'model': self.model,
-            'max_tokens': 1024,
-            'messages': [{'role': 'user', 'content': prompt}],
+            "model": self.model,
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": prompt}],
         }
-        resp = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=body, timeout=30)
+        resp = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=body,
+            timeout=30,
+        )
         data = resp.json()
-        return data['choices'][0]['message']['content']
+        return data["choices"][0]["message"]["content"]
 
     def _parse_response(self, response: str) -> list:
         """Parse the LLM's JSON response into a list of anomaly dicts."""
         # Extract JSON from the response (handle markdown fences)
         text = response.strip()
-        if text.startswith('```'):
+        if text.startswith("```"):
             # Remove code fences
-            lines = text.split('\n')
-            text = '\n'.join(lines[1:-1]) if len(lines) > 2 else text
+            lines = text.split("\n")
+            text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
 
         try:
             anomalies = json.loads(text)
@@ -136,7 +152,8 @@ Return ONLY valid JSON array. No other text.
         except json.JSONDecodeError:
             # Try to extract JSON array from text
             import re
-            match = re.search(r'\[.*\]', text, re.DOTALL)
+
+            match = re.search(r"\[.*\]", text, re.DOTALL)
             if match:
                 try:
                     return json.loads(match.group())

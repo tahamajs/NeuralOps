@@ -1,11 +1,14 @@
 import logging
 from typing import Dict, Type
+
 from .base_trainer import BaseTrainer
 
 logger = logging.getLogger(__name__)
 
+
 class TrainerRegistry:
     """Registry for trainer classes."""
+
     _registry: Dict[str, Type[BaseTrainer]] = {}
 
     @classmethod
@@ -16,12 +19,15 @@ class TrainerRegistry:
             cls._registry[name] = klass
             logger.info(f"Registered trainer: {name} -> {klass.__name__}")
             return klass
+
         return decorator
 
     @classmethod
     def get(cls, name: str) -> Type[BaseTrainer]:
         if name not in cls._registry:
-            raise ValueError(f"Unknown trainer '{name}'. Available: {list(cls._registry.keys())}")
+            raise ValueError(
+                f"Unknown trainer '{name}'. Available: {list(cls._registry.keys())}"
+            )
         return cls._registry[name]
 
     @classmethod

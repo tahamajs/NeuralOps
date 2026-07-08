@@ -1,8 +1,8 @@
 """Configuration for Federated Learning."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Any, List, Optional
+
 
 class AggregationStrategy(Enum):
     FEDAVG = "fedavg"
@@ -14,10 +14,12 @@ class AggregationStrategy(Enum):
     FEDNOVA = "fednova"
     MOON = "moon"
 
+
 class ClientSelectionStrategy(Enum):
     RANDOM = "random"
     POWER_OF_CHOICE = "power_of_choice"
     QUALITY_BASED = "quality_based"
+
 
 class CompressionMethod(Enum):
     NONE = "none"
@@ -27,10 +29,12 @@ class CompressionMethod(Enum):
     STC = "stc"
     SIGN_SGD = "sign_sgd"
 
+
 class PrivacyMethod(Enum):
     NONE = "none"
     DP_SGD = "dp_sgd"
     SECURE_AGGREGATION = "secure_aggregation"
+
 
 @dataclass
 class FLConfig:
@@ -38,7 +42,7 @@ class FLConfig:
 
     # Core FL settings
     num_clients: int = 10
-    clients_per_round: float = 0.3        # fraction or absolute number
+    clients_per_round: float = 0.3  # fraction or absolute number
     num_rounds: int = 100
     local_epochs: int = 5
     local_batch_size: int = 32
@@ -52,7 +56,7 @@ class FLConfig:
     fedprox_mu: float = 0.01
 
     # MOON specific
-    moon_mu: float = 1.0         # contrastive loss weight
+    moon_mu: float = 1.0  # contrastive loss weight
     moon_temperature: float = 0.5
 
     # Client selection
@@ -71,8 +75,10 @@ class FLConfig:
     dp_delta: float = 1e-5
 
     # Data partitioning
-    partition_type: str = "iid"            # "iid" or "non_iid_label_skew" or "non_iid_quantity_skew"
-    non_iid_alpha: float = 0.5             # Dirichlet concentration parameter
+    partition_type: str = (
+        "iid"  # "iid" or "non_iid_label_skew" or "non_iid_quantity_skew"
+    )
+    non_iid_alpha: float = 0.5  # Dirichlet concentration parameter
     num_classes: int = 2
 
     # Integration

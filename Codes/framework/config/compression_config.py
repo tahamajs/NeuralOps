@@ -1,9 +1,11 @@
-from dataclasses import dataclass, field
-from typing import Optional, List
+from dataclasses import dataclass
+from typing import Optional
+
 
 @dataclass
 class CompressionConfig:
     """Unified configuration for attention injection and compression."""
+
     attn_type: str = "full"
     dropout: float = 0.1
 
@@ -45,26 +47,26 @@ class CompressionConfig:
     max_grad_norm: float = 1.0
 
     # Attention‑specific common fields
-    rank: int = 32                  # general rank for SVD/LoRA
-    svd_rank: int = 32              # SVD rank for compressed attention
-    svd_energy: float = 0.95        # energy threshold for SVD
-    block_size: int = 64            # block size for block-sparse attention
-    local_window: int = 64          # window size for sliding window attention
-    top_k_inter: int = 4            # top-k inter-block tokens
+    rank: int = 32  # general rank for SVD/LoRA
+    svd_rank: int = 32  # SVD rank for compressed attention
+    svd_energy: float = 0.95  # energy threshold for SVD
+    block_size: int = 64  # block size for block-sparse attention
+    local_window: int = 64  # window size for sliding window attention
+    top_k_inter: int = 4  # top-k inter-block tokens
     num_landmarks: int = 16
     feature_dim: int = 128
-    rff_features: int = 128         # random Fourier features dimension
+    rff_features: int = 128  # random Fourier features dimension
     k_early: int = 32
     k_mid: int = 16
     k_late: int = 12
     use_gate: bool = True
     progressive: bool = True
-    max_seq_len: int = 512          # was incomplete; set default 512
-    low_rank_cache_size: int = 16   # for LoLA
-    cur_rank: int = 16              # for PHANTOM
+    max_seq_len: int = 512  # was incomplete; set default 512
+    low_rank_cache_size: int = 16  # for LoLA
+    cur_rank: int = 16  # for PHANTOM
     lsh_rounds: int = 4
     lsh_bucket_size: int = 32
-    window_size: int = 128          # for sliding window
+    window_size: int = 128  # for sliding window
     compression_rank: int = 64
     use_adaptive_gate: bool = True
     gate_bias: float = 2.0
@@ -86,8 +88,8 @@ class CompressionConfig:
     num_global_heads: int = 4
     num_experts: int = 8
     top_k: int = 2
-    ratio: int = 9                  # for hybrid models
-    n_heads: Optional[int] = None   # can override
+    ratio: int = 9  # for hybrid models
+    n_heads: Optional[int] = None  # can override
     n_layers: Optional[int] = None
     use_full_attention: bool = False
     use_fp8: bool = False

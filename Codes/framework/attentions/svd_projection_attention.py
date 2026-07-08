@@ -5,18 +5,22 @@ Similar to svd_linear_attention but with a different factorisation style.
 """
 
 import math
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 class SVDProjectionLinear(nn.Module):
     """
     Alternative SVDLinear: stores U and V, with σ absorbed into one of them.
     """
-    def __init__(self, in_features: int, out_features: int, rank: int, bias: bool = True):
+
+    def __init__(
+        self, in_features: int, out_features: int, rank: int, bias: bool = True
+    ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -26,7 +30,7 @@ class SVDProjectionLinear(nn.Module):
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -43,8 +47,9 @@ class SVDProjectionLinear(nn.Module):
 
 
 class SVDProjectionAttention(nn.Module):
-    def __init__(self, model_config, rank: int = 32, dropout: float = 0.1,
-                 pretrained_attn=None):
+    def __init__(
+        self, model_config, rank: int = 32, dropout: float = 0.1, pretrained_attn=None
+    ):
         super().__init__()
         if pretrained_attn is None:
             raise ValueError("pretrained_attn required for zero‑shot init")
@@ -55,14 +60,30 @@ class SVDProjectionAttention(nn.Module):
         self.hidden_size = model_config.hidden_size
         self.rank = rank
 
-        self.q_proj = SVDProjectionLinear(self.hidden_size, self.all_head_size, rank,
-                                          bias=pretrained_attn.q_lin.bias is not None)
-        self.k_proj = SVDProjectionLinear(self.hidden_size, self.all_head_size, rank,
-                                          bias=pretrained_attn.k_lin.bias is not None)
-        self.v_proj = SVDProjectionLinear(self.hidden_size, self.all_head_size, rank,
-                                          bias=pretrained_attn.v_lin.bias is not None)
-        self.out_proj = SVDProjectionLinear(self.all_head_size, self.hidden_size, rank,
-                                            bias=pretrained_attn.out_lin.bias is not None)
+        self.q_proj = SVDProjectionLinear(
+            self.hidden_size,
+            self.all_head_size,
+            rank,
+            bias=pretrained_attn.q_lin.bias is not None,
+        )
+        self.k_proj = SVDProjectionLinear(
+            self.hidden_size,
+            self.all_head_size,
+            rank,
+            bias=pretrained_attn.k_lin.bias is not None,
+        )
+        self.v_proj = SVDProjectionLinear(
+            self.hidden_size,
+            self.all_head_size,
+            rank,
+            bias=pretrained_attn.v_lin.bias is not None,
+        )
+        self.out_proj = SVDProjectionLinear(
+            self.all_head_size,
+            self.hidden_size,
+            rank,
+            bias=pretrained_attn.out_lin.bias is not None,
+        )
 
         self._init_from_linear(self.q_proj, pretrained_attn.q_lin)
         self._init_from_linear(self.k_proj, pretrained_attn.k_lin)
@@ -81,8 +102,14 @@ class SVDProjectionAttention(nn.Module):
             if svd_linear.bias is not None and orig_linear.bias is not None:
                 svd_linear.bias.data = orig_linear.bias.data.clone()
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
 
@@ -90,7 +117,7 @@ class SVDProjectionAttention(nn.Module):
         K = self.k_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
         V = self.v_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
 
-        scale = D ** -0.5
+        scale = D**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         if attention_mask is not None:
@@ -110,9 +137,11 @@ class SVDProjectionAttention(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("svd_proj_attn")
-def inject_svd_proj_attn(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    rank = getattr(comp_config, 'svd_rank', 32)
-    dropout = getattr(comp_config, 'dropout', 0.1)
+def inject_svd_proj_attn(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
+    rank = getattr(comp_config, "svd_rank", 32)
+    dropout = getattr(comp_config, "dropout", 0.1)
     new_attn = SVDProjectionAttention(model_config, rank, dropout, old_attn)
     layer.attention = new_attn
     return new_attn

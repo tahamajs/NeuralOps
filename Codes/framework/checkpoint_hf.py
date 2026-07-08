@@ -1,9 +1,9 @@
 # framework/checkpoint_hf.py
-import os, json, logging
-from pathlib import Path
+import logging
+import os
 from typing import Optional
 
-from huggingface_hub import HfApi, create_repo, upload_folder, upload_file
+from huggingface_hub import HfApi, create_repo, upload_file, upload_folder
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +15,7 @@ class HuggingFaceCheckpointUploader:
 
     Repository: {username}/neuralops-run-{run_id}
     """
+
     def __init__(
         self,
         run_id: str,
@@ -38,13 +39,21 @@ class HuggingFaceCheckpointUploader:
     def api(self) -> HfApi:
         if self._api is None:
             if not self.token:
-                raise ValueError("HuggingFace token not set. Set HUGGINGFACE_TOKEN or log in via HF.")
+                raise ValueError(
+                    "HuggingFace token not set. Set HUGGINGFACE_TOKEN or log in via HF."
+                )
             self._api = HfApi(token=self.token)
         return self._api
 
     def init_repo(self):
         """Create the HF repository if it doesn't exist (private by default)."""
-        create_repo(self.repo_id, token=self.token, repo_type="model", exist_ok=True, private=True)
+        create_repo(
+            self.repo_id,
+            token=self.token,
+            repo_type="model",
+            exist_ok=True,
+            private=True,
+        )
         logger.info(f"Initialized HF repo: {self.repo_id}")
 
     def upload_checkpoint(self, step: int, checkpoint_path: Optional[str] = None):
@@ -59,7 +68,9 @@ class HuggingFaceCheckpointUploader:
             return
 
         remote_folder = f"checkpoints/step_{step}"
-        logger.info(f"Uploading checkpoint at step {step} to {self.repo_id}/{remote_folder}")
+        logger.info(
+            f"Uploading checkpoint at step {step} to {self.repo_id}/{remote_folder}"
+        )
         upload_folder(
             folder_path=local_dir,
             path_in_repo=remote_folder,
@@ -75,7 +86,9 @@ class HuggingFaceCheckpointUploader:
             oldest_step = self._uploaded_checkpoints.pop(0)
             # HF doesn't provide a simple delete folder API, we can try to delete
             # by listing files and removing them. For simplicity, we just log.
-            logger.info(f"Old checkpoint at step {oldest_step} can be pruned (manual step).")
+            logger.info(
+                f"Old checkpoint at step {oldest_step} can be pruned (manual step)."
+            )
 
     def upload_final_model(self, model_dir: str, metrics: dict, final: bool = True):
         """
@@ -114,7 +127,7 @@ class HuggingFaceCheckpointUploader:
 
     def _generate_readme(self, metrics: dict) -> str:
         run_id = self.run_id
-        content = f"""---
+        content = """---
 tags:
 - neuralops
 - training-run

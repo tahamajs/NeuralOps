@@ -1,14 +1,16 @@
 """FLAT-LLM: Activation‑aware dimension pruning via PCA. Registered as 'flat_llm'."""
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class FLATLLMCompressor(BaseCompressor):
-    def __init__(self, model, tokenizer, keep_ratio=0.7, calibration_texts=None, **kwargs):
+    def __init__(
+        self, model, tokenizer, keep_ratio=0.7, calibration_texts=None, **kwargs
+    ):
         super().__init__(model, name="flat_llm", **kwargs)
         self.tokenizer = tokenizer
         self.keep_ratio = keep_ratio
@@ -57,9 +59,13 @@ class FLATLLMCompressor(BaseCompressor):
                 # Soft pruning: zero out unimportant rows (output neurons)
                 mask = torch.zeros(total_dims, device=module.weight.device)
                 mask[idx] = 1.0
-                module.weight.data = module.weight.data * mask.unsqueeze(1)  # broadcast over input dim
+                module.weight.data = module.weight.data * mask.unsqueeze(
+                    1
+                )  # broadcast over input dim
                 if module.bias is not None:
-                    module.bias.data = module.bias.data * mask  # keep only the biases of kept neurons
+                    module.bias.data = (
+                        module.bias.data * mask
+                    )  # keep only the biases of kept neurons
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
@@ -67,8 +73,8 @@ class FLATLLMCompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("flat_llm")
 def flat_llm_factory(model, comp_config):
-    keep_ratio = getattr(comp_config, 'flat_llm_keep_ratio', 0.7)
-    tokenizer = getattr(model, 'tokenizer', None)
+    keep_ratio = getattr(comp_config, "flat_llm_keep_ratio", 0.7)
+    tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:
         raise ValueError("flat_llm requires tokenizer attached as model.tokenizer")
     compressor = FLATLLMCompressor(model, tokenizer, keep_ratio=keep_ratio)

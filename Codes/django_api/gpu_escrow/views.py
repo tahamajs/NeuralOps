@@ -1,27 +1,23 @@
 # gpu_escrow/views.py
 import logging
-from decimal import Decimal
-from django.shortcuts import get_object_or_404
+
 from django.db import transaction
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.pagination import PageNumberPagination
 
-from .models import EscrowAccount, EscrowTransaction
-from .serializers import (
-    EscrowAccountSerializer,
-    EscrowTransactionSerializer,
-    DepositWithdrawSerializer,
-)
+from .models import EscrowAccount
+from .serializers import (DepositWithdrawSerializer, EscrowAccountSerializer,
+                          EscrowTransactionSerializer)
 
 logger = logging.getLogger(__name__)
 
 
 class StandardPagination(PageNumberPagination):
     page_size = 20
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 100
 
 
@@ -34,7 +30,7 @@ def _get_account(user) -> EscrowAccount:
 # ═══════════════════════════════════════════════════════════════
 # BALANCE
 # ═══════════════════════════════════════════════════════════════
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def balance(request):
     """Get the authenticated user's escrow balance."""
@@ -45,7 +41,7 @@ def balance(request):
 # ═══════════════════════════════════════════════════════════════
 # DEPOSIT (Mock – in production, integrate with Stripe / PayPal)
 # ═══════════════════════════════════════════════════════════════
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def deposit(request):
     """Add funds to the user's escrow balance."""
@@ -53,8 +49,8 @@ def deposit(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    amount = serializer.validated_data['amount_usd']
-    description = serializer.validated_data.get('description', 'Manual deposit')
+    amount = serializer.validated_data["amount_usd"]
+    description = serializer.validated_data.get("description", "Manual deposit")
 
     account = _get_account(request.user)
     try:
@@ -70,7 +66,7 @@ def deposit(request):
 # ═══════════════════════════════════════════════════════════════
 # WITHDRAW
 # ═══════════════════════════════════════════════════════════════
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def withdraw(request):
     """Withdraw available funds from the escrow account."""
@@ -78,12 +74,15 @@ def withdraw(request):
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    amount = serializer.validated_data['amount_usd']
-    description = serializer.validated_data.get('description', 'Manual withdrawal')
+    amount = serializer.validated_data["amount_usd"]
+    description = serializer.validated_data.get("description", "Manual withdrawal")
 
     account = _get_account(request.user)
     if amount > account.balance_usd:
-        return Response({"error": "Insufficient available balance"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Insufficient available balance"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     try:
         with transaction.atomic():
@@ -98,22 +97,26 @@ def withdraw(request):
 # ═══════════════════════════════════════════════════════════════
 # TRANSACTIONS
 # ═══════════════════════════════════════════════════════════════
-@api_view(['GET'])
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def transaction_list(request):
     """List all transactions for the authenticated user."""
     account = _get_account(request.user)
-    qs = account.transactions.select_related('account__user', 'counterparty_account__user', 'job').order_by('-created_at')
+    qs = account.transactions.select_related(
+        "account__user", "counterparty_account__user", "job"
+    ).order_by("-created_at")
 
     # Optional filters
-    tx_type = request.query_params.get('tx_type')
+    tx_type = request.query_params.get("tx_type")
     if tx_type:
         qs = qs.filter(tx_type=tx_type)
 
-    job_id = request.query_params.get('job_id')
+    job_id = request.query_params.get("job_id")
     if job_id:
         qs = qs.filter(job_id=job_id)
 
     paginator = StandardPagination()
     page = paginator.paginate_queryset(qs, request)
-    return paginator.get_paginated_response(EscrowTransactionSerializer(page, many=True).data)
+    return paginator.get_paginated_response(
+        EscrowTransactionSerializer(page, many=True).data
+    )

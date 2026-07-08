@@ -1,7 +1,7 @@
 """LiLLaMA: local distillation via cross‑covariance. Registered as 'lillama'."""
 
-import torch
 import numpy as np
+import torch
 from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
@@ -21,6 +21,7 @@ class LiLLaMACompressor(BaseCompressor):
         def make_hook(name):
             def hook(module, input, output):
                 activations[name] = (input[0].detach(), output.detach())
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -64,8 +65,8 @@ class LiLLaMACompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("lillama")
 def lillama_factory(model, comp_config):
-    rank = getattr(comp_config, 'lillama_rank', 64)
-    tokenizer = getattr(model, 'tokenizer', None)
+    rank = getattr(comp_config, "lillama_rank", 64)
+    tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:
         raise ValueError("lillama requires tokenizer attached as model.tokenizer")
     compressor = LiLLaMACompressor(model, tokenizer, rank)

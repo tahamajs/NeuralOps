@@ -44,8 +44,10 @@ def load_unsloth_model_with_attention(
 
     if attention_type != "full":
         # Add classification head if missing
-        if not hasattr(model, 'score'):
-            model.score = torch.nn.Linear(model.config.hidden_size, num_labels).to(torch.float16)
+        if not hasattr(model, "score"):
+            model.score = torch.nn.Linear(model.config.hidden_size, num_labels).to(
+                torch.float16
+            )
             model.config.num_labels = num_labels
 
         inject_attention(model, attention_type, rank=rank, copy_weights=True)

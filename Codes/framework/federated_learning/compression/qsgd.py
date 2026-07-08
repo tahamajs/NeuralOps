@@ -1,14 +1,16 @@
 """QSGD – Quantized Stochastic Gradient Descent (Alistarh et al. 2017)."""
 
 import numpy as np
-from .base import BaseCompressor, COMPRESSION_REGISTRY
+
+from .base import COMPRESSION_REGISTRY, BaseCompressor
+
 
 @COMPRESSION_REGISTRY.register("qsgd")
 class QSGDCompressor(BaseCompressor):
     def __init__(self, config):
         super().__init__(config)
         self.num_bits = config.compression_quantization_bits
-        self.levels = 2 ** self.num_bits - 1
+        self.levels = 2**self.num_bits - 1
 
     def compress(self, update):
         compressed = {}
@@ -26,7 +28,9 @@ class QSGDCompressor(BaseCompressor):
         decompressed = {}
         for k, (quantized, norm, shape) in compressed.items():
             if isinstance(quantized, np.ndarray) and quantized.size > 1:
-                decompressed[k] = (norm.reshape(shape) * quantized.reshape(shape)).reshape(shape)
+                decompressed[k] = (
+                    norm.reshape(shape) * quantized.reshape(shape)
+                ).reshape(shape)
             else:
                 decompressed[k] = np.zeros(shape)
         return decompressed

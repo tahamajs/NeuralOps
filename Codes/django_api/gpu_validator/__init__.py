@@ -1,1 +1,1 @@
-default_app_config = 'gpu_validator.apps.GpuValidatorConfig'
+default_app_config = "gpu_validator.apps.GpuValidatorConfig"

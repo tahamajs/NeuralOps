@@ -1,17 +1,18 @@
 """Central Prompt Registry – CRUD, versioning, aliases, search."""
 
-import os
 import json
 import logging
-from typing import Dict, Any, List, Optional, Union
+import os
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Union
 
-from .config import PromptConfig, PromptType, StorageBackend
-from .templates import PromptTemplate, ChatPromptTemplate
-from .versioning import PromptVersion, VersionHistory
+from .config import PromptConfig, StorageBackend
 from .evaluation import PromptEvaluation
+from .templates import ChatPromptTemplate, PromptTemplate
+from .versioning import PromptVersion, VersionHistory
 
 logger = logging.getLogger(__name__)
+
 
 class PromptRegistry:
     """
@@ -43,34 +44,44 @@ class PromptRegistry:
 
     def __init__(self, config: PromptConfig = None):
         self.config = config or PromptConfig()
-        self._prompts: Dict[str, VersionHistory] = {}   # name → version chain
-        self._aliases: Dict[str, Dict[str, int]] = {}    # name → {alias → version}
+        self._prompts: Dict[str, VersionHistory] = {}  # name → version chain
+        self._aliases: Dict[str, Dict[str, int]] = {}  # name → {alias → version}
         self._evaluations: Dict[str, Dict[int, PromptEvaluation]] = {}
         self._load_from_disk()
 
     # ── Registration ────────────────────────────────────────
-    def register(self, name: str,
-                 template: Union[PromptTemplate, ChatPromptTemplate],
-                 commit_message: str = "",
-                 author: str = "system",
-                 tags: List[str] = None,
-                 metadata: Dict[str, Any] = None) -> PromptVersion:
+    def register(
+        self,
+        name: str,
+        template: Union[PromptTemplate, ChatPromptTemplate],
+        commit_message: str = "",
+        author: str = "system",
+        tags: List[str] = None,
+        metadata: Dict[str, Any] = None,
+    ) -> PromptVersion:
         """Create a new prompt (version 1)."""
         if name in self._prompts:
-            raise ValueError(f"Prompt '{name}' already exists. Use update() to add a version.")
+            raise ValueError(
+                f"Prompt '{name}' already exists. Use update() to add a version."
+            )
         v = self._create_version(name, template, commit_message, author, tags, metadata)
         self._get_history(name).add(v)
         self._set_default_alias(name, v.version_number)
         self._save(name)
-        logger.info("Registered prompt '%s' – v%d (%s)", name, v.version_number, v.id[:8])
+        logger.info(
+            "Registered prompt '%s' – v%d (%s)", name, v.version_number, v.id[:8]
+        )
         return v
 
-    def update(self, name: str,
-               template: Union[PromptTemplate, ChatPromptTemplate],
-               commit_message: str = "",
-               author: str = "system",
-               tags: List[str] = None,
-               metadata: Dict[str, Any] = None) -> PromptVersion:
+    def update(
+        self,
+        name: str,
+        template: Union[PromptTemplate, ChatPromptTemplate],
+        commit_message: str = "",
+        author: str = "system",
+        tags: List[str] = None,
+        metadata: Dict[str, Any] = None,
+    ) -> PromptVersion:
         """Add a new version to an existing prompt."""
         if name not in self._prompts:
             raise KeyError(f"Prompt '{name}' not found. Use register() first.")
@@ -81,22 +92,32 @@ class PromptRegistry:
         return v
 
     def _create_version(self, name, template, commit_message, author, tags, metadata):
-        raw = template.template if isinstance(template, PromptTemplate) else json.dumps(template.messages)
+        raw = (
+            template.template
+            if isinstance(template, PromptTemplate)
+            else json.dumps(template.messages)
+        )
         ttype = "simple" if isinstance(template, PromptTemplate) else "chat"
         ts = datetime.now().isoformat()
         vid = PromptVersion.compute_id(name, raw, ts)
         return PromptVersion(
-            id=vid, version_number=0, prompt_name=name,
-            template=raw, template_type=ttype,
-            commit_message=commit_message, author=author,
-            tags=tags or [], metadata=metadata or {}
+            id=vid,
+            version_number=0,
+            prompt_name=name,
+            template=raw,
+            template_type=ttype,
+            commit_message=commit_message,
+            author=author,
+            tags=tags or [],
+            metadata=metadata or {},
         )
 
     # ── Loading ────────────────────────────────────────────
-    def load(self, name: str, version: int = None,
-             alias: str = None) -> Union[PromptTemplate, ChatPromptTemplate]:
+    def load(
+        self, name: str, version: int = None, alias: str = None
+    ) -> Union[PromptTemplate, ChatPromptTemplate]:
         """Retrieve a prompt by version number or alias.
-           If neither is given, returns the latest version.
+        If neither is given, returns the latest version.
         """
         history = self._prompts.get(name)
         if history is None:
@@ -131,7 +152,11 @@ class PromptRegistry:
         if alias not in self._aliases.get(name, {}):
             self._aliases.setdefault(name, {})["_history"] = []
         self._aliases.setdefault(name, {})["_history"].append(
-            {"alias": alias, "version": version, "timestamp": datetime.now().isoformat()}
+            {
+                "alias": alias,
+                "version": version,
+                "timestamp": datetime.now().isoformat(),
+            }
         )
         self._aliases[name][alias] = version
         self._save(name)
@@ -142,8 +167,11 @@ class PromptRegistry:
 
     def alias_history(self, name: str, alias: str) -> List[dict]:
         """Return the full assignment history for an alias."""
-        return [h for h in self._aliases.get(name, {}).get("_history", [])
-                if h["alias"] == alias]
+        return [
+            h
+            for h in self._aliases.get(name, {}).get("_history", [])
+            if h["alias"] == alias
+        ]
 
     def rollback_alias(self, name: str, alias: str):
         """Roll back an alias to its previous version."""
@@ -157,10 +185,13 @@ class PromptRegistry:
     # ── Search & List ──────────────────────────────────────
     def list_prompts(self) -> List[Dict[str, Any]]:
         return [
-            {"name": n, "versions": len(h.versions),
-             "latest": h.latest().version_number if h.latest() else 0,
-             "aliases": self._aliases.get(n, {}).get("_aliases", {}),
-             "tags": list(set(t for v in h.versions for t in v.tags))}
+            {
+                "name": n,
+                "versions": len(h.versions),
+                "latest": h.latest().version_number if h.latest() else 0,
+                "aliases": self._aliases.get(n, {}).get("_aliases", {}),
+                "tags": list(set(t for v in h.versions for t in v.tags)),
+            }
             for n, h in self._prompts.items()
         ]
 
@@ -179,7 +210,8 @@ class PromptRegistry:
 
     def diff(self, name: str, v1: int, v2: int = None) -> str:
         h = self._prompts.get(name)
-        if h is None: raise KeyError(f"Prompt '{name}' not found.")
+        if h is None:
+            raise KeyError(f"Prompt '{name}' not found.")
         return h.diff(v1, v2)
 
     # ── Evaluation (delegates to PromptEvaluation) ─────────
@@ -210,13 +242,16 @@ class PromptRegistry:
         os.makedirs(self.config.registry_path, exist_ok=True)
         data = {
             "versions": self._prompts[name].to_list(),
-            "aliases": {k: v for k, v in self._aliases.get(name, {}).items() if k != "_history"},
+            "aliases": {
+                k: v for k, v in self._aliases.get(name, {}).items() if k != "_history"
+            },
             "alias_history": self._aliases.get(name, {}).get("_history", []),
-            "evaluations": {str(k): v.to_dict() for k, v in
-                            self._evaluations.get(name, {}).items()},
+            "evaluations": {
+                str(k): v.to_dict() for k, v in self._evaluations.get(name, {}).items()
+            },
         }
         path = os.path.join(self.config.registry_path, f"{name}.json")
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=2, default=str)
 
     def _load_from_disk(self):
@@ -226,7 +261,7 @@ class PromptRegistry:
         if not os.path.isdir(p):
             return
         for fname in os.listdir(p):
-            if not fname.endswith('.json'):
+            if not fname.endswith(".json"):
                 continue
             name = fname[:-5]
             with open(os.path.join(p, fname)) as f:

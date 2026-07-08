@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("chela_slay")
 class ChelaSlayAttention(BaseAttention):
@@ -10,6 +11,7 @@ class ChelaSlayAttention(BaseAttention):
     CHELA‑SLAY: Spherical linearized attention with Yat‑kernel.
     Constrains Q,K to unit sphere, uses random Fourier features.
     """
+
     def __init__(self, config, rank=64, feature_dim=256):
         super().__init__(config, rank)
         self.dim = config.hidden_size
@@ -30,28 +32,30 @@ class ChelaSlayAttention(BaseAttention):
 
     def _yat_feature_map(self, x):
         # x: (..., head_dim) -> (..., 2*feature_dim)
-        proj = torch.matmul(x, self.random_proj)   # (..., feature_dim)
-        return torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) * (1.0 / self.feature_dim**0.25)
+        proj = torch.matmul(x, self.random_proj)  # (..., feature_dim)
+        return torch.cat([torch.cos(proj), torch.sin(proj)], dim=-1) * (
+            1.0 / self.feature_dim**0.25
+        )
 
     def forward(self, x, mask=None, **kwargs):
         B, L, D = x.shape
-        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
-        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).permute(0,2,1,3)
+        q = self.W_q(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
+        v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
         # Spherical normalization
         q_norm = self._spherical_normalize(q)
         k_norm = self._spherical_normalize(k)
 
         # Apply Yat‑kernel feature map
-        q_feat = self._yat_feature_map(q_norm)   # (B, H, L, 2F)
-        k_feat = self._yat_feature_map(k_norm)   # (B, H, L, 2F)
+        q_feat = self._yat_feature_map(q_norm)  # (B, H, L, 2F)
+        k_feat = self._yat_feature_map(k_norm)  # (B, H, L, 2F)
 
         # Linear attention: O = φ(Q) ( φ(K)^T V ) / (φ(Q) sum(φ(K)))
-        kv = torch.matmul(k_feat.transpose(-2, -1), v)   # (B, H, 2F, D_h)
+        kv = torch.matmul(k_feat.transpose(-2, -1), v)  # (B, H, 2F, D_h)
         # Denominator: φ(Q) · (sum_t φ(K)_t)  --> (B, H, L, 1)
-        k_sum = k_feat.sum(dim=2, keepdim=True)          # (B, H, 1, 2F)
+        k_sum = k_feat.sum(dim=2, keepdim=True)  # (B, H, 1, 2F)
         denom = torch.matmul(q_feat, k_sum.transpose(-2, -1)) + 1e-8  # (B, H, L, 1)
         out = torch.matmul(q_feat, kv) / denom
-        out = out.permute(0,2,1,3).contiguous().view(B, L, D)
+        out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         return self.out_proj(out), None

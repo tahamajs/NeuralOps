@@ -1,13 +1,18 @@
 # framework/visualization/report_generator.py
 import os
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
-from .utils import set_plot_style, save_figure
 
-def generate_csv_summary(all_results: Dict[str, Dict], output_path: str) -> pd.DataFrame:
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+from .utils import save_figure, set_plot_style
+
+
+def generate_csv_summary(
+    all_results: Dict[str, Dict], output_path: str
+) -> pd.DataFrame:
     rows = []
     for task, rank_results in all_results.items():
         for rank, metrics in rank_results.items():
@@ -22,7 +27,10 @@ def generate_csv_summary(all_results: Dict[str, Dict], output_path: str) -> pd.D
     df.to_csv(output_path, index=False)
     return df
 
-def generate_html_report(df: pd.DataFrame, output_dir: str, title: str = "Experiment Report") -> str:
+
+def generate_html_report(
+    df: pd.DataFrame, output_dir: str, title: str = "Experiment Report"
+) -> str:
     os.makedirs(output_dir, exist_ok=True)
     html = f"""<!DOCTYPE html>
 <html>
@@ -45,7 +53,10 @@ def generate_html_report(df: pd.DataFrame, output_dir: str, title: str = "Experi
         f.write(html)
     return out_path
 
-def generate_latex_table(df: pd.DataFrame, output_path: str, caption: str = "Experimental Results") -> str:
+
+def generate_latex_table(
+    df: pd.DataFrame, output_path: str, caption: str = "Experimental Results"
+) -> str:
     lines = [
         "\\begin{table}[htbp]",
         "\\centering",
@@ -53,31 +64,45 @@ def generate_latex_table(df: pd.DataFrame, output_path: str, caption: str = "Exp
         "\\begin{tabular}{lcccr}",
         "\\toprule",
         "Model & Task & Rank & Accuracy & Drop \\\\",
-        "\\midrule"
+        "\\midrule",
     ]
     for _, row in df.iterrows():
         acc = row.get("accuracy", row.get("pearson_spearman", 0))
         drop = row.get("accuracy_drop", "-")
         drop_str = f"{drop:.4f}" if isinstance(drop, (int, float)) else "-"
-        lines.append(f"{row['model']} & {row['task']} & {row['rank']} & {acc:.4f} & {drop_str} \\\\")
+        lines.append(
+            f"{row['model']} & {row['task']} & {row['rank']} & {acc:.4f} & {drop_str} \\\\"
+        )
     lines.extend(["\\bottomrule", "\\end{tabular}", "\\end{table}"])
     with open(output_path, "w") as f:
         f.write("\n".join(lines))
     return output_path
 
-def plot_accuracy_vs_rank(df: pd.DataFrame, task: Optional[str] = None,
-                          hue: str = "model", save_path: Optional[str] = None,
-                          figsize: Tuple[int, int] = (10, 6)) -> plt.Figure:
+
+def plot_accuracy_vs_rank(
+    df: pd.DataFrame,
+    task: Optional[str] = None,
+    hue: str = "model",
+    save_path: Optional[str] = None,
+    figsize: Tuple[int, int] = (10, 6),
+) -> plt.Figure:
     set_plot_style()
     if task:
         df = df[df["task"] == task]
     fig, ax = plt.subplots(figsize=figsize)
     for group in df[hue].unique():
         data = df[df[hue] == group].sort_values("rank")
-        ax.plot(data["rank"], data["accuracy"], marker="o", label=group, linewidth=2, markersize=8)
+        ax.plot(
+            data["rank"],
+            data["accuracy"],
+            marker="o",
+            label=group,
+            linewidth=2,
+            markersize=8,
+        )
     ax.set_xlabel("SVD Rank")
     ax.set_ylabel("Accuracy")
-    ax.set_title(f"Accuracy vs Rank" + (f" - {task.upper()}" if task else ""))
+    ax.set_title("Accuracy vs Rank" + (f" - {task.upper()}" if task else ""))
     ax.legend()
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -85,11 +110,17 @@ def plot_accuracy_vs_rank(df: pd.DataFrame, task: Optional[str] = None,
         save_figure(fig, save_path)
     return fig
 
-def plot_radar_chart(df: pd.DataFrame, models: List[str], tasks: List[str],
-                     metric: str = "accuracy", save_path: Optional[str] = None,
-                     figsize: Tuple[int, int] = (8, 8)) -> plt.Figure:
+
+def plot_radar_chart(
+    df: pd.DataFrame,
+    models: List[str],
+    tasks: List[str],
+    metric: str = "accuracy",
+    save_path: Optional[str] = None,
+    figsize: Tuple[int, int] = (8, 8),
+) -> plt.Figure:
     set_plot_style()
-    angles = np.linspace(0, 2*np.pi, len(tasks), endpoint=False).tolist()
+    angles = np.linspace(0, 2 * np.pi, len(tasks), endpoint=False).tolist()
     angles += angles[:1]
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection="polar")

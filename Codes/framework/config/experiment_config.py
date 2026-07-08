@@ -1,17 +1,21 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Optional
+from typing import Dict, List
+
 
 @dataclass
 class DatasetConfig:
     name: str
     path: str
-    task_type: str           # "mc" or "single"
+    task_type: str  # "mc" or "single"
     num_choices: int = 0
     num_labels: int = 2
 
+
 @dataclass
 class ExperimentConfig:
-    base_models: Dict[str, str] = field(default_factory=lambda: {"bert": "bert-base-uncased"})
+    base_models: Dict[str, str] = field(
+        default_factory=lambda: {"bert": "bert-base-uncased"}
+    )
     svd_ranks: List[int] = field(default_factory=lambda: [8, 16, 32])
     datasets: List[DatasetConfig] = field(default_factory=list)
     min_samples: int = 10

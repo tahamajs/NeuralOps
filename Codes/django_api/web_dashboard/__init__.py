@@ -1,1 +1,1 @@
-default_app_config = 'web_dashboard.apps.WebDashboardConfig'
+default_app_config = "web_dashboard.apps.WebDashboardConfig"

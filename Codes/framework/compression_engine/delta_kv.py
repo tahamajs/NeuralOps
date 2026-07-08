@@ -13,7 +13,7 @@ Registered as 'delta_kv'.
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class DeltaKVStore:
@@ -21,8 +21,10 @@ class DeltaKVStore:
     Maintains a reference key‑value store and compresses new K/V tensors
     by storing only the residuals relative to the closest historical references.
     """
-    def __init__(self, max_refs: int = 128, topk: int = 4,
-                 compression_ratio: float = 0.29):
+
+    def __init__(
+        self, max_refs: int = 128, topk: int = 4, compression_ratio: float = 0.29
+    ):
         self.max_refs = max_refs
         self.topk = topk
         self.compression_ratio = compression_ratio
@@ -35,7 +37,7 @@ class DeltaKVStore:
         B, H, N, D = k.shape
         if B == 0:
             return
-        ks = k[0]   # (H, N, D)
+        ks = k[0]  # (H, N, D)
         vs = v[0]
         if self.ref_k is None:
             self.ref_k = ks
@@ -45,8 +47,8 @@ class DeltaKVStore:
             self.ref_v = torch.cat([self.ref_v, vs], dim=1)
         # Truncate to max_refs
         if self.ref_k.size(1) > self.max_refs:
-            self.ref_k = self.ref_k[:, -self.max_refs:, :]
-            self.ref_v = self.ref_v[:, -self.max_refs:, :]
+            self.ref_k = self.ref_k[:, -self.max_refs :, :]
+            self.ref_v = self.ref_v[:, -self.max_refs :, :]
 
     @torch.no_grad()
     def compress(self, k: torch.Tensor, v: torch.Tensor):
@@ -62,14 +64,12 @@ class DeltaKVStore:
 
         # Compute similarities between current K and reference K
         sim = torch.matmul(k, self.ref_k.transpose(-2, -1))  # (B, H, N, C)
-        _, idx = sim.topk(tk, dim=-1)                         # (B, H, N, tk)
+        _, idx = sim.topk(tk, dim=-1)  # (B, H, N, tk)
 
         # Gather reference vectors
         idx_expand = idx.unsqueeze(-1).expand(-1, -1, -1, -1, D)
-        ref_k_expanded = (self.ref_k.unsqueeze(0).unsqueeze(2)
-                          .expand(B, H, N, -1, -1))
-        ref_v_expanded = (self.ref_v.unsqueeze(0).unsqueeze(2)
-                          .expand(B, H, N, -1, -1))
+        ref_k_expanded = self.ref_k.unsqueeze(0).unsqueeze(2).expand(B, H, N, -1, -1)
+        ref_v_expanded = self.ref_v.unsqueeze(0).unsqueeze(2).expand(B, H, N, -1, -1)
 
         rk = ref_k_expanded.gather(3, idx_expand).mean(dim=3)
         rv = ref_v_expanded.gather(3, idx_expand).mean(dim=3)
@@ -79,14 +79,16 @@ class DeltaKVStore:
         v_residual = v - rv
 
         # Keep only significant residuals (L2 norm > threshold)
-        k_keep_mask = k_residual.norm(dim=-1) > 1e-3   # (B, H, N)
+        k_keep_mask = k_residual.norm(dim=-1) > 1e-3  # (B, H, N)
         v_keep_mask = v_residual.norm(dim=-1) > 1e-3
 
         # Apply masks: zero out negligible residuals
-        k_compressed = torch.where(k_keep_mask.unsqueeze(-1), k_residual,
-                                   torch.zeros_like(k_residual))
-        v_compressed = torch.where(v_keep_mask.unsqueeze(-1), v_residual,
-                                   torch.zeros_like(v_residual))
+        k_compressed = torch.where(
+            k_keep_mask.unsqueeze(-1), k_residual, torch.zeros_like(k_residual)
+        )
+        v_compressed = torch.where(
+            v_keep_mask.unsqueeze(-1), v_residual, torch.zeros_like(v_residual)
+        )
 
         return k_compressed, v_compressed
 
@@ -102,6 +104,7 @@ class DeltaKVCompressor(BaseCompressor):
         rank: rank of the reference (low‑rank) component (default 16).
         sparsity: fraction of residual entries to retain (default 0.29).
     """
+
     def __init__(self, model, rank=16, sparsity=0.29, **kwargs):
         super().__init__(model, name="delta_kv", **kwargs)
         self.rank = rank
@@ -133,13 +136,12 @@ class DeltaKVCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
 
 
 @COMPRESSOR_REGISTRY.register("delta_kv")
 def delta_kv_factory(model, comp_config):
-    rank = getattr(comp_config, 'delta_kv_rank', 16)
-    sparsity = getattr(comp_config, 'delta_kv_sparsity', 0.29)
+    rank = getattr(comp_config, "delta_kv_rank", 16)
+    sparsity = getattr(comp_config, "delta_kv_sparsity", 0.29)
     compressor = DeltaKVCompressor(model, rank=rank, sparsity=sparsity)
     compressed_model, _ = compressor.compress()
     return compressed_model

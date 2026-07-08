@@ -1,8 +1,11 @@
 """HuggingFace Trainer callback for automatic metric logging."""
 
-from transformers.trainer_callback import TrainerCallback
-from .tracker import MetricsTracker
 import logging
+
+from transformers.trainer_callback import TrainerCallback
+
+from .tracker import MetricsTracker
+
 
 class LoggingCallback(TrainerCallback):
     """
@@ -26,9 +29,12 @@ class LoggingCallback(TrainerCallback):
             eval_loss = logs.get("eval_loss", None)
             lr = logs.get("learning_rate", None)
             msg = f"Step {step}: "
-            if loss is not None: msg += f"loss={loss:.4f} "
-            if eval_loss is not None: msg += f"eval_loss={eval_loss:.4f} "
-            if lr is not None: msg += f"lr={lr:.2e}"
+            if loss is not None:
+                msg += f"loss={loss:.4f} "
+            if eval_loss is not None:
+                msg += f"eval_loss={eval_loss:.4f} "
+            if lr is not None:
+                msg += f"lr={lr:.2e}"
             self.logger.info(msg)
 
     def on_evaluate(self, args, state, control, metrics=None, **kwargs):

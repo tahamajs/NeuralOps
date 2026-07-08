@@ -1,13 +1,17 @@
 """
 Mixout: Regularisation by mixing weights with a frozen copy.
 """
+
+import logging
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import logging
+
 from .registry import register_method
 
 logger = logging.getLogger(__name__)
+
 
 class MixoutLinear(nn.Module):
     def __init__(self, linear: nn.Linear, p: float):
@@ -33,7 +37,10 @@ class MixoutLinear(nn.Module):
             return F.linear(x, mixed_weight, mixed_bias)
         return F.linear(x, self.weight, self.bias)
 
-def replace_linears_with_mixout(model: nn.Module, p: float, skip_classifier: bool = True):
+
+def replace_linears_with_mixout(
+    model: nn.Module, p: float, skip_classifier: bool = True
+):
     for name, module in list(model.named_children()):
         if skip_classifier and "classifier" in name:
             continue
@@ -41,6 +48,7 @@ def replace_linears_with_mixout(model: nn.Module, p: float, skip_classifier: boo
             setattr(model, name, MixoutLinear(module, p))
         else:
             replace_linears_with_mixout(module, p, skip_classifier)
+
 
 @register_method("mixout")
 def apply_mixout(model, config):

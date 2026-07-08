@@ -1,5 +1,7 @@
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def track(run_id, run_dir, metrics, params, cfg):
     try:

@@ -1,13 +1,23 @@
 """OATS: Outlier-Aware Training Sparsification. Registered as 'oats'."""
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class OATSCompressor(BaseCompressor):
-    def __init__(self, model, tokenizer, sparsity=0.5, rank_ratio=0.2, num_iters=5, device="cuda", **kwargs):
+    def __init__(
+        self,
+        model,
+        tokenizer,
+        sparsity=0.5,
+        rank_ratio=0.2,
+        num_iters=5,
+        device="cuda",
+        **kwargs,
+    ):
         super().__init__(model, name="oats", **kwargs)
         self.tokenizer = tokenizer
         self.sparsity = sparsity
@@ -44,10 +54,14 @@ class OATSCompressor(BaseCompressor):
         return W_compressed.to(W.device)
 
     def compress(self):
-        print(f"✂️ Applying OATS (sparsity={self.sparsity}, rank_ratio={self.rank_ratio})...")
+        print(
+            f"✂️ Applying OATS (sparsity={self.sparsity}, rank_ratio={self.rank_ratio})..."
+        )
         self.model.eval()
         calib_texts = ["The quick brown fox jumps over the lazy dog."] * 100
-        inputs = self.tokenizer(calib_texts, return_tensors="pt", padding=True, truncation=True)
+        inputs = self.tokenizer(
+            calib_texts, return_tensors="pt", padding=True, truncation=True
+        )
         input_ids = inputs.input_ids.to(self.device)
         with torch.no_grad():
             embeds = self.model.get_input_embeddings()(input_ids)
@@ -55,26 +69,28 @@ class OATSCompressor(BaseCompressor):
         M = self._compute_second_moment(flat_inputs)
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and 'classifier' not in name:
+            if isinstance(module, nn.Linear) and "classifier" not in name:
                 W = module.weight.data
-                W_comp = self._oats_decompose(W, M, self.sparsity, self.rank_ratio, self.num_iters)
+                W_comp = self._oats_decompose(
+                    W, M, self.sparsity, self.rank_ratio, self.num_iters
+                )
                 module.weight.data = W_comp
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
 
 
 @COMPRESSOR_REGISTRY.register("oats")
 def oats_compressor_factory(model, comp_config):
-    sparsity = getattr(comp_config, 'oats_sparsity', 0.5)
-    rank_ratio = getattr(comp_config, 'oats_rank_ratio', 0.2)
-    num_iters = getattr(comp_config, 'oats_num_iters', 5)
+    sparsity = getattr(comp_config, "oats_sparsity", 0.5)
+    rank_ratio = getattr(comp_config, "oats_rank_ratio", 0.2)
+    num_iters = getattr(comp_config, "oats_num_iters", 5)
     # Note: tokenizer must be attached to model or passed separately
     # For the test, assume model.tokenizer is set
-    tokenizer = getattr(model, 'tokenizer', None)
+    tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:
-        raise ValueError("OATS compressor requires tokenizer attached as model.tokenizer")
+        raise ValueError(
+            "OATS compressor requires tokenizer attached as model.tokenizer"
+        )
     compressor = OATSCompressor(model, tokenizer, sparsity, rank_ratio, num_iters)
     compressed_model, _ = compressor.compress()
     return compressed_model
-

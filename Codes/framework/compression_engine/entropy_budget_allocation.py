@@ -6,7 +6,7 @@ Registered as 'entropy_budget'.
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class EntropyBudgetCompressor(BaseCompressor):
@@ -18,6 +18,7 @@ class EntropyBudgetCompressor(BaseCompressor):
     def collect_covariances(self):
         activations = {}
         hooks = []
+
         def hook_fn(module, input, output, name):
             x = input[0].detach()
             x_flat = x.reshape(-1, x.shape[-1]).float()
@@ -29,11 +30,18 @@ class EntropyBudgetCompressor(BaseCompressor):
 
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                hooks.append(module.register_forward_hook(lambda m, i, o, n=name: hook_fn(m, i, o, n)))
+                hooks.append(
+                    module.register_forward_hook(
+                        lambda m, i, o, n=name: hook_fn(m, i, o, n)
+                    )
+                )
 
         with torch.no_grad():
             for batch in self.calibration_loader:
-                batch = {k: v.to(next(self.model.parameters()).device) for k, v in batch.items()}
+                batch = {
+                    k: v.to(next(self.model.parameters()).device)
+                    for k, v in batch.items()
+                }
                 self.model(**batch)
         for h in hooks:
             h.remove()
@@ -52,7 +60,7 @@ class EntropyBudgetCompressor(BaseCompressor):
                 for i, s in enumerate(S):
                     components.append((name, i, s.item(), entropy.item()))
 
-        components.sort(key=lambda x: x[2]**2 / x[3], reverse=True)
+        components.sort(key=lambda x: x[2] ** 2 / x[3], reverse=True)
         total_components = len(components)
         keep_count = max(1, int(total_components * self.total_budget_ratio))
         keep_set = set((c[0], c[1]) for c in components[:keep_count])
@@ -69,7 +77,7 @@ class EntropyBudgetCompressor(BaseCompressor):
                 module.weight.data = W_approx.to(dtype=module.weight.dtype)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
+
 
 @COMPRESSOR_REGISTRY.register("entropy_budget")
 def entropy_budget_factory(model, comp_config):

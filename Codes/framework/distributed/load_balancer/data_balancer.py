@@ -10,10 +10,10 @@ References:
   - FastSpeed heterogeneous GPU data partitioning
 """
 
-import torch
-from torch.utils.data import DataLoader, Sampler, Dataset
+from typing import Callable, Iterator, List, Optional
+
 import numpy as np
-from typing import Iterator, List, Optional, Callable
+from torch.utils.data import DataLoader, Dataset, Sampler
 
 
 class WorkloadSampler(Sampler):
@@ -50,8 +50,9 @@ class WorkloadSampler(Sampler):
         self.epoch = 0
 
         # Pre‑compute cost for every sample
-        self.costs = np.array([self.cost_fn(i) for i in range(len(dataset))],
-                              dtype=np.float64)
+        self.costs = np.array(
+            [self.cost_fn(i) for i in range(len(dataset))], dtype=np.float64
+        )
         self._build_batches()
 
     def _build_batches(self):
@@ -78,7 +79,9 @@ class WorkloadSampler(Sampler):
             current_batch.append(idx)
             current_cost += c
 
-        if current_batch and (not self.drop_last or len(current_batch) == self.batch_size):
+        if current_batch and (
+            not self.drop_last or len(current_batch) == self.batch_size
+        ):
             batches.append(current_batch)
 
         self.batches = batches

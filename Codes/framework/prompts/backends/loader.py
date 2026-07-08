@@ -1,11 +1,15 @@
 """Hot‑loading prompt loader for dynamic reload without code changes."""
 
-import threading, time, logging
-from typing import Optional, Union
+import logging
+import threading
+import time
+from typing import Union
+
 from ..registry import PromptRegistry
-from ..templates import PromptTemplate, ChatPromptTemplate
+from ..templates import ChatPromptTemplate, PromptTemplate
 
 logger = logging.getLogger(__name__)
+
 
 class PromptLoader:
     """
@@ -16,8 +20,12 @@ class PromptLoader:
         prompt = loader.get("customer_support", alias="production")
     """
 
-    def __init__(self, registry: PromptRegistry,
-                 hot_load: bool = False, refresh_interval: int = 60):
+    def __init__(
+        self,
+        registry: PromptRegistry,
+        hot_load: bool = False,
+        refresh_interval: int = 60,
+    ):
         self.registry = registry
         self.hot_load = hot_load
         self.refresh_interval = refresh_interval
@@ -27,8 +35,9 @@ class PromptLoader:
             self._thread = threading.Thread(target=self._refresh_loop, daemon=True)
             self._thread.start()
 
-    def get(self, name: str, version: int = None,
-            alias: str = "production") -> Union[PromptTemplate, ChatPromptTemplate]:
+    def get(
+        self, name: str, version: int = None, alias: str = "production"
+    ) -> Union[PromptTemplate, ChatPromptTemplate]:
         return self.registry.load(name, version=version, alias=alias)
 
     def _refresh_loop(self):

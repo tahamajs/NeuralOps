@@ -3,13 +3,13 @@ RemoteCoordinator – runs inside Django.  Dispatches training jobs to
 remote worker agents that have registered themselves.
 """
 
-import json
+import logging
 import threading
-import requests
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime
-import logging
+from typing import Any, Dict, List, Optional
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -17,15 +17,16 @@ logger = logging.getLogger(__name__)
 @dataclass
 class RemoteWorker:
     """Information about a registered remote GPU machine."""
+
     worker_id: str
-    host: str                 # public IP or hostname
-    port: int                 # agent API port
-    auth_token: str           # shared secret
+    host: str  # public IP or hostname
+    port: int  # agent API port
+    auth_token: str  # shared secret
     num_gpus: int
-    status: str = "idle"      # idle | busy | offline
+    status: str = "idle"  # idle | busy | offline
     current_job: Optional[str] = None
     last_heartbeat: str = field(default_factory=lambda: datetime.now().isoformat())
-    metadata: Dict[str, Any] = field(default_factory=dict)   # country, GPU model, etc.
+    metadata: Dict[str, Any] = field(default_factory=dict)  # country, GPU model, etc.
 
 
 class RemoteCoordinator:
@@ -45,18 +46,33 @@ class RemoteCoordinator:
         self._lock = threading.Lock()
         self._workers: Dict[str, RemoteWorker] = {}
 
-    def register_worker(self, worker_id: str, host: str, port: int,
-                        auth_token: str, num_gpus: int = 1,
-                        metadata: Dict = None) -> RemoteWorker:
+    def register_worker(
+        self,
+        worker_id: str,
+        host: str,
+        port: int,
+        auth_token: str,
+        num_gpus: int = 1,
+        metadata: Dict = None,
+    ) -> RemoteWorker:
         """Called when a new remote agent comes online."""
         with self._lock:
             worker = RemoteWorker(
-                worker_id=worker_id, host=host, port=port,
-                auth_token=auth_token, num_gpus=num_gpus,
+                worker_id=worker_id,
+                host=host,
+                port=port,
+                auth_token=auth_token,
+                num_gpus=num_gpus,
                 metadata=metadata or {},
             )
             self._workers[worker_id] = worker
-            logger.info("Worker registered: %s (%s:%d, %d GPUs)", worker_id, host, port, num_gpus)
+            logger.info(
+                "Worker registered: %s (%s:%d, %d GPUs)",
+                worker_id,
+                host,
+                port,
+                num_gpus,
+            )
             return worker
 
     def heartbeat(self, worker_id: str) -> None:
@@ -102,8 +118,9 @@ class RemoteCoordinator:
                 return selected
         return None
 
-    def launch_job(self, config: Dict[str, Any],
-                   num_gpus_needed: int = 2) -> Optional[str]:
+    def launch_job(
+        self, config: Dict[str, Any], num_gpus_needed: int = 2
+    ) -> Optional[str]:
         """
         Find suitable workers and instruct them to form a training ring.
 
@@ -111,8 +128,11 @@ class RemoteCoordinator:
         """
         workers = self.select_workers(num_gpus_needed)
         if workers is None:
-            logger.warning("Not enough GPUs. Need %d, available %d",
-                           num_gpus_needed, self.total_available_gpus)
+            logger.warning(
+                "Not enough GPUs. Need %d, available %d",
+                num_gpus_needed,
+                self.total_available_gpus,
+            )
             return None
 
         # Build the rendezvous info so all workers can find each other
@@ -130,16 +150,20 @@ class RemoteCoordinator:
 
         # Send launch command to each worker (fire & forget)
         for idx, w in enumerate(workers):
-            self._send_launch_command(
-                w, job_id, config, idx, len(workers), worker_list
-            )
+            self._send_launch_command(w, job_id, config, idx, len(workers), worker_list)
 
         logger.info("Job %s launched on %d workers", job_id, len(workers))
         return job_id
 
-    def _send_launch_command(self, worker: RemoteWorker, job_id: str,
-                             config: Dict, rank: int, world_size: int,
-                             all_workers: List[Dict]) -> None:
+    def _send_launch_command(
+        self,
+        worker: RemoteWorker,
+        job_id: str,
+        config: Dict,
+        rank: int,
+        world_size: int,
+        all_workers: List[Dict],
+    ) -> None:
         """POST to the worker agent to start training."""
         url = f"http://{worker.host}:{worker.port}/launch"
         payload = {

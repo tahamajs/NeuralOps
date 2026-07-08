@@ -1,5 +1,8 @@
-import logging, os
+import logging
+import os
+
 logger = logging.getLogger(__name__)
+
 
 def push(run_id, run_dir, cfg):
     try:

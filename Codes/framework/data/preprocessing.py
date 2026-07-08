@@ -1,7 +1,10 @@
-def preprocess_function(tokenizer, task_name, max_seq_length, sent1_key, sent2_key, is_regression):
+def preprocess_function(
+    tokenizer, task_name, max_seq_length, sent1_key, sent2_key, is_regression
+):
     """
     Returns a preprocessing function for GLUE tasks that works with batched=True.
     """
+
     def _preprocess(examples):
         # Extract the text(s) - each is a list of strings
         texts = (examples[sent1_key],)
@@ -22,4 +25,5 @@ def preprocess_function(tokenizer, task_name, max_seq_length, sent1_key, sent2_k
         else:
             tokenized["labels"] = [int(x) for x in examples["label"]]
         return tokenized
+
     return _preprocess

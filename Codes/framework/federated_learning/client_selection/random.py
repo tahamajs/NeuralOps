@@ -1,7 +1,9 @@
 """Random client selection."""
 
 import random
-from .base import BaseSelector, SELECTOR_REGISTRY
+
+from .base import SELECTOR_REGISTRY, BaseSelector
+
 
 @SELECTOR_REGISTRY.register("random")
 class RandomSelector(BaseSelector):

@@ -44,11 +44,11 @@ What was *removed* and why:
 All that remains is a clean, factorised linear layer and standard attention.
 """
 
-import math
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
 
 
 class FactorisedLinear(nn.Module):
@@ -58,6 +58,7 @@ class FactorisedLinear(nn.Module):
     Rank `r` is chosen automatically from the pretrained weight matrix to
     preserve `energy` fraction of the singular‑value energy.
     """
+
     def __init__(
         self,
         pretrained_weight: torch.Tensor,
@@ -68,13 +69,13 @@ class FactorisedLinear(nn.Module):
         out_dim, in_dim = pretrained_weight.shape
         with torch.no_grad():
             U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
-            total = (S ** 2).sum()
-            cum = torch.cumsum(S ** 2, dim=0) / total
+            total = (S**2).sum()
+            cum = torch.cumsum(S**2, dim=0) / total
             rank = int(torch.searchsorted(cum, energy).item()) + 1
-            rank = max(1, min(rank, min(out_dim, in_dim), 64))   # cap for sanity
+            rank = max(1, min(rank, min(out_dim, in_dim), 64))  # cap for sanity
             self.rank = rank
-            A = U[:, :rank] * S[:rank].unsqueeze(0)   # (out, r)
-            B = Vt[:rank, :]                          # (r, in)
+            A = U[:, :rank] * S[:rank].unsqueeze(0)  # (out, r)
+            B = Vt[:rank, :]  # (r, in)
 
         self.down = nn.Linear(in_dim, rank, bias=False)
         self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
@@ -95,12 +96,13 @@ class MinimalSVDAttention(nn.Module):
     Replaces q_lin, k_lin, v_lin, out_lin with FactorisedLinear layers
     initialised from the pretrained weights.
     """
+
     def __init__(
         self,
-        model_config,                 # e.g. DistilBertConfig
-        energy: float = 0.95,         # fraction of singular‑value energy to keep
+        model_config,  # e.g. DistilBertConfig
+        energy: float = 0.95,  # fraction of singular‑value energy to keep
         dropout: float = 0.1,
-        pretrained_attn=None,         # original DistilBERT attention module
+        pretrained_attn=None,  # original DistilBERT attention module
     ):
         super().__init__()
         self.num_heads = model_config.num_attention_heads
@@ -147,21 +149,25 @@ class MinimalSVDAttention(nn.Module):
         H, D = self.num_heads, self.head_dim
 
         # --- Factorised projections ---
-        Q = self.q_proj(hidden_states)   # (B, N, all_head)
+        Q = self.q_proj(hidden_states)  # (B, N, all_head)
         K = self.k_proj(hidden_states)
         V = self.v_proj(hidden_states)
 
         # --- Reshape to multi‑head ---
-        Q = Q.view(B, N, H, D).transpose(1, 2)   # (B, H, N, D)
+        Q = Q.view(B, N, H, D).transpose(1, 2)  # (B, H, N, D)
         K = K.view(B, N, H, D).transpose(1, 2)
         V = V.view(B, N, H, D).transpose(1, 2)
 
         # --- Standard scaled dot‑product attention ---
-        scale = D ** -0.5
+        scale = D**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         # --- Mask handling (robust to 2D/3D/4D masks) ---
-        mask = attention_mask if attention_mask is not None else kwargs.get('attn_mask', None)
+        mask = (
+            attention_mask
+            if attention_mask is not None
+            else kwargs.get("attn_mask", None)
+        )
         if mask is not None:
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
                 token_valid = mask[:, 0, 0, :] > -1e9
@@ -181,7 +187,7 @@ class MinimalSVDAttention(nn.Module):
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)
 
-        context = torch.matmul(attn_weights, V)                     # (B, H, N, D)
+        context = torch.matmul(attn_weights, V)  # (B, H, N, D)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
 
         # --- Factorised output projection ---

@@ -1,23 +1,21 @@
 """
 ComparisonEngine – compares multiple runs, methods, or models.
 """
-import numpy as np
-import pandas as pd
-from typing import Dict, List, Optional, Union
-from dataclasses import dataclass, field
-from pathlib import Path
+
 import json
 import logging
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, List, Optional, Union
 
-from .statistical_tests import (
-    anova_test, pairwise_t_tests, mann_whitney_test,
-    nemenyi_test, dunn_test,
-)
+import numpy as np
+import pandas as pd
+
 from .leaderboard import generate_leaderboard
-from .plotting import (
-    plot_critical_difference_diagram,
-    plot_pairwise_comparison_heatmap,
-)
+from .plotting import (plot_critical_difference_diagram,
+                       plot_pairwise_comparison_heatmap)
+from .statistical_tests import (anova_test, dunn_test, mann_whitney_test,
+                                nemenyi_test, pairwise_t_tests)
 
 logger = logging.getLogger(__name__)
 
@@ -97,14 +95,22 @@ class ComparisonEngine:
             mean = np.mean(scores)
             std = np.std(scores, ddof=1) if n > 1 else 0.0
             ci = 1.96 * std / np.sqrt(n) if n > 1 else 0.0
-            stats_rows.append({
-                "group": name, "n": n, "mean": mean,
-                "std": std, "ci95": ci,
-            })
+            stats_rows.append(
+                {
+                    "group": name,
+                    "n": n,
+                    "mean": mean,
+                    "std": std,
+                    "ci95": ci,
+                }
+            )
         group_stats = pd.DataFrame(stats_rows).sort_values("mean", ascending=False)
 
         anova_result = anova_test(self._groups)
-        is_significant = anova_result is not None and anova_result.get("p_value", 1) < significance_level
+        is_significant = (
+            anova_result is not None
+            and anova_result.get("p_value", 1) < significance_level
+        )
 
         ttest_df = pairwise_t_tests(self._groups, alpha=significance_level)
         mw_df = mann_whitney_test(self._groups, alpha=significance_level)
@@ -133,14 +139,16 @@ class ComparisonEngine:
             out.mkdir(parents=True, exist_ok=True)
             try:
                 result.cd_diagram_path = plot_critical_difference_diagram(
-                    self._groups, alpha=significance_level,
+                    self._groups,
+                    alpha=significance_level,
                     output_path=str(out / "critical_difference.png"),
                 )
             except Exception as e:
                 result.notes.append(f"CD diagram failed: {e}")
             try:
                 result.heatmap_path = plot_pairwise_comparison_heatmap(
-                    self._groups, metric=metric,
+                    self._groups,
+                    metric=metric,
                     output_path=str(out / "pairwise_heatmap.png"),
                 )
             except Exception as e:

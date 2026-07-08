@@ -1,21 +1,23 @@
 import uuid
-from django.db import models
+
 from django.conf import settings
+from django.db import models
 
 
 class PaperGraphCache(models.Model):
     """
     Cached citation relationships for fast graph traversal.
     """
+
     paper = models.OneToOneField(
-        'agents.ResearchPaper',
+        "agents.ResearchPaper",
         on_delete=models.CASCADE,
-        related_name='citation_graph_cache'
+        related_name="citation_graph_cache",
     )
     # JSON fields storing lists of paper IDs
-    citations = models.JSONField(default=list)      # papers this paper cites
-    references = models.JSONField(default=list)     # papers that cite this paper
-    co_cited = models.JSONField(default=list)       # papers co-cited with this one
+    citations = models.JSONField(default=list)  # papers this paper cites
+    references = models.JSONField(default=list)  # papers that cite this paper
+    co_cited = models.JSONField(default=list)  # papers co-cited with this one
     embedding = models.JSONField(default=list, null=True, blank=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -27,24 +29,19 @@ class CitationPath(models.Model):
     """
     A saved citation path between two papers.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     source_paper = models.ForeignKey(
-        'agents.ResearchPaper',
-        on_delete=models.CASCADE,
-        related_name='paths_from'
+        "agents.ResearchPaper", on_delete=models.CASCADE, related_name="paths_from"
     )
     target_paper = models.ForeignKey(
-        'agents.ResearchPaper',
-        on_delete=models.CASCADE,
-        related_name='paths_to'
+        "agents.ResearchPaper", on_delete=models.CASCADE, related_name="paths_to"
     )
     # JSON list of paper IDs forming the path
     path = models.JSONField(default=list)
     length = models.PositiveIntegerField(default=0)
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True, blank=True
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -56,36 +53,35 @@ class PaperRecommendation(models.Model):
     """
     A paper recommended to a user.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='paper_recommendations'
+        related_name="paper_recommendations",
     )
     paper = models.ForeignKey(
-        'agents.ResearchPaper',
-        on_delete=models.CASCADE,
-        related_name='recommendations'
+        "agents.ResearchPaper", on_delete=models.CASCADE, related_name="recommendations"
     )
     score = models.FloatField(default=0.0)
     reason = models.TextField(blank=True)
     source_type = models.CharField(
         max_length=30,
         choices=[
-            ('citation', 'Citation-Based'),
-            ('semantic', 'Semantic Similarity'),
-            ('co_author', 'Co-Author Network'),
-            ('topic', 'Topic Modelling'),
+            ("citation", "Citation-Based"),
+            ("semantic", "Semantic Similarity"),
+            ("co_author", "Co-Author Network"),
+            ("topic", "Topic Modelling"),
         ],
-        default='citation'
+        default="citation",
     )
     is_dismissed = models.BooleanField(default=False)
     is_saved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = [['user', 'paper', 'source_type']]
-        ordering = ['-score', '-created_at']
+        unique_together = [["user", "paper", "source_type"]]
+        ordering = ["-score", "-created_at"]
 
     def __str__(self):
         return f"Recommend {self.paper.title[:50]} to {self.user.username}"
@@ -95,11 +91,12 @@ class ResearchLandscape(models.Model):
     """
     A saved research landscape (cluster/topic map) for a user.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='research_landscapes'
+        related_name="research_landscapes",
     )
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -109,7 +106,7 @@ class ResearchLandscape(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"Landscape: {self.name} by {self.user.username}"
@@ -119,24 +116,21 @@ class PaperFeedItem(models.Model):
     """
     A feed item for the continuous paper feed (Spotify-style).
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='paper_feed'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="paper_feed"
     )
     paper = models.ForeignKey(
-        'agents.ResearchPaper',
-        on_delete=models.CASCADE,
-        related_name='feed_items'
+        "agents.ResearchPaper", on_delete=models.CASCADE, related_name="feed_items"
     )
     seen = models.BooleanField(default=False)
     clicked = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = [['user', 'paper']]
-        ordering = ['-created_at']
+        unique_together = [["user", "paper"]]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"Feed: {self.paper.title[:50]} → {self.user.username}"

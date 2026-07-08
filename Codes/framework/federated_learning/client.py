@@ -1,10 +1,13 @@
 """FL Client – local training on client data."""
 
+from typing import Dict, Optional
+
+import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-import numpy as np
-from typing import Dict, Any, Optional
+
 from .config import FLConfig
+
 
 class FLClientTrainer:
     """Handles local training on client data."""
@@ -35,7 +38,9 @@ class FLClientTrainer:
         Returns:
             Trained model after local epochs
         """
-        optimizer = torch.optim.AdamW(model.parameters(), lr=self.config.server_learning_rate)
+        optimizer = torch.optim.AdamW(
+            model.parameters(), lr=self.config.server_learning_rate
+        )
         model.train()
 
         for epoch in range(self.config.local_epochs):
@@ -46,7 +51,10 @@ class FLClientTrainer:
                 loss = torch.nn.functional.cross_entropy(outputs, labels)
 
                 # FedProx proximal term
-                if self.config.aggregation.value == "fedprox" and global_model is not None:
+                if (
+                    self.config.aggregation.value == "fedprox"
+                    and global_model is not None
+                ):
                     prox_loss = 0.0
                     for p, gp in zip(model.parameters(), global_model.parameters()):
                         prox_loss += torch.sum((p - gp.detach()) ** 2)

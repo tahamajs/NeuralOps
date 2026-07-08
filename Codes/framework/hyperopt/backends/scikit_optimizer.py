@@ -1,10 +1,12 @@
 """Scikit‑optimize (skopt) backend – Gaussian Processes, Random Forests."""
 
 import logging
-from typing import Callable, Dict, Any, Tuple
-from skopt import gp_minimize, forest_minimize, dummy_minimize
-from skopt.space import Real, Integer, Categorical
-from ..base import BaseOptimizer, HPO_REGISTRY
+from typing import Any, Callable, Dict, Tuple
+
+from skopt import dummy_minimize, forest_minimize, gp_minimize
+from skopt.space import Categorical, Integer, Real
+
+from ..base import HPO_REGISTRY, BaseOptimizer
 from ..config import HPOConfig
 
 logger = logging.getLogger(__name__)
@@ -15,7 +17,7 @@ class ScikitOptimizer(BaseOptimizer):
     """Scikit‑optimize hyperparameter optimization."""
 
     METHOD_MAP = {
-        "tpe": "ET",         # Extra Trees proxy
+        "tpe": "ET",  # Extra Trees proxy
         "bayesian": "GP",
         "random": "dummy",
     }
@@ -33,7 +35,14 @@ class ScikitOptimizer(BaseOptimizer):
         for name, spec in self.config.search_space.items():
             names.append(name)
             if spec["type"] == "float":
-                dimensions.append(Real(spec["low"], spec["high"], prior='log-uniform' if spec.get("log") else 'uniform', name=name))
+                dimensions.append(
+                    Real(
+                        spec["low"],
+                        spec["high"],
+                        prior="log-uniform" if spec.get("log") else "uniform",
+                        name=name,
+                    )
+                )
             elif spec["type"] == "int":
                 dimensions.append(Integer(spec["low"], spec["high"], name=name))
             elif spec["type"] == "categorical":
@@ -52,8 +61,12 @@ class ScikitOptimizer(BaseOptimizer):
         else:
             opt_fn = dummy_minimize
 
-        res = opt_fn(wrapped, dimensions, n_calls=self.config.num_trials,
-                     random_state=self.config.seed)
+        res = opt_fn(
+            wrapped,
+            dimensions,
+            n_calls=self.config.num_trials,
+            random_state=self.config.seed,
+        )
         best_params = dict(zip(names, res.x))
         best_score = -res.fun if self.config.direction == "maximize" else res.fun
         logger.info("SKopt finished: best score=%f", best_score)

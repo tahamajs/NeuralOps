@@ -4,12 +4,13 @@ Uses leverage score sampling for column/row selection.
 Registered as 'cur'.
 """
 
+from typing import Any, Dict, Optional, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-from typing import Dict, Any, Tuple, Optional
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class CURLinear(nn.Module):
@@ -19,8 +20,16 @@ class CURLinear(nn.Module):
     - R: selected rows of W (size r × in)
     - U: core matrix of size r × r computed via pseudo‑inverses.
     """
-    def __init__(self, in_features: int, out_features: int, rank: int, bias: Optional[torch.Tensor] = None,
-                 method: str = 'leverage', device=None):
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: Optional[torch.Tensor] = None,
+        method: str = "leverage",
+        device=None,
+    ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -29,26 +38,26 @@ class CURLinear(nn.Module):
         self.device = device
 
         # These buffers will be set later by the compressor
-        self.register_buffer('C', torch.empty(out_features, rank))
-        self.register_buffer('U', torch.empty(rank, rank))
-        self.register_buffer('R', torch.empty(rank, in_features))
+        self.register_buffer("C", torch.empty(out_features, rank))
+        self.register_buffer("U", torch.empty(rank, rank))
+        self.register_buffer("R", torch.empty(rank, in_features))
         if bias is not None:
             self.bias = nn.Parameter(bias.clone())
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Reconstruct approximated weight: W_approx = C @ U @ R
         # Compute efficiently: (x @ R.T) @ U.T @ C.T
-        xR = x @ self.R.T                     # (B, N, rank)
-        xRU = xR @ self.U.T                   # (B, N, rank)
-        out = xRU @ self.C.T                  # (B, N, out_features)
+        xR = x @ self.R.T  # (B, N, rank)
+        xRU = xR @ self.U.T  # (B, N, rank)
+        out = xRU @ self.C.T  # (B, N, out_features)
         if self.bias is not None:
             out = out + self.bias
         return out
 
     @classmethod
-    def from_linear(cls, linear: nn.Linear, rank: int, method: str = 'leverage'):
+    def from_linear(cls, linear: nn.Linear, rank: int, method: str = "leverage"):
         """Create a CURLinear from an existing nn.Linear using CUR decomposition."""
         device = linear.weight.device
         W = linear.weight.data.float().cpu().numpy()
@@ -56,7 +65,7 @@ class CURLinear(nn.Module):
         r = min(rank, min(out_dim, in_dim))
 
         # ---- Column selection (leverage scores or uniform) ----
-        if method == 'leverage':
+        if method == "leverage":
             col_norms = np.linalg.norm(W, axis=0)
             col_probs = col_norms / (col_norms.sum() + 1e-8)
         else:
@@ -64,23 +73,25 @@ class CURLinear(nn.Module):
         selected_cols = np.random.choice(in_dim, size=r, replace=False, p=col_probs)
 
         # ---- Row selection ----
-        if method == 'leverage':
+        if method == "leverage":
             row_norms = np.linalg.norm(W, axis=1)
             row_probs = row_norms / (row_norms.sum() + 1e-8)
         else:
             row_probs = np.ones(out_dim) / out_dim
         selected_rows = np.random.choice(out_dim, size=r, replace=False, p=row_probs)
 
-        C = W[:, selected_cols]                      # (out, r)
-        R = W[selected_rows, :]                      # (r, in)
+        C = W[:, selected_cols]  # (out, r)
+        R = W[selected_rows, :]  # (r, in)
 
         # Compute core matrix U = C⁺ @ W @ R⁺
-        C_pinv = np.linalg.pinv(C)                   # (r, out)
-        R_pinv = np.linalg.pinv(R)                   # (in, r)
-        U = C_pinv @ W @ R_pinv                      # (r, r)
+        C_pinv = np.linalg.pinv(C)  # (r, out)
+        R_pinv = np.linalg.pinv(R)  # (in, r)
+        U = C_pinv @ W @ R_pinv  # (r, r)
 
         # Create CURLinear and set buffers
-        cur_linear = cls(in_dim, out_dim, r, bias=linear.bias, method=method, device=device)
+        cur_linear = cls(
+            in_dim, out_dim, r, bias=linear.bias, method=method, device=device
+        )
         cur_linear.C.data = torch.tensor(C, dtype=torch.float32).to(device)
         cur_linear.U.data = torch.tensor(U, dtype=torch.float32).to(device)
         cur_linear.R.data = torch.tensor(R, dtype=torch.float32).to(device)
@@ -92,8 +103,15 @@ class CURCompressor(BaseCompressor):
     """
     Compressor that replaces eligible Linear layers with CURLinear.
     """
-    def __init__(self, model: nn.Module, rank: int = 64, method: str = 'leverage',
-                 target_names: Optional[list] = None, **kwargs):
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 64,
+        method: str = "leverage",
+        target_names: Optional[list] = None,
+        **kwargs,
+    ):
         """
         Args:
             model: The model to compress.
@@ -119,13 +137,13 @@ class CURCompressor(BaseCompressor):
             max_rank = min(module.in_features, module.out_features)
             r = min(self.rank, max_rank)
             if r >= max_rank:
-                continue   # no compression benefit
+                continue  # no compression benefit
 
             try:
                 cur_linear = CURLinear.from_linear(module, r, method=self.method)
                 # Replace in the model
                 parent = self._get_parent_module(self.model, name)
-                child_name = name.split('.')[-1]
+                child_name = name.split(".")[-1]
                 setattr(parent, child_name, cur_linear)
             except Exception as e:
                 print(f"  ⚠️ Failed to compress {name}: {e}")
@@ -135,7 +153,7 @@ class CURCompressor(BaseCompressor):
 
     @staticmethod
     def _get_parent_module(model: nn.Module, full_name: str):
-        parts = full_name.split('.')
+        parts = full_name.split(".")
         parent = model
         for part in parts[:-1]:
             parent = getattr(parent, part)
@@ -154,12 +172,11 @@ def cur_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
         cur_method (str, default 'leverage')
         cur_target_names (list, optional)
     """
-    rank = getattr(comp_config, 'cur_rank', 64)
-    method = getattr(comp_config, 'cur_method', 'leverage')
-    target_names = getattr(comp_config, 'cur_target_names', None)
-    compressor = CURCompressor(model, rank=rank, method=method, target_names=target_names)
+    rank = getattr(comp_config, "cur_rank", 64)
+    method = getattr(comp_config, "cur_method", "leverage")
+    target_names = getattr(comp_config, "cur_target_names", None)
+    compressor = CURCompressor(
+        model, rank=rank, method=method, target_names=target_names
+    )
     compressed_model, _ = compressor.compress()
     return compressed_model
-
-
-

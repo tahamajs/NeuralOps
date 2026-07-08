@@ -1,6 +1,7 @@
 """
 TPAttention: Tensor Product Attention with Factorised Query‑Key Projections.
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -57,7 +58,9 @@ class TPAttention(BaseAttention):
                 W = orig.weight.data  # (H*dh, D)
                 # Split into two equal halves? We'll just copy to proj1 and set proj2 to zero.
                 proj1.weight.data.zero_()
-                proj1.weight.data[:, :W.shape[1]] = W  # will fail if rank*H != hidden_size
+                proj1.weight.data[:, : W.shape[1]] = (
+                    W  # will fail if rank*H != hidden_size
+                )
                 # Actually, hidden_size = H*dh, and H*rank != H*dh generally.
                 # Better: initialise randomly. For zero-shot we rely on value/out only.
                 # Since TP is a structural change, full zero-shot is not achievable;
@@ -67,8 +70,14 @@ class TPAttention(BaseAttention):
             # The original biases are not used for Q/K because they are split;
             # we ignore them. This is a known limitation – TPA requires fine-tuning.
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ):
         B, L, D = hidden_states.shape
         H, r, hd = self.num_heads, self.rank, self.head_dim
 
@@ -79,17 +88,17 @@ class TPAttention(BaseAttention):
         v = self.v_proj(hidden_states).view(B, L, H, hd)
 
         # Tensor product: Q = q1 ⊗ q2
-        Q = torch.einsum('blhi,blhj->blhij', q1, q2).reshape(B, L, H, r * r)
-        K = torch.einsum('blhi,blhj->blhij', k1, k2).reshape(B, L, H, r * r)
+        Q = torch.einsum("blhi,blhj->blhij", q1, q2).reshape(B, L, H, r * r)
+        K = torch.einsum("blhi,blhj->blhij", k1, k2).reshape(B, L, H, r * r)
 
         # Reshape to (B, H, L, r*r) – transpose correctly
-        Q = Q.permute(0, 2, 1, 3)   # (B, H, L, r*r)
+        Q = Q.permute(0, 2, 1, 3)  # (B, H, L, r*r)
         K = K.permute(0, 2, 1, 3)
-        v = v.permute(0, 2, 1, 3)   # (B, H, L, hd)
+        v = v.permute(0, 2, 1, 3)  # (B, H, L, hd)
 
         # Scaled dot-product attention (scaling by sqrt(r) as in original)
-        scale = r ** -0.5
-        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale   # (B, H, L, L)
+        scale = r**-0.5
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # (B, H, L, L)
 
         # Mask handling
         if attention_mask is not None:
@@ -105,7 +114,7 @@ class TPAttention(BaseAttention):
         if head_mask is not None:
             attn = attn * head_mask
 
-        out = torch.matmul(attn, v)   # (B, H, L, hd)
+        out = torch.matmul(attn, v)  # (B, H, L, hd)
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         out = self.out_proj(out)
 
@@ -115,7 +124,7 @@ class TPAttention(BaseAttention):
 
 
 def inject_tpa(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    rank = getattr(comp_config, 'rank', 8)
+    rank = getattr(comp_config, "rank", 8)
     new_attn = TPAttention(config=model_config, rank=rank, pretrained_attn=old_attn)
     layer.attention = new_attn
     return new_attn

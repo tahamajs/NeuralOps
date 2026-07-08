@@ -1,24 +1,30 @@
 # framework/experiment/train.py
-import os
 import logging
-from transformers import TrainingArguments, DataCollatorWithPadding
-from framework.trainer.trainer import CompressionTrainer, get_compute_metrics
+import os
+
+from experiment_logging import LoggingCallback
 from framework.trainer.methods.rdrop_r3f import MethodTrainer
-from experiment_logging import MetricsTracker, LoggingCallback
-import torch
+from framework.trainer.trainer import CompressionTrainer, get_compute_metrics
+from transformers import DataCollatorWithPadding, TrainingArguments
+
 logger = logging.getLogger(__name__)
+
 
 def setup_trainer(model, tokenizer, dataset, config, tracker, logger):
     metric_map = {
         "cola": "eval_matthews_correlation",
         "stsb": "eval_pearson",
         "mrpc": "eval_f1",
-        "qqp": "eval_f1"
+        "qqp": "eval_f1",
     }
     metric_for_best = metric_map.get(config.task, "eval_accuracy")
-    is_regression = (config.task == "stsb")
+    is_regression = config.task == "stsb"
 
-    output_dir = os.path.join(config.output_dir, config.exp_name or f"{config.attn_type}_{config.method}_{config.task}_{config.seed}")
+    output_dir = os.path.join(
+        config.output_dir,
+        config.exp_name
+        or f"{config.attn_type}_{config.method}_{config.task}_{config.seed}",
+    )
     os.makedirs(output_dir, exist_ok=True)
 
     training_args = TrainingArguments(
@@ -45,7 +51,7 @@ def setup_trainer(model, tokenizer, dataset, config, tracker, logger):
     )
 
     # Define extra dictionary with default
-    extra = {}   # <-- FIX: define it before conditional blocks
+    extra = {}  # <-- FIX: define it before conditional blocks
 
     # For rdrop/r3f methods, fill extra accordingly
     if config.method in ("rdrop", "r3f"):
@@ -59,7 +65,7 @@ def setup_trainer(model, tokenizer, dataset, config, tracker, logger):
     else:
         # baseline and other methods
         trainer_cls = CompressionTrainer
-        extra["ortho_weight"] = 0.0   # or any default needed
+        extra["ortho_weight"] = 0.0  # or any default needed
 
     # Create trainer
     trainer = trainer_cls(
@@ -69,7 +75,7 @@ def setup_trainer(model, tokenizer, dataset, config, tracker, logger):
         eval_dataset=dataset.get("validation", dataset.get("validation_matched")),
         data_collator=DataCollatorWithPadding(tokenizer),
         compute_metrics=get_compute_metrics(config.task),
-        **extra
+        **extra,
     )
 
     # Add logging callback (without plots_dir)

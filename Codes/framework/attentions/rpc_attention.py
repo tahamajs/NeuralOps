@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 
+
 @ATTENTION_REGISTRY.register("rpc")
 class RPCAttention(nn.Module):
     def __init__(self, config, rank=64, pretrained_attn=None, **kwargs):
@@ -17,7 +18,9 @@ class RPCAttention(nn.Module):
         self.W_k = nn.Linear(self.dim, self.dim)
         self.W_v = nn.Linear(self.dim, self.dim)
         self.out_proj = nn.Linear(self.dim, self.dim)
-        self.register_buffer('proj', torch.randn(self.num_heads, self.head_dim, self.head_dim))
+        self.register_buffer(
+            "proj", torch.randn(self.num_heads, self.head_dim, self.head_dim)
+        )
 
     def forward(self, x, pretrained_attn=None, **kwargs):
         B, L, D = x.shape
@@ -25,12 +28,11 @@ class RPCAttention(nn.Module):
         k = self.W_k(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
         proj = self.proj.to(x.device)
-        k_feat = torch.einsum('bhld,hde->bhle', k, proj)
-        q_feat = torch.einsum('bhld,hde->bhle', q, proj)
-        scale = self.head_dim ** -0.5
+        k_feat = torch.einsum("bhld,hde->bhle", k, proj)
+        q_feat = torch.einsum("bhld,hde->bhle", q, proj)
+        scale = self.head_dim**-0.5
         attn = torch.matmul(q_feat, k_feat.transpose(-2, -1)) * scale
         attn = F.softmax(attn, dim=-1)
         out = torch.matmul(attn, v)
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         return self.out_proj(out), None
-    

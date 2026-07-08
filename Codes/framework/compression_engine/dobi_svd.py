@@ -1,11 +1,13 @@
 """Dobi-SVD: Differentiable SVD with learnable rank ratio. Registered as 'dobi'."""
 
 import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class DobiSVDLinearLayer(nn.Module):
     def __init__(self, in_features, out_features, bias=True, init_rank_ratio=0.5):
@@ -17,7 +19,7 @@ class DobiSVDLinearLayer(nn.Module):
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -47,18 +49,19 @@ class DobiSVDCompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 new_layer = DobiSVDLinearLayer(
-                    module.in_features, module.out_features,
+                    module.in_features,
+                    module.out_features,
                     bias=module.bias is not None,
-                    init_rank_ratio=self.init_rank_ratio
+                    init_rank_ratio=self.init_rank_ratio,
                 )
                 parent = self._get_parent(name)
                 if parent is not None:
-                    setattr(parent, name.split('.')[-1], new_layer)
+                    setattr(parent, name.split(".")[-1], new_layer)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
     def _get_parent(self, full_name):
-        parts = full_name.split('.')
+        parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
             parent = getattr(parent, part, None)
@@ -67,7 +70,7 @@ class DobiSVDCompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("dobi")
 def dobi_factory(model, comp_config):
-    init_rank_ratio = getattr(comp_config, 'dobi_init_rank_ratio', 0.5)
+    init_rank_ratio = getattr(comp_config, "dobi_init_rank_ratio", 0.5)
     compressor = DobiSVDCompressor(model, init_rank_ratio=init_rank_ratio)
     compressed_model, _ = compressor.compress()
     return compressed_model

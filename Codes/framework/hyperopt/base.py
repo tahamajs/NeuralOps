@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, Callable, Tuple
+from typing import Any, Callable, Dict, Tuple
+
 from framework.core.registry import Registry
 
 HPO_REGISTRY = Registry("hpo_optimizers")
@@ -28,6 +29,7 @@ class BasePruner(ABC):
         self.config = config
 
     @abstractmethod
-    def should_prune(self, trial_id: int, intermediate_result: float,
-                     step: int) -> bool:
+    def should_prune(
+        self, trial_id: int, intermediate_result: float, step: int
+    ) -> bool:
         pass

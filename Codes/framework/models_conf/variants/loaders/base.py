@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+
 from framework.core.registry import Registry
 
 LOADER_REGISTRY = Registry("loaders")
+
 
 class BaseLoader(ABC):
     @abstractmethod

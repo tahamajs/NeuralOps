@@ -1,9 +1,10 @@
 import json
 import logging
-from channels.generic.websocket import AsyncWebsocketConsumer
+
 from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+
 from .models import SupportTicket, TicketMessage
-from .tasks import process_ticket_task
 
 logger = logging.getLogger(__name__)
 
@@ -13,9 +14,10 @@ class SupportConsumer(AsyncWebsocketConsumer):
     WebSocket consumer for a support ticket.
     Streams AI responses back to the user as they are generated.
     """
+
     async def connect(self):
-        self.ticket_id = self.scope['url_route']['kwargs']['ticket_id']
-        self.group_name = f'support_ticket_{self.ticket_id}'
+        self.ticket_id = self.scope["url_route"]["kwargs"]["ticket_id"]
+        self.group_name = f"support_ticket_{self.ticket_id}"
 
         # Authenticate user via token
         user = await self._get_user()
@@ -36,73 +38,91 @@ class SupportConsumer(AsyncWebsocketConsumer):
 
         # Send existing messages
         messages = await self._get_messages()
-        await self.send(text_data=json.dumps({
-            'type': 'history',
-            'messages': messages,
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "history",
+                    "messages": messages,
+                }
+            )
+        )
 
     async def disconnect(self, close_code):
-        if hasattr(self, 'group_name'):
+        if hasattr(self, "group_name"):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
-        msg_type = data.get('type')
+        msg_type = data.get("type")
 
-        if msg_type == 'user_message':
-            content = data.get('content', '')
+        if msg_type == "user_message":
+            content = data.get("content", "")
             if content.strip():
                 # Save user message
                 ticket = await self._get_ticket()
-                await self._save_message(ticket, 'user', content)
+                await self._save_message(ticket, "user", content)
 
                 # Broadcast to group
                 await self.channel_layer.group_send(
                     self.group_name,
                     {
-                        'type': 'chat_message',
-                        'role': 'user',
-                        'content': content,
-                    }
+                        "type": "chat_message",
+                        "role": "user",
+                        "content": content,
+                    },
                 )
 
                 # Trigger AI processing (async task)
                 from .tasks import process_ticket_message_task
+
                 process_ticket_message_task.delay(str(self.ticket_id), content)
 
     async def chat_message(self, event):
         """Send a chat message to the WebSocket."""
-        await self.send(text_data=json.dumps({
-            'type': 'message',
-            'role': event['role'],
-            'content': event['content'],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "message",
+                    "role": event["role"],
+                    "content": event["content"],
+                }
+            )
+        )
 
     async def ai_stream(self, event):
         """Stream a chunk of AI response."""
-        await self.send(text_data=json.dumps({
-            'type': 'stream',
-            'content': event['content'],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "stream",
+                    "content": event["content"],
+                }
+            )
+        )
 
     async def ticket_update(self, event):
         """Notify that ticket metadata changed."""
-        await self.send(text_data=json.dumps({
-            'type': 'ticket_update',
-            'data': event['data'],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "ticket_update",
+                    "data": event["data"],
+                }
+            )
+        )
 
     @database_sync_to_async
     def _get_user(self):
         # Extract token from query string
-        query_string = self.scope.get('query_string', b'').decode()
+        query_string = self.scope.get("query_string", b"").decode()
         token = None
-        if 'token=' in query_string:
-            token = query_string.split('token=')[1]
+        if "token=" in query_string:
+            token = query_string.split("token=")[1]
         if token:
             from rest_framework.authtoken.models import Token
+
             try:
-                return Token.objects.select_related('user').get(key=token).user
+                return Token.objects.select_related("user").get(key=token).user
             except Token.DoesNotExist:
                 pass
         return None
@@ -117,7 +137,7 @@ class SupportConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def _get_messages(self):
         ticket = SupportTicket.objects.get(id=self.ticket_id)
-        return list(ticket.messages.values('role', 'content', 'created_at'))
+        return list(ticket.messages.values("role", "content", "created_at"))
 
     @database_sync_to_async
     def _save_message(self, ticket, role, content):

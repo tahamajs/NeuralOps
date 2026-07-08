@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 def ssd_kernel(q, k, v):
     """Causal linear attention (SSD‑style simplified). q,k,v: (B, L, D)."""
@@ -13,14 +14,16 @@ def ssd_kernel(q, k, v):
         kt = k[:, t]
         vt = v[:, t]
         qt = q[:, t]
-        h = h + kt.unsqueeze(-1) @ vt.unsqueeze(1)   # outer product
-        out_t = (qt.unsqueeze(1) @ h).squeeze(1)     # (B, D)
+        h = h + kt.unsqueeze(-1) @ vt.unsqueeze(1)  # outer product
+        out_t = (qt.unsqueeze(1) @ h).squeeze(1)  # (B, D)
         outputs.append(out_t)
     return torch.stack(outputs, dim=1)
+
 
 @ATTENTION_REGISTRY.register("griffin_ssd")
 class GriffinSSDBlock(BaseAttention):
     """Local sliding window + global SSD recurrence."""
+
     def __init__(self, config, rank=64, window_size=256):
         super().__init__(config, rank)
         self.dim = config.hidden_size
@@ -39,12 +42,12 @@ class GriffinSSDBlock(BaseAttention):
         q_local = self.W_q(x)
         k_local = self.W_k(x)
         v_local = self.W_v(x)
-        scores = torch.bmm(q_local, k_local.transpose(1,2)) / (D**0.5)
+        scores = torch.bmm(q_local, k_local.transpose(1, 2)) / (D**0.5)
         idx = torch.arange(L, device=x.device)
         causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
         window = (idx.unsqueeze(1) - idx.unsqueeze(0)) < self.window_size
         local_mask = ~(causal & window)
-        scores = scores.masked_fill(local_mask.unsqueeze(0), float('-inf'))
+        scores = scores.masked_fill(local_mask.unsqueeze(0), float("-inf"))
         local_out = torch.bmm(F.softmax(scores, dim=-1), v_local)
 
         # Global linear attention

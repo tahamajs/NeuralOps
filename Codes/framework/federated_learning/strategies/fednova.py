@@ -1,7 +1,9 @@
 """FedNova – Normalized averaging with local steps (Wang et al. 2020)."""
 
 import numpy as np
-from .base import BaseAggregator, AGGREGATOR_REGISTRY
+
+from .base import AGGREGATOR_REGISTRY, BaseAggregator
+
 
 @AGGREGATOR_REGISTRY.register("fednova")
 class FedNovaAggregator(BaseAggregator):

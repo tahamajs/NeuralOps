@@ -1,10 +1,10 @@
 """
 SVD‑LLM V2 Attention: Truncation‑aware SVD for LLM Compression (improved version)
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
@@ -14,6 +14,7 @@ class SVDLLMV2Attention(BaseAttention):
     """
     SVD factorised attention with dynamic rank based on energy threshold.
     """
+
     def __init__(self, config, rank=64, energy_threshold=0.95, pretrained_attn=None):
         if rank is None:
             rank = 64
@@ -101,7 +102,9 @@ class SVDLLMV2Attention(BaseAttention):
             self.out_proj_s.data = torch.ones(r)
             self.out_proj_vh.data = Vt[:r, :].to(dtype=torch.float32)
             if r < self.rank:
-                self._pad_factors(self.out_proj_u, self.out_proj_s, self.out_proj_vh, self.rank)
+                self._pad_factors(
+                    self.out_proj_u, self.out_proj_s, self.out_proj_vh, self.rank
+                )
 
     def _pad_factors(self, u, s, vh, target_rank):
         """Pad factors to target rank with small random values."""
@@ -127,11 +130,23 @@ class SVDLLMV2Attention(BaseAttention):
         W_v = (self.value_u * self.value_s) @ self.value_vh
         W_o = (self.out_proj_u * self.out_proj_s) @ self.out_proj_vh
 
-        Q = F.linear(hidden_states, W_q).view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0,2,1,3)
-        K = F.linear(hidden_states, W_k).view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0,2,1,3)
-        V = F.linear(hidden_states, W_v).view(batch_size, seq_len, self.num_heads, self.head_dim).permute(0,2,1,3)
+        Q = (
+            F.linear(hidden_states, W_q)
+            .view(batch_size, seq_len, self.num_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        K = (
+            F.linear(hidden_states, W_k)
+            .view(batch_size, seq_len, self.num_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
+        V = (
+            F.linear(hidden_states, W_v)
+            .view(batch_size, seq_len, self.num_heads, self.head_dim)
+            .permute(0, 2, 1, 3)
+        )
 
-        scale = 1.0 / (self.head_dim ** 0.5)
+        scale = 1.0 / (self.head_dim**0.5)
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
         if attention_mask is not None:
             if attention_mask.dim() == 2:
@@ -144,16 +159,24 @@ class SVDLLMV2Attention(BaseAttention):
         probs = self.dropout(probs)
 
         context = torch.matmul(probs, V)
-        context = context.permute(0,2,1,3).contiguous().view(batch_size, seq_len, self.all_head_size)
+        context = (
+            context.permute(0, 2, 1, 3)
+            .contiguous()
+            .view(batch_size, seq_len, self.all_head_size)
+        )
         out = F.linear(context, W_o)
         return out, None
 
 
 @ATTENTION_REGISTRY.register("svd_llm_v2")
-def inject_svd_llm_v2(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_svd_llm_v2(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
     """Injection function for DistilBERT."""
-    rank = getattr(comp_config, 'rank', 64)
-    energy = getattr(comp_config, 'svd_energy', 0.95)
-    new_attn = SVDLLMV2Attention(model_config, rank=rank, energy_threshold=energy, pretrained_attn=old_attn)
+    rank = getattr(comp_config, "rank", 64)
+    energy = getattr(comp_config, "svd_energy", 0.95)
+    new_attn = SVDLLMV2Attention(
+        model_config, rank=rank, energy_threshold=energy, pretrained_attn=old_attn
+    )
     layer.attention = new_attn
     return new_attn

@@ -10,15 +10,21 @@ References:
   • taskmill priority aging – escalate priority over time to prevent starvation
 """
 
-import os, time, signal, threading, queue, subprocess, logging, json
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+import json
+import logging
+import os
+import queue
+import signal
+import subprocess
+import threading
+import time
+from dataclasses import dataclass
 from enum import IntEnum
+from typing import Dict
 
 import torch
-from django.utils import timezone
 from django.conf import settings
-from django.db import connection
+from django.utils import timezone
 
 from .models import Job, JobGroup
 
@@ -43,34 +49,34 @@ class Priority(IntEnum):
 class SchedulerConfig:
     # ── Priority Aging ─────────────────────────────────────────────
     aging_enabled: bool = True
-    aging_grace_period: int = 300        # seconds before aging starts
-    aging_interval: int = 60             # seconds between priority bumps
+    aging_grace_period: int = 300  # seconds before aging starts
+    aging_interval: int = 60  # seconds between priority bumps
     aging_max_effective: int = Priority.HIGH  # never age beyond this
 
     # ── Backfill ───────────────────────────────────────────────────
     backfill_enabled: bool = True
-    backfill_interval: int = 15          # seconds between backfill scans
-    backfill_max_job_duration: int = 300 # max estimated seconds for backfill
+    backfill_interval: int = 15  # seconds between backfill scans
+    backfill_max_job_duration: int = 300  # max estimated seconds for backfill
 
     # ── Fair Share ─────────────────────────────────────────────────
     fair_share_enabled: bool = True
     fair_share_decay_half_life: int = 86400  # 24‑hour half‑life
 
     # ── Preemption ─────────────────────────────────────────────────
-    preempt_checkpoint_grace: int = 30   # seconds to allow checkpoint save
-    preempt_min_priority_gap: int = 2    # incoming must be at least this many
-                                         #   tiers higher to trigger preemption
+    preempt_checkpoint_grace: int = 30  # seconds to allow checkpoint save
+    preempt_min_priority_gap: int = 2  # incoming must be at least this many
+    #   tiers higher to trigger preemption
 
     # ── Job Timeout ─────────────────────────────────────────────────
-    job_timeout: int = 0                 # seconds; 0 = no timeout
+    job_timeout: int = 0  # seconds; 0 = no timeout
 
     # ── Observability ──────────────────────────────────────────────
-    stats_window: int = 3600             # lookback for average wait time, etc.
+    stats_window: int = 3600  # lookback for average wait time, etc.
 
     @classmethod
     def from_settings(cls):
         return cls(
-            job_timeout=getattr(settings, 'JOB_TIMEOUT_SECONDS', 0),
+            job_timeout=getattr(settings, "JOB_TIMEOUT_SECONDS", 0),
         )
 
 
@@ -103,7 +109,7 @@ class GPUScheduler:
         self.job_start_time: Dict[str, float] = {}
 
         # Fair‑share bookkeeping
-        self.group_usage: Dict[str, float] = {}   # group → cumulative GPU‑seconds
+        self.group_usage: Dict[str, float] = {}  # group → cumulative GPU‑seconds
         self.group_last_update: Dict[str, float] = {}
 
         self.lock = threading.RLock()
@@ -125,19 +131,29 @@ class GPUScheduler:
         )
 
     # ── Public API ──────────────────────────────────────────────────
-    def add_job(self, job_id: str, base_priority: int,
-                estimated_duration: int = None, memory_gb: int = None,
-                group: str = "default", preemptible: bool = True):
+    def add_job(
+        self,
+        job_id: str,
+        base_priority: int,
+        estimated_duration: int = None,
+        memory_gb: int = None,
+        group: str = "default",
+        preemptible: bool = True,
+    ):
         """Submit a job to the queue."""
         effective = self._effective_priority(job_id, base_priority)
         self.task_queue.put((effective, time.time(), job_id))
         Job.objects.filter(id=job_id).update(
-            status='queued',
+            status="queued",
             aging_priority=effective,
         )
         logger.info(
             "Job %s enqueued (base_prio=%d, effective=%d, group=%s, preemptible=%s)",
-            job_id, base_priority, effective, group, preemptible,
+            job_id,
+            base_priority,
+            effective,
+            group,
+            preemptible,
         )
 
     def update_priority(self, job_id: str, new_priority: int):
@@ -150,54 +166,63 @@ class GPUScheduler:
             proc = self.running_jobs.get(job_id)
             if proc:
                 proc.send_signal(signal.SIGSTOP)
-                Job.objects.filter(id=job_id).update(status='paused')
+                Job.objects.filter(id=job_id).update(status="paused")
 
     def resume_job(self, job_id: str):
         with self.lock:
             proc = self.running_jobs.get(job_id)
             if proc:
                 proc.send_signal(signal.SIGCONT)
-                Job.objects.filter(id=job_id).update(status='running')
+                Job.objects.filter(id=job_id).update(status="running")
             else:
                 job = Job.objects.get(id=job_id)
-                self.add_job(job_id, job.priority, job.estimated_duration,
-                             job.memory_requirements, getattr(job, 'group', 'default'),
-                             job.preemptible)
+                self.add_job(
+                    job_id,
+                    job.priority,
+                    job.estimated_duration,
+                    job.memory_requirements,
+                    getattr(job, "group", "default"),
+                    job.preemptible,
+                )
 
     def stop_job(self, job_id: str):
         with self.lock:
             proc = self.running_jobs.get(job_id)
             if proc:
                 proc.terminate()
-                Job.objects.filter(id=job_id).update(status='stopped')
+                Job.objects.filter(id=job_id).update(status="stopped")
                 self.available_gpus += self.job_gpu_map.pop(job_id, 1)
                 self.running_jobs.pop(job_id, None)
                 self.job_start_time.pop(job_id, None)
 
     def get_status(self) -> dict:
         return {
-            'total_gpus': self.total_gpus,
-            'available_gpus': self.available_gpus,
-            'queued_jobs': self.task_queue.qsize(),
-            'running_jobs': len(self.running_jobs),
-            'preempted_count': Job.objects.filter(status='preempted').count(),
-            'fair_share': self._fair_share_snapshot(),
+            "total_gpus": self.total_gpus,
+            "available_gpus": self.available_gpus,
+            "queued_jobs": self.task_queue.qsize(),
+            "running_jobs": len(self.running_jobs),
+            "preempted_count": Job.objects.filter(status="preempted").count(),
+            "fair_share": self._fair_share_snapshot(),
         }
 
     # ── Lifecycle ───────────────────────────────────────────────────
     def start(self):
         if self.worker_thread is None or not self.worker_thread.is_alive():
             self.worker_thread = threading.Thread(
-                target=self._worker, daemon=True, name="SchedulerWorker")
+                target=self._worker, daemon=True, name="SchedulerWorker"
+            )
             self.worker_thread.start()
         if self.monitor_thread is None or not self.monitor_thread.is_alive():
             self.monitor_thread = threading.Thread(
-                target=self._monitor_jobs, daemon=True, name="SchedulerMonitor")
+                target=self._monitor_jobs, daemon=True, name="SchedulerMonitor"
+            )
             self.monitor_thread.start()
         if self.cfg.backfill_enabled and (
-            self.backfill_thread is None or not self.backfill_thread.is_alive()):
+            self.backfill_thread is None or not self.backfill_thread.is_alive()
+        ):
             self.backfill_thread = threading.Thread(
-                target=self._backfill_loop, daemon=True, name="BackfillWorker")
+                target=self._backfill_loop, daemon=True, name="BackfillWorker"
+            )
             self.backfill_thread.start()
         logger.info("Scheduler v2 started (timeout=%ds)", self.cfg.job_timeout)
 
@@ -266,9 +291,7 @@ class GPUScheduler:
         self.group_last_update[group] = time.time()
 
     def _fair_share_snapshot(self) -> dict:
-        return {
-            g: round(u, 1) for g, u in self.group_usage.items()
-        }
+        return {g: round(u, 1) for g, u in self.group_usage.items()}
 
     # ── Internal: Preemption ────────────────────────────────────────
     def _try_preempt(self, incoming_prio: int) -> bool:
@@ -302,8 +325,11 @@ class GPUScheduler:
 
                 proc = self.running_jobs.get(job_id)
                 start = time.time()
-                while proc and proc.poll() is None and \
-                      (time.time() - start) < self.cfg.preempt_checkpoint_grace:
+                while (
+                    proc
+                    and proc.poll() is None
+                    and (time.time() - start) < self.cfg.preempt_checkpoint_grace
+                ):
                     time.sleep(0.5)
 
                 if proc and proc.poll() is None:
@@ -313,10 +339,14 @@ class GPUScheduler:
                 self.available_gpus += self.job_gpu_map.pop(job_id, 1)
                 self.running_jobs.pop(job_id, None)
                 self.job_start_time.pop(job_id, None)
-                job.status = 'preempted'
+                job.status = "preempted"
                 job.save()
-                logger.info("Preempted job %s (priority %d) for incoming priority %d",
-                            job_id, prio, incoming_prio)
+                logger.info(
+                    "Preempted job %s (priority %d) for incoming priority %d",
+                    job_id,
+                    prio,
+                    incoming_prio,
+                )
                 return True
 
         return False
@@ -324,12 +354,15 @@ class GPUScheduler:
     def _signal_preempt(self, job_id: str):
         """Write preemption flag so the training loop can save a checkpoint."""
         flag = os.path.join(self.preempt_flag_dir, str(job_id))
-        with open(flag, 'w') as f:
-            json.dump({
-                'job_id': job_id,
-                'timestamp': time.time(),
-                'action': 'checkpoint_and_exit',
-            }, f)
+        with open(flag, "w") as f:
+            json.dump(
+                {
+                    "job_id": job_id,
+                    "timestamp": time.time(),
+                    "action": "checkpoint_and_exit",
+                },
+                f,
+            )
 
     # ── Internal: Backfill ──────────────────────────────────────────
     def _backfill_loop(self):
@@ -349,9 +382,9 @@ class GPUScheduler:
         # Peek at the queue (we can't peek a PriorityQueue easily, so we copy)
         # For backfill we check DB directly
         short_jobs = Job.objects.filter(
-            status='queued',
+            status="queued",
             estimated_duration__lte=self.cfg.backfill_max_job_duration,
-        ).order_by('priority', 'created_at')
+        ).order_by("priority", "created_at")
 
         for job in short_jobs[:free]:
             if self.available_gpus <= 0:
@@ -368,7 +401,7 @@ class GPUScheduler:
     # ── Internal: Job Execution ─────────────────────────────────────
     def _run_job(self, job_id: str):
         job = Job.objects.get(id=job_id)
-        job.status = 'running'
+        job.status = "running"
         job.started_at = timezone.now()
         job.save()
         self.job_start_time[job_id] = time.time()
@@ -378,11 +411,15 @@ class GPUScheduler:
         if os.path.exists(flag):
             os.remove(flag)
 
-        group = getattr(job, 'group', 'default')
+        group = getattr(job, "group", "default")
         cmd = [
-            'python', 'manage.py', 'run_training_job',
-            '--job-id', job_id,
-            '--checkpoint-dir', job.checkpoint_path or '',
+            "python",
+            "manage.py",
+            "run_training_job",
+            "--job-id",
+            job_id,
+            "--checkpoint-dir",
+            job.checkpoint_path or "",
         ]
         try:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -395,7 +432,7 @@ class GPUScheduler:
 
             if proc.returncode != 0:
                 logger.error("Job %s failed: %s", job_id, stderr.decode())
-                job.status = 'failed'
+                job.status = "failed"
                 job.logs += f"\nProcess error: {stderr.decode()}"
                 job.save()
             else:
@@ -403,7 +440,7 @@ class GPUScheduler:
 
         except Exception as e:
             logger.exception("Exception running job %s: %s", job_id, e)
-            job.status = 'failed'
+            job.status = "failed"
             job.logs += f"\nException: {str(e)}"
             job.save()
         finally:
@@ -416,11 +453,15 @@ class GPUScheduler:
             self._record_usage(group, job.gpu_requirements, duration)
 
             job.refresh_from_db()
-            if job.status == 'preempted':
+            if job.status == "preempted":
                 # Re‑queue with original priority
                 self.add_job(
-                    job_id, job.priority, job.estimated_duration,
-                    job.memory_requirements, group, job.preemptible,
+                    job_id,
+                    job.priority,
+                    job.estimated_duration,
+                    job.memory_requirements,
+                    group,
+                    job.preemptible,
                 )
 
     # ── Internal: Main Worker ───────────────────────────────────────
@@ -434,12 +475,19 @@ class GPUScheduler:
             with self.lock:
                 if self.available_gpus <= 0:
                     if not self._try_preempt(
-                        self._effective_priority(job_id,
-                            Job.objects.get(id=job_id).priority)):
-                        self.task_queue.put((
-                            self._effective_priority(job_id,
-                                Job.objects.get(id=job_id).priority),
-                            time.time(), job_id))
+                        self._effective_priority(
+                            job_id, Job.objects.get(id=job_id).priority
+                        )
+                    ):
+                        self.task_queue.put(
+                            (
+                                self._effective_priority(
+                                    job_id, Job.objects.get(id=job_id).priority
+                                ),
+                                time.time(),
+                                job_id,
+                            )
+                        )
                         time.sleep(5)
                         continue
                 self.available_gpus -= 1
@@ -459,12 +507,15 @@ class GPUScheduler:
                         proc = self.running_jobs.get(job_id)
                         if proc:
                             proc.terminate()
-                        Job.objects.filter(id=job_id).update(status='failed')
+                        Job.objects.filter(id=job_id).update(status="failed")
                         self.available_gpus += self.job_gpu_map.pop(job_id, 1)
                         self.running_jobs.pop(job_id, None)
                         self.job_start_time.pop(job_id, None)
-                        logger.warning("Job %s killed by timeout (%ds)", job_id,
-                                       self.cfg.job_timeout)
+                        logger.warning(
+                            "Job %s killed by timeout (%ds)",
+                            job_id,
+                            self.cfg.job_timeout,
+                        )
 
 
 # ---------------------------------------------------------------------------

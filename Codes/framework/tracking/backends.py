@@ -3,15 +3,16 @@ Backend implementations for experiment tracking.
 Each backend handles the specifics of initialisation, metric/param/artifact logging, and finalisation.
 """
 
-import os
 import json
 import logging
+import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
+
 
 # ----------------------------------------------------------------------
 # Enum & backend keys
@@ -21,6 +22,7 @@ class TrackingBackend(Enum):
     TENSORBOARD = "tensorboard"
     WANDB = "wandb"
     MLFLOW = "mlflow"
+
 
 # Convenience constants for configuration
 LOCAL_BACKEND = TrackingBackend.LOCAL.value
@@ -70,12 +72,21 @@ class LocalTracker(BaseTracker):
         self.experiment_name = experiment_name
         os.makedirs(self.log_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.metrics_file = os.path.join(self.log_dir, f"{experiment_name}_{timestamp}_metrics.jsonl")
-        self.params_file = os.path.join(self.log_dir, f"{experiment_name}_{timestamp}_params.json")
+        self.metrics_file = os.path.join(
+            self.log_dir, f"{experiment_name}_{timestamp}_metrics.jsonl"
+        )
+        self.params_file = os.path.join(
+            self.log_dir, f"{experiment_name}_{timestamp}_params.json"
+        )
         self.metrics = []
 
     def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
-        entry = {"name": name, "value": value, "step": step, "timestamp": datetime.now().isoformat()}
+        entry = {
+            "name": name,
+            "value": value,
+            "step": step,
+            "timestamp": datetime.now().isoformat(),
+        }
         self.metrics.append(entry)
         # Append to file immediately for resilience
         with open(self.metrics_file, "a") as f:
@@ -87,12 +98,15 @@ class LocalTracker(BaseTracker):
 
     def log_artifact(self, local_path: str) -> None:
         import shutil
+
         dest = os.path.join(self.log_dir, os.path.basename(local_path))
         shutil.copy2(local_path, dest)
 
     def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
         if result:
-            summary_file = os.path.join(self.log_dir, f"{self.experiment_name}_summary.json")
+            summary_file = os.path.join(
+                self.log_dir, f"{self.experiment_name}_summary.json"
+            )
             with open(summary_file, "w") as f:
                 json.dump(result, f, indent=2)
 
@@ -108,6 +122,7 @@ class TensorBoardTracker(BaseTracker):
 
     def __init__(self, log_dir: str, experiment_name: str):
         from torch.utils.tensorboard import SummaryWriter
+
         run_dir = os.path.join(log_dir, experiment_name)
         self.writer = SummaryWriter(log_dir=run_dir)
         self._params = {}
@@ -126,11 +141,13 @@ class TensorBoardTracker(BaseTracker):
     def log_artifact(self, local_path: str) -> None:
         # TensorBoard doesn't support artifacts; fallback to local copy
         import shutil
+
         dest = os.path.join(self.writer.log_dir, os.path.basename(local_path))
         shutil.copy2(local_path, dest)
 
     def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
         from torch.utils.tensorboard.summary import hparams
+
         if self._params or result:
             combined = {**self._params, **(result or {})}
             exp, ssi, sei = hparams(combined, {})
@@ -149,8 +166,14 @@ class TensorBoardTracker(BaseTracker):
 class WandBTracker(BaseTracker):
     """Logs to Weights & Biases."""
 
-    def __init__(self, project: str, experiment_name: str, config_dict: Optional[Dict[str, Any]] = None):
+    def __init__(
+        self,
+        project: str,
+        experiment_name: str,
+        config_dict: Optional[Dict[str, Any]] = None,
+    ):
         import wandb
+
         self.run = wandb.init(project=project, name=experiment_name, config=config_dict)
 
     def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
@@ -180,6 +203,7 @@ class MLflowTracker(BaseTracker):
 
     def __init__(self, experiment_name: str, tracking_uri: Optional[str] = None):
         import mlflow
+
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(experiment_name)
@@ -187,21 +211,26 @@ class MLflowTracker(BaseTracker):
 
     def log_metric(self, name: str, value: float, step: Optional[int] = None) -> None:
         import mlflow
+
         mlflow.log_metric(name, value, step=step)
 
     def log_params(self, params: Dict[str, Any]) -> None:
         import mlflow
+
         mlflow.log_params(params)
 
     def log_artifact(self, local_path: str) -> None:
         import mlflow
+
         mlflow.log_artifact(local_path)
 
     def finalize(self, result: Optional[Dict[str, Any]] = None) -> None:
         if result:
             import mlflow
+
             mlflow.log_metrics(result)
 
     def close(self) -> None:
         import mlflow
+
         mlflow.end_run()

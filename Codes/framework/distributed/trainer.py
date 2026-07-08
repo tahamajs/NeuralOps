@@ -1,8 +1,12 @@
 """DistributedTrainer — the single entry point that wraps any training function."""
 
-import os, logging, torch
+import logging
+import os
+
+import torch
+
+from .allocator import AllocationStrategy, GPUAllocator
 from .config import DistributedConfig
-from .allocator import GPUAllocator, AllocationStrategy
 from .strategies import STRATEGY_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -55,7 +59,9 @@ class DistributedTrainer:
 
         # 4. Set device
         local_rank = int(os.environ.get("LOCAL_RANK", 0))
-        device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
+        device = torch.device(
+            f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu"
+        )
         kwargs["device"] = device
 
         # 5. Run training

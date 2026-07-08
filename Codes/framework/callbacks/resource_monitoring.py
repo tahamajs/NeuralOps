@@ -1,6 +1,8 @@
 """Resource monitoring callbacks: memory, time, GPU."""
-import time
+
 import logging
+import time
+
 from transformers import TrainerCallback
 
 logger = logging.getLogger(__name__)
@@ -14,6 +16,7 @@ class MemoryCallback(TrainerCallback):
         if state.global_step % self.log_every_steps == 0:
             try:
                 import psutil
+
                 mem = psutil.virtual_memory()
                 logger.info(f"RAM: {mem.percent}% used ({mem.used // (1024**2)} MB)")
             except ImportError:
@@ -41,9 +44,12 @@ class GPUStatsCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):
         try:
             import torch
+
             if torch.cuda.is_available():
                 allocated = torch.cuda.memory_allocated() / 1024**2
                 reserved = torch.cuda.memory_reserved() / 1024**2
-                logger.info(f"GPU memory: {allocated:.0f}MB allocated, {reserved:.0f}MB reserved")
+                logger.info(
+                    f"GPU memory: {allocated:.0f}MB allocated, {reserved:.0f}MB reserved"
+                )
         except ImportError:
             pass

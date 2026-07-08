@@ -1,10 +1,10 @@
-from .base import BaseAggregator, AGGREGATOR_REGISTRY
+from .base import AGGREGATOR_REGISTRY, BaseAggregator
+from .fedadam import FedAdagradAggregator, FedAdamAggregator, FedYogiAggregator
 from .fedavg import FedAvgAggregator
-from .fedprox import FedProxAggregator
-from .fedadam import FedAdamAggregator, FedYogiAggregator, FedAdagradAggregator
-from .scaffold import SCAFFOLDAggregator
 from .fednova import FedNovaAggregator
+from .fedprox import FedProxAggregator
 from .moon import MOONAggregator
+from .scaffold import SCAFFOLDAggregator
 
 __all__ = [
     "BaseAggregator",

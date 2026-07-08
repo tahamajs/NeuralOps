@@ -2,33 +2,46 @@
 HuggingFace integration for notes – upload as Dataset or Space.
 Supports: free public hosting, sharing via link, and sync.
 """
-import os, json, tempfile, logging
+
+import json
+import logging
+import os
+import tempfile
+
 from django.conf import settings
 from django.utils import timezone
 from huggingface_hub import HfApi, create_repo, upload_folder, whoami
 
 logger = logging.getLogger(__name__)
 
-HF_TOKEN = getattr(settings, 'HUGGINGFACE_TOKEN', None)
-HF_USERNAME = getattr(settings, 'HUGGINGFACE_USERNAME', None)
+HF_TOKEN = getattr(settings, "HUGGINGFACE_TOKEN", None)
+HF_USERNAME = getattr(settings, "HUGGINGFACE_USERNAME", None)
 
 
 def _get_api() -> HfApi:
     """Get authenticated HF API instance."""
     token = HF_TOKEN
     if not token:
-        raise ValueError("HUGGINGFACE_TOKEN not set. Set HUGGINGFACE_TOKEN or run `huggingface-cli login`.")
+        raise ValueError(
+            "HUGGINGFACE_TOKEN not set. Set HUGGINGFACE_TOKEN or run `huggingface-cli login`."
+        )
     return HfApi(token=token)
 
 
 def upload_note_to_hub(note, repo_type: str = "dataset", make_public: bool = True):
     """Upload a note to HuggingFace Hub as a Dataset."""
     api = _get_api()
-    username = HF_USERNAME or whoami(token=HF_TOKEN)['name']
+    username = HF_USERNAME or whoami(token=HF_TOKEN)["name"]
     repo_id = f"{username}/neuralops-note-{note.id}"
 
     try:
-        create_repo(repo_id, token=HF_TOKEN, repo_type=repo_type, exist_ok=True, private=not make_public)
+        create_repo(
+            repo_id,
+            token=HF_TOKEN,
+            repo_type=repo_type,
+            exist_ok=True,
+            private=not make_public,
+        )
     except Exception:
         pass
 
@@ -39,35 +52,55 @@ def upload_note_to_hub(note, repo_type: str = "dataset", make_public: bool = Tru
 
         meta_path = os.path.join(tmpdir, "metadata.json")
         with open(meta_path, "w") as f:
-            json.dump({
-                "note_id": str(note.id),
-                "title": note.title,
-                "author": note.author.username,
-                "note_type": note.note_type,
-                "tags": note.tags,
-                "created_at": note.created_at.isoformat(),
-                "version": note.version,
-            }, f, indent=2)
+            json.dump(
+                {
+                    "note_id": str(note.id),
+                    "title": note.title,
+                    "author": note.author.username,
+                    "note_type": note.note_type,
+                    "tags": note.tags,
+                    "created_at": note.created_at.isoformat(),
+                    "version": note.version,
+                },
+                f,
+                indent=2,
+            )
 
-        upload_folder(folder_path=tmpdir, repo_id=repo_id, repo_type=repo_type, token=HF_TOKEN)
+        upload_folder(
+            folder_path=tmpdir, repo_id=repo_id, repo_type=repo_type, token=HF_TOKEN
+        )
 
     if make_public:
         try:
-            api.update_repo_visibility(repo_id=repo_id, repo_type=repo_type, private=False, token=HF_TOKEN)
+            api.update_repo_visibility(
+                repo_id=repo_id, repo_type=repo_type, private=False, token=HF_TOKEN
+            )
         except Exception:
             pass
 
-    return {"status": "uploaded", "url": f"https://huggingface.co/{repo_type}s/{repo_id}", "repo_id": repo_id, "repo_type": repo_type}
+    return {
+        "status": "uploaded",
+        "url": f"https://huggingface.co/{repo_type}s/{repo_id}",
+        "repo_id": repo_id,
+        "repo_type": repo_type,
+    }
 
 
 def upload_note_as_space(note):
     """Upload a note as a static HTML Space on HuggingFace (free hosting)."""
     api = _get_api()
-    username = HF_USERNAME or whoami(token=HF_TOKEN)['name']
+    username = HF_USERNAME or whoami(token=HF_TOKEN)["name"]
     repo_id = f"{username}/neuralops-note-{note.id}"
 
     try:
-        create_repo(repo_id, token=HF_TOKEN, repo_type="space", exist_ok=True, private=False, space_sdk="static")
+        create_repo(
+            repo_id,
+            token=HF_TOKEN,
+            repo_type="space",
+            exist_ok=True,
+            private=False,
+            space_sdk="static",
+        )
     except Exception:
         pass
 
@@ -76,14 +109,21 @@ def upload_note_as_space(note):
         with open(os.path.join(tmpdir, "index.html"), "w") as f:
             f.write(html)
 
-        upload_folder(folder_path=tmpdir, repo_id=repo_id, repo_type="space", token=HF_TOKEN)
+        upload_folder(
+            folder_path=tmpdir, repo_id=repo_id, repo_type="space", token=HF_TOKEN
+        )
 
-    return {"status": "uploaded", "url": f"https://huggingface.co/spaces/{repo_id}", "repo_id": repo_id, "repo_type": "space"}
+    return {
+        "status": "uploaded",
+        "url": f"https://huggingface.co/spaces/{repo_id}",
+        "repo_id": repo_id,
+        "repo_type": "space",
+    }
 
 
 def sync_note_to_hf(note):
     """Sync a note to HuggingFace. Re‑uploads if a previous URL exists."""
-    existing_url = (note.metadata or {}).get('hf_url', '')
+    existing_url = (note.metadata or {}).get("hf_url", "")
     if existing_url:
         try:
             return upload_note_to_hub(note)
@@ -123,9 +163,13 @@ version: {note.version}
 def _note_to_html(note) -> str:
     """Convert note to a styled static HTML page for HF Spaces."""
     import html as html_mod
+
     try:
         import markdown as md_lib
-        content_html = md_lib.markdown(note.content or '', extensions=['fenced_code', 'tables'])
+
+        content_html = md_lib.markdown(
+            note.content or "", extensions=["fenced_code", "tables"]
+        )
     except ImportError:
         content_html = f"<pre>{html_mod.escape(note.content or '')}</pre>"
 

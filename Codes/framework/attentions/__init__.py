@@ -1,8 +1,9 @@
 """
 Auto-import all attention modules, silently skipping those with missing dependencies.
 """
-import os
+
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 

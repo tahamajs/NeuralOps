@@ -11,9 +11,12 @@ This engine takes a research question and autonomously:
 
 It can operate in fully autonomous mode or with human checkpoints.
 """
+
 import logging
+
 from django.utils import timezone
-from .models import ResearchPipeline, PipelineStep, AutonomousDecision, PipelineArtifact
+
+from .models import PipelineArtifact, PipelineStep, ResearchPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -26,18 +29,18 @@ class ResearchEngine:
     def __init__(self, pipeline: ResearchPipeline):
         self.pipeline = pipeline
         self.context = {
-            'research_question': pipeline.research_question,
-            'papers_found': [],
-            'papers_analyzed': [],
-            'hypotheses': [],
-            'experiments_run': [],
-            'results': {},
-            'manuscript_sections': [],
+            "research_question": pipeline.research_question,
+            "papers_found": [],
+            "papers_analyzed": [],
+            "hypotheses": [],
+            "experiments_run": [],
+            "results": {},
+            "manuscript_sections": [],
         }
 
     def run(self):
         """Execute the full pipeline."""
-        self.pipeline.status = 'literature_review'
+        self.pipeline.status = "literature_review"
         self.pipeline.save()
 
         # Step 1: Literature Review
@@ -45,12 +48,12 @@ class ResearchEngine:
         self._paper_analysis()
 
         # Step 2: Hypothesis Generation
-        self.pipeline.status = 'hypothesis_generated'
+        self.pipeline.status = "hypothesis_generated"
         self.pipeline.save()
         self._generate_hypothesis()
 
         # Step 3: Experiment Design & Execution
-        self.pipeline.status = 'experimenting'
+        self.pipeline.status = "experimenting"
         self.pipeline.save()
         self._design_experiments()
         self._execute_experiments()
@@ -59,12 +62,12 @@ class ResearchEngine:
         self._analyze_results()
 
         # Step 5: Manuscript Preparation
-        self.pipeline.status = 'manuscript_draft'
+        self.pipeline.status = "manuscript_draft"
         self.pipeline.save()
         self._draft_manuscript()
 
         # Mark as completed
-        self.pipeline.status = 'completed'
+        self.pipeline.status = "completed"
         self.pipeline.completed_at = timezone.now()
         self.pipeline.progress = 100.0
         self.pipeline.save()
@@ -73,21 +76,24 @@ class ResearchEngine:
         """Search for relevant papers."""
         step = PipelineStep.objects.create(
             pipeline=self.pipeline,
-            step_type='literature_search',
+            step_type="literature_search",
             order=1,
-            title='Literature Search',
-            description=f'Searching for papers related to: {self.pipeline.research_question}',
-            status='running',
+            title="Literature Search",
+            description=f"Searching for papers related to: {self.pipeline.research_question}",
+            status="running",
             started_at=timezone.now(),
         )
 
         # Use the existing agent tools to search for papers
         from agents.tools import search_papers
-        results = search_papers(query=self.pipeline.research_question, limit=20, source='all')
 
-        self.context['papers_found'] = results.get('results', [])
-        step.output_data = {'papers_found': len(self.context['papers_found'])}
-        step.status = 'completed'
+        results = search_papers(
+            query=self.pipeline.research_question, limit=20, source="all"
+        )
+
+        self.context["papers_found"] = results.get("results", [])
+        step.output_data = {"papers_found": len(self.context["papers_found"])}
+        step.status = "completed"
         step.completed_at = timezone.now()
         step.save()
 
@@ -95,10 +101,12 @@ class ResearchEngine:
         PipelineArtifact.objects.create(
             pipeline=self.pipeline,
             step=step,
-            artifact_type='literature_summary',
-            title='Literature Search Results',
+            artifact_type="literature_summary",
+            title="Literature Search Results",
             content=f"Found {len(self.context['papers_found'])} papers.",
-            metadata={'papers': [p.get('title') for p in self.context['papers_found'][:10]]},
+            metadata={
+                "papers": [p.get("title") for p in self.context["papers_found"][:10]]
+            },
         )
 
         self.pipeline.progress = 15.0
@@ -108,26 +116,26 @@ class ResearchEngine:
         """Analyze each paper and extract key findings."""
         step = PipelineStep.objects.create(
             pipeline=self.pipeline,
-            step_type='paper_analysis',
+            step_type="paper_analysis",
             order=2,
-            title='Paper Analysis',
-            description='Analyzing found papers for key insights',
-            status='running',
+            title="Paper Analysis",
+            description="Analyzing found papers for key insights",
+            status="running",
             started_at=timezone.now(),
         )
 
         analyzed = []
-        for paper in self.context['papers_found'][:10]:
+        for paper in self.context["papers_found"][:10]:
             analysis = {
-                'title': paper.get('title'),
-                'year': paper.get('year'),
-                'key_findings': paper.get('abstract', '')[:300],
+                "title": paper.get("title"),
+                "year": paper.get("year"),
+                "key_findings": paper.get("abstract", "")[:300],
             }
             analyzed.append(analysis)
 
-        self.context['papers_analyzed'] = analyzed
-        step.output_data = {'papers_analyzed': len(analyzed)}
-        step.status = 'completed'
+        self.context["papers_analyzed"] = analyzed
+        step.output_data = {"papers_analyzed": len(analyzed)}
+        step.status = "completed"
         step.completed_at = timezone.now()
         step.save()
 
@@ -138,11 +146,11 @@ class ResearchEngine:
         """Generate research hypotheses based on literature analysis."""
         step = PipelineStep.objects.create(
             pipeline=self.pipeline,
-            step_type='hypothesis_generation',
+            step_type="hypothesis_generation",
             order=3,
-            title='Hypothesis Generation',
-            description='Generating research hypotheses from literature analysis',
-            status='running',
+            title="Hypothesis Generation",
+            description="Generating research hypotheses from literature analysis",
+            status="running",
             started_at=timezone.now(),
         )
 
@@ -152,9 +160,9 @@ class ResearchEngine:
             f"Based on the literature, we hypothesize that applying {self.pipeline.research_question[:50]}... will improve performance.",
         ]
 
-        self.context['hypotheses'] = hypotheses
-        step.output_data = {'hypotheses': hypotheses}
-        step.status = 'completed'
+        self.context["hypotheses"] = hypotheses
+        step.output_data = {"hypotheses": hypotheses}
+        step.status = "completed"
         step.completed_at = timezone.now()
         step.save()
 
@@ -162,8 +170,8 @@ class ResearchEngine:
         PipelineArtifact.objects.create(
             pipeline=self.pipeline,
             step=step,
-            artifact_type='hypothesis',
-            title='Research Hypothesis',
+            artifact_type="hypothesis",
+            title="Research Hypothesis",
             content=hypotheses[0],
         )
 
@@ -176,27 +184,27 @@ class ResearchEngine:
         """Design experiments to test the hypothesis."""
         step = PipelineStep.objects.create(
             pipeline=self.pipeline,
-            step_type='experiment_design',
+            step_type="experiment_design",
             order=4,
-            title='Experiment Design',
-            description='Designing experiments to test the hypothesis',
-            status='running',
+            title="Experiment Design",
+            description="Designing experiments to test the hypothesis",
+            status="running",
             started_at=timezone.now(),
         )
 
         experiment_config = {
-            'model_name': 'bert-base-uncased',
-            'task_name': 'mrpc',
-            'attention_type': 'full',
-            'method': 'baseline',
-            'epochs': 3,
-            'batch_size': 16,
-            'learning_rate': 2e-5,
+            "model_name": "bert-base-uncased",
+            "task_name": "mrpc",
+            "attention_type": "full",
+            "method": "baseline",
+            "epochs": 3,
+            "batch_size": 16,
+            "learning_rate": 2e-5,
         }
 
-        self.context['experiment_config'] = experiment_config
-        step.output_data = {'config': experiment_config}
-        step.status = 'completed'
+        self.context["experiment_config"] = experiment_config
+        step.output_data = {"config": experiment_config}
+        step.status = "completed"
         step.completed_at = timezone.now()
         step.save()
 
@@ -207,17 +215,18 @@ class ResearchEngine:
         """Execute the designed experiments."""
         step = PipelineStep.objects.create(
             pipeline=self.pipeline,
-            step_type='experiment_execution',
+            step_type="experiment_execution",
             order=5,
-            title='Experiment Execution',
-            description='Running experiments',
-            status='running',
+            title="Experiment Execution",
+            description="Running experiments",
+            status="running",
             started_at=timezone.now(),
         )
 
         # Launch a training run via the experiment system
         from experiment.models import Experiment, TrainingRun
-        config = self.context['experiment_config']
+
+        config = self.context["experiment_config"]
 
         experiment = Experiment.objects.create(
             name=f"Auto-Research: {self.pipeline.name}",
@@ -225,19 +234,21 @@ class ResearchEngine:
         )
         run = TrainingRun.objects.create(
             experiment=experiment,
-            job_type='training',
-            status='queued',
+            job_type="training",
+            status="queued",
             config=config,
             name=experiment.name,
         )
 
-        self.context['experiments_run'].append({
-            'run_id': str(run.id),
-            'config': config,
-        })
+        self.context["experiments_run"].append(
+            {
+                "run_id": str(run.id),
+                "config": config,
+            }
+        )
 
-        step.output_data = {'run_id': str(run.id)}
-        step.status = 'completed'
+        step.output_data = {"run_id": str(run.id)}
+        step.status = "completed"
         step.completed_at = timezone.now()
         step.save()
 
@@ -248,36 +259,36 @@ class ResearchEngine:
         """Analyze experiment results."""
         step = PipelineStep.objects.create(
             pipeline=self.pipeline,
-            step_type='result_analysis',
+            step_type="result_analysis",
             order=6,
-            title='Result Analysis',
-            description='Analyzing experiment results',
-            status='running',
+            title="Result Analysis",
+            description="Analyzing experiment results",
+            status="running",
             started_at=timezone.now(),
         )
 
         # In production, this would wait for the experiment to complete and analyze metrics
-        self.context['results'] = {
-            'eval_accuracy': 0.85,
-            'eval_f1': 0.83,
-            'eval_loss': 0.35,
+        self.context["results"] = {
+            "eval_accuracy": 0.85,
+            "eval_f1": 0.83,
+            "eval_loss": 0.35,
         }
 
-        step.output_data = self.context['results']
-        step.status = 'completed'
+        step.output_data = self.context["results"]
+        step.status = "completed"
         step.completed_at = timezone.now()
         step.save()
 
         PipelineArtifact.objects.create(
             pipeline=self.pipeline,
             step=step,
-            artifact_type='experiment_results',
-            title='Experiment Results',
+            artifact_type="experiment_results",
+            title="Experiment Results",
             content=f"Accuracy: {self.context['results']['eval_accuracy']}",
-            metadata=self.context['results'],
+            metadata=self.context["results"],
         )
 
-        self.pipeline.final_metrics = self.context['results']
+        self.pipeline.final_metrics = self.context["results"]
         self.pipeline.save()
         self.pipeline.progress = 85.0
         self.pipeline.save()
@@ -286,11 +297,11 @@ class ResearchEngine:
         """Draft a manuscript from the research findings."""
         step = PipelineStep.objects.create(
             pipeline=self.pipeline,
-            step_type='manuscript_section',
+            step_type="manuscript_section",
             order=7,
-            title='Manuscript Draft',
-            description='Drafting the research manuscript',
-            status='running',
+            title="Manuscript Draft",
+            description="Drafting the research manuscript",
+            status="running",
             started_at=timezone.now(),
         )
 
@@ -316,17 +327,17 @@ F1 Score: {self.context['results'].get('eval_f1', 'N/A')}
 The results suggest that...
 """
 
-        self.context['manuscript_sections'].append(manuscript)
-        step.output_data = {'manuscript_length': len(manuscript)}
-        step.status = 'completed'
+        self.context["manuscript_sections"].append(manuscript)
+        step.output_data = {"manuscript_length": len(manuscript)}
+        step.status = "completed"
         step.completed_at = timezone.now()
         step.save()
 
         PipelineArtifact.objects.create(
             pipeline=self.pipeline,
             step=step,
-            artifact_type='full_manuscript',
-            title='Research Manuscript',
+            artifact_type="full_manuscript",
+            title="Research Manuscript",
             content=manuscript,
         )
 

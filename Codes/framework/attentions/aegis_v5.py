@@ -10,12 +10,12 @@ Combines:
   4. Per‑head adaptive gate to blend local and global information
 """
 
-import math
+from dataclasses import dataclass
+from typing import Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
-from dataclasses import dataclass
 
 
 # --------------------------------------------------------------------------
@@ -23,46 +23,52 @@ from dataclasses import dataclass
 # --------------------------------------------------------------------------
 @dataclass
 class AegisConfigV5:
-    svd_energy: float = 0.95          # fraction of singular‑value energy to keep
+    svd_energy: float = 0.95  # fraction of singular‑value energy to keep
     min_rank: int = 4
     max_rank: int = 64
-    num_local_heads: int = 8          # local window attention
-    num_global_heads: int = 4         # global kernel linear attention
-    local_window: int = 64            # sliding window radius
+    num_local_heads: int = 8  # local window attention
+    num_global_heads: int = 4  # global kernel linear attention
+    local_window: int = 64  # sliding window radius
     softpick_temperature: float = 1.0
-    rff_features: int = 256           # random Fourier feature dimension
-    use_zero_sum_keys: bool = True    # stabilise kernel approximation
-    use_adaptive_gate: bool = True    # per‑head blending
-    gate_init_bias: float = 1.5       # initial bias towards global
+    rff_features: int = 256  # random Fourier feature dimension
+    use_zero_sum_keys: bool = True  # stabilise kernel approximation
+    use_adaptive_gate: bool = True  # per‑head blending
+    gate_init_bias: float = 1.5  # initial bias towards global
     dropout: float = 0.1
 
 
 # --------------------------------------------------------------------------
 # Factorised Linear Layer (truncated SVD)
 # --------------------------------------------------------------------------
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("aegis_v5")
 class FactorisedLinear(nn.Module):
-    def __init__(self, pretrained_weight: torch.Tensor,
-                 pretrained_bias: Optional[torch.Tensor],
-                 energy: float, min_rank: int = 4, max_rank: int = 64):
+    def __init__(
+        self,
+        pretrained_weight: torch.Tensor,
+        pretrained_bias: Optional[torch.Tensor],
+        energy: float,
+        min_rank: int = 4,
+        max_rank: int = 64,
+    ):
         super().__init__()
         out_dim, in_dim = pretrained_weight.shape
         with torch.no_grad():
             U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
-            total = (S ** 2).sum()
-            cum = torch.cumsum(S ** 2, dim=0) / total
+            total = (S**2).sum()
+            cum = torch.cumsum(S**2, dim=0) / total
             rank = int(torch.searchsorted(cum, energy).item()) + 1
             rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
             self.rank = rank
-            A = U[:, :rank] * S[:rank].unsqueeze(0)   # (out, r)
-            B = Vt[:rank, :]                           # (r, in)
+            A = U[:, :rank] * S[:rank].unsqueeze(0)  # (out, r)
+            B = Vt[:rank, :]  # (r, in)
 
         self.down = nn.Linear(in_dim, rank, bias=False)
-        self.up   = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
+        self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
         self.down.weight.data = B.float()
-        self.up.weight.data   = A.float()
+        self.up.weight.data = A.float()
         if pretrained_bias is not None:
             self.up.bias.data = pretrained_bias.float()
         else:
@@ -88,7 +94,7 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
 # --------------------------------------------------------------------------
 def local_window_attention(Q, K, V, window, temperature, token_valid=None):
     B, H, N, D = Q.shape
-    scale = D ** -0.5
+    scale = D**-0.5
     idx = torch.arange(N, device=Q.device)
     dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
     mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
@@ -111,8 +117,13 @@ def local_window_attention(Q, K, V, window, temperature, token_valid=None):
 # AEGIS‑Attention Module
 # --------------------------------------------------------------------------
 class AegisAttention(nn.Module):
-    def __init__(self, model_config, aegis_cfg: AegisConfigV5,
-                 pretrained_attn=None, bert_mode: bool = False):
+    def __init__(
+        self,
+        model_config,
+        aegis_cfg: AegisConfigV5,
+        pretrained_attn=None,
+        bert_mode: bool = False,
+    ):
         super().__init__()
         self.num_heads = model_config.num_attention_heads
         self.head_dim = model_config.hidden_size // self.num_heads
@@ -121,30 +132,50 @@ class AegisAttention(nn.Module):
         self.cfg = aegis_cfg
         self.bert_mode = bert_mode
 
-        assert (aegis_cfg.num_local_heads + aegis_cfg.num_global_heads == self.num_heads)
+        assert aegis_cfg.num_local_heads + aegis_cfg.num_global_heads == self.num_heads
         self.num_local_heads = aegis_cfg.num_local_heads
         self.num_global_heads = aegis_cfg.num_global_heads
 
         if pretrained_attn is None:
-            raise ValueError("AegisAttention requires pretrained_attn for zero‑shot init")
+            raise ValueError(
+                "AegisAttention requires pretrained_attn for zero‑shot init"
+            )
 
         # SVD‑factorised projections
         self.q_proj = FactorisedLinear(
-            pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias.data,
-            aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
+            pretrained_attn.q_lin.weight.data,
+            pretrained_attn.q_lin.bias.data,
+            aegis_cfg.svd_energy,
+            aegis_cfg.min_rank,
+            aegis_cfg.max_rank,
+        )
         self.k_proj = FactorisedLinear(
-            pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias.data,
-            aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
+            pretrained_attn.k_lin.weight.data,
+            pretrained_attn.k_lin.bias.data,
+            aegis_cfg.svd_energy,
+            aegis_cfg.min_rank,
+            aegis_cfg.max_rank,
+        )
         self.v_proj = FactorisedLinear(
-            pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias.data,
-            aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
+            pretrained_attn.v_lin.weight.data,
+            pretrained_attn.v_lin.bias.data,
+            aegis_cfg.svd_energy,
+            aegis_cfg.min_rank,
+            aegis_cfg.max_rank,
+        )
         self.out_proj = FactorisedLinear(
-            pretrained_attn.out_lin.weight.data, pretrained_attn.out_lin.bias.data,
-            aegis_cfg.svd_energy, aegis_cfg.min_rank, aegis_cfg.max_rank)
+            pretrained_attn.out_lin.weight.data,
+            pretrained_attn.out_lin.bias.data,
+            aegis_cfg.svd_energy,
+            aegis_cfg.min_rank,
+            aegis_cfg.max_rank,
+        )
 
         # Random Fourier features for global heads
         self.rff_proj = nn.Parameter(
-            torch.randn(self.num_global_heads, self.head_dim, aegis_cfg.rff_features) * 0.02)
+            torch.randn(self.num_global_heads, self.head_dim, aegis_cfg.rff_features)
+            * 0.02
+        )
 
         # Adaptive gating
         if aegis_cfg.use_adaptive_gate:
@@ -178,8 +209,14 @@ class AegisAttention(nn.Module):
     # ------------------------------------------------------------------
     # Forward pass
     # ------------------------------------------------------------------
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs,
+    ):
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         Hl, Hg = self.num_local_heads, self.num_global_heads
@@ -203,33 +240,39 @@ class AegisAttention(nn.Module):
 
         # 2. Local window attention
         ctx_local = local_window_attention(
-            Q_local, K_local, V_local,
+            Q_local,
+            K_local,
+            V_local,
             window=self.cfg.local_window,
             temperature=self.cfg.softpick_temperature,
             token_valid=token_valid,
-        )   # (B, Hl, N, D)
+        )  # (B, Hl, N, D)
 
         # 3. Global kernel linear attention
         # project with learnable random Fourier features
-        Q_feat = torch.einsum('bhnd,hdf->bhnf', Q_global, self.rff_proj)  # (B,Hg,N,F)
-        K_feat = torch.einsum('bhnd,hdf->bhnf', K_global, self.rff_proj)
+        Q_feat = torch.einsum("bhnd,hdf->bhnf", Q_global, self.rff_proj)  # (B,Hg,N,F)
+        K_feat = torch.einsum("bhnd,hdf->bhnf", K_global, self.rff_proj)
 
         # mask padding tokens
         if token_valid is not None:
-            mask_g = token_valid.unsqueeze(1).unsqueeze(-1)   # (B,1,N,1)
+            mask_g = token_valid.unsqueeze(1).unsqueeze(-1)  # (B,1,N,1)
             K_feat = K_feat.masked_fill(~mask_g, 0.0)
             V_global = V_global.masked_fill(~mask_g, 0.0)
 
-        KV = torch.einsum('bhnf,bhnd->bhfd', K_feat, V_global)          # (B,Hg,F,D)
-        K_sum = K_feat.sum(dim=2, keepdim=True)                          # (B,Hg,1,F)
-        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-8     # (B,Hg,N,1)
-        ctx_global = torch.einsum('bhnf,bhfd->bhnd', Q_feat, KV) / denom  # (B,Hg,N,D)
+        KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_global)  # (B,Hg,F,D)
+        K_sum = K_feat.sum(dim=2, keepdim=True)  # (B,Hg,1,F)
+        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-8  # (B,Hg,N,1)
+        ctx_global = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom  # (B,Hg,N,D)
 
         # 4. Adaptive blending (or simple concatenation)
         if self.blend_logits is not None:
             global_signal = ctx_global.mean(dim=1, keepdim=True).expand(-1, H, -1, -1)
-            local_full = torch.cat([ctx_local, torch.zeros(B, Hg, N, D, device=ctx_local.device)], dim=1)
-            gate = torch.sigmoid(self.blend_logits.unsqueeze(-1).unsqueeze(-1) + self.gate_bias)
+            local_full = torch.cat(
+                [ctx_local, torch.zeros(B, Hg, N, D, device=ctx_local.device)], dim=1
+            )
+            gate = torch.sigmoid(
+                self.blend_logits.unsqueeze(-1).unsqueeze(-1) + self.gate_bias
+            )
             context = gate * local_full + (1 - gate) * global_signal
         else:
             context = torch.cat([ctx_local, ctx_global], dim=1)
@@ -251,23 +294,28 @@ class AegisAttention(nn.Module):
 # Injection helper & Registry
 # ------------------------------------------------------------
 def inject_aegis_into_distilbert(layer, model_config, aegis_cfg, old_attn):
-    new_attn = AegisAttention(model_config=model_config,
-                              aegis_cfg=aegis_cfg,
-                              pretrained_attn=old_attn,
-                              bert_mode=False)
+    new_attn = AegisAttention(
+        model_config=model_config,
+        aegis_cfg=aegis_cfg,
+        pretrained_attn=old_attn,
+        bert_mode=False,
+    )
     layer.attention = new_attn
     return new_attn
 
 
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("aegis_v5")
-def inject_aegis_v5(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_aegis_v5(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
     cfg = AegisConfigV5(
         num_local_heads=8,
         num_global_heads=4,
-        local_window=getattr(comp_config, 'block_size', 64),
-        rff_features=getattr(comp_config, 'rff_features', 256),
-        dropout=getattr(comp_config, 'dropout', 0.1),
+        local_window=getattr(comp_config, "block_size", 64),
+        rff_features=getattr(comp_config, "rff_features", 256),
+        dropout=getattr(comp_config, "dropout", 0.1),
     )
     return inject_aegis_into_distilbert(layer, model_config, cfg, old_attn)

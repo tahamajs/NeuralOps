@@ -1,9 +1,10 @@
 """ENLighten: low‑rank SVD + 2:4 structured sparsity (photonic‑aligned). Registered as 'enlighten'."""
 
-import torch
 import numpy as np
+import torch
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class ENLightenCompressor(BaseCompressor):
     def __init__(self, model, rank=64, sparsity=0.5, **kwargs):
@@ -26,23 +27,23 @@ class ENLightenCompressor(BaseCompressor):
                 residual_sp = np.zeros_like(residual)
                 for i in range(residual.shape[0]):
                     for j in range(0, residual.shape[1], 4):
-                        sub = residual[i, j:j+4]
+                        sub = residual[i, j : j + 4]
                         idx = np.argsort(np.abs(sub))[-2:]
                         mask = np.zeros(4)
                         mask[idx] = 1
-                        residual_sp[i, j:j+4] = sub * mask
+                        residual_sp[i, j : j + 4] = sub * mask
                 W_new = L + residual_sp
-                module.weight.data = torch.tensor(W_new, dtype=module.weight.dtype, device=module.weight.device)
+                module.weight.data = torch.tensor(
+                    W_new, dtype=module.weight.dtype, device=module.weight.device
+                )
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
 
-
-
 @COMPRESSOR_REGISTRY.register("enlighten")
 def enlighten_factory(model, comp_config):
-    rank = getattr(comp_config, 'enlighten_rank', 64)
-    sparsity = getattr(comp_config, 'enlighten_sparsity', 0.5)
+    rank = getattr(comp_config, "enlighten_rank", 64)
+    sparsity = getattr(comp_config, "enlighten_sparsity", 0.5)
     compressor = ENLightenCompressor(model, rank=rank, sparsity=sparsity)
     compressed_model, _ = compressor.compress()
     return compressed_model

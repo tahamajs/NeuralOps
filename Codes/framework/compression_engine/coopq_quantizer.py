@@ -2,7 +2,8 @@
 
 import torch
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class CoopQQuantizer(BaseCompressor):
     def __init__(self, model, bits=4, **kwargs):
@@ -21,7 +22,9 @@ class CoopQQuantizer(BaseCompressor):
             min_b, max_b = module.bias.min(), module.bias.max()
             if max_b > min_b:
                 scale_b = (max_b - min_b) / (2**bits - 1)
-                module.bias.data = torch.round((module.bias.data - min_b) / scale_b) * scale_b + min_b
+                module.bias.data = (
+                    torch.round((module.bias.data - min_b) / scale_b) * scale_b + min_b
+                )
 
     def compress(self):
         sensitivities = {}
@@ -36,12 +39,11 @@ class CoopQQuantizer(BaseCompressor):
                 self._quantize_layer(module, bits_layer)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
+
 
 @COMPRESSOR_REGISTRY.register("coopq")
 def coopq_factory(model, comp_config):
-    bits = getattr(comp_config, 'coopq_bits', 4)
+    bits = getattr(comp_config, "coopq_bits", 4)
     compressor = CoopQQuantizer(model, bits)
     compressed_model, _ = compressor.compress()
     return compressed_model
-

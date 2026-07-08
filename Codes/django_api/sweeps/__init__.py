@@ -1,1 +1,1 @@
-default_app_config = 'sweeps.apps.SweepsConfig'
+default_app_config = "sweeps.apps.SweepsConfig"

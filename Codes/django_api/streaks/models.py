@@ -1,6 +1,7 @@
 import uuid
-from django.db import models
+
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 
 
@@ -9,19 +10,22 @@ class DailyActivity(models.Model):
     Counts of research activities for a user on a specific date.
     One row per user per date.  Activity types are stored as integer fields.
     """
+
     ACTIVITY_TYPES = [
-        ('paper_read', 'Paper Read / Saved'),
-        ('experiment_run', 'Experiment Run'),
-        ('note_created', 'Note Created'),
-        ('paper_written', 'Paper / LaTeX Edited'),
-        ('code_commit', 'Code Commit'),
-        ('benchmark_submission', 'Benchmark Submission'),
-        ('discussion_post', 'Discussion / Reply'),
+        ("paper_read", "Paper Read / Saved"),
+        ("experiment_run", "Experiment Run"),
+        ("note_created", "Note Created"),
+        ("paper_written", "Paper / LaTeX Edited"),
+        ("code_commit", "Code Commit"),
+        ("benchmark_submission", "Benchmark Submission"),
+        ("discussion_post", "Discussion / Reply"),
     ]
     # We'll store each type as a separate integer field for simplicity.
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='daily_activities'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="daily_activities",
     )
     date = models.DateField(db_index=True)
 
@@ -40,10 +44,10 @@ class DailyActivity(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = [['user', 'date']]
-        ordering = ['-date']
+        unique_together = [["user", "date"]]
+        ordering = ["-date"]
         indexes = [
-            models.Index(fields=['user', '-date']),
+            models.Index(fields=["user", "-date"]),
         ]
 
     def __str__(self):
@@ -51,11 +55,15 @@ class DailyActivity(models.Model):
 
     def recalculate_total(self):
         self.total_count = (
-            self.paper_reads + self.experiments_run + self.notes_created +
-            self.papers_written + self.code_commits + self.benchmark_submissions +
-            self.discussion_posts
+            self.paper_reads
+            + self.experiments_run
+            + self.notes_created
+            + self.papers_written
+            + self.code_commits
+            + self.benchmark_submissions
+            + self.discussion_posts
         )
-        self.save(update_fields=['total_count'])
+        self.save(update_fields=["total_count"])
 
     @staticmethod
     def record(user, activity_type: str, increment: int = 1):
@@ -63,13 +71,13 @@ class DailyActivity(models.Model):
         today = timezone.now().date()
         obj, _ = DailyActivity.objects.get_or_create(user=user, date=today)
         field_map = {
-            'paper_read': 'paper_reads',
-            'experiment_run': 'experiments_run',
-            'note_created': 'notes_created',
-            'paper_written': 'papers_written',
-            'code_commit': 'code_commits',
-            'benchmark_submission': 'benchmark_submissions',
-            'discussion_post': 'discussion_posts',
+            "paper_read": "paper_reads",
+            "experiment_run": "experiments_run",
+            "note_created": "notes_created",
+            "paper_written": "papers_written",
+            "code_commit": "code_commits",
+            "benchmark_submission": "benchmark_submissions",
+            "discussion_post": "discussion_posts",
         }
         field = field_map.get(activity_type)
         if field:
@@ -84,9 +92,10 @@ class Streak(models.Model):
     """
     Tracks the current and longest streak for a user.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='streak'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="streak"
     )
     current_streak = models.PositiveIntegerField(default=0)
     longest_streak = models.PositiveIntegerField(default=0)
@@ -98,7 +107,6 @@ class Streak(models.Model):
 
     def update_streak(self, activity_date):
         """Update streak after an activity on activity_date."""
-        from datetime import timedelta
 
         if self.last_active_date is None:
             # First activity ever
@@ -126,9 +134,12 @@ class WeeklySummary(models.Model):
     """
     A snapshot of a user's activity for a given week.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='weekly_summaries'
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="weekly_summaries",
     )
     week_start = models.DateField()
     total_activities = models.PositiveIntegerField(default=0)
@@ -141,8 +152,8 @@ class WeeklySummary(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = [['user', 'week_start']]
-        ordering = ['-week_start']
+        unique_together = [["user", "week_start"]]
+        ordering = ["-week_start"]
 
     def __str__(self):
         return f"Week {self.week_start} for {self.user.username}"
