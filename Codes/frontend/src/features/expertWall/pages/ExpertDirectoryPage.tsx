@@ -38,16 +38,16 @@ export default function ExpertDirectoryPage({
   } = useQuery({
     queryKey: ["experts", filters, searchTerm],
     queryFn: () =>
-      expertWallAPI.getExperts({ ...filters, search: searchTerm || undefined }),
+      (expertWallAPI as any).getExperts({ ...filters, search: searchTerm || undefined }),
   });
 
   const { data: stats } = useQuery({
     queryKey: ["expert-stats"],
-    queryFn: () => expertWallAPI.getStats(),
+    queryFn: () => (expertWallAPI as any).getStats(),
   });
 
   const refreshMutation = useMutation({
-    mutationFn: () => expertWallAPI.refreshExpertCache(),
+    mutationFn: () => (expertWallAPI as any).refreshExpertCache(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["experts"] });
       success("Expert list refreshed");

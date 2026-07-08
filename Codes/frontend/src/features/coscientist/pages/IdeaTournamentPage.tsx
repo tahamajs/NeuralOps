@@ -134,11 +134,9 @@ export default function IdeaTournamentPage({
   }
 
   // Active session view
-  const displayHypotheses = hypotheses.length
-    ? hypotheses
-    : session?.hypotheses || [];
-  const displayMatches = matches.length ? matches : session?.matches || [];
-  const displayAgents = agents.length ? agents : session?.agents || [];
+  const displayHypotheses = hypotheses.length ? hypotheses : (sessionData as any)?.hypotheses || [];
+  const displayMatches = matches.length ? matches : (sessionData as any)?.matches || [];
+  const displayAgents = agents.length ? agents : (sessionData as any)?.agents || [];
 
   return (
     <div className="flex flex-col h-full">
@@ -148,7 +146,7 @@ export default function IdeaTournamentPage({
             <Trophy size={20} className="text-yellow-400" /> Idea Tournament
           </h1>
           <p className="text-xs text-slate-400 truncate max-w-md">
-            {session?.goal || goal}
+            Goal: {(sessionData as any)?.goal || "General exploration"}
           </p>
         </div>
         <div className="flex gap-2">

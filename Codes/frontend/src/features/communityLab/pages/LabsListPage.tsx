@@ -69,8 +69,8 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
       </div>
       <div className="flex-1 overflow-auto p-4 space-y-3">
         {labs?.map((lab) => (
-          <Link key={lab.id} to={`/labs/${lab.id}`}>
-            <TerminalCard hover className="p-4">
+          <div key={lab.id} onClick={() => navigate(`/community/labs/${lab.id}`)} className="cursor-pointer">
+            <TerminalCard className="p-4">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
