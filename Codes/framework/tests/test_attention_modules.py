@@ -14,6 +14,9 @@ Tests:
 
 import pytest
 import torch
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
 from conftest import build_attention, get_testable_attention_keys
 
 # ----------------------------------------------------------------------
