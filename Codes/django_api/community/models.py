@@ -304,7 +304,7 @@ class ReputationEvent(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="reputation_events",
+        related_name="community_reputation_events",
     )
     event_type = models.CharField(max_length=30, choices=EVENT_TYPES)
     amount = models.IntegerField()

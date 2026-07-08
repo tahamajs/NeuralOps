@@ -153,7 +153,7 @@ class SecurityScan(models.Model):
     model_version = models.ForeignKey(
         "model_versioning.ModelVersion",
         on_delete=models.CASCADE,
-        related_name="security_scans",
+        related_name="governance_security_scans",
     )
     status = models.CharField(max_length=30, default="queued")
     summary = models.TextField(blank=True)
