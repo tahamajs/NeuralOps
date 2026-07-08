@@ -1,6 +1,6 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import { cn } from "@/lib/utils";
+import { cn } from "../../../lib/utils";
 
 marked.setOptions({
   breaks: true,
