@@ -1,6 +1,6 @@
 // src/features/governance/pages/AuditLogDashboard.tsx
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { governanceAPI } from "../services/api";
 import { AuditLogTable } from "../components/AuditLogTable";
 import { StatCard } from "../components/StatCard";
@@ -130,12 +130,12 @@ export default function AuditLogDashboard({
         </div>
         <TerminalCard className="p-4">
           <div className="flex flex-wrap gap-3 items-end">
-            <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
-              onStartChange={setStartDate}
-              onEndChange={setEndDate}
-            />
+            {(DateRangePicker as any)({
+              startDate,
+              endDate,
+              onStartChange: setStartDate,
+              onEndChange: setEndDate,
+            })}
             <Input
               placeholder="User ID"
               value={userId}
