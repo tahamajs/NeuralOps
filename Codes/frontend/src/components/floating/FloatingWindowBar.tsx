@@ -1,26 +1,26 @@
-import { useFloatingWindowStore, WINDOW_TYPES } from "./FloatingWindowManager";
+import { useWindowStore } from "../../store/windowStore";
 
 const QUICK_LAUNCH = [
   {
-    id: WINDOW_TYPES.TERMINAL,
+    id: "terminal",
     title: "Terminal",
     icon: ">_",
     color: "text-green-400",
   },
   {
-    id: WINDOW_TYPES.PAPER_EDITOR,
+    id: "paper-editor",
     title: "Paper",
     icon: "📄",
     color: "text-purple-400",
   },
   {
-    id: WINDOW_TYPES.NOTES_EDITOR,
+    id: "notes",
     title: "Notes",
     icon: "📝",
     color: "text-yellow-400",
   },
   {
-    id: WINDOW_TYPES.SYSTEM_MONITOR,
+    id: "system",
     title: "Monitor",
     icon: "⬡",
     color: "text-blue-400",
@@ -28,22 +28,15 @@ const QUICK_LAUNCH = [
 ];
 
 export default function FloatingWindowBar() {
-  const { addWindow, windows, toggleMinimize } = useFloatingWindowStore();
+  const { addWindow, windows, toggleMinimize } = useWindowStore();
 
   const handleClick = (item: (typeof QUICK_LAUNCH)[number]) => {
-    const existing = windows.find((w) => w.id === item.id);
+    const existing = windows.find((w) => w.type === item.id);
     if (existing) {
-      if (existing.minimized) toggleMinimize(item.id);
-      else toggleMinimize(item.id); // or just focus: we can bring to front
+      if (existing.minimized) toggleMinimize(existing.id);
+      else toggleMinimize(existing.id);
     } else {
-      addWindow({
-        id: item.id,
-        title: item.title,
-        icon: item.icon,
-        content: item.id,
-        width: 700,
-        height: 500,
-      });
+      addWindow(item.id, item.title, item.icon);
     }
   };
 
