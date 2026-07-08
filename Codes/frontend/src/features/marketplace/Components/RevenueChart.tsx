@@ -3,9 +3,12 @@ import {
   Area,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+
+export type RevenuePoint = any;
 
 export function RevenueChart({ data }: { data: RevenuePoint[] }) {
   const chartData = data.map((d) => ({

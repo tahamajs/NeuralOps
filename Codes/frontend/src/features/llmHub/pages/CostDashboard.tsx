@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { llmHubAPI } from "../services/api";
 import { CostChart } from "../components/CostChart";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
+import { Button } from "../../../components/ui/Button";
 import { Spinner } from "../../../components/ui/Spinner";
 import { Badge } from "../../../components/ui/Badge";
 import { DollarSign, TrendingUp, AlertTriangle } from "lucide-react";
