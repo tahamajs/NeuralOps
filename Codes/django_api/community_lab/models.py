@@ -2,6 +2,8 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+
 
 
 class ResearchLab(models.Model):
@@ -329,15 +331,15 @@ class DiscoveryReview(models.Model):
         related_name="discovery_reviews",
     )
     overall_score = models.PositiveSmallIntegerField(
-        validators=[models.MinValueValidator(1), models.MaxValueValidator(10)]
+        validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
     methodology_score = models.PositiveSmallIntegerField(
-        validators=[models.MinValueValidator(1), models.MaxValueValidator(10)],
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
         null=True,
         blank=True,
     )
     reproducibility_score = models.PositiveSmallIntegerField(
-        validators=[models.MinValueValidator(1), models.MaxValueValidator(10)],
+        validators=[MinValueValidator(1), MaxValueValidator(10)],
         null=True,
         blank=True,
     )
