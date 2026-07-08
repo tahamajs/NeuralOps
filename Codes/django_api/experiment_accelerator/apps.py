@@ -6,4 +6,5 @@ class ExperimentAcceleratorConfig(AppConfig):
     name = "experiment_accelerator"
 
     def ready(self):
-        import experiment_accelerator.signals  # noqa
+        # import experiment_accelerator.signals  # noqa
+        pass
