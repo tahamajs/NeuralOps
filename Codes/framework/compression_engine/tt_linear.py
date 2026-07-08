@@ -193,7 +193,7 @@ class TTLinearLayer(nn.Module):
                 S = S[:rank]
                 V = V[:, :rank]
                 # First core: shape (1, p1, q1, rank) -> actually we need to reshape U to (p1, q1, rank)
-                core1 = (
+                (
                     U.view(p1, q1, rank).permute(2, 0, 1).unsqueeze(0)
                 )  # (1, p1, q1, rank)
                 # Middle core: diagonal of singular values? No, we need to integrate S.
@@ -287,7 +287,7 @@ class TTLinearLayer(nn.Module):
             # For the i-th core, we want to contract p_i and r_left.
             # We can move the p_i dimension to the front.
             dims = list(range(2, 2 + self.d))  # positions of p1...pd in x_core
-            p_i_pos = dims[i]  # index of p_i
+            dims[i]  # index of p_i
             # Rearrange x_core so that r_left and p_i are the last two dims before the rest?
             # Better: use einsum with explicit subscripts based on current dimensions.
             # We'll construct the subscript strings programmatically.
@@ -302,7 +302,7 @@ class TTLinearLayer(nn.Module):
 
             # First, compute the total number of "other" dimensions (excluding batch, r_left, and p_i)
             other_dims = [d for j, d in enumerate(self.p_dims) if j != i]
-            product_other = np.prod(other_dims) if other_dims else 1
+            np.prod(other_dims) if other_dims else 1
 
             # Current x_core shape: (B, r_left, p1, p2, ..., pd)
             # We want to combine batch, r_left, and all p_j (j != i) into one dimension
@@ -323,13 +323,13 @@ class TTLinearLayer(nn.Module):
             )
 
             # Perform matrix multiplication: (N, p_i) @ (p_i, q_i*r_right) -> (N, q_i*r_right)
-            y_flat = torch.mm(x_flat, core_flat)  # (N, q_i * r_right)
+            torch.mm(x_flat, core_flat)  # (N, q_i * r_right)
 
             # New r_right value
             r_right = core.shape[-1]
             # New shape: (B, r_right, q_i, other_dims...)
             # We need to reshape back to (B, r_right, q_i, other p_j...)
-            new_shape = (batch_size, r_left, *other_dims, self.q_dims[i], r_right)
+            (batch_size, r_left, *other_dims, self.q_dims[i], r_right)
             # Actually the order of dimensions after contraction: we have q_i and r_right, but we also have the other p's.
             # Let's determine correct order: our original x_core had dimensions: B, r_left, p1, p2, ..., pd.
             # After contracting p_i, we get new dimensions: B, r_right, q_i, and all p_j for j != i.
@@ -374,7 +374,7 @@ class TTLinearLayer(nn.Module):
         # Use tensorly or a custom loop.
         # For simplicity, we'll use einsum sequentially.
         # Initialize with first core (1, p1, q1, r1)
-        res = self.cores[0]  # (1, p1, q1, r1)
+        self.cores[0]  # (1, p1, q1, r1)
         for core in self.cores[1:-1]:
             # core shape (r_left, p_i, q_i, r_right)
             # res currently (1, p1, q1, ..., r_prev)
@@ -400,7 +400,7 @@ class TTLinearLayer(nn.Module):
         # Use torch.einsum iteratively.
         # We need to contract all cores into a single tensor.
         # Start with first core as a 4D tensor: (1, p1, q1, r1)
-        full = self.cores[0]  # (1, p1, q1, r1)
+        self.cores[0]  # (1, p1, q1, r1)
         for core in self.cores[1:]:
             # full shape (r_left, p1, q1, ..., p_{i-1}, q_{i-1}, r_prev)
             # core shape (r_prev, p_i, q_i, r_next)
@@ -412,7 +412,7 @@ class TTLinearLayer(nn.Module):
                 from tensorly import tt_to_tensor
 
                 tl.set_backend("pytorch")
-                cores_list = [
+                [
                     core.squeeze(0) for core in self.cores
                 ]  # remove first and last singleton dims?
                 # tensorly expects list of 3D cores (r_k, n_k, m_k, r_{k+1})? Actually for matrix TT it expects list of 3D arrays (r_k, n_k*m_k, r_{k+1})? Let's not.
@@ -424,7 +424,7 @@ class TTLinearLayer(nn.Module):
                     core0 = self.cores[0].squeeze(0)  # (p1, q1, r)
                     core1 = self.cores[1].squeeze(-1)  # (r, p2, q2)
                     # Contract over r: (p1, q1, r) * (r, p2, q2) -> (p1, q1, p2, q2)
-                    W_tt = torch.einsum(
+                    torch.einsum(
                         "pqr,rpq->pqpq", core0, core1
                     )  # careful: indices
                     # Actually we need to get shape (p1, p2, q1, q2) after permutation

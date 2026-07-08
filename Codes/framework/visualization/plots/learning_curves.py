@@ -29,7 +29,7 @@ def plot_learning_curve(history, metrics, config, output_dir, opts):
         # Fallback: use steps as a proxy (not true learning curve but useful)
         steps = [h.get("step", i) for i, h in enumerate(history) if "loss" in h]
         train = [h["loss"] for h in history if "loss" in h]
-        eval_s = [h.get("step", i) for i, h in enumerate(history) if "eval_loss" in h]
+        [h.get("step", i) for i, h in enumerate(history) if "eval_loss" in h]
         eval_l = [h["eval_loss"] for h in history if "eval_loss" in h]
         if not steps:
             return []

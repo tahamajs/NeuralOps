@@ -46,7 +46,6 @@ class LayerwiseAnalyzer:
 
     def analyze(self, texts: List[str], batch_size: int = 8) -> Dict[str, Any]:
         self.register_hooks()
-        all_hidden = []
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
             inputs = self.tokenizer(

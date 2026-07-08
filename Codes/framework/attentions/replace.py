@@ -51,8 +51,7 @@ def _replace_distilbert_attention(model, attention_name, attention_params):
     for layer in model.distilbert.transformer.layer:
         old_attn = layer.attention
         # DistilBERT attention has q_lin, k_lin, v_lin, out_lin
-        hidden_size = old_attn.q_lin.in_features
-        num_heads = getattr(model.config, "num_attention_heads", 12)
+        getattr(model.config, "num_attention_heads", 12)
         # Build a custom `inject` function instead of a class directly
         # But we rely on the registry's inject function for the given key.
         inject_fn = ATTENTION_REGISTRY.get(attention_name)

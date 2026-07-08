@@ -19,7 +19,7 @@ def plot_embedding(history, metrics, config, output_dir, opts):
         data = json.load(f)
     vectors = np.array(data.get("vectors", []))
     labels = np.array(data.get("labels", []))
-    texts = data.get("texts", [])
+    data.get("texts", [])
     if len(vectors) == 0:
         return []
 

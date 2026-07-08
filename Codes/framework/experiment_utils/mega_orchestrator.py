@@ -200,7 +200,7 @@ class MegaOrchestrator:
 
         # 3h. Train
         self._log("Training started…")
-        train_result = trainer.train()
+        trainer.train()
         eval_result = trainer.evaluate()
 
         # 3i. Store state

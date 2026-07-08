@@ -144,7 +144,6 @@ class LabelQualityDetector:
         Return: (issue_mask, quality_scores, suggested_labels)
         """
         n_samples, n_classes = pred_probs.shape
-        confident_joint = cj
 
         # For each sample, the label quality score = 1 - P(mislabeled)
         self_confidence = pred_probs[np.arange(n_samples), labels]

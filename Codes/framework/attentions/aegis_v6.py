@@ -392,7 +392,7 @@ class ContextFusionGate(nn.Module):
         # hidden_states: (B,N,H)
         # local_out, global_out: (B,h,N,d)
         B, h, N, d = local_out.shape
-        H = hidden_states.size(-1)
+        hidden_states.size(-1)
         # Split hidden into per-head features: (B,N,H) -> (B,N,h,d) -> (B,h,N,d)
         hidden_per_head = hidden_states.view(B, N, h, d).permute(
             0, 2, 1, 3
@@ -563,7 +563,6 @@ class AegisAttentionV3(BaseAttention):
         All other args as before.
         """
         B, h, N, d = Q.shape
-        m = self.cfg.kernel_feature_dim
 
         # Normalise pad_mask_1d to (B, 1, 1, N)
         if pad_mask_1d.dim() == 2:

@@ -12,11 +12,13 @@ Tests:
   7. Dropout behaviour – train vs eval mode
 """
 
+import os
+import sys
+
 import pytest
 import torch
 from transformers import DistilBertConfig
-import sys
-import os
+
 sys.path.insert(0, os.path.dirname(__file__))
 from conftest import build_attention, get_testable_attention_keys
 
@@ -205,7 +207,7 @@ class TestMultiHeadCompatibility:
     def test_multi_head_no_error(self, key, small_hidden_states, model_config):
         attn = build_attention(key, model_config)
         try:
-            out = attn(small_hidden_states)
+            attn(small_hidden_states)
         except Exception as e:
             pytest.fail(f"{key}: forward pass raised {type(e).__name__}: {e}")
 

@@ -190,7 +190,7 @@ class ExperimentManager:
             trainer.add_callback(cb)
 
         logger.info("Starting single run training...")
-        train_result = trainer.train()
+        trainer.train()
         eval_result = trainer.evaluate()
         logger.info("Training completed.")
 

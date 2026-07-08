@@ -174,7 +174,7 @@ def lsh_attention(
                 # Sort queries by hash code
                 sorted_q_idx = torch.argsort(hq)
                 q_sorted = q_h[sorted_q_idx]  # (N_eff, D)
-                v_sorted = v_h[sorted_q_idx]
+                v_h[sorted_q_idx]
                 # For keys, we need to lookup by the same sorting; we'll compute scores in a double loop (simplified)
                 # Actually efficient bucket attention would use a sorted list. For brevity, we do naive O(N^2) per head
                 # but reduce the compute by only attending within same bucket.

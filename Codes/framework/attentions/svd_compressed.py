@@ -117,7 +117,6 @@ def lagrangian_rank_allocation(
     # Binary search on λ
     low, high = lambda_bracket
     best_allocation = None
-    best_used_params = None
 
     for _ in range(num_lambda_steps):
         lam = (low + high) / 2.0
@@ -135,7 +134,6 @@ def lagrangian_rank_allocation(
         if total_params <= target_budget:
             # feasible – try smaller λ (less penalty on params → maybe more params)
             best_allocation = ranks.copy()
-            best_used_params = total_params
             high = lam
         else:
             low = lam

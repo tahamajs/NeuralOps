@@ -68,7 +68,7 @@ class AdaptiveSpanAttention(nn.Module):
         **kwargs
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
-        H, D = self.num_heads, self.head_dim
+        _H, D = self.num_heads, self.head_dim
 
         Q = self._reshape(self.q_proj(hidden_states), B)  # (B, H, N, D)
         K = self._reshape(self.k_proj(hidden_states), B)

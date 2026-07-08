@@ -42,7 +42,7 @@ class AdaSVDCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         # 2. Compute total original parameters
-        total_params = sum(
+        sum(
             p.numel() for p in self.model.parameters() if p.requires_grad
         )
 

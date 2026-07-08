@@ -147,7 +147,6 @@ class DistributedJobScheduler:
         """One scheduling cycle."""
         with self._lock:
             # 1. Check for completed jobs
-            completed = []
             for jid, job in self._running.items():
                 # In a real system, you'd poll the job's subprocess
                 pass
