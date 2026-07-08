@@ -1,13 +1,13 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { marketplaceApi } from "@/api/marketplace";
-import { useMarketWebSocket } from "@/hooks/useMarketWebSocket";
-import { CandlestickChart } from "@/components/CandlestickChart";
-import { OrderBook } from "@/components/OrderBook";
-import { PlaceOrderForm } from "@/components/PlaceOrderForm";
-import { PortfolioTracker } from "@/components/PortfolioTracker";
-import { TerminalCard } from "@/components/ui/TerminalCard";
-import { Button } from "@/components/ui/Button";
+import { marketplaceApi } from "../../../api/marketplace";
+import { useMarketWebSocket } from "../../../hooks/useMarketWebSocket";
+import { CandlestickChart } from "../../../components/CandlestickChart";
+import { OrderBook } from "../../../components/OrderBook";
+import { PlaceOrderForm } from "../../../components/PlaceOrderForm";
+import { PortfolioTracker } from "../../../components/PortfolioTracker";
+import { TerminalCard } from "../../../components/ui/TerminalCard";
+import { Button } from "../../../components/ui/Button";
 import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
 
 export default function GPUTradingTerminal() {

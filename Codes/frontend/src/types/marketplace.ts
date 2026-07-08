@@ -47,3 +47,43 @@ export interface Portfolio {
   unrealized_pnl_display: number;
   holdings: Holding[];
 }
+
+export interface OrderBookDepth {
+  asks: [number, number][];
+  bids: [number, number][];
+}
+
+export interface ProviderStats {
+  active_gpus: number;
+  total_gpus: number;
+  uptime_percent: number;
+  total_earned: number;
+  monthly_earned: number;
+}
+
+export interface RevenuePoint {
+  date: string;
+  amount: number;
+}
+
+export interface UsageData {
+  labels: string[];
+  datasets: { label: string; data: number[] }[];
+}
+
+export interface Dispute {
+  id: string;
+  job_id: string;
+  reason: string;
+  description: string;
+  status: string;
+  created_at: string;
+  messages?: DisputeMessage[];
+}
+
+export interface DisputeMessage {
+  id: string;
+  sender: string;
+  message: string;
+  created_at: string;
+}
