@@ -16,7 +16,7 @@ class ModelVersion(models.Model):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     run = models.ForeignKey(
-        Job, on_delete=models.CASCADE, related_name="model_versions"
+        Job, on_delete=models.CASCADE, related_name="versioning_model_versions"
     )
     version = models.CharField(max_length=100)
     version_number = models.IntegerField()
@@ -294,7 +294,7 @@ class ModelApproval(models.Model):
     requested_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="approval_requests",
+        related_name="versioning_approval_requests",
     )
     reviewer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -346,7 +346,7 @@ class ModelAccessControl(models.Model):
         ModelVersion, on_delete=models.CASCADE, related_name="access_controls"
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="model_access"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="versioning_model_access"
     )
     access_level = models.CharField(
         max_length=20, choices=ACCESS_LEVELS, default="read"
@@ -356,7 +356,7 @@ class ModelAccessControl(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="granted_access",
+        related_name="versioning_granted_access",
     )
     granted_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(null=True, blank=True)
@@ -444,7 +444,7 @@ class ModelUsageLog(models.Model):
         ModelVersion, on_delete=models.CASCADE, related_name="usage_logs"
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="model_usage"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="versioning_model_usage"
     )
     action = models.CharField(max_length=20, choices=ACTION_TYPES)
     metadata = models.JSONField(default=dict, blank=True)
