@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../api/client";
-import { Card, Button, Input, Spinner, Table } from "../../../components/ui";
+import { Card, Button, Input, Spinner, Table, Badge } from "../../../components/ui";
 import { useState } from "react";
 
 export default function EscrowBalancePage() {
