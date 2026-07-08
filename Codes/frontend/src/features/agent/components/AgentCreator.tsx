@@ -6,7 +6,7 @@ import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
-import { Textarea } from "../../../components/ui/Textarea";
+import { Textarea } from "../../../components/ui/Input";
 import { Bot } from "lucide-react";
 
 export default function AgentCreator() {

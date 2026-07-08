@@ -1,4 +1,4 @@
-import api from "../../../api/client";
+import { request } from "../../../api/client";
 import { Protocol, ProtocolVersion } from "../types";
 
 export const protocolsAPI = {
@@ -8,25 +8,25 @@ export const protocolsAPI = {
     tags?: string[];
     status?: string;
   }) =>
-    api.get<{ results: Protocol[]; count: number }>("/protocols/", { params }),
+    request.get<{ results: Protocol[]; count: number }>("/protocols/", { params }),
 
   // Single protocol
-  getProtocol: (id: string) => api.get<Protocol>(`/protocols/${id}/`),
+  getProtocol: (id: string) => request.get<Protocol>(`/protocols/${id}/`),
 
   // Create / Update / Delete
   createProtocol: (data: Partial<Protocol>) =>
-    api.post<Protocol>("/protocols/", data),
+    request.post<Protocol>("/protocols/", data),
   updateProtocol: (id: string, data: Partial<Protocol>) =>
-    api.patch(`/protocols/${id}/`, data),
-  deleteProtocol: (id: string) => api.delete(`/protocols/${id}/`),
+    request.patch(`/protocols/${id}/`, data),
+  deleteProtocol: (id: string) => request.delete(`/protocols/${id}/`),
 
   // Versioning
   getVersionHistory: (id: string) =>
-    api.get<ProtocolVersion[]>(`/protocols/${id}/versions/`),
+    request.get<ProtocolVersion[]>(`/protocols/${id}/versions/`),
   revertToVersion: (id: string, version: string) =>
-    api.post(`/protocols/${id}/revert/`, { version }),
+    request.post(`/protocols/${id}/revert/`, { version }),
 
   // Publishing
-  publishProtocol: (id: string) => api.post(`/protocols/${id}/publish/`),
-  archiveProtocol: (id: string) => api.post(`/protocols/${id}/archive/`),
+  publishProtocol: (id: string) => request.post(`/protocols/${id}/publish/`),
+  archiveProtocol: (id: string) => request.post(`/protocols/${id}/archive/`),
 };

@@ -9,7 +9,7 @@ import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
 import { Spinner } from "../../../components/ui/Spinner";
-import { Search, Plus, Filter, BookOpen } from "lucide-react";
+import { Search, Plus, Filter, BookOpen, RefreshCw } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
 
 export default function ProtocolListPage({

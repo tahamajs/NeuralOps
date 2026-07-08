@@ -1,46 +1,64 @@
-import api from "../../../api/client";
+import { request } from "../../../api/client";
+import {
+  UserProfile,
+  UserStats,
+  UserActivity,
+  PinnedItem,
+  Badge,
+  OrganizationMembership,
+} from "../types";
+
+export type {
+  UserProfile,
+  UserStats,
+  UserActivity,
+  PinnedItem,
+  Badge,
+  OrganizationMembership,
+};
 
 export const profileAPI = {
   getProfile: (username?: string) =>
     username
-      ? api.get(`/profiles/user/${username}/`).then((res) => res.data)
-      : api.get("/profiles/me/").then((res) => res.data),
+      ? request.get<UserProfile>(`/profiles/user/${username}/`)
+      : request.get<UserProfile>("/profiles/me/"),
 
   updateProfile: (data: Partial<UserProfile>) =>
-    api.patch("/profiles/me/", data).then((res) => res.data),
+    request.patch<UserProfile>("/profiles/me/", data),
 
   uploadAvatar: (file: File) => {
     const formData = new FormData();
     formData.append("avatar", file);
-    return api.post("/profiles/me/avatar/", formData).then((res) => res.data);
+    return request.post<UserProfile>("/profiles/me/avatar/", formData);
   },
 
-  removeAvatar: () => api.delete("/profiles/me/avatar/remove/"),
+  removeAvatar: () => request.delete("/profiles/me/avatar/remove/"),
 
   getUserStats: (userId: string) =>
-    api.get(`/profiles/users/${userId}/stats/`).then((res) => res.data),
+    request.get<UserStats>(`/profiles/users/${userId}/stats/`),
 
   getUserActivity: (userId: string, page: number = 1) =>
-    api
-      .get(`/profiles/users/${userId}/activity/?page=${page}`)
-      .then((res) => res.data),
+    request.get<{ results: UserActivity[]; next: string | null; count: number }>(
+      `/profiles/users/${userId}/activity/`,
+      { params: { page } },
+    ),
 
   getPinnedItems: (userId: string) =>
-    api.get(`/profiles/users/${userId}/pins/`).then((res) => res.data),
+    request.get<PinnedItem[]>(`/profiles/users/${userId}/pins/`),
 
   pinItem: (itemType: string, itemId: string) =>
-    api.post("/profiles/me/pins/", { item_type: itemType, item_id: itemId }),
+    request.post("/profiles/me/pins/", { item_type: itemType, item_id: itemId }),
 
-  unpinItem: (pinId: string) => api.delete(`/profiles/me/pins/${pinId}/`),
+  unpinItem: (pinId: string) => request.delete(`/profiles/me/pins/${pinId}/`),
 
   getBadges: (userId: string) =>
-    api.get(`/profiles/users/${userId}/badges/`).then((res) => res.data),
+    request.get<Badge[]>(`/profiles/users/${userId}/badges/`),
 
   getOrganizationMemberships: (userId: string) =>
-    api.get(`/profiles/users/${userId}/orgs/`).then((res) => res.data),
+    request.get<OrganizationMembership[]>(`/profiles/users/${userId}/orgs/`),
 
   changePassword: (oldPassword: string, newPassword: string) =>
-    api.post("/auth/change-password/", {
+    request.post("/auth/change-password/", {
       old_password: oldPassword,
       new_password: newPassword,
     }),

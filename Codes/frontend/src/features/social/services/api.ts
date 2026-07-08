@@ -1,28 +1,32 @@
-// Add to existing socialAPI object
+import { request } from "../../../api/client";
+import {
+  DiscussionThread,
+  Discussion,
+  Alert,
+  SuggestedResearcher,
+} from "../types";
 
 export const socialAPI = {
-  // ... existing methods (follow/unfollow, groups, feed, etc.)
-
   // Group discussions
   getDiscussionThreads: (groupId: string) =>
-    api.get<DiscussionThread[]>(`/social/groups/${groupId}/discussions/`),
+    request.get<DiscussionThread[]>(`/social/groups/${groupId}/discussions/`),
   getDiscussion: (discussionId: string) =>
-    api.get<Discussion>(`/social/discussions/${discussionId}/`),
+    request.get<Discussion>(`/social/discussions/${discussionId}/`),
   createDiscussion: (groupId: string, title: string, content: string) =>
-    api.post(`/social/groups/${groupId}/discussions/`, { title, content }),
+    request.post(`/social/groups/${groupId}/discussions/`, { title, content }),
   postReply: (discussionId: string, content: string) =>
-    api.post(`/social/discussions/${discussionId}/reply/`, { content }),
+    request.post(`/social/discussions/${discussionId}/reply/`, { content }),
   likeDiscussion: (discussionId: string) =>
-    api.post(`/social/discussions/${discussionId}/like/`),
+    request.post(`/social/discussions/${discussionId}/like/`),
 
   // Alerts
-  getAlerts: () => api.get<Alert[]>("/social/alerts/"),
-  markAlertRead: (id: string) => api.post(`/social/alerts/${id}/read/`),
-  markAllAlertsRead: () => api.post("/social/alerts/mark-all-read/"),
+  getAlerts: () => request.get<Alert[]>("/social/alerts/"),
+  markAlertRead: (id: string) => request.post(`/social/alerts/${id}/read/`),
+  markAllAlertsRead: () => request.post("/social/alerts/mark-all-read/"),
 
   // Suggested researchers
   getSuggestedResearchers: () =>
-    api.get<SuggestedResearcher[]>("/social/suggested/"),
+    request.get<SuggestedResearcher[]>("/social/suggested/"),
   dismissSuggestion: (id: string) =>
-    api.post(`/social/suggested/${id}/dismiss/`),
+    request.post(`/social/suggested/${id}/dismiss/`),
 };

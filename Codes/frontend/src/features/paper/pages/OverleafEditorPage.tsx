@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../api/client";
 import { ENDPOINTS } from "../../../api/endpoints";
 import FileTreeSidebar from "../components/FileTreeSidebar";
-import EditorPanel from "../components/EditorPanel";
+import { EditorPanel } from "../components/EditorPanel";
 import PDFPreviewPanel from "../components/PDFPreviewPanel";
 import EditorToolbar from "../components/EditorToolbar";
 import CompileErrorsPanel from "../components/CompileErrorsPanel";
@@ -43,10 +43,13 @@ export default function OverleafEditorPage() {
       return res.data;
     },
     enabled: !!projectId && !!selectedFile,
-    onSuccess: (data: any) => {
-      setFileContent(data.content || "");
-    },
   });
+
+  useEffect(() => {
+    if (fileData) {
+      setFileContent(fileData.content || "");
+    }
+  }, [fileData]);
 
   // Compile mutation
   const compileMut = useMutation({
@@ -152,11 +155,10 @@ export default function OverleafEditorPage() {
           {/* Editor Pane */}
           <div className="flex-1 border-r border-white/5">
             <EditorPanel
-              value={fileContent}
+              content={fileContent}
               onChange={handleContentChange}
-              editorRef={editorRef}
               language="latex"
-              fileName={selectedFile}
+              onSave={handleSave}
             />
           </div>
 

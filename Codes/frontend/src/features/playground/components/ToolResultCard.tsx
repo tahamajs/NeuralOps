@@ -6,7 +6,7 @@ export function ToolResultCard({ result }: any) {
     <TerminalCard className="p-4">
       <div className="flex justify-between">
         <h3 className="font-bold text-white">{result.tool_name}</h3>
-        <Badge variant={result.success ? "success" : "danger"}>
+        <Badge variant={result.success ? "success" : "failed"}>
           {result.success ? "Success" : "Failed"}
         </Badge>
       </div>

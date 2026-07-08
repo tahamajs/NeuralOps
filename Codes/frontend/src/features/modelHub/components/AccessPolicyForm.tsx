@@ -17,7 +17,7 @@ export function AccessPolicyForm({ open, onClose, modelId, onSuccess }: any) {
       await modelHubAPI.grantAccess(
         modelId,
         userId,
-        permission,
+        permission as any,
         expiresAt || undefined,
       );
       success("Access granted");

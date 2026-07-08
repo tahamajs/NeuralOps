@@ -1,5 +1,12 @@
-import { Timeline } from "antd"; // or custom – we'll implement a simple one
 import { CheckCircle, XCircle, MessageCircle } from "lucide-react";
+
+export interface ApprovalComment {
+  id: string;
+  action: "approve" | "reject" | "request_changes";
+  user: string;
+  created_at: string;
+  comment?: string;
+}
 
 export function ApprovalTimeline({
   comments,

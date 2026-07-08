@@ -12,6 +12,7 @@ import { Button } from "../../../components/ui/Button";
 import { Spinner } from "../../../components/ui/Spinner";
 import { Settings, Play, Save, Trash2 } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
+import { ChatMessage, ModelConfig } from "../types";
 
 export default function PromptPlayground({
   onClose,

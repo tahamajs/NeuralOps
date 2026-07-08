@@ -12,6 +12,7 @@ import { Spinner } from "../../../components/ui/Spinner";
 import { DataGrid } from "../../../components/ui/DataGrid";
 import { Shield, Plus, Trash2 } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
+import { Badge } from "../../../components/ui/Badge";
 
 export default function ModelAccessManager({
   onClose,

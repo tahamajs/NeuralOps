@@ -40,7 +40,7 @@ export default function NoteMentionsPage() {
       </div>
 
       {mentions.length === 0 ? (
-        <EmptyState message="No mentions in this note." />
+        <EmptyState title="No mentions found." />
       ) : (
         <div className="space-y-2">
           {mentions.map((m: any) => (

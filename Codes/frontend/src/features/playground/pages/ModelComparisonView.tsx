@@ -11,6 +11,7 @@ import { ParameterControls } from "../components/ParameterControls";
 import { Spinner } from "../../../components/ui/Spinner";
 import { GitBranch, Play } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
+import { ModelConfig } from "../types";
 
 export default function ModelComparisonView({
   onClose,
@@ -18,7 +19,7 @@ export default function ModelComparisonView({
   onClose?: () => void;
 }) {
   const [prompt, setPrompt] = useState("");
-  const [configA, setConfigA] = useState({
+  const [configA, setConfigA] = useState<ModelConfig>({
     provider: "openai",
     model: "gpt-4o-mini",
     temperature: 0.7,
@@ -27,7 +28,7 @@ export default function ModelComparisonView({
     frequency_penalty: 0,
     presence_penalty: 0,
   });
-  const [configB, setConfigB] = useState({
+  const [configB, setConfigB] = useState<ModelConfig>({
     provider: "openai",
     model: "gpt-3.5-turbo",
     temperature: 0.7,
@@ -41,7 +42,7 @@ export default function ModelComparisonView({
 
   const compareMutation = useMutation({
     mutationFn: () => playgroundAPI.compareModels(configA, configB, prompt),
-    onSuccess: (res) => setResult(res.data),
+    onSuccess: (res) => setResult(res),
     onError: () => toastError("Comparison failed"),
   });
 

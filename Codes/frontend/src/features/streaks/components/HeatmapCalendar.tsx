@@ -9,7 +9,8 @@ import {
   subWeeks,
   getISOWeek,
 } from "date-fns";
-import { HeatmapData } from "../types";
+import { HeatmapData, ContributionDay } from "../types";
+import { Calendar } from "lucide-react";
 
 interface HeatmapCalendarProps {
   data: HeatmapData;

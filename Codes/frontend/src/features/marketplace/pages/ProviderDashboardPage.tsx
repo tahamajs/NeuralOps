@@ -7,6 +7,8 @@ import { UsageHeatmap } from "../components/UsageHeatmap";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Spinner } from "../../../components/ui/Spinner";
 import { Badge } from "../../../components/ui/Badge";
+import { Button } from "../../../components/ui/Button";
+import { Select } from "../../../components/ui/Select";
 import {
   DollarSign,
   Clock,

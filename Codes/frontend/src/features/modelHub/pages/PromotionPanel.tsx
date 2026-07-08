@@ -129,7 +129,7 @@ export default function PromotionPanel({ onClose }: { onClose?: () => void }) {
                     {new Date(p.approved_at || p.requested_at).toLocaleString()}
                   </div>
                 </div>
-                <Badge variant={p.status === "approved" ? "success" : "danger"}>
+                <Badge variant={p.status === "approved" ? "success" : "failed"}>
                   {p.status}
                 </Badge>
               </div>

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { socialAPI } from "../services/api";
-import { ResearcherCard } from "../components/ResearcherCard";
+import { ResearcherCard } from "./ResearcherCard";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Button } from "../../../components/ui/Button";
 import { Spinner } from "../../../components/ui/Spinner";

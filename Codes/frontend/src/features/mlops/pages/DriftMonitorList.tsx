@@ -112,7 +112,7 @@ export default function DriftMonitorList({
                         ? "success"
                         : m.status === "warning"
                           ? "warning"
-                          : "danger"
+                          : "failed"
                     }
                     className="mt-1"
                   >

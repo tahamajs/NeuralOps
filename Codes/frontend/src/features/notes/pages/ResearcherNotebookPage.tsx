@@ -72,7 +72,7 @@ const NoteCard = ({
     <div
       className="mt-2 text-sm text-slate-300 line-clamp-3 prose prose-invert max-w-none"
       dangerouslySetInnerHTML={{
-        __html: marked.parse(note.content.substring(0, 300)),
+        __html: marked.parse(note.content.substring(0, 300)) as string,
       }}
     />
     <div className="flex flex-wrap gap-1 mt-2">
@@ -259,7 +259,7 @@ const NoteModal = ({
           <div>
             <div
               className="prose prose-invert max-w-none text-sm"
-              dangerouslySetInnerHTML={{ __html: marked.parse(note.content) }}
+              dangerouslySetInnerHTML={{ __html: marked.parse(note.content) as string }}
             />
             <div className="mt-4 text-xs text-slate-400 space-y-1">
               <p>
@@ -378,7 +378,7 @@ const NoteModal = ({
                   <div
                     className="text-sm text-white"
                     dangerouslySetInnerHTML={{
-                      __html: marked.parse(reply.content),
+                      __html: marked.parse(reply.content) as string,
                     }}
                   />
                 </div>
@@ -704,7 +704,7 @@ export default function ResearcherNotebookPage() {
               </Button>
             </div>
             {notes.length === 0 ? (
-              <EmptyState message="No notes found. Create your first one!" />
+              <EmptyState title="No notes found. Create your first one!" />
             ) : (
               <div className="space-y-3 max-h-[70vh] overflow-y-auto scrollbar-thin">
                 {notes.map((note) => (

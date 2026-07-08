@@ -12,7 +12,8 @@ import { Input } from "../../../components/ui/Input";
 import { Textarea } from "../../../components/ui/Input";
 import { Tabs, TabList, Tab, TabPanel } from "../../../components/ui/Tabs";
 import { Spinner } from "../../../components/ui/Spinner";
-import { Save, Eye, GitBranch, ArrowLeft } from "lucide-react";
+import { Save, Eye, GitBranch, ArrowLeft, Plus } from "lucide-react";
+import { Protocol, ProtocolStep } from "../types";
 import { useToast } from "../../../components/ui/Toast";
 
 export default function ProtocolBuilder({ onClose }: { onClose?: () => void }) {
@@ -34,8 +35,13 @@ export default function ProtocolBuilder({ onClose }: { onClose?: () => void }) {
     queryKey: ["protocol", protocolId],
     queryFn: () => protocolsAPI.getProtocol(protocolId!),
     enabled: !!protocolId,
-    onSuccess: (data) => setProtocol(data),
   });
+
+  useEffect(() => {
+    if (existingProtocol) {
+      setProtocol(existingProtocol);
+    }
+  }, [existingProtocol]);
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -45,7 +51,7 @@ export default function ProtocolBuilder({ onClose }: { onClose?: () => void }) {
     onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ["protocols"] });
       success(protocolId ? "Protocol updated" : "Protocol created");
-      if (!protocolId) navigate(`/protocols/${saved.data.id}`);
+      if (!protocolId) navigate(`/protocols/${saved.id}`);
       setIsSaving(false);
     },
     onError: () => {

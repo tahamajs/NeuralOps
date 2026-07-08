@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { socialAPI } from "../services/api";
-import { useSocialWebSocket } from "../hooks/useSocialWebSocket";
+import { useSocialWebSocket } from "./useSocialWebSocket";
 import { AlertDropdown } from "./AlertDropdown";
 import { Bell } from "lucide-react";
 

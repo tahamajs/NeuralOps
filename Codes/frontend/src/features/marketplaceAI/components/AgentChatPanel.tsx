@@ -51,9 +51,9 @@ export function AgentChatPanel({
   return (
     <TerminalCard className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {messages.map((msg) => (
+        {messages.map((msg, index) => (
           <div
-            key={msg.id}
+            key={index}
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div

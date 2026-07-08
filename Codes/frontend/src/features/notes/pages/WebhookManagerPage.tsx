@@ -76,7 +76,7 @@ export default function WebhookManagerPage() {
       </Card>
 
       {webhooks.length === 0 ? (
-        <EmptyState message="No webhooks configured." />
+        <EmptyState title="No webhooks configured yet." />
       ) : (
         webhooks.map((w: any) => (
           <Card key={w.id} className="flex items-center justify-between">
