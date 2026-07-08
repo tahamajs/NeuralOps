@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { literatureAPI } from "../services/api";
@@ -50,10 +51,10 @@ export default function CitationGraphViewer({
             <TerminalCard className="p-2" style={{ height: "500px" }}>
               {isLoading ? (
                 <Spinner />
-              ) : graph?.data ? (
+              ) : graph ? (
                 <ForceGraph
-                  nodes={graph.data.nodes}
-                  links={graph.data.links}
+                  nodes={graph.nodes}
+                  links={graph.links}
                   onNodeClick={(node) => setPaperId(node.id)}
                   height={460}
                 />
@@ -77,14 +78,14 @@ export default function CitationGraphViewer({
           </TabList>
           <TabPanel value="landscapes">
             <div className="grid md:grid-cols-2 gap-3">
-              {(landscapes?.data || []).map((l) => (
+              {(landscapes || []).map((l) => (
                 <LandscapeCard key={l.id} landscape={l} />
               ))}
             </div>
           </TabPanel>
           <TabPanel value="feed">
             <div className="space-y-2">
-              {(feed?.data || []).slice(0, 10).map((f) => (
+              {(feed || []).slice(0, 10).map((f) => (
                 <FeedItemComponent key={f.id} item={f} />
               ))}
             </div>
