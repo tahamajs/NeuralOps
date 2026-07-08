@@ -1,11 +1,14 @@
-import { Button } from '../../../components/ui/Button'
+import { Button } from "../../../components/ui/Button";
 
 interface PDFPreviewPanelProps {
-  pdfUrl: string | null
-  compiling: boolean
+  pdfUrl: string | null;
+  compiling: boolean;
 }
 
-export default function PDFPreviewPanel({ pdfUrl, compiling }: PDFPreviewPanelProps) {
+export default function PDFPreviewPanel({
+  pdfUrl,
+  compiling,
+}: PDFPreviewPanelProps) {
   return (
     <div className="h-full flex flex-col">
       <div className="bg-cyber-800 border-b border-white/5 px-3 py-1 text-xs text-slate-400 flex items-center justify-between">
@@ -13,12 +16,16 @@ export default function PDFPreviewPanel({ pdfUrl, compiling }: PDFPreviewPanelPr
         {pdfUrl && (
           <div className="flex gap-2">
             <button
-              onClick={() => window.open(pdfUrl, '_blank')}
+              onClick={() => window.open(pdfUrl, "_blank")}
               className="text-neon-blue hover:text-white text-xs"
             >
               Open in new tab
             </button>
-            <a href={pdfUrl} download className="text-neon-blue hover:text-white text-xs">
+            <a
+              href={pdfUrl}
+              download
+              className="text-neon-blue hover:text-white text-xs"
+            >
               Download
             </a>
           </div>
@@ -33,7 +40,11 @@ export default function PDFPreviewPanel({ pdfUrl, compiling }: PDFPreviewPanelPr
             </div>
           </div>
         ) : pdfUrl ? (
-          <iframe src={pdfUrl} className="w-full h-full border-0" title="PDF Preview" />
+          <iframe
+            src={pdfUrl}
+            className="w-full h-full border-0"
+            title="PDF Preview"
+          />
         ) : (
           <div className="flex items-center justify-center h-full text-slate-500">
             Compile to preview PDF
@@ -41,5 +52,5 @@ export default function PDFPreviewPanel({ pdfUrl, compiling }: PDFPreviewPanelPr
         )}
       </div>
     </div>
-  )
+  );
 }

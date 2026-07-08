@@ -1,5 +1,5 @@
-import React from 'react';
-import { useTradingWebSocket } from '../../../hooks/useTradingWebSocket';
+import React from "react";
+import { useTradingWebSocket } from "../../../hooks/useTradingWebSocket";
 
 export default function OrderBook({ gpuModel }: { gpuModel: string }) {
   const { orderBook } = useTradingWebSocket(gpuModel);
@@ -18,7 +18,9 @@ export default function OrderBook({ gpuModel }: { gpuModel: string }) {
           </div>
         ))}
         <div className="my-2 border-t border-slate-700 pt-2">
-          <span className="text-xl font-bold">${orderBook.last_price || '—'}</span>
+          <span className="text-xl font-bold">
+            ${orderBook.last_price || "—"}
+          </span>
         </div>
         <h3 className="text-green-400 font-semibold">Bids</h3>
         {orderBook.bids.slice(0, 5).map(([price, qty], i) => (

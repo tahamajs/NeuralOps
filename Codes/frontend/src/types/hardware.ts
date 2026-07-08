@@ -1,5 +1,5 @@
 export interface HardwareMetrics {
-  cpu: number
-  memory: number
-  gpu: number
+  cpu: number;
+  memory: number;
+  gpu: number;
 }
