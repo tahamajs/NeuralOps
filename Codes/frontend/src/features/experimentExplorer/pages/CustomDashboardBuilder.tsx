@@ -55,11 +55,11 @@ export default function CustomDashboardBuilder({
 }: {
   onClose?: () => void;
 }) {
-  const [layouts, setLayouts] = useState<DashboardLayout[]>([]);
+  const [layouts, setLayouts] = useState<any[]>([]);
   const [selectedLayoutId, setSelectedLayoutId] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [layoutName, setLayoutName] = useState("");
-  const [currentWidgets, setCurrentWidgets] = useState<DashboardWidget[]>([]);
+  const [currentWidgets, setCurrentWidgets] = useState<any[]>([]);
   const [gridItems, setGridItems] = useState<
     { i: string; x: number; y: number; w: number; h: number }[]
   >([]);
@@ -85,7 +85,7 @@ export default function CustomDashboardBuilder({
     },
   });
 
-  const loadLayout = (layout: DashboardLayout) => {
+  const loadLayout = (layout: any) => {
     setSelectedLayoutId(layout.id);
     setCurrentWidgets(layout.widgets);
     setGridItems(
@@ -95,7 +95,7 @@ export default function CustomDashboardBuilder({
 
   const addWidget = (type: string) => {
     const newId = `widget-${Date.now()}`;
-    const newWidget: DashboardWidget = {
+    const newWidget: any = {
       id: newId,
       type: type as any,
       title: type.replace("_", " "),

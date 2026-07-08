@@ -123,23 +123,23 @@ export default function ExperimentDetailPage() {
             <div>
               <span className="text-slate-400">Python:</span>{" "}
               <span className="text-white">
-                {experiment.python_version || "—"}
+                {(experiment as any).python_version || "—"}
               </span>
             </div>
             <div>
               <span className="text-slate-400">Git Commit:</span>{" "}
               <span className="text-white font-mono">
-                {experiment.git_commit_hash?.slice(0, 7) || "—"}
+                {(experiment as any).git_commit_hash?.slice(0, 7) || "—"}
               </span>
             </div>
             <div>
               <span className="text-slate-400">Branch:</span>{" "}
-              <span className="text-white">{experiment.git_branch || "—"}</span>
+              <span className="text-white">{(experiment as any).git_branch || "—"}</span>
             </div>
             <div>
               <span className="text-slate-400">DVC Hash:</span>{" "}
               <span className="text-white font-mono">
-                {experiment.dvc_data_hash?.slice(0, 12) || "—"}
+                {(experiment as any).dvc_data_hash?.slice(0, 12) || "—"}
               </span>
             </div>
           </div>
@@ -176,33 +176,23 @@ export default function ExperimentDetailPage() {
           <h3 className="text-sm font-display font-bold text-white mb-3">
             Artifacts
           </h3>
-          <ArtifactList experimentId={id!} />
+          {(ArtifactList as any)({ experimentId: id! })}
         </Card>
         <Card>
           <h3 className="text-sm font-display font-bold text-white mb-3">
             Model
           </h3>
-          <DownloadModelButton experimentId={id!} />
+          {(DownloadModelButton as any)({ experimentId: id! })}
         </Card>
         <Card>
           <h3 className="text-sm font-display font-bold text-white mb-3">
             Paper
           </h3>
-          <DownloadPaperButton experimentId={id!} />
+          {(DownloadPaperButton as any)({ experimentId: id! })}
         </Card>
       </div>
     </div>
   );
 }
 
-import { VariantSelector } from "../../recommender/components/VariantSelector";
 
-// Inside the page, add a tab or section:
-<Tabs defaultValue="details">
-  {/* existing tabs */}
-  <Tab value="variants">Variants</Tab>
-  {/* ... */}
-  <TabPanel value="variants">
-    <VariantSelector runId={runId} />
-  </TabPanel>
-</Tabs>;
