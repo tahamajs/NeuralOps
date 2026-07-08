@@ -15,7 +15,7 @@ export function useOrderBookWebSocket(listingId: string | null) {
     wsRef.current = ws
     ws.onopen = () => setIsConnected(true)
     ws.onmessage = (event) => setLiveDepth(JSON.parse(event.data))
-    ws.onclose = () => { setIsConnected(false); setTimeout(() => wsRef.current && new WebSocket(...), 3000) }
+    ws.onclose = () => { setIsConnected(false); setTimeout(() => {}, 3000) }
     return () => ws.close()
   }, [listingId, token])
 

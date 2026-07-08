@@ -21,8 +21,8 @@
   --color-accent-network: #f59e0b;
 
   /* Typography */
-  --font-family-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-family-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-family-mono: "JetBrains Mono", "Fira Code", monospace;
 
   /* Spacing (8px grid) */
   --space-1: 0.25rem;
@@ -39,14 +39,18 @@
 @layer base {
   body {
     background-color: var(--color-surface);
-    background-image: 
-      radial-gradient(circle at 25% 0%, rgba(0, 255, 157, 0.03) 0%, transparent 50%),
+    background-image:
+      radial-gradient(
+        circle at 25% 0%,
+        rgba(0, 255, 157, 0.03) 0%,
+        transparent 50%
+      ),
       linear-gradient(rgba(0, 255, 157, 0.02) 1px, transparent 1px),
       linear-gradient(90deg, rgba(0, 255, 157, 0.02) 1px, transparent 1px);
     background-size: 40px 40px;
     color: #e2e8f0;
     font-family: var(--font-family-sans);
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
   }
@@ -178,8 +182,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 .animate-fade-in {
   animation: fadeIn 0.5s ease-out;
@@ -214,7 +222,8 @@
 }
 
 @keyframes glowPulse {
-  0%, 100% {
+  0%,
+  100% {
     text-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
   }
   50% {
@@ -268,7 +277,8 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -330,7 +340,6 @@
     background: transparent !important;
   }
 }
-
 
 /* src/index.css – add at the top or in a new layer */
 @layer base {

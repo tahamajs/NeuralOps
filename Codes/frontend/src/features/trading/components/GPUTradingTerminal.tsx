@@ -1,25 +1,25 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import api from '../../../api/client';
-import CandlestickChart from './CandlestickChart';
-import OrderBook from './OrderBook';
-import PlaceOrderForm from './PlaceOrderForm';
-import PortfolioTracker from './PortfolioTracker';
-import { Trade } from '../types';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
+import CandlestickChart from "./CandlestickChart";
+import OrderBook from "./OrderBook";
+import PlaceOrderForm from "./PlaceOrderForm";
+import PortfolioTracker from "./PortfolioTracker";
+import { Trade } from "../types";
 
-const GPU_MODELS = ['H100', 'A100', 'RTX 4090', 'RTX 3090'];
+const GPU_MODELS = ["H100", "A100", "RTX 4090", "RTX 3090"];
 
 export default function GPUTradingTerminal() {
-  const [selectedGPU, setSelectedGPU] = useState('H100');
+  const [selectedGPU, setSelectedGPU] = useState("H100");
 
   return (
     <div className="p-4 space-y-6">
       <div className="flex gap-2">
-        {GPU_MODELS.map(model => (
+        {GPU_MODELS.map((model) => (
           <button
             key={model}
             onClick={() => setSelectedGPU(model)}
-            className={`px-4 py-2 rounded-lg font-semibold ${selectedGPU === model ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300'}`}
+            className={`px-4 py-2 rounded-lg font-semibold ${selectedGPU === model ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300"}`}
           >
             {model}
           </button>
@@ -46,8 +46,11 @@ export default function GPUTradingTerminal() {
 
 function RecentTrades({ gpuModel }: { gpuModel: string }) {
   const { data: trades } = useQuery({
-    queryKey: ['trades', gpuModel],
-    queryFn: () => api.get(`/trading/orders/trades/?gpu_model=${gpuModel}`).then(r => r.data),
+    queryKey: ["trades", gpuModel],
+    queryFn: () =>
+      api
+        .get(`/trading/orders/trades/?gpu_model=${gpuModel}`)
+        .then((r) => r.data),
     refetchInterval: 5000,
   });
 
@@ -58,15 +61,25 @@ function RecentTrades({ gpuModel }: { gpuModel: string }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-400 border-b border-slate-700">
-              <th>Price</th><th>Qty</th><th>Time</th>
+              <th>Price</th>
+              <th>Qty</th>
+              <th>Time</th>
             </tr>
           </thead>
           <tbody>
             {trades?.map((trade: any, i: number) => (
               <tr key={i} className="border-b border-slate-800">
-                <td className={trade.side === 'buy' ? 'text-green-400' : 'text-red-400'}>${trade.price}</td>
+                <td
+                  className={
+                    trade.side === "buy" ? "text-green-400" : "text-red-400"
+                  }
+                >
+                  ${trade.price}
+                </td>
                 <td>{trade.quantity}</td>
-                <td className="text-slate-500">{new Date(trade.created_at).toLocaleTimeString()}</td>
+                <td className="text-slate-500">
+                  {new Date(trade.created_at).toLocaleTimeString()}
+                </td>
               </tr>
             ))}
           </tbody>

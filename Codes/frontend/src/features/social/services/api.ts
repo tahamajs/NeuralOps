@@ -16,11 +16,13 @@ export const socialAPI = {
     api.post(`/social/discussions/${discussionId}/like/`),
 
   // Alerts
-  getAlerts: () => api.get<Alert[]>('/social/alerts/'),
+  getAlerts: () => api.get<Alert[]>("/social/alerts/"),
   markAlertRead: (id: string) => api.post(`/social/alerts/${id}/read/`),
-  markAllAlertsRead: () => api.post('/social/alerts/mark-all-read/'),
+  markAllAlertsRead: () => api.post("/social/alerts/mark-all-read/"),
 
   // Suggested researchers
-  getSuggestedResearchers: () => api.get<SuggestedResearcher[]>('/social/suggested/'),
-  dismissSuggestion: (id: string) => api.post(`/social/suggested/${id}/dismiss/`),
-}
+  getSuggestedResearchers: () =>
+    api.get<SuggestedResearcher[]>("/social/suggested/"),
+  dismissSuggestion: (id: string) =>
+    api.post(`/social/suggested/${id}/dismiss/`),
+};

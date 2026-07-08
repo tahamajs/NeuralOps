@@ -13,7 +13,7 @@ export function useSocialWebSocket() {
     wsRef.current = ws
     ws.onopen = () => setIsConnected(true)
     ws.onmessage = (event) => setNewAlert(JSON.parse(event.data))
-    ws.onclose = () => { setIsConnected(false); setTimeout(() => wsRef.current && new WebSocket(...), 3000) }
+    ws.onclose = () => { setIsConnected(false); setTimeout(() => {}, 3000) }
     return () => ws.close()
   }, [token])
 

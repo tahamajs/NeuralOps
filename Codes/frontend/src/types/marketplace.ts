@@ -13,7 +13,7 @@ export interface GPUListing {
 
 export interface MarketOrder {
   id: string;
-  side: 'BUY' | 'SELL';
+  side: "BUY" | "SELL";
   quantity: number;
   price: number;
   status: string;

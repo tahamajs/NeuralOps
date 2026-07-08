@@ -1,49 +1,56 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import api from '../../../api/client'
-import { Card, Button, Input, Modal, Spinner, EmptyState } from '../../../components/ui'
-import { Plus, Search, Users, CreditCard, Settings } from 'lucide-react'
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import api from "../../../api/client";
+import {
+  Card,
+  Button,
+  Input,
+  Modal,
+  Spinner,
+  EmptyState,
+} from "../../../components/ui";
+import { Plus, Search, Users, CreditCard, Settings } from "lucide-react";
 
 export default function OrganizationListPage() {
-  const [search, setSearch] = useState('')
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [newOrgName, setNewOrgName] = useState('')
-  const [newOrgSlug, setNewOrgSlug] = useState('')
-  const [newOrgDesc, setNewOrgDesc] = useState('')
-  const queryClient = useQueryClient()
+  const [search, setSearch] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgSlug, setNewOrgSlug] = useState("");
+  const [newOrgDesc, setNewOrgDesc] = useState("");
+  const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['organizations', search],
+    queryKey: ["organizations", search],
     queryFn: async () => {
-      const params = new URLSearchParams()
-      if (search) params.set('search', search)
-      const res = await api.get(`/orgs/?${params.toString()}`)
-      return res.data
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      const res = await api.get(`/orgs/?${params.toString()}`);
+      return res.data;
     },
-  })
+  });
 
   const createOrg = useMutation({
     mutationFn: async () => {
-      const res = await api.post('/orgs/', {
+      const res = await api.post("/orgs/", {
         name: newOrgName,
         slug: newOrgSlug,
         description: newOrgDesc,
-      })
-      return res.data
+      });
+      return res.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizations'] })
-      setShowCreateModal(false)
-      setNewOrgName('')
-      setNewOrgSlug('')
-      setNewOrgDesc('')
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      setShowCreateModal(false);
+      setNewOrgName("");
+      setNewOrgSlug("");
+      setNewOrgDesc("");
     },
-  })
+  });
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <Spinner />;
 
-  const organizations = data?.results || []
+  const organizations = data?.results || [];
 
   return (
     <div className="space-y-6">
@@ -55,7 +62,10 @@ export default function OrganizationListPage() {
       </div>
 
       <div className="relative">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+        />
         <Input
           placeholder="Search organizations..."
           value={search}
@@ -98,7 +108,7 @@ export default function OrganizationListPage() {
                       {org.name}
                     </h3>
                     <p className="text-sm text-slate-400 mt-0.5">
-                      {org.description || 'No description'}
+                      {org.description || "No description"}
                     </p>
                     <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
@@ -119,14 +129,18 @@ export default function OrganizationListPage() {
       )}
 
       {/* Create Organization Modal */}
-      <Modal open={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create Organization">
+      <Modal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Create Organization"
+      >
         <div className="space-y-4">
           <Input
             label="Organization Name"
             value={newOrgName}
             onChange={(e) => {
-              setNewOrgName(e.target.value)
-              setNewOrgSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))
+              setNewOrgName(e.target.value);
+              setNewOrgSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"));
             }}
             placeholder="Acme Inc."
           />
@@ -147,10 +161,10 @@ export default function OrganizationListPage() {
             disabled={!newOrgName || !newOrgSlug || createOrg.isPending}
             className="w-full"
           >
-            {createOrg.isPending ? 'Creating...' : 'Create Organization'}
+            {createOrg.isPending ? "Creating..." : "Create Organization"}
           </Button>
         </div>
       </Modal>
     </div>
-  )
+  );
 }

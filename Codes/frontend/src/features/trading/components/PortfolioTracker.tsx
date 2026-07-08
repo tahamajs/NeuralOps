@@ -1,12 +1,12 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import api from '../../../api/client';
-import { PortfolioItem } from '../types';
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { PortfolioItem } from "../types";
 
 export default function PortfolioTracker() {
   const { data: portfolio } = useQuery({
-    queryKey: ['portfolio'],
-    queryFn: () => api.get('/trading/portfolio/').then(r => r.data),
+    queryKey: ["portfolio"],
+    queryFn: () => api.get("/trading/portfolio/").then((r) => r.data),
     refetchInterval: 10000,
   });
 
@@ -17,8 +17,12 @@ export default function PortfolioTracker() {
         {portfolio?.map((item: PortfolioItem) => (
           <div key={item.gpu_model} className="flex justify-between">
             <span>{item.gpu_model}</span>
-            <span className={item.quantity > 0 ? 'text-green-400' : 'text-red-400'}>{item.quantity} hrs</span>
-            <span>${item.market_value?.toFixed(2) || '—'}</span>
+            <span
+              className={item.quantity > 0 ? "text-green-400" : "text-red-400"}
+            >
+              {item.quantity} hrs
+            </span>
+            <span>${item.market_value?.toFixed(2) || "—"}</span>
           </div>
         ))}
       </div>

@@ -1,13 +1,16 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { ENDPOINTS } from '../../../api/endpoints'
-import { Card } from '../../../components/ui/Card'
-import { Button } from '../../../components/ui/Button'
-import { Select } from '../../../components/ui/Select'
-import { Spinner } from '../../../components/ui/Spinner'
-import { useFloatingWindowStore, WINDOW_TYPES } from '../../../components/floating/FloatingWindowManager'
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { ENDPOINTS } from "../../../api/endpoints";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Select } from "../../../components/ui/Select";
+import { Spinner } from "../../../components/ui/Spinner";
+import {
+  useFloatingWindowStore,
+  WINDOW_TYPES,
+} from "../../../components/floating/FloatingWindowManager";
 
 // Templates
 const TEMPLATES: Record<string, string> = {
@@ -65,178 +68,196 @@ Our proposed attention achieves competitive results with lower complexity.
 \\section{Energy Retention}
 The cumulative energy plot shows that rank 64 retains 95\\% of the information.
 \\end{document}`,
-}
+};
 
 const templateOptions = [
-  { value: 'empty', label: 'Empty Document' },
-  { value: 'glue', label: 'GLUE Experiment' },
-  { value: 'svd', label: 'SVD Compression Report' },
-  { value: 'run', label: 'Paper with Run Metrics' },
-]
+  { value: "empty", label: "Empty Document" },
+  { value: "glue", label: "GLUE Experiment" },
+  { value: "svd", label: "SVD Compression Report" },
+  { value: "run", label: "Paper with Run Metrics" },
+];
 
 export default function PaperEditorPage() {
-  const { runId } = useParams<{ runId?: string }>()
-  const { addWindow } = useFloatingWindowStore()
+  const { runId } = useParams<{ runId?: string }>();
+  const { addWindow } = useFloatingWindowStore();
 
-  const [latexSource, setLatexSource] = useState(TEMPLATES.empty)
-  const [compileStatus, setCompileStatus] = useState<'idle' | 'compiling' | 'success' | 'error'>('idle')
-  const [compileError, setCompileError] = useState('')
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
-  const editorRef = useRef<any>(null)
+  const [latexSource, setLatexSource] = useState(TEMPLATES.empty);
+  const [compileStatus, setCompileStatus] = useState<
+    "idle" | "compiling" | "success" | "error"
+  >("idle");
+  const [compileError, setCompileError] = useState("");
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const editorRef = useRef<any>(null);
 
   // Fetch run metric-based template if runId exists
   const { data: run } = useQuery({
-    queryKey: ['run', runId],
+    queryKey: ["run", runId],
     queryFn: async () => (await api.get(`/api/runs/${runId}/`)).data,
     enabled: !!runId,
-  })
+  });
 
   // Build run-based template
   useEffect(() => {
     if (run) {
-      const metrics = run.final_metrics || {}
-      const acc = metrics.eval_accuracy?.toFixed(4) ?? 'N/A'
-      const loss = metrics.eval_loss?.toFixed(4) ?? 'N/A'
-      const config = run.config || {}
+      const metrics = run.final_metrics || {};
+      const acc = metrics.eval_accuracy?.toFixed(4) ?? "N/A";
+      const loss = metrics.eval_loss?.toFixed(4) ?? "N/A";
+      const config = run.config || {};
       const runTemplate = `\\documentclass{article}
 \\usepackage{graphicx, booktabs}
-\\title{Experiment Report: ${config.task_name?.toUpperCase() || 'Task'}}
+\\title{Experiment Report: ${config.task_name?.toUpperCase() || "Task"}}
 \\author{Researcher}
 \\date{\\today}
 \\begin{document}
 \\maketitle
 \\section{Configuration}
 \\begin{tabular}{ll}
-Model: & ${config.model_name || 'N/A'} \\\\
-Attention: & ${config.attention_type || 'full'} \\\\
-Epochs: & ${config.epochs || 'N/A'} \\\\
-Batch size: & ${config.batch_size || 'N/A'} \\\\
-Learning rate: & ${config.learning_rate || 'N/A'} \\\\
+Model: & ${config.model_name || "N/A"} \\\\
+Attention: & ${config.attention_type || "full"} \\\\
+Epochs: & ${config.epochs || "N/A"} \\\\
+Batch size: & ${config.batch_size || "N/A"} \\\\
+Learning rate: & ${config.learning_rate || "N/A"} \\\\
 \\end{tabular}
 \\section{Results}
 \\begin{tabular}{lccc}
 \\toprule
 Metric & Accuracy & Loss & F1 \\\\
 \\midrule
-Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? 'N/A'} \\\\
+Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? "N/A"} \\\\
 \\bottomrule
 \\end{tabular}
-\\end{document}`
-      TEMPLATES.run = runTemplate
+\\end{document}`;
+      TEMPLATES.run = runTemplate;
     }
-  }, [run])
+  }, [run]);
 
   // Compilation mutation
   const compileMut = useMutation({
     mutationFn: async (source: string) => {
-      const res = await api.post('/api/latex/compile/', { latex: source })
-      return res.data
+      const res = await api.post("/api/latex/compile/", { latex: source });
+      return res.data;
     },
     onMutate: () => {
-      setCompileStatus('compiling')
-      setCompileError('')
+      setCompileStatus("compiling");
+      setCompileError("");
     },
     onSuccess: (data) => {
       // If backend returns a PDF URL or blob URL
       if (data.pdf_url) {
-        setPdfUrl(data.pdf_url)
+        setPdfUrl(data.pdf_url);
       } else {
         // Create object URL from blob response if needed
         // In practice, you'd have the backend return a URL, not blob.
         // For now, set a dummy.
-        setPdfUrl('/api/latex/compile/output/') // adjust as needed
+        setPdfUrl("/api/latex/compile/output/"); // adjust as needed
       }
-      setCompileStatus('success')
+      setCompileStatus("success");
     },
     onError: (err: any) => {
-      setCompileStatus('error')
-      setCompileError(err.response?.data?.error || err.message || 'Compilation failed')
+      setCompileStatus("error");
+      setCompileError(
+        err.response?.data?.error || err.message || "Compilation failed",
+      );
     },
-  })
+  });
 
   // Save source to run (if runId)
   const saveMut = useMutation({
     mutationFn: async (source: string) => {
       await api.post(`/api/runs/${runId}/paper_source/`, source, {
-        headers: { 'Content-Type': 'text/plain' },
-      })
+        headers: { "Content-Type": "text/plain" },
+      });
     },
-    onSuccess: () => alert('LaTeX source saved to run.'),
-    onError: () => alert('Failed to save source.'),
-  })
+    onSuccess: () => alert("LaTeX source saved to run."),
+    onError: () => alert("Failed to save source."),
+  });
 
   // Load source from run
   const loadSource = async () => {
-    if (!runId) return
+    if (!runId) return;
     try {
-      const res = await api.get(`/api/runs/${runId}/paper_source/`)
-      setLatexSource(res.data)
+      const res = await api.get(`/api/runs/${runId}/paper_source/`);
+      setLatexSource(res.data);
     } catch {
-      alert('No saved LaTeX found.')
+      alert("No saved LaTeX found.");
     }
-  }
+  };
 
   // Load source on mount if runId
   useEffect(() => {
-    if (runId) loadSource()
-  }, [runId])
+    if (runId) loadSource();
+  }, [runId]);
 
   // Template handler
   const handleTemplate = (value: string) => {
-    if (value === 'run' && runId) {
+    if (value === "run" && runId) {
       // Already built TEMPLATES.run
-      setLatexSource(TEMPLATES.run || TEMPLATES.empty)
+      setLatexSource(TEMPLATES.run || TEMPLATES.empty);
     } else {
-      setLatexSource(TEMPLATES[value] || TEMPLATES.empty)
+      setLatexSource(TEMPLATES[value] || TEMPLATES.empty);
     }
-  }
+  };
 
   // Insert image (Monaco action)
   const insertImage = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
     input.onchange = (e: any) => {
-      const file = e.target.files?.[0]
-      if (!file) return
-      const reader = new FileReader()
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
       reader.onload = (ev) => {
-        const base64 = ev.target?.result as string
+        const base64 = ev.target?.result as string;
         const snippet = `\\begin{figure}[htbp]
 \\centering
 \\includegraphics[width=0.8\\textwidth]{${base64}}
 \\caption{${file.name}}
-\\label{fig:${file.name.replace(/\./g, '')}}
-\\end{figure}`
+\\label{fig:${file.name.replace(/\./g, "")}}
+\\end{figure}`;
         // Insert into Monaco via editor reference
         if (editorRef.current) {
-          const selection = editorRef.current.getSelection()
-          editorRef.current.executeEdits('insert-image', [
+          const selection = editorRef.current.getSelection();
+          editorRef.current.executeEdits("insert-image", [
             { range: selection, text: snippet, forceMoveMarkers: true },
-          ])
+          ]);
         }
-      }
-      reader.readAsDataURL(file)
-    }
-    input.click()
-  }
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
 
   // Compile button
   const handleCompile = () => {
-    compileMut.mutate(latexSource)
-  }
+    compileMut.mutate(latexSource);
+  };
 
   return (
     <div className="flex flex-col h-full bg-cyber-900">
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-4 py-2 bg-cyber-800 border-b border-white/5 flex-wrap">
-        <Button size="sm" onClick={handleCompile} disabled={compileMut.isPending}>
-          {compileMut.isPending ? '⏳ Compiling...' : '▶ Compile'}
+        <Button
+          size="sm"
+          onClick={handleCompile}
+          disabled={compileMut.isPending}
+        >
+          {compileMut.isPending ? "⏳ Compiling..." : "▶ Compile"}
         </Button>
-        <Button variant="secondary" size="sm" disabled={!pdfUrl} onClick={() => pdfUrl && window.open(pdfUrl, '_blank')}>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={!pdfUrl}
+          onClick={() => pdfUrl && window.open(pdfUrl, "_blank")}
+        >
           📥 Download PDF
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => runId && saveMut.mutate(latexSource)} disabled={!runId}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => runId && saveMut.mutate(latexSource)}
+          disabled={!runId}
+        >
           💾 Save to Run
         </Button>
         <Button variant="ghost" size="sm" onClick={insertImage}>
@@ -249,15 +270,24 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? 'N/A'} \\\\
           className="w-40"
         />
         <div className="flex-1" />
-        <span className={`text-xs font-mono px-3 py-1 rounded-full ${
-          compileStatus === 'success' ? 'bg-green-500/20 text-green-400' :
-          compileStatus === 'error' ? 'bg-red-500/20 text-red-400' :
-          compileStatus === 'compiling' ? 'bg-yellow-500/20 text-yellow-400' :
-          'bg-white/5 text-slate-400'
-        }`}>
-          {compileStatus === 'idle' ? 'Ready' :
-           compileStatus === 'compiling' ? 'Compiling...' :
-           compileStatus === 'success' ? 'Compiled' : 'Error'}
+        <span
+          className={`text-xs font-mono px-3 py-1 rounded-full ${
+            compileStatus === "success"
+              ? "bg-green-500/20 text-green-400"
+              : compileStatus === "error"
+                ? "bg-red-500/20 text-red-400"
+                : compileStatus === "compiling"
+                  ? "bg-yellow-500/20 text-yellow-400"
+                  : "bg-white/5 text-slate-400"
+          }`}
+        >
+          {compileStatus === "idle"
+            ? "Ready"
+            : compileStatus === "compiling"
+              ? "Compiling..."
+              : compileStatus === "success"
+                ? "Compiled"
+                : "Error"}
         </span>
       </div>
 
@@ -275,7 +305,7 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? 'N/A'} \\\\
           <div className="h-full">
             <MonacoEditor
               value={latexSource}
-              onChange={(val) => setLatexSource(val || '')}
+              onChange={(val) => setLatexSource(val || "")}
               editorRef={editorRef}
             />
           </div>
@@ -284,12 +314,21 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? 'N/A'} \\\\
         {/* Preview Pane */}
         <div className="w-1/2 h-full bg-slate-100">
           {pdfUrl ? (
-            <iframe src={pdfUrl} className="w-full h-full border-0" title="PDF Preview" />
+            <iframe
+              src={pdfUrl}
+              className="w-full h-full border-0"
+              title="PDF Preview"
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-slate-400">
               <span className="text-4xl mb-4">📄</span>
               <p className="text-sm">Compile to see preview</p>
-              <Button size="sm" variant="secondary" className="mt-3" onClick={handleCompile}>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="mt-3"
+                onClick={handleCompile}
+              >
                 Compile PDF
               </Button>
             </div>
@@ -297,5 +336,5 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? 'N/A'} \\\\
         </div>
       </div>
     </div>
-  )
+  );
 }
