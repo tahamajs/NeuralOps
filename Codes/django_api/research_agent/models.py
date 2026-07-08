@@ -11,7 +11,7 @@ class AgentSession(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="agent_sessions",
+        related_name="research_agent_sessions",
     )
     title = models.CharField(max_length=300, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
