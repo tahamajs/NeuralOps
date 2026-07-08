@@ -39,7 +39,7 @@ export function PayoutForm({ open, onClose, onSuccess }: any) {
             { value: "paypal", label: "PayPal" },
           ]}
           value={method}
-          onChange={(e) => setMethod(e.target.value)}
+          onChange={(e) => setMethod(e.target.value as any)}
         />
         <Button onClick={handleSubmit} disabled={amount <= 0}>
           Submit Request
