@@ -578,4 +578,101 @@ export const ENDPOINTS = {
     CONSUMER_LEADERBOARD: "/api/marketplace/leaderboard/",
     CONSUMER_REPUTATION: "/api/marketplace/reputation/",
   },
+
+  // -----------------------------------------------------
+  // ADDED MISSING ENDPOINTS FOR FULL PLATFORM COMPLETION
+  // -----------------------------------------------------
+  EXPERIMENT_EXPLORER: {
+    ROOT: "/explorer/",
+  },
+  LIVE_DASH: {
+    ROOT: "/live-dash/",
+  },
+  MODEL_HUB: {
+    ROOT: "/model-hub/",
+  },
+  LAB_ASSISTANT: {
+    ROOT: "/lab/",
+  },
+  HEALTH_MONITOR: {
+    ROOT: "/health-monitor/",
+  },
+  COMMUNITY_LAB: {
+    ROOT: "/community-lab/",
+  },
+  PLAYGROUND: {
+    ROOT: "/playground/",
+  },
+  DATASETS: {
+    ROOT: "/datasets/",
+    LIST: "/datasets/",
+    DETAIL: (id: string) => `/datasets/${id}/`,
+  },
+  LLM_HUB: {
+    ROOT: "/llm/",
+    LIST: "/llm/",
+  },
+  COLLABORATORS: {
+    ROOT: "/collaborators/",
+  },
+  IMPACT_PREDICTOR: {
+    ROOT: "/impact/",
+  },
+  LITERATURE: {
+    ROOT: "/literature/",
+  },
+  LITERATURE_DISCOVERY: {
+    ROOT: "/discovery/",
+  },
+  COSCIENTIST: {
+    ROOT: "/coscientist/",
+  },
+  IDEA_TOURNAMENT: {
+    ROOT: "/ideas/",
+  },
+  COMPUTATIONAL_DISCOVERY: {
+    ROOT: "/computational/",
+  },
+  ACCELERATOR: {
+    ROOT: "/accelerator/",
+  },
+  ANOMALY_HPO: {
+    ROOT: "/anomaly-hpo/",
+  },
+  AUTONOMOUS_RESEARCH: {
+    ROOT: "/autonomous-research/",
+  },
+  MARKETPLACE_AI: {
+    ROOT: "/marketplace-ai/",
+  },
+  CODING_ASSISTANT: {
+    ROOT: "/code/",
+  },
+  EXPERIMENT_RECOMMENDER: {
+    ROOT: "/recommender/",
+  },
+  FORENSICS: {
+    ROOT: "/forensics/",
+  },
+  RESEARCH_COACH: {
+    ROOT: "/coach/",
+  },
+  RESEARCH_AGENT: {
+    ROOT: "/agent/",
+  },
+  RESEARCH: {
+    ROOT: "/research/",
+  },
+  RESEARCH_DISCOVERY: {
+    ROOT: "/research-discovery/",
+  },
+  GOVERNANCE: {
+    ROOT: "/governance/",
+  },
+  INTEGRATIONS: {
+    ROOT: "/integrations/",
+  },
+  MLOPS: {
+    ROOT: "/mlops/",
+  },
 };
