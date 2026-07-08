@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { marketplaceAPI } from "../services/api";
-import { useOrderBookWebSocket } from "../hooks/useOrderBookWebSocket";
+import { useOrderBookWebSocket } from "./useOrderBookWebSocket";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Spinner } from "../../../components/ui/Spinner";
 import { TrendingUp, TrendingDown, Activity } from "lucide-react";

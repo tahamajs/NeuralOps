@@ -1,5 +1,5 @@
 // src/api/marketplace.ts
-import api from "./client";
+import { request as api } from "./client";
 import type {
   GPUListing,
   MarketOrder,

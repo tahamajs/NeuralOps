@@ -6,7 +6,7 @@ export function useOrderBookWebSocket(listingId: string | null) {
   const [liveDepth, setLiveDepth] = useState<OrderBookDepth | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
-  const { token } = useAuthStore()
+  const { token } = useAuthStore() as any;
 
   useEffect(() => {
     if (!listingId) return

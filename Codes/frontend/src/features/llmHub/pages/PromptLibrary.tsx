@@ -115,7 +115,6 @@ export default function PromptLibrary({ onClose }: { onClose?: () => void }) {
         open={showEditor}
         onClose={() => setShowEditor(false)}
         title={selectedPrompt ? `Edit ${selectedPrompt.name}` : "New Prompt"}
-        size="lg"
       >
         <PromptEditor
           initialPrompt={selectedPrompt}

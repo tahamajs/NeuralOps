@@ -94,11 +94,11 @@ export default function ProviderDashboardPage({
               <h3 className="text-sm font-bold text-white">Revenue History</h3>
               <Select
                 options={[
-                  { value: 7, label: "7 days" },
-                  { value: 30, label: "30 days" },
-                  { value: 90, label: "90 days" },
+                  { value: "7", label: "7 days" },
+                  { value: "30", label: "30 days" },
+                  { value: "90", label: "90 days" },
                 ]}
-                value={days}
+                value={days.toString()}
                 onChange={(e) => setDays(parseInt(e.target.value))}
                 className="w-28"
               />
