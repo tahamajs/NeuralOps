@@ -25,7 +25,7 @@ export function TerminalEmulator({ sessionId }: { sessionId: string }) {
     termRef.current = term;
     integrationsAPI
       .getSandboxWebSocketUrl(sessionId)
-      .then(({ data: wsUrl }) => {
+      .then((wsUrl: any) => {
         const ws = new WebSocket(wsUrl);
         ws.onopen = () =>
           term.write("\r\n\x1b[32mConnected to sandbox\x1b[0m\r\n$ ");
