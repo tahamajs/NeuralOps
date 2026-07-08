@@ -47,7 +47,7 @@ export function PositionCard({
             <span className="font-bold text-white">
               {contract?.underlying_index || position.contract_id.slice(0, 8)}
             </span>
-            <Badge variant={position.side === "long" ? "success" : "danger"}>
+            <Badge variant={pnlAbs >= 0 ? "success" : "failed"}>
               {position.side.toUpperCase()} {position.quantity}
             </Badge>
           </div>

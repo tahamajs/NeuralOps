@@ -99,7 +99,7 @@ export default function SecurityScanResults({
                       ? "success"
                       : s.status === "in_progress"
                         ? "warning"
-                        : "danger"
+                        : "failed"
                   }
                 >
                   {s.status}

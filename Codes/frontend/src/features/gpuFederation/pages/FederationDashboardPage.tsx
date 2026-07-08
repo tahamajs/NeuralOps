@@ -10,7 +10,7 @@ import {
   Modal,
 } from "../../../components/ui";
 import { useState } from "react";
-import { Plus, Trash2, Heartbeat } from "lucide-react";
+import { Plus, Trash2, Activity } from "lucide-react";
 
 export default function FederationDashboardPage() {
   const queryClient = useQueryClient();

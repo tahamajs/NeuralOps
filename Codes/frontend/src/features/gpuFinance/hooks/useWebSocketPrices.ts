@@ -11,7 +11,7 @@ export function useWebSocketPrices(contractId: string | null) {
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { token } = useAuthStore();
+  const { token } = useAuthStore() as any;
 
   const connect = useCallback(() => {
     if (!contractId) return;
