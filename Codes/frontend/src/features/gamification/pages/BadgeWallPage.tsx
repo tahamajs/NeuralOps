@@ -1,4 +1,5 @@
 import { useState } from "react";
+type BadgeRarity = any;
 import { useQuery } from "@tanstack/react-query";
 import { gamificationAPI } from "../services/api";
 import { TerminalCard } from "../../../components/ui/TerminalCard";

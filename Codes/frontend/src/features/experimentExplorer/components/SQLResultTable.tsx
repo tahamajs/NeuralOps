@@ -22,8 +22,8 @@ export function SQLResultTable({
   return (
     <div className="h-96 w-full ag-theme-alpine-dark">
       <AgGridReact
-        columnDefs={colDefs}
-        rowData={rowData}
+        columnDefs={colDefs as any}
+        rowData={rowData as any}
         pagination={true}
         paginationPageSize={50}
         domLayout="autoHeight"
