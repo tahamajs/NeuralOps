@@ -27,7 +27,7 @@ export function AuditLogTable({ logs }: { logs: AuditLogEntry[] }) {
         <Badge
           variant={
             row.original.severity === "critical"
-              ? "danger"
+              ? "failed"
               : row.original.severity === "warning"
                 ? "warning"
                 : "info"
