@@ -10,22 +10,29 @@ Usage:
     loaded = UnifiedTransformerModel.from_pretrained("./compressed_model")
 """
 
-import torch
-import torch.nn as nn
-from typing import Optional, Dict, Any
-from huggingface_hub import PyTorchModelHubMixin
+from typing import Any, Dict, Optional
 
-from transformers import AutoModel, AutoModelForSequenceClassification, AutoConfig
-from .attention_utils import inject_attention
+import torch.nn as nn
+from huggingface_hub import PyTorchModelHubMixin
+from transformers import AutoModel, AutoModelForSequenceClassification
+
 from .architecture import detect_architecture, get_transformer_layers
+from .attention_utils import inject_attention
+
 
 # ----------------------------------------------------------------------
 # 1. Custom config class to hold our additional parameters
 # ----------------------------------------------------------------------
 class UnifiedTransformerConfig:
     """Lightweight container for the custom attention configuration."""
-    def __init__(self, attention_type: str = None, attention_rank: Optional[int] = None,
-                 attention_kwargs: Optional[Dict[str, Any]] = None, **kwargs):
+
+    def __init__(
+        self,
+        attention_type: str = None,
+        attention_rank: Optional[int] = None,
+        attention_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
         self.attention_type = attention_type
         self.attention_rank = attention_rank
         self.attention_kwargs = attention_kwargs or {}
@@ -55,23 +62,32 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
     and can be saved/loaded via the HuggingFace Hub.
     """
 
-    def __init__(self, model: nn.Module, custom_config: Optional[UnifiedTransformerConfig] = None):
+    def __init__(
+        self, model: nn.Module, custom_config: Optional[UnifiedTransformerConfig] = None
+    ):
         super().__init__()
         self.model = model
-        self.config = getattr(model, 'config', None)          # HF model config
+        self.config = getattr(model, "config", None)  # HF model config
         self.arch = detect_architecture(model)
         self._custom_config = custom_config or UnifiedTransformerConfig()
 
     # ------------------------------------------------------------------
     # Attention replacement
     # ------------------------------------------------------------------
-    def replace_attention(self, attention_type: str, rank: Optional[int] = None,
-                          copy_weights: bool = True, **kwargs):
+    def replace_attention(
+        self,
+        attention_type: str,
+        rank: Optional[int] = None,
+        copy_weights: bool = True,
+        **kwargs,
+    ):
         """
         Inject a custom attention variant into all layers.
         This method also records the choice so it can be saved.
         """
-        inject_attention(self.model, attention_type, rank=rank, copy_weights=copy_weights, **kwargs)
+        inject_attention(
+            self.model, attention_type, rank=rank, copy_weights=copy_weights, **kwargs
+        )
         self._custom_config = UnifiedTransformerConfig(
             attention_type=attention_type,
             attention_rank=rank,
@@ -110,6 +126,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         self.model.save_pretrained(save_directory)
         # 2. Save our custom attention config to a JSON file
         import json
+
         custom_cfg_path = f"{save_directory}/unified_attention_config.json"
         with open(custom_cfg_path, "w") as f:
             json.dump(self._custom_config.to_dict(), f, indent=2)
@@ -123,12 +140,16 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         # 1. Load the custom config
         import json
         import os
+
         if os.path.isdir(model_id):
             cfg_path = os.path.join(model_id, "unified_attention_config.json")
         else:
             # If model_id is a Hub repo, we need to download the file
             from huggingface_hub import hf_hub_download
-            cfg_path = hf_hub_download(repo_id=model_id, filename="unified_attention_config.json")
+
+            cfg_path = hf_hub_download(
+                repo_id=model_id, filename="unified_attention_config.json"
+            )
 
         with open(cfg_path, "r") as f:
             custom_cfg_dict = json.load(f)
@@ -143,7 +164,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
             model.replace_attention(
                 custom_cfg.attention_type,
                 rank=custom_cfg.attention_rank,
-                copy_weights=False,          # Weights already inside the saved base model
+                copy_weights=False,  # Weights already inside the saved base model
                 **custom_cfg.attention_kwargs,
             )
         return model
@@ -159,8 +180,13 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         super().save_pretrained(save_directory)
 
     @classmethod
-    def from_pretrained(cls, model_id: str, task: str = "sequence_classification",
-                        num_labels: Optional[int] = 2, **kwargs) -> "UnifiedTransformerModel":
+    def from_pretrained(
+        cls,
+        model_id: str,
+        task: str = "sequence_classification",
+        num_labels: Optional[int] = 2,
+        **kwargs,
+    ) -> "UnifiedTransformerModel":
         """
         Create a new UnifiedTransformerModel from a pretrained identifier.
         Automatically applies the custom attention if the model was saved with one.
@@ -169,19 +195,26 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         # If the model_id has a unified_attention_config.json, use the mixin's from_pretrained
         # which will call our _from_pretrained. Otherwise, create a fresh one.
         import os
+
         has_custom = False
         if os.path.isdir(model_id):
-            has_custom = os.path.exists(os.path.join(model_id, "unified_attention_config.json"))
+            has_custom = os.path.exists(
+                os.path.join(model_id, "unified_attention_config.json")
+            )
         else:
             # Assume Hub – we'll let the mixin handle it
             has_custom = True
 
         if has_custom:
-            return cls.from_pretrained(model_id, **kwargs)   # calls mixin, then _from_pretrained
+            return cls.from_pretrained(
+                model_id, **kwargs
+            )  # calls mixin, then _from_pretrained
         else:
             # Fresh model – no custom attention yet
             if task == "sequence_classification":
-                base = AutoModelForSequenceClassification.from_pretrained(model_id, num_labels=num_labels, **kwargs)
+                base = AutoModelForSequenceClassification.from_pretrained(
+                    model_id, num_labels=num_labels, **kwargs
+                )
             else:
                 base = AutoModel.from_pretrained(model_id, **kwargs)
             return cls(base)
@@ -190,7 +223,6 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
 # ----------------------------------------------------------------------
 # 3. Auto‑class registration – so that AutoModel works automatically
 # ----------------------------------------------------------------------
-from transformers import AutoModel as AutoModelBase
 
 # Register our wrapper so that `AutoModel.from_pretrained("path")` can load it
 # if the config.json contains our custom keys. (Simplified: always return UnifiedTransformerModel)
@@ -198,7 +230,6 @@ from transformers import AutoModel as AutoModelBase
 # For simplicity, we override the auto class behavior for "unified_transformer".
 # However, to avoid conflicts, we'll register a separate auto class name.
 
-from transformers import AutoConfig, AutoModel
 
 AutoModel.register(UnifiedTransformerModel)
 # This allows AutoModel.from_pretrained("your-repo/your-model") to return a UnifiedTransformerModel

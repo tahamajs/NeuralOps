@@ -3,7 +3,8 @@
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class ERCCompressor(BaseCompressor):
     def __init__(self, model, allowed_error=0.01, **kwargs):
@@ -23,13 +24,11 @@ class ERCCompressor(BaseCompressor):
                 module.weight.data = self._compress_layer(module.weight.data)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
 
 
 @COMPRESSOR_REGISTRY.register("erc")
 def erc_factory(model, comp_config):
-    allowed_error = getattr(comp_config, 'erc_allowed_error', 0.01)
+    allowed_error = getattr(comp_config, "erc_allowed_error", 0.01)
     compressor = ERCCompressor(model, allowed_error)
     compressed_model, _ = compressor.compress()
     return compressed_model
-

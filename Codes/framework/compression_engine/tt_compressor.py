@@ -3,10 +3,12 @@ Tensor Train Compressor: replaces all nn.Linear layers with TTLinearLayer.
 Registered in COMPRESSOR_REGISTRY as "tt".
 """
 
+from typing import Any, Dict, Tuple
+
 import torch.nn as nn
-from typing import Dict, Any, Tuple
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 from .tt_linear import TTLinearLayer
 
 
@@ -15,6 +17,7 @@ class TTCompressor(BaseCompressor):
     Internal compressor class that applies TT decomposition to all linear layers.
     Not registered directly – used by the factory function below.
     """
+
     def __init__(self, model: nn.Module, tt_rank: int = 16, **kwargs):
         super().__init__(model, name="tt_compressor", **kwargs)
         self.tt_rank = tt_rank
@@ -33,24 +36,28 @@ class TTCompressor(BaseCompressor):
                 tt_layer = TTLinearLayer.from_linear(module, self.tt_rank)
                 parent = self._get_parent_module(self.model, name)
                 if parent is not None:
-                    child_name = name.split('.')[-1]
+                    child_name = name.split(".")[-1]
                     setattr(parent, child_name, tt_layer)
-                self.compressed_layers.append({
-                    'name': name,
-                    'original_shape': (module.in_features, module.out_features),
-                    'compressed_rank': self.tt_rank,
-                })
+                self.compressed_layers.append(
+                    {
+                        "name": name,
+                        "original_shape": (module.in_features, module.out_features),
+                        "compressed_rank": self.tt_rank,
+                    }
+                )
 
     def _count_params(self, module: nn.Module) -> int:
         return sum(p.numel() for p in module.parameters() if p.requires_grad)
 
     def get_compression_stats(self) -> Dict[str, Any]:
         stats = super().get_compression_stats()
-        stats.update({
-            'compressed_layers': len(self.compressed_layers),
-            'method': 'tensor_train',
-            'tt_rank': self.tt_rank,
-        })
+        stats.update(
+            {
+                "compressed_layers": len(self.compressed_layers),
+                "method": "tensor_train",
+                "tt_rank": self.tt_rank,
+            }
+        )
         return stats
 
 
@@ -65,7 +72,7 @@ def tt_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
     Returns the compressed model (nn.Module) ready for training.
     """
     # Extract tt_rank from comp_config if available, else default 16
-    tt_rank = getattr(comp_config, 'tt_rank', 16)
+    tt_rank = getattr(comp_config, "tt_rank", 16)
     compressor = TTCompressor(model, tt_rank=tt_rank)
     compressed_model, _ = compressor.compress()
-    return compressed_model   # <-- returns nn.Module, not a compressor object
+    return compressed_model  # <-- returns nn.Module, not a compressor object

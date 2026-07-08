@@ -7,15 +7,16 @@ Paper: "KV Cache Transform Coding for Compact Storage in LLM Inference"
 Registered as 'kvtc'.
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class SimpleEntropyCoder:
     """Lightweight entropy coder using Huffman-like frequency encoding."""
+
     @staticmethod
     def compute_compression_ratio(tensor: torch.Tensor, bits: int) -> float:
         """Estimate compression ratio for a quantised tensor."""
@@ -34,6 +35,7 @@ class KVTCCompressor(BaseCompressor):
         bits: quantisation bit‑width (default 4).
         pca_energy: fraction of PCA energy retained (default 0.95).
     """
+
     def __init__(self, model, bits=4, pca_energy=0.95, **kwargs):
         super().__init__(model, name="kvtc", **kwargs)
         self.bits = bits
@@ -49,8 +51,8 @@ class KVTCCompressor(BaseCompressor):
 
                 # Step 1: PCA decorrelation via SVD on weight
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                total_energy = (S ** 2).sum()
-                cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
+                total_energy = (S**2).sum()
+                cum_energy = torch.cumsum(S**2, dim=0) / total_energy
                 rank = int(torch.searchsorted(cum_energy, self.pca_energy).item()) + 1
                 rank = max(4, min(rank, min(W.shape)))
 
@@ -64,30 +66,29 @@ class KVTCCompressor(BaseCompressor):
                 min_val, max_val = W_lowrank.min(), W_lowrank.max()
                 if max_val == min_val:
                     max_val = min_val + 1e-6
-                scale = (max_val - min_val) / (2 ** self.bits - 1)
+                scale = (max_val - min_val) / (2**self.bits - 1)
                 W_quant = torch.round((W_lowrank - min_val) / scale) * scale + min_val
 
                 # Step 3: Entropy coding (estimate compression ratio)
-                compression_ratio = SimpleEntropyCoder.compute_compression_ratio(W_quant, 32)
+                compression_ratio = SimpleEntropyCoder.compute_compression_ratio(
+                    W_quant, 32
+                )
                 total_compression += compression_ratio
                 layers_compressed += 1
 
                 module.weight.data = W_quant.to(dtype=module.weight.dtype)
 
-        self._compression_stats['avg_entropy_compression_ratio'] = (
+        self._compression_stats["avg_entropy_compression_ratio"] = (
             total_compression / max(layers_compressed, 1)
         )
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
-
 
 
 @COMPRESSOR_REGISTRY.register("kvtc")
 def kvtc_factory(model, comp_config):
-    bits = getattr(comp_config, 'kvtc_bits', 4)
-    pca_energy = getattr(comp_config, 'kvtc_pca_energy', 0.95)
+    bits = getattr(comp_config, "kvtc_bits", 4)
+    pca_energy = getattr(comp_config, "kvtc_pca_energy", 0.95)
     compressor = KVTCCompressor(model, bits=bits, pca_energy=pca_energy)
     compressed_model, _ = compressor.compress()
     return compressed_model
-

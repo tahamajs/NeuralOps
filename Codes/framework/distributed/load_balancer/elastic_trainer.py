@@ -12,16 +12,15 @@ References:
   - DLRover: https://github.com/intelligent-machine-learning/dlrover
 """
 
-import os
-import time
 import json
+import logging
+import os
+from dataclasses import dataclass
+from typing import Callable, Optional
+
 import torch
 import torch.distributed as dist
-import torch.distributed.elastic.rendezvous.registry as rdzv_registry
 from torch.distributed.elastic.multiprocessing.errors import record
-from dataclasses import dataclass, field
-from typing import Callable, Optional, Dict, Any
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,33 +28,38 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ElasticConfig:
     """Configuration for elastic training."""
+
     min_nodes: int = 1
     max_nodes: int = 8
     nproc_per_node: int = 1
-    rdzv_backend: str = "c10d"       # "c10d", "etcd", "etcd-v2", "static"
+    rdzv_backend: str = "c10d"  # "c10d", "etcd", "etcd-v2", "static"
     rdzv_endpoint: str = "localhost:29500"
     run_id: str = "elastic-run"
     checkpoint_dir: str = "./elastic_checkpoints"
     checkpoint_every_steps: int = 500
     max_restarts: int = 3
-    monitor_interval: int = 5        # seconds between health checks
+    monitor_interval: int = 5  # seconds between health checks
 
 
 @dataclass
 class ElasticState:
     """State that must be synchronised across elastic workers."""
+
     epoch: int = 0
     global_step: int = 0
     best_metric: float = 0.0
     rng_state: Optional[bytes] = None
 
     def save(self, path: str) -> None:
-        with open(path, 'w') as f:
-            json.dump({
-                "epoch": self.epoch,
-                "global_step": self.global_step,
-                "best_metric": self.best_metric,
-            }, f)
+        with open(path, "w") as f:
+            json.dump(
+                {
+                    "epoch": self.epoch,
+                    "global_step": self.global_step,
+                    "best_metric": self.best_metric,
+                },
+                f,
+            )
 
     def load(self, path: str) -> None:
         if not os.path.exists(path):
@@ -124,8 +128,9 @@ class ElasticTrainer:
         kwargs = kwargs or {}
 
         # Use PyTorch Elastic Launcher
-        from torch.distributed.run import main as torchrun_main
         import sys
+
+        from torch.distributed.run import main as torchrun_main
 
         # Build command‑line args for torchrun
         sys.argv = [
@@ -143,18 +148,21 @@ class ElasticTrainer:
         torchrun_main()
 
     # ── Checkpointing ───────────────────────────────────────────────
-    def save_checkpoint(self, model: torch.nn.Module, optimizer,
-                        state: ElasticState) -> str:
+    def save_checkpoint(
+        self, model: torch.nn.Module, optimizer, state: ElasticState
+    ) -> str:
         """Save training state to disk."""
         path = os.path.join(
-            self.config.checkpoint_dir,
-            f"checkpoint_step_{state.global_step}.pt"
+            self.config.checkpoint_dir, f"checkpoint_step_{state.global_step}.pt"
         )
-        torch.save({
-            "model": model.state_dict(),
-            "optimizer": optimizer.state_dict(),
-            "state": state,
-        }, path)
+        torch.save(
+            {
+                "model": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "state": state,
+            },
+            path,
+        )
         logger.info("Elastic checkpoint saved to %s", path)
         return path
 

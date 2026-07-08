@@ -10,11 +10,14 @@ Architecture:
     - MatchingEngine class: orchestrates matching across all GPU models
     - Called by Celery beat every 30 seconds
 """
+
 import logging
 from decimal import Decimal
+
 from django.db import transaction
 from django.utils import timezone
-from .models import ComputeOrder, GPUListing, ComputeJob, JobEvent
+
+from .models import ComputeJob, ComputeOrder, GPUListing, JobEvent
 
 logger = logging.getLogger(__name__)
 
@@ -25,24 +28,26 @@ class OrderBook:
     Buy orders: sorted descending by price, then by created_at.
     Sell orders: sorted ascending by price, then by created_at.
     """
+
     def __init__(self, gpu_model: str):
         self.gpu_model = gpu_model
-        self.buy_orders = []   # list of ComputeOrder
+        self.buy_orders = []  # list of ComputeOrder
         self.sell_orders = []  # list of GPUListing
 
     def load(self):
         """Load open orders from database for this GPU model."""
         self.buy_orders = list(
             ComputeOrder.objects.filter(
-                order_type='buy', status='open',
+                order_type="buy",
+                status="open",
                 gpu_model_preference__iexact=self.gpu_model,
-            ).order_by('-max_price_per_hour', 'created_at')
+            ).order_by("-max_price_per_hour", "created_at")
         )
         self.sell_orders = list(
             GPUListing.objects.filter(
                 gpu_model__iexact=self.gpu_model,
-                status='online',
-            ).order_by('current_price_per_hour', 'created_at')
+                status="online",
+            ).order_by("current_price_per_hour", "created_at")
         )
 
     def best_buy(self):
@@ -71,8 +76,8 @@ class MatchingEngine:
     def run(self):
         """Run a full matching cycle across all distinct GPU models."""
         gpu_models = (
-            ComputeOrder.objects.filter(order_type='buy', status='open')
-            .values_list('gpu_model_preference', flat=True)
+            ComputeOrder.objects.filter(order_type="buy", status="open")
+            .values_list("gpu_model_preference", flat=True)
             .distinct()
         )
         matched_count = 0
@@ -102,7 +107,7 @@ class MatchingEngine:
                 buy.refresh_from_db()
                 sell.refresh_from_db()
 
-                if buy.status != 'open' or sell.status != 'online':
+                if buy.status != "open" or sell.status != "online":
                     book.load()  # Reload
                     continue
 
@@ -112,32 +117,34 @@ class MatchingEngine:
                     listing=sell,
                     consumer=buy.user,
                     provider=sell.provider,
-                    status='queued',
-                    docker_image=buy.docker_image or 'pytorch/pytorch:latest',
-                    command=buy.command or '',
-                    input_data_url=buy.input_data_url or '',
+                    status="queued",
+                    docker_image=buy.docker_image or "pytorch/pytorch:latest",
+                    command=buy.command or "",
+                    input_data_url=buy.input_data_url or "",
                     price_per_hour=match_price,
                 )
-                JobEvent.objects.create(job=job, event_type='created')
-                JobEvent.objects.create(job=job, event_type='matched')
+                JobEvent.objects.create(job=job, event_type="created")
+                JobEvent.objects.create(job=job, event_type="matched")
 
                 # Update order and listing
                 buy.matched_listing = sell
                 buy.final_price_per_hour = match_price
-                buy.status = 'filled'
+                buy.status = "filled"
                 buy.filled_at = timezone.now()
                 buy.save()
 
-                sell.status = 'busy'
+                sell.status = "busy"
                 sell.total_rentals += 1
                 sell.save()
 
-                self.trades.append({
-                    'buy_order': str(buy.id),
-                    'listing': str(sell.id),
-                    'price': str(match_price),
-                    'job': str(job.id),
-                })
+                self.trades.append(
+                    {
+                        "buy_order": str(buy.id),
+                        "listing": str(sell.id),
+                        "price": str(match_price),
+                        "job": str(job.id),
+                    }
+                )
                 count += 1
 
             # Reload book after each match
@@ -153,8 +160,8 @@ def match_all_orders():
 
 
 import logging
-from django.db import transaction
-from .models import TradeOrder, Trade, Portfolio, Candlestick
+
+from .models import Candlestick, Portfolio, Trade, TradeOrder
 
 logger = logging.getLogger(__name__)
 
@@ -162,23 +169,23 @@ logger = logging.getLogger(__name__)
 def match_order(order):
     """Match a buy/sell order against the order book."""
     with transaction.atomic():
-        opposite_side = 'sell' if order.side == 'buy' else 'buy'
+        opposite_side = "sell" if order.side == "buy" else "buy"
         # Find matching orders
         candidates = TradeOrder.objects.filter(
             gpu_model=order.gpu_model,
             side=opposite_side,
-            status__in=['open', 'partially_filled']
-        ).order_by('price' if order.side == 'buy' else '-price')
+            status__in=["open", "partially_filled"],
+        ).order_by("price" if order.side == "buy" else "-price")
 
         remaining = order.quantity
         for match in candidates:
             if remaining <= 0:
                 break
             # Determine if price matches
-            if order.order_type == 'limit' and order.price:
-                if order.side == 'buy' and match.price > order.price:
+            if order.order_type == "limit" and order.price:
+                if order.side == "buy" and match.price > order.price:
                     break
-                if order.side == 'sell' and match.price < order.price:
+                if order.side == "sell" and match.price < order.price:
                     break
 
             trade_qty = min(remaining, match.quantity - match.filled_quantity)
@@ -186,35 +193,55 @@ def match_order(order):
                 continue
 
             # Execute trade
-            trade_price = match.price if match.order_type == 'limit' else order.price
+            trade_price = match.price if match.order_type == "limit" else order.price
             Trade.objects.create(
                 gpu_model=order.gpu_model,
                 price=trade_price,
                 quantity=trade_qty,
-                buyer=order.user if order.side == 'buy' else match.user,
-                seller=match.user if order.side == 'sell' else order.user,
-                buy_order=order if order.side == 'buy' else match,
-                sell_order=match if order.side == 'sell' else order,
+                buyer=order.user if order.side == "buy" else match.user,
+                seller=match.user if order.side == "sell" else order.user,
+                buy_order=order if order.side == "buy" else match,
+                sell_order=match if order.side == "sell" else order,
             )
 
             # Update portfolio for both parties
-            update_portfolio(order.user, order.gpu_model, trade_qty if order.side == 'buy' else -trade_qty)
-            update_portfolio(match.user, order.gpu_model, -trade_qty if match.side == 'buy' else trade_qty)
+            update_portfolio(
+                order.user,
+                order.gpu_model,
+                trade_qty if order.side == "buy" else -trade_qty,
+            )
+            update_portfolio(
+                match.user,
+                order.gpu_model,
+                -trade_qty if match.side == "buy" else trade_qty,
+            )
 
             # Update order fill status
             order.filled_quantity += trade_qty
-            order.status = 'filled' if order.filled_quantity >= order.quantity else 'partially_filled'
+            order.status = (
+                "filled"
+                if order.filled_quantity >= order.quantity
+                else "partially_filled"
+            )
             order.save()
 
             match.filled_quantity += trade_qty
-            match.status = 'filled' if match.filled_quantity >= match.quantity else 'partially_filled'
+            match.status = (
+                "filled"
+                if match.filled_quantity >= match.quantity
+                else "partially_filled"
+            )
             match.save()
 
             remaining -= trade_qty
 
         # Update candlestick (simplified: use last trade price)
         if remaining < order.quantity:
-            last_trade = Trade.objects.filter(gpu_model=order.gpu_model).order_by('-created_at').first()
+            last_trade = (
+                Trade.objects.filter(gpu_model=order.gpu_model)
+                .order_by("-created_at")
+                .first()
+            )
             if last_trade:
                 update_candlestick(order.gpu_model, float(last_trade.price), trade_qty)
 
@@ -227,11 +254,18 @@ def update_portfolio(user, gpu_model, delta):
 
 def update_candlestick(gpu_model, price, volume):
     from django.utils import timezone
+
     now = timezone.now()
     minute_start = now.replace(second=0, microsecond=0)
     candle, _ = Candlestick.objects.get_or_create(
-        gpu_model=gpu_model, interval_start=minute_start,
-        defaults={'open_price': price, 'high_price': price, 'low_price': price, 'close_price': price}
+        gpu_model=gpu_model,
+        interval_start=minute_start,
+        defaults={
+            "open_price": price,
+            "high_price": price,
+            "low_price": price,
+            "close_price": price,
+        },
     )
     candle.high_price = max(candle.high_price, price)
     candle.low_price = min(candle.low_price, price)

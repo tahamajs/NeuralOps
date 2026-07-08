@@ -1,14 +1,4 @@
 # Auto-generated __init__.py
-from . import architecture
-from . import checkpoint
-from . import config
-from . import device
-from . import helpers
-from . import layer_norm_fix
-from . import logger
-from . import metrics
-from . import paths
-from . import profiler
-from . import replace_attention
-from . import save_results
-from . import seed
+from . import (architecture, checkpoint, config, device, helpers,
+               layer_norm_fix, logger, metrics, paths, profiler,
+               replace_attention, save_results, seed)

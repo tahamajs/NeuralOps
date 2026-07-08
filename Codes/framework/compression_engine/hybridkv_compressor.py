@@ -11,7 +11,7 @@ Registered as 'hybridkv'.
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class HybridKVCompressor(BaseCompressor):
@@ -24,6 +24,7 @@ class HybridKVCompressor(BaseCompressor):
         budget: overall fraction of parameters to retain (default 0.3).
         static_ratio: fraction of budget allocated to static heads (default 0.7).
     """
+
     def __init__(self, model, budget=0.3, static_ratio=0.7, **kwargs):
         super().__init__(model, name="hybridkv", **kwargs)
         self.budget = budget
@@ -35,11 +36,11 @@ class HybridKVCompressor(BaseCompressor):
         Classify a projection head as 'static' or 'dynamic' based on
         weight variance across the output dimension.
         """
-        row_variance = torch.var(weight.float(), dim=1)   # (out_features,)
+        row_variance = torch.var(weight.float(), dim=1)  # (out_features,)
         # Normalised variance: low → static, high → dynamic
         norm_var = row_variance / (row_variance.max() + 1e-8)
         dynamic_ratio = (norm_var > threshold).float().mean().item()
-        return 'dynamic' if dynamic_ratio > 0.3 else 'static'
+        return "dynamic" if dynamic_ratio > 0.3 else "static"
 
     def compress(self):
         for name, module in self.model.named_modules():
@@ -48,7 +49,7 @@ class HybridKVCompressor(BaseCompressor):
                 out_f = W.shape[0]
                 head_type = self._classify_head(W)
 
-                if head_type == 'static':
+                if head_type == "static":
                     # Text‑prior pruning: keep top rows by L2 norm
                     keep = max(1, int(out_f * self.budget * self.static_ratio))
                     row_norms = torch.norm(W.float(), dim=1)
@@ -65,8 +66,9 @@ class HybridKVCompressor(BaseCompressor):
                         chunk = W[c:end].float()
                         chunk_norms = torch.norm(chunk, dim=1)
                         n_keep_chunk = max(1, int((end - c) * keep / out_f))
-                        _, local_idx = torch.topk(chunk_norms,
-                                                  min(n_keep_chunk, end - c))
+                        _, local_idx = torch.topk(
+                            chunk_norms, min(n_keep_chunk, end - c)
+                        )
                         mask[c + local_idx] = 1.0
 
                 W_pruned = W * mask.unsqueeze(1)
@@ -77,14 +79,25 @@ class HybridKVCompressor(BaseCompressor):
 
     @staticmethod
     def _is_attention_proj(name: str) -> bool:
-        attn_keywords = ['q_lin', 'k_lin', 'v_lin', 'q_proj', 'k_proj', 'v_proj',
-                         'query', 'key', 'value', 'attention']
+        attn_keywords = [
+            "q_lin",
+            "k_lin",
+            "v_lin",
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "query",
+            "key",
+            "value",
+            "attention",
+        ]
         return any(kw in name.lower() for kw in attn_keywords)
-    
+
+
 @COMPRESSOR_REGISTRY.register("hybridkv")
 def hybridkv_factory(model, comp_config):
-    budget = getattr(comp_config, 'hybridkv_budget', 0.3)
-    static_ratio = getattr(comp_config, 'hybridkv_static_ratio', 0.7)
+    budget = getattr(comp_config, "hybridkv_budget", 0.3)
+    static_ratio = getattr(comp_config, "hybridkv_static_ratio", 0.7)
     compressor = HybridKVCompressor(model, budget=budget, static_ratio=static_ratio)
     compressed_model, _ = compressor.compress()
     return compressed_model

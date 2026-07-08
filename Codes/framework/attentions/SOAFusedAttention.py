@@ -1,11 +1,12 @@
 """
 SOA Fused Attention: low‑rank latent space attention with zero‑shot init.
 """
-import math
+
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -14,8 +15,9 @@ class SOAFusedAttention(nn.Module):
     SOA Fused: separate latent spaces for Q/K/V, full output projection.
     """
 
-    def __init__(self, model_config, k_rank: int = 32, dropout: float = 0.1,
-                 pretrained_attn=None):
+    def __init__(
+        self, model_config, k_rank: int = 32, dropout: float = 0.1, pretrained_attn=None
+    ):
         super().__init__()
         if pretrained_attn is None:
             raise ValueError("pretrained_attn required for zero‑shot init")
@@ -55,8 +57,14 @@ class SOAFusedAttention(nn.Module):
             if pretrained_attn.out_lin.bias is not None:
                 self.out_proj.bias.data.copy_(pretrained_attn.out_lin.bias)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
 
         z_q = self.q_down(hidden_states)
@@ -71,10 +79,14 @@ class SOAFusedAttention(nn.Module):
         k = k.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
         v = v.view(B, N, self.num_heads, self.head_dim).transpose(1, 2)
 
-        scale = self.head_dim ** -0.5
+        scale = self.head_dim**-0.5
         scores = torch.matmul(q, k.transpose(-2, -1)) * scale
 
-        mask = attention_mask if attention_mask is not None else kwargs.get('attn_mask', None)
+        mask = (
+            attention_mask
+            if attention_mask is not None
+            else kwargs.get("attn_mask", None)
+        )
         if mask is not None:
             if mask.dim() == 2:
                 mask = mask[:, None, None, :]
@@ -94,9 +106,11 @@ class SOAFusedAttention(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("soa_fused_attn")
-def inject_soa_fused_attn(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    k_rank = getattr(comp_config, 'soa_rank', 32)
-    dropout = getattr(comp_config, 'dropout', 0.1)
+def inject_soa_fused_attn(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
+    k_rank = getattr(comp_config, "soa_rank", 32)
+    dropout = getattr(comp_config, "dropout", 0.1)
     new_attn = SOAFusedAttention(model_config, k_rank, dropout, old_attn)
     layer.attention = new_attn
     return new_attn

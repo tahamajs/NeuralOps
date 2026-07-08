@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 
+
 @dataclass
 class HardwareConfig:
-    device: str = "auto"                # auto, cuda, mps, cpu
+    device: str = "auto"  # auto, cuda, mps, cpu
     force_cpu_for_svd: bool = True
     enable_fp16: bool = False
     enable_bf16: bool = False

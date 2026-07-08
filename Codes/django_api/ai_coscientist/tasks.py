@@ -1,7 +1,9 @@
 """Celery task to run the AI Co‑Scientist workflow asynchronously."""
+
 from celery import shared_task
-from .models import ResearchSession
+
 from .engine import AIScientistFramework
+from .models import ResearchSession
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=60)
@@ -10,7 +12,7 @@ def run_research_workflow(self, session_id: str):
     try:
         session = ResearchSession.objects.get(id=session_id)
     except ResearchSession.DoesNotExist:
-        return {'error': 'Session not found'}
+        return {"error": "Session not found"}
 
     framework = AIScientistFramework(
         session=session,

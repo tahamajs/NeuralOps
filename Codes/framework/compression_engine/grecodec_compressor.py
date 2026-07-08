@@ -1,10 +1,11 @@
 """FRanDI: Feature‑Regression aligned low‑rank compression. Registered as 'frandi'."""
 
+from typing import Any, Dict, Optional, Tuple
+
 import torch
 import torch.nn as nn
-from typing import Optional, Dict, Any, Tuple
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class FRanDICompressor(BaseCompressor):
@@ -13,6 +14,7 @@ class FRanDICompressor(BaseCompressor):
     to linear layers, optionally using feature statistics from a calibration loader
     to align the compression with input feature distribution.
     """
+
     def __init__(
         self,
         model: nn.Module,
@@ -31,9 +33,11 @@ class FRanDICompressor(BaseCompressor):
         """Select rank based on energy threshold if provided, else fixed rank."""
         if self.energy_threshold is None:
             return min(self.rank, len(S))
-        total_energy = (S ** 2).sum()
-        cum_energy = (S ** 2).cumsum(dim=0) / total_energy
-        rank = (cum_energy >= self.energy_threshold).nonzero(as_tuple=True)[0][0].item() + 1
+        total_energy = (S**2).sum()
+        cum_energy = (S**2).cumsum(dim=0) / total_energy
+        rank = (cum_energy >= self.energy_threshold).nonzero(as_tuple=True)[0][
+            0
+        ].item() + 1
         return min(rank, len(S))
 
     def _collect_activations(self) -> Dict[str, torch.Tensor]:
@@ -42,6 +46,7 @@ class FRanDICompressor(BaseCompressor):
             return {}
         activations = {}
         hooks = []
+
         def hook_fn(module, input, output, name):
             x = input[0].detach()
             x_flat = x.reshape(-1, x.shape[-1])
@@ -52,14 +57,20 @@ class FRanDICompressor(BaseCompressor):
 
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
-                hooks.append(module.register_forward_hook(
-                    lambda m, i, o, n=name: hook_fn(m, i, o, n)
-                ))
+                hooks.append(
+                    module.register_forward_hook(
+                        lambda m, i, o, n=name: hook_fn(m, i, o, n)
+                    )
+                )
 
         self.model.eval()
         with torch.no_grad():
             for batch in self.calibration_loader:
-                batch = {k: v.to(self.device) for k, v in batch.items() if isinstance(v, torch.Tensor)}
+                batch = {
+                    k: v.to(self.device)
+                    for k, v in batch.items()
+                    if isinstance(v, torch.Tensor)
+                }
                 _ = self.model(**batch)
 
         for h in hooks:
@@ -89,11 +100,13 @@ class FRanDICompressor(BaseCompressor):
 
     def _compute_stats(self) -> Dict[str, Any]:
         stats = super()._compute_stats()
-        stats.update({
-            "rank": self.rank,
-            "energy_threshold": self.energy_threshold,
-            "calibration_used": self.calibration_loader is not None,
-        })
+        stats.update(
+            {
+                "rank": self.rank,
+                "energy_threshold": self.energy_threshold,
+                "calibration_used": self.calibration_loader is not None,
+            }
+        )
         return stats
 
 
@@ -104,8 +117,8 @@ def frandi_compressor_entry(model: nn.Module, comp_config) -> nn.Module:
         frandi_rank (int, default 8)
         frandi_energy (float, optional)
     """
-    rank = getattr(comp_config, 'frandi_rank', 8)
-    energy = getattr(comp_config, 'frandi_energy', None)
+    rank = getattr(comp_config, "frandi_rank", 8)
+    energy = getattr(comp_config, "frandi_energy", None)
     compressor = FRanDICompressor(model, rank=rank, energy_threshold=energy)
     compressed_model, _ = compressor.compress()
     return compressed_model

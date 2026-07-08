@@ -1,14 +1,16 @@
 """Integration with Django runner – called by MegaOrchestrator."""
 
-import torch
-import numpy as np
 from pathlib import Path
-from typing import Callable, Dict, Any, Optional
+from typing import Any, Callable, Dict, Optional
 
-from .config import FLConfig
-from .server import FLServer
+import numpy as np
+import torch
+
 from .client import FLClientTrainer
+from .config import FLConfig
 from .data_partitioning import DataPartitioner
+from .server import FLServer
+
 
 def run_federated_experiment(
     config_dict: Dict[str, Any],
@@ -16,8 +18,9 @@ def run_federated_experiment(
     dataset: Any,
     output_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
-    cfg = FLConfig(**{k: v for k, v in config_dict.items()
-                      if k in FLConfig.__dataclass_fields__})
+    cfg = FLConfig(
+        **{k: v for k, v in config_dict.items() if k in FLConfig.__dataclass_fields__}
+    )
     partitioner = DataPartitioner(
         num_clients=cfg.num_clients,
         partition_type=cfg.partition_type,
@@ -31,23 +34,27 @@ def run_federated_experiment(
     trainer = FLClientTrainer(cfg)
 
     def train_fn(model, data):
-        return trainer.train_from_data(model, data, epochs=cfg.local_epochs,
-                                       batch_size=cfg.local_batch_size)
+        return trainer.train_from_data(
+            model, data, epochs=cfg.local_epochs, batch_size=cfg.local_batch_size
+        )
 
     result = server.run(client_data, train_fn)
 
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
         import json
+
         # Convert any numpy types to plain floats
         serialisable = {
             "final_accuracy": result.get("accuracy", 0),
             "round_history": [
-                {k: float(v) if isinstance(v, (np.floating, float)) else v
-                 for k, v in r.items()}
+                {
+                    k: float(v) if isinstance(v, (np.floating, float)) else v
+                    for k, v in r.items()
+                }
                 for r in result.get("round_history", [])
             ],
         }
-        with open(output_dir / "fl_results.json", 'w') as f:
+        with open(output_dir / "fl_results.json", "w") as f:
             json.dump(serialisable, f, indent=2)
     return result

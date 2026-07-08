@@ -3,8 +3,10 @@
 Prompt template test suite for the ML Research Assistant.
 Run with: python manage.py test agents.tests.test_prompts
 """
-from django.test import TestCase
+
 from agents.tools import test_prompt_template
+from django.test import TestCase
+
 
 class PromptTemplateTests(TestCase):
     """Test that the agent's prompt templates produce expected outputs."""
@@ -13,8 +15,18 @@ class PromptTemplateTests(TestCase):
         """Test the experiment configuration prompt."""
         template = "Configure a {{model_name}} on {{task_name}} with {{method}}."
         test_cases = [
-            {"model_name": "bert-base-uncased", "task_name": "mrpc", "method": "lora", "expected": "lora"},
-            {"model_name": "distilbert", "task_name": "sst2", "method": "baseline", "expected": "baseline"},
+            {
+                "model_name": "bert-base-uncased",
+                "task_name": "mrpc",
+                "method": "lora",
+                "expected": "lora",
+            },
+            {
+                "model_name": "distilbert",
+                "task_name": "sst2",
+                "method": "baseline",
+                "expected": "baseline",
+            },
         ]
         result = test_prompt_template({"template": template, "test_cases": test_cases})
         self.assertEqual(len(result["results"]), 2)

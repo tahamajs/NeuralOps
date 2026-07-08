@@ -3,20 +3,21 @@ Hybrid SVD Layer: single‑head SVD approximation with positional encoding,
 plus a full encoder layer that uses it instead of multi‑head attention.
 """
 
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class SVDSingleHead(nn.Module):
     """Single‑head SVD approximation with positional encoding."""
+
     def __init__(self, hidden_size, svd_rank=20):
         super().__init__()
         self.hidden_size = hidden_size
         self.svd_rank = svd_rank
-        self.register_buffer('pos_encoding', None)
+        self.register_buffer("pos_encoding", None)
 
     def forward(self, hidden_states):
         batch_size, seq_len, _ = hidden_states.shape
@@ -26,8 +27,8 @@ class SVDSingleHead(nn.Module):
             pe = torch.zeros(seq_len, self.hidden_size, device=hidden_states.device)
             position = torch.arange(0, seq_len, dtype=torch.float).unsqueeze(1)
             div_term = torch.exp(
-                torch.arange(0, self.hidden_size, 2).float() *
-                (-np.log(10000.0) / self.hidden_size)
+                torch.arange(0, self.hidden_size, 2).float()
+                * (-np.log(10000.0) / self.hidden_size)
             )
             pe[:, 0::2] = torch.sin(position * div_term)
             pe[:, 1::2] = torch.cos(position * div_term)
@@ -56,35 +57,40 @@ class SVDSingleHead(nn.Module):
 
 class DirectSVDEncoderLayer(nn.Module):
     """Encoder layer that replaces attention with SVDSingleHead + standard FFN."""
+
     def __init__(self, config):
         super().__init__()
         self.hidden_size = config.hidden_size
         self.num_attention_heads = config.num_attention_heads
 
         self.input_layernorm = nn.LayerNorm(
-            self.hidden_size, eps=getattr(config, 'layer_norm_eps', 1e-12)
+            self.hidden_size, eps=getattr(config, "layer_norm_eps", 1e-12)
         )
         self.svd_layer = SVDSingleHead(
-            hidden_size=self.hidden_size,
-            svd_rank=getattr(config, 'svd_rank', 20)
+            hidden_size=self.hidden_size, svd_rank=getattr(config, "svd_rank", 20)
         )
 
         # FFN (same as BERT)
         self.intermediate = nn.Linear(
-            self.hidden_size,
-            getattr(config, 'intermediate_size', 4 * self.hidden_size)
+            self.hidden_size, getattr(config, "intermediate_size", 4 * self.hidden_size)
         )
         self.output_dense = nn.Linear(
-            getattr(config, 'intermediate_size', 4 * self.hidden_size),
-            self.hidden_size
+            getattr(config, "intermediate_size", 4 * self.hidden_size), self.hidden_size
         )
-        self.dropout = nn.Dropout(getattr(config, 'hidden_dropout_prob', 0.1))
+        self.dropout = nn.Dropout(getattr(config, "hidden_dropout_prob", 0.1))
         self.output_layernorm = nn.LayerNorm(
-            self.hidden_size, eps=getattr(config, 'layer_norm_eps', 1e-12)
+            self.hidden_size, eps=getattr(config, "layer_norm_eps", 1e-12)
         )
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, output_hidden_states=False, return_dict=True):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        output_hidden_states=False,
+        return_dict=True,
+    ):
         residual = hidden_states
         normed = self.input_layernorm(hidden_states)
         svd_out = self.svd_layer(normed)
@@ -107,6 +113,7 @@ class DirectSVDCompressor(BaseCompressor):
     Replaces all encoder layers with DirectSVDEncoderLayer (no attention,
     only SVD decomposition).
     """
+
     def __init__(self, model, svd_rank=20, **kwargs):
         super().__init__(model, name="direct_svd", **kwargs)
         self.svd_rank = svd_rank
@@ -114,7 +121,7 @@ class DirectSVDCompressor(BaseCompressor):
     def compress(self):
         for name, module in self.model.named_modules():
             # We assume the model has an attribute 'encoder' with layers
-            if 'encoder.layer' in name:
+            if "encoder.layer" in name:
                 # Actually we need to replace the entire layer block
                 # This is simplified; a full replacement requires walking the model hierarchy
                 pass
@@ -124,15 +131,11 @@ class DirectSVDCompressor(BaseCompressor):
             "DirectSVDCompressor needs model‑specific layer replacement. "
             "Use the DirectSVDEncoderLayer directly."
         )
-    
-
 
 
 @COMPRESSOR_REGISTRY.register("direct_svd")
 def direct_svd_factory(model, comp_config):
-    svd_rank = getattr(comp_config, 'direct_svd_rank', 20)
+    svd_rank = getattr(comp_config, "direct_svd_rank", 20)
     compressor = DirectSVDCompressor(model, svd_rank=svd_rank)
     compressed_model, _ = compressor.compress()
     return compressed_model
-
-

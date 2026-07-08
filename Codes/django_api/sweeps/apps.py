@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
+
 class SweepsConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'sweeps'
-    verbose_name = 'Hyperparameter Sweeps'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "sweeps"
+    verbose_name = "Hyperparameter Sweeps"

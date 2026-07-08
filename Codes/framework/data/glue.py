@@ -4,8 +4,9 @@ Uses the HuggingFace `datasets` library and local files if available.
 """
 
 import os
-from datasets import load_dataset, DatasetDict
-from typing import Dict, Optional
+from typing import Optional
+
+from datasets import DatasetDict, load_dataset
 
 # Map task name to the sentence columns
 GLUE_TASK_KEYS = {
@@ -31,6 +32,7 @@ SUPERGLUE_TASK_KEYS = {
     "wsc": ("text", "span1_text"),
 }
 
+
 def load_glue_dataset(
     task_name: str,
     split: Optional[str] = None,
@@ -46,7 +48,9 @@ def load_glue_dataset(
         for f in os.listdir(base):
             if f.endswith(".parquet"):
                 s = f.split("-")[0]
-                splits[s] = load_dataset("parquet", data_files=os.path.join(base, f))["train"]
+                splits[s] = load_dataset("parquet", data_files=os.path.join(base, f))[
+                    "train"
+                ]
         ds = DatasetDict(splits)
     else:
         ds = load_dataset("glue", task_name)

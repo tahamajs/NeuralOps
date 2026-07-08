@@ -2,8 +2,9 @@
 Custom dataset loading utilities.
 """
 
-from datasets import load_dataset, Dataset, DatasetDict
-from typing import Optional, Dict, List, Union
+from typing import Dict, Optional, Union
+
+from datasets import Dataset, DatasetDict, load_dataset
 
 
 def load_custom_dataset(
@@ -17,7 +18,9 @@ def load_custom_dataset(
     Supports CSV, JSON, Parquet, text, and HuggingFace hub datasets.
     """
     if path.endswith((".csv", ".json", ".parquet", ".txt")):
-        dataset = load_dataset(path.split(".")[-1], data_files=data_files or path, **kwargs)
+        dataset = load_dataset(
+            path.split(".")[-1], data_files=data_files or path, **kwargs
+        )
     else:
         dataset = load_dataset(path, data_files=data_files, **kwargs)
     if split:

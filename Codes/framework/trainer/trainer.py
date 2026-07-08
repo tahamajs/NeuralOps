@@ -1,13 +1,17 @@
 """
 SVDAwareTrainer – custom HuggingFace Trainer with SVD compression callbacks.
 """
+
 import gc
+from typing import Any, Callable, Optional
+
 import torch
 from transformers import Trainer, TrainingArguments
-from typing import Optional, Callable, Any
+
 
 class SVDAwareTrainer(Trainer):
     """Trainer that supports pre/post training callbacks and attention map logging."""
+
     def __init__(
         self,
         visualizer: Optional[Any] = None,
@@ -49,15 +53,19 @@ class SVDAwareTrainer(Trainer):
 
     def _register_attention_hooks(self):
         self._attention_maps = []
+
         def hook_fn(module, input, output, layer_idx):
             if isinstance(output, tuple) and len(output) > 1 and output[1] is not None:
-                self._attention_maps.append({'layer': layer_idx, 'attention': output[1].detach().cpu()})
+                self._attention_maps.append(
+                    {"layer": layer_idx, "attention": output[1].detach().cpu()}
+                )
+
         for name, module in self.model.named_modules():
-            if 'attention' in name.lower() and hasattr(module, 'forward'):
+            if "attention" in name.lower() and hasattr(module, "forward"):
                 layer_idx = None
-                parts = name.split('.')
+                parts = name.split(".")
                 for i, part in enumerate(parts):
-                    if part == 'layer' and i + 1 < len(parts):
+                    if part == "layer" and i + 1 < len(parts):
                         try:
                             layer_idx = int(parts[i + 1])
                             break
@@ -78,13 +86,13 @@ class SVDAwareTrainer(Trainer):
         if self.visualizer and self._attention_maps:
             for attn_map in self._attention_maps:
                 self.visualizer.plot_attention_heatmap(
-                    attention_matrix=attn_map['attention'][0, 0].numpy(),
+                    attention_matrix=attn_map["attention"][0, 0].numpy(),
                     tokens=None,
-                    layer_idx=attn_map['layer'],
+                    layer_idx=attn_map["layer"],
                     head_idx=0,
-                    rank=getattr(self.args, 'rank', 64),
-                    model_name=getattr(self.model.config, '_name_or_path', 'model'),
-                    task_name=getattr(self.args, 'task_name', 'unknown'),
+                    rank=getattr(self.args, "rank", 64),
+                    model_name=getattr(self.model.config, "_name_or_path", "model"),
+                    task_name=getattr(self.args, "task_name", "unknown"),
                 )
 
     def _cleanup_memory(self):
@@ -93,6 +101,7 @@ class SVDAwareTrainer(Trainer):
             torch.cuda.empty_cache()
         if torch.backends.mps.is_available():
             torch.mps.empty_cache()
+
 
 def create_trainer(
     model,

@@ -1,15 +1,17 @@
 """FL Server orchestrator – runs rounds, selects clients, aggregates updates."""
 
+import logging
+from copy import deepcopy
+from typing import Any, Callable, Dict, List, Optional
+
 import numpy as np
 import torch
-import logging
-from typing import Dict, Any, List, Optional, Callable
-from copy import deepcopy
-from .config import FLConfig
-from .strategies import AGGREGATOR_REGISTRY
+
 from .client_selection import SELECTOR_REGISTRY
 from .compression import COMPRESSION_REGISTRY
+from .config import FLConfig
 from .privacy import PRIVACY_REGISTRY
+from .strategies import AGGREGATOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +63,9 @@ class FLServer:
                 list(range(self.config.num_clients)),
                 self.round_history,
             )
-            num_selected = max(1, int(self.config.clients_per_round * self.config.num_clients))
+            num_selected = max(
+                1, int(self.config.clients_per_round * self.config.num_clients)
+            )
             selected_indices = selected_indices[:num_selected]
 
             # 2. Send model to clients, train locally, collect updates
@@ -83,8 +87,10 @@ class FLServer:
 
             # 3. Aggregate (server‑side computation)
             new_state = self.aggregator.aggregate(
-                self.global_model, client_updates,
-                np.array(client_weights), round_num,
+                self.global_model,
+                client_updates,
+                np.array(client_weights),
+                round_num,
                 client_ids=selected_indices,
             )
 
@@ -113,11 +119,17 @@ class FLServer:
     def _compute_update(self, global_model, client_model):
         """Compute the difference between client and global model."""
         global_state = global_model.state_dict()
-        client_state = client_model.state_dict() if isinstance(client_model, torch.nn.Module) else client_model
+        client_state = (
+            client_model.state_dict()
+            if isinstance(client_model, torch.nn.Module)
+            else client_model
+        )
         update = {}
         for k in global_state:
             if k in client_state:
-                update[k] = (client_state[k].cpu().numpy() - global_state[k].cpu().numpy())
+                update[k] = (
+                    client_state[k].cpu().numpy() - global_state[k].cpu().numpy()
+                )
         return update
 
     def _apply_update(self, global_model, update):
@@ -130,6 +142,6 @@ class FLServer:
 
     def _get_client_weight(self, idx, data):
         """Return client weight (default: dataset size)."""
-        if hasattr(data, '__len__'):
+        if hasattr(data, "__len__"):
             return len(data)
         return 1

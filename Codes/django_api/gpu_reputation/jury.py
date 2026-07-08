@@ -7,10 +7,13 @@ of being chosen as a juror."
 
 Uses weighted random selection without replacement.
 """
-import random
+
 import logging
+import random
+
 from django.contrib.auth import get_user_model
-from .models import Stake, Dispute
+
+from .models import Dispute, Stake
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -23,11 +26,13 @@ def select_jurors(dispute: Dispute, num_jurors: int) -> list:
     Excludes the disputing parties.
     """
     # Pool: active stakes, excluding the two disputing parties
-    stakes = Stake.objects.filter(
-        status='active',
-    ).exclude(
-        user__in=[dispute.raised_by, dispute.against]
-    ).select_related('user')
+    stakes = (
+        Stake.objects.filter(
+            status="active",
+        )
+        .exclude(user__in=[dispute.raised_by, dispute.against])
+        .select_related("user")
+    )
 
     if not stakes.exists():
         # Fallback: include all active users (not just stakers)
@@ -48,7 +53,9 @@ def select_jurors(dispute: Dispute, num_jurors: int) -> list:
             weights.append(float(stake.amount_usd))
 
     if len(users) < num_jurors:
-        logger.warning(f"Only {len(users)} staked users available for jury of {num_jurors}")
+        logger.warning(
+            f"Only {len(users)} staked users available for jury of {num_jurors}"
+        )
         return users
 
     # Weighted random selection without replacement

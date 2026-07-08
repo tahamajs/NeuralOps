@@ -19,14 +19,15 @@ References:
   - Bonawitz et al. (2017): Practical Secure Aggregation for Privacy-Preserving Machine Learning
 """
 
-from .config import FLConfig, AggregationStrategy, ClientSelectionStrategy, CompressionMethod, PrivacyMethod
-from .strategies import AGGREGATOR_REGISTRY, BaseAggregator
 from .client_selection import SELECTOR_REGISTRY, BaseSelector
 from .compression import COMPRESSION_REGISTRY, BaseCompressor
-from .privacy import PRIVACY_REGISTRY, BasePrivacyMechanism
+from .config import (AggregationStrategy, ClientSelectionStrategy,
+                     CompressionMethod, FLConfig, PrivacyMethod)
 from .data_partitioning import DataPartitioner, PartitionType
-from .server import FLServer
 from .integration import run_federated_experiment
+from .privacy import PRIVACY_REGISTRY, BasePrivacyMechanism
+from .server import FLServer
+from .strategies import AGGREGATOR_REGISTRY, BaseAggregator
 
 __all__ = [
     "FLConfig",

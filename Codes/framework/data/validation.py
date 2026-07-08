@@ -2,9 +2,10 @@
 Simple data validation – missing values, infinite, zero variance, schema checks.
 """
 
-import numpy as np
-from typing import Dict, Any, List
 from dataclasses import dataclass
+from typing import Any, Dict, List
+
+import numpy as np
 
 
 @dataclass
@@ -24,14 +25,22 @@ class DataValidator:
         for col, values in dataset.items():
             v = np.array(values)
             # Missing values
-            missing = np.sum(pd.isna(v)) if 'pd' in globals() else np.sum(v == None)
+            missing = np.sum(pd.isna(v)) if "pd" in globals() else np.sum(v == None)
             if missing > 0:
-                issues.append({"column": col, "issue": "missing_values", "count": int(missing)})
+                issues.append(
+                    {"column": col, "issue": "missing_values", "count": int(missing)}
+                )
             # Infinite values
             if v.dtype in [np.float32, np.float64]:
                 inf_count = np.sum(np.isinf(v))
                 if inf_count > 0:
-                    issues.append({"column": col, "issue": "infinite_values", "count": int(inf_count)})
+                    issues.append(
+                        {
+                            "column": col,
+                            "issue": "infinite_values",
+                            "count": int(inf_count),
+                        }
+                    )
             # Low variance
             if len(v) > 1 and v.dtype in [np.float32, np.float64]:
                 if np.std(v) < 1e-8:
@@ -39,17 +48,29 @@ class DataValidator:
             # Schema checks
             if col in self.schema:
                 expected = self.schema[col]
-                if 'min' in expected and np.min(v) < expected['min']:
-                    issues.append({"column": col, "issue": "below_min",
-                                   "min": expected['min'], "actual": float(np.min(v))})
-                if 'max' in expected and np.max(v) > expected['max']:
-                    issues.append({"column": col, "issue": "above_max",
-                                   "max": expected['max'], "actual": float(np.max(v))})
+                if "min" in expected and np.min(v) < expected["min"]:
+                    issues.append(
+                        {
+                            "column": col,
+                            "issue": "below_min",
+                            "min": expected["min"],
+                            "actual": float(np.min(v)),
+                        }
+                    )
+                if "max" in expected and np.max(v) > expected["max"]:
+                    issues.append(
+                        {
+                            "column": col,
+                            "issue": "above_max",
+                            "max": expected["max"],
+                            "actual": float(np.max(v)),
+                        }
+                    )
 
-        failed_cols = set(i['column'] for i in issues)
+        failed_cols = set(i["column"] for i in issues)
         return ValidationReport(
             checks_passed=len(dataset) - len(failed_cols),
             checks_failed=len(failed_cols),
             issues=issues,
-            is_valid=len(issues) == 0
+            is_valid=len(issues) == 0,
         )

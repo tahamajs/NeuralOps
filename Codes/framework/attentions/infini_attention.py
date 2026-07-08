@@ -1,10 +1,10 @@
 # framework/attentions/specialized/infini_attention.py
 import torch
 import torch.nn as nn
-import math
-from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
 import torch.nn.functional as F
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("infini")
 class InfiniAttention(BaseAttention):
@@ -19,7 +19,7 @@ class InfiniAttention(BaseAttention):
         self.head_dim = config.hidden_size // self.num_heads
         self.compress_dim = compress_dim
         self.local_window = local_window
-        self.dropout = nn.Dropout(config.dropout)   # not attention_probs_dropout_prob
+        self.dropout = nn.Dropout(config.dropout)  # not attention_probs_dropout_prob
 
         self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
@@ -27,9 +27,13 @@ class InfiniAttention(BaseAttention):
         self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
 
         # Compressive memory matrix (learnable)
-        self.memory = nn.Parameter(torch.randn(1, self.num_heads, compress_dim, self.head_dim) * 0.02)
+        self.memory = nn.Parameter(
+            torch.randn(1, self.num_heads, compress_dim, self.head_dim) * 0.02
+        )
 
-    def forward(self, hidden_states, attention_mask=None, output_attentions=False, **kwargs):
+    def forward(
+        self, hidden_states, attention_mask=None, output_attentions=False, **kwargs
+    ):
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
@@ -38,14 +42,18 @@ class InfiniAttention(BaseAttention):
         v = self.v_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
 
         # Compressive memory attention
-        mem = self.memory.expand(B, -1, -1, -1)                     # (B, H, C, Dh)
-        mem_scores = torch.matmul(q, mem.transpose(-2, -1)) / (Dh ** 0.5)
+        mem = self.memory.expand(B, -1, -1, -1)  # (B, H, C, Dh)
+        mem_scores = torch.matmul(q, mem.transpose(-2, -1)) / (Dh**0.5)
         mem_attn = torch.softmax(mem_scores, dim=-1)
         mem_out = torch.matmul(mem_attn, mem)
 
         # Sliding‑window attention
-        window_mask = torch.ones(L, L, device=q.device).tril(diagonal=self.local_window - 1).bool()
-        scale = 1.0 / (Dh ** 0.5)
+        window_mask = (
+            torch.ones(L, L, device=q.device)
+            .tril(diagonal=self.local_window - 1)
+            .bool()
+        )
+        scale = 1.0 / (Dh**0.5)
         scores = torch.matmul(q, k.transpose(-2, -1)) * scale
         scores = scores.masked_fill(~window_mask.unsqueeze(0).unsqueeze(0), -1e9)
 
@@ -63,4 +71,3 @@ class InfiniAttention(BaseAttention):
         if output_attentions:
             return out, attn_local
         return out, None
-

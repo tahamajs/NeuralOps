@@ -3,11 +3,10 @@ Unified model loader – works with any HuggingFace model, optionally injects
 custom attention and wraps the result in a UnifiedTransformerModel.
 """
 
-import torch
-from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
-from framework.core.model_wrapper import UnifiedTransformerModel
 from framework.core.attention_utils import inject_attention
-from framework.core.registry import ATTENTION_REGISTRY
+from framework.core.model_wrapper import UnifiedTransformerModel
+from transformers import (AutoConfig, AutoModelForSequenceClassification,
+                          AutoTokenizer)
 
 
 def load_hf_model(
@@ -22,7 +21,9 @@ def load_hf_model(
     Returns:
         model, tokenizer
     """
-    config = AutoConfig.from_pretrained(model_name, num_labels=num_labels, cache_dir=cache_dir)
+    config = AutoConfig.from_pretrained(
+        model_name, num_labels=num_labels, cache_dir=cache_dir
+    )
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name, config=config, cache_dir=cache_dir, **kwargs
@@ -42,7 +43,10 @@ def load_compressed_model(
     Only works for BERT‑like architectures.
     """
     from .custom_models import CompressedBertModel
-    config = AutoConfig.from_pretrained(model_name, num_labels=num_labels, cache_dir=cache_dir)
+
+    config = AutoConfig.from_pretrained(
+        model_name, num_labels=num_labels, cache_dir=cache_dir
+    )
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
     model = CompressedBertModel(model_path=model_name, rank=rank, num_labels=num_labels)
     return model, tokenizer
@@ -60,7 +64,10 @@ def load_hybrid_svd_model(
     Only works for BERT‑like architectures.
     """
     from .custom_models import HybridBertForSequenceClassification
-    config = AutoConfig.from_pretrained(model_name, num_labels=num_labels, cache_dir=cache_dir)
+
+    config = AutoConfig.from_pretrained(
+        model_name, num_labels=num_labels, cache_dir=cache_dir
+    )
     config.svd_rank = rank
     model = HybridBertForSequenceClassification(config)
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
@@ -75,10 +82,11 @@ def load_unsloth_model(
 ) -> tuple:
     """Load a model using Unsloth (requires unsloth)."""
     from .unsloth_loader import load_unsloth_model_with_attention
+
     return load_unsloth_model_with_attention(
         model_name=model_name,
         num_labels=num_labels,
-        attention_type="full",   # default no replacement
+        attention_type="full",  # default no replacement
         rank=64,
         max_seq_length=max_seq_length,
         **kwargs,
@@ -89,10 +97,10 @@ def load_unsloth_model(
 # Main dispatch function
 # ----------------------------------------------------------------------
 _VARIANT_LOADERS = {
-    "standard":    load_hf_model,
-    "compressed":  load_compressed_model,   # BERT only
-    "hybrid_svd":  load_hybrid_svd_model,   # BERT only
-    "unsloth":     load_unsloth_model,
+    "standard": load_hf_model,
+    "compressed": load_compressed_model,  # BERT only
+    "hybrid_svd": load_hybrid_svd_model,  # BERT only
+    "unsloth": load_unsloth_model,
 }
 
 
@@ -142,6 +150,8 @@ def load_model(
             model.replace_attention(attention_type, rank=attention_rank)
         else:
             # Fallback to direct injection if not wrapped
-            inject_attention(model, attention_type, rank=attention_rank, copy_weights=True)
+            inject_attention(
+                model, attention_type, rank=attention_rank, copy_weights=True
+            )
 
     return model, tokenizer

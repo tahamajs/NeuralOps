@@ -3,7 +3,8 @@
 The contrastive loss is applied on the client side; the server aggregation is identical to FedAvg.
 """
 
-from .base import BaseAggregator, AGGREGATOR_REGISTRY
+from .base import AGGREGATOR_REGISTRY, BaseAggregator
+
 
 @AGGREGATOR_REGISTRY.register("moon")
 class MOONAggregator(BaseAggregator):

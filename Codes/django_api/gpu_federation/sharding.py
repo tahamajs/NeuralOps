@@ -6,13 +6,14 @@ Determines how to split a model across federation nodes based on:
 - Node capacities (VRAM, bandwidth, compute)
 - Sharding strategy (layer-wise, tensor parallel, etc.)
 """
+
 import math
 
 
 def compute_shard_assignment(
     num_layers: int,
     nodes: list,  # list of FederationNode objects
-    strategy: str = 'layer_wise'
+    strategy: str = "layer_wise",
 ) -> list:
     """
     Returns a list of (node, start_layer, end_layer) tuples.
@@ -23,11 +24,11 @@ def compute_shard_assignment(
     if not nodes:
         return []
 
-    if strategy == 'data_parallel':
+    if strategy == "data_parallel":
         # Every node gets all layers
         return [(n, 0, num_layers) for n in nodes]
 
-    elif strategy == 'layer_wise':
+    elif strategy == "layer_wise":
         # Distribute layers proportionally to VRAM
         total_vram = sum(n.listing.vram_gb for n in nodes)
         if total_vram == 0:
@@ -52,7 +53,7 @@ def compute_shard_assignment(
             assignments.append((n, start, end))
         return assignments
 
-    elif strategy == 'tensor_parallel':
+    elif strategy == "tensor_parallel":
         # For tensor parallel, we split each layer's weight matrices across nodes.
         # This is a simplified model: all nodes must participate equally.
         return [(n, 0, num_layers) for n in nodes]

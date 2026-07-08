@@ -1,18 +1,25 @@
-import os
 import json
-import yaml
 import logging
-from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from .callbacks import MemoryCallback, TimeCallback, GradientNormCallback
+import yaml
+
+from .callbacks import GradientNormCallback, MemoryCallback, TimeCallback
 from .utils import plot_training_curves
+
 
 class ResultsManager:
     """Manages per‑run result directories, logging, metrics, and trainer wrapping."""
-    def __init__(self, experiment_name: str, base_dir: str = "results",
-                 config: Optional[Dict[str, Any]] = None, log_to_file: bool = True):
+
+    def __init__(
+        self,
+        experiment_name: str,
+        base_dir: str = "results",
+        config: Optional[Dict[str, Any]] = None,
+        log_to_file: bool = True,
+    ):
         self.experiment_name = experiment_name
         self.base_dir = Path(base_dir)
         self.config = config or {}
@@ -47,7 +54,11 @@ class ResultsManager:
         logger.addHandler(ch)
         if self.log_to_file:
             fh = logging.FileHandler(self.log_dir / "run.log")
-            fh.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+            fh.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                )
+            )
             logger.addHandler(fh)
         return logger
 
@@ -84,8 +95,10 @@ class ResultsManager:
             self.logger.warning(f"Could not add callbacks: {e}")
 
         original_log = trainer.log
+
         def custom_log(logs):
             original_log(logs)
             self.log_metrics(logs)
+
         trainer.log = custom_log
         return trainer

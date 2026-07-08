@@ -1,6 +1,7 @@
 """Security configuration – currently only holds the default algorithm."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+
 
 @dataclass
 class SecurityConfig:
@@ -9,4 +10,5 @@ class SecurityConfig:
     Attributes:
         algorithm: signature algorithm. Currently only 'ed25519' is supported.
     """
+
     algorithm: str = "ed25519"

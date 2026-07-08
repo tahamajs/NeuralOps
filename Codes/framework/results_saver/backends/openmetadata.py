@@ -1,5 +1,9 @@
-import logging, json, requests
+import logging
+
+import requests
+
 logger = logging.getLogger(__name__)
+
 
 def track(run_id, run_dir, metrics, params, cfg):
     """Send metadata and lineage to OpenMetadata via REST API."""

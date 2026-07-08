@@ -1,8 +1,8 @@
+from typing import Optional, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-from typing import Tuple, List, Optional
 
 
 class TTLinearLayer(nn.Module):
@@ -27,14 +27,17 @@ class TTLinearLayer(nn.Module):
         dtype: torch.dtype
         device: torch.device
     """
-    def __init__(self,
-                 in_features: int,
-                 out_features: int,
-                 tt_rank: int = 16,
-                 bias: bool = True,
-                 shape: Optional[Tuple[Tuple[int, ...], Tuple[int, ...]]] = None,
-                 dtype=None,
-                 device=None):
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        tt_rank: int = 16,
+        bias: bool = True,
+        shape: Optional[Tuple[Tuple[int, ...], Tuple[int, ...]]] = None,
+        dtype=None,
+        device=None,
+    ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -47,11 +50,16 @@ class TTLinearLayer(nn.Module):
         else:
             self.p_dims, self.q_dims = shape
             # sanity check
-            if np.prod(self.p_dims) != in_features or np.prod(self.q_dims) != out_features:
-                raise ValueError(f"Shape product mismatch: {self.p_dims} -> {np.prod(self.p_dims)} vs {in_features}; "
-                                 f"{self.q_dims} -> {np.prod(self.q_dims)} vs {out_features}")
+            if (
+                np.prod(self.p_dims) != in_features
+                or np.prod(self.q_dims) != out_features
+            ):
+                raise ValueError(
+                    f"Shape product mismatch: {self.p_dims} -> {np.prod(self.p_dims)} vs {in_features}; "
+                    f"{self.q_dims} -> {np.prod(self.q_dims)} vs {out_features}"
+                )
 
-        self.d = len(self.p_dims)   # number of dimensions / cores
+        self.d = len(self.p_dims)  # number of dimensions / cores
 
         # Build TT‑cores as a list of Parameter tensors
         # We need r_0 = 1, r_d = 1, intermediate ranks = tt_rank (or maybe smaller if product is too small)
@@ -61,7 +69,7 @@ class TTLinearLayer(nn.Module):
         for i in range(self.d - 1):
             p_i = self.p_dims[i]
             q_i = self.q_dims[i]
-            r_right = min(tt_rank, p_i * q_i)   # keep rank bounded
+            r_right = min(tt_rank, p_i * q_i)  # keep rank bounded
             core_shape = (r_left, p_i, q_i, r_right)
             core = nn.Parameter(torch.empty(*core_shape, dtype=dtype, device=device))
             nn.init.xavier_uniform_(core)
@@ -71,21 +79,28 @@ class TTLinearLayer(nn.Module):
         p_last = self.p_dims[-1]
         q_last = self.q_dims[-1]
         core_last_shape = (r_left, p_last, q_last, 1)
-        core_last = nn.Parameter(torch.empty(*core_last_shape, dtype=dtype, device=device))
+        core_last = nn.Parameter(
+            torch.empty(*core_last_shape, dtype=dtype, device=device)
+        )
         nn.init.xavier_uniform_(core_last)
         self.cores.append(core_last)
 
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, dtype=dtype, device=device))
+            self.bias = nn.Parameter(
+                torch.zeros(out_features, dtype=dtype, device=device)
+            )
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
 
-    def _default_shape(self, in_f: int, out_f: int) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
+    def _default_shape(
+        self, in_f: int, out_f: int
+    ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
         """
         Choose a balanced factorisation of in_f and out_f into a common number
         of factors (usually 2 or 3).  For simplicity we use 2 factors (a 2D TT‑grid)
         because it works well for most linear layers.
         """
+
         # Try to split into 2 factors each
         # Find integer divisors close to sqrt
         def divisors(n):
@@ -120,7 +135,7 @@ class TTLinearLayer(nn.Module):
         # Determine shape automatically (2D factorisation)
         in_f = W.shape[1]
         out_f = W.shape[0]
-        p_dims, q_dims = cls._default_shape(in_f, out_f)   # use static method
+        p_dims, q_dims = cls._default_shape(in_f, out_f)  # use static method
         # (We'll call the classmethod but it's not defined yet; we'll use a helper)
         # Actually we can call _default_shape on the class (cls._default_shape(...))
         # But _default_shape is an instance method, so we need to define a separate static.
@@ -129,8 +144,15 @@ class TTLinearLayer(nn.Module):
         p_dims, q_dims = cls._get_shape(in_f, out_f)
 
         # Create empty TTLinearLayer with that shape
-        layer = cls(in_f, out_f, tt_rank=tt_rank, bias=linear_layer.bias is not None,
-                    shape=(p_dims, q_dims), dtype=W.dtype, device=W.device)
+        layer = cls(
+            in_f,
+            out_f,
+            tt_rank=tt_rank,
+            bias=linear_layer.bias is not None,
+            shape=(p_dims, q_dims),
+            dtype=W.dtype,
+            device=W.device,
+        )
 
         # Perform TT‑SVD (truncated SVD per core) to initialise cores from W
         # Reshape W to a d‑dimensional tensor of shape (q1,...,qd, p1,...,pd)
@@ -141,12 +163,15 @@ class TTLinearLayer(nn.Module):
             import tensorly as tl
             from tensorly import tenalg
             from tensorly.decomposition import partial_tucker
-            tl.set_backend('pytorch')
+
+            tl.set_backend("pytorch")
             # Reshape W to full tensor
             W_full = W.view(*q_dims, *p_dims)  # shape (q1,...,qd, p1,...,pd)
             # Permute to interleaved order: (p1,q1, p2,q2, ..., pd,qd)
             # Not trivial, easier: use TT‑SVD from tensorly
-            cores = tt_svd_tensor(W_full, rank=[1] + [tt_rank] * (len(p_dims)-1) + [1])
+            cores = tt_svd_tensor(
+                W_full, rank=[1] + [tt_rank] * (len(p_dims) - 1) + [1]
+            )
             # cores is a list of 3D arrays (r_k, n_k, m_k, r_{k+1})? tensorly's TT‑SVD returns list of 3D cores
             # Actually tensorly.tt_matrix returns cores for matrix TT format: each core shape (r_k, p_k, q_k, r_{k+1})
             # We'll assign them.
@@ -161,31 +186,40 @@ class TTLinearLayer(nn.Module):
                 # Reshape W to (q1, q2, p1, p2)
                 W_reshaped = W.view(q1, q2, p1, p2)  # shape (q1, q2, p1, p2)
                 # TT‑SVD for d=2: reshape to (q1*p1, q2*p2) then SVD
-                M = W_reshaped.permute(0,2,1,3).reshape(q1*p1, q2*p2)
+                M = W_reshaped.permute(0, 2, 1, 3).reshape(q1 * p1, q2 * p2)
                 U, S, V = torch.svd(M)
                 rank = min(tt_rank, len(S))
                 U = U[:, :rank]
                 S = S[:rank]
                 V = V[:, :rank]
                 # First core: shape (1, p1, q1, rank) -> actually we need to reshape U to (p1, q1, rank)
-                core1 = U.view(p1, q1, rank).permute(2,0,1).unsqueeze(0)  # (1, p1, q1, rank)
+                core1 = (
+                    U.view(p1, q1, rank).permute(2, 0, 1).unsqueeze(0)
+                )  # (1, p1, q1, rank)
                 # Middle core: diagonal of singular values? No, we need to integrate S.
                 # Better: use standard TT decomposition: W ≈ G1 * G2 with G1 shape (1, p1, q1, r), G2 shape (r, p2, q2, 1)
                 # Use the SVD factors: W = (U sqrt(S)) * (sqrt(S) V^T) after reshaping.
                 # Reshape U sqrt(S) to (p1, q1, rank) -> core1
                 # Reshape sqrt(S) V^T to (rank, p2, q2) -> core2
                 sqrtS = torch.diag(torch.sqrt(S))
-                U_scaled = U @ sqrtS   # (p1*q1, rank)
+                U_scaled = U @ sqrtS  # (p1*q1, rank)
                 V_scaled = sqrtS @ V.t()  # (rank, q2*p2)
-                core1_data = U_scaled.view(p1, q1, rank).permute(2,0,1).unsqueeze(0)  # (1, p1, q1, rank)
-                core2_data = V_scaled.view(rank, p2, q2).unsqueeze(-1)  # (rank, p2, q2, 1)
+                core1_data = (
+                    U_scaled.view(p1, q1, rank).permute(2, 0, 1).unsqueeze(0)
+                )  # (1, p1, q1, rank)
+                core2_data = V_scaled.view(rank, p2, q2).unsqueeze(
+                    -1
+                )  # (rank, p2, q2, 1)
                 layer.cores[0].data.copy_(core1_data)
                 layer.cores[1].data.copy_(core2_data)
             else:
                 # For d>2, fallback to random initialisation and hope fine-tuning works
                 # (or raise a warning)
                 import warnings
-                warnings.warn("TT‑SVD for d>2 requires tensorly. Using random initialisation.")
+
+                warnings.warn(
+                    "TT‑SVD for d>2 requires tensorly. Using random initialisation."
+                )
                 pass
 
         if bias is not None:
@@ -202,6 +236,7 @@ class TTLinearLayer(nn.Module):
                 if n % i == 0:
                     divs.append((i, n // i))
             return min(divs, key=lambda x: abs(x[0] - x[1]))
+
         p1, p2 = divisors(in_f)
         q1, q2 = divisors(out_f)
         return (p1, p2), (q1, q2)
@@ -251,8 +286,8 @@ class TTLinearLayer(nn.Module):
             # We'll treat x_core as having dimensions: [batch, r_left, p1, p2, ..., pd]
             # For the i-th core, we want to contract p_i and r_left.
             # We can move the p_i dimension to the front.
-            dims = list(range(2, 2 + self.d))   # positions of p1...pd in x_core
-            p_i_pos = dims[i]   # index of p_i
+            dims = list(range(2, 2 + self.d))  # positions of p1...pd in x_core
+            p_i_pos = dims[i]  # index of p_i
             # Rearrange x_core so that r_left and p_i are the last two dims before the rest?
             # Better: use einsum with explicit subscripts based on current dimensions.
             # We'll construct the subscript strings programmatically.
@@ -272,14 +307,20 @@ class TTLinearLayer(nn.Module):
             # Current x_core shape: (B, r_left, p1, p2, ..., pd)
             # We want to combine batch, r_left, and all p_j (j != i) into one dimension
             # Reshape to (B * r_left * product_other, p_i)
-            x_flat = x_core.permute(0, 1, *[2 + j for j in range(self.d) if j != i], 2 + i).contiguous()
+            x_flat = x_core.permute(
+                0, 1, *[2 + j for j in range(self.d) if j != i], 2 + i
+            ).contiguous()
             # after permute, dimensions order: batch, r_left, (other p's), p_i
             # now flatten everything except last dim
-            x_flat = x_flat.view(-1, self.p_dims[i])  # (B * r_left * product_other, p_i)
+            x_flat = x_flat.view(
+                -1, self.p_dims[i]
+            )  # (B * r_left * product_other, p_i)
 
             # Core shape: (r_left, p_i, q_i, r_right)
             # Reshape core to (r_left * p_i, q_i * r_right)
-            core_flat = core.view(r_left * self.p_dims[i], self.q_dims[i] * core.shape[-1])
+            core_flat = core.view(
+                r_left * self.p_dims[i], self.q_dims[i] * core.shape[-1]
+            )
 
             # Perform matrix multiplication: (N, p_i) @ (p_i, q_i*r_right) -> (N, q_i*r_right)
             y_flat = torch.mm(x_flat, core_flat)  # (N, q_i * r_right)
@@ -343,7 +384,9 @@ class TTLinearLayer(nn.Module):
             # Actually easier: use tensorly's tt_to_tensor if available.
             pass
         # To avoid overcomplicating, we'll just raise NotImplementedError and suggest using `tntorch` or `tensorly`.
-        raise NotImplementedError("Efficient materialisation not implemented. Use a dedicated TT library (tensorly, tntorch) or implement contraction.")
+        raise NotImplementedError(
+            "Efficient materialisation not implemented. Use a dedicated TT library (tensorly, tntorch) or implement contraction."
+        )
 
     # For the user's immediate need, we'll provide a simpler alternative: the class can be used with `from_linear`
     # but the forward pass will materialise the weight using a helper that builds the matrix via a series of contractions
@@ -367,8 +410,11 @@ class TTLinearLayer(nn.Module):
             try:
                 import tensorly as tl
                 from tensorly import tt_to_tensor
-                tl.set_backend('pytorch')
-                cores_list = [core.squeeze(0) for core in self.cores]  # remove first and last singleton dims?
+
+                tl.set_backend("pytorch")
+                cores_list = [
+                    core.squeeze(0) for core in self.cores
+                ]  # remove first and last singleton dims?
                 # tensorly expects list of 3D cores (r_k, n_k, m_k, r_{k+1})? Actually for matrix TT it expects list of 3D arrays (r_k, n_k*m_k, r_{k+1})? Let's not.
                 # Too much friction. Simpler: use a manual contraction for 2D case only (d=2), which is common.
                 if self.d == 2:
@@ -378,28 +424,38 @@ class TTLinearLayer(nn.Module):
                     core0 = self.cores[0].squeeze(0)  # (p1, q1, r)
                     core1 = self.cores[1].squeeze(-1)  # (r, p2, q2)
                     # Contract over r: (p1, q1, r) * (r, p2, q2) -> (p1, q1, p2, q2)
-                    W_tt = torch.einsum('pqr,rpq->pqpq', core0, core1)  # careful: indices
+                    W_tt = torch.einsum(
+                        "pqr,rpq->pqpq", core0, core1
+                    )  # careful: indices
                     # Actually we need to get shape (p1, p2, q1, q2) after permutation
                     # Let's do it stepwise:
                     # core0: (p1, q1, r)
                     # core1: (r, p2, q2)
                     # intermediate = torch.einsum('pqr,rPQ->pqPQ', core0, core1) -> (p1, q1, p2, q2)
                     # Then permute to (p1, p2, q1, q2)
-                    inter = torch.einsum('pqr,rPQ->pqPQ', core0, core1)
-                    W_full = inter.permute(0,2,1,3).reshape(self.out_features, self.in_features)
+                    inter = torch.einsum("pqr,rPQ->pqPQ", core0, core1)
+                    W_full = inter.permute(0, 2, 1, 3).reshape(
+                        self.out_features, self.in_features
+                    )
                     return W_full
                 else:
-                    raise ValueError("Materialisation only implemented for d=2 (2‑factor TT). Install tensorly for higher orders.")
+                    raise ValueError(
+                        "Materialisation only implemented for d=2 (2‑factor TT). Install tensorly for higher orders."
+                    )
             except ImportError:
                 if self.d == 2:
                     # Manual 2D case (as above)
                     core0 = self.cores[0].squeeze(0)  # (p1, q1, r)
                     core1 = self.cores[1].squeeze(-1)  # (r, p2, q2)
-                    inter = torch.einsum('pqr,rPQ->pqPQ', core0, core1)
-                    W_full = inter.permute(0,2,1,3).reshape(self.out_features, self.in_features)
+                    inter = torch.einsum("pqr,rPQ->pqPQ", core0, core1)
+                    W_full = inter.permute(0, 2, 1, 3).reshape(
+                        self.out_features, self.in_features
+                    )
                     return W_full
                 else:
-                    raise RuntimeError("For d>2 install tensorly (pip install tensorly) to use TTLinearLayer with materialisation.")
+                    raise RuntimeError(
+                        "For d>2 install tensorly (pip install tensorly) to use TTLinearLayer with materialisation."
+                    )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Materialise weight for forward (inefficient but works)
@@ -411,4 +467,3 @@ class TTLinearLayer(nn.Module):
         if self.bias is not None:
             y += self.bias
         return y.view(*orig_shape[:-1], self.out_features)
-    

@@ -6,17 +6,23 @@ trainable residual adapters. This gives better approximation than pure SVD.
 """
 
 import math
-import numpy as np
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 class AdaptiveSVDLinear(nn.Module):
-    def __init__(self, in_features: int, out_features: int, svd_rank: int,
-                 residual_rank: int = 8, bias: bool = True):
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        svd_rank: int,
+        residual_rank: int = 8,
+        bias: bool = True,
+    ):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
@@ -28,12 +34,12 @@ class AdaptiveSVDLinear(nn.Module):
             self.A = nn.Parameter(torch.empty(out_features, residual_rank))
             self.B = nn.Parameter(torch.empty(residual_rank, in_features))
         else:
-            self.register_parameter('A', None)
-            self.register_parameter('B', None)
+            self.register_parameter("A", None)
+            self.register_parameter("B", None)
         if bias:
             self.bias = nn.Parameter(torch.empty(out_features))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -62,8 +68,14 @@ class AdaptiveSVDLinear(nn.Module):
 
 
 class AdaptiveSVDAttention(nn.Module):
-    def __init__(self, model_config, svd_rank: int = 32, residual_rank: int = 8,
-                 dropout: float = 0.1, pretrained_attn=None):
+    def __init__(
+        self,
+        model_config,
+        svd_rank: int = 32,
+        residual_rank: int = 8,
+        dropout: float = 0.1,
+        pretrained_attn=None,
+    ):
         super().__init__()
         if pretrained_attn is None:
             raise ValueError("pretrained_attn required for zero‑shot init")
@@ -73,18 +85,34 @@ class AdaptiveSVDAttention(nn.Module):
         self.all_head_size = self.num_heads * self.head_dim
         self.hidden_size = model_config.hidden_size
 
-        self.q_proj = AdaptiveSVDLinear(self.hidden_size, self.all_head_size,
-                                        svd_rank, residual_rank,
-                                        bias=pretrained_attn.q_lin.bias is not None)
-        self.k_proj = AdaptiveSVDLinear(self.hidden_size, self.all_head_size,
-                                        svd_rank, residual_rank,
-                                        bias=pretrained_attn.k_lin.bias is not None)
-        self.v_proj = AdaptiveSVDLinear(self.hidden_size, self.all_head_size,
-                                        svd_rank, residual_rank,
-                                        bias=pretrained_attn.v_lin.bias is not None)
-        self.out_proj = AdaptiveSVDLinear(self.all_head_size, self.hidden_size,
-                                          svd_rank, residual_rank,
-                                          bias=pretrained_attn.out_lin.bias is not None)
+        self.q_proj = AdaptiveSVDLinear(
+            self.hidden_size,
+            self.all_head_size,
+            svd_rank,
+            residual_rank,
+            bias=pretrained_attn.q_lin.bias is not None,
+        )
+        self.k_proj = AdaptiveSVDLinear(
+            self.hidden_size,
+            self.all_head_size,
+            svd_rank,
+            residual_rank,
+            bias=pretrained_attn.k_lin.bias is not None,
+        )
+        self.v_proj = AdaptiveSVDLinear(
+            self.hidden_size,
+            self.all_head_size,
+            svd_rank,
+            residual_rank,
+            bias=pretrained_attn.v_lin.bias is not None,
+        )
+        self.out_proj = AdaptiveSVDLinear(
+            self.all_head_size,
+            self.hidden_size,
+            svd_rank,
+            residual_rank,
+            bias=pretrained_attn.out_lin.bias is not None,
+        )
 
         # Initialise SVD part from pretrained weights
         self._init_svd_part(self.q_proj, pretrained_attn.q_lin)
@@ -105,8 +133,14 @@ class AdaptiveSVDAttention(nn.Module):
             if adap_linear.bias is not None and orig_linear.bias is not None:
                 adap_linear.bias.data = orig_linear.bias.data.clone()
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
 
@@ -114,7 +148,7 @@ class AdaptiveSVDAttention(nn.Module):
         K = self.k_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
         V = self.v_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
 
-        scale = D ** -0.5
+        scale = D**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         if attention_mask is not None:
@@ -134,10 +168,12 @@ class AdaptiveSVDAttention(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("adaptive_svd_attn")
-def inject_adaptive_svd_attn(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    svd_rank = getattr(comp_config, 'svd_rank', 32)
-    res_rank = getattr(comp_config, 'residual_rank', 8)
-    dropout = getattr(comp_config, 'dropout', 0.1)
+def inject_adaptive_svd_attn(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
+    svd_rank = getattr(comp_config, "svd_rank", 32)
+    res_rank = getattr(comp_config, "residual_rank", 8)
+    dropout = getattr(comp_config, "dropout", 0.1)
     new_attn = AdaptiveSVDAttention(model_config, svd_rank, res_rank, dropout, old_attn)
     layer.attention = new_attn
     return new_attn

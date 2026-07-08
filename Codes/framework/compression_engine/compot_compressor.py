@@ -1,11 +1,12 @@
 """COMPOT: orthogonal dictionary learning from calibration. Registered as 'compot'."""
 
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
-from typing import List, Optional, Tuple, Dict, Any
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class COMPOTCompressor(BaseCompressor):
@@ -14,9 +15,16 @@ class COMPOTCompressor(BaseCompressor):
     Learns a low‑rank basis from a calibration set by performing QR on inputs,
     then compresses each linear layer's weight via truncated SVD on the dictionary.
     """
-    def __init__(self, model: nn.Module, rank: int = 64,
-                 calibration_texts: Optional[List[str]] = None,
-                 tokenizer=None, device=None, **kwargs):
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 64,
+        calibration_texts: Optional[List[str]] = None,
+        tokenizer=None,
+        device=None,
+        **kwargs
+    ):
         """
         Args:
             model: The model to compress.
@@ -30,7 +38,7 @@ class COMPOTCompressor(BaseCompressor):
         self.calibration_texts = calibration_texts or [
             "The quick brown fox jumps over the lazy dog.",
             "Machine learning is fascinating.",
-            "This is a sample calibration text."
+            "This is a sample calibration text.",
         ]
         if tokenizer is None:
             raise ValueError("tokenizer must be provided for COMPOT compressor")
@@ -49,9 +57,10 @@ class COMPOTCompressor(BaseCompressor):
             def hook(module, input, output):
                 # Store input and output tensors (detached, moved to CPU later)
                 layer_data[name] = {
-                    'input': input[0].detach(),
-                    'output': output.detach()
+                    "input": input[0].detach(),
+                    "output": output.detach(),
                 }
+
             return hook
 
         for name, module in self.model.named_modules():
@@ -65,7 +74,7 @@ class COMPOTCompressor(BaseCompressor):
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=128
+            max_length=128,
         )
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         with torch.no_grad():
@@ -83,8 +92,20 @@ class COMPOTCompressor(BaseCompressor):
                 continue
 
             # Get captured input and output (move to CPU for numpy ops)
-            inp = layer_data[name]['input'].cpu().float().view(-1, module.in_features).numpy()
-            out = layer_data[name]['output'].cpu().float().view(-1, module.out_features).numpy()
+            inp = (
+                layer_data[name]["input"]
+                .cpu()
+                .float()
+                .view(-1, module.in_features)
+                .numpy()
+            )
+            out = (
+                layer_data[name]["output"]
+                .cpu()
+                .float()
+                .view(-1, module.out_features)
+                .numpy()
+            )
 
             # Handle degenerate cases (e.g., batch size 1, small num samples)
             if inp.shape[0] < module.in_features:
@@ -93,16 +114,16 @@ class COMPOTCompressor(BaseCompressor):
 
             # Orthogonal dictionary learning:
             # 1. QR decomposition of inputs: inp = Q @ R
-            Q, R = np.linalg.qr(inp, mode='reduced')   # Q shape (N, in_features)
+            Q, R = np.linalg.qr(inp, mode="reduced")  # Q shape (N, in_features)
             # 2. Project outputs onto Q: D = out @ Q   (out: N x out, Q: N x in -> D: out x in)
-            D = out.T @ Q   # shape (out_features, in_features)
+            D = out.T @ Q  # shape (out_features, in_features)
             # 3. SVD of D and truncate
             U, S, Vt = np.linalg.svd(D, full_matrices=False)
             r = min(self.rank, len(S), D.shape[0], D.shape[1])
             if r < len(S):
-                D_approx = U[:, :r] @ np.diag(S[:r]) @ Vt[:r, :]   # (out, in)
+                D_approx = U[:, :r] @ np.diag(S[:r]) @ Vt[:r, :]  # (out, in)
                 # 4. Reconstruct new weight: W_new = D_approx @ Q.T
-                W_new = D_approx @ Q.T   # (out, in)
+                W_new = D_approx @ Q.T  # (out, in)
                 # 5. Update module weight (preserve device and dtype)
                 module.weight.data = torch.tensor(
                     W_new, dtype=module.weight.dtype, device=module.weight.device
@@ -130,15 +151,16 @@ def compot_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
     (you can set it before calling compression). Alternatively, modify the framework to pass tokenizer.
     This implementation uses a fallback: it attempts to get tokenizer from model.tokenizer.
     """
-    rank = getattr(comp_config, 'compot_rank', 64)
+    rank = getattr(comp_config, "compot_rank", 64)
     # Attempt to get tokenizer from model (must be attached beforehand)
-    tokenizer = getattr(model, 'tokenizer', None)
+    tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:
-        raise ValueError("COMPOT compressor requires tokenizer attached as model.tokenizer")
-    calibration_texts = getattr(comp_config, 'compot_calibration_texts', None)
+        raise ValueError(
+            "COMPOT compressor requires tokenizer attached as model.tokenizer"
+        )
+    calibration_texts = getattr(comp_config, "compot_calibration_texts", None)
     compressor = COMPOTCompressor(
-        model, rank=rank, tokenizer=tokenizer,
-        calibration_texts=calibration_texts
+        model, rank=rank, tokenizer=tokenizer, calibration_texts=calibration_texts
     )
     compressed_model, _ = compressor.compress()
     return compressed_model
@@ -146,4 +168,6 @@ def compot_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
 
 @COMPRESSOR_REGISTRY.register("compot")
 def compot_factory(model, comp_config):
-    raise NotImplementedError("compot requires tokenizer and calibration; not supported in standalone test.")
+    raise NotImplementedError(
+        "compot requires tokenizer and calibration; not supported in standalone test."
+    )

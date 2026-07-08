@@ -1,9 +1,8 @@
 """UniQL: Joint low‑rank + quantisation using SVD and uniform quant. Registered as 'uniql'."""
 
 import torch
-import numpy as np
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+
 
 class UniQLCompressor(BaseCompressor):
     def __init__(self, model, rank=64, bits=8, **kwargs):
@@ -42,4 +41,3 @@ class UniQLCompressor(BaseCompressor):
                     module.bias.data = self._quantize(module.bias.data, self.bits)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    

@@ -2,11 +2,13 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, OrderedDict
-import torch
+
 import numpy as np
+import torch
 from framework.core.registry import Registry
 
 AGGREGATOR_REGISTRY = Registry("fl_aggregators")
+
 
 class BaseAggregator(ABC):
     """Interface for federated learning aggregation strategies."""

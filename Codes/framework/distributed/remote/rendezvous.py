@@ -3,10 +3,11 @@ InternetRendezvous – helps GPUs behind NAT find each other using
 a central coordinating server (similar to etcd or PyTorch Elastic store).
 """
 
-import requests
 import time
-import threading
 from typing import Dict, Optional
+
+import requests
+
 
 class InternetRendezvous:
     """
@@ -37,8 +38,9 @@ class InternetRendezvous:
         except Exception:
             return False
 
-    def wait_for_peers(self, rank: int, world_size: int,
-                       timeout: int = 300) -> Optional[Dict[int, tuple]]:
+    def wait_for_peers(
+        self, rank: int, world_size: int, timeout: int = 300
+    ) -> Optional[Dict[int, tuple]]:
         """Wait until all peers have announced their addresses."""
         deadline = time.time() + timeout
         while time.time() < deadline:
@@ -54,7 +56,9 @@ class InternetRendezvous:
                 if resp.status_code == 200:
                     peers = resp.json()
                     if len(peers) == world_size:
-                        return {int(k): (v["host"], v["port"]) for k, v in peers.items()}
+                        return {
+                            int(k): (v["host"], v["port"]) for k, v in peers.items()
+                        }
             except Exception:
                 pass
             time.sleep(2)

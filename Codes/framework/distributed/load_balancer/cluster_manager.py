@@ -8,13 +8,12 @@ Reference:
   - TorchSubmit: https://github.com/ParthaEth/torch-submit
 """
 
-import os
+import logging
 import subprocess
 import threading
-from typing import Dict, List, Optional, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
-import logging
+from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +26,7 @@ class NodeRole(Enum):
 @dataclass
 class NodeSpec:
     """Description of a machine in the cluster."""
+
     hostname: str
     public_ip: str
     private_ip: str
@@ -110,7 +110,9 @@ class ClusterManager:
         if nnodes == 0:
             nnodes = len(self._nodes)
         if nnodes > len(self._nodes):
-            raise ValueError(f"Requested {nnodes} nodes, only {len(self._nodes)} registered")
+            raise ValueError(
+                f"Requested {nnodes} nodes, only {len(self._nodes)} registered"
+            )
 
         nodes = self._nodes[:nnodes]
         master = nodes[0]
@@ -139,7 +141,9 @@ class ClusterManager:
             proc.start()
             processes.append(proc)
 
-        logger.info("Launched training on %d nodes (%d GPUs each)", nnodes, nproc_per_node)
+        logger.info(
+            "Launched training on %d nodes (%d GPUs each)", nnodes, nproc_per_node
+        )
 
         # Wait for all to finish
         for proc in processes:
@@ -157,8 +161,9 @@ class ClusterManager:
             result[node.hostname] = int(out.strip())
         return result
 
-    def _ssh_run(self, node: NodeSpec, command: str,
-                 quiet: bool = False, capture: bool = False) -> Optional[str]:
+    def _ssh_run(
+        self, node: NodeSpec, command: str, quiet: bool = False, capture: bool = False
+    ) -> Optional[str]:
         """Execute a command on a remote node via SSH."""
         ssh_cmd = (
             f"ssh -i {node.ssh_key_path} -p {node.ssh_port} "

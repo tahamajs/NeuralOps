@@ -1,5 +1,5 @@
-import torch
-from .base import BaseQuantizer, QUANTIZER_REGISTRY
+from .base import QUANTIZER_REGISTRY, BaseQuantizer
+
 
 @QUANTIZER_REGISTRY.register("gptq")
 class GPTQQuantizer(BaseQuantizer):

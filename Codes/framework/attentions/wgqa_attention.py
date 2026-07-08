@@ -1,7 +1,9 @@
+import math
+
 import torch
 import torch.nn as nn
-import math
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("wgqa")
 class WeightedGroupedQueryAttention(nn.Module):
@@ -9,6 +11,7 @@ class WeightedGroupedQueryAttention(nn.Module):
     Weighted Grouped-Query Attention (WGQA).
     Fixed grouping + learnable per‑channel importance weights on K/V heads.
     """
+
     def __init__(self, config, num_kv_heads=4):
         super().__init__()
         self.num_heads = config.num_attention_heads
@@ -16,7 +19,7 @@ class WeightedGroupedQueryAttention(nn.Module):
         self.head_dim = config.hidden_size // self.num_heads
 
         # Learnable weights for KV heads (broadcast across sequence & batch)
-        self.k_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))   # (H_kv, 1)
+        self.k_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))  # (H_kv, 1)
         self.v_weights = nn.Parameter(torch.ones(self.num_kv_heads, 1))
 
         # Projections
@@ -29,10 +32,16 @@ class WeightedGroupedQueryAttention(nn.Module):
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         batch_size, seq_len, _ = hidden_states.shape
 
-        q = self.q_proj(hidden_states).view(batch_size, seq_len, self.num_heads, self.head_dim)
+        q = self.q_proj(hidden_states).view(
+            batch_size, seq_len, self.num_heads, self.head_dim
+        )
 
-        k = self.k_proj(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim)
-        v = self.v_proj(hidden_states).view(batch_size, seq_len, self.num_kv_heads, self.head_dim)
+        k = self.k_proj(hidden_states).view(
+            batch_size, seq_len, self.num_kv_heads, self.head_dim
+        )
+        v = self.v_proj(hidden_states).view(
+            batch_size, seq_len, self.num_kv_heads, self.head_dim
+        )
 
         # Apply per‑head importance: multiply each head by its scalar weight
         # weights have shape (H_kv, 1) -> (1,1,H_kv,1) after unsqueezing
@@ -44,7 +53,7 @@ class WeightedGroupedQueryAttention(nn.Module):
         k = k.repeat_interleave(repeat_factor, dim=2)
         v = v.repeat_interleave(repeat_factor, dim=2)
 
-        q = q.transpose(1, 2)   # (B, num_heads, L, D)
+        q = q.transpose(1, 2)  # (B, num_heads, L, D)
         k = k.transpose(1, 2)
         v = v.transpose(1, 2)
 
@@ -60,4 +69,3 @@ class WeightedGroupedQueryAttention(nn.Module):
         out = self.out_proj(context)
 
         return out, attn_probs
-    

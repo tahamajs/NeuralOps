@@ -1,16 +1,17 @@
-from django.apps import AppConfig
-from django.db.models.signals import post_save
-from django.conf import settings
 import json
 
+from django.apps import AppConfig
+from django.db.models.signals import post_save
+
+
 class AgentsConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'agents'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "agents"
 
     def ready(self):
         # Wire cross‑app signals
-        from experiment.models import TrainingRun
         from agents.tools import analyze_training
+        from experiment.models import TrainingRun
         from notes.models import ResearcherNote
 
         def on_run_complete(sender, instance, **kwargs):
@@ -28,4 +29,6 @@ class AgentsConfig(AppConfig):
                     metadata={"run_id": str(instance.id)},
                 )
 
-        post_save.connect(on_run_complete, sender=TrainingRun, dispatch_uid="agent_on_run_complete")
+        post_save.connect(
+            on_run_complete, sender=TrainingRun, dispatch_uid="agent_on_run_complete"
+        )

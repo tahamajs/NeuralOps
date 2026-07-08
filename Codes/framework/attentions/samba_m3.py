@@ -1,12 +1,14 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from .jamba2 import Mamba   # import the stub or replace with official Mamba
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
+from .jamba2 import Mamba  # import the stub or replace with official Mamba
+
 
 @ATTENTION_REGISTRY.register("spectral_mamba")
 class SpectralMamba(nn.Module):
     """Mamba with learnable spectral scaling."""
+
     def __init__(self, d_model):
         super().__init__()
         self.mamba = Mamba(d_model)
@@ -17,9 +19,11 @@ class SpectralMamba(nn.Module):
         out = out * torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
         return out
 
+
 @ATTENTION_REGISTRY.register("samba_m3")
 class SAMBAM3Block(nn.Module):
     """Sliding window attention + spectral Mamba."""
+
     def __init__(self, d_model, n_heads, window=128):
         super().__init__()
         self.window_size = window
@@ -33,7 +37,7 @@ class SAMBAM3Block(nn.Module):
         causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
         window = (idx.unsqueeze(1) - idx.unsqueeze(0)) < self.window_size
         mask = ~(causal & window)
-        return mask.float().masked_fill(mask, float('-inf')).unsqueeze(0).unsqueeze(0)
+        return mask.float().masked_fill(mask, float("-inf")).unsqueeze(0).unsqueeze(0)
 
     def forward(self, x):
         B, L, D = x.shape
@@ -42,11 +46,11 @@ class SAMBAM3Block(nn.Module):
         x = self.norm1(x + attn_out)
         x = self.norm2(x + self.mamba(x))
         return x
-    
+
+
 @ATTENTION_REGISTRY.register("mamba")
 def inject_mamba(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
     d_model = model_config.hidden_size
     new_module = Mamba(d_model=d_model)
     layer.attention = new_module
     return new_module
-

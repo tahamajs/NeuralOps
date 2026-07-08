@@ -1,17 +1,19 @@
 from rest_framework import serializers
-from .models import ResearchSession, Hypothesis, HypothesisReview, MetaReview, TournamentMatch
+
+from .models import (Hypothesis, HypothesisReview, MetaReview, ResearchSession,
+                     TournamentMatch)
 
 
 class HypothesisReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = HypothesisReview
-        fields = '__all__'
+        fields = "__all__"
 
 
 class MetaReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetaReview
-        fields = '__all__'
+        fields = "__all__"
 
 
 class HypothesisSerializer(serializers.ModelSerializer):
@@ -20,7 +22,7 @@ class HypothesisSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Hypothesis
-        fields = '__all__'
+        fields = "__all__"
 
 
 class ResearchSessionSerializer(serializers.ModelSerializer):
@@ -29,7 +31,7 @@ class ResearchSessionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ResearchSession
-        fields = '__all__'
+        fields = "__all__"
 
     def get_hypothesis_count(self, obj):
         return obj.hypotheses.count()
@@ -38,4 +40,4 @@ class ResearchSessionSerializer(serializers.ModelSerializer):
 class TournamentMatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = TournamentMatch
-        fields = '__all__'
+        fields = "__all__"

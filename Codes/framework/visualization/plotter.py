@@ -1,11 +1,14 @@
 # framework/visualization/plotter.py
 from abc import ABC, abstractmethod
+
 from .base import Registry
 
 PLOTTER_REGISTRY = Registry("plotters")
 
+
 class BasePlotter(ABC):
     """Interface that every plotting backend must implement."""
+
     @abstractmethod
     def figure(self, *args, **kwargs):
         """Return a figure object suitable for the backend."""

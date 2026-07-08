@@ -5,8 +5,7 @@ Uses SHA‑256 by default; the algorithm can be changed if needed.
 """
 
 import hashlib
-from pathlib import Path
-from typing import Optional
+
 
 def compute_file_hash(file_path: str, algorithm: str = "sha256") -> str:
     """
@@ -26,8 +25,9 @@ def compute_file_hash(file_path: str, algorithm: str = "sha256") -> str:
     return h.hexdigest()
 
 
-def verify_file_hash(file_path: str, expected_hash: str,
-                     algorithm: str = "sha256") -> bool:
+def verify_file_hash(
+    file_path: str, expected_hash: str, algorithm: str = "sha256"
+) -> bool:
     """
     Verify that the file's hash matches the expected value.
 

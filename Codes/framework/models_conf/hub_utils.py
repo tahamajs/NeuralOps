@@ -2,6 +2,7 @@
 
 import threading
 import time
+
 from huggingface_hub import HfApi
 
 _cache_lock = threading.Lock()
@@ -22,10 +23,18 @@ def _cache_set(key, value):
 
 
 POPULAR_MODELS = [
-    "distilbert-base-uncased", "bert-base-uncased", "roberta-base",
-    "albert-base-v2", "google/electra-small-discriminator",
-    "microsoft/deberta-v3-base", "meta-llama/Llama-2-7b-hf", "mistralai/Mistral-7B-v0.1",
-    "google/gemma-2b", "facebook/opt-125m", "t5-small", "gpt2",
+    "distilbert-base-uncased",
+    "bert-base-uncased",
+    "roberta-base",
+    "albert-base-v2",
+    "google/electra-small-discriminator",
+    "microsoft/deberta-v3-base",
+    "meta-llama/Llama-2-7b-hf",
+    "mistralai/Mistral-7B-v0.1",
+    "google/gemma-2b",
+    "facebook/opt-125m",
+    "t5-small",
+    "gpt2",
 ]
 
 
@@ -49,7 +58,10 @@ def search_models(query: str = "", limit: int = 20) -> list:
         return results
     except Exception:
         import logging
-        logging.getLogger(__name__).warning("HF Hub search failed, returning empty list")
+
+        logging.getLogger(__name__).warning(
+            "HF Hub search failed, returning empty list"
+        )
         return []
 
 

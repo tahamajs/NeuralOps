@@ -1,32 +1,36 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 # ---- simple RoPE helpers ----
 def rotate_half(x):
     x1, x2 = x.chunk(2, dim=-1)
     return torch.cat((-x2, x1), dim=-1)
 
+
 class RotaryEmbedding(nn.Module):
     def __init__(self, dim, max_seq_len=4096):
         super().__init__()
         inv_freq = 1.0 / (10000 ** (torch.arange(0, dim, 2).float() / dim))
         t = torch.arange(max_seq_len).float()
-        freqs = torch.einsum('i,j->ij', t, inv_freq)   # (L, dim/2)
+        freqs = torch.einsum("i,j->ij", t, inv_freq)  # (L, dim/2)
         emb = torch.cat((freqs, freqs), dim=-1)
-        self.register_buffer('cos_cached', emb.cos())
-        self.register_buffer('sin_cached', emb.sin())
+        self.register_buffer("cos_cached", emb.cos())
+        self.register_buffer("sin_cached", emb.sin())
 
     def forward(self, x, offset=0):
         L = x.shape[1]
-        cos = self.cos_cached[offset:offset+L].unsqueeze(0).unsqueeze(2)
-        sin = self.sin_cached[offset:offset+L].unsqueeze(0).unsqueeze(2)
+        cos = self.cos_cached[offset : offset + L].unsqueeze(0).unsqueeze(2)
+        sin = self.sin_cached[offset : offset + L].unsqueeze(0).unsqueeze(2)
         return (x * cos) + (rotate_half(x) * sin)
+
 
 # ---- Linear attention layer (ReGLA‑style) ----
 class ReGLALayer(nn.Module):
     """ReLU‑kernel linear attention."""
+
     def __init__(self, dim, heads=8):
         super().__init__()
         self.heads = heads
@@ -38,15 +42,18 @@ class ReGLALayer(nn.Module):
 
     def forward(self, x):
         B, L, D = x.shape
-        q = F.relu(self.q_proj(x)).view(B, L, self.heads, self.head_dim).transpose(1,2)
-        k = F.relu(self.k_proj(x)).view(B, L, self.heads, self.head_dim).transpose(1,2)
-        v = self.v_proj(x).view(B, L, self.heads, self.head_dim).transpose(1,2)
-        kv = torch.einsum('bhld,bhlm->bhldm', k, v)   # (B, H, d, d)
-        z = k.cumsum(dim=2)                           # (B, H, L, d)
-        num = torch.einsum('bhld,bhldm->bhldm', q, kv)
-        den = torch.einsum('bhld,bhld->bhl', q, z) + 1e-8
-        out = (num.sum(-1) / den.unsqueeze(-1)).transpose(1,2).contiguous().view(B, L, D)
+        q = F.relu(self.q_proj(x)).view(B, L, self.heads, self.head_dim).transpose(1, 2)
+        k = F.relu(self.k_proj(x)).view(B, L, self.heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(B, L, self.heads, self.head_dim).transpose(1, 2)
+        kv = torch.einsum("bhld,bhlm->bhldm", k, v)  # (B, H, d, d)
+        z = k.cumsum(dim=2)  # (B, H, L, d)
+        num = torch.einsum("bhld,bhldm->bhldm", q, kv)
+        den = torch.einsum("bhld,bhld->bhl", q, z) + 1e-8
+        out = (
+            (num.sum(-1) / den.unsqueeze(-1)).transpose(1, 2).contiguous().view(B, L, D)
+        )
         return self.out_proj(out)
+
 
 # ---- Standard Transformer layer (with RoPE placeholder) ----
 class TransformerLayer(nn.Module):
@@ -55,9 +62,7 @@ class TransformerLayer(nn.Module):
         self.attn = nn.MultiheadAttention(dim, heads, batch_first=True)
         self.rope = RotaryEmbedding(dim)
         self.ffn = nn.Sequential(
-            nn.Linear(dim, dim*4),
-            nn.GELU(),
-            nn.Linear(dim*4, dim)
+            nn.Linear(dim, dim * 4), nn.GELU(), nn.Linear(dim * 4, dim)
         )
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
@@ -68,6 +73,8 @@ class TransformerLayer(nn.Module):
         x = self.norm1(x + attn_out)
         x = self.norm2(x + self.ffn(x))
         return x
+
+
 @ATTENTION_REGISTRY.register("halo_regla")
 class HALOReGLAAttention(nn.Module):
     def __init__(self, config, rank=None, hybrid_ratio=4):
@@ -87,9 +94,9 @@ class HALOReGLAAttention(nn.Module):
 
     def forward(self, x, attention_mask=None, **kwargs):
         B, L, D = x.shape
-        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-        k = self.k_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-        v = self.v_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
+        q = self.q_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        k = self.k_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+        v = self.v_proj(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
 
         # Apply RoPE
         q = self.rope(q)
@@ -99,12 +106,13 @@ class HALOReGLAAttention(nn.Module):
         q = F.relu(q)
         k = F.relu(k)
 
-        kv = torch.einsum('b h n d, b h n e -> b h d e', k, v)
+        kv = torch.einsum("b h n d, b h n e -> b h d e", k, v)
         z = k.sum(dim=2, keepdim=True)
-        num = torch.einsum('b h n d, b h d e -> b h n e', q, kv)
-        den = torch.einsum('b h n d, b h d -> b h n', q, z.squeeze(2)).unsqueeze(-1) + 1e-8
+        num = torch.einsum("b h n d, b h d e -> b h n e", q, kv)
+        den = (
+            torch.einsum("b h n d, b h d -> b h n", q, z.squeeze(2)).unsqueeze(-1)
+            + 1e-8
+        )
         out = num / den
-        out = out.transpose(1,2).contiguous().view(B, L, D)
+        out = out.transpose(1, 2).contiguous().view(B, L, D)
         return self.out_proj(out), None
-    
-

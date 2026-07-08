@@ -1,27 +1,33 @@
-import json, logging
+import json
+import logging
+
 from celery import shared_task
-from langchain_openai import ChatOpenAI
 from django.conf import settings
-from .models import GeneratedIdea, ResearchMemory
+from langchain_openai import ChatOpenAI
+
+from .models import GeneratedIdea
 
 logger = logging.getLogger(__name__)
+
 
 @shared_task
 def generate_ideas_for_user(user_id):
     """Generate research ideas based on a user's history."""
+    from agents.models import ResearchPaper
     from django.contrib.auth import get_user_model
     from experiment.models import TrainingRun
     from notes.models import ResearcherNote
-    from agents.models import ResearchPaper
     from reputation.models import ReputationScore
 
     User = get_user_model()
     user = User.objects.get(id=user_id)
 
     # Collect data
-    runs = TrainingRun.objects.filter(user=user).order_by('-created_at')[:10]
-    notes = ResearcherNote.objects.filter(author=user, deleted_at__isnull=True).order_by('-created_at')[:5]
-    papers = ResearchPaper.objects.filter(saved_by=user).order_by('-created_at')[:5]
+    runs = TrainingRun.objects.filter(user=user).order_by("-created_at")[:10]
+    notes = ResearcherNote.objects.filter(
+        author=user, deleted_at__isnull=True
+    ).order_by("-created_at")[:5]
+    papers = ResearchPaper.objects.filter(saved_by=user).order_by("-created_at")[:5]
     score = ReputationScore.objects.filter(user=user).first()
 
     context = f"""
@@ -33,7 +39,7 @@ Reputation: {score.total_score if score else 0}
 """
 
     llm = ChatOpenAI(
-        model=getattr(settings, 'OPENAI_MODEL', 'gpt-4o'),
+        model=getattr(settings, "OPENAI_MODEL", "gpt-4o"),
         temperature=0.7,
         api_key=settings.OPENAI_API_KEY,
     )
@@ -54,9 +60,9 @@ Return the ideas as a JSON list:
     for idea in ideas:
         GeneratedIdea.objects.create(
             user=user,
-            title=idea.get('title', 'Untitled'),
-            description=idea.get('description', ''),
-            idea_type=idea.get('type', 'experiment'),
+            title=idea.get("title", "Untitled"),
+            description=idea.get("description", ""),
+            idea_type=idea.get("type", "experiment"),
         )
 
     return len(ideas)

@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
+
 def entmax15(scores, dim=-1, n_iter=10, eps=1e-8):
     p = F.softmax(scores, dim=dim)
     for _ in range(n_iter):
@@ -14,6 +15,7 @@ def entmax15(scores, dim=-1, n_iter=10, eps=1e-8):
             break
         p = p_1
     return p
+
 
 @ATTENTION_REGISTRY.register("adasplash")
 class AdaSplashAttention(BaseAttention):
@@ -36,7 +38,7 @@ class AdaSplashAttention(BaseAttention):
         k = self.k_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
 
-        logits = torch.matmul(q, k.transpose(-2, -1)) / (Dh ** 0.5)
+        logits = torch.matmul(q, k.transpose(-2, -1)) / (Dh**0.5)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 mask = attention_mask.unsqueeze(1).unsqueeze(2)

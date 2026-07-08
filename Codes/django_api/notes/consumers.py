@@ -2,11 +2,14 @@
 WebSocket consumer for real-time collaborative note editing.
 Users editing the same note see each other's changes instantly.
 """
+
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
+
 from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.authtoken.models import Token
+
 from .models import ResearcherNote
 
 
@@ -17,12 +20,12 @@ class NoteCollaborationConsumer(AsyncWebsocketConsumer):
     """
 
     async def connect(self):
-        self.note_id = self.scope['url_route']['kwargs']['note_id']
-        self.group_name = f'note_collab_{self.note_id}'
+        self.note_id = self.scope["url_route"]["kwargs"]["note_id"]
+        self.group_name = f"note_collab_{self.note_id}"
 
         # Authenticate via token in query string
-        token_key = self.scope.get('query_string', b'').decode()
-        token_key = token_key.replace('token=', '') if 'token=' in token_key else ''
+        token_key = self.scope.get("query_string", b"").decode()
+        token_key = token_key.replace("token=", "") if "token=" in token_key else ""
         user = await self._get_user_from_token(token_key)
 
         if user is None or isinstance(user, AnonymousUser):
@@ -43,11 +46,15 @@ class NoteCollaborationConsumer(AsyncWebsocketConsumer):
 
         # Send current note content to the new joiner
         content = await self._get_note_content()
-        await self.send(text_data=json.dumps({
-            "type": "init",
-            "content": content,
-            "version": await self._get_note_version(),
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "init",
+                    "content": content,
+                    "version": await self._get_note_version(),
+                }
+            )
+        )
 
         # Notify others that a user joined
         await self.channel_layer.group_send(
@@ -55,17 +62,17 @@ class NoteCollaborationConsumer(AsyncWebsocketConsumer):
             {
                 "type": "user_joined",
                 "username": self.username,
-            }
+            },
         )
 
     async def disconnect(self, close_code):
-        if hasattr(self, 'group_name'):
+        if hasattr(self, "group_name"):
             await self.channel_layer.group_send(
                 self.group_name,
                 {
                     "type": "user_left",
-                    "username": getattr(self, 'username', 'unknown'),
-                }
+                    "username": getattr(self, "username", "unknown"),
+                },
             )
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
@@ -88,7 +95,7 @@ class NoteCollaborationConsumer(AsyncWebsocketConsumer):
                     "cursor": cursor_pos,
                     "username": self.username,
                     "version": await self._get_note_version(),
-                }
+                },
             )
         elif msg_type == "cursor":
             await self.channel_layer.group_send(
@@ -97,47 +104,63 @@ class NoteCollaborationConsumer(AsyncWebsocketConsumer):
                     "type": "cursor_update",
                     "cursor": data.get("cursor", {}),
                     "username": self.username,
-                }
+                },
             )
 
     # ---- Handlers for group messages ----
     async def note_edit(self, event):
         """Broadcast note edit to client."""
-        await self.send(text_data=json.dumps({
-            "type": "edit",
-            "content": event["content"],
-            "cursor": event.get("cursor", {}),
-            "username": event["username"],
-            "version": event.get("version"),
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "edit",
+                    "content": event["content"],
+                    "cursor": event.get("cursor", {}),
+                    "username": event["username"],
+                    "version": event.get("version"),
+                }
+            )
+        )
 
     async def cursor_update(self, event):
         """Broadcast cursor position."""
-        await self.send(text_data=json.dumps({
-            "type": "cursor",
-            "cursor": event["cursor"],
-            "username": event["username"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "cursor",
+                    "cursor": event["cursor"],
+                    "username": event["username"],
+                }
+            )
+        )
 
     async def user_joined(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "presence",
-            "action": "joined",
-            "username": event["username"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "presence",
+                    "action": "joined",
+                    "username": event["username"],
+                }
+            )
+        )
 
     async def user_left(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "presence",
-            "action": "left",
-            "username": event["username"],
-        }))
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "presence",
+                    "action": "left",
+                    "username": event["username"],
+                }
+            )
+        )
 
     # ---- Database helpers ----
     @database_sync_to_async
     def _get_user_from_token(self, token_key):
         try:
-            token = Token.objects.select_related('user').get(key=token_key)
+            token = Token.objects.select_related("user").get(key=token_key)
             return token.user
         except Token.DoesNotExist:
             return AnonymousUser()
@@ -175,6 +198,7 @@ class NoteCollaborationConsumer(AsyncWebsocketConsumer):
                 note.save()
         except ResearcherNote.DoesNotExist:
             pass
+
 
 @database_sync_to_async
 def _check_note_access(self):

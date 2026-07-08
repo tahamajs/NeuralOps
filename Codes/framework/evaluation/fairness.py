@@ -7,9 +7,10 @@ References:
   - Fairlearn: https://fairlearn.org
 """
 
-import numpy as np
-from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+
+import numpy as np
 from framework.core.registry import Registry
 
 FAIRNESS_METRIC_REGISTRY = Registry("fairness_metrics")
@@ -19,10 +20,11 @@ FAIRNESS_MITIGATION_REGISTRY = Registry("fairness_mitigations")
 @dataclass
 class FairnessReport:
     """Complete fairness analysis for a model."""
-    metrics: Dict[str, Dict[str, float]]     # metric_name → {group: value}
+
+    metrics: Dict[str, Dict[str, float]]  # metric_name → {group: value}
     group_sizes: Dict[str, int]
-    disparities: Dict[str, float]             # max disparity per metric
-    overall_score: float                      # 1.0 = perfectly fair, 0.0 = maximally unfair
+    disparities: Dict[str, float]  # max disparity per metric
+    overall_score: float  # 1.0 = perfectly fair, 0.0 = maximally unfair
     worst_off_group: str
     best_off_group: str
     is_fair: bool
@@ -156,7 +158,9 @@ class FairnessEvaluator:
                 mask = vals == val
                 pos_mask = labels[mask] == favorable
                 if pos_mask.sum() > 0:
-                    result[f"{attr}={val}"] = np.mean(preds[mask][pos_mask] == favorable)
+                    result[f"{attr}={val}"] = np.mean(
+                        preds[mask][pos_mask] == favorable
+                    )
                 else:
                     result[f"{attr}={val}"] = 0.0
         return result
@@ -173,7 +177,9 @@ class FairnessEvaluator:
                 mask = vals == val
                 pred_pos = preds[mask] == favorable
                 if pred_pos.sum() > 0:
-                    result[f"{attr}={val}"] = np.mean(labels[mask][pred_pos] == favorable)
+                    result[f"{attr}={val}"] = np.mean(
+                        labels[mask][pred_pos] == favorable
+                    )
                 else:
                     result[f"{attr}={val}"] = 0.0
         return result
@@ -251,5 +257,7 @@ class FairnessEvaluator:
                 "(e.g. Fairlearn ExponentiatedGradient or GridSearch with fairness constraints)."
             )
         if len(suggestions) == 0:
-            suggestions.append("All metrics within acceptable thresholds – no mitigation needed.")
+            suggestions.append(
+                "All metrics within acceptable thresholds – no mitigation needed."
+            )
         return suggestions

@@ -1,4 +1,5 @@
 """Django integration callback (unchanged)."""
+
 from transformers import TrainerCallback
 
 
@@ -30,4 +31,4 @@ class DjangoCallback(TrainerCallback):
 
     def on_train_end(self, args, state, control, **kwargs):
         if self.final_cb:
-            self.final_cb({}, getattr(state, 'log_history', []))
+            self.final_cb({}, getattr(state, "log_history", []))

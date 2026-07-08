@@ -1,9 +1,13 @@
-import os, tempfile, shutil, logging
-from huggingface_hub import HfApi, create_repo, upload_folder
+import logging
+import os
+import shutil
+import tempfile
+
 from django.conf import settings
-from transformers import AutoConfig
+from huggingface_hub import HfApi, create_repo, upload_folder
 
 logger = logging.getLogger(__name__)
+
 
 class HuggingFacePublisher:
     def __init__(self, model_version, token=None):
@@ -13,7 +17,7 @@ class HuggingFacePublisher:
 
     def _generate_repo_name(self):
         run = self.version.run
-        base = run.model_name.split('/')[-1]
+        base = run.model_name.split("/")[-1]
         return f"{settings.HUGGINGFACE_USERNAME}/{base}-{run.task_name}-v{self.version.version_number}"
 
     def publish(self):
@@ -23,11 +27,12 @@ class HuggingFacePublisher:
         # Prepare the model directory (decompressed if needed)
         with tempfile.TemporaryDirectory() as tmpdir:
             source_dir = self.version.artifact_path
-            if self.version.compression_method == 'gzip':
+            if self.version.compression_method == "gzip":
                 from .services import _decompress_gzip
+
                 _decompress_gzip(self.version.compressed_artifact_path, tmpdir)
                 source_dir = tmpdir
-            elif self.version.compression_method != 'none':
+            elif self.version.compression_method != "none":
                 # Framework compressed – it's already a directory
                 source_dir = self.version.compressed_artifact_path
 
@@ -49,7 +54,7 @@ class HuggingFacePublisher:
 
         self.version.is_published_to_hub = True
         self.version.hub_repo_url = f"https://huggingface.co/{repo_name}"
-        self.version.save(update_fields=['is_published_to_hub', 'hub_repo_url'])
+        self.version.save(update_fields=["is_published_to_hub", "hub_repo_url"])
         return self.version.hub_repo_url
 
     def _generate_model_card(self, dir_path):

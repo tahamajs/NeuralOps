@@ -1,4 +1,5 @@
-from .base import BaseServer, SERVER_REGISTRY
+from .base import SERVER_REGISTRY, BaseServer
+
 
 @SERVER_REGISTRY.register("tgi")
 class TGIModelServer(BaseServer):

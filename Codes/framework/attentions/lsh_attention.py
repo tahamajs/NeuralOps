@@ -7,7 +7,6 @@ Paper: https://arxiv.org/abs/2001.04451
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -17,13 +16,18 @@ class LSHAttention(nn.Module):
     Multi‑round LSH attention with angular hashing. Outputs are averaged across rounds.
     """
 
-    def __init__(self, config, rounds: int = 4, bucket_size: int = 64,
-                 pretrained_attn: nn.Module = None):
+    def __init__(
+        self,
+        config,
+        rounds: int = 4,
+        bucket_size: int = 64,
+        pretrained_attn: nn.Module = None,
+    ):
         super().__init__()
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
         self.rounds = rounds
-        self.bucket_size = bucket_size   # number of hash bits
+        self.bucket_size = bucket_size  # number of hash bits
 
         self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
@@ -51,61 +55,72 @@ class LSHAttention(nn.Module):
 
     def _hash(self, vectors, proj):
         """Angular LSH: sign of dot product with random hyperplanes."""
-        norm = F.normalize(vectors, p=2, dim=-1)          # (B, H, N, D)
-        dots = torch.matmul(norm, proj)                   # (B, H, N, bucket_size)
+        norm = F.normalize(vectors, p=2, dim=-1)  # (B, H, N, D)
+        dots = torch.matmul(norm, proj)  # (B, H, N, bucket_size)
         bits = (dots > 0).to(torch.long)
-        multipliers = 2 ** torch.arange(self.bucket_size, device=vectors.device, dtype=torch.long)
-        return (bits * multipliers).sum(dim=-1)           # (B, H, N)
+        multipliers = 2 ** torch.arange(
+            self.bucket_size, device=vectors.device, dtype=torch.long
+        )
+        return (bits * multipliers).sum(dim=-1)  # (B, H, N)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ):
         B, L, D = hidden_states.shape
         H = self.num_heads
         d = self.head_dim
 
-        Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)   # (B, H, L, d)
+        Q = (
+            self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
+        )  # (B, H, L, d)
         K = self.k_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
         V = self.v_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3)
 
         # Prepare mask for key‑padding (will be used per round)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                valid = attention_mask.bool().to(Q.device)   # (B, L)
+                valid = attention_mask.bool().to(Q.device)  # (B, L)
             else:
                 valid = attention_mask.squeeze(1).squeeze(1).bool()
         else:
             valid = None
 
         out = torch.zeros_like(V)
-        scale = d ** -0.5
+        scale = d**-0.5
 
         for r in range(self.rounds):
             # Generate random projection matrix (bucket_size hyperplanes)
             proj = torch.randn(d, self.bucket_size, device=Q.device)
             proj = F.normalize(proj, p=2, dim=0)
 
-            q_hash = self._hash(Q, proj)   # (B, H, N)
+            q_hash = self._hash(Q, proj)  # (B, H, N)
             k_hash = self._hash(K, proj)
 
             # Process per batch and head (could be vectorised, but kept for clarity)
             for b in range(B):
                 for h in range(H):
-                    qh = q_hash[b, h]   # (N,)
+                    qh = q_hash[b, h]  # (N,)
                     kh = k_hash[b, h]
                     # Find unique hash codes present in both Q and K
                     unique_codes = torch.intersect1d(
-                        qh.unique(sorted=False), kh.unique(sorted=False))
+                        qh.unique(sorted=False), kh.unique(sorted=False)
+                    )
                     if len(unique_codes) == 0:
                         continue
                     # For each bucket
                     for code in unique_codes:
-                        q_mask = (qh == code)
-                        k_mask = (kh == code)
+                        q_mask = qh == code
+                        k_mask = kh == code
                         # Skip if masked queries
                         if valid is not None and not q_mask[valid[b]].any():
                             continue
-                        Qs = Q[b, h][q_mask]   # (Nq, d)
-                        Ks = K[b, h][k_mask]   # (Nk, d)
+                        Qs = Q[b, h][q_mask]  # (Nq, d)
+                        Ks = K[b, h][k_mask]  # (Nk, d)
                         Vs = V[b, h][k_mask]
                         # Apply padding mask to keys if necessary
                         if valid is not None:
@@ -125,14 +140,18 @@ class LSHAttention(nn.Module):
         out = self.out_proj(out)
 
         if output_attentions:
-            return out, None   # We do not materialise full attention
+            return out, None  # We do not materialise full attention
         return out, None
 
 
 def inject_lsh(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    rounds = getattr(comp_config, 'rounds', 4)
-    bucket_size = getattr(comp_config, 'bucket_size', 64)
-    new_attn = LSHAttention(config=model_config, rounds=rounds, bucket_size=bucket_size,
-                            pretrained_attn=old_attn)
+    rounds = getattr(comp_config, "rounds", 4)
+    bucket_size = getattr(comp_config, "bucket_size", 64)
+    new_attn = LSHAttention(
+        config=model_config,
+        rounds=rounds,
+        bucket_size=bucket_size,
+        pretrained_attn=old_attn,
+    )
     layer.attention = new_attn
     return new_attn

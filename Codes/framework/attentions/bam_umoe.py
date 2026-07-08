@@ -2,14 +2,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
-import torch.nn.functional as F
+
 class UnifiedMoE(nn.Module):
     """
     Mixture of Experts with top-k gating.
     Vectorized version (no slow python loops).
     """
+
     def __init__(self, dim, num_experts=8, top_k=2, output_dim=None):
         super().__init__()
         self.dim = dim
@@ -20,37 +21,39 @@ class UnifiedMoE(nn.Module):
 
         self.router = nn.Linear(dim, num_experts, bias=False)
 
-        self.experts = nn.ModuleList([
-            nn.Sequential(
-                nn.Linear(dim, out_dim * 2),
-                nn.GELU(),
-                nn.Linear(out_dim * 2, out_dim)
-            ) for _ in range(num_experts)
-        ])
+        self.experts = nn.ModuleList(
+            [
+                nn.Sequential(
+                    nn.Linear(dim, out_dim * 2),
+                    nn.GELU(),
+                    nn.Linear(out_dim * 2, out_dim),
+                )
+                for _ in range(num_experts)
+            ]
+        )
 
     def forward(self, x):
         B, L, D = x.shape
 
         # Router → top‑k expert scores
-        logits = self.router(x)                         # (B, L, E)
-        topk_vals, topk_idx = torch.topk(
-            logits, self.top_k, dim=-1
-        )                                               # (B, L, k)
+        logits = self.router(x)  # (B, L, E)
+        topk_vals, topk_idx = torch.topk(logits, self.top_k, dim=-1)  # (B, L, k)
 
         # Softmax over selected experts
-        scores = F.softmax(topk_vals, dim=-1)           # (B, L, k)
+        scores = F.softmax(topk_vals, dim=-1)  # (B, L, k)
 
         # Compute all expert outputs in parallel
         # experts_out[e] = output of expert e
         experts_out = torch.stack(
             [exp(x) for exp in self.experts], dim=2
-        )                                               # (B, L, E, out_dim)
+        )  # (B, L, E, out_dim)
 
         # Gather expert outputs for top‑k selections
         topk_out = torch.gather(
-            experts_out, 2,
-            topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim)
-        )                                               # (B, L, k, out_dim)
+            experts_out,
+            2,
+            topk_idx.unsqueeze(-1).expand(B, L, self.top_k, self.out_dim),
+        )  # (B, L, k, out_dim)
 
         # Weighted sum of top‑k
         out = torch.sum(topk_out * scores.unsqueeze(-1), dim=2)
@@ -80,13 +83,9 @@ class BAMUMoEBlock(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
 
         self.qkv_moe = UnifiedMoE(
-            self.dim, num_experts, top_k,
-            output_dim=3 * self.all_head_size
+            self.dim, num_experts, top_k, output_dim=3 * self.all_head_size
         )
-        self.ffn_moe = UnifiedMoE(
-            self.dim, num_experts, top_k,
-            output_dim=self.dim
-        )
+        self.ffn_moe = UnifiedMoE(self.dim, num_experts, top_k, output_dim=self.dim)
 
         self.output_proj = nn.Linear(self.all_head_size, self.dim)
         self.norm1 = nn.LayerNorm(self.dim)

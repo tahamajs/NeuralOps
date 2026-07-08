@@ -1,9 +1,10 @@
 """
 Hyperparameter Optimization Engine — SMAC-style Bayesian optimization.
 """
-import logging, random, math
-from collections import OrderedDict
-from django.utils import timezone
+
+import logging
+import math
+import random
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,8 @@ class SMACEngine:
     Uses a Gaussian Process to model the objective function and Expected Improvement
     to select the next hyperparameters to try.
     """
-    def __init__(self, search_space: dict, objective_direction: str = 'maximize'):
+
+    def __init__(self, search_space: dict, objective_direction: str = "maximize"):
         self.search_space = search_space
         self.direction = objective_direction
         self.observed_configs = []  # list of (params, objective_value)
@@ -35,7 +37,7 @@ class SMACEngine:
         # Generate random candidates and pick the one with highest EI
         candidates = [self._random_config() for _ in range(100)]
         best_candidate = None
-        best_ei = -float('inf')
+        best_ei = -float("inf")
 
         for candidate in candidates:
             ei = self._expected_improvement(candidate, best_value)
@@ -54,22 +56,27 @@ class SMACEngine:
         """Generate a random configuration from the search space."""
         config = {}
         for param_name, param_def in self.search_space.items():
-            if param_def['type'] == 'float':
-                min_v = param_def.get('min', 0.0)
-                max_v = param_def.get('max', 1.0)
-                if param_def.get('log'):
-                    config[param_name] = round(math.exp(random.uniform(math.log(min_v + 1e-10), math.log(max_v))), 8)
+            if param_def["type"] == "float":
+                min_v = param_def.get("min", 0.0)
+                max_v = param_def.get("max", 1.0)
+                if param_def.get("log"):
+                    config[param_name] = round(
+                        math.exp(
+                            random.uniform(math.log(min_v + 1e-10), math.log(max_v))
+                        ),
+                        8,
+                    )
                 else:
                     config[param_name] = round(random.uniform(min_v, max_v), 8)
-            elif param_def['type'] == 'int':
-                min_v = int(param_def.get('min', 1))
-                max_v = int(param_def.get('max', 100))
+            elif param_def["type"] == "int":
+                min_v = int(param_def.get("min", 1))
+                max_v = int(param_def.get("max", 100))
                 config[param_name] = random.randint(min_v, max_v)
-            elif param_def['type'] == 'categorical':
-                choices = param_def.get('choices', [])
+            elif param_def["type"] == "categorical":
+                choices = param_def.get("choices", [])
                 if choices:
                     config[param_name] = random.choice(choices)
-            elif param_def['type'] == 'bool':
+            elif param_def["type"] == "bool":
                 config[param_name] = random.choice([True, False])
         return config
 
@@ -77,7 +84,7 @@ class SMACEngine:
         """Get the best observed objective value."""
         if not self.observed_configs:
             return None
-        if self.direction == 'maximize':
+        if self.direction == "maximize":
             return max(v for _, v in self.observed_configs)
         return min(v for _, v in self.observed_configs)
 
@@ -103,7 +110,7 @@ class SMACEngine:
 
         predicted = weighted_sum / total_weight
 
-        if self.direction == 'maximize':
+        if self.direction == "maximize":
             return max(0, predicted - best_value)
         return max(0, best_value - predicted)
 
@@ -116,13 +123,13 @@ class SMACEngine:
             if isinstance(v1, (int, float)) and isinstance(v2, (int, float)):
                 # Normalize by parameter range
                 param_def = self.search_space.get(key, {})
-                if param_def.get('type') in ('float', 'int'):
-                    min_v = param_def.get('min', 0)
-                    max_v = param_def.get('max', 1)
+                if param_def.get("type") in ("float", "int"):
+                    min_v = param_def.get("min", 0)
+                    max_v = param_def.get("max", 1)
                     range_v = max(max_v - min_v, 1e-6)
                     total += ((v1 - v2) / range_v) ** 2
                 else:
-                    total += (1.0 if v1 != v2 else 0.0)
+                    total += 1.0 if v1 != v2 else 0.0
             else:
-                total += (1.0 if str(v1) != str(v2) else 0.0)
+                total += 1.0 if str(v1) != str(v2) else 0.0
         return math.sqrt(total)

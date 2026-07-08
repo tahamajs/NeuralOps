@@ -2,10 +2,12 @@
 Rank comparison and model comparison plots – used by the ResultsSaver
 when users select "rank_allocation" or "pareto_front" in their save_config.
 """
-import os, json, logging
+
+import logging
+from typing import Any, Dict, Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
-from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,7 @@ def plot_rank_comparison(
     save_path: Optional[str] = None,
     figsize=(10, 6),
     dpi=150,
-    **kwargs
+    **kwargs,
 ) -> Optional[str]:
     """
     Draw accuracy vs. rank for a single task across multiple ranks.
@@ -55,8 +57,12 @@ def plot_rank_comparison(
     ax.grid(True, alpha=0.3)
 
     if "None" in results_dict and "accuracy" in results_dict["None"]:
-        ax.axhline(y=results_dict["None"]["accuracy"], color="red",
-                   linestyle="--", label="Full Attention")
+        ax.axhline(
+            y=results_dict["None"]["accuracy"],
+            color="red",
+            linestyle="--",
+            label="Full Attention",
+        )
         ax.legend()
 
     plt.tight_layout()
@@ -73,7 +79,7 @@ def plot_model_comparison(
     save_path: Optional[str] = None,
     figsize=(12, 6),
     dpi=150,
-    **kwargs
+    **kwargs,
 ) -> Optional[str]:
     """
     Draw accuracy vs. rank curves for several models on the same task.
@@ -100,9 +106,15 @@ def plot_model_comparison(
         if ranks:
             ranks = np.array(ranks)
             accuracies = np.array(accuracies)
-            ax.plot(ranks, accuracies, marker=markers[i % len(markers)],
-                    color=colors[i % len(colors)], linewidth=2, markersize=8,
-                    label=model_name)
+            ax.plot(
+                ranks,
+                accuracies,
+                marker=markers[i % len(markers)],
+                color=colors[i % len(colors)],
+                linewidth=2,
+                markersize=8,
+                label=model_name,
+            )
 
     ax.set_xlabel("Rank")
     ax.set_ylabel("Accuracy")

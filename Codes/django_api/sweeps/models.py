@@ -1,24 +1,31 @@
 import uuid
+
 from django.db import models
-from django.conf import settings
 from experiment.models import Experiment
+
+
 class Sweep(models.Model):
     class Status(models.TextChoices):
-        ACTIVE = 'active', 'Active'
-        PAUSED = 'paused', 'Paused'
-        COMPLETED = 'completed', 'Completed'
-        FAILED = 'failed', 'Failed'
+        ACTIVE = "active", "Active"
+        PAUSED = "paused", "Paused"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
 
     class Direction(models.TextChoices):
-        MAXIMIZE = 'maximize', 'Maximize'
-        MINIMIZE = 'minimize', 'Minimize'
+        MAXIMIZE = "maximize", "Maximize"
+        MINIMIZE = "minimize", "Minimize"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    project = models.ForeignKey(Experiment, on_delete=models.CASCADE, related_name='sweep_set')
+    project = models.ForeignKey(
+        Experiment, on_delete=models.CASCADE, related_name="sweep_set"
+    )
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    config = models.JSONField(default=dict, blank=True,
-        help_text='Full sweep configuration: search space, base_config, etc.')
+    config = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Full sweep configuration: search space, base_config, etc.",
+    )
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.ACTIVE
     )
@@ -26,17 +33,20 @@ class Sweep(models.Model):
         max_length=20, choices=Direction.choices, default=Direction.MAXIMIZE
     )
     directions = models.JSONField(default=list, blank=True)
-    metric_name = models.CharField(max_length=100, default='eval_accuracy')
+    metric_name = models.CharField(max_length=100, default="eval_accuracy")
     metric_names = models.JSONField(default=list, blank=True)
-    algorithm = models.CharField(max_length=50, default='tpe')
-    pruner = models.CharField(max_length=50, default='hyperband')
-    scheduler_type = models.CharField(max_length=50, default='fifo')
+    algorithm = models.CharField(max_length=50, default="tpe")
+    pruner = models.CharField(max_length=50, default="hyperband")
+    scheduler_type = models.CharField(max_length=50, default="fifo")
     max_trials = models.IntegerField(default=20)
     max_failures = models.IntegerField(default=3)
     parallel_workers = models.IntegerField(default=1)
     warm_start_from = models.ForeignKey(
-        'self', on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='warm_started_sweeps'
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="warm_started_sweeps",
     )
     # Preferential optimization
     preference_enabled = models.BooleanField(default=False)
@@ -49,10 +59,10 @@ class Sweep(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['project', 'status']),
-            models.Index(fields=['status']),
+            models.Index(fields=["project", "status"]),
+            models.Index(fields=["status"]),
         ]
 
     def __str__(self):
@@ -63,13 +73,13 @@ class Sweep(models.Model):
         if self.metric_names:
             return None
         ordering = (
-            '-objective_value'
+            "-objective_value"
             if self.direction == self.Direction.MAXIMIZE
-            else 'objective_value'
+            else "objective_value"
         )
-        return self.trials.exclude(
-            objective_value__isnull=True
-        ).order_by(ordering).first()
+        return (
+            self.trials.exclude(objective_value__isnull=True).order_by(ordering).first()
+        )
 
     @property
     def pareto_trials(self):
@@ -80,14 +90,14 @@ class Sweep(models.Model):
 
 class SweepTrial(models.Model):
     class Status(models.TextChoices):
-        QUEUED = 'queued', 'Queued'
-        RUNNING = 'running', 'Running'
-        COMPLETED = 'completed', 'Completed'
-        FAILED = 'failed', 'Failed'
-        PRUNED = 'pruned', 'Pruned'
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        COMPLETED = "completed", "Completed"
+        FAILED = "failed", "Failed"
+        PRUNED = "pruned", "Pruned"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    sweep = models.ForeignKey(Sweep, on_delete=models.CASCADE, related_name='trials')
+    sweep = models.ForeignKey(Sweep, on_delete=models.CASCADE, related_name="trials")
     trial_number = models.IntegerField()
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.QUEUED
@@ -99,8 +109,11 @@ class SweepTrial(models.Model):
     notes = models.TextField(blank=True)
     is_pareto = models.BooleanField(default=False)
     run = models.OneToOneField(
-        'experiment.TrainingRun', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='sweep_trial'
+        "experiment.TrainingRun",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sweep_trial",
     )
     # Artifact store
     artifacts = models.JSONField(default=list, blank=True)
@@ -109,11 +122,11 @@ class SweepTrial(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['sweep', 'trial_number']
-        unique_together = [['sweep', 'trial_number']]
+        ordering = ["sweep", "trial_number"]
+        unique_together = [["sweep", "trial_number"]]
         indexes = [
-            models.Index(fields=['sweep', 'status']),
-            models.Index(fields=['objective_value']),
+            models.Index(fields=["sweep", "status"]),
+            models.Index(fields=["objective_value"]),
         ]
 
     def __str__(self):

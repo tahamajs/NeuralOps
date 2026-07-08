@@ -1,6 +1,7 @@
 """
 SALT Attention: Singular Value Adaptation for attention projections.
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,12 +11,13 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 class SALTLinear(nn.Module):
     """A linear layer with SVD‑based adaptation: W = U @ diag(S) @ Vt + A @ B."""
+
     def __init__(self, original_weight: torch.Tensor, rank: int = 16):
         super().__init__()
         out_features, in_features = original_weight.shape
         U, S, Vt = torch.linalg.svd(original_weight.float(), full_matrices=False)
-        self.register_buffer('U', U)
-        self.register_buffer('Vt', Vt)
+        self.register_buffer("U", U)
+        self.register_buffer("Vt", Vt)
         self.S = nn.Parameter(S)
         self.gamma = nn.Parameter(torch.ones(rank))
         self.A = nn.Parameter(torch.randn(out_features, rank) * 0.01)
@@ -24,8 +26,12 @@ class SALTLinear(nn.Module):
         self.out_features = out_features
 
     def forward(self, x):
-        adapted_S = self.S[:self.gamma.shape[0]] * self.gamma
-        adapted_weight = self.U[:, :self.gamma.shape[0]] @ torch.diag(adapted_S) @ self.Vt[:self.gamma.shape[0], :]
+        adapted_S = self.S[: self.gamma.shape[0]] * self.gamma
+        adapted_weight = (
+            self.U[:, : self.gamma.shape[0]]
+            @ torch.diag(adapted_S)
+            @ self.Vt[: self.gamma.shape[0], :]
+        )
         low_rank = self.A @ self.B
         W = adapted_weight + low_rank
         return F.linear(x, W)
@@ -52,8 +58,14 @@ class SALTAttention(BaseAttention):
 
         self.dropout = nn.Dropout(config.dropout)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ):
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
@@ -61,7 +73,7 @@ class SALTAttention(BaseAttention):
         K = self.k_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
         V = self.v_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2)
 
-        scale = Dh ** -0.5
+        scale = Dh**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         if attention_mask is not None:
@@ -85,8 +97,10 @@ class SALTAttention(BaseAttention):
         return out, None
 
 
-def inject_salt_attention(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    rank = getattr(comp_config, 'rank', 16)
+def inject_salt_attention(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
+    rank = getattr(comp_config, "rank", 16)
     new_attn = SALTAttention(config=model_config, rank=rank, pretrained_attn=old_attn)
     layer.attention = new_attn
     return new_attn

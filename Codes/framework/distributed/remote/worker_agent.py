@@ -3,22 +3,24 @@ RemoteWorkerAgent – runs as a standalone process on each GPU machine.
 Connects to the central Django server and waits for training jobs.
 """
 
+import json
+import logging
+import os
+import socket
 import threading
 import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Dict, Optional
+
 import requests
-import json
-import os
-import logging
-import socket
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class WorkerAPIHandler(BaseHTTPRequestHandler):
     """Tiny REST API that accepts launch commands from the coordinator."""
-    agent = None   # set by RemoteWorkerAgent
+
+    agent = None  # set by RemoteWorkerAgent
 
     def do_POST(self):
         if self.path == "/launch":
@@ -57,9 +59,15 @@ class RemoteWorkerAgent:
         agent.start()
     """
 
-    def __init__(self, server_url: str, worker_id: str, auth_token: str,
-                 num_gpus: int = 1, listen_port: int = 8765,
-                 metadata: Dict = None):
+    def __init__(
+        self,
+        server_url: str,
+        worker_id: str,
+        auth_token: str,
+        num_gpus: int = 1,
+        listen_port: int = 8765,
+        metadata: Dict = None,
+    ):
         self.server_url = server_url
         self.worker_id = worker_id
         self.auth_token = auth_token
@@ -106,7 +114,9 @@ class RemoteWorkerAgent:
 
         # Set environment variables for torch distributed
         os.environ["MASTER_ADDR"] = all_workers[0]["host"]
-        os.environ["MASTER_PORT"] = str(config.get("distributed", {}).get("master_port", 29500))
+        os.environ["MASTER_PORT"] = str(
+            config.get("distributed", {}).get("master_port", 29500)
+        )
         os.environ["WORLD_SIZE"] = str(world_size)
         os.environ["RANK"] = str(rank)
         os.environ["LOCAL_RANK"] = "0"
@@ -117,13 +127,15 @@ class RemoteWorkerAgent:
 
         try:
             # Here we call the actual training function (same as single‑node)
-            from framework.experiment_utils.mega_orchestrator import MegaOrchestrator
+            from framework.experiment_utils.mega_orchestrator import \
+                MegaOrchestrator
+
             orchestrator = MegaOrchestrator(
                 config=config,
                 run_id=f"{job_id}-{rank}",
             )
             orchestrator.run()
-        except Exception as e:
+        except Exception:
             logger.exception("Job %s failed on worker %s", job_id, self.worker_id)
 
     def _register(self):

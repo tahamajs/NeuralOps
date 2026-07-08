@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("nha")
@@ -27,7 +27,9 @@ class NHAAttention(BaseAttention):
         self.out_proj = nn.Linear(self.hidden_size, self.hidden_size)
         self.dropout = nn.Dropout(config.dropout)
 
-    def forward(self, hidden_states, attention_mask=None, output_attentions=False, **kwargs):
+    def forward(
+        self, hidden_states, attention_mask=None, output_attentions=False, **kwargs
+    ):
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
@@ -37,19 +39,21 @@ class NHAAttention(BaseAttention):
 
         # Decide which tokens receive full attention (based on Q norm)
         with torch.no_grad():
-            token_score = q.norm(dim=-1).mean(dim=1)          # (B, L)
+            token_score = q.norm(dim=-1).mean(dim=1)  # (B, L)
             num_full = max(1, int(L * self.full_ratio))
             _, top_indices = torch.topk(token_score, k=num_full, dim=-1)
 
         full_mask = torch.zeros(B, L, dtype=torch.bool, device=q.device)
         for b in range(B):
             full_mask[b, top_indices[b]] = True
-        full_mask = full_mask.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, Dh)   # (B, H, L, Dh)
+        full_mask = (
+            full_mask.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, Dh)
+        )  # (B, H, L, Dh)
 
         # Full attention on selected tokens
         full_q = q * full_mask
         full_k = k * full_mask
-        scores = torch.matmul(full_q, full_k.transpose(-2, -1)) / (Dh ** 0.5)
+        scores = torch.matmul(full_q, full_k.transpose(-2, -1)) / (Dh**0.5)
         if attention_mask is not None:
             scores = scores + (attention_mask.float() - 1.0) * -1e9
         attn_full = F.softmax(scores, dim=-1)
@@ -76,4 +80,3 @@ class NHAAttention(BaseAttention):
         if output_attentions:
             return out, attn_full
         return out
-    

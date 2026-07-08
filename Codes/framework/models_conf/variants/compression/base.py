@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+
 from framework.core.registry import Registry
 
 COMPRESSOR_REGISTRY = Registry("compressors")
+
 
 class BaseCompressor(ABC):
     @abstractmethod

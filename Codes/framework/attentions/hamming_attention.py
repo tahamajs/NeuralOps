@@ -10,7 +10,14 @@ from framework.core.registry import ATTENTION_REGISTRY
 class HammingAttention(BaseAttention):
     """Hamming Attention Distillation (HAD)."""
 
-    def __init__(self, config, rank: int = None, distill_temperature=1.0, sparsity_ratio=0.5, **kwargs):
+    def __init__(
+        self,
+        config,
+        rank: int = None,
+        distill_temperature=1.0,
+        sparsity_ratio=0.5,
+        **kwargs
+    ):
         super().__init__(config, rank)
         self.num_heads = config.num_attention_heads
         self.head_dim = config.hidden_size // self.num_heads
@@ -36,7 +43,9 @@ class HammingAttention(BaseAttention):
         dot = torch.matmul(q_b, k_b.transpose(-2, -1))
         return (q_b.shape[-1] - dot) / 2.0
 
-    def forward(self, hidden_states, attention_mask=None, teacher_attention=None, **kwargs):
+    def forward(
+        self, hidden_states, attention_mask=None, teacher_attention=None, **kwargs
+    ):
         B, L, D = hidden_states.shape
         H, Dh = self.num_heads, self.head_dim
 
@@ -47,7 +56,7 @@ class HammingAttention(BaseAttention):
         q_b = self._binarize(q, self.q_scale)
         k_b = self._binarize(k, self.k_scale)
 
-        scores = -self._hamming_dist(q_b, k_b) / (Dh ** 0.5)
+        scores = -self._hamming_dist(q_b, k_b) / (Dh**0.5)
 
         # Mask handling (convert 2D mask to additive)
         if attention_mask is not None:

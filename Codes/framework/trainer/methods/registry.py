@@ -5,16 +5,21 @@ Each entry maps a string name to a callable (model, config, ...).
 
 METHOD_REGISTRY = {}
 
+
 def register_method(name: str):
     """Decorator to register a method callable."""
+
     def decorator(fn):
         METHOD_REGISTRY[name] = fn
         return fn
+
     return decorator
+
 
 def get_method(name: str):
     """Return the method function by name, or None if not found."""
     return METHOD_REGISTRY.get(name)
+
 
 def available_methods():
     """Return list of all registered method names."""

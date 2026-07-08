@@ -11,6 +11,7 @@ class FRanDICompressor(BaseCompressor):
     If a tokenizer is attached to the model, it can optionally use calibration
     activations to align the low‑rank approximation (future work placeholder).
     """
+
     def __init__(self, model, rank=8, energy_threshold=None, **kwargs):
         super().__init__(model, name="frandi", **kwargs)
         self.rank = rank
@@ -20,8 +21,8 @@ class FRanDICompressor(BaseCompressor):
         """Choose rank based on energy threshold if provided, else fixed rank."""
         if self.energy_threshold is None:
             return min(self.rank, len(S))
-        total_energy = (S ** 2).sum()
-        cum_energy = torch.cumsum(S ** 2, dim=0) / total_energy
+        total_energy = (S**2).sum()
+        cum_energy = torch.cumsum(S**2, dim=0) / total_energy
         # find first index where cumulative energy >= threshold
         idx = torch.where(cum_energy >= self.energy_threshold)[0]
         if len(idx) > 0:
@@ -45,8 +46,8 @@ class FRanDICompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("frandi")
 def frandi_factory(model, comp_config):
-    rank = getattr(comp_config, 'frandi_rank', 8)
-    energy = getattr(comp_config, 'frandi_energy', None)
+    rank = getattr(comp_config, "frandi_rank", 8)
+    energy = getattr(comp_config, "frandi_energy", None)
     compressor = FRanDICompressor(model, rank=rank, energy_threshold=energy)
     compressed_model, _ = compressor.compress()
     return compressed_model

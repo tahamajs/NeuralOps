@@ -1,12 +1,22 @@
-import threading, time
-from django.utils import timezone
+import threading
+import time
+
 from django.db import connection
+from django.utils import timezone
+
 from .models import Job
 
+
 class DynamicPriorityManager:
-    def __init__(self, scheduler, boost_wait_threshold=600, boost_amount=1,
-                 reduce_runtime_threshold=3600, reduce_amount=1,
-                 check_interval=30):
+    def __init__(
+        self,
+        scheduler,
+        boost_wait_threshold=600,
+        boost_amount=1,
+        reduce_runtime_threshold=3600,
+        reduce_amount=1,
+        check_interval=30,
+    ):
         self.scheduler = scheduler
         self.boost_wait_threshold = boost_wait_threshold
         self.boost_amount = boost_amount
@@ -27,16 +37,16 @@ class DynamicPriorityManager:
             if connection.connection is None:
                 continue
             try:
-                for job in Job.objects.filter(status='queued'):
+                for job in Job.objects.filter(status="queued"):
                     wait = (timezone.now() - job.created_at).total_seconds()
                     if wait > self.boost_wait_threshold:
                         new_prio = max(1, job.priority - self.boost_amount)
                         if new_prio != job.priority:
                             job.priority = new_prio
-                            job.save(update_fields=['priority'])
+                            job.save(update_fields=["priority"])
                             self.scheduler.update_priority(str(job.id), new_prio)
 
-                for job in Job.objects.filter(status='running'):
+                for job in Job.objects.filter(status="running"):
                     if job.started_at is None:
                         continue
                     runtime = (timezone.now() - job.started_at).total_seconds()
@@ -44,6 +54,6 @@ class DynamicPriorityManager:
                         new_prio = min(10, job.priority + self.reduce_amount)
                         if new_prio != job.priority:
                             job.priority = new_prio
-                            job.save(update_fields=['priority'])
+                            job.save(update_fields=["priority"])
             except Exception:
                 pass

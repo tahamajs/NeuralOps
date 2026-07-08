@@ -1,7 +1,9 @@
 """STC – Sparse Ternary Compression (Sattler et al. 2019)."""
 
 import numpy as np
-from .base import BaseCompressor, COMPRESSION_REGISTRY
+
+from .base import COMPRESSION_REGISTRY, BaseCompressor
+
 
 @COMPRESSION_REGISTRY.register("stc")
 class STCCompressor(BaseCompressor):

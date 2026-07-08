@@ -3,12 +3,14 @@ Unified attention injection for any HuggingFace model.
 Uses architecture helpers and weight copying to swap attention modules.
 """
 
-import torch.nn as nn
 from typing import Optional
-from .registry import ATTENTION_REGISTRY
-from .architecture import detect_architecture, get_attention_modules
-from .model_utils import copy_attention_weights, replace_module
+
+import torch.nn as nn
+
 from .adapters import get_adapter
+from .architecture import detect_architecture, get_attention_modules
+from .model_utils import replace_module
+from .registry import ATTENTION_REGISTRY
 
 
 def inject_attention(
@@ -23,7 +25,7 @@ def inject_attention(
     Automatically copies pretrained weights using the appropriate adapter.
     """
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
-    config = getattr(model, 'config', None)
+    config = getattr(model, "config", None)
     arch = detect_architecture(model)
     adapter = get_adapter(arch)
 
@@ -32,7 +34,9 @@ def inject_attention(
         # Create new attention instance
         try:
             if config is not None:
-                new_attn = attn_class(config, rank=rank, pretrained_attn=old_attn, **kwargs)
+                new_attn = attn_class(
+                    config, rank=rank, pretrained_attn=old_attn, **kwargs
+                )
             else:
                 new_attn = attn_class(rank=rank, **kwargs)
         except TypeError:
@@ -40,12 +44,12 @@ def inject_attention(
 
         # Copy pretrained weights
         if copy_weights:
-            for proj in ['q', 'k', 'v', 'o']:
+            for proj in ["q", "k", "v", "o"]:
                 try:
                     src_weight, src_bias = adapter.get_weight_bias(old_attn, proj)
                 except ValueError:
                     continue  # skip if projection not found
-                target_proj = getattr(new_attn, f'{proj}_proj', None)
+                target_proj = getattr(new_attn, f"{proj}_proj", None)
                 if target_proj is None:
                     target_proj = getattr(new_attn, proj, None)
                 if target_proj is not None:

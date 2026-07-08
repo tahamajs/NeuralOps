@@ -1,8 +1,11 @@
 """Celery tasks for running autonomous research pipelines."""
+
 import logging
+
 from celery import shared_task
-from .models import ResearchPipeline
+
 from .engine import ResearchEngine
+from .models import ResearchPipeline
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +24,6 @@ def run_pipeline_async(self, pipeline_id: str):
         return f"Pipeline {pipeline.name} completed successfully"
     except Exception as exc:
         logger.exception("Pipeline %s failed", pipeline_id)
-        pipeline.status = 'failed'
-        pipeline.save(update_fields=['status'])
+        pipeline.status = "failed"
+        pipeline.save(update_fields=["status"])
         raise self.retry(exc=exc)

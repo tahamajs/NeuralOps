@@ -2,35 +2,38 @@
 Pluggable plot types for the ResultsSaver.
 Each function receives (history, metrics, config, output_dir, opts) and returns a list of saved file paths.
 """
-from .base import Registry
+
 import logging
+
+from .base import Registry
 
 PLOT_REGISTRY = Registry("plots")
 logger = logging.getLogger(__name__)
 
+
 def register_default_plots():
     """Call this once to register all built‑in plot types."""
-    from .plots.loss import plot_loss_curve
     from .plots.accuracy import plot_accuracy_curve
-    from .plots.learning_rate import plot_lr_schedule
-    from .plots.training_time import plot_training_time
-    from .plots.training_curves import plot_combined_training_curves
-    from .plots.confusion import plot_confusion_matrix
-    from .plots.gradient import plot_gradient_flow
-    from .plots.gpu_memory import plot_gpu_memory
-    from .plots.parameter_count import plot_parameter_distribution
-    from .plots.rank_allocation import plot_rank_allocation
-    from .plots.radar_chart import plot_radar_chart
-    from .plots.attention import plot_attention_heatmap
-    from .plots.roc_pr_curve import plot_roc_pr_curve
-    from .plots.learning_curves import plot_learning_curve
-    from .plots.embedding import plot_embedding
-    from .plots.residuals import plot_residuals
-    from .plots.parallel_coords import plot_parallel_coords
-    from .plots.hyperparam_importance import plot_hyperparam_importance
-    from .plots.robustness import plot_robustness
     from .plots.activation_dist import plot_activation_distribution
+    from .plots.attention import plot_attention_heatmap
+    from .plots.confusion import plot_confusion_matrix
+    from .plots.embedding import plot_embedding
+    from .plots.gpu_memory import plot_gpu_memory
+    from .plots.gradient import plot_gradient_flow
+    from .plots.hyperparam_importance import plot_hyperparam_importance
+    from .plots.learning_curves import plot_learning_curve
+    from .plots.learning_rate import plot_lr_schedule
+    from .plots.loss import plot_loss_curve
+    from .plots.parallel_coords import plot_parallel_coords
+    from .plots.parameter_count import plot_parameter_distribution
     from .plots.precision_recall_by_class import plot_precision_recall_by_class
+    from .plots.radar_chart import plot_radar_chart
+    from .plots.rank_allocation import plot_rank_allocation
+    from .plots.residuals import plot_residuals
+    from .plots.robustness import plot_robustness
+    from .plots.roc_pr_curve import plot_roc_pr_curve
+    from .plots.training_curves import plot_combined_training_curves
+    from .plots.training_time import plot_training_time
 
     PLOT_REGISTRY.register("roc_pr_curve")(plot_roc_pr_curve)
     PLOT_REGISTRY.register("learning_curve")(plot_learning_curve)
@@ -41,8 +44,6 @@ def register_default_plots():
     PLOT_REGISTRY.register("robustness")(plot_robustness)
     PLOT_REGISTRY.register("activation_dist")(plot_activation_distribution)
     PLOT_REGISTRY.register("precision_recall_by_class")(plot_precision_recall_by_class)
-
-
 
     PLOT_REGISTRY.register("loss_curve")(plot_loss_curve)
     PLOT_REGISTRY.register("accuracy_curve")(plot_accuracy_curve)

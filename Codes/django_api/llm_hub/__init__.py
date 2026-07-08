@@ -1,1 +1,1 @@
-default_app_config = 'llm_hub.apps.LLMHubConfig'
+default_app_config = "llm_hub.apps.LLMHubConfig"

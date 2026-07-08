@@ -22,7 +22,9 @@ class MambaShedderCompressor(BaseCompressor):
             "Machine learning is a subfield of artificial intelligence.",
             "Transformers have revolutionized natural language processing.",
         ]
-        inputs = self.tokenizer(calib_texts, return_tensors="pt", padding=True, truncation=True)
+        inputs = self.tokenizer(
+            calib_texts, return_tensors="pt", padding=True, truncation=True
+        )
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         activations = {}
@@ -50,7 +52,7 @@ class MambaShedderCompressor(BaseCompressor):
         sensitivities = {}
         for name, act in activations.items():
             act_flat = act.view(-1, act.shape[-1])
-            fisher = (act_flat ** 2).mean(dim=0)
+            fisher = (act_flat**2).mean(dim=0)
             sensitivities[name] = fisher.sqrt()
         return sensitivities
 
@@ -78,8 +80,8 @@ class MambaShedderCompressor(BaseCompressor):
 
 @COMPRESSOR_REGISTRY.register("mamba_shedder")
 def mamba_shedder_factory(model, comp_config):
-    sparsity = getattr(comp_config, 'mamba_shedder_sparsity', 0.2)
-    tokenizer = getattr(model, 'tokenizer', None)
+    sparsity = getattr(comp_config, "mamba_shedder_sparsity", 0.2)
+    tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:
         raise ValueError("mamba_shedder requires tokenizer attached as model.tokenizer")
     compressor = MambaShedderCompressor(model, tokenizer, sparsity)

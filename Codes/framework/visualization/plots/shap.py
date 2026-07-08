@@ -2,13 +2,15 @@
 SHAP explanation – local interpretability via SHAP values for the model on a sample.
 Requires shap to be installed. If not, logs a warning and skips.
 """
+
 import json
 import logging
-import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
 
+import matplotlib.pyplot as plt
+
 logger = logging.getLogger(__name__)
+
 
 def plot_shap(history, metrics, config, output_dir, opts):
     try:
@@ -37,7 +39,9 @@ def plot_shap(history, metrics, config, output_dir, opts):
 
     # Load model and tokenizer
     try:
-        from transformers import AutoModelForSequenceClassification, AutoTokenizer
+        from transformers import (AutoModelForSequenceClassification,
+                                  AutoTokenizer)
+
         model = AutoModelForSequenceClassification.from_pretrained(str(model_path))
         tokenizer = AutoTokenizer.from_pretrained(str(tokenizer_path))
     except Exception as e:
@@ -61,7 +65,7 @@ def plot_shap(history, metrics, config, output_dir, opts):
         fig = plt.figure(figsize=opts.get("figsize", [12, 4]))
         shap.plots.text(shap_values[i], display=False)
         out_path = str(Path(output_dir) / f"shap_sample_{i}.png")
-        fig.savefig(out_path, dpi=opts.get("dpi", 150), bbox_inches='tight')
+        fig.savefig(out_path, dpi=opts.get("dpi", 150), bbox_inches="tight")
         plt.close(fig)
         saved.append(out_path)
 

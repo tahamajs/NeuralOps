@@ -1,9 +1,10 @@
 """LSC: Fourier‑based low‑rank compression. Registered as 'lsc'."""
 
-import torch
 import numpy as np
+import torch
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class LSCCompressor(BaseCompressor):
     def __init__(self, model, rank=32, **kwargs):
@@ -16,20 +17,20 @@ class LSCCompressor(BaseCompressor):
                 W = module.weight.data.float().cpu().numpy()
                 W_fft = np.fft.fft2(W)
                 magnitude = np.abs(W_fft)
-                flat_idx = np.argsort(magnitude.ravel())[::-1][:self.rank*self.rank]
+                flat_idx = np.argsort(magnitude.ravel())[::-1][: self.rank * self.rank]
                 mask = np.zeros_like(W_fft)
                 mask.flat[flat_idx] = 1
                 W_comp = np.fft.ifft2(W_fft * mask).real
-                module.weight.data = torch.tensor(W_comp, dtype=module.weight.dtype, device=module.weight.device)
+                module.weight.data = torch.tensor(
+                    W_comp, dtype=module.weight.dtype, device=module.weight.device
+                )
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
-
 
 
 @COMPRESSOR_REGISTRY.register("lsc")
 def lsc_factory(model, comp_config):
-    rank = getattr(comp_config, 'lsc_rank', 32)
+    rank = getattr(comp_config, "lsc_rank", 32)
     compressor = LSCCompressor(model, rank=rank)
     compressed_model, _ = compressor.compress()
     return compressed_model

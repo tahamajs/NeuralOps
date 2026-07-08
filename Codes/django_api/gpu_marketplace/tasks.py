@@ -1,12 +1,14 @@
 """
 Celery tasks for the GPU Marketplace.
 """
+
 import logging
+
 from celery import shared_task
-from django.db import transaction
 from django.utils import timezone
-from .models import GPUListing, ComputeJob, JobEvent, PricingRule
+
 from .matching_engine import match_all_orders
+from .models import ComputeJob, GPUListing, JobEvent
 
 logger = logging.getLogger(__name__)
 
@@ -27,24 +29,24 @@ def run_matching_cycle(self):
 @shared_task
 def update_dynamic_pricing():
     """Periodic task: update dynamic prices based on demand/supply."""
-    for listing in GPUListing.objects.filter(status='online'):
+    for listing in GPUListing.objects.filter(status="online"):
         listing.update_dynamic_price()
-    return GPUListing.objects.filter(status='online').count()
+    return GPUListing.objects.filter(status="online").count()
 
 
 @shared_task
 def expire_stale_orders():
     """Cancel orders that have passed their deadline."""
     count = ComputeOrder.objects.filter(
-        status='open', deadline__lt=timezone.now()
-    ).update(status='expired')
+        status="open", deadline__lt=timezone.now()
+    ).update(status="expired")
     return count
 
 
 @shared_task
 def update_reliability_scores():
     """Update reliability scores for all listings."""
-    for listing in GPUListing.objects.filter(status__in=['online', 'busy']):
+    for listing in GPUListing.objects.filter(status__in=["online", "busy"]):
         total = listing.completed_jobs + listing.failed_jobs
         if total > 0:
             success_rate = (listing.completed_jobs / total) * 100
@@ -52,7 +54,7 @@ def update_reliability_scores():
                 listing.reliability_score * 0.9 + success_rate * 0.1, 2
             )
             listing.uptime_percentage = success_rate
-            listing.save(update_fields=['reliability_score', 'uptime_percentage'])
+            listing.save(update_fields=["reliability_score", "uptime_percentage"])
 
 
 @shared_task
@@ -70,18 +72,18 @@ def provision_job(job_id: str):
     except ComputeJob.DoesNotExist:
         return
 
-    job.status = 'provisioning'
-    job.save(update_fields=['status'])
-    JobEvent.objects.create(job=job, event_type='provisioning')
+    job.status = "provisioning"
+    job.save(update_fields=["status"])
+    JobEvent.objects.create(job=job, event_type="provisioning")
 
     # In production: communicate with provider agent
     # agent_url = job.listing.provider.profile.agent_endpoint
     # response = requests.post(agent_url, json={...})
 
     # Simulated success
-    job.status = 'running'
+    job.status = "running"
     job.started_at = timezone.now()
-    job.save(update_fields=['status', 'started_at'])
-    JobEvent.objects.create(job=job, event_type='running')
+    job.save(update_fields=["status", "started_at"])
+    JobEvent.objects.create(job=job, event_type="running")
 
-    return {'job_id': job_id, 'status': 'running'}
+    return {"job_id": job_id, "status": "running"}

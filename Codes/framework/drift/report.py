@@ -3,17 +3,21 @@
 import json
 import os
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
 
 @dataclass
 class FeatureDriftReport:
     feature: str
-    methods: Dict[str, Dict[str, Any]]   # method_key → {statistic, p_value, drifted, threshold}
+    methods: Dict[
+        str, Dict[str, Any]
+    ]  # method_key → {statistic, p_value, drifted, threshold}
     reference_mean: float = 0.0
     current_mean: float = 0.0
     reference_std: float = 0.0
     current_std: float = 0.0
+
 
 @dataclass
 class DriftReport:
@@ -25,7 +29,9 @@ class DriftReport:
 
     @property
     def n_features_drifted(self) -> int:
-        return sum(1 for f in self.features if any(m["drifted"] for m in f.methods.values()))
+        return sum(
+            1 for f in self.features if any(m["drifted"] for m in f.methods.values())
+        )
 
     @property
     def n_features_tested(self) -> int:
@@ -57,13 +63,13 @@ class DriftReport:
 
     def save(self, path: str) -> str:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(self.to_dict(), f, indent=2, default=str)
         return path
 
     @classmethod
     def load(cls, path: str) -> "DriftReport":
-        with open(path, 'r') as f:
+        with open(path, "r") as f:
             data = json.load(f)
         features = [FeatureDriftReport(**f) for f in data.pop("features", [])]
         return cls(features=features, **data)

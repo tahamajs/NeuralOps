@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Badge, UserBadge, ContributionEvent, UserStreak, LeaderboardSnapshot, AchievementUnlock, PremiumFeature
+
+from .models import (AchievementUnlock, Badge, ContributionEvent,
+                     LeaderboardSnapshot, PremiumFeature, UserBadge,
+                     UserStreak)
 
 admin.site.register(Badge)
 admin.site.register(UserBadge)

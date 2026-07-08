@@ -4,19 +4,22 @@ with gated fusion.  Drop‑in for DistilBERT.
 """
 
 import math
+from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dataclasses import dataclass
-from typing import Optional, Tuple
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
+
 
 def transpose_for_scores(x, num_attention_heads, head_dim):
     # x shape: (batch_size, seq_len, num_heads * head_dim)
     new_x_shape = x.size()[:-1] + (num_attention_heads, head_dim)
-    x = x.view(*new_x_shape)                 # (B, N, num_heads, head_dim)
-    return x.permute(0, 2, 1, 3)             # (B, num_heads, N, head_dim)
+    x = x.view(*new_x_shape)  # (B, N, num_heads, head_dim)
+    return x.permute(0, 2, 1, 3)  # (B, num_heads, N, head_dim)
+
+
 @dataclass
 class OptimizedHybridAttentionConfig:
     hidden_size: int = 768
@@ -46,8 +49,12 @@ class OptimizedHybridAttention(BaseAttention):
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
-        self.compress_k = nn.Linear(config.hidden_size, self.compression_rank, bias=False)
-        self.compress_v = nn.Linear(config.hidden_size, self.compression_rank, bias=False)
+        self.compress_k = nn.Linear(
+            config.hidden_size, self.compression_rank, bias=False
+        )
+        self.compress_v = nn.Linear(
+            config.hidden_size, self.compression_rank, bias=False
+        )
         self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
@@ -67,11 +74,22 @@ class OptimizedHybridAttention(BaseAttention):
         mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         return mask.unsqueeze(0).unsqueeze(0)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs,
+    ):
         B, N, _ = hidden_states.shape
-        Q = transpose_for_scores(self.query(hidden_states), self.num_heads, self.head_dim)
+        Q = transpose_for_scores(
+            self.query(hidden_states), self.num_heads, self.head_dim
+        )
         K = transpose_for_scores(self.key(hidden_states), self.num_heads, self.head_dim)
-        V = transpose_for_scores(self.value(hidden_states), self.num_heads, self.head_dim)
+        V = transpose_for_scores(
+            self.value(hidden_states), self.num_heads, self.head_dim
+        )
 
         # Convert attention_mask to additive shape
         if attention_mask is not None:
@@ -126,7 +144,9 @@ class OptimizedHybridAttention(BaseAttention):
         else:
             context = local_ctx + global_ctx
 
-        context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        context = (
+            context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        )
         output = self.out_proj(context)
         return output, (local_probs if output_attentions else None)
 
@@ -134,7 +154,9 @@ class OptimizedHybridAttention(BaseAttention):
         return torch.tensor(0.0, device=self.out_proj.weight.device)
 
     @classmethod
-    def from_distilbert_pretrained(cls, distilbert_attention_layer, config: OptimizedHybridAttentionConfig):
+    def from_distilbert_pretrained(
+        cls, distilbert_attention_layer, config: OptimizedHybridAttentionConfig
+    ):
         oha = cls(config)
         src = distilbert_attention_layer
         oha.query.weight.data.copy_(src.q_lin.weight.data)
@@ -153,10 +175,10 @@ def inject_oha(layer, model_config, comp_config, layer_idx, total_layers, old_at
     oha_cfg = OptimizedHybridAttentionConfig(
         hidden_size=model_config.hidden_size,
         num_attention_heads=model_config.num_attention_heads,
-        window_size=getattr(comp_config, 'block_size', 128),
-        compression_rank=getattr(comp_config, 'compression_rank', 64),
-        use_gate=getattr(comp_config, 'use_gate', True),
-        gate_bias=getattr(comp_config, 'gate_bias', 2.0),
+        window_size=getattr(comp_config, "block_size", 128),
+        compression_rank=getattr(comp_config, "compression_rank", 64),
+        use_gate=getattr(comp_config, "use_gate", True),
+        gate_bias=getattr(comp_config, "gate_bias", 2.0),
     )
     new_attn = OptimizedHybridAttention.from_distilbert_pretrained(old_attn, oha_cfg)
     layer.attention = new_attn

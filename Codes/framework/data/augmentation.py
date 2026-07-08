@@ -2,10 +2,12 @@
 Simple data augmentation registry (random mask, back‑translation placeholder).
 """
 
-from framework.core.registry import Registry
 import random
 
+from framework.core.registry import Registry
+
 AUGMENTATION_REGISTRY = Registry("augmentation")
+
 
 @AUGMENTATION_REGISTRY.register("random_mask")
 def random_mask_augment(dataset, mask_prob=0.15):
@@ -16,6 +18,7 @@ def random_mask_augment(dataset, mask_prob=0.15):
                 input_ids[i] = 103  # [MASK] token id (BERT)
         example["input_ids"] = input_ids
         return example
+
     return dataset.map(mask_tokens)
 
 

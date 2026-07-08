@@ -4,11 +4,12 @@ global linear kernel attention, and adaptive soft masking.
 """
 
 import math
+from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional
-from dataclasses import dataclass
+
 
 @dataclass
 class AegisAttentionConfigV2:
@@ -47,7 +48,7 @@ class AegisAttentionV2(nn.Module):
             self.prune_gate = nn.Sequential(
                 nn.Linear(self.hidden_size, self.hidden_size // 4),
                 nn.ReLU(),
-                nn.Linear(self.hidden_size // 4, self.num_heads)
+                nn.Linear(self.hidden_size // 4, self.num_heads),
             )
         else:
             self.prune_gate = None
@@ -67,7 +68,14 @@ class AegisAttentionV2(nn.Module):
         if bias is not None:
             lin2.bias.data = bias
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None, output_attentions=False, **kwargs):
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ):
         B, N, H = hidden_states.shape
         # ---- convert mask to 2D bool where True = keep ----
         token_valid = None
@@ -82,9 +90,11 @@ class AegisAttentionV2(nn.Module):
             elif attention_mask.dim() == 2:
                 token_valid = attention_mask.bool()
 
-        mask_2d = token_valid   # (B,N) bool, True = valid
+        mask_2d = token_valid  # (B,N) bool, True = valid
 
-        def lr(lin1, lin2, x): return lin2(lin1(x))
+        def lr(lin1, lin2, x):
+            return lin2(lin1(x))
+
         Q = lr(self.q_proj1, self.q_proj2, hidden_states)
         K = lr(self.k_proj1, self.k_proj2, hidden_states)
         V = lr(self.v_proj1, self.v_proj2, hidden_states)
@@ -94,31 +104,31 @@ class AegisAttentionV2(nn.Module):
         V = V.view(B, N, self.num_heads, self.head_dim)
 
         if mask_2d is not None:
-            m4 = mask_2d.unsqueeze(-1).unsqueeze(-1)   # (B,N,1,1)
+            m4 = mask_2d.unsqueeze(-1).unsqueeze(-1)  # (B,N,1,1)
             Q = Q * m4
             K = K * m4
             V = V * m4
 
         # ---- Local attention ----
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.einsum('bnhd,bmhd->bhnm', Q, K) * scale
+        scores = torch.einsum("bnhd,bmhd->bhnm", Q, K) * scale
         idx = torch.arange(N, device=hidden_states.device)
         band = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.local_window
         band = band.unsqueeze(0).unsqueeze(0)
-        scores = scores.masked_fill(~band, float('-inf'))
+        scores = scores.masked_fill(~band, float("-inf"))
         if mask_2d is not None:
-            key_mask = mask_2d.unsqueeze(1).unsqueeze(2)   # (B,1,1,N)
-            scores = scores.masked_fill(~key_mask, float('-inf'))
+            key_mask = mask_2d.unsqueeze(1).unsqueeze(2)  # (B,1,1,N)
+            scores = scores.masked_fill(~key_mask, float("-inf"))
 
         attn_local = F.softmax(scores, dim=-1)
         attn_local = self.dropout(attn_local)
-        local_out = torch.einsum('bhnm,bmhd->bnhd', attn_local, V)   # (B,N,h,d)
+        local_out = torch.einsum("bhnm,bmhd->bnhd", attn_local, V)  # (B,N,h,d)
 
         # ---- Global linear attention ----
         phi = lambda x: F.elu(x) + 1
 
         if self.prune_gate is not None:
-            keep = torch.sigmoid(self.prune_gate(hidden_states))   # (B,N,h)
+            keep = torch.sigmoid(self.prune_gate(hidden_states))  # (B,N,h)
             Kg = K * keep.unsqueeze(-1)
             Vg = V * keep.unsqueeze(-1)
         else:
@@ -130,25 +140,25 @@ class AegisAttentionV2(nn.Module):
 
         phi_K = phi(Kg)
         phi_Q = phi(Q)
-        phi_K_t = phi_K.permute(0, 2, 3, 1)          # (B,h,d,N)
-        Vg_t = Vg.permute(0, 2, 1, 3)                # (B,h,N,d)
+        phi_K_t = phi_K.permute(0, 2, 3, 1)  # (B,h,d,N)
+        Vg_t = Vg.permute(0, 2, 1, 3)  # (B,h,N,d)
 
-        KV = torch.matmul(phi_K_t, Vg_t)              # (B,h,d,d)
+        KV = torch.matmul(phi_K_t, Vg_t)  # (B,h,d,d)
         ones = torch.ones(B, self.num_heads, N, 1, device=Kg.device)
-        Z = torch.matmul(phi_K_t, ones)               # (B,h,d,1)
+        Z = torch.matmul(phi_K_t, ones)  # (B,h,d,1)
 
-        phi_Q_t = phi_Q.permute(0, 2, 1, 3).unsqueeze(-2)   # (B,h,N,1,d)
+        phi_Q_t = phi_Q.permute(0, 2, 1, 3).unsqueeze(-2)  # (B,h,N,1,d)
         global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2)  # (B,h,N,d)
-        norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)          # (B,h,N,1)
+        norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)  # (B,h,N,1)
         global_out = global_out / (norm + 1e-8)
-        global_out = global_out.permute(0, 2, 1, 3)     # (B,N,h,d)
+        global_out = global_out.permute(0, 2, 1, 3)  # (B,N,h,d)
 
         if mask_2d is not None:
             global_out = global_out * mask_2d.unsqueeze(-1).unsqueeze(-1)
 
         # ---- Adaptive fusion ----
-        alpha = torch.sigmoid(self.fusion_gate(hidden_states))   # (B,N,h)
-        alpha = alpha.unsqueeze(-1)   # (B,N,h,1)
+        alpha = torch.sigmoid(self.fusion_gate(hidden_states))  # (B,N,h)
+        alpha = alpha.unsqueeze(-1)  # (B,N,h,1)
         fused = alpha * local_out + (1 - alpha) * global_out
 
         fused = fused.reshape(B, N, H)
@@ -166,27 +176,38 @@ class AegisAttentionV2(nn.Module):
 # ------------------------------------------------------------
 # Registry integration
 # ------------------------------------------------------------
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 @ATTENTION_REGISTRY.register("aegis_v2")
-def inject_aegis_v2(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_aegis_v2(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
     cfg = AegisAttentionConfigV2(
         hidden_size=model_config.hidden_size,
         num_attention_heads=model_config.num_attention_heads,
         head_dim=model_config.hidden_size // model_config.num_attention_heads,
-        local_window=getattr(comp_config, 'block_size', 64),
-        rank=getattr(comp_config, 'lora_r', 64),
-        kernel_feature_dim=getattr(comp_config, 'rff_features', 128),
-        dropout=getattr(comp_config, 'dropout', 0.1),
-        use_adaptive_pruning=getattr(comp_config, 'use_gate', True),
+        local_window=getattr(comp_config, "block_size", 64),
+        rank=getattr(comp_config, "lora_r", 64),
+        kernel_feature_dim=getattr(comp_config, "rff_features", 128),
+        dropout=getattr(comp_config, "dropout", 0.1),
+        use_adaptive_pruning=getattr(comp_config, "use_gate", True),
     )
     new_attn = AegisAttentionV2(cfg)
 
     # Transfer weights from pretrained
-    AegisAttentionV2._svd_init(old_attn.q_lin, new_attn.q_proj1, new_attn.q_proj2, cfg.rank)
-    AegisAttentionV2._svd_init(old_attn.k_lin, new_attn.k_proj1, new_attn.k_proj2, cfg.rank)
-    AegisAttentionV2._svd_init(old_attn.v_lin, new_attn.v_proj1, new_attn.v_proj2, cfg.rank)
-    AegisAttentionV2._svd_init(old_attn.out_lin, new_attn.out_proj1, new_attn.out_proj2, cfg.rank)
+    AegisAttentionV2._svd_init(
+        old_attn.q_lin, new_attn.q_proj1, new_attn.q_proj2, cfg.rank
+    )
+    AegisAttentionV2._svd_init(
+        old_attn.k_lin, new_attn.k_proj1, new_attn.k_proj2, cfg.rank
+    )
+    AegisAttentionV2._svd_init(
+        old_attn.v_lin, new_attn.v_proj1, new_attn.v_proj2, cfg.rank
+    )
+    AegisAttentionV2._svd_init(
+        old_attn.out_lin, new_attn.out_proj1, new_attn.out_proj2, cfg.rank
+    )
 
     layer.attention = new_attn
     return new_attn

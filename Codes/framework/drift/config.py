@@ -1,7 +1,8 @@
 """Configuration for drift detection."""
 
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
+from typing import Dict, List, Optional
+
 
 @dataclass
 class DriftConfig:
@@ -18,17 +19,17 @@ class DriftConfig:
 
     # Multivariate drift
     enable_multivariate: bool = True
-    multivariate_method: str = "pca"          # "pca" or "domain_classifier"
+    multivariate_method: str = "pca"  # "pca" or "domain_classifier"
     multivariate_n_components: int = 5
 
     # Concept drift (prediction drift)
     enable_concept_drift: bool = False
-    concept_metric: str = "psi"               # method used for prediction drift
+    concept_metric: str = "psi"  # method used for prediction drift
 
     # Feature selection
-    features: Optional[List[str]] = None      # if None, all numeric columns are used
+    features: Optional[List[str]] = None  # if None, all numeric columns are used
     categorical_features: Optional[List[str]] = None
-    max_categories: int = 20                  # above this, treat as numeric
+    max_categories: int = 20  # above this, treat as numeric
 
     # Output
     generate_plots: bool = True

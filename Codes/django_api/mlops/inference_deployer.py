@@ -1,7 +1,11 @@
 """One‑click model deployment to HF Spaces, SageMaker, etc."""
-import tempfile, os, shutil
-from huggingface_hub import HfApi, create_repo, upload_folder
+
+import os
+import tempfile
+
 from django.conf import settings
+from huggingface_hub import HfApi, create_repo, upload_folder
+
 
 def deploy_to_huggingface(model_version, config: dict):
     """Deploy a model to HuggingFace Spaces as a Gradio app."""
@@ -10,7 +14,9 @@ def deploy_to_huggingface(model_version, config: dict):
     repo_id = f"{username}/neuralops-endpoint-{model_version.id.hex[:8]}"
 
     api = HfApi(token=token)
-    create_repo(repo_id, token=token, repo_type="space", space_sdk="gradio", exist_ok=True)
+    create_repo(
+        repo_id, token=token, repo_type="space", space_sdk="gradio", exist_ok=True
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Create app.py with Gradio interface
@@ -25,13 +31,15 @@ def predict(text):
 
 gr.Interface(fn=predict, inputs='text', outputs='label').launch()
 """
-        with open(os.path.join(tmpdir, 'app.py'), 'w') as f:
+        with open(os.path.join(tmpdir, "app.py"), "w") as f:
             f.write(app_py)
 
         requirements = "transformers\ntorch\ngradio"
-        with open(os.path.join(tmpdir, 'requirements.txt'), 'w') as f:
+        with open(os.path.join(tmpdir, "requirements.txt"), "w") as f:
             f.write(requirements)
 
-        upload_folder(folder_path=tmpdir, repo_id=repo_id, repo_type="space", token=token)
+        upload_folder(
+            folder_path=tmpdir, repo_id=repo_id, repo_type="space", token=token
+        )
 
     return f"https://huggingface.co/spaces/{repo_id}"

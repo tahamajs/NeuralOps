@@ -1,5 +1,7 @@
 """Celery tasks for the Lab Assistant."""
+
 from celery import shared_task
+
 from .ai_assistant import AIAssistant
 
 
@@ -7,6 +9,7 @@ from .ai_assistant import AIAssistant
 def auto_pre_label_new_tasks(project_id: str):
     """Automatically run AI pre-labeling on newly imported tasks."""
     from .models import AnnotationProject
+
     try:
         project = AnnotationProject.objects.get(id=project_id)
     except AnnotationProject.DoesNotExist:
@@ -16,7 +19,7 @@ def auto_pre_label_new_tasks(project_id: str):
         return
 
     assistant = AIAssistant(model_id=project.ai_model_id)
-    tasks = project.tasks.filter(status='pending', ai_predictions=[])
+    tasks = project.tasks.filter(status="pending", ai_predictions=[])
     count = 0
     for task in tasks:
         if assistant.pre_label_task(task):

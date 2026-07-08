@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import ResearchPipeline, PipelineStep, AutonomousDecision, PipelineArtifact, PipelineTemplate
+
+from .models import (AutonomousDecision, PipelineArtifact, PipelineStep,
+                     PipelineTemplate, ResearchPipeline)
 
 admin.site.register(ResearchPipeline)
 admin.site.register(PipelineStep)

@@ -1,5 +1,8 @@
-import logging, os
+import logging
+import os
+
 logger = logging.getLogger(__name__)
+
 
 def push(run_dir, cfg):
     try:
@@ -17,6 +20,9 @@ def push(run_dir, cfg):
     for root, _, files in os.walk(run_dir):
         for f in files:
             local = os.path.join(root, f)
-            with open(local, 'rb') as data:
-                cc.upload_blob(name=os.path.relpath(local, os.path.dirname(str(run_dir))), data=data)
+            with open(local, "rb") as data:
+                cc.upload_blob(
+                    name=os.path.relpath(local, os.path.dirname(str(run_dir))),
+                    data=data,
+                )
     logger.info("Uploaded results to Azure container %s", container)

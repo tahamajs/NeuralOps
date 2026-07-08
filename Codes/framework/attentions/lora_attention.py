@@ -6,15 +6,22 @@ Zero‑shot initialisation (adapters start at zero).
 """
 
 import math
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 class LoRALinear(nn.Module):
-    def __init__(self, original_layer: nn.Linear, rank: int, alpha: float = 1.0, dropout: float = 0.0):
+    def __init__(
+        self,
+        original_layer: nn.Linear,
+        rank: int,
+        alpha: float = 1.0,
+        dropout: float = 0.0,
+    ):
         super().__init__()
         self.original_layer = original_layer
         for param in self.original_layer.parameters():
@@ -34,15 +41,21 @@ class LoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_out = self.original_layer(x)
-        lora_out = F.linear(self.dropout(x), self.lora_A)   # (..., rank)
-        lora_out = F.linear(lora_out, self.lora_B)          # (..., out_features)
+        lora_out = F.linear(self.dropout(x), self.lora_A)  # (..., rank)
+        lora_out = F.linear(lora_out, self.lora_B)  # (..., out_features)
         lora_out = lora_out * (self.alpha / self.rank)
         return orig_out + lora_out
 
 
 class LoRAAttention(nn.Module):
-    def __init__(self, model_config, rank: int = 8, alpha: float = 16.0, dropout: float = 0.1,
-                 pretrained_attn=None):
+    def __init__(
+        self,
+        model_config,
+        rank: int = 8,
+        alpha: float = 16.0,
+        dropout: float = 0.1,
+        pretrained_attn=None,
+    ):
         super().__init__()
         if pretrained_attn is None:
             raise ValueError("pretrained_attn required for zero‑shot init")
@@ -60,8 +73,14 @@ class LoRAAttention(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, hidden_states, attention_mask=None, head_mask=None,
-                output_attentions=False, **kwargs) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    def forward(
+        self,
+        hidden_states,
+        attention_mask=None,
+        head_mask=None,
+        output_attentions=False,
+        **kwargs
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
 
@@ -69,7 +88,7 @@ class LoRAAttention(nn.Module):
         K = self.k_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
         V = self.v_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
 
-        scale = D ** -0.5
+        scale = D**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         if attention_mask is not None:
@@ -89,10 +108,12 @@ class LoRAAttention(nn.Module):
 
 
 @ATTENTION_REGISTRY.register("lora_attn")
-def inject_lora_attn(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    rank = getattr(comp_config, 'lora_rank', 8)
-    alpha = getattr(comp_config, 'lora_alpha', 16.0)
-    dropout = getattr(comp_config, 'dropout', 0.1)
+def inject_lora_attn(
+    layer, model_config, comp_config, layer_idx, total_layers, old_attn
+):
+    rank = getattr(comp_config, "lora_rank", 8)
+    alpha = getattr(comp_config, "lora_alpha", 16.0)
+    dropout = getattr(comp_config, "dropout", 0.1)
     new_attn = LoRAAttention(model_config, rank, alpha, dropout, old_attn)
     layer.attention = new_attn
     return new_attn

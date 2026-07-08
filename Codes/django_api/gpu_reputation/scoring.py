@@ -14,41 +14,52 @@ Key concepts:
 Reference: Kamvar et al., "The Eigentrust Algorithm for Reputation
            Management in P2P Networks", WWW 2003.
 """
+
 import numpy as np
 from django.contrib.auth import get_user_model
-from .models import TrustEdge, ReputationGraph, EigenTrustResult
+
+from .models import EigenTrustResult, ReputationGraph, TrustEdge
 
 User = get_user_model()
+
 
 # Pre-trusted peers: staff users and validators with high accuracy
 def get_pre_trusted_peers():
     """Return the set of pre-trusted peer user IDs."""
     trusted_ids = set()
     # Staff users
-    trusted_ids.update(User.objects.filter(is_staff=True).values_list('id', flat=True))
+    trusted_ids.update(User.objects.filter(is_staff=True).values_list("id", flat=True))
     # Validators with high accuracy
     try:
         from gpu_validator.models import ValidatorNode
+
         trusted_ids.update(
-            ValidatorNode.objects.filter(accuracy_score__gte=90.0, status='active')
-            .values_list('user_id', flat=True)
+            ValidatorNode.objects.filter(
+                accuracy_score__gte=90.0, status="active"
+            ).values_list("user_id", flat=True)
         )
     except ImportError:
         pass
     # Providers with high reputation
     try:
         from .models import ReputationScore
+
         trusted_ids.update(
-            ReputationScore.objects.filter(provider_score__gte=80.0)
-            .values_list('user_id', flat=True)
+            ReputationScore.objects.filter(provider_score__gte=80.0).values_list(
+                "user_id", flat=True
+            )
         )
     except ImportError:
         pass
     return trusted_ids
 
 
-def compute_eigentrust(graph: ReputationGraph, alpha: float = 0.85,
-                        epsilon: float = 1e-6, max_iterations: int = 100):
+def compute_eigentrust(
+    graph: ReputationGraph,
+    alpha: float = 0.85,
+    epsilon: float = 1e-6,
+    max_iterations: int = 100,
+):
     """
     Compute EigenTrust scores for a reputation graph.
 
@@ -61,7 +72,7 @@ def compute_eigentrust(graph: ReputationGraph, alpha: float = 0.85,
     Returns:
         dict: {user_id: global_trust_score}
     """
-    edges = TrustEdge.objects.filter(graph=graph).select_related('source', 'target')
+    edges = TrustEdge.objects.filter(graph=graph).select_related("source", "target")
     if not edges.exists():
         return {}
 
@@ -139,7 +150,7 @@ def compute_eigentrust(graph: ReputationGraph, alpha: float = 0.85,
     return results
 
 
-def build_reputation_graph(name: str = 'global'):
+def build_reputation_graph(name: str = "global"):
     """
     Build a reputation graph from all available trust signals:
     - Direct job interactions (provider ↔ consumer)
@@ -150,18 +161,25 @@ def build_reputation_graph(name: str = 'global'):
 
     # Add edges from job completions
     from gpu_marketplace.models import ComputeJob
-    jobs = ComputeJob.objects.filter(status='completed').select_related('consumer', 'provider')
+
+    jobs = ComputeJob.objects.filter(status="completed").select_related(
+        "consumer", "provider"
+    )
     for job in jobs:
         # Consumer trusts provider (if job succeeded)
         trust = 0.8 if job.verification_proof else 0.5
         TrustEdge.objects.get_or_create(
-            graph=graph, source=job.consumer, target=job.provider,
-            defaults={'trust_score': trust, 'derivation': 'direct'}
+            graph=graph,
+            source=job.consumer,
+            target=job.provider,
+            defaults={"trust_score": trust, "derivation": "direct"},
         )
         # Provider trusts consumer (if payment was smooth)
         TrustEdge.objects.get_or_create(
-            graph=graph, source=job.provider, target=job.consumer,
-            defaults={'trust_score': 0.7, 'derivation': 'direct'}
+            graph=graph,
+            source=job.provider,
+            target=job.consumer,
+            defaults={"trust_score": 0.7, "derivation": "direct"},
         )
 
     return graph

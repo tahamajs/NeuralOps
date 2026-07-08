@@ -1,8 +1,9 @@
-from .base import BaseExporter, EXPORTER_REGISTRY
+from .base import EXPORTER_REGISTRY, BaseExporter
 from .onnx import ONNXExporter
-from .torchscript import TorchScriptExporter
 from .tensorrt import TensorRTExporter
 from .tflite import TFLiteExporter
+from .torchscript import TorchScriptExporter
+
 
 def list_exporters():
     return list(EXPORTER_REGISTRY.keys())

@@ -1,8 +1,9 @@
 """Statistical drift detection engine using scipy and numpy."""
+
 import logging
+
 import numpy as np
 from scipy import stats
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,11 @@ class DriftDetector:
     def ks_test(reference: np.ndarray, current: np.ndarray) -> dict:
         """Two-sample Kolmogorov-Smirnov test."""
         statistic, p_value = stats.ks_2samp(reference, current)
-        return {'statistic': float(statistic), 'p_value': float(p_value), 'drifted': p_value < 0.05}
+        return {
+            "statistic": float(statistic),
+            "p_value": float(p_value),
+            "drifted": p_value < 0.05,
+        }
 
     @staticmethod
     def wasserstein_distance(reference: np.ndarray, current: np.ndarray) -> float:
@@ -74,24 +79,28 @@ class DriftDetector:
         # Remove zeros
         mask = (ref_hist > 0) & (cur_hist > 0)
         statistic, p_value = stats.chisquare(ref_hist[mask], cur_hist[mask])
-        return {'statistic': float(statistic), 'p_value': float(p_value), 'drifted': p_value < 0.05}
+        return {
+            "statistic": float(statistic),
+            "p_value": float(p_value),
+            "drifted": p_value < 0.05,
+        }
 
     def detect(self, metric: str, reference: np.ndarray, current: np.ndarray) -> float:
         """
         Run the specified drift detection test.
         Returns the metric value (higher = more drift).
         """
-        if metric == 'psi':
+        if metric == "psi":
             return self.compute_psi(reference, current)
-        elif metric == 'ks_test':
+        elif metric == "ks_test":
             result = self.ks_test(reference, current)
-            return 1.0 - result['p_value']  # convert to drift magnitude
-        elif metric == 'wasserstein':
+            return 1.0 - result["p_value"]  # convert to drift magnitude
+        elif metric == "wasserstein":
             return self.wasserstein_distance(reference, current)
-        elif metric == 'js_divergence':
+        elif metric == "js_divergence":
             return self.js_divergence(reference, current)
-        elif metric == 'chi2':
+        elif metric == "chi2":
             result = self.chi2_test(reference, current)
-            return 1.0 - result['p_value']
+            return 1.0 - result["p_value"]
         else:
             raise ValueError(f"Unknown metric: {metric}")

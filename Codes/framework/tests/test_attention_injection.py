@@ -3,7 +3,6 @@ Tests for the attention injection utilities.
 """
 
 import pytest
-from conftest import ATTENTION_REGISTRY
 
 
 class TestAttentionInjection:
@@ -15,12 +14,15 @@ class TestAttentionInjection:
         try:
             from framework.core.attention_utils import inject_attention
             from transformers import AutoModel
+
             model = AutoModel.from_pretrained(
-                "distilbert-base-uncased", local_files_only=True)
+                "distilbert-base-uncased", local_files_only=True
+            )
             inject_attention(model, "full", copy_weights=False)
             # Verify forward pass still works
             dummy = model.distilbert.transformer.layer[0].attention
             import torch
+
             x = torch.randn(2, 8, 768)
             out = dummy(x)
             if isinstance(out, tuple):

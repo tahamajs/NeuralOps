@@ -13,7 +13,7 @@ Registered as 'cachenotes'.
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class CompressionPlanningTokens:
@@ -23,11 +23,12 @@ class CompressionPlanningTokens:
     Here we use a simple heuristic: token positions that match task keywords
     are assigned higher importance.
     """
+
     TASK_KEYWORD_MAP = {
-        'qa': ['question', 'answer', 'context', 'passage'],
-        'summarize': ['summary', 'abstract', 'key', 'main'],
-        'code': ['function', 'class', 'def', 'return', 'import'],
-        'reasoning': ['therefore', 'because', 'if', 'then', 'thus'],
+        "qa": ["question", "answer", "context", "passage"],
+        "summarize": ["summary", "abstract", "key", "main"],
+        "code": ["function", "class", "def", "return", "import"],
+        "reasoning": ["therefore", "because", "if", "then", "thus"],
     }
 
     @classmethod
@@ -35,9 +36,9 @@ class CompressionPlanningTokens:
         """Generate a per‑feature importance score based on task type."""
         importance = torch.zeros(num_features)
         # Assign higher baseline importance to first features (position bias)
-        importance[:num_features // 4] = 0.1
+        importance[: num_features // 4] = 0.1
         # Task‑specific boost
-        return importance + 0.5   # uniform baseline
+        return importance + 0.5  # uniform baseline
 
 
 class CacheNotesCompressor(BaseCompressor):
@@ -50,8 +51,8 @@ class CacheNotesCompressor(BaseCompressor):
         task_type: type of downstream task ('qa', 'summarize', 'code', 'reasoning').
         keep_ratio: fraction of parameters to retain (default 0.3).
     """
-    def __init__(self, model, task_type: str = 'qa', keep_ratio: float = 0.3,
-                 **kwargs):
+
+    def __init__(self, model, task_type: str = "qa", keep_ratio: float = 0.3, **kwargs):
         super().__init__(model, name="cachenotes", **kwargs)
         self.task_type = task_type
         self.keep_ratio = keep_ratio
@@ -83,14 +84,12 @@ class CacheNotesCompressor(BaseCompressor):
 
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
 
 
 @COMPRESSOR_REGISTRY.register("cachenotes")
 def cachenotes_factory(model, comp_config):
-    task_type = getattr(comp_config, 'cachenotes_task', 'qa')
-    keep_ratio = getattr(comp_config, 'cachenotes_keep_ratio', 0.3)
+    task_type = getattr(comp_config, "cachenotes_task", "qa")
+    keep_ratio = getattr(comp_config, "cachenotes_keep_ratio", 0.3)
     compressor = CacheNotesCompressor(model, task_type=task_type, keep_ratio=keep_ratio)
     compressed_model, _ = compressor.compress()
     return compressed_model
-

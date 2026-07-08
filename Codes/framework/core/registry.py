@@ -4,7 +4,7 @@ All framework components (attentions, compressors, trainers, visualizers, etc.)
 are stored in registries, enabling dynamic discovery and plug‑and‑play integration.
 """
 
-from typing import Dict, Callable, Optional, List
+from typing import Callable, Dict, List, Optional
 
 
 class Registry:
@@ -22,12 +22,14 @@ class Registry:
             @ATTENTION_REGISTRY.register("griffin")
             class GriffinAttention(BaseAttention): ...
         """
+
         def decorator(obj: Callable) -> Callable:
             nonlocal key
             if key is None:
                 key = obj.__name__
             self._dict[key.lower()] = obj
             return obj
+
         return decorator
 
     def get(self, key: str) -> Optional[Callable]:
@@ -60,17 +62,19 @@ class Registry:
 # ----------------------------------------------------------------------
 # Global registries – populated by their respective packages
 # ----------------------------------------------------------------------
-ATTENTION_REGISTRY = Registry("attentions")      # attention modules (Nexus, LEKA, ...)
-COMPRESSOR_REGISTRY = Registry("compressors")    # compression strategies (SVD, TT, ...)
-METHOD_REGISTRY = Registry("methods")            # training methods (LoRA, R-Drop, ...)
-AUX_REGISTRY = Registry("auxiliary")             # auxiliary modules (RoPE, SSM, token pruning, ...)
+ATTENTION_REGISTRY = Registry("attentions")  # attention modules (Nexus, LEKA, ...)
+COMPRESSOR_REGISTRY = Registry("compressors")  # compression strategies (SVD, TT, ...)
+METHOD_REGISTRY = Registry("methods")  # training methods (LoRA, R-Drop, ...)
+AUX_REGISTRY = Registry(
+    "auxiliary"
+)  # auxiliary modules (RoPE, SSM, token pruning, ...)
 
 # Optional registries (if needed)
-MODEL_REGISTRY = Registry("models")              # different base models
-DATASET_REGISTRY = Registry("datasets")          # GLUE, SuperGLUE, etc.
-LOSS_REGISTRY = Registry("losses")               # custom loss functions
-TRAINER_REGISTRY = Registry("trainers")          # trainer classes
-VISUALIZER_REGISTRY = Registry("visualizers")    # visualization utilities
+MODEL_REGISTRY = Registry("models")  # different base models
+DATASET_REGISTRY = Registry("datasets")  # GLUE, SuperGLUE, etc.
+LOSS_REGISTRY = Registry("losses")  # custom loss functions
+TRAINER_REGISTRY = Registry("trainers")  # trainer classes
+VISUALIZER_REGISTRY = Registry("visualizers")  # visualization utilities
 
 
 def list_all_components() -> dict:

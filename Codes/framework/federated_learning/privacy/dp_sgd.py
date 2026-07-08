@@ -1,7 +1,9 @@
 """Differential Privacy – Gaussian noise addition (Abadi et al. 2016)."""
 
 import numpy as np
-from .base import BasePrivacyMechanism, PRIVACY_REGISTRY
+
+from .base import PRIVACY_REGISTRY, BasePrivacyMechanism
+
 
 @PRIVACY_REGISTRY.register("dp_sgd")
 class DPSGDPrivacy(BasePrivacyMechanism):

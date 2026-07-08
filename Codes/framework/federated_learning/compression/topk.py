@@ -1,7 +1,9 @@
 """Top‑K sparsification – keep only the largest absolute values."""
 
 import numpy as np
-from .base import BaseCompressor, COMPRESSION_REGISTRY
+
+from .base import COMPRESSION_REGISTRY, BaseCompressor
+
 
 @COMPRESSION_REGISTRY.register("topk")
 class TopKCompressor(BaseCompressor):

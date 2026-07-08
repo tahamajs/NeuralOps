@@ -2,17 +2,22 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.base import BaseAttention
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
-from .simple_ssm import SimpleSSM   # assumed
+from framework.core.registry import ATTENTION_REGISTRY
+
+from .simple_ssm import SimpleSSM  # assumed
+
 
 class InfoMambaConceptBottleneck(nn.Module):
     """Minimal‑bandwidth concept bottleneck."""
+
     def __init__(self, dim, bottleneck_dim=64):
         super().__init__()
         self.W_down = nn.Linear(dim, bottleneck_dim, bias=False)
         self.W_up = nn.Linear(bottleneck_dim, dim, bias=False)
+
     def forward(self, x):
         return self.W_up(F.gelu(self.W_down(x)))
+
 
 @ATTENTION_REGISTRY.register("jamba_info")
 class JambaInfoBlock(BaseAttention):
@@ -38,18 +43,17 @@ class JambaInfoBlock(BaseAttention):
     def forward(self, x, mask=None, **kwargs):
         B, L, D = x.shape
         if self.mode == "retrieval":
-            q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-            k1 = self.W_k1(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-            q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-            k2 = self.W_k2(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-            v  = self.W_v(x).view(B, L, self.num_heads, self.head_dim).transpose(1,2)
-            scale = self.head_dim ** -0.5
-            attn1 = F.softmax(torch.matmul(q1, k1.transpose(-2,-1)) * scale, dim=-1)
-            attn2 = F.softmax(torch.matmul(q2, k2.transpose(-2,-1)) * scale, dim=-1)
+            q1 = self.W_q1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+            k1 = self.W_k1(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+            q2 = self.W_q2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+            k2 = self.W_k2(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+            v = self.W_v(x).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
+            scale = self.head_dim**-0.5
+            attn1 = F.softmax(torch.matmul(q1, k1.transpose(-2, -1)) * scale, dim=-1)
+            attn2 = F.softmax(torch.matmul(q2, k2.transpose(-2, -1)) * scale, dim=-1)
             diff_attn = attn1 - 0.5 * attn2
-            diff_attn[:, self.active_heads:] = 0
-            out = torch.matmul(diff_attn, v).transpose(1,2).contiguous().view(B, L, D)
+            diff_attn[:, self.active_heads :] = 0
+            out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, D)
         else:
             out = x + self.ssm(self.bottleneck(x))
         return self.out_proj(out), None
-    

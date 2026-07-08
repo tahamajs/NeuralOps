@@ -1,10 +1,9 @@
-from .config import VersioningConfig, StorageBackend, CleanupPolicy, BackendMode
-from .strategies import (
-    BestKStrategy, TaggedStrategy, TimeBasedStrategy,
-    SizeBasedStrategy, ManualStrategy, STRATEGY_REGISTRY,
-)
+from .config import (BackendMode, CleanupPolicy, StorageBackend,
+                     VersioningConfig)
+from .metadata import ModelCardFormat, generate_model_card
 from .service import ModelVersionService
-from .metadata import generate_model_card, ModelCardFormat
+from .strategies import (STRATEGY_REGISTRY, BestKStrategy, ManualStrategy,
+                         SizeBasedStrategy, TaggedStrategy, TimeBasedStrategy)
 
 __all__ = [
     "VersioningConfig",

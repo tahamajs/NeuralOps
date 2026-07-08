@@ -3,10 +3,13 @@
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor
-from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, METHOD_REGISTRY
+from framework.core.registry import COMPRESSOR_REGISTRY
+
 
 class SubspaceProjectionCompressor(BaseCompressor):
-    def __init__(self, model, calibration_loader, rank_ratio=0.5, power_iters=2, **kwargs):
+    def __init__(
+        self, model, calibration_loader, rank_ratio=0.5, power_iters=2, **kwargs
+    ):
         super().__init__(model, name="subspace_projection", **kwargs)
         self.calibration_loader = calibration_loader
         self.rank_ratio = rank_ratio
@@ -14,6 +17,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
 
     def compress(self):
         act_covs = {}
+
         def hook_fn(module, input, output):
             x = input[0].detach()
             x_flat = x.reshape(-1, x.shape[-1]).float()
@@ -25,19 +29,26 @@ class SubspaceProjectionCompressor(BaseCompressor):
 
         hooks = []
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and not any(skip in name for skip in ['embeddings', 'classifier']):
+            if isinstance(module, nn.Linear) and not any(
+                skip in name for skip in ["embeddings", "classifier"]
+            ):
                 hooks.append(module.register_forward_hook(hook_fn))
 
         with torch.no_grad():
             for batch in self.calibration_loader:
-                batch = {k: v.to(next(self.model.parameters()).device) for k, v in batch.items()}
+                batch = {
+                    k: v.to(next(self.model.parameters()).device)
+                    for k, v in batch.items()
+                }
                 self.model(**batch)
 
         for h in hooks:
             h.remove()
 
         for name, module in self.model.named_modules():
-            if isinstance(module, nn.Linear) and not any(skip in name for skip in ['embeddings', 'classifier']):
+            if isinstance(module, nn.Linear) and not any(
+                skip in name for skip in ["embeddings", "classifier"]
+            ):
                 W = module.weight.data.float()
                 C = act_covs[id(module)]
                 L = torch.linalg.cholesky(C)
@@ -51,18 +62,24 @@ class SubspaceProjectionCompressor(BaseCompressor):
                 B = Q.T @ M
                 U, S, Vt = torch.linalg.svd(B, full_matrices=False)
                 r = min(rank, len(S))
-                U_r = U[:, :r]; S_r = S[:r]; Vt_r = Vt[:r, :]
+                U_r = U[:, :r]
+                S_r = S[:r]
+                Vt_r = Vt[:r, :]
                 new_U = Q @ U_r
-                new_V = Vt_r @ torch.linalg.solve(L.T, torch.eye(L.shape[0], device=W.device)).T
+                new_V = (
+                    Vt_r
+                    @ torch.linalg.solve(L.T, torch.eye(L.shape[0], device=W.device)).T
+                )
                 new_weight = new_U @ torch.diag(S_r) @ new_V
                 module.weight.data = new_weight.to(dtype=module.weight.dtype)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
-    
+
 
 @COMPRESSOR_REGISTRY.register("subspace_projection")
 def subspace_projection_factory(model, comp_config):
     # This compressor requires a calibration_loader, which is not available in the simple test.
     # For the test, we return the model unchanged or raise a clear error.
-    raise NotImplementedError("subspace_projection requires a calibration_loader; not supported in standalone test.")
-
+    raise NotImplementedError(
+        "subspace_projection requires a calibration_loader; not supported in standalone test."
+    )

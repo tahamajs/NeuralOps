@@ -1,4 +1,5 @@
 import logging
+
 from celery import shared_task
 from django.contrib.auth import get_user_model
 
@@ -10,20 +11,32 @@ logger = logging.getLogger(__name__)
 def build_citation_graph(paper_id):
     """Build the citation graph cache for a paper."""
     from agents.models import ResearchPaper
+
     from .models import PaperGraphCache
 
     paper = ResearchPaper.objects.get(id=paper_id)
     # Fetch from Semantic Scholar API or use existing relations
     try:
         from semanticscholar import SemanticScholar
+
         sch = SemanticScholar(timeout=30)
-        details = sch.get_paper(paper.source_id or paper.title, fields=['citations', 'references'])
-        citations = [c.get('paperId') for c in (details.citations or []) if c.get('paperId')]
-        references = [r.get('paperId') for r in (details.references or []) if r.get('paperId')]
+        details = sch.get_paper(
+            paper.source_id or paper.title, fields=["citations", "references"]
+        )
+        citations = [
+            c.get("paperId") for c in (details.citations or []) if c.get("paperId")
+        ]
+        references = [
+            r.get("paperId") for r in (details.references or []) if r.get("paperId")
+        ]
     except Exception:
         # Fallback: use locally stored citation edges
-        citations = list(paper.citations_out.values_list('target_paper__source_id', flat=True))
-        references = list(paper.citations_in.values_list('source_paper__source_id', flat=True))
+        citations = list(
+            paper.citations_out.values_list("target_paper__source_id", flat=True)
+        )
+        references = list(
+            paper.citations_in.values_list("source_paper__source_id", flat=True)
+        )
 
     cache, _ = PaperGraphCache.objects.get_or_create(paper=paper)
     cache.citations = citations
@@ -38,6 +51,7 @@ def find_citation_path(source_id, target_id, user_id):
     Find the shortest citation path between two papers using BFS.
     """
     from agents.models import ResearchPaper
+
     from .models import CitationPath, PaperGraphCache
 
     source = ResearchPaper.objects.get(id=source_id)
@@ -60,7 +74,7 @@ def find_citation_path(source_id, target_id, user_id):
                 target_paper=target,
                 path=path,
                 length=len(path) - 1,
-                created_by=user
+                created_by=user,
             )
             return f"Path found: {len(path)-1} steps"
 
@@ -90,6 +104,7 @@ def generate_recommendations_for_user(user_id):
     """
     user = User.objects.get(id=user_id)
     from agents.models import ResearchPaper
+
     from .models import PaperRecommendation
 
     saved_papers = ResearchPaper.objects.filter(saved_by=user)
@@ -125,20 +140,28 @@ def generate_recommendations_for_user(user_id):
             continue
 
         # Score based on citation count and how many of user's papers cite it
-        citing_count = ResearchPaper.objects.filter(
-            id__in=saved_papers.values_list('id', flat=True)
-        ).filter(
-            citations_out__target_paper=paper
-        ).count()
+        citing_count = (
+            ResearchPaper.objects.filter(
+                id__in=saved_papers.values_list("id", flat=True)
+            )
+            .filter(citations_out__target_paper=paper)
+            .count()
+        )
 
         score = min(1.0, (paper.citation_count or 0) / 1000.0 + citing_count * 0.1)
 
         rec, is_new = PaperRecommendation.objects.update_or_create(
-            user=user, paper=paper, source_type='citation',
+            user=user,
+            paper=paper,
+            source_type="citation",
             defaults={
-                'score': round(score, 2),
-                'reason': f'Cited by {citing_count} of your saved papers' if citing_count else 'Highly cited paper in your field',
-            }
+                "score": round(score, 2),
+                "reason": (
+                    f"Cited by {citing_count} of your saved papers"
+                    if citing_count
+                    else "Highly cited paper in your field"
+                ),
+            },
         )
         if is_new:
             created += 1
@@ -153,7 +176,8 @@ def generate_landscape_task(landscape_id, seed_paper_ids):
     Builds a network of connected papers with clustering.
     """
     from agents.models import ResearchPaper
-    from .models import ResearchLandscape, PaperGraphCache
+
+    from .models import PaperGraphCache, ResearchLandscape
 
     landscape = ResearchLandscape.objects.get(id=landscape_id)
     seed_papers = ResearchPaper.objects.filter(id__in=seed_paper_ids)
@@ -173,13 +197,15 @@ def generate_landscape_task(landscape_id, seed_paper_ids):
             continue
         visited.add(current_id)
 
-        nodes.append({
-            'id': current_id,
-            'title': current.title,
-            'year': current.year,
-            'citations': current.citation_count,
-            'depth': depth[current_id],
-        })
+        nodes.append(
+            {
+                "id": current_id,
+                "title": current.title,
+                "year": current.year,
+                "citations": current.citation_count,
+                "depth": depth[current_id],
+            }
+        )
 
         if depth[current_id] >= 3:
             continue
@@ -194,13 +220,15 @@ def generate_landscape_task(landscape_id, seed_paper_ids):
                         depth[str(neighbor.id)] = depth[current_id] + 1
                     except ResearchPaper.DoesNotExist:
                         pass
-                edges.append({
-                    'from': current_id,
-                    'to': neighbor_id,
-                })
+                edges.append(
+                    {
+                        "from": current_id,
+                        "to": neighbor_id,
+                    }
+                )
         except PaperGraphCache.DoesNotExist:
             pass
 
-    landscape.graph_data = {'nodes': nodes, 'edges': edges}
+    landscape.graph_data = {"nodes": nodes, "edges": edges}
     landscape.save()
     return f"Landscape generated with {len(nodes)} nodes and {len(edges)} edges"

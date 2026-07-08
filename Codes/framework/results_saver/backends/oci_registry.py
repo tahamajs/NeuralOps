@@ -1,10 +1,13 @@
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 def push(run_id, run_dir, cfg):
     """Push model as OCI artifact using ORAS CLI."""
     try:
         import subprocess
+
         subprocess.run(["oras", "version"], capture_output=True, check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
         logger.warning("ORAS CLI not installed – skipping OCI push")
@@ -15,5 +18,15 @@ def push(run_id, run_dir, cfg):
     model_dir = run_dir / "artifacts" / "model"
     if not model_dir.exists():
         return
-    subprocess.run(["oras", "push", artifact, str(model_dir / "pytorch_model.bin"), "--artifact-type", "application/vnd.oci.image.config.v1+json"], check=True)
+    subprocess.run(
+        [
+            "oras",
+            "push",
+            artifact,
+            str(model_dir / "pytorch_model.bin"),
+            "--artifact-type",
+            "application/vnd.oci.image.config.v1+json",
+        ],
+        check=True,
+    )
     logger.info("Pushed OCI artifact %s", artifact)

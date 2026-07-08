@@ -1,1 +1,1 @@
-default_app_config = 'health_monitor.apps.HealthMonitorConfig'
+default_app_config = "health_monitor.apps.HealthMonitorConfig"

@@ -3,7 +3,8 @@ SaveConfig – dataclass that controls all aspects of result persistence.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 
 @dataclass
 class SaveConfig:
@@ -22,24 +23,26 @@ class SaveConfig:
     auto_save_if_better_than: Optional[float] = None
 
     # ── Plot options (passed to framework.analysis.plotting) ──
-    plot_options: Dict[str, Any] = field(default_factory=lambda: {
-        "loss_curve": True,
-        "accuracy_curve": True,
-        "confusion_matrix": False,
-        "attention_heatmap": False,
-        "gradient_flow": False,
-        "lr_schedule": True,
-        "gpu_memory": False,
-        "training_time": True,
-        "parameter_count": False,
-        "rank_allocation": False,
-        "pareto_front": False,
-        "radar_chart": False,
-        "loss_smooth": 0.6,
-        "figsize": [10, 6],
-        "dpi": 150,
-        "class_names": None,
-    })
+    plot_options: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "loss_curve": True,
+            "accuracy_curve": True,
+            "confusion_matrix": False,
+            "attention_heatmap": False,
+            "gradient_flow": False,
+            "lr_schedule": True,
+            "gpu_memory": False,
+            "training_time": True,
+            "parameter_count": False,
+            "rank_allocation": False,
+            "pareto_front": False,
+            "radar_chart": False,
+            "loss_smooth": 0.6,
+            "figsize": [10, 6],
+            "dpi": 150,
+            "class_names": None,
+        }
+    )
 
     # ── Storage backends (local, s3, gcp, azure, hf_hub, etc.) ─
     storage_backends: List[str] = field(default_factory=lambda: ["local"])

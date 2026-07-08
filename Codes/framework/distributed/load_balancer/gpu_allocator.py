@@ -5,28 +5,31 @@ Inspired by ClusterOps' `list_available_gpus()` / `execute_on_gpu()`
 and FastSpeed's heterogeneous GPU load balancing.
 """
 
-import torch
-import threading
 import logging
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple
+import threading
+from dataclasses import dataclass
 from enum import Enum
+from typing import Dict, List, Optional, Tuple
+
+import torch
 
 logger = logging.getLogger(__name__)
 
 
 class AllocationStrategy(Enum):
     """How to choose GPUs."""
-    BEST_FIT = "best_fit"          # pick GPU with most free memory
-    ROUND_ROBIN = "round_robin"    # cycle through all GPUs
-    PACK = "pack"                  # pack jobs onto as few GPUs as possible
-    SPREAD = "spread"              # spread jobs across as many GPUs as possible
+
+    BEST_FIT = "best_fit"  # pick GPU with most free memory
+    ROUND_ROBIN = "round_robin"  # cycle through all GPUs
+    PACK = "pack"  # pack jobs onto as few GPUs as possible
+    SPREAD = "spread"  # spread jobs across as many GPUs as possible
     TOPOLOGY_AWARE = "topology_aware"  # minimise inter‑GPU communication cost
 
 
 @dataclass
 class GPUInfo:
     """Snapshot of a single GPU's state."""
+
     index: int
     name: str
     total_memory_mb: float
@@ -36,7 +39,7 @@ class GPUInfo:
     temperature_c: float = 0.0
     node: str = "localhost"
     is_allocated: bool = False
-    allocated_to: Optional[str] = None   # job_id
+    allocated_to: Optional[str] = None  # job_id
 
 
 class GPUAllocator:
@@ -63,13 +66,16 @@ class GPUAllocator:
     def __init__(self):
         if self._initialised:
             return
-        self._gpus: Dict[str, List[GPUInfo]] = {}   # node → GPU list
+        self._gpus: Dict[str, List[GPUInfo]] = {}  # node → GPU list
         self._jobs: Dict[str, List[Tuple[str, int]]] = {}  # job_id → [(node, gpu_idx)]
         self._round_robin_counter = 0
         self.refresh()
         self._initialised = True
-        logger.info("GPUAllocator initialised: %d GPU(s) across %d node(s)",
-                    self.total_gpus, self.num_nodes)
+        logger.info(
+            "GPUAllocator initialised: %d GPU(s) across %d node(s)",
+            self.total_gpus,
+            self.num_nodes,
+        )
 
     # ── Discovery ───────────────────────────────────────────────────
     def refresh(self) -> List[GPUInfo]:
@@ -81,15 +87,17 @@ class GPUAllocator:
         for i in range(torch.cuda.device_count()):
             props = torch.cuda.get_device_properties(i)
             free, total = torch.cuda.mem_get_info(i)
-            local.append(GPUInfo(
-                index=i,
-                name=props.name,
-                total_memory_mb=total / (1024 ** 2),
-                free_memory_mb=free / (1024 ** 2),
-                allocated_mb=(total - free) / (1024 ** 2),
-                utilization_pct=0.0,
-                node="localhost",
-            ))
+            local.append(
+                GPUInfo(
+                    index=i,
+                    name=props.name,
+                    total_memory_mb=total / (1024**2),
+                    free_memory_mb=free / (1024**2),
+                    allocated_mb=(total - free) / (1024**2),
+                    utilization_pct=0.0,
+                    node="localhost",
+                )
+            )
         self._gpus["localhost"] = local
         return local
 
@@ -113,8 +121,9 @@ class GPUAllocator:
     @property
     def available_gpus(self) -> int:
         with self._lock:
-            return sum(1 for gpus in self._gpus.values()
-                       for g in gpus if not g.is_allocated)
+            return sum(
+                1 for gpus in self._gpus.values() for g in gpus if not g.is_allocated
+            )
 
     def get_free_gpus(self, min_free_memory_mb: float = 0) -> List[GPUInfo]:
         """Return all free GPUs (optionally filtering by minimum free memory)."""
@@ -122,8 +131,7 @@ class GPUAllocator:
             result = []
             for node, gpus in self._gpus.items():
                 for g in gpus:
-                    if (not g.is_allocated and
-                        g.free_memory_mb >= min_free_memory_mb):
+                    if not g.is_allocated and g.free_memory_mb >= min_free_memory_mb:
                         result.append(g)
             return result
 
@@ -150,7 +158,9 @@ class GPUAllocator:
                 )
 
             if strategy == AllocationStrategy.BEST_FIT:
-                chosen = sorted(free, key=lambda g: g.free_memory_mb, reverse=True)[:num_gpus]
+                chosen = sorted(free, key=lambda g: g.free_memory_mb, reverse=True)[
+                    :num_gpus
+                ]
             elif strategy == AllocationStrategy.ROUND_ROBIN:
                 start = self._round_robin_counter % len(free)
                 indices = [(start + i) % len(free) for i in range(num_gpus)]
@@ -194,9 +204,13 @@ class GPUAllocator:
             if job_id:
                 self._jobs[job_id] = [(g.node, g.index) for g in chosen]
 
-            logger.info("Allocated %d GPU(s) to job %s via %s: %s",
-                        num_gpus, job_id, strategy.value,
-                        [(g.node, g.index) for g in chosen])
+            logger.info(
+                "Allocated %d GPU(s) to job %s via %s: %s",
+                num_gpus,
+                job_id,
+                strategy.value,
+                [(g.node, g.index) for g in chosen],
+            )
             return chosen
 
     def release(self, job_id: str) -> None:
@@ -230,10 +244,15 @@ class GPUAllocator:
         with self._lock:
             return {
                 "total_gpus": self.total_gpus,
-                "free_gpus": sum(1 for gpus in self._gpus.values()
-                                 for g in gpus if not g.is_allocated),
-                "allocated_gpus": sum(1 for gpus in self._gpus.values()
-                                      for g in gpus if g.is_allocated),
+                "free_gpus": sum(
+                    1
+                    for gpus in self._gpus.values()
+                    for g in gpus
+                    if not g.is_allocated
+                ),
+                "allocated_gpus": sum(
+                    1 for gpus in self._gpus.values() for g in gpus if g.is_allocated
+                ),
                 "jobs": list(self._jobs.keys()),
                 "nodes": {
                     node: {

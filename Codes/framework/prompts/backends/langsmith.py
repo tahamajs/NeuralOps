@@ -4,9 +4,10 @@ Requires: pip install langsmith
 """
 
 import logging
-from typing import Dict, Any, Optional, Tuple
+from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
 
 class LangSmithBackend:
     """Persist prompts to LangSmith Prompt Hub."""
@@ -17,14 +18,21 @@ class LangSmithBackend:
         self._client = None
         try:
             from langsmith import Client
+
             self._client = Client(api_key=api_key or None)
         except ImportError:
             logger.warning("langsmith not installed – LangSmith backend disabled")
         except Exception as e:
             logger.warning("Failed to initialise LangSmith client: %s", e)
 
-    def save(self, name: str, template: str, version: int,
-             commit_message: str = "", tags: Optional[list] = None) -> bool:
+    def save(
+        self,
+        name: str,
+        template: str,
+        version: int,
+        commit_message: str = "",
+        tags: Optional[list] = None,
+    ) -> bool:
         """Push a new prompt version to LangSmith."""
         if self._client is None:
             logger.warning("LangSmith client unavailable – save skipped")
@@ -45,8 +53,9 @@ class LangSmithBackend:
             logger.exception("LangSmith save failed: %s", e)
             return False
 
-    def load(self, name: str, version: Optional[int] = None,
-             alias: str = "production") -> Optional[Tuple[str, int]]:
+    def load(
+        self, name: str, version: Optional[int] = None, alias: str = "production"
+    ) -> Optional[Tuple[str, int]]:
         """Retrieve a prompt from LangSmith. Returns (template, version_number) or None."""
         if self._client is None:
             return None

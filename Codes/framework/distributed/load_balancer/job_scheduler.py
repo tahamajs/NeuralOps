@@ -10,23 +10,22 @@ References:
   - Blox scheduler toolkit: https://github.com/yue2388253/blox
 """
 
-import time
-import threading
-import heapq
 import enum
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Callable, Any
-from datetime import datetime
+import heapq
 import logging
+import threading
+import time
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 
 class SchedulingPolicy(enum.Enum):
-    FIFO = "fifo"           # first‑in, first‑out
-    PRIORITY = "priority"   # highest priority first
-    FAIR_SHARE = "fair"     # equal GPU time per user
-    SHORTEST_JOB = "sjf"    # estimate‑based shortest first
+    FIFO = "fifo"  # first‑in, first‑out
+    PRIORITY = "priority"  # highest priority first
+    FAIR_SHARE = "fair"  # equal GPU time per user
+    SHORTEST_JOB = "sjf"  # estimate‑based shortest first
 
 
 class JobState(enum.Enum):
@@ -40,6 +39,7 @@ class JobState(enum.Enum):
 @dataclass(order=True)
 class JobSpec:
     """A training job waiting to be scheduled."""
+
     priority: int
     submit_time: float = field(compare=False)
     job_id: str = field(compare=False)
@@ -65,11 +65,12 @@ class DistributedJobScheduler:
     def __init__(self, policy: SchedulingPolicy = SchedulingPolicy.PRIORITY):
         self.policy = policy
         self._lock = threading.Lock()
-        self._queue: List[JobSpec] = []           # heap for priority queue
+        self._queue: List[JobSpec] = []  # heap for priority queue
         self._running: Dict[str, JobSpec] = {}
         self._history: List[JobSpec] = []
         self._stop = threading.Event()
         from .gpu_allocator import GPUAllocator
+
         self.allocator = GPUAllocator()
 
     def submit(
@@ -93,7 +94,9 @@ class DistributedJobScheduler:
         )
         with self._lock:
             heapq.heappush(self._queue, job)
-            logger.info("Job %s submitted (priority %d, %d GPUs)", job_id, priority, num_gpus)
+            logger.info(
+                "Job %s submitted (priority %d, %d GPUs)", job_id, priority, num_gpus
+            )
         return job_id
 
     def cancel(self, job_id: str) -> bool:

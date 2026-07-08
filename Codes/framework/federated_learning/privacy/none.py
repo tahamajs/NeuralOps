@@ -1,6 +1,7 @@
 """No privacy mechanism."""
 
-from .base import BasePrivacyMechanism, PRIVACY_REGISTRY
+from .base import PRIVACY_REGISTRY, BasePrivacyMechanism
+
 
 @PRIVACY_REGISTRY.register("none")
 class NoPrivacy(BasePrivacyMechanism):

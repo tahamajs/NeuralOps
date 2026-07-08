@@ -1,10 +1,13 @@
 """
 LLRD: Layer‑wise Learning Rate Decay.
 """
+
 import logging
+
 from .registry import register_method
 
 logger = logging.getLogger(__name__)
+
 
 def get_llrd_param_groups(model, base_lr, weight_decay, decay):
     no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight", "layernorm.weight"]
@@ -48,16 +51,29 @@ def get_llrd_param_groups(model, base_lr, weight_decay, decay):
     for layer in range(num_layers):
         lr_layer = base_lr * (decay ** (num_layers - layer))
         if layer_decay[layer]:
-            groups.append({"params": layer_decay[layer], "lr": lr_layer, "weight_decay": weight_decay})
+            groups.append(
+                {
+                    "params": layer_decay[layer],
+                    "lr": lr_layer,
+                    "weight_decay": weight_decay,
+                }
+            )
         if layer_nodecay[layer]:
-            groups.append({"params": layer_nodecay[layer], "lr": lr_layer, "weight_decay": 0.0})
+            groups.append(
+                {"params": layer_nodecay[layer], "lr": lr_layer, "weight_decay": 0.0}
+            )
 
     if head_decay:
-        groups.append({"params": head_decay, "lr": base_lr, "weight_decay": weight_decay})
+        groups.append(
+            {"params": head_decay, "lr": base_lr, "weight_decay": weight_decay}
+        )
     if head_nodecay:
         groups.append({"params": head_nodecay, "lr": base_lr, "weight_decay": 0.0})
     return groups
 
+
 @register_method("llrd")
 def apply_llrd(model, config):
-    logger.info("LLRD registered. Use --method llrd to enable layer‑wise learning rates.")
+    logger.info(
+        "LLRD registered. Use --method llrd to enable layer‑wise learning rates."
+    )

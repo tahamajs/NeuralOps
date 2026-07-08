@@ -8,8 +8,14 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 
 
 class ZeroKVNeoCompressor(BaseCompressor):
-    def __init__(self, model, keep_ratio=0.3, num_attention_sinks=4,
-                 heavy_hitter_ratio=0.1, **kwargs):
+    def __init__(
+        self,
+        model,
+        keep_ratio=0.3,
+        num_attention_sinks=4,
+        heavy_hitter_ratio=0.1,
+        **kwargs
+    ):
         super().__init__(model, name="zerokv_neo", **kwargs)
         self.keep_ratio = keep_ratio
         self.num_attention_sinks = num_attention_sinks
@@ -31,8 +37,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 # but the combined number cannot exceed total_keep.
                 n_sinks = min(self.num_attention_sinks, total_keep)
                 n_heavy = min(
-                    max(1, int(out_f * self.heavy_hitter_ratio)),
-                    total_keep - n_sinks
+                    max(1, int(out_f * self.heavy_hitter_ratio)), total_keep - n_sinks
                 )
                 # Select the top norms for sinks and then for heavy hitters
                 _, top_sink_idx = torch.topk(row_norms, n_sinks, largest=True)
@@ -41,7 +46,9 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 mask_all[top_sink_idx] = False
                 remaining_norms = row_norms[mask_all]
                 if n_heavy > 0 and remaining_norms.numel() > 0:
-                    _, top_heavy_idx_relative = torch.topk(remaining_norms, n_heavy, largest=True)
+                    _, top_heavy_idx_relative = torch.topk(
+                        remaining_norms, n_heavy, largest=True
+                    )
                     # Map back to original indices
                     remaining_indices = torch.where(mask_all)[0]
                     top_heavy_idx = remaining_indices[top_heavy_idx_relative]
@@ -63,21 +70,31 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
     @staticmethod
     def _is_attention_proj(name: str) -> bool:
-        attn_keywords = ['q_lin', 'k_lin', 'v_lin', 'q_proj', 'k_proj', 'v_proj',
-                         'query', 'key', 'value', 'attention']
+        attn_keywords = [
+            "q_lin",
+            "k_lin",
+            "v_lin",
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "query",
+            "key",
+            "value",
+            "attention",
+        ]
         return any(kw in name.lower() for kw in attn_keywords)
 
 
 @COMPRESSOR_REGISTRY.register("zerokv_neo")
 def zerokv_neo_factory(model, comp_config):
-    keep_ratio = getattr(comp_config, 'zerokv_keep_ratio', 0.3)
-    num_sinks = getattr(comp_config, 'zerokv_num_sinks', 4)
-    heavy_ratio = getattr(comp_config, 'zerokv_heavy_ratio', 0.1)
+    keep_ratio = getattr(comp_config, "zerokv_keep_ratio", 0.3)
+    num_sinks = getattr(comp_config, "zerokv_num_sinks", 4)
+    heavy_ratio = getattr(comp_config, "zerokv_heavy_ratio", 0.1)
     compressor = ZeroKVNeoCompressor(
         model,
         keep_ratio=keep_ratio,
         num_attention_sinks=num_sinks,
-        heavy_hitter_ratio=heavy_ratio
+        heavy_hitter_ratio=heavy_ratio,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model

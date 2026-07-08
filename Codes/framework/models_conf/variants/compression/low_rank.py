@@ -1,5 +1,7 @@
 import torch
-from .base import BaseCompressor, COMPRESSOR_REGISTRY
+
+from .base import COMPRESSOR_REGISTRY, BaseCompressor
+
 
 @COMPRESSOR_REGISTRY.register("low_rank")
 class LowRankCompressor(BaseCompressor):

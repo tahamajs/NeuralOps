@@ -1,8 +1,13 @@
 """Celery tasks for running benchmarks and updating scores."""
-import logging, time, random
+
+import logging
+import random
+
 from celery import shared_task
 from django.utils import timezone
-from .models import BenchmarkRun, BenchmarkTest, BenchmarkResult, ListingBenchmarkScore
+
+from .models import (BenchmarkResult, BenchmarkRun, BenchmarkTest,
+                     ListingBenchmarkScore)
 from .scoring import normalize_result
 
 logger = logging.getLogger(__name__)
@@ -26,14 +31,14 @@ def run_benchmark_suite(self, run_id: str):
     except BenchmarkRun.DoesNotExist:
         return
 
-    run.status = 'running'
+    run.status = "running"
     run.started_at = timezone.now()
-    run.save(update_fields=['status', 'started_at'])
+    run.save(update_fields=["status", "started_at"])
 
     try:
         tests = run.suite.tests.filter(is_active=True)
         batch_sizes = run.batch_sizes or [8, 32, 128]
-        precisions = run.precisions or ['fp32', 'fp16']
+        precisions = run.precisions or ["fp32", "fp16"]
 
         for test in tests:
             for bs in batch_sizes:
@@ -44,33 +49,35 @@ def run_benchmark_suite(self, run_id: str):
                     # Normalize the score
                     normalized = normalize_result(result)
                     result.normalized_score = normalized
-                    result.save(update_fields=['normalized_score'])
+                    result.save(update_fields=["normalized_score"])
 
-        run.status = 'completed'
+        run.status = "completed"
         run.completed_at = timezone.now()
-        run.save(update_fields=['status', 'completed_at'])
+        run.save(update_fields=["status", "completed_at"])
 
         # Update composite score
         score, _ = ListingBenchmarkScore.objects.get_or_create(listing=run.listing)
         score.last_run = run
         score.total_runs = BenchmarkRun.objects.filter(
-            listing=run.listing, status='completed'
+            listing=run.listing, status="completed"
         ).count()
         score.recalculate()
 
         # Update the listing's dlperf_score
         run.listing.dlperf_score = score.composite_score
-        run.listing.save(update_fields=['dlperf_score'])
+        run.listing.save(update_fields=["dlperf_score"])
 
     except Exception as exc:
-        run.status = 'failed'
+        run.status = "failed"
         run.error_message = str(exc)
         run.completed_at = timezone.now()
-        run.save(update_fields=['status', 'error_message', 'completed_at'])
+        run.save(update_fields=["status", "error_message", "completed_at"])
         logger.exception("Benchmark run failed")
 
 
-def _simulate_benchmark(test: BenchmarkTest, listing, batch_size: int, precision: str) -> BenchmarkResult:
+def _simulate_benchmark(
+    test: BenchmarkTest, listing, batch_size: int, precision: str
+) -> BenchmarkResult:
     """
     Simulate a benchmark result with realistic values based on GPU model.
     In production, this would actually run the benchmark in Docker.
@@ -79,9 +86,15 @@ def _simulate_benchmark(test: BenchmarkTest, listing, batch_size: int, precision
 
     # Rough performance tiers
     tiers = {
-        'H200': 1.4, 'B200': 1.6, 'H100': 1.0, 'A100': 0.65,
-        'RTX 4090': 0.42, 'RTX 3090': 0.28, 'RTX 3080': 0.20,
-        'RTX 3070': 0.13, 'RTX 3060': 0.08,
+        "H200": 1.4,
+        "B200": 1.6,
+        "H100": 1.0,
+        "A100": 0.65,
+        "RTX 4090": 0.42,
+        "RTX 3090": 0.28,
+        "RTX 3080": 0.20,
+        "RTX 3070": 0.13,
+        "RTX 3060": 0.08,
     }
     multiplier = 1.0
     for prefix, factor in tiers.items():
@@ -90,7 +103,7 @@ def _simulate_benchmark(test: BenchmarkTest, listing, batch_size: int, precision
             break
 
     # FP16 is ~2x throughput vs FP32 on most GPUs
-    if precision in ('fp16', 'bf16'):
+    if precision in ("fp16", "bf16"):
         multiplier *= 1.8
 
     # Batch size scaling: larger batches → higher throughput up to VRAM limit
@@ -101,7 +114,11 @@ def _simulate_benchmark(test: BenchmarkTest, listing, batch_size: int, precision
     base = 100.0 * multiplier * bs_factor
 
     result = BenchmarkResult.objects.create(
-        run=BenchmarkRun.objects.get(id=test.suite.runs.last().id) if hasattr(test, '_run_id') else None,
+        run=(
+            BenchmarkRun.objects.get(id=test.suite.runs.last().id)
+            if hasattr(test, "_run_id")
+            else None
+        ),
         run_id=_get_current_run_id(),
         test=test,
         listing=listing,
@@ -121,9 +138,10 @@ def _simulate_benchmark(test: BenchmarkTest, listing, batch_size: int, precision
 def _get_current_run_id():
     """Helper to get the current benchmark run ID during simulation."""
     import inspect
+
     for frame in inspect.stack():
-        if 'run_id' in frame.frame.f_locals:
-            return frame.frame.f_locals['run_id']
+        if "run_id" in frame.frame.f_locals:
+            return frame.frame.f_locals["run_id"]
     return None
 
 
@@ -131,13 +149,15 @@ def _get_current_run_id():
 def auto_benchmark_new_listings():
     """Automatically benchmark newly registered GPU listings."""
     from gpu_marketplace.models import GPUListing
+
     new_listings = GPUListing.objects.filter(
-        status='online',
-        benchmark_runs__isnull=True
-    )[:10]  # limit per cycle
+        status="online", benchmark_runs__isnull=True
+    )[
+        :10
+    ]  # limit per cycle
 
     default_suite = BenchmarkSuite.objects.filter(
-        name__icontains='DLPerf', is_active=True
+        name__icontains="DLPerf", is_active=True
     ).first()
 
     if not default_suite:
@@ -148,6 +168,6 @@ def auto_benchmark_new_listings():
             listing=listing,
             suite=default_suite,
             batch_sizes=[8, 32, 128],
-            precisions=['fp32', 'fp16'],
+            precisions=["fp32", "fp16"],
         )
         run_benchmark_suite.delay(str(run.id))

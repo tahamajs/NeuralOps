@@ -1,25 +1,27 @@
 import asyncio
 import os
+
 from channels.generic.websocket import AsyncWebsocketConsumer
+
 
 class JobLogConsumer(AsyncWebsocketConsumer):
     """Tails the job log file and sends new lines via WebSocket."""
 
     async def connect(self):
-        self.job_id = self.scope['url_route']['kwargs']['job_id']
-        self.group_name = f'job_{self.job_id}'
+        self.job_id = self.scope["url_route"]["kwargs"]["job_id"]
+        self.group_name = f"job_{self.job_id}"
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
-        self.log_path = f'/tmp/job_logs/{self.job_id}.txt'
+        self.log_path = f"/tmp/job_logs/{self.job_id}.txt"
         if os.path.exists(self.log_path):
-            with open(self.log_path, 'r') as f:
+            with open(self.log_path, "r") as f:
                 await self.send(text_data=f.read())
         self.task = asyncio.create_task(self.tail_log())
 
     async def tail_log(self):
         while True:
             if os.path.exists(self.log_path):
-                with open(self.log_path, 'r') as f:
+                with open(self.log_path, "r") as f:
                     f.seek(0, 2)
                     line = f.readline()
                     if line:
@@ -27,9 +29,9 @@ class JobLogConsumer(AsyncWebsocketConsumer):
             await asyncio.sleep(0.5)
 
     async def disconnect(self, close_code):
-        if hasattr(self, 'task'):
+        if hasattr(self, "task"):
             self.task.cancel()
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def job_update(self, event):
-        await self.send(text_data=event['data'])
+        await self.send(text_data=event["data"])

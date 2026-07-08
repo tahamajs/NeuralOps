@@ -1,6 +1,8 @@
 from celery import shared_task
-from .models import EvalRun
+
 from .evaluation import Evaluator
+from .models import EvalRun
+
 
 @shared_task(bind=True, max_retries=2)
 def run_evaluation(self, run_id: str):

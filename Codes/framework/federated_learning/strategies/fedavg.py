@@ -1,7 +1,7 @@
 """FedAvg – the baseline federated averaging algorithm (McMahan et al. 2017)."""
 
-from .base import BaseAggregator, AGGREGATOR_REGISTRY
-import numpy as np
+from .base import AGGREGATOR_REGISTRY, BaseAggregator
+
 
 @AGGREGATOR_REGISTRY.register("fedavg")
 class FedAvgAggregator(BaseAggregator):
