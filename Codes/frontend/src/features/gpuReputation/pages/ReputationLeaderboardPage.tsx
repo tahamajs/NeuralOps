@@ -50,7 +50,7 @@ export default function ReputationLeaderboardPage() {
                 <td>{entry.total_staked} tokens</td>
                 <td>{entry.successful_verifications}</td>
                 <td>
-                  <Badge variant={entry.slashings > 0 ? "danger" : "success"}>
+                  <Badge variant={entry.slashings > 0 ? "failed" : "success"}>
                     {entry.slashings > 0 ? "failed" : "success"}
                   </Badge>
                 </td>
