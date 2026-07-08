@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { TerminalCard } from "../../../components/ui/TerminalCard";
 
 export function LogViewer({ logs }: { logs: string[] }) {
   const containerRef = useRef<HTMLDivElement>(null);

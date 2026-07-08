@@ -65,7 +65,8 @@ const getRankChange = (change: number) => {
 export default function LeaderboardPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const { user: currentUser } = useAuthStore();
+  const { user } = useAuthStore();
+  const currentUser = user as any;
   const pageSize = 20;
 
   const { data: leaderboardData, isLoading } = useQuery({

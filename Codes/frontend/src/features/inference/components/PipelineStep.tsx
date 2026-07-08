@@ -11,7 +11,7 @@ export function PipelineStep({ step }: any) {
             : step.status === "running"
               ? "warning"
               : step.status === "failed"
-                ? "danger"
+                ? "failed"
                 : "secondary"
         }
       >

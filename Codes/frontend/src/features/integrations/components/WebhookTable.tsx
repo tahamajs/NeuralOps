@@ -27,7 +27,7 @@ export function WebhookTable({ webhooks, onEdit, onDelete, onTest }: any) {
       header: "Status",
       cell: ({ row }: any) => (
         <Badge
-          variant={row.original.status === "active" ? "success" : "danger"}
+          variant={row.original.status === "active" ? "success" : "failed"}
         >
           {row.original.status}
         </Badge>

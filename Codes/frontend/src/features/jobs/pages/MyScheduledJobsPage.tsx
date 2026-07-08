@@ -14,7 +14,7 @@ export default function MyScheduledJobsPage() {
 
   if (isLoading) return <Spinner />;
   if (!data?.pending?.length && !data?.running?.length)
-    return <EmptyState message="No scheduled jobs" />;
+    return <EmptyState title="No scheduled jobs" />;
 
   return (
     <div className="space-y-6 animate-fade-in">
