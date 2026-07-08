@@ -1,27 +1,27 @@
-import { useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { useMutation } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { Button } from '../../../components/ui/Button'
-import { Card } from '../../../components/ui/Card'
-import { Input } from '../../../components/ui/Input' // not used but we'll use textarea
+import { useState } from "react";
+import { useParams } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { Button } from "../../../components/ui/Button";
+import { Card } from "../../../components/ui/Card";
+import { Input } from "../../../components/ui/Input"; // not used but we'll use textarea
 
 export default function DriftCheckPage() {
-  const { runId } = useParams<{ runId: string }>()
-  const [reference, setReference] = useState('{}')
-  const [current, setCurrent] = useState('{}')
-  const [result, setResult] = useState<any>(null)
+  const { runId } = useParams<{ runId: string }>();
+  const [reference, setReference] = useState("{}");
+  const [current, setCurrent] = useState("{}");
+  const [result, setResult] = useState<any>(null);
 
   const mutation = useMutation({
     mutationFn: async () => {
       const res = await api.post(`/api/runs/${runId}/drift/check/`, {
         reference: JSON.parse(reference),
         current: JSON.parse(current),
-      })
-      return res.data
+      });
+      return res.data;
     },
     onSuccess: (data) => setResult(data),
-  })
+  });
 
   return (
     <div className="space-y-6 animate-fade-in max-w-4xl mx-auto">
@@ -56,7 +56,7 @@ export default function DriftCheckPage() {
           disabled={mutation.isPending}
           className="w-full"
         >
-          {mutation.isPending ? 'Running...' : 'Run Drift Check'}
+          {mutation.isPending ? "Running..." : "Run Drift Check"}
         </Button>
         {result && (
           <div className="mt-6">
@@ -68,5 +68,5 @@ export default function DriftCheckPage() {
         )}
       </Card>
     </div>
-  )
+  );
 }

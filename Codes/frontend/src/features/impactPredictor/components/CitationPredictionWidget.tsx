@@ -1,12 +1,12 @@
-import { TerminalCard } from '../../../components/ui/TerminalCard'
-import { ArrowUpRight } from 'lucide-react'
+import { TerminalCard } from "../../../components/ui/TerminalCard";
+import { ArrowUpRight } from "lucide-react";
 
 export function CitationPredictionWidget({
   predictedCitations,
   confidenceInterval,
 }: {
-  predictedCitations?: number
-  confidenceInterval?: [number, number]
+  predictedCitations?: number;
+  confidenceInterval?: [number, number];
 }) {
   if (!predictedCitations) {
     return (
@@ -14,16 +14,21 @@ export function CitationPredictionWidget({
         <ArrowUpRight size={24} className="mx-auto mb-2 opacity-30" />
         <p>Not enough data for citation prediction</p>
       </TerminalCard>
-    )
+    );
   }
 
   return (
     <TerminalCard className="p-4">
-      <h3 className="text-sm font-bold text-white mb-2">Citation Prediction (5 years)</h3>
-      <div className="text-4xl font-bold text-neon-mint">{predictedCitations.toLocaleString()}</div>
+      <h3 className="text-sm font-bold text-white mb-2">
+        Citation Prediction (5 years)
+      </h3>
+      <div className="text-4xl font-bold text-neon-mint">
+        {predictedCitations.toLocaleString()}
+      </div>
       {confidenceInterval && (
         <div className="text-xs text-slate-400 mt-1">
-          95% CI: {confidenceInterval[0].toLocaleString()} – {confidenceInterval[1].toLocaleString()}
+          95% CI: {confidenceInterval[0].toLocaleString()} –{" "}
+          {confidenceInterval[1].toLocaleString()}
         </div>
       )}
       <div className="mt-3 pt-3 border-t border-white/10">
@@ -36,5 +41,5 @@ export function CitationPredictionWidget({
         </ul>
       </div>
     </TerminalCard>
-  )
+  );
 }

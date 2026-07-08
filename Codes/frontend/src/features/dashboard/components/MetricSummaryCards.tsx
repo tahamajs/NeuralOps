@@ -1,24 +1,26 @@
-import { Card } from '../../../components/ui/Card'
-import { Experiment } from '../../../types/experiment'
+import { Card } from "../../../components/ui/Card";
+import { Experiment } from "../../../types/experiment";
 
 interface MetricSummaryCardsProps {
-  experiments: Experiment[]
+  experiments: Experiment[];
 }
 
 const METRICS = [
-  { key: 'queued', label: 'Queued', color: 'text-yellow-400' },
-  { key: 'running', label: 'Running', color: 'text-blue-400' },
-  { key: 'completed', label: 'Completed', color: 'text-green-400' },
-  { key: 'failed', label: 'Failed', color: 'text-red-400' },
-] as const
+  { key: "queued", label: "Queued", color: "text-yellow-400" },
+  { key: "running", label: "Running", color: "text-blue-400" },
+  { key: "completed", label: "Completed", color: "text-green-400" },
+  { key: "failed", label: "Failed", color: "text-red-400" },
+] as const;
 
-export const MetricSummaryCards = ({ experiments }: MetricSummaryCardsProps) => {
+export const MetricSummaryCards = ({
+  experiments,
+}: MetricSummaryCardsProps) => {
   const counts = {
-    queued: experiments.filter(e => e.status === 'queued').length,
-    running: experiments.filter(e => e.status === 'running').length,
-    completed: experiments.filter(e => e.status === 'completed').length,
-    failed: experiments.filter(e => e.status === 'failed').length,
-  }
+    queued: experiments.filter((e) => e.status === "queued").length,
+    running: experiments.filter((e) => e.status === "running").length,
+    completed: experiments.filter((e) => e.status === "completed").length,
+    failed: experiments.filter((e) => e.status === "failed").length,
+  };
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -33,5 +35,5 @@ export const MetricSummaryCards = ({ experiments }: MetricSummaryCardsProps) => 
         </Card>
       ))}
     </div>
-  )
-}
+  );
+};

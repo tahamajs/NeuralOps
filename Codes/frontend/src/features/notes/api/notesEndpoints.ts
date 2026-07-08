@@ -1,5 +1,5 @@
 export const NOTES_ENDPOINTS = {
-  LIST: '/notes/v1/notes/',
+  LIST: "/notes/v1/notes/",
   DETAIL: (id: string) => `/notes/v1/notes/${id}/`,
   REACT: (id: string) => `/notes/v1/notes/${id}/react/`,
   VERSIONS: (id: string) => `/notes/v1/notes/${id}/versions/`,
@@ -8,9 +8,9 @@ export const NOTES_ENDPOINTS = {
   REPLIES: (id: string) => `/notes/v1/notes/${id}/replies/`,
   MENTIONS: (id: string) => `/notes/v1/notes/${id}/mentions/`,
   EXPORT_PDF: (id: string) => `/notes/v1/notes/${id}/export/pdf/`,
-  STATISTICS: '/notes/v1/notes/statistics/',
-  RECENT: '/notes/v1/notes/recent/',
-  BULK: '/notes/v1/notes/bulk/',
-  BULK_TAGS: '/notes/v1/notes/bulk/tags/',
-  WEBHOOKS: '/notes/v1/webhooks/',
-}
+  STATISTICS: "/notes/v1/notes/statistics/",
+  RECENT: "/notes/v1/notes/recent/",
+  BULK: "/notes/v1/notes/bulk/",
+  BULK_TAGS: "/notes/v1/notes/bulk/tags/",
+  WEBHOOKS: "/notes/v1/webhooks/",
+};

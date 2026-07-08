@@ -1,28 +1,28 @@
-import { useState, KeyboardEvent } from 'react'
-import { Button } from '../../../components/ui/Button'
-import { Send } from 'lucide-react'
+import { useState, KeyboardEvent } from "react";
+import { Button } from "../../../components/ui/Button";
+import { Send } from "lucide-react";
 
 interface MessageInputProps {
-  onSendMessage: (content: string) => void
-  disabled?: boolean
+  onSendMessage: (content: string) => void;
+  disabled?: boolean;
 }
 
 export function MessageInput({ onSendMessage, disabled }: MessageInputProps) {
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState("");
 
   const handleSend = () => {
     if (input.trim() && !disabled) {
-      onSendMessage(input.trim())
-      setInput('')
+      onSendMessage(input.trim());
+      setInput("");
     }
-  }
+  };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   return (
     <div className="border-t border-white/10 p-4">
@@ -36,10 +36,14 @@ export function MessageInput({ onSendMessage, disabled }: MessageInputProps) {
           rows={2}
           disabled={disabled}
         />
-        <Button onClick={handleSend} disabled={!input.trim() || disabled} className="self-end">
+        <Button
+          onClick={handleSend}
+          disabled={!input.trim() || disabled}
+          className="self-end"
+        >
           <Send size={16} />
         </Button>
       </div>
     </div>
-  )
+  );
 }

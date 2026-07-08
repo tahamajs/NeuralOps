@@ -1,12 +1,16 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Props {
-  currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
-export function PaginationControls({ currentPage, totalPages, onPageChange }: Props) {
+export function PaginationControls({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: Props) {
   return (
     <div className="flex items-center gap-2 text-sm text-slate-400">
       <button
@@ -27,5 +31,5 @@ export function PaginationControls({ currentPage, totalPages, onPageChange }: Pr
         <ChevronRight size={16} />
       </button>
     </div>
-  )
+  );
 }
