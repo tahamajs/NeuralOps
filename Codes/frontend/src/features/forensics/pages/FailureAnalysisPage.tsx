@@ -31,8 +31,7 @@ export default function FailureAnalysisPage({
   const [statusFilter, setStatusFilter] = useState("");
   const [severityFilter, setSeverityFilter] = useState("");
   const [runIdSearch, setRunIdSearch] = useState("");
-  const [selectedAnalysis, setSelectedAnalysis] =
-    useState<FailureAnalysis | null>(null);
+  const [selectedFailure, setSelectedFailure] = useState<any | null>(null);
   const [showFixPanel, setShowFixPanel] = useState(false);
   const queryClient = useQueryClient();
   const { success, error } = useToast();
@@ -94,7 +93,7 @@ export default function FailureAnalysisPage({
         <Badge
           variant={
             row.original.severity === "high"
-              ? "danger"
+              ? "failed"
               : row.original.severity === "medium"
                 ? "warning"
                 : "info"

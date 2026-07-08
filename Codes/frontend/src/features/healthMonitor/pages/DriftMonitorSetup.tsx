@@ -43,7 +43,7 @@ export default function DriftMonitorSetup({
   });
 
   const createMonitor = useMutation({
-    mutationFn: () => healthMonitorAPI.createDriftMonitor(formData),
+    mutationFn: () => healthMonitorAPI.createDriftMonitor(formData as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["drift-monitors"] });
       setIsCreating(false);
