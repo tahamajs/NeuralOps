@@ -162,7 +162,6 @@ class ORIONAttention(nn.Module):
     ):
         B, N, _ = hidden_states.shape
         Hk = self.num_kernel_heads
-        Hf = self.num_full_heads
 
         Q_all = self.q_proj(hidden_states)
         K_all = self.k_proj(hidden_states)

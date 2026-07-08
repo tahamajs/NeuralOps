@@ -55,7 +55,7 @@ class ClusterAttention(nn.Module):
         # For clustering we use the original hidden states (or Q) to form groups.
         # We cluster per head using Q mean across heads for simplicity.
         # Here we cluster tokens globally (same clusters for all heads) using mean of Q.
-        x_for_cluster = Q.mean(
+        Q.mean(
             dim=2
         )  # (B, L, D_h) – use channel‑wise mean across heads? Better to use hidden_states.
         # Actually, use the hidden_states directly for clustering.

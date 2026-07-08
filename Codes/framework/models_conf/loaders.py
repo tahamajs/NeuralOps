@@ -44,7 +44,7 @@ def load_compressed_model(
     """
     from .custom_models import CompressedBertModel
 
-    config = AutoConfig.from_pretrained(
+    AutoConfig.from_pretrained(
         model_name, num_labels=num_labels, cache_dir=cache_dir
     )
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)

@@ -44,7 +44,7 @@ class SparseGPTCompressor(BaseCompressor):
             raise RuntimeError(f"SparseGPT failed: {e}")
 
         pruned_model = AutoModelForSequenceClassification.from_pretrained(save_path)
-        pruned_tokenizer = AutoTokenizer.from_pretrained(save_path)
+        AutoTokenizer.from_pretrained(save_path)
         shutil.rmtree(temp_path, ignore_errors=True)
         self.model = pruned_model  # update base model
         self._compressed_params = self._count_params(self.model)

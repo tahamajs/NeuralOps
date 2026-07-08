@@ -293,7 +293,6 @@ class SpectraV2Attention(nn.Module):
         **kwargs,
     ):
         B, N, _ = hidden_states.shape
-        H = self.num_heads
 
         Q = self._reshape(self.query(hidden_states))
         K = self._reshape(self.key(hidden_states))

@@ -103,7 +103,6 @@ class LEKAV3Attention(BaseAttention):
     ):
         B, N, D = hidden_states.shape
         H = self.num_attention_heads
-        L = self.num_landmarks
 
         Q = self.transpose_for_scores(self.query(hidden_states))
         K = self.transpose_for_scores(self.key(hidden_states))

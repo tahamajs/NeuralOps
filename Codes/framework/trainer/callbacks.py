@@ -47,7 +47,6 @@ class GradientNormCallback(TrainerCallback):
                 param_norm = p.grad.data.norm(2)
                 total_norm += param_norm.item() ** 2
         total_norm = total_norm**0.5
-        logs = {"grad_norm": total_norm}
         # logs will be passed to on_log? Actually we can just log to the trainer
         if hasattr(args, "logging_dir"):
             pass  # We can't easily log here; the SVDAwareTrainer logs it automatically

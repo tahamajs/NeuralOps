@@ -147,7 +147,7 @@ def get_testable_attention_keys(config, pretrained_attn=None):
     testable = []
     for key in ATTENTION_REGISTRY.keys():
         try:
-            attn = build_attention(key, config, pretrained_attn)
+            build_attention(key, config, pretrained_attn)
             testable.append(key)
         except Exception:
             continue

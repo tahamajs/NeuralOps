@@ -82,12 +82,11 @@ class KroneckerLinear(nn.Module):
             # as a kronecker product would have.
             # Compute the total possible parameters if factorisation existed.
             # Estimate: using the factorisation of nearest factorable numbers? Simpler: choose rank = min(in, out)//4
-            max_kron_params = 0
             if in_features == out_features:
                 # square: choose a=sqrt, b=sqrt
                 a = int(math.sqrt(in_features))
                 if a * a == in_features:
-                    max_kron_params = a * a + a * a  # but not needed
+                    a * a + a * a  # but not needed
             # We'll just fall back to SVD with a fixed rank that gives roughly similar compression.
             self.rank = max(1, min(in_features, out_features) // 4)
             self.U = nn.Parameter(
