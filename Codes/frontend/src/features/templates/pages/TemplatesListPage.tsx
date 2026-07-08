@@ -58,7 +58,8 @@ export default function TemplatesListPage() {
       {/* Templates Grid */}
       {filtered.length === 0 ? (
         <EmptyState
-          message={
+          title="No Presets Found"
+          description={
             search
               ? `No templates match "${search}".`
               : "No experiment templates yet. Create your first preset!"
