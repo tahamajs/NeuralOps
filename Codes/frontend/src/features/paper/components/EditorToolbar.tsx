@@ -1,18 +1,18 @@
-import { useState } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { Button } from '../../../components/ui/Button'
-import { Input } from '../../../components/ui/Input'
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
 
 interface EditorToolbarProps {
-  projectId?: string
-  compiling: boolean
-  onCompile: () => void
-  onDownloadPDF: () => void
-  onSave: () => void
-  autoCompile: boolean
-  onToggleAutoCompile: () => void
-  pdfUrl: string | null
+  projectId?: string;
+  compiling: boolean;
+  onCompile: () => void;
+  onDownloadPDF: () => void;
+  onSave: () => void;
+  autoCompile: boolean;
+  onToggleAutoCompile: () => void;
+  pdfUrl: string | null;
 }
 
 export default function EditorToolbar({
@@ -25,19 +25,21 @@ export default function EditorToolbar({
   onToggleAutoCompile,
   pdfUrl,
 }: EditorToolbarProps) {
-  const [showShare, setShowShare] = useState(false)
-  const [shareUsername, setShareUsername] = useState('')
-  const queryClient = useQueryClient()
+  const [showShare, setShowShare] = useState(false);
+  const [shareUsername, setShareUsername] = useState("");
+  const queryClient = useQueryClient();
 
   const shareMut = useMutation({
     mutationFn: async (username: string) => {
-      await api.post(`/api/paper/projects/${projectId}/collaborators/add/`, { username })
+      await api.post(`/api/paper/projects/${projectId}/collaborators/add/`, {
+        username,
+      });
     },
     onSuccess: () => {
-      setShowShare(false)
-      queryClient.invalidateQueries({ queryKey: ['paperProject', projectId] })
+      setShowShare(false);
+      queryClient.invalidateQueries({ queryKey: ["paperProject", projectId] });
     },
-  })
+  });
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-cyber-800 border-b border-white/5">
@@ -47,7 +49,7 @@ export default function EditorToolbar({
         disabled={compiling}
         className="bg-green-600 hover:bg-green-500"
       >
-        {compiling ? 'Compiling...' : 'Compile'}
+        {compiling ? "Compiling..." : "Compile"}
       </Button>
 
       <Button variant="ghost" size="sm" onClick={onSave}>
@@ -77,7 +79,11 @@ export default function EditorToolbar({
 
       <div className="flex-1" />
 
-      <Button variant="ghost" size="sm" onClick={() => setShowShare(!showShare)}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setShowShare(!showShare)}
+      >
         Share
       </Button>
 
@@ -99,5 +105,5 @@ export default function EditorToolbar({
         </div>
       )}
     </div>
-  )
+  );
 }

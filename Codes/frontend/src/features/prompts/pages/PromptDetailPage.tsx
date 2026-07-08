@@ -1,27 +1,27 @@
-import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Spinner } from '../../../components/ui/Spinner'
-import { Button } from '../../../components/ui/Button'
-import { useState } from 'react'
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Spinner } from "../../../components/ui/Spinner";
+import { Button } from "../../../components/ui/Button";
+import { useState } from "react";
 
 export default function PromptDetailPage() {
-  const { name } = useParams<{ name: string }>()
-  const [showHistory, setShowHistory] = useState(false)
+  const { name } = useParams<{ name: string }>();
+  const [showHistory, setShowHistory] = useState(false);
 
   const { data: prompt, isLoading } = useQuery({
-    queryKey: ['prompt', name],
+    queryKey: ["prompt", name],
     queryFn: async () => (await api.get(`/api/prompts/${name}/`)).data,
-  })
+  });
 
   const { data: history } = useQuery({
-    queryKey: ['promptHistory', name],
+    queryKey: ["promptHistory", name],
     queryFn: async () => (await api.get(`/api/prompts/${name}/history/`)).data,
     enabled: showHistory,
-  })
+  });
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <Spinner />;
 
   return (
     <div className="space-y-6 animate-fade-in max-w-3xl mx-auto">
@@ -35,20 +35,26 @@ export default function PromptDetailPage() {
         </pre>
       </Card>
       <Button variant="secondary" onClick={() => setShowHistory(!showHistory)}>
-        {showHistory ? 'Hide History' : 'Show History'}
+        {showHistory ? "Hide History" : "Show History"}
       </Button>
       {showHistory && history && (
         <Card>
           <h3 className="text-sm font-bold text-white mb-4">Version History</h3>
           <ul className="space-y-2">
             {history.map((item: any, idx: number) => (
-              <li key={idx} className="text-xs text-slate-400 border-b border-white/5 pb-2">
-                <span className="font-mono text-neon-blue">v{item.version}</span> – {item.timestamp}
+              <li
+                key={idx}
+                className="text-xs text-slate-400 border-b border-white/5 pb-2"
+              >
+                <span className="font-mono text-neon-blue">
+                  v{item.version}
+                </span>{" "}
+                – {item.timestamp}
               </li>
             ))}
           </ul>
         </Card>
       )}
     </div>
-  )
+  );
 }
