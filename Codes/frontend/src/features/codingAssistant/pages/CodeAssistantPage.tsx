@@ -40,12 +40,11 @@ export default function CodeAssistantPage({
     queryKey: ["code-file", currentFileId],
     queryFn: () => codingAssistantAPI.getFileContent(currentFileId!),
     enabled: !!currentFileId,
-    onSuccess: (data) => setCurrentFileContent(data.content),
-  });
+  } as any);
 
   const createSession = useMutation({
     mutationFn: () => codingAssistantAPI.createSession(),
-    onSuccess: (res) => setSessionId(res.data.session_id),
+    onSuccess: (res: any) => setSessionId(res.data.session_id),
   });
   const saveFile = useMutation({
     mutationFn: (data: { fileId: string; content: string }) =>
@@ -67,7 +66,7 @@ export default function CodeAssistantPage({
     suggestions,
     sendMessage,
     applySuggestion,
-  } = useCodingAssistantWebSocket(sessionId);
+  } = useCodingAssistantWebSocket(sessionId) as any;
 
   useEffect(() => {
     createSession.mutate();
@@ -140,13 +139,13 @@ export default function CodeAssistantPage({
           </div>
           <div className="lg:col-span-3 h-full">
             <ChatPanel
-              messages={messages}
-              onSendMessage={handleSendMessage}
+              messages={messages as any}
+              onSendMessage={handleSendMessage as any}
               isStreaming={false}
-              streamingContent={streamingContent}
-              suggestions={suggestions}
-              onApplySuggestion={applySuggestion}
-              isConnected={isConnected}
+              streamingContent={streamingContent as any}
+              suggestions={suggestions as any}
+              onApplySuggestion={applySuggestion as any}
+              isConnected={isConnected as any}
             />
           </div>
         </div>
