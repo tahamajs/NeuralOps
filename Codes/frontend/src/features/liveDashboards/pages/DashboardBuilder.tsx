@@ -131,13 +131,13 @@ export default function DashboardBuilder({
             <span className="text-xs text-slate-400">Refresh:</span>
             <Select
               options={[
-                { value: 0, label: "Off" },
-                { value: 1, label: "1s" },
-                { value: 5, label: "5s" },
-                { value: 10, label: "10s" },
-                { value: 30, label: "30s" },
+                { value: "0", label: "Off" },
+                { value: "1", label: "1s" },
+                { value: "5", label: "5s" },
+                { value: "10", label: "10s" },
+                { value: "30", label: "30s" },
               ]}
-              value={refreshInterval}
+              value={refreshInterval.toString()}
               onChange={(e) => setRefreshInterval(parseInt(e.target.value))}
               className="w-20"
             />

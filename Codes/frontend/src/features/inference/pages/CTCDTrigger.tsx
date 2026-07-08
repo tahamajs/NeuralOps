@@ -14,7 +14,7 @@ import { useToast } from "../../../components/ui/Toast";
 
 export default function CTCDTrigger({ onClose }: { onClose?: () => void }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<any>({
     name: "",
     type: "cron",
     config: { cron_expression: "0 * * * *" },
