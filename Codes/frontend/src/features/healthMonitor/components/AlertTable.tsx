@@ -46,7 +46,7 @@ export function AlertTable({
               ? "warning"
               : row.original.status === "resolved"
                 ? "success"
-                : "danger"
+                : "failed"
           }
         >
           {row.original.status}

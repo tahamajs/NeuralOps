@@ -76,7 +76,7 @@ export default function PayoutRequestsPage({
                             ? "success"
                             : p.status === "pending"
                               ? "warning"
-                              : "danger"
+                              : "failed"
                         }
                       >
                         {p.status}

@@ -72,7 +72,7 @@ export default function LeaderboardPage() {
   const { data: leaderboardData, isLoading } = useQuery({
     queryKey: ["leaderboard", { timeRange, page: currentPage }],
     queryFn: () =>
-      communityAPI.getLeaderboard({
+      (communityAPI as any).getLeaderboard({
         timeframe: timeRange,
         page: currentPage,
         page_size: pageSize,
@@ -81,13 +81,13 @@ export default function LeaderboardPage() {
 
   const { data: currentUserRank } = useQuery({
     queryKey: ["leaderboard", "currentUserRank", timeRange],
-    queryFn: () => communityAPI.getCurrentUserRank(timeRange),
+    queryFn: () => (communityAPI as any).getCurrentUserRank(timeRange),
     enabled: !!currentUser,
   });
 
   const { data: activityData } = useQuery({
     queryKey: ["leaderboard", "activity", currentUser?.id],
-    queryFn: () => communityAPI.getContributionHeatmap(currentUser?.id),
+    queryFn: () => (communityAPI as any).getContributionHeatmap(currentUser?.id),
     enabled: !!currentUser,
   });
 

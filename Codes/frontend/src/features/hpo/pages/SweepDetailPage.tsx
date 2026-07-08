@@ -59,7 +59,7 @@ export default function SweepDetailPage({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
         <div className="flex gap-2">
-          {sweep.status === "running" && (
+          {(sweep.status as any) === "running" && (
             <Button
               size="sm"
               variant="danger"

@@ -14,7 +14,7 @@ export function FeatureHealthCard({ monitor }: { monitor: DriftMonitor }) {
               ? "success"
               : monitor.status === "warning"
                 ? "warning"
-                : "danger"
+                : "failed"
           }
         >
           {monitor.status}

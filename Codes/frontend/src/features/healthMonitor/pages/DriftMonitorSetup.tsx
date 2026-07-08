@@ -123,7 +123,7 @@ export default function DriftMonitorSetup({
                         ? "success"
                         : m.status === "warning"
                           ? "warning"
-                          : "danger"
+                          : "failed"
                     }
                   >
                     {m.status}
