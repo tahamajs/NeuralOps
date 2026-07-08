@@ -467,7 +467,7 @@ export default function ExperimentMonitorPage() {
       const url = URL.createObjectURL(res.data);
       const a = document.createElement("a");
       a.href = url;
-      a.download = res.headers["content-type"]?.includes("pdf")
+      a.download = String(res.headers["content-type"])?.includes("pdf")
         ? `paper_${id}.pdf`
         : `paper_${id}.tex`;
       a.click();
