@@ -73,9 +73,18 @@ export default function CodeAssistantPage({
   useEffect(() => {
     createSession.mutate();
   }, []);
+  const currentFile = files.find((f: any) => f.id === currentFileId);
   useEffect(() => {
-    if (files[0] && !currentFileId) setCurrentFileId(files[0].id);
-  }, [files]);
+    if (files[0] && !currentFileId) {
+      setCurrentFileId(files[0].id);
+    }
+  }, [files, currentFileId]);
+  useEffect(() => {
+    if (currentFile) {
+      setCurrentFileContent(currentFile.content || "");
+      setCurrentFileLanguage(currentFile.language || "python");
+    }
+  }, [currentFile]);
 
   const handleSendMessage = (content: string) => {
     setMessages((prev) => [
