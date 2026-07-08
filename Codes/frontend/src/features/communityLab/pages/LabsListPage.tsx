@@ -101,7 +101,7 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
                 </Button>
               </div>
             </TerminalCard>
-          </Link>
+          </div>
         ))}
         {(!labs || labs.length === 0) && (
           <TerminalCard className="p-8 text-center text-slate-500">
