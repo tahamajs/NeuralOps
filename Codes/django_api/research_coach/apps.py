@@ -6,4 +6,5 @@ class ResearchCoachConfig(AppConfig):
     name = "research_coach"
 
     def ready(self):
-        import research_coach.signals  # noqa
+        # import research_coach.signals  # noqa
+        pass

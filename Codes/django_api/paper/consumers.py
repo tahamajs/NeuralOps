@@ -105,7 +105,7 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
             pass
 
 
-class CollaborationConsumer(AsyncWebsocketConsumer):
+class CollaborationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.project_id = self.scope["url_route"]["kwargs"]["project_id"]
         self.room_group_name = f"collab_{self.project_id}"
