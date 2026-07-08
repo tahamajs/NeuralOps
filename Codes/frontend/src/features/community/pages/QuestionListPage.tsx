@@ -24,6 +24,8 @@ import { formatDistanceToNow } from "date-fns";
 
 type SortOption = "newest" | "votes" | "unanswered" | "trending";
 type FilterOption = "all" | "open" | "closed" | "bounty";
+type Tag = any;
+type Question = any;
 
 export default function QuestionListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -147,7 +149,7 @@ export default function QuestionListPage() {
           onChange={(e) => {
             setSortBy(e.target.value as SortOption);
             setSearchParams({
-              ...searchParams,
+              ...Object.fromEntries(searchParams.entries()),
               sort: e.target.value,
               page: "1",
             });
@@ -172,7 +174,7 @@ export default function QuestionListPage() {
                 onClick={() => {
                   setFilterBy(opt.value);
                   setSearchParams({
-                    ...searchParams,
+                    ...Object.fromEntries(searchParams.entries()),
                     filter: opt.value,
                     page: "1",
                   });
@@ -193,7 +195,7 @@ export default function QuestionListPage() {
           <button
             onClick={() => {
               setSelectedTag("");
-              setSearchParams({ ...searchParams, tag: "", page: "1" });
+              setSearchParams({ ...Object.fromEntries(searchParams.entries()), tag: "", page: "1" });
             }}
             className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${!selectedTag ? "bg-neon-blue text-white" : "bg-white/10 text-slate-300 hover:bg-white/20"}`}
           >
@@ -204,7 +206,7 @@ export default function QuestionListPage() {
               key={tag.name}
               onClick={() => {
                 setSelectedTag(tag.name);
-                setSearchParams({ ...searchParams, tag: tag.name, page: "1" });
+                setSearchParams({ ...Object.fromEntries(searchParams.entries()), tag: tag.name, page: "1" });
                 setCurrentPage(1);
               }}
               className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${selectedTag === tag.name ? "bg-neon-blue text-white" : "bg-white/10 text-slate-300 hover:bg-white/20"}`}
@@ -242,7 +244,7 @@ export default function QuestionListPage() {
             totalPages={totalPages}
             onPageChange={(page) => {
               setCurrentPage(page);
-              setSearchParams({ ...searchParams, page: page.toString() });
+              setSearchParams({ ...Object.fromEntries(searchParams.entries()), page: page.toString() });
             }}
           />
         </div>

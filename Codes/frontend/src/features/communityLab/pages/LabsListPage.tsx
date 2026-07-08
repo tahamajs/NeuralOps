@@ -1,7 +1,7 @@
 // src/features/communityLab/pages/LabsListPage.tsx
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { communityLabAPI } from "../services/api";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Button } from "../../../components/ui/Button";
@@ -16,6 +16,8 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newLabName, setNewLabName] = useState("");
   const [newLabDesc, setNewLabDesc] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
   const [isPrivate, setIsPrivate] = useState(false);
   const queryClient = useQueryClient();
   const { success, error } = useToast();

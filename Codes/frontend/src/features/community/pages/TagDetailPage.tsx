@@ -1,8 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { communityAPI } from "../services/api";
-import { Card, Spinner } from "../../../components/ui";
-import { QuestionList } from "../components/QuestionList";
+import { Card, Spinner, Badge } from "../../../components/ui";
 
 export default function TagDetailPage() {
   const { tagName } = useParams();
@@ -25,7 +24,7 @@ export default function TagDetailPage() {
           {tag?.description || "No description yet."}
         </p>
       </Card>
-      <QuestionList tagFilter={tagName} />
+      <div className="text-slate-400 text-center py-8">Questions for this tag will appear here.</div>
     </div>
   );
 }

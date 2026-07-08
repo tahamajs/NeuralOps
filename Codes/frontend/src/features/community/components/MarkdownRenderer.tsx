@@ -1,6 +1,7 @@
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { cn } from "../../../lib/utils";
+declare const hljs: any;
 
 marked.setOptions({
   breaks: true,
@@ -11,7 +12,7 @@ marked.setOptions({
     }
     return hljs.highlightAuto(code).value;
   },
-});
+} as any);
 
 interface MarkdownRendererProps {
   content: string;
@@ -23,7 +24,7 @@ export function MarkdownRenderer({
   className,
 }: MarkdownRendererProps) {
   const html = marked(content);
-  const sanitized = DOMPurify.sanitize(html, {
+  const sanitized = DOMPurify.sanitize(html as string, {
     ADD_TAGS: ["iframe"],
     ADD_ATTR: ["target", "allow", "allowfullscreen"],
   });
