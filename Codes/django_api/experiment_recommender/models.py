@@ -118,7 +118,7 @@ class ExperimentRecommendation(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="experiment_recommendations",
+        related_name="recommender_recommendations",
     )
     template = models.ForeignKey(
         ExperimentTemplate,
