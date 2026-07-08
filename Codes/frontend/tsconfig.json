@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": false,
     "strict": false,
     "paths": {
       "~/*": ["./src/*"],
