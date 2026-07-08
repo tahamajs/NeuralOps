@@ -22,7 +22,6 @@ import {
   Grid,
   Title,
 } from "@tremor/react";
-import { TerminalCard } from "../../../components/ui/TerminalCard";
 
 export default function AcceleratorDashboard({
   onClose,
