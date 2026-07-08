@@ -1,10 +1,17 @@
-import React from 'react';
+import { useState, useCallback } from "react";
 
-export default function useResearchWebSocket() {
-  return (
-    <div className="p-8 text-white">
-      <h1 className="text-2xl font-bold">useResearchWebSocket</h1>
-      <p className="mt-4 opacity-70">This page is synced with the backend and ready for implementation.</p>
-    </div>
-  );
+export function useResearchWebSocket() {
+  const [isConnected, setIsConnected] = useState(true);
+  const [response, setResponse] = useState<string>("");
+
+  const sendMessage = useCallback((msg: string) => {
+    setResponse("");
+    setTimeout(() => {
+      setResponse(`AI response to research query: "${msg}"`);
+    }, 1000);
+  }, []);
+
+  return { isConnected, response, sendMessage };
 }
+
+export default useResearchWebSocket;

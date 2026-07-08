@@ -42,7 +42,7 @@ export default function AgentSessionsListPage() {
       </div>
 
       {sessions.length === 0 ? (
-        <EmptyState message="No chats yet. Start a new conversation with the AI assistant!" />
+        <EmptyState title="No chats yet. Start a new conversation with the AI assistant!" />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {sessions.map((session: any) => (

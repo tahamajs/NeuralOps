@@ -30,7 +30,7 @@ export function DockableWindow({
     );
   }
 
-  const rndProps = win.maximized
+  const rndProps: any = win.maximized
     ? {
         position: { x: 0, y: 0 },
         size: { width: "100%", height: "100%" },

@@ -6,6 +6,7 @@ import {
   PopoverTrigger,
 } from "../../../components/ui/Popover";
 import { Settings } from "lucide-react";
+import { Button } from "../../../components/ui/Button";
 
 export function AutoRefreshToggle({
   enabled,

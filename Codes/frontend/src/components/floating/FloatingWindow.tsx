@@ -68,7 +68,7 @@ export default function FloatingWindowRenderer() {
 
         // Determine if window is maximized
         const isMaximized = win.maximized === true;
-        const rndProps = isMaximized
+        const rndProps: any = isMaximized
           ? {
               position: { x: 0, y: 0 },
               size: { width: "100%", height: "100%" },

@@ -10,6 +10,7 @@ import {
   Terminal,
   Users,
 } from "lucide-react";
+import { useFloatingWindowStore } from "../floating/FloatingWindowManager";
 
 interface Command {
   id: string;

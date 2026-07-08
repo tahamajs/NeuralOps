@@ -6,7 +6,7 @@ export function useAnnotationWebSocket(projectId: string | null) {
   const [preLabelProgress, setPreLabelProgress] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const { token } = useAuthStore();
+  const { token } = useAuthStore() as any;
 
   const connect = useCallback(() => {
     if (!projectId) return;

@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import StatusBadge from "./StatusBadge";
 import api from "../api/client";
 
 export default function ExperimentTable({
