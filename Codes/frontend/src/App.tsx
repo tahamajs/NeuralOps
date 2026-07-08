@@ -323,7 +323,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
 
   // Live Dashboards
   'live-dashboards': LiveDashboardList,
-  'dashboard-builder': DashboardBuilder, // note: different from CustomDashboardBuilder – distinct purpose
+  'live-dashboard-builder': DashboardBuilder, // note: different from CustomDashboardBuilder – distinct purpose
 
   // Model Hub
   'model-registry': ModelRegistryList,
