@@ -10,6 +10,8 @@ export default function DeepResearchPage() {
   const [sessionId] = useState(() => crypto.randomUUID());
   const [query, setQuery] = useState("");
   const [isResearching, setIsResearching] = useState(false);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { events, isActive } = useResearchStream(
     isResearching ? sessionId : "",
   );

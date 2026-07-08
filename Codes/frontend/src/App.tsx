@@ -42,7 +42,7 @@ import NotFoundPage from './features/NotFoundPage'
 // ========================
 // Terminal & Chat
 import TerminalPanel from './features/terminal/components/TerminalPanel'
-import ChatPanel from './features/chat/components/ChatPanel'
+import { ChatPanel } from './features/chat/components/ChatPanel'
 import FloatingNotesEditor from './features/notes/components/FloatingNotesEditor'
 import PaperEditorPanel from './features/paper/components/PaperEditorPanel'
 

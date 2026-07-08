@@ -77,9 +77,9 @@ export default function MyOrdersPage() {
         <button
           onClick={() => createOrder.mutate(newOrder)}
           className="mt-3 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-          disabled={createOrder.isLoading}
+          disabled={createOrder.isPending}
         >
-          {createOrder.isLoading ? "Placing..." : "Place Order"}
+          {createOrder.isPending ? "Placing..." : "Place Order"}
         </button>
       </div>
 

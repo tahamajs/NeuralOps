@@ -8,6 +8,8 @@ import { Button } from "../../../components/ui/Button";
 import { Select } from "../../../components/ui/Select";
 import { Spinner } from "../../../components/ui/Spinner";
 import { Badge } from "../../../components/ui/Badge";
+import { Modal } from "../../../components/ui/Modal";
+import { Input } from "../../../components/ui/Input";
 import { Bell, Plus, Settings, Trash2 } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
 
@@ -15,7 +17,7 @@ export default function AlertDashboard({ onClose }: { onClose?: () => void }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const [severityFilter, setSeverityFilter] = useState("");
   const [showChannelModal, setShowChannelModal] = useState(false);
-  const [newChannelType, setNewChannelType] = useState("slack");
+  const [newChannelType, setNewChannelType] = useState<"email" | "slack" | "webhook">("slack");
   const [newChannelName, setNewChannelName] = useState("");
   const [newChannelConfig, setNewChannelConfig] = useState("");
   const queryClient = useQueryClient();
@@ -155,7 +157,7 @@ export default function AlertDashboard({ onClose }: { onClose?: () => void }) {
               { value: "webhook", label: "Webhook" },
             ]}
             value={newChannelType}
-            onChange={(e) => setNewChannelType(e.target.value)}
+            onChange={(e) => setNewChannelType(e.target.value as "email" | "slack" | "webhook")}
           />
           <Input
             label="Name"

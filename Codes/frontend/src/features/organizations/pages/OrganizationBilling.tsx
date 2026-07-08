@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import api from "../../api/client";
-import { Card, Button, Spinner, Table } from "../../components/ui";
+import api from "../../../api/client";
+import { Card, Spinner, Button, Badge, Table } from "../../../components/ui";
 import { CreditCard, Download } from "lucide-react";
 
 export function OrganizationBilling({ orgId }: { orgId: string }) {

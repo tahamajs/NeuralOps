@@ -12,6 +12,8 @@ import { Badge } from "../../../components/ui/Badge";
 import { CheckCircle, XCircle, AlertCircle, ArrowLeft } from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
 
+export type ApprovalAction = "approve" | "reject" | "request_changes";
+
 export default function ApprovalRequestView({
   onClose,
 }: {
@@ -90,7 +92,7 @@ export default function ApprovalRequestView({
                   ? "warning"
                   : request.status === "approved"
                     ? "success"
-                    : "danger"
+                    : "failed"
               }
             >
               {request.status}

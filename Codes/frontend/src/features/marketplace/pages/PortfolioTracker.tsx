@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
+
 export function PortfolioTracker() {
   const { data: portfolio } = useQuery({
     queryKey: ["portfolio"],

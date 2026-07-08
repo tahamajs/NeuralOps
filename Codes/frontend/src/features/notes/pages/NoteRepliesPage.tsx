@@ -67,7 +67,7 @@ export default function NoteRepliesPage() {
       </Card>
 
       {replies.length === 0 ? (
-        <EmptyState message="No replies yet." />
+        <EmptyState title="No replies to this note yet." />
       ) : (
         <div className="space-y-3">
           {replies.map((reply: any) => (

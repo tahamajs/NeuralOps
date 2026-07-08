@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { UserProfile, UserStats } from "../types";
 import { useAuthStore } from "../../auth/store/authStore";
 import { Card, Button, Avatar } from "../../../components/ui";
 import {

@@ -33,7 +33,7 @@ export default function NoteVersionsPage() {
       </div>
 
       {versions.length === 0 ? (
-        <EmptyState message="No previous versions yet." />
+        <EmptyState title="No past versions found." />
       ) : (
         <div className="space-y-3">
           {versions.map((v: any) => (

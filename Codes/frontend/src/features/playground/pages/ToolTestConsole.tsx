@@ -24,7 +24,7 @@ export default function ToolTestConsole({ onClose }: { onClose?: () => void }) {
   const testMutation = useMutation({
     mutationFn: () =>
       playgroundAPI.testTool(selectedTool, JSON.parse(inputJson)),
-    onSuccess: (res) => setResult(res.data),
+    onSuccess: (res) => setResult(res),
     onError: () => toastError("Test failed"),
   });
 

@@ -7,6 +7,7 @@ import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { Select } from "../../../components/ui/Select";
 import { Spinner } from "../../../components/ui/Spinner";
+import MonacoEditor from "../../../components/editor/MonacoEditor";
 import {
   useFloatingWindowStore,
   WINDOW_TYPES,

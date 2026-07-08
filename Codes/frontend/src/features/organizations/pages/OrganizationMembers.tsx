@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "../../api/client";
+import api from "../../../api/client";
 import {
   Card,
   Button,
@@ -9,7 +9,7 @@ import {
   Select,
   Spinner,
   Avatar,
-} from "../../components/ui";
+} from "../../../components/ui";
 import { Trash2, Crown, Mail, UserPlus } from "lucide-react";
 
 export function OrganizationMembers({ orgId }: { orgId: string }) {
