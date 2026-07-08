@@ -789,7 +789,7 @@ export const router = createBrowserRouter([
       // Sweeps
       {
         path: "/sweeps/create",
-        element: <SweepCreator onCreated={() => {}} />,
+        element: <SweepCreator />,
       },
       { path: "/sweeps/:sweepId", element: <SweepDashboardPage /> },
 
