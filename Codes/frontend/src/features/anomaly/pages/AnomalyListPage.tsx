@@ -132,8 +132,8 @@ export default function AnomalyListPage({ onClose }: { onClose?: () => void }) {
 
   if (isLoading) return <Spinner />;
 
-  const anomalies = data?.results || [];
-  const totalPages = Math.ceil((data?.count || 0) / 20);
+  const anomalies = (data as any)?.results || [];
+  const totalPages = Math.ceil(((data as any)?.count || 0) / 20);
 
   return (
     <div className="flex flex-col h-full">

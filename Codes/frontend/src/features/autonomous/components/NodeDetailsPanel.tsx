@@ -48,7 +48,7 @@ export function NodeDetailsPanel({
               : displayStep.status === "completed"
                 ? "success"
                 : displayStep.status === "failed"
-                  ? "danger"
+                  ? "failed"
                   : "secondary"
           }
         >

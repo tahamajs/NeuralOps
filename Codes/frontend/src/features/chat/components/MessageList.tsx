@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { FixedSizeList as List } from "react-window";
-import { Message } from "../store/chatStore";
+type Message = any;
 import { Avatar } from "../../../components/ui/Avatar";
 import { Bot, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -32,7 +32,9 @@ export function MessageList({ messages }: MessageListProps) {
         className={`flex gap-3 p-4 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
       >
         {msg.role === "assistant" && (
-          <Avatar icon={<Bot size={20} />} className="bg-neon-blue/20" />
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-neon-blue/20">
+            <Bot size={20} />
+          </div>
         )}
         <div
           className={`max-w-[80%] rounded-xl p-3 ${msg.role === "user" ? "bg-neon-blue/20 text-white" : "bg-white/5 text-slate-300"}`}
@@ -53,7 +55,9 @@ export function MessageList({ messages }: MessageListProps) {
           </div>
         </div>
         {msg.role === "user" && (
-          <Avatar icon={<User size={20} />} className="bg-slate-700" />
+          <div className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-700">
+            <User size={20} />
+          </div>
         )}
       </div>
     );

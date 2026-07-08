@@ -40,7 +40,7 @@ export function useChat() {
       try {
         const token = localStorage.getItem("token");
         const ws = new WebSocket(
-          `${import.meta.env.VITE_WS_URL || "ws://localhost:8000"}/ws/chat/?token=${token}`,
+          `${(import.meta as any).env.VITE_WS_URL || "ws://localhost:8000"}/ws/chat/?token=${token}`,
         );
         ws.onopen = () => {
           ws.send(

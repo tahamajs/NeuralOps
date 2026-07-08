@@ -21,11 +21,13 @@ export default function AnomalyDetailPage({
   const queryClient = useQueryClient();
   const { success, error } = useToast();
 
-  const { data: anomaly, isLoading } = useQuery({
+  const { data: anomalyRaw, isLoading } = useQuery({
     queryKey: ["anomaly", anomalyId],
     queryFn: () => anomalyAPI.getAnomaly(anomalyId!),
     enabled: !!anomalyId,
   });
+
+  const anomaly = (anomalyRaw as any);
 
   const resolveMutation = useMutation({
     mutationFn: () => anomalyAPI.resolveAnomaly(anomalyId!, true),

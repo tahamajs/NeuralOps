@@ -9,7 +9,7 @@ export function ConversationSidebar({ className }: { className?: string }) {
     addConversation,
     setActiveConversation,
     removeConversation,
-  } = useChatStore();
+  } = useChatStore() as any;
 
   return (
     <div className={cn("glass rounded-2xl p-2", className)}>
