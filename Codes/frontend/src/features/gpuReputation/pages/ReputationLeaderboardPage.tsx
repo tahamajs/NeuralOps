@@ -51,7 +51,7 @@ export default function ReputationLeaderboardPage() {
                 <td>{entry.successful_verifications}</td>
                 <td>
                   <Badge variant={entry.slashings > 0 ? "danger" : "success"}>
-                    {entry.slashings} events
+                    {entry.slashings > 0 ? "failed" : "success"}
                   </Badge>
                 </td>
               </tr>

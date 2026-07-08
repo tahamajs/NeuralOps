@@ -2,7 +2,7 @@ import { useHardware } from "../context/HardwareContext";
 import { Card } from "../../../components/ui/Card";
 
 export const SystemResourcesWidget = () => {
-  const { metrics, error } = useHardware();
+  const { metrics, error } = useHardware() as any;
 
   if (error) return null;
 

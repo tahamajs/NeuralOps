@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../../../features/auth/store/authStore";
+import { request as api } from "../../../api/client";
 import {
   Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
+  TabPanel as TabsContent,
+  TabList as TabsList,
+  Tab as TabsTrigger,
 } from "../../../components/ui/Tabs";
 import {
   Card,
@@ -33,6 +34,7 @@ import {
   Cpu,
   HardDrive,
   Wifi,
+  Brain,
   Eye,
   ShieldCheck,
   Gavel,
