@@ -16,6 +16,7 @@ import { Toaster } from './components/ui/Toast'
 // 1. Core / Layout Pages (used in Router)
 // ========================
 import LandingPage from './features/auth/pages/LandingPage'
+import DocsPage from './features/auth/pages/DocsPage'
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
 import DashboardPage from './features/dashboard/pages/DashboardPage'
@@ -395,6 +396,7 @@ function App() {
           <BrowserRouter>
             <Routes>
               <Route index element={<LandingPage />} />
+              <Route path="/docs" element={<DocsPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route element={<MainLayout />}>
