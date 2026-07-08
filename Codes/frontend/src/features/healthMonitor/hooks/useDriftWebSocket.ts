@@ -6,7 +6,7 @@ export function useDriftWebSocket(monitorId?: string) {
   const [driftChecks, setDriftChecks] = useState<DriftCheck[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const { token } = useAuthStore();
+  const { token } = useAuthStore() as any;
 
   const connect = useCallback(() => {
     if (!monitorId) return;

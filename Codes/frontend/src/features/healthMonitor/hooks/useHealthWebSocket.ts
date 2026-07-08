@@ -8,7 +8,7 @@ export function useHealthWebSocket(dashboardId?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { token } = useAuthStore();
+  const { token } = useAuthStore() as any;
 
   const connect = useCallback(() => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";

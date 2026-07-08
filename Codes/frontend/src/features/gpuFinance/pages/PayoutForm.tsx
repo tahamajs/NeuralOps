@@ -8,7 +8,7 @@ import { useToast } from "../../../components/ui/Toast";
 
 export function PayoutForm({ open, onClose, onSuccess }: any) {
   const [amount, setAmount] = useState(0);
-  const [method, setMethod] = useState("bank_transfer");
+  const [method, setMethod] = useState<"bank_transfer" | "crypto" | "paypal">("bank_transfer");
   const { success, error } = useToast();
 
   const handleSubmit = async () => {

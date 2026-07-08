@@ -20,7 +20,7 @@ interface GPUMarketData {
 
 export function GPUMarketOverview() {
   const [marketData, setMarketData] = useState<GPUMarketData[]>([]);
-  const { lastMessage } = useWebSocket("/ws/market/");
+  const { lastMessage } = useWebSocket("/ws/market/") as any;
 
   useEffect(() => {
     if ((lastMessage as any)?.data) {
