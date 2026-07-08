@@ -11,7 +11,8 @@ import {
   FileText,
   FlaskConical,
 } from "lucide-react";
-import { cn } from "../../../../lib/utils";
+import { cn } from "@/lib/utils";
+import { ReviewRequest } from "../types";
 
 interface ReviewRequestCardProps {
   request: ReviewRequest;
