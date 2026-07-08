@@ -15,7 +15,7 @@ export default function ResearchAgentChat({
   const [currentStream, setCurrentStream] = useState("");
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const token = useAuthStore((s) => s.token);
+  const token = useAuthStore((s: any) => s.token);
 
   useEffect(() => {
     const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/agent/${sessionId}/?token=${token}`;

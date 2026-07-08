@@ -26,7 +26,7 @@ export const annotationAPI = {
     ),
   getItem: (itemId: string) =>
     api.get<AnnotationItem>(`/annotation/items/${itemId}/`),
-  saveAnnotation: (itemId: string, annotation: Partial<Annotation>) =>
+  saveAnnotation: (itemId: string, annotation: Partial<any>) =>
     api.post(`/annotation/items/${itemId}/annotations/`, annotation),
   submitItem: (itemId: string) =>
     api.post(`/annotation/items/${itemId}/submit/`),

@@ -54,6 +54,8 @@ export default function AIPreLabelingPanel({
     onSuccess: () => success("Pre‑label applied"),
   });
 
+  const statusObj = (preLabelStatus as any)?.data || preLabelStatus;
+
   if (!project) return <Spinner />;
 
   return (
@@ -119,14 +121,14 @@ export default function AIPreLabelingPanel({
             </div>
           </div>
         </TerminalCard>
-        <PreLabelProgress progress={preLabelProgress} status={preLabelStatus} />
-        {preLabelStatus?.items && (
+        <PreLabelProgress progress={preLabelProgress} status={statusObj} />
+        {statusObj?.items && (
           <TerminalCard className="p-4">
             <h3 className="text-sm font-bold text-white mb-2">
               Pre‑labeled Items
             </h3>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {preLabelStatus.items.slice(0, 10).map((item: any) => (
+              {statusObj.items.slice(0, 10).map((item: any) => (
                 <div
                   key={item.id}
                   className="flex justify-between items-center p-2 rounded bg-white/5"

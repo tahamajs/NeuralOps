@@ -36,7 +36,7 @@ export function useAgentChat(sessionId?: string) {
     if (!sessionId) return;
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const host =
-      import.meta.env.VITE_WS_URL || `${protocol}://${window.location.host}`;
+      (import.meta as any).env.VITE_WS_URL || `${protocol}://${window.location.host}`;
     setWsStatus("connecting");
     const ws = new WebSocket(`${host}/ws/agent/${sessionId}/`);
 

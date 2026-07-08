@@ -57,7 +57,7 @@ export default function PaperLibraryPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState message="No papers saved. Ask the agent to search for papers and save them!" />
+        <EmptyState title="No papers saved. Ask the agent to search for papers and save them!" />
       ) : (
         <div className="grid gap-4">
           {filtered.map((paper: any) => (

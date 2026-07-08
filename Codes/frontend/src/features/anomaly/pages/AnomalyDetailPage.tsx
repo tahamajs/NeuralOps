@@ -86,9 +86,9 @@ export default function AnomalyDetailPage({
             <Badge
               variant={
                 anomaly.severity === "critical"
-                  ? "danger"
+                  ? "failed"
                   : anomaly.severity === "high"
-                    ? "danger"
+                    ? "failed"
                     : anomaly.severity === "medium"
                       ? "warning"
                       : "info"

@@ -23,8 +23,10 @@ export function SuggestedFixes({ anomalyId }: { anomalyId: string }) {
     onError: () => error("Failed to apply fix"),
   });
 
+  const fixesData = (fixes as any)?.data || fixes;
+
   if (isLoading) return <Spinner size="sm" />;
-  if (!fixes?.length)
+  if (!fixesData?.length)
     return (
       <div className="text-slate-500 text-sm">
         No automatic fixes available.
@@ -33,7 +35,7 @@ export function SuggestedFixes({ anomalyId }: { anomalyId: string }) {
 
   return (
     <div className="space-y-3">
-      {fixes.map((fix) => (
+      {fixesData.map((fix: any) => (
         <TerminalCard key={fix.id} className="p-4">
           <div className="flex justify-between items-start">
             <div>

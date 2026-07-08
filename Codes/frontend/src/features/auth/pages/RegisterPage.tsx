@@ -17,7 +17,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setAuth = useAuthStore((s: any) => s.setAuth);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {

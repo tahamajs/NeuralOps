@@ -41,7 +41,7 @@ export default function AnnotationProjectList({
   });
 
   const createProject = useMutation({
-    mutationFn: () => annotationAPI.createProject(newProject),
+    mutationFn: () => annotationAPI.createProject(newProject as any),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["annotation-projects"] });
       setShowCreateModal(false);
@@ -50,8 +50,10 @@ export default function AnnotationProjectList({
     },
   });
 
+  const projectsData = (projects as any)?.data || projects;
+
   const filtered =
-    projects?.filter((p) =>
+    projectsData?.filter((p: any) =>
       p.name.toLowerCase().includes(search.toLowerCase()),
     ) || [];
 
@@ -94,7 +96,7 @@ export default function AnnotationProjectList({
       </div>
       <div className="flex-1 overflow-auto p-4">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((p) => (
+          {filtered.map((p: any) => (
             <ProjectCard key={p.id} project={p} />
           ))}
         </div>

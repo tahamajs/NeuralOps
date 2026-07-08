@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
-import { useLocalStorage } from "../../../hooks/useLocalStorage";
+import { useLocalStorage } from "../../hooks/useLocalStorage";
 
 export function ThemeToggle() {
   const [theme, setTheme] = useLocalStorage<"dark" | "light">("theme", "dark");

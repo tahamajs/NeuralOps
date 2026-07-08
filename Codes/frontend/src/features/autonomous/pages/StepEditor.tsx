@@ -37,10 +37,10 @@ export default function StepEditor({ onClose }: { onClose?: () => void }) {
       definitionId
         ? autonomousAPI.updateWorkflowDefinition(definitionId, definition)
         : autonomousAPI.createWorkflowDefinition(definition),
-    onSuccess: (saved) => {
+    onSuccess: (saved: any) => {
       queryClient.invalidateQueries({ queryKey: ["workflow-definitions"] });
       success("Workflow saved");
-      navigate(`/autonomous/definitions/${saved.id}`);
+      navigate(`/autonomous/definitions/${saved.data?.id || saved.id}`);
     },
   });
 
