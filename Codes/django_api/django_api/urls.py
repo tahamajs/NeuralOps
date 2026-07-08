@@ -14,7 +14,7 @@ from django.urls import include, path
 # Local imports – adjust paths if your apps live elsewhere
 # ----------------------------------------------------------------------
 from experiment import views as experiment_views
-from social.consumers import CollaborationConsumer  # WebSocket consumer
+from paper.consumers import CollaborationConsumer  # WebSocket consumer
 from sweeps import views as sweeps_views
 
 

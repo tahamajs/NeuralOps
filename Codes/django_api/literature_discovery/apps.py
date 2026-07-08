@@ -6,4 +6,5 @@ class LiteratureDiscoveryConfig(AppConfig):
     name = "literature_discovery"
 
     def ready(self):
-        import literature_discovery.signals  # noqa
+        # import literature_discovery.signals  # noqa
+        pass
