@@ -17,7 +17,7 @@ export function EndpointCard({ endpoint, onRefresh }: any) {
               endpoint.status === "running"
                 ? "success"
                 : endpoint.status === "failed"
-                  ? "danger"
+                  ? "failed"
                   : "warning"
             }
             className="mt-1"

@@ -87,7 +87,7 @@ export function useLiveDashboard(
         liveDashboardsAPI
           .fetchWidgetData(widget.id, widget.data_source.params)
           .then((res) =>
-            setLiveData((prev) => ({ ...prev, [widget.id]: res.data })),
+            setLiveData((prev) => ({ ...prev, [widget.id]: res })),
           )
           .catch(console.error);
       });

@@ -39,10 +39,10 @@ export default function LauncherPage() {
     mutationFn: async () => {
       const endpoint =
         tab === "training"
-          ? ENDPOINTS.EXPERIMENTS.TRAIN
+          ? ENDPOINTS.EXPERIMENTS.START_TRAIN
           : tab === "evaluation"
-            ? ENDPOINTS.EXPERIMENTS.EVALUATE
-            : ENDPOINTS.EXPERIMENTS.COMPRESS;
+            ? ENDPOINTS.EXPERIMENTS.START_EVALUATE
+            : ENDPOINTS.EXPERIMENTS.START_COMPRESS;
       const res = await api.post(endpoint, form);
       return res.data;
     },
