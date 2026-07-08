@@ -1,19 +1,19 @@
-import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Spinner } from '../../../components/ui/Spinner'
-import { LiveLossPlot } from '../../../components/widgets/LiveLossPlot'
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Spinner } from "../../../components/ui/Spinner";
+import { LiveLossPlot } from "../../../components/widgets/LiveLossPlot";
 
 export default function TrainingSnapshotsPage() {
-  const { runId } = useParams<{ runId: string }>()
+  const { runId } = useParams<{ runId: string }>();
   const { data, isLoading } = useQuery({
-    queryKey: ['trainingSnapshots', runId],
+    queryKey: ["trainingSnapshots", runId],
     queryFn: async () => (await api.get(`/api/runs/${runId}/snapshots/`)).data,
-  })
+  });
 
-  if (isLoading) return <Spinner />
-  const snapshots = data || []
+  if (isLoading) return <Spinner />;
+  const snapshots = data || [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -49,8 +49,12 @@ export default function TrainingSnapshotsPage() {
                       <td className="py-1 px-2">{s.step}</td>
                       <td className="py-1 px-2">{s.train_loss?.toFixed(4)}</td>
                       <td className="py-1 px-2">{s.eval_loss?.toFixed(4)}</td>
-                      <td className="py-1 px-2">{s.eval_accuracy?.toFixed(4)}</td>
-                      <td className="py-1 px-2">{s.learning_rate?.toExponential(2)}</td>
+                      <td className="py-1 px-2">
+                        {s.eval_accuracy?.toFixed(4)}
+                      </td>
+                      <td className="py-1 px-2">
+                        {s.learning_rate?.toExponential(2)}
+                      </td>
                       <td className="py-1 px-2">{s.cpu_percent}%</td>
                     </tr>
                   ))}
@@ -61,5 +65,5 @@ export default function TrainingSnapshotsPage() {
         )}
       </Card>
     </div>
-  )
+  );
 }

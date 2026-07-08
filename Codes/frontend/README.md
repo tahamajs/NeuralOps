@@ -55,57 +55,57 @@ It integrates the entire ML lifecycle – from literature search to model deploy
 
 ### Experiment Platform
 
-| Feature | Status |
-|---------|--------|
-| **Dashboard** – KPI cards, recent experiments table, active jobs widget, system monitor | ✅ |
-| **Experiment Launcher** – Model, task, attention, method pickers with presets | ✅ |
-| **Live Monitoring** – Real‑time loss charts, progress bar with ETA, log viewer via WebSocket | ✅ |
-| **Run Comparison** – Config diff table, multi‑run metric overlay, parallel coordinates | ✅ |
-| **Custom Metrics** – Plotly scalars, image gallery, tables | ✅ |
-| **Configuration History** – Versioned snapshots with diff viewer | ✅ |
-| **Hyperparameter Sweeps** – Optuna‑powered with TPE, SMAC3, Hyperband pruning | ✅ |
+| Feature                                                                                      | Status |
+| -------------------------------------------------------------------------------------------- | ------ |
+| **Dashboard** – KPI cards, recent experiments table, active jobs widget, system monitor      | ✅     |
+| **Experiment Launcher** – Model, task, attention, method pickers with presets                | ✅     |
+| **Live Monitoring** – Real‑time loss charts, progress bar with ETA, log viewer via WebSocket | ✅     |
+| **Run Comparison** – Config diff table, multi‑run metric overlay, parallel coordinates       | ✅     |
+| **Custom Metrics** – Plotly scalars, image gallery, tables                                   | ✅     |
+| **Configuration History** – Versioned snapshots with diff viewer                             | ✅     |
+| **Hyperparameter Sweeps** – Optuna‑powered with TPE, SMAC3, Hyperband pruning                | ✅     |
 
 ### AI Research Assistant
 
-| Feature | Description |
-|---------|-------------|
-| **Conversational Chat** | Ask questions, get experiment suggestions, and receive real‑time help |
-| **Paper Search** | Search Semantic Scholar, arXiv, OpenAlex, and Consensus for relevant papers |
-| **Citation Graph** | Build interactive citation networks for discovered papers |
-| **Paper Library** | Save, tag, and annotate papers for future reference |
-| **Training Analysis** | Auto‑detect overfitting, plateau, divergence, and suggest fixes |
-| **Auto‑Note Generation** | Generate rich Markdown notes with loss charts at training checkpoints |
-| **Auto‑Stop** | Automatically halt diverging experiments to save GPU hours |
-| **Prompt Testing** | Test prompt templates against multiple test cases |
+| Feature                  | Description                                                                 |
+| ------------------------ | --------------------------------------------------------------------------- |
+| **Conversational Chat**  | Ask questions, get experiment suggestions, and receive real‑time help       |
+| **Paper Search**         | Search Semantic Scholar, arXiv, OpenAlex, and Consensus for relevant papers |
+| **Citation Graph**       | Build interactive citation networks for discovered papers                   |
+| **Paper Library**        | Save, tag, and annotate papers for future reference                         |
+| **Training Analysis**    | Auto‑detect overfitting, plateau, divergence, and suggest fixes             |
+| **Auto‑Note Generation** | Generate rich Markdown notes with loss charts at training checkpoints       |
+| **Auto‑Stop**            | Automatically halt diverging experiments to save GPU hours                  |
+| **Prompt Testing**       | Test prompt templates against multiple test cases                           |
 
 ### Collaboration & Knowledge Management
 
-| Feature | Description |
-|---------|-------------|
-| **Research Notebook** | Tiptap‑based rich text editor with Markdown, reactions, sharing, version history |
-| **Paper Editor** | Monaco‑based LaTeX editor with PDF compilation (Overleaf‑style) |
-| **Integrated Terminal** | xterm.js floating terminal with PTY backend, auto‑reconnect, quick commands |
-| **Webhooks** | Configure webhook subscriptions for note events |
-| **Activity Feed** | Platform‑wide audit log of all actions |
+| Feature                 | Description                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| **Research Notebook**   | Tiptap‑based rich text editor with Markdown, reactions, sharing, version history |
+| **Paper Editor**        | Monaco‑based LaTeX editor with PDF compilation (Overleaf‑style)                  |
+| **Integrated Terminal** | xterm.js floating terminal with PTY backend, auto‑reconnect, quick commands      |
+| **Webhooks**            | Configure webhook subscriptions for note events                                  |
+| **Activity Feed**       | Platform‑wide audit log of all actions                                           |
 
 ### Model Operations
 
-| Feature | Description |
-|---------|-------------|
-| **Model Registry** | Staging → production → archive lifecycle |
-| **Model Versioning** | Automatic version creation on run completion |
-| **HuggingFace Publishing** | One‑click publish to HuggingFace Hub |
-| **Model Cards** | Auto‑generated model cards from run metadata |
-| **Lineage Graph** | Full data → code → model ancestry visualization |
+| Feature                    | Description                                     |
+| -------------------------- | ----------------------------------------------- |
+| **Model Registry**         | Staging → production → archive lifecycle        |
+| **Model Versioning**       | Automatic version creation on run completion    |
+| **HuggingFace Publishing** | One‑click publish to HuggingFace Hub            |
+| **Model Cards**            | Auto‑generated model cards from run metadata    |
+| **Lineage Graph**          | Full data → code → model ancestry visualization |
 
 ### Cluster & Administration
 
-| Feature | Description |
-|---------|-------------|
+| Feature                   | Description                                            |
+| ------------------------- | ------------------------------------------------------ |
 | **GPU Cluster Dashboard** | Utilization heatmap, per‑node metrics, job queue depth |
-| **Job Management** | Bulk delete, stop all, priority scheduling |
-| **Admin Panel** | Django Admin integration, system health monitoring |
-| **Statistics** | Platform‑wide analytics with model and task usage |
+| **Job Management**        | Bulk delete, stop all, priority scheduling             |
+| **Admin Panel**           | Django Admin integration, system health monitoring     |
+| **Statistics**            | Platform‑wide analytics with model and task usage      |
 
 ---
 
@@ -113,31 +113,31 @@ It integrates the entire ML lifecycle – from literature search to model deploy
 
 ### Backend (Python)
 
-| Component | Technology |
-|-----------|------------|
-| Framework | Django 4.2 + Django REST Framework |
-| Async server | Daphne (WebSocket support) |
-| Real‑time | Django Channels |
-| Task queue | Celery + Redis |
-| Hyperparameter optimization | Optuna 4.2 |
-| LaTeX compilation | pdflatex / xelatex / lualatex |
-| Code versioning | GitPython |
-| Database | PostgreSQL (production) / SQLite (development) |
+| Component                   | Technology                                     |
+| --------------------------- | ---------------------------------------------- |
+| Framework                   | Django 4.2 + Django REST Framework             |
+| Async server                | Daphne (WebSocket support)                     |
+| Real‑time                   | Django Channels                                |
+| Task queue                  | Celery + Redis                                 |
+| Hyperparameter optimization | Optuna 4.2                                     |
+| LaTeX compilation           | pdflatex / xelatex / lualatex                  |
+| Code versioning             | GitPython                                      |
+| Database                    | PostgreSQL (production) / SQLite (development) |
 
 ### Frontend (TypeScript)
 
-| Component | Technology |
-|-----------|------------|
-| Framework | React 18 |
+| Component        | Technology                              |
+| ---------------- | --------------------------------------- |
+| Framework        | React 18                                |
 | State management | Zustand (client) + React Query (server) |
-| Routing | React Router 6 (lazy‑loaded routes) |
-| Styling | Tailwind CSS 3 + custom glassmorphism |
-| Charts | Plotly.js |
-| Code editor | Monaco Editor |
-| Terminal | xterm.js |
-| Rich text | Tiptap |
-| HTTP | Axios with interceptors |
-| WebSocket | Custom hook with auto‑reconnect |
+| Routing          | React Router 6 (lazy‑loaded routes)     |
+| Styling          | Tailwind CSS 3 + custom glassmorphism   |
+| Charts           | Plotly.js                               |
+| Code editor      | Monaco Editor                           |
+| Terminal         | xterm.js                                |
+| Rich text        | Tiptap                                  |
+| HTTP             | Axios with interceptors                 |
+| WebSocket        | Custom hook with auto‑reconnect         |
 
 ---
 
@@ -212,12 +212,14 @@ npm install
 ### Development
 
 Start the backend (with WebSocket support):
+
 ```bash
 cd backend
 daphne django_api.asgi:application
 ```
 
 In a separate terminal, start the frontend:
+
 ```bash
 cd frontend
 npm run dev
@@ -241,20 +243,20 @@ Open **http://localhost:3000** and log in with your superuser credentials.
 
 All endpoints are prefixed with `/api/`. Key groups:
 
-| Group | Base Path | Description |
-|-------|-----------|-------------|
-| Auth | `/api/auth/` | Login, register, logout, profile, password change |
-| Experiments | `/api/experiments/` | CRUD, start/stop, compare, diff, reproducibility |
-| Jobs | `/api/jobs/` | Job queue, scheduling, config history, custom metrics |
-| Notes | `/api/notes/` | Full notebook CRUD, versioning, reactions, webhooks |
-| Agent | `/api/agents/` | Chat sessions, paper search, library, citation graph, training analysis |
-| Sweeps | `/api/sweeps/` | Create sweeps, list trials, importance plots |
-| Model Registry | `/api/model-versioning/` | Model lifecycle, download, publish |
-| Paper | `/api/paper/` | LaTeX projects, compile, output PDF/log |
-| Terminal | `/api/terminal/` | Active sessions, kill session |
-| Cluster | `/api/loadbalancer/` | GPU allocator status, scheduler queue, cluster nodes |
-| Config | `/api/config/` | Available models, tasks, attentions, compressors |
-| Health | `/api/health/` | Backend health check |
+| Group          | Base Path                | Description                                                             |
+| -------------- | ------------------------ | ----------------------------------------------------------------------- |
+| Auth           | `/api/auth/`             | Login, register, logout, profile, password change                       |
+| Experiments    | `/api/experiments/`      | CRUD, start/stop, compare, diff, reproducibility                        |
+| Jobs           | `/api/jobs/`             | Job queue, scheduling, config history, custom metrics                   |
+| Notes          | `/api/notes/`            | Full notebook CRUD, versioning, reactions, webhooks                     |
+| Agent          | `/api/agents/`           | Chat sessions, paper search, library, citation graph, training analysis |
+| Sweeps         | `/api/sweeps/`           | Create sweeps, list trials, importance plots                            |
+| Model Registry | `/api/model-versioning/` | Model lifecycle, download, publish                                      |
+| Paper          | `/api/paper/`            | LaTeX projects, compile, output PDF/log                                 |
+| Terminal       | `/api/terminal/`         | Active sessions, kill session                                           |
+| Cluster        | `/api/loadbalancer/`     | GPU allocator status, scheduler queue, cluster nodes                    |
+| Config         | `/api/config/`           | Available models, tasks, attentions, compressors                        |
+| Health         | `/api/health/`           | Backend health check                                                    |
 
 ---
 
@@ -271,21 +273,21 @@ All endpoints are prefixed with `/api/`. Key groups:
 
 The conversational assistant has access to these tools:
 
-| Tool | Description |
-|------|-------------|
-| `search_papers` | Search Semantic Scholar, arXiv, OpenAlex, Consensus |
-| `get_paper_details` | Get full paper metadata |
-| `get_citation_graph` | Build citation network |
-| `save_paper` | Save to library |
-| `search_library` | Search saved papers |
-| `configure_experiment` | Draft experiment configuration |
-| `launch_experiment` | Launch training (with confirmation) |
-| `analyze_training` | Detect overfitting, plateau, divergence |
-| `suggest_next_experiment` | Recommend next hyperparameters |
-| `read_latex_project` | Read LaTeX project files |
-| `edit_latex_file` | Edit LaTeX files |
-| `compile_latex` | Compile to PDF |
-| `test_prompt_template` | Test prompt templates |
+| Tool                      | Description                                         |
+| ------------------------- | --------------------------------------------------- |
+| `search_papers`           | Search Semantic Scholar, arXiv, OpenAlex, Consensus |
+| `get_paper_details`       | Get full paper metadata                             |
+| `get_citation_graph`      | Build citation network                              |
+| `save_paper`              | Save to library                                     |
+| `search_library`          | Search saved papers                                 |
+| `configure_experiment`    | Draft experiment configuration                      |
+| `launch_experiment`       | Launch training (with confirmation)                 |
+| `analyze_training`        | Detect overfitting, plateau, divergence             |
+| `suggest_next_experiment` | Recommend next hyperparameters                      |
+| `read_latex_project`      | Read LaTeX project files                            |
+| `edit_latex_file`         | Edit LaTeX files                                    |
+| `compile_latex`           | Compile to PDF                                      |
+| `test_prompt_template`    | Test prompt templates                               |
 
 ---
 

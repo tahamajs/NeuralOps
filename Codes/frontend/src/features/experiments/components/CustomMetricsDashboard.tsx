@@ -1,75 +1,91 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import Plot from 'react-plotly.js'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Button } from '../../../components/ui/Button'
-import { Spinner } from '../../../components/ui/Spinner'
+import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import Plot from "react-plotly.js";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Spinner } from "../../../components/ui/Spinner";
 
 interface MetricGroup {
-  steps: number[]
-  values: any[]
-  type: 'scalar' | 'image' | 'table'
+  steps: number[];
+  values: any[];
+  type: "scalar" | "image" | "table";
 }
 
 interface MetricsData {
-  [name: string]: MetricGroup
+  [name: string]: MetricGroup;
 }
 
 interface CustomMetricsDashboardProps {
-  runId: string
+  runId: string;
 }
 
-export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboardProps) {
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([])
-  const [autoRefresh, setAutoRefresh] = useState(true)
-  const [fullImage, setFullImage] = useState<{ src: string; title: string } | null>(null)
+export default function CustomMetricsDashboard({
+  runId,
+}: CustomMetricsDashboardProps) {
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [fullImage, setFullImage] = useState<{
+    src: string;
+    title: string;
+  } | null>(null);
 
-  const { data: metrics, isLoading, isError, error, refetch } = useQuery<MetricsData>({
-    queryKey: ['customMetrics', runId],
+  const {
+    data: metrics,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery<MetricsData>({
+    queryKey: ["customMetrics", runId],
     queryFn: async () => {
-      const res = await api.get(`/api/runs/${runId}/metrics/`)
-      return res.data
+      const res = await api.get(`/api/runs/${runId}/metrics/`);
+      return res.data;
     },
     enabled: !!runId,
     refetchInterval: autoRefresh ? 10000 : false,
-  })
+  });
 
   // Auto-refresh toggle doesn't need effect; it's handled by `refetchInterval`
 
   const scalarMetrics = metrics
-    ? Object.entries(metrics).filter(([_, group]) => group.type === 'scalar')
-    : []
+    ? Object.entries(metrics).filter(([_, group]) => group.type === "scalar")
+    : [];
 
   const imageMetrics = metrics
-    ? Object.entries(metrics).filter(([_, group]) => group.type === 'image')
-    : []
+    ? Object.entries(metrics).filter(([_, group]) => group.type === "image")
+    : [];
 
   const tableMetrics = metrics
-    ? Object.entries(metrics).filter(([_, group]) => group.type === 'table')
-    : []
+    ? Object.entries(metrics).filter(([_, group]) => group.type === "table")
+    : [];
 
   const handleMetricToggle = (name: string) => {
-    setSelectedMetrics(prev =>
-      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
-    )
-  }
+    setSelectedMetrics((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+    );
+  };
 
   // Build Plotly traces
   const chartData = selectedMetrics
-    .filter(name => metrics?.[name]?.type === 'scalar')
-    .map(name => ({
+    .filter((name) => metrics?.[name]?.type === "scalar")
+    .map((name) => ({
       x: metrics![name].steps,
       y: metrics![name].values,
-      type: 'scatter' as const,
-      mode: 'lines+markers' as const,
+      type: "scatter" as const,
+      mode: "lines+markers" as const,
       name,
       line: { width: 2 },
       marker: { size: 4 },
-    }))
+    }));
 
-  if (isLoading) return <Spinner className="py-8" />
-  if (isError) return <p className="text-red-400 text-sm">Failed to load metrics: {(error as any)?.message}</p>
+  if (isLoading) return <Spinner className="py-8" />;
+  if (isError)
+    return (
+      <p className="text-red-400 text-sm">
+        Failed to load metrics: {(error as any)?.message}
+      </p>
+    );
   if (!metrics || Object.keys(metrics).length === 0) {
     return (
       <Card>
@@ -77,9 +93,11 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
           <span className="w-1 h-4 bg-purple-500 rounded-full" />
           Custom Metrics Dashboard
         </h3>
-        <p className="text-slate-500 text-sm">No custom metrics have been logged for this run yet.</p>
+        <p className="text-slate-500 text-sm">
+          No custom metrics have been logged for this run yet.
+        </p>
       </Card>
-    )
+    );
   }
 
   return (
@@ -92,10 +110,10 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
         <div className="flex gap-2">
           <Button
             size="sm"
-            variant={autoRefresh ? 'secondary' : 'ghost'}
+            variant={autoRefresh ? "secondary" : "ghost"}
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
-            Auto {autoRefresh ? 'On' : 'Off'}
+            Auto {autoRefresh ? "On" : "Off"}
           </Button>
           <Button size="sm" variant="ghost" onClick={() => refetch()}>
             Refresh Now
@@ -116,8 +134,8 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
                   key={name}
                   className={`flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors ${
                     selectedMetrics.includes(name)
-                      ? 'bg-neon-blue/10 text-neon-blue'
-                      : 'hover:bg-white/5 text-slate-400'
+                      ? "bg-neon-blue/10 text-neon-blue"
+                      : "hover:bg-white/5 text-slate-400"
                   }`}
                 >
                   <input
@@ -147,14 +165,19 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
                   autosize: true,
                   height: 350,
                   margin: { t: 20, r: 20, b: 40, l: 50 },
-                  paper_bgcolor: 'transparent',
-                  plot_bgcolor: 'transparent',
-                  font: { color: '#94a3b8' },
-                  legend: { x: 1, y: 1, xanchor: 'right', bgcolor: 'rgba(0,0,0,0.5)' },
-                  hovermode: 'closest',
+                  paper_bgcolor: "transparent",
+                  plot_bgcolor: "transparent",
+                  font: { color: "#94a3b8" },
+                  legend: {
+                    x: 1,
+                    y: 1,
+                    xanchor: "right",
+                    bgcolor: "rgba(0,0,0,0.5)",
+                  },
+                  hovermode: "closest",
                 }}
                 useResizeHandler
-                style={{ width: '100%' }}
+                style={{ width: "100%" }}
               />
             ) : (
               <div className="flex items-center justify-center h-[350px] text-slate-500 text-sm">
@@ -168,12 +191,14 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
       {/* Image Gallery */}
       {imageMetrics.length > 0 && (
         <div className="mb-6">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Logged Images</h4>
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+            Logged Images
+          </h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {imageMetrics.map(([name, group]) => {
               // Show the last image for each metric
-              const lastImg = group.values[group.values.length - 1]
-              const lastStep = group.steps[group.steps.length - 1]
+              const lastImg = group.values[group.values.length - 1];
+              const lastStep = group.steps[group.steps.length - 1];
               return (
                 <div
                   key={name}
@@ -194,7 +219,7 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
                     {name} (step {lastStep})
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </div>
@@ -203,19 +228,26 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
       {/* Tables */}
       {tableMetrics.length > 0 && (
         <div>
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Logged Tables</h4>
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+            Logged Tables
+          </h4>
           {tableMetrics.map(([name, group]) => {
-            const lastTable = group.values[group.values.length - 1]
-            const headers = Object.keys(lastTable)
+            const lastTable = group.values[group.values.length - 1];
+            const headers = Object.keys(lastTable);
             return (
               <div key={name} className="mb-4">
-                <h5 className="text-sm font-semibold text-white mb-2">{name}</h5>
+                <h5 className="text-sm font-semibold text-white mb-2">
+                  {name}
+                </h5>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs border border-white/10 rounded-lg overflow-hidden">
                     <thead>
                       <tr className="bg-cyber-700">
-                        {headers.map(h => (
-                          <th key={h} className="px-3 py-2 text-left text-slate-400 font-medium">
+                        {headers.map((h) => (
+                          <th
+                            key={h}
+                            className="px-3 py-2 text-left text-slate-400 font-medium"
+                          >
                             {h}
                           </th>
                         ))}
@@ -223,7 +255,7 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
                     </thead>
                     <tbody>
                       <tr className="border-t border-white/5">
-                        {headers.map(h => (
+                        {headers.map((h) => (
                           <td key={h} className="px-3 py-2 text-white">
                             {String(lastTable[h])}
                           </td>
@@ -233,13 +265,14 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
                   </table>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       )}
 
       <div className="text-[10px] text-slate-500 mt-4 text-center">
-        {autoRefresh ? 'Auto-refreshing every 10s' : 'Auto-refresh off'} · Last updated: {new Date().toLocaleTimeString()}
+        {autoRefresh ? "Auto-refreshing every 10s" : "Auto-refresh off"} · Last
+        updated: {new Date().toLocaleTimeString()}
       </div>
 
       {/* Full-screen image modal */}
@@ -254,10 +287,12 @@ export default function CustomMetricsDashboard({ runId }: CustomMetricsDashboard
               alt={fullImage.title}
               className="max-w-full max-h-[90vh] rounded-lg shadow-2xl"
             />
-            <p className="text-center mt-3 text-slate-400 text-sm">{fullImage.title}</p>
+            <p className="text-center mt-3 text-slate-400 text-sm">
+              {fullImage.title}
+            </p>
           </div>
         </div>
       )}
     </Card>
-  )
+  );
 }

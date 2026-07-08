@@ -1,17 +1,19 @@
-import { useNavigate } from 'react-router-dom'
-import { Card } from '../../../components/ui/Card'
-import { Badge } from '../../../components/ui/Badge'
-import { Button } from '../../../components/ui/Button'
-import { Box, ArrowRight } from 'lucide-react'
-import { Experiment } from '../../../types/experiment'
+import { useNavigate } from "react-router-dom";
+import { Card } from "../../../components/ui/Card";
+import { Badge } from "../../../components/ui/Badge";
+import { Button } from "../../../components/ui/Button";
+import { Box, ArrowRight } from "lucide-react";
+import { Experiment } from "../../../types/experiment";
 
 interface ActiveJobsWidgetProps {
-  experiments: Experiment[]
+  experiments: Experiment[];
 }
 
 export const ActiveJobsWidget = ({ experiments }: ActiveJobsWidgetProps) => {
-  const navigate = useNavigate()
-  const active = experiments.filter(e => e.status === 'running' || e.status === 'queued')
+  const navigate = useNavigate();
+  const active = experiments.filter(
+    (e) => e.status === "running" || e.status === "queued",
+  );
 
   return (
     <Card className="h-full">
@@ -21,7 +23,7 @@ export const ActiveJobsWidget = ({ experiments }: ActiveJobsWidgetProps) => {
           Active Jobs
         </h3>
         <span className="text-[10px] text-slate-400">
-          {active.length} job{active.length !== 1 ? 's' : ''}
+          {active.length} job{active.length !== 1 ? "s" : ""}
         </span>
       </div>
 
@@ -32,7 +34,7 @@ export const ActiveJobsWidget = ({ experiments }: ActiveJobsWidgetProps) => {
         </div>
       ) : (
         <div className="space-y-2">
-          {active.map(job => (
+          {active.map((job) => (
             <div
               key={job.id}
               className="flex items-center justify-between py-2 px-2 -mx-2 rounded-lg cursor-pointer hover:bg-white/5 transition-colors group"
@@ -43,7 +45,7 @@ export const ActiveJobsWidget = ({ experiments }: ActiveJobsWidgetProps) => {
                   {job.name || job.id.slice(0, 8)}
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
-                  {job.config?.task_name?.toUpperCase() || '—'}
+                  {job.config?.task_name?.toUpperCase() || "—"}
                 </p>
               </div>
               <Badge variant={job.status}>{job.status}</Badge>
@@ -51,9 +53,9 @@ export const ActiveJobsWidget = ({ experiments }: ActiveJobsWidgetProps) => {
                 variant="ghost"
                 size="sm"
                 className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={e => {
-                  e.stopPropagation()
-                  navigate(`/experiments/${job.id}`)
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/experiments/${job.id}`);
                 }}
               >
                 <ArrowRight size={14} />
@@ -63,5 +65,5 @@ export const ActiveJobsWidget = ({ experiments }: ActiveJobsWidgetProps) => {
         </div>
       )}
     </Card>
-  )
-}
+  );
+};

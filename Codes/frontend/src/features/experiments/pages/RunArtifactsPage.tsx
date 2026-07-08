@@ -1,19 +1,19 @@
-import { useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Spinner } from '../../../components/ui/Spinner'
-import { Button } from '../../../components/ui/Button'
+import { useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Spinner } from "../../../components/ui/Spinner";
+import { Button } from "../../../components/ui/Button";
 
 export default function RunArtifactsPage() {
-  const { runId } = useParams<{ runId: string }>()
+  const { runId } = useParams<{ runId: string }>();
   const { data, isLoading } = useQuery({
-    queryKey: ['runArtifacts', runId],
+    queryKey: ["runArtifacts", runId],
     queryFn: async () => (await api.get(`/api/runs/${runId}/artifacts/`)).data,
-  })
+  });
 
-  if (isLoading) return <Spinner />
-  const files = data?.files || {}
+  if (isLoading) return <Spinner />;
+  const files = data?.files || {};
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -24,10 +24,15 @@ export default function RunArtifactsPage() {
         ) : (
           <div className="space-y-2">
             {Object.entries(files).map(([name, url]: any) => (
-              <div key={name} className="flex justify-between items-center bg-cyber-800 p-3 rounded">
+              <div
+                key={name}
+                className="flex justify-between items-center bg-cyber-800 p-3 rounded"
+              >
                 <span className="text-sm text-white">{name}</span>
                 <a href={url} download>
-                  <Button size="sm" variant="secondary">Download</Button>
+                  <Button size="sm" variant="secondary">
+                    Download
+                  </Button>
                 </a>
               </div>
             ))}
@@ -35,5 +40,5 @@ export default function RunArtifactsPage() {
         )}
       </Card>
     </div>
-  )
+  );
 }

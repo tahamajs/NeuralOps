@@ -1,41 +1,46 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Button } from '../../../components/ui/Button'
-import { Input } from '../../../components/ui/Input'
-import { Badge } from '../../../components/ui/Badge'
-import { Spinner } from '../../../components/ui/Spinner'
-import { EmptyState } from '../../../components/ui/EmptyState'
-import { BookOpen, Search, Trash2, Tag, ExternalLink } from 'lucide-react'
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Input } from "../../../components/ui/Input";
+import { Badge } from "../../../components/ui/Badge";
+import { Spinner } from "../../../components/ui/Spinner";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { BookOpen, Search, Trash2, Tag, ExternalLink } from "lucide-react";
 
 export default function PaperLibraryPage() {
-  const queryClient = useQueryClient()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [noteInputs, setNoteInputs] = useState<Record<string, string>>({})
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
 
   const { data: papers = [], isLoading } = useQuery({
-    queryKey: ['savedPapers'],
-    queryFn: async () => (await api.get('/api/agents/papers/saved/')).data,
-  })
+    queryKey: ["savedPapers"],
+    queryFn: async () => (await api.get("/api/agents/papers/saved/")).data,
+  });
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/api/agents/papers/saved/${id}/`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['savedPapers'] }),
-  })
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["savedPapers"] }),
+  });
 
   const annotateMut = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes: string }) =>
       api.patch(`/api/agents/papers/saved/${id}/annotate/`, { notes }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['savedPapers'] }),
-  })
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["savedPapers"] }),
+  });
 
-  const filtered = papers.filter((p: any) =>
-    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.authors.some((a: string) => a.toLowerCase().includes(searchQuery.toLowerCase()))
-  )
+  const filtered = papers.filter(
+    (p: any) =>
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.authors.some((a: string) =>
+        a.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+  );
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <Spinner />;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -46,7 +51,7 @@ export default function PaperLibraryPage() {
         <Input
           placeholder="Search papers..."
           value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="w-64"
         />
       </div>
@@ -59,23 +64,39 @@ export default function PaperLibraryPage() {
             <Card key={paper.id} hover className="space-y-3">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-white">{paper.title}</h3>
+                  <h3 className="text-sm font-semibold text-white">
+                    {paper.title}
+                  </h3>
                   <p className="text-xs text-slate-400">
-                    {paper.authors?.slice(0, 5).join(', ')} ({paper.year})
-                    {paper.citation_count > 0 && ` · ${paper.citation_count} citations`}
+                    {paper.authors?.slice(0, 5).join(", ")} ({paper.year})
+                    {paper.citation_count > 0 &&
+                      ` · ${paper.citation_count} citations`}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => window.open(paper.url, '_blank')}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(paper.url, "_blank")}
+                  >
                     <ExternalLink size={14} />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => deleteMut.mutate(paper.id)}>
-                    <Trash2 size={14} className="text-slate-400 hover:text-red-400" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteMut.mutate(paper.id)}
+                  >
+                    <Trash2
+                      size={14}
+                      className="text-slate-400 hover:text-red-400"
+                    />
                   </Button>
                 </div>
               </div>
 
-              <p className="text-xs text-slate-500 line-clamp-2">{paper.abstract}</p>
+              <p className="text-xs text-slate-500 line-clamp-2">
+                {paper.abstract}
+              </p>
 
               <div className="flex flex-wrap gap-1">
                 {paper.tags?.map((tag: string) => (
@@ -86,11 +107,21 @@ export default function PaperLibraryPage() {
               <div className="flex gap-2 items-end">
                 <Input
                   placeholder="Add notes..."
-                  value={noteInputs[paper.id] || paper.notes || ''}
-                  onChange={e => setNoteInputs({ ...noteInputs, [paper.id]: e.target.value })}
+                  value={noteInputs[paper.id] || paper.notes || ""}
+                  onChange={(e) =>
+                    setNoteInputs({ ...noteInputs, [paper.id]: e.target.value })
+                  }
                   className="flex-1 text-xs"
                 />
-                <Button size="sm" onClick={() => annotateMut.mutate({ id: paper.id, notes: noteInputs[paper.id] || '' })}>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    annotateMut.mutate({
+                      id: paper.id,
+                      notes: noteInputs[paper.id] || "",
+                    })
+                  }
+                >
                   <Tag size={14} className="mr-1" /> Save
                 </Button>
               </div>
@@ -99,5 +130,5 @@ export default function PaperLibraryPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

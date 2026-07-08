@@ -1,9 +1,15 @@
-import { useChatStore } from '../store/chatStore'
-import { cn } from '../../../lib/utils'
-import { MessageSquare, Plus, Trash2 } from 'lucide-react'
+import { useChatStore } from "../store/chatStore";
+import { cn } from "../../../lib/utils";
+import { MessageSquare, Plus, Trash2 } from "lucide-react";
 
 export function ConversationSidebar({ className }: { className?: string }) {
-  const { conversations, activeConversationId, addConversation, setActiveConversation, removeConversation } = useChatStore()
+  const {
+    conversations,
+    activeConversationId,
+    addConversation,
+    setActiveConversation,
+    removeConversation,
+  } = useChatStore();
 
   return (
     <div className={cn("glass rounded-2xl p-2", className)}>
@@ -14,12 +20,12 @@ export function ConversationSidebar({ className }: { className?: string }) {
         <Plus size={16} /> New Chat
       </button>
       <div className="space-y-1">
-        {conversations.map(conv => (
+        {conversations.map((conv) => (
           <div
             key={conv.id}
             className={cn(
               "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer hover:bg-white/5 transition-colors",
-              activeConversationId === conv.id && "bg-white/10"
+              activeConversationId === conv.id && "bg-white/10",
             )}
             onClick={() => setActiveConversation(conv.id)}
           >
@@ -28,7 +34,10 @@ export function ConversationSidebar({ className }: { className?: string }) {
               <span className="text-sm text-white truncate">{conv.title}</span>
             </div>
             <button
-              onClick={(e) => { e.stopPropagation(); removeConversation(conv.id) }}
+              onClick={(e) => {
+                e.stopPropagation();
+                removeConversation(conv.id);
+              }}
               className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10"
             >
               <Trash2 size={12} className="text-red-400" />
@@ -37,5 +46,5 @@ export function ConversationSidebar({ className }: { className?: string }) {
         ))}
       </div>
     </div>
-  )
+  );
 }

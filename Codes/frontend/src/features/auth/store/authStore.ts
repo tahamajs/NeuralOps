@@ -1,31 +1,35 @@
-import { create } from 'zustand'
-import api from '../../../api/client'
-import { ENDPOINTS } from '../../../api/endpoints'
+import { create } from "zustand";
+import api from "../../../api/client";
+import { ENDPOINTS } from "../../../api/endpoints";
 
 interface AuthState {
-  user: { username: string; email?: string } | null
-  isAuthenticated: boolean
-  login: (username: string, password: string) => Promise<void>
-  logout: () => void
-  register: (username: string, email: string, password: string) => Promise<void>
+  user: { username: string; email?: string } | null;
+  isAuthenticated: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+  register: (
+    username: string,
+    email: string,
+    password: string,
+  ) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isAuthenticated: !!localStorage.getItem('token'),
+  isAuthenticated: !!localStorage.getItem("token"),
   login: async (username, password) => {
-    const res = await api.post(ENDPOINTS.AUTH.LOGIN, { username, password })
+    const res = await api.post(ENDPOINTS.AUTH.LOGIN, { username, password });
     if (res.data.token) {
-      localStorage.setItem('token', res.data.token)
-      set({ user: { username }, isAuthenticated: true })
+      localStorage.setItem("token", res.data.token);
+      set({ user: { username }, isAuthenticated: true });
     }
   },
   logout: () => {
-    localStorage.removeItem('token')
-    set({ user: null, isAuthenticated: false })
-    window.location.href = '/login'
+    localStorage.removeItem("token");
+    set({ user: null, isAuthenticated: false });
+    window.location.href = "/login";
   },
   register: async (username, email, password) => {
-    await api.post(ENDPOINTS.AUTH.REGISTER, { username, email, password })
+    await api.post(ENDPOINTS.AUTH.REGISTER, { username, email, password });
   },
-}))
+}));

@@ -1,17 +1,17 @@
-import { useQuery } from '@tanstack/react-query'
-import api from '../../../api/client'
-import { Card } from '../../../components/ui/Card'
-import { Button } from '../../../components/ui/Button'
-import { Spinner } from '../../../components/ui/Spinner'
-import { Box } from 'lucide-react'
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
+import { Card } from "../../../components/ui/Card";
+import { Button } from "../../../components/ui/Button";
+import { Spinner } from "../../../components/ui/Spinner";
+import { Box } from "lucide-react";
 
 export default function AdminModelVersionsPage() {
   const { data: experiments = [], isLoading } = useQuery({
-    queryKey: ['experiments'],
-    queryFn: async () => (await api.get('/api/experiments/')).data,
-  })
+    queryKey: ["experiments"],
+    queryFn: async () => (await api.get("/api/experiments/")).data,
+  });
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <Spinner />;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -23,12 +23,20 @@ export default function AdminModelVersionsPage() {
       </p>
       <div className="grid gap-4">
         {experiments.length === 0 && (
-          <p className="text-slate-500 text-sm text-center py-8">No experiments found.</p>
+          <p className="text-slate-500 text-sm text-center py-8">
+            No experiments found.
+          </p>
         )}
         {experiments.map((exp: any) => (
-          <Card key={exp.id} hover className="flex items-center justify-between">
+          <Card
+            key={exp.id}
+            hover
+            className="flex items-center justify-between"
+          >
             <div>
-              <span className="text-white font-semibold">{exp.name || exp.id.slice(0, 8)}</span>
+              <span className="text-white font-semibold">
+                {exp.name || exp.id.slice(0, 8)}
+              </span>
               <p className="text-xs text-slate-400 mt-0.5">
                 {exp.job_type} – {exp.status}
               </p>
@@ -36,7 +44,9 @@ export default function AdminModelVersionsPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => window.open(`/runs/${exp.id}/model-versions`, '_blank')}
+              onClick={() =>
+                window.open(`/runs/${exp.id}/model-versions`, "_blank")
+              }
             >
               Manage Versions
             </Button>
@@ -44,5 +54,5 @@ export default function AdminModelVersionsPage() {
         ))}
       </div>
     </div>
-  )
+  );
 }

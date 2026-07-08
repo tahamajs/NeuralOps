@@ -1,10 +1,10 @@
-import { useHardware } from '../context/HardwareContext'
-import { Card } from '../../../components/ui/Card'
+import { useHardware } from "../context/HardwareContext";
+import { Card } from "../../../components/ui/Card";
 
 export const SystemResourcesWidget = () => {
-  const { metrics, error } = useHardware()
+  const { metrics, error } = useHardware();
 
-  if (error) return null
+  if (error) return null;
 
   return (
     <Card className="space-y-4" hover={false}>
@@ -20,7 +20,10 @@ export const SystemResourcesWidget = () => {
             <span className="font-mono">{metrics.cpu.toFixed(1)}%</span>
           </div>
           <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-neon-blue transition-all duration-500" style={{ width: `${metrics.cpu}%` }} />
+            <div
+              className="h-full bg-neon-blue transition-all duration-500"
+              style={{ width: `${metrics.cpu}%` }}
+            />
           </div>
         </div>
         <div>
@@ -29,7 +32,10 @@ export const SystemResourcesWidget = () => {
             <span className="font-mono">{metrics.memory.toFixed(1)}%</span>
           </div>
           <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${metrics.memory}%` }} />
+            <div
+              className="h-full bg-purple-500 transition-all duration-500"
+              style={{ width: `${metrics.memory}%` }}
+            />
           </div>
         </div>
         <div>
@@ -38,10 +44,13 @@ export const SystemResourcesWidget = () => {
             <span className="font-mono">{metrics.gpu.toFixed(1)}%</span>
           </div>
           <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${metrics.gpu}%` }} />
+            <div
+              className="h-full bg-green-500 transition-all duration-500"
+              style={{ width: `${metrics.gpu}%` }}
+            />
           </div>
         </div>
       </div>
     </Card>
-  )
-}
+  );
+};

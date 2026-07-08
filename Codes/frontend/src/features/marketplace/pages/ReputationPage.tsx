@@ -1,11 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
-import api from '../../../api/client'
+import { useQuery } from "@tanstack/react-query";
+import api from "../../../api/client";
 
 export default function ReputationPage() {
   const { data } = useQuery({
-    queryKey: ['marketplace-reputation'],
-    queryFn: () => api.get('/marketplace/reputation/').then(r => r.data),
-  })
+    queryKey: ["marketplace-reputation"],
+    queryFn: () => api.get("/marketplace/reputation/").then((r) => r.data),
+  });
 
   return (
     <div className="p-6">
@@ -24,10 +24,11 @@ export default function ReputationPage() {
       <div className="flex flex-wrap gap-2">
         {data?.badges?.map((b: any, i: number) => (
           <span key={i} className="badge-pill bg-white/10 text-white">
-            {b.icon} {b.name} <span className="text-xs text-slate-400">({b.tier})</span>
+            {b.icon} {b.name}{" "}
+            <span className="text-xs text-slate-400">({b.tier})</span>
           </span>
         ))}
       </div>
     </div>
-  )
+  );
 }

@@ -1,39 +1,46 @@
-import { useState, useEffect } from 'react'
-import { Modal } from './Modal'
-import { Button } from './Button'
-import { Command } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { Modal } from "./Modal";
+import { Button } from "./Button";
+import { Command } from "lucide-react";
 
 const shortcuts = [
-  { keys: ['⌘', 'K'], description: 'Open command palette' },
-  { keys: ['⌘', 'S'], description: 'Save current file/note' },
-  { keys: ['⌘', 'F'], description: 'Search' },
-  { keys: ['⌘', 'Shift', 'P'], description: 'Show command palette' },
-  { keys: ['⌘', 'N'], description: 'New experiment/note' },
-  { keys: ['⌘', 'B'], description: 'Toggle sidebar' },
-  { keys: ['⌘', '⌫'], description: 'Delete selected item' },
-  { keys: ['Esc'], description: 'Close modal / cancel' },
-  { keys: ['⌘', '?'], description: 'Show this help' },
-]
+  { keys: ["⌘", "K"], description: "Open command palette" },
+  { keys: ["⌘", "S"], description: "Save current file/note" },
+  { keys: ["⌘", "F"], description: "Search" },
+  { keys: ["⌘", "Shift", "P"], description: "Show command palette" },
+  { keys: ["⌘", "N"], description: "New experiment/note" },
+  { keys: ["⌘", "B"], description: "Toggle sidebar" },
+  { keys: ["⌘", "⌫"], description: "Delete selected item" },
+  { keys: ["Esc"], description: "Close modal / cancel" },
+  { keys: ["⌘", "?"], description: "Show this help" },
+];
 
 export function KeyboardShortcutsHelp() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === '?') {
-        e.preventDefault()
-        setOpen(true)
+      if ((e.metaKey || e.ctrlKey) && e.key === "?") {
+        e.preventDefault();
+        setOpen(true);
       }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [])
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
-    <Modal open={open} onClose={() => setOpen(false)} title="Keyboard Shortcuts">
+    <Modal
+      open={open}
+      onClose={() => setOpen(false)}
+      title="Keyboard Shortcuts"
+    >
       <div className="space-y-2 max-h-96 overflow-y-auto">
         {shortcuts.map((shortcut, idx) => (
-          <div key={idx} className="flex justify-between items-center py-2 border-b border-white/5">
+          <div
+            key={idx}
+            className="flex justify-between items-center py-2 border-b border-white/5"
+          >
             <div className="flex gap-1">
               {shortcut.keys.map((key, i) => (
                 <kbd
@@ -44,13 +51,20 @@ export function KeyboardShortcutsHelp() {
                 </kbd>
               ))}
             </div>
-            <span className="text-sm text-slate-300">{shortcut.description}</span>
+            <span className="text-sm text-slate-300">
+              {shortcut.description}
+            </span>
           </div>
         ))}
       </div>
-      <Button variant="ghost" size="sm" className="mt-4" onClick={() => setOpen(false)}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="mt-4"
+        onClick={() => setOpen(false)}
+      >
         Close
       </Button>
     </Modal>
-  )
+  );
 }

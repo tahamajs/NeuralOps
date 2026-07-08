@@ -10,7 +10,7 @@ export interface ModelLayer {
 export interface ModelArchitecture {
   id: string;
   name: string;
-  framework: 'onnx' | 'pytorch' | 'tensorflow';
+  framework: "onnx" | "pytorch" | "tensorflow";
   layers: ModelLayer[];
   totalParams: number;
 }

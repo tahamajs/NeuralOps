@@ -1,16 +1,19 @@
-import { useNavigate } from 'react-router-dom'
-import { Badge } from '../../../components/ui/Badge'
-import { Button } from '../../../components/ui/Button'
-import { Experiment } from '../../../types/experiment'
-import { ArrowRight, Search } from 'lucide-react'
+import { useNavigate } from "react-router-dom";
+import { Badge } from "../../../components/ui/Badge";
+import { Button } from "../../../components/ui/Button";
+import { Experiment } from "../../../types/experiment";
+import { ArrowRight, Search } from "lucide-react";
 
 interface ExperimentTableProps {
-  experiments: Experiment[]
-  showViewAll?: boolean
+  experiments: Experiment[];
+  showViewAll?: boolean;
 }
 
-export const ExperimentTable = ({ experiments, showViewAll = true }: ExperimentTableProps) => {
-  const navigate = useNavigate()
+export const ExperimentTable = ({
+  experiments,
+  showViewAll = true,
+}: ExperimentTableProps) => {
+  const navigate = useNavigate();
 
   if (experiments.length === 0) {
     return (
@@ -18,7 +21,7 @@ export const ExperimentTable = ({ experiments, showViewAll = true }: ExperimentT
         <Search size={32} className="mb-2 opacity-30" />
         <p className="text-xs">No experiments found.</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -31,11 +34,15 @@ export const ExperimentTable = ({ experiments, showViewAll = true }: ExperimentT
             <th className="py-3 px-4 font-medium">Status</th>
             <th className="py-3 px-4 font-medium">Accuracy</th>
             <th className="py-3 px-4 font-medium">Created</th>
-            {showViewAll && <th className="py-3 px-4 font-medium text-right w-[80px]">Action</th>}
-           </tr>
+            {showViewAll && (
+              <th className="py-3 px-4 font-medium text-right w-[80px]">
+                Action
+              </th>
+            )}
+          </tr>
         </thead>
         <tbody className="divide-y divide-white/5">
-          {experiments.map(exp => (
+          {experiments.map((exp) => (
             <tr
               key={exp.id}
               className="hover:bg-white/5 cursor-pointer transition-colors group"
@@ -48,40 +55,40 @@ export const ExperimentTable = ({ experiments, showViewAll = true }: ExperimentT
                 <p className="text-[10px] text-slate-500 font-mono">
                   {exp.id.slice(0, 8)}
                 </p>
-               </td>
+              </td>
               <td className="py-3 px-4">
                 <span className="px-2 py-0.5 rounded bg-white/5 text-[10px] font-bold uppercase text-slate-300">
-                  {exp.config?.task_name || '—'}
+                  {exp.config?.task_name || "—"}
                 </span>
-               </td>
+              </td>
               <td className="py-3 px-4">
                 <Badge variant={exp.status}>{exp.status}</Badge>
-               </td>
+              </td>
               <td className="py-3 px-4 font-mono text-sm text-white">
-                {exp.final_metrics?.eval_accuracy?.toFixed(4) || '—'}
-               </td>
+                {exp.final_metrics?.eval_accuracy?.toFixed(4) || "—"}
+              </td>
               <td className="py-3 px-4 text-slate-400 text-xs">
                 {new Date(exp.created_at).toLocaleDateString()}
-               </td>
+              </td>
               {showViewAll && (
                 <td className="py-3 px-4 text-right">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={e => {
-                      e.stopPropagation()
-                      navigate(`/experiments/${exp.id}`)
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/experiments/${exp.id}`);
                     }}
                   >
                     <ArrowRight size={14} />
                   </Button>
-                 </td>
+                </td>
               )}
-             </tr>
+            </tr>
           ))}
         </tbody>
-       </table>
+      </table>
     </div>
-  )
-}
+  );
+};

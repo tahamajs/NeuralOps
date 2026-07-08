@@ -1,6 +1,6 @@
 export interface Client {
   id: string;
-  status: 'active' | 'inactive' | 'straggler';
+  status: "active" | "inactive" | "straggler";
   accuracy: number;
   data_samples: number;
   last_update: string;
@@ -17,7 +17,7 @@ export interface GlobalMetrics {
 export interface FLRun {
   id: string;
   name: string;
-  status: 'running' | 'completed' | 'failed';
+  status: "running" | "completed" | "failed";
   started_at: string;
   clients: Client[];
   global_metrics: GlobalMetrics;

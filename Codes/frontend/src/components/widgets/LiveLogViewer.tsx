@@ -1,12 +1,12 @@
-import { useEffect, useRef } from 'react'
-import { ScrollText } from 'lucide-react'
+import { useEffect, useRef } from "react";
+import { ScrollText } from "lucide-react";
 
 export const LiveLogViewer = ({ logs }: { logs: string[] }) => {
-  const ref = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight
-  }, [logs])
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
+  }, [logs]);
 
   return (
     <div className="relative">
@@ -33,5 +33,5 @@ export const LiveLogViewer = ({ logs }: { logs: string[] }) => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};

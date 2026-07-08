@@ -1,35 +1,41 @@
-import { useEffect, useCallback } from 'react'
-import { X } from 'lucide-react'
-import { cn } from '../../lib/utils'
+import { useEffect, useCallback } from "react";
+import { X } from "lucide-react";
+import { cn } from "../../lib/utils";
 
 interface ModalProps {
-  open: boolean
-  onClose: () => void
-  title?: string
-  children: React.ReactNode
-  className?: string
+  open: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
 }
 
-export const Modal = ({ open, onClose, title, children, className }: ModalProps) => {
+export const Modal = ({
+  open,
+  onClose,
+  title,
+  children,
+  className,
+}: ModalProps) => {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === "Escape") onClose();
     },
-    [onClose]
-  )
+    [onClose],
+  );
 
   useEffect(() => {
     if (open) {
-      document.addEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = 'hidden'
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
     }
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = ''
-    }
-  }, [open, handleKeyDown])
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [open, handleKeyDown]);
 
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -41,8 +47,8 @@ export const Modal = ({ open, onClose, title, children, className }: ModalProps)
       {/* Panel */}
       <div
         className={cn(
-          'relative glass p-6 w-full max-w-lg mx-4 animate-scale-in max-h-[85vh] overflow-y-auto',
-          className
+          "relative glass p-6 w-full max-w-lg mx-4 animate-scale-in max-h-[85vh] overflow-y-auto",
+          className,
         )}
       >
         {title && (
@@ -59,5 +65,5 @@ export const Modal = ({ open, onClose, title, children, className }: ModalProps)
         {children}
       </div>
     </div>
-  )
-}
+  );
+};

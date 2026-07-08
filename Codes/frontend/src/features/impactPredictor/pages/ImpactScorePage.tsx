@@ -1,73 +1,85 @@
-import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
-import { useQuery, useMutation } from '@tanstack/react-query'
-import { impactAPI } from '../services/api'
-import { ImpactScoreCard } from '../components/ImpactScoreCard'
-import { ForecastingChart } from '../components/ForecastingChart'
-import { MetricsRadar } from '../components/MetricsRadar'
-import { CitationPredictionWidget } from '../components/CitationPredictionWidget'
-import { TerminalCard } from '../../../components/ui/TerminalCard'
-import { Button } from '../../../components/ui/Button'
-import { Spinner } from '../../../components/ui/Spinner'
-import { Tabs, TabList, Tab, TabPanel } from '../../../components/ui/Tabs'
-import { TrendingUp, AlertCircle, Lightbulb, RefreshCw } from 'lucide-react'
-import { useToast } from '../../../components/ui/Toast'
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { impactAPI } from "../services/api";
+import { ImpactScoreCard } from "../components/ImpactScoreCard";
+import { ForecastingChart } from "../components/ForecastingChart";
+import { MetricsRadar } from "../components/MetricsRadar";
+import { CitationPredictionWidget } from "../components/CitationPredictionWidget";
+import { TerminalCard } from "../../../components/ui/TerminalCard";
+import { Button } from "../../../components/ui/Button";
+import { Spinner } from "../../../components/ui/Spinner";
+import { Tabs, TabList, Tab, TabPanel } from "../../../components/ui/Tabs";
+import { TrendingUp, AlertCircle, Lightbulb, RefreshCw } from "lucide-react";
+import { useToast } from "../../../components/ui/Toast";
 
 export default function ImpactScorePage({ onClose }: { onClose?: () => void }) {
-  const { projectId } = useParams()
-  const [activeTab, setActiveTab] = useState('overview')
-  const { success, error } = useToast()
+  const { projectId } = useParams();
+  const [activeTab, setActiveTab] = useState("overview");
+  const { success, error } = useToast();
 
   const {
     data: score,
     isLoading: scoreLoading,
     refetch: refetchScore,
   } = useQuery({
-    queryKey: ['impact-score', projectId],
+    queryKey: ["impact-score", projectId],
     queryFn: () => impactAPI.getImpactScore(projectId!),
     enabled: !!projectId,
-  })
+  });
 
   const { data: metrics, isLoading: metricsLoading } = useQuery({
-    queryKey: ['impact-metrics', projectId],
+    queryKey: ["impact-metrics", projectId],
     queryFn: () => impactAPI.getMetrics(projectId!),
     enabled: !!projectId,
-  })
+  });
 
   const { data: history } = useQuery({
-    queryKey: ['impact-history', projectId],
+    queryKey: ["impact-history", projectId],
     queryFn: () => impactAPI.getHistory(projectId!),
     enabled: !!projectId,
-  })
+  });
 
   const { data: featureImportance } = useQuery({
-    queryKey: ['feature-importance'],
+    queryKey: ["feature-importance"],
     queryFn: () => impactAPI.getFeatureImportance(),
-  })
+  });
 
   const refreshMutation = useMutation({
     mutationFn: () => impactAPI.getImpactScore(projectId!),
     onSuccess: (data) => {
-      success('Impact score refreshed', `New score: ${data.overall_score}`)
-      refetchScore()
+      success("Impact score refreshed", `New score: ${data.overall_score}`);
+      refetchScore();
     },
-    onError: () => error('Failed to refresh impact score'),
-  })
+    onError: () => error("Failed to refresh impact score"),
+  });
 
-  if (scoreLoading || metricsLoading) return <Spinner />
+  if (scoreLoading || metricsLoading) return <Spinner />;
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center p-4 border-b border-white/10">
         <div>
-          <h1 className="text-xl font-bold text-white">Impact Score Dashboard</h1>
-          <p className="text-xs text-slate-400">Project ID: {projectId?.slice(0, 8)}</p>
+          <h1 className="text-xl font-bold text-white">
+            Impact Score Dashboard
+          </h1>
+          <p className="text-xs text-slate-400">
+            Project ID: {projectId?.slice(0, 8)}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={() => refreshMutation.mutate()}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => refreshMutation.mutate()}
+          >
             <RefreshCw size={14} className="mr-1" /> Refresh
           </Button>
-          {onClose && <Button size="sm" variant="ghost" onClick={onClose}>✕</Button>}
+          {onClose && (
+            <Button size="sm" variant="ghost" onClick={onClose}>
+              ✕
+            </Button>
+          )}
         </div>
       </div>
 
@@ -90,7 +102,10 @@ export default function ImpactScorePage({ onClose }: { onClose?: () => void }) {
 
           <TabPanel value="overview">
             <div className="grid lg:grid-cols-2 gap-6">
-              <ForecastingChart history={history || []} predictedScore={score?.predicted_h_index} />
+              <ForecastingChart
+                history={history || []}
+                predictedScore={score?.predicted_h_index}
+              />
               <CitationPredictionWidget
                 predictedCitations={score?.predicted_citations_5y}
                 confidenceInterval={score?.confidence_interval}
@@ -122,18 +137,27 @@ export default function ImpactScorePage({ onClose }: { onClose?: () => void }) {
               </TerminalCard>
               {featureImportance && featureImportance.length > 0 && (
                 <TerminalCard className="p-4">
-                  <div className="text-sm font-bold text-white mb-2">What Drives Impact?</div>
+                  <div className="text-sm font-bold text-white mb-2">
+                    What Drives Impact?
+                  </div>
                   <div className="space-y-3">
                     {featureImportance.slice(0, 5).map((fi) => (
                       <div key={fi.feature}>
                         <div className="flex justify-between text-xs mb-1">
                           <span className="text-slate-300">{fi.feature}</span>
-                          <span className="text-neon-mint">{fi.importance.toFixed(1)}%</span>
+                          <span className="text-neon-mint">
+                            {fi.importance.toFixed(1)}%
+                          </span>
                         </div>
                         <div className="w-full bg-white/10 rounded-full h-1.5">
-                          <div className="bg-neon-blue h-1.5 rounded-full" style={{ width: `${fi.importance}%` }} />
+                          <div
+                            className="bg-neon-blue h-1.5 rounded-full"
+                            style={{ width: `${fi.importance}%` }}
+                          />
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5">{fi.description}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {fi.description}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -143,10 +167,13 @@ export default function ImpactScorePage({ onClose }: { onClose?: () => void }) {
           </TabPanel>
 
           <TabPanel value="comparison">
-            <div className="text-center text-slate-400 py-8">Project comparison view is available in the <strong>Project Leaderboard</strong></div>
+            <div className="text-center text-slate-400 py-8">
+              Project comparison view is available in the{" "}
+              <strong>Project Leaderboard</strong>
+            </div>
           </TabPanel>
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

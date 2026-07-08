@@ -1,5 +1,5 @@
-import { useParams } from 'react-router-dom';
-import { FLDashboard } from '../components/FLDashboard';
+import { useParams } from "react-router-dom";
+import { FLDashboard } from "../components/FLDashboard";
 
 export default function FLRunPage({ onClose }: { onClose?: () => void }) {
   const { runId } = useParams();

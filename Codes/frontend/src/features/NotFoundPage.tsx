@@ -4,5 +4,5 @@ export default function NotFoundPage() {
       <h1 className="text-2xl font-bold">NotFoundPage</h1>
       <p className="text-slate-400 mt-2">Coming soon.</p>
     </div>
-  )
+  );
 }
