@@ -230,6 +230,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
 # For simplicity, we override the auto class behavior for "unified_transformer".
 # However, to avoid conflicts, we'll register a separate auto class name.
 
-AutoModel.register(UnifiedTransformerConfig, UnifiedTransformerModel) AutoModel.from_pretrained("your-repo/your-model") to return a UnifiedTransformerModel
+AutoModel.register(UnifiedTransformerConfig, UnifiedTransformerModel)
+# This allows AutoModel.from_pretrained("your-repo/your-model") to return a UnifiedTransformerModel
 # if the config.json contains the appropriate auto_map. We'll set that up when saving.
 # For now, users can simply use UnifiedTransformerModel.from_pretrained directly.
