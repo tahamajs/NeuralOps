@@ -181,7 +181,7 @@ export default function StatisticsPage() {
         <Card>
           <h3 className="text-sm font-bold text-white mb-3">Top Models</h3>
           {topModels.length ? (
-            topModels.map(([model, count]) => (
+            topModels.map(([model, count]: any) => (
               <div
                 key={model}
                 className="flex justify-between text-xs py-1.5 border-b border-white/5"
@@ -197,7 +197,7 @@ export default function StatisticsPage() {
         <Card>
           <h3 className="text-sm font-bold text-white mb-3">Top Tasks</h3>
           {topTasks.length ? (
-            topTasks.map(([task, count]) => (
+            topTasks.map(([task, count]: any) => (
               <div
                 key={task}
                 className="flex justify-between text-xs py-1.5 border-b border-white/5"

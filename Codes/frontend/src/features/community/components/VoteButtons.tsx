@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { communityAPI } from "../services/api";
 import { ChevronUp, ChevronDown } from "lucide-react";
-import { cn } from "../../../../lib/utils";
+import { cn } from "../../../lib/utils";
 import type { VoteType } from "../types";
 
 interface VoteButtonsProps {

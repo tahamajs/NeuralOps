@@ -17,7 +17,7 @@ export default function AskQuestionPage() {
 
   const createQuestion = useMutation({
     mutationFn: () => communityAPI.createQuestion({ title, body, tags }),
-    onSuccess: (data) => navigate(`/questions/${data.id}`),
+    onSuccess: (data: any) => navigate(`/questions/${data.id}`),
     onError: () => setIsSubmitting(false),
   });
 

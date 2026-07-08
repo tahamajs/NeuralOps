@@ -11,7 +11,7 @@ export const experimentExplorerAPI = {
   getExperiments: (params?: { limit?: number; sort?: string }) =>
     api.get<ExperimentRun[]>("/explorer/experiments/", { params }),
   getParameterCorrelations: (metric: string) =>
-    api.get<ParameterMetricCorrelation[]>(`/explorer/correlations/`, {
+    api.get<any>(`/explorer/correlations/`, {
       params: { metric },
     }),
 
