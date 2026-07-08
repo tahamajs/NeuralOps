@@ -163,7 +163,6 @@ packages = [
     "framework.federated_learning",
     "framework.trainer",
     "framework.utils",
-    # Add these when you create the directories:
-    # "framework.models",
-    # "framework.training",
+    "framework.models",
+    "framework.training",
 ]
