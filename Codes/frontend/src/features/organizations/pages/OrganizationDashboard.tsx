@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import api from "../../api/client";
-import { Card, Button } from "../../components/ui";
+import api from "../../../api/client";
+import { Card, Button } from "../../../components/ui";
 import { Users, CreditCard, HardDrive, BarChart3 } from "lucide-react";
 
 export function OrganizationDashboard({ orgId }: { orgId: string }) {

@@ -38,3 +38,12 @@ export interface HeatmapData {
   range: { start: string; end: string };
   streak_stats: StreakStats;
 }
+
+export interface LeaderboardEntry {
+  user_id: string;
+  username: string;
+  current_streak: number;
+  longest_streak: number;
+  total_active_days: number;
+}
+

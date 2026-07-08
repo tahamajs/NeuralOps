@@ -1,4 +1,4 @@
-import api from "../../../api/client";
+import { request } from "../../../api/client";
 import {
   ChatMessage,
   ModelConfig,
@@ -10,25 +10,25 @@ import {
 export const playgroundAPI = {
   // Chat completion (streaming)
   chatCompletion: (messages: ChatMessage[], config: ModelConfig) =>
-    api.post(
+    request.post<any>(
       "/playground/chat/",
       { messages, config },
       { responseType: "stream" },
     ),
 
   // List available models
-  getModels: () => api.get<ModelConfig[]>("/playground/models/"),
+  getModels: () => request.get<ModelConfig[]>("/playground/models/"),
 
   // Comparison
   compareModels: (configA: ModelConfig, configB: ModelConfig, prompt: string) =>
-    api.post<ComparisonResult>("/playground/compare/", {
+    request.post<ComparisonResult>("/playground/compare/", {
       config_a: configA,
       config_b: configB,
       prompt,
     }),
 
   // Tools
-  getTools: () => api.get<ToolDefinition[]>("/playground/tools/"),
+  getTools: () => request.get<ToolDefinition[]>("/playground/tools/"),
   testTool: (toolName: string, input: any) =>
-    api.post<ToolTestResult>(`/playground/tools/${toolName}/test/`, { input }),
+    request.post<ToolTestResult>(`/playground/tools/${toolName}/test/`, { input }),
 };

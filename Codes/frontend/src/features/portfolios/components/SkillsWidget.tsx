@@ -1,4 +1,4 @@
-import { Card } from "../../../components/ui";
+import { Card, Badge } from "../../../components/ui";
 import type { Portfolio } from "../types";
 
 interface SkillsWidgetProps {

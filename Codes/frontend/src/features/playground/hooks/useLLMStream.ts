@@ -6,7 +6,7 @@ export function useLLMStream(sessionId?: string) {
   const [streamingContent, setStreamingContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const { token } = useAuthStore();
+  const token = localStorage.getItem("token") || "";
 
   const connect = useCallback(() => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";

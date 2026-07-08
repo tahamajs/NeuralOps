@@ -25,7 +25,7 @@ export default function ModelVersionsPage() {
   });
 
   if (isLoading) return <Spinner />;
-  if (!versions.length) return <EmptyState message="No model versions yet" />;
+  if (!versions.length) return <EmptyState title="No versions found for this model." />;
 
   return (
     <div className="space-y-6 animate-fade-in">

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../api/client";
-import { Card, Spinner, Link } from "../../../components/ui";
+import { Card, Spinner } from "../../../components/ui";
+import { Link } from "react-router-dom";
 
 export default function ChatListPage() {
   const { data, isLoading } = useQuery({

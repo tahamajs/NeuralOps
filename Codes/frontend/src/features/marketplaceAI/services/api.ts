@@ -1,4 +1,4 @@
-import api from "../../../api/client";
+import { request } from "../../../api/client";
 import {
   MarketplaceListing,
   ComparisonGroup,
@@ -9,41 +9,41 @@ import {
 export const marketplaceAIApi = {
   // Agent mode endpoints
   startAgentSession: () =>
-    api.post<{ session_id: string }>("/marketplace-ai/agent/start/"),
+    request.post<{ session_id: string }>("/marketplace-ai/agent/start/"),
   sendAgentMessage: (sessionId: string, message: string) =>
-    api.post<{
+    request.post<{
       reply: string;
       listings: MarketplaceListing[];
       state: ConversationState;
     }>(`/marketplace-ai/agent/${sessionId}/send/`, { message }),
   getAgentState: (sessionId: string) =>
-    api.get<ConversationState>(`/marketplace-ai/agent/${sessionId}/state/`),
+    request.get<ConversationState>(`/marketplace-ai/agent/${sessionId}/state/`),
 
   // Listings
   getListings: (params?: Record<string, any>) =>
-    api.get<{ results: MarketplaceListing[]; count: number }>(
+    request.get<{ results: MarketplaceListing[]; count: number }>(
       "/marketplace-ai/listings/",
       { params },
     ),
 
   // Comparison builder
   getComparisonGroups: () =>
-    api.get<ComparisonGroup[]>("/marketplace-ai/comparisons/"),
+    request.get<ComparisonGroup[]>("/marketplace-ai/comparisons/"),
   createComparisonGroup: (name: string, listingIds: string[]) =>
-    api.post<ComparisonGroup>("/marketplace-ai/comparisons/", {
+    request.post<ComparisonGroup>("/marketplace-ai/comparisons/", {
       name,
       listing_ids: listingIds,
     }),
   deleteComparisonGroup: (id: string) =>
-    api.delete(`/marketplace-ai/comparisons/${id}/`),
+    request.delete(`/marketplace-ai/comparisons/${id}/`),
   addToListingsToComparison: (groupId: string, listingIds: string[]) =>
-    api.post(`/marketplace-ai/comparisons/${groupId}/add/`, {
+    request.post(`/marketplace-ai/comparisons/${groupId}/add/`, {
       listing_ids: listingIds,
     }),
 
   // Compliance
   checkListingCompliance: (listingId: string) =>
-    api.get<ComplianceCheck>(
+    request.get<ComplianceCheck>(
       `/marketplace-ai/listings/${listingId}/compliance/`,
     ),
 };

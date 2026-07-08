@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 export function ModelCard({ model }: { model: Model }) {
   return (
     <Link to={`/model-hub/models/${model.id}`}>
-      <TerminalCard hover className="p-4">
+      <TerminalCard className="p-4">
         <div className="flex justify-between items-start">
           <div>
             <div className="flex items-center gap-2">

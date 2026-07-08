@@ -40,7 +40,7 @@ export default function FileTreeSidebar({
     mutationFn: async (filename: string) => {
       await api.delete(`/api/paper/projects/${projectId}/files/${filename}/`);
     },
-    onSuccess: () => {
+    onSuccess: (_, filename) => {
       onRefresh();
       if (selectedFile === filename) {
         onFileSelect("main.tex");

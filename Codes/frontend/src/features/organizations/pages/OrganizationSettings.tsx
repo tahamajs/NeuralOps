@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import api from "../../api/client";
-import { Card, Input, Button, Modal } from "../../components/ui";
+import api from "../../../api/client";
+import { Card, Input, Button, Modal } from "../../../components/ui";
 
 export function OrganizationSettings({ orgId }: { orgId: string }) {
   const navigate = useNavigate();
@@ -16,13 +16,16 @@ export function OrganizationSettings({ orgId }: { orgId: string }) {
 
   const { data: org } = useQuery({
     queryKey: ["organization", orgId],
-    queryFn: async () => (await api.get(`/orgs/${orgId}/`)).data,
-    onSuccess: (data) => {
-      setName(data.name);
-      setSlug(data.slug);
-      setDescription(data.description || "");
-    },
+    queryFn: async () => (await api.get(`/orgs/${orgId}/`)).data as any,
   });
+
+  useEffect(() => {
+    if (org) {
+      setName(org.name);
+      setSlug(org.slug);
+      setDescription(org.description || "");
+    }
+  }, [org]);
 
   const updateOrg = useMutation({
     mutationFn: async () => {

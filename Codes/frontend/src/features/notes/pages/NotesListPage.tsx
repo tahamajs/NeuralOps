@@ -128,7 +128,7 @@ export default function NotesListPage() {
         <Spinner />
       ) : notes.length === 0 ? (
         <EmptyState
-          message={
+          title={
             debouncedSearch
               ? "No notes match your search."
               : "No notes yet. Create your first one!"
@@ -145,11 +145,9 @@ export default function NotesListPage() {
                 />
               )}
               {note.shared_with?.length > 0 && (
-                <Users
-                  size={12}
-                  className="absolute top-2 right-8 text-neon-blue"
-                  title={`Shared with ${note.shared_with.join(", ")}`}
-                />
+                <span title={`Shared with ${note.shared_with.join(", ")}`} className="absolute top-2 right-8 text-neon-blue">
+                  <Users size={12} />
+                </span>
               )}
               <Link to={`/notes/${note.id}`} className="flex-1">
                 <h3 className="text-sm font-semibold text-white line-clamp-1 group-hover:text-neon-blue transition-colors">

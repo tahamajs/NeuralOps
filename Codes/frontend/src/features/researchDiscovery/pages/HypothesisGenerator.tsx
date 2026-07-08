@@ -105,11 +105,11 @@ export default function HypothesisGenerator({
             />
             <Select
               options={[
-                { value: 1, label: "1 iteration" },
-                { value: 3, label: "3 iterations" },
-                { value: 5, label: "5 iterations" },
+                { value: "1", label: "1 iteration" },
+                { value: "3", label: "3 iterations" },
+                { value: "5", label: "5 iterations" },
               ]}
-              value={iterations}
+              value={String(iterations)}
               onChange={(e) => setIterations(parseInt(e.target.value))}
               className="w-36"
             />

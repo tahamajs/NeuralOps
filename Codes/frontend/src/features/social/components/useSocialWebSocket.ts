@@ -1,11 +1,10 @@
 import { useEffect, useState, useRef } from 'react'
-import { useAuthStore } from '../../auth/store/authStore'
 
 export function useSocialWebSocket() {
   const [newAlert, setNewAlert] = useState<any>(null)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
-  const { token } = useAuthStore()
+  const token = localStorage.getItem("token") || "";
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'

@@ -19,12 +19,12 @@ import { StatsGrid } from "../components/StatsGrid";
 import { ActivityHeatmap } from "../components/ActivityHeatmap";
 import { ShowcaseSection } from "../components/ShowcaseSection";
 import { SkillsWidget } from "../components/SkillsWidget";
-import { useToast } from "../../../hooks/useToast";
+import { useToast } from "../../../components/ui/Toast";
 
 export default function PublicPortfolioPage() {
   const { username } = useParams<{ username: string }>();
   const { user: currentUser } = useAuthStore();
-  const { showToast } = useToast();
+  const { error: toastError } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("showcase");
 
@@ -75,7 +75,7 @@ export default function PublicPortfolioPage() {
     },
     onError: (err, _, context) => {
       queryClient.setQueryData(["portfolio", username], context?.previous);
-      showToast("Failed to update follow status", "error");
+      toastError("Failed to update follow status");
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["portfolio", username] });

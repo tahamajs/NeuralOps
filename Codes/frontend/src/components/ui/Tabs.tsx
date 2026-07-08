@@ -13,14 +13,23 @@ const TabsContext = createContext<TabsContextValue>({
 
 export const Tabs = ({
   defaultValue,
+  value,
+  onValueChange,
   children,
   className,
 }: {
-  defaultValue: string;
+  defaultValue?: string;
+  value?: string;
+  onValueChange?: (val: string) => void;
   children: React.ReactNode;
   className?: string;
 }) => {
-  const [active, setActive] = useState(defaultValue);
+  const [localActive, setLocalActive] = useState(defaultValue || "");
+  const active = value !== undefined ? value : localActive;
+  const setActive = (val: string) => {
+    if (onValueChange) onValueChange(val);
+    setLocalActive(val);
+  };
   return (
     <TabsContext.Provider value={{ active, setActive }}>
       <div className={cn("flex flex-col", className)}>{children}</div>
@@ -66,11 +75,13 @@ export const Tab = ({
 export const TabPanel = ({
   value,
   children,
+  className,
 }: {
   value: string;
   children: React.ReactNode;
+  className?: string;
 }) => {
   const { active } = useContext(TabsContext);
   if (active !== value) return null;
-  return <div className="pt-4">{children}</div>;
+  return <div className={cn("pt-4", className)}>{children}</div>;
 };

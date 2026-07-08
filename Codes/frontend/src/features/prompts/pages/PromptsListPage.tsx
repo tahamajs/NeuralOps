@@ -12,7 +12,7 @@ export default function PromptsListPage() {
   });
 
   if (isLoading) return <Spinner />;
-  if (!prompts.length) return <EmptyState message="No prompts registered" />;
+  if (!prompts.length) return <EmptyState title="No prompts registered" />;
 
   return (
     <div className="space-y-6 animate-fade-in">

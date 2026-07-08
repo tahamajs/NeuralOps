@@ -1,5 +1,7 @@
+import React from "react";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
 import { Badge } from "../../../components/ui/Badge";
+import { MarkdownRenderer } from "../../community/components/MarkdownRenderer";
 
 export function ComparisonTable({ result }: any) {
   return (
@@ -15,7 +17,7 @@ export function ComparisonTable({ result }: any) {
           Latency: {result.latency_ms_a}ms
         </div>
         <div className="mt-3 prose prose-invert max-w-none">
-          <ReactMarkdown>{result.response_a}</ReactMarkdown>
+          <MarkdownRenderer content={result.response_a} />
         </div>
       </TerminalCard>
       <TerminalCard className="p-4">
@@ -29,7 +31,7 @@ export function ComparisonTable({ result }: any) {
           Latency: {result.latency_ms_b}ms
         </div>
         <div className="mt-3 prose prose-invert max-w-none">
-          <ReactMarkdown>{result.response_b}</ReactMarkdown>
+          <MarkdownRenderer content={result.response_b} />
         </div>
       </TerminalCard>
     </div>

@@ -31,7 +31,7 @@ export default function AgenticMarketplacePage({
 
   const startSession = useMutation({
     mutationFn: () => marketplaceAIApi.startAgentSession(),
-    onSuccess: (res) => setSessionId(res.data.session_id),
+    onSuccess: (res) => setSessionId(res.session_id),
   });
 
   const {
