@@ -62,7 +62,10 @@ export default function SystemStatusPage() {
         <Card>
           <h3 className="text-sm font-bold text-white">Disk</h3>
           <div className="text-2xl font-bold text-white">
-            {sys.disk.used_gb} / {sys.disk.total_gb} GB
+            {sys.disk.used_gb !== undefined
+              ? sys.disk.used_gb
+              : ((sys.disk.total_gb * sys.disk.percent) / 100).toFixed(1)}{" "}
+            / {sys.disk.total_gb} GB
           </div>
           <p className="text-xs text-slate-400">{sys.disk.percent}% used</p>
         </Card>
