@@ -13,15 +13,15 @@ export const marketplaceAPI = {
     request.get<UsageData>("/marketplace/provider/usage/", { params: { period } }),
 
   // Disputes
-  getDisputes: (params?: { status?: string }) =>
-    request.get<Dispute[]>("/marketplace/disputes/", { params }),
-  getDispute: (id: string) => request.get<Dispute>(`/marketplace/disputes/${id}/`),
+  getDisputes: (params?: any) =>
+    request.get<Dispute[]>("/gpu/reputation/disputes/", { params }),
+  getDispute: (id: string) => request.get<Dispute>(`/gpu/reputation/disputes/${id}/`),
   raiseDispute: (jobId: string, reason: string, description: string) =>
-    request.post("/marketplace/disputes/", { job_id: jobId, reason, description }),
+    request.post(`/gpu/reputation/disputes/raise/${jobId}/`, { reason, description }),
   respondToDispute: (id: string, response: string) =>
-    request.post(`/marketplace/disputes/${id}/respond/`, { response }),
+    request.post(`/gpu/reputation/disputes/${id}/respond/`, { response }),
   resolveDispute: (id: string, resolution: string, refundAmount?: number) =>
-    request.post(`/marketplace/disputes/${id}/resolve/`, {
+    request.post(`/gpu/reputation/disputes/${id}/resolve/`, {
       resolution,
       refund_amount: refundAmount,
     }),

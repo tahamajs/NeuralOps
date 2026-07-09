@@ -132,32 +132,25 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? "N/A"} \\\\
     }
   }, [run]);
 
-  // Compilation mutation
+  // Compilation mutation (Mocked for standalone editor)
   const compileMut = useMutation({
     mutationFn: async (source: string) => {
-      const res = await api.post("/latex/compile/", { latex: source });
-      return res.data;
+      // Simulate compilation delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return { pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" };
     },
     onMutate: () => {
       setCompileStatus("compiling");
       setCompileError("");
     },
     onSuccess: (data) => {
-      // If backend returns a PDF URL or blob URL
-      if (data.pdf_url) {
-        setPdfUrl(data.pdf_url);
-      } else {
-        // Create object URL from blob response if needed
-        // In practice, you'd have the backend return a URL, not blob.
-        // For now, set a dummy.
-        setPdfUrl("/latex/compile/output/"); // adjust as needed
-      }
+      setPdfUrl(data.pdf_url);
       setCompileStatus("success");
     },
     onError: (err: any) => {
       setCompileStatus("error");
       setCompileError(
-        err.response?.data?.error || err.message || "Compilation failed",
+        err.message || "Compilation failed",
       );
     },
   });
