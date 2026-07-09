@@ -1,8 +1,7 @@
-// src/components/WindowLauncher.tsx
 import { useState, useEffect } from "react";
 import { useWindowStore } from "../store/windowStore";
 
-const AVAILABLE_WINDOWS = [
+export const AVAILABLE_WINDOWS = [
   // ═══════════════════════════════════════════════════════════════
   // Core / Communication
   // ═══════════════════════════════════════════════════════════════
