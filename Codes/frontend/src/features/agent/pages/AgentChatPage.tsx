@@ -29,7 +29,7 @@ export default function AgentChatPage() {
   const [showCitationGraph, setShowCitationGraph] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, loading, sending, sendMessage } = useAgentChat(sessionId);
+  const { messages, loading, sending, wsStatus, sendMessage } = useAgentChat(sessionId);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

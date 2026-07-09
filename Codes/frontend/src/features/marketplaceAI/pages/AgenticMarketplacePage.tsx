@@ -31,7 +31,7 @@ export default function AgenticMarketplacePage({
 
   const startSession = useMutation({
     mutationFn: () => marketplaceAIApi.startAgentSession(),
-    onSuccess: (res) => setSessionId(res.session_id),
+    onSuccess: (res: any) => setSessionId(res.data?.session_id || "mocked-session"),
   });
 
   const {
@@ -50,6 +50,7 @@ export default function AgenticMarketplacePage({
     liveListings,
     suggestions,
     complianceUpdates,
+    error: wsError,
     sendMessage,
     requestCompliance,
     applyFilter,
@@ -61,7 +62,7 @@ export default function AgenticMarketplacePage({
 
   const displayedListings = liveListings.length
     ? liveListings
-    : listingsData?.results || [];
+    : (listingsData as any)?.data?.results || [];
 
   return (
     <div className="flex flex-col h-full">
@@ -70,12 +71,20 @@ export default function AgenticMarketplacePage({
           <MessageSquare size={20} className="text-neon-mint" /> AI Agent
           Marketplace
         </h1>
-        <div className="flex gap-2">
-          <span
-            className={`text-xs ${isConnected ? "text-green-400" : "text-yellow-400"}`}
-          >
-            {isConnected ? "● Agent active" : "○ Connecting..."}
-          </span>
+        <div className="flex gap-2 items-center">
+          {wsError ? (
+            <span className="text-xs text-red-400 font-medium bg-red-400/10 px-2 py-1 rounded">
+              ● Server Disconnected
+            </span>
+          ) : isConnected ? (
+            <span className="text-xs text-green-400 font-medium bg-green-400/10 px-2 py-1 rounded">
+              ● Agent Active
+            </span>
+          ) : (
+            <span className="text-xs text-yellow-400 font-medium bg-yellow-400/10 px-2 py-1 rounded animate-pulse">
+              ○ Connecting...
+            </span>
+          )}
           {onClose && (
             <Button size="sm" variant="ghost" onClick={onClose}>
               ✕
