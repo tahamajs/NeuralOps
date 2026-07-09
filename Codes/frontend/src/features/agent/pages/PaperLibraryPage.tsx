@@ -20,14 +20,14 @@ export default function PaperLibraryPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => api.delete(`/api/agents/papers/saved/${id}/`),
+    mutationFn: (id: string) => api.delete(`/agents/papers/saved/${id}/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["savedPapers"] }),
   });
 
   const annotateMut = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes: string }) =>
-      api.patch(`/api/agents/papers/saved/${id}/annotate/`, { notes }),
+      api.patch(`/agents/papers/saved/${id}/annotate/`, { notes }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["savedPapers"] }),
   });

@@ -13,12 +13,12 @@ export default function SetProductionVersionPage() {
   const { data: versions = [] } = useQuery({
     queryKey: ["modelVersions", runId],
     queryFn: async () =>
-      (await api.get(`/api/model-versioning/runs/${runId}/versions/`)).data,
+      (await api.get(`/model-versioning/runs/${runId}/versions/`)).data,
   });
   const mutation = useMutation({
     mutationFn: () =>
       api.post(
-        `/api/model-versioning/runs/${runId}/versions/${version}/set_production/`,
+        `/model-versioning/runs/${runId}/versions/${version}/set_production/`,
       ),
     onSuccess: () => alert("Production version set"),
   });

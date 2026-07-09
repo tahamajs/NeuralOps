@@ -13,7 +13,7 @@ export default function ExperimentReportPage() {
   // Fetch run data
   const { data: run, isLoading: runLoading } = useQuery({
     queryKey: ["run", id],
-    queryFn: async () => (await api.get(`/api/runs/${id}/`)).data,
+    queryFn: async () => (await api.get(`/runs/${id}/`)).data,
     enabled: !!id,
   });
 
@@ -21,7 +21,7 @@ export default function ExperimentReportPage() {
   const { data: history, isLoading: historyLoading } = useQuery({
     queryKey: ["history", id],
     queryFn: async () => {
-      const res = await api.get(`/api/runs/${id}/history/`);
+      const res = await api.get(`/runs/${id}/history/`);
       return res.data;
     },
     enabled: !!id,
@@ -122,7 +122,7 @@ export default function ExperimentReportPage() {
           </Button>
           <Button
             size="sm"
-            onClick={() => window.open(`/api/runs/${id}/paper/`, "_blank")}
+            onClick={() => window.open(`/runs/${id}/paper/`, "_blank")}
           >
             📄 LaTeX Source
           </Button>
@@ -311,7 +311,7 @@ export default function ExperimentReportPage() {
           📁 Artifacts & Downloads
         </h2>
         <div className="flex flex-wrap gap-3">
-          <a href={`/api/runs/${id}/model/`} download>
+          <a href={`/runs/${id}/model/`} download>
             <Button variant="secondary" size="sm">
               🤖 Download Model
             </Button>
@@ -335,7 +335,7 @@ export default function ExperimentReportPage() {
             📊 Metrics JSON
           </Button>
           <a
-            href={`/api/runs/${id}/history/?format=csv`}
+            href={`/runs/${id}/history/?format=csv`}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -344,7 +344,7 @@ export default function ExperimentReportPage() {
             </Button>
           </a>
           <a
-            href={`/api/runs/${id}/paper/`}
+            href={`/runs/${id}/paper/`}
             target="_blank"
             rel="noopener noreferrer"
           >

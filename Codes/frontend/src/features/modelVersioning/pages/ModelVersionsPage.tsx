@@ -14,12 +14,12 @@ export default function ModelVersionsPage() {
   const { data: versions = [], isLoading } = useQuery({
     queryKey: ["modelVersions", runId],
     queryFn: async () =>
-      (await api.get(`/api/model-versioning/runs/${runId}/versions/`)).data,
+      (await api.get(`/model-versioning/runs/${runId}/versions/`)).data,
   });
 
   const publishMutation = useMutation({
     mutationFn: async (versionId: string) =>
-      api.post(`/api/model-versioning/versions/${versionId}/publish/`),
+      api.post(`/model-versioning/versions/${versionId}/publish/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["modelVersions", runId] }),
   });
@@ -52,7 +52,7 @@ export default function ModelVersionsPage() {
                 Publish to Hub
               </Button>
               <a
-                href={`/api/model-versioning/versions/${v.id}/download/`}
+                href={`/model-versioning/versions/${v.id}/download/`}
                 download
               >
                 <Button size="sm" variant="ghost">

@@ -13,24 +13,24 @@ export default function ModelVersionDetailPage() {
   const { data: version, isLoading } = useQuery({
     queryKey: ["modelVersion", versionId],
     queryFn: async () =>
-      (await api.get(`/api/model-versioning/versions/${versionId}/`)).data,
+      (await api.get(`/model-versioning/versions/${versionId}/`)).data,
   });
 
   const publishMutation = useMutation({
     mutationFn: () =>
-      api.post(`/api/model-versioning/versions/${versionId}/publish/`),
+      api.post(`/model-versioning/versions/${versionId}/publish/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["modelVersion", versionId] }),
   });
   const archiveMutation = useMutation({
     mutationFn: () =>
-      api.post(`/api/model-versioning/versions/${versionId}/archive/`),
+      api.post(`/model-versioning/versions/${versionId}/archive/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["modelVersion", versionId] }),
   });
   const downloadMutation = useMutation({
     mutationFn: () =>
-      api.get(`/api/model-versioning/versions/${versionId}/download/`, {
+      api.get(`/model-versioning/versions/${versionId}/download/`, {
         responseType: "blob",
       }),
     onSuccess: (res) => {

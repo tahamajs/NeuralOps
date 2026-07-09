@@ -155,7 +155,7 @@ const ConfigHistoryDiff = ({ runId }: { runId: string }) => {
   const { data: history } = useQuery({
     queryKey: ["configHistory", runId],
     queryFn: async () =>
-      (await api.get(`/api/runs/${runId}/config/history/`)).data,
+      (await api.get(`/runs/${runId}/config/history/`)).data,
   });
   const versions = history?.versions || [];
   const options = versions.map((v: any) => ({
@@ -165,7 +165,7 @@ const ConfigHistoryDiff = ({ runId }: { runId: string }) => {
 
   const handleCompare = async () => {
     if (!va || !vb) return;
-    const res = await api.get(`/api/runs/${runId}/config/compare/${va}/${vb}/`);
+    const res = await api.get(`/runs/${runId}/config/compare/${va}/${vb}/`);
     setDiff(res.data);
   };
 
@@ -263,7 +263,7 @@ const CustomMetricsDashboard = ({ runId }: { runId: string }) => {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
   const { data: metrics, isLoading } = useQuery({
     queryKey: ["customMetrics", runId],
-    queryFn: async () => (await api.get(`/api/runs/${runId}/metrics/`)).data,
+    queryFn: async () => (await api.get(`/runs/${runId}/metrics/`)).data,
     refetchInterval: 10000,
   });
   if (isLoading) return <Spinner className="py-4" />;
@@ -424,7 +424,7 @@ export default function ExperimentMonitorPage() {
 
   const { data: history } = useQuery({
     queryKey: ["runHistory", id],
-    queryFn: async () => (await api.get(`/api/runs/${id}/history/`)).data,
+    queryFn: async () => (await api.get(`/runs/${id}/history/`)).data,
     enabled: !!id,
   });
 
@@ -453,15 +453,15 @@ export default function ExperimentMonitorPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["run", id] }),
   });
   const deleteMut = useMutation({
-    mutationFn: () => api.delete(`/api/runs/${id}/`),
+    mutationFn: () => api.delete(`/runs/${id}/`),
     onSuccess: () => navigate("/experiments"),
   });
   const evalMut = useMutation({
-    mutationFn: () => api.post(`/api/runs/${id}/evaluate/`),
+    mutationFn: () => api.post(`/runs/${id}/evaluate/`),
   });
   const paperMut = useMutation({
     mutationFn: async () => {
-      const res = await api.get(`/api/runs/${id}/paper/`, {
+      const res = await api.get(`/runs/${id}/paper/`, {
         responseType: "blob",
       });
       const url = URL.createObjectURL(res.data);
@@ -509,7 +509,7 @@ export default function ExperimentMonitorPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => window.open(`/api/runs/${id}/report/`, "_blank")}
+            onClick={() => window.open(`/runs/${id}/report/`, "_blank")}
           >
             📑 Full Report
           </Button>
@@ -517,7 +517,7 @@ export default function ExperimentMonitorPage() {
             variant="ghost"
             size="sm"
             onClick={() =>
-              window.open(`/api/runs/${id}/paper_preview/`, "_blank")
+              window.open(`/runs/${id}/paper_preview/`, "_blank")
             }
           >
             📄 PDF Preview
@@ -660,7 +660,7 @@ export default function ExperimentMonitorPage() {
           size="sm"
           className="mt-3"
           onClick={async () => {
-            const env = await api.get(`/api/runs/${id}/environment/`);
+            const env = await api.get(`/runs/${id}/environment/`);
             alert(JSON.stringify(env.data, null, 2));
           }}
         >
@@ -701,7 +701,7 @@ export default function ExperimentMonitorPage() {
           📁 Artifacts & Downloads
         </h3>
         <div className="flex gap-2">
-          <a href={`/api/runs/${id}/model/`} download>
+          <a href={`/runs/${id}/model/`} download>
             <Button variant="secondary" size="sm">
               🤖 Download Model
             </Button>

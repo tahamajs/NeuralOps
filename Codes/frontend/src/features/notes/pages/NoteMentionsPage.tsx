@@ -14,13 +14,13 @@ export default function NoteMentionsPage() {
   const { data: mentions = [], isLoading } = useQuery({
     queryKey: ["noteMentions", noteId],
     queryFn: async () =>
-      (await api.get(`/api/notes/v1/notes/${noteId}/mentions/`)).data,
+      (await api.get(`/notes/v1/notes/${noteId}/mentions/`)).data,
     enabled: !!noteId,
   });
 
   const markReadMut = useMutation({
     mutationFn: (mentionId: string) =>
-      api.post(`/api/notes/v1/mentions/${mentionId}/read/`),
+      api.post(`/notes/v1/mentions/${mentionId}/read/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["noteMentions", noteId] }),
   });

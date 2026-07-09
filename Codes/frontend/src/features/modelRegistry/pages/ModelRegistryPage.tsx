@@ -22,14 +22,14 @@ export default function ModelRegistryPage() {
 
   const promoteMut = useMutation({
     mutationFn: (id: string) =>
-      api.post(`/api/model-versioning/versions/${id}/promote/`),
+      api.post(`/model-versioning/versions/${id}/promote/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["modelVersions"] }),
   });
 
   const archiveMut = useMutation({
     mutationFn: (id: string) =>
-      api.post(`/api/model-versioning/versions/${id}/archive/`),
+      api.post(`/model-versioning/versions/${id}/archive/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["modelVersions"] }),
   });
@@ -99,7 +99,7 @@ export default function ModelRegistryPage() {
                 variant="ghost"
                 onClick={() =>
                   window.open(
-                    `/api/model-versioning/versions/${model.id}/download/`,
+                    `/model-versioning/versions/${model.id}/download/`,
                     "_blank",
                   )
                 }

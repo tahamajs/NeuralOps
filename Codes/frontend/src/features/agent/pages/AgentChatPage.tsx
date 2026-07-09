@@ -42,7 +42,7 @@ export default function AgentChatPage() {
 
   const handleSelectSession = (id: string) => navigate(`/agent/${id}`);
   const handleDeleteSession = async (id: string) => {
-    await api.delete(`/api/agents/chats/${id}/`);
+    await api.delete(`/agents/chats/${id}/`);
     queryClient.invalidateQueries({ queryKey: ["agentSessions"] });
     if (id === sessionId) navigate("/agent");
   };

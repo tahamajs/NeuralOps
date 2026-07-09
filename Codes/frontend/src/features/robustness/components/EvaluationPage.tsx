@@ -16,8 +16,8 @@ export default function EvaluationPage({ type }: { type: EvalType }) {
     mutationFn: async () => {
       const endpoint =
         type === "fairness"
-          ? `/api/runs/${runId}/fairness/`
-          : `/api/runs/${runId}/robustness/`;
+          ? `/runs/${runId}/fairness/`
+          : `/runs/${runId}/robustness/`;
       const res = await api.post(endpoint, JSON.parse(input));
       return res.data;
     },

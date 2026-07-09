@@ -10,13 +10,13 @@ export default function ModelCardPage() {
   const { runId } = useParams<{ runId: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["modelCard", runId],
-    queryFn: async () => (await api.get(`/api/runs/${runId}/model-card/`)).data,
+    queryFn: async () => (await api.get(`/runs/${runId}/model-card/`)).data,
   });
 
   const [repoId, setRepoId] = useState("");
   const pushMutation = useMutation({
     mutationFn: async () =>
-      api.post(`/api/runs/${runId}/model-card/push/`, { repo_id: repoId }),
+      api.post(`/runs/${runId}/model-card/push/`, { repo_id: repoId }),
     onSuccess: () => alert("Pushed to HuggingFace Hub"),
   });
 

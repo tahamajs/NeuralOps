@@ -16,7 +16,7 @@ export default function NoteVersionDetailPage() {
     queryFn: async () =>
       (
         await api.get(
-          `/api/notes/v1/notes/${noteId}/versions/${versionNumber}/`,
+          `/notes/v1/notes/${noteId}/versions/${versionNumber}/`,
         )
       ).data,
     enabled: !!noteId && !!versionNumber,

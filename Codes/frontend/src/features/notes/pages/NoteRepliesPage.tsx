@@ -16,13 +16,13 @@ export default function NoteRepliesPage() {
   const { data: replies = [], isLoading } = useQuery({
     queryKey: ["noteReplies", noteId],
     queryFn: async () =>
-      (await api.get(`/api/notes/v1/notes/${noteId}/replies/`)).data,
+      (await api.get(`/notes/v1/notes/${noteId}/replies/`)).data,
     enabled: !!noteId,
   });
 
   const postReplyMut = useMutation({
     mutationFn: async () => {
-      await api.post(`/api/notes/v1/notes/${noteId}/replies/`, {
+      await api.post(`/notes/v1/notes/${noteId}/replies/`, {
         content: replyContent,
       });
     },
