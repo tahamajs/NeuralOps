@@ -258,7 +258,8 @@ class ConfigEndpointTests(TestCase):
     def test_list_models(self):
         resp = self.client.get("/api/config/models/")
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("distilbert-base-uncased", resp.data["models"])
+        model_names = [m["name"] if isinstance(m, dict) else m for m in resp.data["models"]]
+        self.assertIn("distilbert-base-uncased", model_names)
 
     def test_list_tasks(self):
         resp = self.client.get("/api/config/tasks/")

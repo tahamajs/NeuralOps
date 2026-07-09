@@ -121,7 +121,7 @@ class AnonBurstRateThrottle(AnonRateThrottle):
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
-def _registry_list(registry, key_name):
+def _registry_list(request, registry, key_name):
     return Response({key_name: list(registry.keys()), "count": len(registry)})
 
 
