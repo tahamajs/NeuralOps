@@ -384,6 +384,8 @@ class NotesWorkflowTests(IntegrationTestBase):
         resp = other_client.get(f"/api/notes/v1/notes/{note_id}/")
         self.assertEqual(resp.status_code, 200)
 
+        # Restore credentials of original user (researcher) to add reaction
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token)
         # Add reaction
         resp = self.client.post(
             f"/api/notes/v1/notes/{note_id}/react/", {"reaction": "like"}, format="json"
