@@ -212,13 +212,48 @@ def trial_update(request, sweep_id, trial_number):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def parameter_interactions(request):
-    """Placeholder for parameter interactions visualization data."""
-    return Response([])
+    """Retrieve parameter interactions. Filters by sweep_id query param if provided."""
+    try:
+        from sweeps.models import SweepTrial
+        sweep_id = request.query_params.get("sweep_id")
+        if sweep_id:
+            trials = SweepTrial.objects.filter(sweep_id=sweep_id, objective_value__isnull=False)
+        else:
+            trials = SweepTrial.objects.filter(objective_value__isnull=False)
+            
+        data = []
+        for t in trials:
+            data.append({
+                "trial_number": t.trial_number,
+                "objective_value": t.objective_value,
+                "params": t.params,
+                "duration_seconds": t.duration_seconds
+            })
+        return Response(data)
+    except Exception:
+        return Response([])
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def run_parameter_scatter(request):
-    """Placeholder for parameter scatter visualization data."""
-    return Response([])
+    """Retrieve parameter scatter data. Filters by sweep_id query param if provided."""
+    try:
+        from sweeps.models import SweepTrial
+        sweep_id = request.query_params.get("sweep_id")
+        if sweep_id:
+            trials = SweepTrial.objects.filter(sweep_id=sweep_id, objective_value__isnull=False)
+        else:
+            trials = SweepTrial.objects.filter(objective_value__isnull=False)
+            
+        data = []
+        for t in trials:
+            data.append({
+                "trial_number": t.trial_number,
+                "objective_value": t.objective_value,
+                "params": t.params,
+            })
+        return Response(data)
+    except Exception:
+        return Response([])
 
