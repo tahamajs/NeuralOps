@@ -231,13 +231,33 @@ def download_model_version(request, version_id):
         )
         return response
 
-    # 2. If no compressed artifact, stream the artifact directory as tar.gz
-    if not os.path.isdir(version.artifact_path):
+    # 2. Support single file download or glob resolution
+    path = version.artifact_path
+    if path and not os.path.exists(path):
+        import glob
+        # Try finding checkpoints inside or matching the path
+        matches = glob.glob(os.path.join(path, "*.pth")) or glob.glob(path + "*")
+        if matches:
+            path = matches[0]
+
+    if path and os.path.isfile(path):
+        response = FileResponse(
+            open(path, "rb"),
+            as_attachment=True,
+            content_type="application/octet-stream",
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="{os.path.basename(path)}"'
+        )
+        return response
+
+    # 3. If no compressed artifact and it's a directory, stream as tar.gz
+    if not path or not os.path.isdir(path):
         raise Http404("Artifact not found")
 
     tar_buffer = io.BytesIO()
     with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-        tar.add(version.artifact_path, arcname=os.path.basename(version.artifact_path))
+        tar.add(path, arcname=os.path.basename(path))
     tar_buffer.seek(0)
     response = FileResponse(
         tar_buffer, as_attachment=True, content_type="application/gzip"

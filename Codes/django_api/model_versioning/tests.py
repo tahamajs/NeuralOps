@@ -158,6 +158,8 @@ class ModelVersionTests(TestCase):
     @patch("os.path.exists", return_value=True)
     @patch("builtins.open", new_callable=MagicMock)
     def test_download_success(self, mock_open, mock_exists):
+        self.version.compressed_artifact_path = "/tmp/model_v1.tar.gz"
+        self.version.save()
         url = f"/api/model-versioning/versions/{self.version.id}/download/"
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
