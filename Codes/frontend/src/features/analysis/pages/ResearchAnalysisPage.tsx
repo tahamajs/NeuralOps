@@ -31,6 +31,7 @@ function getMetric(run: Run, metric: string): number {
 }
 
 function uniqueValues(runs: Run[], key: string) {
+  if (!Array.isArray(runs)) return [];
   return Array.from(new Set(runs.map((r) => r.config?.[key]).filter(Boolean)));
 }
 
@@ -169,12 +170,12 @@ export default function ResearchAnalysisPage() {
   const attentions = uniqueValues(runs, "attention_type");
 
   const filteredRuns = useMemo(() => {
-    let filtered = runs;
+    let filtered = Array.isArray(runs) ? runs : [];
     if (filterTask)
       filtered = filtered.filter((r) => r.config?.task_name === filterTask);
     if (filterAttention)
       filtered = filtered.filter(
-        (r) => r.config?.attention_type === filterAttention,
+         (r) => r.config?.attention_type === filterAttention,
       );
     if (filterStatus)
       filtered = filtered.filter((r) => r.status === filterStatus);
