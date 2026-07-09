@@ -20,7 +20,7 @@ export default function SessionSidebar({
 }: Props) {
   const { data: sessions = [] } = useQuery<ChatSession[]>({
     queryKey: ["agentSessions"],
-    queryFn: async () => (await api.get("/api/agents/chats/")).data,
+    queryFn: async () => (await api.get("/agents/chats/")).data,
     refetchInterval: 10000,
   });
 

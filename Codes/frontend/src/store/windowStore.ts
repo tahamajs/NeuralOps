@@ -1,6 +1,20 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+/** crypto.randomUUID() is only available in HTTPS secure contexts.
+ *  This polyfill works on plain HTTP (LAN access, etc.) as well. */
+const uuid = (): string => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback: RFC 4122 v4 UUID using Math.random
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 export interface WindowItem {
   id: string;
   type: string;
@@ -47,7 +61,7 @@ export const useWindowStore = create<WindowStore>()(
           windows: [
             ...get().windows,
             {
-              id: crypto.randomUUID(),
+              id: uuid(),
               type,
               title,
               icon,

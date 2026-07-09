@@ -22,7 +22,7 @@ export default function AgentCreator() {
   });
 
   const createMut = useMutation({
-    mutationFn: () => api.post("/api/agents/sessions/", form),
+    mutationFn: () => api.post("/agents/sessions/", form),
     onSuccess: (res) => navigate(`/agents/${res.data.id}`),
   });
 

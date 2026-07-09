@@ -14,7 +14,7 @@ export default function AgentSessionsListPage() {
 
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ["agentSessions"],
-    queryFn: async () => (await api.get("/api/agents/chats/")).data,
+    queryFn: async () => (await api.get("/agents/chats/")).data,
   });
 
   const deleteMut = useMutation({
@@ -24,7 +24,7 @@ export default function AgentSessionsListPage() {
   });
 
   const handleNewChat = async () => {
-    const res = await api.post("/api/agents/chats/", { title: "" });
+    const res = await api.post("/agents/chats/", { title: "" });
     navigate(`/agent/${res.data.id}`);
   };
 

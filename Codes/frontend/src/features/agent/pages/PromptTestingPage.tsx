@@ -16,7 +16,7 @@ export default function PromptTestingPage() {
 
   const testMut = useMutation({
     mutationFn: async () => {
-      const res = await api.post("/api/agents/prompts/test/", {
+      const res = await api.post("/agents/prompts/test/", {
         template,
         test_cases: testCases,
         metric,

@@ -79,7 +79,7 @@ export default function AgentToolsPage() {
     queryKey: ["agentTools"],
     queryFn: async () => {
       try {
-        return (await api.get("/api/agents/tools/")).data;
+        return (await api.get("/agents/tools/")).data;
       } catch {
         return FALLBACK_TOOLS;
       }
