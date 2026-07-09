@@ -386,6 +386,7 @@ class NotesWorkflowTests(IntegrationTestBase):
 
         # Restore credentials of original user (researcher) to add reaction
         self.client.credentials(HTTP_AUTHORIZATION="Token " + self.token)
+        self.client.cookies["authToken"] = self.token
         # Add reaction
         resp = self.client.post(
             f"/api/notes/v1/notes/{note_id}/react/", {"reaction": "like"}, format="json"
@@ -488,8 +489,9 @@ class NotesWorkflowTests(IntegrationTestBase):
         )
         from notes.models import NoteMention
 
+        other_u, _ = User.objects.get_or_create(username="other", defaults={"email": "other@test.com"})
         mention = NoteMention.objects.create(
-            note=note, mentioned_user=self.other_user()
+            note=note, mentioned_user=other_u
         )
         # list mentions
         resp = self.client.get(f"/api/notes/v1/notes/{note.id}/mentions/")
@@ -522,6 +524,7 @@ class NotesWorkflowTests(IntegrationTestBase):
         self.assertIn("new", note_obj.tags)
 
     def test_recent_notes(self):
+        from datetime import timedelta
         old_note = ResearcherNote.objects.create(
             title="Old",
             content="x",

@@ -4,8 +4,7 @@ DataLoader creation, and augmentation for all common tasks and models.
 """
 
 from .augmentation import AUGMENTATION_REGISTRY, random_mask_augment
-from .base import DataConfig, TaskType, create_dataloader
-from .base import preprocess_function as base_preprocess
+from .base import DataConfig, TaskType, create_dataloader, preprocess_function
 from .dataset_loader import ExperimentConfig, load_dataset
 from .glue_loader import (GLUE_TASK_KEYS, get_num_labels_and_is_regression,
                           load_glue_local)
