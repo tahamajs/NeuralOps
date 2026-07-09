@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../features/auth/store/authStore";
 import ConnectionStatus from "./ConnectionStatus";
@@ -261,7 +261,9 @@ export const MainLayout = () => {
           </header>
 
           <main className="flex-1 p-6 md:p-8">
-            <Outlet />
+            <Suspense fallback={<Spinner className="py-8" />}>
+              <Outlet />
+            </Suspense>
           </main>
         </div>
       </div>
