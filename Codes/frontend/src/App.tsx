@@ -441,27 +441,27 @@ function App() {
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
-          </BrowserRouter>
 
-          {/* Floating window system (always on top, independent of router) */}
-          <div className="fixed inset-0 z-50 overflow-hidden pointer-events-none">
-            <div className="pointer-events-auto">
-              {windows.map((win) => {
-                const Component = componentMap[win.type]
-                if (!Component) return null
-                return (
-                  <DockableWindow key={win.id} window={win}>
-                    <Component onClose={() => useWindowStore.getState().removeWindow(win.id)} />
-                  </DockableWindow>
-                )
-              })}
-              <WindowLauncher />
-              <WorkspaceManager />
-              <FloatingWindowRenderer />
-              <FloatingWindowBar />
-              <Toaster />
+            {/* Floating window system (always on top, shares router context) */}
+            <div className="fixed inset-0 z-50 overflow-hidden pointer-events-none">
+              <div className="pointer-events-auto">
+                {windows.map((win) => {
+                  const Component = componentMap[win.type]
+                  if (!Component) return null
+                  return (
+                    <DockableWindow key={win.id} window={win}>
+                      <Component onClose={() => useWindowStore.getState().removeWindow(win.id)} />
+                    </DockableWindow>
+                  )
+                })}
+                <WindowLauncher />
+                <WorkspaceManager />
+                <FloatingWindowRenderer />
+                <FloatingWindowBar />
+                <Toaster />
+              </div>
             </div>
-          </div>
+          </BrowserRouter>
         </ThemeProvider>
       </HardwareProvider>
     </QueryClientProvider>
