@@ -211,3 +211,22 @@ def performance_snapshot_list(request):
             serializer.save()
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def system_health(request):
+    """Return mock system resource stats & service status."""
+    return Response({
+        "status": "healthy",
+        "resources": {
+            "cpu": 45.2,
+            "memory": 62.1,
+            "disk": 51.4
+        },
+        "services": {
+            "database": { "status": "healthy", "latency": 2 },
+            "redis": { "status": "healthy", "latency": 1 },
+            "celery": { "status": "healthy" }
+        }
+    })
