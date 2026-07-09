@@ -19,7 +19,7 @@ export function PromptEditor({ initialPrompt, onSave }: PromptEditorProps) {
     const matches = template.match(/\{\{([^}]+)\}\}/g);
     if (matches) {
       const vars = Array.from(new Set(matches.map((m) => m.replace(/\{\{|\}\}/g, "").trim())));
-      setVariables(vars);
+      setVariables(vars as string[]);
     } else {
       setVariables([]);
     }

@@ -1,6 +1,6 @@
 import React from "react";
 import { ArenaBattle } from "../types";
-import { Table, TableHeader, TableRow, TableCell, TableBody } from "../../../components/ui/Table";
+
 import { Trophy, Award } from "lucide-react";
 
 interface ArenaLeaderboardProps {
