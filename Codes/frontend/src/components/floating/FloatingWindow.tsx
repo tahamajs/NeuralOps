@@ -39,11 +39,16 @@ export default function FloatingWindowRenderer() {
   // Ref for dragging to avoid accidental clicks
   const dragRef = useRef<boolean>(false);
 
+  const minimizedWindows = windows.filter((w) => w.minimized);
+
   return (
     <>
       {windows.map((win) => {
         if (win.minimized) {
-          // Minimized representation (taskbar icon)
+          // Minimized representation (taskbar icon aligned horizontally from right)
+          const minIdx = minimizedWindows.findIndex((w) => w.id === win.id);
+          const offsetRight = 16 + minIdx * 150; // 150px spacing
+
           return (
             <div
               key={win.id}
@@ -52,14 +57,27 @@ export default function FloatingWindowRenderer() {
                 bringToFront(win.id);
                 toggleMinimize(win.id);
               }}
-              className={`fixed bottom-4 right-4 z-[200] glass px-4 py-2 rounded-xl cursor-pointer flex items-center gap-2 text-xs font-bold text-white transition-all hover:scale-105 ${
+              style={{ right: `${offsetRight}px` }}
+              className={`fixed bottom-4 z-[200] glass px-3 py-2 rounded-xl cursor-pointer flex items-center justify-between gap-2 text-xs font-bold text-white transition-all hover:scale-105 w-[140px] border ${
                 focusedId === win.id
-                  ? "border-neon-blue shadow-neon-blue/20 shadow-lg"
-                  : ""
+                  ? "border-neon-blue/60 shadow-neon-blue/20 shadow-md"
+                  : "border-white/10"
               }`}
             >
-              <span>{win.icon || "▣"}</span>
-              <span>{win.title}</span>
+              <div className="flex items-center gap-1.5 truncate">
+                <span>{win.icon || "▣"}</span>
+                <span className="truncate">{win.title}</span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeWindow(win.id);
+                }}
+                className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-red-500/30 text-slate-400 hover:text-red-400 text-[10px]"
+                title="Close"
+              >
+                ✕
+              </button>
             </div>
           );
         }
