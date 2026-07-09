@@ -15,15 +15,23 @@ User = get_user_model()
 @receiver(post_save, sender=Job)
 def on_training_complete(sender, instance, **kwargs):
     if instance.status == "completed":
+        user = getattr(instance, "user", None)
+        if not user:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            user = User.objects.first()
+        if not user:
+            return
+
         # Activity
         ActivityEvent.objects.get_or_create(
-            user=instance.user,
+            user=user,
             date=timezone.now().date(),
             event_type="training",
             defaults={"count": 1},
         )
         # Auto-add to portfolio if public
-        portfolio, _ = Portfolio.objects.get_or_create(user=instance.user)
+        portfolio, _ = Portfolio.objects.get_or_create(user=user)
         if portfolio.is_public:
             ShowcaseItem.objects.get_or_create(
                 portfolio=portfolio,
