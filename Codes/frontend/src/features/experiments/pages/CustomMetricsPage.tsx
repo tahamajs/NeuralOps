@@ -9,7 +9,7 @@ export default function CustomMetricsPage() {
   const { id } = useParams<{ id: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["customMetrics", id],
-    queryFn: async () => (await api.get(`/api/jobs/${id}/metrics/`)).data,
+    queryFn: async () => (await api.get(`/jobs/${id}/metrics/`)).data,
   });
 
   if (isLoading) return <Spinner />;

@@ -17,7 +17,7 @@ export default function ExperimentDiffPage() {
 
   const handleDiff = async () => {
     if (!runA || !runB) return;
-    const res = await api.get(`/api/experiments/runs/${runA}/diff/${runB}/`);
+    const res = await api.get(`/experiments/runs/${runA}/diff/${runB}/`);
     setDiff(res.data);
   };
 

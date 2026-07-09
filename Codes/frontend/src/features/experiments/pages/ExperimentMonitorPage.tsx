@@ -445,11 +445,11 @@ export default function ExperimentMonitorPage() {
 
   // Action mutations
   const stopMut = useMutation({
-    mutationFn: () => api.post(`/api/jobs/${id}/stop/`),
+    mutationFn: () => api.post(`/jobs/${id}/stop/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["run", id] }),
   });
   const retryMut = useMutation({
-    mutationFn: () => api.post(`/api/jobs/${id}/retry/`),
+    mutationFn: () => api.post(`/jobs/${id}/retry/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["run", id] }),
   });
   const deleteMut = useMutation({

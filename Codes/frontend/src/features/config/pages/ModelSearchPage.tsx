@@ -15,7 +15,7 @@ export default function ModelSearchPage() {
   const { data, isLoading, isFetched } = useQuery({
     queryKey: ["hfModels", searchQuery],
     queryFn: async () =>
-      (await api.get(`/api/config/search-models/?q=${searchQuery}`)).data,
+      (await api.get(`/config/search-models/?q=${searchQuery}`)).data,
     enabled: searchQuery.length > 0,
   });
 
