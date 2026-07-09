@@ -134,7 +134,7 @@ def list_model_versions(request, run_id):
         queryset = queryset.order_by("-version_number")
 
     # CSV export
-    if request.query_params.get("format") == "csv":
+    if request.query_params.get("export_csv") == "true":
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = (
             f'attachment; filename="model_versions_run_{run.id}.csv"'
