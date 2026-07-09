@@ -483,15 +483,14 @@ class NotesWorkflowTests(IntegrationTestBase):
     def test_note_mentions_and_read(self):
         note = ResearcherNote.objects.create(
             title="Mention Test",
-            content="Hey @other",
+            content="Hey @researcher",
             author=User.objects.get(username=self.username),
             run=self.job,
         )
         from notes.models import NoteMention
 
-        other_u, _ = User.objects.get_or_create(username="other", defaults={"email": "other@test.com"})
         mention = NoteMention.objects.create(
-            note=note, mentioned_user=other_u
+            note=note, mentioned_user=User.objects.get(username=self.username)
         )
         # list mentions
         resp = self.client.get(f"/api/notes/v1/notes/{note.id}/mentions/")
@@ -530,7 +529,9 @@ class NotesWorkflowTests(IntegrationTestBase):
             content="x",
             author=User.objects.get(username=self.username),
             run=self.job,
-            created_at=timezone.now() - timedelta(days=30),
+        )
+        ResearcherNote.objects.filter(id=old_note.id).update(
+            created_at=timezone.now() - timedelta(days=30)
         )
         new_note = self._create_note_via_api(title="Recent")  # helper needed
         resp = self.client.get("/api/notes/v1/notes/recent/?days=7")
