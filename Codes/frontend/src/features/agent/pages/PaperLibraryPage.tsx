@@ -16,7 +16,7 @@ export default function PaperLibraryPage() {
 
   const { data: papers = [], isLoading } = useQuery({
     queryKey: ["savedPapers"],
-    queryFn: async () => (await api.get("/api/agents/papers/saved/")).data,
+    queryFn: async () => (await api.get("/agents/papers/saved/")).data,
   });
 
   const deleteMut = useMutation({

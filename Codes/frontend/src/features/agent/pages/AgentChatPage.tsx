@@ -36,7 +36,7 @@ export default function AgentChatPage() {
   }, [messages]);
 
   const handleNewChat = async () => {
-    const res = await api.post("/api/agents/chats/", { title: "" });
+    const res = await api.post("/agents/chats/", { title: "" });
     navigate(`/agent/${res.data.id}`);
   };
 

@@ -18,7 +18,7 @@ export default function CitationGraphModal({ onClose }: Props) {
 
   const fetchMut = useMutation({
     mutationFn: async () => {
-      const res = await api.post("/api/agents/papers/citation-graph/", {
+      const res = await api.post("/agents/papers/citation-graph/", {
         paper_ids: [paperId],
       });
       return res.data;

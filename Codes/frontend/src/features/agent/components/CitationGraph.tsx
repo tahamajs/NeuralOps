@@ -13,7 +13,7 @@ export default function CitationGraph({ paperIds }: Props) {
     queryKey: ["citationGraph", paperIds],
     queryFn: async () =>
       (
-        await api.post("/api/agents/papers/citation-graph/", {
+        await api.post("/agents/papers/citation-graph/", {
           paper_ids: paperIds,
         })
       ).data,

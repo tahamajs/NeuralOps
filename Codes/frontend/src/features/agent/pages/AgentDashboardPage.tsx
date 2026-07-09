@@ -59,7 +59,7 @@ export default function AgentDashboardPage() {
 
   const { data: sessions, isLoading: sessionsLoading } = useQuery<ChatSession[]>({
     queryKey: ["agentSessions"],
-    queryFn: async () => (await api.get("/api/agents/chats/")).data,
+    queryFn: async () => (await api.get("/agents/chats/")).data,
     refetchInterval: 10_000,
   });
 
@@ -67,7 +67,7 @@ export default function AgentDashboardPage() {
     queryKey: ["agentStatus"],
     queryFn: async () => {
       try {
-        return (await api.get("/api/agents/status/")).data;
+        return (await api.get("/agents/status/")).data;
       } catch {
         return { status: "offline", model: "Unknown", tools_count: 0, active_sessions: 0, ws_enabled: false } as AgentStatus;
       }
@@ -76,7 +76,7 @@ export default function AgentDashboardPage() {
   });
 
   const handleNewSession = async (initialPrompt?: string) => {
-    const res = await api.post("/api/agents/chats/", { title: "" });
+    const res = await api.post("/agents/chats/", { title: "" });
     const id: string = res.data.id;
     if (initialPrompt) {
       await api.post(`/api/agents/chats/${id}/send/`, { text: initialPrompt });
