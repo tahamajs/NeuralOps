@@ -43,5 +43,8 @@ export const forensicsAPI = {
     api.post("/forensics/patterns/create/", data),
 
   // Stats
-  getFailureStats: () => api.get<FailureStats>("/forensics/stats/"),
+  getFailureStats: async () => {
+    const res = await api.get<FailureStats>("/forensics/stats/");
+    return res.data;
+  },
 };
