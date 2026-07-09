@@ -1,5 +1,5 @@
 from django.urls import path, re_path
-
+from api import views as api_views
 from . import views
 
 urlpatterns = [
@@ -89,17 +89,17 @@ urlpatterns = [
         name="use_template",
     ),
     # Config endpoints (static lists)
-    path("config/attentions/", views.list_attentions, name="list_attentions"),
-    path("config/models/", views.list_models, name="list_models"),
-    path("config/tasks/", views.list_tasks, name="list_tasks"),
-    path("config/compressors/", views.list_compressors, name="list_compressors"),
-    path("config/methods/", views.list_methods, name="list_methods"),
-    path("config/presets/", views.list_presets, name="list_presets"),
+    path("config/attentions/", api_views.list_attentions, name="list_attentions"),
+    path("config/models/", api_views.list_models, name="list_models"),
+    path("config/tasks/", api_views.list_tasks, name="list_tasks"),
+    path("config/compressors/", api_views.list_compressors, name="list_compressors"),
+    path("config/methods/", api_views.list_methods, name="list_methods"),
+    path("config/presets/", api_views.list_presets, name="list_presets"),
     # Auth (if you want separate auth endpoints)
     path("auth/register/", views.register_view, name="register"),
     path("auth/login/", views.login_view, name="login"),
     path("auth/logout/", views.logout_view, name="logout"),
     # System status
-    path("system/status/", views.system_status, name="system_status"),
-    path("system/gpu/", views.gpu_info, name="gpu_info"),
+    path("system/status/", api_views.system_status, name="system_status"),
+    path("system/gpu/", api_views.gpu_info, name="gpu_info"),
 ]
