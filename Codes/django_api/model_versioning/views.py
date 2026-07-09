@@ -78,6 +78,8 @@ def all_model_versions(request):
 @permission_classes([IsAuthenticated])
 def list_model_versions(request, run_id):
     """List versions for a specific run with optional filtering, sorting, and CSV export."""
+    print("ALL JOBS:", list(Job.objects.values_list("id", flat=True)))
+    print("LOOKING FOR:", run_id)
     run = get_object_or_404(Job, id=run_id)
     queryset = run.versioning_model_versions.all().order_by("-version_number")
 
