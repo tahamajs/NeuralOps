@@ -552,14 +552,28 @@ class RunnerTests(TestCase):
         self.addCleanup(patcher1.stop)
         self.addCleanup(patcher2.stop)
         # Import the real framework modules and mock them
-        self.fw_patcher = patch.multiple(
-            "experiment.runners",
-            framework_train=MagicMock(),
-            framework_eval=MagicMock(return_value={"eval_accuracy": 0.9}),
-            framework_compress=MagicMock(return_value={"compression_ratio": 0.5}),
+        self.patch_train = patch("framework.experiment_utils.run_training", MagicMock())
+        self.patch_eval = patch(
+            "framework.experiment_utils.run_evaluation",
+            MagicMock(return_value={"eval_accuracy": 0.9}),
         )
-        self.fw_mocks = self.fw_patcher.start()
-        self.addCleanup(self.fw_patcher.stop)
+        self.patch_compress = patch(
+            "framework.experiment_utils.run_compression",
+            MagicMock(return_value={"compression_ratio": 0.5}),
+        )
+        self.mock_train = self.patch_train.start()
+        self.mock_eval = self.patch_eval.start()
+        self.mock_compress = self.patch_compress.start()
+        self.addCleanup(self.patch_train.stop)
+        self.addCleanup(self.patch_eval.stop)
+        self.addCleanup(self.patch_compress.stop)
+
+        # Also mock MegaOrchestrator to avoid real training in run_training
+        self.orch_patcher = patch("experiment.runners.MegaOrchestrator")
+        self.mock_orch = self.orch_patcher.start()
+        self.mock_orch_instance = MagicMock()
+        self.mock_orch.return_value = self.mock_orch_instance
+        self.addCleanup(self.orch_patcher.stop)
 
     def test_run_training_completes(self):
         run_training(self.run, self.stop_event)
@@ -573,7 +587,7 @@ class RunnerTests(TestCase):
         self.assertEqual(self.run.status, "stopped")
 
     def test_run_training_fails(self):
-        self.fw_mocks["framework_train"].side_effect = Exception("crash")
+        self.mock_train.side_effect = Exception("crash")
         run_training(self.run, self.stop_event)
         self.run.refresh_from_db()
         self.assertEqual(self.run.status, "failed")
@@ -584,7 +598,7 @@ class RunnerTests(TestCase):
         self.assertEqual(self.run.status, "completed")
 
     def test_run_evaluation_fails(self):
-        self.fw_mocks["framework_eval"].side_effect = Exception("eval crash")
+        self.mock_eval.side_effect = Exception("eval crash")
         run_evaluation(self.run, self.stop_event)
         self.run.refresh_from_db()
         self.assertEqual(self.run.status, "failed")
