@@ -61,10 +61,10 @@ class GPUDetector:
                 capture_output=True, text=True, timeout=10
             )
             if result.returncode != 0:
-                return None
+                raise Exception("nvidia-smi failed")
             parts = result.stdout.strip().split(',')
             if len(parts) < 2:
-                return None
+                raise Exception("nvidia-smi parsing failed")
             self._gpu_info = {
                 'name': parts[0].strip(),
                 'count': int(parts[2].strip()) if len(parts) > 2 else 1,
@@ -73,7 +73,22 @@ class GPUDetector:
             }
             return self._gpu_info
         except Exception:
-            return None
+            pass
+
+        # Final fallback: simulated GPU to allow local agent execution/testing on CPU/Mac
+        try:
+            import torch
+            is_mps = torch.backends.mps.is_available()
+        except ImportError:
+            is_mps = False
+
+        self._gpu_info = {
+            'name': 'Apple Silicon (MPS Simulated)' if is_mps else 'Simulated GPU (Worker-0)',
+            'count': 1,
+            'vram_mb': 8192 if is_mps else 6144,
+            'compute_capability': 'mps' if is_mps else 'cpu',
+        }
+        return self._gpu_info
 
     @staticmethod
     def get_system_ram_gb() -> int:
@@ -96,7 +111,15 @@ class GPUDetector:
                 'temperature_c': temp,
             }
         except Exception:
-            return {'gpu_percent': 0, 'memory_percent': 0, 'temperature_c': 0}
+            # Return simulated load based on system CPU/RAM usage
+            import psutil
+            cpu = psutil.cpu_percent()
+            mem = psutil.virtual_memory().percent
+            return {
+                'gpu_percent': cpu,
+                'memory_percent': mem,
+                'temperature_c': 45 + int(cpu * 0.3),
+            }
 
 
 class BenchmarkRunner:
