@@ -6,7 +6,7 @@ import { Spinner } from "../../../components/ui/Spinner";
 export default function VersionPage() {
   const { data } = useQuery({
     queryKey: ["version"],
-    queryFn: async () => (await api.get("/api/version/")).data,
+    queryFn: async () => (await api.get("/version/")).data,
   });
   if (!data) return <Spinner />;
   return (

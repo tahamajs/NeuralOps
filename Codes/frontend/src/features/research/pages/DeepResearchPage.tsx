@@ -18,7 +18,7 @@ export default function DeepResearchPage() {
 
   const startResearch = async () => {
     setIsResearching(true);
-    await fetch("/api/research/start", {
+    await fetch("/research/start", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId, query }),

@@ -31,40 +31,40 @@ export default function ClusterOverviewPage({
   // Queries for real-time cluster status
   const { data: gpuStatus, isLoading: loadingGpuStatus } = useQuery({
     queryKey: ["gpuStatus", refreshKey],
-    queryFn: async () => (await api.get("/api/loadbalancer/gpu/status/")).data,
+    queryFn: async () => (await api.get("/loadbalancer/gpu/status/")).data,
     refetchInterval: 5000,
   });
 
   const { data: gpuNodes, isLoading: loadingGpuNodes } = useQuery({
     queryKey: ["gpuNodes", refreshKey],
-    queryFn: async () => (await api.get("/api/loadbalancer/gpu/nodes/")).data,
+    queryFn: async () => (await api.get("/loadbalancer/gpu/nodes/")).data,
     refetchInterval: 5000,
   });
 
   const { data: schedulerStatus } = useQuery({
     queryKey: ["schedulerStatus", refreshKey],
     queryFn: async () =>
-      (await api.get("/api/loadbalancer/scheduler/status/")).data,
+      (await api.get("/loadbalancer/scheduler/status/")).data,
     refetchInterval: 5000,
   });
 
   const { data: queue } = useQuery({
     queryKey: ["schedulerQueue", refreshKey],
     queryFn: async () =>
-      (await api.get("/api/loadbalancer/scheduler/queue/")).data,
+      (await api.get("/loadbalancer/scheduler/queue/")).data,
     refetchInterval: 5000,
   });
 
   const { data: history } = useQuery({
     queryKey: ["schedulerHistory", refreshKey],
     queryFn: async () =>
-      (await api.get("/api/loadbalancer/scheduler/history/")).data,
+      (await api.get("/loadbalancer/scheduler/history/")).data,
   });
 
   const { data: clusterNodes } = useQuery({
     queryKey: ["clusterNodes", refreshKey],
     queryFn: async () =>
-      (await api.get("/api/loadbalancer/cluster/nodes/")).data,
+      (await api.get("/loadbalancer/cluster/nodes/")).data,
   });
 
   const triggerRefresh = () => {
