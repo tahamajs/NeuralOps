@@ -14,7 +14,9 @@ export default function ConfigHistoryPage() {
   });
 
   if (isLoading) return <Spinner />;
-  const versions = data?.versions || [];
+  const versions = Array.isArray(data)
+    ? data
+    : data?.versions || [];
 
   return (
     <div className="space-y-6 animate-fade-in">
