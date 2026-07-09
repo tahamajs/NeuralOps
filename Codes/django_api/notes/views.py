@@ -571,6 +571,11 @@ def webhook_delete(request, webhook_id, version="v1"):
 # 8. Versioned URL wrapper
 # ----------------------------------------------------------------------
 def versioned_view(view_func):
+    from django.views.decorators.csrf import csrf_exempt
+    from functools import wraps
+
+    @csrf_exempt
+    @wraps(view_func)
     def wrapper(request, *args, **kwargs):
         version = request.resolver_match.kwargs.get("version", "v1")
         return view_func(request, version=version, *args, **kwargs)

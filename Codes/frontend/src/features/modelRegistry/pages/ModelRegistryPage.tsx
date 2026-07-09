@@ -16,7 +16,7 @@ export default function ModelRegistryPage() {
   const { data: models = [], isLoading } = useQuery({
     queryKey: ["modelVersions"],
     queryFn: async () =>
-      (await api.get("/api/model-versioning/versions/")).data,
+      (await api.get("/model-versioning/versions/")).data,
     refetchInterval: 10000,
   });
 

@@ -135,7 +135,7 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? "N/A"} \\\\
   // Compilation mutation
   const compileMut = useMutation({
     mutationFn: async (source: string) => {
-      const res = await api.post("/api/latex/compile/", { latex: source });
+      const res = await api.post("/latex/compile/", { latex: source });
       return res.data;
     },
     onMutate: () => {
@@ -150,7 +150,7 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? "N/A"} \\\\
         // Create object URL from blob response if needed
         // In practice, you'd have the backend return a URL, not blob.
         // For now, set a dummy.
-        setPdfUrl("/api/latex/compile/output/"); // adjust as needed
+        setPdfUrl("/latex/compile/output/"); // adjust as needed
       }
       setCompileStatus("success");
     },
