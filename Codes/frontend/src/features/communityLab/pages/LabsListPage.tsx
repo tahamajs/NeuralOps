@@ -47,6 +47,8 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
 
   if (isLoading) return <Spinner />;
 
+  const labsArray = Array.isArray(labs) ? labs : (labs as any)?.results || [];
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center p-4 border-b border-white/10">
@@ -70,7 +72,7 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
         </div>
       </div>
       <div className="flex-1 overflow-auto p-4 space-y-3">
-        {labs?.map((lab) => (
+        {labsArray.map((lab: any) => (
           <div key={lab.id} onClick={() => navigate(`/community/labs/${lab.id}`)} className="cursor-pointer">
             <TerminalCard className="p-4">
               <div className="flex justify-between items-start">
@@ -88,10 +90,10 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
                   </p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
                     <span className="flex items-center gap-1">
-                      <Users size={12} /> {lab.member_count} members
+                      <Users size={12} /> {lab.member_count || 0} members
                     </span>
                     <span className="flex items-center gap-1">
-                      <Sparkles size={12} /> {lab.agent_count} agents
+                      <Sparkles size={12} /> {lab.agent_count || 0} agents
                     </span>
                     {lab.role === "owner" && (
                       <Badge variant="info">Owner</Badge>
@@ -105,7 +107,7 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
             </TerminalCard>
           </div>
         ))}
-        {(!labs || labs.length === 0) && (
+        {labsArray.length === 0 && (
           <TerminalCard className="p-8 text-center text-slate-500">
             <Users size={32} className="mx-auto mb-2 opacity-30" />
             <p>No labs yet. Create one to start collaborating!</p>
