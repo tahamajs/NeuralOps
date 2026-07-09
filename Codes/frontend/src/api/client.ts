@@ -412,6 +412,56 @@ api.interceptors.response.use(
           return { data: { success: true } };
         }
       }
+
+      // 5. Provider dashboard mocks
+      if (url.includes("/marketplace/provider/")) {
+        if (url.includes("/stats/")) {
+          return {
+            data: {
+              total_earned: 1250.75,
+              pending_earnings: 120.50,
+              total_hours_provided: 320,
+              active_listings: 1,
+              average_rating: 4.8,
+              dispute_rate: 0.02
+            }
+          };
+        }
+        if (url.includes("/revenue/")) {
+          return {
+            data: [
+              { date: "2026-07-01", amount: 15.0 },
+              { date: "2026-07-02", amount: 20.5 },
+              { date: "2026-07-03", amount: 12.0 },
+              { date: "2026-07-04", amount: 35.0 },
+              { date: "2026-07-05", amount: 40.0 },
+              { date: "2026-07-06", amount: 22.0 },
+              { date: "2026-07-07", amount: 48.0 }
+            ]
+          };
+        }
+        if (url.includes("/usage/")) {
+          return {
+            data: {
+              hourly_distribution: Array.from({ length: 24 }, (_, i) => ({ hour: i, hours: Math.floor(Math.random() * 20) + 5 })),
+              daily_distribution: [
+                { day: "Mon", hours: 45 },
+                { day: "Tue", hours: 50 },
+                { day: "Wed", hours: 40 },
+                { day: "Thu", hours: 60 },
+                { day: "Fri", hours: 55 },
+                { day: "Sat", hours: 30 },
+                { day: "Sun", hours: 25 }
+              ],
+              top_gpu_models: [
+                { model: "NVIDIA H100 PCIe 80GB", hours: 180 },
+                { model: "NVIDIA A100-SXM4-80GB", hours: 100 },
+                { model: "NVIDIA RTX 4090 24GB", hours: 40 }
+              ]
+            }
+          };
+        }
+      }
     }
 
     // Format error message for consistency
