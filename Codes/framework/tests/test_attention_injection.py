@@ -15,9 +15,17 @@ class TestAttentionInjection:
             from framework.core.attention_utils import inject_attention
             from transformers import AutoModel
 
-            model = AutoModel.from_pretrained(
-                "distilbert-base-uncased", local_files_only=True
-            )
+            try:
+                model = AutoModel.from_pretrained(
+                    "distilbert-base-uncased", local_files_only=True
+                )
+            except Exception:
+                try:
+                    model = AutoModel.from_pretrained(
+                        "distilbert-base-uncased", local_files_only=False
+                    )
+                except Exception as inner_e:
+                    pytest.skip(f"Model distilbert-base-uncased not cached and download failed: {inner_e}")
             inject_attention(model, "full", copy_weights=False)
             # Verify forward pass still works
             dummy = model.distilbert.transformer.layer[0].attention
