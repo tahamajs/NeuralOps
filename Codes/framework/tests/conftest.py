@@ -17,6 +17,7 @@ from transformers import AutoModel, DistilBertConfig
 # ----------------------------------------------------------------------
 try:
     import framework
+    import framework.attentions
     from framework.core.registry import ATTENTION_REGISTRY
 except ImportError:
     # Fallback for when the framework isn't installed
