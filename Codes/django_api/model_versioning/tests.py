@@ -542,15 +542,13 @@ class ModelVersionTests(TestCase):
         # Uses the real job (self.job) which already has one version – guaranteed to work.
         url = f"/api/model-versioning/runs/{self.job.id}/versions/?export_csv=true"
         resp = self.client.get(url)
-        if resp.status_code != 200:
-            print("CSV EXPORT FAIL:", getattr(resp, 'data', resp.content))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "text/csv")
 
     def test_csv_export_empty(self):
         # Create a fresh run with zero versions
         run = Job.objects.create(name="EmptyForCSV", model_name="x", task_name="y")
-        url = f"/api/model-versioning/runs/{run.id}/versions/?format=csv"
+        url = f"/api/model-versioning/runs/{run.id}/versions/?export_csv=true"
         resp = self.client.get(url)
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "text/csv")
