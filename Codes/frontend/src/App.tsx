@@ -206,6 +206,8 @@ import SubscriptionPlansPage from './features/gpuFinance/pages/SubscriptionPlans
 import GroupDiscussionPage from './features/social/pages/GroupDiscussionPage'
 import SuggestedResearchersPage from './features/social/pages/SuggestedResearchersPage'
 
+import SupportHubPage from './features/support/pages/SupportHubPage'
+import NewPaperProjectPage from './features/paper/pages/NewPaperProjectPage'
 // ========================
 // 3. Component Map for DockableWindow (complete merged)
 // ========================
@@ -221,6 +223,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   'comparison-builder': ComparisonBuilder,
   'provider-dashboard': ProviderDashboardPage,
   disputes: DisputeHandlingPage,
+  support: SupportHubPage,
 
   // Experiments & Analysis
   experiments: ExperimentListWindow,
@@ -228,6 +231,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   analytics: AdvancedAnalyticsPage,
   accelerator: AcceleratorDashboard,
   hpo: HPODashboard,
+  sweeps: HPORunsPage,
   sweep_detail: SweepDetailPage,
   recommendations: RecommendationListPage,
   forensics: FailureAnalysisPage,
@@ -416,8 +420,10 @@ function App() {
                 <Route path="/notes/new" element={<NoteCreatePage />} />
                 <Route path="/notes/:id" element={<NoteDetailPage />} />
                 <Route path="/paper/editor" element={<PaperEditorPage />} />
+                <Route path="/paper/new" element={<NewPaperProjectPage />} />
                 <Route path="/profile" element={<UserProfilePage />} />
                 <Route path="/system" element={<SystemStatusPage />} />
+                <Route path="/support" element={<SupportHubPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>
