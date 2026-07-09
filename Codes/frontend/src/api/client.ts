@@ -7,6 +7,8 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
+import { getAuthToken, removeAuthToken } from "../utils/authUtils";
+
 // ----------------------------------------------------------------------
 // Types
 // ----------------------------------------------------------------------
@@ -59,7 +61,7 @@ api.interceptors.request.use(
     }
 
     // Authentication token
-    const token = localStorage.getItem("token") || document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1];
+    const token = getAuthToken();
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }
@@ -82,8 +84,7 @@ api.interceptors.response.use(
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      localStorage.removeItem("token");
-      document.cookie = "authToken=; path=/; max-age=0; SameSite=Lax";
+      removeAuthToken();
       // Avoid redirect loop if already on login page
       if (
         typeof window !== "undefined" &&

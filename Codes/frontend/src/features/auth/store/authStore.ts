@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import api from "../../../api/client";
 import { ENDPOINTS } from "../../../api/endpoints";
+import { getAuthToken, setAuthToken, removeAuthToken } from "../../../utils/authUtils";
 
 interface AuthState {
   user: { username: string; email?: string } | null;
@@ -17,18 +18,16 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isAuthenticated: !!localStorage.getItem("token") || document.cookie.includes("authToken="),
+  isAuthenticated: !!getAuthToken(),
   login: async (username, password) => {
     const res = await api.post(ENDPOINTS.AUTH.LOGIN, { username, password });
     if (res.data.token) {
-      localStorage.setItem("token", res.data.token);
-      document.cookie = `authToken=${res.data.token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+      setAuthToken(res.data.token);
       set({ user: { username }, isAuthenticated: true });
     }
   },
   logout: () => {
-    localStorage.removeItem("token");
-    document.cookie = "authToken=; path=/; max-age=0; SameSite=Lax";
+    removeAuthToken();
     set({ user: null, isAuthenticated: false });
     window.location.href = "/login";
   },

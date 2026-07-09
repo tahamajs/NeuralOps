@@ -4,6 +4,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
+import { getAuthToken } from "../../../utils/authUtils";
 
 interface TerminalPanelProps {
   onClose?: () => void;
@@ -30,7 +31,7 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
       return;
 
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const token = localStorage.getItem("token") || document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1];
+    const token = getAuthToken();
     const url = `${protocol}://${window.location.host}/ws/terminal/?token=${token}`;
     const ws = new WebSocket(url);
     wsRef.current = ws;
