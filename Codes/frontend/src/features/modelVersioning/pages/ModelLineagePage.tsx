@@ -9,7 +9,7 @@ export default function ModelLineagePage() {
   const { data, isLoading } = useQuery({
     queryKey: ["modelLineage", versionId],
     queryFn: async () =>
-      (await api.get(`/api/models/${versionId}/lineage/`)).data,
+      (await api.get(`/models/${versionId}/lineage/`)).data,
   });
 
   if (isLoading) return <Spinner />;

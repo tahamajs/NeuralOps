@@ -8,7 +8,7 @@ export default function PromptHistoryPage() {
   const { name } = useParams<{ name: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["promptHistory", name],
-    queryFn: async () => (await api.get(`/api/prompts/${name}/history/`)).data,
+    queryFn: async () => (await api.get(`/prompts/${name}/history/`)).data,
   });
 
   if (isLoading) return <Spinner />;

@@ -37,7 +37,7 @@ export default function TrainingControlPanel({
 
   // Stop mutation with error handling
   const stopMut = useMutation({
-    mutationFn: () => api.post(`/api/jobs/${runId}/stop/`),
+    mutationFn: () => api.post(`/jobs/${runId}/stop/`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["run", runId] });
       liveStore.addLog("Stop request sent.");
@@ -49,7 +49,7 @@ export default function TrainingControlPanel({
 
   // Retry mutation
   const retryMut = useMutation({
-    mutationFn: () => api.post(`/api/jobs/${runId}/retry/`),
+    mutationFn: () => api.post(`/jobs/${runId}/retry/`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["run", runId] });
       liveStore.addLog("Job re-queued for retry.");

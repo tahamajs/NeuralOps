@@ -26,7 +26,7 @@ export default function TemplateDetailPage() {
   const { data: template, isLoading } = useQuery({
     queryKey: ["template", templateId],
     queryFn: async () =>
-      (await api.get(`/api/experiments/templates/${templateId}/`)).data,
+      (await api.get(`/experiments/templates/${templateId}/`)).data,
     enabled: !!templateId,
   });
 
@@ -50,7 +50,7 @@ export default function TemplateDetailPage() {
       } catch {
         throw new Error("Invalid JSON in config");
       }
-      return api.patch(`/api/experiments/templates/${templateId}/`, {
+      return api.patch(`/experiments/templates/${templateId}/`, {
         name: form.name,
         description: form.description,
         category: form.category,

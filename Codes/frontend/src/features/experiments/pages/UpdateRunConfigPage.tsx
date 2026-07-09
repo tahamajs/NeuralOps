@@ -12,7 +12,7 @@ export default function UpdateRunConfigPage() {
   const [configText, setConfigText] = useState("");
   const { data: run, isLoading } = useQuery({
     queryKey: ["run", runId],
-    queryFn: async () => (await api.get(`/api/experiments/${runId}/`)).data,
+    queryFn: async () => (await api.get(`/experiments/${runId}/`)).data,
   });
 
   useEffect(() => {

@@ -9,7 +9,7 @@ export default function EnvironmentInfoPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["environment", jobId],
     queryFn: async () =>
-      (await api.get(`/api/jobs/${jobId}/environment/`)).data,
+      (await api.get(`/jobs/${jobId}/environment/`)).data,
   });
 
   if (isLoading) return <Spinner />;
