@@ -151,14 +151,14 @@ const NoteModal = ({
   const { data: replies = [] } = useQuery({
     queryKey: ["noteReplies", noteId],
     queryFn: async () =>
-      (await api.get(`/api/notes/v1/notes/${noteId}/replies/`)).data,
+      (await api.get(`/notes/v1/notes/${noteId}/replies/`)).data,
     enabled: activeTab === "replies",
   });
 
   const { data: versions = [] } = useQuery({
     queryKey: ["noteVersions", noteId],
     queryFn: async () =>
-      (await api.get(`/api/notes/v1/notes/${noteId}/versions/`)).data,
+      (await api.get(`/notes/v1/notes/${noteId}/versions/`)).data,
     enabled: activeTab === "versions",
   });
 
@@ -213,7 +213,7 @@ const NoteModal = ({
 
   const postReplyMut = useMutation({
     mutationFn: () =>
-      api.post(`/api/notes/v1/notes/${noteId}/replies/`, {
+      api.post(`/notes/v1/notes/${noteId}/replies/`, {
         content: replyContent,
       }),
     onSuccess: () => {
@@ -764,7 +764,7 @@ const WebhookModal = ({ onClose }: { onClose: () => void }) => {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) =>
-      api.delete(`/api/notes/v1/webhooks/${id}/`),
+      api.delete(`/notes/v1/webhooks/${id}/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["webhooks"] }),
   });
 

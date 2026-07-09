@@ -8,7 +8,7 @@ export default function DataLineagePage() {
   const { runId } = useParams<{ runId: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["dataLineage", runId],
-    queryFn: async () => (await api.get(`/api/runs/${runId}/lineage/`)).data,
+    queryFn: async () => (await api.get(`/runs/${runId}/lineage/`)).data,
   });
 
   if (isLoading) return <Spinner />;

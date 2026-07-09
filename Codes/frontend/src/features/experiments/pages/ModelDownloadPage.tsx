@@ -13,7 +13,7 @@ export default function ModelDownloadPage() {
         <p className="text-slate-400 text-sm">
           Download the trained model as a ZIP archive.
         </p>
-        <a href={`/api/runs/${runId}/model/`} download>
+        <a href={`/runs/${runId}/model/`} download>
           <Button>Download Model</Button>
         </a>
       </Card>

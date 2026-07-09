@@ -20,7 +20,7 @@ export default function PaperRecommendationsPanel({
   const endpoint = fromLibrary
     ? "/agents/papers/recommendations/library/"
     : runId
-      ? `/api/agents/papers/recommendations/${runId}/`
+      ? `/agents/papers/recommendations/${runId}/`
       : null;
 
   const { data, isLoading } = useQuery({

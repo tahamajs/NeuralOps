@@ -8,7 +8,7 @@ export default function PublishModelPage() {
   const { versionId } = useParams<{ versionId: string }>();
   const mutation = useMutation({
     mutationFn: async () =>
-      api.post(`/api/model-versioning/versions/${versionId}/publish/`),
+      api.post(`/model-versioning/versions/${versionId}/publish/`),
     onSuccess: () => alert("Published to HuggingFace Hub"),
   });
   return (

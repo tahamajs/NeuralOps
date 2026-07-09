@@ -84,7 +84,7 @@ export default function ResearchAnalysisPage() {
   });
 
   const deleteNoteMut = useMutation({
-    mutationFn: async (id: string) => api.delete(`/api/notes/v1/notes/${id}/`),
+    mutationFn: async (id: string) => api.delete(`/notes/v1/notes/${id}/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notes"] }),
   });
 

@@ -10,7 +10,7 @@ export default function PaperPreviewPage() {
       </h1>
       <Card className="p-0 overflow-hidden">
         <iframe
-          src={`/api/runs/${runId}/paper_preview/`}
+          src={`/runs/${runId}/paper_preview/`}
           className="w-full h-[800px] border-0"
           title="Paper Preview"
         />

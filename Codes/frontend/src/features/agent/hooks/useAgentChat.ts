@@ -19,7 +19,7 @@ export function useAgentChat(sessionId?: string) {
     initialLoadDone.current = true;
     setLoading(true);
     api
-      .get(`/api/agents/chats/${sessionId}/messages/`)
+      .get(`/agents/chats/${sessionId}/messages/`)
       .then((res) => setMessages(res.data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -84,7 +84,7 @@ export function useAgentChat(sessionId?: string) {
       } else {
         setLoading(true);
         api
-          .post(`/api/agents/chats/${sessionId}/send/`, { text })
+          .post(`/agents/chats/${sessionId}/send/`, { text })
           .then((res) => {
             setMessages(res.data.messages);
           })

@@ -18,7 +18,7 @@ export default function AgentSessionsListPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => api.delete(`/api/agents/chats/${id}/`),
+    mutationFn: (id: string) => api.delete(`/agents/chats/${id}/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["agentSessions"] }),
   });

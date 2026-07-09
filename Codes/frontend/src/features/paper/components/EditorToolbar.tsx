@@ -31,7 +31,7 @@ export default function EditorToolbar({
 
   const shareMut = useMutation({
     mutationFn: async (username: string) => {
-      await api.post(`/api/paper/projects/${projectId}/collaborators/add/`, {
+      await api.post(`/paper/projects/${projectId}/collaborators/add/`, {
         username,
       });
     },
