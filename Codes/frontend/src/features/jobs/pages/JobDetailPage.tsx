@@ -14,26 +14,26 @@ export default function JobDetailPage() {
 
   const { data: job, isLoading } = useQuery({
     queryKey: ["job", jobId],
-    queryFn: async () => (await api.get(`/api/jobs/${jobId}/`)).data,
+    queryFn: async () => (await api.get(`/jobs/${jobId}/`)).data,
   });
 
   const pauseMutation = useMutation({
-    mutationFn: () => api.post(`/api/jobs/${jobId}/pause/`),
+    mutationFn: () => api.post(`/jobs/${jobId}/pause/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
   });
   const resumeMutation = useMutation({
-    mutationFn: () => api.post(`/api/jobs/${jobId}/resume/`),
+    mutationFn: () => api.post(`/jobs/${jobId}/resume/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
   });
   const stopMutation = useMutation({
-    mutationFn: () => api.post(`/api/jobs/${jobId}/stop/`),
+    mutationFn: () => api.post(`/jobs/${jobId}/stop/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
   });
   const retryMutation = useMutation({
-    mutationFn: () => api.post(`/api/jobs/${jobId}/retry/`),
+    mutationFn: () => api.post(`/jobs/${jobId}/retry/`),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
   });
@@ -45,7 +45,7 @@ export default function JobDetailPage() {
 
   const saveNotes = useMutation({
     mutationFn: (notes: string) =>
-      api.post(`/api/jobs/${jobId}/notes/`, { notes }),
+      api.post(`/jobs/${jobId}/notes/`, { notes }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
   });

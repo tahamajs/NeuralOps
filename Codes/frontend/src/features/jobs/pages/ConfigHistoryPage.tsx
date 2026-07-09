@@ -10,7 +10,7 @@ export default function ConfigHistoryPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["configHistory", jobId],
     queryFn: async () =>
-      (await api.get(`/api/jobs/${jobId}/config/history/`)).data,
+      (await api.get(`/jobs/${jobId}/config/history/`)).data,
   });
 
   if (isLoading) return <Spinner />;

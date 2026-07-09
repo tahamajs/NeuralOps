@@ -12,7 +12,7 @@ export default function JobSchedulingPage() {
   const queryClient = useQueryClient();
   const { data: job, isLoading } = useQuery({
     queryKey: ["job", jobId],
-    queryFn: async () => (await api.get(`/api/jobs/${jobId}/`)).data,
+    queryFn: async () => (await api.get(`/jobs/${jobId}/`)).data,
   });
 
   const [form, setForm] = useState({
@@ -32,7 +32,7 @@ export default function JobSchedulingPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (payload: any) =>
-      api.patch(`/api/jobs/${jobId}/scheduling/`, payload),
+      api.patch(`/jobs/${jobId}/scheduling/`, payload),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
   });

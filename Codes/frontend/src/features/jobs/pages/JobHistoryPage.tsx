@@ -9,7 +9,7 @@ export default function JobHistoryPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["jobHistory", jobId],
-    queryFn: async () => (await api.get(`/api/jobs/${jobId}/history/`)).data,
+    queryFn: async () => (await api.get(`/jobs/${jobId}/history/`)).data,
   });
 
   if (isLoading) return <Spinner />;

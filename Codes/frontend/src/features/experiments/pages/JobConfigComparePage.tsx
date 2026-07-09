@@ -15,13 +15,13 @@ export default function JobConfigComparePage() {
   const { data: history } = useQuery({
     queryKey: ["configHistory", jobId],
     queryFn: async () =>
-      (await api.get(`/api/jobs/${jobId}/config/history/`)).data,
+      (await api.get(`/jobs/${jobId}/config/history/`)).data,
   });
   const versions = history?.versions || [];
 
   const handleCompare = async () => {
     if (!va || !vb) return;
-    const res = await api.get(`/api/jobs/${jobId}/config/compare/${va}/${vb}/`);
+    const res = await api.get(`/jobs/${jobId}/config/compare/${va}/${vb}/`);
     setDiff(res.data);
   };
 

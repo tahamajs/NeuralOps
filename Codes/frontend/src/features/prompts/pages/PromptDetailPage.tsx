@@ -12,12 +12,12 @@ export default function PromptDetailPage() {
 
   const { data: prompt, isLoading } = useQuery({
     queryKey: ["prompt", name],
-    queryFn: async () => (await api.get(`/api/prompts/${name}/`)).data,
+    queryFn: async () => (await api.get(`/prompts/${name}/`)).data,
   });
 
   const { data: history } = useQuery({
     queryKey: ["promptHistory", name],
-    queryFn: async () => (await api.get(`/api/prompts/${name}/history/`)).data,
+    queryFn: async () => (await api.get(`/prompts/${name}/history/`)).data,
     enabled: showHistory,
   });
 

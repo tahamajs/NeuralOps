@@ -133,7 +133,7 @@ export default function AdminJobsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => api.post(`/api/jobs/${job.id}/stop/`)}
+                          onClick={() => api.post(`/jobs/${job.id}/stop/`)}
                         >
                           Stop
                         </Button>
