@@ -519,3 +519,99 @@ class RunnerTests(TestCase):
         run_compression(self.run, self.stop_event)
         self.run.refresh_from_db()
         self.assertEqual(self.run.status, "completed")
+
+
+class NewEndpointTests(TestCase):
+    def setUp(self):
+        from rest_framework.test import APIClient
+        from django.contrib.auth.models import User
+        self.user = User.objects.create_user(username="testuser_new", password="testpass_new")
+        self.client, _, _ = create_authenticated_client(self.user)
+
+    def test_prompt_endpoints(self):
+        from llm_hub.models import PromptTemplate, PromptVersion
+        prompt = PromptTemplate.objects.create(
+            user=self.user,
+            name="test_prompt",
+            description="Test Description"
+        )
+        PromptVersion.objects.create(
+            prompt=prompt,
+            version_number=1,
+            content="Hello {input}",
+            created_by=self.user
+        )
+
+        # test prompt list
+        resp = self.client.get("/api/prompts/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]["name"], "test_prompt")
+
+        # test prompt detail
+        resp = self.client.get("/api/prompts/test_prompt/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["template"], "Hello {input}")
+
+        # test prompt history
+        resp = self.client.get("/api/prompts/test_prompt/history/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]["content"], "Hello {input}")
+
+    def test_hpo_status_endpoint(self):
+        resp = self.client.get("/api/hpo/status/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("status", resp.data)
+
+    def test_fl_status_endpoint(self):
+        resp = self.client.get("/api/federated/status/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("status", resp.data)
+
+    def test_data_lineage_endpoint(self):
+        from experiment.models import Experiment, TrainingRun
+        exp = Experiment.objects.create(
+            name="test_exp"
+        )
+        run = TrainingRun.objects.create(
+            experiment=exp,
+            name="test_run",
+            config={"dataset_name": "IMDB"}
+        )
+        resp = self.client.get(f"/api/runs/{run.id}/lineage/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("IMDB", resp.data["lineage"])
+
+    def test_model_lineage_endpoint(self):
+        from jobscheduler.models import Job
+        from model_versioning.models import ModelVersion, ModelLineage
+        job = Job.objects.create(
+            name="test_job"
+        )
+        parent_mv = ModelVersion.objects.create(
+            run=job,
+            version="1.0.0",
+            version_number=1,
+            artifact_path="models/1.0.0.pt",
+            storage_tier="hot"
+        )
+        mv = ModelVersion.objects.create(
+            run=job,
+            version="2.0.0",
+            version_number=2,
+            artifact_path="models/2.0.0.pt",
+            storage_tier="hot"
+        )
+        ModelLineage.objects.create(
+            parent=parent_mv,
+            child=mv,
+            relationship_type="fine_tuned"
+        )
+
+        resp = self.client.get(f"/api/models/{mv.id}/lineage/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data["nodes"]), 2)
+        labels = [node["label"] for node in resp.data["nodes"]]
+        self.assertIn("1.0.0", labels)
+        self.assertIn("2.0.0", labels)

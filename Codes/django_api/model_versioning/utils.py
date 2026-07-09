@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def cleanup_old_versions(run, keep_best_k=3, keep_version_tags=None):
     if keep_version_tags is None:
         keep_version_tags = []
-    versions = run.model_versions.all()
+    versions = run.versioning_model_versions.all()
     protected = [
         v
         for v in versions

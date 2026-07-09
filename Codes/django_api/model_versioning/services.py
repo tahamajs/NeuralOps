@@ -26,7 +26,7 @@ def create_version(
     - compression: 'none', 'gzip', or a compressor key from COMPRESSOR_REGISTRY.
     """
     # Determine version number
-    last = run.model_versions.order_by("-version_number").first()
+    last = run.versioning_model_versions.order_by("-version_number").first()
     new_number = (last.version_number + 1) if last else 1
     version_str = version_name or f"v{new_number}"
 
