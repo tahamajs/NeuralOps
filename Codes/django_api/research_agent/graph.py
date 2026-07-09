@@ -27,11 +27,10 @@ class ResearchState(TypedDict):
     final_answer: str
 
 
-# LLM
 llm = ChatOpenAI(
     model=getattr(settings, "OPENAI_MODEL", "gpt-4o"),
     temperature=0.3,
-    api_key=settings.OPENAI_API_KEY,
+    api_key=settings.OPENAI_API_KEY or "mock-key-for-import",
 )
 
 llm_with_tools = llm.bind_tools(ALL_TOOLS)
