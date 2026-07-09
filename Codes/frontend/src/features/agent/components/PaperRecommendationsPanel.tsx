@@ -18,7 +18,7 @@ export default function PaperRecommendationsPanel({
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   const endpoint = fromLibrary
-    ? "/api/agents/papers/recommendations/library/"
+    ? "/agents/papers/recommendations/library/"
     : runId
       ? `/api/agents/papers/recommendations/${runId}/`
       : null;
@@ -34,7 +34,7 @@ export default function PaperRecommendationsPanel({
   });
 
   const savePaper = async (paper: any) => {
-    await api.post("/api/agents/papers/save/", {
+    await api.post("/agents/papers/save/", {
       title: paper.title,
       authors: paper.authors || [],
       abstract: paper.abstract || "",

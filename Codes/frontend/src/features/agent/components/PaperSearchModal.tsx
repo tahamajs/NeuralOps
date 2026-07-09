@@ -20,7 +20,7 @@ export default function PaperSearchModal({ onClose, onPaperSaved }: Props) {
 
   const searchMut = useMutation({
     mutationFn: async () => {
-      const res = await api.post("/api/agents/papers/search/", {
+      const res = await api.post("/agents/papers/search/", {
         query,
         source,
         limit: 20,
@@ -32,7 +32,7 @@ export default function PaperSearchModal({ onClose, onPaperSaved }: Props) {
 
   const saveMut = useMutation({
     mutationFn: async (paper: any) => {
-      await api.post("/api/agents/papers/save/", {
+      await api.post("/agents/papers/save/", {
         title: paper.title,
         authors: paper.authors,
         abstract: paper.abstract,
