@@ -52,9 +52,11 @@ class IntegrationTestBase(TestCase):
         self.addCleanup(self.settings_patcher.disable)
 
     def register_and_login(
-        self, username="researcher", password="Strong1!", email="r@test.com"
+        self, username="researcher", password="Strong1!", email=None
     ):
         """Helper: register a new user and authenticate the client."""
+        if email is None:
+            email = f"{username}@test.com"
         resp = self.client.post(
             "/api/auth/register/",
             {"username": username, "password": password, "email": email},
