@@ -542,6 +542,8 @@ class ModelVersionTests(TestCase):
         # Uses the real job (self.job) which already has one version – guaranteed to work.
         url = f"/api/model-versioning/runs/{self.job.id}/versions/?format=csv"
         resp = self.client.get(url)
+        if resp.status_code != 200:
+            print("CSV EXPORT FAIL:", getattr(resp, 'data', resp.content))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "text/csv")
 
