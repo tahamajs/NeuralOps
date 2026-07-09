@@ -540,7 +540,7 @@ class ModelVersionTests(TestCase):
     # 8. CSV export with empty version list
     def test_csv_export(self):
         # Uses the real job (self.job) which already has one version – guaranteed to work.
-        url = f"/api/model-versioning/runs/{self.job.id}/versions/?format=csv"
+        url = f"/api/model-versioning/runs/{self.job.id}/versions/?export_csv=true"
         resp = self.client.get(url)
         if resp.status_code != 200:
             print("CSV EXPORT FAIL:", getattr(resp, 'data', resp.content))
