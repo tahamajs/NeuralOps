@@ -366,31 +366,105 @@ def _call_anthropic(messages, tools):
 
 
 def _call_openai(messages, tools):
-    # implement similar for OpenAI
-    pass
+    headers = {
+        "Authorization": f"Bearer {os.environ.get('OPENAI_API_KEY', '')}",
+        "Content-Type": "application/json",
+    }
+    body = {
+        "model": os.environ.get("OPENAI_MODEL", "gpt-4o"),
+        "messages": messages,
+        "max_tokens": 1024,
+    }
+    if tools:
+        body["tools"] = tools
+    try:
+        resp = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            json=body,
+            timeout=30
+        )
+        return resp.json()
+    except Exception as e:
+        return {"choices": [{"message": {"content": f"Error calling OpenAI: {e}", "tool_calls": []}}]}
 
 
 def get_llm_response(messages: list, tools: list = None) -> dict:
     provider = os.environ.get("LLM_PROVIDER", "anthropic")
     if provider == "openai":
-        # Implement OpenAI call (left as exercise)
+        raw = _call_openai(messages, tools)
+        if "choices" in raw and len(raw["choices"]) > 0:
+            msg = raw["choices"][0]["message"]
+            return {
+                "content": msg.get("content") or "",
+                "tool_calls": msg.get("tool_calls") or []
+            }
         return {"content": "", "tool_calls": []}
     else:
+        # Anthropic
+        anthropic_tools = []
+        if tools:
+            for t in tools:
+                if t.get("type") == "function":
+                    f = t["function"]
+                    anthropic_tools.append({
+                        "name": f["name"],
+                        "description": f.get("description", ""),
+                        "input_schema": f.get("parameters", {"type": "object", "properties": {}})
+                    })
+                else:
+                    anthropic_tools.append(t)
+
+        system_prompt = None
+        anthropic_messages = []
+        for m in messages:
+            if m["role"] == "system":
+                system_prompt = m["content"]
+            else:
+                anthropic_messages.append(m)
+
         headers = {
-            "x-api-key": os.environ["ANTHROPIC_API_KEY"],
+            "x-api-key": os.environ.get("ANTHROPIC_API_KEY", ""),
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
         }
         body = {
             "model": os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514"),
             "max_tokens": 1024,
-            "messages": messages,
-            "tools": tools or [],
+            "messages": anthropic_messages,
         }
-        resp = requests.post(
-            "https://api.anthropic.com/v1/messages",
-            headers=headers,
-            json=body,
-            timeout=30,
-        )
-        return resp.json()
+        if system_prompt:
+            body["system"] = system_prompt
+        if anthropic_tools:
+            body["tools"] = anthropic_tools
+
+        try:
+            resp = requests.post(
+                "https://api.anthropic.com/v1/messages",
+                headers=headers,
+                json=body,
+                timeout=30,
+            )
+            raw = resp.json()
+        except Exception as e:
+            return {"content": f"Error calling Anthropic: {e}", "tool_calls": []}
+
+        content_text = ""
+        tool_calls = []
+        if "content" in raw:
+            for item in raw["content"]:
+                if item.get("type") == "text":
+                    content_text += item.get("text", "")
+                elif item.get("type") == "tool_use":
+                    tool_calls.append({
+                        "id": item.get("id"),
+                        "type": "function",
+                        "function": {
+                            "name": item.get("name"),
+                            "arguments": json.dumps(item.get("input", {}))
+                        }
+                    })
+        return {
+            "content": content_text,
+            "tool_calls": tool_calls
+        }
