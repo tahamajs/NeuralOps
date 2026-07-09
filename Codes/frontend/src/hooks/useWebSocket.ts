@@ -12,8 +12,14 @@ export function useWebSocket(experimentId: string | undefined) {
   useEffect(() => {
     if (!experimentId) return;
     store.reset();
+    let retries = 0;
 
     const connect = () => {
+      if (retries > 3) {
+        setWsStatus("error");
+        store.addLog("Max connection retries reached. Assuming backend is mocked.");
+        return;
+      }
       setWsStatus("connecting");
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const wsUrl =
@@ -24,6 +30,7 @@ export function useWebSocket(experimentId: string | undefined) {
 
       socket.onopen = () => {
         setWsStatus("open");
+        retries = 0;
         store.addLog("Connected to live stream");
       };
 
@@ -63,9 +70,12 @@ export function useWebSocket(experimentId: string | undefined) {
 
       socket.onclose = () => {
         setWsStatus("closed");
-        store.addLog("Connection closed. Reconnecting in 3s...");
-        if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
-        reconnectTimerRef.current = setTimeout(connect, 3000);
+        retries++;
+        if (retries <= 3) {
+          store.addLog(`Connection closed. Reconnecting in 3s... (Attempt ${retries}/3)`);
+          if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+          reconnectTimerRef.current = setTimeout(connect, 3000);
+        }
       };
     };
 

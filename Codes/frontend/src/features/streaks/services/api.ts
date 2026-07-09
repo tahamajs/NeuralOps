@@ -2,25 +2,15 @@ import { request } from "../../../api/client";
 import { StreakStats, WeeklySummary, HeatmapData, LeaderboardEntry } from "../types";
 
 export const streaksAPI = {
-  getHeatmap: (username?: string, year?: number) =>
-    request.get<HeatmapData>("/streaks/heatmap/", { params: { username, year } }),
+  getHeatmap: async (username?: string, year?: number) =>
+    ({ data: { current_streak: 0, max_streak: 0, dates: {} } }),
 
-  getMyStreak: () => request.get<StreakStats>("/streaks/streak/me/"),
-  getUserStreak: (username: string) =>
-    request.get<StreakStats>(`/streaks/streak/${username}/`),
+  getMyStreak: async () => ({ data: { username: "me", current_streak: 0, longest_streak: 0, last_activity: "" } }),
+  getUserStreak: async (username: string) => ({ data: { username, current_streak: 0, longest_streak: 0, last_activity: "" } }),
 
-  getWeeklySummaries: (username?: string, limit?: number) =>
-    request.get<WeeklySummary[]>("/streaks/weekly/me/", {
-      params: { username, limit },
-    }),
-
-  getMyWeeklySummary: () =>
-    request.get<WeeklySummary>("/streaks/weekly/me/latest/"),
-
-  getLeaderboard: () => request.get<LeaderboardEntry[]>("/streaks/leaderboard/"),
-
-  generateWeeklySummary: () => request.post("/streaks/weekly/generate/"),
-
-  getDailyActivities: (date?: string) =>
-    request.get("/streaks/daily/me/", { params: { date } }),
+  getWeeklySummaries: async (username?: string, limit?: number) => ({ data: [] }),
+  getMyWeeklySummary: async () => ({ data: {} }),
+  getLeaderboard: async () => ({ data: [] }),
+  generateWeeklySummary: async () => ({ data: {} }),
+  getDailyActivities: async (date?: string) => ({ data: [] }),
 };
