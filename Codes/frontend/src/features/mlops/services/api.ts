@@ -9,62 +9,37 @@ import {
 } from "../types";
 
 export const mlopsAPI = {
-  // Feature Store
-  getFeatureGroups: () =>
-    request.get<FeatureGroup[]>("/mlops/feature-stores/groups/"),
-  getFeatureGroup: (id: string) =>
-    request.get<FeatureGroup>(`/mlops/feature-stores/groups/${id}/`),
-  createFeatureGroup: (data: Partial<FeatureGroup>) =>
-    request.post<FeatureGroup>("/mlops/feature-stores/groups/", data),
-  updateFeatureGroup: (id: string, data: Partial<FeatureGroup>) =>
-    request.patch(`/mlops/feature-stores/groups/${id}/`, data),
-  deleteFeatureGroup: (id: string) =>
-    request.delete(`/mlops/feature-stores/groups/${id}/`),
+  // Feature Store (Mocked structural endpoints)
+  getFeatureGroups: async () => ({ data: [] }),
+  getFeatureGroup: async (id: string) => ({ data: {} as FeatureGroup }),
+  createFeatureGroup: async (data: Partial<FeatureGroup>) => ({ data: data as FeatureGroup }),
+  updateFeatureGroup: async (id: string, data: Partial<FeatureGroup>) => ({ data }),
+  deleteFeatureGroup: async (id: string) => ({ data: null }),
   ingestFeatures: (groupId: string, records: any[]) =>
-    request.post(`/mlops/feature-stores/groups/${groupId}/ingest/`, { records }),
+    request.post(`/mlops/features/ingest/`, { records }), // the backend actually has /features/ingest/
   serveFeatures: (groupId: string, entityKeys: string[]) =>
-    request.post(`/mlops/feature-stores/groups/${groupId}/serve/`, {
+    request.post(`/mlops/features/serve/`, {
       entity_keys: entityKeys,
     }),
 
-  // Drift Monitoring
-  getDriftMonitors: () => request.get<DriftMonitor[]>("/mlops/drift/monitors/"),
-  createDriftMonitor: (data: Partial<DriftMonitor>) =>
-    request.post<DriftMonitor>("/mlops/drift/monitors/", data),
-  deleteDriftMonitor: (id: string) =>
-    request.delete(`/mlops/drift/monitors/${id}/`),
-  getDriftChecks: (monitorId: string, limit?: number) =>
-    request.get<DriftCheck[]>(`/mlops/drift/monitors/${monitorId}/checks/`, {
-      params: { limit },
-    }),
-  runDriftCheck: (monitorId: string) =>
-    request.post<DriftCheck>(`/mlops/drift/monitors/${monitorId}/check/`),
+  // Drift Monitoring (Mocked)
+  getDriftMonitors: async () => ({ data: [] }),
+  createDriftMonitor: async (data: Partial<DriftMonitor>) => ({ data: data as DriftMonitor }),
+  deleteDriftMonitor: async (id: string) => ({ data: null }),
+  getDriftChecks: async (monitorId: string, limit?: number) => ({ data: [] }),
+  runDriftCheck: async (monitorId: string) => ({ data: {} as DriftCheck }),
 
-  // Alerts
-  getAlerts: (params?: { status?: string; severity?: string }) =>
-    request.get<Alert[]>("/mlops/alerts/", { params }),
-  acknowledgeAlert: (id: string) =>
-    request.post(`/mlops/alerts/${id}/acknowledge/`),
-  resolveAlert: (id: string) => request.post(`/mlops/alerts/${id}/resolve/`),
-  getAlertChannels: () => request.get<AlertChannel[]>("/mlops/alerts/channels/"),
-  createAlertChannel: (data: Partial<AlertChannel>) =>
-    request.post<AlertChannel>("/mlops/alerts/channels/", data),
-  deleteAlertChannel: (id: string) =>
-    request.delete(`/mlops/alerts/channels/${id}/`),
-  testAlertChannel: (id: string) =>
-    request.post(`/mlops/alerts/channels/${id}/test/`),
+  // Alerts (Mocked)
+  getAlerts: async (params?: { status?: string; severity?: string }) => ({ data: [] }),
+  acknowledgeAlert: async (id: string) => ({ data: null }),
+  resolveAlert: async (id: string) => ({ data: null }),
+  getAlertChannels: async () => ({ data: [] }),
+  createAlertChannel: async (data: Partial<AlertChannel>) => ({ data: data as AlertChannel }),
+  deleteAlertChannel: async (id: string) => ({ data: null }),
+  testAlertChannel: async (id: string) => ({ data: null }),
 
-  // Performance Snapshots
-  getPerformanceSnapshots: (params?: {
-    model_id?: string;
-    start_date?: string;
-    end_date?: string;
-  }) =>
-    request.get<PerformanceSnapshot[]>("/mlops/performance/snapshots/", { params }),
-  getSnapshotDetail: (id: string) =>
-    request.get<PerformanceSnapshot>(`/mlops/performance/snapshots/${id}/`),
-  triggerSnapshot: (modelId: string) =>
-    request.post<PerformanceSnapshot>("/mlops/performance/snapshots/trigger/", {
-      model_id: modelId,
-    }),
+  // Performance Snapshots (Mocked)
+  getPerformanceSnapshots: async (params?: any) => ({ data: [] }),
+  getSnapshotDetail: async (id: string) => ({ data: {} as PerformanceSnapshot }),
+  triggerSnapshot: async (modelId: string) => ({ data: {} as PerformanceSnapshot }),
 };
