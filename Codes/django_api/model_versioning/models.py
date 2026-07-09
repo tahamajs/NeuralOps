@@ -203,16 +203,17 @@ def get_lineage_graph(
             mv = ModelVersion.objects.get(id=current_id)
         except ModelVersion.DoesNotExist:
             return
-        nodes.append(
-            {
-                "id": str(mv.id),
-                "version": mv.version,
-                "version_number": mv.version_number,
-                "metrics": mv.metrics,
-                "created_at": mv.created_at.isoformat(),
-                "depth": depth,
-            }
-        )
+        if not any(n["id"] == str(mv.id) for n in nodes):
+            nodes.append(
+                {
+                    "id": str(mv.id),
+                    "version": mv.version,
+                    "version_number": mv.version_number,
+                    "metrics": mv.metrics,
+                    "created_at": mv.created_at.isoformat(),
+                    "depth": depth,
+                }
+            )
         links = ModelLineage.objects.filter(child_id=current_id).select_related(
             "parent"
         )
@@ -235,16 +236,17 @@ def get_lineage_graph(
             mv = ModelVersion.objects.get(id=current_id)
         except ModelVersion.DoesNotExist:
             return
-        nodes.append(
-            {
-                "id": str(mv.id),
-                "version": mv.version,
-                "version_number": mv.version_number,
-                "metrics": mv.metrics,
-                "created_at": mv.created_at.isoformat(),
-                "depth": depth,
-            }
-        )
+        if not any(n["id"] == str(mv.id) for n in nodes):
+            nodes.append(
+                {
+                    "id": str(mv.id),
+                    "version": mv.version,
+                    "version_number": mv.version_number,
+                    "metrics": mv.metrics,
+                    "created_at": mv.created_at.isoformat(),
+                    "depth": depth,
+                }
+            )
         links = ModelLineage.objects.filter(parent_id=current_id).select_related(
             "child"
         )
