@@ -41,7 +41,7 @@ class APIClient:
         return self._post('/api/gpu/listings/update-status/', {'status': status})
 
     def submit_benchmark(self, listing_id: str, results: dict) -> dict:
-        return self._post('/api/benchmarks/submit/', {
+        return self._post('/api/gpu/benchmarks/submit/', {
             'listing_id': listing_id, 'results': results
         })
 

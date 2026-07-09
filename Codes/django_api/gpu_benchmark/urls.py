@@ -26,4 +26,6 @@ urlpatterns = [
     path("leaderboard/", views.gpu_leaderboard, name="gpu_leaderboard"),
     # ── Provider Dashboard ───────────────────────────────────
     path("dashboard/", views.my_benchmark_dashboard, name="my_benchmark_dashboard"),
+    # ── Agent Submission ─────────────────────────────────────
+    path("submit/", views.submit_benchmark, name="submit_benchmark"),
 ]
