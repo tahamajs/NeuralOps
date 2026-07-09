@@ -45,10 +45,20 @@ load_env_file(BASE_DIR / ".env")
 if str(CODES_DIR) not in sys.path:
     sys.path.insert(0, str(CODES_DIR))
 
-# Try to import get_glue_dir from framework.utils.paths, fall back to a sensible default
+# Try to import get_glue_dir from framework.utils.paths.
+# IMPORTANT: We load paths.py directly (bypassing framework/utils/__init__.py)
+# because __init__.py eagerly imports device.py → torch → dill → tempfile,
+# which can crash if disk space is low or temp dirs are unavailable.
 try:
-    from framework.utils.paths import get_glue_dir
-except ImportError:
+    import importlib.util as _ilu
+    _spec = _ilu.spec_from_file_location(
+        "framework.utils.paths",
+        str(CODES_DIR / "framework" / "utils" / "paths.py"),
+    )
+    _paths_mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_paths_mod)
+    get_glue_dir = _paths_mod.get_glue_dir
+except Exception:
 
     def get_glue_dir() -> str:
         return str(BASE_DIR / "glue_data")
