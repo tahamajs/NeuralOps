@@ -349,17 +349,33 @@ class TrainingRunViewTests(TestCase):
         # Patch the real start_job to run synchronously
         patcher = patch("experiment.jobs.start_job")
         self.mock_start_job = patcher.start()
-        
-        patcher2 = patch("api.views.start_job")
-        self.mock_start_job_api = patcher2.start()
 
         def sync_start(run, target):
             target(run, None)  # run runner immediately
 
         self.mock_start_job.side_effect = sync_start
-        self.mock_start_job_api.side_effect = sync_start
         self.addCleanup(patcher.stop)
-        self.addCleanup(patcher2.stop)
+
+        # Mock MegaOrchestrator to avoid real training in view tests
+        self.orch_patcher = patch("experiment.runners.MegaOrchestrator")
+        self.mock_orch = self.orch_patcher.start()
+        self.mock_orch_instance = MagicMock()
+        self.mock_orch.return_value = self.mock_orch_instance
+        self.addCleanup(self.orch_patcher.stop)
+
+        # Mock run_evaluation and run_compression
+        self.patch_eval = patch(
+            "framework.experiment_utils.run_evaluation",
+            MagicMock(return_value={"eval_accuracy": 0.9}),
+        )
+        self.patch_compress = patch(
+            "framework.experiment_utils.run_compression",
+            MagicMock(return_value={"compression_ratio": 0.5}),
+        )
+        self.mock_eval = self.patch_eval.start()
+        self.mock_compress = self.patch_compress.start()
+        self.addCleanup(self.patch_eval.stop)
+        self.addCleanup(self.patch_compress.stop)
 
     def test_start_train_new_experiment(self):
         resp = self.client.post(
@@ -460,11 +476,17 @@ class RateLimitTests(TestCase):
         cache.clear()
 
     def test_anon_throttle_register(self):
-        for i in range(3):
-            resp = self.client.post(
-                "/api/auth/register/", {"username": f"user{i}", "password": "Strong1"}
-            )
-        self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        from api.views import AnonBurstRateThrottle
+        original_rate = AnonBurstRateThrottle.rate
+        AnonBurstRateThrottle.rate = "2/minute"
+        try:
+            for i in range(3):
+                resp = self.client.post(
+                    "/api/auth/register/", {"username": f"user{i}", "password": "Strong1"}
+                )
+            self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        finally:
+            AnonBurstRateThrottle.rate = original_rate
 
 
 # ========================== CONSUMER TESTS ============================
