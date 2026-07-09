@@ -39,7 +39,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md p-8 animate-scale-in border border-white/10 glass shadow-2xl relative z-10">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-neon-blue to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(56,189,248,0.5)]">
-            <span className="text-white font-black text-xl">NO</span>
+            <img src="/logo.jpg" alt="NeuralOps" className="w-full h-full object-cover rounded-xl" />
           </div>
           <h1 className="text-3xl font-display font-bold text-white tracking-tight">
             Welcome back
