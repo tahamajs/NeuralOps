@@ -83,7 +83,13 @@ def all_model_versions(request):
 @permission_classes([IsAuthenticated])
 def list_model_versions(request, run_id):
     """List versions for a specific run with optional filtering, sorting, and CSV export."""
-    run = get_object_or_404(Job, id=run_id)
+    run = Job.objects.filter(id=run_id).first()
+    if not run:
+        return Response({
+            "error": "Job not found",
+            "run_id": str(run_id),
+            "jobs_in_db": [str(x) for x in Job.objects.values_list('id', flat=True)],
+        }, status=404)
     queryset = run.versioning_model_versions.all().order_by("-version_number")
 
     # Filtering
