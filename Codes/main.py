@@ -87,7 +87,7 @@ from framework.training import (
     get_task_metrics,
 )
 from framework.training.methods import get_method as get_method_fn
-from framework.training.callbacks import (
+from framework.trainer.callbacks import (
     MemoryCallback,
     TimeCallback,
     GradientNormCallback,
