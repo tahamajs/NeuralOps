@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 
 import torch
 
-from .models import ModelVersion
+from .models import ModelVersion, ModelVersionDiff
 from .services import create_diff, load_version_from_diff
 
 
@@ -676,7 +676,11 @@ class ModelVersionTests(TestCase):
         resp = self.staff_client.post(url)
         self.assertEqual(resp.status_code, 404)
 
-    def test_create_diff(self):
+    @patch("model_versioning.services.load_model")
+    def test_create_diff(self, mock_load):
+        mock_model = MagicMock()
+        mock_model.state_dict.return_value = {"weight": torch.zeros(10)}
+        mock_load.return_value = mock_model
         v2 = ModelVersion.objects.create(
             run=self.job,
             version="v2",
