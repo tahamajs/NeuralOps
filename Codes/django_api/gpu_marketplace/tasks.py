@@ -76,14 +76,26 @@ def provision_job(job_id: str):
     job.save(update_fields=["status"])
     JobEvent.objects.create(job=job, event_type="provisioning")
 
-    # In production: communicate with provider agent
-    # agent_url = job.listing.provider.profile.agent_endpoint
-    # response = requests.post(agent_url, json={...})
+    # Dispatch to provider agent via Channels WebSocket group
+    from channels.layers import get_channel_layer
+    from asgiref.sync import async_to_sync
 
-    # Simulated success
-    job.status = "running"
-    job.started_at = timezone.now()
-    job.save(update_fields=["status", "started_at"])
-    JobEvent.objects.create(job=job, event_type="running")
+    channel_layer = get_channel_layer()
+    if channel_layer:
+        try:
+            async_to_sync(channel_layer.group_send)(
+                f"provider_listing_{job.listing.id}",
+                {
+                    "type": "send_job",
+                    "job": {
+                        "id": str(job.id),
+                        "docker_image": job.docker_image,
+                        "command": job.command,
+                    }
+                }
+            )
+            logger.info(f"Dispatched job {job.id} to provider listing {job.listing.id}")
+        except Exception as e:
+            logger.error(f"Failed to dispatch job to provider agent: {e}")
 
-    return {"job_id": job_id, "status": "running"}
+    return {"job_id": job_id, "status": "provisioning"}

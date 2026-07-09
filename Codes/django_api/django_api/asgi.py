@@ -18,6 +18,7 @@ from api.routing import websocket_urlpatterns as api_ws
 from messaging.routing import websocket_urlpatterns as messaging_ws
 from notes.routing import websocket_urlpatterns as notes_ws
 from research_agent.routing import websocket_urlpatterns as agent_ws
+from gpu_marketplace.routing import websocket_urlpatterns as gpu_ws
 
 try:
     from community.routing import websocket_urlpatterns as community_ws
@@ -31,7 +32,7 @@ except ImportError:
 
 # Combine all WebSocket patterns
 websocket_urlpatterns = (
-    messaging_ws + notes_ws + api_ws + agent_ws + support_ws + community_ws
+    messaging_ws + notes_ws + api_ws + agent_ws + support_ws + community_ws + gpu_ws
 )
 
 application = ProtocolTypeRouter(
