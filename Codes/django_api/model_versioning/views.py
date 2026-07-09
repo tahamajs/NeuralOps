@@ -12,6 +12,11 @@ import os
 import tarfile
 import tempfile
 
+try:
+    import boto3
+except ImportError:
+    boto3 = None
+
 from django.conf import settings
 from django.contrib.auth.models import User  # add this
 from django.db.models import Q
