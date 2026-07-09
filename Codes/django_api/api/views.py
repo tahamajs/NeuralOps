@@ -1350,15 +1350,13 @@ def gpu_info(request):
 @permission_classes([IsAuthenticated])
 def dashboard_stats(request):
     """Aggregate platform statistics for the main dashboard."""
-    from experiment.models import Run
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
+    from experiment.models import TrainingRun
 
     try:
-        total_experiments = Run.objects.filter(user=request.user).count()
-        running = Run.objects.filter(user=request.user, status="running").count()
-        completed = Run.objects.filter(user=request.user, status="completed").count()
-        failed = Run.objects.filter(user=request.user, status="failed").count()
+        total_experiments = TrainingRun.objects.count()
+        running = TrainingRun.objects.filter(status="running").count()
+        completed = TrainingRun.objects.filter(status="completed").count()
+        failed = TrainingRun.objects.filter(status="failed").count()
     except Exception:
         total_experiments = running = completed = failed = 0
 
@@ -1372,4 +1370,5 @@ def dashboard_stats(request):
         "papers_saved": 0,
         "agent_sessions": 0,
     })
+
 
