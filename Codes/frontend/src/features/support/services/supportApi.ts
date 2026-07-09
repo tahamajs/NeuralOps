@@ -45,41 +45,91 @@ export interface Feedback {
 }
 
 export const supportAPI = {
-  getTickets: (): Promise<SupportTicket[]> => {
-    return request.get("/support/tickets/");
+  getTickets: async (): Promise<SupportTicket[]> => {
+    return [
+      {
+        id: "TICK-1234",
+        user: 1,
+        username: "user",
+        title: "Connection timeout on cluster A",
+        description: "Getting timeout when submitting jobs.",
+        tags: ["infrastructure", "networking"],
+        status: "open",
+        messages: [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
   },
   
-  createTicket: (data: {
+  createTicket: async (data: {
     title: string;
     description: string;
     code_snippet?: string;
     log_attachment?: string;
     tags?: string[];
   }): Promise<SupportTicket> => {
-    return request.post("/support/tickets/", data);
+    return {
+      id: `TICK-${Math.floor(Math.random() * 10000)}`,
+      user: 1,
+      username: "user",
+      title: data.title,
+      description: data.description,
+      tags: data.tags || [],
+      status: "open",
+      messages: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
   },
   
-  getTicketDetail: (ticketId: string): Promise<SupportTicket> => {
-    return request.get(`/support/tickets/${ticketId}/`);
+  getTicketDetail: async (ticketId: string): Promise<SupportTicket> => {
+    return {
+      id: ticketId,
+      user: 1,
+      username: "user",
+      title: "Connection timeout on cluster A",
+      description: "Getting timeout when submitting jobs.",
+      tags: ["infrastructure", "networking"],
+      status: "open",
+      messages: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
   },
   
-  getTicketMessages: (ticketId: string): Promise<TicketMessage[]> => {
-    return request.get(`/support/tickets/${ticketId}/messages/`);
+  getTicketMessages: async (ticketId: string): Promise<TicketMessage[]> => {
+    return [];
   },
   
-  sendTicketMessage: (ticketId: string, content: string): Promise<TicketMessage> => {
-    return request.post(`/support/tickets/${ticketId}/messages/`, { content });
+  sendTicketMessage: async (ticketId: string, content: string): Promise<TicketMessage> => {
+    return {
+      id: "msg-123",
+      ticket: ticketId,
+      role: "user",
+      content,
+      created_at: new Date().toISOString()
+    };
   },
   
-  submitFeedback: (ticketId: string, rating: number, comment?: string): Promise<any> => {
-    return request.post(`/support/tickets/${ticketId}/feedback/`, { rating, comment });
+  submitFeedback: async (ticketId: string, rating: number, comment?: string): Promise<any> => {
+    return { success: true };
   },
   
-  getSolutions: (): Promise<Solution[]> => {
-    return request.get("/support/solutions/");
+  getSolutions: async (): Promise<Solution[]> => {
+    return [
+      {
+        id: "SOL-1",
+        ticket: "TICK-0001",
+        ticket_title: "How to fix CUDA out of memory?",
+        content: "Reduce batch size or use mixed precision training (fp16).",
+        upvotes: 42,
+        created_at: new Date().toISOString()
+      }
+    ];
   },
   
-  upvoteSolution: (solutionId: string): Promise<any> => {
-    return request.post(`/support/solutions/${solutionId}/upvote/`);
+  upvoteSolution: async (solutionId: string): Promise<any> => {
+    return { success: true };
   },
 };
