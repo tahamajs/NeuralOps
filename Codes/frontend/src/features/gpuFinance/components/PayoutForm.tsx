@@ -1,4 +1,1 @@
-import React from "react";
-export function PayoutForm() {
-  return <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800">Payout Form</div>;
-}
+export { PayoutForm } from "../pages/PayoutForm";
