@@ -381,7 +381,7 @@ def create_research_plan(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated])
 def research_plan_status(request, plan_id):
     """Get the current status of a research plan."""
     plan = get_object_or_404(ResearchPlan, id=plan_id, user=request.user)
