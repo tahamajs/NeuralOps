@@ -349,16 +349,21 @@ class TrainingRunViewTests(TestCase):
         # Patch the real start_job to run synchronously
         patcher = patch("experiment.jobs.start_job")
         self.mock_start_job = patcher.start()
+        
+        patcher2 = patch("api.views.start_job")
+        self.mock_start_job_api = patcher2.start()
 
         def sync_start(run, target):
             target(run, None)  # run runner immediately
 
         self.mock_start_job.side_effect = sync_start
+        self.mock_start_job_api.side_effect = sync_start
         self.addCleanup(patcher.stop)
+        self.addCleanup(patcher2.stop)
 
     def test_start_train_new_experiment(self):
         resp = self.client.post(
-            "/api/train/", {"name": "Training", "config": {"epochs": 1}}, format="json"
+            "/api/experiments/start_train/", {"name": "Training", "config": {"epochs": 1}}, format="json"
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         run = TrainingRun.objects.first()
@@ -367,7 +372,7 @@ class TrainingRunViewTests(TestCase):
 
     def test_start_train_existing_experiment(self):
         resp = self.client.post(
-            "/api/train/",
+            "/api/experiments/start_train/",
             {"experiment_id": str(self.exp.id), "config": {"epochs": 1}},
             format="json",
         )
@@ -376,7 +381,7 @@ class TrainingRunViewTests(TestCase):
 
     def test_start_evaluate(self):
         resp = self.client.post(
-            "/api/evaluate/",
+            "/api/experiments/start_evaluate/",
             {"experiment_id": str(self.exp.id), "config": {}},
             format="json",
         )
@@ -386,7 +391,7 @@ class TrainingRunViewTests(TestCase):
 
     def test_start_compress(self):
         resp = self.client.post(
-            "/api/compress/",
+            "/api/experiments/start_compress/",
             {"experiment_id": str(self.exp.id), "config": {}},
             format="json",
         )
