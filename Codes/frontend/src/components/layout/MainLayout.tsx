@@ -2,6 +2,8 @@ import { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../features/auth/store/authStore";
 import ConnectionStatus from "./ConnectionStatus";
+import { useWindowStore } from "../../store/windowStore";
+import { AVAILABLE_WINDOWS } from "../WindowLauncher";
 import {
   Bell,
   Search,
@@ -39,6 +41,7 @@ export const MainLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const { addWindow } = useWindowStore();
 
   const navItems = [
     {
@@ -61,11 +64,6 @@ export const MainLayout = () => {
     { label: "System", path: "/system", icon: <Monitor size={18} /> },
   ];
 
-  const quickActions = [
-    { label: "Terminal", path: "/terminal", icon: <Terminal size={18} /> },
-    { label: "Cluster", path: "/cluster", icon: <Monitor size={18} /> },
-  ];
-
   return (
     <>
       <ConnectionStatus />
@@ -78,7 +76,7 @@ export const MainLayout = () => {
             sidebarCollapsed ? "w-20" : "w-64"
           } glass border-r border-white/5 flex flex-col transition-all duration-300 sticky top-0 h-screen z-40`}
         >
-          <div className="p-4 flex items-center justify-between">
+          <div className="p-4 flex items-center justify-between shrink-0">
             {!sidebarCollapsed && (
               <NavLink to="/dashboard" className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-neon-blue to-purple-500 rounded-lg flex items-center justify-center">
@@ -91,7 +89,7 @@ export const MainLayout = () => {
             )}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="text-slate-400 hover:text-white p-1 rounded-lg"
+              className="text-slate-400 hover:text-white p-1 rounded-lg shrink-0"
             >
               {sidebarCollapsed ? (
                 <ChevronRight size={18} />
@@ -101,45 +99,51 @@ export const MainLayout = () => {
             </button>
           </div>
 
-          <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-neon-blue/10 text-neon-blue"
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
-                  } ${sidebarCollapsed ? "justify-center" : ""}`
-                }
-                title={sidebarCollapsed ? item.label : undefined}
-              >
-                {item.icon}
-                {!sidebarCollapsed && item.label}
-              </NavLink>
-            ))}
-          </nav>
-
-          {!sidebarCollapsed && (
-            <div className="px-3 pb-3">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">
-                Quick
+          <nav className="flex-1 px-3 space-y-6 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <div>
+              <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 ${sidebarCollapsed ? 'text-center' : 'px-3'}`}>
+                Core Apps
               </p>
               <div className="space-y-1">
-                {quickActions.map((action) => (
-                  <button
-                    key={action.path}
-                    onClick={() => navigate(action.path)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-400 hover:text-white hover:bg-white/5 transition-all w-full"
+                {navItems.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-neon-blue/10 text-neon-blue"
+                          : "text-slate-400 hover:text-white hover:bg-white/5"
+                      } ${sidebarCollapsed ? "justify-center" : ""}`
+                    }
+                    title={sidebarCollapsed ? item.label : undefined}
                   >
-                    {action.icon}
-                    {action.label}
+                    {item.icon}
+                    {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 ${sidebarCollapsed ? 'text-center' : 'px-3'}`}>
+                Features & Tools
+              </p>
+              <div className="space-y-1">
+                {AVAILABLE_WINDOWS.map((win) => (
+                  <button
+                    key={win.type}
+                    onClick={() => addWindow(win.type, win.title, win.icon)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all w-full ${sidebarCollapsed ? "justify-center" : "justify-start"}`}
+                    title={sidebarCollapsed ? win.title : undefined}
+                  >
+                    <span className="text-lg w-5 text-center flex-shrink-0">{win.icon}</span>
+                    {!sidebarCollapsed && <span className="truncate">{win.title}</span>}
                   </button>
                 ))}
               </div>
             </div>
-          )}
+          </nav>
 
           <div className="p-4 border-t border-white/5">
             <div
