@@ -83,19 +83,19 @@ export default function SupportHubPage() {
   const { success, error } = useToast();
 
   // Queries
-  const { data: ticketsData, isLoading: isLoadingTickets, refetch: refetchTickets } = useQuery({
+  const { data: rawTicketsData, isLoading: isLoadingTickets, refetch: refetchTickets } = useQuery({
     queryKey: ["support-tickets"],
     queryFn: supportAPI.getTickets,
     retry: false,
   });
 
-  const { data: solutionsData, isLoading: isLoadingSolutions } = useQuery({
+  const { data: rawSolutionsData, isLoading: isLoadingSolutions } = useQuery({
     queryKey: ["support-solutions"],
     queryFn: supportAPI.getSolutions,
     retry: false,
   });
 
-  const { data: selectedTicket, isLoading: isLoadingDetail } = useQuery({
+  const { data: rawSelectedTicket, isLoading: isLoadingDetail } = useQuery({
     queryKey: ["support-ticket-detail", selectedTicketId],
     queryFn: () => supportAPI.getTicketDetail(selectedTicketId!),
     enabled: !!selectedTicketId,
