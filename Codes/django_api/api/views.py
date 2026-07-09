@@ -1344,3 +1344,32 @@ def gpu_info(request):
             return Response({"type": "cpu", "total_gpus": 0})
     except ImportError:
         return Response({"type": "cpu", "total_gpus": 0})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def dashboard_stats(request):
+    """Aggregate platform statistics for the main dashboard."""
+    from experiment.models import Run
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    try:
+        total_experiments = Run.objects.filter(user=request.user).count()
+        running = Run.objects.filter(user=request.user, status="running").count()
+        completed = Run.objects.filter(user=request.user, status="completed").count()
+        failed = Run.objects.filter(user=request.user, status="failed").count()
+    except Exception:
+        total_experiments = running = completed = failed = 0
+
+    return Response({
+        "total_experiments": total_experiments,
+        "running_experiments": running,
+        "completed_experiments": completed,
+        "failed_experiments": failed,
+        "total_models": 0,
+        "gpu_hours_used": 0.0,
+        "papers_saved": 0,
+        "agent_sessions": 0,
+    })
+

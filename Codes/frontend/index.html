@@ -20,6 +20,22 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preconnect" href="http://localhost:8000" />
     <title>NeuralOps — AI Research Suite</title>
+    <script>
+      // Polyfill: crypto.randomUUID is only available in HTTPS secure contexts.
+      // This shim works on plain HTTP (LAN, local dev over IP) as well.
+      if (typeof crypto !== 'undefined' && typeof crypto.randomUUID !== 'function') {
+        crypto.randomUUID = function() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+          });
+        };
+      }
+      // Shim process for CJS packages (react-rnd, react-draggable)
+      if (typeof process === 'undefined') {
+        window.process = { env: { NODE_ENV: 'development' } };
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
