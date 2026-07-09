@@ -172,8 +172,8 @@ api.interceptors.response.use(
         if (url.includes("/config/history/")) {
           return {
             data: [
-              { version: 1, config: { lr: 2e-5, batch_size: 32 }, created_at: new Date().toISOString() },
-              { version: 2, config: { lr: 3e-5, batch_size: 32 }, created_at: new Date().toISOString() }
+              { version: 1, description: "Base run config", snapshot: { lr: 2e-5, batch_size: 32 }, created_at: new Date(Date.now() - 3600000).toISOString() },
+              { version: 2, description: "Updated hyperparameters", snapshot: { lr: 3e-5, batch_size: 32 }, created_at: new Date().toISOString() }
             ]
           };
         }
@@ -249,7 +249,8 @@ api.interceptors.response.use(
         if (url.includes("/config/history/")) {
           return {
             data: [
-              { version: 1, config: { lr: 2e-5 }, created_at: new Date().toISOString() }
+              { version: 1, description: "Initial job launch parameters", snapshot: { lr: 2e-5, batch_size: 32 }, created_at: new Date(Date.now() - 3600000).toISOString() },
+              { version: 2, description: "Optimized learning rate for faster convergence", snapshot: { lr: 3e-5, batch_size: 32 }, created_at: new Date().toISOString() }
             ]
           };
         }
