@@ -8,7 +8,10 @@ from django.test import TestCase, override_settings
 from jobscheduler.models import Job
 from rest_framework.test import APIClient
 
+import torch
+
 from .models import ModelVersion
+from .services import create_diff, load_version_from_diff
 
 
 class ModelVersionTests(TestCase):
@@ -694,8 +697,6 @@ class ModelVersionTests(TestCase):
         # Create a dummy diff file
         import tarfile
         import tempfile
-
-        import torch
 
         with tempfile.NamedTemporaryFile(suffix=".tar.gz") as f:
             diff_state = {"weight": torch.ones(10)}

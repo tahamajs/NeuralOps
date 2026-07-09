@@ -134,9 +134,17 @@ class ResearcherNote(models.Model):
     def get_absolute_url(self):
         return reverse("note_detail", kwargs={"note_id": self.id})
 
+    @property
+    def is_deleted(self) -> bool:
+        return self.deleted_at is not None
+
     def soft_delete(self):
         self.deleted_at = timezone.now()
         self.save(update_fields=["deleted_at"])
+
+    def increment_version(self):
+        self.version += 1
+        self.save(update_fields=["version"])
 
     def toggle_favorite(self):
         self.is_favorite = not self.is_favorite
