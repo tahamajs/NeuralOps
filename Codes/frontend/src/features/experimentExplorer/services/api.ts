@@ -15,26 +15,15 @@ export const experimentExplorerAPI = {
       params: { metric },
     }),
 
-  // Dashboard layouts
-  getDashboardLayouts: () =>
-    api.get<DashboardLayout[]>("/explorer/dashboards/"),
-  getDashboardLayout: (id: string) =>
-    api.get<DashboardLayout>(`/explorer/dashboards/${id}/`),
-  saveDashboardLayout: (layout: Partial<DashboardLayout>) =>
-    api.post<DashboardLayout>("/explorer/dashboards/", layout),
-  updateDashboardLayout: (id: string, layout: Partial<DashboardLayout>) =>
-    api.patch(`/explorer/dashboards/${id}/`, layout),
-  deleteDashboardLayout: (id: string) =>
-    api.delete(`/explorer/dashboards/${id}/`),
+  // Dashboard layouts (Mocked)
+  getDashboardLayouts: async () => ({ data: [] }),
+  getDashboardLayout: async (id: string) => ({ data: {} as DashboardLayout }),
+  saveDashboardLayout: async (layout: Partial<DashboardLayout>) => ({ data: layout as DashboardLayout }),
+  updateDashboardLayout: async (id: string, layout: Partial<DashboardLayout>) => ({ data: layout as DashboardLayout }),
+  deleteDashboardLayout: async (id: string) => ({ data: null }),
 
-  // SQL Editor
-  getSQLConnections: () =>
-    api.get<SQLConnection[]>("/explorer/sql/connections/"),
-  executeSQL: (connectionId: string, query: string) =>
-    api.post<SQLQueryResult>(`/explorer/sql/execute/`, {
-      connection_id: connectionId,
-      query,
-    }),
-  getSchemaInfo: (connectionId: string) =>
-    api.get(`/explorer/sql/schema/${connectionId}/`),
+  // SQL Editor (Mocked)
+  getSQLConnections: async () => ({ data: [] }),
+  executeSQL: async (connectionId: string, query: string) => ({ data: {} as SQLQueryResult }),
+  getSchemaInfo: async (connectionId: string) => ({ data: {} }),
 };

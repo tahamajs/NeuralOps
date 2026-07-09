@@ -32,7 +32,7 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
       communityLabAPI.createLab({
         name: newLabName,
         description: newLabDesc,
-        is_private: isPrivate,
+        visibility: isPrivate ? "private" : "public",
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["labs"] });
