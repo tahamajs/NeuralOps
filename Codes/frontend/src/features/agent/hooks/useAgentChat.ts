@@ -20,7 +20,11 @@ export function useAgentChat(sessionId?: string) {
     setLoading(true);
     api
       .get(`/agents/chats/${sessionId}/messages/`)
-      .then((res) => setMessages(res.data))
+      .then((res) => {
+        const data = res.data;
+        const msgs = Array.isArray(data) ? data : data?.results ?? [];
+        setMessages(msgs);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [sessionId]);
@@ -45,7 +49,8 @@ export function useAgentChat(sessionId?: string) {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "messages_sync") {
-          setMessages(data.messages);
+          const msgs = Array.isArray(data.messages) ? data.messages : [];
+          setMessages(msgs);
           setLoading(false);
           setSending(false);
         }
@@ -86,9 +91,22 @@ export function useAgentChat(sessionId?: string) {
         api
           .post(`/agents/chats/${sessionId}/send/`, { text })
           .then((res) => {
-            setMessages(res.data.messages);
+            const data = res.data;
+            const msgs = Array.isArray(data) ? data : data?.messages ?? data?.results ?? [];
+            if (msgs.length > 0) setMessages(msgs);
           })
-          .catch(console.error)
+          .catch((err) => {
+            console.error("Send failed", err);
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `err-${Date.now()}`,
+                role: "assistant",
+                content: "⚠️ Failed to get a response. Please check the backend server.",
+                created_at: new Date().toISOString(),
+              },
+            ]);
+          })
           .finally(() => {
             setLoading(false);
             setSending(false);

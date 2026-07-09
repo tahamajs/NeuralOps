@@ -127,7 +127,7 @@ export default function AgentChatPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto scrollbar-thin px-2 space-y-1">
-          {messages.length === 0 && !loading && (
+          {(Array.isArray(messages) ? messages : []).length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center h-full text-slate-500">
               <Bot size={48} className="mb-4 text-slate-600" />
               <p className="text-sm">
@@ -146,7 +146,7 @@ export default function AgentChatPage() {
               </div>
             </div>
           )}
-          {messages.map((msg) => (
+          {(Array.isArray(messages) ? messages : []).map((msg) => (
             <ChatMessageBubble key={msg.id} msg={msg} />
           ))}
           {(loading || sending) && (
