@@ -9,7 +9,7 @@ export default function TrainingSnapshotsPage() {
   const { runId } = useParams<{ runId: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["trainingSnapshots", runId],
-    queryFn: async () => (await api.get(`/api/runs/${runId}/snapshots/`)).data,
+    queryFn: async () => (await api.get(`/runs/${runId}/snapshots/`)).data,
   });
 
   if (isLoading) return <Spinner />;

@@ -29,7 +29,7 @@ export default function OverleafEditorPage() {
   const { data: project, isLoading } = useQuery({
     queryKey: ["paperProject", projectId],
     queryFn: async () =>
-      (await api.get(`/api/paper/projects/${projectId}/`)).data,
+      (await api.get(`/paper/projects/${projectId}/`)).data,
     enabled: !!projectId,
   });
 
@@ -38,7 +38,7 @@ export default function OverleafEditorPage() {
     queryKey: ["paperFile", projectId, selectedFile],
     queryFn: async () => {
       const res = await api.get(
-        `/api/paper/projects/${projectId}/files/${selectedFile}/`,
+        `/paper/projects/${projectId}/files/${selectedFile}/`,
       );
       return res.data;
     },
@@ -56,7 +56,7 @@ export default function OverleafEditorPage() {
     mutationFn: async () => {
       setCompiling(true);
       setShowErrors(false);
-      const res = await api.post(`/api/paper/projects/${projectId}/compile/`);
+      const res = await api.post(`/paper/projects/${projectId}/compile/`);
       return res.data;
     },
     onSuccess: (data) => {
@@ -97,7 +97,7 @@ export default function OverleafEditorPage() {
 
   const handleSave = async () => {
     if (!projectId || !selectedFile) return;
-    await api.put(`/api/paper/projects/${projectId}/files/${selectedFile}/`, {
+    await api.put(`/paper/projects/${projectId}/files/${selectedFile}/`, {
       content: fileContent,
     });
     queryClient.invalidateQueries({ queryKey: ["paperProject", projectId] });

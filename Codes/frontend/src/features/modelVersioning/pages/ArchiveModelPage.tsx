@@ -8,12 +8,12 @@ export default function ArchiveModelPage() {
   const { versionId } = useParams<{ versionId: string }>();
   const archiveMut = useMutation({
     mutationFn: () =>
-      api.post(`/api/model-versioning/versions/${versionId}/archive/`),
+      api.post(`/model-versioning/versions/${versionId}/archive/`),
     onSuccess: () => alert("Archived to cold storage"),
   });
   const restoreMut = useMutation({
     mutationFn: () =>
-      api.post(`/api/model-versioning/versions/${versionId}/restore/`),
+      api.post(`/model-versioning/versions/${versionId}/restore/`),
     onSuccess: () => alert("Restored from cold storage"),
   });
 

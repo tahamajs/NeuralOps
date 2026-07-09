@@ -14,7 +14,7 @@ export default function AgentDashboardPage() {
   const { data: session, isLoading } = useQuery({
     queryKey: ["agentSession", sessionId],
     queryFn: async () =>
-      (await api.get(`/api/agents/sessions/${sessionId}/`)).data,
+      (await api.get(`/agents/sessions/${sessionId}/`)).data,
     refetchInterval: 3000,
     enabled: !!sessionId,
   });
@@ -23,7 +23,7 @@ export default function AgentDashboardPage() {
 
   const handlePauseResume = async () => {
     const newStatus = session.status === "active" ? "paused" : "active";
-    await api.patch(`/api/agents/sessions/${sessionId}/`, {
+    await api.patch(`/agents/sessions/${sessionId}/`, {
       status: newStatus,
     });
   };

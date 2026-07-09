@@ -13,7 +13,7 @@ export default function PaperGeneratorPage() {
   const downloadPaper = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/runs/${runId}/paper/`);
+      const response = await fetch(`/runs/${runId}/paper/`);
       if (!response.ok) throw new Error("Generation failed");
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);

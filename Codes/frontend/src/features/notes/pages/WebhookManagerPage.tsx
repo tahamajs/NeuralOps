@@ -34,12 +34,12 @@ export default function WebhookManagerPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => api.delete(`/api/notes/v1/webhooks/${id}/`),
+    mutationFn: (id: string) => api.delete(`/notes/v1/webhooks/${id}/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["webhooks"] }),
   });
 
   const testMut = useMutation({
-    mutationFn: (id: string) => api.post(`/api/notes/v1/webhooks/${id}/test/`),
+    mutationFn: (id: string) => api.post(`/notes/v1/webhooks/${id}/test/`),
     onSuccess: () => alert("Webhook test triggered"),
   });
 

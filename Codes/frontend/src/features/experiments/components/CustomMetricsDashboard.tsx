@@ -39,7 +39,7 @@ export default function CustomMetricsDashboard({
   } = useQuery<MetricsData>({
     queryKey: ["customMetrics", runId],
     queryFn: async () => {
-      const res = await api.get(`/api/runs/${runId}/metrics/`);
+      const res = await api.get(`/runs/${runId}/metrics/`);
       return res.data;
     },
     enabled: !!runId,

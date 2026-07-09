@@ -4,7 +4,7 @@ import { Button } from "../ui/Button";
 export function DownloadPaperButton({ runId }: { runId?: string }) {
   const handleDownload = () => {
     if (runId) {
-      window.open(`/api/runs/${runId}/paper/`, "_blank");
+      window.open(`/runs/${runId}/paper/`, "_blank");
     }
   };
 

@@ -4,7 +4,7 @@ import { Button } from "../ui/Button";
 export function DownloadModelButton({ runId }: { runId?: string }) {
   const handleDownload = () => {
     if (runId) {
-      window.open(`/api/runs/${runId}/model/`, "_blank");
+      window.open(`/runs/${runId}/model/`, "_blank");
     }
   };
 

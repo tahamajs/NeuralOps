@@ -9,7 +9,7 @@ export default function RunAnalysisOverviewPage() {
   const { runId } = useParams<{ runId: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["runAnalysis", runId],
-    queryFn: async () => (await api.get(`/api/runs/${runId}/analysis/`)).data,
+    queryFn: async () => (await api.get(`/runs/${runId}/analysis/`)).data,
   });
 
   if (isLoading) return <Spinner />;

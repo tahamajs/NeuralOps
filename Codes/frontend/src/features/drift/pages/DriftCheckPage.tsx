@@ -14,7 +14,7 @@ export default function DriftCheckPage() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const res = await api.post(`/api/runs/${runId}/drift/check/`, {
+      const res = await api.post(`/runs/${runId}/drift/check/`, {
         reference: JSON.parse(reference),
         current: JSON.parse(current),
       });

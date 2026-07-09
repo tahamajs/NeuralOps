@@ -16,13 +16,13 @@ export default function ModelVersionComparePage() {
   const { data: versions = [] } = useQuery({
     queryKey: ["modelVersions", runId],
     queryFn: async () =>
-      (await api.get(`/api/model-versioning/runs/${runId}/versions/`)).data,
+      (await api.get(`/model-versioning/runs/${runId}/versions/`)).data,
   });
 
   const handleCompare = async () => {
     if (!va || !vb) return;
     const res = await api.get(
-      `/api/model-versioning/runs/${runId}/versions/compare/${va}/${vb}/`,
+      `/model-versioning/runs/${runId}/versions/compare/${va}/${vb}/`,
     );
     setDiff(res.data);
   };

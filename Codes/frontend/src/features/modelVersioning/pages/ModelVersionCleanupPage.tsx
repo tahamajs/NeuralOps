@@ -8,7 +8,7 @@ export default function ModelVersionCleanupPage() {
   const { runId } = useParams<{ runId: string }>();
   const mutation = useMutation({
     mutationFn: async () =>
-      api.post(`/api/model-versioning/runs/${runId}/versions/cleanup/`),
+      api.post(`/model-versioning/runs/${runId}/versions/cleanup/`),
     onSuccess: () => alert("Cleanup started"),
   });
   return (

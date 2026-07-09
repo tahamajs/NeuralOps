@@ -93,7 +93,7 @@ export default function PaperEditorPage() {
   // Fetch run metric-based template if runId exists
   const { data: run } = useQuery({
     queryKey: ["run", runId],
-    queryFn: async () => (await api.get(`/api/runs/${runId}/`)).data,
+    queryFn: async () => (await api.get(`/runs/${runId}/`)).data,
     enabled: !!runId,
   });
 
@@ -165,7 +165,7 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? "N/A"} \\\\
   // Save source to run (if runId)
   const saveMut = useMutation({
     mutationFn: async (source: string) => {
-      await api.post(`/api/runs/${runId}/paper_source/`, source, {
+      await api.post(`/runs/${runId}/paper_source/`, source, {
         headers: { "Content-Type": "text/plain" },
       });
     },
@@ -177,7 +177,7 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? "N/A"} \\\\
   const loadSource = async () => {
     if (!runId) return;
     try {
-      const res = await api.get(`/api/runs/${runId}/paper_source/`);
+      const res = await api.get(`/runs/${runId}/paper_source/`);
       setLatexSource(res.data);
     } catch {
       alert("No saved LaTeX found.");

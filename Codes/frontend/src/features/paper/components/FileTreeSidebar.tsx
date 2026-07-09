@@ -24,7 +24,7 @@ export default function FileTreeSidebar({
 
   const createFileMut = useMutation({
     mutationFn: async (filename: string) => {
-      await api.post(`/api/paper/projects/${projectId}/files/`, {
+      await api.post(`/paper/projects/${projectId}/files/`, {
         filename,
         content: "",
       });
@@ -38,7 +38,7 @@ export default function FileTreeSidebar({
 
   const deleteFileMut = useMutation({
     mutationFn: async (filename: string) => {
-      await api.delete(`/api/paper/projects/${projectId}/files/${filename}/`);
+      await api.delete(`/paper/projects/${projectId}/files/${filename}/`);
     },
     onSuccess: (_, filename) => {
       onRefresh();
@@ -57,7 +57,7 @@ export default function FileTreeSidebar({
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const content = ev.target?.result as string;
-        await api.post(`/api/paper/projects/${projectId}/files/`, {
+        await api.post(`/paper/projects/${projectId}/files/`, {
           filename: file.name,
           content,
         });

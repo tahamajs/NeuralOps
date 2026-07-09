@@ -79,7 +79,7 @@ export default function AgentDashboardPage() {
     const res = await api.post("/agents/chats/", { title: "" });
     const id: string = res.data.id;
     if (initialPrompt) {
-      await api.post(`/api/agents/chats/${id}/send/`, { text: initialPrompt });
+      await api.post(`/agents/chats/${id}/send/`, { text: initialPrompt });
     }
     navigate(`/agent/${id}`);
   };

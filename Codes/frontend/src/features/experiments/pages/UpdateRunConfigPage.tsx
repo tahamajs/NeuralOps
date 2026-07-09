@@ -22,7 +22,7 @@ export default function UpdateRunConfigPage() {
   const updateMut = useMutation({
     mutationFn: async () => {
       const config = JSON.parse(configText);
-      return api.patch(`/api/runs/${runId}/config/`, { config });
+      return api.patch(`/runs/${runId}/config/`, { config });
     },
     onSuccess: () => alert("Config updated"),
   });

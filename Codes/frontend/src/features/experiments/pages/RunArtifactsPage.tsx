@@ -9,7 +9,7 @@ export default function RunArtifactsPage() {
   const { runId } = useParams<{ runId: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["runArtifacts", runId],
-    queryFn: async () => (await api.get(`/api/runs/${runId}/artifacts/`)).data,
+    queryFn: async () => (await api.get(`/runs/${runId}/artifacts/`)).data,
   });
 
   if (isLoading) return <Spinner />;
