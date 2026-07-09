@@ -7,6 +7,7 @@ import { Badge } from "../../../components/ui/Badge";
 import { Spinner } from "../../../components/ui/Spinner";
 import { Link, useNavigate } from "react-router-dom";
 import { useWindowStore } from "../../../store/windowStore";
+import { AVAILABLE_WINDOWS } from "../../../components/WindowLauncher";
 import {
   BarChart3,
   TrendingUp,
@@ -291,6 +292,29 @@ export default function DashboardPage() {
               <p className="text-xs text-slate-400">Versioning & promotion</p>
             </div>
           </Card>
+        </div>
+      </div>
+
+      {/* All Applications Directory */}
+      <div className="pt-4 border-t border-white/5 mt-8">
+        <h2 className="text-xl font-display font-bold text-white mb-6 flex items-center gap-2">
+          <Layers className="text-neon-blue" size={20} /> All Applications Directory
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          {AVAILABLE_WINDOWS.map((app) => (
+            <button
+              key={app.type}
+              onClick={() => launchFeature(app.type)}
+              className="text-left glass p-3 rounded-xl border border-white/5 hover:border-neon-blue/50 hover:bg-white/5 transition-all flex items-center gap-3 group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                <span className="text-xl">{app.icon}</span>
+              </div>
+              <span className="text-xs font-semibold text-slate-300 group-hover:text-white line-clamp-2 leading-tight">
+                {app.title}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
       
