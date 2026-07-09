@@ -4,9 +4,9 @@ from rest_framework.exceptions import AuthenticationFailed
 
 class CookieTokenAuthentication(TokenAuthentication):
     def authenticate(self, request):
-        # First try the Authorization header (standard Bearer token)
+        # First try the Authorization header (standard Token or Bearer token)
         auth = request.META.get("HTTP_AUTHORIZATION", "").split()
-        if auth and auth[0].lower() == "bearer":
+        if auth and auth[0].lower() in ["bearer", "token"]:
             if len(auth) == 1:
                 raise AuthenticationFailed(
                     "Invalid token header. No credentials provided."
