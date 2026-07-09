@@ -12,12 +12,12 @@ export default function ExperimentComparePage() {
 
   const { data: experiments = [] } = useQuery({
     queryKey: ["experiments"],
-    queryFn: async () => (await api.get("/api/experiments/")).data,
+    queryFn: async () => (await api.get("/experiments/")).data,
   });
 
   const compareMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const res = await api.post("/api/experiments/compare/", { run_ids: ids });
+      const res = await api.post("/experiments/compare/", { run_ids: ids });
       return res.data;
     },
     onSuccess: setResult,

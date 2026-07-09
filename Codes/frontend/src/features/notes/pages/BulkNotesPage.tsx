@@ -14,12 +14,12 @@ export default function BulkNotesPage() {
   const { data: notes = [] } = useQuery({
     queryKey: ["notes"],
     queryFn: async () =>
-      (await api.get("/api/notes/v1/notes/")).data.results || [],
+      (await api.get("/notes/v1/notes/")).data.results || [],
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (ids: string[]) =>
-      api.post("/api/notes/v1/notes/bulk/", { action: "delete", ids }),
+      api.post("/notes/v1/notes/bulk/", { action: "delete", ids }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       setSelected([]);
@@ -35,7 +35,7 @@ export default function BulkNotesPage() {
       ids: string[];
       tags: string[];
       action: string;
-    }) => api.patch("/api/notes/v1/notes/bulk/tags/", { ids, tags, action }),
+    }) => api.patch("/notes/v1/notes/bulk/tags/", { ids, tags, action }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notes"] }),
   });
 

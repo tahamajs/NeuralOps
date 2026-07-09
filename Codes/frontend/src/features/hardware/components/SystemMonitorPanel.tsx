@@ -9,8 +9,8 @@ export default function SystemMonitorPanel() {
     const fetch = async () => {
       try {
         const [sysRes, gpuRes] = await Promise.all([
-          api.get("/api/system/status/"),
-          api.get("/api/system/gpu/"),
+          api.get("/system/status/"),
+          api.get("/system/gpu/"),
         ]);
         setSys(sysRes.data);
         setGpu(gpuRes.data);

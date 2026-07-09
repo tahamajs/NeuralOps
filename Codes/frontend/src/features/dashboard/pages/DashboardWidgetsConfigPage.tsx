@@ -22,19 +22,19 @@ export default function DashboardWidgetsConfigPage() {
     error,
   } = useQuery<Widget[]>({
     queryKey: ["dashboardWidgets"],
-    queryFn: async () => (await api.get("/api/widgets/")).data,
+    queryFn: async () => (await api.get("/widgets/")).data,
   });
 
   const saveMutation = useMutation({
     mutationFn: async (layout: Widget[]) =>
-      await api.put("/api/widgets/layout/", { widgets: layout }),
+      await api.put("/widgets/layout/", { widgets: layout }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboardWidgets"] });
     },
   });
 
   const resetMutation = useMutation({
-    mutationFn: async () => await api.post("/api/widgets/reset/"),
+    mutationFn: async () => await api.post("/widgets/reset/"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboardWidgets"] });
     },

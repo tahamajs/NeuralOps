@@ -54,7 +54,7 @@ export default function ResearchAnalysisPage() {
   const { data: runs = [], isLoading: runsLoading } = useQuery<Run[]>({
     queryKey: ["runs"],
     queryFn: async () => {
-      const res = await api.get("/api/runs/?all=true");
+      const res = await api.get("/runs/?all=true");
       return res.data;
     },
     refetchInterval: 15000,

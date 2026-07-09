@@ -12,7 +12,7 @@ export default function ExperimentDiffPage() {
 
   const { data: experiments = [] } = useQuery({
     queryKey: ["experiments"],
-    queryFn: async () => (await api.get("/api/experiments/")).data,
+    queryFn: async () => (await api.get("/experiments/")).data,
   });
 
   const handleDiff = async () => {

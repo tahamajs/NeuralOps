@@ -10,9 +10,9 @@ export default function GlobalStatsPage() {
     queryKey: ["globalStats"],
     queryFn: async () => {
       const [jobs, sys, gpu] = await Promise.all([
-        api.get("/api/jobs/stats/").then((r) => r.data),
-        api.get("/api/system/status/").then((r) => r.data),
-        api.get("/api/system/gpu/").then((r) => r.data),
+        api.get("/jobs/stats/").then((r) => r.data),
+        api.get("/system/status/").then((r) => r.data),
+        api.get("/system/gpu/").then((r) => r.data),
       ]);
       return { jobs, sys, gpu };
     },

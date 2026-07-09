@@ -71,7 +71,7 @@ performance while reducing computational requirements.
     setError(null);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("/api/paper/compile/", {
+      const response = await fetch("/paper/compile/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
