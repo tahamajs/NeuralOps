@@ -98,7 +98,7 @@ class DockerManager:
             'read_only': True,  # Read-only root filesystem
             'tmpfs': {'/tmp': 'size=512M'},
             'network_mode': 'bridge',
-            'auto_remove': True,  # Auto-remove on exit
+            'auto_remove': False,  # Managed manually to retrieve exit code/logs
             'mem_limit': '8g',
             'nano_cpus': int(4 * 1e9),  # 4 CPUs
             'shm_size': '1g',
@@ -137,12 +137,19 @@ class DockerManager:
         """Stop and remove a container."""
         try:
             container = self.client.containers.get(container_id)
-            container.stop(timeout=10)
-            logger.info("Container stopped: %s", container_id)
+            try:
+                container.stop(timeout=10)
+            except Exception:
+                pass
+            try:
+                container.remove()
+            except Exception:
+                pass
+            logger.info("Container stopped and removed: %s", container_id)
         except docker.errors.NotFound:
             pass
         except Exception as e:
-            logger.error("Failed to stop container %s: %s", container_id, e)
+            logger.error("Failed to stop/remove container %s: %s", container_id, e)
 
     def cleanup(self):
         """Remove all completed NeuralOps containers."""
@@ -191,7 +198,7 @@ class DockerManager:
             read_only=True,
             tmpfs={'/tmp': 'size=512M'},
             network_mode='bridge',
-            auto_remove=True,
+            auto_remove=False,
             mem_limit='8g',
             nano_cpus=int(4 * 1e9),
             shm_size='1g',
