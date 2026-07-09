@@ -931,9 +931,9 @@ class PermissionTests(IntegrationTestBase):
         client = APIClient()
         endpoints = [
             "/api/experiments/",
-            "/api/runs/",
-            "/api/config/attentions/",
-            "/api/jobs/",
+            "/api/experiments/runs/",
+            "/api/experiments/config/attentions/",
+            "/api/jobs/api/jobs/",
             "/api/notes/v1/notes/",
             "/api/model-versioning/versions/",
         ]
