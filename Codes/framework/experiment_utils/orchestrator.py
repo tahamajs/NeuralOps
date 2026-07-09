@@ -88,7 +88,7 @@ class MegaOrchestrator:
 
             # 2. Apply training method (if any)
             if self.cfg.method.method != "baseline":
-                from framework.training.methods import get_method
+                from framework.trainer.methods import get_method
 
                 method_fn = get_method(self.cfg.method.method)
                 if method_fn:
