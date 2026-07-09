@@ -13,7 +13,7 @@ export function InvoiceRow({ invoice, onDownload }: InvoiceRowProps) {
       case "paid": return "success";
       case "draft": return "secondary";
       case "open": return "warning";
-      case "overdue": return "danger";
+      case "overdue": return "failed";
       default: return "info";
     }
   };
