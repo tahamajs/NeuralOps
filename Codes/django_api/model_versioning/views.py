@@ -85,6 +85,10 @@ def list_model_versions(request, run_id):
     """List versions for a specific run with optional filtering, sorting, and CSV export."""
     run = Job.objects.filter(id=run_id).first()
     if not run:
+        print("DEBUG:", type(run_id), repr(run_id))
+        print("DEBUG DB:", [type(x) for x in Job.objects.values_list('id', flat=True)])
+        print("DEBUG DB VALS:", list(Job.objects.values_list('id', flat=True)))
+        print("DEBUG FILTER STR:", Job.objects.filter(id=str(run_id)).first())
         return Response({
             "error": "Job not found",
             "run_id": str(run_id),
