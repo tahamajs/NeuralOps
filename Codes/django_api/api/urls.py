@@ -123,4 +123,7 @@ urlpatterns = [
     path("runs/<uuid:run_id>/save/", views.run_save, name="run_save"),
     path("system/status/", views.system_status, name="system_status"),
     path("system/gpu/", views.gpu_info, name="gpu_info"),
+    # Dashboard stats
+    path("stats/", views.dashboard_stats, name="dashboard_stats"),
+    path("health/", views.health_check, name="health_check"),
 ]
