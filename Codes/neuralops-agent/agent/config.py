@@ -56,12 +56,18 @@ class AgentConfig:
             config.api_key = args.api_key
         if args.server:
             config.api_base_url = args.server
-            config.ws_url = args.server.replace('https://', 'wss://') + '/ws/provider/'
+            ws_proto = 'wss://' if args.server.startswith('https://') else 'ws://'
+            clean_url = args.server.replace('https://', '').replace('http://', '')
+            config.ws_url = f"{ws_proto}{clean_url}/ws/provider/"
         # 3. Env vars override
         if os.environ.get('NEURALOPS_API_KEY'):
             config.api_key = os.environ['NEURALOPS_API_KEY']
         if os.environ.get('NEURALOPS_SERVER'):
             config.api_base_url = os.environ['NEURALOPS_SERVER']
+            server_url = os.environ['NEURALOPS_SERVER']
+            ws_proto = 'wss://' if server_url.startswith('https://') else 'ws://'
+            clean_url = server_url.replace('https://', '').replace('http://', '')
+            config.ws_url = f"{ws_proto}{clean_url}/ws/provider/"
         # Build derived paths
         os.makedirs(config.data_dir, exist_ok=True)
         os.makedirs(config.job_dir, exist_ok=True)
