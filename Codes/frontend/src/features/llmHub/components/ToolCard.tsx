@@ -20,11 +20,12 @@ export function ToolCard({ tool, onToggle }: ToolCardProps) {
             {tool.description}
           </p>
         </div>
-        <Switch
-          checked={tool.enabled}
-          onCheckedChange={onToggle}
-          className="accent-neon-blue shrink-0"
-        />
+        <div className="shrink-0">
+          <Switch
+            checked={tool.enabled}
+            onChange={onToggle}
+          />
+        </div>
       </div>
 
       <div className="flex justify-between items-center pt-2 border-t border-white/5">
