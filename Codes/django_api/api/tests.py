@@ -393,9 +393,8 @@ class RateLimitTests(TestCase):
 
     def test_anon_throttle_register(self):
         # Temporarily lower the rate to 2/min for this test
-        with patch.object(BurstRateThrottle, "rate", "2/min"), \
-             patch.object(BurstRateThrottle, "num_requests", 2), \
-             patch.object(BurstRateThrottle, "duration", 60):
+        from api.views import AnonBurstRateThrottle
+        with patch.object(AnonBurstRateThrottle, "rate", "2/min"):
             for i in range(3):
                 resp = self.client.post(
                     "/api/auth/register/",
