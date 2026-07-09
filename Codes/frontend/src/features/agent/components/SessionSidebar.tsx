@@ -18,11 +18,17 @@ export default function SessionSidebar({
   onNew,
   onDelete,
 }: Props) {
-  const { data: sessions = [] } = useQuery<ChatSession[]>({
+  const { data } = useQuery<any>({
     queryKey: ["agentSessions"],
     queryFn: async () => (await api.get("/agents/chats/")).data,
     refetchInterval: 10000,
   });
+
+  const sessionList: ChatSession[] = Array.isArray(data)
+    ? data
+    : data && Array.isArray(data.results)
+    ? data.results
+    : [];
 
   return (
     <div className="w-64 glass border-r border-white/5 flex flex-col h-full">
@@ -32,7 +38,7 @@ export default function SessionSidebar({
         </Button>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin px-2 py-2">
-        {sessions.map((s) => (
+        {sessionList.map((s) => (
           <div
             key={s.id}
             className={`group flex items-center px-3 py-2 rounded-lg cursor-pointer transition-colors mb-0.5 ${
