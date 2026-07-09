@@ -146,9 +146,13 @@ export default function SupportHubPage() {
     },
   });
 
+  const ticketsData = rawTicketsData && ("data" in rawTicketsData) ? (rawTicketsData as any).data : rawTicketsData;
+  const solutionsData = rawSolutionsData && ("data" in rawSolutionsData) ? (rawSolutionsData as any).data : rawSolutionsData;
+  const selectedTicket = rawSelectedTicket && ("data" in rawSelectedTicket) ? (rawSelectedTicket as any).data : rawSelectedTicket;
+
   // Safe data retrieval (use mock data if backend empty/fails)
-  const tickets: SupportTicket[] = ticketsData || [];
-  const solutions: Solution[] = solutionsData && solutionsData.length > 0 ? solutionsData : MOCK_SOLUTIONS;
+  const tickets: SupportTicket[] = Array.isArray(ticketsData) ? ticketsData : [];
+  const solutions: Solution[] = Array.isArray(solutionsData) && solutionsData.length > 0 ? solutionsData : MOCK_SOLUTIONS;
 
   const handleCreateTicketSubmit = (e: React.FormEvent) => {
     e.preventDefault();
