@@ -38,7 +38,7 @@ export function FailureStatsWidget() {
       <TerminalCard className="p-3 text-center">
         <Clock size={20} className="mx-auto text-neon-blue mb-1" />
         <div className="text-2xl font-bold text-white">
-          {data.avg_resolution_time_hours.toFixed(1)}h
+          {(data.avg_resolution_time_hours || 0).toFixed(1)}h
         </div>
         <div className="text-xs text-slate-400">Avg. Resolution</div>
       </TerminalCard>
