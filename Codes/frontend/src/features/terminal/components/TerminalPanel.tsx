@@ -30,7 +30,7 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
       return;
 
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1];
     const url = `${protocol}://${window.location.host}/ws/terminal/?token=${token}`;
     const ws = new WebSocket(url);
     wsRef.current = ws;
