@@ -110,6 +110,7 @@ urlpatterns = [
     path("api/forensics/", include("failure_forensics.urls")),
     path("api/coach/", include("research_coach.urls")),
     path("api/agent/", include("research_agent.urls")),
+    path("api/agents/", include("agents.urls")),
     # ------------------------------------------------------------------
     # Additional research & integration services
     # ------------------------------------------------------------------
