@@ -100,6 +100,18 @@
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+        .global-loader-logo {
+          position: absolute;
+          width: 50px;
+          height: 50px;
+          z-index: 20;
+          border-radius: 12px;
+          animation: pulseLogo 2s infinite alternate;
+        }
+        @keyframes pulseLogo {
+          0% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 10px rgba(34,211,238,0.2); }
+          100% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 30px rgba(147,51,234,0.6); }
+        }
         .global-loader-text {
           margin-top: 30px;
           font-size: 14px;
@@ -121,6 +133,7 @@
       </style>
       <div class="global-loader-container">
         <div class="global-loader-bg-glow"></div>
+        <img src="/logo.jpg" alt="NeuralOps Logo" class="global-loader-logo" />
         <div class="global-loader-spinner">
           <div class="spinner-ring"></div>
           <div class="spinner-ring"></div>
