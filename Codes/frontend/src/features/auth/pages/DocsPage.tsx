@@ -25,7 +25,7 @@ export default function DocsPage() {
           </Link>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-neon-blue to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-black text-xs">NO</span>
+              <img src="/logo.jpg" alt="NeuralOps" className="w-full h-full object-cover rounded-md" />
             </div>
             <span className="font-bold text-white tracking-widest text-sm">NEURALOPS DOCS</span>
           </div>

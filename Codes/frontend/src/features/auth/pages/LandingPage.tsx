@@ -56,7 +56,7 @@ export default function LandingPage() {
       <header className="relative z-10 max-w-7xl mx-auto w-full px-6 py-6 flex justify-between items-center border-b border-white/5 backdrop-blur-md">
         <div className="flex items-center gap-3 group cursor-pointer">
           <div className="w-10 h-10 bg-gradient-to-br from-neon-blue via-cyan-400 to-purple-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.5)] group-hover:shadow-[0_0_30px_rgba(59,130,246,0.8)] transition-all duration-300">
-            <span className="text-white font-black text-sm">NO</span>
+            <img src="/logo.jpg" alt="NeuralOps" className="w-full h-full object-cover rounded-xl" />
           </div>
           <span className="font-extrabold text-xl tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
             NEURALOPS
