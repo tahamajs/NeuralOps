@@ -199,7 +199,6 @@ ipcMain.handle('ws-disconnect', () => {
 
 // In electron/main.js, add:
 
-const { ContainerController } = require('./container_ctrl_bridge');
 // We need a small Node.js bridge that calls the Python agent via HTTP or
 // directly manages Docker.  For simplicity we expose the operations and
 // have the Python agent handle them, then relay via WebSocket.

@@ -70,6 +70,11 @@ class JobExecutor:
         finally:
             with self._lock:
                 self._active_jobs.pop(job_id, None)
+            if 'container_id' in locals() and container_id:
+                try:
+                    self.docker.stop_container(container_id)
+                except Exception:
+                    pass
 
     def _build_download_script(self, model_id: str, input_url: str) -> str:
         """Generate a bash script that downloads the model and data inside the container."""

@@ -32,15 +32,30 @@ def inject_attention(
     replaced = 0
     for name, old_attn in get_attention_modules(model):
         # Create new attention instance
-        try:
+        new_attn = None
+        signatures_to_try = []
+        if config is not None:
+            signatures_to_try.append(lambda: attn_class(config, rank=rank, pretrained_attn=old_attn, **kwargs))
+            signatures_to_try.append(lambda: attn_class(config, rank=rank, **kwargs))
+            signatures_to_try.append(lambda: attn_class(config, **kwargs))
+            signatures_to_try.append(lambda: attn_class(config))
+        else:
+            signatures_to_try.append(lambda: attn_class(rank=rank, **kwargs))
+            signatures_to_try.append(lambda: attn_class(**kwargs))
+            signatures_to_try.append(lambda: attn_class())
+
+        for fn in signatures_to_try:
+            try:
+                new_attn = fn()
+                break
+            except TypeError:
+                continue
+
+        if new_attn is None:
             if config is not None:
-                new_attn = attn_class(
-                    config, rank=rank, pretrained_attn=old_attn, **kwargs
-                )
+                new_attn = attn_class(config)
             else:
-                new_attn = attn_class(rank=rank, **kwargs)
-        except TypeError:
-            new_attn = attn_class(rank=rank, **kwargs)
+                new_attn = attn_class()
 
         # Copy pretrained weights
         if copy_weights:

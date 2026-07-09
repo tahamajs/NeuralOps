@@ -12,23 +12,20 @@ class TestAttentionInjection:
     def test_inject_attention_on_distilbert(self):
         """Inject a known attention type into DistilBERT and verify no crash."""
         try:
+            import framework.attentions
             from framework.core.attention_utils import inject_attention
-            from transformers import AutoModel
-
-            try:
-                model = AutoModel.from_pretrained(
-                    "distilbert-base-uncased", local_files_only=True
-                )
-            except Exception:
-                try:
-                    model = AutoModel.from_pretrained(
-                        "distilbert-base-uncased", local_files_only=False
-                    )
-                except Exception as inner_e:
-                    pytest.skip(f"Model distilbert-base-uncased not cached and download failed: {inner_e}")
+            from transformers import DistilBertConfig, DistilBertModel
+            config = DistilBertConfig(
+                vocab_size=100,
+                dim=768,
+                n_layers=2,
+                n_heads=8,
+                hidden_dim=3072,
+            )
+            model = DistilBertModel(config)
             inject_attention(model, "full", copy_weights=False)
             # Verify forward pass still works
-            dummy = model.distilbert.transformer.layer[0].attention
+            dummy = model.distilbert.transformer.layer[0].attention if hasattr(model, "distilbert") else model.transformer.layer[0].attention
             import torch
 
             x = torch.randn(2, 8, 768)
