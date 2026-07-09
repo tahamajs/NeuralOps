@@ -303,6 +303,115 @@ api.interceptors.response.use(
       if (url.includes("/jobs/") && !isGet) {
         return { data: { success: true } };
       }
+
+      // 4. Notes list, create, update, delete
+      if (url.includes("/notes/v1/notes/")) {
+        if (isGet) {
+          // Check if it is a detail endpoint or list
+          const pathAfterNotes = url.split("/notes/v1/notes/")[1] || "";
+          const urlParts = pathAfterNotes.split("?")[0].split("/");
+          const noteId = urlParts[0];
+          
+          if (noteId && noteId !== "" && !noteId.startsWith("?")) {
+            // Note detail
+            return {
+              data: {
+                id: noteId,
+                title: "Research note analysis",
+                content: "<p>Using Griffin SSD shows standard accuracy drops of only ~1% while saving ~40% latency in BERT-base models.</p>",
+                author_username: "researcher_alpha",
+                tags: ["analysis", "bert", "griffin_ssd"],
+                is_public: true,
+                pinned: false,
+                reactions: {},
+                version: 1,
+                reply_count: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            };
+          }
+          
+          // Note list
+          return {
+            data: {
+              count: 2,
+              results: [
+                {
+                  id: "note-1",
+                  title: "BERT Griffin-SSD Latency Gains",
+                  content: "<p>Using Griffin SSD shows standard accuracy drops of only ~1% while saving ~40% latency in BERT-base models.</p>",
+                  author_username: "researcher_alpha",
+                  tags: ["analysis", "bert", "griffin_ssd"],
+                  is_public: true,
+                  pinned: true,
+                  reactions: {},
+                  version: 1,
+                  reply_count: 0,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                },
+                {
+                  id: "note-2",
+                  title: "Attention Compression Pipeline Notes",
+                  content: "<p>Explored SVD decomposition on layer 11. Suggests fine-tuning with 5 epochs instead of 3 for convergence stability.</p>",
+                  author_username: "researcher_beta",
+                  tags: ["hpo", "pipeline"],
+                  is_public: false,
+                  pinned: false,
+                  reactions: {},
+                  version: 1,
+                  reply_count: 1,
+                  created_at: new Date(Date.now() - 3600000).toISOString(),
+                  updated_at: new Date().toISOString()
+                }
+              ]
+            }
+          };
+        } else {
+          // POST / PATCH / DELETE
+          const method = error.config?.method?.toLowerCase();
+          if (method === "post") {
+            const body = JSON.parse(error.config?.data || "{}");
+            return {
+              data: {
+                id: `note-${Math.random().toString(36).substr(2, 9)}`,
+                title: body.title || "New Note",
+                content: body.content || "",
+                author_username: "current_user",
+                tags: body.tags || [],
+                is_public: body.is_public || false,
+                pinned: body.pinned || false,
+                reactions: {},
+                version: 1,
+                reply_count: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            };
+          }
+          if (method === "patch") {
+            const body = JSON.parse(error.config?.data || "{}");
+            return {
+              data: {
+                id: "note-1",
+                title: body.title || "Updated Title",
+                content: body.content || "Updated Content",
+                author_username: "current_user",
+                tags: body.tags || [],
+                is_public: body.is_public || false,
+                pinned: body.pinned || false,
+                reactions: {},
+                version: 2,
+                reply_count: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            };
+          }
+          return { data: { success: true } };
+        }
+      }
     }
 
     // Format error message for consistency
