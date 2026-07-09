@@ -30,6 +30,8 @@ export default function CustomMetricsDashboard({
     title: string;
   } | null>(null);
 
+  const [isMocked, setIsMocked] = useState(false);
+
   const {
     data: metrics,
     isLoading,
@@ -39,11 +41,17 @@ export default function CustomMetricsDashboard({
   } = useQuery<MetricsData>({
     queryKey: ["customMetrics", runId],
     queryFn: async () => {
+      if (isMocked) {
+        return {
+          "loss": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.9, 0.7, 0.4, 0.2, 0.1] },
+          "accuracy": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.5, 0.65, 0.8, 0.9, 0.95] }
+        } as MetricsData;
+      }
       try {
         const res = await api.get(`/runs/${runId}/metrics/`);
         return res.data;
       } catch (err) {
-        // Return dummy data for UI completeness if backend is missing
+        setIsMocked(true);
         return {
           "loss": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.9, 0.7, 0.4, 0.2, 0.1] },
           "accuracy": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.5, 0.65, 0.8, 0.9, 0.95] }
@@ -114,6 +122,11 @@ export default function CustomMetricsDashboard({
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
           <span className="w-1 h-4 bg-purple-500 rounded-full" />
           Custom Metrics Dashboard
+          {isMocked && (
+            <span className="ml-3 text-[10px] text-red-400 font-medium bg-red-400/10 px-2 py-0.5 rounded-full border border-red-400/20">
+              ● Server Disconnected
+            </span>
+          )}
         </h3>
         <div className="flex gap-2">
           <Button
