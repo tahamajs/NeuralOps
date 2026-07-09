@@ -30,7 +30,7 @@ class AgentsConfig(AppConfig):
                     content=json.dumps(analysis, indent=2),
                     tags=["auto-generated", "training-report", instance.status],
                     is_public=False,
-                    pinned=False,
+                    is_pinned=False,
                     metadata={"run_id": str(instance.id)},
                 )
 
