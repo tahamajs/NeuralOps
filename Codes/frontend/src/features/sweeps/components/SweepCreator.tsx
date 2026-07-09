@@ -58,7 +58,7 @@ export default function SweepCreator({ onCreated }: { onCreated: () => void }) {
           pruner: form.pruner,
         },
       };
-      await api.post("/api/sweeps/", params);
+      await api.post("/sweeps/", params);
     },
     onSuccess: () => onCreated(),
   });

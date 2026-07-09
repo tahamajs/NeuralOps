@@ -15,7 +15,7 @@ export default function WebhookManagerPage() {
 
   const { data: webhooks = [], isLoading } = useQuery({
     queryKey: ["webhooks"],
-    queryFn: async () => (await api.get("/api/notes/v1/webhooks/")).data,
+    queryFn: async () => (await api.get("/notes/v1/webhooks/")).data,
   });
 
   const createMut = useMutation({
@@ -24,7 +24,7 @@ export default function WebhookManagerPage() {
         .split(",")
         .map((e) => e.trim())
         .filter(Boolean);
-      await api.post("/api/notes/v1/webhooks/", { url, events: eventsArray });
+      await api.post("/notes/v1/webhooks/", { url, events: eventsArray });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["webhooks"] });

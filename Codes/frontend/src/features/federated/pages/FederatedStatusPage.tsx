@@ -6,7 +6,7 @@ import { Spinner } from "../../../components/ui/Spinner";
 export default function FederatedStatusPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["federatedStatus"],
-    queryFn: async () => (await api.get("/api/federated/status/")).data,
+    queryFn: async () => (await api.get("/federated/status/")).data,
     refetchInterval: 5000,
   });
 

@@ -15,13 +15,13 @@ export default function AdminJobsPage() {
 
   const { data: jobs = [], isLoading } = useQuery({
     queryKey: ["jobs"],
-    queryFn: async () => (await api.get("/api/jobs/")).data,
+    queryFn: async () => (await api.get("/jobs/")).data,
     refetchInterval: 5000,
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (ids: string[]) =>
-      api.post("/api/jobs/bulk-delete/", { job_ids: ids }),
+      api.post("/jobs/bulk-delete/", { job_ids: ids }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       setSelected([]);
@@ -29,7 +29,7 @@ export default function AdminJobsPage() {
   });
 
   const stopAllMutation = useMutation({
-    mutationFn: async () => api.post("/api/runs/stop_all/"),
+    mutationFn: async () => api.post("/runs/stop_all/"),
     onSuccess: () => alert("All jobs stopped"),
   });
 

@@ -456,7 +456,7 @@ export default function ResearcherNotebookPage() {
   // Queries
   const { data: runs = [] } = useQuery({
     queryKey: ["runs"],
-    queryFn: async () => (await api.get("/api/jobs/")).data, // or experiments
+    queryFn: async () => (await api.get("/jobs/")).data, // or experiments
   });
 
   const { data: notesData, isLoading: notesLoading } = useQuery({
@@ -744,7 +744,7 @@ const WebhookModal = ({ onClose }: { onClose: () => void }) => {
 
   const { data: webhooks = [] } = useQuery({
     queryKey: ["webhooks"],
-    queryFn: async () => (await api.get("/api/notes/v1/webhooks/")).data,
+    queryFn: async () => (await api.get("/notes/v1/webhooks/")).data,
   });
 
   const addMut = useMutation({
@@ -753,7 +753,7 @@ const WebhookModal = ({ onClose }: { onClose: () => void }) => {
         .split(",")
         .map((e) => e.trim())
         .filter(Boolean);
-      await api.post("/api/notes/v1/webhooks/", { url, events: eventsArray });
+      await api.post("/notes/v1/webhooks/", { url, events: eventsArray });
     },
     onSuccess: () => {
       setUrl("");

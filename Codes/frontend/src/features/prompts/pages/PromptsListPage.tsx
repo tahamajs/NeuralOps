@@ -8,7 +8,7 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 export default function PromptsListPage() {
   const { data: prompts = [], isLoading } = useQuery({
     queryKey: ["prompts"],
-    queryFn: async () => (await api.get("/api/prompts/")).data,
+    queryFn: async () => (await api.get("/prompts/")).data,
   });
 
   if (isLoading) return <Spinner />;

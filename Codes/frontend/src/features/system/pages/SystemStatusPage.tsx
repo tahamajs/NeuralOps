@@ -6,11 +6,11 @@ import { Spinner } from "../../../components/ui/Spinner";
 export default function SystemStatusPage() {
   const { data: sys } = useQuery({
     queryKey: ["systemStatus"],
-    queryFn: async () => (await api.get("/api/system/status/")).data,
+    queryFn: async () => (await api.get("/system/status/")).data,
   });
   const { data: gpu } = useQuery({
     queryKey: ["gpuInfo"],
-    queryFn: async () => (await api.get("/api/system/gpu/")).data,
+    queryFn: async () => (await api.get("/system/gpu/")).data,
   });
 
   if (!sys || !gpu) return <Spinner />;
