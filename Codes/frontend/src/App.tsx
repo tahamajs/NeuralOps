@@ -431,6 +431,7 @@ function App() {
                 <Route path="/profile" element={<UserProfilePage />} />
                 <Route path="/system" element={<SystemStatusPage />} />
                 <Route path="/support" element={<SupportHubPage />} />
+                <Route path="/analysis" element={<ResearchAnalysisPage />} />
                 {/* Agent routes */}
                 <Route path="/agent" element={<AgentDashboardPage />} />
                 <Route path="/agent/tools" element={<AgentToolsPage />} />
