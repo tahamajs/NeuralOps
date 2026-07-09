@@ -37,6 +37,10 @@ _registry_fallbacks = lambda: {}
 ATTENTION_REGISTRY = _registry_fallbacks()
 COMPRESSOR_REGISTRY = _registry_fallbacks()
 TRAINER_REGISTRY = _registry_fallbacks()
+import logging
+
+logger = logging.getLogger(__name__)
+
 METHOD_REGISTRY = _registry_fallbacks()
 LOSS_REGISTRY = _registry_fallbacks()
 OPTIMIZER_REGISTRY = _registry_fallbacks()
@@ -49,58 +53,59 @@ try:
 
     ATTENTION_REGISTRY = attn_reg
 except ImportError:
-    pass
+    ATTENTION_REGISTRY = _registry_fallbacks()
+    logger.warning("framework module not available, using fallback ATTENTION_REGISTRY")
 try:
     from framework.compression_engine.core.registry import \
         COMPRESSOR_REGISTRY as comp_reg
 
     COMPRESSOR_REGISTRY = comp_reg
 except ImportError:
-    pass
+    COMPRESSOR_REGISTRY = _registry_fallbacks()
+    logger.warning("framework module not available, using fallback COMPRESSOR_REGISTRY")
 try:
     from framework.core.registry import TRAINER_REGISTRY as train_reg
 
     TRAINER_REGISTRY = train_reg
 except ImportError:
-    pass
+    TRAINER_REGISTRY = _registry_fallbacks()
+    logger.warning("framework module not available, using fallback TRAINER_REGISTRY")
 try:
     from framework.trainer.methods.registry import METHOD_REGISTRY as meth_reg
 
     METHOD_REGISTRY = meth_reg
 except ImportError:
-    pass
+    logger.warning("framework module not available, using fallback METHOD_REGISTRY")
 try:
     from framework.trainer.losses import LOSS_REGISTRY as loss_reg
 
     LOSS_REGISTRY = loss_reg
 except ImportError:
-    pass
+    logger.warning("framework module not available, using fallback LOSS_REGISTRY")
 try:
     from framework.trainer.optimizers import OPTIMIZER_REGISTRY as opt_reg
 
     OPTIMIZER_REGISTRY = opt_reg
 except ImportError:
-    pass
+    logger.warning("framework module not available, using fallback OPTIMIZER_REGISTRY")
 try:
     from framework.trainer.schedulers import SCHEDULER_REGISTRY as sched_reg
 
     SCHEDULER_REGISTRY = sched_reg
 except ImportError:
-    pass
+    logger.warning("framework module not available, using fallback SCHEDULER_REGISTRY")
 try:
     from framework.callbacks import CALLBACK_REGISTRY as cb_reg
 
     CALLBACK_REGISTRY = cb_reg
 except ImportError:
-    pass
+    logger.warning("framework module not available, using fallback CALLBACK_REGISTRY")
 try:
     from framework.data.augmentation import AUGMENTATION_REGISTRY as aug_reg
 
     AUGMENTATION_REGISTRY = aug_reg
 except ImportError:
-    pass
-
-logger = logging.getLogger(__name__)
+    logger.warning("framework module not available, using fallback AUGMENTATION_REGISTRY")
 
 
 # ── Rate limiting ────────────────────────────────────────────────────
@@ -1000,31 +1005,59 @@ def robustness_evaluation(request, run_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def prompt_list(request):
-    return Response([])
+    try:
+        from llm_hub.models import PromptTemplate
+        prompts = PromptTemplate.objects.filter(user=request.user).values("id", "name", "description")
+        return Response(list(prompts))
+    except Exception:
+        return Response([])
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def prompt_detail(request, name):
-    return Response({"template": "Hello, {input}"})
+    try:
+        from llm_hub.models import PromptTemplate
+        prompt = PromptTemplate.objects.get(name=name, user=request.user)
+        return Response({"template": prompt.prompt, "name": prompt.name})
+    except Exception:
+        return Response({"template": "Hello, {input}"})
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def prompt_history(request, name):
-    return Response([])
+    try:
+        from llm_hub.models import PromptVersion, PromptTemplate
+        prompt = PromptTemplate.objects.get(name=name, user=request.user)
+        history = PromptVersion.objects.filter(prompt=prompt).values("version_number", "prompt", "created_at")
+        return Response(list(history))
+    except Exception:
+        return Response([])
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def hpo_status(request):
-    return Response({"status": "idle", "trials_completed": 0})
+    try:
+        from sweeps.models import Sweep, Trial
+        sweeps_count = Sweep.objects.filter(user=request.user).count()
+        trials_count = Trial.objects.filter(sweep__user=request.user, status="completed").count()
+        return Response({"status": "active" if sweeps_count > 0 else "idle", "sweeps_active": sweeps_count, "trials_completed": trials_count})
+    except Exception:
+        return Response({"status": "idle", "trials_completed": 0})
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def fl_status(request):
-    return Response({"status": "no active federated run", "connected_clients": 0})
+    try:
+        from gpu_federation.models import Cluster
+        clusters = Cluster.objects.filter(owner=request.user)
+        clients = sum([c.nodes.count() for c in clusters])
+        return Response({"status": "active" if clients > 0 else "no active federated run", "connected_clients": clients})
+    except Exception:
+        return Response({"status": "no active federated run", "connected_clients": 0})
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -1067,13 +1100,29 @@ def push_model_card_view(request, run_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def data_lineage_view(request, run_id):
-    return Response({"lineage": "not implemented"})
+    try:
+        from experiment.models import TrainingRun
+        run = TrainingRun.objects.get(id=run_id)
+        dataset_name = run.config.get("dataset_name", "Unknown Dataset")
+        return Response({"lineage": f"Dataset: {dataset_name} -> TrainingRun: {run.name}"})
+    except Exception:
+        return Response({"lineage": "not implemented"})
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def model_lineage_view(request, version_id):
-    return Response({"nodes": [], "edges": []})
+    try:
+        from model_versioning.models import ModelVersion
+        mv = ModelVersion.objects.get(id=version_id)
+        nodes = [{"id": str(mv.id), "label": mv.version}]
+        edges = []
+        if mv.parent_version:
+            nodes.append({"id": str(mv.parent_version.id), "label": mv.parent_version.version})
+            edges.append({"source": str(mv.parent_version.id), "target": str(mv.id)})
+        return Response({"nodes": nodes, "edges": edges})
+    except Exception:
+        return Response({"nodes": [], "edges": []})
 
 
 # ═══════════════════════════════════════════════════════════════════

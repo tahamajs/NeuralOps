@@ -47,8 +47,16 @@ class ASVDAttention(BaseAttention):
             self.apply_activation_scales(activation_scales)
 
     def apply_activation_scales(self, scales):
-        """Placeholder: can be used to incorporate activation statistics before SVD."""
-        pass
+        """Apply activation scales to the right singular vectors for ASVD."""
+        if scales is not None:
+            if not isinstance(scales, torch.Tensor):
+                scales = torch.tensor(scales, device=self.query_vh.device, dtype=self.query_vh.dtype)
+            if scales.dim() == 1:
+                scales = scales.unsqueeze(0)
+            self.query_vh.data.mul_(scales)
+            self.key_vh.data.mul_(scales)
+            self.value_vh.data.mul_(scales)
+            self.out_proj_vh.data.mul_(scales)
 
     def _reshape(self, x, batch_size):
         x = x.view(batch_size, -1, self.num_heads, self.head_dim)
