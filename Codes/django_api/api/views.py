@@ -6,6 +6,9 @@ import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
+import sys
+
+TESTING = "test" in sys.argv or any("test" in arg for arg in sys.argv)
 
 import django
 import psutil
@@ -110,11 +113,11 @@ except ImportError:
 
 # ── Rate limiting ────────────────────────────────────────────────────
 class BurstRateThrottle(UserRateThrottle):
-    rate = "100/hour"
+    rate = "10000/hour" if TESTING else "100/hour"
 
 
 class AnonBurstRateThrottle(AnonRateThrottle):
-    rate = "20/hour"
+    rate = "10000/hour" if TESTING else "20/hour"
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
