@@ -208,6 +208,13 @@ import SuggestedResearchersPage from './features/social/pages/SuggestedResearche
 
 import SupportHubPage from './features/support/pages/SupportHubPage'
 import NewPaperProjectPage from './features/paper/pages/NewPaperProjectPage'
+// Agent pages
+import AgentDashboardPage from './features/agent/pages/AgentDashboardPage'
+import AgentChatPage from './features/agent/pages/AgentChatPage'
+import AgentToolsPage from './features/agent/pages/AgentToolsPage'
+import AgentSessionsListPage from './features/agent/pages/AgentSessionsListPage'
+import PaperLibraryPage from './features/agent/pages/PaperLibraryPage'
+import PromptTestingPage from './features/agent/pages/PromptTestingPage'
 // ========================
 // 3. Component Map for DockableWindow (complete merged)
 // ========================
@@ -424,6 +431,13 @@ function App() {
                 <Route path="/profile" element={<UserProfilePage />} />
                 <Route path="/system" element={<SystemStatusPage />} />
                 <Route path="/support" element={<SupportHubPage />} />
+                {/* Agent routes */}
+                <Route path="/agent" element={<AgentDashboardPage />} />
+                <Route path="/agent/tools" element={<AgentToolsPage />} />
+                <Route path="/agent/sessions" element={<AgentSessionsListPage />} />
+                <Route path="/agent/papers" element={<PaperLibraryPage />} />
+                <Route path="/agent/prompts" element={<PromptTestingPage />} />
+                <Route path="/agent/:sessionId" element={<AgentChatPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
             </Routes>

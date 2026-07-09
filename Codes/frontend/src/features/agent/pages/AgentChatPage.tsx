@@ -10,6 +10,7 @@ import {
   FlaskConical,
   FileText,
   GitBranch,
+  Wrench,
 } from "lucide-react";
 import { useAgentChat } from "../hooks/useAgentChat";
 import SessionSidebar from "../components/SessionSidebar";
@@ -17,6 +18,7 @@ import ChatMessageBubble from "../components/ChatMessageBubble";
 import ChatInput from "../components/ChatInput";
 import PaperSearchModal from "../components/PaperSearchModal";
 import CitationGraphModal from "../components/CitationGraphModal";
+import AgentStatusBadge from "../components/AgentStatusBadge";
 
 export default function AgentChatPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -81,9 +83,11 @@ export default function AgentChatPage() {
         {/* Toolbar */}
         <div className="glass px-4 py-2 mb-4 flex items-center gap-2 flex-wrap">
           <Bot size={18} className="text-neon-blue" />
-          <h1 className="text-sm font-bold text-white mr-4">
+          <h1 className="text-sm font-bold text-white mr-2">
             ML Research Assistant
           </h1>
+          <AgentStatusBadge status={wsStatus} />
+          <div className="flex-1" />
           <Button
             variant="ghost"
             size="sm"
@@ -108,9 +112,16 @@ export default function AgentChatPage() {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => navigate("/agent/tools")}
+          >
+            <Wrench size={14} className="mr-1" /> Tools
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => navigate("/agent/prompts")}
           >
-            <FlaskConical size={14} className="mr-1" /> Prompt Tests
+            <FlaskConical size={14} className="mr-1" /> Prompts
           </Button>
         </div>
 
