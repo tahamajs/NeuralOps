@@ -503,8 +503,7 @@ class ConsumerTests(TransactionTestCase):
                 "terminal", {"type": "terminal_message", "data": "Hello"}
             )
             response = await communicator.receive_from()
-            data = json.loads(response)
-            self.assertEqual(data["data"], "Hello")
+            self.assertEqual(response, "Hello")
             await communicator.disconnect()
 
         async_to_sync(test)()
