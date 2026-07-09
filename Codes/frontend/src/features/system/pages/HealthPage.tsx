@@ -6,7 +6,7 @@ import { Spinner } from "../../../components/ui/Spinner";
 export default function HealthPage() {
   const { data } = useQuery({
     queryKey: ["health"],
-    queryFn: async () => (await api.get("/api/health/")).data,
+    queryFn: async () => (await api.get("/health/")).data,
   });
   if (!data) return <Spinner />;
   return (

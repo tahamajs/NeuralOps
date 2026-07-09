@@ -9,18 +9,18 @@ export default function ClusterDashboardPage() {
   // Use existing load balancer endpoints
   const { data: gpuStatus } = useQuery({
     queryKey: ["gpuStatus"],
-    queryFn: async () => (await api.get("/api/loadbalancer/gpu/status/")).data,
+    queryFn: async () => (await api.get("/loadbalancer/gpu/status/")).data,
     refetchInterval: 5000,
   });
   const { data: gpuNodes } = useQuery({
     queryKey: ["gpuNodes"],
-    queryFn: async () => (await api.get("/api/loadbalancer/gpu/nodes/")).data,
+    queryFn: async () => (await api.get("/loadbalancer/gpu/nodes/")).data,
     refetchInterval: 5000,
   });
   const { data: schedulerStatus } = useQuery({
     queryKey: ["schedulerStatus"],
     queryFn: async () =>
-      (await api.get("/api/loadbalancer/scheduler/status/")).data,
+      (await api.get("/loadbalancer/scheduler/status/")).data,
     refetchInterval: 5000,
   });
 

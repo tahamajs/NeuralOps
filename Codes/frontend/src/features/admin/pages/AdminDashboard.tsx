@@ -17,11 +17,11 @@ import {
 export default function AdminDashboard() {
   const { data: health, isLoading: healthLoading } = useQuery({
     queryKey: ["health"],
-    queryFn: async () => (await api.get("/api/health/")).data,
+    queryFn: async () => (await api.get("/health/")).data,
   });
   const { data: version, isLoading: versionLoading } = useQuery({
     queryKey: ["version"],
-    queryFn: async () => (await api.get("/api/version/")).data,
+    queryFn: async () => (await api.get("/version/")).data,
   });
   const { data: jobStats, isLoading: jobsLoading } = useQuery({
     queryKey: ["jobStats"],
