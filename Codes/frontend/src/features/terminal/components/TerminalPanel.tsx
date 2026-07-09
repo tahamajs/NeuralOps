@@ -86,12 +86,19 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
 
       const attempt = reconnectAttemptRef.current + 1;
       reconnectAttemptRef.current = attempt;
-      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
-      setReconnectCountdown(Math.floor(delay / 1000));
 
-      reconnectTimerRef.current = setTimeout(() => {
-        connectWebSocket();
-      }, delay);
+      if (attempt <= 3) {
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+        setReconnectCountdown(Math.floor(delay / 1000));
+        reconnectTimerRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, delay);
+      } else {
+        setStatus("error");
+        terminalInstance.current?.writeln(
+          "\x1b[1;31m[Error]\x1b[0m Max reconnects reached. Backend offline.",
+        );
+      }
     };
   }, []);
 
@@ -121,7 +128,9 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
     term.loadAddon(searchAddon);
 
     term.open(terminalRef.current);
-    fitAddon.fit();
+    try {
+      fitAddon.fit();
+    } catch (e) {}
     fitAddonRef.current = fitAddon;
 
     term.onData((data) => {
@@ -133,29 +142,28 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
     terminalInstance.current = term;
     connectWebSocket();
 
-    const resizeObserver = new ResizeObserver(() => {
-      fitAddon.fit();
-      const ws = wsRef.current;
-      if (ws?.readyState === WebSocket.OPEN && term) {
-        ws.send(
-          JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }),
-        );
+    const safeFit = (fitAddon: FitAddon, ws: WebSocket | null, term: Terminal) => {
+      try {
+        fitAddon.fit();
+        if (ws?.readyState === WebSocket.OPEN && term.cols && term.rows) {
+          ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+        }
+      } catch (err) {
+        // Ignore xterm dimension errors when container is hidden
       }
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      safeFit(fitAddon, wsRef.current, term);
     });
     resizeObserver.observe(terminalRef.current);
 
-    window.addEventListener("resize", () => {
-      fitAddon.fit();
-      const ws = wsRef.current;
-      if (ws?.readyState === WebSocket.OPEN && term) {
-        ws.send(
-          JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }),
-        );
-      }
-    });
+    const handleResize = () => safeFit(fitAddon, wsRef.current, term);
+    window.addEventListener("resize", handleResize);
 
     return () => {
       resizeObserver.disconnect();
+      window.removeEventListener("resize", handleResize);
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       wsRef.current?.close();
       term.dispose();
