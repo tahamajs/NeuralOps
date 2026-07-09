@@ -392,7 +392,9 @@ class RateLimitTests(TestCase):
 
     def test_anon_throttle_register(self):
         # Temporarily lower the rate to 2/min for this test
-        with patch.object(BurstRateThrottle, "rate", "2/min"):
+        with patch.object(BurstRateThrottle, "rate", "2/min"), \
+             patch.object(BurstRateThrottle, "num_requests", 2), \
+             patch.object(BurstRateThrottle, "duration", 60):
             for i in range(3):
                 resp = self.client.post(
                     "/api/auth/register/",
@@ -443,8 +445,7 @@ class ConsumerTests(TransactionTestCase):
                 "terminal", {"type": "terminal_message", "data": "Hello"}
             )
             response = await communicator.receive_from()
-            data = json.loads(response)
-            self.assertEqual(data["data"], "Hello")
+            self.assertEqual(response, "Hello")
             await communicator.disconnect()
 
         async_to_sync(test)()
@@ -466,18 +467,13 @@ class RunnerTests(TestCase):
         self.addCleanup(patcher1.stop)
         self.addCleanup(patcher2.stop)
 
-        # Mock framework functions – use patch.object to directly replace the attributes
-        import experiment.runners as runners_module
-
-        self.patch_train = patch.object(runners_module, "framework_train", MagicMock())
-        self.patch_eval = patch.object(
-            runners_module,
-            "framework_eval",
+        self.patch_train = patch("framework.experiment_utils.run_training", MagicMock())
+        self.patch_eval = patch(
+            "framework.experiment_utils.run_evaluation",
             MagicMock(return_value={"eval_accuracy": 0.9}),
         )
-        self.patch_compress = patch.object(
-            runners_module,
-            "framework_compress",
+        self.patch_compress = patch(
+            "framework.experiment_utils.run_compression",
             MagicMock(return_value={"compression_ratio": 0.5}),
         )
         self.mock_train = self.patch_train.start()
