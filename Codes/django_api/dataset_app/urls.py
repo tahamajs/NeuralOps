@@ -4,9 +4,9 @@ from . import views
 
 urlpatterns = [
     # Datasets
-    path('datasets/', views.dataset_list, name='dataset_list'),
-    path('datasets/<uuid:dataset_id>/', views.dataset_detail, name='dataset_detail'),
-    path('datasets/<uuid:dataset_id>/export/', views.dataset_export, name='dataset_export'),
+    path('', views.dataset_list, name='dataset_list'),
+    path('<uuid:dataset_id>/', views.dataset_detail, name='dataset_detail'),
+    path('<uuid:dataset_id>/export/', views.dataset_export, name='dataset_export'),
 
     # Artifacts & Lineage
     path('artifacts/', views.artifact_list, name='artifact_list'),

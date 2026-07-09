@@ -84,8 +84,10 @@ export default function AgentDashboardPage() {
     navigate(`/agent/${id}`);
   };
 
+  const sessionsArray = Array.isArray(sessions) ? sessions : ((sessions as any)?.results || []);
+
   const stats = [
-    { label: "Total Sessions", value: sessions?.length ?? 0, icon: MessageSquare, color: "#818cf8" },
+    { label: "Total Sessions", value: sessionsArray.length, icon: MessageSquare, color: "#818cf8" },
     { label: "Tools Available", value: status?.tools_count ?? 0, icon: Wrench, color: "#34d399" },
     { label: "Active Sessions", value: status?.active_sessions ?? 0, icon: Activity, color: "#f59e0b" },
     { label: "AI Model", value: status?.model ?? "—", icon: Zap, color: "#f472b6" },
@@ -167,14 +169,14 @@ export default function AgentDashboardPage() {
         </h2>
         {sessionsLoading ? (
           <div className="flex justify-center py-8"><Spinner /></div>
-        ) : !sessions || sessions.length === 0 ? (
+        ) : !sessionsArray || sessionsArray.length === 0 ? (
           <Card className="text-center py-12">
             <Bot size={32} className="text-slate-600 mx-auto mb-3" />
             <p className="text-slate-400">No sessions yet. Start a new chat above.</p>
           </Card>
         ) : (
           <div className="space-y-2">
-            {sessions.slice(0, 10).map((session) => (
+            {sessionsArray.slice(0, 10).map((session: ChatSession) => (
               <button
                 key={session.id}
                 onClick={() => navigate(`/agent/${session.id}`)}
@@ -190,9 +192,9 @@ export default function AgentDashboardPage() {
                   <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                     <Clock size={10} />
                     {formatDistanceToNow(new Date(session.updated_at), { addSuffix: true })}
-                    {session.message_count > 0 && (
+                    {session.message_count && session.message_count > 0 ? (
                       <span className="ml-2 text-slate-600">· {session.message_count} messages</span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
                 <BookOpen size={14} className="text-slate-600 flex-shrink-0" />
