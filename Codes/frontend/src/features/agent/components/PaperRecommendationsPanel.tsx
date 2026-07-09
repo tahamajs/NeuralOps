@@ -27,8 +27,12 @@ export default function PaperRecommendationsPanel({
     queryKey: ["paperRecommendations", runId, fromLibrary],
     queryFn: async () => {
       if (!endpoint) return { recommendations: [] };
-      const res = await api.get(endpoint);
-      return res.data;
+      try {
+        const res = await api.get(endpoint);
+        return res.data;
+      } catch (err) {
+        return { recommendations: [] };
+      }
     },
     enabled: !!endpoint,
   });
