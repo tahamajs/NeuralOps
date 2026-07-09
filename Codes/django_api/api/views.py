@@ -225,7 +225,7 @@ def register(request):
     resp.set_cookie(
         "authToken",
         token.key,
-        httponly=True,
+        httponly=False,
         samesite="Lax",
         secure=False,
         max_age=60 * 60 * 24 * 7,
@@ -257,7 +257,7 @@ def login(request):
         resp.set_cookie(
             "authToken",
             token.key,
-            httponly=True,
+            httponly=False,
             samesite="Lax",
             secure=False,
             max_age=60 * 60 * 24 * 7,

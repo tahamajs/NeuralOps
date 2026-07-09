@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { getAuthToken } from "../../../utils/authUtils";
 import { useChatStore } from "../store/chatStore";
 import { useToast } from "../../../components/ui/Toast";
