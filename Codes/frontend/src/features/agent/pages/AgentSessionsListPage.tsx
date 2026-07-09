@@ -12,10 +12,11 @@ export default function AgentSessionsListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: sessions = [], isLoading } = useQuery({
+  const { data: sessionsRaw, isLoading } = useQuery({
     queryKey: ["agentSessions"],
     queryFn: async () => (await api.get("/agents/chats/")).data,
   });
+  const sessions = Array.isArray(sessionsRaw) ? sessionsRaw : (sessionsRaw?.results || []);
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/agents/chats/${id}/`),

@@ -14,10 +14,11 @@ export default function PaperLibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
 
-  const { data: papers = [], isLoading } = useQuery({
+  const { data: papersRaw, isLoading } = useQuery({
     queryKey: ["savedPapers"],
     queryFn: async () => (await api.get("/agents/papers/saved/")).data,
   });
+  const papers = Array.isArray(papersRaw) ? papersRaw : (papersRaw?.results || []);
 
   const deleteMut = useMutation({
     mutationFn: (id: string) => api.delete(`/agents/papers/saved/${id}/`),
