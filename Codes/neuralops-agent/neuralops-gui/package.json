@@ -39,7 +39,9 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.4.0",
     "recharts": "^2.10.0",
-    "lucide-react": "^0.260.0"
+    "lucide-react": "^0.260.0",
+    "electron-store": "^8.1.0",
+    "dockerode": "^4.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.22.0",
