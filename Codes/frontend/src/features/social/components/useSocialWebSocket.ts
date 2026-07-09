@@ -4,7 +4,7 @@ export function useSocialWebSocket() {
   const [newAlert, setNewAlert] = useState<any>(null)
   const [isConnected, setIsConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
-  const token = localStorage.getItem("token") || "";
+  const token = localStorage.getItem("token") || document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1] || "";
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
