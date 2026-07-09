@@ -39,7 +39,7 @@ export default function CustomMetricsDashboard({
     error,
     refetch,
   } = useQuery<MetricsData>({
-    queryKey: ["customMetrics", runId],
+    queryKey: ["customMetrics", runId, isMocked],
     queryFn: async () => {
       if (isMocked) {
         return {
@@ -52,6 +52,7 @@ export default function CustomMetricsDashboard({
         return res.data;
       } catch (err) {
         setIsMocked(true);
+        setAutoRefresh(false); // Stop polling
         return {
           "loss": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.9, 0.7, 0.4, 0.2, 0.1] },
           "accuracy": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.5, 0.65, 0.8, 0.9, 0.95] }
