@@ -4,6 +4,12 @@ import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 
 export default defineConfig({
+  define: {
+    // Shim Node.js globals that CJS packages (react-rnd, react-draggable) rely on
+    "process.env.NODE_ENV": JSON.stringify("development"),
+    "process.env": JSON.stringify({}),
+    global: "globalThis",
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
