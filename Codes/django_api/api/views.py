@@ -1019,7 +1019,9 @@ def prompt_detail(request, name):
     try:
         from llm_hub.models import PromptTemplate
         prompt = PromptTemplate.objects.get(name=name, user=request.user)
-        return Response({"template": prompt.prompt, "name": prompt.name})
+        latest_version = prompt.versions.order_by("-version_number").first()
+        template_content = latest_version.content if latest_version else ""
+        return Response({"template": template_content, "name": prompt.name})
     except Exception:
         return Response({"template": "Hello, {input}"})
 
@@ -1030,7 +1032,7 @@ def prompt_history(request, name):
     try:
         from llm_hub.models import PromptVersion, PromptTemplate
         prompt = PromptTemplate.objects.get(name=name, user=request.user)
-        history = PromptVersion.objects.filter(prompt=prompt).values("version_number", "prompt", "created_at")
+        history = PromptVersion.objects.filter(prompt=prompt).values("version_number", "content", "created_at")
         return Response(list(history))
     except Exception:
         return Response([])
@@ -1113,13 +1115,24 @@ def data_lineage_view(request, run_id):
 @permission_classes([IsAuthenticated])
 def model_lineage_view(request, version_id):
     try:
-        from model_versioning.models import ModelVersion
-        mv = ModelVersion.objects.get(id=version_id)
-        nodes = [{"id": str(mv.id), "label": mv.version}]
+        from model_versioning.models import get_lineage_graph
+        graph = get_lineage_graph(str(version_id))
+        nodes = []
+        for n in graph.get("nodes", []):
+            nodes.append({
+                "id": n["id"],
+                "label": n["version"],
+                "version_number": n["version_number"],
+                "metrics": n.get("metrics"),
+                "created_at": n.get("created_at")
+            })
         edges = []
-        if mv.parent_version:
-            nodes.append({"id": str(mv.parent_version.id), "label": mv.parent_version.version})
-            edges.append({"source": str(mv.parent_version.id), "target": str(mv.id)})
+        for e in graph.get("edges", []):
+            edges.append({
+                "source": e["from"],
+                "target": e["to"],
+                "type": e.get("type", "fine_tuned")
+            })
         return Response({"nodes": nodes, "edges": edges})
     except Exception:
         return Response({"nodes": [], "edges": []})
