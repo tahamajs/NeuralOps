@@ -53,59 +53,49 @@ AUGMENTATION_REGISTRY = _registry_fallbacks()
 
 try:
     from framework.core.registry import ATTENTION_REGISTRY as attn_reg
-
     ATTENTION_REGISTRY = attn_reg
 except ImportError:
     ATTENTION_REGISTRY = _registry_fallbacks()
     logger.warning("framework module not available, using fallback ATTENTION_REGISTRY")
 try:
-    from framework.compression_engine.core.registry import \
-        COMPRESSOR_REGISTRY as comp_reg
-
+    from framework.core.registry import COMPRESSOR_REGISTRY as comp_reg
     COMPRESSOR_REGISTRY = comp_reg
 except ImportError:
     COMPRESSOR_REGISTRY = _registry_fallbacks()
     logger.warning("framework module not available, using fallback COMPRESSOR_REGISTRY")
 try:
     from framework.core.registry import TRAINER_REGISTRY as train_reg
-
     TRAINER_REGISTRY = train_reg
 except ImportError:
     TRAINER_REGISTRY = _registry_fallbacks()
     logger.warning("framework module not available, using fallback TRAINER_REGISTRY")
 try:
-    from framework.trainer.methods.registry import METHOD_REGISTRY as meth_reg
-
+    from framework.core.registry import METHOD_REGISTRY as meth_reg
     METHOD_REGISTRY = meth_reg
 except ImportError:
     logger.warning("framework module not available, using fallback METHOD_REGISTRY")
 try:
-    from framework.trainer.losses import LOSS_REGISTRY as loss_reg
-
+    from framework.core.registry import LOSS_REGISTRY as loss_reg
     LOSS_REGISTRY = loss_reg
 except ImportError:
     logger.warning("framework module not available, using fallback LOSS_REGISTRY")
 try:
     from framework.trainer.optimizers import OPTIMIZER_REGISTRY as opt_reg
-
     OPTIMIZER_REGISTRY = opt_reg
 except ImportError:
     logger.warning("framework module not available, using fallback OPTIMIZER_REGISTRY")
 try:
     from framework.trainer.schedulers import SCHEDULER_REGISTRY as sched_reg
-
     SCHEDULER_REGISTRY = sched_reg
 except ImportError:
     logger.warning("framework module not available, using fallback SCHEDULER_REGISTRY")
 try:
     from framework.callbacks import CALLBACK_REGISTRY as cb_reg
-
     CALLBACK_REGISTRY = cb_reg
 except ImportError:
     logger.warning("framework module not available, using fallback CALLBACK_REGISTRY")
 try:
     from framework.data.augmentation import AUGMENTATION_REGISTRY as aug_reg
-
     AUGMENTATION_REGISTRY = aug_reg
 except ImportError:
     logger.warning("framework module not available, using fallback AUGMENTATION_REGISTRY")
