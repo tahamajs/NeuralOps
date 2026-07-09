@@ -4,6 +4,7 @@ import { useAuthStore } from "../../features/auth/store/authStore";
 import ConnectionStatus from "./ConnectionStatus";
 import { useWindowStore } from "../../store/windowStore";
 import { AVAILABLE_WINDOWS } from "../WindowLauncher";
+import { Spinner } from "../ui/Spinner";
 import {
   Bell,
   Search,
