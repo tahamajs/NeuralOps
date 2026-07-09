@@ -24,6 +24,7 @@ class DockerManager:
 
     def __init__(self):
         self._client = None
+        self.has_gpu_runtime = True
 
     @property
     def client(self) -> docker.DockerClient:
@@ -39,24 +40,33 @@ class DockerManager:
             logger.info("Docker is running")
 
             # Check NVIDIA runtime by running nvidia-smi in a test container
-            result = self.client.containers.run(
-                'nvidia/cuda:12.4.0-base-ubuntu22.04',
-                command='nvidia-smi',
-                device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[['gpu']])],
-                remove=True,
-                stdout=True,
-                stderr=True,
-            )
-            logger.info("NVIDIA container runtime verified")
+            try:
+                result = self.client.containers.run(
+                    'nvidia/cuda:12.4.0-base-ubuntu22.04',
+                    command='nvidia-smi',
+                    device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[['gpu']])],
+                    remove=True,
+                    stdout=True,
+                    stderr=True,
+                )
+                logger.info("NVIDIA container runtime verified")
+                self.has_gpu_runtime = True
+            except Exception as e:
+                logger.warning("NVIDIA container runtime not configured: %s. Falling back to CPU-only container runtime.", e)
+                # Verify basic CPU container run works
+                self.client.containers.run(
+                    'alpine:latest',
+                    command='echo "Basic container test"',
+                    remove=True
+                )
+                logger.info("Standard CPU container runtime verified")
+                self.has_gpu_runtime = False
             return True
         except docker.errors.DockerException as e:
             logger.critical("Docker is not running: %s", e)
             return False
         except Exception as e:
-            logger.critical("NVIDIA container runtime not configured: %s", e)
-            logger.critical("Run: sudo apt install -y nvidia-container-toolkit && "
-                            "sudo nvidia-ctk runtime configure --runtime=docker && "
-                            "sudo systemctl restart docker")
+            logger.critical("Docker verification failed: %s", e)
             return False
 
     def pull_image(self, image: str):
@@ -90,10 +100,6 @@ class DockerManager:
             'volumes': {
                 job_dir: {'bind': '/workspace', 'mode': 'rw'},
             },
-            'device_requests': [docker.types.DeviceRequest(
-                count=-1,
-                capabilities=[['gpu']]
-            )],
             # Security hardening
             'read_only': True,  # Read-only root filesystem
             'tmpfs': {'/tmp': 'size=512M'},
@@ -103,6 +109,12 @@ class DockerManager:
             'nano_cpus': int(4 * 1e9),  # 4 CPUs
             'shm_size': '1g',
         }
+
+        if self.has_gpu_runtime:
+            container_config['device_requests'] = [docker.types.DeviceRequest(
+                count=-1,
+                capabilities=[['gpu']]
+            )]
 
         # Add input data download if provided
         if input_data_url:
@@ -187,20 +199,24 @@ class DockerManager:
         else:
             actual_command = command if command else '/bin/bash'
 
-        container = self.client.containers.run(
-            image=image,
-            command=actual_command,
-            detach=True,
-            name=f'neuralops-job-{job_id[:12]}',
-            environment=env_vars or {},
-            volumes={job_dir: {'bind': '/workspace', 'mode': 'rw'}},
-            device_requests=[docker.types.DeviceRequest(count=-1, capabilities=[['gpu']])],
-            read_only=True,
-            tmpfs={'/tmp': 'size=512M'},
-            network_mode='bridge',
-            auto_remove=False,
-            mem_limit='8g',
-            nano_cpus=int(4 * 1e9),
-            shm_size='1g',
-        )
+        container_params = {
+            'image': image,
+            'command': actual_command,
+            'detach': True,
+            'name': f'neuralops-job-{job_id[:12]}',
+            'environment': env_vars or {},
+            'volumes': {job_dir: {'bind': '/workspace', 'mode': 'rw'}},
+            'read_only': True,
+            'tmpfs': {'/tmp': 'size=512M'},
+            'network_mode': 'bridge',
+            'auto_remove': False,
+            'mem_limit': '8g',
+            'nano_cpus': int(4 * 1e9),
+            'shm_size': '1g',
+        }
+
+        if self.has_gpu_runtime:
+            container_params['device_requests'] = [docker.types.DeviceRequest(count=-1, capabilities=[['gpu']])]
+
+        container = self.client.containers.run(**container_params)
         return container.id

@@ -272,3 +272,37 @@ def my_benchmark_dashboard(request):
                 }
             )
     return Response({"listings": scores})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def submit_benchmark(request):
+    """API endpoint for GPU provider agent to submit PyTorch benchmark results."""
+    from gpu_marketplace.models import GPUListing
+
+    listing_id = request.data.get("listing_id")
+    results = request.data.get("results", {})
+    if not listing_id:
+        return Response({"error": "listing_id required"}, status=400)
+
+    listing = get_object_or_404(GPUListing, id=listing_id)
+
+    tests = results.get("tests", [])
+    gemm_val = next((t["value"] for t in tests if t["test"] == "GEMM (FP32)"), 500.0)
+    bw_val = next((t["value"] for t in tests if t["test"] == "Memory Bandwidth"), 100.0)
+
+    # Normalize a score: standard H100 achieves 4000+ GFLOPs (100%), A100 is ~2000 GFLOPs, etc.
+    composite = min(100.0, max(1.0, (gemm_val / 4000.0) * 80.0 + (bw_val / 200.0) * 20.0))
+
+    score, _ = ListingBenchmarkScore.objects.get_or_create(listing=listing)
+    score.composite_score = round(composite, 2)
+    score.training_score = round(composite * 0.95, 2)
+    score.inference_score = round(composite * 1.05, 2)
+    score.llm_score = round(composite * 0.9, 2)
+    score.best_throughput = gemm_val
+    score.save()
+
+    return Response({
+        "status": "success",
+        "composite_score": score.composite_score
+    })
