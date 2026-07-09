@@ -38,7 +38,7 @@ export function useChat() {
       });
 
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token") || document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1];
         const ws = new WebSocket(
           `${(import.meta as any).env.VITE_WS_URL || "ws://localhost:8000"}/ws/chat/?token=${token}`,
         );
