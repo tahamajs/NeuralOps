@@ -79,7 +79,7 @@ def all_model_versions(request):
 def list_model_versions(request, run_id):
     """List versions for a specific run with optional filtering, sorting, and CSV export."""
     run = get_object_or_404(Job, id=run_id)
-    queryset = run.model_versions.all().order_by("-version_number")
+    queryset = run.versioning_model_versions.all().order_by("-version_number")
 
     # Filtering
     validation = request.query_params.get("validation_passed")
@@ -329,7 +329,7 @@ def set_production_version(request, run_id, version_number):
     run = get_object_or_404(Job, id=run_id)
     version = get_object_or_404(ModelVersion, run=run, version_number=version_number)
     # Unset previous production flag
-    run.model_versions.filter(is_production=True).update(is_production=False)
+    run.versioning_model_versions.filter(is_production=True).update(is_production=False)
     version.is_production = True
     version.save(update_fields=["is_production"])
     return Response(

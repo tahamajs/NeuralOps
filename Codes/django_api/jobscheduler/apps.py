@@ -9,6 +9,9 @@ class JobschedulerConfig(AppConfig):
     name = "jobscheduler"
 
     def ready(self):
+        import sys
+        if "test" in sys.argv:
+            return
         # Avoid starting scheduler in migrate or collectstatic
         if os.environ.get("RUN_MAIN") != "true" and not os.environ.get(
             "DJANGO_AUTORELOAD"
