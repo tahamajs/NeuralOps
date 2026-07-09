@@ -115,6 +115,50 @@ api.interceptors.response.use(
       }
       // 2. Runs details or run compare/diff
       if (url.includes("/runs/") && isGet) {
+        if (url.endsWith("/runs/") || url.includes("/runs/?") || url.includes("/runs/all/")) {
+          return {
+            data: [
+              {
+                id: "1c615fbe-7d0e-42ea-b195-27ee5e049867",
+                name: "griffin-ssd-mrpc",
+                status: "completed",
+                config: {
+                  task_name: "mrpc",
+                  attention_type: "griffin_ssd",
+                  model_name: "bert-base-uncased",
+                  epochs: 3,
+                  batch_size: 32,
+                  learning_rate: 2e-5
+                },
+                final_metrics: {
+                  eval_accuracy: 0.852,
+                  eval_loss: 0.342,
+                  eval_f1: 0.891
+                },
+                created_at: new Date().toISOString()
+              },
+              {
+                id: "run-2",
+                name: "full-attn-mrpc",
+                status: "completed",
+                config: {
+                  task_name: "mrpc",
+                  attention_type: "full",
+                  model_name: "bert-base-uncased",
+                  epochs: 3,
+                  batch_size: 32,
+                  learning_rate: 2e-5
+                },
+                final_metrics: {
+                  eval_accuracy: 0.865,
+                  eval_loss: 0.315,
+                  eval_f1: 0.902
+                },
+                created_at: new Date(Date.now() - 7200000).toISOString()
+              }
+            ]
+          };
+        }
         if (url.includes("/analysis/")) {
           return {
             data: {
