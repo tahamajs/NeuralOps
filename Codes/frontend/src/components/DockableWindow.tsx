@@ -19,13 +19,32 @@ export function DockableWindow({
   } = useWindowStore();
   const rndRef = useRef<any>();
 
+  const { windows } = useWindowStore();
+  const minimizedWindows = windows.filter((w) => w.minimized);
+
   if (win.minimized) {
+    const minIdx = minimizedWindows.findIndex((w) => w.id === win.id);
+    const offsetLeft = 16 + minIdx * 160; // 160px spacing for each item
     return (
       <div
-        className="fixed bottom-4 left-4 z-50 glass-terminal px-3 py-1 rounded cursor-pointer text-sm font-mono"
+        className="fixed bottom-4 z-50 glass-terminal px-3 py-1.5 rounded cursor-pointer text-sm font-mono flex items-center justify-between gap-2 border border-white/10 hover:border-neon-mint/50 w-[150px] shadow-lg select-none"
         onClick={() => toggleMinimize(win.id)}
+        style={{ left: `${offsetLeft}px` }}
       >
-        {win.icon} {win.title}
+        <span className="truncate flex items-center gap-1.5">
+          <span>{win.icon || "▣"}</span>
+          <span className="truncate">{win.title}</span>
+        </span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            removeWindow(win.id);
+          }}
+          className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-red-500/30 text-slate-400 hover:text-red-400 text-[10px]"
+          title="Close"
+        >
+          ✕
+        </button>
       </div>
     );
   }
