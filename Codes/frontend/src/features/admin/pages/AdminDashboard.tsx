@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   });
   const { data: jobStats, isLoading: jobsLoading } = useQuery({
     queryKey: ["jobStats"],
-    queryFn: async () => (await api.get("/api/jobs/stats/")).data,
+    queryFn: async () => (await api.get("/jobs/stats/")).data,
   });
 
   const isLoading = healthLoading || versionLoading || jobsLoading;

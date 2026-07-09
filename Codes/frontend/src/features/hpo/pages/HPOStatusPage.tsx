@@ -6,7 +6,7 @@ import { Spinner } from "../../../components/ui/Spinner";
 export default function HPOStatusPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["hpoStatus"],
-    queryFn: async () => (await api.get("/api/hpo/status/")).data,
+    queryFn: async () => (await api.get("/hpo/status/")).data,
     refetchInterval: 5000,
   });
 

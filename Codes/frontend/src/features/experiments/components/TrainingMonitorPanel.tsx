@@ -20,7 +20,7 @@ export default function TrainingMonitorPanel({ runId, status }: Props) {
 
   const startMonitorMut = useMutation({
     mutationFn: async () => {
-      const res = await api.post("/api/agents/monitor/start/", {
+      const res = await api.post("/agents/monitor/start/", {
         run_id: runId,
         check_interval_ratio: checkInterval,
         auto_stop_enabled: autoStop,
@@ -33,7 +33,7 @@ export default function TrainingMonitorPanel({ runId, status }: Props) {
 
   const recommendMut = useMutation({
     mutationFn: async () => {
-      const res = await api.get(`/api/agents/papers/recommendations/${runId}/`);
+      const res = await api.get(`/agents/papers/recommendations/${runId}/`);
       return res.data;
     },
     onSuccess: (data) => {

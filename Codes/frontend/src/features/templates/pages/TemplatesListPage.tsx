@@ -14,7 +14,7 @@ export default function TemplatesListPage() {
 
   const { data: templates = [], isLoading } = useQuery({
     queryKey: ["templates"],
-    queryFn: async () => (await api.get("/api/experiments/templates/")).data,
+    queryFn: async () => (await api.get("/experiments/templates/")).data,
   });
 
   const filtered = useMemo(() => {

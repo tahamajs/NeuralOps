@@ -5,7 +5,7 @@ import { Card } from "../../../components/ui/Card";
 
 export default function StopAllJobsPage() {
   const mutation = useMutation({
-    mutationFn: async () => api.post("/api/runs/stop_all/"),
+    mutationFn: async () => api.post("/runs/stop_all/"),
     onSuccess: () => alert("All jobs stopped"),
   });
 

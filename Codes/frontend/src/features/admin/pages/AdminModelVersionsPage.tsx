@@ -8,7 +8,7 @@ import { Box } from "lucide-react";
 export default function AdminModelVersionsPage() {
   const { data: experiments = [], isLoading } = useQuery({
     queryKey: ["experiments"],
-    queryFn: async () => (await api.get("/api/experiments/")).data,
+    queryFn: async () => (await api.get("/experiments/")).data,
   });
 
   if (isLoading) return <Spinner />;

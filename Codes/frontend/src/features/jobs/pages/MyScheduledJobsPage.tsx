@@ -8,7 +8,7 @@ import { EmptyState } from "../../../components/ui/EmptyState";
 export default function MyScheduledJobsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["myJobs"],
-    queryFn: async () => (await api.get("/api/jobs/my-jobs/")).data,
+    queryFn: async () => (await api.get("/jobs/my-jobs/")).data,
     refetchInterval: 5000,
   });
 

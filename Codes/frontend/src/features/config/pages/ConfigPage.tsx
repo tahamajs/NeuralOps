@@ -7,23 +7,23 @@ import { Spinner } from "../../../components/ui/Spinner";
 import { Search } from "lucide-react";
 
 const configEndpoints = [
-  { key: "attentions", path: "/api/config/attentions/", label: "Attentions" },
+  { key: "attentions", path: "/config/attentions/", label: "Attentions" },
   {
     key: "compressors",
-    path: "/api/config/compressors/",
+    path: "/config/compressors/",
     label: "Compressors",
   },
-  { key: "trainers", path: "/api/config/trainers/", label: "Trainers" },
-  { key: "methods", path: "/api/config/methods/", label: "Methods" },
-  { key: "models", path: "/api/config/models/", label: "Models" },
-  { key: "tasks", path: "/api/config/tasks/", label: "Tasks" },
-  { key: "losses", path: "/api/config/losses/", label: "Losses" },
-  { key: "optimizers", path: "/api/config/optimizers/", label: "Optimizers" },
-  { key: "schedulers", path: "/api/config/schedulers/", label: "Schedulers" },
-  { key: "callbacks", path: "/api/config/callbacks/", label: "Callbacks" },
+  { key: "trainers", path: "/config/trainers/", label: "Trainers" },
+  { key: "methods", path: "/config/methods/", label: "Methods" },
+  { key: "models", path: "/config/models/", label: "Models" },
+  { key: "tasks", path: "/config/tasks/", label: "Tasks" },
+  { key: "losses", path: "/config/losses/", label: "Losses" },
+  { key: "optimizers", path: "/config/optimizers/", label: "Optimizers" },
+  { key: "schedulers", path: "/config/schedulers/", label: "Schedulers" },
+  { key: "callbacks", path: "/config/callbacks/", label: "Callbacks" },
   {
     key: "augmentations",
-    path: "/api/config/augmentations/",
+    path: "/config/augmentations/",
     label: "Augmentations",
   },
 ];

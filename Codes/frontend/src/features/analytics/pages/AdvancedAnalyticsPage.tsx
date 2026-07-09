@@ -8,12 +8,12 @@ export default function AdvancedAnalyticsPage() {
   const { data: hpImportance, isLoading: hpLoading } = useQuery({
     queryKey: ["hpImportance"],
     queryFn: async () =>
-      (await api.get("/api/experiments/analytics/hp-importance/")).data,
+      (await api.get("/experiments/analytics/hp-importance/")).data,
   });
   const { data: metricCorr, isLoading: corrLoading } = useQuery({
     queryKey: ["metricCorr"],
     queryFn: async () =>
-      (await api.get("/api/experiments/analytics/metric-correlation/")).data,
+      (await api.get("/experiments/analytics/metric-correlation/")).data,
   });
 
   if (hpLoading || corrLoading) return <Spinner />;
