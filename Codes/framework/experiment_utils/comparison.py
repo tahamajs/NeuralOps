@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from deepdiff import DeepDiff
 
-from .models import TrainingRun
+from .model import TrainingRun
 
 
 @dataclass
