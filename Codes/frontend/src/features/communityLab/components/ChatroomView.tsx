@@ -31,7 +31,7 @@ export function ChatroomView({ labId }: { labId: string }) {
 
   useEffect(() => {
     if (!activeRoomId) return;
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1];
     const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/lab/${labId}/chat/${activeRoomId}/?token=${token}`;
     const websocket = new WebSocket(wsUrl);
     websocket.onmessage = (event) => {
