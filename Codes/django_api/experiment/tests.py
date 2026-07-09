@@ -477,16 +477,12 @@ class RateLimitTests(TestCase):
 
     def test_anon_throttle_register(self):
         from api.views import AnonBurstRateThrottle
-        original_rate = AnonBurstRateThrottle.rate
-        AnonBurstRateThrottle.rate = "2/minute"
-        try:
+        with patch.object(AnonBurstRateThrottle, "rate", "2/min"):
             for i in range(3):
                 resp = self.client.post(
                     "/api/auth/register/", {"username": f"user{i}", "password": "Strong1"}
                 )
             self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
-        finally:
-            AnonBurstRateThrottle.rate = original_rate
 
 
 # ========================== CONSUMER TESTS ============================
