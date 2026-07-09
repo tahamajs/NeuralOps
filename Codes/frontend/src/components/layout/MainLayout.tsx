@@ -55,6 +55,8 @@ export const MainLayout = () => {
     { label: "Notes", path: "/notes", icon: <BookOpen size={18} /> },
     { label: "Analysis", path: "/analysis", icon: <BarChart3 size={18} /> },
     { label: "Papers", path: "/paper/editor", icon: <FileText size={18} /> },
+    { label: "Marketplace", path: "/marketplace", icon: <Terminal size={18} /> },
+    { label: "System", path: "/system", icon: <Monitor size={18} /> },
   ];
 
   const quickActions = [
