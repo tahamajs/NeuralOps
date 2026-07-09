@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/client";
+import { setAuthToken } from "../../../utils/authUtils";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Card } from "../../../components/ui/Card";
@@ -24,8 +25,7 @@ export default function ChangePasswordPage() {
       setForm({ old_password: "", new_password: "" });
       // Optionally update token
       if (res.data.token) {
-        localStorage.setItem("token", res.data.token);
-        document.cookie = `authToken=${res.data.token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+        setAuthToken(res.data.token);
       }
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to change password");
