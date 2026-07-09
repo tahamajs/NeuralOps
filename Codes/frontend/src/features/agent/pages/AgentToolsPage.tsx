@@ -79,7 +79,8 @@ export default function AgentToolsPage() {
     queryKey: ["agentTools"],
     queryFn: async () => {
       try {
-        return (await api.get("/agents/tools/")).data;
+        const data = (await api.get("/agents/tools/")).data;
+        return Array.isArray(data) ? data : (data?.results || FALLBACK_TOOLS);
       } catch {
         return FALLBACK_TOOLS;
       }
