@@ -55,49 +55,99 @@ try:
     from framework.core.registry import ATTENTION_REGISTRY as attn_reg
     ATTENTION_REGISTRY = attn_reg
 except ImportError:
-    ATTENTION_REGISTRY = _registry_fallbacks()
+    ATTENTION_REGISTRY = {
+        "scaled_dot_product": None,
+        "linear": None,
+        "fast_linear": None,
+        "flash": None,
+        "performer": None
+    }
     logger.warning("framework module not available, using fallback ATTENTION_REGISTRY")
 try:
     from framework.core.registry import COMPRESSOR_REGISTRY as comp_reg
     COMPRESSOR_REGISTRY = comp_reg
 except ImportError:
-    COMPRESSOR_REGISTRY = _registry_fallbacks()
+    COMPRESSOR_REGISTRY = {
+        "svd": None,
+        "pruning": None,
+        "quantization": None
+    }
     logger.warning("framework module not available, using fallback COMPRESSOR_REGISTRY")
 try:
     from framework.core.registry import TRAINER_REGISTRY as train_reg
     TRAINER_REGISTRY = train_reg
 except ImportError:
-    TRAINER_REGISTRY = _registry_fallbacks()
+    TRAINER_REGISTRY = {
+        "custom_loop": None,
+        "hf": None,
+        "accelerate": None
+    }
     logger.warning("framework module not available, using fallback TRAINER_REGISTRY")
 try:
     from framework.core.registry import METHOD_REGISTRY as meth_reg
     METHOD_REGISTRY = meth_reg
 except ImportError:
+    METHOD_REGISTRY = {
+        "svd": None,
+        "pruning": None,
+        "quantization": None,
+        "distillation": None,
+        "low_rank": None
+    }
     logger.warning("framework module not available, using fallback METHOD_REGISTRY")
 try:
     from framework.core.registry import LOSS_REGISTRY as loss_reg
     LOSS_REGISTRY = loss_reg
 except ImportError:
+    LOSS_REGISTRY = {
+        "cross_entropy": None,
+        "mse": None,
+        "kl_div": None,
+        "huber": None
+    }
     logger.warning("framework module not available, using fallback LOSS_REGISTRY")
 try:
     from framework.trainer.optimizers import OPTIMIZER_REGISTRY as opt_reg
     OPTIMIZER_REGISTRY = opt_reg
 except ImportError:
+    OPTIMIZER_REGISTRY = {
+        "adamw": None,
+        "adam": None,
+        "sgd": None,
+        "rmsprop": None
+    }
     logger.warning("framework module not available, using fallback OPTIMIZER_REGISTRY")
 try:
     from framework.trainer.schedulers import SCHEDULER_REGISTRY as sched_reg
     SCHEDULER_REGISTRY = sched_reg
 except ImportError:
+    SCHEDULER_REGISTRY = {
+        "cosine": None,
+        "linear": None,
+        "step": None,
+        "plateau": None
+    }
     logger.warning("framework module not available, using fallback SCHEDULER_REGISTRY")
 try:
     from framework.callbacks import CALLBACK_REGISTRY as cb_reg
     CALLBACK_REGISTRY = cb_reg
 except ImportError:
+    CALLBACK_REGISTRY = {
+        "early_stopping": None,
+        "model_checkpoint": None,
+        "tensorboard": None,
+        "wandb": None
+    }
     logger.warning("framework module not available, using fallback CALLBACK_REGISTRY")
 try:
     from framework.data.augmentation import AUGMENTATION_REGISTRY as aug_reg
     AUGMENTATION_REGISTRY = aug_reg
 except ImportError:
+    AUGMENTATION_REGISTRY = {
+        "mixup": None,
+        "cutmix": None,
+        "randaugment": None
+    }
     logger.warning("framework module not available, using fallback AUGMENTATION_REGISTRY")
 
 
