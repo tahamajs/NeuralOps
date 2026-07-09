@@ -47,6 +47,7 @@ export default function MarketplacePage() {
               current_price_per_hour: 0.45,
               reliability_score: "98.2%",
               provider: "RunPod"
+            }
           ]
         };
       }
