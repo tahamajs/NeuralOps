@@ -25,6 +25,7 @@ export default function ChangePasswordPage() {
       // Optionally update token
       if (res.data.token) {
         localStorage.setItem("token", res.data.token);
+        document.cookie = `authToken=${res.data.token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
       }
     } catch (err: any) {
       setError(err.response?.data?.error || "Failed to change password");
