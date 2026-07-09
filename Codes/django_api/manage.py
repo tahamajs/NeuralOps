@@ -7,6 +7,11 @@ import sys
 
 
 def main():
+    # Add parent directory to sys.path so 'framework' module can be imported
+    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if parent_dir not in sys.path:
+        sys.path.insert(0, parent_dir)
+        
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_api.settings")
     try:
         from django.core.management import execute_from_command_line
