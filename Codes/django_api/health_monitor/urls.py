@@ -35,8 +35,10 @@ urlpatterns = [
     ),
     # Performance Snapshots
     path(
-        "performance/",
-        views.performance_snapshot_list,
-        name="performance_snapshot_list",
+      "performance/",
+      views.performance_snapshot_list,
+      name="performance_snapshot_list",
     ),
+    # System Health
+    path("health/", views.system_health, name="system_health"),
 ]
