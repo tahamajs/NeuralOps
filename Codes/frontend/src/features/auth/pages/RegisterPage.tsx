@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../../api/client";
 import { useAuthStore } from "../store/authStore";
+import { setAuthToken } from "../../../utils/authUtils";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Card } from "../../../components/ui/Card";
@@ -35,8 +36,7 @@ export default function RegisterPage() {
         password: form.password,
       });
       const { token, ...user } = res.data;
-      localStorage.setItem("token", token);
-      document.cookie = `authToken=${token}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+      setAuthToken(token);
       setAuth(user, token);
       navigate("/dashboard");
     } catch (err: any) {

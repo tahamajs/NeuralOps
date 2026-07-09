@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { getAuthToken } from "../../../utils/authUtils";
 import { useChatStore } from "../store/chatStore";
 import { useToast } from "../../../components/ui/Toast";
 
@@ -38,7 +39,7 @@ export function useChat() {
       });
 
       try {
-        const token = localStorage.getItem("token") || document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1];
+        const token = getAuthToken();
         const ws = new WebSocket(
           `${(import.meta as any).env.VITE_WS_URL || "ws://localhost:8000"}/ws/chat/?token=${token}`,
         );

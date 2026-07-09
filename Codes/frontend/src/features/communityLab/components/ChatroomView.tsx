@@ -1,5 +1,6 @@
 // src/features/communityLab/components/ChatroomView.tsx
 import { useState, useEffect, useRef } from "react";
+import { getAuthToken } from "../../../utils/authUtils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { communityLabAPI } from "../services/api";
 import { TerminalCard } from "../../../components/ui/TerminalCard";
@@ -31,7 +32,7 @@ export function ChatroomView({ labId }: { labId: string }) {
 
   useEffect(() => {
     if (!activeRoomId) return;
-    const token = localStorage.getItem("token") || document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1];
+    const token = getAuthToken();
     const wsUrl = `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/lab/${labId}/chat/${activeRoomId}/?token=${token}`;
     const websocket = new WebSocket(wsUrl);
     websocket.onmessage = (event) => {
