@@ -363,7 +363,7 @@ def stop_agent_session(request, session_id):
 
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([permissions.IsAuthenticated])
 def create_research_plan(request):
     """Create a research plan and start async execution."""
     plan = ResearchPlan.objects.create(
@@ -407,3 +407,36 @@ def research_plan_status(request, plan_id):
             ),
         }
     )
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def list_tools(request):
+    """List all available tools in ToolRegistry."""
+    from agents.tools import ToolRegistry
+    tools_list = []
+    for tool_name, tool_info in ToolRegistry._tools.items():
+        tools_list.append({
+            "name": tool_info["name"],
+            "description": tool_info["description"],
+            "category": tool_info["category"],
+            "requires_confirmation": tool_info["requires_confirmation"],
+            "parameters": {},
+        })
+    return Response(tools_list)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.IsAuthenticated])
+def agent_status(request):
+    """Get the current operational status of the agent subsystem."""
+    from agents.tools import ToolRegistry
+    active_sessions = AgentSession.objects.filter(user=request.user, status="active").count()
+    return Response({
+        "status": "operational",
+        "model": "claude-3-5-sonnet",
+        "tools_count": len(ToolRegistry._tools),
+        "active_sessions": active_sessions,
+        "ws_enabled": True
+    })
+
