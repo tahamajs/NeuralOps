@@ -83,23 +83,26 @@ def all_model_versions(request):
 @permission_classes([IsAuthenticated])
 def list_model_versions(request, run_id):
     """List versions for a specific run with optional filtering, sorting, and CSV export."""
-    print("ALL JOBS:", list(Job.objects.values_list("id", flat=True)))
-    print("LOOKING FOR:", run_id)
-    run = get_object_or_404(Job, id=run_id)
-    queryset = run.versioning_model_versions.all().order_by("-version_number")
+    import traceback
+    try:
+        print("ALL JOBS:", list(Job.objects.values_list("id", flat=True)))
+        print("LOOKING FOR:", run_id)
+        run = get_object_or_404(Job, id=run_id)
+        print("FOUND RUN:", run)
+        queryset = run.versioning_model_versions.all().order_by("-version_number")
 
-    # Filtering
-    validation = request.query_params.get("validation_passed")
-    if validation is not None:
-        queryset = queryset.filter(validation_passed=validation.lower() == "true")
+        # Filtering
+        validation = request.query_params.get("validation_passed")
+        if validation is not None:
+            queryset = queryset.filter(validation_passed=validation.lower() == "true")
 
-    published = request.query_params.get("published")
-    if published is not None:
-        queryset = queryset.filter(is_published_to_hub=published.lower() == "true")
+        published = request.query_params.get("published")
+        if published is not None:
+            queryset = queryset.filter(is_published_to_hub=published.lower() == "true")
 
-    storage_tier = request.query_params.get("storage_tier")
-    if storage_tier in ["hot", "warm", "cold"]:
-        queryset = queryset.filter(storage_tier=storage_tier)
+        storage_tier = request.query_params.get("storage_tier")
+        if storage_tier in ["hot", "warm", "cold"]:
+            queryset = queryset.filter(storage_tier=storage_tier)
 
     compression_method = request.query_params.get("compression_method")
     if compression_method:
@@ -165,10 +168,14 @@ def list_model_versions(request, run_id):
             )
         return response
 
-    paginator = StandardPagination()
-    page = paginator.paginate_queryset(queryset, request)
-    serializer = ModelVersionSerializer(page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = ModelVersionSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    except Exception as e:
+        print("EXCEPTION IN list_model_versions:", e)
+        traceback.print_exc()
+        raise e
 
 
 # ═══════════════════════════════════════════════════════════════════
