@@ -1,17 +1,45 @@
-"""Helper to replace attention modules in HuggingFace models."""
+r"""
+Model Attention Replacement and Dynamic Graph Surgery Utilities.
 
+Provides unified dispatch interfaces to substitute attention sub-layers in pretrained
+HuggingFace transformer architectures (BERT, RoBERTa, DistilBERT, GPT-2) with custom efficient attention mechanisms.
+
+Mathematical Mechanism:
+    Given a transformer computation graph $\mathcal{G} = (V, E)$ containing self-attention operators
+    $f_{\text{attn}}^{(l)}: \mathbb{R}^{B \times L \times D} \to \mathbb{R}^{B \times L \times D}$ for layers $l \in \{1, \dots, L\}$,
+    the replacement surgery executes an in-place operator mutation:
+    $$\mathcal{G} \xmapsto{\text{replace}} \mathcal{G}' \quad \text{where } f_{\text{attn}}^{(l)} \leftarrow \widetilde{f}_{\text{attn}}^{(l)}$$
+    transferring or re-initializing projection weights according to registry specifications.
+
+Computational Complexity:
+    - Graph traversal & module injection: $\mathcal{O}(L)$ operations over $L$ transformer layers.
+"""
+
+from typing import Any, Dict, Optional
+
+import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-def replace_attention_in_model(model, attention_name, attention_params=None):
-    """
-    Replace all self‑attention layers in a model with the specified attention type.
-    Supports BERT, RoBERTa, DistilBERT, GPT‑2.
+def replace_attention_in_model(
+    model: nn.Module,
+    attention_name: str,
+    attention_params: Optional[Dict[str, Any]] = None,
+) -> nn.Module:
+    r"""Replace all self-attention layers in a transformer model with target attention variant.
+
+    Args:
+        model: Pretrained transformer neural network module (`nn.Module`).
+        attention_name: Identifier registered in `ATTENTION_REGISTRY`.
+        attention_params: Optional dictionary of hyperparameter overrides.
+
+    Returns:
+        Mutated model instance with updated attention sub-layers.
     """
     if attention_params is None:
         attention_params = {}
 
-    model_type = getattr(model.config, "model_type", None)
+    model_type: Optional[str] = getattr(getattr(model, "config", None), "model_type", None)
 
     if model_type in ("bert", "roberta"):
         _replace_bert_attention(model, attention_name, attention_params)
@@ -25,8 +53,16 @@ def replace_attention_in_model(model, attention_name, attention_params=None):
     return model
 
 
-def _replace_bert_attention(model, attention_name, attention_params):
-    for layer in model.encoder.layer:
+def _replace_bert_attention(
+    model: nn.Module,
+    attention_name: str,
+    attention_params: Dict[str, Any],
+) -> None:
+    r"""In-place replacement of BERT / RoBERTa attention sub-layers."""
+    encoder = getattr(model, "encoder", None) or getattr(getattr(model, "bert", None), "encoder", None)
+    if encoder is None:
+        raise AttributeError("Could not locate encoder in model architecture.")
+    for layer in encoder.layer:
         old_attn = layer.attention.self
         hidden_size = old_attn.query.in_features
         num_heads = old_attn.num_attention_heads
@@ -36,8 +72,16 @@ def _replace_bert_attention(model, attention_name, attention_params):
         layer.attention.self = new_attn
 
 
-def _replace_gpt_attention(model, attention_name, attention_params):
-    for block in model.transformer.h:
+def _replace_gpt_attention(
+    model: nn.Module,
+    attention_name: str,
+    attention_params: Dict[str, Any],
+) -> None:
+    r"""In-place replacement of GPT-2 block attention sub-layers."""
+    transformer = getattr(model, "transformer", None)
+    if transformer is None:
+        raise AttributeError("Could not locate transformer in GPT-2 model architecture.")
+    for block in transformer.h:
         old_attn = block.attn
         hidden_size = old_attn.embed_dim
         num_heads = old_attn.num_heads
@@ -47,28 +91,46 @@ def _replace_gpt_attention(model, attention_name, attention_params):
         block.attn = new_attn
 
 
-def _replace_distilbert_attention(model, attention_name, attention_params):
-    for layer in model.distilbert.transformer.layer:
+def _replace_distilbert_attention(
+    model: nn.Module,
+    attention_name: str,
+    attention_params: Dict[str, Any],
+) -> None:
+    r"""In-place replacement of DistilBERT transformer attention sub-layers."""
+    distilbert = getattr(model, "distilbert", model)
+    layers = distilbert.transformer.layer
+    total_layers = len(layers)
+    inject_fn = ATTENTION_REGISTRY.get(attention_name)
+    if inject_fn is None:
+        raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
+
+    for idx, layer in enumerate(layers):
         old_attn = layer.attention
-        # DistilBERT attention has q_lin, k_lin, v_lin, out_lin
-        getattr(model.config, "num_attention_heads", 12)
-        # Build a custom `inject` function instead of a class directly
-        # But we rely on the registry's inject function for the given key.
-        inject_fn = ATTENTION_REGISTRY.get(attention_name)
-        if inject_fn is None:
-            raise ValueError(f"Attention '{attention_name}' not registered.")
         inject_fn(
             layer,
             model.config,
-            None,
-            0,
-            len(model.distilbert.transformer.layer),
+            attention_params,
+            idx,
+            total_layers,
             old_attn,
         )
 
 
-def build_attention(attention_name, hidden_size, num_heads, **kwargs):
-    """Helper to instantiate an attention class (not injection)."""
-    # This is a simplified version; the registry expects an injection function,
-    # not a class. For simplicity, we raise an error – use the injectors instead.
+def build_attention(
+    attention_name: str,
+    hidden_size: int,
+    num_heads: int,
+    **kwargs: Any,
+) -> nn.Module:
+    r"""Instantiate an attention module from the registry."""
+    attn_cls = ATTENTION_REGISTRY.get(attention_name)
+    if attn_cls is None:
+        raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
+    if hasattr(attn_cls, "__call__"):
+        try:
+            return attn_cls(hidden_size=hidden_size, num_attention_heads=num_heads, **kwargs)
+        except Exception:
+            raise NotImplementedError(
+                f"Direct instantiation failed for '{attention_name}'. Use registry injection functions."
+            )
     raise NotImplementedError("Use the registry inject functions with a full model.")

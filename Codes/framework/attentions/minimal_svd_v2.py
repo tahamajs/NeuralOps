@@ -1,62 +1,22 @@
-"""
-MinimalSVD‑Attention — stable, zero‑shot, drop‑in replacement for DistilBERT.
-================================================================================
-What this module *does*:
-  - Factorises Q, K, V, and output projections into down‑/up‑projections using
-    truncated SVD.  Rank is chosen by retaining a configurable fraction of the
-    singular‑value energy (default 0.95).
-  - Weights are initialised directly from the pretrained DistilBERT matrices,
-    so the module works immediately without any fine‑tuning.
-  - The attention mechanism itself is unchanged: full dot‑product attention.
-    The only compression is in the linear projections, which already yields
-    >20× parameter reduction and proportionally smaller KV caches.
-
-What was *removed* and why:
-  ┌─────────────────────────┬───────────────────────────────────────────────┐
-  │ Removed component       │ Reason                                        │
-  ├─────────────────────────┼───────────────────────────────────────────────┤
-  │ SLiM sparse‑quantised   │ Added int8 dequantisation and 2:4 masks that  │
-  │ residuals               │ complicate the forward pass and offer little  │
-  │                         │ extra gain after SVD truncation.              │
-  │ ProxSparse 2:4 masks   │ Learning masks during training introduced      │
-  │                         │ instability; the SVD truncation already       │
-  │                         │ selects the most important directions.        │
-  │ MGIE‑SVD entropy‑driven │ Requires per‑layer SVD inside forward →       │
-  │ rank re‑selection       │ breaks gradient flow and slows inference.     │
-  │ OATS outlier triage     │ Real‑time token scoring and fractional        │
-  │ + SLA dual‑pathway      │ attention (critical / marginal / negligible)  │
-  │                         │ causes complex branching, shape mismatches,   │
-  │                         │ and often degrades accuracy.                  │
-  │ Softpick rectified      │ Non‑standard softmax can harm convergence;    │
-  │ softmax                 │ removed in favour of standard softmax.        │
-  │ DeltaKV + KVTC          │ Residual cache management and PCA quantisation│
-  │                         │ are outside the attention module itself; they │
-  │                         │ belong to a separate KV‑cache compression     │
-  │                         │ pipeline.                                     │
-  │ SliceGPT PCA reduction  │ Dynamic PCA projection inside attention makes │
-  │                         │ shapes unpredictable and adds latency.        │
-  │ ReplaceMe linear skip   │ Overly aggressive; better handled by layer    │
-  │                         │ dropping at the model level.                  │
-  │ NMF / Kronecker         │ Supplementary projections that bloat the      │
-  │                         │ module without clear benefits over SVD.       │
-  └─────────────────────────┴───────────────────────────────────────────────┘
-
-All that remains is a clean, factorised linear layer and standard attention.
-"""
-
-from typing import Optional, Tuple
+import math
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 class FactorisedLinear(nn.Module):
-    """
-    Linear layer factorised via truncated SVD:  y = x @ W.T + b
-    where W ≈ A @ B,  A ∈ R^(out, r), B ∈ R^(r, in).
-    Rank `r` is chosen automatically from the pretrained weight matrix to
-    preserve `energy` fraction of the singular‑value energy.
+    r"""
+    SVD-Factorized Linear Layer: $y = x W^\top + b$ where $W \approx A B$.
+
+    Mathematical Mechanism:
+        $$W = U \Sigma V^\top \approx U_{:, :r} \Sigma_{:r} V_{:r, :}^\top = A B$$
+        $$y = (x B^\top) A^\top + b$$
+        where $A \in \mathbb{R}^{\text{out} \times r}$ and $B \in \mathbb{R}^{r \times \text{in}}$.
     """
 
     def __init__(
@@ -64,7 +24,7 @@ class FactorisedLinear(nn.Module):
         pretrained_weight: torch.Tensor,
         pretrained_bias: Optional[torch.Tensor],
         energy: float = 0.95,
-    ):
+    ) -> None:
         super().__init__()
         out_dim, in_dim = pretrained_weight.shape
         with torch.no_grad():
@@ -72,70 +32,90 @@ class FactorisedLinear(nn.Module):
             total = (S**2).sum()
             cum = torch.cumsum(S**2, dim=0) / total
             rank = int(torch.searchsorted(cum, energy).item()) + 1
-            rank = max(1, min(rank, min(out_dim, in_dim), 64))  # cap for sanity
-            self.rank = rank
-            A = U[:, :rank] * S[:rank].unsqueeze(0)  # (out, r)
-            B = Vt[:rank, :]  # (r, in)
+            rank = max(1, min(rank, min(out_dim, in_dim), 64))
+            self.rank: int = rank
+            A = U[:, :rank] * S[:rank].unsqueeze(0)
+            B = Vt[:rank, :]
 
-        self.down = nn.Linear(in_dim, rank, bias=False)
-        self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
+        self.down: nn.Linear = nn.Linear(in_dim, rank, bias=False)
+        self.up: nn.Linear = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
         self.down.weight.data = B.float()
         self.up.weight.data = A.float()
         if pretrained_bias is not None:
             self.up.bias.data = pretrained_bias.float()
         else:
-            self.up.bias.data.zero_()
+            self.up.bias = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        r"""Evaluates factorized linear transformation."""
         return self.up(self.down(x))
 
 
-class MinimalSVDAttention(nn.Module):
-    """
-    Minimal SVD‑compressed attention for DistilBERT.
-    Replaces q_lin, k_lin, v_lin, out_lin with FactorisedLinear layers
-    initialised from the pretrained weights.
+@ATTENTION_REGISTRY.register("minimal_svd_v2")
+class MinimalSVDAttentionV2(BaseAttention):
+    r"""
+    MinimalSVD v2: Clean SVD-Factorized Attention for DistilBERT.
+
+    Mathematical Mechanism:
+        Replaces projection matrices with truncated SVD low-rank factors:
+        $$\begin{aligned}
+        Q &= \text{FactorisedLinear}_Q(X) \\
+        K &= \text{FactorisedLinear}_K(X) \\
+        V &= \text{FactorisedLinear}_V(X) \\
+        S &= \frac{Q K^\top}{\sqrt{d_k}} + M_{\text{mask}} \\
+        A &= \text{softmax}(S, \text{dim}=-1) \\
+        O &= \text{FactorisedLinear}_O(A V)
+        \end{aligned}$$
+
+    Computational Complexity:
+        - Projections: $\mathcal{O}(B \cdot N \cdot r \cdot D)$
+        - Attention: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k)$ time, $\mathcal{O}(B \cdot H \cdot N^2)$ space.
+
+    Tensor Dimensions:
+        - Input `hidden_states`: `[B, N, D]`
+        - Output: Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.
     """
 
     def __init__(
         self,
-        model_config,  # e.g. DistilBertConfig
-        energy: float = 0.95,  # fraction of singular‑value energy to keep
+        model_config: Any,
+        energy: float = 0.95,
         dropout: float = 0.1,
-        pretrained_attn=None,  # original DistilBERT attention module
-    ):
-        super().__init__()
-        self.num_heads = model_config.num_attention_heads
-        self.head_dim = model_config.hidden_size // self.num_heads
-        self.all_head_size = self.num_heads * self.head_dim
-        self.hidden_size = model_config.hidden_size
+        pretrained_attn: Optional[nn.Module] = None,
+        rank: Optional[int] = None,
+    ) -> None:
+        super().__init__(model_config, rank)
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        hidden_size: int = getattr(model_config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.hidden_size: int = hidden_size
 
         if pretrained_attn is None:
-            raise ValueError("pretrained_attn must be supplied for zero‑shot init")
+            raise ValueError("pretrained_attn must be supplied for zero-shot init")
 
-        # Create factorised projections from the original weights
-        self.q_proj = FactorisedLinear(
+        self.q_proj: FactorisedLinear = FactorisedLinear(
             pretrained_attn.q_lin.weight.data,
-            pretrained_attn.q_lin.bias.data,
+            pretrained_attn.q_lin.bias.data if pretrained_attn.q_lin.bias is not None else None,
             energy,
         )
-        self.k_proj = FactorisedLinear(
+        self.k_proj: FactorisedLinear = FactorisedLinear(
             pretrained_attn.k_lin.weight.data,
-            pretrained_attn.k_lin.bias.data,
+            pretrained_attn.k_lin.bias.data if pretrained_attn.k_lin.bias is not None else None,
             energy,
         )
-        self.v_proj = FactorisedLinear(
+        self.v_proj: FactorisedLinear = FactorisedLinear(
             pretrained_attn.v_lin.weight.data,
-            pretrained_attn.v_lin.bias.data,
+            pretrained_attn.v_lin.bias.data if pretrained_attn.v_lin.bias is not None else None,
             energy,
         )
-        self.out_proj = FactorisedLinear(
+        self.out_proj: FactorisedLinear = FactorisedLinear(
             pretrained_attn.out_lin.weight.data,
-            pretrained_attn.out_lin.bias.data,
+            pretrained_attn.out_lin.bias.data if pretrained_attn.out_lin.bias is not None else None,
             energy,
         )
 
-        self.dropout = nn.Dropout(dropout)
+        self.dropout: nn.Dropout = nn.Dropout(dropout)
 
     def forward(
         self,
@@ -143,26 +123,35 @@ class MinimalSVDAttention(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""
+        Forward pass for MinimalSVDAttentionV2.
+
+        Args:
+            hidden_states: Input tensor of shape `[B, N, D]`.
+            attention_mask: Optional attention mask tensor.
+            head_mask: Optional head masking tensor.
+            output_attentions: Boolean flag to return attention matrix.
+            **kwargs: Extra keyword arguments.
+
+        Returns:
+            Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.
+        """
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
 
-        # --- Factorised projections ---
-        Q = self.q_proj(hidden_states)  # (B, N, all_head)
+        Q = self.q_proj(hidden_states)
         K = self.k_proj(hidden_states)
         V = self.v_proj(hidden_states)
 
-        # --- Reshape to multi‑head ---
-        Q = Q.view(B, N, H, D).transpose(1, 2)  # (B, H, N, D)
+        Q = Q.view(B, N, H, D).transpose(1, 2)
         K = K.view(B, N, H, D).transpose(1, 2)
         V = V.view(B, N, H, D).transpose(1, 2)
 
-        # --- Standard scaled dot‑product attention ---
-        scale = D**-0.5
+        scale = 1.0 / math.sqrt(D)
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
-        # --- Mask handling (robust to 2D/3D/4D masks) ---
         mask = (
             attention_mask
             if attention_mask is not None
@@ -181,38 +170,52 @@ class MinimalSVDAttention(nn.Module):
                 token_valid = None
             if token_valid is not None:
                 scores = scores.masked_fill(
-                    ~token_valid.unsqueeze(1).unsqueeze(2), -1e5
+                    ~token_valid.unsqueeze(1).unsqueeze(2), float("-1e5")
                 )
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)
 
-        context = torch.matmul(attn_weights, V)  # (B, H, N, D)
+        context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
 
-        # --- Factorised output projection ---
         output = self.out_proj(context)
-
-        return (output, attn_weights) if output_attentions else (output,)
+        return output, (attn_weights if output_attentions else None)
 
     def get_ortho_loss(self) -> torch.Tensor:
-        """Compatibility stub for existing trainers."""
+        r"""Returns orthogonality loss (0.0)."""
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-# --------------------------------------------------------------------------
-# Injection helper for DistilBERT
-# --------------------------------------------------------------------------
-def inject_minimal_svd_into_distilbert(
-    layer,
-    model_config,
-    energy: float = 0.95,
-    old_attn=None,
-):
-    """Replace layer.attention with MinimalSVDAttention using zero‑shot SVD."""
-    new_attn = MinimalSVDAttention(
+@ATTENTION_REGISTRY.register("minimal_svd_v2")
+def inject_minimal_svd_v2(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module] = None,
+) -> MinimalSVDAttentionV2:
+    r"""
+    Injection hook for MinimalSVDAttentionV2 into transformer layer.
+
+    Args:
+        layer: Target transformer layer module.
+        model_config: Model configuration.
+        comp_config: Compression configuration.
+        layer_idx: Layer index.
+        total_layers: Total number of transformer layers.
+        old_attn: Previous attention module.
+
+    Returns:
+        Instantiated `MinimalSVDAttentionV2` assigned to `layer.attention`.
+    """
+    energy: float = getattr(comp_config, "svd_energy", 0.95)
+    dropout: float = getattr(comp_config, "dropout", 0.1)
+    new_attn = MinimalSVDAttentionV2(
         model_config=model_config,
         energy=energy,
+        dropout=dropout,
         pretrained_attn=old_attn,
     )
     layer.attention = new_attn
