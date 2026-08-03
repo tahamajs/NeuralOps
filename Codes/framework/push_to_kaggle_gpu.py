@@ -65,6 +65,8 @@ def prepare_code_dataset():
     if res.returncode != 0 and "already exists" not in res.stderr:
         print(f"Notice on dataset upload: {res.stderr}")
     print("✓ Dataset uploaded/updated successfully")
+    print("⏳ Waiting 20 seconds for Kaggle to process new dataset version...")
+    time.sleep(20)
 
 
 def prepare_kernel(command_str: str):
@@ -90,7 +92,7 @@ def prepare_kernel(command_str: str):
                 "outputs": [],
                 "source": [
                     "# Install missing requirements\n",
-                    "!pip install -q datasets transformers accelerate evaluate scipy scikit-learn deepdiff matplotlib asgiref\n",
+                    "!pip install -q datasets transformers accelerate evaluate scipy scikit-learn deepdiff matplotlib asgiref channels\n",
                     "import os, sys, shutil, torch\n",
                     "print(f'GPU Available: {torch.cuda.is_available()}')\n",
                     "if torch.cuda.is_available():\n",
@@ -184,6 +186,7 @@ def prepare_kernel(command_str: str):
         "is_private": "true",
         "enable_gpu": "true",
         "enable_internet": "true",
+        "accelerator": "gpu",
         "dataset_sources": [DATASET_SLUG],
         "competition_sources": [],
         "kernel_sources": []
