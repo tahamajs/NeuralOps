@@ -14,7 +14,9 @@ from .registry import ATTENTION_REGISTRY
 
 
 PROJ_TARGET_NAMES = {
-    "q": ["query", "q_proj", "q_lin", "Wq", "c_attn", "q"],
+    # Prefer canonical names (`query/key/value`) first; fall back to `_proj` variants.
+    # Never use aliases that share memory with these – remove any `self.q_proj = self.query` patterns.
+    "q": ["query", "q_proj", "q_lin", "Wq", "q"],
     "k": ["key", "k_proj", "k_lin", "Wk", "k"],
     "v": ["value", "v_proj", "v_lin", "Wv", "v"],
     "o": ["out_proj", "dense", "o_proj", "out_lin", "c_proj", "o"],
