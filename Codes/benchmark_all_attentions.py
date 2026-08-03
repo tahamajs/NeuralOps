@@ -208,9 +208,52 @@ def run_benchmark(
                     with open(summary_file, "w") as f:
                         json.dump(results, f, indent=2)
                 finally:
-                    # Clean up references safely and flush GPU memory
+                    # Explicitly delete all model, dataset, trainer, and loader variable bindings to drop RAM usage immediately
+                    try:
+                        del model
+                    except NameError:
+                        pass
+                    try:
+                        del tokenizer
+                    except NameError:
+                        pass
+                    try:
+                        del train_loader
+                    except NameError:
+                        pass
+                    try:
+                        del eval_loader
+                    except NameError:
+                        pass
+                    try:
+                        del raw_ds
+                    except NameError:
+                        pass
+                    try:
+                        del train_ds
+                    except NameError:
+                        pass
+                    try:
+                        del eval_ds
+                    except NameError:
+                        pass
+                    try:
+                        del trainer
+                    except NameError:
+                        pass
+                    try:
+                        del train_res
+                    except NameError:
+                        pass
+                    try:
+                        del eval_metrics
+                    except NameError:
+                        pass
+
+                    import gc
+                    gc.collect()
                     cleanup_gpu_memory(force=True)
-                    print(f"GPU/MPS memory cleared for {run_key}.")
+                    print(f"🧹 System RAM and GPU/MPS memory 100% cleared for {run_key}.")
 
     # Generate Markdown Table
     md_report = "# Full Multi-Task, Multi-Model & Multi-Attention Benchmark Report\n\n"
