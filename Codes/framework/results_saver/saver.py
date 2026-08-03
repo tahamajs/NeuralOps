@@ -175,12 +175,15 @@ class ResultsSaver:
         model.save_pretrained(str(p))
 
     def _save_archive(self) -> None:
-        """ save archive."""
-        with tarfile.open(self.run_dir / "results.tar.gz", "w:gz") as tar:
-            for sub in ["artifacts", "logs", "plots"]:
-                sp = self.run_dir / sub
-                if sp.exists():
-                    tar.add(sp, arcname=sub)
+        """ save archive safely."""
+        try:
+            with tarfile.open(self.run_dir / "results.tar.gz", "w:gz") as tar:
+                for sub in ["artifacts", "logs", "plots"]:
+                    sp = self.run_dir / sub
+                    if sp.exists():
+                        tar.add(sp, arcname=sub)
+        except Exception as e:
+            logger.warning(f"Archive creation skipped due to warning/error: {e}")
 
     # ------------------------------------------------------------------
     # Plots – delegates to framework.analysis.plotting
