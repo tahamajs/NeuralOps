@@ -14,6 +14,7 @@ T = TypeVar("T")
 
 
 def load_yaml(path: str) -> dict:
+    """Load yaml from disk or config."""
     with open(path, "r") as f:
         return yaml.safe_load(f)
 

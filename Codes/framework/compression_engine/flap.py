@@ -17,7 +17,8 @@ class FLAPCompressor(BaseCompressor):
         self.device = device
         self.nsamples = nsamples
 
-    def _compute_fluctuation_metric(self, weight, inputs, metric_type="WIFV"):
+    def _compute_fluctuation_metric(self, weight, inputs, metric_type="WIFV") -> Any:
+        """ compute fluctuation metric."""
         inp = inputs.detach().float()
         inp_var = torch.var(inp, dim=0)
         if metric_type == "IFV":
@@ -32,7 +33,8 @@ class FLAPCompressor(BaseCompressor):
             raise ValueError(f"Unknown metric: {metric_type}")
         return scores.cpu().numpy()
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         print(f"✂️ Applying FLAP (sparsity={self.sparsity})...")
         self.model.eval()
         # Simple calibration set
@@ -70,7 +72,8 @@ class FLAPCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("flap")
-def flap_compressor_factory(model, comp_config):
+def flap_compressor_factory(model, comp_config) -> Any:
+    """Flap compressor factory."""
     sparsity = getattr(comp_config, "flap_sparsity", 0.2)
     tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:

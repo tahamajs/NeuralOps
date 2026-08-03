@@ -3,5 +3,6 @@
 COMPRESSOR_REGISTRY = {}
 
 
-def list_compressors():
+def list_compressors() -> Any:
+    """List compressors."""
     return []

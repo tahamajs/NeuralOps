@@ -13,7 +13,7 @@ class MambaShedderCompressor(BaseCompressor):
         self.sparsity = sparsity
         self.device = device
 
-    def _collect_activations(self):
+    def _collect_activations(self) -> Any:
         """Use a small set of generated texts to collect input activations."""
         self.model.eval()
         # Create a simple calibration set from a few sentences
@@ -30,7 +30,8 @@ class MambaShedderCompressor(BaseCompressor):
         activations = {}
         hooks = []
 
-        def hook_fn(module, input, output, name):
+        def hook_fn(module, input, output, name) -> None:
+            """Hook fn."""
             if isinstance(module, nn.Linear):
                 activations[name] = input[0].detach().clone()
 
@@ -48,7 +49,8 @@ class MambaShedderCompressor(BaseCompressor):
             hook.remove()
         return activations
 
-    def _compute_sensitivity(self, activations):
+    def _compute_sensitivity(self, activations) -> Any:
+        """ compute sensitivity."""
         sensitivities = {}
         for name, act in activations.items():
             act_flat = act.view(-1, act.shape[-1])
@@ -56,7 +58,8 @@ class MambaShedderCompressor(BaseCompressor):
             sensitivities[name] = fisher.sqrt()
         return sensitivities
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         print(f"✂️ Applying Mamba-Shedder (sparsity={self.sparsity})...")
         activations = self._collect_activations()
         sensitivities = self._compute_sensitivity(activations)
@@ -79,7 +82,8 @@ class MambaShedderCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("mamba_shedder")
-def mamba_shedder_factory(model, comp_config):
+def mamba_shedder_factory(model, comp_config) -> Any:
+    """Mamba shedder factory."""
     sparsity = getattr(comp_config, "mamba_shedder_sparsity", 0.2)
     tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:

@@ -141,6 +141,7 @@ class SVDProjectionAttention(nn.Module):
     def _init_from_linear(
         self, svd_linear: SVDProjectionLinear, orig_linear: nn.Linear
     ) -> None:
+        """ init from linear."""
         with torch.no_grad():
             W = orig_linear.weight.data.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)

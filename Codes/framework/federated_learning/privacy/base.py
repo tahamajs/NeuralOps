@@ -8,10 +8,10 @@ PRIVACY_REGISTRY = Registry("fl_privacy")
 
 
 class BasePrivacyMechanism(ABC):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         self.config = config
 
     @abstractmethod
-    def apply(self, aggregated_update):
+    def apply(self, aggregated_update) -> None:
         """Apply privacy mechanism to the aggregated update."""
         pass

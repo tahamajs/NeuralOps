@@ -22,7 +22,7 @@ class NevergradOptimizer(BaseOptimizer):
         "random": "RandomSearch",
     }
 
-    def __init__(self, config: HPOConfig):
+    def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)
 
     def optimize(
@@ -30,6 +30,7 @@ class NevergradOptimizer(BaseOptimizer):
         objective_fn: Callable[[Dict[str, Any]], float],
         **kwargs,
     ) -> Tuple[Dict[str, Any], float]:
+        """Optimize."""
         instrumentation = ng.p.Instrumentation(
             **{
                 name: (
@@ -48,7 +49,8 @@ class NevergradOptimizer(BaseOptimizer):
             num_workers=1,
         )
 
-        def wrapped(**params):
+        def wrapped(**params) -> Any:
+            """Wrapped."""
             score = objective_fn(params)
             return -score if self.config.direction == "maximize" else score
 

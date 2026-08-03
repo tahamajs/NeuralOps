@@ -68,6 +68,7 @@ ARCH_PATTERNS: Dict[str, List[str]] = {
 
 
 def detect_architecture(model_name: str) -> str:
+    """Detect architecture."""
     name_lower = model_name.lower()
     if "distilbert" in name_lower:
         return "distilbert"
@@ -89,10 +90,12 @@ def detect_architecture(model_name: str) -> str:
 
 
 def get_layer_patterns(arch: str) -> List[str]:
+    """Return the layer patterns."""
     return ARCH_PATTERNS.get(arch, ARCH_PATTERNS["bert"])
 
 
 def get_compression_targets(model_name: str, include_ffn: bool = True) -> List[str]:
+    """Return the compression targets."""
     arch = detect_architecture(model_name)
     patterns = get_layer_patterns(arch)
     if not include_ffn:
@@ -102,6 +105,7 @@ def get_compression_targets(model_name: str, include_ffn: bool = True) -> List[s
 
 
 def get_model_info(model_name: str) -> Dict[str, Any]:
+    """Return the model info."""
     arch = detect_architecture(model_name)
     default_configs = {
         "bert": {"hidden_size": 768, "num_layers": 12, "num_heads": 12},
@@ -124,6 +128,7 @@ def get_model_info(model_name: str) -> Dict[str, Any]:
 
 
 def get_layer_count(model) -> int:
+    """Return the layer count."""
     if hasattr(model, "config") and hasattr(model.config, "num_hidden_layers"):
         return model.config.num_hidden_layers
     if hasattr(model, "encoder") and hasattr(model.encoder, "layer"):
@@ -134,6 +139,7 @@ def get_layer_count(model) -> int:
 
 
 def get_hidden_size(model) -> int:
+    """Return the hidden size."""
     if hasattr(model, "config") and hasattr(model.config, "hidden_size"):
         return model.config.hidden_size
     return 768

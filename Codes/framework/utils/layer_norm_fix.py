@@ -2,7 +2,8 @@
 import torch.nn as nn
 
 
-def fix_layernorm_naming(model: nn.Module):
+def fix_layernorm_naming(model: nn.Module) -> None:
+    """Fix layernorm naming."""
     for module in model.modules():
         if isinstance(module, nn.LayerNorm):
             state = dict(module.named_parameters())

@@ -9,7 +9,7 @@ HPO_REGISTRY = Registry("hpo_optimizers")
 class BaseOptimizer(ABC):
     """Interface for HPO backends."""
 
-    def __init__(self, config: "HPOConfig"):
+    def __init__(self, config: "HPOConfig") -> None:
         self.config = config
 
     @abstractmethod
@@ -25,11 +25,12 @@ class BaseOptimizer(ABC):
 class BasePruner(ABC):
     """Interface for trial pruners."""
 
-    def __init__(self, config: "HPOConfig"):
+    def __init__(self, config: "HPOConfig") -> None:
         self.config = config
 
     @abstractmethod
     def should_prune(
         self, trial_id: int, intermediate_result: float, step: int
     ) -> bool:
+        """Should prune."""
         pass

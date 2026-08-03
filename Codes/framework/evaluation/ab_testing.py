@@ -18,12 +18,13 @@ class ABTestResult:
 
 
 class ABTester:
-    def __init__(self, alpha: float = 0.05):
+    def __init__(self, alpha: float = 0.05) -> None:
         self.alpha = alpha
 
     def compare(
         self, results_a: Dict[str, List[float]], results_b: Dict[str, List[float]]
     ) -> List[ABTestResult]:
+        """Compare."""
         outcomes = []
         for metric in results_a:
             if metric not in results_b:

@@ -13,7 +13,8 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def plot_error_gallery(history, metrics, config, output_dir, opts):
+def plot_error_gallery(history, metrics, config, output_dir, opts) -> Any:
+    """Plot error gallery."""
     preds_path = Path(output_dir).parent / "artifacts" / "eval_predictions.json"
     if not preds_path.exists():
         logger.info("Error gallery requested but no eval_predictions.json found.")

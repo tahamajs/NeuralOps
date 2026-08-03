@@ -10,5 +10,6 @@ from .base import AGGREGATOR_REGISTRY, BaseAggregator
 class MOONAggregator(BaseAggregator):
     """MOON aggregation (identical to FedAvg on server side)."""
 
-    def aggregate(self, global_model, client_updates, client_weights, round_num):
+    def aggregate(self, global_model, client_updates, client_weights, round_num) -> Any:
+        """Aggregate."""
         return self.compute_weighted_average(client_updates, client_weights)

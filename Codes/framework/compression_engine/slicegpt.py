@@ -33,6 +33,7 @@ class SliceGPTCompressor(BaseCompressor):
         self, save_dir="sliced_model", run_finetuning=False, finetune_nsamples=8000
     ):
         # 1. Save temporary model
+        """Compress the target module using this strategy."""
         temp_path = Path("temp_original_model")
         temp_path.mkdir(exist_ok=True)
         self.model.save_pretrained(temp_path)
@@ -96,7 +97,8 @@ class SliceGPTCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("slicegpt")
-def slicegpt_factory(model, comp_config):
+def slicegpt_factory(model, comp_config) -> Any:
+    """Slicegpt factory."""
     sparsity = getattr(comp_config, "slicegpt_sparsity", 0.25)
     run_finetuning = getattr(comp_config, "slicegpt_run_finetuning", False)
     finetune_nsamples = getattr(comp_config, "slicegpt_finetune_nsamples", 8000)

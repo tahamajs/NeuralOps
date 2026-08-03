@@ -2,7 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_radar_chart(history, metrics, config, output_dir, opts):
+def plot_radar_chart(history, metrics, config, output_dir, opts) -> Any:
+    """Plot radar chart."""
     if not metrics:
         return []
     categories = list(metrics.keys())

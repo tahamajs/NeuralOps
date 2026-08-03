@@ -13,6 +13,7 @@ from .utils import save_figure, set_plot_style
 def generate_csv_summary(
     all_results: Dict[str, Dict], output_path: str
 ) -> pd.DataFrame:
+    """Generate csv summary."""
     rows = []
     for task, rank_results in all_results.items():
         for rank, metrics in rank_results.items():
@@ -31,6 +32,7 @@ def generate_csv_summary(
 def generate_html_report(
     df: pd.DataFrame, output_dir: str, title: str = "Experiment Report"
 ) -> str:
+    """Generate html report."""
     os.makedirs(output_dir, exist_ok=True)
     html = f"""<!DOCTYPE html>
 <html>
@@ -57,6 +59,7 @@ def generate_html_report(
 def generate_latex_table(
     df: pd.DataFrame, output_path: str, caption: str = "Experimental Results"
 ) -> str:
+    """Generate latex table."""
     lines = [
         "\\begin{table}[htbp]",
         "\\centering",
@@ -86,6 +89,7 @@ def plot_accuracy_vs_rank(
     save_path: Optional[str] = None,
     figsize: Tuple[int, int] = (10, 6),
 ) -> plt.Figure:
+    """Plot accuracy vs rank."""
     set_plot_style()
     if task:
         df = df[df["task"] == task]
@@ -119,6 +123,7 @@ def plot_radar_chart(
     save_path: Optional[str] = None,
     figsize: Tuple[int, int] = (8, 8),
 ) -> plt.Figure:
+    """Plot radar chart."""
     set_plot_style()
     angles = np.linspace(0, 2 * np.pi, len(tasks), endpoint=False).tolist()
     angles += angles[:1]

@@ -7,6 +7,6 @@ QUANTIZER_REGISTRY = Registry("quantizers")
 
 class BaseQuantizer(ABC):
     @abstractmethod
-    def apply(self, model, **kwargs):
+    def apply(self, model, **kwargs) -> None:
         """Return the quantized model."""
         pass

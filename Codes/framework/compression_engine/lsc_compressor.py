@@ -11,7 +11,8 @@ class LSCCompressor(BaseCompressor):
         super().__init__(model, name="lsc", **kwargs)
         self.rank = rank
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -29,7 +30,8 @@ class LSCCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("lsc")
-def lsc_factory(model, comp_config):
+def lsc_factory(model, comp_config) -> Any:
+    """Lsc factory."""
     rank = getattr(comp_config, "lsc_rank", 32)
     compressor = LSCCompressor(model, rank=rank)
     compressed_model, _ = compressor.compress()

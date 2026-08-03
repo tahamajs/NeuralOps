@@ -11,7 +11,7 @@ PLOT_REGISTRY = Registry("plots")
 logger = logging.getLogger(__name__)
 
 
-def register_default_plots():
+def register_default_plots() -> None:
     """Call this once to register all built‑in plot types."""
     from .plots.accuracy import plot_accuracy_curve
     from .plots.activation_dist import plot_activation_distribution

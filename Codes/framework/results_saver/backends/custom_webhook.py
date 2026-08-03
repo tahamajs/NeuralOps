@@ -6,7 +6,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def push(run_dir, cfg):
+def push(run_dir, cfg) -> None:
     """POST results to a user-defined webhook URL."""
     webhook_url = cfg.cloud_options.get("custom_webhook_url")
     if not webhook_url:

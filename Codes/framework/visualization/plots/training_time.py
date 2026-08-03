@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 def plot_training_time(history, metrics, config, output_dir, opts):
     # Try to use 'elapsed' field if logged, else estimate
+    """Plot training time."""
     times = [
         h.get("elapsed", i * 0.01)
         for i, h in enumerate(history)

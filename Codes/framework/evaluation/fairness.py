@@ -41,7 +41,7 @@ class FairnessEvaluator:
         report = evaluator.evaluate(predictions, labels, groups={"gender": gender_array})
     """
 
-    def __init__(self, threshold: float = 0.05):
+    def __init__(self, threshold: float = 0.05) -> None:
         self.threshold = threshold
 
     # ── Main API ────────────────────────────────────────────────────
@@ -141,7 +141,7 @@ class FairnessEvaluator:
             return {}
         return fn(preds, labels, groups, favorable)
 
-    def _demographic_parity(self, preds, labels, groups, favorable):
+    def _demographic_parity(self, preds, labels, groups, favorable) -> Any:
         """Selection rate parity: P(Ŷ=1|A=a) should be equal for all groups."""
         result = {}
         for attr, vals in groups.items():
@@ -150,7 +150,7 @@ class FairnessEvaluator:
                 result[f"{attr}={val}"] = np.mean(preds[mask] == favorable)
         return result
 
-    def _equalized_odds(self, preds, labels, groups, favorable):
+    def _equalized_odds(self, preds, labels, groups, favorable) -> Any:
         """TPR and FPR should be equal across groups. We report TPR."""
         result = {}
         for attr, vals in groups.items():
@@ -165,11 +165,11 @@ class FairnessEvaluator:
                     result[f"{attr}={val}"] = 0.0
         return result
 
-    def _equal_opportunity(self, preds, labels, groups, favorable):
+    def _equal_opportunity(self, preds, labels, groups, favorable) -> Any:
         """TPR equality (a stricter form of equalized odds)."""
         return self._equalized_odds(preds, labels, groups, favorable)
 
-    def _predictive_parity(self, preds, labels, groups, favorable):
+    def _predictive_parity(self, preds, labels, groups, favorable) -> Any:
         """PPV equality: P(Y=1|Ŷ=1,A=a) equal across groups."""
         result = {}
         for attr, vals in groups.items():
@@ -184,7 +184,7 @@ class FairnessEvaluator:
                     result[f"{attr}={val}"] = 0.0
         return result
 
-    def _treatment_equality(self, preds, labels, groups, favorable):
+    def _treatment_equality(self, preds, labels, groups, favorable) -> Any:
         """Ratio of FN to FP should be equal."""
         result = {}
         for attr, vals in groups.items():
@@ -195,7 +195,7 @@ class FairnessEvaluator:
                 result[f"{attr}={val}"] = fn / max(fp, 1)
         return result
 
-    def _overall_accuracy_equality(self, preds, labels, groups, favorable):
+    def _overall_accuracy_equality(self, preds, labels, groups, favorable) -> Any:
         """Accuracy equality across groups."""
         result = {}
         for attr, vals in groups.items():
@@ -204,11 +204,11 @@ class FairnessEvaluator:
                 result[f"{attr}={val}"] = np.mean(preds[mask] == labels[mask])
         return result
 
-    def _conditional_demographic_parity(self, preds, labels, groups, favorable):
+    def _conditional_demographic_parity(self, preds, labels, groups, favorable) -> Any:
         """Demographic parity conditioned on a legitimate feature (proxy)."""
         return self._demographic_parity(preds, labels, groups, favorable)
 
-    def _disparate_impact(self, preds, labels, groups, favorable):
+    def _disparate_impact(self, preds, labels, groups, favorable) -> Any:
         """Ratio of selection rates between unprivileged and privileged groups."""
         result = self._demographic_parity(preds, labels, groups, favorable)
         if len(result) >= 2:
@@ -217,7 +217,7 @@ class FairnessEvaluator:
             return {"disparate_impact_ratio": ratio}
         return {"disparate_impact_ratio": 1.0}
 
-    def _statistical_parity_diff(self, preds, labels, groups, favorable):
+    def _statistical_parity_diff(self, preds, labels, groups, favorable) -> Any:
         """Max difference in selection rates."""
         result = self._demographic_parity(preds, labels, groups, favorable)
         if result:
@@ -239,6 +239,7 @@ class FairnessEvaluator:
     def _generate_suggestions(
         self, metrics: Dict[str, Dict[str, float]], threshold: float
     ) -> List[str]:
+        """ generate suggestions."""
         suggestions = []
         # Check demographic parity
         dp = metrics.get("demographic_parity", {})

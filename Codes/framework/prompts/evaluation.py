@@ -47,12 +47,13 @@ class PromptEvaluation:
 
     @property
     def feedback_ratio(self) -> float:
+        """Feedback ratio."""
         total = self.user_feedback_positive + self.user_feedback_negative
         return self.user_feedback_positive / total if total > 0 else 0.0
 
     def log_request(
         self, latency_ms: float, tokens: int, cost: float, feedback: int = 0
-    ):
+    ) -> None:
         """Log a single request's statistics."""
         self.requests += 1
         self.avg_latency_ms = (
@@ -68,10 +69,12 @@ class PromptEvaluation:
             self.user_feedback_negative += 1
         self.last_evaluated_at = datetime.now().isoformat()
 
-    def add_custom_metric(self, name: str, value: float, unit: str = ""):
+    def add_custom_metric(self, name: str, value: float, unit: str = "") -> None:
+        """Add custom metric."""
         self.custom_metrics.append(EvalMetric(name=name, value=value, unit=unit))
 
     def to_dict(self) -> dict:
+        """To dict."""
         return {
             "prompt_name": self.prompt_name,
             "version": self.version,

@@ -12,11 +12,12 @@ logger = logging.getLogger(__name__)
 class SVDAttentionCallback(TrainerCallback):
     """Periodically computes SVD of attention projection weights and logs condition numbers."""
 
-    def __init__(self, layer_interval: int = 2, log_every_steps: int = 500):
+    def __init__(self, layer_interval: int = 2, log_every_steps: int = 500) -> None:
         self.layer_interval = layer_interval
         self.log_every_steps = log_every_steps
 
-    def on_step_end(self, args, state, control, **kwargs):
+    def on_step_end(self, args, state, control, **kwargs) -> None:
+        """On step end."""
         model = kwargs.get("model")
         if model is None or state.global_step % self.log_every_steps != 0:
             return
@@ -50,13 +51,14 @@ class AttentionHeatmapCallback(TrainerCallback):
 
     def __init__(
         self, output_dir: str, sample_inputs: dict = None, log_every_steps: int = 1000
-    ):
+    ) -> None:
         self.output_dir = output_dir
         self.sample_inputs = sample_inputs  # dict with input_ids, attention_mask, token_type_ids (optional)
         self.log_every_steps = log_every_steps
         os.makedirs(output_dir, exist_ok=True)
 
-    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs) -> None:
+        """On evaluate."""
         if state.global_step % self.log_every_steps != 0 or self.sample_inputs is None:
             return
         model = kwargs.get("model")
@@ -97,7 +99,8 @@ class AttentionHeatmapCallback(TrainerCallback):
 class GradientNormCallback(TrainerCallback):
     """Logs the L2 norm of gradients after each optimizer step."""
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
+    def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+        """On log."""
         if logs is None:
             return
         model = kwargs.get("model")
@@ -115,11 +118,12 @@ class GradientNormCallback(TrainerCallback):
 class LayerwiseAnalysisCallback(TrainerCallback):
     """Computes intrinsic dimension / effective rank of hidden representations."""
 
-    def __init__(self, log_every_steps: int = 2000, sample_inputs: dict = None):
+    def __init__(self, log_every_steps: int = 2000, sample_inputs: dict = None) -> None:
         self.log_every_steps = log_every_steps
         self.sample_inputs = sample_inputs
 
-    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs) -> None:
+        """On evaluate."""
         if state.global_step % self.log_every_steps != 0 or self.sample_inputs is None:
             return
         model = kwargs.get("model")
@@ -158,11 +162,12 @@ class LayerwiseAnalysisCallback(TrainerCallback):
 class ActivationStatsCallback(TrainerCallback):
     """Collects mean/std of activations during evaluation."""
 
-    def __init__(self, sample_inputs: dict = None):
+    def __init__(self, sample_inputs: dict = None) -> None:
         self.sample_inputs = sample_inputs
         self.stats = []
 
-    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs) -> None:
+        """On evaluate."""
         if self.sample_inputs is None:
             return
         model = kwargs.get("model")

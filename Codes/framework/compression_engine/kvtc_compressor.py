@@ -41,7 +41,8 @@ class KVTCCompressor(BaseCompressor):
         self.bits = bits
         self.pca_energy = pca_energy
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         total_compression = 0.0
         layers_compressed = 0
 
@@ -86,7 +87,8 @@ class KVTCCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kvtc")
-def kvtc_factory(model, comp_config):
+def kvtc_factory(model, comp_config) -> Any:
+    """Kvtc factory."""
     bits = getattr(comp_config, "kvtc_bits", 4)
     pca_energy = getattr(comp_config, "kvtc_pca_energy", 0.95)
     compressor = KVTCCompressor(model, bits=bits, pca_energy=pca_energy)

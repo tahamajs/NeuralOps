@@ -86,4 +86,5 @@ def inject_attention(
 
 
 def available_attention_types() -> list:
+    """Available attention types."""
     return ATTENTION_REGISTRY.keys()

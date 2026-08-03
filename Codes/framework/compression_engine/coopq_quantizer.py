@@ -10,7 +10,8 @@ class CoopQQuantizer(BaseCompressor):
         super().__init__(model, name="coopq", **kwargs)
         self.bits = bits
 
-    def _quantize_layer(self, module, bits):
+    def _quantize_layer(self, module, bits) -> None:
+        """ quantize layer."""
         W = module.weight.data.float()
         min_v, max_v = W.min(), W.max()
         if max_v == min_v:
@@ -26,7 +27,8 @@ class CoopQQuantizer(BaseCompressor):
                     torch.round((module.bias.data - min_b) / scale_b) * scale_b + min_b
                 )
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         sensitivities = {}
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
@@ -42,7 +44,8 @@ class CoopQQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("coopq")
-def coopq_factory(model, comp_config):
+def coopq_factory(model, comp_config) -> Any:
+    """Coopq factory."""
     bits = getattr(comp_config, "coopq_bits", 4)
     compressor = CoopQQuantizer(model, bits)
     compressed_model, _ = compressor.compress()

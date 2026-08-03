@@ -11,7 +11,8 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 logger = logging.getLogger(__name__)
 
 
-def plot_precision_recall_by_class(history, metrics, config, output_dir, opts):
+def plot_precision_recall_by_class(history, metrics, config, output_dir, opts) -> Any:
+    """Plot precision recall by class."""
     preds_path = Path(output_dir).parent / "artifacts" / "eval_predictions.json"
     if not preds_path.exists():
         return []

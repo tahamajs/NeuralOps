@@ -11,7 +11,7 @@ import torch.nn as nn
 class BaseAttention(nn.Module):
     """Every custom attention module must inherit from this."""
 
-    def __init__(self, config, rank: Optional[int] = None):
+    def __init__(self, config, rank: Optional[int] = None) -> None:
         super().__init__()
         self.config = config
         self.rank = rank
@@ -32,13 +32,14 @@ class BaseAttention(nn.Module):
         pass
 
     def extra_repr(self) -> str:
+        """Extra repr."""
         return f"num_heads={self.num_heads}, head_dim={self.head_dim}, rank={self.rank}"
 
 
 class BaseCompressor:
     """Base class for all compressors. Not a nn.Module to avoid parameter storage."""
 
-    def __init__(self, model: nn.Module, name: str = "base", **kwargs):
+    def __init__(self, model: nn.Module, name: str = "base", **kwargs) -> None:
         self.model = model
         self.name = name
         self.kwargs = kwargs
@@ -50,9 +51,11 @@ class BaseCompressor:
         pass
 
     def _count_params(self, model: nn.Module) -> int:
+        """ count params."""
         return sum(p.numel() for p in model.parameters())
 
     def get_compression_stats(self) -> Dict[str, Any]:
+        """Return the compression stats."""
         compressed = self._count_params(self.model)
         orig = self._original_params
         return {
@@ -67,6 +70,7 @@ class BaseCompressor:
         }
 
     def summary(self) -> str:
+        """Summary."""
         s = self.get_compression_stats()
         return (
             f"\n========================================\n"

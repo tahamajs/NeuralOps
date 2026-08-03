@@ -44,7 +44,7 @@ class MegaOrchestrator:
         log_callback: Optional[Callable] = None,
         final_callback: Optional[Callable] = None,
         stop_event: Optional[threading.Event] = None,
-    ):
+    ) -> None:
         self.raw_config = config
         self.run_id = run_id
         self.base_dir = Path(base_dir)
@@ -146,12 +146,14 @@ class MegaOrchestrator:
             self._log(f"Experiment failed: {traceback.format_exc()}")
             raise
 
-    def _build_experiment_config(self):
+    def _build_experiment_config(self) -> Any:
+        """ build experiment config."""
         from framework.data.dataset_loader import ExperimentConfig
 
         return ExperimentConfig(dataset_name=self.cfg.training.task)
 
-    def _preprocess_dataset(self, dataset):
+    def _preprocess_dataset(self, dataset) -> Any:
+        """ preprocess dataset."""
         task = self.cfg.training.task
         s1, s2 = None, None
         from framework.data.glue_loader import GLUE_TASK_KEYS
@@ -171,7 +173,8 @@ class MegaOrchestrator:
             label_column="label",
         )
 
-        def preprocess(examples):
+        def preprocess(examples) -> Any:
+            """Preprocess."""
             return preprocess_function(examples, self.tokenizer, data_cfg)
 
         tokenized = dataset.map(
@@ -182,7 +185,8 @@ class MegaOrchestrator:
         )
         return tokenized
 
-    def _log(self, msg: str):
+    def _log(self, msg: str) -> None:
+        """ log."""
         logger.info("[%s] %s", self.run_id[:8], msg)
         if self.log_cb:
             self.log_cb(msg)

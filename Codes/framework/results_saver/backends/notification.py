@@ -3,7 +3,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def notify(run_id, success, metrics, cfg):
+def notify(run_id, success, metrics, cfg) -> None:
+    """Notify."""
     n = cfg.notification
     if not n:
         return

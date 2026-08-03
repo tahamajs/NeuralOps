@@ -28,6 +28,7 @@ def apply_variants(
     **kwargs,
 ):
     # 1. Load
+    """Apply variants."""
     loader_cls = LOADER_REGISTRY.resolve(loader)
     model, tokenizer = loader_cls().load(model_name, num_labels=num_labels, **kwargs)
 

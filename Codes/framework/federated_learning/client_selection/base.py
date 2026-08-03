@@ -9,7 +9,7 @@ SELECTOR_REGISTRY = Registry("fl_client_selectors")
 
 
 class BaseSelector(ABC):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         self.config = config
 
     @abstractmethod

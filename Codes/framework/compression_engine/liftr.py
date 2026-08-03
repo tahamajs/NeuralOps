@@ -14,7 +14,8 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 class _LinearizedGELU(nn.Module):
     """Linear approximation of GELU: 0.5 * x + 0.5 * sqrt(2/π) * x ≈ 0.8 * x"""
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
+        """Forward pass."""
         return 0.8 * x
 
 
@@ -34,6 +35,7 @@ class _LinearizedAttention(nn.Module):
 
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         # Compute Q, K, V (linear projections)
+        """Forward pass."""
         self.q_lin(hidden_states)
         self.k_lin(hidden_states)
         v = self.v_lin(hidden_states)
@@ -68,7 +70,7 @@ class LIFTRCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _linearize_module(self, module: nn.Module):
+    def _linearize_module(self, module: nn.Module) -> None:
         """Recursively replace non‑linear layers and attention modules."""
         for name, child in list(module.named_children()):
             # Replace activation functions

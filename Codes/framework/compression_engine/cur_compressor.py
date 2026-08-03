@@ -49,6 +49,7 @@ class CURLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Reconstruct approximated weight: W_approx = C @ U @ R
         # Compute efficiently: (x @ R.T) @ U.T @ C.T
+        """Forward pass."""
         xR = x @ self.R.T  # (B, N, rank)
         xRU = xR @ self.U.T  # (B, N, rank)
         out = xRU @ self.C.T  # (B, N, out_features)
@@ -57,7 +58,7 @@ class CURLinear(nn.Module):
         return out
 
     @classmethod
-    def from_linear(cls, linear: nn.Linear, rank: int, method: str = "leverage"):
+    def from_linear(cls, linear: nn.Linear, rank: int, method: str = "leverage") -> Any:
         """Create a CURLinear from an existing nn.Linear using CUR decomposition."""
         device = linear.weight.device
         W = linear.weight.data.float().cpu().numpy()
@@ -152,7 +153,8 @@ class CURCompressor(BaseCompressor):
         return self.model, self.get_compression_stats()
 
     @staticmethod
-    def _get_parent_module(model: nn.Module, full_name: str):
+    def _get_parent_module(model: nn.Module, full_name: str) -> Any:
+        """ get parent module."""
         parts = full_name.split(".")
         parent = model
         for part in parts[:-1]:

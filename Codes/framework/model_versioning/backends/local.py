@@ -1,12 +1,15 @@
-def upload(local_path, **kwargs):
+def upload(local_path, **kwargs) -> None:
+    """Upload."""
     pass  # already on disk
 
 
-def download(local_path, **kwargs):
+def download(local_path, **kwargs) -> None:
+    """Download."""
     pass  # assumed to exist
 
 
-def delete(local_path, **kwargs):
+def delete(local_path, **kwargs) -> None:
+    """Delete."""
     import os
     import shutil
 

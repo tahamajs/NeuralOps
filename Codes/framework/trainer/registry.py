@@ -12,8 +12,10 @@ class TrainerRegistry:
     _registry: Dict[str, Type[BaseTrainer]] = {}
 
     @classmethod
-    def register(cls, name: str):
+    def register(cls, name: str) -> Any:
+        """Register."""
         def decorator(klass: Type[BaseTrainer]) -> Type[BaseTrainer]:
+            """Decorator."""
             if not issubclass(klass, BaseTrainer):
                 raise TypeError(f"{klass.__name__} must inherit from BaseTrainer")
             cls._registry[name] = klass
@@ -24,6 +26,7 @@ class TrainerRegistry:
 
     @classmethod
     def get(cls, name: str) -> Type[BaseTrainer]:
+        """Get."""
         if name not in cls._registry:
             raise ValueError(
                 f"Unknown trainer '{name}'. Available: {list(cls._registry.keys())}"
@@ -32,8 +35,10 @@ class TrainerRegistry:
 
     @classmethod
     def list(cls) -> list:
+        """List."""
         return list(cls._registry.keys())
 
     @classmethod
     def create(cls, name: str, **kwargs) -> BaseTrainer:
+        """Create."""
         return cls.get(name)(**kwargs)

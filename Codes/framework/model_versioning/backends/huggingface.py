@@ -3,7 +3,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def push_to_hub(local_dir, repo_name, token=None):
+def push_to_hub(local_dir, repo_name, token=None) -> None:
+    """Push to hub."""
     try:
         from huggingface_hub import HfApi
 

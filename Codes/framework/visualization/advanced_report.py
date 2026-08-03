@@ -7,11 +7,12 @@ import plotly.graph_objects as go
 
 
 class AdvancedReportGenerator:
-    def __init__(self, output_dir: str):
+    def __init__(self, output_dir: str) -> None:
         self.output_dir = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
     def create_rank_evolution_plot(self, df: pd.DataFrame) -> go.Figure:
+        """Build and return rank evolution plot."""
         fig = go.Figure()
         for task in df["task"].unique():
             sub = df[df["task"] == task]
@@ -26,6 +27,7 @@ class AdvancedReportGenerator:
         return fig
 
     def create_model_comparison_plot(self, df: pd.DataFrame) -> go.Figure:
+        """Build and return model comparison plot."""
         fig = go.Figure()
         for model in df["model"].unique():
             sub = df[df["model"] == model]
@@ -40,6 +42,7 @@ class AdvancedReportGenerator:
         return fig
 
     def generate_full_report(self, df: pd.DataFrame, output_path: str) -> str:
+        """Generate full report."""
         rank_plot = self.create_rank_evolution_plot(df)
         model_plot = self.create_model_comparison_plot(df)
         html = f"""<!DOCTYPE html>

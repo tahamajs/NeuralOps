@@ -2,7 +2,7 @@ import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-def replace_attention(model, attention_key, layer_indices=None, **kwargs):
+def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any:
     """
     Replace attention modules in a model with a registered attention block.
 

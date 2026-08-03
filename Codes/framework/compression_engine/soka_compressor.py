@@ -29,6 +29,7 @@ class LowRankLinear(nn.Module):
 
     def forward(self, x):
         # x: (..., in_features)
+        """Forward pass."""
         return F.linear(F.linear(x, self.V), self.U.t()) + self.bias
 
 
@@ -48,6 +49,7 @@ class LowRankCompressor(BaseCompressor):
         self.compressed_layers = []
 
     def _select_rank(self, S: torch.Tensor) -> int:
+        """ select rank."""
         if self.energy_threshold is None:
             return min(self.rank, len(S))
         total = (S**2).sum()
@@ -57,11 +59,13 @@ class LowRankCompressor(BaseCompressor):
         return min(r, len(S))
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Compress the target module using this strategy."""
         self._replace_all_linear()
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _replace_all_linear(self):
+    def _replace_all_linear(self) -> None:
+        """ replace all linear."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float()
@@ -88,7 +92,8 @@ class LowRankCompressor(BaseCompressor):
                     }
                 )
 
-    def _get_parent(self, full_name: str):
+    def _get_parent(self, full_name: str) -> Any:
+        """ get parent."""
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
@@ -98,6 +103,7 @@ class LowRankCompressor(BaseCompressor):
         return parent
 
     def get_compression_stats(self) -> Dict[str, Any]:
+        """Get compression stats."""
         stats = super().get_compression_stats()
         stats.update(
             {
@@ -110,7 +116,8 @@ class LowRankCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("soka")
-def soka_factory(model, comp_config):
+def soka_factory(model, comp_config) -> Any:
+    """Soka factory."""
     rank = getattr(comp_config, "soka_rank", 8)
     energy = getattr(comp_config, "soka_energy", None)
     compressor = LowRankCompressor(model, rank=rank, energy_threshold=energy)

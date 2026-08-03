@@ -22,7 +22,7 @@ class ScikitOptimizer(BaseOptimizer):
         "random": "dummy",
     }
 
-    def __init__(self, config: HPOConfig):
+    def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)
 
     def optimize(
@@ -30,6 +30,7 @@ class ScikitOptimizer(BaseOptimizer):
         objective_fn: Callable[[Dict[str, Any]], float],
         **kwargs,
     ) -> Tuple[Dict[str, Any], float]:
+        """Optimize."""
         dimensions = []
         names = []
         for name, spec in self.config.search_space.items():
@@ -48,7 +49,8 @@ class ScikitOptimizer(BaseOptimizer):
             elif spec["type"] == "categorical":
                 dimensions.append(Categorical(spec["choices"], name=name))
 
-        def wrapped(params_list):
+        def wrapped(params_list) -> Any:
+            """Wrapped."""
             params = dict(zip(names, params_list))
             score = objective_fn(params)
             return -score if self.config.direction == "maximize" else score

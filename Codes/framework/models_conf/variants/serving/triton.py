@@ -3,7 +3,8 @@ from .base import SERVER_REGISTRY, BaseServer
 
 @SERVER_REGISTRY.register("triton")
 class TritonServer(BaseServer):
-    def serve(self, model, **kwargs):
+    def serve(self, model, **kwargs) -> Any:
+        """Serve."""
         try:
             import tritonclient.grpc as grpcclient
         except ImportError:

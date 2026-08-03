@@ -30,7 +30,8 @@ class ElasticState:
     global_step: int = 0
     best_metric: float = 0.0
 
-    def save(self, path: str):
+    def save(self, path: str) -> None:
+        """Save."""
         with open(path, "w") as f:
             json.dump(
                 {
@@ -41,7 +42,8 @@ class ElasticState:
                 f,
             )
 
-    def load(self, path: str):
+    def load(self, path: str) -> None:
+        """Load."""
         if not os.path.exists(path):
             return
         with open(path) as f:
@@ -54,12 +56,13 @@ class ElasticState:
 class ElasticTrainer:
     """Wraps a training loop with elastic scaling and checkpointing."""
 
-    def __init__(self, config: ElasticConfig = None):
+    def __init__(self, config: ElasticConfig = None) -> None:
         self.cfg = config or ElasticConfig()
         self.state = ElasticState()
         os.makedirs(self.cfg.checkpoint_dir, exist_ok=True)
 
     def save_checkpoint(self, model, optimizer) -> str:
+        """Persist checkpoint to disk."""
         path = os.path.join(
             self.cfg.checkpoint_dir, f"ckpt_step_{self.state.global_step}.pt"
         )
@@ -75,6 +78,7 @@ class ElasticTrainer:
         return path
 
     def load_checkpoint(self, model, optimizer) -> Optional[dict]:
+        """Load checkpoint from disk or config."""
         if not os.path.isdir(self.cfg.checkpoint_dir):
             return None
         files = sorted(

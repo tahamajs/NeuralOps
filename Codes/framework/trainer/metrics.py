@@ -10,19 +10,23 @@ from sklearn.metrics import (
 )
 
 
-def compute_accuracy(predictions, labels):
+def compute_accuracy(predictions, labels) -> Any:
+    """Compute and return accuracy."""
     return accuracy_score(labels, predictions)
 
 
-def compute_f1(predictions, labels, average="weighted"):
+def compute_f1(predictions, labels, average="weighted") -> Any:
+    """Compute and return f1."""
     return f1_score(labels, predictions, average=average, zero_division=0)
 
 
-def compute_matthews_corrcoef(predictions, labels):
+def compute_matthews_corrcoef(predictions, labels) -> Any:
+    """Compute and return matthews corrcoef."""
     return matthews_corrcoef(labels, predictions)
 
 
-def compute_pearson_spearman(predictions, labels):
+def compute_pearson_spearman(predictions, labels) -> Any:
+    """Compute and return pearson spearman."""
     pred_flat = np.squeeze(predictions)
     labels_flat = np.squeeze(labels)
     p = pearsonr(pred_flat, labels_flat)[0]
@@ -30,33 +34,37 @@ def compute_pearson_spearman(predictions, labels):
     return {"pearson": p, "spearman": s, "pearson_spearman": (p + s) / 2}
 
 
-def compute_precision_recall(predictions, labels, average="weighted"):
+def compute_precision_recall(predictions, labels, average="weighted") -> Any:
+    """Compute and return precision recall."""
     p, r, _, _ = precision_recall_fscore_support(
         labels, predictions, average=average, zero_division=0
     )
     return {"precision": p, "recall": r}
 
 
-def compute_regression_metrics(predictions, labels):
+def compute_regression_metrics(predictions, labels) -> Any:
+    """Compute and return regression metrics."""
     mse = mean_squared_error(labels, predictions)
     mae = mean_absolute_error(labels, predictions)
     rmse = np.sqrt(mse)
     return {"mse": mse, "mae": mae, "rmse": rmse}
 
 
-def get_task_metrics(task_name: str):
+def get_task_metrics(task_name: str) -> Any:
     """Return a compute_metrics function for a GLUE task."""
     task_name = task_name.lower()
     if task_name == "stsb":
 
-        def fn(p):
+        def fn(p) -> Any:
+            """Fn."""
             preds = np.squeeze(p.predictions)
             labels = p.label_ids
             return compute_pearson_spearman(preds, labels)
 
     elif task_name == "cola":
 
-        def fn(p):
+        def fn(p) -> Any:
+            """Fn."""
             preds = np.argmax(p.predictions, axis=1)
             labels = p.label_ids
             return {
@@ -66,7 +74,8 @@ def get_task_metrics(task_name: str):
 
     elif task_name in ("mrpc", "qqp"):
 
-        def fn(p):
+        def fn(p) -> Any:
+            """Fn."""
             preds = np.argmax(p.predictions, axis=1)
             labels = p.label_ids
             acc = accuracy_score(labels, preds)
@@ -75,7 +84,8 @@ def get_task_metrics(task_name: str):
 
     else:
 
-        def fn(p):
+        def fn(p) -> Any:
+            """Fn."""
             preds = np.argmax(p.predictions, axis=1)
             labels = p.label_ids
             return {
@@ -89,7 +99,8 @@ def get_task_metrics(task_name: str):
     return fn
 
 
-def aggregate_results(results_list):
+def aggregate_results(results_list) -> Any:
+    """Aggregate results."""
     if not results_list:
         return {}
     aggregated = {}

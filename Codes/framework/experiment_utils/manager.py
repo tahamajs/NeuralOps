@@ -62,7 +62,7 @@ class ExperimentManager:
         thread.start()
     """
 
-    def __init__(self, config: FullExperimentConfig):
+    def __init__(self, config: FullExperimentConfig) -> None:
         self.config = config
         # Initialize tracker early – logs everything from the start
         self.tracker = ExperimentTracker(config.tracking_config)
@@ -223,7 +223,7 @@ class ExperimentManager:
     # ------------------------------------------------------------------
     # Helper methods
     # ------------------------------------------------------------------
-    def _build_callbacks(self):
+    def _build_callbacks(self) -> Any:
         """Instantiate callbacks based on config."""
         cbs = []
         callback_names = getattr(self.config, "selected_callbacks", [])
@@ -243,7 +243,7 @@ class ExperimentManager:
             )
         return cbs
 
-    def _build_training_args(self, cfg, output_dir):
+    def _build_training_args(self, cfg, output_dir) -> Any:
         """Create HuggingFace TrainingArguments from config."""
         return TrainingArguments(
             output_dir=output_dir,
@@ -268,24 +268,26 @@ class ExperimentManager:
             gradient_checkpointing=cfg.gradient_checkpointing,
         )
 
-    def _get_loss_fn(self, cfg):
+    def _get_loss_fn(self, cfg) -> Any:
+        """ get loss fn."""
         loss_name = getattr(cfg, "loss_type", "cross_entropy")
         loss_cls = LOSS_REGISTRY.get(loss_name)
         if loss_cls:
             return loss_cls()
         return None
 
-    def _get_optimizer_cls(self, cfg):
+    def _get_optimizer_cls(self, cfg) -> Any:
+        """ get optimizer cls."""
         opt_name = getattr(cfg, "optimizer_type", "adamw")
         return OPTIMIZER_REGISTRY.get(opt_name)
 
-    def _apply_post_training_compression(self, output_dir):
+    def _apply_post_training_compression(self, output_dir) -> None:
         """Run compression after training."""
         from framework.experiment_utils.main import run_compression
 
         run_compression(self.config, output_dir)
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         """Release resources."""
         if self._executor:
             self._executor.shutdown(wait=False)
@@ -293,7 +295,8 @@ class ExperimentManager:
             cleanup_distributed()
 
     @staticmethod
-    def _dummy_event():
+    def _dummy_event() -> Any:
+        """ dummy event."""
         import threading
 
         return threading.Event()

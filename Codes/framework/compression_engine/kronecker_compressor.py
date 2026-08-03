@@ -24,7 +24,8 @@ class KroneckerCompressor(BaseCompressor):
     def __init__(self, model, **kwargs):
         super().__init__(model, name="kronecker", **kwargs)
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 # Replace with KroneckerLinear
@@ -37,7 +38,8 @@ class KroneckerCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _get_parent(self, full_name):
+    def _get_parent(self, full_name) -> Any:
+        """ get parent."""
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
@@ -48,7 +50,8 @@ class KroneckerCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kronecker")
-def kronecker_factory(model, comp_config):
+def kronecker_factory(model, comp_config) -> Any:
+    """Kronecker factory."""
     compressor = KroneckerCompressor(model)  # takes only model
     compressed_model, _ = compressor.compress()
     return compressed_model

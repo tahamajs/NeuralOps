@@ -12,7 +12,8 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         super().__init__(model, name="mgie_budget", **kwargs)
         self.total_rank_budget = total_rank_budget
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         layers = []
         entropies = []
         for name, module in self.model.named_modules():
@@ -44,7 +45,8 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("mgie_budget")
-def mgie_budget_factory(model, comp_config):
+def mgie_budget_factory(model, comp_config) -> Any:
+    """Mgie budget factory."""
     total_rank_budget = getattr(comp_config, "total_rank_budget", 1000)
     compressor = MGIESVDBudgetCompressor(model, total_rank_budget=total_rank_budget)
     compressed_model, _ = compressor.compress()

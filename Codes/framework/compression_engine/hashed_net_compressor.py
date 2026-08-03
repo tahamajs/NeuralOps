@@ -24,7 +24,8 @@ class HashedNetCompressor(BaseCompressor):
         super().__init__(model, name="hashed_net", **kwargs)
         self.n_buckets = n_buckets
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 # Replace with HashedLinear initialized from existing weights
@@ -36,7 +37,8 @@ class HashedNetCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _get_parent(self, full_name):
+    def _get_parent(self, full_name) -> Any:
+        """ get parent."""
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
@@ -47,7 +49,8 @@ class HashedNetCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("hashed_net")
-def hashed_net_factory(model, comp_config):
+def hashed_net_factory(model, comp_config) -> Any:
+    """Hashed net factory."""
     n_buckets = getattr(comp_config, "hashed_net_buckets", 1024)
     compressor = HashedNetCompressor(model, n_buckets=n_buckets)
     compressed_model, _ = compressor.compress()

@@ -42,7 +42,7 @@ class RemoteCoordinator:
         job_id = coord.launch_job(config, workers_needed=2)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._lock = threading.Lock()
         self._workers: Dict[str, RemoteWorker] = {}
 
@@ -83,6 +83,7 @@ class RemoteCoordinator:
                 self._workers[worker_id].status = "idle"
 
     def unregister(self, worker_id: str) -> None:
+        """Unregister."""
         with self._lock:
             self._workers.pop(worker_id, None)
             logger.info("Worker unregistered: %s", worker_id)
@@ -101,6 +102,7 @@ class RemoteCoordinator:
 
     @property
     def total_available_gpus(self) -> int:
+        """Total available gpus."""
         return sum(w.num_gpus for w in self.available_workers)
 
     def select_workers(self, num_gpus_needed: int) -> Optional[List[RemoteWorker]]:

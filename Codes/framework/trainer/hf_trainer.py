@@ -16,7 +16,7 @@ class HuggingFaceTrainer(BaseTrainer):
         results_manager,
         compute_metrics=None,
         **kwargs
-    ):
+    ) -> None:
         self.model = model
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
@@ -26,7 +26,8 @@ class HuggingFaceTrainer(BaseTrainer):
         self.kwargs = kwargs
         self._trainer = None
 
-    def _build(self):
+    def _build(self) -> Any:
+        """ build."""
         output_dir = self.results_manager.get_checkpoint_dir()
         training_args_dict = {
             "output_dir": output_dir,
@@ -60,7 +61,8 @@ class HuggingFaceTrainer(BaseTrainer):
         self._trainer = self.results_manager.wrap_trainer(self._trainer)
         original_train = self._trainer.train
 
-        def train_and_save(*args, **train_kwargs):
+        def train_and_save(*args, **train_kwargs) -> Any:
+            """Train and save."""
             result = original_train(*args, **train_kwargs)
             self.results_manager.save_final_model(self.model)
             self.results_manager.save_plots()
@@ -68,12 +70,14 @@ class HuggingFaceTrainer(BaseTrainer):
 
         self._trainer.train = train_and_save
 
-    def train(self):
+    def train(self) -> Any:
+        """Fit the model on the provided dataset."""
         if self._trainer is None:
             self._build()
         return self._trainer.train()
 
-    def evaluate(self):
+    def evaluate(self) -> Any:
+        """Run evaluate and return results."""
         if self._trainer is None:
             self._build()
         return self._trainer.evaluate()

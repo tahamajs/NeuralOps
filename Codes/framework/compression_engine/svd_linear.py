@@ -27,6 +27,7 @@ class SVDLinearLayer(nn.Module):
 
     def forward(self, x):
         # (x @ Vh^T) * diag(S) @ U^T
+        """Forward pass."""
         x_v = torch.matmul(x, self.Vh.t())
         out = torch.matmul(x_v * self.S.unsqueeze(0), self.U.t())
         if self.bias is not None:

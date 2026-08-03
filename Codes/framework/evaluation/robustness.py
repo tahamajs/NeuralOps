@@ -42,7 +42,7 @@ class TextAdversarialTester:
         report = tester.evaluate(predict_fn, texts, labels)
     """
 
-    def __init__(self, max_perturbation_ratio: float = 0.3, seed: int = 42):
+    def __init__(self, max_perturbation_ratio: float = 0.3, seed: int = 42) -> None:
         self.max_perturbation_ratio = max_perturbation_ratio
         self.seed = seed
         random.seed(seed)
@@ -150,6 +150,7 @@ class TextAdversarialTester:
         return text
 
     def _char_swap(self, text: str) -> str:
+        """ char swap."""
         chars = list(text)
         n = max(1, int(len(chars) * self.max_perturbation_ratio * 0.3))
         for _ in range(n):
@@ -159,6 +160,7 @@ class TextAdversarialTester:
         return "".join(chars)
 
     def _char_delete(self, text: str) -> str:
+        """ char delete."""
         chars = list(text)
         n = max(1, int(len(chars) * self.max_perturbation_ratio * 0.3))
         for _ in range(n):
@@ -168,6 +170,7 @@ class TextAdversarialTester:
         return "".join(chars)
 
     def _word_substitute(self, text: str) -> str:
+        """ word substitute."""
         words = text.split()
         n = max(1, int(len(words) * self.max_perturbation_ratio))
         for _ in range(n):
@@ -191,12 +194,14 @@ class TextAdversarialTester:
         return " ".join(words)
 
     def _word_delete(self, text: str) -> str:
+        """ word delete."""
         words = text.split()
         n = max(1, int(len(words) * self.max_perturbation_ratio))
         indices = set(random.sample(range(len(words)), min(n, len(words))))
         return " ".join(w for i, w in enumerate(words) if i not in indices)
 
     def _word_swap(self, text: str) -> str:
+        """ word swap."""
         words = text.split()
         n = max(1, int(len(words) * self.max_perturbation_ratio * 0.3))
         for _ in range(n):
@@ -227,6 +232,7 @@ class TextAdversarialTester:
         return "".join(chars)
 
     def _insert_punctuation(self, text: str) -> str:
+        """ insert punctuation."""
         words = text.split()
         n = max(1, int(len(words) * self.max_perturbation_ratio * 0.3))
         for _ in range(n):
@@ -235,6 +241,7 @@ class TextAdversarialTester:
         return " ".join(words)
 
     def _repeat_char(self, text: str) -> str:
+        """ repeat char."""
         chars = list(text)
         n = max(1, int(len(chars) * self.max_perturbation_ratio * 0.3))
         for _ in range(n):
@@ -253,6 +260,7 @@ class TextAdversarialTester:
         return diffs / max(len(original), 1)
 
     def _generate_recommendations(self, results: List[Dict]) -> List[str]:
+        """ generate recommendations."""
         recs = []
         for r in results:
             if r.get("success_rate", 0) > 0.3:

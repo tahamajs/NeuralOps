@@ -29,7 +29,7 @@ class TTCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _replace_all_linear(self):
+    def _replace_all_linear(self) -> None:
         """Replace all nn.Linear modules with TTLinearLayer."""
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and not isinstance(module, TTLinearLayer):
@@ -47,9 +47,11 @@ class TTCompressor(BaseCompressor):
                 )
 
     def _count_params(self, module: nn.Module) -> int:
+        """ count params."""
         return sum(p.numel() for p in module.parameters() if p.requires_grad)
 
     def get_compression_stats(self) -> Dict[str, Any]:
+        """Get compression stats."""
         stats = super().get_compression_stats()
         stats.update(
             {

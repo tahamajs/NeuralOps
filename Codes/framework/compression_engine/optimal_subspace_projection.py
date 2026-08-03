@@ -15,10 +15,12 @@ class SubspaceProjectionCompressor(BaseCompressor):
         self.rank_ratio = rank_ratio
         self.power_iters = power_iters
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         act_covs = {}
 
-        def hook_fn(module, input, output):
+        def hook_fn(module, input, output) -> None:
+            """Hook fn."""
             x = input[0].detach()
             x_flat = x.reshape(-1, x.shape[-1]).float()
             cov = x_flat.T @ x_flat / x_flat.shape[0]
@@ -80,6 +82,7 @@ class SubspaceProjectionCompressor(BaseCompressor):
 def subspace_projection_factory(model, comp_config):
     # This compressor requires a calibration_loader, which is not available in the simple test.
     # For the test, we return the model unchanged or raise a clear error.
+    """Subspace projection factory."""
     raise NotImplementedError(
         "subspace_projection requires a calibration_loader; not supported in standalone test."
     )

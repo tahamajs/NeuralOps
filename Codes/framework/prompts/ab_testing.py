@@ -42,7 +42,7 @@ class ABTestRouter:
         alias = router.route("customer_support")   # returns "v1" 80% of the time
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._tests: Dict[str, ABTestConfig] = {}
         self._counters: Dict[str, Dict[str, int]] = {}  # prompt → {variant → requests}
         self._scores: Dict[str, Dict[str, List[float]]] = {}
@@ -81,7 +81,7 @@ class ABTestRouter:
                 return variant
         return list(cfg.variants.keys())[-1]  # fallback
 
-    def record_result(self, prompt_name: str, variant: str, score: float):
+    def record_result(self, prompt_name: str, variant: str, score: float) -> None:
         """Record an outcome for statistical analysis."""
         if prompt_name in self._scores:
             self._scores[prompt_name].setdefault(variant, []).append(score)

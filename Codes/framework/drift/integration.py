@@ -16,6 +16,7 @@ def auto_drift_check(
     config: Optional[DriftConfig] = None,
     output_dir: Optional[Path] = None,
 ) -> "DriftReport":
+    """Auto drift check."""
     cfg = config or DriftConfig()
     detector = DriftDetector(reference_data, cfg)
     report = detector.detect(current_data)

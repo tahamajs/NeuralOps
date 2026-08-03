@@ -147,6 +147,7 @@ class AegisHybridAttention(nn.Module):
         B, N, H_dim = hidden_states.shape
 
         def lr(p1: nn.Linear, p2: nn.Linear, x: torch.Tensor) -> torch.Tensor:
+            """Lr."""
             return p2(p1(x))
 
         Q = lr(self.q_proj1, self.q_proj2, hidden_states)  # (B, N, H_dim)
@@ -193,6 +194,7 @@ class AegisHybridAttention(nn.Module):
 
         # ============== 2. Global linear attention ==============
         def phi(x: torch.Tensor) -> torch.Tensor:
+            """Phi."""
             return F.elu(x) + 1.0
 
         if self.prune_gate is not None:

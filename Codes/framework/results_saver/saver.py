@@ -25,7 +25,7 @@ class ResultsSaver:
 
     def __init__(
         self, run_id: str, base_dir: Path, config: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         self.run_id = run_id
         self.base_dir = Path(base_dir)
         self.run_dir = self.base_dir / run_id
@@ -36,7 +36,8 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # Directory setup
     # ------------------------------------------------------------------
-    def _init_dirs(self):
+    def _init_dirs(self) -> None:
+        """ init dirs."""
         dirs = [self.run_dir]
         if self.cfg.save_logs:
             dirs.append(self.run_dir / "logs")
@@ -54,6 +55,7 @@ class ResultsSaver:
             d.mkdir(parents=True, exist_ok=True)
 
     def should_save_heavy(self, final_metrics: Dict[str, Any]) -> bool:
+        """Should save heavy."""
         threshold = self.cfg.auto_save_if_better_than
         if threshold is None:
             return True
@@ -105,38 +107,46 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
-    def _write_json(self, rel_path: str, obj):
+    def _write_json(self, rel_path: str, obj) -> None:
+        """ write json."""
         fp = self.run_dir / rel_path
         fp.parent.mkdir(exist_ok=True)
         with open(fp, "w") as f:
             json.dump(obj, f, indent=2)
 
-    def _write_text(self, rel_path: str, text: str):
+    def _write_text(self, rel_path: str, text: str) -> None:
+        """ write text."""
         fp = self.run_dir / rel_path
         fp.parent.mkdir(exist_ok=True)
         with open(fp, "w") as f:
             f.write(text)
 
     def _flatten_config(self, config) -> Dict[str, Any]:
+        """ flatten config."""
         if hasattr(config, "__dict__"):
             return vars(config)
         return config
 
-    def _save_config(self, config):
+    def _save_config(self, config) -> None:
+        """ save config."""
         self._write_json("artifacts/config.json", self._flatten_config(config))
 
-    def _save_history(self, history):
+    def _save_history(self, history) -> None:
+        """ save history."""
         self._write_json("artifacts/history.json", history)
 
-    def _save_final_metrics(self, metrics):
+    def _save_final_metrics(self, metrics) -> None:
+        """ save final metrics."""
         self._write_json("artifacts/final_metrics.json", metrics)
 
-    def _save_metrics_log(self, history):
+    def _save_metrics_log(self, history) -> None:
+        """ save metrics log."""
         with open(self.run_dir / "logs" / "metrics.jsonl", "w") as f:
             for entry in history:
                 f.write(json.dumps(entry) + "\n")
 
-    def _save_model(self, model, tokenizer=None):
+    def _save_model(self, model, tokenizer=None) -> None:
+        """ save model."""
         p = self.run_dir / "artifacts" / "model"
         p.mkdir(exist_ok=True)
         model.save_pretrained(str(p))
@@ -147,12 +157,14 @@ class ResultsSaver:
 
             torch.save(model.state_dict(), p / "optimizer.pt")
 
-    def _save_checkpoint(self, model, name="best"):
+    def _save_checkpoint(self, model, name="best") -> None:
+        """ save checkpoint."""
         p = self.run_dir / "checkpoints" / name
         p.mkdir(exist_ok=True)
         model.save_pretrained(str(p))
 
-    def _save_archive(self):
+    def _save_archive(self) -> None:
+        """ save archive."""
         with tarfile.open(self.run_dir / "results.tar.gz", "w:gz") as tar:
             for sub in ["artifacts", "logs", "plots"]:
                 sp = self.run_dir / sub
@@ -162,7 +174,8 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # Plots – delegates to framework.analysis.plotting
     # ------------------------------------------------------------------
-    def _generate_plots(self, history, final_metrics):
+    def _generate_plots(self, history, final_metrics) -> None:
+        """ generate plots."""
         try:
             import matplotlib.pyplot as plt
             from framework.analysis.plotting import (
@@ -180,7 +193,8 @@ class ResultsSaver:
             opts = self.cfg.plot_options
             dpi = opts.get("dpi", 150)
 
-            def save_fig(name, fig):
+            def save_fig(name, fig) -> None:
+                """Persist fig to disk."""
                 fig.savefig(
                     self.run_dir / "plots" / f"{name}.png", dpi=dpi, bbox_inches="tight"
                 )
@@ -267,7 +281,8 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # Model card
     # ------------------------------------------------------------------
-    def _save_model_card(self, config, metrics):
+    def _save_model_card(self, config, metrics) -> None:
+        """ save model card."""
         cfg_dict = (
             self._flatten_config(config) if hasattr(config, "__dict__") else config
         )
@@ -289,7 +304,8 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     # Export formats
     # ------------------------------------------------------------------
-    def _export_format(self, fmt: str, model, input_example):
+    def _export_format(self, fmt: str, model, input_example) -> None:
+        """ export format."""
         try:
             from .backends.exports import EXPORTERS
 
@@ -303,10 +319,12 @@ class ResultsSaver:
     # Push to storage backends
     # ------------------------------------------------------------------
     def push_all(self) -> None:
+        """Push all."""
         for be in self.cfg.storage_backends:
             self._push_backend(be)
 
-    def _push_backend(self, name: str):
+    def _push_backend(self, name: str) -> None:
+        """ push backend."""
         try:
             if name == "local":
                 return
@@ -323,6 +341,7 @@ class ResultsSaver:
     # Git / DVC
     # ------------------------------------------------------------------
     def git_commit_and_push(self) -> None:
+        """Git commit and push."""
         if not self.cfg.git_options.get("commit_results"):
             return
         from .backends.git import git_commit_and_push
@@ -330,6 +349,7 @@ class ResultsSaver:
         git_commit_and_push(self.run_dir, self.cfg)
 
     def dvc_track(self) -> None:
+        """Dvc track."""
         if not self.cfg.dvc_options.get("track_model"):
             return
         from .backends.dvc import dvc_track
@@ -340,6 +360,7 @@ class ResultsSaver:
     # Experiment trackers (legacy backends – prefer framework.tracking)
     # ------------------------------------------------------------------
     def track_all(self, metrics: Dict[str, Any], params: Dict[str, Any]) -> None:
+        """Track all."""
         for t in self.cfg.experiment_trackers:
             try:
                 mod = __import__(
@@ -355,6 +376,7 @@ class ResultsSaver:
     # Model registries
     # ------------------------------------------------------------------
     def push_to_registries(self) -> None:
+        """Push to registries."""
         for r in self.cfg.model_registries:
             try:
                 mod = __import__(
@@ -370,6 +392,7 @@ class ResultsSaver:
     # GitHub Release
     # ------------------------------------------------------------------
     def create_github_release(self, metrics: Dict[str, Any]) -> Optional[str]:
+        """Build and return github release."""
         if not self.cfg.release_options.get("create_github_release"):
             return None
         from .backends.github_release import create_release
@@ -380,6 +403,7 @@ class ResultsSaver:
     # Notifications
     # ------------------------------------------------------------------
     def notify(self, success: bool, metrics: Dict[str, Any]) -> None:
+        """Notify."""
         from .backends.notification import notify
 
         notify(self.run_id, success, metrics, self.cfg)

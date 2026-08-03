@@ -16,11 +16,12 @@ class LoggingCallback(TrainerCallback):
         trainer.add_callback(LoggingCallback(tracker, logger))
     """
 
-    def __init__(self, tracker: MetricsTracker, logger: logging.Logger):
+    def __init__(self, tracker: MetricsTracker, logger: logging.Logger) -> None:
         self.tracker = tracker
         self.logger = logger
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
+    def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+        """On log."""
         if logs:
             step = state.global_step
             self.tracker.log(logs, step=step)
@@ -37,7 +38,8 @@ class LoggingCallback(TrainerCallback):
                 msg += f"lr={lr:.2e}"
             self.logger.info(msg)
 
-    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs) -> None:
+        """On evaluate."""
         if metrics:
             self.logger.info("=== Evaluation ===")
             for k, v in metrics.items():
@@ -48,6 +50,7 @@ class LoggingCallback(TrainerCallback):
             self.tracker.log(metrics, step=state.global_step)
             self.tracker.flush()
 
-    def on_train_end(self, args, state, control, **kwargs):
+    def on_train_end(self, args, state, control, **kwargs) -> None:
+        """On train end."""
         self.tracker.save()
         self.logger.info("Training finished. Metrics saved.")

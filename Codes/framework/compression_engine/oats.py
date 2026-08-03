@@ -25,10 +25,12 @@ class OATSCompressor(BaseCompressor):
         self.num_iters = num_iters
         self.device = device
 
-    def _compute_second_moment(self, inputs):
+    def _compute_second_moment(self, inputs) -> Any:
+        """ compute second moment."""
         return (inputs.T @ inputs) / inputs.shape[0]
 
-    def _oats_decompose(self, W, M, sparsity, rank_ratio, num_iters):
+    def _oats_decompose(self, W, M, sparsity, rank_ratio, num_iters) -> Any:
+        """ oats decompose."""
         L_chol = torch.linalg.cholesky(M)
         W_scaled = W @ L_chol.T
         U, s, Vt = np.linalg.svd(W_scaled.cpu().numpy(), full_matrices=False)
@@ -53,7 +55,8 @@ class OATSCompressor(BaseCompressor):
         W_compressed = torch.from_numpy(L + S).float() @ L_chol.T
         return W_compressed.to(W.device)
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         print(
             f"✂️ Applying OATS (sparsity={self.sparsity}, rank_ratio={self.rank_ratio})..."
         )
@@ -80,7 +83,8 @@ class OATSCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("oats")
-def oats_compressor_factory(model, comp_config):
+def oats_compressor_factory(model, comp_config) -> Any:
+    """Oats compressor factory."""
     sparsity = getattr(comp_config, "oats_sparsity", 0.5)
     rank_ratio = getattr(comp_config, "oats_rank_ratio", 0.2)
     num_iters = getattr(comp_config, "oats_num_iters", 5)

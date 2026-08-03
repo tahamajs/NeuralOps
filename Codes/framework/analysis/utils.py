@@ -13,6 +13,7 @@ def filter_results(
     ranks: Optional[List[int]] = None,
     min_accuracy: Optional[float] = None,
 ) -> pd.DataFrame:
+    """Filter results."""
     result = df.copy()
     if models:
         result = result[result["model"].isin(models)]
@@ -26,6 +27,7 @@ def filter_results(
 
 
 def get_best_configurations(df: pd.DataFrame, metric: str = "accuracy") -> pd.DataFrame:
+    """Return the best configurations."""
     best_rows = []
     for (task, model), group in df.groupby(["task", "model"]):
         if metric in group.columns:
@@ -35,12 +37,14 @@ def get_best_configurations(df: pd.DataFrame, metric: str = "accuracy") -> pd.Da
 
 
 def correlation_matrix(df: pd.DataFrame, columns: List[str]) -> pd.DataFrame:
+    """Correlation matrix."""
     return df[columns].corr()
 
 
 def statistical_tests(
     df: pd.DataFrame, group_col: str, value_col: str
 ) -> Dict[str, Any]:
+    """Statistical tests."""
     from scipy import stats
 
     groups = [g[1][value_col].dropna() for g in df.groupby(group_col)]
@@ -57,6 +61,7 @@ def statistical_tests(
 def detect_least_compressible_layers(
     model, tokenizer, calibration_texts: List[str], k: int = 5
 ) -> List[int]:
+    """Detect least compressible layers."""
     from .layerwise_analyzer import LayerwiseAnalyzer
 
     analyzer = LayerwiseAnalyzer(model, tokenizer)

@@ -119,13 +119,14 @@ class DriftDetector:
 
     def __init__(
         self, reference_data: Dict[str, np.ndarray], config: "DriftConfig" = None
-    ):
+    ) -> None:
         from .config import DriftConfig
 
         self.reference = {k: np.array(v) for k, v in reference_data.items()}
         self.config = config or DriftConfig()
 
     def detect(self, current_data: Dict[str, np.ndarray]) -> "DriftReport":
+        """Detect."""
         from .report import DriftReport, FeatureDriftReport
 
         current = {k: np.array(v) for k, v in current_data.items()}
@@ -198,11 +199,13 @@ class DriftDetector:
         )
 
     def _multivariate_drift(self, ref: dict, cur: dict) -> Dict[str, Any]:
+        """ multivariate drift."""
         if self.config.multivariate_method == "domain_classifier":
             return self._domain_classifier_drift(ref, cur)
         return self._pca_drift(ref, cur)
 
     def _pca_drift(self, ref: dict, cur: dict) -> Dict[str, Any]:
+        """ pca drift."""
         from sklearn.decomposition import PCA
 
         features = [
@@ -226,6 +229,7 @@ class DriftDetector:
         }
 
     def _domain_classifier_drift(self, ref: dict, cur: dict) -> Dict[str, Any]:
+        """ domain classifier drift."""
         from sklearn.linear_model import LogisticRegression
 
         features = [

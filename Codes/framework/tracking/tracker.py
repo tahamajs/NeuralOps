@@ -42,7 +42,7 @@ class ExperimentTracker:
         project: Optional[str] = None,
         config_dict: Optional[Dict[str, Any]] = None,
         tracking_uri: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Args:
             backend: "local", "tensorboard", "wandb", or "mlflow".

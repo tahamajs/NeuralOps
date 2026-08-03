@@ -130,12 +130,14 @@ class LowRankLinear(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
+        """Reset parameters."""
         nn.init.orthogonal_(self.U)
         nn.init.orthogonal_(self.V)
         if self.bias is not None:
             nn.init.zeros_(self.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward."""
         Vx = F.linear(x, self.V)
         out = F.linear(Vx, self.U)
         if self.bias is not None:
@@ -210,6 +212,7 @@ class LoLAAttention(BaseAttention):
         self.sparse_gate: nn.Parameter = nn.Parameter(torch.tensor(0.5))
 
     def _init_from_linear(self, lowrank: LowRankLinear, orig: nn.Linear) -> None:
+        """ init from linear."""
         with torch.no_grad():
             W = orig.weight.data.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)

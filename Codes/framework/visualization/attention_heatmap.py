@@ -19,7 +19,7 @@ except ImportError:
 
 @VISUALIZER_REGISTRY.register("attention_heatmap")
 class AttentionHeatmapVisualizer(BaseVisualizer):
-    def __init__(self, config=None, output_dir="visualizations"):
+    def __init__(self, config=None, output_dir="visualizations") -> None:
         super().__init__(output_dir)
         self.config = config or {}
         self.defaults = {
@@ -47,7 +47,8 @@ class AttentionHeatmapVisualizer(BaseVisualizer):
         }
         self.defaults.update(self.config)
 
-    def generate(self, attention_matrix, output_path=None, **kwargs):
+    def generate(self, attention_matrix, output_path=None, **kwargs) -> Any:
+        """Generate."""
         opts = self.defaults.copy()
         opts.update(kwargs)
 
@@ -89,7 +90,8 @@ class AttentionHeatmapVisualizer(BaseVisualizer):
                 att, output_path, opts, is_multihead, n_heads
             )
 
-    def _normalize(self, att, method):
+    def _normalize(self, att, method) -> Any:
+        """ normalize."""
         if method == "none":
             return att
         if method == "row":
@@ -103,7 +105,8 @@ class AttentionHeatmapVisualizer(BaseVisualizer):
             return exp_att / exp_att.sum()
         raise ValueError(f"Unknown normalization: {method}")
 
-    def _matplotlib_heatmap(self, att, output_path, opts, is_multihead, n_heads):
+    def _matplotlib_heatmap(self, att, output_path, opts, is_multihead, n_heads) -> Any:
+        """ matplotlib heatmap."""
         sns.set_theme(style="white", font_scale=1.0)
         if not is_multihead:
             fig, ax = plt.subplots(figsize=opts["figsize"], dpi=opts["dpi"])
@@ -150,7 +153,8 @@ class AttentionHeatmapVisualizer(BaseVisualizer):
                 out_path = None
             return self._handle_output(fig, out_path, opts)
 
-    def _draw(self, ax, data, opts):
+    def _draw(self, ax, data, opts) -> None:
+        """ draw."""
         mask = np.eye(data.shape[0], dtype=bool) if opts["mask_diagonal"] else None
         sns.heatmap(
             data,
@@ -166,7 +170,8 @@ class AttentionHeatmapVisualizer(BaseVisualizer):
             yticklabels=False,
         )
 
-    def _apply_tick_labels(self, ax, n, opts):
+    def _apply_tick_labels(self, ax, n, opts) -> None:
+        """ apply tick labels."""
         if n <= 20 and not opts.get("hide_ticks", False):
             ax.set_xticks(np.arange(n) + 0.5)
             ax.set_xticklabels(
@@ -180,7 +185,8 @@ class AttentionHeatmapVisualizer(BaseVisualizer):
             ax.set_xticks([])
             ax.set_yticks([])
 
-    def _plotly_heatmap(self, att, output_path, opts, is_multihead):
+    def _plotly_heatmap(self, att, output_path, opts, is_multihead) -> Any:
+        """ plotly heatmap."""
         if not PLOTLY_AVAILABLE:
             raise ImportError("Plotly not installed")
         if is_multihead:
@@ -231,7 +237,8 @@ class AttentionHeatmapVisualizer(BaseVisualizer):
             return output_path
         return fig
 
-    def _handle_output(self, fig, output_path, opts):
+    def _handle_output(self, fig, output_path, opts) -> Any:
+        """ handle output."""
         if output_path:
             path = self._add_extension(output_path, opts["save_ext"])
             fig.savefig(path, bbox_inches="tight", dpi=opts["dpi"])
@@ -239,7 +246,8 @@ class AttentionHeatmapVisualizer(BaseVisualizer):
             return path
         return fig
 
-    def _add_extension(self, path, ext):
+    def _add_extension(self, path, ext) -> Any:
+        """ add extension."""
         if not path:
             return None
         if not os.path.splitext(path)[1]:

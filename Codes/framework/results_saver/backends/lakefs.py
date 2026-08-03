@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def push(run_dir, cfg):
+def push(run_dir, cfg) -> None:
     """Commit results to a lakeFS branch."""
     try:
         import lakefs

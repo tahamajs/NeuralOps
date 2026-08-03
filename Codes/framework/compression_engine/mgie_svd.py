@@ -10,7 +10,8 @@ class MGIECompressor(BaseCompressor):
     def __init__(self, model, **kwargs):
         super().__init__(model, name="mgie", **kwargs)
 
-    def _compress_layer(self, W):
+    def _compress_layer(self, W) -> Any:
+        """ compress layer."""
         U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
         p = S / S.sum()
         entropy = -torch.sum(p * torch.log(p + 1e-8))
@@ -21,7 +22,8 @@ class MGIECompressor(BaseCompressor):
         rank = min(rank, max_rank)
         return U[:, :rank] @ torch.diag(S[:rank]) @ Vt[:rank, :]
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 module.weight.data = self._compress_layer(module.weight.data)
@@ -30,7 +32,8 @@ class MGIECompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("mgie")
-def mgie_factory(model, comp_config):
+def mgie_factory(model, comp_config) -> Any:
+    """Mgie factory."""
     compressor = MGIECompressor(model)  # takes only model
     compressed_model, _ = compressor.compress()
     return compressed_model

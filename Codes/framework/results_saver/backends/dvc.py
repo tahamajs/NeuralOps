@@ -5,7 +5,8 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 
-def dvc_track(run_dir, cfg):
+def dvc_track(run_dir, cfg) -> None:
+    """Dvc track."""
     try:
         subprocess.run(["dvc", "--version"], capture_output=True, check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):

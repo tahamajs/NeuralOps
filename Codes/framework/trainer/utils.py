@@ -21,6 +21,7 @@ def train_model(
     num_labels: int,
     is_multichoice: bool = False,
 ) -> Dict[str, float]:
+    """Train model."""
     model.to(device)
     model.train()
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
@@ -73,6 +74,7 @@ def evaluate_model(
     is_multichoice=False,
     compute_all_metrics=False,
 ) -> Union[float, Dict[str, float]]:
+    """Evaluate model."""
     model.eval()
     all_preds, all_labels = [], []
     with torch.no_grad():
@@ -113,6 +115,7 @@ def evaluate_model(
 
 
 def benchmark_model(model, data_loader, device, warmup=2) -> Dict[str, float]:
+    """Benchmark model."""
     model.eval()
     for i, batch in enumerate(data_loader):
         if i >= warmup:
@@ -164,6 +167,7 @@ def benchmark_model(model, data_loader, device, warmup=2) -> Dict[str, float]:
 
 
 def count_parameters(model, trainable_only=True) -> int:
+    """Count parameters."""
     return (
         sum(p.numel() for p in model.parameters() if p.requires_grad)
         if trainable_only
@@ -171,7 +175,8 @@ def count_parameters(model, trainable_only=True) -> int:
     )
 
 
-def compute_metrics(eval_pred, task: str = "classification"):
+def compute_metrics(eval_pred, task: str = "classification") -> Any:
+    """Compute and return metrics."""
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=-1)
     metrics = {"accuracy": accuracy_score(labels, preds)}
@@ -182,13 +187,15 @@ def compute_metrics(eval_pred, task: str = "classification"):
     return metrics
 
 
-def save_training_history(history: List[Dict[str, Any]], save_path: str):
+def save_training_history(history: List[Dict[str, Any]], save_path: str) -> None:
+    """Persist training history to disk."""
     Path(save_path).parent.mkdir(parents=True, exist_ok=True)
     with open(save_path, "w") as f:
         json.dump(history, f, indent=2)
 
 
-def plot_training_curves(history: List[Dict[str, Any]], save_path: str):
+def plot_training_curves(history: List[Dict[str, Any]], save_path: str) -> None:
+    """Plot training curves."""
     import matplotlib.pyplot as plt
 
     losses = [h.get("loss") for h in history if "loss" in h]

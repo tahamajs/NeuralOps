@@ -7,6 +7,7 @@ import yaml
 
 
 def load_config(config_path: str) -> Dict[str, Any]:
+    """Load config from disk or config."""
     path = Path(config_path)
     if not path.exists():
         raise FileNotFoundError(f"Config file not found: {path}")
@@ -18,7 +19,8 @@ def load_config(config_path: str) -> Dict[str, Any]:
             return json.load(f)
 
 
-def save_config(config: Dict[str, Any], config_path: str):
+def save_config(config: Dict[str, Any], config_path: str) -> None:
+    """Persist config to disk."""
     path = Path(config_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.suffix in (".yaml", ".yml"):
@@ -30,6 +32,7 @@ def save_config(config: Dict[str, Any], config_path: str):
 
 
 def update_config(config: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, Any]:
+    """Update config."""
     for key, value in updates.items():
         if key in config and isinstance(config[key], dict) and isinstance(value, dict):
             config[key] = update_config(config[key], value)
@@ -39,5 +42,6 @@ def update_config(config: Dict[str, Any], updates: Dict[str, Any]) -> Dict[str, 
 
 
 def merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """Merge configs."""
     result = base.copy()
     return update_config(result, override)

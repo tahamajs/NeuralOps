@@ -3,7 +3,8 @@ from .base import SERVER_REGISTRY, BaseServer
 
 @SERVER_REGISTRY.register("ray_serve")
 class RayServeServer(BaseServer):
-    def serve(self, model, **kwargs):
+    def serve(self, model, **kwargs) -> Any:
+        """Serve."""
         try:
             from ray import serve
 
@@ -12,7 +13,7 @@ class RayServeServer(BaseServer):
             # Simplified placeholder
             @serve.deployment
             class ModelDeployment:
-                def __init__(self, model):
+                def __init__(self, model) -> None:
                     self.model = model
 
                 def __call__(self, request):

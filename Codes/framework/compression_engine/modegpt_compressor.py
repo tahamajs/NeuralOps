@@ -28,6 +28,7 @@ class MoDeGPTCompressor(BaseCompressor):
     def compress(self):
         # Identify pairs of Linear layers in transformer blocks
         # A simple heuristic: look for 'q_lin' and 'k_lin' in the same parent module.
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if hasattr(module, "q_lin") and hasattr(module, "k_lin"):
                 q_lin = module.q_lin
@@ -50,7 +51,8 @@ class MoDeGPTCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("modegpt")
-def modegpt_factory(model, comp_config):
+def modegpt_factory(model, comp_config) -> Any:
+    """Modegpt factory."""
     rank = getattr(comp_config, "modegpt_rank", 64)
     method = getattr(comp_config, "modegpt_method", "cr")
     compressor = MoDeGPTCompressor(model, rank=rank, method=method)

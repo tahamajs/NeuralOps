@@ -10,7 +10,7 @@ from typing import Optional, Tuple
 class CustomPromptBackend(ABC):
     """Interface for custom prompt storage backends."""
 
-    def __init__(self, config: dict = None):
+    def __init__(self, config: dict = None) -> None:
         self.config = config or {}
 
     @abstractmethod

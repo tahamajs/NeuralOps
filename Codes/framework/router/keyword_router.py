@@ -153,7 +153,7 @@ class KeywordRouter(BaseRouter):
         use_word_boundaries: bool = True,
         min_confidence: float = 0.3,
         default_task: str = "factual",
-    ):
+    ) -> None:
         self.keywords = keywords or DEFAULT_KEYWORDS
         self.case_sensitive = case_sensitive
         self.use_word_boundaries = use_word_boundaries
@@ -162,7 +162,8 @@ class KeywordRouter(BaseRouter):
         self._patterns = {}
         self._compile_patterns()
 
-    def _compile_patterns(self):
+    def _compile_patterns(self) -> None:
+        """ compile patterns."""
         for task, word_weights in self.keywords.items():
             if self.use_word_boundaries:
                 pattern = r"\b(" + "|".join(re.escape(w) for w in word_weights) + r")\b"
@@ -172,6 +173,7 @@ class KeywordRouter(BaseRouter):
             self._patterns[task] = re.compile(pattern, flags)
 
     def route(self, text: str) -> Tuple[str, Dict[str, float]]:
+        """Route."""
         scores = defaultdict(float)
         text_proc = text if self.case_sensitive else text.lower()
         for task, pattern in self._patterns.items():
@@ -192,9 +194,11 @@ class KeywordRouter(BaseRouter):
         return best, probs
 
     def can_route(self, text: str) -> bool:
+        """Can route."""
         return True
 
-    def add_keywords(self, task: str, word_weights: Dict[str, float]):
+    def add_keywords(self, task: str, word_weights: Dict[str, float]) -> None:
+        """Add keywords."""
         if task not in self.keywords:
             self.keywords[task] = {}
         self.keywords[task].update(word_weights)

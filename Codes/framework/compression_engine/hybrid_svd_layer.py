@@ -19,7 +19,8 @@ class SVDSingleHead(nn.Module):
         self.svd_rank = svd_rank
         self.register_buffer("pos_encoding", None)
 
-    def forward(self, hidden_states):
+    def forward(self, hidden_states) -> Any:
+        """Forward pass."""
         batch_size, seq_len, _ = hidden_states.shape
 
         # Sinusoidal positional encoding (if not already present)
@@ -90,7 +91,8 @@ class DirectSVDEncoderLayer(nn.Module):
         output_attentions=False,
         output_hidden_states=False,
         return_dict=True,
-    ):
+    ) -> Any:
+        """Forward pass."""
         residual = hidden_states
         normed = self.input_layernorm(hidden_states)
         svd_out = self.svd_layer(normed)
@@ -118,7 +120,8 @@ class DirectSVDCompressor(BaseCompressor):
         super().__init__(model, name="direct_svd", **kwargs)
         self.svd_rank = svd_rank
 
-    def compress(self):
+    def compress(self) -> None:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             # We assume the model has an attribute 'encoder' with layers
             if "encoder.layer" in name:
@@ -134,7 +137,8 @@ class DirectSVDCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("direct_svd")
-def direct_svd_factory(model, comp_config):
+def direct_svd_factory(model, comp_config) -> Any:
+    """Direct svd factory."""
     svd_rank = getattr(comp_config, "direct_svd_rank", 20)
     compressor = DirectSVDCompressor(model, svd_rank=svd_rank)
     compressed_model, _ = compressor.compress()

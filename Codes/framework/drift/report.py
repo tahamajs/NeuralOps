@@ -29,20 +29,24 @@ class DriftReport:
 
     @property
     def n_features_drifted(self) -> int:
+        """N features drifted."""
         return sum(
             1 for f in self.features if any(m["drifted"] for m in f.methods.values())
         )
 
     @property
     def n_features_tested(self) -> int:
+        """N features tested."""
         return len(self.features)
 
     @property
     def drift_percentage(self) -> float:
+        """Drift percentage."""
         n = self.n_features_tested
         return round(self.n_features_drifted / max(n, 1) * 100, 1)
 
     def to_dict(self) -> Dict[str, Any]:
+        """To dict."""
         return {
             "generated_at": self.generated_at,
             "n_features_tested": self.n_features_tested,
@@ -62,6 +66,7 @@ class DriftReport:
         }
 
     def save(self, path: str) -> str:
+        """Save."""
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w") as f:
             json.dump(self.to_dict(), f, indent=2, default=str)
@@ -69,6 +74,7 @@ class DriftReport:
 
     @classmethod
     def load(cls, path: str) -> "DriftReport":
+        """Load."""
         with open(path, "r") as f:
             data = json.load(f)
         features = [FeatureDriftReport(**f) for f in data.pop("features", [])]

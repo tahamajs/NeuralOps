@@ -5,5 +5,6 @@ from .magnitude_pruning import MagnitudePruning
 from .movement_pruning import MovementPruning
 
 
-def list_compressors():
+def list_compressors() -> Any:
+    """List compressors."""
     return list(COMPRESSOR_REGISTRY.keys())

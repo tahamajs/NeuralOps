@@ -7,7 +7,8 @@ from .base import PEFT_REGISTRY, BasePEFT
 
 @PEFT_REGISTRY.register("qlora")
 class QLoRAPEFT(BasePEFT):
-    def apply(self, model, r=8, lora_alpha=16, lora_dropout=0.1, **kwargs):
+    def apply(self, model, r=8, lora_alpha=16, lora_dropout=0.1, **kwargs) -> Any:
+        """Execute the apply operation and return results."""
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16
         )

@@ -28,6 +28,7 @@ class BaseRouter(ABC):
         pass
 
     def route_with_metadata(self, text: str) -> RouteResult:
+        """Route with metadata."""
         start = time.perf_counter()
         task, scores = self.route(text)
         elapsed_ms = (time.perf_counter() - start) * 1000
@@ -44,6 +45,7 @@ class BaseRouter(ABC):
         )
 
     def batch_route(self, texts: List[str]) -> List[RouteResult]:
+        """Batch route."""
         return [self.route_with_metadata(t) for t in texts]
 
     @abstractmethod
@@ -57,12 +59,15 @@ class TrainableRouter(BaseRouter, ABC):
 
     @abstractmethod
     def train(self, texts: List[str], labels: List[str], **kwargs) -> "TrainableRouter":
+        """Fit the model on the provided dataset."""
         pass
 
     @abstractmethod
-    def save(self, path: str):
+    def save(self, path: str) -> None:
+        """Save."""
         pass
 
     @abstractmethod
-    def load(self, path: str):
+    def load(self, path: str) -> None:
+        """Load."""
         pass

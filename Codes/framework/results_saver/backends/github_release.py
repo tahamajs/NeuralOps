@@ -4,7 +4,8 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def create_release(run_id, run_dir, metrics, cfg):
+def create_release(run_id, run_dir, metrics, cfg) -> Any:
+    """Build and return release."""
     try:
         from github import Github
     except ImportError:

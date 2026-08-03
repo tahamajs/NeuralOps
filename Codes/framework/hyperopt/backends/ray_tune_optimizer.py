@@ -22,7 +22,7 @@ class RayTuneOptimizer(BaseOptimizer):
         "hyperband": "HyperBand",
     }
 
-    def __init__(self, config: HPOConfig):
+    def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)
         try:
             from ray import tune
@@ -37,6 +37,7 @@ class RayTuneOptimizer(BaseOptimizer):
         objective_fn: Callable[[Dict[str, Any]], float],
         **kwargs,
     ) -> Tuple[Dict[str, Any], float]:
+        """Optimize."""
         config = {}
         for name, spec in self.config.search_space.items():
             if spec["type"] == "float":
@@ -61,7 +62,8 @@ class RayTuneOptimizer(BaseOptimizer):
         else:
             search_alg = None
 
-        def trainable(config_dict):
+        def trainable(config_dict) -> Any:
+            """Trainable."""
             return {"score": objective_fn(config_dict)}
 
         analysis = self.tune.run(

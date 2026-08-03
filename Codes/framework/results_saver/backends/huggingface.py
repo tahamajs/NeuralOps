@@ -4,7 +4,8 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def push(run_id, run_dir, cfg):
+def push(run_id, run_dir, cfg) -> None:
+    """Push."""
     try:
         from huggingface_hub import HfApi
     except ImportError:

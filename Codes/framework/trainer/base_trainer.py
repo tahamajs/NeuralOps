@@ -7,8 +7,10 @@ class BaseTrainer(ABC):
 
     @abstractmethod
     def train(self) -> Dict[str, Any]:
+        """Fit the model on the provided dataset."""
         pass
 
     @abstractmethod
     def evaluate(self) -> Dict[str, Any]:
+        """Run evaluate and return results."""
         pass

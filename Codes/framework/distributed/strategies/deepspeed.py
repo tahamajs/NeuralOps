@@ -10,7 +10,8 @@ except ImportError:
 
 @STRATEGY_REGISTRY.register("deepspeed")
 class DeepSpeedStrategy(BaseStrategy):
-    def wrap_model(self, model, **kwargs):
+    def wrap_model(self, model, **kwargs) -> Any:
+        """Wrap model."""
         if deepspeed is None:
             raise ImportError(
                 "DeepSpeedStrategy requires the optional 'deepspeed' package."
@@ -30,8 +31,10 @@ class DeepSpeedStrategy(BaseStrategy):
         )
         return engine
 
-    def setup(self):
+    def setup(self) -> None:
+        """Initialise resources and configuration."""
         pass  # DeepSpeed does its own init
 
-    def cleanup(self):
+    def cleanup(self) -> None:
+        """Cleanup."""
         pass

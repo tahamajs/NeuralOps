@@ -86,7 +86,7 @@ class RetrainingOrchestrator:
             orch.trigger_retraining(run_id="model-v3", training_fn=my_train_func)
     """
 
-    def __init__(self, policy: RetrainPolicy = None):
+    def __init__(self, policy: RetrainPolicy = None) -> None:
         self.policy = policy or RetrainPolicy()
         self._retrain_count_today: int = 0
         self._last_retrain_date: str = ""
@@ -157,6 +157,7 @@ class RetrainingOrchestrator:
     def _check_performance(
         self, current: Dict[str, float], reference: Dict[str, float]
     ) -> RetrainDecision:
+        """ check performance."""
         acc_key = "accuracy" if "accuracy" in current else "eval_accuracy"
         curr_acc = current.get(acc_key, 1.0)
         ref_acc = reference.get(acc_key, 1.0)
@@ -189,6 +190,7 @@ class RetrainingOrchestrator:
         )
 
     def _check_drift(self, drift_report) -> RetrainDecision:
+        """ check drift."""
         n_drifted = getattr(drift_report, "n_features_drifted", 0)
         n_total = getattr(drift_report, "n_features_tested", 1)
         ratio = n_drifted / max(n_total, 1)
@@ -206,6 +208,7 @@ class RetrainingOrchestrator:
         )
 
     def _check_data_volume(self, new_count: int) -> RetrainDecision:
+        """ check data volume."""
         if new_count >= self.policy.min_new_samples:
             return RetrainDecision(
                 should_retrain=True,
@@ -217,6 +220,7 @@ class RetrainingOrchestrator:
         return RetrainDecision(should_retrain=False, reason="Insufficient new data")
 
     def _check_schedule(self, days_since: int) -> RetrainDecision:
+        """ check schedule."""
         if days_since >= self.policy.max_days_since_last_train:
             return RetrainDecision(
                 should_retrain=True,

@@ -55,7 +55,8 @@ class CURLinear(nn.Module):
         else:
             self.register_parameter("bias", None)
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
+        """Forward pass."""
         W_approx = self.C @ self.U @ self.R
         y = x @ W_approx.T
         if self.bias is not None:

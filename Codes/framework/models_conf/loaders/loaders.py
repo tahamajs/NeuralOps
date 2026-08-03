@@ -3,5 +3,6 @@
 LOADER_REGISTRY = {}
 
 
-def list_loaders():
+def list_loaders() -> Any:
+    """List loaders."""
     return []

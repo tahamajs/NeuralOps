@@ -15,11 +15,13 @@ class EntropyBudgetCompressor(BaseCompressor):
         self.calibration_loader = calibration_loader
         self.total_budget_ratio = total_budget_ratio
 
-    def collect_covariances(self):
+    def collect_covariances(self) -> Any:
+        """Collect covariances."""
         activations = {}
         hooks = []
 
-        def hook_fn(module, input, output, name):
+        def hook_fn(module, input, output, name) -> None:
+            """Hook fn."""
             x = input[0].detach()
             x_flat = x.reshape(-1, x.shape[-1]).float()
             cov = x_flat.T @ x_flat / x_flat.shape[0]
@@ -47,7 +49,8 @@ class EntropyBudgetCompressor(BaseCompressor):
             h.remove()
         return activations
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         components = []
         covs = self.collect_covariances()
         for name, module in self.model.named_modules():
@@ -80,7 +83,8 @@ class EntropyBudgetCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("entropy_budget")
-def entropy_budget_factory(model, comp_config):
+def entropy_budget_factory(model, comp_config) -> None:
+    """Entropy budget factory."""
     raise NotImplementedError(
         "entropy_budget compressor requires a calibration_loader; not supported in standalone test."
     )

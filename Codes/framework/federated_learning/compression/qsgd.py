@@ -7,12 +7,13 @@ from .base import COMPRESSION_REGISTRY, BaseCompressor
 
 @COMPRESSION_REGISTRY.register("qsgd")
 class QSGDCompressor(BaseCompressor):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.num_bits = config.compression_quantization_bits
         self.levels = 2**self.num_bits - 1
 
-    def compress(self, update):
+    def compress(self, update) -> Any:
+        """Compress the target module or tensor."""
         compressed = {}
         for k, v in update.items():
             norm = np.linalg.norm(v)
@@ -24,7 +25,8 @@ class QSGDCompressor(BaseCompressor):
                 compressed[k] = (quantized, norm, v.shape)
         return compressed
 
-    def decompress(self, compressed):
+    def decompress(self, compressed) -> Any:
+        """Decompress the target module or tensor."""
         decompressed = {}
         for k, (quantized, norm, shape) in compressed.items():
             if isinstance(quantized, np.ndarray) and quantized.size > 1:
@@ -35,7 +37,7 @@ class QSGDCompressor(BaseCompressor):
                 decompressed[k] = np.zeros(shape)
         return decompressed
 
-    def _stochastic_quantize(self, arr):
+    def _stochastic_quantize(self, arr) -> Any:
         """Stochastic quantization to {0, 1/(levels-1), ..., 1}."""
         arr = np.abs(arr) / np.max(np.abs(arr)) if np.max(np.abs(arr)) > 0 else arr
         bins = np.linspace(0, 1, self.levels)

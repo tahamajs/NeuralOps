@@ -25,6 +25,7 @@ class PromptVersion:
 
     @staticmethod
     def compute_id(prompt_name: str, template: str, ts: str) -> str:
+        """Compute and return id."""
         raw = f"{prompt_name}:{template}:{ts}"
         return hashlib.sha256(raw.encode()).hexdigest()[:12]
 
@@ -32,11 +33,12 @@ class PromptVersion:
 class VersionHistory:
     """Manages the version chain for a single prompt."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.versions: List[PromptVersion] = []
         self._current_number: int = 0
 
     def add(self, version: PromptVersion) -> None:
+        """Add."""
         version.parent_version = (
             self._current_number if self._current_number > 0 else None
         )
@@ -45,12 +47,14 @@ class VersionHistory:
         self.versions.append(version)
 
     def get(self, version_number: int) -> Optional[PromptVersion]:
+        """Get."""
         for v in self.versions:
             if v.version_number == version_number:
                 return v
         return None
 
     def latest(self) -> Optional[PromptVersion]:
+        """Latest."""
         return self.versions[-1] if self.versions else None
 
     def diff(self, v1: int, v2: Optional[int] = None) -> str:
@@ -75,6 +79,7 @@ class VersionHistory:
         return [v for v in self.versions if v.version_number < version_number]
 
     def to_list(self) -> List[dict]:
+        """To list."""
         return [
             {
                 "version_number": v.version_number,

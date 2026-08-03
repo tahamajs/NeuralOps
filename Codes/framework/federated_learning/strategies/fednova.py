@@ -12,6 +12,7 @@ class FedNovaAggregator(BaseAggregator):
     def aggregate(self, global_model, client_updates, client_weights, round_num):
         # Normalize by number of local steps (tau_i)
         # Here we assume client_weights includes tau_i
+        """Aggregate."""
         normalized_updates = []
         normalized_weights = []
         for i, update in enumerate(client_updates):

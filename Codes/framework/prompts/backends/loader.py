@@ -25,7 +25,7 @@ class PromptLoader:
         registry: PromptRegistry,
         hot_load: bool = False,
         refresh_interval: int = 60,
-    ):
+    ) -> None:
         self.registry = registry
         self.hot_load = hot_load
         self.refresh_interval = refresh_interval
@@ -38,9 +38,11 @@ class PromptLoader:
     def get(
         self, name: str, version: int = None, alias: str = "production"
     ) -> Union[PromptTemplate, ChatPromptTemplate]:
+        """Get."""
         return self.registry.load(name, version=version, alias=alias)
 
-    def _refresh_loop(self):
+    def _refresh_loop(self) -> None:
+        """ refresh loop."""
         while not self._stop.is_set():
             time.sleep(self.refresh_interval)
             try:
@@ -51,5 +53,6 @@ class PromptLoader:
             except Exception as e:
                 logger.error("Hot‑load refresh failed: %s", e)
 
-    def stop(self):
+    def stop(self) -> None:
+        """Stop."""
         self._stop.set()

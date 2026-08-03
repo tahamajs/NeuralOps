@@ -5,5 +5,6 @@ from .safetensors_loader import SafeTensorsLoader
 from .unsloth_loader import UnslothLoader
 
 
-def list_loaders():
+def list_loaders() -> Any:
+    """List loaders."""
     return list(LOADER_REGISTRY.keys())

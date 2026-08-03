@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 def plot_rank_allocation(history, metrics, config, output_dir, opts):
     # Expects per‑layer rank information stored during training in a JSON file
+    """Plot rank allocation."""
     rank_path = output_dir.parent / "artifacts" / "rank_allocation.json"
     if not rank_path.exists():
         return []

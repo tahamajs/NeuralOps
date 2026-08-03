@@ -12,6 +12,7 @@ def run_hpo_experiment(
     objective_fn: Callable[[Dict[str, Any]], float],
     output_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
+    """Run hpo experiment."""
     cfg = HPOConfig(
         **{k: v for k, v in config_dict.items() if k in HPOConfig.__dataclass_fields__}
     )

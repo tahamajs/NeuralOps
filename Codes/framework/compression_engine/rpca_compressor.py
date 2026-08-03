@@ -13,7 +13,8 @@ class RPCACompressor(BaseCompressor):
         self.mu = mu
         self.max_iter = max_iter
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -35,7 +36,8 @@ class RPCACompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("rpca")
-def rpca_compressor_factory(model, comp_config):
+def rpca_compressor_factory(model, comp_config) -> Any:
+    """Rpca compressor factory."""
     rank = getattr(comp_config, "rpca_rank", 64)
     mu = getattr(comp_config, "rpca_mu", 1e-3)
     max_iter = getattr(comp_config, "rpca_max_iter", 5)

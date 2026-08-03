@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 def plot_gradient_flow(history, metrics, config, output_dir, opts):
     # Expects 'grad_norm' entries in history
+    """Plot gradient flow."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "grad_norm" in h]
     norms = [h["grad_norm"] for h in history if "grad_norm" in h]
     if not steps:

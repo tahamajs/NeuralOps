@@ -12,4 +12,5 @@ class SecureAggregation(BasePrivacyMechanism):
 
     def apply(self, aggregated_update):
         # No additional noise; security is assumed from the protocol itself
+        """Execute the apply operation and return results."""
         return aggregated_update

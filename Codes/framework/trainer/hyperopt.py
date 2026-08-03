@@ -21,7 +21,7 @@ class HyperparameterOptimizer:
         study_name: str = "svd_attention_opt",
         storage: Optional[str] = None,
         direction: str = "maximize",
-    ):
+    ) -> None:
         if not _HAS_OPTUNA:
             raise ImportError("optuna is required. pip install optuna")
         self.train_fn = train_fn
@@ -34,6 +34,7 @@ class HyperparameterOptimizer:
         self.best_params = None
 
     def objective(self, trial) -> float:
+        """Objective."""
         config = self.config_template.copy()
         config["learning_rate"] = trial.suggest_float(
             "learning_rate", 1e-6, 5e-5, log=True
@@ -62,6 +63,7 @@ class HyperparameterOptimizer:
         n_jobs: int = 1,
         show_progress_bar: bool = True,
     ) -> Dict[str, Any]:
+        """Execute the run operation and return results."""
         self.study = optuna.create_study(
             direction=self.direction,
             study_name=self.study_name,
@@ -85,16 +87,19 @@ class HyperparameterOptimizer:
         return self.best_params
 
     def get_trial_dataframe(self) -> pd.DataFrame:
+        """Return the trial dataframe."""
         if self.study is None:
             raise ValueError("Run optimization first")
         return self.study.trials_dataframe()
 
     def get_importance(self) -> Dict[str, float]:
+        """Return the importance."""
         if self.study is None:
             raise ValueError("Run optimization first")
         return optuna.importance.get_param_importances(self.study)
 
-    def plot_optimization_history(self, save_path=None):
+    def plot_optimization_history(self, save_path=None) -> Any:
+        """Plot optimization history."""
         if self.study is None:
             raise ValueError("Run optimization first")
         fig = optuna.visualization.plot_optimization_history(self.study)
@@ -102,7 +107,8 @@ class HyperparameterOptimizer:
             fig.write_image(save_path)
         return fig
 
-    def plot_parallel_coordinate(self, save_path=None):
+    def plot_parallel_coordinate(self, save_path=None) -> Any:
+        """Plot parallel coordinate."""
         if self.study is None:
             raise ValueError("Run optimization first")
         fig = optuna.visualization.plot_parallel_coordinate(self.study)
@@ -110,7 +116,8 @@ class HyperparameterOptimizer:
             fig.write_image(save_path)
         return fig
 
-    def plot_param_importances(self, save_path=None):
+    def plot_param_importances(self, save_path=None) -> Any:
+        """Plot param importances."""
         if self.study is None:
             raise ValueError("Run optimization first")
         fig = optuna.visualization.plot_param_importances(self.study)
@@ -120,7 +127,7 @@ class HyperparameterOptimizer:
 
 
 class PrunedHyperparameterOptimizer(HyperparameterOptimizer):
-    def __init__(self, *args, pruner="median", **kwargs):
+    def __init__(self, *args, pruner="median", **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if pruner == "median":
             self.pruner = optuna.pruners.MedianPruner()
@@ -135,6 +142,7 @@ class PrunedHyperparameterOptimizer(HyperparameterOptimizer):
 def quick_optimize(
     train_fn, eval_fn, n_trials=10, study_name="quick_opt"
 ) -> Dict[str, Any]:
+    """Quick optimize."""
     config_template = {
         "learning_rate": 2e-5,
         "batch_size": 16,

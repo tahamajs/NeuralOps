@@ -8,7 +8,7 @@ from .base import AGGREGATOR_REGISTRY, BaseAggregator
 class FedOptAggregator(BaseAggregator):
     """Base class for FedOpt family (FedAdam, FedYogi, FedAdagrad)."""
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.beta1 = 0.9
         self.beta2 = 0.99
@@ -18,6 +18,7 @@ class FedOptAggregator(BaseAggregator):
 
     def aggregate(self, global_model, client_updates, client_weights, round_num):
         # Compute pseudo-gradient (difference from previous global)
+        """Aggregate."""
         avg_update = self.compute_weighted_average(client_updates, client_weights)
 
         # Initialise momentum buffers if needed
@@ -49,7 +50,8 @@ class FedAdamAggregator(FedOptAggregator):
 class FedYogiAggregator(FedOptAggregator):
     """FedYogi: uses sign‑based adaptive update."""
 
-    def aggregate(self, global_model, client_updates, client_weights, round_num):
+    def aggregate(self, global_model, client_updates, client_weights, round_num) -> Any:
+        """Aggregate."""
         avg_update = self.compute_weighted_average(client_updates, client_weights)
         if not self.m:
             for k in avg_update:
@@ -72,7 +74,8 @@ class FedYogiAggregator(FedOptAggregator):
 class FedAdagradAggregator(FedOptAggregator):
     """FedAdagrad: only second‑moment accumulator."""
 
-    def aggregate(self, global_model, client_updates, client_weights, round_num):
+    def aggregate(self, global_model, client_updates, client_weights, round_num) -> Any:
+        """Aggregate."""
         avg_update = self.compute_weighted_average(client_updates, client_weights)
         if not self.v:
             for k in avg_update:

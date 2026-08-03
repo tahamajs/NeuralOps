@@ -14,7 +14,8 @@ from .registry import register_method
 logger = logging.getLogger(__name__)
 
 
-def rdrop_loss(logits1, logits2, labels, is_regression, alpha):
+def rdrop_loss(logits1, logits2, labels, is_regression, alpha) -> Any:
+    """Rdrop loss."""
     if is_regression:
         loss_fn = nn.MSELoss()
         loss1 = loss_fn(logits1.view(-1), labels.view(-1))
@@ -43,7 +44,8 @@ def rdrop_loss(logits1, logits2, labels, is_regression, alpha):
 
 def r3f_forward(
     model, input_ids, attention_mask, token_type_ids, labels, epsilon, is_regression
-):
+) -> Any:
+    """R3f forward."""
     base_kwargs = {
         "input_ids": input_ids,
         "attention_mask": attention_mask,
@@ -92,14 +94,15 @@ def r3f_forward(
 class MethodTrainer(Trainer):
     def __init__(
         self, method, rdrop_alpha, r3f_epsilon, is_regression, *args, **kwargs
-    ):
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.method = method
         self.rdrop_alpha = rdrop_alpha
         self.r3f_epsilon = r3f_epsilon
         self.is_regression = is_regression
 
-    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+    def compute_loss(self, model, inputs, return_outputs=False, **kwargs) -> Any:
+        """Compute and return loss."""
         if "rdrop" in self.method.lower():
             outputs1 = model(**inputs)
             outputs2 = model(**inputs)
@@ -126,10 +129,12 @@ class MethodTrainer(Trainer):
 
 
 @register_method("rdrop")
-def apply_rdrop(model, config):
+def apply_rdrop(model, config) -> None:
+    """Apply rdrop."""
     pass
 
 
 @register_method("r3f")
-def apply_r3f(model, config):
+def apply_r3f(model, config) -> None:
+    """Apply r3f."""
     pass

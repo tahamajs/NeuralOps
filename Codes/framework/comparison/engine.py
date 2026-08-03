@@ -43,7 +43,7 @@ class ComparisonResult:
 
 
 class ComparisonEngine:
-    def __init__(self):
+    def __init__(self) -> None:
         self._groups: Dict[str, np.ndarray] = {}
 
     def load_from_dirs(
@@ -51,7 +51,8 @@ class ComparisonEngine:
         dirs: List[Union[str, Path]],
         group_names: Optional[List[str]] = None,
         metric: str = "eval_accuracy",
-    ):
+    ) -> None:
+        """Load from dirs from disk or config."""
         for i, d in enumerate(dirs):
             name = group_names[i] if group_names else Path(d).name
             metrics_path = Path(d) / "artifacts" / "final_metrics.json"
@@ -72,15 +73,18 @@ class ComparisonEngine:
         df: pd.DataFrame,
         group_col: str = "model",
         metric_col: str = "eval_accuracy",
-    ):
+    ) -> None:
+        """Load from dataframe from disk or config."""
         for group, sub in df.groupby(group_col):
             self._groups[group] = sub[metric_col].dropna().to_numpy()
 
-    def load_from_dict(self, data: Dict[str, List[float]]):
+    def load_from_dict(self, data: Dict[str, List[float]]) -> None:
+        """Load from dict from disk or config."""
         for k, v in data.items():
             self._groups[k] = np.array(v)
 
-    def add_group(self, name: str, scores: Union[List[float], np.ndarray]):
+    def add_group(self, name: str, scores: Union[List[float], np.ndarray]) -> None:
+        """Add group."""
         self._groups[name] = np.array(scores)
 
     def compare(
@@ -90,6 +94,7 @@ class ComparisonEngine:
         generate_plots: bool = True,
         output_dir: Optional[str] = None,
     ) -> ComparisonResult:
+        """Compare."""
         if len(self._groups) < 2:
             raise ValueError("Need at least 2 groups")
 
@@ -160,5 +165,6 @@ class ComparisonEngine:
 
         return result
 
-    def clear(self):
+    def clear(self) -> None:
+        """Clear."""
         self._groups.clear()

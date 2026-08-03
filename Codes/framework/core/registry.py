@@ -10,7 +10,7 @@ from typing import Callable, Dict, List, Optional
 class Registry:
     """A named dictionary that maps string keys to classes or factory functions."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
         self.name = name
         self._dict: Dict[str, Callable] = {}
 
@@ -24,6 +24,7 @@ class Registry:
         """
 
         def decorator(obj: Callable) -> Callable:
+            """Decorator."""
             nonlocal key
             if key is None:
                 key = obj.__name__

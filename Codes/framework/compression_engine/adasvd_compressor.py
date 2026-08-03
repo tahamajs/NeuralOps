@@ -23,12 +23,14 @@ class AdaSVDCompressor(BaseCompressor):
         self.num_iters = num_iters
 
     @staticmethod
-    def _weight_importance(W):
+    def _weight_importance(W) -> Any:
+        """ weight importance."""
         _, S, _ = np.linalg.svd(W, full_matrices=False)
         return np.sum(S)
 
     def compress(self):
         # 1. Compute importance per layer
+        """Compress the target module using this strategy."""
         layer_importances = {}
         total_importance = 0.0
         for name, module in self.model.named_modules():
@@ -92,7 +94,8 @@ class AdaSVDCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("adasvd")
-def adasvd_factory(model, comp_config):
+def adasvd_factory(model, comp_config) -> Any:
+    """Adasvd factory."""
     target_param_ratio = getattr(comp_config, "adasvd_target_ratio", 0.3)
     num_iters = getattr(comp_config, "adasvd_iters", 5)
     compressor = AdaSVDCompressor(

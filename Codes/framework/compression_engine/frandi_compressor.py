@@ -17,7 +17,7 @@ class FRanDICompressor(BaseCompressor):
         self.rank = rank
         self.energy_threshold = energy_threshold
 
-    def _select_rank(self, S):
+    def _select_rank(self, S) -> Any:
         """Choose rank based on energy threshold if provided, else fixed rank."""
         if self.energy_threshold is None:
             return min(self.rank, len(S))
@@ -31,7 +31,8 @@ class FRanDICompressor(BaseCompressor):
             rank = 1
         return min(rank, len(S))
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float()
@@ -45,7 +46,8 @@ class FRanDICompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("frandi")
-def frandi_factory(model, comp_config):
+def frandi_factory(model, comp_config) -> Any:
+    """Frandi factory."""
     rank = getattr(comp_config, "frandi_rank", 8)
     energy = getattr(comp_config, "frandi_energy", None)
     compressor = FRanDICompressor(model, rank=rank, energy_threshold=energy)

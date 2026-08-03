@@ -11,7 +11,8 @@ class UniQLCompressor(BaseCompressor):
         self.bits = bits
 
     @staticmethod
-    def _quantize(tensor, bits):
+    def _quantize(tensor, bits) -> Any:
+        """ quantize."""
         if bits >= 32:
             return tensor.float()
         t = tensor.float()
@@ -22,7 +23,8 @@ class UniQLCompressor(BaseCompressor):
         quant = torch.round((t - min_val) / scale) * scale + min_val
         return quant
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float()

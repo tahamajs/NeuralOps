@@ -7,6 +7,6 @@ SERVER_REGISTRY = Registry("serving_backends")
 
 class BaseServer(ABC):
     @abstractmethod
-    def serve(self, model, **kwargs):
+    def serve(self, model, **kwargs) -> None:
         """Start the inference server."""
         pass

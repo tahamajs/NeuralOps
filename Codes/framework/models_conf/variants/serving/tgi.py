@@ -3,7 +3,8 @@ from .base import SERVER_REGISTRY, BaseServer
 
 @SERVER_REGISTRY.register("tgi")
 class TGIModelServer(BaseServer):
-    def serve(self, model, **kwargs):
+    def serve(self, model, **kwargs) -> Any:
+        """Serve."""
         try:
             from text_generation import Client
         except ImportError:

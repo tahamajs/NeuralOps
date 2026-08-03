@@ -53,9 +53,11 @@ class COMPOTCompressor(BaseCompressor):
         layer_data = {}
         hooks = []
 
-        def make_hook(name: str):
+        def make_hook(name: str) -> Any:
+            """Make hook."""
             def hook(module, input, output):
                 # Store input and output tensors (detached, moved to CPU later)
+                """Hook."""
                 layer_data[name] = {
                     "input": input[0].detach(),
                     "output": output.detach(),
@@ -167,7 +169,8 @@ def compot_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
 
 
 @COMPRESSOR_REGISTRY.register("compot")
-def compot_factory(model, comp_config):
+def compot_factory(model, comp_config) -> None:
+    """Compot factory."""
     raise NotImplementedError(
         "compot requires tokenizer and calibration; not supported in standalone test."
     )
