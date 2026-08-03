@@ -76,7 +76,11 @@ class SaveConfig:
     cloud_options: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> "SaveConfig":
-        """From dict."""
+    def from_dict(cls, d: Any) -> "SaveConfig":
+        """Build SaveConfig from dict or return if already SaveConfig."""
+        if isinstance(d, cls):
+            return d
+        if not isinstance(d, dict):
+            return cls()
         valid = {k for k in d if k in cls.__dataclass_fields__}
         return cls(**{k: d[k] for k in valid})
