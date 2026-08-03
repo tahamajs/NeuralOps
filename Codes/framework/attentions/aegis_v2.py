@@ -72,7 +72,8 @@ class AegisAttentionV2(nn.Module):
         self.local_window: int = config.local_window
         self.rank: int = config.rank
         self.kernel_dim: int = config.kernel_feature_dim
-        self.dropout: nn.Dropout = nn.Dropout(config.dropout)
+        dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         self.q_proj1 = nn.Linear(self.hidden_size, self.rank, bias=False)
         self.q_proj2 = nn.Linear(self.rank, self.hidden_size, bias=True)

@@ -77,7 +77,8 @@ class ASVDAttention(BaseAttention):
             torch.randn(self.rank, self.all_head_size) * 0.02
         )
 
-        self.dropout: nn.Dropout = nn.Dropout(config.dropout)
+        dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         if activation_scales is not None:
             self.apply_activation_scales(activation_scales)
