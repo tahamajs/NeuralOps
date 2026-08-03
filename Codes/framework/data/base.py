@@ -23,7 +23,7 @@ class TaskType(Enum):
 class DataConfig:
     task_type: TaskType
     max_length: int = 128
-    padding: bool = True
+    padding: Any = "max_length"
     truncation: bool = True
     return_tensors: str = "pt"
     text_column: Optional[str] = None
