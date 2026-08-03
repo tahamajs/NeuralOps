@@ -151,10 +151,6 @@ class AdaptiveSVDAttention(nn.Module):
         )
 
         # Aliases
-        self.q_proj = self.query
-        self.k_proj = self.key
-        self.v_proj = self.value
-
         dropout_p = getattr(
             config,
             "dropout",

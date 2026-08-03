@@ -45,12 +45,6 @@ class SVDLinearAttention(nn.Module):
         self.key: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.value: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, config.hidden_size)
-
-        # Aliases for compatibility
-        self.q_proj = self.query
-        self.k_proj = self.key
-        self.v_proj = self.value
-
         dropout_val: float = (
             dropout if dropout is not None else getattr(config, "dropout", 0.1)
         )
