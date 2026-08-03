@@ -21,51 +21,59 @@ GLUE_TASK_KEYS = {
 
 def load_glue_local(task_name: str, base_path: str = None) -> DatasetDict:
     """
-    Load a GLUE task from local Parquet files.
+    Load a GLUE task from local Parquet files, falling back to HuggingFace Datasets hub.
+    Compatible with local, Kaggle, Colab, and remote GPU/HPC environments.
     """
     if not base_path:
-        from framework.utils.paths import get_glue_dir
-        base_path = str(get_glue_dir())
-    task_path = os.path.join(base_path, task_name)
-    if not os.path.exists(task_path):
-        raise FileNotFoundError(f"Directory not found: {task_path}")
+        # Check Kaggle input dataset first if present
+        kaggle_glue = f"/kaggle/input/glue-dataset/{task_name}"
+        if os.path.exists(kaggle_glue):
+            base_path = "/kaggle/input/glue-dataset"
+        else:
+            from framework.utils.paths import get_glue_dir
+            base_path = str(get_glue_dir())
 
-    split_map = {
-        "train": "train",
-        "validation": "validation",
-        "test": "test",
-        "dev": "validation",
-        "valid": "validation",
-    }
+    task_path = os.path.join(base_path, task_name) if base_path else None
+    
+    # Try loading from local parquet files
+    if task_path and os.path.exists(task_path):
+        split_map = {
+            "train": "train",
+            "validation": "validation",
+            "test": "test",
+            "dev": "validation",
+            "valid": "validation",
+        }
 
-    splits = {}
-    for fname in os.listdir(task_path):
-        if not fname.endswith(".parquet"):
-            continue
-        found_split = None
-        for key, split_name in split_map.items():
-            if key in fname.lower():
-                found_split = split_name
-                break
-        if found_split:
-            splits[found_split] = Dataset.from_parquet(os.path.join(task_path, fname))
+        splits = {}
+        for fname in os.listdir(task_path):
+            if not fname.endswith(".parquet"):
+                continue
+            found_split = None
+            for key, split_name in split_map.items():
+                if key in fname.lower():
+                    found_split = split_name
+                    break
+            if found_split:
+                splits[found_split] = Dataset.from_parquet(os.path.join(task_path, fname))
 
-    if not splits:
-        raise RuntimeError(f"No Parquet files found in {task_path}")
+        if task_name == "mnli":
+            for special in ["validation_matched", "validation_mismatched"]:
+                for fname in os.listdir(task_path):
+                    if special in fname and fname.endswith(".parquet"):
+                        splits[special] = Dataset.from_parquet(
+                            os.path.join(task_path, fname)
+                        )
 
-    if task_name == "mnli":
-        for special in ["validation_matched", "validation_mismatched"]:
-            for fname in os.listdir(task_path):
-                if special in fname and fname.endswith(".parquet"):
-                    splits[special] = Dataset.from_parquet(
-                        os.path.join(task_path, fname)
-                    )
+        if "train" in splits:
+            return DatasetDict(splits)
 
-    if "train" not in splits:
-        raise RuntimeError(
-            f"No 'train' split found in {task_path}. Available: {list(splits.keys())}"
-        )
-    return DatasetDict(splits)
+    # Fallback to HuggingFace datasets hub (ideal for Kaggle / Colab / cloud)
+    from datasets import load_dataset as hf_load_dataset
+    try:
+        return hf_load_dataset("glue", task_name)
+    except Exception:
+        return hf_load_dataset("nyu-mll/glue", task_name)
 
 
 def get_num_labels_and_is_regression(task_name: str) -> Any:
