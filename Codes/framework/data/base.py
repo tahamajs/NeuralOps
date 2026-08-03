@@ -21,7 +21,8 @@ class TaskType(Enum):
 
 @dataclass
 class DataConfig:
-    task_type: TaskType
+    task_type: TaskType = TaskType.SINGLE_CLASSIFICATION
+    task_name: Optional[str] = None
     max_length: int = 128
     padding: Any = "max_length"
     truncation: bool = True
@@ -40,6 +41,9 @@ class DataConfig:
     tokens_column: Optional[str] = None
     tags_column: Optional[str] = None
     custom_preprocess: Optional[Callable] = None
+    max_samples: Optional[int] = None
+    split: Optional[str] = None
+
 
 
 def preprocess_function(examples, tokenizer, config: DataConfig) -> Any:

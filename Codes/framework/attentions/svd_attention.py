@@ -98,13 +98,20 @@ class SVDLinearAttention(nn.Module):
             valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, device)
             masked_h = hidden_states * valid_mask.unsqueeze(-1).to(dtype)
 
-            # Compute SVD natively on active device without CPU roundtrips
+            # Compute SVD on active device (with CPU fallback if device lacks native QR/SVD kernels like MPS)
             U_list = []
             for b in range(batch_size):
-                # Ensure float32 for high numerical accuracy in SVD
                 h_b = masked_h[b].float()
-                U, _, _ = torch.svd_lowrank(h_b, q=effective_rank, niter=2)
-                U_r_b = U[:, :effective_rank].to(dtype=dtype)
+                if device.type == "mps":
+                    U, _, _ = torch.svd_lowrank(h_b.cpu(), q=effective_rank, niter=2)
+                    U_r_b = U[:, :effective_rank].to(device=device, dtype=dtype)
+                else:
+                    try:
+                        U, _, _ = torch.svd_lowrank(h_b, q=effective_rank, niter=2)
+                        U_r_b = U[:, :effective_rank].to(dtype=dtype)
+                    except Exception:
+                        U, _, _ = torch.svd_lowrank(h_b.cpu(), q=effective_rank, niter=2)
+                        U_r_b = U[:, :effective_rank].to(device=device, dtype=dtype)
                 U_list.append(U_r_b)
 
             U_r = torch.stack(U_list, dim=0)  # (B, seq_len, r)
