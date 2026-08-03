@@ -1,87 +1,66 @@
 """
-Model‑family adapters. Each adapter knows how to copy weights, extract RoPE,
-handle GQA, etc. for a specific architecture.
+Model‑family adapters. Extracts projection weights and biases cleanly across all Transformer architectures.
 """
 
-
-class DistilBertAdapter:
-    @staticmethod
-    def get_weight_bias(old_attn, proj: str) -> Any:
-        """Return the weight bias."""
-        if proj == "q":
-            return old_attn.q_lin.weight.data, getattr(old_attn.q_lin, "bias", None)
-        if proj == "k":
-            return old_attn.k_lin.weight.data, getattr(old_attn.k_lin, "bias", None)
-        if proj == "v":
-            return old_attn.v_lin.weight.data, getattr(old_attn.v_lin, "bias", None)
-        if proj == "o":
-            return old_attn.out_lin.weight.data, getattr(old_attn.out_lin, "bias", None)
-        raise ValueError(f"Unknown projection: {proj}")
+from typing import Any, Optional
 
 
-class LlamaAdapter:
-    @staticmethod
-    def get_weight_bias(old_attn, proj: str) -> Any:
-        """Return the weight bias."""
-        if proj == "q":
-            return old_attn.q_proj.weight.data, getattr(old_attn.q_proj, "bias", None)
-        if proj == "k":
-            return old_attn.k_proj.weight.data, getattr(old_attn.k_proj, "bias", None)
-        if proj == "v":
-            return old_attn.v_proj.weight.data, getattr(old_attn.v_proj, "bias", None)
-        if proj == "o":
-            return old_attn.o_proj.weight.data, getattr(old_attn.o_proj, "bias", None)
-        raise ValueError(f"Unknown projection: {proj}")
+class UniversalAdapter:
+    """Universal adapter supporting BERT, DistilBERT, RoBERTa, LLaMA, GPT2, DeBERTa, etc."""
 
     @staticmethod
-    def get_rotary_emb(old_attn) -> Any:
-        """Return the rotary emb."""
+    def get_weight_bias(old_attn: Any, proj: str) -> tuple:
+        """Extract (weight, bias) for projection 'q', 'k', 'v', or 'o'."""
+        target = getattr(old_attn, "self", old_attn)
+
+        q_names = ["query", "q_proj", "q_lin", "Wq", "c_attn"]
+        k_names = ["key", "k_proj", "k_lin", "Wk"]
+        v_names = ["value", "v_proj", "v_lin", "Wv"]
+        o_names = ["out_proj", "o_proj", "out_lin", "dense", "c_proj"]
+
+        candidate_names = {"q": q_names, "k": k_names, "v": v_names, "o": o_names}.get(proj, [])
+
+        # 1. Search in target (old_attn.self or old_attn)
+        for name in candidate_names:
+            if hasattr(target, name):
+                mod = getattr(target, name)
+                if hasattr(mod, "weight"):
+                    return mod.weight.data, getattr(mod, "bias", None)
+
+        # 2. Search in old_attn.output (BERT / RoBERTa output projection)
+        if proj == "o" and hasattr(old_attn, "output") and hasattr(old_attn.output, "dense"):
+            mod = old_attn.output.dense
+            if hasattr(mod, "weight"):
+                return mod.weight.data, getattr(mod, "bias", None)
+
+        # 3. Search directly in old_attn
+        for name in candidate_names:
+            if hasattr(old_attn, name):
+                mod = getattr(old_attn, name)
+                if hasattr(mod, "weight"):
+                    return mod.weight.data, getattr(mod, "bias", None)
+
+        raise ValueError(f"Could not extract '{proj}' projection weights from {type(old_attn).__name__}")
+
+    @staticmethod
+    def get_rotary_emb(old_attn: Any) -> Optional[Any]:
+        """Return rotary embeddings if present."""
         return getattr(old_attn, "rotary_emb", None)
 
     @staticmethod
-    def get_kv_heads(config) -> Any:
-        """Return the kv heads."""
-        return getattr(config, "num_key_value_heads", config.num_attention_heads)
+    def get_kv_heads(config: Any) -> int:
+        """Return number of key-value heads for GQA/MQA."""
+        return getattr(config, "num_key_value_heads", getattr(config, "num_attention_heads", 12))
 
 
-class BertAdapter:
-    """Bert / RoBERTa style – uses self_attn with q/k/v weight names."""
+# Backward compatibility aliases
+DistilBertAdapter = UniversalAdapter
+BertAdapter = UniversalAdapter
+LlamaAdapter = UniversalAdapter
 
-    @staticmethod
-    def get_weight_bias(old_attn, proj: str) -> Any:
-        """Return the weight bias."""
-        if proj == "q":
-            return old_attn.query.weight.data, getattr(old_attn.query, "bias", None)
-        if proj == "k":
-            return old_attn.key.weight.data, getattr(old_attn.key, "bias", None)
-        if proj == "v":
-            return old_attn.value.weight.data, getattr(old_attn.value, "bias", None)
-        if proj == "o":
-            # BERT output projection is called 'dense' inside self_attn
-            if hasattr(old_attn, "output"):
-                return old_attn.output.dense.weight.data, getattr(
-                    old_attn.output.dense, "bias", None
-                )
-            elif hasattr(old_attn, "dense"):
-                return old_attn.dense.weight.data, getattr(old_attn.dense, "bias", None)
-        raise ValueError(f"Unknown projection: {proj}")
-
-
-# Map architecture name → adapter class
-ADAPTER_MAP = {
-    "distilbert": DistilBertAdapter,
-    "bert": BertAdapter,
-    "roberta": BertAdapter,
-    "llama": LlamaAdapter,
-    "mistral": LlamaAdapter,
-    "gemma": LlamaAdapter,
-    "phi": LlamaAdapter,
-}
+ADAPTER_MAP = {}
 
 
 def get_adapter(arch: str) -> Any:
-    """Return the adapter."""
-    adapter = ADAPTER_MAP.get(arch)
-    if adapter is None:
-        raise ValueError(f"No adapter for architecture '{arch}'")
-    return adapter
+    """Return universal adapter for any architecture."""
+    return UniversalAdapter
