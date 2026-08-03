@@ -1,6 +1,28 @@
-"""
-Weighted ensemble with task‑aware attention and hybrid combination.
-Supports simple average, performance‑based weighting, and attention‑based fusion.
+r"""
+Smart Weighted Ensemble with Task-Aware Attention and Hybrid Combination.
+
+Implements multi-model ensemble fusion strategies combining:
+- Simple average pooling of per-model output logits.
+- Performance-history weighted voting with exponential moving average tracking.
+- Task-aware scaled dot-product attention over learned task embeddings.
+- Hybrid fusion combining task attention and per-input dynamic confidence.
+
+Mathematical Mechanism:
+    Given $M$ model logit outputs $\{L_m\}_{m=1}^M \in \mathbb{R}^{B \times C}$ for task $t$:
+    1. **Task-Aware Attention Weighting:**
+       Let task embeddings $e_t = W_Q E[t]$ and model embeddings $e_m = W_K E[\text{task}_m]$:
+       $$w_m^{\text{attn}} = \text{Softmax}\left(\frac{e_t e_m^\top}{\sqrt{D}} + S_{m, t}\right)$$
+       $$L^{\text{attn}} = \sum_{m=1}^M w_m^{\text{attn}} L_m$$
+    2. **Dynamic Confidence Weighting:**
+       $$c_m = \mathbb{E}_B\left[\max_c p_{m, c}\right], \quad w_m^{\text{dyn}} = \frac{c_m}{\sum_{m'} c_{m'}}$$
+       $$L^{\text{dyn}} = \sum_{m=1}^M w_m^{\text{dyn}} L_m$$
+    3. **Hybrid Fusion:**
+       $$L^{\text{hybrid}} = 0.6 \cdot L^{\text{attn}} + 0.4 \cdot L^{\text{dyn}}$$
+
+Computational Complexity:
+    - Task attention: $\mathcal{O}(M^2 \cdot D)$.
+    - Dynamic confidence: $\mathcal{O}(M \cdot B \cdot C)$.
+    - Ensemble combination: $\mathcal{O}(M \cdot B \cdot C)$.
 """
 
 from typing import List

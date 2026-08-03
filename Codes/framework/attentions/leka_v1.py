@@ -1,49 +1,86 @@
-"""
-LEKAv1 – Linear‑time Efficient Kernel Attention (basic version)
-Pure kernel‑based linear attention (no landmarks).
-"""
-
 import math
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
 
-class LEKAV1Attention(nn.Module):
+
+@ATTENTION_REGISTRY.register("leka_v1")
+class LEKAV1Attention(BaseAttention):
+    r"""
+    LEKAv1: Linear-time Efficient Kernel Attention (Basic Random Fourier Features).
+
+    Mathematical Mechanism:
+        Approximates the Gaussian RBF kernel via Random Fourier Feature (RFF) mapping $\phi(x)$:
+        $$\begin{aligned}
+        \phi(x) &= \frac{1}{\sqrt{F}} \left[\cos(x W_{\text{proj}}), \; \sin(x W_{\text{proj}})\right] \in \mathbb{R}^{B \times H \times N \times 2F} \\
+        KV &= \sum_{t=1}^N \phi(K_t)^\top V_t \in \mathbb{R}^{B \times H \times 2F \times d} \\
+        Z &= \sum_{t=1}^N \phi(K_t) \in \mathbb{R}^{B \times H \times 2F} \\
+        O_i &= \frac{\phi(Q_i) KV}{\phi(Q_i) Z^\top + \epsilon} W_{\text{out}}
+        \end{aligned}$$
+
+    Computational Complexity:
+        - Time: $\mathcal{O}(B \cdot H \cdot N \cdot F \cdot d_k)$ — strictly linear in sequence length $N$.
+        - Space: $\mathcal{O}(B \cdot H \cdot F \cdot d_k)$ for associative matrix products.
+
+    Tensor Dimensions:
+        - Input `hidden_states`: `[B, N, D]`
+        - Output: Tuple `(output, None)` where `output` is `[B, N, D]`.
     """
-    Simple linear attention using random Fourier features + Softpick.
-    """
 
-    def __init__(self, config, comp_config, layer_idx, total_layers=6, bert_mode=False):
-        super().__init__()
-        self.num_attention_heads = config.num_attention_heads
-        self.attention_head_size = int(config.hidden_size / config.num_attention_heads)
-        self.all_head_size = self.num_attention_heads * self.attention_head_size
-        self.head_dim = self.attention_head_size
-        self.bert_mode = bert_mode
-        self.layer_idx = layer_idx
+    def __init__(
+        self,
+        config: Any,
+        comp_config: Optional[Any] = None,
+        layer_idx: int = 0,
+        total_layers: int = 6,
+        bert_mode: bool = False,
+        rank: Optional[int] = None,
+    ) -> None:
+        super().__init__(config, rank)
+        self.num_attention_heads: int = getattr(config, "num_attention_heads", 12)
+        hidden_size: int = getattr(config, "hidden_size", 768)
+        self.attention_head_size: int = hidden_size // self.num_attention_heads if self.num_attention_heads > 0 else 64
+        self.all_head_size: int = self.num_attention_heads * self.attention_head_size
+        self.head_dim: int = self.attention_head_size
+        self.bert_mode: bool = bert_mode
+        self.layer_idx: int = layer_idx
 
-        self.feature_dim = getattr(comp_config, "feature_dim", 256)
+        self.feature_dim: int = getattr(comp_config, "feature_dim", 256) if comp_config is not None else 256
+        dropout_p: float = getattr(comp_config, "dropout", 0.1) if comp_config is not None else 0.1
 
-        self.query = nn.Linear(config.hidden_size, self.all_head_size)
-        self.key = nn.Linear(config.hidden_size, self.all_head_size)
-        self.value = nn.Linear(config.hidden_size, self.all_head_size)
-        self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
-        self.dropout = nn.Dropout(getattr(comp_config, "dropout", 0.1))
+        self.query: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
+        self.key: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
+        self.value: nn.Linear = nn.Linear(hidden_size, self.all_head_size)
+        self.out_proj: nn.Linear = nn.Linear(self.all_head_size, hidden_size)
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         # Random projection matrix (one per head, shared)
         self.register_buffer(
             "proj",
             torch.randn(self.num_attention_heads, self.head_dim, self.feature_dim),
+            persistent=False,
         )
 
-    def transpose_for_scores(self, x):
+    def transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
+        r"""Reshapes `[B, N, D]` to `[B, H, N, d_k]`."""
         new_shape = x.size()[:-1] + (self.num_attention_heads, self.attention_head_size)
         return x.view(new_shape).permute(0, 2, 1, 3)
 
-    def kernel_feature_map(self, x):
-        # x: (B, H, N, D)
+    def kernel_feature_map(self, x: torch.Tensor) -> torch.Tensor:
+        r"""
+        Computes random Fourier feature embedding $\phi(x)$.
+
+        Args:
+            x: Tensor of shape `[B, H, N, d_k]`.
+
+        Returns:
+            Feature map tensor `[B, H, N, 2F]`.
+        """
         proj = self.proj.to(x.device)  # (H, D, F)
         x_proj = torch.einsum("bhnd,hdf->bhnf", x, proj)  # (B, H, N, F)
         phi = torch.cat([torch.cos(x_proj), torch.sin(x_proj)], dim=-1)  # (B, H, N, 2F)
@@ -51,7 +88,8 @@ class LEKAV1Attention(nn.Module):
         return phi
 
     @staticmethod
-    def softpick(x, dim=-1, temperature=1.0):
+    def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
+        r"""Numerically stable soft selection function."""
         m = x.max(dim=dim, keepdim=True).values
         e = torch.exp((x - m) / temperature)
         denom = e - torch.exp(-m / temperature)
@@ -60,12 +98,25 @@ class LEKAV1Attention(nn.Module):
 
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        **kwargs
-    ):
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""
+        Forward computation of LEKAV1Attention.
+
+        Args:
+            hidden_states: Input tensor of shape `[B, N, D]`.
+            attention_mask: Optional mask tensor.
+            head_mask: Optional head masking tensor.
+            output_attentions: Unused flag for interface compliance.
+            **kwargs: Extra keyword arguments.
+
+        Returns:
+            Tuple `(output, None)` with output of shape `[B, N, D]`.
+        """
         B, N, D = hidden_states.shape
         Q = self.transpose_for_scores(self.query(hidden_states))
         K = self.transpose_for_scores(self.key(hidden_states))
@@ -75,8 +126,8 @@ class LEKAV1Attention(nn.Module):
         K_features = self.kernel_feature_map(K)
 
         # Linear attention
-        KV = torch.einsum("bhnf,bhnd->bhfd", K_features, V)  # (B, H, F, D)
-        K_sum = K_features.sum(dim=2, keepdim=True)  # (B, H, 1, F)
+        KV = torch.einsum("bhnf,bhnd->bhfd", K_features, V)  # (B, H, 2F, D)
+        K_sum = K_features.sum(dim=2, keepdim=True)  # (B, H, 1, 2F)
 
         num = torch.einsum("bhnf,bhfd->bhnd", Q_features, KV)
         denom = (
@@ -86,7 +137,6 @@ class LEKAV1Attention(nn.Module):
         context = num / denom
 
         if attention_mask is not None:
-            # assume 2D mask (B,N) with 1 for keep
             if attention_mask.dim() == 2:
                 mask = attention_mask[:, None, None, :].to(context.dtype)
             elif attention_mask.dim() == 4:
@@ -101,15 +151,34 @@ class LEKAV1Attention(nn.Module):
         out = self.out_proj(context)
         return out, None
 
-    def get_ortho_loss(self):
+    def get_ortho_loss(self) -> float:
+        r"""Returns orthogonality loss for projection matrices (default 0.0)."""
         return 0.0
 
 
-from framework.core.registry import ATTENTION_REGISTRY
-
-
 @ATTENTION_REGISTRY.register("leka_v1")
-def inject_leka_v1(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_leka_v1(
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module] = None,
+) -> LEKAV1Attention:
+    r"""
+    Injection hook for LEKAV1Attention into transformer layer.
+
+    Args:
+        layer: Target transformer layer module.
+        model_config: Model configuration.
+        comp_config: Compression configuration.
+        layer_idx: Layer index.
+        total_layers: Total number of transformer layers.
+        old_attn: Previous attention module to copy pretrained weights from.
+
+    Returns:
+        Instantiated `LEKAV1Attention` assigned to `layer.attention`.
+    """
     new_attn = LEKAV1Attention(
         config=model_config,
         comp_config=comp_config,
@@ -117,14 +186,20 @@ def inject_leka_v1(layer, model_config, comp_config, layer_idx, total_layers, ol
         total_layers=total_layers,
         bert_mode=False,
     )
-    # Copy pretrained weights
-    new_attn.query.weight.data.copy_(old_attn.q_lin.weight.data)
-    new_attn.query.bias.data.copy_(old_attn.q_lin.bias.data)
-    new_attn.key.weight.data.copy_(old_attn.k_lin.weight.data)
-    new_attn.key.bias.data.copy_(old_attn.k_lin.bias.data)
-    new_attn.value.weight.data.copy_(old_attn.v_lin.weight.data)
-    new_attn.value.bias.data.copy_(old_attn.v_lin.bias.data)
-    new_attn.out_proj.weight.data.copy_(old_attn.out_lin.weight.data)
-    new_attn.out_proj.bias.data.copy_(old_attn.out_lin.bias.data)
+    # Copy pretrained weights if available
+    if old_attn is not None:
+        if hasattr(old_attn, "q_lin") and hasattr(old_attn.q_lin, "weight"):
+            new_attn.query.weight.data.copy_(old_attn.q_lin.weight.data)
+            if old_attn.q_lin.bias is not None and new_attn.query.bias is not None:
+                new_attn.query.bias.data.copy_(old_attn.q_lin.bias.data)
+            new_attn.key.weight.data.copy_(old_attn.k_lin.weight.data)
+            if old_attn.k_lin.bias is not None and new_attn.key.bias is not None:
+                new_attn.key.bias.data.copy_(old_attn.k_lin.bias.data)
+            new_attn.value.weight.data.copy_(old_attn.v_lin.weight.data)
+            if old_attn.v_lin.bias is not None and new_attn.value.bias is not None:
+                new_attn.value.bias.data.copy_(old_attn.v_lin.bias.data)
+            new_attn.out_proj.weight.data.copy_(old_attn.out_lin.weight.data)
+            if old_attn.out_lin.bias is not None and new_attn.out_proj.bias is not None:
+                new_attn.out_proj.bias.data.copy_(old_attn.out_lin.bias.data)
     layer.attention = new_attn
     return new_attn

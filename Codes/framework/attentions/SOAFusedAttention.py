@@ -1,8 +1,26 @@
-"""
-SOA Fused Attention: low‑rank latent space attention with zero‑shot init.
+r"""
+SOA Fused Attention: Low-Rank Latent Space Multi-Head Attention with Zero-Shot SVD Initialization.
+
+Factorizes dense Q, K, and V linear projection operators into separate low-rank bottleneck pairs
+initialized from truncated Singular Value Decomposition (SVD) of source attention weights.
+
+Mathematical Mechanism:
+    Given input activations $X \in \mathbb{R}^{B \times N \times D}$:
+    1. **SVD-Factorized Projections:**
+       $$W \approx W^{\text{up}} W^{\text{down}}, \quad \text{where } W^{\text{down}} \in \mathbb{R}^{r \times D}, \, W^{\text{up}} \in \mathbb{R}^{D \times r}$$
+       $$Z_Q = X (W_Q^{\text{down}})^T, \quad Z_K = X (W_K^{\text{down}})^T, \quad Z_V = X (W_V^{\text{down}})^T \in \mathbb{R}^{B \times N \times r}$$
+       $$Q = Z_Q (W_Q^{\text{up}})^T, \quad K = Z_K (W_K^{\text{up}})^T, \quad V = Z_V (W_V^{\text{up}})^T \in \mathbb{R}^{B \times N \times D}$$
+    2. **Multi-Head Attention Computation:**
+       $$A = \operatorname{Softmax}\left(\frac{Q K^T}{\sqrt{d}} + M\right) \in \mathbb{R}^{B \times H \times N \times N}$$
+       $$O = (A V) W_O \in \mathbb{R}^{B \times N \times D}$$
+
+Computational Complexity:
+    - Low-rank projection evaluation: $\mathcal{O}(B \cdot N \cdot D \cdot r)$ per Q/K/V branch.
+    - Scaled dot-product attention: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d)$.
+    - Total per-layer complexity: $\mathcal{O}(N \cdot D \cdot r + H \cdot N^2 \cdot d)$.
 """
 
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -10,22 +28,32 @@ import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 
 
+@ATTENTION_REGISTRY.register("soa_fused_module")
 class SOAFusedAttention(nn.Module):
-    """
-    SOA Fused: separate latent spaces for Q/K/V, full output projection.
+    r"""Fused SOA Attention module factorizing Q/K/V projections with low-rank bottlenecks.
+
+    Args:
+        model_config: Transformer configuration specifying `hidden_size` and `num_attention_heads`.
+        k_rank: Latent bottleneck compression rank ($r$).
+        dropout: Attention dropout rate.
+        pretrained_attn: Source attention module for zero-shot SVD weight initialization.
     """
 
     def __init__(
-        self, model_config, k_rank: int = 32, dropout: float = 0.1, pretrained_attn=None
-    ):
+        self,
+        model_config: Any,
+        k_rank: int = 32,
+        dropout: float = 0.1,
+        pretrained_attn: Optional[Any] = None,
+    ) -> None:
         super().__init__()
         if pretrained_attn is None:
-            raise ValueError("pretrained_attn required for zero‑shot init")
+            raise ValueError("pretrained_attn required for zero-shot SVD initialization.")
 
-        self.num_heads = model_config.num_attention_heads
-        self.head_dim = model_config.hidden_size // self.num_heads
-        self.hidden_size = model_config.hidden_size
-        self.k_rank = k_rank
+        self.num_heads: int = model_config.num_attention_heads
+        self.head_dim: int = model_config.hidden_size // self.num_heads
+        self.hidden_size: int = model_config.hidden_size
+        self.k_rank: int = k_rank
 
         self.q_down = nn.Linear(self.hidden_size, k_rank, bias=False)
         self.k_down = nn.Linear(self.hidden_size, k_rank, bias=False)
@@ -36,11 +64,11 @@ class SOAFusedAttention(nn.Module):
         self.v_up = nn.Linear(k_rank, self.hidden_size, bias=False)
 
         self.out_proj = nn.Linear(self.hidden_size, self.hidden_size, bias=True)
-
         self.dropout = nn.Dropout(dropout)
         self._init_from_pretrained(pretrained_attn)
 
-    def _init_from_pretrained(self, pretrained_attn):
+    def _init_from_pretrained(self, pretrained_attn: Any) -> None:
+        r"""Initialize down- and up-projections via truncated SVD decomposition."""
         with torch.no_grad():
             for orig, down, up in [
                 (pretrained_attn.q_lin, self.q_down, self.q_up),
@@ -59,12 +87,26 @@ class SOAFusedAttention(nn.Module):
 
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        **kwargs
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""Compute bottlenecked multi-head attention.
+
+        Args:
+            hidden_states: Input activations `[Batch, SeqLen, HiddenDim]`.
+            attention_mask: Optional attention mask tensor `[Batch, SeqLen]` or broadcastable.
+            head_mask: Optional head pruning tensor.
+            output_attentions: Return explicit attention probabilities if True.
+            **kwargs: Additional runtime arguments.
+
+        Returns:
+            Tuple of:
+                - output: Projected tensor `[Batch, SeqLen, HiddenDim]`.
+                - attention_weights: Softmax probability matrix or None.
+        """
         B, N, _ = hidden_states.shape
 
         z_q = self.q_down(hidden_states)
@@ -89,11 +131,17 @@ class SOAFusedAttention(nn.Module):
         )
         if mask is not None:
             if mask.dim() == 2:
-                mask = mask[:, None, None, :]
-            scores = scores + (1.0 - mask) * -1e9
+                mask = mask[:, None, None, :].to(scores.dtype)
+                scores = scores + (1.0 - mask) * -1e9
+            elif mask.dim() == 3:
+                scores = scores + mask.unsqueeze(1)
+            else:
+                scores = scores + mask
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)
+        if head_mask is not None:
+            attn_weights = attn_weights * head_mask
 
         context = torch.matmul(attn_weights, v)
         context = context.transpose(1, 2).contiguous().view(B, N, -1)
@@ -107,8 +155,14 @@ class SOAFusedAttention(nn.Module):
 
 @ATTENTION_REGISTRY.register("soa_fused_attn")
 def inject_soa_fused_attn(
-    layer, model_config, comp_config, layer_idx, total_layers, old_attn
-):
+    layer: Any,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Any,
+) -> SOAFusedAttention:
+    r"""Bridge helper injecting SOAFusedAttention into a target transformer layer."""
     k_rank = getattr(comp_config, "soa_rank", 32)
     dropout = getattr(comp_config, "dropout", 0.1)
     new_attn = SOAFusedAttention(model_config, k_rank, dropout, old_attn)

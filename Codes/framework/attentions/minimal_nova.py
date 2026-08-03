@@ -1,17 +1,30 @@
-"""
-MinimalNOVA – stable, zero‑shot, production‑ready drop‑in replacement for DistilBERT.
-SVD‑factorised Q/K/V/Out projections only.
-"""
+import math
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.base import BaseAttention
+from framework.core.registry import ATTENTION_REGISTRY
+
 
 class FactorisedLinear(nn.Module):
-    """SVD‑factorised linear layer."""
+    r"""
+    SVD-Factorized Linear Transformation for NOVA Architecture.
 
-    def __init__(self, pretrained_weight, pretrained_bias, energy=0.95):
+    Mathematical Mechanism:
+        Preserves $\eta \in (0, 1]$ fraction of the singular energy spectrum:
+        $$W \approx U_{:, :r} \Sigma_{:r} V_{:, :r}^\top = A B$$
+        $$y = (x B^\top) A^\top + b$$
+    """
+
+    def __init__(
+        self,
+        pretrained_weight: torch.Tensor,
+        pretrained_bias: Optional[torch.Tensor],
+        energy: float = 0.95,
+    ) -> None:
         super().__init__()
         out_dim, in_dim = pretrained_weight.shape
         with torch.no_grad():
@@ -20,58 +33,105 @@ class FactorisedLinear(nn.Module):
             cum = torch.cumsum(S**2, dim=0) / total
             rank = int(torch.searchsorted(cum, energy).item()) + 1
             rank = max(4, min(rank, min(out_dim, in_dim), 64))
-            self.rank = rank
+            self.rank: int = rank
             A = U[:, :rank] * S[:rank].unsqueeze(0)
             B = Vt[:rank, :]
-        self.down = nn.Linear(in_dim, rank, bias=False)
-        self.up = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
+        self.down: nn.Linear = nn.Linear(in_dim, rank, bias=False)
+        self.up: nn.Linear = nn.Linear(rank, out_dim, bias=(pretrained_bias is not None))
         self.down.weight.data = B.float()
         self.up.weight.data = A.float()
         if pretrained_bias is not None:
             self.up.bias.data = pretrained_bias.float()
         else:
-            self.up.bias.data.zero_()
+            self.up.bias = None
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        r"""Evaluates factorized linear transformation."""
         return self.up(self.down(x))
 
 
-class MinimalNOVAAttention(nn.Module):
-    """SVD‑factorised attention, full standard attention, zero‑shot."""
+@ATTENTION_REGISTRY.register("minimal_nova")
+class MinimalNOVAAttention(BaseAttention):
+    r"""
+    MinimalNOVA: SVD-Factorized Low-Rank Projection Attention.
 
-    def __init__(self, model_config, energy=0.95, dropout=0.1, pretrained_attn=None):
-        super().__init__()
+    Mathematical Mechanism:
+        Zero-shot drop-in replacement with SVD-compressed projection layers:
+        $$\begin{aligned}
+        Q &= \text{FactorisedLinear}_Q(X), \quad K = \text{FactorisedLinear}_K(X), \quad V = \text{FactorisedLinear}_V(X) \\
+        A &= \text{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} + M_{\text{mask}}\right) \\
+        O &= \text{FactorisedLinear}_O(A V)
+        \end{aligned}$$
+
+    Computational Complexity:
+        - Projections: $\mathcal{O}(B \cdot N \cdot r \cdot D)$
+        - Attention: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k)$ time, $\mathcal{O}(B \cdot H \cdot N^2)$ space.
+
+    Tensor Dimensions:
+        - Input `hidden_states`: `[B, N, D]`
+        - Output: Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.
+    """
+
+    def __init__(
+        self,
+        model_config: Any,
+        energy: float = 0.95,
+        dropout: float = 0.1,
+        pretrained_attn: Optional[nn.Module] = None,
+        rank: Optional[int] = None,
+    ) -> None:
+        super().__init__(model_config, rank)
         if pretrained_attn is None:
-            raise ValueError("pretrained_attn required for zero‑shot init")
-        self.num_heads = model_config.num_attention_heads
-        self.head_dim = model_config.hidden_size // self.num_heads
-        self.all_head_size = self.num_heads * self.head_dim
-        self.hidden_size = model_config.hidden_size
+            raise ValueError("pretrained_attn required for zero-shot init")
+        self.num_heads: int = getattr(model_config, "num_attention_heads", 12)
+        hidden_size: int = getattr(model_config, "hidden_size", 768)
+        self.head_dim: int = hidden_size // self.num_heads if self.num_heads > 0 else 64
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.hidden_size: int = hidden_size
 
-        self.q_proj = FactorisedLinear(
-            pretrained_attn.q_lin.weight.data, pretrained_attn.q_lin.bias.data, energy
-        )
-        self.k_proj = FactorisedLinear(
-            pretrained_attn.k_lin.weight.data, pretrained_attn.k_lin.bias.data, energy
-        )
-        self.v_proj = FactorisedLinear(
-            pretrained_attn.v_lin.weight.data, pretrained_attn.v_lin.bias.data, energy
-        )
-        self.out_proj = FactorisedLinear(
-            pretrained_attn.out_lin.weight.data,
-            pretrained_attn.out_lin.bias.data,
+        self.q_proj: FactorisedLinear = FactorisedLinear(
+            pretrained_attn.q_lin.weight.data,
+            pretrained_attn.q_lin.bias.data if pretrained_attn.q_lin.bias is not None else None,
             energy,
         )
-        self.dropout = nn.Dropout(dropout)
+        self.k_proj: FactorisedLinear = FactorisedLinear(
+            pretrained_attn.k_lin.weight.data,
+            pretrained_attn.k_lin.bias.data if pretrained_attn.k_lin.bias is not None else None,
+            energy,
+        )
+        self.v_proj: FactorisedLinear = FactorisedLinear(
+            pretrained_attn.v_lin.weight.data,
+            pretrained_attn.v_lin.bias.data if pretrained_attn.v_lin.bias is not None else None,
+            energy,
+        )
+        self.out_proj: FactorisedLinear = FactorisedLinear(
+            pretrained_attn.out_lin.weight.data,
+            pretrained_attn.out_lin.bias.data if pretrained_attn.out_lin.bias is not None else None,
+            energy,
+        )
+        self.dropout: nn.Dropout = nn.Dropout(dropout)
 
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        **kwargs
-    ):
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""
+        Forward computation of MinimalNOVAAttention.
+
+        Args:
+            hidden_states: Input tensor of shape `[B, N, D]`.
+            attention_mask: Optional attention mask tensor.
+            head_mask: Optional head masking tensor.
+            output_attentions: Boolean flag to return attention matrix.
+            **kwargs: Extra keyword arguments.
+
+        Returns:
+            Tuple `(output, attn_weights)` where `output` is `[B, N, D]`.
+        """
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         Q = self.q_proj(hidden_states)
@@ -81,7 +141,7 @@ class MinimalNOVAAttention(nn.Module):
         K = K.view(B, N, H, D).transpose(1, 2)
         V = V.view(B, N, H, D).transpose(1, 2)
 
-        scale = D**-0.5
+        scale = 1.0 / math.sqrt(D)
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
 
         mask = (
@@ -102,7 +162,7 @@ class MinimalNOVAAttention(nn.Module):
                 token_valid = None
             if token_valid is not None:
                 scores = scores.masked_fill(
-                    ~token_valid.unsqueeze(1).unsqueeze(2), -1e5
+                    ~token_valid.unsqueeze(1).unsqueeze(2), float("-1e5")
                 )
 
         attn_weights = F.softmax(scores, dim=-1)
@@ -110,25 +170,36 @@ class MinimalNOVAAttention(nn.Module):
         context = torch.matmul(attn_weights, V)
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         output = self.out_proj(context)
-        if output_attentions:
-            return (output, attn_weights)
-        else:
-            return (output, None)
+        return output, (attn_weights if output_attentions else None)
 
-    def get_ortho_loss(self):
+    def get_ortho_loss(self) -> torch.Tensor:
+        r"""Returns orthogonality regularization loss (0.0)."""
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
-
-
-# ------------------------------------------------------------
-# Framework injection & registration
-# ------------------------------------------------------------
-from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("minimal_nova")
 def inject_minimal_nova(
-    layer, model_config, comp_config, layer_idx, total_layers, old_attn
-):
+    layer: nn.Module,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module] = None,
+) -> MinimalNOVAAttention:
+    r"""
+    Injection hook for MinimalNOVAAttention into transformer layer.
+
+    Args:
+        layer: Target transformer layer module.
+        model_config: Model configuration.
+        comp_config: Compression configuration.
+        layer_idx: Layer index.
+        total_layers: Total number of transformer layers.
+        old_attn: Previous attention module.
+
+    Returns:
+        Instantiated `MinimalNOVAAttention` assigned to `layer.attention`.
+    """
     new_attn = MinimalNOVAAttention(
         model_config=model_config,
         energy=getattr(comp_config, "svd_energy", 0.95),

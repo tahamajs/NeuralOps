@@ -1,7 +1,32 @@
-# framework/attentions/specialized/primal_attention.py
+r"""
+Primal Attention: Self-Attention through Asymmetric Kernel SVD in Primal Representation.
+
+Nyström-inspired low-rank landmark approximation of self-attention using segment pooling landmarks
+and iterative Schulz pseudoinverse refinement.
+
+Mathematical Mechanism:
+    Given queries $Q \in \mathbb{R}^{B \times H \times N \times d}$, keys $K \in \mathbb{R}^{B \times H \times N \times d}$, and values $V \in \mathbb{R}^{B \times H \times N \times d}$:
+    1. **Landmark Selection:**
+       Extract $r$ landmark queries $\widetilde{Q} \in \mathbb{R}^{B \times H \times r \times d}$ and keys $\widetilde{K} \in \mathbb{R}^{B \times H \times r \times d}$
+       via uniform segment-pooling along sequence dimension $N$.
+    2. **Kernel Factorization:**
+       $$F_1 = \frac{Q \widetilde{K}^T}{\sqrt{d}} \in \mathbb{R}^{B \times H \times N \times r}$$
+       $$F_2 = \frac{\widetilde{Q} \widetilde{K}^T}{\sqrt{d}} \in \mathbb{R}^{B \times H \times r \times r}$$
+       $$F_3 = \frac{\widetilde{Q} K^T}{\sqrt{d}} \in \mathbb{R}^{B \times H \times r \times N}$$
+    3. **Iterative Pseudoinverse Refinement (Schulz Iteration):**
+       Starting from Moore-Penrose pseudoinverse $X_0 = F_2^{\dagger}$, compute $T$ Schulz refinement steps:
+       $$X_{t+1} = X_t (2I - F_2 X_t)$$
+    4. **Reconstructed Attention Matrix:**
+       $$A = F_1 X_T F_3 \in \mathbb{R}^{B \times H \times N \times N}$$
+       $$\text{Output} = \operatorname{Softmax}(A) V$$
+
+Computational Complexity:
+    - Landmark pooling & block matrix products: $\mathcal{O}(B \cdot H \cdot N \cdot r \cdot d)$.
+    - Pseudoinverse inversion & Schulz iterations: $\mathcal{O}(B \cdot H \cdot T \cdot r^3)$.
+    - Total per-layer complexity: $\mathcal{O}(N \cdot r \cdot d + T \cdot r^3) \ll \mathcal{O}(N^2 \cdot d)$ when $r \ll N$.
 """
-Primal‑Attention: Self‑attention through Asymmetric Kernel SVD in Primal Representation.
-"""
+
+from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -12,37 +37,50 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 @ATTENTION_REGISTRY.register("primal")
 class PrimalAttention(BaseAttention):
-    """
-    Primal Attention (Nyström‑like) with landmark selection and iterative pinv.
+    r"""Primal Attention module implementing low-rank landmark kernel factorization.
+
+    Args:
+        config: Model configuration specifying `hidden_size`, `num_attention_heads`, and `dropout`.
+        rank: Number of landmark tokens $r$.
+        pinv_iters: Number of iterative Newton-Schulz pseudoinverse refinement iterations.
+        pretrained_attn: Optional source attention module to initialize linear projections.
     """
 
     def __init__(
         self,
-        config,
+        config: Any,
         rank: int = 64,
         pinv_iters: int = 6,
-        pretrained_attn: nn.Module = None,
-    ):
+        pretrained_attn: Optional[nn.Module] = None,
+    ) -> None:
         if rank is None:
             rank = 64
         super().__init__(config, rank)
-        self.pinv_iters = pinv_iters
+        self.pinv_iters: int = pinv_iters
+        dropout_p: float = float(
+            getattr(
+                config,
+                "dropout",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            )
+        )
 
-        self.num_heads = config.num_attention_heads
-        self.head_dim = config.hidden_size // self.num_heads
-        self.all_head_size = self.num_heads * self.head_dim
-        self.rank = rank
+        self.num_heads: int = config.num_attention_heads
+        self.head_dim: int = config.hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.rank: int = rank
 
         self.query = nn.Linear(config.hidden_size, self.all_head_size)
         self.key = nn.Linear(config.hidden_size, self.all_head_size)
         self.value = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
-        self.dropout = nn.Dropout(config.dropout)
+        self.dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def copy_weights(self, src):
+    def copy_weights(self, src: Any) -> None:
+        r"""Copy projection weights from standard transformer attention sub-layer."""
         with torch.no_grad():
             self.query.weight.copy_(src.q_lin.weight)
             if src.q_lin.bias is not None:
@@ -57,23 +95,37 @@ class PrimalAttention(BaseAttention):
             if src.out_lin.bias is not None:
                 self.out_proj.bias.copy_(src.out_lin.bias)
 
-    def _reshape(self, x, batch_size):
+    def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
+        r"""Reshape `[Batch, SeqLen, AllHeadSize]` to `[Batch, Heads, SeqLen, HeadDim]`."""
         return x.view(batch_size, -1, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        **kwargs
-    ):
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""Compute Primal Attention over input hidden representations.
+
+        Args:
+            hidden_states: Input tensor of shape `[Batch, SeqLen, HiddenDim]`.
+            attention_mask: Optional attention mask tensor `[Batch, SeqLen]` or broadcastable.
+            head_mask: Optional head masking tensor.
+            output_attentions: Return reconstructed attention matrix if True.
+            **kwargs: Additional runtime arguments.
+
+        Returns:
+            Tuple of:
+                - output: Projected tensor of shape `[Batch, SeqLen, HiddenDim]`.
+                - attention_weights: Reconstructed attention matrix or None.
+        """
         batch_size, seq_len, _ = hidden_states.shape
         Q = self._reshape(self.query(hidden_states), batch_size)
         K = self._reshape(self.key(hidden_states), batch_size)
         V = self._reshape(self.value(hidden_states), batch_size)
 
-        # Landmark selection
         num_landmarks = self.rank
         if seq_len % num_landmarks == 0:
             seg = seq_len // num_landmarks
@@ -99,7 +151,6 @@ class PrimalAttention(BaseAttention):
         F2 = torch.matmul(Q_land, K_land.transpose(-2, -1)) * scale
         F3 = torch.matmul(Q_land, K.transpose(-2, -1)) * scale
 
-        # Iterative pseudoinverse starting from SVD pinv
         X0 = torch.linalg.pinv(F2)
         I = torch.eye(F2.size(-1), device=F2.device).unsqueeze(0).unsqueeze(0)
         F2_pinv = X0
@@ -108,7 +159,6 @@ class PrimalAttention(BaseAttention):
 
         attn = torch.matmul(F1, torch.matmul(F2_pinv, F3))
 
-        # Mask handling
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 mask = attention_mask[:, None, None, :].to(dtype=attn.dtype)
@@ -131,7 +181,15 @@ class PrimalAttention(BaseAttention):
         return out, None
 
 
-def inject_primal(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_primal(
+    layer: Any,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Any,
+) -> PrimalAttention:
+    r"""Bridge helper injecting PrimalAttention into a transformer block."""
     rank = getattr(comp_config, "rank", 64)
     new_attn = PrimalAttention(config=model_config, rank=rank, pretrained_attn=old_attn)
     layer.attention = new_attn
