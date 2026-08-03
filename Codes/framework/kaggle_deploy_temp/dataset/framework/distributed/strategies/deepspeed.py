@@ -1,4 +1,5 @@
 """DeepSpeed ZeRO strategy – single / multi‑node."""
+from typing import Any
 
 from .base import STRATEGY_REGISTRY, BaseStrategy
 

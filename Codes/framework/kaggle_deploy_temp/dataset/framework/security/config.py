@@ -1,4 +1,5 @@
 """Security configuration – currently only holds the default algorithm."""
+from typing import Optional
 
 from dataclasses import dataclass
 

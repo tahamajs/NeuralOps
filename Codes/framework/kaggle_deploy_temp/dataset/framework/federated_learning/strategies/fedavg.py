@@ -1,4 +1,5 @@
 """FedAvg – the baseline federated averaging algorithm (McMahan et al. 2017)."""
+from typing import Any
 
 from .base import AGGREGATOR_REGISTRY, BaseAggregator
 

@@ -3,6 +3,7 @@ PADRe – Polynomial Attention with Dropout Regularization.
 Replaces softmax with a stable polynomial approximation, enabling faster
 inference and potential for linear‑time attention via kernelisation.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

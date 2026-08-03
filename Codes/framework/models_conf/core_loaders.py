@@ -2,6 +2,7 @@
 Unified model loader – works with any HuggingFace model, optionally injects
 custom attention and wraps the result in a UnifiedTransformerModel.
 """
+from typing import Optional
 
 from framework.core.attention_utils import inject_attention
 from framework.core.model_wrapper import UnifiedTransformerModel

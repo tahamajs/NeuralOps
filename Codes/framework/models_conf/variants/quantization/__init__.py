@@ -1,3 +1,4 @@
+from typing import Any, List
 from .awq import AWQQuantizer
 from .base import QUANTIZER_REGISTRY, BaseQuantizer
 from .bitsandbytes import BitsAndBytesQuantizer

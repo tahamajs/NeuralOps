@@ -1,3 +1,4 @@
+from typing import Any
 from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
 from .base import LOADER_REGISTRY, BaseLoader

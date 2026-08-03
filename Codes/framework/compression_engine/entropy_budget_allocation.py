@@ -2,6 +2,7 @@
 EntropyBudgetAllocation: global rank assignment via whitened activation entropy.
 Registered as 'entropy_budget'.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

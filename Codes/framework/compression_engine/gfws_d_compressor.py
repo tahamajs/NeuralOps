@@ -1,4 +1,5 @@
 """GFWSVD: Fisher-weighted SVD. Registered as 'gfws'."""
+from typing import Any
 
 import numpy as np
 import torch

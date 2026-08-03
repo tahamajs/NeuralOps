@@ -2,6 +2,7 @@
 Spectraformer: Random feature linearisation with flexible kernel approximation.
 Paper: https://arxiv.org/abs/2103.04246 (placeholder)
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

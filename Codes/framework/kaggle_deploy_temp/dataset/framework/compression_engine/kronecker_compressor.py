@@ -2,6 +2,7 @@
 Kronecker Product Compressor: replaces nn.Linear with KroneckerLinear.
 Registered as 'kronecker'.
 """
+from typing import Any
 
 import torch.nn as nn
 from framework.core.base import BaseCompressor

@@ -1,4 +1,5 @@
 """MLoRQ: Multi‑Layer optimal rank & quantisation under a total memory budget. Registered as 'mlorq'."""
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

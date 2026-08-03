@@ -1,6 +1,7 @@
 """
 LLRD: Layer‑wise Learning Rate Decay.
 """
+from typing import Any
 
 import logging
 

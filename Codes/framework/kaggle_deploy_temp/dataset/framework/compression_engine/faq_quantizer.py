@@ -1,4 +1,5 @@
 """FAQ (Future‑Aware Quantization): adjusts quantisation scale using next layer activations. Registered as 'faq'."""
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

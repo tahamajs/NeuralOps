@@ -1,4 +1,5 @@
 """ReplaceMe: removes last N encoder layers with a simple linear replacement. Registered as 'replaceme'."""
+from typing import Any
 
 import torch.nn as nn
 from framework.core.base import BaseCompressor

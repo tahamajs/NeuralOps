@@ -1,4 +1,5 @@
 """CoMe: Compress LLMs through layer concatenation (external wrapper). Registered as 'come'."""
+from typing import Any
 
 import shutil
 import subprocess

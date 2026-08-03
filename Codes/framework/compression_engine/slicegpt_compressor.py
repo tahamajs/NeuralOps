@@ -1,4 +1,5 @@
 """SliceGPT PCA‑based slicing compressor. Registered as 'slicegpt_pca'."""
+from typing import Any
 
 import numpy as np
 import torch

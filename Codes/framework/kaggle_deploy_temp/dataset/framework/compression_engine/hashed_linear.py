@@ -2,6 +2,7 @@
 HashedNets: Weight sharing via hash function (efficient vectorized version).
 Reference: "HashedNets: Efficient Training of Neural Networks with Hash Tables"
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

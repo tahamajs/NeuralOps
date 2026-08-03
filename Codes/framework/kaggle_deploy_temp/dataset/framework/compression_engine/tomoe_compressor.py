@@ -2,6 +2,7 @@
 ToMoE: converts dense MLP to Mixture of Experts via dynamic structural pruning.
 Registered as 'tomoe'.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

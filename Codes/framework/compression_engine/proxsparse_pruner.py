@@ -1,4 +1,5 @@
 """ProxSparse: regularized learning of semi‑structured sparsity. Registered as 'proxsparse'."""
+from typing import Any
 
 import numpy as np
 import torch

@@ -1,4 +1,5 @@
 """Precision-Recall per class bar chart."""
+from typing import Any
 
 import json
 import logging

@@ -1,3 +1,4 @@
+from typing import Any
 import torch
 
 from .base import EXPORTER_REGISTRY, BaseExporter

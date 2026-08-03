@@ -1,4 +1,5 @@
 """KMeans‑based weight clustering compressor. Registered as 'kmeans'."""
+from typing import Any
 
 import torch
 import torch.nn as nn

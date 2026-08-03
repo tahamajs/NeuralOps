@@ -2,6 +2,7 @@
 HashedNet Compressor: replaces nn.Linear with HashedLinear.
 Registered as 'hashed_net'.
 """
+from typing import Any
 
 import torch.nn as nn
 from framework.core.base import BaseCompressor

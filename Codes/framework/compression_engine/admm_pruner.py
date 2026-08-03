@@ -1,4 +1,5 @@
 """ADMM pruner (soft thresholding). Registered as 'admm_pruner'."""
+from typing import Any
 
 import numpy as np
 import torch

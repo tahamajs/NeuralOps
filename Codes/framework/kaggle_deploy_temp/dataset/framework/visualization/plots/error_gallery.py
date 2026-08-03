@@ -2,6 +2,7 @@
 Error gallery – shows the top‑K worst predictions with their inputs, true labels,
 and predicted probabilities.
 """
+from typing import Any
 
 import json
 import logging

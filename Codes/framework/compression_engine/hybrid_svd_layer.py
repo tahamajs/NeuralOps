@@ -2,6 +2,7 @@
 Hybrid SVD Layer: single‑head SVD approximation with positional encoding,
 plus a full encoder layer that uses it instead of multi‑head attention.
 """
+from typing import Any
 
 import numpy as np
 import torch

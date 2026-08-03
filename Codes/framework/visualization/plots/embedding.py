@@ -1,4 +1,5 @@
 """UMAP / t-SNE embedding visualization of hidden states or predictions."""
+from typing import Any
 
 import json
 import logging

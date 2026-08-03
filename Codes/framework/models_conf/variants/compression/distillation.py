@@ -1,3 +1,4 @@
+from typing import Any
 from .base import COMPRESSOR_REGISTRY, BaseCompressor
 
 

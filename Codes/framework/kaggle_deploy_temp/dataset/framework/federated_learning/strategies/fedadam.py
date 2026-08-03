@@ -1,4 +1,5 @@
 """FedAdam, FedYogi, FedAdagrad – Adaptive server optimizers (Reddi et al. 2020)."""
+from typing import Any
 
 import numpy as np
 

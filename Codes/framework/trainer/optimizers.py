@@ -1,3 +1,4 @@
+from typing import Any
 import torch.optim as optim
 from framework.core.registry import Registry
 

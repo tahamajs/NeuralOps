@@ -1,4 +1,5 @@
 """LSC: Fourier‑based low‑rank compression. Registered as 'lsc'."""
+from typing import Any
 
 import numpy as np
 import torch

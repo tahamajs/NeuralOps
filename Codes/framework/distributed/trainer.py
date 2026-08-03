@@ -1,4 +1,5 @@
 """DistributedTrainer — the single entry point that wraps any training function."""
+from typing import Any
 
 import logging
 import os
