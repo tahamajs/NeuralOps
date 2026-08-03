@@ -38,12 +38,16 @@ def load_hf_model(
     tokenizer = _safe_load(
         AutoTokenizer.from_pretrained, model_name, cache_dir=cache_dir
     )
+    model_kwargs = {
+        k: v for k, v in kwargs.items()
+        if k not in {"task", "attention_type", "attention_rank", "copy_weights", "rank"}
+    }
     model = _safe_load(
         AutoModelForSequenceClassification.from_pretrained,
         model_name,
         config=config,
         cache_dir=cache_dir,
-        **kwargs,
+        **model_kwargs,
     )
     return model, tokenizer
 
