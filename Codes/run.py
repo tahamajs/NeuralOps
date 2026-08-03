@@ -197,27 +197,31 @@ def main():
         trainer.add_callback(AttentionHeatmapCallback(output_dir=str(output_dir)))
 
     # 7. Train
-    trainer.train()
-    eval_metrics = trainer.evaluate()
+    try:
+        trainer.train()
+        eval_metrics = trainer.evaluate()
 
-    # 8. Save everything
-    saver_cfg = SaveConfig(
-        save_model=True,
-        save_plots=True,
-        model_export_formats=["onnx"] if device.type == "cuda" else [],
-        storage_backends=["local"],
-    )
-    saver = ResultsSaver(
-        run_id=exp_name,
-        base_dir=Path(args.output_dir),
-        config=saver_cfg,
-    )
-    history = getattr(trainer.state, "log_history", [])
-    saver.save_all(model, cfg.__dict__, history, eval_metrics, tokenizer)
-    saver.push_all()
+        # 8. Save everything
+        saver_cfg = SaveConfig(
+            save_model=True,
+            save_plots=True,
+            model_export_formats=["onnx"] if device.type == "cuda" else [],
+            storage_backends=["local"],
+        )
+        saver = ResultsSaver(
+            run_id=exp_name,
+            base_dir=Path(args.output_dir),
+            config=saver_cfg,
+        )
+        history = getattr(trainer.state, "log_history", [])
+        saver.save_all(model, cfg.__dict__, history, eval_metrics, tokenizer)
+        saver.push_all()
 
-    print(f"Experiment {exp_name} completed. Results in {output_dir}")
-    print(f"Final metrics: {eval_metrics}")
+        print(f"Experiment {exp_name} completed. Results in {output_dir}")
+        print(f"Final metrics: {eval_metrics}")
+    finally:
+        from framework.core.utils import clear_memory
+        clear_memory()
 
 
 if __name__ == "__main__":
