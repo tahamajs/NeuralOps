@@ -2,6 +2,7 @@
 CUR‑MoE: Interpretable CUR decomposition for MoE expert layers.
 Registered as 'cur_moe'.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

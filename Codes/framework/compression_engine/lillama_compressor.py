@@ -1,4 +1,5 @@
 """LiLLaMA: local distillation via cross‑covariance. Registered as 'lillama'."""
+from typing import Any
 
 import numpy as np
 import torch

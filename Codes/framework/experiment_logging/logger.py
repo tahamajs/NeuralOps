@@ -1,4 +1,5 @@
 """Structured logger setup with JSON and human‑readable formats."""
+from typing import Any
 
 import json
 import logging

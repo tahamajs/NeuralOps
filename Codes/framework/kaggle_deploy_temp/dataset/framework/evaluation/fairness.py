@@ -6,6 +6,7 @@ References:
   - AIF360: https://aif360.res.ibm.com
   - Fairlearn: https://fairlearn.org
 """
+from typing import Any
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional

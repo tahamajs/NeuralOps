@@ -1,4 +1,5 @@
 """No privacy mechanism."""
+from typing import Any
 
 from .base import PRIVACY_REGISTRY, BasePrivacyMechanism
 

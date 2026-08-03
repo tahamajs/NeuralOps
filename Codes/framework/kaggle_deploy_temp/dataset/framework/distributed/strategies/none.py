@@ -1,4 +1,5 @@
 """No distributed strategy – single GPU / CPU fallback."""
+from typing import Any
 
 from .base import STRATEGY_REGISTRY, BaseStrategy
 

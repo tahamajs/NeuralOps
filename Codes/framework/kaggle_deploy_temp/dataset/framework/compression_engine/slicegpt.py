@@ -1,4 +1,5 @@
 """SliceGPT: post‑training slicing (external wrapper). Registered as 'slicegpt'."""
+from typing import Any, Optional
 
 import shutil
 import subprocess

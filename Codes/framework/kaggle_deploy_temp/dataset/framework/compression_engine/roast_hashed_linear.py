@@ -2,6 +2,7 @@
 ROAST: Hardware‑Aware Weight Sharing with Tiling.
 Reference: "ROAST: A Hardware‑Aware Weight Sharing Scheme for Efficient Neural Networks"
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

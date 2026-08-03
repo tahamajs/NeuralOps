@@ -1,4 +1,5 @@
 """Stub module."""
+from typing import Any, List
 
 QUANTIZER_REGISTRY = {}
 

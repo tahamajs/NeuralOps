@@ -1,4 +1,5 @@
 """AstroQuantizer: simple uniform quantisation. Registered as 'astro'."""
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

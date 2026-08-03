@@ -1,3 +1,4 @@
+from typing import Any
 from peft import AdaLoraConfig  # using AdaLoRA as a modern adapter proxy
 from peft import get_peft_model
 

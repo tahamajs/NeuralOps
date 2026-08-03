@@ -1,4 +1,5 @@
 """SALR: Unifies low-rank and sparse pruning. Registered as 'salr'."""
+from typing import Any
 
 import torch
 import torch.nn as nn

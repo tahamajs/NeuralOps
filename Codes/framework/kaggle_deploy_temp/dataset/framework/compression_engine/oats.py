@@ -1,4 +1,5 @@
 """OATS: Outlier-Aware Training Sparsification. Registered as 'oats'."""
+from typing import Any
 
 import numpy as np
 import torch

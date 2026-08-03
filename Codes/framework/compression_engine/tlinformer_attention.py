@@ -2,6 +2,7 @@
 TLinFormer: Exact linear‑time attention via low‑rank projections.
 Paper: LinFormer (Wang et al., 2020) – adapted for DistilBERT.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

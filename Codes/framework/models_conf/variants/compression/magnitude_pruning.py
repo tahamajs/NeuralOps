@@ -1,3 +1,4 @@
+from typing import Any
 import torch.nn.utils.prune as prune
 
 from .base import COMPRESSOR_REGISTRY, BaseCompressor

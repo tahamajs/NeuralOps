@@ -1,4 +1,5 @@
 """MGIE‑SVD with total rank budget. Registered as 'mgie_budget'."""
+from typing import Any
 
 import numpy as np
 import torch

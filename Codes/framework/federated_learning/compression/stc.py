@@ -1,4 +1,5 @@
 """STC – Sparse Ternary Compression (Sattler et al. 2019)."""
+from typing import Any
 
 import numpy as np
 

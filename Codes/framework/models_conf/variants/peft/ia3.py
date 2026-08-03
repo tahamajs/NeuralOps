@@ -1,3 +1,4 @@
+from typing import Any
 from peft import IA3Config, TaskType, get_peft_model
 
 from .base import PEFT_REGISTRY, BasePEFT

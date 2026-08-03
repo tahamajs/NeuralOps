@@ -2,6 +2,7 @@
 Experimental compressed BERT architectures (used only with variant="compressed" or "hybrid_svd").
 These are not model‑agnostic and are kept for research purposes.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

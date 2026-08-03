@@ -1,6 +1,7 @@
 """
 RPC Attention: Kernel PCA perspective on self‑attention.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

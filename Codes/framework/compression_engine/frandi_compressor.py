@@ -1,4 +1,5 @@
 """FRanDI: Feature‑Regression aligned low‑rank compression. Registered as 'frandi'."""
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

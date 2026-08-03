@@ -1,4 +1,5 @@
 """Top‑K sparsification – keep only the largest absolute values."""
+from typing import Any
 
 import numpy as np
 

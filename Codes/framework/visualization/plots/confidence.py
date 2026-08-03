@@ -2,6 +2,7 @@
 Confidence plots – histogram of prediction confidence, calibration curve,
 and reliability diagram.
 """
+from typing import Any
 
 import json
 import logging

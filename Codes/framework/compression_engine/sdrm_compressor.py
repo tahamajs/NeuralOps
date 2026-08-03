@@ -2,6 +2,7 @@
 SDRM: rank assignment proportional to parameter budget for edge inference.
 Registered as 'sdrm'.
 """
+from typing import Any
 
 import numpy as np
 import torch

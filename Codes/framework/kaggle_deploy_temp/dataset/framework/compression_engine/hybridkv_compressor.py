@@ -7,6 +7,7 @@ Paper: "HybridKV: Hybrid KV Cache Compression for Efficient MLLM Inference"
        Zeng et al., arXiv:2604.05887.
 Registered as 'hybridkv'.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

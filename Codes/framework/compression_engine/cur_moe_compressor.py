@@ -2,6 +2,7 @@
 CUR‑MoE Compressor: apply CUR decomposition to MoE expert layers.
 Registered as 'cur_moe'.
 """
+from typing import Any
 
 import numpy as np
 import torch

@@ -1,4 +1,5 @@
 """SparseGPT: One‑shot pruning via second‑order information. Registered as 'sparsegpt'."""
+from typing import Any
 
 import shutil
 import subprocess

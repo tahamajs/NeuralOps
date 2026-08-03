@@ -1,4 +1,5 @@
 """Activation distribution – histogram of layer activations."""
+from typing import Any
 
 import json
 import logging

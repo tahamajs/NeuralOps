@@ -134,6 +134,26 @@ def prepare_kernel(command_str: str):
                     "# Execute pipeline command\n",
                     f"!python run_kaggle.py {command_str}\n"
                 ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "# Copy all results & model checkpoints to top-level /kaggle/working/ for Kaggle output capture\n",
+                    "import os, shutil\n",
+                    "res_dir = '/kaggle/working/framework/results'\n",
+                    "if os.path.exists(res_dir):\n",
+                    "    for item in os.listdir(res_dir):\n",
+                    "        s = os.path.join(res_dir, item)\n",
+                    "        d = os.path.join('/kaggle/working', item)\n",
+                    "        if os.path.isdir(s):\n",
+                    "            shutil.copytree(s, d, dirs_exist_ok=True)\n",
+                    "        else:\n",
+                    "            shutil.copy2(s, d)\n",
+                    "    print('✓ All results and model checkpoints successfully exported to /kaggle/working/!')\n"
+                ]
             }
         ],
         "metadata": {

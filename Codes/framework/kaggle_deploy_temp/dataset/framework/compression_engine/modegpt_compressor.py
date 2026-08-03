@@ -3,6 +3,7 @@ MoDeGPT: modular decomposition of transformer blocks.
 Decomposes pairs of linear layers (e.g., Q and K) jointly.
 Registered as 'modegpt'.
 """
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

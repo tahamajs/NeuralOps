@@ -1,4 +1,5 @@
 """Power‑of‑choice client selection – pick the best among a random subset."""
+from typing import Any
 
 import random
 

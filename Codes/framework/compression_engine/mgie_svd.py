@@ -1,4 +1,5 @@
 """MGIE-SVD: Entropy-driven rank selection. Registered as 'mgie'."""
+from typing import Any
 
 import torch
 import torch.nn as nn

@@ -1,4 +1,5 @@
 """QSGD – Quantized Stochastic Gradient Descent (Alistarh et al. 2017)."""
+from typing import Any
 
 import numpy as np
 

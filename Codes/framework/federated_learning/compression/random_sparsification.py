@@ -1,4 +1,5 @@
 """Random sparsification – keep a random fraction of elements."""
+from typing import Any
 
 import numpy as np
 

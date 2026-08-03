@@ -1,6 +1,8 @@
 """ZeroKV‑Neo: L2‑norm based KV cache eviction with attention sink preservation.
 Registered as 'zerokv_neo'."""
 
+from typing import Any
+
 import torch
 import torch.nn as nn
 from framework.core.base import BaseCompressor

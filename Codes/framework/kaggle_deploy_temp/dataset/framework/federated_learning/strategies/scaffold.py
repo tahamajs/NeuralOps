@@ -1,4 +1,5 @@
 """SCAFFOLD – Stochastic Controlled Averaging (Karimireddy et al. 2020)."""
+from typing import Any
 
 import numpy as np
 

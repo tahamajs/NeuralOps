@@ -1,4 +1,5 @@
 """SAES‑SVD v2: error suppression with fixed rank ratio. Registered as 'saes_svd_v2'."""
+from typing import Any
 
 import torch
 import torch.nn as nn
