@@ -203,7 +203,7 @@ def main():
 
         # 8. Save everything
         saver_cfg = SaveConfig(
-            save_model=True,
+            save_model=False,
             save_plots=True,
             model_export_formats=["onnx"] if device.type == "cuda" else [],
             storage_backends=["local"],
