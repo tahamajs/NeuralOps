@@ -128,10 +128,10 @@ export default function HealthDashboard({ onClose }: { onClose?: () => void }) {
             <div className="p-2 overflow-auto">
               {(Array.isArray(driftMonitors)
                 ? driftMonitors
-                : (driftMonitors?.results ?? [])
+                : ((driftMonitors as any)?.results ?? [])
               )
                 .slice(0, 3)
-                .map((m) => (
+                .map((m: any) => (
                   <FeatureHealthCard key={m.id} monitor={m} />
                 ))}
             </div>
@@ -145,10 +145,10 @@ export default function HealthDashboard({ onClose }: { onClose?: () => void }) {
             <div className="p-2 grid grid-cols-2 gap-2">
               {(Array.isArray(performanceMetrics)
                 ? performanceMetrics
-                : (performanceMetrics?.results ?? [])
+                : ((performanceMetrics as any)?.results ?? [])
               )
                 .slice(-4)
-                .map((m) => (
+                .map((m: any) => (
                   <HealthMetricGauge key={m.metric_type} metric={m} />
                 ))}
             </div>
