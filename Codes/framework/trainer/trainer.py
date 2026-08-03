@@ -101,6 +101,29 @@ class SVDAwareTrainer(Trainer):
                     task_name=getattr(self.args, "task_name", "unknown"),
                 )
 
+    def _determine_best_metric(self, metrics, trial=None):
+        """Safely determine best metric without throwing KeyError if key mismatch occurs."""
+        target = getattr(self.args, "metric_for_best_model", None)
+        if target and target not in metrics:
+            candidates = [
+                target,
+                f"eval_{target}",
+                target.replace("eval_", ""),
+                "eval_accuracy",
+                "accuracy",
+                "eval_loss",
+                "loss",
+            ]
+            found = False
+            for cand in candidates:
+                if cand in metrics:
+                    self.args.metric_for_best_model = cand
+                    found = True
+                    break
+            if not found:
+                return False
+        return super()._determine_best_metric(metrics, trial=trial)
+
     def _cleanup_memory(self) -> None:
         """ cleanup memory."""
         gc.collect()
