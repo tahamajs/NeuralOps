@@ -20,6 +20,7 @@ from framework.core.utils import clear_memory
 from framework.trainer.trainer import create_trainer
 from framework.trainer.metrics import get_task_metrics
 from framework.data.base import DataConfig, TaskType, create_dataloader
+from framework.data import ExperimentConfig, load_dataset
 
 from framework.core.memory import cleanup_gpu_memory, get_gpu_memory_stats
 
@@ -107,13 +108,24 @@ def run_benchmark(
                         num_labels=2 if task != "mnli" else 3,
                     )
 
-                    # 2. Load dataset
+                    # 2. Load dataset and tokenized dataloaders
+                    exp_config = ExperimentConfig(dataset_name=task)
+                    raw_ds = load_dataset(exp_config)
+                    train_ds = raw_ds["train"]
+                    if max_samples > 0 and len(train_ds) > max_samples:
+                        train_ds = train_ds.select(range(max_samples))
+                    val_key = "validation" if "validation" in raw_ds else ("validation_matched" if "validation_matched" in raw_ds else None)
+                    eval_ds = raw_ds[val_key] if val_key else train_ds
+                    if max_samples > 0 and len(eval_ds) > max_samples:
+                        eval_ds = eval_ds.select(range(max_samples))
+
                     train_cfg = DataConfig(
                         task_name=task,
                         task_type=task_type,
                         max_length=64,
                         batch_size=batch_size,
                         max_samples=max_samples,
+                        shuffle=True,
                     )
                     eval_cfg = DataConfig(
                         task_name=task,
@@ -121,9 +133,10 @@ def run_benchmark(
                         max_length=64,
                         batch_size=batch_size,
                         max_samples=max_samples,
+                        shuffle=False,
                     )
-                    train_loader = create_dataloader(train_cfg, tokenizer)
-                    eval_loader = create_dataloader(eval_cfg, tokenizer)
+                    train_loader = create_dataloader(train_ds, tokenizer, train_cfg)
+                    eval_loader = create_dataloader(eval_ds, tokenizer, eval_cfg)
 
                     # 3. Create trainer & execute full training
                     out_name = f"{task}_{model_name.replace('/', '_')}_{attn_type}"
@@ -163,6 +176,8 @@ def run_benchmark(
 
                 except Exception as e:
                     print(f"❌ FAILED: {run_key} -> {e}")
+                    import traceback
+                    traceback.print_exc()
                     results[run_key] = {
                         "task": task,
                         "model": model_name,
@@ -173,8 +188,7 @@ def run_benchmark(
                     with open(summary_file, "w") as f:
                         json.dump(results, f, indent=2)
                 finally:
-                    # Clean up references and flush memory
-                    del model, tokenizer, train_loader, eval_loader
+                    # Clean up references safely and flush GPU memory
                     cleanup_gpu_memory(force=True)
                     print(f"GPU/MPS memory cleared for {run_key}.")
 
