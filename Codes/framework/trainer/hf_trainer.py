@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from .base_trainer import BaseTrainer
 from .registry import TrainerRegistry
@@ -25,9 +25,31 @@ class HuggingFaceTrainer(BaseTrainer):
         self.compute_metrics = compute_metrics
         self.kwargs = kwargs
         self._trainer = None
+        self._callbacks: List[Any] = []
+
+    def add_callback(self, callback: Any) -> None:
+        """Add a callback to the trainer."""
+        if callback is not None:
+            self._callbacks.append(callback)
+            if self._trainer is not None:
+                self._trainer.add_callback(callback)
+
+    @property
+    def args(self) -> Any:
+        """Return training arguments."""
+        if self._trainer is None:
+            self._build()
+        return self._trainer.args
+
+    @property
+    def state(self) -> Any:
+        """Return trainer state."""
+        if self._trainer is not None:
+            return self._trainer.state
+        return None
 
     def _build(self) -> Any:
-        """ build."""
+        """Build underlying HuggingFace Trainer."""
         output_dir = self.results_manager.get_checkpoint_dir()
         training_args_dict = {
             "output_dir": output_dir,
@@ -41,7 +63,7 @@ class HuggingFaceTrainer(BaseTrainer):
             "eval_strategy": self.config.get("eval_strategy", "epoch"),
             "save_strategy": self.config.get("save_strategy", "epoch"),
             "save_total_limit": self.config.get("save_total_limit", 2),
-            "load_best_model_at_end": self.config.get("load_best_model_at_end", True),
+            "load_best_model_at_end": self.config.get("load_best_model_at_end", True) if self.eval_dataset is not None else False,
             "metric_for_best_model": self.config.get(
                 "metric_for_best_model", "eval_loss"
             ),
@@ -59,13 +81,22 @@ class HuggingFaceTrainer(BaseTrainer):
             **self.kwargs
         )
         self._trainer = self.results_manager.wrap_trainer(self._trainer)
+        for cb in self._callbacks:
+            self._trainer.add_callback(cb)
+
         original_train = self._trainer.train
 
         def train_and_save(*args, **train_kwargs) -> Any:
-            """Train and save."""
+            """Train, persist artifacts, and generate structured summary reports."""
             result = original_train(*args, **train_kwargs)
             self.results_manager.save_final_model(self.model)
             self.results_manager.save_plots()
+            last_metrics = (
+                getattr(self._trainer.state, "log_history", [])[-1]
+                if getattr(self._trainer.state, "log_history", [])
+                else {}
+            )
+            self.results_manager.generate_summary_report(final_metrics=last_metrics)
             return result
 
         self._trainer.train = train_and_save

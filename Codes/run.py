@@ -13,13 +13,12 @@ import os
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Force offline mode – must happen before any HuggingFace import
+# Cache and environment setup
 # ---------------------------------------------------------------------------
-CACHE_DIR = os.path.join(os.getcwd(), "models")
-os.environ["HF_HOME"] = CACHE_DIR
-os.environ["TRANSFORMERS_CACHE"] = CACHE_DIR
-os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
+if "HF_HOME" not in os.environ and os.path.exists(os.path.join(os.getcwd(), "models")):
+    CACHE_DIR = os.path.join(os.getcwd(), "models")
+    os.environ["HF_HOME"] = CACHE_DIR
+    os.environ["TRANSFORMERS_CACHE"] = CACHE_DIR
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # ---------------------------------------------------------------------------
@@ -152,7 +151,10 @@ def main():
         type="torch", columns=["input_ids", "attention_mask", "labels"]
     )
 
-    train_loader = create_dataloader(tokenized["train"], tokenizer, data_cfg)
+    train_data = tokenized["train"]
+    if args.max_train_samples > 0:
+        train_data = train_data.select(range(min(len(train_data), args.max_train_samples)))
+    train_loader = create_dataloader(train_data, tokenizer, data_cfg)
     val_split = "validation" if "validation" in tokenized else "validation_matched"
     val_loader = (
         create_dataloader(tokenized[val_split], tokenizer, data_cfg)

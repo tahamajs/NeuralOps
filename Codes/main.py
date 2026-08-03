@@ -32,6 +32,7 @@ parser.add_argument("--exp_name", type=str, default=None)
 parser.add_argument("--device", type=str, default="auto")
 parser.add_argument("--fp16", action="store_true")
 parser.add_argument("--save_visuals", action="store_true")
+parser.add_argument("--max_train_samples", type=int, default=-1)
 parser.add_argument("--sweep", action="store_true", help="Run hyperparameter sweep")
 args = parser.parse_args()
 
@@ -89,8 +90,12 @@ from framework.trainer.callbacks import (
     MemoryCallback,
     TimeCallback,
 )
-from framework.training import HuggingFaceTrainer, ResultsManager, get_task_metrics
-from framework.training.methods import get_method as get_method_fn
+from framework.training import (
+    HuggingFaceTrainer,
+    ResultsManager,
+    get_method as get_method_fn,
+    get_task_metrics,
+)
 
 # Optional callbacks
 try:
@@ -161,7 +166,10 @@ tokenized = dataset.map(
 )
 tokenized.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
-train_loader = create_dataloader(tokenized["train"], tokenizer, data_cfg)
+train_data = tokenized["train"]
+if args.max_train_samples > 0:
+    train_data = train_data.select(range(min(len(train_data), args.max_train_samples)))
+train_loader = create_dataloader(train_data, tokenizer, data_cfg)
 val_split = "validation" if "validation" in tokenized else "validation_matched"
 val_loader = (
     create_dataloader(tokenized[val_split], tokenizer, data_cfg)
