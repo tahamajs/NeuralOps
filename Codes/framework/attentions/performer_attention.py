@@ -1,5 +1,5 @@
 """
-Performer: Fast Attention Via Positive Orthogonal Random features (FAVOR+)
+Performer Attention – Fast Attention Via Positive Orthogonal Random Features (FAVOR+).
 Paper: https://arxiv.org/abs/2009.14794
 """
 
@@ -8,23 +8,23 @@ from typing import Any, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
-from framework.core.base import BaseAttention
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("performer")
-class PerformerAttention(BaseAttention):
-    r"""Performer Linear Attention via FAVOR+ Kernel Decomposition.
+class PerformerAttention(nn.Module):
+    r"""Performer: Fast Attention via Positive Orthogonal Random Features (FAVOR+) (Choromanski et al., 2021).
 
-    Approximates softmax self-attention using Positive Orthogonal Random Features (FAVOR+):
-    $$\phi(x) = \frac{h(x)}{\sqrt{M}} \exp\left(W x - \frac{\|x\|^2}{2}\right)$$
-    where $W \in \mathbb{R}^{M \times d_k}$ are Gaussian orthogonal random features obtained via QR decomposition.
-    $$\text{Attention}_{\text{Performer}}(Q, K, V) = \frac{\phi(Q) (\phi(K)^\top V)}{\phi(Q) (\phi(K)^\top \mathbf{1})}$$
+    Linearizes the softmax kernel using unbiased positive orthogonal random feature maps:
+    $$\phi(x) = \frac{1}{\sqrt{m}} \exp\left(\frac{x \Omega^\top}{\sqrt{d_k}} - \frac{\|x\|^2}{2 \sqrt{d_k}}\right)$$
+    $$\text{Attention}_{\text{FAVOR+}}(Q, K, V) = D^{-1} \left( \phi(Q) \left(\phi(K)^\top V\right) \right), \quad D = \operatorname{diag}\left(\phi(Q) \left(\phi(K)^\top \mathbf{1}_N\right)\right)$$
 
     Computational Complexity:
-        - Time: $\mathcal{O}(B \cdot H \cdot (N \cdot M \cdot d_k + N \cdot M))$
-        - Memory: $\mathcal{O}(B \cdot H \cdot (N \cdot M + M \cdot d_k))$ vs $\mathcal{O}(B \cdot H \cdot N^2)$
+        - Time: $\mathcal{O}(B \cdot H \cdot N \cdot m \cdot d_k)$ (strictly linear in sequence length $N$)
+        - Memory: $\mathcal{O}(B \cdot H \cdot (N \cdot m + m \cdot d_k))$ vs $\mathcal{O}(B \cdot H \cdot N^2)$
 
     Tensor Dimensions:
         - hidden_states: $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
@@ -34,69 +34,70 @@ class PerformerAttention(BaseAttention):
     def __init__(
         self,
         config: Any,
-        rank: int = 256,
-        redraw_projection: bool = False,
-        pretrained_attn: Optional[nn.Module] = None,
+        rank: Optional[int] = None,
+        eps: float = 1e-6,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(config, rank)
-        self.rank: int = rank
-        self.redraw_projection: bool = redraw_projection
+        super().__init__()
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
+        self.num_features: int = getattr(
+            config,
+            "performer_rank",
+            rank if rank is not None else getattr(config, "rank", 64),
+        )
+        self.eps: float = eps
 
         self.query: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.key: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.value: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, config.hidden_size)
-        dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+
+        # Aliases
+        self.q_proj = self.query
+        self.k_proj = self.key
+        self.v_proj = self.value
+
+        # Register orthogonal random projection matrix
+        omega = self._get_orthogonal_projection_matrix(self.head_dim, self.num_features)
+        self.register_buffer("omega", omega)
+
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
-        self.register_buffer("projection", None)
+    def _get_orthogonal_projection_matrix(self, d: int, m: int) -> torch.Tensor:
+        """Construct orthogonal random features by stacking QR decomposed Gaussian blocks."""
+        num_blocks = math.ceil(m / d)
+        blocks = []
+        for _ in range(num_blocks):
+            g = torch.randn(d, d)
+            q, _ = torch.linalg.qr(g)
+            blocks.append(q.T)
+        matrix = torch.cat(blocks, dim=0)[:m]  # (m, d)
+        # Multiplier according to FAVOR+ theory
+        multiplier = torch.randn(m, d).norm(dim=1, keepdim=True)
+        return matrix * multiplier
 
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+    def _feature_map(self, x: torch.Tensor) -> torch.Tensor:
+        r"""Compute positive orthogonal random feature map $\phi(x)$ with numerical stabilization."""
+        # x: (B, H, N, d)
+        # omega: (m, d) -> x @ omega.T: (B, H, N, m)
+        proj = torch.matmul(x, self.omega.to(dtype=x.dtype, device=x.device).T)
+        x_norm_sq = torch.sum(x**2, dim=-1, keepdim=True) / 2.0  # (B, H, N, 1)
 
-    def copy_weights(self, src: Any) -> None:
-        """Copy pretrained weights and biases."""
-        with torch.no_grad():
-            self.query.weight.copy_(src.q_lin.weight)
-            if src.q_lin.bias is not None:
-                self.query.bias.copy_(src.q_lin.bias)
-            self.key.weight.copy_(src.k_lin.weight)
-            if src.k_lin.bias is not None:
-                self.key.bias.copy_(src.k_lin.bias)
-            self.value.weight.copy_(src.v_lin.weight)
-            if src.v_lin.bias is not None:
-                self.value.bias.copy_(src.v_lin.bias)
-            self.out_proj.weight.copy_(src.out_lin.weight)
-            if src.out_lin.bias is not None:
-                self.out_proj.bias.copy_(src.out_lin.bias)
-
-    def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
-        """ reshape."""
-        return x.view(batch_size, -1, self.num_heads, self.head_dim).permute(
-            0, 2, 1, 3
-        )
-
-    def _get_projection_matrix(self, device: torch.device) -> torch.Tensor:
-        """Create per‑head orthogonal random features (FAVOR+)."""
-        if self.projection is None or self.redraw_projection:
-            proj = []
-            for _ in range(self.num_heads):
-                ortho = torch.randn(self.head_dim, self.rank, device=device)
-                q, _ = torch.linalg.qr(ortho)
-                proj.append(q)
-            self.projection = torch.stack(proj, dim=0)  # (H, D, R)
-        return self.projection
-
-    def _feature_map(self, x: torch.Tensor, proj: torch.Tensor) -> torch.Tensor:
-        r"""Evaluate positive orthogonal random feature map: $\phi(x) = \exp(x R - \|x\|^2/2)/\sqrt{r}$."""
-        x_proj: torch.Tensor = torch.einsum(
-            "bhnd,hdr->bhnr", x, proj
-        )  # (B, H, N, R)
-        x_norm: torch.Tensor = (x * x).sum(dim=-1, keepdim=True) / 2.0
-        phi: torch.Tensor = torch.exp(x_proj - x_norm) / math.sqrt(self.rank)
+        # Numerical stabilization
+        logits = proj - x_norm_sq
+        max_val = logits.amax(dim=-1, keepdim=True).detach()
+        phi = torch.exp(logits - max_val) / math.sqrt(self.num_features)
         return phi
 
     def forward(
@@ -107,80 +108,44 @@ class PerformerAttention(BaseAttention):
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Forward pass for FAVOR+ linear attention.
+        """Forward pass for FAVOR+ linear attention."""
+        B, N, D = hidden_states.shape
+        H, d = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
 
-        Args:
-            hidden_states (torch.Tensor): Input tensor `[Batch, SeqLen, HiddenDim]`.
-            attention_mask (Optional[torch.Tensor]): Mask tensor.
-            head_mask (Optional[torch.Tensor]): Head mask tensor.
-            output_attentions (bool): Whether to output attention weights.
-            **kwargs (Any): Additional parameters.
+        # Pre-scale queries and keys by d^-1/4
+        scale = d**-0.25
+        Q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2) * scale
+        K: torch.Tensor = self.key(hidden_states).view(B, N, H, d).transpose(1, 2) * scale
+        V: torch.Tensor = self.value(hidden_states).view(B, N, H, d).transpose(1, 2)
 
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]: Output features and `None`.
-        """
-        batch_size, seq_len, _ = hidden_states.shape
-        Q: torch.Tensor = self._reshape(self.query(hidden_states), batch_size)
-        K: torch.Tensor = self._reshape(self.key(hidden_states), batch_size)
-        V: torch.Tensor = self._reshape(self.value(hidden_states), batch_size)
+        valid_mask = get_token_valid_mask(attention_mask, B, N, device)  # (B, N)
+        mask_expanded = valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)  # (B, 1, N, 1)
 
-        proj: torch.Tensor = self._get_projection_matrix(Q.device)
+        # Feature maps: (B, H, N, m)
+        Q_prime = self._feature_map(Q)
+        K_prime = self._feature_map(K) * mask_expanded
 
-        Q_feat: torch.Tensor = self._feature_map(Q, proj)
-        K_feat: torch.Tensor = self._feature_map(K, proj)
+        # Associative linear multiplication: O(N * m * d)
+        # KV: (B, H, m, d)
+        KV = torch.matmul(K_prime.transpose(-2, -1), V)
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                valid = attention_mask.bool().to(Q.device)
-            else:
-                valid = attention_mask.squeeze(1).squeeze(1).bool()
-            valid_expanded = valid.unsqueeze(1).unsqueeze(-1)
-            K_feat = K_feat * valid_expanded.to(K_feat.dtype)
-            V = V * valid_expanded.to(V.dtype)
+        # Normalization denominator: (B, H, N, 1)
+        K_sum = K_prime.sum(dim=-2, keepdim=True)  # (B, H, 1, m)
+        den = torch.matmul(Q_prime, K_sum.transpose(-2, -1)) + self.eps  # (B, H, N, 1)
 
-        KV: torch.Tensor = torch.einsum(
-            "bhnr,bhnd->bhrd", K_feat, V
-        )  # (B, H, R, D)
-        K_sum: torch.Tensor = K_feat.sum(dim=2, keepdim=True)  # (B, H, 1, R)
-        num: torch.Tensor = torch.einsum("bhnr,bhrd->bhnd", Q_feat, KV)
-        den: torch.Tensor = (
-            torch.einsum("bhnr,bhr->bhn", Q_feat, K_sum.squeeze(2)).unsqueeze(
-                -1
-            )
-            + 1e-8
-        )
-        context: torch.Tensor = num / den
+        # Context: (B, H, N, d)
+        num = torch.matmul(Q_prime, KV)
+        context = num / den
 
-        if attention_mask is not None:
-            valid_out = valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
-            context = context * valid_out
+        context = self.dropout(context)
+        if head_mask is not None:
+            context = context * head_mask
 
-        context = (
-            context.permute(0, 2, 1, 3)
-            .contiguous()
-            .view(batch_size, seq_len, self.all_head_size)
-        )
+        # Mask padding queries
+        context = context * mask_expanded
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         out: torch.Tensor = self.out_proj(context)
 
         return out, None
-
-
-def inject_performer(
-    layer: Any,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Any,
-) -> PerformerAttention:
-    """Injection helper for Performer attention."""
-    rank: int = getattr(comp_config, "rank", 256)
-    redraw: bool = getattr(comp_config, "redraw_projection", False)
-    new_attn: PerformerAttention = PerformerAttention(
-        config=model_config,
-        rank=rank,
-        redraw_projection=redraw,
-        pretrained_attn=old_attn,
-    )
-    layer.attention = new_attn
-    return new_attn
