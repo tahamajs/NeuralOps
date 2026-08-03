@@ -1,7 +1,7 @@
 """
 SVD Linear Attention – each linear projection (Q, K, V, Out) is replaced by
 a low‑rank factorisation: W = U @ V, computed as U(Vx) + bias.
-Zero‑shot initialisation from a pretrained DistilBERT attention layer.
+Zero‑shot initialisation from any pretrained Transformer attention layer.
 """
 
 from typing import Any, Optional, Tuple, Union
@@ -10,6 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.attention_mask import apply_attention_mask
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -24,10 +25,6 @@ class SVDLinear(nn.Module):
     Computational Complexity:
         - Parameters: $r(d_{\text{in}} + d_{\text{out}})$ vs $d_{\text{in}} \cdot d_{\text{out}}$
         - FLOPs: $\mathcal{O}(B \cdot N \cdot r \cdot (d_{\text{in}} + d_{\text{out}}))$
-
-    Tensor Dimensions:
-        - Input $x$: $[*, d_{\text{in}}]$
-        - Output $y$: $[*, d_{\text{out}}]$
     """
 
     def __init__(
@@ -59,14 +56,7 @@ class SVDLinear(nn.Module):
             nn.init.zeros_(self.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """Forward pass through factorized linear projections.
-
-        Args:
-            x (torch.Tensor): Input activations of shape `[*, in_features]`.
-
-        Returns:
-            torch.Tensor: Projected tensor of shape `[*, out_features]`.
-        """
+        """Forward pass through factorized linear projections."""
         Vx: torch.Tensor = F.linear(x, self.V)  # (..., rank)
         out: torch.Tensor = F.linear(Vx, self.U)  # (..., out_features)
         if self.bias is not None:
@@ -80,6 +70,8 @@ class SVDLinear(nn.Module):
             self.V.copy_(V)
 
 
+@ATTENTION_REGISTRY.register("svd_linear_attn")
+@ATTENTION_REGISTRY.register("svd_linear")
 class SVDLinearAttention(nn.Module):
     r"""Multi-Head Attention with Low-Rank SVD-Factorized Linear Projections.
 
@@ -98,65 +90,89 @@ class SVDLinearAttention(nn.Module):
 
     def __init__(
         self,
-        model_config: Any,
-        rank: int = 32,
-        dropout: float = 0.1,
+        config: Any,
+        rank: Optional[int] = None,
         pretrained_attn: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
-        if pretrained_attn is None:
-            raise ValueError("pretrained_attn required for zero‑shot init")
-
-        self.num_heads: int = model_config.num_attention_heads
-        self.head_dim: int = model_config.hidden_size // self.num_heads
+        self.num_heads: int = config.num_attention_heads
+        self.head_dim: int = config.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
-        self.hidden_size: int = model_config.hidden_size
-        self.rank: int = rank
+        self.hidden_size: int = config.hidden_size
+        self.rank: int = getattr(
+            config,
+            "svd_rank",
+            rank if rank is not None else getattr(config, "rank", 32),
+        )
 
-        self.q_proj: SVDLinear = SVDLinear(
+        self.query: SVDLinear = SVDLinear(
             self.hidden_size,
             self.all_head_size,
-            rank,
-            bias=pretrained_attn.q_lin.bias is not None,
+            self.rank,
+            bias=True,
         )
-        self.k_proj: SVDLinear = SVDLinear(
+        self.key: SVDLinear = SVDLinear(
             self.hidden_size,
             self.all_head_size,
-            rank,
-            bias=pretrained_attn.k_lin.bias is not None,
+            self.rank,
+            bias=True,
         )
-        self.v_proj: SVDLinear = SVDLinear(
+        self.value: SVDLinear = SVDLinear(
             self.hidden_size,
             self.all_head_size,
-            rank,
-            bias=pretrained_attn.v_lin.bias is not None,
+            self.rank,
+            bias=True,
         )
         self.out_proj: SVDLinear = SVDLinear(
             self.all_head_size,
             self.hidden_size,
-            rank,
-            bias=pretrained_attn.out_lin.bias is not None,
+            self.rank,
+            bias=True,
         )
 
-        self._init_from_linear(self.q_proj, pretrained_attn.q_lin)
-        self._init_from_linear(self.k_proj, pretrained_attn.k_lin)
-        self._init_from_linear(self.v_proj, pretrained_attn.v_lin)
-        self._init_from_linear(self.out_proj, pretrained_attn.out_lin)
+        # Aliases
+        self.q_proj = self.query
+        self.k_proj = self.key
+        self.v_proj = self.value
 
-        self.dropout: nn.Dropout = nn.Dropout(dropout)
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
-    def _init_from_linear(
-        self, svd_linear: SVDLinear, orig_linear: nn.Linear
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def _init_from_weight(
+        self, svd_linear: SVDLinear, W_data: torch.Tensor, bias_data: Optional[torch.Tensor]
     ) -> None:
-        """ init from linear."""
+        """Initialize SVD factors from weight and bias."""
         with torch.no_grad():
-            W = orig_linear.weight.data.float()
+            W = W_data.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(self.rank, U.size(1), Vt.size(0))
             svd_linear.U.data[:, :r] = (U[:, :r] * S[:r]).to(svd_linear.U.dtype)
             svd_linear.V.data[:r, :] = Vt[:r, :].to(svd_linear.V.dtype)
-            if svd_linear.bias is not None and orig_linear.bias is not None:
-                svd_linear.bias.data = orig_linear.bias.data.clone()
+            if svd_linear.bias is not None and bias_data is not None:
+                svd_linear.bias.data.copy_(bias_data)
+
+    def copy_weights(self, src: Any) -> None:
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                self._init_from_weight(target, w, b)
+            except Exception:
+                pass
 
     def forward(
         self,
@@ -166,64 +182,32 @@ class SVDLinearAttention(nn.Module):
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Forward pass of SVD factorized linear attention.
-
-        Args:
-            hidden_states (torch.Tensor): Input activations `[Batch, SeqLen, HiddenDim]`.
-            attention_mask (Optional[torch.Tensor]): Attention mask `[Batch, SeqLen]` or `[Batch, 1, 1, SeqLen]`.
-            head_mask (Optional[torch.Tensor]): Mask for individual attention heads.
-            output_attentions (bool): Whether to return raw attention weight matrices.
-            **kwargs (Any): Additional parameters.
-
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]: Contextualized representation and optional attention weights.
-        """
+        """Forward pass of SVD factorized linear attention."""
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
 
         Q: torch.Tensor = (
-            self.q_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+            self.query(hidden_states).view(B, N, H, D).transpose(1, 2)
         )
         K: torch.Tensor = (
-            self.k_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+            self.key(hidden_states).view(B, N, H, D).transpose(1, 2)
         )
         V: torch.Tensor = (
-            self.v_proj(hidden_states).view(B, N, H, D).transpose(1, 2)
+            self.value(hidden_states).view(B, N, H, D).transpose(1, 2)
         )
 
         scale = D**-0.5
         scores: torch.Tensor = torch.matmul(Q, K.transpose(-2, -1)) * scale
-
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask[:, None, None, :]
-            else:
-                mask = attention_mask
-            scores = scores + (1.0 - mask) * -1e9
+        scores = apply_attention_mask(scores, attention_mask)
 
         attn_weights: torch.Tensor = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)
+
+        if head_mask is not None:
+            attn_weights = attn_weights * head_mask
+
         context: torch.Tensor = torch.matmul(attn_weights, V)
-        context = context.transpose(1, 2).contiguous().view(B, N, -1)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         output: torch.Tensor = self.out_proj(context)
 
         return output, attn_weights if output_attentions else None
-
-
-@ATTENTION_REGISTRY.register("svd_linear_attn")
-def inject_svd_linear_attn(
-    layer: Any,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Any,
-) -> SVDLinearAttention:
-    """Inject SVD Linear Attention into target model layer."""
-    rank: int = getattr(comp_config, "svd_rank", 32)
-    dropout: float = getattr(comp_config, "dropout", 0.1)
-    new_attn: SVDLinearAttention = SVDLinearAttention(
-        model_config, rank, dropout, old_attn
-    )
-    layer.attention = new_attn
-    return new_attn

@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from framework.core.attention_mask import apply_attention_mask
 from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -20,68 +21,66 @@ class FullAttention(nn.Module):
 
     Tensor Dimensions:
         - hidden_states: $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
-        - attention_mask: $[B, N]$ or $[B, 1, 1, N]$ binary or additive attention mask.
-        - Output: Tuple of $([B, N, D], \text{Optional}[B, H, N, N])$ representing projected contextualized states and attention maps.
+        - attention_mask: $[B, N]$, $[B, 1, 1, N]$, or $[B, 1, N, N]$.
+        - Output: Tuple of $([B, N, D], \text{Optional}[B, H, N, N])$.
     """
 
-    def __init__(self, config: Any) -> None:
+    def __init__(self, config: Any, **kwargs: Any) -> None:
         super().__init__()
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
-        self.q_proj: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
-        self.k_proj: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
-        self.v_proj: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
+
+        self.query: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
+        self.key: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
+        self.value: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, config.hidden_size)
-        dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+
+        # Aliases for compatibility
+        self.q_proj = self.query
+        self.k_proj = self.key
+        self.v_proj = self.value
+
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Forward pass of scaled dot-product multi-head attention.
-
-        Args:
-            hidden_states (torch.Tensor): Input activations of shape `[Batch, SeqLen, HiddenDim]`.
-            attention_mask (Optional[torch.Tensor]): Binary or additive mask of shape `[Batch, SeqLen]` or `[Batch, 1, 1, SeqLen]`.
-            **kwargs (Any): Additional model configuration parameters.
-
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]:
-                - Contextualized output tensor of shape `[Batch, SeqLen, HiddenDim]`.
-                - Optional attention weights of shape `[Batch, NumHeads, SeqLen, SeqLen]`.
-        """
+        """Forward pass of scaled dot-product multi-head attention."""
         B, N, D = hidden_states.shape
-        q: torch.Tensor = (
-            self.q_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-        )
-        k: torch.Tensor = (
-            self.k_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-        )
-        v: torch.Tensor = (
-            self.v_proj(hidden_states)
-            .view(B, N, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-        )
-        scores: torch.Tensor = torch.matmul(q, k.transpose(-2, -1)) / (
-            self.head_dim**0.5
-        )
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask.unsqueeze(1).unsqueeze(2)
-            else:
-                mask = attention_mask
-            scores = scores + (1.0 - mask) * -1e9
+        H, d = self.num_heads, self.head_dim
+
+        q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
+        k: torch.Tensor = self.key(hidden_states).view(B, N, H, d).transpose(1, 2)
+        v: torch.Tensor = self.value(hidden_states).view(B, N, H, d).transpose(1, 2)
+
+        scale: float = d**-0.5
+        scores: torch.Tensor = torch.matmul(q, k.transpose(-2, -1)) * scale
+
+        scores = apply_attention_mask(scores, attention_mask)
+
         attn: torch.Tensor = F.softmax(scores, dim=-1)
         attn = self.dropout(attn)
-        out: torch.Tensor = (
-            torch.matmul(attn, v).transpose(1, 2).contiguous().view(B, N, -1)
-        )
-        return self.out_proj(out), None
+
+        if head_mask is not None:
+            attn = attn * head_mask
+
+        context: torch.Tensor = torch.matmul(attn, v)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        out: torch.Tensor = self.out_proj(context)
+
+        return out, attn if output_attentions else None

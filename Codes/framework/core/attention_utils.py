@@ -3,14 +3,77 @@ Unified attention injection for any HuggingFace model.
 Uses architecture helpers and weight copying to swap attention modules.
 """
 
-from typing import Optional
-
+from typing import Any, List, Optional, Tuple
+import torch
 import torch.nn as nn
 
 from .adapters import get_adapter
 from .architecture import detect_architecture, get_attention_modules
 from .model_utils import replace_module
 from .registry import ATTENTION_REGISTRY
+
+
+PROJ_TARGET_NAMES = {
+    "q": ["query", "q_proj", "q_lin", "Wq", "c_attn", "q"],
+    "k": ["key", "k_proj", "k_lin", "Wk", "k"],
+    "v": ["value", "v_proj", "v_lin", "Wv", "v"],
+    "o": ["out_proj", "dense", "o_proj", "out_lin", "c_proj", "o"],
+}
+
+
+def _find_submodule(module: nn.Module, candidate_names: List[str]) -> Optional[nn.Module]:
+    """Find the first matching submodule among candidate names."""
+    for name in candidate_names:
+        if hasattr(module, name):
+            sub = getattr(module, name)
+            if isinstance(sub, nn.Module):
+                return sub
+    return None
+
+
+def _copy_projection_weights(target_mod: nn.Module, src_weight: torch.Tensor, src_bias: Optional[torch.Tensor]) -> None:
+    """Copy weights and biases into target module, handling both standard Linear and SVD low-rank layers."""
+    # Standard nn.Linear
+    if hasattr(target_mod, "weight") and isinstance(target_mod.weight, torch.Tensor):
+        with torch.no_grad():
+            if target_mod.weight.shape == src_weight.shape:
+                target_mod.weight.data.copy_(src_weight)
+            elif target_mod.weight.shape[1] == src_weight.shape[1] and target_mod.weight.shape[0] < src_weight.shape[0]:
+                # e.g., GQA head compression: average or slice query heads
+                target_mod.weight.data.copy_(src_weight[:target_mod.weight.shape[0]])
+            if src_bias is not None and hasattr(target_mod, "bias") and target_mod.bias is not None:
+                if target_mod.bias.shape == src_bias.shape:
+                    target_mod.bias.data.copy_(src_bias)
+                elif target_mod.bias.shape[0] <= src_bias.shape[0]:
+                    target_mod.bias.data.copy_(src_bias[:target_mod.bias.shape[0]])
+            elif src_bias is None and hasattr(target_mod, "bias") and target_mod.bias is not None:
+                nn.init.zeros_(target_mod.bias)
+        return
+
+    # SVD decomposed linear layer (e.g. SVDLinear with U, V or down, up)
+    if hasattr(target_mod, "set_low_rank_factors"):
+        with torch.no_grad():
+            W = src_weight.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r = min(getattr(target_mod, "rank", U.size(1)), U.size(1), Vt.size(0))
+            U_r = (U[:, :r] * S[:r]).to(target_mod.U.dtype)
+            V_r = Vt[:r, :].to(target_mod.V.dtype)
+            target_mod.set_low_rank_factors(U_r, V_r)
+            if hasattr(target_mod, "bias") and target_mod.bias is not None and src_bias is not None:
+                target_mod.bias.data.copy_(src_bias)
+        return
+
+    if hasattr(target_mod, "set_svd_factors"):
+        with torch.no_grad():
+            W = src_weight.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r = min(getattr(target_mod, "svd_rank", U.size(1)), U.size(1), Vt.size(0))
+            U_r = (U[:, :r] * S[:r]).to(target_mod.U.dtype)
+            V_r = Vt[:r, :].to(target_mod.V.dtype)
+            target_mod.set_svd_factors(U_r, V_r)
+            if hasattr(target_mod, "bias") and target_mod.bias is not None and src_bias is not None:
+                target_mod.bias.data.copy_(src_bias)
+        return
 
 
 def inject_attention(
@@ -48,9 +111,11 @@ def inject_attention(
                 )
             )
             signatures_to_try.append(lambda: attn_class(config, rank=rank, **kwargs))
+            signatures_to_try.append(lambda: attn_class(config, pretrained_attn=old_attn, **kwargs))
             signatures_to_try.append(lambda: attn_class(config, **kwargs))
             signatures_to_try.append(lambda: attn_class(config))
         else:
+            signatures_to_try.append(lambda: attn_class(rank=rank, pretrained_attn=old_attn, **kwargs))
             signatures_to_try.append(lambda: attn_class(rank=rank, **kwargs))
             signatures_to_try.append(lambda: attn_class(**kwargs))
             signatures_to_try.append(lambda: attn_class())
@@ -70,20 +135,24 @@ def inject_attention(
 
         # Copy pretrained weights
         if copy_weights:
+            # If the module has its own copy_weights method, prefer it
+            if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
+                try:
+                    new_attn.copy_weights(old_attn)
+                except Exception:
+                    pass
+
+            # Also perform universal attribute projection copying
             for proj in ["q", "k", "v", "o"]:
                 try:
                     src_weight, src_bias = adapter.get_weight_bias(old_attn, proj)
                 except ValueError:
                     continue  # skip if projection not found
-                target_proj = getattr(new_attn, f"{proj}_proj", None)
-                if target_proj is None:
-                    target_proj = getattr(new_attn, proj, None)
+
+                candidate_names = PROJ_TARGET_NAMES.get(proj, [])
+                target_proj = _find_submodule(new_attn, candidate_names)
                 if target_proj is not None:
-                    target_proj.weight.data.copy_(src_weight)
-                    if src_bias is not None and target_proj.bias is not None:
-                        target_proj.bias.data.copy_(src_bias)
-                    elif src_bias is None and target_proj.bias is not None:
-                        nn.init.zeros_(target_proj.bias)
+                    _copy_projection_weights(target_proj, src_weight, src_bias)
 
         replace_module(model, name, new_attn)
         replaced += 1
