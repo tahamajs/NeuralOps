@@ -98,12 +98,31 @@ class ResultsManager:
 
     def generate_summary_report(self, final_metrics: Optional[Dict[str, Any]] = None) -> None:
         """Generate structured markdown and json summary reports for the run."""
+        def _make_serializable(obj):
+            if hasattr(obj, "to_dict") and callable(obj.to_dict):
+                return obj.to_dict()
+            if hasattr(obj, "__dict__"):
+                return {k: _make_serializable(v) for k, v in obj.__dict__.items() if not k.startswith("_")}
+            if isinstance(obj, dict):
+                return {str(k): _make_serializable(v) for k, v in obj.items()}
+            if isinstance(obj, (list, tuple, set)):
+                return [_make_serializable(item) for item in obj]
+            if isinstance(obj, (datetime, Path)):
+                return str(obj)
+            if hasattr(obj, "value"):
+                return obj.value
+            try:
+                json.dumps(obj)
+                return obj
+            except Exception:
+                return str(obj)
+
         summary = {
             "experiment_name": self.experiment_name,
             "run_dir": str(self.run_dir),
             "total_steps": len(self.history),
-            "config": self.config,
-            "final_metrics": final_metrics or (self.history[-1] if self.history else {}),
+            "config": _make_serializable(self.config),
+            "final_metrics": _make_serializable(final_metrics or (self.history[-1] if self.history else {})),
             "timestamp": datetime.now().isoformat(),
         }
         summary_path = self.run_dir / "run_summary.json"
