@@ -1,83 +1,118 @@
+r"""
+TPAttention: Tensor Product Attention with Factorised Query-Key Projections.
+
+Replaces standard linear projections for queries and keys with a Hadamard/outer
+product of two low-rank factorised feature vectors, yielding richer polynomial
+interaction terms at reduced per-token projection cost.
+
+Mathematical Mechanism:
+    Given input $X \in \mathbb{R}^{B \times L \times D}$ with $H$ heads and factorization rank $r$:
+    1. **Factorised Projection:**
+       $$q_1 = X W_{Q_1} \in \mathbb{R}^{B \times L \times H \times r}, \quad q_2 = X W_{Q_2} \in \mathbb{R}^{B \times L \times H \times r}$$
+       $$k_1 = X W_{K_1} \in \mathbb{R}^{B \times L \times H \times r}, \quad k_2 = X W_{K_2} \in \mathbb{R}^{B \times L \times H \times r}$$
+    2. **Tensor Product Expansion:**
+       $$Q_{h, i} = q_{1, h, i} \otimes q_{2, h, i} \in \mathbb{R}^{r^2}, \quad K_{h, j} = k_{1, h, j} \otimes k_{2, h, j} \in \mathbb{R}^{r^2}$$
+    3. **Scaled Dot-Product Attention:**
+       $$A = \text{Softmax}\left(\frac{Q K^\top}{\sqrt{r}} + M\right) \in \mathbb{R}^{B \times H \times L \times L}$$
+       $$O = (A V) W_O \in \mathbb{R}^{B \times L \times D}$$
+
+Computational Complexity:
+    - Factorised projection: $\mathcal{O}(B \cdot L \cdot D \cdot H \cdot r)$.
+    - Tensor product expansion: $\mathcal{O}(B \cdot L \cdot H \cdot r^2)$.
+    - Attention matrix products: $\mathcal{O}(B \cdot H \cdot L^2 \cdot r^2)$.
+    - Total: $\mathcal{O}(B \cdot H \cdot L \cdot (D r + r^2 + L r^2))$.
 """
-TPAttention: Tensor Product Attention with Factorised Query‑Key Projections.
-"""
+
+from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("tpa")
 class TPAttention(BaseAttention):
-    """
-    Tensor Product Attention: Q and K formed by outer product of two factorised features.
-    Scaling uses 1 / (rank**0.5).  Default rank = 8.
+    r"""Tensor Product Attention with factorised low-rank query-key projection.
+
+    Query and key representations are formed as outer products of two
+    factorised feature vectors, enabling richer polynomial similarity kernels.
+
+    Args:
+        config: Model configuration specifying `hidden_size`, `num_attention_heads`, and `dropout`.
+        rank: Factorization rank $r$ per head (default 8). Effective Q/K dimension becomes $r^2$.
+        pretrained_attn: Optional pretrained attention module for weight initialization.
     """
 
-    def __init__(self, config, rank: int = 8, pretrained_attn: nn.Module = None):
+    def __init__(
+        self,
+        config: Any,
+        rank: int = 8,
+        pretrained_attn: Optional[nn.Module] = None,
+    ) -> None:
         super().__init__(config, rank)
-        self.num_heads = config.num_attention_heads
-        self.head_dim = config.hidden_size // self.num_heads
-        self.rank = rank
-        self.dim = config.hidden_size
+        self.num_heads: int = config.num_attention_heads
+        self.head_dim: int = config.hidden_size // self.num_heads
+        self.rank: int = rank
+        self.dim: int = config.hidden_size
+        dropout_p: float = float(
+            getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
+        )
 
         # Factorised projections for Q and K (two parts each)
-        self.q_proj1 = nn.Linear(self.dim, self.num_heads * self.rank)
-        self.q_proj2 = nn.Linear(self.dim, self.num_heads * self.rank)
-        self.k_proj1 = nn.Linear(self.dim, self.num_heads * self.rank)
-        self.k_proj2 = nn.Linear(self.dim, self.num_heads * self.rank)
+        self.q_proj1: nn.Linear = nn.Linear(self.dim, self.num_heads * self.rank)
+        self.q_proj2: nn.Linear = nn.Linear(self.dim, self.num_heads * self.rank)
+        self.k_proj1: nn.Linear = nn.Linear(self.dim, self.num_heads * self.rank)
+        self.k_proj2: nn.Linear = nn.Linear(self.dim, self.num_heads * self.rank)
         # Value and output projections are standard
-        self.v_proj = nn.Linear(self.dim, self.num_heads * self.head_dim)
-        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.dim)
-        self.dropout = nn.Dropout(config.dropout)
+        self.v_proj: nn.Linear = nn.Linear(self.dim, self.num_heads * self.head_dim)
+        self.out_proj: nn.Linear = nn.Linear(self.num_heads * self.head_dim, self.dim)
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def copy_weights(self, src):
-        """Initialise the standard projections from a pretrained attention module."""
+    def copy_weights(self, src: Any) -> None:
+        r"""Initialise the standard projections from a pretrained attention module."""
         with torch.no_grad():
-            # Value projection: copy from original v_lin (both map hidden → hidden)
             self.v_proj.weight.copy_(src.v_lin.weight)
             if src.v_lin.bias is not None:
                 self.v_proj.bias.copy_(src.v_lin.bias)
             self.out_proj.weight.copy_(src.out_lin.weight)
             if src.out_lin.bias is not None:
                 self.out_proj.bias.copy_(src.out_lin.bias)
-            # For the factorised Q/K, we split the original q_lin/k_lin weights
-            # roughly: we keep the original projection and add a small random second part.
-            # A proper initialisation would use SVD, but here we just copy the first
-            # part from the original and initialise the second part close to identity.
-            # This provides a decent starting point.
-            for proj1, proj2, orig in [
-                (self.q_proj1, self.q_proj2, src.q_lin),
-                (self.k_proj1, self.k_proj2, src.k_lin),
+            # Factorised Q/K: small random initialisation
+            for proj1, proj2 in [
+                (self.q_proj1, self.q_proj2),
+                (self.k_proj1, self.k_proj2),
             ]:
-                W = orig.weight.data  # (H*dh, D)
-                # Split into two equal halves? We'll just copy to proj1 and set proj2 to zero.
-                proj1.weight.data.zero_()
-                proj1.weight.data[:, : W.shape[1]] = (
-                    W  # will fail if rank*H != hidden_size
-                )
-                # Actually, hidden_size = H*dh, and H*rank != H*dh generally.
-                # Better: initialise randomly. For zero-shot we rely on value/out only.
-                # Since TP is a structural change, full zero-shot is not achievable;
-                # we initialise the factorised parts with small random values.
                 nn.init.normal_(proj1.weight, std=0.02)
                 nn.init.normal_(proj2.weight, std=0.02)
-            # The original biases are not used for Q/K because they are split;
-            # we ignore them. This is a known limitation – TPA requires fine-tuning.
 
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        **kwargs
-    ):
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""Compute tensor product attention.
+
+        Args:
+            hidden_states: Input activations of shape `[Batch, SeqLen, HiddenDim]`.
+            attention_mask: Optional mask `[Batch, SeqLen]` or broadcastable additive mask.
+            head_mask: Optional per-head gating mask.
+            output_attentions: Return explicit attention weights if True.
+            **kwargs: Additional runtime arguments.
+
+        Returns:
+            Tuple of:
+                - output: Projected representation `[Batch, SeqLen, HiddenDim]`.
+                - attention_weights: Softmax probability matrix or None.
+        """
         B, L, D = hidden_states.shape
         H, r, hd = self.num_heads, self.rank, self.head_dim
 
@@ -87,23 +122,19 @@ class TPAttention(BaseAttention):
         k2 = self.k_proj2(hidden_states).view(B, L, H, r)
         v = self.v_proj(hidden_states).view(B, L, H, hd)
 
-        # Tensor product: Q = q1 ⊗ q2
+        # Tensor product: Q = q1 ⊗ q2, shape [B, L, H, r*r]
         Q = torch.einsum("blhi,blhj->blhij", q1, q2).reshape(B, L, H, r * r)
         K = torch.einsum("blhi,blhj->blhij", k1, k2).reshape(B, L, H, r * r)
 
-        # Reshape to (B, H, L, r*r) – transpose correctly
         Q = Q.permute(0, 2, 1, 3)  # (B, H, L, r*r)
         K = K.permute(0, 2, 1, 3)
         v = v.permute(0, 2, 1, 3)  # (B, H, L, hd)
 
-        # Scaled dot-product attention (scaling by sqrt(r) as in original)
         scale = r**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale  # (B, H, L, L)
 
-        # Mask handling
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                # (B, L) -> additive mask
                 mask = attention_mask[:, None, None, :].to(dtype=scores.dtype)
                 scores = scores + (1.0 - mask) * -1e9
             else:
@@ -123,7 +154,19 @@ class TPAttention(BaseAttention):
         return out, None
 
 
-def inject_tpa(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_tpa(
+    layer: Any,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Optional[nn.Module] = None,
+) -> TPAttention:
+    r"""Bridge helper injecting TPAttention into a transformer layer.
+
+    Returns:
+        The newly instantiated :class:`TPAttention`.
+    """
     rank = getattr(comp_config, "rank", 8)
     new_attn = TPAttention(config=model_config, rank=rank, pretrained_attn=old_attn)
     layer.attention = new_attn

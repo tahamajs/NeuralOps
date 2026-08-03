@@ -1,42 +1,61 @@
+"""ViG Attention: Vision GNN‑inspired Grid Linear Attention with Gated Fusion.
+
+Paper: https://arxiv.org/abs/2206.00272
 """
-ViG Attention: Vision GNN‑inspired Grid Linear Attention with Gated Fusion.
-"""
+
+from typing import Any, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
 @ATTENTION_REGISTRY.register("vig")
 class ViGAttention(BaseAttention):
-    """
-    Grid‑based linear attention: splits sequence into H×W grid, applies
-    kernelised linear attention along rows and columns, and fuses them with
-    learned gates.
+    r"""Vision GNN-inspired 2D Grid Linear Attention with Learned Gated Fusion.
+
+    Arranges the 1D sequence of length $N$ into a 2D spatial grid of dimensions $H_g \times W_g \approx \sqrt{N} \times \sqrt{N}$.
+    Applies decoupled ELU kernel linear attention along rows ($H_g$) and columns ($W_g$), fusing the spatial contexts
+    with dynamic input-conditioned gating coefficients:
+    $$\text{Attention}_{\text{ViG}}(X) = g_{\text{row}} \odot \text{LinAttn}_{\text{row}}(X) + g_{\text{col}} \odot \text{LinAttn}_{\text{col}}(X)$$
+    where $g = \sigma(W_g X) \in \mathbb{R}^{B \times N \times 2 \times H}$.
+
+    Computational Complexity:
+        - Row Linear Attention: $\mathcal{O}(B \cdot H \cdot W_g \cdot H_g \cdot d_k) = \mathcal{O}(B \cdot H \cdot N \cdot d_k)$
+        - Column Linear Attention: $\mathcal{O}(B \cdot H \cdot H_g \cdot W_g \cdot d_k) = \mathcal{O}(B \cdot H \cdot N \cdot d_k)$
+        - Overall Time & Memory: Strictly linear in sequence length $\mathcal{O}(N)$.
+
+    Tensor Dimensions:
+        - hidden_states: $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
+        - Output: Tuple of $([B, N, D], \text{None})$.
     """
 
-    def __init__(self, config, rank=None, pretrained_attn=None):
+    def __init__(
+        self,
+        config: Any,
+        rank: Optional[int] = None,
+        pretrained_attn: Optional[nn.Module] = None,
+    ) -> None:
         super().__init__(config, rank)
-        self.dim = config.hidden_size
-        self.num_heads = config.num_attention_heads
-        self.head_dim = self.dim // self.num_heads
+        self.dim: int = config.hidden_size
+        self.num_heads: int = config.num_attention_heads
+        self.head_dim: int = self.dim // self.num_heads
 
-        self.q_proj = nn.Linear(self.dim, self.dim)
-        self.k_proj = nn.Linear(self.dim, self.dim)
-        self.v_proj = nn.Linear(self.dim, self.dim)
-        self.out_proj = nn.Linear(self.dim, self.dim)
-        self.gate_net = nn.Linear(self.dim, 2 * self.num_heads)
-        self.dropout = nn.Dropout(
-            config.dropout
-        )  # applied after softmax? Not directly used in lin attn,
-        # but we keep for consistency.
+        self.q_proj: nn.Linear = nn.Linear(self.dim, self.dim)
+        self.k_proj: nn.Linear = nn.Linear(self.dim, self.dim)
+        self.v_proj: nn.Linear = nn.Linear(self.dim, self.dim)
+        self.out_proj: nn.Linear = nn.Linear(self.dim, self.dim)
+        self.gate_net: nn.Linear = nn.Linear(self.dim, 2 * self.num_heads)
+        self.dropout: nn.Dropout = nn.Dropout(config.dropout)
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
-    def copy_weights(self, src):
+    def copy_weights(self, src: Any) -> None:
+        """Copy weights and biases from pretrained multi-head attention module."""
         with torch.no_grad():
             self.q_proj.weight.copy_(src.q_lin.weight)
             if src.q_lin.bias is not None:
@@ -53,23 +72,33 @@ class ViGAttention(BaseAttention):
 
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        **kwargs
-    ):
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Forward pass for 2D Grid Linear Attention.
+
+        Args:
+            hidden_states (torch.Tensor): Input hidden tensor `[Batch, SeqLen, HiddenDim]`.
+            attention_mask (Optional[torch.Tensor]): Mask tensor.
+            head_mask (Optional[torch.Tensor]): Head mask tensor.
+            output_attentions (bool): Whether to return attention weights.
+            **kwargs (Any): Additional parameters.
+
+        Returns:
+            Tuple[torch.Tensor, Optional[torch.Tensor]]: Fused grid representations `[Batch, SeqLen, HiddenDim]` and `None`.
+        """
         B, N, D = hidden_states.shape
 
-        # Build grid
-        H = int(N**0.5)
-        W = (N + H - 1) // H
-        total = H * W
-        pad_len = total - N
+        H: int = int(N**0.5)
+        W: int = (N + H - 1) // H
+        total: int = H * W
+        pad_len: int = total - N
 
         if pad_len > 0:
-            # Pad with zeros – these will not contribute because we will mask them later
-            x = torch.cat(
+            x: torch.Tensor = torch.cat(
                 [
                     hidden_states,
                     torch.zeros(
@@ -82,93 +111,95 @@ class ViGAttention(BaseAttention):
                 ],
                 dim=1,
             )
-            N_pad = total
+            N_pad: int = total
         else:
             x = hidden_states
             N_pad = N
 
-        # Create a validity mask for the grid (True = valid token)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                valid = attention_mask.bool().to(x.device)  # (B, N)
+                valid: torch.Tensor = attention_mask.bool().to(x.device)
                 if pad_len > 0:
                     valid = torch.cat(
                         [
                             valid,
-                            torch.zeros(B, pad_len, dtype=torch.bool, device=x.device),
+                            torch.zeros(
+                                B, pad_len, dtype=torch.bool, device=x.device
+                            ),
                         ],
                         dim=1,
                     )
             else:
-                # Assume already broadcastable bool
                 valid = attention_mask.bool()
         else:
             valid = torch.ones(B, N_pad, dtype=torch.bool, device=x.device)
 
-        Hh = self.num_heads
-        Dh = self.head_dim
+        Hh: int = self.num_heads
+        Dh: int = self.head_dim
 
-        q = (
+        q: torch.Tensor = (
             self.q_proj(x).view(B, N_pad, Hh, Dh).permute(0, 2, 1, 3)
-        )  # (B, Hh, N_pad, Dh)
-        k = self.k_proj(x).view(B, N_pad, Hh, Dh).permute(0, 2, 1, 3)
-        v = self.v_proj(x).view(B, N_pad, Hh, Dh).permute(0, 2, 1, 3)
+        )
+        k: torch.Tensor = (
+            self.k_proj(x).view(B, N_pad, Hh, Dh).permute(0, 2, 1, 3)
+        )
+        v: torch.Tensor = (
+            self.v_proj(x).view(B, N_pad, Hh, Dh).permute(0, 2, 1, 3)
+        )
 
-        gates = torch.sigmoid(self.gate_net(x)).view(
+        gates: torch.Tensor = torch.sigmoid(self.gate_net(x)).view(
             B, N_pad, 2, Hh, 1
-        )  # (B, N_pad, 2, Hh, 1)
+        )
 
-        # Reshape to grid
-        q = q.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)  # (B, Hh, W, H, Dh)
+        q = q.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
         k = k.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
         v = v.reshape(B, Hh, H, W, Dh).permute(0, 1, 3, 2, 4)
 
-        # Row attention (along height)
-        q_row = q.reshape(B, Hh * W, H, Dh).transpose(2, 3)  # (B, Hh*W, Dh, H)
-        k_row = k.reshape(B, Hh * W, H, Dh).transpose(2, 3)
-        v_row = v.reshape(B, Hh * W, H, Dh).transpose(2, 3)
+        q_row: torch.Tensor = q.reshape(B, Hh * W, H, Dh).transpose(2, 3)
+        k_row: torch.Tensor = k.reshape(B, Hh * W, H, Dh).transpose(2, 3)
+        v_row: torch.Tensor = v.reshape(B, Hh * W, H, Dh).transpose(2, 3)
 
-        # Apply ELU+1 kernel
-        q_row_lin = F.elu(q_row) + 1.0
-        k_row_lin = F.elu(k_row) + 1.0
+        q_row_lin: torch.Tensor = F.elu(q_row) + 1.0
+        k_row_lin: torch.Tensor = F.elu(k_row) + 1.0
 
-        # Mask invalid tokens (zero them out in k and v)
-        # valid shape (B, N_pad) -> reshape to grid and select axis
-        valid_grid = valid.view(B, H, W).permute(0, 2, 1)  # (B, W, H)
-        valid_row = (
+        valid_grid: torch.Tensor = valid.view(B, H, W).permute(0, 2, 1)
+        valid_row: torch.Tensor = (
             valid_grid.unsqueeze(1)
             .expand(B, Hh, W, H)
             .reshape(B, Hh * W, H)
             .unsqueeze(-2)
             .to(k_row.dtype)
-        )  # (B, Hh*W, 1, H)
+        )
         k_row_lin = k_row_lin * valid_row
         v_row = v_row * valid_row
 
-        kv_row = torch.einsum("b m n d, b m n e -> b m d e", k_row_lin, v_row)
-        z_row = k_row_lin.sum(dim=2, keepdim=True)
-        denom_row = torch.einsum(
+        kv_row: torch.Tensor = torch.einsum(
+            "b m n d, b m n e -> b m d e", k_row_lin, v_row
+        )
+        z_row: torch.Tensor = k_row_lin.sum(dim=2, keepdim=True)
+        denom_row: torch.Tensor = torch.einsum(
             "b m n d, b m d -> b m n", q_row_lin, z_row.squeeze(2)
         ).unsqueeze(-1)
-        out_row = torch.einsum("b m n d, b m d e -> b m n e", q_row_lin, kv_row) / (
-            denom_row + 1e-8
-        )
+        out_row: torch.Tensor = torch.einsum(
+            "b m n d, b m d e -> b m n e", q_row_lin, kv_row
+        ) / (denom_row + 1e-8)
         out_row = (
-            out_row.transpose(2, 3).reshape(B, Hh, W, H, Dh).permute(0, 1, 3, 2, 4)
-        )  # (B, Hh, H, W, Dh)
+            out_row.transpose(2, 3)
+            .reshape(B, Hh, W, H, Dh)
+            .permute(0, 1, 3, 2, 4)
+        )
 
-        # Column attention (along width)
-        q_col = q.permute(0, 1, 2, 4, 3)  # (B, Hh, H, Dh, W)
-        k_col = k.permute(0, 1, 2, 4, 3)
-        v_col = v.permute(0, 1, 2, 4, 3)
-        q_col_flat = q_col.reshape(B * Hh * H, W, Dh)
-        k_col_flat = k_col.reshape(B * Hh * H, W, Dh)
-        v_col_flat = v_col.reshape(B * Hh * H, W, Dh)
+        q_col: torch.Tensor = q.permute(0, 1, 2, 4, 3)
+        k_col: torch.Tensor = k.permute(0, 1, 2, 4, 3)
+        v_col: torch.Tensor = v.permute(0, 1, 2, 4, 3)
+        q_col_flat: torch.Tensor = q_col.reshape(B * Hh * H, W, Dh)
+        k_col_flat: torch.Tensor = k_col.reshape(B * Hh * H, W, Dh)
+        v_col_flat: torch.Tensor = v_col.reshape(B * Hh * H, W, Dh)
 
-        q_col_lin = F.elu(q_col_flat) + 1.0
-        k_col_lin = F.elu(k_col_flat) + 1.0
+        q_col_lin: torch.Tensor = F.elu(q_col_flat) + 1.0
+        k_col_lin: torch.Tensor = F.elu(k_col_flat) + 1.0
 
-        valid_col = (
+        valid_col: torch.Tensor = (
             valid.view(B, H, W)
             .unsqueeze(1)
             .expand(B, Hh, H, W)
@@ -179,36 +210,48 @@ class ViGAttention(BaseAttention):
         k_col_lin = k_col_lin * valid_col
         v_col_flat = v_col_flat * valid_col
 
-        kv_col = torch.einsum("b n d, b n e -> b d e", k_col_lin, v_col_flat)
-        z_col = k_col_lin.sum(dim=1, keepdim=True)
-        denom_col = torch.einsum(
+        kv_col: torch.Tensor = torch.einsum(
+            "b n d, b n e -> b d e", k_col_lin, v_col_flat
+        )
+        z_col: torch.Tensor = k_col_lin.sum(dim=1, keepdim=True)
+        denom_col: torch.Tensor = torch.einsum(
             "b n d, b d -> b n", q_col_lin, z_col.squeeze(1)
         ).unsqueeze(-1)
-        out_col_flat = torch.einsum("b n d, b d e -> b n e", q_col_lin, kv_col) / (
-            denom_col + 1e-8
-        )
-        out_col = out_col_flat.view(B, Hh, H, W, Dh)  # (B, Hh, H, W, Dh)
+        out_col_flat: torch.Tensor = torch.einsum(
+            "b n d, b d e -> b n e", q_col_lin, kv_col
+        ) / (denom_col + 1e-8)
+        out_col: torch.Tensor = out_col_flat.view(B, Hh, H, W, Dh)
 
-        # Gates
-        gate_row = (
+        gate_row: torch.Tensor = (
             gates[:, :, 0].view(B, H, W, Hh, 1).permute(0, 3, 1, 2, 4)
-        )  # (B, Hh, H, W, 1)
-        gate_col = gates[:, :, 1].view(B, H, W, Hh, 1).permute(0, 3, 1, 2, 4)
+        )
+        gate_col: torch.Tensor = (
+            gates[:, :, 1].view(B, H, W, Hh, 1).permute(0, 3, 1, 2, 4)
+        )
 
-        out = gate_row * out_row + gate_col * out_col  # (B, Hh, H, W, Dh)
+        out: torch.Tensor = (
+            gate_row * out_row + gate_col * out_col
+        )
         out = out.permute(0, 2, 3, 1, 4).reshape(B, total, D)
 
         if pad_len > 0:
             out = out[:, :N, :]
 
         out = self.out_proj(out)
-
-        if output_attentions:
-            return out, None  # linear attention does not materialise weights
         return out, None
 
 
-def inject_vig(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
-    new_attn = ViGAttention(config=model_config, pretrained_attn=old_attn)
+def inject_vig(
+    layer: Any,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Any,
+) -> ViGAttention:
+    """Injection helper for ViG attention."""
+    new_attn: ViGAttention = ViGAttention(
+        config=model_config, pretrained_attn=old_attn
+    )
     layer.attention = new_attn
     return new_attn

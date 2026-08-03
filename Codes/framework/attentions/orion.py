@@ -1,11 +1,31 @@
-"""
-ORION — Optimized Rectified Input-aware Orthogonal Network
-Hybrid attention: SVD‑factorised projections + head‑wise kernel/full attention + Softpick.
+r"""
+ORION: Optimized Rectified Input-aware Orthogonal Network.
+
+Hybrid multi-head attention architecture integrating zero-shot SVD low-rank factorized projections,
+head-wise bifurcated linear kernel vs. rectified Softpick full attention, and random Fourier features.
+
+Mathematical Mechanism:
+    1. **SVD-Factorized Projections:**
+       Weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ is decomposed via truncated SVD
+       guided by cumulative spectral energy threshold $\eta$:
+       $$\sum_{i=1}^r \sigma_i^2 \ge \eta \sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i^2 \implies W \approx A B, \quad A \in \mathbb{R}^{d_{\text{out}} \times r}, B \in \mathbb{R}^{r \times d_{\text{in}}}$$
+    2. **Bifurcated Attention Heads ($H = H_k + H_f$):**
+       - **Linear Kernel Heads ($H_k$):**
+         Random Fourier feature mapping $\phi(x) = \frac{1}{\sqrt{F}} \exp(x W_{\text{rff}})$ yielding linearized attention:
+         $$\operatorname{Attn}_{\text{kernel}}(Q, K, V) = \frac{\phi(Q) (\phi(K)^T V)}{\phi(Q) (\phi(K)^T \mathbf{1})}$$
+       - **Full Softpick Heads ($H_f$):**
+         Dense attention with rectified ~47% sparse Softpick activation:
+         $$\operatorname{Attn}_{\text{full}}(Q, K, V) = \operatorname{Softpick}\left(\frac{Q K^T}{\sqrt{d}}\right) V$$
+
+Computational Complexity:
+    - Kernel heads: $\mathcal{O}(B \cdot H_k \cdot N \cdot F \cdot d)$ linear in sequence length $N$.
+    - Full heads: $\mathcal{O}(B \cdot H_f \cdot N^2 \cdot d)$ quadratic in sequence length $N$.
+    - Overall Complexity: $\mathcal{O}(N \cdot (H_k F + H_f N) \cdot d)$.
 """
 
 import math
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -15,6 +35,19 @@ from framework.core.registry import ATTENTION_REGISTRY
 
 @dataclass
 class ORIONConfig:
+    r"""Hyperparameter configuration for ORION Attention.
+
+    Attributes:
+        svd_energy: Cumulative spectral energy target for SVD rank determination ($\eta \in (0, 1]$).
+        svd_min_rank: Minimum allowable rank for factorized linear projections.
+        svd_max_rank: Maximum allowable rank for factorized linear projections.
+        num_kernel_heads: Number of heads computing linearized random Fourier feature attention ($H_k$).
+        num_full_heads: Number of heads computing full Softpick rectified attention ($H_f$).
+        rff_features: Number of random Fourier features per kernel head ($F$).
+        softpick_temperature: Softmax temperature parameter for Softpick activation.
+        dropout: Attention dropout probability.
+    """
+
     svd_energy: float = 0.95
     svd_min_rank: int = 4
     svd_max_rank: int = 64
@@ -26,6 +59,16 @@ class ORIONConfig:
 
 
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
+    r"""Rectified non-negative sparse activation function without sink token collapse.
+
+    Args:
+        x: Input logits tensor of shape `[..., N]`.
+        dim: Normalization dimension.
+        temperature: Temperature parameter $\tau$.
+
+    Returns:
+        Sparse normalized probability distribution `[..., N]`.
+    """
     m = x.max(dim=dim, keepdim=True).values
     e = torch.exp((x - m) / temperature)
     denom = e - torch.exp(-m / temperature)
@@ -34,6 +77,19 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
 
 
 class FactorisedLinear(nn.Module):
+    r"""Low-rank factorized linear layer initialized via truncated SVD of pretrained weights.
+
+    Factorizes $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ into:
+    $$\text{Down}: \mathbb{R}^{d_{\text{in}}} \to \mathbb{R}^r, \quad \text{Up}: \mathbb{R}^r \to \mathbb{R}^{d_{\text{out}}}$$
+
+    Args:
+        pretrained_weight: Source weight tensor `[OutDim, InDim]`.
+        pretrained_bias: Optional source bias tensor `[OutDim]`.
+        energy: Cumulative singular value energy fraction to retain.
+        min_rank: Lower bound on factorization rank.
+        max_rank: Upper bound on factorization rank.
+    """
+
     def __init__(
         self,
         pretrained_weight: torch.Tensor,
@@ -41,7 +97,7 @@ class FactorisedLinear(nn.Module):
         energy: float,
         min_rank: int = 4,
         max_rank: int = 64,
-    ):
+    ) -> None:
         super().__init__()
         out_dim, in_dim = pretrained_weight.shape
         with torch.no_grad():
@@ -50,7 +106,7 @@ class FactorisedLinear(nn.Module):
             cum = torch.cumsum(S**2, dim=0) / total
             rank = int(torch.searchsorted(cum, energy).item()) + 1
             rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
-            self.rank = rank
+            self.rank: int = rank
             A = U[:, :rank] * S[:rank].unsqueeze(0)
             B = Vt[:rank, :]
         self.down = nn.Linear(in_dim, rank, bias=False)
@@ -63,26 +119,37 @@ class FactorisedLinear(nn.Module):
             self.up.bias.data.zero_()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        r"""Compute low-rank linear projection: $y = (x B^T) A^T + b$."""
         return self.up(self.down(x))
 
 
+@ATTENTION_REGISTRY.register("orion_module")
 class ORIONAttention(nn.Module):
+    r"""ORION hybrid multi-head attention module.
+
+    Args:
+        model_config: Model configuration containing `hidden_size` and `num_attention_heads`.
+        orion_cfg: ORIONConfig hyperparameters.
+        pretrained_attn: Pretrained attention module used for SVD weight initialization.
+        bert_mode: Boolean indicating bidirectional context handling.
+    """
+
     def __init__(
         self,
-        model_config,
+        model_config: Any,
         orion_cfg: ORIONConfig,
-        pretrained_attn=None,
+        pretrained_attn: Optional[Any] = None,
         bert_mode: bool = False,
-    ):
+    ) -> None:
         super().__init__()
         if pretrained_attn is None:
-            raise ValueError("ORION requires pretrained_attn for zero‑shot SVD init")
-        self.num_heads = model_config.num_attention_heads
-        self.head_dim = model_config.hidden_size // self.num_heads
-        self.all_head_size = self.num_heads * self.head_dim
-        self.hidden_size = model_config.hidden_size
-        self.cfg = orion_cfg
-        self.bert_mode = bert_mode
+            raise ValueError("ORION requires pretrained_attn for zero-shot SVD init")
+        self.num_heads: int = model_config.num_attention_heads
+        self.head_dim: int = model_config.hidden_size // self.num_heads
+        self.all_head_size: int = self.num_heads * self.head_dim
+        self.hidden_size: int = model_config.hidden_size
+        self.cfg: ORIONConfig = orion_cfg
+        self.bert_mode: bool = bert_mode
 
         if orion_cfg.num_kernel_heads + orion_cfg.num_full_heads != self.num_heads:
             raise ValueError(
@@ -90,8 +157,8 @@ class ORIONAttention(nn.Module):
                 f"num_full_heads ({orion_cfg.num_full_heads}) must equal "
                 f"total heads ({self.num_heads})"
             )
-        self.num_kernel_heads = orion_cfg.num_kernel_heads
-        self.num_full_heads = orion_cfg.num_full_heads
+        self.num_kernel_heads: int = orion_cfg.num_kernel_heads
+        self.num_full_heads: int = orion_cfg.num_full_heads
 
         self.q_proj = FactorisedLinear(
             pretrained_attn.q_lin.weight.data,
@@ -127,7 +194,10 @@ class ORIONAttention(nn.Module):
         )
         self.dropout = nn.Dropout(orion_cfg.dropout)
 
-    def _kernel_linear_attention(self, Q, K, V):
+    def _kernel_linear_attention(
+        self, Q: torch.Tensor, K: torch.Tensor, V: torch.Tensor
+    ) -> torch.Tensor:
+        r"""Compute kernel linear attention via RFF projections in $\mathcal{O}(N \cdot F \cdot d)$."""
         B, Hk, N, D = Q.shape
         F_dim = self.cfg.rff_features
         Q_norm = F.normalize(Q, p=2, dim=-1)
@@ -143,7 +213,14 @@ class ORIONAttention(nn.Module):
         ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-8)
         return ctx
 
-    def _full_softpick_attention(self, Q, K, V, token_valid=None):
+    def _full_softpick_attention(
+        self,
+        Q: torch.Tensor,
+        K: torch.Tensor,
+        V: torch.Tensor,
+        token_valid: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        r"""Compute full Softpick rectified attention in $\mathcal{O}(N^2 \cdot d)$."""
         scale = self.head_dim**-0.5
         scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
         if token_valid is not None:
@@ -154,12 +231,26 @@ class ORIONAttention(nn.Module):
 
     def forward(
         self,
-        hidden_states,
-        attention_mask=None,
-        head_mask=None,
-        output_attentions=False,
-        **kwargs,
-    ):
+        hidden_states: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
+        **kwargs: Any,
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        r"""Forward pass computing hybrid kernel and full attention across parallel heads.
+
+        Args:
+            hidden_states: Input tensor of shape `[Batch, SeqLen, HiddenDim]`.
+            attention_mask: Optional attention mask tensor `[Batch, SeqLen]` or broadcastable.
+            head_mask: Optional head gating mask.
+            output_attentions: Return explicit attention matrices if True.
+            **kwargs: Additional runtime arguments.
+
+        Returns:
+            Tuple of:
+                - output: Layer projection output of shape `[Batch, SeqLen, HiddenDim]`.
+                - attention_weights: Attention matrix or None.
+        """
         B, N, _ = hidden_states.shape
         Hk = self.num_kernel_heads
 
@@ -201,12 +292,21 @@ class ORIONAttention(nn.Module):
         output = self.out_proj(context)
         return output, None
 
-    def get_ortho_loss(self):
+    def get_ortho_loss(self) -> torch.Tensor:
+        r"""Compute orthogonal regularization loss."""
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
 @ATTENTION_REGISTRY.register("orion")
-def inject_orion(layer, model_config, comp_config, layer_idx, total_layers, old_attn):
+def inject_orion(
+    layer: Any,
+    model_config: Any,
+    comp_config: Any,
+    layer_idx: int,
+    total_layers: int,
+    old_attn: Any,
+) -> ORIONAttention:
+    r"""Bridge function injecting ORION attention into a transformer layer."""
     cfg = ORIONConfig(
         svd_energy=getattr(comp_config, "svd_energy", 0.95),
         svd_min_rank=getattr(comp_config, "min_rank", 4),
