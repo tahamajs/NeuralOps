@@ -10,12 +10,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 from framework.config import Config, load_config
-from framework.data import (DataConfig, TaskType, load_dataset,
-                            preprocess_function)
+from framework.data import DataConfig, TaskType, load_dataset, preprocess_function
 from framework.models import load_model
 from framework.results_saver import ResultsSaver, SaveConfig
-from framework.training import (HuggingFaceTrainer, ResultsManager,
-                                get_task_metrics)
+from framework.training import HuggingFaceTrainer, ResultsManager, get_task_metrics
 
 logger = logging.getLogger(__name__)
 

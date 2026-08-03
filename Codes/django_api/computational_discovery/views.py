@@ -7,8 +7,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import CodeExperiment, CodeVariant, ExperimentRun
-from .serializers import (CodeExperimentSerializer, CodeVariantSerializer,
-                          ExperimentRunSerializer)
+from .serializers import (
+    CodeExperimentSerializer,
+    CodeVariantSerializer,
+    ExperimentRunSerializer,
+)
 from .tasks import run_computational_experiment
 
 logger = logging.getLogger(__name__)

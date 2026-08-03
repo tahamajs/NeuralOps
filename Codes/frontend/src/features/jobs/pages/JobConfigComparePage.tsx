@@ -14,8 +14,7 @@ export default function JobConfigComparePage() {
 
   const { data: history } = useQuery({
     queryKey: ["configHistory", jobId],
-    queryFn: async () =>
-      (await api.get(`/jobs/${jobId}/config/history/`)).data,
+    queryFn: async () => (await api.get(`/jobs/${jobId}/config/history/`)).data,
   });
   const versions = history?.versions || [];
 

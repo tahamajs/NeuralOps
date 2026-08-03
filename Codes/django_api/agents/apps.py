@@ -17,9 +17,14 @@ class AgentsConfig(AppConfig):
         def on_run_complete(sender, instance, **kwargs):
             if instance.status in ("completed", "failed"):
                 analysis = analyze_training(run_id=str(instance.id))
-                user_id = getattr(instance.experiment, "user_id", None) if instance.experiment else None
+                user_id = (
+                    getattr(instance.experiment, "user_id", None)
+                    if instance.experiment
+                    else None
+                )
                 if not user_id:
                     from django.contrib.auth import get_user_model
+
                     User = get_user_model()
                     first_user = User.objects.first()
                     user_id = first_user.id if first_user else None

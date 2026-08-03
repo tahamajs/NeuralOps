@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (AutonomousDecision, PipelineArtifact, PipelineStep,
-                     PipelineTemplate, ResearchPipeline)
+from .models import (
+    AutonomousDecision,
+    PipelineArtifact,
+    PipelineStep,
+    PipelineTemplate,
+    ResearchPipeline,
+)
 
 
 class PipelineStepSerializer(serializers.ModelSerializer):

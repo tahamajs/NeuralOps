@@ -21,8 +21,13 @@ References:
 
 from .client_selection import SELECTOR_REGISTRY, BaseSelector
 from .compression import COMPRESSION_REGISTRY, BaseCompressor
-from .config import (AggregationStrategy, ClientSelectionStrategy,
-                     CompressionMethod, FLConfig, PrivacyMethod)
+from .config import (
+    AggregationStrategy,
+    ClientSelectionStrategy,
+    CompressionMethod,
+    FLConfig,
+    PrivacyMethod,
+)
 from .data_partitioning import DataPartitioner, PartitionType
 from .integration import run_federated_experiment
 from .privacy import PRIVACY_REGISTRY, BasePrivacyMechanism

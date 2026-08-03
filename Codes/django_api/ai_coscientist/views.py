@@ -5,8 +5,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Hypothesis, ResearchSession, TournamentMatch
-from .serializers import (HypothesisSerializer, ResearchSessionSerializer,
-                          TournamentMatchSerializer)
+from .serializers import (
+    HypothesisSerializer,
+    ResearchSessionSerializer,
+    TournamentMatchSerializer,
+)
 from .tasks import run_research_workflow
 
 

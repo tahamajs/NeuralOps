@@ -73,7 +73,11 @@ export default function LabsListPage({ onClose }: { onClose?: () => void }) {
       </div>
       <div className="flex-1 overflow-auto p-4 space-y-3">
         {labsArray.map((lab: any) => (
-          <div key={lab.id} onClick={() => navigate(`/community/labs/${lab.id}`)} className="cursor-pointer">
+          <div
+            key={lab.id}
+            onClick={() => navigate(`/community/labs/${lab.id}`)}
+            className="cursor-pointer"
+          >
             <TerminalCard className="p-4">
               <div className="flex justify-between items-start">
                 <div className="flex-1">

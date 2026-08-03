@@ -38,16 +38,20 @@ export const profileAPI = {
     request.get<UserStats>(`/profiles/users/${userId}/stats/`),
 
   getUserActivity: (userId: string, page: number = 1) =>
-    request.get<{ results: UserActivity[]; next: string | null; count: number }>(
-      `/profiles/users/${userId}/activity/`,
-      { params: { page } },
-    ),
+    request.get<{
+      results: UserActivity[];
+      next: string | null;
+      count: number;
+    }>(`/profiles/users/${userId}/activity/`, { params: { page } }),
 
   getPinnedItems: (userId: string) =>
     request.get<PinnedItem[]>(`/profiles/users/${userId}/pins/`),
 
   pinItem: (itemType: string, itemId: string) =>
-    request.post("/profiles/me/pins/", { item_type: itemType, item_id: itemId }),
+    request.post("/profiles/me/pins/", {
+      item_type: itemType,
+      item_id: itemId,
+    }),
 
   unpinItem: (pinId: string) => request.delete(`/profiles/me/pins/${pinId}/`),
 

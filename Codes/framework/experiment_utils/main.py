@@ -9,25 +9,32 @@ from pathlib import Path
 
 from framework.core.registry import COMPRESSOR_REGISTRY
 from framework.core.utils import get_device, set_seed
-from framework.data.dataset_loader import \
-    ExperimentConfig as data_ExperimentConfig
-from framework.data.glue_loader import (GLUE_TASK_KEYS,
-                                        get_num_labels_and_is_regression,
-                                        load_glue_local)
-from framework.data.preprocessing import \
-    preprocess_function as build_preprocess
-from framework.trainer.callbacks import (MemoryCallback, SVDAttentionCallback,
-                                         TimeCallback)
+from framework.data.dataset_loader import ExperimentConfig as data_ExperimentConfig
+from framework.data.glue_loader import (
+    GLUE_TASK_KEYS,
+    get_num_labels_and_is_regression,
+    load_glue_local,
+)
+from framework.data.preprocessing import preprocess_function as build_preprocess
+from framework.trainer.callbacks import (
+    MemoryCallback,
+    SVDAttentionCallback,
+    TimeCallback,
+)
 from framework.trainer.trainer_factory import get_trainer
 from framework.utils.layer_norm_fix import fix_layernorm_naming
-from transformers import (AutoModelForSequenceClassification, AutoTokenizer,
-                          DataCollatorWithPadding, Trainer, TrainerCallback,
-                          TrainingArguments)
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    DataCollatorWithPadding,
+    Trainer,
+    TrainerCallback,
+    TrainingArguments,
+)
 
 # ---------- Safe import of LoggingCallback ----------
 try:
-    from framework.trainer.callbacks import \
-        LoggingCallback as TrainerLoggingCallback
+    from framework.trainer.callbacks import LoggingCallback as TrainerLoggingCallback
 except ImportError:
 
     class TrainerLoggingCallback:
@@ -257,8 +264,7 @@ def run_compression(config, output_dir):
 
 
 def main():
-    from experiment_logging.logger import (LoggingConfig, MetricsTracker,
-                                           setup_logging)
+    from experiment_logging.logger import LoggingConfig, MetricsTracker, setup_logging
     from framework.experiment_utils.config import build_config_from_args
 
     cfg = build_config_from_args()

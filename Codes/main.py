@@ -9,7 +9,6 @@ Usage:
 """
 
 import argparse
-import sys
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
@@ -37,7 +36,7 @@ parser.add_argument("--sweep", action="store_true", help="Run hyperparameter swe
 args = parser.parse_args()
 
 # Import framework after argument parsing to allow offline mode early
-from framework.config import Config, load_config
+from framework.config import load_config
 
 # Load full configuration (YAML + CLI overrides)
 cfg = load_config(args.config, cli_args=args)
@@ -54,46 +53,44 @@ if args.epochs != 5:
 if args.lr != 2e-5:
     cfg.training.learning_rate = args.lr
 if args.seed != 42:
-    cfg.training.seed = args.seed  # but TrainingConfig does not have seed? We'll handle seed separately
+    cfg.training.seed = (
+        args.seed
+    )  # but TrainingConfig does not have seed? We'll handle seed separately
 if args.fp16:
     cfg.hardware.enable_fp16 = True
 if args.device != "auto":
     cfg.hardware.device = args.device
 
-exp_name = args.exp_name or f"{cfg.compression.attn_type}_{cfg.method.method}_{args.task}_{args.seed}"
+exp_name = (
+    args.exp_name
+    or f"{cfg.compression.attn_type}_{cfg.method.method}_{args.task}_{args.seed}"
+)
 output_dir = Path(args.output_dir) / exp_name
 
 # ---------------------------------------------------------------------------
 # 2. Framework imports (offline mode already set via environment if needed)
 # ---------------------------------------------------------------------------
-import torch
-import numpy as np
-from transformers import set_seed
 
-from framework.core.utils import set_seed as set_all_seeds
 from framework.core.utils import get_device
+from framework.core.utils import set_seed as set_all_seeds
 from framework.data import (
-    load_dataset,
     DataConfig,
-    TaskType,
-    preprocess_function,
-    create_dataloader,
     ExperimentConfig,
+    TaskType,
+    create_dataloader,
+    load_dataset,
+    preprocess_function,
 )
 from framework.models import load_model
-from framework.training import (
-    HuggingFaceTrainer,
-    ResultsManager,
-    get_task_metrics,
-)
-from framework.training.methods import get_method as get_method_fn
-from framework.trainer.callbacks import (
-    MemoryCallback,
-    TimeCallback,
-    GradientNormCallback,
-)
 from framework.results_saver import ResultsSaver, SaveConfig
 from framework.tracking import ExperimentTracker, TrackingBackend
+from framework.trainer.callbacks import (
+    GradientNormCallback,
+    MemoryCallback,
+    TimeCallback,
+)
+from framework.training import HuggingFaceTrainer, ResultsManager, get_task_metrics
+from framework.training.methods import get_method as get_method_fn
 
 # Optional callbacks
 try:
@@ -101,11 +98,11 @@ try:
 except ImportError:
     EMACallback = SWACallback = None
 try:
+    from framework.callbacks.analysis import AttentionHeatmapCallback
     from framework.callbacks.analysis import (
-        SVDAttentionCallback,
-        AttentionHeatmapCallback,
         GradientNormCallback as AnalysisGradCallback,
     )
+    from framework.callbacks.analysis import SVDAttentionCallback
 except ImportError:
     SVDAttentionCallback = AttentionHeatmapCallback = AnalysisGradCallback = None
 
@@ -134,14 +131,19 @@ exp_config = ExperimentConfig(dataset_name=args.task)
 dataset = load_dataset(exp_config)
 
 num_labels = cfg.model.num_labels
-is_regression = (args.task == "stsb")
+is_regression = args.task == "stsb"
 sent1_key, sent2_key = None, None
 from framework.data.glue_loader import GLUE_TASK_KEYS
+
 if args.task in GLUE_TASK_KEYS:
     sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
 
 data_cfg = DataConfig(
-    task_type=TaskType.SINGLE_CLASSIFICATION if sent2_key is None else TaskType.PAIR_CLASSIFICATION,
+    task_type=(
+        TaskType.SINGLE_CLASSIFICATION
+        if sent2_key is None
+        else TaskType.PAIR_CLASSIFICATION
+    ),
     max_length=cfg.data.max_seq_length,
     batch_size=cfg.training.batch_size,
     text_column_1=sent1_key,
@@ -149,16 +151,23 @@ data_cfg = DataConfig(
     label_column="label",
 )
 
+
 def glue_preprocess(examples):
     return preprocess_function(examples, tokenizer, data_cfg)
 
-tokenized = dataset.map(glue_preprocess, batched=True,
-                       remove_columns=dataset["train"].column_names)
+
+tokenized = dataset.map(
+    glue_preprocess, batched=True, remove_columns=dataset["train"].column_names
+)
 tokenized.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
 train_loader = create_dataloader(tokenized["train"], tokenizer, data_cfg)
 val_split = "validation" if "validation" in tokenized else "validation_matched"
-val_loader = create_dataloader(tokenized[val_split], tokenizer, data_cfg) if val_split in tokenized else None
+val_loader = (
+    create_dataloader(tokenized[val_split], tokenizer, data_cfg)
+    if val_split in tokenized
+    else None
+)
 
 # ---------------------------------------------------------------------------
 # 6. Apply training method (LoRA, Mixout, etc.)
@@ -167,7 +176,9 @@ if cfg.method.method != "baseline":
     method_fn = get_method_fn(cfg.method.method)
     if method_fn is None:
         raise ValueError(f"Unknown method: {cfg.method.method}")
-    method_fn(model, cfg.compression)   # compression config contains method-specific params
+    method_fn(
+        model, cfg.compression
+    )  # compression config contains method-specific params
 
 # ---------------------------------------------------------------------------
 # 7. Set up ResultsManager, Tracker, and Trainer
@@ -227,7 +238,7 @@ saver = ResultsSaver(
     config=saver_cfg,
 )
 # Convert history to a list of dicts for the saver
-history = [h for h in trainer.state.log_history] if hasattr(trainer, 'state') else []
+history = [h for h in trainer.state.log_history] if hasattr(trainer, "state") else []
 saver.save_all(model, cfg.__dict__, history, eval_metrics, tokenizer)
 saver.push_all()
 

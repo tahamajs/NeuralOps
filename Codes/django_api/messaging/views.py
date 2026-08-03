@@ -11,8 +11,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import ChatRoom, Message
-from .serializers import (ChatRoomDetailSerializer, ChatRoomListSerializer,
-                          MessageSerializer)
+from .serializers import (
+    ChatRoomDetailSerializer,
+    ChatRoomListSerializer,
+    MessageSerializer,
+)
 
 logger = logging.getLogger(__name__)
 

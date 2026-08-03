@@ -15,10 +15,14 @@ from .config import DistributedConfig
 from .elastic import ElasticConfig, ElasticState, ElasticTrainer
 from .launcher import launch_distributed, launch_elastic
 from .rendezvous import InternetRendezvous
-from .scheduler import (DistributedJobScheduler, JobSpec, JobState,
-                        SchedulingPolicy)
-from .strategies import (STRATEGY_REGISTRY, BaseStrategy, DDPStrategy,
-                         DeepSpeedStrategy, FSDPStrategy)
+from .scheduler import DistributedJobScheduler, JobSpec, JobState, SchedulingPolicy
+from .strategies import (
+    STRATEGY_REGISTRY,
+    BaseStrategy,
+    DDPStrategy,
+    DeepSpeedStrategy,
+    FSDPStrategy,
+)
 from .trainer import DistributedTrainer
 
 __all__ = [

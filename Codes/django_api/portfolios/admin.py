@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import (ActivityEvent, Endorsement, Portfolio, ShowcaseItem,
-                     WidgetEmbed)
+from .models import ActivityEvent, Endorsement, Portfolio, ShowcaseItem, WidgetEmbed
 
 
 @admin.register(Portfolio)

@@ -1,8 +1,15 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import (ActivityFeed, Connection, Discussion, DiscussionReply,
-                     GroupMembership, PublicationAlert, ResearchGroup)
+from .models import (
+    ActivityFeed,
+    Connection,
+    Discussion,
+    DiscussionReply,
+    GroupMembership,
+    PublicationAlert,
+    ResearchGroup,
+)
 
 User = get_user_model()
 

@@ -23,8 +23,7 @@ export default function ClusterOverviewPage() {
   });
   const { data: queue } = useQuery({
     queryKey: ["schedulerQueue"],
-    queryFn: async () =>
-      (await api.get("/loadbalancer/scheduler/queue/")).data,
+    queryFn: async () => (await api.get("/loadbalancer/scheduler/queue/")).data,
     refetchInterval: 5000,
   });
   const { data: history } = useQuery({
@@ -34,8 +33,7 @@ export default function ClusterOverviewPage() {
   });
   const { data: clusterNodes } = useQuery({
     queryKey: ["clusterNodes"],
-    queryFn: async () =>
-      (await api.get("/loadbalancer/cluster/nodes/")).data,
+    queryFn: async () => (await api.get("/loadbalancer/cluster/nodes/")).data,
   });
 
   if (!gpuStatus) return <Spinner />;

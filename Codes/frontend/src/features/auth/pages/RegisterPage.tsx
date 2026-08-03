@@ -51,7 +51,11 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md p-8 animate-scale-in border border-white/10">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-neon-blue to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow-md">
-            <img src="/logo.jpg" alt="NeuralOps" className="w-full h-full object-cover rounded-xl" />
+            <img
+              src="/logo.jpg"
+              alt="NeuralOps"
+              className="w-full h-full object-cover rounded-xl"
+            />
           </div>
           <h1 className="text-2xl font-display font-bold text-white">
             Create account

@@ -1,5 +1,7 @@
 """System resource monitor — pushes periodic snapshots via WebSocket."""
-import threading, psutil
+
+import psutil
+
 
 class SystemMonitor:
     def __init__(self, gpu_detector):
@@ -18,9 +20,9 @@ class SystemMonitor:
         mem = psutil.virtual_memory()
         gpu = self.gpu.get_current_utilization()
         return {
-            'cpu_percent': cpu,
-            'ram_used_percent': mem.percent,
-            'gpu_percent': gpu['gpu_percent'],
-            'gpu_memory_percent': gpu['memory_percent'],
-            'gpu_temperature_c': gpu['temperature_c'],
+            "cpu_percent": cpu,
+            "ram_used_percent": mem.percent,
+            "gpu_percent": gpu["gpu_percent"],
+            "gpu_memory_percent": gpu["memory_percent"],
+            "gpu_temperature_c": gpu["temperature_c"],
         }

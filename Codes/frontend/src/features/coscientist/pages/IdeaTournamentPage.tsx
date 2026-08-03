@@ -134,8 +134,12 @@ export default function IdeaTournamentPage({
   }
 
   // Active session view
-  const displayHypotheses = hypotheses.length ? hypotheses : (session as any)?.hypotheses || [];
-  const displayMatches = matches.length ? matches : (session as any)?.matches || [];
+  const displayHypotheses = hypotheses.length
+    ? hypotheses
+    : (session as any)?.hypotheses || [];
+  const displayMatches = matches.length
+    ? matches
+    : (session as any)?.matches || [];
   const displayAgents = agents.length ? agents : (session as any)?.agents || [];
 
   return (
@@ -192,20 +196,42 @@ export default function IdeaTournamentPage({
               <TabPanel value="evolution">
                 <div className="space-y-4">
                   {[
-                    { gen: "Generation 4", desc: "Agents converge on self-attention alternative", time: "Just now" },
-                    { gen: "Generation 3", desc: "Cross-breeding: memory-augmented RNN + sparse transformers", time: "10m ago" },
-                    { gen: "Generation 2", desc: "Filtered out weak linear hypotheses via simulated debate", time: "25m ago" },
-                    { gen: "Generation 1", desc: "Initial population seeded with 10 random hypotheses", time: "40m ago" }
+                    {
+                      gen: "Generation 4",
+                      desc: "Agents converge on self-attention alternative",
+                      time: "Just now",
+                    },
+                    {
+                      gen: "Generation 3",
+                      desc: "Cross-breeding: memory-augmented RNN + sparse transformers",
+                      time: "10m ago",
+                    },
+                    {
+                      gen: "Generation 2",
+                      desc: "Filtered out weak linear hypotheses via simulated debate",
+                      time: "25m ago",
+                    },
+                    {
+                      gen: "Generation 1",
+                      desc: "Initial population seeded with 10 random hypotheses",
+                      time: "40m ago",
+                    },
                   ].map((event, idx) => (
                     <div key={idx} className="flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className="w-3 h-3 rounded-full bg-neon-blue mt-1.5 shadow-[0_0_10px_rgba(56,189,248,0.5)]"></div>
-                        {idx !== 3 && <div className="w-px h-full bg-white/10 my-1"></div>}
+                        {idx !== 3 && (
+                          <div className="w-px h-full bg-white/10 my-1"></div>
+                        )}
                       </div>
                       <div className="pb-4">
                         <p className="text-white font-medium">{event.gen}</p>
-                        <p className="text-slate-400 text-sm mt-1">{event.desc}</p>
-                        <p className="text-slate-500 text-xs mt-2">{event.time}</p>
+                        <p className="text-slate-400 text-sm mt-1">
+                          {event.desc}
+                        </p>
+                        <p className="text-slate-500 text-xs mt-2">
+                          {event.time}
+                        </p>
                       </div>
                     </div>
                   ))}

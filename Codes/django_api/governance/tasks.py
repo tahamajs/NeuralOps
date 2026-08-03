@@ -2,8 +2,13 @@ from celery import shared_task
 
 from .compliance import ComplianceChecker
 from .drift import DriftDetector
-from .models import (ComplianceCheck, ComplianceRule, DriftAlert, DriftMonitor,
-                     SecurityScan)
+from .models import (
+    ComplianceCheck,
+    ComplianceRule,
+    DriftAlert,
+    DriftMonitor,
+    SecurityScan,
+)
 from .scanner import ModelScanner
 
 

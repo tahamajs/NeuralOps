@@ -30,5 +30,7 @@ export const playgroundAPI = {
   // Tools
   getTools: () => request.get<ToolDefinition[]>("/playground/tools/"),
   testTool: (toolName: string, input: any) =>
-    request.post<ToolTestResult>(`/playground/tools/${toolName}/test/`, { input }),
+    request.post<ToolTestResult>(`/playground/tools/${toolName}/test/`, {
+      input,
+    }),
 };

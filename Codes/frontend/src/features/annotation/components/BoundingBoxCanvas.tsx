@@ -18,12 +18,10 @@ export function BoundingBoxCanvas({
         canvas.width! / img.width!,
         canvas.height! / img.height!,
       );
-      img
-        .scale(scale)
-        .set({
-          left: (canvas.width! - img.width! * scale) / 2,
-          top: (canvas.height! - img.height! * scale) / 2,
-        });
+      img.scale(scale).set({
+        left: (canvas.width! - img.width! * scale) / 2,
+        top: (canvas.height! - img.height! * scale) / 2,
+      });
       canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
     });
     canvas.on("object:added", () =>

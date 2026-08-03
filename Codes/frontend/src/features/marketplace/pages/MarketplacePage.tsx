@@ -15,7 +15,10 @@ export default function MarketplacePage() {
         const r = await api.get("/marketplace/listings/", { params: filters });
         return r.data;
       } catch (err) {
-        console.warn("Backend marketplace listings endpoint failed, returning mock data", err);
+        console.warn(
+          "Backend marketplace listings endpoint failed, returning mock data",
+          err,
+        );
         return {
           results: [
             {
@@ -26,7 +29,7 @@ export default function MarketplacePage() {
               listing_type: "rent",
               current_price_per_hour: 2.15,
               reliability_score: "99.8%",
-              provider: "Lambda Labs"
+              provider: "Lambda Labs",
             },
             {
               id: "listing-2",
@@ -36,7 +39,7 @@ export default function MarketplacePage() {
               listing_type: "rent",
               current_price_per_hour: 1.25,
               reliability_score: "99.5%",
-              provider: "Vast.ai"
+              provider: "Vast.ai",
             },
             {
               id: "listing-3",
@@ -46,9 +49,9 @@ export default function MarketplacePage() {
               listing_type: "rent",
               current_price_per_hour: 0.45,
               reliability_score: "98.2%",
-              provider: "RunPod"
-            }
-          ]
+              provider: "RunPod",
+            },
+          ],
         };
       }
     },

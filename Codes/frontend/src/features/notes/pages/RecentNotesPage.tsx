@@ -7,8 +7,7 @@ import { Link } from "react-router-dom";
 export default function RecentNotesPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["recentNotes"],
-    queryFn: async () =>
-      (await api.get("/notes/v1/notes/recent/?days=7")).data,
+    queryFn: async () => (await api.get("/notes/v1/notes/recent/?days=7")).data,
   });
 
   if (isLoading) return <Spinner />;

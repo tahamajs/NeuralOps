@@ -424,9 +424,7 @@ class TTLinearLayer(nn.Module):
                     core0 = self.cores[0].squeeze(0)  # (p1, q1, r)
                     core1 = self.cores[1].squeeze(-1)  # (r, p2, q2)
                     # Contract over r: (p1, q1, r) * (r, p2, q2) -> (p1, q1, p2, q2)
-                    torch.einsum(
-                        "pqr,rpq->pqpq", core0, core1
-                    )  # careful: indices
+                    torch.einsum("pqr,rpq->pqpq", core0, core1)  # careful: indices
                     # Actually we need to get shape (p1, p2, q1, q2) after permutation
                     # Let's do it stepwise:
                     # core0: (p1, q1, r)

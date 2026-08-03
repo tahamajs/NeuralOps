@@ -1,7 +1,11 @@
 from rest_framework import serializers
 
-from .models import (CreativeVariant, ExperimentRecommendation,
-                     ExperimentTemplate, OpportunityIndex)
+from .models import (
+    CreativeVariant,
+    ExperimentRecommendation,
+    ExperimentTemplate,
+    OpportunityIndex,
+)
 
 
 class ExperimentTemplateSerializer(serializers.ModelSerializer):

@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (Recommendation, ReputationEvent, ReputationScore,
-                     ReputationSnapshot, ReputationWeight)
+from .models import (
+    Recommendation,
+    ReputationEvent,
+    ReputationScore,
+    ReputationSnapshot,
+    ReputationWeight,
+)
 
 
 class ReputationWeightSerializer(serializers.ModelSerializer):

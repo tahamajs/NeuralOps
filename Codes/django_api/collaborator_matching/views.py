@@ -8,8 +8,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import CollaboratorMatch, ResearcherInterestProfile
-from .serializers import (CollaboratorMatchSerializer,
-                          ResearcherInterestProfileSerializer)
+from .serializers import (
+    CollaboratorMatchSerializer,
+    ResearcherInterestProfileSerializer,
+)
 from .tasks import generate_matches_for_user
 
 logger = logging.getLogger(__name__)

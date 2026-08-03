@@ -1,7 +1,14 @@
 from django.contrib import admin
 
-from .models import (ActivityFeed, Connection, Discussion, DiscussionReply,
-                     GroupMembership, PublicationAlert, ResearchGroup)
+from .models import (
+    ActivityFeed,
+    Connection,
+    Discussion,
+    DiscussionReply,
+    GroupMembership,
+    PublicationAlert,
+    ResearchGroup,
+)
 
 admin.site.register(Connection)
 admin.site.register(ResearchGroup)

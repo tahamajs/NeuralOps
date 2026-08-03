@@ -11,18 +11,30 @@ NAT traversal: The WebSocket is an outbound connection from the provider
 (behind NAT) to our server (public). This naturally traverses NAT.
 For peer-to-peer data transfer, we use STUN/TURN (WebRTC) separately.
 """
-import json, logging, time, threading, ssl
+
+import json
+import logging
+import threading
+import time
 from typing import Callable
+
 import websocket  # websocket-client library
 
 logger = logging.getLogger("neuralops.ws")
 
+
 class NeuralOpsWebSocket:
     """Persistent WebSocket to NeuralOps server with auto-reconnect."""
 
-    def __init__(self, url: str, api_key: str, listing_id: str,
-                 on_job: Callable = None, on_cancel: Callable = None,
-                 on_heartbeat_ack: Callable = None):
+    def __init__(
+        self,
+        url: str,
+        api_key: str,
+        listing_id: str,
+        on_job: Callable = None,
+        on_cancel: Callable = None,
+        on_heartbeat_ack: Callable = None,
+    ):
         self.url = url
         self.api_key = api_key
         self.listing_id = listing_id
@@ -61,11 +73,15 @@ class NeuralOpsWebSocket:
         """Send GPU/CPU utilization stats to server."""
         if self._ws and self._connected:
             try:
-                self._ws.send(json.dumps({
-                    'type': 'system_stats',
-                    'listing_id': self.listing_id,
-                    'data': stats,
-                }))
+                self._ws.send(
+                    json.dumps(
+                        {
+                            "type": "system_stats",
+                            "listing_id": self.listing_id,
+                            "data": stats,
+                        }
+                    )
+                )
             except Exception:
                 pass
 
@@ -73,12 +89,16 @@ class NeuralOpsWebSocket:
         """Send job status update to server."""
         if self._ws and self._connected:
             try:
-                self._ws.send(json.dumps({
-                    'type': 'job_update',
-                    'job_id': job_id,
-                    'status': status,
-                    'data': data or {},
-                }))
+                self._ws.send(
+                    json.dumps(
+                        {
+                            "type": "job_update",
+                            "job_id": job_id,
+                            "status": status,
+                            "data": data or {},
+                        }
+                    )
+                )
             except Exception:
                 pass
 
@@ -91,7 +111,7 @@ class NeuralOpsWebSocket:
             try:
                 self._ws = websocket.WebSocketApp(
                     self.url,
-                    header={'Authorization': f'Token {self.api_key}'},
+                    header={"Authorization": f"Token {self.api_key}"},
                     on_open=self._on_open,
                     on_message=self._on_message,
                     on_error=self._on_error,
@@ -119,26 +139,30 @@ class NeuralOpsWebSocket:
         self._connected = True
         self._missed_pongs = 0
         # Register this connection with the server
-        ws.send(json.dumps({
-            'type': 'register',
-            'listing_id': self.listing_id,
-            'api_key': self.api_key,
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "type": "register",
+                    "listing_id": self.listing_id,
+                    "api_key": self.api_key,
+                }
+            )
+        )
 
     def _on_message(self, ws, message):
         try:
             data = json.loads(message)
-            msg_type = data.get('type')
+            msg_type = data.get("type")
 
-            if msg_type == 'new_job' and self._on_job:
-                self._on_job(data['job'])
-            elif msg_type == 'cancel_job' and self._on_cancel:
-                self._on_cancel(data['job_id'])
-            elif msg_type == 'heartbeat_ack' and self._on_heartbeat_ack:
+            if msg_type == "new_job" and self._on_job:
+                self._on_job(data["job"])
+            elif msg_type == "cancel_job" and self._on_cancel:
+                self._on_cancel(data["job_id"])
+            elif msg_type == "heartbeat_ack" and self._on_heartbeat_ack:
                 self._on_heartbeat_ack(data)
-            elif msg_type == 'benchmark_request':
+            elif msg_type == "benchmark_request":
                 self._handle_benchmark_request(data)
-            elif msg_type == 'config_update':
+            elif msg_type == "config_update":
                 self._handle_config_update(data)
             else:
                 logger.debug("Unknown message type: %s", msg_type)
@@ -163,31 +187,35 @@ class NeuralOpsWebSocket:
         """Server pushes updated configuration."""
         pass
 
-
-
-# Inside class NeuralOpsWebSocket, add:
+    # Inside class NeuralOpsWebSocket, add:
 
     def send_gpu_snapshot(self, snapshot: dict):
         """Push a full GPU snapshot to the server (and relayed to GUI)."""
-        self._send({
-            'type': 'gpu_snapshot',
-            'data': snapshot,
-        })
+        self._send(
+            {
+                "type": "gpu_snapshot",
+                "data": snapshot,
+            }
+        )
 
     def send_container_stats(self, job_id: str, stats: dict):
         """Push container stats (CPU/RAM/network) to the server."""
-        self._send({
-            'type': 'container_stats',
-            'job_id': job_id,
-            'data': stats,
-        })
+        self._send(
+            {
+                "type": "container_stats",
+                "job_id": job_id,
+                "data": stats,
+            }
+        )
 
     def send_container_logs(self, job_id: str, logs: str):
-        self._send({
-            'type': 'container_logs',
-            'job_id': job_id,
-            'data': logs,
-        })
+        self._send(
+            {
+                "type": "container_logs",
+                "job_id": job_id,
+                "data": logs,
+            }
+        )
 
     def _send(self, data: dict):
         """Helper to send JSON over the WebSocket."""

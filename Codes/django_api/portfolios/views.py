@@ -9,8 +9,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import ActivityEvent, Endorsement, Portfolio, ShowcaseItem
-from .serializers import (PortfolioSerializer, ShowcaseItemSerializer,
-                          WidgetEmbedSerializer)
+from .serializers import (
+    PortfolioSerializer,
+    ShowcaseItemSerializer,
+    WidgetEmbedSerializer,
+)
 
 
 # ═══════════════════════════════════════════════════════════════

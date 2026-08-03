@@ -5,8 +5,7 @@ custom attention and wraps the result in a UnifiedTransformerModel.
 
 from framework.core.attention_utils import inject_attention
 from framework.core.model_wrapper import UnifiedTransformerModel
-from transformers import (AutoConfig, AutoModelForSequenceClassification,
-                          AutoTokenizer)
+from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
 
 def load_hf_model(
@@ -44,9 +43,7 @@ def load_compressed_model(
     """
     from .custom_models import CompressedBertModel
 
-    AutoConfig.from_pretrained(
-        model_name, num_labels=num_labels, cache_dir=cache_dir
-    )
+    AutoConfig.from_pretrained(model_name, num_labels=num_labels, cache_dir=cache_dir)
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
     model = CompressedBertModel(model_path=model_name, rank=rank, num_labels=num_labels)
     return model, tokenizer

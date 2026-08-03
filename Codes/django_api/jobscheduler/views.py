@@ -15,13 +15,17 @@ from rest_framework.response import Response
 from .models import Job, VersionedConfig
 from .scheduler import scheduler
 from .serializers import CustomMetricEntrySerializer, JobSerializer
-from .version_utils import (capture_data_version, capture_git_info,
-                            create_config_snapshot)
+from .version_utils import (
+    capture_data_version,
+    capture_git_info,
+    create_config_snapshot,
+)
 
 # Optional distributed scheduler import
 try:
-    from framework.distributed.load_balancer.job_scheduler import \
-        DistributedJobScheduler
+    from framework.distributed.load_balancer.job_scheduler import (
+        DistributedJobScheduler,
+    )
 except ImportError:
     DistributedJobScheduler = None
 

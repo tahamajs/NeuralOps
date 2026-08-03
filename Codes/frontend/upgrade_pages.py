@@ -1,22 +1,23 @@
-import os
 import glob
 
 # Path to the features directory
-features_dir = 'src/features'
+features_dir = "src/features"
 
 # Find all TSX files in features
-for filepath in glob.iglob(f'{features_dir}/**/*.tsx', recursive=True):
-    with open(filepath, 'r') as f:
+for filepath in glob.iglob(f"{features_dir}/**/*.tsx", recursive=True):
+    with open(filepath, "r") as f:
         content = f.read()
 
     # Identify if it's one of the placeholders we generated
-    if 'This UI part is fully synced with the backend.' in content:
-        comp_name_start = content.find('export default function ') + len('export default function ')
-        comp_name_end = content.find('(', comp_name_start)
+    if "This UI part is fully synced with the backend." in content:
+        comp_name_start = content.find("export default function ") + len(
+            "export default function "
+        )
+        comp_name_end = content.find("(", comp_name_start)
         comp_name = content[comp_name_start:comp_name_end].strip()
 
         # Generate a beautiful, professional, glassmorphic layout wrapper
-        new_content = f'''import React from "react";
+        new_content = f"""import React from "react";
 import {{ Sparkles, Activity, Server, Zap, CheckCircle2 }} from "lucide-react";
 
 export default function {comp_name}() {{
@@ -79,7 +80,7 @@ export default function {comp_name}() {{
     </div>
   );
 }}
-'''
-        with open(filepath, 'w') as out:
+"""
+        with open(filepath, "w") as out:
             out.write(new_content)
         print(f"Upgraded {filepath}")

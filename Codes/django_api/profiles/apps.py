@@ -10,8 +10,7 @@ class ProfilesConfig(AppConfig):
         # Register the HuggingFace provider only if allauth is installed
         try:
             from allauth.socialaccount.providers import registry
-            from profiles.providers.huggingface.provider import \
-                HuggingFaceProvider
+            from profiles.providers.huggingface.provider import HuggingFaceProvider
 
             registry.register(HuggingFaceProvider)
         except ImportError:

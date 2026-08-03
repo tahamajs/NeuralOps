@@ -46,8 +46,12 @@ export function ChatPanel({
           Copilot Console
         </span>
         <span className="flex items-center gap-1">
-          <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400" : "bg-rose-400 animate-pulse"}`} />
-          <span className="text-[10px] text-slate-500 font-mono">{isConnected ? "ONLINE" : "OFFLINE"}</span>
+          <span
+            className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400" : "bg-rose-400 animate-pulse"}`}
+          />
+          <span className="text-[10px] text-slate-500 font-mono">
+            {isConnected ? "ONLINE" : "OFFLINE"}
+          </span>
         </span>
       </div>
 
@@ -55,7 +59,8 @@ export function ChatPanel({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-xs">
         {messages.length === 0 && !streamingContent && (
           <div className="text-center py-12 text-slate-500 italic max-w-xs mx-auto">
-            Ask Copilot to write model configurations, custom attention layers, or run sweeps.
+            Ask Copilot to write model configurations, custom attention layers,
+            or run sweeps.
           </div>
         )}
 
@@ -71,7 +76,9 @@ export function ChatPanel({
             <span className="text-[9px] text-slate-500 uppercase tracking-widest mb-1 block">
               {msg.role === "user" ? "You" : "Copilot"}
             </span>
-            <p className="text-slate-200 leading-relaxed break-words whitespace-pre-wrap">{msg.content}</p>
+            <p className="text-slate-200 leading-relaxed break-words whitespace-pre-wrap">
+              {msg.content}
+            </p>
           </div>
         ))}
 
@@ -106,7 +113,10 @@ export function ChatPanel({
       )}
 
       {/* Form Input */}
-      <form onSubmit={handleSend} className="p-3 border-t border-white/10 bg-slate-950/40 shrink-0 flex gap-2">
+      <form
+        onSubmit={handleSend}
+        className="p-3 border-t border-white/10 bg-slate-950/40 shrink-0 flex gap-2"
+      >
         <input
           type="text"
           value={input}
@@ -114,7 +124,11 @@ export function ChatPanel({
           placeholder="Ask a question or request a change..."
           className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-neon-blue/50 transition-colors"
         />
-        <Button type="submit" size="sm" className="bg-neon-blue hover:bg-neon-blue/80 text-white shrink-0">
+        <Button
+          type="submit"
+          size="sm"
+          className="bg-neon-blue hover:bg-neon-blue/80 text-white shrink-0"
+        >
           <Send size={12} />
         </Button>
       </form>

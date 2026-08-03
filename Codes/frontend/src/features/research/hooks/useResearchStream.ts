@@ -49,22 +49,26 @@ export function useResearchStream(sessionId: string) {
       const mockSteps = [
         {
           nodeId: "hypothesis_formulator",
-          message: "Formulating research hypotheses based on SVD Linear Attention structures.",
+          message:
+            "Formulating research hypotheses based on SVD Linear Attention structures.",
           progress: { current: 2, total: 10 },
         },
         {
           nodeId: "lit_searcher",
-          message: "Searching literature databases for 'SVD key-value projections' and 'linear complexity'.",
+          message:
+            "Searching literature databases for 'SVD key-value projections' and 'linear complexity'.",
           progress: { current: 4, total: 10 },
         },
         {
           nodeId: "proof_verifier",
-          message: "Verifying mathematical norms and spectral bounds of linear projections.",
+          message:
+            "Verifying mathematical norms and spectral bounds of linear projections.",
           progress: { current: 7, total: 10 },
         },
         {
           nodeId: "latex_editor",
-          message: "Generating LaTeX manuscript sections and organizing bibliography.",
+          message:
+            "Generating LaTeX manuscript sections and organizing bibliography.",
           progress: { current: 9, total: 10 },
         },
       ];
@@ -94,7 +98,12 @@ Using the Optuna trial sweep optimizer on GLUE tasks:
           const step = mockSteps[stepIdx];
           setEvents((prev) => [
             ...prev,
-            { type: "status", nodeId: step.nodeId, message: step.message, progress: step.progress },
+            {
+              type: "status",
+              nodeId: step.nodeId,
+              message: step.message,
+              progress: step.progress,
+            },
           ]);
           stepIdx++;
           simulationTimeoutRef.current = setTimeout(runStep, 2500);
@@ -103,7 +112,10 @@ Using the Optuna trial sweep optimizer on GLUE tasks:
           const interval = setInterval(() => {
             if (charIdx < reportText.length) {
               const chunk = reportText.slice(charIdx, charIdx + 8);
-              setEvents((prev) => [...prev, { type: "llm_token", token: chunk }]);
+              setEvents((prev) => [
+                ...prev,
+                { type: "llm_token", token: chunk },
+              ]);
               charIdx += 8;
             } else {
               clearInterval(interval);
@@ -136,7 +148,8 @@ Using the Optuna trial sweep optimizer on GLUE tasks:
           {
             type: "status",
             nodeId: "websocket",
-            message: "Connected to research server. Initiating agent executor...",
+            message:
+              "Connected to research server. Initiating agent executor...",
             progress: { current: 2, total: 10 },
           },
         ]);
@@ -145,7 +158,7 @@ Using the Optuna trial sweep optimizer on GLUE tasks:
           JSON.stringify({
             type: "message",
             text: "Generate research report for SVD Linear Attention optimization.",
-          })
+          }),
         );
       };
 
@@ -153,7 +166,10 @@ Using the Optuna trial sweep optimizer on GLUE tasks:
         try {
           const data = JSON.parse(event.data);
           if (data.type === "token") {
-            setEvents((prev) => [...prev, { type: "llm_token", token: data.text }]);
+            setEvents((prev) => [
+              ...prev,
+              { type: "llm_token", token: data.text },
+            ]);
           } else if (data.type === "done") {
             setEvents((prev) => [
               ...prev,
@@ -165,7 +181,8 @@ Using the Optuna trial sweep optimizer on GLUE tasks:
               },
               {
                 type: "final_report",
-                report: "# SVD Linear Attention Research Report\n\nDeep research completed successfully.",
+                report:
+                  "# SVD Linear Attention Research Report\n\nDeep research completed successfully.",
               },
             ]);
             setIsActive(false);
@@ -176,7 +193,10 @@ Using the Optuna trial sweep optimizer on GLUE tasks:
       };
 
       socket.onerror = (err) => {
-        console.error("WebSocket error, falling back to local agent simulation:", err);
+        console.error(
+          "WebSocket error, falling back to local agent simulation:",
+          err,
+        );
         startSimulation();
       };
 

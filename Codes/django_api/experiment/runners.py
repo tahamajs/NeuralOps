@@ -49,8 +49,7 @@ def run_training(run: TrainingRun, stop_event=None):
     _log(run, "Starting training...")
 
     try:
-        from framework.experiment_utils.mega_orchestrator import \
-            MegaOrchestrator
+        from framework.experiment_utils.mega_orchestrator import MegaOrchestrator
     except ImportError:
         _log(run, "MegaOrchestrator not found – falling back to legacy runner")
         _run_training_legacy(run, stop_event)

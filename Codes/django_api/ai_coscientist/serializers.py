@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (Hypothesis, HypothesisReview, MetaReview, ResearchSession,
-                     TournamentMatch)
+from .models import (
+    Hypothesis,
+    HypothesisReview,
+    MetaReview,
+    ResearchSession,
+    TournamentMatch,
+)
 
 
 class HypothesisReviewSerializer(serializers.ModelSerializer):

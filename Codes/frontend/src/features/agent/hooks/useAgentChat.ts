@@ -22,7 +22,7 @@ export function useAgentChat(sessionId?: string) {
       .get(`/agents/chats/${sessionId}/messages/`)
       .then((res) => {
         const data = res.data;
-        const msgs = Array.isArray(data) ? data : data?.results ?? [];
+        const msgs = Array.isArray(data) ? data : (data?.results ?? []);
         setMessages(msgs);
       })
       .catch(console.error)
@@ -40,7 +40,8 @@ export function useAgentChat(sessionId?: string) {
     if (!sessionId) return;
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const host =
-      (import.meta as any).env.VITE_WS_URL || `${protocol}://${window.location.host}`;
+      (import.meta as any).env.VITE_WS_URL ||
+      `${protocol}://${window.location.host}`;
     setWsStatus("connecting");
     const ws = new WebSocket(`${host}/ws/agent/${sessionId}/`);
 
@@ -92,7 +93,9 @@ export function useAgentChat(sessionId?: string) {
           .post(`/agents/chats/${sessionId}/send/`, { text })
           .then((res) => {
             const data = res.data;
-            const msgs = Array.isArray(data) ? data : data?.messages ?? data?.results ?? [];
+            const msgs = Array.isArray(data)
+              ? data
+              : (data?.messages ?? data?.results ?? []);
             if (msgs.length > 0) setMessages(msgs);
           })
           .catch((err) => {
@@ -102,7 +105,8 @@ export function useAgentChat(sessionId?: string) {
               {
                 id: `err-${Date.now()}`,
                 role: "assistant",
-                content: "⚠️ Failed to get a response. Please check the backend server.",
+                content:
+                  "⚠️ Failed to get a response. Please check the backend server.",
                 created_at: new Date().toISOString(),
               },
             ]);

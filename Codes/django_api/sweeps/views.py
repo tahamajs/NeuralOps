@@ -4,15 +4,23 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .engine import (export_study, get_empirical_attainment_surface,
-                     get_optimization_history, get_parallel_coordinate,
-                     get_parameter_importance, get_pareto_front,
-                     get_slice_plot, get_study_dataframe, get_trial_contour,
-                     get_warm_start_config, import_study, report_intermediate,
-                     should_prune)
+from .engine import (
+    export_study,
+    get_empirical_attainment_surface,
+    get_optimization_history,
+    get_parallel_coordinate,
+    get_parameter_importance,
+    get_pareto_front,
+    get_slice_plot,
+    get_study_dataframe,
+    get_trial_contour,
+    get_warm_start_config,
+    import_study,
+    report_intermediate,
+    should_prune,
+)
 from .models import Sweep, SweepTrial
-from .serializers import (SweepCreateSerializer, SweepSerializer,
-                          SweepTrialSerializer)
+from .serializers import SweepCreateSerializer, SweepSerializer, SweepTrialSerializer
 from .tasks import start_sweep
 
 
@@ -215,20 +223,25 @@ def parameter_interactions(request):
     """Retrieve parameter interactions. Filters by sweep_id query param if provided."""
     try:
         from sweeps.models import SweepTrial
+
         sweep_id = request.query_params.get("sweep_id")
         if sweep_id:
-            trials = SweepTrial.objects.filter(sweep_id=sweep_id, objective_value__isnull=False)
+            trials = SweepTrial.objects.filter(
+                sweep_id=sweep_id, objective_value__isnull=False
+            )
         else:
             trials = SweepTrial.objects.filter(objective_value__isnull=False)
-            
+
         data = []
         for t in trials:
-            data.append({
-                "trial_number": t.trial_number,
-                "objective_value": t.objective_value,
-                "params": t.params,
-                "duration_seconds": t.duration_seconds
-            })
+            data.append(
+                {
+                    "trial_number": t.trial_number,
+                    "objective_value": t.objective_value,
+                    "params": t.params,
+                    "duration_seconds": t.duration_seconds,
+                }
+            )
         return Response(data)
     except Exception:
         return Response([])
@@ -240,20 +253,24 @@ def run_parameter_scatter(request):
     """Retrieve parameter scatter data. Filters by sweep_id query param if provided."""
     try:
         from sweeps.models import SweepTrial
+
         sweep_id = request.query_params.get("sweep_id")
         if sweep_id:
-            trials = SweepTrial.objects.filter(sweep_id=sweep_id, objective_value__isnull=False)
+            trials = SweepTrial.objects.filter(
+                sweep_id=sweep_id, objective_value__isnull=False
+            )
         else:
             trials = SweepTrial.objects.filter(objective_value__isnull=False)
-            
+
         data = []
         for t in trials:
-            data.append({
-                "trial_number": t.trial_number,
-                "objective_value": t.objective_value,
-                "params": t.params,
-            })
+            data.append(
+                {
+                    "trial_number": t.trial_number,
+                    "objective_value": t.objective_value,
+                    "params": t.params,
+                }
+            )
         return Response(data)
     except Exception:
         return Response([])
-

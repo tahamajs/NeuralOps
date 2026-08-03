@@ -1,22 +1,22 @@
 // src/features/chat/hooks/useResearchWebSocket.ts
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { useAuthStore } from '../../auth/store/authStore'
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useAuthStore } from "../../auth/store/authStore";
 
-type WebSocketStatus = 'connecting' | 'open' | 'closing' | 'closed' | 'error'
+type WebSocketStatus = "connecting" | "open" | "closing" | "closed" | "error";
 
 interface WebSocketOptions {
-  onMessage?: (data: any) => void
-  onStatusChange?: (status: WebSocketStatus) => void
-  onError?: (error: Event) => void
-  autoReconnect?: boolean
-  maxReconnectAttempts?: number
-  baseReconnectDelay?: number
-  maxReconnectDelay?: number
+  onMessage?: (data: any) => void;
+  onStatusChange?: (status: WebSocketStatus) => void;
+  onError?: (error: Event) => void;
+  autoReconnect?: boolean;
+  maxReconnectAttempts?: number;
+  baseReconnectDelay?: number;
+  maxReconnectDelay?: number;
 }
 
 export function useResearchWebSocket(
   sessionId: string | null,
-  options: WebSocketOptions = {}
+  options: WebSocketOptions = {},
 ) {
   const {
     onMessage,
@@ -26,120 +26,142 @@ export function useResearchWebSocket(
     maxReconnectAttempts = 10,
     baseReconnectDelay = 1000,
     maxReconnectDelay = 30000,
-  } = options
+  } = options;
 
-  const { token } = useAuthStore() as any
-  const wsRef = useRef<WebSocket | null>(null)
-  const reconnectAttemptsRef = useRef(0)
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const messageQueueRef = useRef<any[]>([])
-  const [status, setStatus] = useState<WebSocketStatus>('closed')
-  const [reconnectCountdown, setReconnectCountdown] = useState(0)
+  const { token } = useAuthStore() as any;
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const messageQueueRef = useRef<any[]>([]);
+  const [status, setStatus] = useState<WebSocketStatus>("closed");
+  const [reconnectCountdown, setReconnectCountdown] = useState(0);
 
-  const updateStatus = useCallback((newStatus: WebSocketStatus) => {
-    setStatus(newStatus)
-    onStatusChange?.(newStatus)
-  }, [onStatusChange])
+  const updateStatus = useCallback(
+    (newStatus: WebSocketStatus) => {
+      setStatus(newStatus);
+      onStatusChange?.(newStatus);
+    },
+    [onStatusChange],
+  );
 
   const flushMessageQueue = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       while (messageQueueRef.current.length) {
-        const msg = messageQueueRef.current.shift()
-        wsRef.current.send(JSON.stringify(msg))
+        const msg = messageQueueRef.current.shift();
+        wsRef.current.send(JSON.stringify(msg));
       }
     }
-  }, [])
+  }, []);
 
   const sendMessage = useCallback((data: any) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(data))
+      wsRef.current.send(JSON.stringify(data));
     } else {
       // Buffer messages when disconnected
-      messageQueueRef.current.push(data)
+      messageQueueRef.current.push(data);
     }
-  }, [])
+  }, []);
 
   const connect = useCallback(() => {
-    if (!sessionId) return
-    if (wsRef.current?.readyState === WebSocket.OPEN) return
+    if (!sessionId) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     // Clear any pending reconnect timer
     if (reconnectTimerRef.current) {
-      clearTimeout(reconnectTimerRef.current)
-      reconnectTimerRef.current = null
+      clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = null;
     }
     if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current)
-      pingIntervalRef.current = null
+      clearInterval(pingIntervalRef.current);
+      pingIntervalRef.current = null;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const wsUrl = `${protocol}://${window.location.host}/ws/chat/${sessionId}/?token=${token}`
-    const ws = new WebSocket(wsUrl)
-    wsRef.current = ws
-    updateStatus('connecting')
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const wsUrl = `${protocol}://${window.location.host}/ws/chat/${sessionId}/?token=${token}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+    updateStatus("connecting");
 
     ws.onopen = () => {
-      updateStatus('open')
-      reconnectAttemptsRef.current = 0
-      setReconnectCountdown(0)
-      flushMessageQueue()
+      updateStatus("open");
+      reconnectAttemptsRef.current = 0;
+      setReconnectCountdown(0);
+      flushMessageQueue();
 
       // Send ping every 30 seconds to keep connection alive
       pingIntervalRef.current = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'ping' }))
+          ws.send(JSON.stringify({ type: "ping" }));
         }
-      }, 30000)
-    }
+      }, 30000);
+    };
 
     ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'pong') return
-        onMessage?.(data)
+        const data = JSON.parse(event.data);
+        if (data.type === "pong") return;
+        onMessage?.(data);
       } catch (err) {
-        console.error('WebSocket message parse error', err)
+        console.error("WebSocket message parse error", err);
       }
-    }
+    };
 
     ws.onerror = (event) => {
-      console.error('WebSocket error', event)
-      updateStatus('error')
-      onError?.(event)
-    }
+      console.error("WebSocket error", event);
+      updateStatus("error");
+      onError?.(event);
+    };
 
     ws.onclose = () => {
-      updateStatus('closed')
+      updateStatus("closed");
       if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current)
-        pingIntervalRef.current = null
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
       }
 
-      if (autoReconnect && reconnectAttemptsRef.current < maxReconnectAttempts) {
+      if (
+        autoReconnect &&
+        reconnectAttemptsRef.current < maxReconnectAttempts
+      ) {
         const delay = Math.min(
           baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current),
-          maxReconnectDelay
-        )
-        reconnectAttemptsRef.current++
-        setReconnectCountdown(Math.ceil(delay / 1000))
+          maxReconnectDelay,
+        );
+        reconnectAttemptsRef.current++;
+        setReconnectCountdown(Math.ceil(delay / 1000));
 
         reconnectTimerRef.current = setTimeout(() => {
-          connect()
-        }, delay)
+          connect();
+        }, delay);
       }
-    }
-  }, [sessionId, token, autoReconnect, maxReconnectAttempts, baseReconnectDelay, maxReconnectDelay, updateStatus, onMessage, onError, flushMessageQueue])
+    };
+  }, [
+    sessionId,
+    token,
+    autoReconnect,
+    maxReconnectAttempts,
+    baseReconnectDelay,
+    maxReconnectDelay,
+    updateStatus,
+    onMessage,
+    onError,
+    flushMessageQueue,
+  ]);
 
   useEffect(() => {
-    connect()
+    connect();
     return () => {
-      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
-      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current)
-      if (wsRef.current) wsRef.current.close()
-    }
-  }, [connect])
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (pingIntervalRef.current) clearInterval(pingIntervalRef.current);
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, [connect]);
 
-  return { status, reconnectCountdown, sendMessage, isConnected: status === 'open' }
+  return {
+    status,
+    reconnectCountdown,
+    sendMessage,
+    isConnected: status === "open",
+  };
 }

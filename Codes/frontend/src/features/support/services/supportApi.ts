@@ -57,11 +57,11 @@ export const supportAPI = {
         status: "open",
         messages: [],
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      },
     ];
   },
-  
+
   createTicket: async (data: {
     title: string;
     description: string;
@@ -79,10 +79,10 @@ export const supportAPI = {
       status: "open",
       messages: [],
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
   },
-  
+
   getTicketDetail: async (ticketId: string): Promise<SupportTicket> => {
     return {
       id: ticketId,
@@ -94,28 +94,35 @@ export const supportAPI = {
       status: "open",
       messages: [],
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
   },
-  
+
   getTicketMessages: async (ticketId: string): Promise<TicketMessage[]> => {
     return [];
   },
-  
-  sendTicketMessage: async (ticketId: string, content: string): Promise<TicketMessage> => {
+
+  sendTicketMessage: async (
+    ticketId: string,
+    content: string,
+  ): Promise<TicketMessage> => {
     return {
       id: "msg-123",
       ticket: ticketId,
       role: "user",
       content,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
   },
-  
-  submitFeedback: async (ticketId: string, rating: number, comment?: string): Promise<any> => {
+
+  submitFeedback: async (
+    ticketId: string,
+    rating: number,
+    comment?: string,
+  ): Promise<any> => {
     return { success: true };
   },
-  
+
   getSolutions: async (): Promise<Solution[]> => {
     return [
       {
@@ -124,11 +131,11 @@ export const supportAPI = {
         ticket_title: "How to fix CUDA out of memory?",
         content: "Reduce batch size or use mixed precision training (fp16).",
         upvotes: 42,
-        created_at: new Date().toISOString()
-      }
+        created_at: new Date().toISOString(),
+      },
     ];
   },
-  
+
   upvoteSolution: async (solutionId: string): Promise<any> => {
     return { success: true };
   },

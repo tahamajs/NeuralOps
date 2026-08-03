@@ -43,7 +43,8 @@ export default function ReviewQueue({ onClose }: { onClose?: () => void }) {
   const queueData = (queue as any)?.data || queue;
 
   const filteredQueue =
-    queueData?.filter((q: any) => filter === "all" || q.priority === filter) || [];
+    queueData?.filter((q: any) => filter === "all" || q.priority === filter) ||
+    [];
 
   if (isLoading) return <Spinner />;
 

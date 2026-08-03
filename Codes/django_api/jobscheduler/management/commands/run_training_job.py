@@ -5,8 +5,7 @@ import sys
 
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from framework.experiment import \
-    run_training  # your existing training function
+from framework.experiment import run_training  # your existing training function
 from jobscheduler.models import Job
 from jobscheduler.version_utils import capture_environment
 

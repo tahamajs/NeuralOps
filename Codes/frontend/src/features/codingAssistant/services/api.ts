@@ -10,14 +10,19 @@ export const codingAssistantAPI = {
   getFileContent: (fileId: string) => api.get(`/code/files/${fileId}/`),
   saveFileContent: (fileId: string, content: string) =>
     api.patch(`/code/files/${fileId}/`, { content }),
-  saveFile: (sessionId: string, data: { name: string; content: string; language: string }) =>
-    api.post(`/code/sessions/${sessionId}/files/`, data),
+  saveFile: (
+    sessionId: string,
+    data: { name: string; content: string; language: string },
+  ) => api.post(`/code/sessions/${sessionId}/files/`, data),
   deleteFile: (fileId: string) => api.delete(`/code/files/${fileId}/`),
   createFile: (sessionId: string, filename: string) =>
     api.post(`/code/sessions/${sessionId}/files/`, { filename, content: "" }),
   generateExperimentConfig: (params: any) =>
     api.post("/code/generate-config/", params),
   getHistory: () => api.get("/code/sessions/"),
-  sendMessage: (sessionId: string, content: string, language: string = "python") =>
-    api.post(`/code/sessions/${sessionId}/send/`, { content, language }),
+  sendMessage: (
+    sessionId: string,
+    content: string,
+    language: string = "python",
+  ) => api.post(`/code/sessions/${sessionId}/send/`, { content, language }),
 };

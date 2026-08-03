@@ -95,7 +95,9 @@ class Streak(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="streaks_app_streak"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="streaks_app_streak",
     )
     current_streak = models.PositiveIntegerField(default=0)
     longest_streak = models.PositiveIntegerField(default=0)

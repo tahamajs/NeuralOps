@@ -120,8 +120,14 @@ class ModelVersionDiffSerializer(serializers.ModelSerializer):
 
 # Add to model_versioning/serializers.py
 
-from .models import (ModelAccessControl, ModelApproval, ModelSecurityScan,
-                     ModelUsageLog, ModelVersion, ModelVersionDiff)
+from .models import (
+    ModelAccessControl,
+    ModelApproval,
+    ModelSecurityScan,
+    ModelUsageLog,
+    ModelVersion,
+    ModelVersionDiff,
+)
 
 
 class ModelApprovalSerializer(serializers.ModelSerializer):

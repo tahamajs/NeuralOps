@@ -13,8 +13,7 @@ export default function AgentDashboardPage() {
 
   const { data: session, isLoading } = useQuery({
     queryKey: ["agentSession", sessionId],
-    queryFn: async () =>
-      (await api.get(`/agents/sessions/${sessionId}/`)).data,
+    queryFn: async () => (await api.get(`/agents/sessions/${sessionId}/`)).data,
     refetchInterval: 3000,
     enabled: !!sessionId,
   });

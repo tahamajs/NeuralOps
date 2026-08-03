@@ -6,10 +6,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .llm_client import (generate_code, generate_tests, get_llm_response,
-                         review_code)
-from .models import (CodeGenerationSession, CodeMessage, CodeReview,
-                     GeneratedCode, TestGeneration)
+from .llm_client import generate_code, generate_tests, get_llm_response, review_code
+from .models import (
+    CodeGenerationSession,
+    CodeMessage,
+    CodeReview,
+    GeneratedCode,
+    TestGeneration,
+)
 from .serializers import *
 
 logger = logging.getLogger(__name__)

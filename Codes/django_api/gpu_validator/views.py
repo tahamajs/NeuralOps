@@ -7,10 +7,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import (ProofOfCompute, ValidatorNode, Verification,
-                     VerificationTask)
-from .serializers import (ProofOfComputeSerializer, ValidatorNodeSerializer,
-                          VerificationSerializer, VerificationTaskSerializer)
+from .models import ProofOfCompute, ValidatorNode, Verification, VerificationTask
+from .serializers import (
+    ProofOfComputeSerializer,
+    ValidatorNodeSerializer,
+    VerificationSerializer,
+    VerificationTaskSerializer,
+)
 
 logger = logging.getLogger(__name__)
 

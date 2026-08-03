@@ -7,7 +7,10 @@ interface StreamingOutputProps {
   isStreaming: boolean;
 }
 
-export function StreamingOutput({ content, isStreaming }: StreamingOutputProps) {
+export function StreamingOutput({
+  content,
+  isStreaming,
+}: StreamingOutputProps) {
   const { success } = useToast();
   const [copied, setCopied] = React.useState(false);
 
@@ -32,7 +35,11 @@ export function StreamingOutput({ content, isStreaming }: StreamingOutputProps) 
             className="hover:text-white transition-colors p-1 hover:bg-white/5 rounded"
             title="Copy Output"
           >
-            {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+            {copied ? (
+              <Check size={12} className="text-emerald-400" />
+            ) : (
+              <Copy size={12} />
+            )}
           </button>
         )}
       </div>
@@ -46,7 +53,9 @@ export function StreamingOutput({ content, isStreaming }: StreamingOutputProps) 
             )}
           </>
         ) : (
-          <span className="text-slate-600 italic">Console output is empty. Run a prompt.</span>
+          <span className="text-slate-600 italic">
+            Console output is empty. Run a prompt.
+          </span>
         )}
       </div>
     </div>

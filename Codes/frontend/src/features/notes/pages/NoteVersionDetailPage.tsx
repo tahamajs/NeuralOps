@@ -14,11 +14,8 @@ export default function NoteVersionDetailPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["noteVersion", noteId, versionNumber],
     queryFn: async () =>
-      (
-        await api.get(
-          `/notes/v1/notes/${noteId}/versions/${versionNumber}/`,
-        )
-      ).data,
+      (await api.get(`/notes/v1/notes/${noteId}/versions/${versionNumber}/`))
+        .data,
     enabled: !!noteId && !!versionNumber,
   });
 

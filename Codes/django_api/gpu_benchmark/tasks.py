@@ -6,8 +6,7 @@ import random
 from celery import shared_task
 from django.utils import timezone
 
-from .models import (BenchmarkResult, BenchmarkRun, BenchmarkTest,
-                     ListingBenchmarkScore)
+from .models import BenchmarkResult, BenchmarkRun, BenchmarkTest, ListingBenchmarkScore
 from .scoring import normalize_result
 
 logger = logging.getLogger(__name__)

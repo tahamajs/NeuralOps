@@ -1,6 +1,7 @@
 import os
+
 import django
-import uuid
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_api.settings")
 django.setup()
 

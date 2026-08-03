@@ -13,8 +13,7 @@ except ImportError:
     Notification = None
 
 try:
-    from experiment.activity import \
-        log_activity  # your existing activity logger
+    from experiment.activity import log_activity  # your existing activity logger
 except ImportError:
     log_activity = None
 

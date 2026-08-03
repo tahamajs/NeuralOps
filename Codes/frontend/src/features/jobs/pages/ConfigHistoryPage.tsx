@@ -9,14 +9,11 @@ export default function ConfigHistoryPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const { data, isLoading } = useQuery({
     queryKey: ["configHistory", jobId],
-    queryFn: async () =>
-      (await api.get(`/jobs/${jobId}/config/history/`)).data,
+    queryFn: async () => (await api.get(`/jobs/${jobId}/config/history/`)).data,
   });
 
   if (isLoading) return <Spinner />;
-  const versions = Array.isArray(data)
-    ? data
-    : data?.versions || [];
+  const versions = Array.isArray(data) ? data : data?.versions || [];
 
   return (
     <div className="space-y-6 animate-fade-in">

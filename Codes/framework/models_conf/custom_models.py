@@ -5,8 +5,7 @@ These are not model‑agnostic and are kept for research purposes.
 
 import torch
 import torch.nn as nn
-from transformers import (AutoModelForSequenceClassification, BertConfig,
-                          BertModel)
+from transformers import AutoModelForSequenceClassification, BertConfig, BertModel
 
 
 # ----------------------------------------------------------------------

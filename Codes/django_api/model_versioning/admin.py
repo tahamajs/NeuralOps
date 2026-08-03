@@ -1,8 +1,16 @@
 from django.contrib import admin
 
-from .models import (ModelAccessControl, ModelApproval, ModelBranch,
-                     ModelCommit, ModelLineage, ModelSecurityScan,
-                     ModelUsageLog, ModelVersion, ModelVersionDiff)
+from .models import (
+    ModelAccessControl,
+    ModelApproval,
+    ModelBranch,
+    ModelCommit,
+    ModelLineage,
+    ModelSecurityScan,
+    ModelUsageLog,
+    ModelVersion,
+    ModelVersionDiff,
+)
 
 
 # ----------------------------- Inlines -----------------------------

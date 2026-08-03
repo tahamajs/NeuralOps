@@ -27,16 +27,39 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
           <div className="flex items-center gap-2 mb-2">
             <FlaskConical size={18} className="text-neon-blue" />
             <span className="text-sm font-display font-bold text-white">
-              {isLaunched ? "🚀 Experiment Launched!" : "Experiment Configuration"}
+              {isLaunched
+                ? "🚀 Experiment Launched!"
+                : "Experiment Configuration"}
             </span>
           </div>
           <div className="text-xs space-y-1 text-slate-300">
-            <p>Model: <span className="text-white">{String(config.model_name ?? "—")}</span></p>
-            <p>Task: <span className="text-white">{String(config.task_name ?? "—").toUpperCase()}</span></p>
-            <p>Attention: <span className="text-white">{String(config.attention_type ?? "full")}</span></p>
-            <p>Method: <span className="text-white">{String(config.method ?? "baseline")}</span></p>
             <p>
-              Epochs: {String(config.epochs)} · Batch: {String(config.batch_size)} · LR: {String(config.learning_rate)}
+              Model:{" "}
+              <span className="text-white">
+                {String(config.model_name ?? "—")}
+              </span>
+            </p>
+            <p>
+              Task:{" "}
+              <span className="text-white">
+                {String(config.task_name ?? "—").toUpperCase()}
+              </span>
+            </p>
+            <p>
+              Attention:{" "}
+              <span className="text-white">
+                {String(config.attention_type ?? "full")}
+              </span>
+            </p>
+            <p>
+              Method:{" "}
+              <span className="text-white">
+                {String(config.method ?? "baseline")}
+              </span>
+            </p>
+            <p>
+              Epochs: {String(config.epochs)} · Batch:{" "}
+              {String(config.batch_size)} · LR: {String(config.learning_rate)}
             </p>
           </div>
           {isLaunched && config.run_id && (
@@ -66,7 +89,9 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
         <Card className="w-full max-w-md border border-yellow-500/30 bg-yellow-500/5">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp size={18} className="text-yellow-400" />
-            <span className="text-sm font-display font-bold text-white">Training Analysis</span>
+            <span className="text-sm font-display font-bold text-white">
+              Training Analysis
+            </span>
             <Badge
               status={
                 analysis.status === "healthy"
@@ -84,7 +109,8 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
               <span className="text-slate-400">Issues: </span>
               {analysis.issues!.map((issue, i) => (
                 <span key={i} className="text-yellow-400">
-                  {issue}{i < analysis.issues!.length - 1 ? ", " : ""}
+                  {issue}
+                  {i < analysis.issues!.length - 1 ? ", " : ""}
                 </span>
               ))}
             </div>
@@ -93,7 +119,9 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
             <div className="text-xs text-slate-300">
               <span className="text-slate-400">Suggestions:</span>
               <ul className="list-disc list-inside mt-1 space-y-0.5 text-green-400">
-                {analysis.suggestions!.map((s, i) => <li key={i}>{s}</li>)}
+                {analysis.suggestions!.map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
               </ul>
             </div>
           )}
@@ -104,7 +132,14 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
 
   // --- Paper search result card ---
   if (msg.role === "tool" && msg.metadata?.tool_name === "search_papers") {
-    const data = parseJSON(msg.content) as { results?: Array<{title?: string; authors?: string[]; year?: number; url?: string}> } | null;
+    const data = parseJSON(msg.content) as {
+      results?: Array<{
+        title?: string;
+        authors?: string[];
+        year?: number;
+        url?: string;
+      }>;
+    } | null;
     if (!data?.results) return null;
     return (
       <div className="flex justify-center my-3">
@@ -120,9 +155,14 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
               <div key={i} className="bg-cyber-800 p-2 rounded text-xs">
                 <p className="text-white font-medium truncate">{paper.title}</p>
                 <p className="text-slate-400">
-                  {paper.authors?.slice(0, 3).join(", ")} {paper.year ? `(${paper.year})` : ""}
+                  {paper.authors?.slice(0, 3).join(", ")}{" "}
+                  {paper.year ? `(${paper.year})` : ""}
                 </p>
-                {paper.url && <p className="text-neon-blue text-[10px] truncate">{paper.url}</p>}
+                {paper.url && (
+                  <p className="text-neon-blue text-[10px] truncate">
+                    {paper.url}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -161,7 +201,8 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
       <div className="flex justify-start mb-2">
         <div className="bg-cyber-800/50 rounded-lg px-3 py-1.5 max-w-[80%] text-xs text-slate-500 font-mono flex items-center gap-1">
           <AlertTriangle size={11} className="text-amber-500 flex-shrink-0" />
-          {String(msg.metadata?.tool_name ?? "tool")}: {msg.content.slice(0, 200)}
+          {String(msg.metadata?.tool_name ?? "tool")}:{" "}
+          {msg.content.slice(0, 200)}
           {msg.content.length > 200 && "…"}
         </div>
       </div>
@@ -171,7 +212,9 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
   // --- Regular chat bubble ---
   const isUser = msg.role === "user";
   return (
-    <div className={`flex gap-2 mb-3 ${isUser ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`flex gap-2 mb-3 ${isUser ? "justify-end" : "justify-start"}`}
+    >
       {!isUser && (
         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-neon-blue to-purple-500 flex items-center justify-center flex-shrink-0">
           <Bot size={14} className="text-white" />
@@ -185,7 +228,9 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
         }`}
       >
         <div className="whitespace-pre-wrap">{msg.content}</div>
-        <div className={`text-[10px] mt-1 ${isUser ? "text-neon-blue/60" : "text-slate-500"}`}>
+        <div
+          className={`text-[10px] mt-1 ${isUser ? "text-neon-blue/60" : "text-slate-500"}`}
+        >
           {new Date(msg.created_at).toLocaleTimeString()}
         </div>
       </div>
@@ -199,5 +244,9 @@ export default function ChatMessageBubble({ msg }: { msg: ChatMessage }) {
 }
 
 function parseJSON(str: string): unknown {
-  try { return JSON.parse(str); } catch { return null; }
+  try {
+    return JSON.parse(str);
+  } catch {
+    return null;
+  }
 }

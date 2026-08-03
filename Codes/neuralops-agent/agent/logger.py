@@ -1,10 +1,11 @@
-import logging, sys
+import logging
+import sys
 from pathlib import Path
+
 
 def setup_logging(level: str, log_file: str = None):
     fmt = logging.Formatter(
-        '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
     root = logging.getLogger("neuralops")
     root.setLevel(getattr(logging, level.upper(), logging.INFO))

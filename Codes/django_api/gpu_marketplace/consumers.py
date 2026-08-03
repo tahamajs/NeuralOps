@@ -1,11 +1,14 @@
 import json
 import logging
-from channels.generic.websocket import AsyncWebsocketConsumer
+
 from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
-from .models import GPUListing, ComputeJob, JobEvent
+
+from .models import ComputeJob, GPUListing, JobEvent
 
 logger = logging.getLogger(__name__)
+
 
 class ProviderConsumer(AsyncWebsocketConsumer):
     """
@@ -26,10 +29,7 @@ class ProviderConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         if self.group_name:
             # Leave group
-            await self.channel_layer.group_discard(
-                self.group_name,
-                self.channel_name
-            )
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
             # Mark listing as offline
             await self.update_listing_status(self.listing_id, "offline")
             logger.info(f"Provider Agent listing {self.listing_id} disconnected")
@@ -47,10 +47,7 @@ class ProviderConsumer(AsyncWebsocketConsumer):
             if self.listing_id:
                 self.group_name = f"provider_listing_{self.listing_id}"
                 # Join listing-specific group
-                await self.channel_layer.group_add(
-                    self.group_name,
-                    self.channel_name
-                )
+                await self.channel_layer.group_add(self.group_name, self.channel_name)
                 # Mark listing as online
                 await self.update_listing_status(self.listing_id, "online")
                 logger.info(f"Provider Agent registered listing: {self.listing_id}")
@@ -68,20 +65,18 @@ class ProviderConsumer(AsyncWebsocketConsumer):
             status = data.get("status")
             update_data = data.get("data") or {}
             if job_id and status:
-                await self.update_job_status(job_id, status, update_data.get("container_id"))
+                await self.update_job_status(
+                    job_id, status, update_data.get("container_id")
+                )
 
     # Handler for messages sent from celery/matching engine to group
     async def send_job(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "new_job",
-            "job": event["job"]
-        }))
+        await self.send(text_data=json.dumps({"type": "new_job", "job": event["job"]}))
 
     async def cancel_job(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "cancel_job",
-            "job_id": event["job_id"]
-        }))
+        await self.send(
+            text_data=json.dumps({"type": "cancel_job", "job_id": event["job_id"]})
+        )
 
     @database_sync_to_async
     def update_listing_status(self, listing_id, status):
@@ -101,13 +96,13 @@ class ProviderConsumer(AsyncWebsocketConsumer):
                 job.started_at = timezone.now()
             elif status in ["completed", "failed"]:
                 job.completed_at = timezone.now()
-            
+
             update_fields = ["status"]
             if status == "running":
                 update_fields.append("started_at")
             elif status in ["completed", "failed"]:
                 update_fields.append("completed_at")
-                
+
             job.save(update_fields=update_fields)
             JobEvent.objects.create(job=job, event_type=status)
         except ComputeJob.DoesNotExist:

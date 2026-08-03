@@ -259,7 +259,9 @@ const NoteModal = ({
           <div>
             <div
               className="prose prose-invert max-w-none text-sm"
-              dangerouslySetInnerHTML={{ __html: marked.parse(note.content) as string }}
+              dangerouslySetInnerHTML={{
+                __html: marked.parse(note.content) as string,
+              }}
             />
             <div className="mt-4 text-xs text-slate-400 space-y-1">
               <p>
@@ -763,8 +765,7 @@ const WebhookModal = ({ onClose }: { onClose: () => void }) => {
   });
 
   const deleteMut = useMutation({
-    mutationFn: async (id: string) =>
-      api.delete(`/notes/v1/webhooks/${id}/`),
+    mutationFn: async (id: string) => api.delete(`/notes/v1/webhooks/${id}/`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["webhooks"] }),
   });
 

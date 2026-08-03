@@ -9,7 +9,7 @@ export interface ToolCall {
 
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'tool' | 'experiment_card' | 'system';
+  role: "user" | "assistant" | "tool" | "experiment_card" | "system";
   content: string;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
@@ -43,7 +43,7 @@ export interface Paper {
 
 export interface TrainingAnalysisResult {
   run_id: string;
-  status: 'healthy' | 'overfitting' | 'plateau' | 'underfitting' | 'diverging';
+  status: "healthy" | "overfitting" | "plateau" | "underfitting" | "diverging";
   issues: string[];
   suggestions: string[];
   metrics_summary: Record<string, unknown>;
@@ -69,7 +69,7 @@ export interface AgentTool {
 }
 
 export interface AgentStatus {
-  status: 'operational' | 'degraded' | 'offline';
+  status: "operational" | "degraded" | "offline";
   model: string;
   tools_count: number;
   active_sessions: number;
@@ -80,7 +80,7 @@ export interface AgentSession {
   id: string;
   name?: string;
   objective?: string;
-  status: 'active' | 'paused' | 'completed' | 'failed';
+  status: "active" | "paused" | "completed" | "failed";
   cycles_completed?: number;
   max_cycles?: number;
   experiments_run?: number;

@@ -2,11 +2,11 @@ import json
 import logging
 import os
 import platform
+import sys
 import threading
 import uuid
 from datetime import datetime
 from pathlib import Path
-import sys
 
 TESTING = "test" in sys.argv or any("test" in arg for arg in sys.argv)
 
@@ -27,8 +27,7 @@ from experiment.models import Experiment, TrainingRun
 from experiment.runners import run_compression, run_evaluation, run_training
 from experiment.serializers import ExperimentSerializer, TrainingRunSerializer
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import (api_view, permission_classes,
-                                       throttle_classes)
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
@@ -53,6 +52,7 @@ AUGMENTATION_REGISTRY = _registry_fallbacks()
 
 try:
     from framework.core.registry import ATTENTION_REGISTRY as attn_reg
+
     if not attn_reg or len(attn_reg) == 0:
         raise ImportError("Registry is empty")
     ATTENTION_REGISTRY = attn_reg
@@ -62,35 +62,36 @@ except (ImportError, TypeError):
         "linear": None,
         "fast_linear": None,
         "flash": None,
-        "performer": None
+        "performer": None,
     }
-    logger.warning("framework module not available or empty, using fallback ATTENTION_REGISTRY")
+    logger.warning(
+        "framework module not available or empty, using fallback ATTENTION_REGISTRY"
+    )
 try:
     from framework.core.registry import COMPRESSOR_REGISTRY as comp_reg
+
     if not comp_reg or len(comp_reg) == 0:
         raise ImportError("Registry is empty")
     COMPRESSOR_REGISTRY = comp_reg
 except (ImportError, TypeError):
-    COMPRESSOR_REGISTRY = {
-        "svd": None,
-        "pruning": None,
-        "quantization": None
-    }
-    logger.warning("framework module not available or empty, using fallback COMPRESSOR_REGISTRY")
+    COMPRESSOR_REGISTRY = {"svd": None, "pruning": None, "quantization": None}
+    logger.warning(
+        "framework module not available or empty, using fallback COMPRESSOR_REGISTRY"
+    )
 try:
     from framework.core.registry import TRAINER_REGISTRY as train_reg
+
     if not train_reg or len(train_reg) == 0:
         raise ImportError("Registry is empty")
     TRAINER_REGISTRY = train_reg
 except (ImportError, TypeError):
-    TRAINER_REGISTRY = {
-        "custom_loop": None,
-        "hf": None,
-        "accelerate": None
-    }
-    logger.warning("framework module not available or empty, using fallback TRAINER_REGISTRY")
+    TRAINER_REGISTRY = {"custom_loop": None, "hf": None, "accelerate": None}
+    logger.warning(
+        "framework module not available or empty, using fallback TRAINER_REGISTRY"
+    )
 try:
     from framework.core.registry import METHOD_REGISTRY as meth_reg
+
     if not meth_reg or len(meth_reg) == 0:
         raise ImportError("Registry is empty")
     METHOD_REGISTRY = meth_reg
@@ -100,50 +101,47 @@ except (ImportError, TypeError):
         "pruning": None,
         "quantization": None,
         "distillation": None,
-        "low_rank": None
+        "low_rank": None,
     }
-    logger.warning("framework module not available or empty, using fallback METHOD_REGISTRY")
+    logger.warning(
+        "framework module not available or empty, using fallback METHOD_REGISTRY"
+    )
 try:
     from framework.core.registry import LOSS_REGISTRY as loss_reg
+
     if not loss_reg or len(loss_reg) == 0:
         raise ImportError("Registry is empty")
     LOSS_REGISTRY = loss_reg
 except (ImportError, TypeError):
-    LOSS_REGISTRY = {
-        "cross_entropy": None,
-        "mse": None,
-        "kl_div": None,
-        "huber": None
-    }
-    logger.warning("framework module not available or empty, using fallback LOSS_REGISTRY")
+    LOSS_REGISTRY = {"cross_entropy": None, "mse": None, "kl_div": None, "huber": None}
+    logger.warning(
+        "framework module not available or empty, using fallback LOSS_REGISTRY"
+    )
 try:
     from framework.trainer.optimizers import OPTIMIZER_REGISTRY as opt_reg
+
     if not opt_reg or len(opt_reg) == 0:
         raise ImportError("Registry is empty")
     OPTIMIZER_REGISTRY = opt_reg
 except (ImportError, TypeError):
-    OPTIMIZER_REGISTRY = {
-        "adamw": None,
-        "adam": None,
-        "sgd": None,
-        "rmsprop": None
-    }
-    logger.warning("framework module not available or empty, using fallback OPTIMIZER_REGISTRY")
+    OPTIMIZER_REGISTRY = {"adamw": None, "adam": None, "sgd": None, "rmsprop": None}
+    logger.warning(
+        "framework module not available or empty, using fallback OPTIMIZER_REGISTRY"
+    )
 try:
     from framework.trainer.schedulers import SCHEDULER_REGISTRY as sched_reg
+
     if not sched_reg or len(sched_reg) == 0:
         raise ImportError("Registry is empty")
     SCHEDULER_REGISTRY = sched_reg
 except (ImportError, TypeError):
-    SCHEDULER_REGISTRY = {
-        "cosine": None,
-        "linear": None,
-        "step": None,
-        "plateau": None
-    }
-    logger.warning("framework module not available or empty, using fallback SCHEDULER_REGISTRY")
+    SCHEDULER_REGISTRY = {"cosine": None, "linear": None, "step": None, "plateau": None}
+    logger.warning(
+        "framework module not available or empty, using fallback SCHEDULER_REGISTRY"
+    )
 try:
     from framework.callbacks import CALLBACK_REGISTRY as cb_reg
+
     if not cb_reg or len(cb_reg) == 0:
         raise ImportError("Registry is empty")
     CALLBACK_REGISTRY = cb_reg
@@ -152,21 +150,22 @@ except (ImportError, TypeError):
         "early_stopping": None,
         "model_checkpoint": None,
         "tensorboard": None,
-        "wandb": None
+        "wandb": None,
     }
-    logger.warning("framework module not available or empty, using fallback CALLBACK_REGISTRY")
+    logger.warning(
+        "framework module not available or empty, using fallback CALLBACK_REGISTRY"
+    )
 try:
     from framework.data.augmentation import AUGMENTATION_REGISTRY as aug_reg
+
     if not aug_reg or len(aug_reg) == 0:
         raise ImportError("Registry is empty")
     AUGMENTATION_REGISTRY = aug_reg
 except (ImportError, TypeError):
-    AUGMENTATION_REGISTRY = {
-        "mixup": None,
-        "cutmix": None,
-        "randaugment": None
-    }
-    logger.warning("framework module not available or empty, using fallback AUGMENTATION_REGISTRY")
+    AUGMENTATION_REGISTRY = {"mixup": None, "cutmix": None, "randaugment": None}
+    logger.warning(
+        "framework module not available or empty, using fallback AUGMENTATION_REGISTRY"
+    )
 
 
 # ── Rate limiting ────────────────────────────────────────────────────
@@ -553,7 +552,11 @@ def gpu_info(request):
                     "memory_allocated_mb": round(mem_alloc, 1),
                     "memory_reserved_mb": round(mem_reserved, 1),
                     "utilization_percent": util,
-                    "status": "full" if util > 90 or mem_alloc / mem_total > 0.9 else "available",
+                    "status": (
+                        "full"
+                        if util > 90 or mem_alloc / mem_total > 0.9
+                        else "available"
+                    ),
                     "compute_capability": f"{props.major}.{props.minor}",
                 }
             )
@@ -574,7 +577,7 @@ def gpu_info(request):
                         "memory_reserved_mb": 81920.0,
                         "utilization_percent": 100,
                         "status": "full",
-                        "compute_capability": "9.0"
+                        "compute_capability": "9.0",
                     },
                     {
                         "index": 1,
@@ -584,7 +587,7 @@ def gpu_info(request):
                         "memory_reserved_mb": 45000.0,
                         "utilization_percent": 54,
                         "status": "available",
-                        "compute_capability": "8.0"
+                        "compute_capability": "8.0",
                     },
                     {
                         "index": 2,
@@ -594,7 +597,7 @@ def gpu_info(request):
                         "memory_reserved_mb": 24576.0,
                         "utilization_percent": 100,
                         "status": "full",
-                        "compute_capability": "8.9"
+                        "compute_capability": "8.9",
                     },
                     {
                         "index": 3,
@@ -604,9 +607,9 @@ def gpu_info(request):
                         "memory_reserved_mb": 2000.0,
                         "utilization_percent": 5,
                         "status": "available",
-                        "compute_capability": "8.6"
-                    }
-                ]
+                        "compute_capability": "8.6",
+                    },
+                ],
             }
         )
 
@@ -926,13 +929,13 @@ try:
 except ImportError:
     GPUAllocator = None
 try:
-    from framework.distributed.load_balancer.job_scheduler import \
-        DistributedJobScheduler
+    from framework.distributed.load_balancer.job_scheduler import (
+        DistributedJobScheduler,
+    )
 except ImportError:
     DistributedJobScheduler = None
 try:
-    from framework.distributed.load_balancer.cluster_manager import \
-        ClusterManager
+    from framework.distributed.load_balancer.cluster_manager import ClusterManager
 except ImportError:
     ClusterManager = None
 
@@ -1114,7 +1117,10 @@ def robustness_evaluation(request, run_id):
 def prompt_list(request):
     try:
         from llm_hub.models import PromptTemplate
-        prompts = PromptTemplate.objects.filter(user=request.user).values("id", "name", "description")
+
+        prompts = PromptTemplate.objects.filter(user=request.user).values(
+            "id", "name", "description"
+        )
         return Response(list(prompts))
     except Exception:
         return Response([])
@@ -1125,6 +1131,7 @@ def prompt_list(request):
 def prompt_detail(request, name):
     try:
         from llm_hub.models import PromptTemplate
+
         prompt = PromptTemplate.objects.get(name=name, user=request.user)
         latest_version = prompt.versions.order_by("-version_number").first()
         template_content = latest_version.content if latest_version else ""
@@ -1137,9 +1144,12 @@ def prompt_detail(request, name):
 @permission_classes([IsAuthenticated])
 def prompt_history(request, name):
     try:
-        from llm_hub.models import PromptVersion, PromptTemplate
+        from llm_hub.models import PromptTemplate, PromptVersion
+
         prompt = PromptTemplate.objects.get(name=name, user=request.user)
-        history = PromptVersion.objects.filter(prompt=prompt).values("version_number", "content", "created_at")
+        history = PromptVersion.objects.filter(prompt=prompt).values(
+            "version_number", "content", "created_at"
+        )
         return Response(list(history))
     except Exception:
         return Response([])
@@ -1150,9 +1160,18 @@ def prompt_history(request, name):
 def hpo_status(request):
     try:
         from sweeps.models import Sweep, Trial
+
         sweeps_count = Sweep.objects.filter(user=request.user).count()
-        trials_count = Trial.objects.filter(sweep__user=request.user, status="completed").count()
-        return Response({"status": "active" if sweeps_count > 0 else "idle", "sweeps_active": sweeps_count, "trials_completed": trials_count})
+        trials_count = Trial.objects.filter(
+            sweep__user=request.user, status="completed"
+        ).count()
+        return Response(
+            {
+                "status": "active" if sweeps_count > 0 else "idle",
+                "sweeps_active": sweeps_count,
+                "trials_completed": trials_count,
+            }
+        )
     except Exception:
         return Response({"status": "idle", "trials_completed": 0})
 
@@ -1162,9 +1181,15 @@ def hpo_status(request):
 def fl_status(request):
     try:
         from gpu_federation.models import Cluster
+
         clusters = Cluster.objects.filter(owner=request.user)
         clients = sum([c.nodes.count() for c in clusters])
-        return Response({"status": "active" if clients > 0 else "no active federated run", "connected_clients": clients})
+        return Response(
+            {
+                "status": "active" if clients > 0 else "no active federated run",
+                "connected_clients": clients,
+            }
+        )
     except Exception:
         return Response({"status": "no active federated run", "connected_clients": 0})
 
@@ -1211,9 +1236,12 @@ def push_model_card_view(request, run_id):
 def data_lineage_view(request, run_id):
     try:
         from experiment.models import TrainingRun
+
         run = TrainingRun.objects.get(id=run_id)
         dataset_name = run.config.get("dataset_name", "Unknown Dataset")
-        return Response({"lineage": f"Dataset: {dataset_name} -> TrainingRun: {run.name}"})
+        return Response(
+            {"lineage": f"Dataset: {dataset_name} -> TrainingRun: {run.name}"}
+        )
     except Exception:
         return Response({"lineage": "not implemented"})
 
@@ -1223,23 +1251,28 @@ def data_lineage_view(request, run_id):
 def model_lineage_view(request, version_id):
     try:
         from model_versioning.models import get_lineage_graph
+
         graph = get_lineage_graph(str(version_id))
         nodes = []
         for n in graph.get("nodes", []):
-            nodes.append({
-                "id": n["id"],
-                "label": n["version"],
-                "version_number": n["version_number"],
-                "metrics": n.get("metrics"),
-                "created_at": n.get("created_at")
-            })
+            nodes.append(
+                {
+                    "id": n["id"],
+                    "label": n["version"],
+                    "version_number": n["version_number"],
+                    "metrics": n.get("metrics"),
+                    "created_at": n.get("created_at"),
+                }
+            )
         edges = []
         for e in graph.get("edges", []):
-            edges.append({
-                "source": e["from"],
-                "target": e["to"],
-                "type": e.get("type", "fine_tuned")
-            })
+            edges.append(
+                {
+                    "source": e["from"],
+                    "target": e["to"],
+                    "type": e.get("type", "fine_tuned"),
+                }
+            )
         return Response({"nodes": nodes, "edges": edges})
     except Exception:
         return Response({"nodes": [], "edges": []})
@@ -1474,15 +1507,15 @@ def dashboard_stats(request):
     except Exception:
         total_experiments = running = completed = failed = 0
 
-    return Response({
-        "total_experiments": total_experiments,
-        "running_experiments": running,
-        "completed_experiments": completed,
-        "failed_experiments": failed,
-        "total_models": 0,
-        "gpu_hours_used": 0.0,
-        "papers_saved": 0,
-        "agent_sessions": 0,
-    })
-
-
+    return Response(
+        {
+            "total_experiments": total_experiments,
+            "running_experiments": running,
+            "completed_experiments": completed,
+            "failed_experiments": failed,
+            "total_models": 0,
+            "gpu_hours_used": 0.0,
+            "papers_saved": 0,
+            "agent_sessions": 0,
+        }
+    )

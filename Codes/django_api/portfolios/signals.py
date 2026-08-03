@@ -18,6 +18,7 @@ def on_training_complete(sender, instance, **kwargs):
         user = getattr(instance, "user", None)
         if not user:
             from django.contrib.auth import get_user_model
+
             User = get_user_model()
             user = User.objects.first()
         if not user:

@@ -9,11 +9,16 @@ interface ArenaLeaderboardProps {
 
 export function ArenaLeaderboard({ battles = [] }: ArenaLeaderboardProps) {
   // Aggregate stats
-  const statsMap: Record<string, { wins: number; total: number; losses: number; ties: number }> = {};
+  const statsMap: Record<
+    string,
+    { wins: number; total: number; losses: number; ties: number }
+  > = {};
 
   battles.forEach((b) => {
-    if (!statsMap[b.model_a]) statsMap[b.model_a] = { wins: 0, total: 0, losses: 0, ties: 0 };
-    if (!statsMap[b.model_b]) statsMap[b.model_b] = { wins: 0, total: 0, losses: 0, ties: 0 };
+    if (!statsMap[b.model_a])
+      statsMap[b.model_a] = { wins: 0, total: 0, losses: 0, ties: 0 };
+    if (!statsMap[b.model_b])
+      statsMap[b.model_b] = { wins: 0, total: 0, losses: 0, ties: 0 };
 
     if (b.winner) {
       statsMap[b.model_a].total++;
@@ -47,7 +52,9 @@ export function ArenaLeaderboard({ battles = [] }: ArenaLeaderboardProps) {
     if (idx === 0) return <Trophy size={14} className="text-yellow-400" />;
     if (idx === 1) return <Award size={14} className="text-slate-400" />;
     if (idx === 2) return <Award size={14} className="text-amber-600" />;
-    return <span className="text-[10px] text-slate-500 font-mono">#{idx + 1}</span>;
+    return (
+      <span className="text-[10px] text-slate-500 font-mono">#{idx + 1}</span>
+    );
   };
 
   return (
@@ -80,8 +87,12 @@ export function ArenaLeaderboard({ battles = [] }: ArenaLeaderboardProps) {
                   <td className="p-2.5 text-center">{getRankBadge(idx)}</td>
                   <td className="p-2.5 font-bold text-white">{row.model}</td>
                   <td className="p-2.5 text-center font-mono">{row.wins}</td>
-                  <td className="p-2.5 text-center font-mono text-slate-500">{row.losses}</td>
-                  <td className="p-2.5 text-center font-mono text-slate-500">{row.ties}</td>
+                  <td className="p-2.5 text-center font-mono text-slate-500">
+                    {row.losses}
+                  </td>
+                  <td className="p-2.5 text-center font-mono text-slate-500">
+                    {row.ties}
+                  </td>
                   <td className="p-2.5 text-center font-mono font-extrabold text-neon-mint">
                     {row.winRate.toFixed(1)}%
                   </td>

@@ -109,7 +109,9 @@ class HymbaTransXBlock(BaseAttention):
         scores2 = torch.matmul(q2, k2.transpose(-2, -1)) * scale
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)  # (B, 1, 1, L)
+                pad_mask = (
+                    (attention_mask == 0).unsqueeze(1).unsqueeze(2)
+                )  # (B, 1, 1, L)
                 scores1 = scores1.masked_fill(pad_mask, float("-1e9"))
                 scores2 = scores2.masked_fill(pad_mask, float("-1e9"))
         attn1 = F.softmax(scores1, dim=-1)
@@ -124,7 +126,6 @@ class HymbaTransXBlock(BaseAttention):
             if attention_mask.dim() == 2:
                 out = out * attention_mask.unsqueeze(-1)
         return out, None
-
 
 
 # Injection function

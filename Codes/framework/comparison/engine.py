@@ -12,10 +12,14 @@ import numpy as np
 import pandas as pd
 
 from .leaderboard import generate_leaderboard
-from .plotting import (plot_critical_difference_diagram,
-                       plot_pairwise_comparison_heatmap)
-from .statistical_tests import (anova_test, dunn_test, mann_whitney_test,
-                                nemenyi_test, pairwise_t_tests)
+from .plotting import plot_critical_difference_diagram, plot_pairwise_comparison_heatmap
+from .statistical_tests import (
+    anova_test,
+    dunn_test,
+    mann_whitney_test,
+    nemenyi_test,
+    pairwise_t_tests,
+)
 
 logger = logging.getLogger(__name__)
 
