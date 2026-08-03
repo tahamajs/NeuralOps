@@ -138,7 +138,7 @@ def run_benchmark(
                     train_loader = create_dataloader(train_ds, tokenizer, train_cfg)
                     eval_loader = create_dataloader(eval_ds, tokenizer, eval_cfg)
 
-                    # 3. Create trainer & execute full training with paper-grade hyperparameters
+                    # 3. Create trainer & execute full training with paper-grade hyperparameters (no weight saving)
                     out_name = f"{task}_{model_name.replace('/', '_')}_{attn_type}"
                     output_dir = f"./benchmark_runs/{out_name}"
                     trainer = create_trainer(
@@ -151,6 +151,8 @@ def run_benchmark(
                         learning_rate=2e-5,
                         warmup_ratio=0.1,
                         weight_decay=0.01,
+                        save_strategy="no",
+                        load_best_model_at_end=False,
                         compute_metrics=get_task_metrics(task),
                         logging_steps=10,
                     )
