@@ -16,21 +16,23 @@ export const experimentExplorerAPI = {
     }),
 
   // Dashboard layouts (Mocked)
-  getDashboardLayouts: async () => ({ data: [] }),
-  getDashboardLayout: async (id: string) => ({ data: {} as DashboardLayout }),
-  saveDashboardLayout: async (layout: Partial<DashboardLayout>) => ({
-    data: layout as DashboardLayout,
-  }),
+  getDashboardLayouts: async (): Promise<DashboardLayout[]> => [],
+  getDashboardLayout: async (id: string): Promise<DashboardLayout> =>
+    ({} as DashboardLayout),
+  saveDashboardLayout: async (
+    layout: Partial<DashboardLayout>,
+  ): Promise<DashboardLayout> => layout as DashboardLayout,
   updateDashboardLayout: async (
     id: string,
     layout: Partial<DashboardLayout>,
-  ) => ({ data: layout as DashboardLayout }),
-  deleteDashboardLayout: async (id: string) => ({ data: null }),
+  ): Promise<DashboardLayout> => layout as DashboardLayout,
+  deleteDashboardLayout: async (id: string): Promise<null> => null,
 
   // SQL Editor (Mocked)
-  getSQLConnections: async () => ({ data: [] }),
-  executeSQL: async (connectionId: string, query: string) => ({
-    data: {} as SQLQueryResult,
-  }),
-  getSchemaInfo: async (connectionId: string) => ({ data: {} }),
+  getSQLConnections: async (): Promise<SQLConnection[]> => [],
+  executeSQL: async (
+    connectionId: string,
+    query: string,
+  ): Promise<SQLQueryResult> => ({} as SQLQueryResult),
+  getSchemaInfo: async (connectionId: string): Promise<any> => ({}),
 };
