@@ -178,5 +178,24 @@ desktop.ini
 
 Codes/MasterHttpRelayVPN
 
-
-
+# ============================================================
+# Experiments, Results & Checkpoint Artifacts
+# ============================================================
+experiments/
+**/experiments/
+results/
+**/results/
+test_experiments/
+**/test_experiments/
+test_results/
+**/test_results/
+runs/
+**/runs/
+outputs/
+**/outputs/
+checkpoints/
+**/checkpoints/
+cache/
+**/cache/
+*.ckpt
+test_marker.txt
