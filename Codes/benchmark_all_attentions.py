@@ -122,7 +122,7 @@ def run_benchmark(
                     train_cfg = DataConfig(
                         task_name=task,
                         task_type=task_type,
-                        max_length=64,
+                        max_length=128,
                         batch_size=batch_size,
                         max_samples=max_samples,
                         shuffle=True,
@@ -130,7 +130,7 @@ def run_benchmark(
                     eval_cfg = DataConfig(
                         task_name=task,
                         task_type=task_type,
-                        max_length=64,
+                        max_length=128,
                         batch_size=batch_size,
                         max_samples=max_samples,
                         shuffle=False,
@@ -138,7 +138,7 @@ def run_benchmark(
                     train_loader = create_dataloader(train_ds, tokenizer, train_cfg)
                     eval_loader = create_dataloader(eval_ds, tokenizer, eval_cfg)
 
-                    # 3. Create trainer & execute full training
+                    # 3. Create trainer & execute full training with paper-grade hyperparameters
                     out_name = f"{task}_{model_name.replace('/', '_')}_{attn_type}"
                     output_dir = f"./benchmark_runs/{out_name}"
                     trainer = create_trainer(
@@ -148,6 +148,9 @@ def run_benchmark(
                         output_dir=output_dir,
                         epochs=epochs,
                         batch_size=batch_size,
+                        learning_rate=2e-5,
+                        warmup_ratio=0.1,
+                        weight_decay=0.01,
                         compute_metrics=get_task_metrics(task),
                         logging_steps=10,
                     )
@@ -156,15 +159,32 @@ def run_benchmark(
                     eval_metrics = trainer.evaluate()
                     elapsed = time.time() - start_t
 
+                    print(f"📊 Raw eval_metrics: {eval_metrics}")
+
+                    # Robust metric extraction — HF Trainer may prefix with "eval_"
+                    eval_loss = eval_metrics.get("eval_loss") or eval_metrics.get("loss")
+                    eval_accuracy = (
+                        eval_metrics.get("eval_accuracy")
+                        or eval_metrics.get("accuracy")
+                        or eval_metrics.get("eval_f1")
+                        or eval_metrics.get("f1")
+                        or eval_metrics.get("eval_matthews_correlation")
+                        or eval_metrics.get("matthews_correlation")
+                    )
+                    train_loss = getattr(train_res, "training_loss", None)
+                    if train_loss is None and hasattr(train_res, "metrics"):
+                        train_loss = train_res.metrics.get("train_loss")
+
                     metrics_summary = {
                         "task": task,
                         "model": model_name,
                         "attention": attn_type,
                         "epochs": epochs,
                         "status": "SUCCESS",
-                        "train_loss": getattr(train_res, "training_loss", None),
-                        "eval_loss": eval_metrics.get("eval_loss"),
-                        "eval_accuracy": eval_metrics.get("eval_accuracy") or eval_metrics.get("accuracy"),
+                        "train_loss": train_loss,
+                        "eval_loss": eval_loss,
+                        "eval_accuracy": eval_accuracy,
+                        "eval_metrics_raw": {k: v for k, v in eval_metrics.items() if isinstance(v, (int, float))},
                         "elapsed_seconds": round(elapsed, 2),
                     }
                     results[run_key] = metrics_summary

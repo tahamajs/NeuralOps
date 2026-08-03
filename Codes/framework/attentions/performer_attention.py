@@ -53,8 +53,6 @@ class PerformerAttention(nn.Module):
         self.key: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.value: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, config.hidden_size)
-
-        # Aliases
         # Register orthogonal random projection matrix
         omega = self._get_orthogonal_projection_matrix(self.head_dim, self.num_features)
         self.register_buffer("omega", omega)

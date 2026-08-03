@@ -149,8 +149,6 @@ class AdaptiveSVDAttention(nn.Module):
             self.residual_rank,
             bias=True,
         )
-
-        # Aliases
         dropout_p = getattr(
             config,
             "dropout",

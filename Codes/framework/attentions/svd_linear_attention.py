@@ -130,8 +130,6 @@ class SVDLinearAttention(nn.Module):
             self.rank,
             bias=True,
         )
-
-        # Aliases
         dropout_p = getattr(
             config,
             "dropout",
