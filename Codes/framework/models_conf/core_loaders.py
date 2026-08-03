@@ -8,6 +8,15 @@ from framework.core.model_wrapper import UnifiedTransformerModel
 from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 
 
+def _safe_load(loader_fn, *args, **kwargs):
+    """Load model/config/tokenizer using local disk cache first to eliminate re-downloads."""
+    try:
+        return loader_fn(*args, local_files_only=True, **kwargs)
+    except Exception:
+        # Download once online if missing from local cache
+        return loader_fn(*args, **kwargs)
+
+
 def load_hf_model(
     model_name: str,
     num_labels: int = 2,
@@ -20,28 +29,22 @@ def load_hf_model(
     Returns:
         model, tokenizer
     """
-    try:
-        config = AutoConfig.from_pretrained(
-            model_name, num_labels=num_labels, cache_dir=cache_dir
-        )
-    except OSError:
-        config = AutoConfig.from_pretrained(
-            model_name, num_labels=num_labels, cache_dir=cache_dir, local_files_only=True
-        )
-
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-    except OSError:
-        tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir, local_files_only=True)
-
-    try:
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, config=config, cache_dir=cache_dir, **kwargs
-        )
-    except OSError:
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, config=config, cache_dir=cache_dir, local_files_only=True, **kwargs
-        )
+    config = _safe_load(
+        AutoConfig.from_pretrained,
+        model_name,
+        num_labels=num_labels,
+        cache_dir=cache_dir,
+    )
+    tokenizer = _safe_load(
+        AutoTokenizer.from_pretrained, model_name, cache_dir=cache_dir
+    )
+    model = _safe_load(
+        AutoModelForSequenceClassification.from_pretrained,
+        model_name,
+        config=config,
+        cache_dir=cache_dir,
+        **kwargs,
+    )
     return model, tokenizer
 
 

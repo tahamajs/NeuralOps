@@ -45,7 +45,8 @@ class XAttention(nn.Module):
         self.k_proj: nn.Linear = nn.Linear(config.hidden_size, config.hidden_size)
         self.v_proj: nn.Linear = nn.Linear(config.hidden_size, config.hidden_size)
         self.out_proj: nn.Linear = nn.Linear(config.hidden_size, config.hidden_size)
-        self.dropout: nn.Dropout = nn.Dropout(config.dropout)
+        dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+        self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
     def forward(
         self,
