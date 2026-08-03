@@ -21,6 +21,8 @@ from framework.trainer.trainer import create_trainer
 from framework.trainer.metrics import get_task_metrics
 from framework.data.base import DataConfig, TaskType, create_dataloader
 
+from framework.core.memory import cleanup_gpu_memory, get_gpu_memory_stats
+
 DEFAULT_TASKS = ["sst2", "mrpc", "cola"]
 DEFAULT_MODELS = ["bert-base-uncased", "distilbert-base-uncased", "roberta-base"]
 DEFAULT_ATTENTIONS = [
@@ -47,7 +49,8 @@ def run_benchmark(
     models=None,
     attentions=None,
     epochs=3,
-    max_samples=64,
+    batch_size=16,
+    max_samples=1000,
     resume=True,
 ):
     registered_keys = list(ATTENTION_REGISTRY.keys())
@@ -63,7 +66,7 @@ def run_benchmark(
     print(f"Tasks: {tasks}")
     print(f"Models: {models}")
     print(f"Attentions: {attentions}")
-    print(f"Epochs: {epochs} | Max Samples: {max_samples}")
+    print(f"Epochs: {epochs} | Batch Size: {batch_size} | Max Samples: {max_samples}")
 
     results = {}
     out_dir = Path("benchmark_results")
@@ -92,6 +95,7 @@ def run_benchmark(
                 print(f"RUNNING EXPERIMENT: Task={task.upper()} | Model={model_name} | Attention={attn_type.upper()}")
                 print("=" * 80)
 
+                cleanup_gpu_memory(force=True)
                 start_t = time.time()
                 try:
                     # 1. Load model & tokenizer
@@ -108,14 +112,14 @@ def run_benchmark(
                         task_name=task,
                         task_type=task_type,
                         max_length=64,
-                        batch_size=4,
+                        batch_size=batch_size,
                         max_samples=max_samples,
                     )
                     eval_cfg = DataConfig(
                         task_name=task,
                         task_type=task_type,
                         max_length=64,
-                        batch_size=4,
+                        batch_size=batch_size,
                         max_samples=max_samples,
                     )
                     train_loader = create_dataloader(train_cfg, tokenizer)
@@ -130,9 +134,9 @@ def run_benchmark(
                         eval_dataset=eval_loader.dataset,
                         output_dir=output_dir,
                         epochs=epochs,
-                        batch_size=4,
+                        batch_size=batch_size,
                         compute_metrics=get_task_metrics(task),
-                        logging_steps=5,
+                        logging_steps=10,
                     )
 
                     train_res = trainer.train()
@@ -169,7 +173,9 @@ def run_benchmark(
                     with open(summary_file, "w") as f:
                         json.dump(results, f, indent=2)
                 finally:
-                    clear_memory()
+                    # Clean up references and flush memory
+                    del model, tokenizer, train_loader, eval_loader
+                    cleanup_gpu_memory(force=True)
                     print(f"GPU/MPS memory cleared for {run_key}.")
 
     # Generate Markdown Table
@@ -187,6 +193,22 @@ def run_benchmark(
     with open(out_dir / "comprehensive_report.md", "w") as f:
         f.write(md_report)
 
+    # Generate Paper-Ready LaTeX Table
+    latex_table = "\\begin{table*}[t]\n\\centering\n\\small\n"
+    latex_table += "\\caption{Empirical evaluation across architectures and efficient attention mechanisms.}\n"
+    latex_table += "\\label{tab:benchmark_results}\n"
+    latex_table += "\\begin{tabular}{lllcccc}\n\\toprule\n"
+    latex_table += "\\textbf{Dataset} & \\textbf{Backbone} & \\textbf{Attention Mechanism} & \\textbf{Epochs} & \\textbf{Loss} & \\textbf{Accuracy (\\%)} & \\textbf{Time (s)} \\\\\n\\midrule\n"
+    for k, v in results.items():
+        if v["status"] == "SUCCESS":
+            e_loss = f"{v.get('eval_loss'):.4f}" if v.get('eval_loss') is not None else "--"
+            e_acc = f"{v.get('eval_accuracy') * 100:.2f}" if v.get('eval_accuracy') is not None else "--"
+            latex_table += f"{v['task'].upper()} & {v['model']} & \\textsc{{{v['attention']}}} & {v.get('epochs', 1)} & {e_loss} & \\textbf{{{e_acc}}} & {v['elapsed_seconds']} \\\\\n"
+    latex_table += "\\bottomrule\n\\end{tabular}\n\\end{table*}\n"
+
+    with open(out_dir / "table_latex.tex", "w") as f:
+        f.write(latex_table)
+
     print("\n" + "=" * 80)
     print("FINAL FULL EXPERIMENT BENCHMARK COMPARISON SUMMARY")
     print("=" * 80)
@@ -199,7 +221,8 @@ if __name__ == "__main__":
     parser.add_argument("--models", nargs="+", default=DEFAULT_MODELS, help="Models to benchmark")
     parser.add_argument("--attentions", nargs="+", default=DEFAULT_ATTENTIONS, help="Attentions to benchmark")
     parser.add_argument("--epochs", type=int, default=3, help="Epochs per run")
-    parser.add_argument("--max_samples", type=int, default=64, help="Max train/eval samples")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
+    parser.add_argument("--max_samples", type=int, default=1000, help="Max train/eval samples")
     parser.add_argument("--no_resume", action="store_true", help="Do not resume previous runs")
     args = parser.parse_args()
 
@@ -208,6 +231,7 @@ if __name__ == "__main__":
         models=args.models,
         attentions=args.attentions,
         epochs=args.epochs,
+        batch_size=args.batch_size,
         max_samples=args.max_samples,
         resume=not args.no_resume,
     )
