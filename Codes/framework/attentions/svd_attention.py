@@ -98,20 +98,23 @@ class SVDLinearAttention(nn.Module):
             valid_mask = get_token_valid_mask(attention_mask, batch_size, seq_len, device)
             masked_h = hidden_states * valid_mask.unsqueeze(-1).to(dtype)
 
-            # Compute SVD on active device (with CPU fallback if device lacks native QR/SVD kernels like MPS)
+            # Compute SVD / orthogonal subspace on active device with numerical regularization
             U_list = []
             for b in range(batch_size):
                 h_b = masked_h[b].float()
-                if device.type == "mps":
-                    U, _, _ = torch.svd_lowrank(h_b.cpu(), q=effective_rank, niter=2)
+                try:
+                    # Regularized randomized SVD (Halko et al., 2011)
+                    jitter = 1e-5 * torch.randn_like(h_b)
+                    h_b_reg = (h_b + jitter).cpu() if device.type == "mps" else (h_b + jitter)
+                    U, _, _ = torch.svd_lowrank(h_b_reg, q=effective_rank, niter=2)
                     U_r_b = U[:, :effective_rank].to(device=device, dtype=dtype)
-                else:
-                    try:
-                        U, _, _ = torch.svd_lowrank(h_b, q=effective_rank, niter=2)
-                        U_r_b = U[:, :effective_rank].to(dtype=dtype)
-                    except Exception:
-                        U, _, _ = torch.svd_lowrank(h_b.cpu(), q=effective_rank, niter=2)
-                        U_r_b = U[:, :effective_rank].to(device=device, dtype=dtype)
+                except Exception:
+                    # High-stability randomized orthonormal basis fallback
+                    D_dim = h_b.size(1)
+                    omega = torch.randn(D_dim, effective_rank, device="cpu", dtype=torch.float32)
+                    Y = torch.matmul(h_b.cpu(), omega)
+                    Q_mat, _ = torch.linalg.qr(Y)
+                    U_r_b = Q_mat[:, :effective_rank].to(device=device, dtype=dtype)
                 U_list.append(U_r_b)
 
             U_r = torch.stack(U_list, dim=0)  # (B, seq_len, r)
