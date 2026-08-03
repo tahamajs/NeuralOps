@@ -67,8 +67,6 @@ class GroupedQueryAttention(nn.Module):
         self.out_proj: nn.Linear = nn.Linear(
             self.num_heads * self.head_dim, self.hidden_size
         )
-
-        # Aliases
         dropout_p = getattr(
             config,
             "dropout",

@@ -60,8 +60,6 @@ class LinformerAttention(nn.Module):
         self.key: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.value: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, config.hidden_size)
-
-        # Aliases
         # Sequence projection matrices E and F: (k, max_seq_len)
         self.E: nn.Parameter = nn.Parameter(
             torch.empty(self.k_proj_dim, self.max_seq_len)

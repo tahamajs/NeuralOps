@@ -54,8 +54,6 @@ class NystromAttention(nn.Module):
         self.key: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.value: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, config.hidden_size)
-
-        # Aliases
         dropout_p = getattr(
             config,
             "dropout",

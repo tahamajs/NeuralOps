@@ -101,8 +101,6 @@ class ASVDAttention(nn.Module):
         self.key: ASVDLinear = ASVDLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
         self.value: ASVDLinear = ASVDLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
         self.out_proj: ASVDLinear = ASVDLinear(self.all_head_size, self.hidden_size, self.rank, bias=True)
-
-        # Aliases
         dropout_p = getattr(
             config,
             "dropout",
