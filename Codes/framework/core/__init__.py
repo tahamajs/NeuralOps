@@ -17,6 +17,7 @@ from .attention_mask import apply_attention_mask, get_token_valid_mask
 from .attention_utils import available_attention_types, inject_attention
 from .base import BaseAttention, BaseCompressor
 from .compression_engine import CompressionPipeline, compress_model
+from .memory import GPUMemoryGuard, cleanup_gpu_memory, get_gpu_memory_stats
 from .model_utils import activation_hooks, copy_attention_weights
 from .model_utils import count_parameters as count_params
 from .model_utils import (

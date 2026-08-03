@@ -87,10 +87,14 @@ def test_attention_module(attn_name: str, config: Any, device: torch.device):
 def test_model_injection(model_name: str, attn_name: str, device: torch.device):
     print(f"Testing injection: Model='{model_name}' | Attn='{attn_name}'...")
     try:
-        config = AutoConfig.from_pretrained(model_name, local_files_only=True)
-        model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, config=config, local_files_only=True
-        )
+        try:
+            config = AutoConfig.from_pretrained(model_name, local_files_only=True)
+            model = AutoModelForSequenceClassification.from_pretrained(
+                model_name, config=config, local_files_only=True
+            )
+        except Exception:
+            config = AutoConfig.from_pretrained(model_name)
+            model = AutoModelForSequenceClassification.from_config(config)
         model = inject_attention(model, attn_name, copy_weights=True)
         model.to(device)
 

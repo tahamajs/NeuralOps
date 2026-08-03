@@ -47,10 +47,11 @@ class ASVDLinear(nn.Module):
 
     def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor, S: Optional[torch.Tensor] = None) -> None:
         with torch.no_grad():
-            self.U.copy_(U)
-            self.V.copy_(V)
+            r = min(self.rank, U.size(1), V.size(0))
+            self.U.data[:, :r].copy_(U[:, :r])
+            self.V.data[:r, :].copy_(V[:r, :])
             if S is not None:
-                self.S.copy_(S)
+                self.S.data[:r].copy_(S[:r])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: (*, in_features)

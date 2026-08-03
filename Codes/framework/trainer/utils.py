@@ -12,6 +12,9 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
+from framework.core.memory import cleanup_gpu_memory, get_gpu_memory_stats
+
+
 def train_model(
     model: nn.Module,
     train_loader: DataLoader,
@@ -21,49 +24,82 @@ def train_model(
     num_labels: int,
     is_multichoice: bool = False,
 ) -> Dict[str, float]:
-    """Train model."""
+    """Train model with maximum GPU compute utilization and robust memory cleanup."""
+    cleanup_gpu_memory(force=True)
     model.to(device)
     model.train()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
-    steps_per_epoch = len(train_loader)
-    epoch_loss = 0.0
-    for epoch in range(config.epochs):
-        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{config.epochs}", leave=False)
-        for batch in pbar:
+
+    use_amp = getattr(config, "fp16", False) or getattr(config, "amp", True)
+    amp_dtype = torch.float16 if device.type == "cuda" else (torch.bfloat16 if hasattr(torch, "bfloat16") else torch.float32)
+    scaler = torch.cuda.amp.GradScaler(enabled=(use_amp and device.type == "cuda"))
+
+    # Optimizer with fused option if available on CUDA
+    optimizer_kwargs = {"lr": getattr(config, "learning_rate", 2e-5), "weight_decay": getattr(config, "weight_decay", 0.01)}
+    if device.type == "cuda" and hasattr(torch.optim.AdamW, "fused"):
+        optimizer_kwargs["fused"] = True
+    optimizer = torch.optim.AdamW(model.parameters(), **optimizer_kwargs)
+
+    epochs = getattr(config, "epochs", 3)
+    max_grad_norm = getattr(config, "max_grad_norm", 1.0)
+    steps_per_epoch = max(1, len(train_loader))
+    total_loss = 0.0
+
+    for epoch in range(epochs):
+        epoch_loss = 0.0
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+        for step, batch in enumerate(pbar):
             optimizer.zero_grad(set_to_none=True)
-            if is_multichoice:
-                input_ids = batch["input_ids"].to(device)
-                attention_mask = batch["attention_mask"].to(device)
-                true_labels = batch["labels"].to(device)
-                bs, nc, sl = input_ids.shape
-                flat_ids = input_ids.view(-1, sl)
-                flat_mask = attention_mask.view(-1, sl)
-                outputs = model(input_ids=flat_ids, attention_mask=flat_mask)
-                logits = outputs["logits"]
-                combined_labels = true_labels.repeat_interleave(nc)
-                loss = nn.functional.cross_entropy(logits, combined_labels)
-            else:
-                input_ids = batch["input_ids"].to(device)
-                attention_mask = batch["attention_mask"].to(device)
-                labels = batch["labels"].to(device)
-                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-                logits = outputs["logits"]
-                loss = nn.functional.cross_entropy(logits, labels)
+
+            with torch.autocast(device_type=device.type, dtype=amp_dtype, enabled=use_amp and device.type in ["cuda", "mps"]):
+                if is_multichoice:
+                    input_ids = batch["input_ids"].to(device, non_blocking=True)
+                    attention_mask = batch["attention_mask"].to(device, non_blocking=True)
+                    true_labels = batch["labels"].to(device, non_blocking=True)
+                    bs, nc, sl = input_ids.shape
+                    flat_ids = input_ids.view(-1, sl)
+                    flat_mask = attention_mask.view(-1, sl)
+                    outputs = model(input_ids=flat_ids, attention_mask=flat_mask)
+                    logits = outputs["logits"]
+                    combined_labels = true_labels.repeat_interleave(nc)
+                    loss = nn.functional.cross_entropy(logits, combined_labels)
+                else:
+                    input_ids = batch["input_ids"].to(device, non_blocking=True)
+                    attention_mask = batch["attention_mask"].to(device, non_blocking=True)
+                    labels = batch["labels"].to(device, non_blocking=True)
+                    outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                    logits = outputs["logits"]
+                    loss = nn.functional.cross_entropy(logits, labels)
+
             if torch.isfinite(loss):
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(
-                    model.parameters(),
-                    max_norm=(
-                        config.max_grad_norm
-                        if hasattr(config, "max_grad_norm")
-                        else 1.0
-                    ),
-                )
-                optimizer.step()
-                epoch_loss += loss.item()
-            pbar.set_postfix({"loss": f"{loss.item():.4f}"})
+                if scaler.is_enabled():
+                    scaler.scale(loss).backward()
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
+                    optimizer.step()
+
+                curr_loss = loss.detach().item()
+                epoch_loss += curr_loss
+                total_loss += curr_loss
+            else:
+                curr_loss = 0.0
+
+            if (step + 1) % max(1, getattr(config, "logging_steps", 10)) == 0 or step == len(train_loader) - 1:
+                pbar.set_postfix({"loss": f"{curr_loss:.4f}"})
+
+            # Explicitly delete activation references to free memory immediately
+            del outputs, logits, loss
+
+        # End of epoch memory cleanup
+        cleanup_gpu_memory(force=False)
+
     val_acc = evaluate_model(model, val_loader, device, num_labels, is_multichoice)
-    return {"final_accuracy": val_acc, "avg_loss": epoch_loss / steps_per_epoch}
+    cleanup_gpu_memory(force=True)
+    return {"final_accuracy": val_acc, "avg_loss": total_loss / (epochs * steps_per_epoch)}
 
 
 def evaluate_model(
@@ -74,14 +110,15 @@ def evaluate_model(
     is_multichoice=False,
     compute_all_metrics=False,
 ) -> Union[float, Dict[str, float]]:
-    """Evaluate model."""
+    """Evaluate model with non-blocking GPU execution and memory safety."""
+    cleanup_gpu_memory(force=False)
     model.eval()
     all_preds, all_labels = [], []
     with torch.no_grad():
         for batch in data_loader:
             if is_multichoice:
-                input_ids = batch["input_ids"].to(device)
-                attention_mask = batch["attention_mask"].to(device)
+                input_ids = batch["input_ids"].to(device, non_blocking=True)
+                attention_mask = batch["attention_mask"].to(device, non_blocking=True)
                 true_labels = batch["labels"]
                 bs, nc, sl = input_ids.shape
                 flat_ids = input_ids.view(-1, sl)
@@ -93,12 +130,15 @@ def evaluate_model(
                 all_preds.extend(preds)
                 all_labels.extend(true_labels.numpy())
             else:
-                input_ids = batch["input_ids"].to(device)
-                attention_mask = batch["attention_mask"].to(device)
+                input_ids = batch["input_ids"].to(device, non_blocking=True)
+                attention_mask = batch["attention_mask"].to(device, non_blocking=True)
                 outputs = model(input_ids, attention_mask=attention_mask)
                 preds = torch.argmax(outputs["logits"], dim=-1).cpu().numpy()
                 all_preds.extend(preds)
                 all_labels.extend(batch["labels"].numpy())
+            del outputs
+
+    cleanup_gpu_memory(force=False)
     if not all_preds:
         return 0.0 if not compute_all_metrics else {"accuracy": 0.0}
     acc = accuracy_score(all_labels, all_preds)
