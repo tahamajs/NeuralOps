@@ -55,7 +55,8 @@ def _copy_projection_weights(target_mod: nn.Module, src_weight: torch.Tensor, sr
         with torch.no_grad():
             W = src_weight.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-            r = min(getattr(target_mod, "rank", U.size(1)), U.size(1), Vt.size(0))
+            target_rank = getattr(target_mod, "rank", getattr(target_mod, "svd_rank", getattr(target_mod.U, "size", lambda i: 32)(1)))
+            r = min(target_rank, U.size(1), Vt.size(0), target_mod.U.size(1), target_mod.V.size(0))
             U_r = (U[:, :r] * S[:r]).to(target_mod.U.dtype)
             V_r = Vt[:r, :].to(target_mod.V.dtype)
             target_mod.set_low_rank_factors(U_r, V_r)
@@ -67,7 +68,8 @@ def _copy_projection_weights(target_mod: nn.Module, src_weight: torch.Tensor, sr
         with torch.no_grad():
             W = src_weight.float()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-            r = min(getattr(target_mod, "svd_rank", U.size(1)), U.size(1), Vt.size(0))
+            target_rank = getattr(target_mod, "svd_rank", getattr(target_mod, "rank", getattr(target_mod.U, "size", lambda i: 32)(1)))
+            r = min(target_rank, U.size(1), Vt.size(0), target_mod.U.size(1), target_mod.V.size(0))
             U_r = (U[:, :r] * S[:r]).to(target_mod.U.dtype)
             V_r = Vt[:r, :].to(target_mod.V.dtype)
             target_mod.set_svd_factors(U_r, V_r)
