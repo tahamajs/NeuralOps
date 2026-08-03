@@ -8,10 +8,15 @@ import threading
 import traceback
 from pathlib import Path
 
-import psutil
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from django.conf import settings
+try:
+    from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
+    HAS_CHANNELS = True
+except ImportError:
+    async_to_sync = None
+    get_channel_layer = None
+    HAS_CHANNELS = False
+
 from framework.experiment_utils.orchestrator import MegaOrchestrator
 
 
@@ -20,9 +25,12 @@ from framework.experiment_utils.orchestrator import MegaOrchestrator
 # -------------------------------------------------------------------------
 def broadcast_terminal(msg: str) -> None:
     """Send a log message to the terminal WebSocket group."""
+    if not HAS_CHANNELS:
+        return
     try:
         channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
+        if channel_layer and async_to_sync:
+            async_to_sync(channel_layer.group_send)(
             "terminal", {"type": "terminal_message", "data": msg}
         )
     except Exception as e:
