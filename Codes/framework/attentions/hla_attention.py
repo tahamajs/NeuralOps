@@ -35,6 +35,16 @@ class HLAAttention(BaseAttention):
         k = k.permute(0, 2, 1, 3)
         v = v.permute(0, 2, 1, 3)
 
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask = attention_mask.unsqueeze(1).unsqueeze(-1)  # (B, 1, L, 1)
+            elif attention_mask.dim() == 4:
+                mask = (attention_mask > -1).float().permute(0, 2, 3, 1)
+            else:
+                mask = attention_mask
+            k = k * mask
+            v = v * mask
+
         # Recurrent linear attention with Hadamard product
         h = torch.zeros(B, H, Dh, Dh, device=x.device)
         outputs = []
@@ -48,4 +58,9 @@ class HLAAttention(BaseAttention):
 
         out = torch.stack(outputs, dim=2)  # (B, H, L, Dh)
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
-        return self.out_proj(out), None
+        out = self.out_proj(out)
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                out = out * attention_mask.unsqueeze(-1)
+        return out, None
+

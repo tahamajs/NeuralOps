@@ -97,3 +97,22 @@ class BAMUMoEBlock(BaseAttention):
         self.num_layers = num_layers
         self.old_attn = old_attn
         self.comp_config = comp_config
+
+    def forward(self, hidden_states, attention_mask=None, **kwargs):
+        B, L, D = hidden_states.shape
+        qkv = self.qkv_moe(hidden_states)
+        q, k, v = qkv.chunk(3, dim=-1)
+        proj = self.output_proj(v)
+        h1 = self.norm1(hidden_states + self.dropout(proj))
+        ffn = self.ffn_moe(h1)
+        out = self.norm2(h1 + self.dropout(ffn))
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask = attention_mask.unsqueeze(-1)
+            elif attention_mask.dim() == 4:
+                mask = (attention_mask > -1).float().squeeze(1).squeeze(1).unsqueeze(-1)
+            else:
+                mask = attention_mask
+            out = out * mask
+        return out, None
+

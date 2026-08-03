@@ -15,14 +15,28 @@ class FactorisedMatrixState(nn.Module):
     def forward(self, hidden_states, attention_mask=None, **kwargs):
         # This is a stateful module; for simplicity, we ignore k,v and use hidden_states as query
         B, N, D = hidden_states.shape
-        # We'll process each token sequentially (simplified)
-        self.L @ self.R.T  # (D, D)
+        proj = self.L @ self.R.T  # (D, D)
+
+        mask = None
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask = attention_mask.unsqueeze(-1)
+            elif attention_mask.dim() == 4:
+                mask = (attention_mask > -1).float().squeeze(1).squeeze(1).unsqueeze(-1)
+            else:
+                mask = attention_mask
+            hidden_states = hidden_states * mask
+
         outputs = []
-        state = torch.zeros(B, D, D, device=hidden_states.device)
+        state = torch.zeros(B, D, D, device=hidden_states.device, dtype=hidden_states.dtype)
         for t in range(N):
             xt = hidden_states[:, t, :]  # (B, D)
             state = state + (xt.unsqueeze(-1) @ xt.unsqueeze(1))
             out_t = (state @ xt.unsqueeze(-1)).squeeze(-1)
             outputs.append(out_t)
         out = torch.stack(outputs, dim=1)  # (B, N, D)
+        out = out @ proj
+        if mask is not None:
+            out = out * mask
         return out, None
+
