@@ -54,16 +54,16 @@ def prepare_code_dataset():
 
     # Upload or update Kaggle Dataset
     print(f"☁️ Uploading dataset to Kaggle ({DATASET_SLUG})...")
-    res = subprocess.run(["kaggle", "datasets", "status", DATASET_SLUG], capture_output=True, text=True)
-    if res.returncode == 0:
-        cmd = ["kaggle", "datasets", "version", "-p", str(ds_dir), "-m", "Updated framework codebase"]
+    res = subprocess.run(["kaggle", "datasets", "list", "--mine"], capture_output=True, text=True)
+    if DATASET_SLUG in res.stdout or "efficient-attention-code" in res.stdout:
+        cmd = ["kaggle", "datasets", "version", "-p", str(ds_dir), "-m", "Updated framework codebase", "--dir-mode", "zip"]
     else:
-        cmd = ["kaggle", "datasets", "create", "-p", str(ds_dir)]
+        cmd = ["kaggle", "datasets", "create", "-p", str(ds_dir), "--dir-mode", "zip"]
 
     res = subprocess.run(cmd, capture_output=True, text=True)
     print(res.stdout)
     if res.returncode != 0 and "already exists" not in res.stderr:
-        print(f"Warning/Notice on dataset upload: {res.stderr}")
+        print(f"Notice on dataset upload: {res.stderr}")
     print("✓ Dataset uploaded/updated successfully")
 
 
@@ -103,15 +103,26 @@ def prepare_kernel(command_str: str):
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Copy framework from input dataset to working directory\n",
-                    "ds_path = '/kaggle/input/efficient-attention-code/framework'\n",
-                    "if not os.path.exists(ds_path):\n",
-                    "    ds_path = '/kaggle/input/efficient-attention-code'\n",
+                    "# Dynamically extract and locate framework directory in /kaggle/input/\n",
+                    "import glob, os, sys, shutil, zipfile\n",
                     "work_dir = '/kaggle/working/framework'\n",
                     "if os.path.exists(work_dir): shutil.rmtree(work_dir)\n",
-                    "shutil.copytree(ds_path, work_dir)\n",
-                    "%cd /kaggle/working/framework\n",
-                    "print('Current directory:', os.getcwd())\n"
+                    "zips = glob.glob('/kaggle/input/**/framework.zip', recursive=True)\n",
+                    "if zips:\n",
+                    "    os.makedirs(work_dir, exist_ok=True)\n",
+                    "    with zipfile.ZipFile(zips[0], 'r') as zip_ref:\n",
+                    "        zip_ref.extractall(work_dir)\n",
+                    "    os.chdir(work_dir)\n",
+                    "    print('✓ Unzipped framework from:', zips[0])\n",
+                    "else:\n",
+                    "    matches = glob.glob('/kaggle/input/**/run_kaggle.py', recursive=True)\n",
+                    "    if matches:\n",
+                    "        src_dir = os.path.dirname(matches[0])\n",
+                    "        shutil.copytree(src_dir, work_dir)\n",
+                    "        os.chdir(work_dir)\n",
+                    "        print('✓ Framework loaded from:', src_dir)\n",
+                    "    else:\n",
+                    "        print('⚠️ Framework source not found in /kaggle/input/!')\n"
                 ]
             },
             {
@@ -123,9 +134,39 @@ def prepare_kernel(command_str: str):
                     "# Execute pipeline command\n",
                     f"!python run_kaggle.py {command_str}\n"
                 ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "# Copy all results & model checkpoints to top-level /kaggle/working/ for Kaggle output capture\n",
+                    "import os, shutil\n",
+                    "res_dir = '/kaggle/working/framework/results'\n",
+                    "if os.path.exists(res_dir):\n",
+                    "    for item in os.listdir(res_dir):\n",
+                    "        s = os.path.join(res_dir, item)\n",
+                    "        d = os.path.join('/kaggle/working', item)\n",
+                    "        if os.path.isdir(s):\n",
+                    "            shutil.copytree(s, d, dirs_exist_ok=True)\n",
+                    "        else:\n",
+                    "            shutil.copy2(s, d)\n",
+                    "    print('✓ All results and model checkpoints successfully exported to /kaggle/working/!')\n"
+                ]
             }
         ],
-        "metadata": {"language_info": {"name": "python"}},
+        "metadata": {
+            "kernelspec": {
+                "display_name": "Python 3",
+                "language": "python",
+                "name": "python3"
+            },
+            "language_info": {
+                "name": "python",
+                "version": "3.10"
+            }
+        },
         "nbformat": 4,
         "nbformat_minor": 2
     }
