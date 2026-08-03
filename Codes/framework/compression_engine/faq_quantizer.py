@@ -14,13 +14,16 @@ class FAQQuantizer(BaseCompressor):
             "The quick brown fox jumps over the lazy dog"
         ]
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         self.model.eval()
         activations = {}
         hooks = []
 
-        def make_hook(name):
-            def hook(module, input, output):
+        def make_hook(name) -> Any:
+            """Make hook."""
+            def hook(module, input, output) -> None:
+                """Hook."""
                 activations[name] = output.detach()
 
             return hook
@@ -59,7 +62,8 @@ class FAQQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("faq")
-def faq_factory(model, comp_config):
+def faq_factory(model, comp_config) -> Any:
+    """Faq factory."""
     bits = getattr(comp_config, "faq_bits", 8)
     tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:

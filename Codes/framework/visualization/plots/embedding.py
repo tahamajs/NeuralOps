@@ -10,7 +10,8 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def plot_embedding(history, metrics, config, output_dir, opts):
+def plot_embedding(history, metrics, config, output_dir, opts) -> Any:
+    """Plot embedding."""
     emb_path = Path(output_dir).parent / "artifacts" / "embeddings.json"
     if not emb_path.exists():
         logger.info("Embedding plot requires embeddings.json (hidden states).")

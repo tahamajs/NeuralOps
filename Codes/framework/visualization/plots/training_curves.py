@@ -5,7 +5,8 @@ import numpy as np
 from scipy.ndimage import uniform_filter1d
 
 
-def plot_combined_training_curves(history, metrics, config, output_dir, opts):
+def plot_combined_training_curves(history, metrics, config, output_dir, opts) -> Any:
+    """Plot combined training curves."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "loss" in h]
     train = [h["loss"] for h in history if "loss" in h]
     eval_steps = [h.get("step", i) for i, h in enumerate(history) if "eval_loss" in h]

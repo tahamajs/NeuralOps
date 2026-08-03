@@ -42,7 +42,7 @@ class PromptRegistry:
         result = prompt.render(role="assistant", question="Help!")
     """
 
-    def __init__(self, config: PromptConfig = None):
+    def __init__(self, config: PromptConfig = None) -> None:
         self.config = config or PromptConfig()
         self._prompts: Dict[str, VersionHistory] = {}  # name → version chain
         self._aliases: Dict[str, Dict[str, int]] = {}  # name → {alias → version}
@@ -91,7 +91,8 @@ class PromptRegistry:
         logger.info("Updated prompt '%s' – v%d (%s)", name, v.version_number, v.id[:8])
         return v
 
-    def _create_version(self, name, template, commit_message, author, tags, metadata):
+    def _create_version(self, name, template, commit_message, author, tags, metadata) -> Any:
+        """ create version."""
         raw = (
             template.template
             if isinstance(template, PromptTemplate)
@@ -135,11 +136,12 @@ class PromptRegistry:
             raise ValueError(f"Version not found for prompt '{name}'.")
         return self._deserialise(v)
 
-    def load_production(self, name: str):
+    def load_production(self, name: str) -> Any:
         """Shortcut to load the production alias."""
         return self.load(name, alias="production")
 
-    def _deserialise(self, v: PromptVersion):
+    def _deserialise(self, v: PromptVersion) -> Any:
+        """ deserialise."""
         if v.template_type == "chat":
             return ChatPromptTemplate(messages=json.loads(v.template))
         return PromptTemplate(template=v.template, metadata=v.metadata)
@@ -163,6 +165,7 @@ class PromptRegistry:
         logger.info("Alias '%s' for '%s' → v%d", alias, name, version)
 
     def get_alias(self, name: str, alias: str) -> Optional[int]:
+        """Return the alias."""
         return self._aliases.get(name, {}).get(alias)
 
     def alias_history(self, name: str, alias: str) -> List[dict]:
@@ -173,7 +176,7 @@ class PromptRegistry:
             if h["alias"] == alias
         ]
 
-    def rollback_alias(self, name: str, alias: str):
+    def rollback_alias(self, name: str, alias: str) -> None:
         """Roll back an alias to its previous version."""
         history = self.alias_history(name, alias)
         if len(history) < 2:
@@ -184,6 +187,7 @@ class PromptRegistry:
 
     # ── Search & List ──────────────────────────────────────
     def list_prompts(self) -> List[Dict[str, Any]]:
+        """List prompts."""
         return [
             {
                 "name": n,
@@ -196,6 +200,7 @@ class PromptRegistry:
         ]
 
     def search(self, tag: str = None, query: str = None) -> List[Dict[str, Any]]:
+        """Search."""
         results = self.list_prompts()
         if tag:
             results = [r for r in results if tag in r.get("tags", [])]
@@ -206,16 +211,19 @@ class PromptRegistry:
 
     # ── Version History ────────────────────────────────────
     def get_history(self, name: str) -> VersionHistory:
+        """Return the history."""
         return self._prompts.get(name)
 
     def diff(self, name: str, v1: int, v2: int = None) -> str:
+        """Diff."""
         h = self._prompts.get(name)
         if h is None:
             raise KeyError(f"Prompt '{name}' not found.")
         return h.diff(v1, v2)
 
     # ── Evaluation (delegates to PromptEvaluation) ─────────
-    def log_evaluation(self, name: str, version: int, **metrics):
+    def log_evaluation(self, name: str, version: int, **metrics) -> None:
+        """Log evaluation."""
         if name not in self._evaluations:
             self._evaluations[name] = {}
         self._evaluations[name][version] = PromptEvaluation(
@@ -224,19 +232,23 @@ class PromptRegistry:
         self._save(name)
 
     def get_evaluations(self, name: str) -> Dict[int, "PromptEvaluation"]:
+        """Return the evaluations."""
         return self._evaluations.get(name, {})
 
     # ── Persistence ─────────────────────────────────────────
     def _get_history(self, name: str) -> VersionHistory:
+        """ get history."""
         if name not in self._prompts:
             self._prompts[name] = VersionHistory()
         return self._prompts[name]
 
-    def _set_default_alias(self, name, version):
+    def _set_default_alias(self, name, version) -> None:
+        """ set default alias."""
         self._aliases.setdefault(name, {"_history": []})
         self._aliases[name][self.config.default_alias] = version
 
-    def _save(self, name: str):
+    def _save(self, name: str) -> None:
+        """ save."""
         if self.config.storage_backend != StorageBackend.LOCAL:
             return
         os.makedirs(self.config.registry_path, exist_ok=True)
@@ -254,7 +266,8 @@ class PromptRegistry:
         with open(path, "w") as f:
             json.dump(data, f, indent=2, default=str)
 
-    def _load_from_disk(self):
+    def _load_from_disk(self) -> None:
+        """ load from disk."""
         if self.config.storage_backend != StorageBackend.LOCAL:
             return
         p = self.config.registry_path

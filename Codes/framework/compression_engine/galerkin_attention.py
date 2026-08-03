@@ -66,6 +66,7 @@ class GalerkinAttention(nn.Module):
         output_attentions=False,
         **kwargs
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Forward pass."""
         B, N, _ = hidden_states.shape
         _H, D = self.num_heads, self.head_dim
 
@@ -112,7 +113,7 @@ class GalerkinAttention(nn.Module):
 @ATTENTION_REGISTRY.register("galerkin")
 def inject_galerkin(
     layer, model_config, comp_config, layer_idx, total_layers, old_attn
-):
+) -> Any:
     """Injection function for DistilBERT."""
     rank = getattr(comp_config, "galerkin_rank", 64)
     dropout = getattr(comp_config, "dropout", 0.1)

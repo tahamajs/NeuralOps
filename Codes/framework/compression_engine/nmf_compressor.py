@@ -11,7 +11,8 @@ class NMFCompressor(BaseCompressor):
         super().__init__(model, name="nmf", **kwargs)
         self.rank = rank
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -28,7 +29,8 @@ class NMFCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("nmf")
-def nmf_factory(model, comp_config):
+def nmf_factory(model, comp_config) -> Any:
+    """Nmf factory."""
     rank = getattr(comp_config, "nmf_rank", 64)
     compressor = NMFCompressor(model, rank=rank)
     compressed_model, _ = compressor.compress()

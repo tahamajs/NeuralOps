@@ -18,12 +18,14 @@ class FLATLLMCompressor(BaseCompressor):
             "The quick brown fox jumps over the lazy dog."
         ]
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         self.model.eval()
         activations = {}
         hooks = []
 
-        def hook_fn(module, input, output, name):
+        def hook_fn(module, input, output, name) -> None:
+            """Hook fn."""
             activations[name] = output.detach().cpu()
 
         for name, module in self.model.named_modules():
@@ -72,7 +74,8 @@ class FLATLLMCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("flat_llm")
-def flat_llm_factory(model, comp_config):
+def flat_llm_factory(model, comp_config) -> Any:
+    """Flat llm factory."""
     keep_ratio = getattr(comp_config, "flat_llm_keep_ratio", 0.7)
     tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:

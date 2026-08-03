@@ -47,7 +47,8 @@ class FRanDICompressor(BaseCompressor):
         activations = {}
         hooks = []
 
-        def hook_fn(module, input, output, name):
+        def hook_fn(module, input, output, name) -> None:
+            """Hook fn."""
             x = input[0].detach()
             x_flat = x.reshape(-1, x.shape[-1])
             if name not in activations:
@@ -99,6 +100,7 @@ class FRanDICompressor(BaseCompressor):
         return self.model, self.get_compression_stats()
 
     def _compute_stats(self) -> Dict[str, Any]:
+        """ compute stats."""
         stats = super()._compute_stats()
         stats.update(
             {

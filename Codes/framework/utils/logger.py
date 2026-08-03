@@ -11,6 +11,7 @@ def setup_logger(
     log_file: Optional[str] = None,
     format_string: Optional[str] = None,
 ) -> logging.Logger:
+    """Setup logger."""
     if format_string is None:
         format_string = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     logger = logging.getLogger(name)
@@ -28,8 +29,10 @@ def setup_logger(
 
 
 def get_logger(name: str) -> logging.Logger:
+    """Return the logger."""
     return logging.getLogger(name)
 
 
-def set_log_level(logger_name: str, level: int):
+def set_log_level(logger_name: str, level: int) -> None:
+    """Set the log level."""
     logging.getLogger(logger_name).setLevel(level)

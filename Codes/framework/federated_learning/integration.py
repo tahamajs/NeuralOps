@@ -18,6 +18,7 @@ def run_federated_experiment(
     dataset: Any,
     output_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
+    """Run federated experiment."""
     cfg = FLConfig(
         **{k: v for k, v in config_dict.items() if k in FLConfig.__dataclass_fields__}
     )
@@ -33,7 +34,8 @@ def run_federated_experiment(
     server = FLServer(cfg, global_model)
     trainer = FLClientTrainer(cfg)
 
-    def train_fn(model, data):
+    def train_fn(model, data) -> Any:
+        """Train fn."""
         return trainer.train_from_data(
             model, data, epochs=cfg.local_epochs, batch_size=cfg.local_batch_size
         )

@@ -80,7 +80,7 @@ def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -> N
     setattr(parent, parts[-1], new_module)
 
 
-def get_parent_and_child_name(model: nn.Module, full_name: str):
+def get_parent_and_child_name(model: nn.Module, full_name: str) -> Any:
     """Return (parent_module, child_attribute_name)."""
     parts = full_name.split(".")
     parent = model
@@ -90,6 +90,7 @@ def get_parent_and_child_name(model: nn.Module, full_name: str):
 
 
 def count_parameters(model: nn.Module, trainable_only: bool = False) -> int:
+    """Count parameters."""
     if trainable_only:
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
     return sum(p.numel() for p in model.parameters())
@@ -101,13 +102,15 @@ def activation_hooks(
     target_module_type: type = nn.Linear,
     collect_input: bool = True,
     collect_output: bool = False,
-):
+) -> Any:
     """Context manager that collects activations for all modules of a given type."""
     activations: Dict[str, Any] = {}
     hooks = []
 
-    def make_hook(name):
-        def hook(module, input, output):
+    def make_hook(name) -> Any:
+        """Make hook."""
+        def hook(module, input, output) -> None:
+            """Hook."""
             data = {}
             if collect_input:
                 data["input"] = input[0].detach()

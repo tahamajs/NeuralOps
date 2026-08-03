@@ -41,6 +41,7 @@ class CoMeCompressor(BaseCompressor):
         self, save_dir="come_pruned", calibration_dataset="wiki2", nsamples=256
     ):
         # 1. Save temporary model
+        """Compress the target module using this strategy."""
         temp_path = Path("temp_come_model")
         temp_path.mkdir(exist_ok=True)
         self.model.save_pretrained(temp_path)
@@ -94,7 +95,8 @@ class CoMeCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("come")
-def come_factory(model, comp_config):
+def come_factory(model, comp_config) -> Any:
+    """Come factory."""
     target_layers = getattr(comp_config, "come_target_layers", None)
     sparsity = getattr(comp_config, "come_sparsity", 0.3)
     calib_dataset = getattr(comp_config, "come_calib_dataset", "wiki2")

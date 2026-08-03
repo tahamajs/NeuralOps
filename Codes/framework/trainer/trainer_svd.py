@@ -18,7 +18,8 @@ def train_model(
     config,
     num_labels: int,
     is_multichoice: bool = False,
-):
+) -> Any:
+    """Train model."""
     model.train()
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
     steps_per_epoch = len(train_loader)
@@ -59,7 +60,8 @@ def train_model(
     return {"final_accuracy": val_accuracy, "avg_loss": epoch_loss / steps_per_epoch}
 
 
-def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False):
+def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False) -> Any:
+    """Evaluate model."""
     model.eval()
     all_preds = []
     all_labels = []
@@ -96,6 +98,7 @@ def evaluate_model(model, data_loader, device, num_labels, is_multichoice=False)
 def benchmark_model(
     model: nn.Module, data_loader: DataLoader, device: torch.device
 ) -> Dict:
+    """Benchmark model."""
     model.eval()
     memory_before = psutil.Process().memory_info().rss / 1024 / 1024
     start_time = time.time()
@@ -133,4 +136,5 @@ def benchmark_model(
 
 
 def count_parameters(model: nn.Module) -> int:
+    """Count parameters."""
     return sum(p.numel() for p in model.parameters() if p.requires_grad)

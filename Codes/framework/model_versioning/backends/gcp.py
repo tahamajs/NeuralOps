@@ -4,7 +4,8 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def upload_to_gcp(local_path, bucket):
+def upload_to_gcp(local_path, bucket) -> None:
+    """Upload to gcp."""
     try:
         from google.cloud import storage
 
@@ -19,5 +20,6 @@ def upload_to_gcp(local_path, bucket):
         logger.exception("GCP upload failed: %s", e)
 
 
-def download_from_gcp(local_path, bucket):
+def download_from_gcp(local_path, bucket) -> None:
+    """Download from gcp."""
     pass  # implement with client.download_blob_to_file

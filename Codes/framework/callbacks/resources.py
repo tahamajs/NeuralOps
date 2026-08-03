@@ -11,10 +11,11 @@ logger = logging.getLogger(__name__)
 class MemoryCallback(TrainerCallback):
     """Logs CPU/GPU memory usage."""
 
-    def __init__(self, log_every_steps: int = 100):
+    def __init__(self, log_every_steps: int = 100) -> None:
         self.log_every_steps = log_every_steps
 
-    def on_step_end(self, args, state, control, **kwargs):
+    def on_step_end(self, args, state, control, **kwargs) -> None:
+        """On step end."""
         if state.global_step % self.log_every_steps == 0:
             import psutil
 
@@ -25,13 +26,15 @@ class MemoryCallback(TrainerCallback):
 class TimeCallback(TrainerCallback):
     """Tracks elapsed time and estimates remaining time."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.start_time = None
 
-    def on_train_begin(self, args, state, control, **kwargs):
+    def on_train_begin(self, args, state, control, **kwargs) -> None:
+        """On train begin."""
         self.start_time = time.time()
 
-    def on_step_end(self, args, state, control, **kwargs):
+    def on_step_end(self, args, state, control, **kwargs) -> None:
+        """On step end."""
         if state.global_step % 100 == 0:
             elapsed = time.time() - self.start_time
             steps_done = state.global_step
@@ -44,7 +47,8 @@ class TimeCallback(TrainerCallback):
 class GPUStatsCallback(TrainerCallback):
     """Logs GPU utilisation and memory."""
 
-    def on_step_end(self, args, state, control, **kwargs):
+    def on_step_end(self, args, state, control, **kwargs) -> None:
+        """On step end."""
         try:
             import torch
 

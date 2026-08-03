@@ -13,8 +13,10 @@ class RouterRegistry:
             cls._instance._registry: Dict[str, Type[BaseRouter]] = {}
         return cls._instance
 
-    def register(self, name: Optional[str] = None):
-        def decorator(cls):
+    def register(self, name: Optional[str] = None) -> Any:
+        """Register."""
+        def decorator(cls) -> Any:
+            """Decorator."""
             nonlocal name
             if name is None:
                 name = getattr(cls, "name", cls.__name__.lower())
@@ -24,15 +26,18 @@ class RouterRegistry:
         return decorator
 
     def get(self, name: str) -> Optional[Type[BaseRouter]]:
+        """Get."""
         return self._registry.get(name)
 
     def create(self, name: str, **kwargs) -> Optional[BaseRouter]:
+        """Create."""
         cls = self.get(name)
         if cls is None:
             return None
         return cls(**kwargs)
 
     def list(self) -> Dict[str, Type[BaseRouter]]:
+        """List."""
         return self._registry.copy()
 
 

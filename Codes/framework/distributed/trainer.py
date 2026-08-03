@@ -24,12 +24,12 @@ class DistributedTrainer:
         trainer.run(train, model, dataloader)
     """
 
-    def __init__(self, config: DistributedConfig):
+    def __init__(self, config: DistributedConfig) -> None:
         self.cfg = config
         self._strategy = None
         self._gpu_ids = None
 
-    def run(self, train_fn, *args, **kwargs):
+    def run(self, train_fn, *args, **kwargs) -> Any:
         """Run training with full distributed setup."""
         # 1. Allocate GPUs if not already set
         if self.cfg.auto_discover and not self.cfg.gpu_ids:

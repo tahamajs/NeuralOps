@@ -19,7 +19,7 @@ class ResultsManager:
         base_dir: str = "results",
         config: Optional[Dict[str, Any]] = None,
         log_to_file: bool = True,
-    ):
+    ) -> None:
         self.experiment_name = experiment_name
         self.base_dir = Path(base_dir)
         self.config = config or {}
@@ -46,6 +46,7 @@ class ResultsManager:
         self.logger.info(f"Results directory: {self.run_dir}")
 
     def _setup_logger(self) -> logging.Logger:
+        """ setup logger."""
         logger = logging.getLogger(f"training.{self.experiment_name}")
         logger.setLevel(logging.INFO)
         logger.handlers.clear()
@@ -62,7 +63,8 @@ class ResultsManager:
             logger.addHandler(fh)
         return logger
 
-    def log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None):
+    def log_metrics(self, metrics: Dict[str, Any], step: Optional[int] = None) -> None:
+        """Log metrics."""
         record = {"step": step} if step is not None else {}
         record.update(metrics)
         record["timestamp"] = datetime.now().isoformat()
@@ -70,22 +72,25 @@ class ResultsManager:
         with open(self.metrics_path, "a") as f:
             f.write(json.dumps(record) + "\n")
 
-    def save_plots(self):
+    def save_plots(self) -> None:
+        """Persist plots to disk."""
         if self.history:
             plot_path = self.run_dir / "training_history.png"
             plot_training_curves(self.history, str(plot_path))
             self.logger.info(f"Saved training plot to {plot_path}")
 
-    def save_final_model(self, model, tokenizer=None):
+    def save_final_model(self, model, tokenizer=None) -> None:
+        """Persist final model to disk."""
         model.save_pretrained(self.final_model_dir)
         if tokenizer:
             tokenizer.save_pretrained(self.final_model_dir)
         self.logger.info(f"Final model saved to {self.final_model_dir}")
 
     def get_checkpoint_dir(self) -> str:
+        """Return the checkpoint dir."""
         return str(self.checkpoint_dir)
 
-    def wrap_trainer(self, trainer):
+    def wrap_trainer(self, trainer) -> Any:
         """Add standard callbacks and metrics logging to a Hugging Face Trainer."""
         try:
             trainer.add_callback(MemoryCallback())
@@ -96,7 +101,8 @@ class ResultsManager:
 
         original_log = trainer.log
 
-        def custom_log(logs):
+        def custom_log(logs) -> None:
+            """Custom log."""
             original_log(logs)
             self.log_metrics(logs)
 

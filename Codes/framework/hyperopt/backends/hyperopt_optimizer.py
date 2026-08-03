@@ -20,7 +20,7 @@ class HyperoptOptimizer(BaseOptimizer):
         "random": rand.suggest,
     }
 
-    def __init__(self, config: HPOConfig):
+    def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)
 
     def optimize(
@@ -28,6 +28,7 @@ class HyperoptOptimizer(BaseOptimizer):
         objective_fn: Callable[[Dict[str, Any]], float],
         **kwargs,
     ) -> Tuple[Dict[str, Any], float]:
+        """Optimize."""
         space = {}
         for name, spec in self.config.search_space.items():
             if spec["type"] == "float":
@@ -40,7 +41,8 @@ class HyperoptOptimizer(BaseOptimizer):
         algo = self.ALGO_MAP.get(self.config.algorithm.value, tpe.suggest)
 
         # Direction
-        def wrapped(params):
+        def wrapped(params) -> Any:
+            """Wrapped."""
             score = objective_fn(params)
             return -score if self.config.direction == "maximize" else score
 

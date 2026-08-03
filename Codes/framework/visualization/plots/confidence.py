@@ -14,7 +14,8 @@ from sklearn.calibration import calibration_curve
 logger = logging.getLogger(__name__)
 
 
-def plot_confidence(history, metrics, config, output_dir, opts):
+def plot_confidence(history, metrics, config, output_dir, opts) -> Any:
+    """Plot confidence."""
     preds_path = Path(output_dir).parent / "artifacts" / "eval_predictions.json"
     if not preds_path.exists():
         logger.info("Confidence plot requested but no eval_predictions.json found.")

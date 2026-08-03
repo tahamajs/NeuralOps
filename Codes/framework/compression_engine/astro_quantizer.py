@@ -10,7 +10,8 @@ class AstroQuantizer(BaseCompressor):
         super().__init__(model, name="astro", **kwargs)
         self.bits = bits
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float()
@@ -33,7 +34,8 @@ class AstroQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("astro")
-def astro_factory(model, comp_config):
+def astro_factory(model, comp_config) -> Any:
+    """Astro factory."""
     bits = getattr(comp_config, "astro_bits", 8)
     compressor = AstroQuantizer(model, bits=bits)
     compressed_model, _ = compressor.compress()

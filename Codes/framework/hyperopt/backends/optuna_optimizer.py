@@ -21,7 +21,7 @@ class OptunaOptimizer(BaseOptimizer):
         "cma_es": optuna.samplers.CmaEsSampler,
     }
 
-    def __init__(self, config: HPOConfig):
+    def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)
 
     def optimize(
@@ -29,6 +29,7 @@ class OptunaOptimizer(BaseOptimizer):
         objective_fn: Callable[[Dict[str, Any]], float],
         **kwargs,
     ) -> Tuple[Dict[str, Any], float]:
+        """Optimize."""
         direction = "maximize" if self.config.direction == "maximize" else "minimize"
         sampler_cls = self.SAMPLER_MAP.get(
             self.config.algorithm.value, optuna.samplers.TPESampler
@@ -47,6 +48,7 @@ class OptunaOptimizer(BaseOptimizer):
         )
 
         def wrapped_trial(trial: optuna.Trial) -> float:
+            """Wrapped trial."""
             params = {}
             for name, spec in self.config.search_space.items():
                 if spec["type"] == "float":
@@ -80,7 +82,8 @@ class OptunaOptimizer(BaseOptimizer):
         )
         return best_params, best_score
 
-    def _create_pruner(self):
+    def _create_pruner(self) -> Any:
+        """ create pruner."""
         if self.config.pruning == "median":
             return optuna.pruners.MedianPruner(
                 n_startup_trials=self.config.pruner_n_startup_trials,

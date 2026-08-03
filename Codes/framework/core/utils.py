@@ -8,6 +8,7 @@ import torch
 
 
 def get_device(device_str: str = "auto") -> torch.device:
+    """Return the device."""
     if device_str == "auto":
         if torch.cuda.is_available():
             return torch.device("cuda")
@@ -17,7 +18,8 @@ def get_device(device_str: str = "auto") -> torch.device:
     return torch.device(device_str)
 
 
-def set_seed(seed: int, deterministic: bool = False):
+def set_seed(seed: int, deterministic: bool = False) -> None:
+    """Set the seed."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -28,6 +30,7 @@ def set_seed(seed: int, deterministic: bool = False):
 
 
 def get_model_device(model: torch.nn.Module) -> torch.device:
+    """Return the model device."""
     try:
         return next(model.parameters()).device
     except StopIteration:
@@ -35,12 +38,14 @@ def get_model_device(model: torch.nn.Module) -> torch.device:
 
 
 def count_parameters(model: torch.nn.Module, trainable_only: bool = True) -> int:
+    """Count parameters."""
     if trainable_only:
         return sum(p.numel() for p in model.parameters() if p.requires_grad)
     return sum(p.numel() for p in model.parameters())
 
 
 def format_number(num: int) -> str:
+    """Format number."""
     if num >= 1_000_000:
         return f"{num/1_000_000:.1f}M"
     if num >= 1_000:
@@ -48,7 +53,8 @@ def format_number(num: int) -> str:
     return str(num)
 
 
-def clear_memory():
+def clear_memory() -> None:
+    """Clear memory."""
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     if hasattr(torch, "mps") and torch.backends.mps.is_available():
@@ -56,12 +62,14 @@ def clear_memory():
 
 
 def get_memory_usage() -> Optional[float]:
+    """Return the memory usage."""
     if torch.cuda.is_available():
         return torch.cuda.memory_allocated() / (1024 * 1024)
     return None
 
 
 def human_readable_time(seconds: float) -> str:
+    """Human readable time."""
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
     secs = int(seconds % 60)

@@ -20,6 +20,7 @@ def suggest_float(
     log: bool = False,
     default: Optional[float] = None,
 ) -> SearchSpace:
+    """Suggest float."""
     return SearchSpace(
         name=name, type="float", low=low, high=high, log=log, default=default
     )
@@ -28,6 +29,7 @@ def suggest_float(
 def suggest_int(
     name: str, low: int, high: int, log: bool = False, default: Optional[int] = None
 ) -> SearchSpace:
+    """Suggest int."""
     return SearchSpace(
         name=name, type="int", low=low, high=high, log=log, default=default
     )
@@ -36,6 +38,7 @@ def suggest_int(
 def suggest_categorical(
     name: str, choices: List[Any], default: Optional[Any] = None
 ) -> SearchSpace:
+    """Suggest categorical."""
     return SearchSpace(name=name, type="categorical", choices=choices, default=default)
 
 

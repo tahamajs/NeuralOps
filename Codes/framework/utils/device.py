@@ -3,6 +3,7 @@ import torch
 
 
 def get_device(device_str: str = "auto") -> torch.device:
+    """Return the device."""
     if device_str == "auto":
         if torch.cuda.is_available():
             return torch.device("cuda")

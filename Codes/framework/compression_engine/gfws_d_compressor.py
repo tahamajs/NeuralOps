@@ -13,7 +13,8 @@ class GFWSCompressor(BaseCompressor):
         self.rank = rank
         self.damping = damping
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear) and module.weight.grad is not None:
                 W = module.weight.data.float().cpu().numpy()
@@ -32,7 +33,8 @@ class GFWSCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("gfws")
-def gfws_factory(model, comp_config):
+def gfws_factory(model, comp_config) -> Any:
+    """Gfws factory."""
     rank = getattr(comp_config, "gfws_rank", 64)
     damping = getattr(comp_config, "gfws_damping", 0.01)
     compressor = GFWSCompressor(model, rank, damping)

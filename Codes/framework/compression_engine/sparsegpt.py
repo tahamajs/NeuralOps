@@ -19,7 +19,8 @@ class SparseGPTCompressor(BaseCompressor):
         self.device = device
         self.nsamples = nsamples
 
-    def compress(self, save_path="pruned_model"):
+    def compress(self, save_path="pruned_model") -> Any:
+        """Compress the target module using this strategy."""
         temp_path = Path("temp_model_for_sparsegpt")
         temp_path.mkdir(exist_ok=True)
         self.model.save_pretrained(temp_path)
@@ -55,6 +56,7 @@ class SparseGPTCompressor(BaseCompressor):
 def slicegpt_pca_factory(model, comp_config):
     # This compressor expects a calibration_loader – not available in test.
     # For the test, we skip it; here we raise a clear error.
+    """Slicegpt pca factory."""
     raise NotImplementedError(
         "slicegpt_pca requires a calibration_loader; not supported in standalone test."
     )

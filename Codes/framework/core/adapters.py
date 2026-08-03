@@ -6,7 +6,8 @@ handle GQA, etc. for a specific architecture.
 
 class DistilBertAdapter:
     @staticmethod
-    def get_weight_bias(old_attn, proj: str):
+    def get_weight_bias(old_attn, proj: str) -> Any:
+        """Return the weight bias."""
         if proj == "q":
             return old_attn.q_lin.weight.data, getattr(old_attn.q_lin, "bias", None)
         if proj == "k":
@@ -20,7 +21,8 @@ class DistilBertAdapter:
 
 class LlamaAdapter:
     @staticmethod
-    def get_weight_bias(old_attn, proj: str):
+    def get_weight_bias(old_attn, proj: str) -> Any:
+        """Return the weight bias."""
         if proj == "q":
             return old_attn.q_proj.weight.data, getattr(old_attn.q_proj, "bias", None)
         if proj == "k":
@@ -32,11 +34,13 @@ class LlamaAdapter:
         raise ValueError(f"Unknown projection: {proj}")
 
     @staticmethod
-    def get_rotary_emb(old_attn):
+    def get_rotary_emb(old_attn) -> Any:
+        """Return the rotary emb."""
         return getattr(old_attn, "rotary_emb", None)
 
     @staticmethod
-    def get_kv_heads(config):
+    def get_kv_heads(config) -> Any:
+        """Return the kv heads."""
         return getattr(config, "num_key_value_heads", config.num_attention_heads)
 
 
@@ -44,7 +48,8 @@ class BertAdapter:
     """Bert / RoBERTa style – uses self_attn with q/k/v weight names."""
 
     @staticmethod
-    def get_weight_bias(old_attn, proj: str):
+    def get_weight_bias(old_attn, proj: str) -> Any:
+        """Return the weight bias."""
         if proj == "q":
             return old_attn.query.weight.data, getattr(old_attn.query, "bias", None)
         if proj == "k":
@@ -74,7 +79,8 @@ ADAPTER_MAP = {
 }
 
 
-def get_adapter(arch: str):
+def get_adapter(arch: str) -> Any:
+    """Return the adapter."""
     adapter = ADAPTER_MAP.get(arch)
     if adapter is None:
         raise ValueError(f"No adapter for architecture '{arch}'")

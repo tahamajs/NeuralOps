@@ -14,7 +14,8 @@ class SDRMCompressor(BaseCompressor):
         super().__init__(model, name="sdrm", **kwargs)
         self.total_param_ratio = total_param_ratio
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         total_params = 0
         layer_params = {}
         for name, module in self.model.named_modules():
@@ -43,7 +44,8 @@ class SDRMCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("sdrm")
-def sdrm_compressor_factory(model, comp_config):
+def sdrm_compressor_factory(model, comp_config) -> Any:
+    """Sdrm compressor factory."""
     total_param_ratio = getattr(comp_config, "total_param_ratio", 0.7)
     compressor = SDRMCompressor(model, total_param_ratio)
     compressed_model, _ = compressor.compress()

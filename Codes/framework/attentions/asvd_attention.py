@@ -101,6 +101,7 @@ class ASVDAttention(BaseAttention):
             self.out_proj_vh.data.mul_(scales_t)
 
     def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
+        """ reshape."""
         x = x.view(batch_size, -1, self.num_heads, self.head_dim)
         return x.permute(0, 2, 1, 3)
 
@@ -182,6 +183,7 @@ class ASVDAttention(BaseAttention):
         def decomposed_weights(
             W: np.ndarray, rank: int
         ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+            """Decomposed weights."""
             U, S, Vh = np.linalg.svd(W, full_matrices=False)
             U_r = U[:, :rank]
             S_r = S[:rank]

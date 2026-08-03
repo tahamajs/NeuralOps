@@ -4,7 +4,8 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def upload_to_s3(local_path, bucket, region=None):
+def upload_to_s3(local_path, bucket, region=None) -> None:
+    """Upload to s3."""
     try:
         import boto3
 
@@ -18,7 +19,8 @@ def upload_to_s3(local_path, bucket, region=None):
         logger.exception("S3 upload failed: %s", e)
 
 
-def download_from_s3(local_path, bucket, region=None):
+def download_from_s3(local_path, bucket, region=None) -> None:
+    """Download from s3."""
     try:
         import boto3
 
@@ -30,7 +32,8 @@ def download_from_s3(local_path, bucket, region=None):
         logger.exception("S3 download failed: %s", e)
 
 
-def delete_from_s3(local_path, bucket, region=None):
+def delete_from_s3(local_path, bucket, region=None) -> None:
+    """Delete from s3."""
     try:
         import boto3
 

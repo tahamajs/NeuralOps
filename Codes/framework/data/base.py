@@ -42,7 +42,7 @@ class DataConfig:
     custom_preprocess: Optional[Callable] = None
 
 
-def preprocess_function(examples, tokenizer, config: DataConfig):
+def preprocess_function(examples, tokenizer, config: DataConfig) -> Any:
     """
     Generic preprocessing function handling all TaskTypes.
     Returns a dictionary with 'input_ids', 'attention_mask', and appropriate labels.

@@ -32,7 +32,7 @@ class DeltaKVStore:
         self.ref_v: torch.Tensor | None = None
 
     @torch.no_grad()
-    def update(self, k: torch.Tensor, v: torch.Tensor):
+    def update(self, k: torch.Tensor, v: torch.Tensor) -> None:
         """Update the reference store with new K/V tensors."""
         B, H, N, D = k.shape
         if B == 0:
@@ -51,7 +51,7 @@ class DeltaKVStore:
             self.ref_v = self.ref_v[:, -self.max_refs :, :]
 
     @torch.no_grad()
-    def compress(self, k: torch.Tensor, v: torch.Tensor):
+    def compress(self, k: torch.Tensor, v: torch.Tensor) -> Any:
         """
         Compress K/V by computing residuals relative to the closest reference
         tokens, keeping only the top residuals.
@@ -110,7 +110,8 @@ class DeltaKVCompressor(BaseCompressor):
         self.rank = rank
         self.sparsity = sparsity
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float()
@@ -139,7 +140,8 @@ class DeltaKVCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("delta_kv")
-def delta_kv_factory(model, comp_config):
+def delta_kv_factory(model, comp_config) -> Any:
+    """Delta kv factory."""
     rank = getattr(comp_config, "delta_kv_rank", 16)
     sparsity = getattr(comp_config, "delta_kv_sparsity", 0.29)
     compressor = DeltaKVCompressor(model, rank=rank, sparsity=sparsity)

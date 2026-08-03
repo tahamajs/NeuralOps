@@ -7,6 +7,6 @@ COMPRESSOR_REGISTRY = Registry("compressors")
 
 class BaseCompressor(ABC):
     @abstractmethod
-    def apply(self, model, **kwargs):
+    def apply(self, model, **kwargs) -> None:
         """Return the compressed model."""
         pass

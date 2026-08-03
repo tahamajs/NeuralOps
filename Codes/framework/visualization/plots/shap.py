@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger(__name__)
 
 
-def plot_shap(history, metrics, config, output_dir, opts):
+def plot_shap(history, metrics, config, output_dir, opts) -> Any:
+    """Plot shap."""
     try:
         import shap
     except ImportError:

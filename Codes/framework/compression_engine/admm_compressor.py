@@ -12,7 +12,8 @@ class ADMMCompressor(BaseCompressor):
         self.sparsity = sparsity
         self.quant_bits = quant_bits
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float()
@@ -32,7 +33,8 @@ class ADMMCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("admm")
-def admm_factory(model, comp_config):
+def admm_factory(model, comp_config) -> Any:
+    """Admm factory."""
     sparsity = getattr(comp_config, "admm_sparsity", 0.5)
     quant_bits = getattr(comp_config, "admm_quant_bits", 4)
     compressor = ADMMCompressor(model, sparsity=sparsity, quant_bits=quant_bits)

@@ -20,7 +20,7 @@ class SVDAwareTrainer(Trainer):
         log_attention_maps: bool = False,
         attention_layers: Optional[list] = None,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(**kwargs)
         self.visualizer = visualizer
         self.pre_train_callback = pre_train_callback
@@ -30,7 +30,8 @@ class SVDAwareTrainer(Trainer):
         self._attention_hooks = []
         self._attention_maps = []
 
-    def train(self, *args, **kwargs):
+    def train(self, *args, **kwargs) -> Any:
+        """Fit the model on the provided dataset."""
         if self.pre_train_callback:
             self.pre_train_callback(self.model, self.train_dataset)
         if self.log_attention_maps:
@@ -42,7 +43,8 @@ class SVDAwareTrainer(Trainer):
         self._cleanup_memory()
         return result
 
-    def evaluate(self, eval_dataset=None, **kwargs):
+    def evaluate(self, eval_dataset=None, **kwargs) -> Any:
+        """Run evaluate and return results."""
         if self.log_attention_maps:
             self._register_attention_hooks()
         result = super().evaluate(eval_dataset, **kwargs)
@@ -51,10 +53,12 @@ class SVDAwareTrainer(Trainer):
         self._remove_attention_hooks()
         return result
 
-    def _register_attention_hooks(self):
+    def _register_attention_hooks(self) -> None:
+        """ register attention hooks."""
         self._attention_maps = []
 
-        def hook_fn(module, input, output, layer_idx):
+        def hook_fn(module, input, output, layer_idx) -> None:
+            """Hook fn."""
             if isinstance(output, tuple) and len(output) > 1 and output[1] is not None:
                 self._attention_maps.append(
                     {"layer": layer_idx, "attention": output[1].detach().cpu()}
@@ -77,12 +81,14 @@ class SVDAwareTrainer(Trainer):
                     )
                     self._attention_hooks.append(hook)
 
-    def _remove_attention_hooks(self):
+    def _remove_attention_hooks(self) -> None:
+        """ remove attention hooks."""
         for hook in self._attention_hooks:
             hook.remove()
         self._attention_hooks = []
 
-    def _save_attention_maps(self):
+    def _save_attention_maps(self) -> None:
+        """ save attention maps."""
         if self.visualizer and self._attention_maps:
             for attn_map in self._attention_maps:
                 self.visualizer.plot_attention_heatmap(
@@ -95,7 +101,8 @@ class SVDAwareTrainer(Trainer):
                     task_name=getattr(self.args, "task_name", "unknown"),
                 )
 
-    def _cleanup_memory(self):
+    def _cleanup_memory(self) -> None:
+        """ cleanup memory."""
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -120,6 +127,7 @@ def create_trainer(
     metric_for_best_model: str = "eval_accuracy",
     **kwargs,
 ) -> SVDAwareTrainer:
+    """Build and return trainer."""
     training_args = TrainingArguments(
         output_dir=output_dir,
         learning_rate=learning_rate,

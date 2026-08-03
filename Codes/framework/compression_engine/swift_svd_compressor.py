@@ -12,13 +12,16 @@ class SwiftSVDActivationCompressor(BaseCompressor):
         self.rank = rank
         self.calibration_texts = calibration_texts or ["Sample text."]
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         self.model.eval()
         activations = {}
         hooks = []
 
-        def make_hook(name):
-            def hook(module, input, output):
+        def make_hook(name) -> Any:
+            """Make hook."""
+            def hook(module, input, output) -> None:
+                """Hook."""
                 activations[name] = (input[0].detach(), output.detach())
 
             return hook
@@ -60,7 +63,8 @@ class SwiftSVDActivationCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("swift_svd_act")
-def swift_svd_act_factory(model, comp_config):
+def swift_svd_act_factory(model, comp_config) -> Any:
+    """Swift svd act factory."""
     rank = getattr(comp_config, "swift_svd_act_rank", 64)
     tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:

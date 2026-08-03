@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class LoRALinear(nn.Module):
-    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float):
+    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float) -> None:
         super().__init__()
         self.linear = linear
         self.linear.weight.requires_grad = False
@@ -35,7 +35,8 @@ class LoRALinear(nn.Module):
             self.scaling = 1.0
             self.dropout = nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
+        """Forward pass — compute module output from inputs."""
         base = self.linear(x)
         if self.r > 0:
             lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
@@ -44,7 +45,7 @@ class LoRALinear(nn.Module):
 
 
 class DoRALinear(nn.Module):
-    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float):
+    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float) -> None:
         super().__init__()
         self.linear = linear
         self.linear.weight.requires_grad = False
@@ -65,7 +66,8 @@ class DoRALinear(nn.Module):
             self.scaling = 1.0
             self.dropout = nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
+        """Forward pass — compute module output from inputs."""
         base_out = self.linear(x)
         if self.r > 0:
             lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
@@ -85,7 +87,7 @@ class DisLoRALinear(nn.Module):
         dropout: float,
         beta: float = 0.5,
         capacity_factor: float = 1.0,
-    ):
+    ) -> None:
         super().__init__()
         self.linear = linear
         self.linear.weight.requires_grad = False
@@ -107,14 +109,16 @@ class DisLoRALinear(nn.Module):
             self.scaling = 1.0
             self.dropout = nn.Identity()
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
+        """Forward pass — compute module output from inputs."""
         base = self.linear(x)
         if self.r > 0:
             lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
             return base + lora
         return base
 
-    def ortho_loss(self):
+    def ortho_loss(self) -> Any:
+        """Ortho loss."""
         if self.lora_A is None:
             return 0.0
         A = self.lora_A.weight
@@ -123,7 +127,8 @@ class DisLoRALinear(nn.Module):
         return self.beta * reg
 
 
-def _apply_adapters(model, r, alpha, dropout, method_type="lora", **kwargs):
+def _apply_adapters(model, r, alpha, dropout, method_type="lora", **kwargs) -> None:
+    """ apply adapters."""
     target_substrings = [
         "query",
         "key",
@@ -158,21 +163,24 @@ def _apply_adapters(model, r, alpha, dropout, method_type="lora", **kwargs):
 
 
 @register_method("lora")
-def apply_lora(model, config):
+def apply_lora(model, config) -> None:
+    """Apply lora."""
     _apply_adapters(
         model, config.lora_r, config.lora_alpha, config.lora_dropout, "lora"
     )
 
 
 @register_method("dora")
-def apply_dora(model, config):
+def apply_dora(model, config) -> None:
+    """Apply dora."""
     _apply_adapters(
         model, config.lora_r, config.lora_alpha, config.lora_dropout, "dora"
     )
 
 
 @register_method("dislora")
-def apply_dislora(model, config):
+def apply_dislora(model, config) -> None:
+    """Apply dislora."""
     _apply_adapters(
         model,
         config.lora_r,

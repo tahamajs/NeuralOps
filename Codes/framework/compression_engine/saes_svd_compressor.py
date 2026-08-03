@@ -14,6 +14,7 @@ class SAESCompressor(BaseCompressor):
 
     def compress(self):
         # Placeholder: apply SVD to each linear layer with optional error compensation
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float().cpu().numpy()

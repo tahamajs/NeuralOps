@@ -22,7 +22,8 @@ class WorkerAPIHandler(BaseHTTPRequestHandler):
 
     agent = None  # set by RemoteWorkerAgent
 
-    def do_POST(self):
+    def do_POST(self) -> None:
+        """Do post."""
         if self.path == "/launch":
             content_length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(content_length)
@@ -67,7 +68,7 @@ class RemoteWorkerAgent:
         num_gpus: int = 1,
         listen_port: int = 8765,
         metadata: Dict = None,
-    ):
+    ) -> None:
         self.server_url = server_url
         self.worker_id = worker_id
         self.auth_token = auth_token
@@ -79,7 +80,7 @@ class RemoteWorkerAgent:
         # Determine public IP (optional)
         self.public_ip = self._get_public_ip()
 
-    def start(self):
+    def start(self) -> None:
         """Start the agent (registers + starts HTTP listener)."""
         self._register()
         self._running = True
@@ -93,13 +94,14 @@ class RemoteWorkerAgent:
         logger.info("Worker agent listening on port %d", self.listen_port)
         self._http_server.serve_forever()
 
-    def stop(self):
+    def stop(self) -> None:
+        """Stop."""
         self._running = False
         self._unregister()
         if self._http_server:
             self._http_server.shutdown()
 
-    def execute_job(self, launch_data: Dict[str, Any]):
+    def execute_job(self, launch_data: Dict[str, Any]) -> None:
         """
         Called by the coordinator via HTTP.  Sets up distributed environment
         and runs the training function.
@@ -137,7 +139,8 @@ class RemoteWorkerAgent:
         except Exception:
             logger.exception("Job %s failed on worker %s", job_id, self.worker_id)
 
-    def _register(self):
+    def _register(self) -> None:
+        """ register."""
         try:
             resp = requests.post(
                 f"{self.server_url}/api/remote/register/",
@@ -158,7 +161,8 @@ class RemoteWorkerAgent:
         except Exception as e:
             logger.error("Unable to reach server: %s", e)
 
-    def _heartbeat_loop(self):
+    def _heartbeat_loop(self) -> None:
+        """ heartbeat loop."""
         while self._running:
             time.sleep(30)
             try:
@@ -170,7 +174,8 @@ class RemoteWorkerAgent:
             except Exception:
                 pass
 
-    def _unregister(self):
+    def _unregister(self) -> None:
+        """ unregister."""
         try:
             requests.post(
                 f"{self.server_url}/api/remote/unregister/",
@@ -180,7 +185,8 @@ class RemoteWorkerAgent:
         except Exception:
             pass
 
-    def _get_public_ip(self):
+    def _get_public_ip(self) -> Any:
+        """ get public ip."""
         try:
             return requests.get("https://api.ipify.org", timeout=5).text.strip()
         except Exception:

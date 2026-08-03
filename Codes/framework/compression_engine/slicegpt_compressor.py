@@ -40,6 +40,7 @@ class SliceGPTPCACompressor(BaseCompressor):
 
     def compress(self):
         # 1. Collect activations from a reference module
+        """Compress the target module using this strategy."""
         activations = []
         handle = None
         # Prefer the first encoder layer; fallback to first Linear
@@ -111,7 +112,8 @@ class SliceGPTPCACompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("slicegpt_pca")
-def slicegpt_pca_factory(model, comp_config):
+def slicegpt_pca_factory(model, comp_config) -> Any:
+    """Slicegpt pca factory."""
     sparsity = getattr(comp_config, "slicegpt_pca_sparsity", 0.3)
     calibration_texts = getattr(comp_config, "slicegpt_pca_calib_texts", None)
     tokenizer = getattr(model, "tokenizer", None)

@@ -5,7 +5,8 @@ from .base import LOADER_REGISTRY, BaseLoader
 
 @LOADER_REGISTRY.register("unsloth")
 class UnslothLoader(BaseLoader):
-    def load(self, model_name, num_labels=2, max_seq_length=2048, **kwargs):
+    def load(self, model_name, num_labels=2, max_seq_length=2048, **kwargs) -> Any:
+        """Load."""
         try:
             from unsloth import FastLanguageModel
         except ImportError:

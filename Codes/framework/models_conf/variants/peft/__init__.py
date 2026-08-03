@@ -7,5 +7,6 @@ from .prompt_tuning import PromptTuningPEFT
 from .qlora import QLoRAPEFT
 
 
-def list_peft_methods():
+def list_peft_methods() -> Any:
+    """List peft methods."""
     return list(PEFT_REGISTRY.keys())

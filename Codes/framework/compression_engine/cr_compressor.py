@@ -26,7 +26,8 @@ class CRCompressor(BaseCompressor):
         super().__init__(model, name="cr", **kwargs)
         self.rank = rank
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -52,7 +53,8 @@ class CRCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cr")
-def cr_compressor_factory(model, comp_config):
+def cr_compressor_factory(model, comp_config) -> Any:
+    """Cr compressor factory."""
     rank = getattr(comp_config, "cr_rank", 64)
     compressor = CRCompressor(model, rank)
     compressed_model, _ = compressor.compress()

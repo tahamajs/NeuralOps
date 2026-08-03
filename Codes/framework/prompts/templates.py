@@ -39,6 +39,7 @@ class PromptTemplate:
         return result
 
     def to_dict(self) -> dict:
+        """To dict."""
         return {
             "type": "simple",
             "template": self.template,
@@ -66,6 +67,7 @@ class ChatPromptTemplate:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def render(self, **kwargs) -> List[Dict[str, str]]:
+        """Render."""
         merged = {**self.variables, **kwargs}
         output = []
         for msg in self.messages:
@@ -76,6 +78,7 @@ class ChatPromptTemplate:
         return output
 
     def to_dict(self) -> dict:
+        """To dict."""
         return {
             "type": "chat",
             "messages": self.messages,

@@ -7,11 +7,12 @@ from .base import SELECTOR_REGISTRY, BaseSelector
 
 @SELECTOR_REGISTRY.register("power_of_choice")
 class PowerOfChoiceSelector(BaseSelector):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.candidates = config.power_of_choice_candidates
 
-    def select(self, client_ids, round_history):
+    def select(self, client_ids, round_history) -> Any:
+        """Select."""
         num = max(1, int(self.config.clients_per_round * self.config.num_clients))
         selected = []
         for _ in range(num):

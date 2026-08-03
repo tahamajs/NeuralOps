@@ -37,6 +37,7 @@ class HuggingFaceCheckpointUploader:
 
     @property
     def api(self) -> HfApi:
+        """Api."""
         if self._api is None:
             if not self.token:
                 raise ValueError(
@@ -126,6 +127,7 @@ class HuggingFaceCheckpointUploader:
         logger.info(f"Final model and metrics uploaded to {self.repo_id}")
 
     def _generate_readme(self, metrics: dict) -> str:
+        """ generate readme."""
         run_id = self.run_id
         content = """---
 tags:

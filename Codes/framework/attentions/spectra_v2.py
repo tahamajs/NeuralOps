@@ -68,6 +68,7 @@ class SimpleRFFKernel(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         r"""Project queries and keys into cosine/sine feature representations."""
         def rff(x: torch.Tensor) -> torch.Tensor:
+            """Rff."""
             p = torch.matmul(x, self.proj)
             return torch.cat([torch.cos(p), torch.sin(p)], dim=-1) / (
                 self.proj.size(1) ** 0.25

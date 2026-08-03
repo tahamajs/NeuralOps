@@ -63,6 +63,7 @@ def load_superglue_dataset(
     task_name: str,
     split: Optional[str] = None,
 ) -> DatasetDict:
+    """Load superglue dataset from disk or config."""
     ds = load_dataset("super_glue", task_name)
     if split:
         return ds[split]

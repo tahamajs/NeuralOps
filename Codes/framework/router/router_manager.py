@@ -14,7 +14,7 @@ class RouterManager:
         default_router: Optional[BaseRouter] = None,
         cache_size: int = 10000,
         fallback_task: str = "factual",
-    ):
+    ) -> None:
         self.routers: Dict[str, BaseRouter] = {}
         self.active_router_name: Optional[str] = None
         self.fallback_task = fallback_task
@@ -29,7 +29,8 @@ class RouterManager:
 
     def register_router(
         self, router: BaseRouter, name: Optional[str] = None, make_active: bool = False
-    ):
+    ) -> None:
+        """Register router."""
         router_name = name or getattr(router, "name", router.__class__.__name__)
         self.routers[router_name] = router
         if make_active:
@@ -42,6 +43,7 @@ class RouterManager:
         use_cache: bool = True,
         force_refresh: bool = False,
     ) -> RouteResult:
+        """Route."""
         if router_name is None:
             router_name = self.active_router_name
         if router_name is None or router_name not in self.routers:
@@ -74,9 +76,11 @@ class RouterManager:
         router_name: Optional[str] = None,
         use_cache: bool = True,
     ) -> List[RouteResult]:
+        """Batch route."""
         return [self.route(t, router_name, use_cache) for t in texts]
 
     def get_metrics(self) -> Dict[str, Dict[str, Any]]:
+        """Return the metrics."""
         metrics = {}
         for name, m in self._metrics.items():
             avg_time = m["total_time_ms"] / m["count"] if m["count"] > 0 else 0
@@ -87,10 +91,12 @@ class RouterManager:
             }
         return metrics
 
-    def clear_cache(self):
+    def clear_cache(self) -> None:
+        """Clear cache."""
         self._cache.clear()
 
     def get_stats(self) -> Dict[str, Any]:
+        """Return the stats."""
         return {
             "active_router": self.active_router_name,
             "registered_routers": list(self.routers.keys()),
@@ -98,12 +104,14 @@ class RouterManager:
             "metrics": self.get_metrics(),
         }
 
-    def set_active_router(self, name: str):
+    def set_active_router(self, name: str) -> None:
+        """Set the active router."""
         if name not in self.routers:
             raise ValueError(f"Router '{name}' not registered.")
         self.active_router_name = name
 
-    def remove_router(self, name: str):
+    def remove_router(self, name: str) -> None:
+        """Remove router."""
         if name in self.routers:
             del self.routers[name]
             if self.active_router_name == name:
@@ -111,5 +119,6 @@ class RouterManager:
                     next(iter(self.routers.keys())) if self.routers else None
                 )
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> None:
+        """Reset metrics."""
         self._metrics.clear()

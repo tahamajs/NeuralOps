@@ -7,6 +7,7 @@ from .base import AGGREGATOR_REGISTRY, BaseAggregator
 class FedAvgAggregator(BaseAggregator):
     """Federated Averaging."""
 
-    def aggregate(self, global_model, client_updates, client_weights, round_num):
+    def aggregate(self, global_model, client_updates, client_weights, round_num) -> Any:
+        """Aggregate."""
         avg_update = self.compute_weighted_average(client_updates, client_weights)
         return avg_update

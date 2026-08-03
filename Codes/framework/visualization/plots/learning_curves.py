@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 def plot_learning_curve(history, metrics, config, output_dir, opts):
     # Requires training data splits captured at multiple sizes.
     # If not available, falls back to using history steps as proxy.
+    """Plot learning curve."""
     lc_path = Path(output_dir).parent / "artifacts" / "learning_curve_data.json"
     if lc_path.exists():
         with open(lc_path) as f:

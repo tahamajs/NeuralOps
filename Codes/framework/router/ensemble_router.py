@@ -17,7 +17,7 @@ class EnsembleRouter(BaseRouter):
         strategy: str = "weighted_vote",
         default_task: str = "factual",
         meta_classifier: Optional[Any] = None,
-    ):
+    ) -> None:
         self.routers = routers
         self.strategy = strategy
         self.default_task = default_task
@@ -28,11 +28,13 @@ class EnsembleRouter(BaseRouter):
         self.weights = [w / total for w in weights]
         self.selector = None
 
-    def set_selector(self, selector: BaseRouter):
+    def set_selector(self, selector: BaseRouter) -> None:
+        """Set the selector."""
         self.selector = selector
         self.strategy = "dynamic"
 
     def route(self, text: str) -> Tuple[str, Dict[str, float]]:
+        """Route."""
         if self.strategy == "weighted_vote":
             return self._weighted_vote(text)
         elif self.strategy == "majority_vote":
@@ -44,7 +46,8 @@ class EnsembleRouter(BaseRouter):
         else:
             raise ValueError(f"Unknown strategy: {self.strategy}")
 
-    def _weighted_vote(self, text):
+    def _weighted_vote(self, text) -> Any:
+        """ weighted vote."""
         all_scores = defaultdict(float)
         for router, w in zip(self.routers, self.weights):
             _, scores = router.route(text)
@@ -57,7 +60,8 @@ class EnsembleRouter(BaseRouter):
         best = max(probs, key=probs.get)
         return best, probs
 
-    def _majority_vote(self, text):
+    def _majority_vote(self, text) -> Any:
+        """ majority vote."""
         votes = defaultdict(int)
         for router in self.routers:
             task, _ = router.route(text)
@@ -66,7 +70,8 @@ class EnsembleRouter(BaseRouter):
         confidence = votes[best] / len(self.routers)
         return best, {best: confidence}
 
-    def _stacking(self, text):
+    def _stacking(self, text) -> Any:
+        """ stacking."""
         if self.meta_classifier is None:
             raise ValueError("Meta-classifier not set for stacking.")
         # Build feature vector from all routers' probability outputs
@@ -89,7 +94,8 @@ class EnsembleRouter(BaseRouter):
             scores = {pred_task: 1.0}
         return pred_task, scores
 
-    def _dynamic(self, text):
+    def _dynamic(self, text) -> Any:
+        """ dynamic."""
         if self.selector is None:
             raise ValueError("Selector router not set for dynamic strategy.")
         selected_idx, _ = self.selector.route(text)
@@ -101,4 +107,5 @@ class EnsembleRouter(BaseRouter):
         return self.routers[idx].route(text)
 
     def can_route(self, text: str) -> bool:
+        """Can route."""
         return any(r.can_route(text) for r in self.routers)

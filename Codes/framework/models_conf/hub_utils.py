@@ -9,7 +9,8 @@ _cache_lock = threading.Lock()
 _cache = {}
 
 
-def _cache_get(key):
+def _cache_get(key) -> Any:
+    """ cache get."""
     with _cache_lock:
         entry = _cache.get(key)
         if entry and (time.time() - entry[0]) < 300:
@@ -17,7 +18,8 @@ def _cache_get(key):
     return None
 
 
-def _cache_set(key, value):
+def _cache_set(key, value) -> None:
+    """ cache set."""
     with _cache_lock:
         _cache[key] = (time.time(), value)
 

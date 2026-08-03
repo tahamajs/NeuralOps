@@ -64,15 +64,18 @@ class ExperimentConfig:
     config: Optional[str] = None  # for YAML file path
 
     def to_dict(self) -> Dict[str, Any]:
+        """To dict."""
         return {k: v for k, v in self.__dict__.items() if not k.startswith("_")}
 
 
 def load_yaml_config(path: str) -> Dict[str, Any]:
+    """Load yaml config from disk or config."""
     with open(path, "r") as f:
         return yaml.safe_load(f)
 
 
 def build_config_from_args() -> ExperimentConfig:
+    """Build and return config from args."""
     parser = argparse.ArgumentParser(description="Efficient Attention GLUE Runner")
     parser.add_argument("--config", type=str, default=None, help="YAML config file")
     parser.add_argument(

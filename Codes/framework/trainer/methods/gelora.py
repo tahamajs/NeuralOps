@@ -12,7 +12,8 @@ from .registry import register_method
 logger = logging.getLogger(__name__)
 
 
-def estimate_intrinsic_dimension_pytorch(hidden_states, k=5):
+def estimate_intrinsic_dimension_pytorch(hidden_states, k=5) -> Any:
+    """Estimate intrinsic dimension pytorch."""
     if hidden_states.dim() == 3:
         hidden_states = hidden_states.mean(dim=1)
     elif hidden_states.dim() != 2:
@@ -33,7 +34,8 @@ def estimate_intrinsic_dimension_pytorch(hidden_states, k=5):
     return max(1.0, id_global)
 
 
-def get_encoder_layers(model):
+def get_encoder_layers(model) -> Any:
+    """Return the encoder layers."""
     if hasattr(model, "distilbert") and hasattr(model.distilbert, "transformer"):
         return model.distilbert.transformer.layer
     if hasattr(model, "bert") and hasattr(model.bert, "encoder"):
@@ -54,14 +56,17 @@ def get_encoder_layers(model):
     raise ValueError("Cannot find encoder layers")
 
 
-def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800):
+def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800) -> Any:
+    """Collect hidden states."""
     layers = get_encoder_layers(model)
     num_layers = len(layers)
     hidden_states_per_layer = {i: [] for i in range(num_layers)}
     hooks = []
 
-    def hook_fn(layer_idx):
-        def hook(module, input, output):
+    def hook_fn(layer_idx) -> Any:
+        """Hook fn."""
+        def hook(module, input, output) -> None:
+            """Hook."""
             hs = output[0].detach() if isinstance(output, tuple) else output.detach()
             hidden_states_per_layer[layer_idx].append(hs)
 
@@ -95,7 +100,8 @@ def collect_hidden_states(model, dataloader, num_batches=10, max_samples=800):
     return hidden_states_per_layer
 
 
-def compute_gelora_base_ranks(model, dataloader, config):
+def compute_gelora_base_ranks(model, dataloader, config) -> Any:
+    """Compute and return gelora base ranks."""
     layer_hidden = collect_hidden_states(
         model, dataloader, num_batches=8, max_samples=800
     )
@@ -134,7 +140,8 @@ def compute_gelora_base_ranks(model, dataloader, config):
 
 
 @register_method("fisher_gelora")
-def apply_fisher_gelora(model, config):
+def apply_fisher_gelora(model, config) -> None:
+    """Apply fisher gelora."""
     logger.info(
         "Fisher‑GeLoRA registered. Use compute_gelora_base_ranks in training script."
     )

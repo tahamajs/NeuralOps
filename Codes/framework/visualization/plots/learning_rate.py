@@ -3,7 +3,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 
-def plot_lr_schedule(history, metrics, config, output_dir, opts):
+def plot_lr_schedule(history, metrics, config, output_dir, opts) -> Any:
+    """Plot lr schedule."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "learning_rate" in h]
     lr = [h["learning_rate"] for h in history if "learning_rate" in h]
     if not steps:

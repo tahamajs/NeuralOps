@@ -4,7 +4,8 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def upload_to_azure(local_path, conn_str, container):
+def upload_to_azure(local_path, conn_str, container) -> None:
+    """Upload to azure."""
     try:
         from azure.storage.blob import BlobServiceClient
 

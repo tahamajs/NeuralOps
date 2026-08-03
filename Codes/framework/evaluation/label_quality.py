@@ -44,7 +44,7 @@ class LabelQualityDetector:
     model predictions and given labels.
     """
 
-    def __init__(self, threshold: float = 0.1, seed: int = 42):
+    def __init__(self, threshold: float = 0.1, seed: int = 42) -> None:
         self.threshold = threshold
         self.seed = seed
 
@@ -199,6 +199,7 @@ class LabelQualityDetector:
 
     # ── Summary helpers ─────────────────────────────────────────────
     def summary(self, report: LabelQualityReport) -> Dict[str, Any]:
+        """Summary."""
         return {
             "total_samples": report.n_samples,
             "label_issues_found": report.n_label_issues,

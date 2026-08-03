@@ -45,10 +45,12 @@ class LoRALinear(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
+        """Reset parameters."""
         nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         nn.init.zeros_(self.lora_B)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward."""
         orig_out = self.original_layer(x)
         lora_out = F.linear(self.dropout(x), self.lora_A)  # (..., rank)
         lora_out = F.linear(lora_out, self.lora_B)  # (..., out_features)

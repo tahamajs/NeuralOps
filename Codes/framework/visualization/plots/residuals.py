@@ -11,7 +11,8 @@ from scipy import stats
 logger = logging.getLogger(__name__)
 
 
-def plot_residuals(history, metrics, config, output_dir, opts):
+def plot_residuals(history, metrics, config, output_dir, opts) -> Any:
+    """Plot residuals."""
     preds_path = Path(output_dir).parent / "artifacts" / "eval_predictions.json"
     if not preds_path.exists():
         logger.info("Residual plot requires eval_predictions.json")

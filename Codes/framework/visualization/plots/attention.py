@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 def plot_attention_heatmap(history, metrics, config, output_dir, opts):
     # This plot requires the actual model and a data sample – not available from history alone.
     # If you saved an attention matrix during training, you can load it here.
+    """Plot attention heatmap."""
     attn_path = output_dir.parent / "artifacts" / "attention_sample.json"
     if not attn_path.exists():
         logger.info(

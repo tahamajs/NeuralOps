@@ -51,6 +51,7 @@ class ElasticState:
     rng_state: Optional[bytes] = None
 
     def save(self, path: str) -> None:
+        """Save."""
         with open(path, "w") as f:
             json.dump(
                 {
@@ -62,6 +63,7 @@ class ElasticState:
             )
 
     def load(self, path: str) -> None:
+        """Load."""
         if not os.path.exists(path):
             return
         with open(path) as f:
@@ -80,13 +82,13 @@ class ElasticTrainer:
         trainer.launch(my_train_function, args=(model, dataloader))
     """
 
-    def __init__(self, config: ElasticConfig = None):
+    def __init__(self, config: ElasticConfig = None) -> None:
         self.config = config or ElasticConfig()
         self.state = ElasticState()
         os.makedirs(self.config.checkpoint_dir, exist_ok=True)
 
     @record
-    def _worker_main(self, train_fn: Callable, args, kwargs):
+    def _worker_main(self, train_fn: Callable, args, kwargs) -> None:
         """Entry point for each elastic worker process."""
         rank = int(os.environ.get("RANK", 0))
         world_size = int(os.environ.get("WORLD_SIZE", 1))

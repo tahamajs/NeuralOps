@@ -9,4 +9,5 @@ class FedProxAggregator(BaseAggregator):
 
     def aggregate(self, global_model, client_updates, client_weights, round_num):
         # FedProx uses same server aggregation as FedAvg; the prox term is applied on client side
+        """Aggregate."""
         return self.compute_weighted_average(client_updates, client_weights)

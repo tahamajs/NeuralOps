@@ -12,7 +12,7 @@ from .config import FLConfig
 class FLClientTrainer:
     """Handles local training on client data."""
 
-    def __init__(self, config: FLConfig):
+    def __init__(self, config: FLConfig) -> None:
         self.config = config
 
     def train(

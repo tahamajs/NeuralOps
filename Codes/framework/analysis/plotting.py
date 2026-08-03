@@ -17,7 +17,8 @@ sns.set_palette("husl")
 sns.set_context("paper", font_scale=1.2)
 
 
-def set_style():
+def set_style() -> None:
+    """Set the style."""
     plt.style.use("seaborn-v0_8-darkgrid")
     sns.set_palette("husl")
     sns.set_context("paper", font_scale=1.2)
@@ -26,7 +27,8 @@ def set_style():
 # ---------- Individual plot functions ----------
 
 
-def plot_loss_curve(history, metrics, config, output_dir, opts):
+def plot_loss_curve(history, metrics, config, output_dir, opts) -> Any:
+    """Plot loss curve."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "loss" in h]
     train = [h["loss"] for h in history if "loss" in h]
     eval_steps = [h.get("step", i) for i, h in enumerate(history) if "eval_loss" in h]
@@ -55,7 +57,8 @@ def plot_loss_curve(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_accuracy_curve(history, metrics, config, output_dir, opts):
+def plot_accuracy_curve(history, metrics, config, output_dir, opts) -> Any:
+    """Plot accuracy curve."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "eval_accuracy" in h]
     acc = [h["eval_accuracy"] for h in history if "eval_accuracy" in h]
     if not steps:
@@ -73,7 +76,8 @@ def plot_accuracy_curve(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_lr_schedule(history, metrics, config, output_dir, opts):
+def plot_lr_schedule(history, metrics, config, output_dir, opts) -> Any:
+    """Plot lr schedule."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "learning_rate" in h]
     lr = [h["learning_rate"] for h in history if "learning_rate" in h]
     if not steps:
@@ -91,7 +95,8 @@ def plot_lr_schedule(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_training_time(history, metrics, config, output_dir, opts):
+def plot_training_time(history, metrics, config, output_dir, opts) -> Any:
+    """Plot training time."""
     times = [
         h.get("elapsed", i * 0.01)
         for i, h in enumerate(history)
@@ -112,7 +117,8 @@ def plot_training_time(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_confusion_matrix(history, metrics, config, output_dir, opts):
+def plot_confusion_matrix(history, metrics, config, output_dir, opts) -> Any:
+    """Plot confusion matrix."""
     preds_path = Path(output_dir).parent / "artifacts" / "eval_predictions.json"
     if not preds_path.exists():
         return []
@@ -145,7 +151,8 @@ def plot_confusion_matrix(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_gradient_flow(history, metrics, config, output_dir, opts):
+def plot_gradient_flow(history, metrics, config, output_dir, opts) -> Any:
+    """Plot gradient flow."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "grad_norm" in h]
     norms = [h["grad_norm"] for h in history if "grad_norm" in h]
     if not steps:
@@ -163,7 +170,8 @@ def plot_gradient_flow(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_gpu_memory(history, metrics, config, output_dir, opts):
+def plot_gpu_memory(history, metrics, config, output_dir, opts) -> Any:
+    """Plot gpu memory."""
     gpu_steps = [h.get("step", i) for i, h in enumerate(history) if "gpu_mem" in h]
     gpu = [h["gpu_mem"] for h in history if "gpu_mem" in h]
     cpu_steps = [h.get("step", i) for i, h in enumerate(history) if "cpu_mem" in h]
@@ -187,7 +195,8 @@ def plot_gpu_memory(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_parameter_distribution(history, metrics, config, output_dir, opts):
+def plot_parameter_distribution(history, metrics, config, output_dir, opts) -> Any:
+    """Plot parameter distribution."""
     param_path = Path(output_dir).parent / "artifacts" / "param_counts.json"
     if not param_path.exists():
         return []
@@ -206,7 +215,8 @@ def plot_parameter_distribution(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_rank_allocation(history, metrics, config, output_dir, opts):
+def plot_rank_allocation(history, metrics, config, output_dir, opts) -> Any:
+    """Plot rank allocation."""
     rank_path = Path(output_dir).parent / "artifacts" / "rank_allocation.json"
     if not rank_path.exists():
         return []
@@ -227,7 +237,8 @@ def plot_rank_allocation(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_radar_chart(history, metrics, config, output_dir, opts):
+def plot_radar_chart(history, metrics, config, output_dir, opts) -> Any:
+    """Plot radar chart."""
     if not metrics:
         return []
     numeric = {k: v for k, v in metrics.items() if isinstance(v, (int, float))}
@@ -253,7 +264,8 @@ def plot_radar_chart(history, metrics, config, output_dir, opts):
     return [str(path)]
 
 
-def plot_attention_heatmap(history, metrics, config, output_dir, opts):
+def plot_attention_heatmap(history, metrics, config, output_dir, opts) -> Any:
+    """Plot attention heatmap."""
     attn_path = Path(output_dir).parent / "artifacts" / "attention_sample.json"
     if not attn_path.exists():
         return []
@@ -279,6 +291,7 @@ def plot_attention_heatmap(history, metrics, config, output_dir, opts):
 def create_comprehensive_plots(
     df: pd.DataFrame, output_dir: str, figsize: Tuple[int, int] = (18, 16)
 ) -> None:
+    """Build and return comprehensive plots."""
     os.makedirs(output_dir, exist_ok=True)
     set_style()
     fig, axes = plt.subplots(3, 3, figsize=figsize)
@@ -446,7 +459,8 @@ def create_comprehensive_plots(
     plt.close()
 
 
-def plot_tradeoff(df, output_dir, metric="accuracy"):
+def plot_tradeoff(df, output_dir, metric="accuracy") -> None:
+    """Plot tradeoff."""
     set_style()
     fig, ax = plt.subplots(figsize=(10, 8))
     for model in df["model"].unique():
@@ -462,7 +476,8 @@ def plot_tradeoff(df, output_dir, metric="accuracy"):
     plt.close()
 
 
-def plot_pareto_front(df, output_dir, x_metric="speedup_factor", y_metric="accuracy"):
+def plot_pareto_front(df, output_dir, x_metric="speedup_factor", y_metric="accuracy") -> None:
+    """Plot pareto front."""
     set_style()
     points = df[[x_metric, y_metric, "model", "rank"]].dropna().values
     pareto = []
@@ -497,7 +512,8 @@ def plot_pareto_front(df, output_dir, x_metric="speedup_factor", y_metric="accur
     plt.close()
 
 
-def plot_rank_allocation(recommended_ranks, output_dir):
+def plot_rank_allocation(recommended_ranks, output_dir) -> None:
+    """Plot rank allocation."""
     set_style()
     fig, ax = plt.subplots(figsize=(12, 6))
     layers = list(range(len(recommended_ranks)))
@@ -511,7 +527,8 @@ def plot_rank_allocation(recommended_ranks, output_dir):
     plt.close()
 
 
-def plot_training_history(history: dict, save_path: str):
+def plot_training_history(history: dict, save_path: str) -> None:
+    """Plot training history."""
     fig, ax = plt.subplots(figsize=(8, 5))
     if history.get("train_steps") and history.get("train_loss"):
         ax.plot(

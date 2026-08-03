@@ -11,7 +11,8 @@ class ASTPruner(BaseCompressor):
         super().__init__(model, name="ast_pruner", **kwargs)
         self.block_size = block_size
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -32,7 +33,8 @@ class ASTPruner(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("ast_pruner")
-def ast_pruner_factory(model, comp_config):
+def ast_pruner_factory(model, comp_config) -> Any:
+    """Ast pruner factory."""
     block_size = getattr(comp_config, "ast_block_size", 4)
     compressor = ASTPruner(model, block_size)
     compressed_model, _ = compressor.compress()

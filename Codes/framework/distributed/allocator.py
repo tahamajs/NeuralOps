@@ -44,7 +44,7 @@ class GPUAllocator:
             cls._instance._init = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if self._init:
             return
         self._gpus: Dict[str, List[GPUInfo]] = {}
@@ -54,6 +54,7 @@ class GPUAllocator:
         self._init = True
 
     def refresh(self) -> List[GPUInfo]:
+        """Refresh."""
         local = []
         if not torch.cuda.is_available():
             self._gpus["localhost"] = local
@@ -74,24 +75,28 @@ class GPUAllocator:
         self._gpus["localhost"] = local
         return local
 
-    def register_remote(self, node: str, gpus: List[GPUInfo]):
+    def register_remote(self, node: str, gpus: List[GPUInfo]) -> None:
+        """Register remote."""
         with self._lock:
             for g in gpus:
                 g.node = node
             self._gpus[node] = gpus
 
     @property
-    def total_gpus(self):
+    def total_gpus(self) -> Any:
+        """Total gpus."""
         return sum(len(v) for v in self._gpus.values())
 
     @property
-    def available_gpus(self):
+    def available_gpus(self) -> Any:
+        """Available gpus."""
         with self._lock:
             return sum(
                 1 for gs in self._gpus.values() for g in gs if not g.is_allocated
             )
 
     def get_free(self, min_mem: float = 0) -> List[GPUInfo]:
+        """Return the free."""
         with self._lock:
             return [
                 g
@@ -108,6 +113,7 @@ class GPUAllocator:
         min_mem: float = 0,
         prefer_same_node: bool = True,
     ) -> List[GPUInfo]:
+        """Allocate."""
         with self._lock:
             free = self.get_free(min_mem)
             if len(free) < num:
@@ -165,7 +171,8 @@ class GPUAllocator:
             logger.info("Allocated %d GPU(s) to %s via %s", num, job_id, strategy.value)
             return chosen
 
-    def release(self, job_id: str):
+    def release(self, job_id: str) -> None:
+        """Release."""
         with self._lock:
             if job_id not in self._jobs:
                 return
@@ -177,6 +184,7 @@ class GPUAllocator:
             logger.info("Released GPUs for %s", job_id)
 
     def status(self) -> Dict:
+        """Status."""
         with self._lock:
             return {
                 "total": self.total_gpus,

@@ -40,7 +40,7 @@ class MegaOrchestrator:
         log_callback: Optional[Callable] = None,
         final_callback: Optional[Callable] = None,
         stop_event: Optional[threading.Event] = None,
-    ):
+    ) -> None:
         self.config = config
         self.run_id = run_id
         self.base_dir = Path(base_dir)
@@ -110,6 +110,7 @@ class MegaOrchestrator:
     # Phase 1 – HPO
     # ════════════════════════════════════════════════════════════════
     def _run_hpo(self) -> Dict[str, Any]:
+        """ run hpo."""
         from framework.hyperopt.integration import run_hpo_experiment
 
         hpo_cfg = self.config.get("hpo", {})
@@ -137,11 +138,13 @@ class MegaOrchestrator:
     # Phase 2 – Federated Learning
     # ════════════════════════════════════════════════════════════════
     def _run_federated(self) -> Dict[str, Any]:
+        """ run federated."""
         from framework.federated_learning.integration import run_federated_experiment
 
         fl_cfg = self.config.get("federated_learning", {})
 
-        def model_builder():
+        def model_builder() -> Any:
+            """Model builder."""
             return self._load_model()
 
         # User must provide a dataset or a dataset loader function
@@ -158,6 +161,7 @@ class MegaOrchestrator:
     # Phase 3 – Single Training
     # ════════════════════════════════════════════════════════════════
     def _run_single_training(self) -> Dict[str, float]:
+        """ run single training."""
         cfg = self.config
 
         # 3a. Load model & tokenizer
@@ -226,6 +230,7 @@ class MegaOrchestrator:
     # Phase 4 – Post‑Training Analysis
     # ════════════════════════════════════════════════════════════════
     def _run_post_analysis(self) -> None:
+        """ run post analysis."""
         cfg = self.config
 
         # Drift detection
@@ -250,7 +255,8 @@ class MegaOrchestrator:
             notify(self.run_id, True, self.final_metrics, cfg["save_config"])
 
     # ── Helpers ─────────────────────────────────────────────────────
-    def _load_model(self):
+    def _load_model(self) -> Any:
+        """ load model."""
         from framework.models import load_model
 
         cfg = self.config
@@ -261,7 +267,8 @@ class MegaOrchestrator:
             rank=cfg.get("compression_rank", 64),
         )
 
-    def _load_data(self, cfg):
+    def _load_data(self, cfg) -> Any:
+        """ load data."""
         from framework.experiment_utils.config import ExperimentConfig
         from framework.experiment_utils.data import load_and_preprocess_data
 
@@ -275,7 +282,8 @@ class MegaOrchestrator:
         setattr(exp_cfg, "glue_base_path", cfg.get("glue_base_path", "/default/path"))
         return load_and_preprocess_data(exp_cfg)
 
-    def _create_trainer(self, cfg, train_ds, eval_ds, num_labels, callbacks):
+    def _create_trainer(self, cfg, train_ds, eval_ds, num_labels, callbacks) -> Any:
+        """ create trainer."""
         from framework.trainer.trainer_factory import get_trainer
         from transformers import DataCollatorWithPadding, TrainingArguments
 
@@ -305,7 +313,8 @@ class MegaOrchestrator:
             callbacks=callbacks,
         )
 
-    def _build_callbacks(self):
+    def _build_callbacks(self) -> Any:
+        """ build callbacks."""
         cbs = []
         from Codes.framework.callbacks.django import DjangoCallback
 
@@ -320,7 +329,8 @@ class MegaOrchestrator:
         # Add more callbacks based on config…
         return cbs
 
-    def _save_results(self, metrics):
+    def _save_results(self, metrics) -> None:
+        """ save results."""
         from framework.results_saver import ResultsSaver
 
         save_cfg = self.config.get("save_config", {})
@@ -336,7 +346,8 @@ class MegaOrchestrator:
         saver.git_commit_and_push()
         saver.track_all(metrics, self.config)
 
-    def _create_model_version(self, metrics):
+    def _create_model_version(self, metrics) -> None:
+        """ create model version."""
         from framework.model_versioning import ModelVersionService, VersioningConfig
 
         save_cfg = self.config.get("save_config", {})
@@ -350,7 +361,8 @@ class MegaOrchestrator:
             artifact_base=str(self.base_dir),
         )
 
-    def _run_drift(self):
+    def _run_drift(self) -> None:
+        """ run drift."""
         from framework.drift.integration import auto_drift_check
 
         auto_drift_check(
@@ -360,7 +372,8 @@ class MegaOrchestrator:
             output_dir=self.run_dir / "drift",
         )
 
-    def _run_fairness(self):
+    def _run_fairness(self) -> None:
+        """ run fairness."""
         import json
 
         import numpy as np
@@ -380,7 +393,8 @@ class MegaOrchestrator:
             with open(path, "w") as f:
                 json.dump(report.__dict__, f, indent=2, default=str)
 
-    def _run_robustness(self):
+    def _run_robustness(self) -> None:
+        """ run robustness."""
         import json
 
         import numpy as np
@@ -401,11 +415,13 @@ class MegaOrchestrator:
             with open(path, "w") as f:
                 json.dump(report.__dict__, f, indent=2, default=str)
 
-    def _save_config(self):
+    def _save_config(self) -> None:
+        """ save config."""
         with open(self.run_dir / "config.json", "w") as f:
             json.dump(self.config, f, indent=2, default=str)
 
-    def _log(self, msg: str):
+    def _log(self, msg: str) -> None:
+        """ log."""
         logger.info("[%s] %s", self.run_id[:8], msg)
         if self.log_cb:
             self.log_cb(0, {"message": msg})

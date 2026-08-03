@@ -62,7 +62,7 @@ class DistributedJobScheduler:
         scheduler.run_loop()   # blocking
     """
 
-    def __init__(self, policy: SchedulingPolicy = SchedulingPolicy.PRIORITY):
+    def __init__(self, policy: SchedulingPolicy = SchedulingPolicy.PRIORITY) -> None:
         self.policy = policy
         self._lock = threading.Lock()
         self._queue: List[JobSpec] = []  # heap for priority queue
@@ -127,7 +127,7 @@ class DistributedJobScheduler:
                 ],
             }
 
-    def run_loop(self, train_fn: Callable, tick_interval: float = 2.0):
+    def run_loop(self, train_fn: Callable, tick_interval: float = 2.0) -> None:
         """
         Main scheduling loop.  Blocks until stopped.
 
@@ -140,10 +140,11 @@ class DistributedJobScheduler:
             self._tick(train_fn)
             time.sleep(tick_interval)
 
-    def stop(self):
+    def stop(self) -> None:
+        """Stop."""
         self._stop.set()
 
-    def _tick(self, train_fn: Callable):
+    def _tick(self, train_fn: Callable) -> None:
         """One scheduling cycle."""
         with self._lock:
             # 1. Check for completed jobs
@@ -184,7 +185,7 @@ class DistributedJobScheduler:
                 # Not enough GPUs – re‑queue
                 heapq.heappush(self._queue, job)
 
-    def _launch_job(self, job: JobSpec, train_fn: Callable):
+    def _launch_job(self, job: JobSpec, train_fn: Callable) -> None:
         """Execute the job (called in a background thread)."""
         try:
             train_fn(job)

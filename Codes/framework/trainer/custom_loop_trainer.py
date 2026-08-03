@@ -23,7 +23,7 @@ class CustomLoopTrainer(BaseTrainer):
         is_multichoice: bool = False,
         compute_metrics_fn=None,
         **kwargs
-    ):
+    ) -> None:
         self.model = model
         self.train_dataset = train_dataset
         self.eval_dataset = eval_dataset
@@ -37,7 +37,8 @@ class CustomLoopTrainer(BaseTrainer):
         )
         self.kwargs = kwargs
 
-    def _make_loader(self, dataset, shuffle=False):
+    def _make_loader(self, dataset, shuffle=False) -> Any:
+        """ make loader."""
         return DataLoader(
             dataset,
             batch_size=self.config.get("batch_size", 16),
@@ -46,6 +47,7 @@ class CustomLoopTrainer(BaseTrainer):
         )
 
     def train(self) -> Dict[str, Any]:
+        """Fit the model on the provided dataset."""
         train_loader = self._make_loader(self.train_dataset, shuffle=True)
         val_loader = self._make_loader(self.eval_dataset, shuffle=False)
 
@@ -70,6 +72,7 @@ class CustomLoopTrainer(BaseTrainer):
         return result
 
     def evaluate(self) -> Dict[str, Any]:
+        """Run evaluate and return results."""
         val_loader = self._make_loader(self.eval_dataset, shuffle=False)
         return evaluate_model(
             self.model,

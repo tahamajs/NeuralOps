@@ -21,7 +21,8 @@ class ZeroKVNeoCompressor(BaseCompressor):
         self.num_attention_sinks = num_attention_sinks
         self.heavy_hitter_ratio = heavy_hitter_ratio
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear) and self._is_attention_proj(name):
                 W = module.weight.data
@@ -70,6 +71,7 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
     @staticmethod
     def _is_attention_proj(name: str) -> bool:
+        """ is attention proj."""
         attn_keywords = [
             "q_lin",
             "k_lin",
@@ -86,7 +88,8 @@ class ZeroKVNeoCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("zerokv_neo")
-def zerokv_neo_factory(model, comp_config):
+def zerokv_neo_factory(model, comp_config) -> Any:
+    """Zerokv neo factory."""
     keep_ratio = getattr(comp_config, "zerokv_keep_ratio", 0.3)
     num_sinks = getattr(comp_config, "zerokv_num_sinks", 4)
     heavy_ratio = getattr(comp_config, "zerokv_heavy_ratio", 0.1)

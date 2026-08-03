@@ -24,7 +24,8 @@ class CURMoECompressor(BaseCompressor):
         self.rank = rank
         self.method = method
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if hasattr(module, "experts"):
                 for expert in module.experts:
@@ -70,7 +71,8 @@ class CURMoECompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cur_moe")
-def cur_moe_factory(model, comp_config):
+def cur_moe_factory(model, comp_config) -> Any:
+    """Cur moe factory."""
     rank = getattr(comp_config, "cur_moe_rank", 64)
     method = getattr(comp_config, "cur_moe_method", "leverage")
     compressor = CURMoECompressor(model, rank=rank, method=method)

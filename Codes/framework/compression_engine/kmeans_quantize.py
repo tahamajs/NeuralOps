@@ -25,7 +25,8 @@ class KMeansLinear(nn.Module):
             nn.Parameter(linear.bias.data.clone()) if linear.bias is not None else None
         )
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
+        """Forward pass."""
         W = self.centroids[self.indices].to(x.dtype)
         out = F.linear(x, W, self.bias)
         return out
@@ -36,7 +37,8 @@ class KMeansCompressor(BaseCompressor):
         super().__init__(model, name="kmeans", **kwargs)
         self.n_clusters = n_clusters
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 new_layer = KMeansLinear(module, self.n_clusters)
@@ -46,7 +48,8 @@ class KMeansCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _get_parent(self, full_name):
+    def _get_parent(self, full_name) -> Any:
+        """ get parent."""
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
@@ -55,7 +58,8 @@ class KMeansCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("kmeans")
-def kmeans_factory(model, comp_config):
+def kmeans_factory(model, comp_config) -> Any:
+    """Kmeans factory."""
     n_clusters = getattr(comp_config, "kmeans_clusters", 256)
     compressor = KMeansCompressor(model, n_clusters=n_clusters)
     compressed_model, _ = compressor.compress()

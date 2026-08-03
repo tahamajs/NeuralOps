@@ -61,6 +61,7 @@ class RALALinearAttention(nn.Module):
     def _apply_linear_mask(
         k: torch.Tensor, attention_mask: Optional[torch.Tensor]
     ) -> torch.Tensor:
+        """ apply linear mask."""
         if attention_mask is None:
             return k
         if attention_mask.dim() == 2:  # (B, L)

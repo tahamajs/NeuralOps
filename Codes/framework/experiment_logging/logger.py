@@ -13,7 +13,8 @@ from .config import LoggingConfig
 class StructuredFormatter(logging.Formatter):
     """JSON‑line formatter for structured logging."""
 
-    def format(self, record):
+    def format(self, record) -> Any:
+        """Format."""
         entry = {
             "timestamp": datetime.utcnow().isoformat() + "Z",
             "level": record.levelname,

@@ -10,7 +10,8 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def plot_activation_distribution(history, metrics, config, output_dir, opts):
+def plot_activation_distribution(history, metrics, config, output_dir, opts) -> Any:
+    """Plot activation distribution."""
     act_path = Path(output_dir).parent / "artifacts" / "activations.json"
     if not act_path.exists():
         logger.info("Activation distribution requires activations.json.")

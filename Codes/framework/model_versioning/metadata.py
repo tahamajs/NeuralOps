@@ -12,7 +12,8 @@ class ModelCardFormat(Enum):
 
 def generate_model_card(
     run, metrics: Dict[str, Any], output_path: str, fmt=ModelCardFormat.MARKDOWN
-):
+) -> None:
+    """Generate model card."""
     cfg = getattr(run, "config", {}) or {}
     name = cfg.get("model_name", "model")
     task = cfg.get("task_name", "task")
@@ -29,7 +30,8 @@ def generate_model_card(
         f.write(content)
 
 
-def _markdown_card(name, task, cfg, metrics):
+def _markdown_card(name, task, cfg, metrics) -> Any:
+    """ markdown card."""
     return f"""---
 language: en
 tags: [{task}, transformer]
@@ -54,5 +56,6 @@ metrics:
 """
 
 
-def _html_card(name, task, cfg, metrics):
+def _html_card(name, task, cfg, metrics) -> Any:
+    """ html card."""
     return f"<html><body><h1>{name} – {task.upper()}</h1>...</body></html>"

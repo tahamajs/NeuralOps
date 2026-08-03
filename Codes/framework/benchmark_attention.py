@@ -451,6 +451,7 @@ def generate_markdown_report(
 
 
 def main():
+    """Main."""
     parser = argparse.ArgumentParser(description="Attention Module Benchmark Suite")
     parser.add_argument(
         "--modules",

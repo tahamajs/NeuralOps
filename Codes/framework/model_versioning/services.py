@@ -47,7 +47,8 @@ class VersioningConfig:
 # ----------------------------------------------------------------------
 class _DummyManager:
     def __getattr__(self, name):
-        def dummy(*args, **kwargs):
+        def dummy(*args, **kwargs) -> None:
+            """Dummy."""
             return None
 
         return dummy
@@ -63,15 +64,17 @@ class _DummyModelVersion:
 class VersioningStrategy:
     """Decides which versions to keep / delete."""
 
-    def __init__(self, config: VersioningConfig):
+    def __init__(self, config: VersioningConfig) -> None:
         self.config = config
 
-    def select_versions_to_delete(self, all_versions):
+    def select_versions_to_delete(self, all_versions) -> None:
+        """Select versions to delete."""
         raise NotImplementedError
 
 
 class BestKStrategy(VersioningStrategy):
-    def select_versions_to_delete(self, all_versions):
+    def select_versions_to_delete(self, all_versions) -> Any:
+        """Select versions to delete."""
         if not all_versions:
             return []
         sorted_versions = sorted(
@@ -81,7 +84,8 @@ class BestKStrategy(VersioningStrategy):
 
 
 class TaggedStrategy(VersioningStrategy):
-    def select_versions_to_delete(self, all_versions):
+    def select_versions_to_delete(self, all_versions) -> Any:
+        """Select versions to delete."""
         protected = [
             v
             for v in all_versions
@@ -91,7 +95,8 @@ class TaggedStrategy(VersioningStrategy):
 
 
 class TimeBasedStrategy(VersioningStrategy):
-    def select_versions_to_delete(self, all_versions):
+    def select_versions_to_delete(self, all_versions) -> Any:
+        """Select versions to delete."""
         import datetime
 
         cutoff = datetime.datetime.now() - datetime.timedelta(
@@ -107,7 +112,8 @@ class ModelVersionService:
     """High‑level service for creating, loading, and managing model versions."""
 
     @staticmethod
-    def _get_model():
+    def _get_model() -> Any:
+        """ get model."""
         try:
             from model_versioning.models import ModelVersion
 
@@ -126,6 +132,7 @@ class ModelVersionService:
         tags: Optional[List[str]] = None,
         config: Optional[VersioningConfig] = None,
     ) -> Optional[Any]:
+        """Build and return version."""
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return None
@@ -166,7 +173,8 @@ class ModelVersionService:
         return record
 
     @staticmethod
-    def load_version(version_id, map_location="cpu"):
+    def load_version(version_id, map_location="cpu") -> Any:
+        """Load version from disk or config."""
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return None
@@ -186,7 +194,8 @@ class ModelVersionService:
             return None
 
     @staticmethod
-    def apply_cleanup_policy(run, config: VersioningConfig):
+    def apply_cleanup_policy(run, config: VersioningConfig) -> None:
+        """Apply cleanup policy."""
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return

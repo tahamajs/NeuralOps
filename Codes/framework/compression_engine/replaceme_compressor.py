@@ -9,7 +9,8 @@ class ReplaceMeCompressor(BaseCompressor):
         super().__init__(model, name="replaceme", **kwargs)
         self.remove_layers = remove_layers
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         if hasattr(self.model, "encoder"):
             layers = self.model.encoder.layer
             dim = self.model.config.hidden_size

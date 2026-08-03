@@ -10,7 +10,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def plot_parallel_coords(history, metrics, config, output_dir, opts):
+def plot_parallel_coords(history, metrics, config, output_dir, opts) -> Any:
     """Reads all runs from the parent directory and plots parallel coordinates."""
     runs_dir = Path(output_dir).parent.parent  # go up to runs root
     run_dirs = sorted(runs_dir.glob("*/artifacts/final_metrics.json"))

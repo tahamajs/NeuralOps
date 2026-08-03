@@ -14,6 +14,7 @@ def plot_accuracy_vs_rank(
     save_path: Optional[str] = None,
     figsize: Tuple[int, int] = (10, 6),
 ) -> plt.Figure:
+    """Plot accuracy vs rank."""
     set_plot_style()
     if task:
         df = df[df["task"] == task]
@@ -49,6 +50,7 @@ def plot_radar_chart(
     save_path: Optional[str] = None,
     figsize: Tuple[int, int] = (10, 8),
 ) -> plt.Figure:
+    """Plot radar chart."""
     set_plot_style()
     fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111, projection="polar")

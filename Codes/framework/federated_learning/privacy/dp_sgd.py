@@ -7,7 +7,8 @@ from .base import PRIVACY_REGISTRY, BasePrivacyMechanism
 
 @PRIVACY_REGISTRY.register("dp_sgd")
 class DPSGDPrivacy(BasePrivacyMechanism):
-    def apply(self, aggregated_update):
+    def apply(self, aggregated_update) -> Any:
+        """Execute the apply operation and return results."""
         noise_scale = self.config.dp_noise_multiplier * self.config.dp_max_grad_norm
         dp_update = {}
         for k, v in aggregated_update.items():

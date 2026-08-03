@@ -22,10 +22,12 @@ class SpectraformerAttention(BaseAttention):
         self.out_proj = nn.Linear(self.all_head_size, config.hidden_size)
         self.dropout = nn.Dropout(config.attention_probs_dropout_prob)
 
-    def _reshape(self, x, batch_size):
+    def _reshape(self, x, batch_size) -> Any:
+        """ reshape."""
         return x.view(batch_size, -1, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
-    def forward(self, hidden_states, attention_mask=None, **kwargs):
+    def forward(self, hidden_states, attention_mask=None, **kwargs) -> Any:
+        """Forward pass."""
         B, N, _ = hidden_states.shape
         Q = self._reshape(self.query(hidden_states), B)  # (B, H, N, D)
         K = self._reshape(self.key(hidden_states), B)

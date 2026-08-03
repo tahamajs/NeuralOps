@@ -284,24 +284,28 @@ class SVDCompressedAttention(BaseAttention):
         H, d = self.num_heads, self.head_dim
 
         def proj_q(x: torch.Tensor) -> torch.Tensor:
+            """Proj q."""
             out = self.q_up(self.q_down(x))
             if self.add_sparse:
                 out = out + F.linear(x, self.q_sparse_weight)
             return out
 
         def proj_k(x: torch.Tensor) -> torch.Tensor:
+            """Proj k."""
             out = self.k_up(self.k_down(x))
             if self.add_sparse:
                 out = out + F.linear(x, self.k_sparse_weight)
             return out
 
         def proj_v(x: torch.Tensor) -> torch.Tensor:
+            """Proj v."""
             out = self.v_up(self.v_down(x))
             if self.add_sparse:
                 out = out + F.linear(x, self.v_sparse_weight)
             return out
 
         def proj_o(x: torch.Tensor) -> torch.Tensor:
+            """Proj o."""
             out = self.o_up(self.o_down(x))
             if self.add_sparse:
                 out = out + F.linear(x, self.o_sparse_weight)

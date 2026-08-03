@@ -28,13 +28,16 @@ class AASVDCompressor(BaseCompressor):
             "The quick brown fox jumps over the lazy dog."
         ]
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         self.model.eval()
         activations = {}
         hooks = []
 
-        def make_hook(name):
-            def hook(module, input, output):
+        def make_hook(name) -> Any:
+            """Make hook."""
+            def hook(module, input, output) -> None:
+                """Hook."""
                 activations[name] = input[0].detach()  # (batch, seq_len, in_features)
 
             return hook
@@ -80,7 +83,8 @@ class AASVDCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("aasvd")
-def aasvd_factory(model, comp_config):
+def aasvd_factory(model, comp_config) -> Any:
+    """Aasvd factory."""
     rank = getattr(comp_config, "aasvd_rank", 64)
     # tokenizer required
     tokenizer = getattr(model, "tokenizer", None)

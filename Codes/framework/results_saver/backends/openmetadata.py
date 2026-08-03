@@ -5,7 +5,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 
-def track(run_id, run_dir, metrics, params, cfg):
+def track(run_id, run_dir, metrics, params, cfg) -> None:
     """Send metadata and lineage to OpenMetadata via REST API."""
     om_cfg = cfg.metadata_store
     if om_cfg != "openmetadata":

@@ -29,7 +29,7 @@ class GPUManager:
             cls._instance._initialised = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if self._initialised:
             return
         self.total_gpus = torch.cuda.device_count() if torch.cuda.is_available() else 0
@@ -39,6 +39,7 @@ class GPUManager:
 
     @property
     def available_gpus(self) -> int:
+        """Available gpus."""
         with self._lock:
             return self.total_gpus - len(self._allocated)
 
