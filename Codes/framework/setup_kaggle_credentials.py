@@ -12,10 +12,21 @@ import os
 import sys
 import json
 import argparse
+import subprocess
 from pathlib import Path
 
 KAGGLE_DIR = Path.home() / ".kaggle"
-KAGGLE_FILE = KAGGLE_DIR / "kaggle.json"
+TOKEN_FILE = KAGGLE_DIR / "access_token"
+
+def configure_token(token: str):
+    """Save Kaggle Access Token (KGAT_...) to ~/.kaggle/access_token with 600 permissions."""
+    KAGGLE_DIR.mkdir(parents=True, exist_ok=True)
+    with open(TOKEN_FILE, "w") as f:
+        f.write(token.strip())
+    os.chmod(TOKEN_FILE, 0o600)
+    os.environ["KAGGLE_API_TOKEN"] = token.strip()
+    print(f"✓ Saved Kaggle Access Token to {TOKEN_FILE} (chmod 600)")
+    return test_connection()
 
 def configure_credentials(username: str = None, key: str = None, json_file: str = None):
     """Save Kaggle credentials to ~/.kaggle/kaggle.json with 600 permissions."""
@@ -35,7 +46,6 @@ def configure_credentials(username: str = None, key: str = None, json_file: str 
     with open(KAGGLE_FILE, "w") as f:
         json.dump(creds, f, indent=2)
 
-    # Set strict 600 permissions as required by Kaggle CLI
     os.chmod(KAGGLE_FILE, 0o600)
     print(f"✓ Saved Kaggle API credentials to {KAGGLE_FILE} (chmod 600)")
     return test_connection()
@@ -49,10 +59,13 @@ def test_connection():
         api = KaggleApi()
         api.authenticate()
         print(f"✅ Kaggle API Authenticated Successfully!")
-        # Try listing user datasets to confirm full API access
-        datasets = api.dataset_list(user=api.username, page_size=3)
-        print(f"   Logged in as: {api.username}")
-        print(f"   Active Kaggle Datasets: {len(datasets)}")
+        # Query datasets via API
+        res = subprocess.run(["kaggle", "datasets", "list", "--mine"], capture_output=True, text=True)
+        if res.returncode == 0:
+            print("   API CLI status: Connected & operational")
+            lines = res.stdout.strip().splitlines()
+            if len(lines) > 2:
+                print(f"   Sample user dataset: {lines[2].split()[0]}")
         return True
     except Exception as e:
         print(f"❌ Kaggle API Authentication Failed: {e}")
