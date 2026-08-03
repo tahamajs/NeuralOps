@@ -196,6 +196,18 @@ def create_trainer(
     dataloader_num_workers = training_args_kwargs.pop("dataloader_num_workers", 0)
     _ = training_args_kwargs.pop("remove_unused_columns", None)  # handled below
 
+    # Build only the kwargs that TrainingArguments actually supports
+    import inspect as _inspect
+    _ta_params = set(_inspect.signature(TrainingArguments.__init__).parameters)
+
+    optional_ta_kwargs = {}
+    if "save_safetensors" in _ta_params:
+        optional_ta_kwargs["save_safetensors"] = save_safetensors
+    if "dataloader_pin_memory" in _ta_params:
+        optional_ta_kwargs["dataloader_pin_memory"] = dataloader_pin_memory
+    if "dataloader_num_workers" in _ta_params:
+        optional_ta_kwargs["dataloader_num_workers"] = dataloader_num_workers
+
     training_args = TrainingArguments(
         output_dir=output_dir,
         learning_rate=learning_rate,
@@ -214,10 +226,7 @@ def create_trainer(
         disable_tqdm=False,
         report_to=training_args_kwargs.pop("report_to", "none"),
         remove_unused_columns=False,
-        # Critical: avoids safetensors RuntimeError when custom attn modules have shared-memory params
-        save_safetensors=save_safetensors,
-        dataloader_pin_memory=dataloader_pin_memory,
-        dataloader_num_workers=dataloader_num_workers,
+        **optional_ta_kwargs,
         **training_args_kwargs,
     )
     return SVDAwareTrainer(
