@@ -215,44 +215,28 @@ class ResultsSaver:
                 plt.close(fig)
 
             if opts.get("loss_curve", True):
-                fig = plot_loss_curves(
-                    history,
-                    smooth=opts.get("loss_smooth", 0.6),
-                    figsize=tuple(opts.get("figsize", [10, 6])),
-                )
-                save_fig("loss_curve", fig)
+                try:
+                    plot_loss_curve(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                except Exception as e:
+                    logger.debug(f"plot_loss_curve error: {e}")
 
             if opts.get("accuracy_curve", True):
-                fig = plot_accuracy_curves(
-                    history, figsize=tuple(opts.get("figsize", [10, 6]))
-                )
-                save_fig("accuracy_curve", fig)
+                try:
+                    plot_accuracy_curve(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                except Exception as e:
+                    logger.debug(f"plot_accuracy_curve error: {e}")
 
             if opts.get("lr_schedule", True):
-                fig = plot_lr_schedule(
-                    history, figsize=tuple(opts.get("figsize", [10, 6]))
-                )
-                save_fig("lr_schedule", fig)
+                try:
+                    plot_lr_schedule(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                except Exception as e:
+                    logger.debug(f"plot_lr_schedule error: {e}")
 
             if opts.get("training_time", True):
-                fig = plot_training_time(
-                    history, figsize=tuple(opts.get("figsize", [10, 6]))
-                )
-                save_fig("training_time", fig)
-
-            if opts.get("gpu_memory", False):
-                if any("gpu_mem" in e for e in history):
-                    fig = plot_gpu_memory(
-                        history, figsize=tuple(opts.get("figsize", [10, 6]))
-                    )
-                    save_fig("gpu_memory", fig)
-
-            if opts.get("gradient_flow", False):
-                if any("grad_norm" in e for e in history):
-                    fig = plot_gradient_flow(
-                        history, figsize=tuple(opts.get("figsize", [10, 6]))
-                    )
-                    save_fig("gradient_flow", fig)
+                try:
+                    plot_training_time(history, final_metrics, self.cfg, self.run_dir / "plots", opts)
+                except Exception as e:
+                    logger.debug(f"plot_training_time error: {e}")
 
             if opts.get("confusion_matrix", False):
                 preds_path = self.run_dir / "artifacts" / "eval_predictions.json"
