@@ -121,3 +121,18 @@ class ExperimentTracker:
     def close(self) -> None:
         """Close the backend (useful for cleaning up without final results)."""
         self._tracker.close()
+
+    def get_callback(self):
+        """Return a transformers-compatible TrainerCallback for experiment tracking."""
+        from transformers import TrainerCallback
+
+        class TrackingCallback(TrainerCallback):
+            def __init__(self, tracker_instance):
+                self.tracker = tracker_instance
+
+            def on_log(self, args, state, control, logs=None, **kwargs):
+                if logs:
+                    step = state.global_step if state else None
+                    self.tracker.log_metrics(logs, step=step)
+
+        return TrackingCallback(self)
