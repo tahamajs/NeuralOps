@@ -7,8 +7,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import AgentSession, GeneratedIdea
-from .serializers import (AgentMessageSerializer, AgentSessionSerializer,
-                          GeneratedIdeaSerializer)
+from .serializers import (
+    AgentMessageSerializer,
+    AgentSessionSerializer,
+    GeneratedIdeaSerializer,
+)
 from .tasks import generate_ideas_for_user
 
 logger = logging.getLogger(__name__)

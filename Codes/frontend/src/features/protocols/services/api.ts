@@ -8,7 +8,9 @@ export const protocolsAPI = {
     tags?: string[];
     status?: string;
   }) =>
-    request.get<{ results: Protocol[]; count: number }>("/protocols/", { params }),
+    request.get<{ results: Protocol[]; count: number }>("/protocols/", {
+      params,
+    }),
 
   // Single protocol
   getProtocol: (id: string) => request.get<Protocol>(`/protocols/${id}/`),

@@ -81,7 +81,11 @@ export const MainLayout = () => {
             {!sidebarCollapsed && (
               <NavLink to="/dashboard" className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-neon-blue to-purple-500 rounded-lg flex items-center justify-center">
-                  <img src="/logo.jpg" alt="NeuralOps" className="w-full h-full object-cover rounded-md" />
+                  <img
+                    src="/logo.jpg"
+                    alt="NeuralOps"
+                    className="w-full h-full object-cover rounded-md"
+                  />
                 </div>
                 <span className="font-bold text-white tracking-tight">
                   NeuralOps
@@ -102,7 +106,9 @@ export const MainLayout = () => {
 
           <nav className="flex-1 px-3 space-y-6 overflow-y-auto pb-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             <div>
-              <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 ${sidebarCollapsed ? 'text-center' : 'px-3'}`}>
+              <p
+                className={`text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 ${sidebarCollapsed ? "text-center" : "px-3"}`}
+              >
                 Core Apps
               </p>
               <div className="space-y-1">
@@ -120,14 +126,18 @@ export const MainLayout = () => {
                     title={sidebarCollapsed ? item.label : undefined}
                   >
                     {item.icon}
-                    {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
+                    {!sidebarCollapsed && (
+                      <span className="truncate">{item.label}</span>
+                    )}
                   </NavLink>
                 ))}
               </div>
             </div>
 
             <div>
-              <p className={`text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 ${sidebarCollapsed ? 'text-center' : 'px-3'}`}>
+              <p
+                className={`text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 ${sidebarCollapsed ? "text-center" : "px-3"}`}
+              >
                 Features & Tools
               </p>
               <div className="space-y-1">
@@ -138,8 +148,12 @@ export const MainLayout = () => {
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/5 transition-all w-full ${sidebarCollapsed ? "justify-center" : "justify-start"}`}
                     title={sidebarCollapsed ? win.title : undefined}
                   >
-                    <span className="text-lg w-5 text-center flex-shrink-0">{win.icon}</span>
-                    {!sidebarCollapsed && <span className="truncate">{win.title}</span>}
+                    <span className="text-lg w-5 text-center flex-shrink-0">
+                      {win.icon}
+                    </span>
+                    {!sidebarCollapsed && (
+                      <span className="truncate">{win.title}</span>
+                    )}
                   </button>
                 ))}
               </div>

@@ -31,11 +31,7 @@ class RPCAttention(BaseAttention):
         V = self._reshape(self.value(hidden_states), B)
 
         # Flatten batch and heads for SVD (treat each head independently)
-        (
-            K.permute(0, 2, 1, 3)
-            .contiguous()
-            .view(B * N, self.num_heads, self.head_dim)
-        )
+        (K.permute(0, 2, 1, 3).contiguous().view(B * N, self.num_heads, self.head_dim))
         # Actually SVD per head: we need (B*H, N, D)
         K_svd = (
             K.permute(0, 2, 1, 3)

@@ -1,5 +1,12 @@
 import React from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { CostEntry } from "../types";
 
 interface CostChartProps {
@@ -8,11 +15,17 @@ interface CostChartProps {
 
 export function CostChart({ data }: CostChartProps) {
   // Group costs by date
-  const chartDataMap = data.reduce((acc, entry) => {
-    const date = new Date(entry.date).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-    acc[date] = (acc[date] || 0) + entry.cost_usd;
-    return acc;
-  }, {} as Record<string, number>);
+  const chartDataMap = data.reduce(
+    (acc, entry) => {
+      const date = new Date(entry.date).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      });
+      acc[date] = (acc[date] || 0) + entry.cost_usd;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   const chartData = Object.entries(chartDataMap).map(([date, cost]) => ({
     date,
@@ -25,7 +38,10 @@ export function CostChart({ data }: CostChartProps) {
         <div className="bg-slate-950/90 border border-white/10 p-3 rounded-xl shadow-2xl backdrop-blur-md text-xs font-sans">
           <p className="text-slate-500 mb-1">{label}</p>
           <p className="font-bold text-white">
-            Cost: <span className="text-neon-mint">${payload[0].value.toFixed(4)}</span>
+            Cost:{" "}
+            <span className="text-neon-mint">
+              ${payload[0].value.toFixed(4)}
+            </span>
           </p>
         </div>
       );
@@ -45,7 +61,10 @@ export function CostChart({ data }: CostChartProps) {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
+            >
               <XAxis
                 dataKey="date"
                 stroke="#64748b"

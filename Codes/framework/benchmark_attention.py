@@ -30,9 +30,9 @@ try:
     from framework.core.registry import ATTENTION_REGISTRY
 except ImportError as e:
     print(f"Error importing framework: {e}")
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-    import framework
-    import framework.attentions
+    sys.path.insert(
+        0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    )
     from framework.core.registry import ATTENTION_REGISTRY
 
 
@@ -56,7 +56,9 @@ def get_device_name(device: torch.device) -> str:
     return f"CPU ({platform.processor() or platform.machine()})"
 
 
-def build_attention_module(key: str, config: DistilBertConfig, rank: int = 32) -> torch.nn.Module:
+def build_attention_module(
+    key: str, config: DistilBertConfig, rank: int = 32
+) -> torch.nn.Module:
     """Instantiate an attention module from ATTENTION_REGISTRY."""
     cls = ATTENTION_REGISTRY.get(key)
     if cls is None:
@@ -89,6 +91,7 @@ def measure_memory_peak_mb(device: torch.device) -> float:
     # CPU fallback approximation via process RSS
     try:
         import resource
+
         rusage = resource.getrusage(resource.RUSAGE_SELF)
         # On macOS ru_maxrss is in bytes, on Linux in KB
         if sys.platform == "darwin":
@@ -202,7 +205,9 @@ def benchmark_single_module(
     throughput = total_tokens_per_iter / (mean_lat / 1000.0) if mean_lat > 0 else 0.0
 
     # Memory peak delta
-    mem_usage_mb = max(0.0, mem_after - mem_before) if device.type == "cuda" else mem_after
+    mem_usage_mb = (
+        max(0.0, mem_after - mem_before) if device.type == "cuda" else mem_after
+    )
 
     return {
         "module": module_key,
@@ -272,15 +277,19 @@ def run_benchmark_suite(
 
             if "error" in res:
                 print(f"{key:<24} | ERROR: {res['error']}", flush=True)
-                results.append({"module": key, "seq_len": seq_len, "error": res["error"]})
+                results.append(
+                    {"module": key, "seq_len": seq_len, "error": res["error"]}
+                )
             else:
                 lat_str = f"{res['mean_latency_ms']:.2f} ± {res['std_latency_ms']:.2f}"
                 tp_str = f"{res['throughput_tokens_sec']:,.1f}"
                 mem_str = f"{res['memory_mb']:.1f}"
                 param_str = f"{res['total_params']:,}"
-                print(f"{key:<24} | {lat_str:<16} | {tp_str:<20} | {mem_str:<12} | {param_str:<10}", flush=True)
+                print(
+                    f"{key:<24} | {lat_str:<16} | {tp_str:<20} | {mem_str:<12} | {param_str:<10}",
+                    flush=True,
+                )
                 results.append(res)
-
 
     meta = {
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -300,7 +309,9 @@ def run_benchmark_suite(
     return meta, results
 
 
-def generate_markdown_report(meta: Dict[str, Any], results: List[Dict[str, Any]], output_path: str):
+def generate_markdown_report(
+    meta: Dict[str, Any], results: List[Dict[str, Any]], output_path: str
+):
     """Generate a comprehensive, beautifully styled Markdown report."""
     seq_lens = meta["seq_lens"]
     valid_results = [r for r in results if "error" not in r]
@@ -314,19 +325,33 @@ def generate_markdown_report(meta: Dict[str, Any], results: List[Dict[str, Any]]
     lines = []
     lines.append("# Attention Module Performance & Scaling Benchmark Report\n")
     lines.append(f"**Generated:** {meta['timestamp']}  ")
-    lines.append(f"**Compute Device:** `{meta['device']}` ({meta['device_type'].upper()})  ")
-    lines.append(f"**Environment:** PyTorch `{meta['pytorch_version']}`, Python `{meta['python_version']}` on `{meta['platform']}`  ")
-    lines.append(f"**Model Configuration:** Batch Size = `{meta['batch_size']}`, Hidden Dim = `{meta['hidden_size']}`, Heads = `{meta['num_heads']}`, Warmup/Runs = `{meta['warmup_runs']}/{meta['num_runs']}`\n")
+    lines.append(
+        f"**Compute Device:** `{meta['device']}` ({meta['device_type'].upper()})  "
+    )
+    lines.append(
+        f"**Environment:** PyTorch `{meta['pytorch_version']}`, Python `{meta['python_version']}` on `{meta['platform']}`  "
+    )
+    lines.append(
+        f"**Model Configuration:** Batch Size = `{meta['batch_size']}`, Hidden Dim = `{meta['hidden_size']}`, Heads = `{meta['num_heads']}`, Warmup/Runs = `{meta['warmup_runs']}/{meta['num_runs']}`\n"
+    )
     lines.append("---\n")
 
     lines.append("## Executive Summary\n")
-    lines.append("This report benchmarks the newly fixed and verified attention mechanisms in the framework across multiple sequence lengths (from short contexts to long sequences). It evaluates **Inference Latency**, **Token Throughput**, and **Memory Efficiency** to quantify theoretical vs. empirical scaling benefits.\n")
+    lines.append(
+        "This report benchmarks the newly fixed and verified attention mechanisms in the framework across multiple sequence lengths (from short contexts to long sequences). It evaluates **Inference Latency**, **Token Throughput**, and **Memory Efficiency** to quantify theoretical vs. empirical scaling benefits.\n"
+    )
 
     # Table 1: Latency Comparison
     lines.append("## 1. Inference Latency Comparison (ms, Mean ± Std)\n")
-    lines.append("Lower is better. Measures the average wall-clock forward pass execution time.\n")
-    
-    header_cols = ["Module", "Parameters"] + [f"L={l}" for l in seq_lens] + ["Scaling (L_max / L_min)"]
+    lines.append(
+        "Lower is better. Measures the average wall-clock forward pass execution time.\n"
+    )
+
+    header_cols = (
+        ["Module", "Parameters"]
+        + [f"L={l}" for l in seq_lens]
+        + ["Scaling (L_max / L_min)"]
+    )
     lines.append("| " + " | ".join(header_cols) + " |")
     lines.append("| " + " | ".join(["---"] * len(header_cols)) + " |")
 
@@ -334,7 +359,7 @@ def generate_markdown_report(meta: Dict[str, Any], results: List[Dict[str, Any]]
         row = [f"**`{mod}`**"]
         params = grid[mod].get(seq_lens[0], {}).get("total_params", 0)
         row.append(f"{params:,}" if params else "N/A")
-        
+
         first_lat = None
         last_lat = None
         for l in seq_lens:
@@ -361,7 +386,9 @@ def generate_markdown_report(meta: Dict[str, Any], results: List[Dict[str, Any]]
 
     # Table 2: Throughput Comparison
     lines.append("## 2. Token Throughput Comparison (Tokens / Second)\n")
-    lines.append("Higher is better. Measures the processing capacity in tokens per second.\n")
+    lines.append(
+        "Higher is better. Measures the processing capacity in tokens per second.\n"
+    )
 
     header_cols_tp = ["Module"] + [f"L={l} (tok/s)" for l in seq_lens]
     lines.append("| " + " | ".join(header_cols_tp) + " |")
@@ -383,19 +410,39 @@ def generate_markdown_report(meta: Dict[str, Any], results: List[Dict[str, Any]]
     # Analysis & Recommendations
     lines.append("## 3. Architecture Analysis & Key Takeaways\n")
     lines.append("### Key Architectural Findings:\n")
-    lines.append("1. **Linear Attention Variants (`hla`, `nha`, `factorised_matrix_state`, `griffin_ssd`)**:")
-    lines.append("   - Maintain linear time complexity $\\mathcal{O}(L \\cdot d^2)$ with respect to sequence length.")
-    lines.append("   - Excellent sustained throughput at $L \\ge 1024$ where standard quadratic self-attention experiences computational slowdown.")
-    lines.append("2. **Low-Rank & Factorized Mechanisms (`asvd`, `rala`, `svd`, `linformer`)**:")
-    lines.append("   - Significant parameter and memory reduction while preserving high token processing rates.")
+    lines.append(
+        "1. **Linear Attention Variants (`hla`, `nha`, `factorised_matrix_state`, `griffin_ssd`)**:"
+    )
+    lines.append(
+        "   - Maintain linear time complexity $\\mathcal{O}(L \\cdot d^2)$ with respect to sequence length."
+    )
+    lines.append(
+        "   - Excellent sustained throughput at $L \\ge 1024$ where standard quadratic self-attention experiences computational slowdown."
+    )
+    lines.append(
+        "2. **Low-Rank & Factorized Mechanisms (`asvd`, `rala`, `svd`, `linformer`)**:"
+    )
+    lines.append(
+        "   - Significant parameter and memory reduction while preserving high token processing rates."
+    )
     lines.append("3. **Mixture-of-Experts (`bam_umoe`)**:")
-    lines.append("   - Completely eliminates quadratic pairwise attention matrices by routing tokens independently to top-$k$ expert sub-networks, ensuring constant-time token processing.")
-    lines.append("4. **Graph & Structural Attention (`vig`, `lsh`, `kda`, `xattention`)**:")
-    lines.append("   - Specialized inductive biases for structured and sparse long-context inputs.")
+    lines.append(
+        "   - Completely eliminates quadratic pairwise attention matrices by routing tokens independently to top-$k$ expert sub-networks, ensuring constant-time token processing."
+    )
+    lines.append(
+        "4. **Graph & Structural Attention (`vig`, `lsh`, `kda`, `xattention`)**:"
+    )
+    lines.append(
+        "   - Specialized inductive biases for structured and sparse long-context inputs."
+    )
 
     lines.append("\n### Verification Status:\n")
-    lines.append("- **Unit Test Suite:** 100% Passed (235 passed tests across shape correctness, output finiteness, zero-shot fidelity, gradient flow, padding mask verification, and tuple returns).")
-    lines.append("- **Interface Integrity:** All modules conform to the standardized `(output_tensor, attention_weights_or_None)` return signature.")
+    lines.append(
+        "- **Unit Test Suite:** 100% Passed (235 passed tests across shape correctness, output finiteness, zero-shot fidelity, gradient flow, padding mask verification, and tuple returns)."
+    )
+    lines.append(
+        "- **Interface Integrity:** All modules conform to the standardized `(output_tensor, attention_weights_or_None)` return signature."
+    )
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
@@ -445,12 +492,27 @@ def main():
         help="Sequence lengths to evaluate",
     )
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size")
-    parser.add_argument("--hidden_size", type=int, default=768, help="Hidden dimension size")
-    parser.add_argument("--num_heads", type=int, default=12, help="Number of attention heads")
-    parser.add_argument("--rank", type=int, default=32, help="Rank for low-rank / SVD modules")
-    parser.add_argument("--warmup", type=int, default=5, help="Number of warmup iterations")
-    parser.add_argument("--num_runs", type=int, default=25, help="Number of benchmark iterations")
-    parser.add_argument("--device", type=str, default="auto", help="Compute device (auto, cuda, mps, cpu)")
+    parser.add_argument(
+        "--hidden_size", type=int, default=768, help="Hidden dimension size"
+    )
+    parser.add_argument(
+        "--num_heads", type=int, default=12, help="Number of attention heads"
+    )
+    parser.add_argument(
+        "--rank", type=int, default=32, help="Rank for low-rank / SVD modules"
+    )
+    parser.add_argument(
+        "--warmup", type=int, default=5, help="Number of warmup iterations"
+    )
+    parser.add_argument(
+        "--num_runs", type=int, default=25, help="Number of benchmark iterations"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        help="Compute device (auto, cuda, mps, cpu)",
+    )
     parser.add_argument(
         "--output_report",
         type=str,

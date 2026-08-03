@@ -65,7 +65,9 @@ export const ExperimentTable = ({
                 <Badge variant={exp.status}>{exp.status}</Badge>
               </td>
               <td className="py-3 px-4 font-mono text-sm text-white">
-                  <div className="text-white">{(exp as any).final_metrics?.accuracy?.toFixed(4) || "—"}</div>
+                <div className="text-white">
+                  {(exp as any).final_metrics?.accuracy?.toFixed(4) || "—"}
+                </div>
               </td>
               <td className="py-3 px-4 text-slate-400 text-xs">
                 {new Date(exp.created_at).toLocaleDateString()}

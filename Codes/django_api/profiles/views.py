@@ -18,8 +18,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Profile
-from .serializers import (ProfileSerializer, ProfileUpdateSerializer,
-                          UserSearchSerializer)
+from .serializers import (
+    ProfileSerializer,
+    ProfileUpdateSerializer,
+    UserSearchSerializer,
+)
 
 logger = logging.getLogger(__name__)
 

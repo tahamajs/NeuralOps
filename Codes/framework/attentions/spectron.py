@@ -22,9 +22,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from scipy.linalg import svd
-from transformers import (AutoConfig, AutoModelForSequenceClassification,
-                          AutoTokenizer, EarlyStoppingCallback, Trainer,
-                          TrainerCallback, TrainingArguments, set_seed)
+from transformers import (
+    AutoConfig,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    EarlyStoppingCallback,
+    Trainer,
+    TrainerCallback,
+    TrainingArguments,
+    set_seed,
+)
 
 from datasets import Dataset, DatasetDict
 

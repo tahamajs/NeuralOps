@@ -170,27 +170,32 @@ export default function SweepDashboardPage() {
             <Plot
               data={[
                 {
-                  type: 'parcoords',
+                  type: "parcoords",
                   line: {
                     color: trials.map((t: any) => t.score || 0),
-                    colorscale: 'Jet'
+                    colorscale: "Jet",
                   },
-                  dimensions: Object.keys(trials[0]?.params || {}).slice(0, 5).map(key => ({
-                    label: key,
-                    values: trials.map((t: any) => parseFloat(t.params[key]) || 0)
-                  })).concat([
-                    {
-                      label: 'Score',
-                      values: trials.map((t: any) => t.score || 0)
-                    }
-                  ])
-                } as any
+                  dimensions: Object.keys(trials[0]?.params || {})
+                    .slice(0, 5)
+                    .map((key) => ({
+                      label: key,
+                      values: trials.map(
+                        (t: any) => parseFloat(t.params[key]) || 0,
+                      ),
+                    }))
+                    .concat([
+                      {
+                        label: "Score",
+                        values: trials.map((t: any) => t.score || 0),
+                      },
+                    ]),
+                } as any,
               ]}
-              layout={{ 
-                height: 400, 
-                autosize: true, 
-                paper_bgcolor: 'rgba(0,0,0,0)', 
-                font: { color: '#94a3b8' } 
+              layout={{
+                height: 400,
+                autosize: true,
+                paper_bgcolor: "rgba(0,0,0,0)",
+                font: { color: "#94a3b8" },
               }}
               style={{ width: "100%" }}
             />

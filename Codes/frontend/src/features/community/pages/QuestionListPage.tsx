@@ -195,7 +195,11 @@ export default function QuestionListPage() {
           <button
             onClick={() => {
               setSelectedTag("");
-              setSearchParams({ ...Object.fromEntries(searchParams.entries()), tag: "", page: "1" });
+              setSearchParams({
+                ...Object.fromEntries(searchParams.entries()),
+                tag: "",
+                page: "1",
+              });
             }}
             className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${!selectedTag ? "bg-neon-blue text-white" : "bg-white/10 text-slate-300 hover:bg-white/20"}`}
           >
@@ -206,7 +210,11 @@ export default function QuestionListPage() {
               key={tag.name}
               onClick={() => {
                 setSelectedTag(tag.name);
-                setSearchParams({ ...Object.fromEntries(searchParams.entries()), tag: tag.name, page: "1" });
+                setSearchParams({
+                  ...Object.fromEntries(searchParams.entries()),
+                  tag: tag.name,
+                  page: "1",
+                });
                 setCurrentPage(1);
               }}
               className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${selectedTag === tag.name ? "bg-neon-blue text-white" : "bg-white/10 text-slate-300 hover:bg-white/20"}`}
@@ -244,7 +252,10 @@ export default function QuestionListPage() {
             totalPages={totalPages}
             onPageChange={(page) => {
               setCurrentPage(page);
-              setSearchParams({ ...Object.fromEntries(searchParams.entries()), page: page.toString() });
+              setSearchParams({
+                ...Object.fromEntries(searchParams.entries()),
+                page: page.toString(),
+              });
             }}
           />
         </div>

@@ -51,6 +51,7 @@ if str(CODES_DIR) not in sys.path:
 # which can crash if disk space is low or temp dirs are unavailable.
 try:
     import importlib.util as _ilu
+
     _spec = _ilu.spec_from_file_location(
         "framework.utils.paths",
         str(CODES_DIR / "framework" / "utils" / "paths.py"),
@@ -105,8 +106,6 @@ INSTALLED_APPS = [
     "playground",
     "dataset_app",
     "llm_hub",
-    
-    
     # Core research apps
     "computational_discovery",
     "experiment_accelerator",
@@ -207,7 +206,7 @@ DATABASES = {
         "NAME": BASE_DIR / "db.sqlite3",
         "OPTIONS": {
             "timeout": 30,
-        }
+        },
     }
 }
 

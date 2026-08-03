@@ -10,7 +10,14 @@ import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Spinner } from "../../../components/ui/Spinner";
 import { Tabs, TabList, Tab, TabPanel } from "../../../components/ui/Tabs";
-import { Database, Search, GitBranch, Filter, Globe, FileText } from "lucide-react";
+import {
+  Database,
+  Search,
+  GitBranch,
+  Filter,
+  Globe,
+  FileText,
+} from "lucide-react";
 import { useToast } from "../../../components/ui/Toast";
 
 const ALL_DATABASES = [

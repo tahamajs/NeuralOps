@@ -27,8 +27,8 @@ export default function SessionSidebar({
   const sessionList: ChatSession[] = Array.isArray(data)
     ? data
     : data && Array.isArray(data.results)
-    ? data.results
-    : [];
+      ? data.results
+      : [];
 
   return (
     <div className="w-64 glass border-r border-white/5 flex flex-col h-full">

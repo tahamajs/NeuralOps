@@ -8,7 +8,11 @@ interface CodeDiffViewerProps {
   modifiedCode?: string;
 }
 
-export function CodeDiffViewer({ diffText = "", originalCode = "", modifiedCode = "" }: CodeDiffViewerProps) {
+export function CodeDiffViewer({
+  diffText = "",
+  originalCode = "",
+  modifiedCode = "",
+}: CodeDiffViewerProps) {
   const { success } = useToast();
   const [copied, setCopied] = React.useState(false);
 
@@ -27,12 +31,17 @@ export function CodeDiffViewer({ diffText = "", originalCode = "", modifiedCode 
       return diffText.split("\n").map((line, idx) => {
         let lineClass = "text-slate-300";
         if (line.startsWith("+")) {
-          lineClass = "text-emerald-400 bg-emerald-950/20 px-1 border-l-2 border-emerald-500";
+          lineClass =
+            "text-emerald-400 bg-emerald-950/20 px-1 border-l-2 border-emerald-500";
         } else if (line.startsWith("-")) {
-          lineClass = "text-rose-400 bg-rose-950/20 px-1 border-l-2 border-rose-500 line-through";
+          lineClass =
+            "text-rose-400 bg-rose-950/20 px-1 border-l-2 border-rose-500 line-through";
         }
         return (
-          <div key={idx} className={`font-mono text-xs py-0.5 whitespace-pre-wrap ${lineClass}`}>
+          <div
+            key={idx}
+            className={`font-mono text-xs py-0.5 whitespace-pre-wrap ${lineClass}`}
+          >
             {line}
           </div>
         );
@@ -44,13 +53,17 @@ export function CodeDiffViewer({ diffText = "", originalCode = "", modifiedCode 
       return (
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-0.5">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Original</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+              Original
+            </span>
             <pre className="bg-slate-950 p-3 rounded-xl border border-white/5 font-mono text-xs text-rose-300 overflow-x-auto whitespace-pre max-h-96">
               {originalCode}
             </pre>
           </div>
           <div className="space-y-0.5">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Modified</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">
+              Modified
+            </span>
             <pre className="bg-slate-950 p-3 rounded-xl border border-white/5 font-mono text-xs text-emerald-300 overflow-x-auto whitespace-pre max-h-96">
               {modifiedCode}
             </pre>
@@ -59,7 +72,9 @@ export function CodeDiffViewer({ diffText = "", originalCode = "", modifiedCode 
       );
     }
 
-    return <div className="text-slate-500 italic">No code differences loaded.</div>;
+    return (
+      <div className="text-slate-500 italic">No code differences loaded.</div>
+    );
   };
 
   return (
@@ -74,7 +89,11 @@ export function CodeDiffViewer({ diffText = "", originalCode = "", modifiedCode 
             onClick={handleCopy}
             className="hover:text-white transition-colors p-1 hover:bg-white/5 rounded text-xs text-slate-400 flex items-center gap-1"
           >
-            {copied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+            {copied ? (
+              <Check size={12} className="text-emerald-400" />
+            ) : (
+              <Copy size={12} />
+            )}
             Copy Code
           </button>
         )}

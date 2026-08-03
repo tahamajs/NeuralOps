@@ -5,8 +5,10 @@ export function UsageHeatmap({ usage, data = [] }: any) {
   // Generate 7x24 heatmap data based on usage details or simulated values
   const heatmapData = React.useMemo(() => {
     if (data && data.length) return data;
-    
-    const matrix = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0.0));
+
+    const matrix = Array.from({ length: 7 }, () =>
+      Array.from({ length: 24 }, () => 0.0),
+    );
     for (let day = 0; day < 7; day++) {
       for (let hour = 0; hour < 24; hour++) {
         let val = 0.25 + Math.random() * 0.25;
@@ -28,7 +30,9 @@ export function UsageHeatmap({ usage, data = [] }: any) {
 
   return (
     <Card className="glass border-white/5 p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Compute Usage Heatmap</h3>
+      <h3 className="text-lg font-semibold text-white mb-4">
+        Compute Usage Heatmap
+      </h3>
       <div className="flex">
         {/* Y Axis Labels */}
         <div className="flex flex-col justify-between pr-4 py-1 text-xs text-slate-500 font-medium h-[200px]">
@@ -36,7 +40,7 @@ export function UsageHeatmap({ usage, data = [] }: any) {
             <span key={day}>{day}</span>
           ))}
         </div>
-        
+
         {/* Heatmap Grid */}
         <div className="flex-1 flex flex-col justify-between h-[200px]">
           {heatmapData.map((dayRow: any, i: number) => (
@@ -46,10 +50,10 @@ export function UsageHeatmap({ usage, data = [] }: any) {
                 const intensity = Math.floor(val * 10);
                 const opacity = Math.max(0.1, val);
                 return (
-                  <div 
-                    key={j} 
+                  <div
+                    key={j}
                     className="flex-1 rounded-sm transition-colors hover:ring-2 hover:ring-neon-blue/50 cursor-pointer"
-                    style={{ 
+                    style={{
                       backgroundColor: `rgba(56, 189, 248, ${opacity})`,
                     }}
                     title={`${days[i]} ${j}:00 - Usage: ${(val * 100).toFixed(0)}%`}
@@ -60,7 +64,7 @@ export function UsageHeatmap({ usage, data = [] }: any) {
           ))}
         </div>
       </div>
-      
+
       {/* X Axis Labels */}
       <div className="flex justify-between pl-12 mt-2 text-xs text-slate-500 font-medium">
         <span>00:00</span>

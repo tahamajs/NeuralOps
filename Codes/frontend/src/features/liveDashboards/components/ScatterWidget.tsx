@@ -24,9 +24,18 @@ export function ScatterWidget({ data, config }: any) {
     <ResponsiveContainer width="100%" height={200}>
       <ScatterChart>
         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-        <XAxis type="number" dataKey="x" name="X" stroke="#475569" tick={{ fontSize: 10 }} />
+        <XAxis
+          type="number"
+          dataKey="x"
+          name="X"
+          stroke="#475569"
+          tick={{ fontSize: 10 }}
+        />
         <YAxis type="number" dataKey="y" name="Y" stroke="#475569" />
-        <Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={{ backgroundColor: "#0a0f1a" }} />
+        <Tooltip
+          cursor={{ strokeDasharray: "3 3" }}
+          contentStyle={{ backgroundColor: "#0a0f1a" }}
+        />
         <Scatter name="Points" data={chartData} fill="#3b82f6" />
       </ScatterChart>
     </ResponsiveContainer>

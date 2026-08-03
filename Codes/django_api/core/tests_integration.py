@@ -524,6 +524,7 @@ class NotesWorkflowTests(IntegrationTestBase):
 
     def test_recent_notes(self):
         from datetime import timedelta
+
         old_note = ResearcherNote.objects.create(
             title="Old",
             content="x",
@@ -532,7 +533,7 @@ class NotesWorkflowTests(IntegrationTestBase):
         )
         ResearcherNote.objects.filter(id=old_note.id).update(
             created_at=timezone.now() - timedelta(days=30),
-            updated_at=timezone.now() - timedelta(days=30)
+            updated_at=timezone.now() - timedelta(days=30),
         )
         new_note = self._create_note_via_api(title="Recent")  # helper needed
         resp = self.client.get("/api/notes/v1/notes/recent/?days=7")

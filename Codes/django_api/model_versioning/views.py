@@ -29,13 +29,22 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import ModelCommit  # add these
-from .models import (ModelAccessControl, ModelApproval, ModelBranch,
-                     ModelSecurityScan, ModelUsageLog, ModelVersion,
-                     ModelVersionDiff)
+from .models import (
+    ModelAccessControl,
+    ModelApproval,
+    ModelBranch,
+    ModelSecurityScan,
+    ModelUsageLog,
+    ModelVersion,
+    ModelVersionDiff,
+)
 from .serializers import ModelUsageLogSerializer  # add these
-from .serializers import (ModelAccessControlSerializer,
-                          ModelApprovalSerializer, ModelSecurityScanSerializer,
-                          ModelVersionSerializer)
+from .serializers import (
+    ModelAccessControlSerializer,
+    ModelApprovalSerializer,
+    ModelSecurityScanSerializer,
+    ModelVersionSerializer,
+)
 from .services import create_diff, load_version_from_diff, migrate_storage_tier
 from .utils import HuggingFacePublisher, cleanup_old_versions
 
@@ -235,6 +244,7 @@ def download_model_version(request, version_id):
     path = version.artifact_path
     if path and not os.path.exists(path):
         import glob
+
         # Try finding checkpoints inside or matching the path
         matches = glob.glob(os.path.join(path, "*.pth")) or glob.glob(path + "*")
         if matches:

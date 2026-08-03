@@ -137,8 +137,7 @@ class MegaOrchestrator:
     # Phase 2 – Federated Learning
     # ════════════════════════════════════════════════════════════════
     def _run_federated(self) -> Dict[str, Any]:
-        from framework.federated_learning.integration import \
-            run_federated_experiment
+        from framework.federated_learning.integration import run_federated_experiment
 
         fl_cfg = self.config.get("federated_learning", {})
 
@@ -338,8 +337,7 @@ class MegaOrchestrator:
         saver.track_all(metrics, self.config)
 
     def _create_model_version(self, metrics):
-        from framework.model_versioning import (ModelVersionService,
-                                                VersioningConfig)
+        from framework.model_versioning import ModelVersionService, VersioningConfig
 
         save_cfg = self.config.get("save_config", {})
         vc = VersioningConfig(**save_cfg.get("versioning", {}))

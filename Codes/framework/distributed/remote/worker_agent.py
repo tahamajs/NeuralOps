@@ -127,8 +127,7 @@ class RemoteWorkerAgent:
 
         try:
             # Here we call the actual training function (same as single‑node)
-            from framework.experiment_utils.mega_orchestrator import \
-                MegaOrchestrator
+            from framework.experiment_utils.mega_orchestrator import MegaOrchestrator
 
             orchestrator = MegaOrchestrator(
                 config=config,

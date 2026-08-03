@@ -6,7 +6,11 @@ interface DateRangePickerProps {
   className?: string;
 }
 
-export function DateRangePicker({ value, onChange, className = "" }: DateRangePickerProps) {
+export function DateRangePicker({
+  value,
+  onChange,
+  className = "",
+}: DateRangePickerProps) {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <input

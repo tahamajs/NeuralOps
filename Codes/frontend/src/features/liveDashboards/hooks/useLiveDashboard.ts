@@ -86,9 +86,7 @@ export function useLiveDashboard(
       widgets.forEach((widget) => {
         liveDashboardsAPI
           .fetchWidgetData(widget.id, widget.data_source.params)
-          .then((res) =>
-            setLiveData((prev) => ({ ...prev, [widget.id]: res })),
-          )
+          .then((res) => setLiveData((prev) => ({ ...prev, [widget.id]: res })))
           .catch(console.error);
       });
     }, refreshInterval * 1000);

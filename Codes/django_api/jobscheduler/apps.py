@@ -10,6 +10,7 @@ class JobschedulerConfig(AppConfig):
 
     def ready(self):
         import sys
+
         if "test" in sys.argv:
             return
         # Avoid starting scheduler in migrate or collectstatic

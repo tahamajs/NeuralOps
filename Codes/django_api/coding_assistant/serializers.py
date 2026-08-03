@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (CodeGenerationSession, CodeMessage, CodeReview,
-                     GeneratedCode, TestGeneration)
+from .models import (
+    CodeGenerationSession,
+    CodeMessage,
+    CodeReview,
+    GeneratedCode,
+    TestGeneration,
+)
 
 
 class CodeMessageSerializer(serializers.ModelSerializer):

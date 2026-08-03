@@ -1,9 +1,10 @@
 # framework/experiment/data.py
-from framework.data.glue_loader import (GLUE_TASK_KEYS,
-                                        get_num_labels_and_is_regression,
-                                        load_glue_local)
-from framework.data.preprocessing import \
-    preprocess_function as build_preprocess
+from framework.data.glue_loader import (
+    GLUE_TASK_KEYS,
+    get_num_labels_and_is_regression,
+    load_glue_local,
+)
+from framework.data.preprocessing import preprocess_function as build_preprocess
 from transformers import AutoTokenizer
 
 

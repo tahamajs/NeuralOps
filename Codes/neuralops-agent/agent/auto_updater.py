@@ -1,9 +1,17 @@
 """Self-update mechanism — checks server for new versions and hot-reloads."""
-import hashlib, os, sys, logging, subprocess, tempfile, shutil
+
+import hashlib
+import logging
+import os
+import shutil
+import sys
+import tempfile
 from pathlib import Path
+
 import requests
 
 logger = logging.getLogger("neuralops.updater")
+
 
 class AutoUpdater:
     def __init__(self, config, api_client):
@@ -19,23 +27,28 @@ class AutoUpdater:
             latest = self._fetch_latest_version()
             if not latest:
                 return
-            if self._version_newer(latest['version'], current):
-                logger.info("New version available: %s → %s", current, latest['version'])
-                self._download_and_apply(latest['download_url'], latest['sha256'])
+            if self._version_newer(latest["version"], current):
+                logger.info(
+                    "New version available: %s → %s", current, latest["version"]
+                )
+                self._download_and_apply(latest["download_url"], latest["sha256"])
         except Exception as e:
             logger.warning("Update check failed: %s", e)
 
     def _fetch_latest_version(self):
-        resp = self.api._post('/api/agent/check-update/', {'version': self.config.version})
-        return resp if resp.get('version') else None
+        resp = self.api._post(
+            "/api/agent/check-update/", {"version": self.config.version}
+        )
+        return resp if resp.get("version") else None
 
     def _version_newer(self, latest: str, current: str) -> bool:
         from packaging.version import parse
+
         return parse(latest) > parse(current)
 
     def _download_and_apply(self, url, sha256):
         """Download new binary, verify hash, replace self."""
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix='.bin')
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".bin")
         try:
             resp = requests.get(url, stream=True)
             sha = hashlib.sha256()
@@ -48,7 +61,7 @@ class AutoUpdater:
                 return
             # Replace executable
             current = sys.executable
-            backup = str(Path(current).with_suffix('.bak'))
+            backup = str(Path(current).with_suffix(".bak"))
             shutil.move(current, backup)
             shutil.move(tmp.name, current)
             os.chmod(current, 0o755)

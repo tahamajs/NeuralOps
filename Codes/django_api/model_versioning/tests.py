@@ -3,12 +3,11 @@ import shutil
 import uuid
 from unittest.mock import MagicMock, patch
 
+import torch
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
 from jobscheduler.models import Job
 from rest_framework.test import APIClient
-
-import torch
 
 from .models import ModelVersion, ModelVersionDiff
 from .services import create_diff, load_version_from_diff

@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
-import { Shield, Activity, BarChart, AlertTriangle, CheckCircle } from "lucide-react";
+import {
+  Shield,
+  Activity,
+  BarChart,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
 
 export const EvaluationPage = ({ type }: { type: string }) => {
   const [isRunning, setIsRunning] = useState(false);
@@ -17,7 +23,7 @@ export const EvaluationPage = ({ type }: { type: string }) => {
           { metric: "Demographic Parity", value: "0.95", status: "pass" },
           { metric: "Equal Opportunity", value: "0.88", status: "warn" },
           { metric: "Disparate Impact", value: "0.91", status: "pass" },
-        ]
+        ],
       });
       setIsRunning(false);
     }, 2000);
@@ -27,11 +33,16 @@ export const EvaluationPage = ({ type }: { type: string }) => {
     <div className="space-y-6 animate-fade-in pb-10">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-display font-bold text-white capitalize">{type} Evaluation</h1>
-          <p className="text-slate-400 mt-1">Analyze model performance for potential biases and robustness issues.</p>
+          <h1 className="text-3xl font-display font-bold text-white capitalize">
+            {type} Evaluation
+          </h1>
+          <p className="text-slate-400 mt-1">
+            Analyze model performance for potential biases and robustness
+            issues.
+          </p>
         </div>
-        <Button 
-          onClick={runEvaluation} 
+        <Button
+          onClick={runEvaluation}
           disabled={isRunning}
           className="bg-neon-blue text-black hover:bg-neon-blue/80"
         >
@@ -78,13 +89,18 @@ export const EvaluationPage = ({ type }: { type: string }) => {
           </h2>
           <div className="space-y-4">
             {results.details.map((detail: any, idx: number) => (
-              <div key={idx} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+              <div
+                key={idx}
+                className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5"
+              >
                 <div>
                   <h4 className="text-white font-medium">{detail.metric}</h4>
-                  <p className="text-sm text-slate-400">Score: {detail.value}</p>
+                  <p className="text-sm text-slate-400">
+                    Score: {detail.value}
+                  </p>
                 </div>
                 <div>
-                  {detail.status === 'pass' ? (
+                  {detail.status === "pass" ? (
                     <span className="flex items-center gap-1 text-green-400 text-sm font-medium bg-green-400/10 px-3 py-1 rounded-full">
                       <CheckCircle size={14} /> Passed
                     </span>

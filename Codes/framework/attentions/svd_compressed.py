@@ -21,9 +21,15 @@ import torch.nn.functional as F
 from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 from scipy.linalg import svd
-from transformers import (AutoConfig, AutoModelForSequenceClassification,
-                          AutoTokenizer, EarlyStoppingCallback, Trainer,
-                          TrainingArguments, set_seed)
+from transformers import (
+    AutoConfig,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    EarlyStoppingCallback,
+    Trainer,
+    TrainingArguments,
+    set_seed,
+)
 
 from datasets import Dataset, DatasetDict
 

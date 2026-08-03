@@ -4,8 +4,7 @@ from typing import Annotated, List, Optional, TypedDict
 
 from django.conf import settings
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import (AIMessage, HumanMessage, SystemMessage,
-                                     ToolMessage)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, StateGraph
@@ -24,11 +23,19 @@ class AgentState(TypedDict):
 
 # ====================== Tools (wrapped for LangChain) ======================
 # We'll import the raw functions from tools.py and wrap them as LangChain tools
-from .tools import (check_experiment_status, compile_latex,
-                    configure_experiment, edit_latex_file, get_dataset_info,
-                    launch_experiment, list_attention_types,
-                    list_available_tasks, read_latex_project, search_datasets,
-                    search_models)
+from .tools import (
+    check_experiment_status,
+    compile_latex,
+    configure_experiment,
+    edit_latex_file,
+    get_dataset_info,
+    launch_experiment,
+    list_attention_types,
+    list_available_tasks,
+    read_latex_project,
+    search_datasets,
+    search_models,
+)
 
 
 @tool
@@ -382,11 +389,15 @@ def _call_openai(messages, tools):
             "https://api.openai.com/v1/chat/completions",
             headers=headers,
             json=body,
-            timeout=30
+            timeout=30,
         )
         return resp.json()
     except Exception as e:
-        return {"choices": [{"message": {"content": f"Error calling OpenAI: {e}", "tool_calls": []}}]}
+        return {
+            "choices": [
+                {"message": {"content": f"Error calling OpenAI: {e}", "tool_calls": []}}
+            ]
+        }
 
 
 def get_llm_response(messages: list, tools: list = None) -> dict:
@@ -397,7 +408,7 @@ def get_llm_response(messages: list, tools: list = None) -> dict:
             msg = raw["choices"][0]["message"]
             return {
                 "content": msg.get("content") or "",
-                "tool_calls": msg.get("tool_calls") or []
+                "tool_calls": msg.get("tool_calls") or [],
             }
         return {"content": "", "tool_calls": []}
     else:
@@ -407,11 +418,15 @@ def get_llm_response(messages: list, tools: list = None) -> dict:
             for t in tools:
                 if t.get("type") == "function":
                     f = t["function"]
-                    anthropic_tools.append({
-                        "name": f["name"],
-                        "description": f.get("description", ""),
-                        "input_schema": f.get("parameters", {"type": "object", "properties": {}})
-                    })
+                    anthropic_tools.append(
+                        {
+                            "name": f["name"],
+                            "description": f.get("description", ""),
+                            "input_schema": f.get(
+                                "parameters", {"type": "object", "properties": {}}
+                            ),
+                        }
+                    )
                 else:
                     anthropic_tools.append(t)
 
@@ -456,15 +471,14 @@ def get_llm_response(messages: list, tools: list = None) -> dict:
                 if item.get("type") == "text":
                     content_text += item.get("text", "")
                 elif item.get("type") == "tool_use":
-                    tool_calls.append({
-                        "id": item.get("id"),
-                        "type": "function",
-                        "function": {
-                            "name": item.get("name"),
-                            "arguments": json.dumps(item.get("input", {}))
+                    tool_calls.append(
+                        {
+                            "id": item.get("id"),
+                            "type": "function",
+                            "function": {
+                                "name": item.get("name"),
+                                "arguments": json.dumps(item.get("input", {})),
+                            },
                         }
-                    })
-        return {
-            "content": content_text,
-            "tool_calls": tool_calls
-        }
+                    )
+        return {"content": content_text, "tool_calls": tool_calls}

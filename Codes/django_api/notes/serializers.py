@@ -1,7 +1,13 @@
 from rest_framework import serializers
 
-from .models import (NoteComment, NoteImage, NoteVersion, Notification,
-                     ResearcherNote, WebhookSubscription)
+from .models import (
+    NoteComment,
+    NoteImage,
+    NoteVersion,
+    Notification,
+    ResearcherNote,
+    WebhookSubscription,
+)
 
 
 class NoteVersionSerializer(serializers.ModelSerializer):

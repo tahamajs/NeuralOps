@@ -35,7 +35,11 @@ def inject_attention(
         new_attn = None
         signatures_to_try = []
         if config is not None:
-            signatures_to_try.append(lambda: attn_class(config, rank=rank, pretrained_attn=old_attn, **kwargs))
+            signatures_to_try.append(
+                lambda: attn_class(
+                    config, rank=rank, pretrained_attn=old_attn, **kwargs
+                )
+            )
             signatures_to_try.append(lambda: attn_class(config, rank=rank, **kwargs))
             signatures_to_try.append(lambda: attn_class(config, **kwargs))
             signatures_to_try.append(lambda: attn_class(config))

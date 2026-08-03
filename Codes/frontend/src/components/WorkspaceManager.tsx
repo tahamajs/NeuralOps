@@ -34,7 +34,14 @@ export function WorkspaceManager() {
         className="w-10 h-10 rounded-full bg-cyber-900/90 hover:bg-neon-blue/20 border border-white/10 hover:border-neon-blue/50 flex items-center justify-center text-slate-300 hover:text-neon-blue shadow-lg backdrop-blur-md transition-all group duration-300"
         title="Workspace Layouts"
       >
-        {isOpen ? <X size={18} /> : <LayoutTemplate size={18} className="group-hover:rotate-12 transition-transform" />}
+        {isOpen ? (
+          <X size={18} />
+        ) : (
+          <LayoutTemplate
+            size={18}
+            className="group-hover:rotate-12 transition-transform"
+          />
+        )}
       </button>
 
       {/* Expanded panel */}
@@ -69,7 +76,10 @@ export function WorkspaceManager() {
                   onClick={() => handleLoad(layout)}
                 >
                   <span>{layout}</span>
-                  <FolderOpen size={12} className="opacity-0 group-hover:opacity-100 text-neon-blue transition-opacity" />
+                  <FolderOpen
+                    size={12}
+                    className="opacity-0 group-hover:opacity-100 text-neon-blue transition-opacity"
+                  />
                 </div>
               ))}
             </div>

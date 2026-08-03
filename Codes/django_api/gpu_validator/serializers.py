@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from .models import (ProofOfCompute, ValidatorNode, Verification,
-                     VerificationTask)
+from .models import ProofOfCompute, ValidatorNode, Verification, VerificationTask
 
 
 class ValidatorNodeSerializer(serializers.ModelSerializer):

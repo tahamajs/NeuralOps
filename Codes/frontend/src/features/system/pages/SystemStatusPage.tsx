@@ -14,12 +14,12 @@ export default function SystemStatusPage() {
         return {
           cpu: { percent: 45, count: 16 },
           memory: { used_gb: 12.4, total_gb: 32, percent: 38.7 },
-          disk: { used_gb: 245, total_gb: 1000, percent: 24.5 }
+          disk: { used_gb: 245, total_gb: 1000, percent: 24.5 },
         };
       }
-    }
+    },
   });
-  
+
   const { data: gpu } = useQuery({
     queryKey: ["gpuInfo"],
     queryFn: async () => {
@@ -30,11 +30,16 @@ export default function SystemStatusPage() {
         return {
           type: "mocked",
           devices: [
-            { name: "NVIDIA RTX 4090", utilization_percent: 85, memory_allocated_mb: 18432, memory_total_mb: 24576 }
-          ]
+            {
+              name: "NVIDIA RTX 4090",
+              utilization_percent: 85,
+              memory_allocated_mb: 18432,
+              memory_total_mb: 24576,
+            },
+          ],
         };
       }
-    }
+    },
   });
 
   if (!sys || !gpu) return <Spinner />;

@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (FederationCluster, FederationNode, FederationResult,
-                     FederationTask, FederationTaskShard)
+from .models import (
+    FederationCluster,
+    FederationNode,
+    FederationResult,
+    FederationTask,
+    FederationTaskShard,
+)
 
 
 class FederationNodeSerializer(serializers.ModelSerializer):

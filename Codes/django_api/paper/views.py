@@ -24,8 +24,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .compiler import LatexCompiler
-from .models import (PaperComment, PaperCompile, PaperFile, PaperProject,
-                     PaperShareLink, PaperTemplate, PaperVersion)
+from .models import (
+    PaperComment,
+    PaperCompile,
+    PaperFile,
+    PaperProject,
+    PaperShareLink,
+    PaperTemplate,
+    PaperVersion,
+)
 from .serializers import *
 
 

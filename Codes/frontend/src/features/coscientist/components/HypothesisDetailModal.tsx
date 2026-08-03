@@ -23,7 +23,12 @@ export function HypothesisDetailModal({
   onClose,
 }: HypothesisDetailModalProps) {
   return (
-    <Modal open={open} onClose={onClose} title="Hypothesis Details" className="max-w-4xl">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Hypothesis Details"
+      className="max-w-4xl"
+    >
       <div className="space-y-4">
         <div>
           <div className="text-sm text-slate-400">Description</div>

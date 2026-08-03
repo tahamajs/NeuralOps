@@ -17,7 +17,9 @@ export default function AlertDashboard({ onClose }: { onClose?: () => void }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const [severityFilter, setSeverityFilter] = useState("");
   const [showChannelModal, setShowChannelModal] = useState(false);
-  const [newChannelType, setNewChannelType] = useState<"email" | "slack" | "webhook">("slack");
+  const [newChannelType, setNewChannelType] = useState<
+    "email" | "slack" | "webhook"
+  >("slack");
   const [newChannelName, setNewChannelName] = useState("");
   const [newChannelConfig, setNewChannelConfig] = useState("");
   const queryClient = useQueryClient();
@@ -157,7 +159,9 @@ export default function AlertDashboard({ onClose }: { onClose?: () => void }) {
               { value: "webhook", label: "Webhook" },
             ]}
             value={newChannelType}
-            onChange={(e) => setNewChannelType(e.target.value as "email" | "slack" | "webhook")}
+            onChange={(e) =>
+              setNewChannelType(e.target.value as "email" | "slack" | "webhook")
+            }
           />
           <Input
             label="Name"

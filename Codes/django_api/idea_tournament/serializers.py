@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (Hypothesis, HypothesisReview, IdeaTournament,
-                     LiteratureCitation, TournamentLog)
+from .models import (
+    Hypothesis,
+    HypothesisReview,
+    IdeaTournament,
+    LiteratureCitation,
+    TournamentLog,
+)
 
 
 class LiteratureCitationSerializer(serializers.ModelSerializer):

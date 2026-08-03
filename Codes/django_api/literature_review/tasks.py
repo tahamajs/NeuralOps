@@ -5,8 +5,13 @@ from agents.models import ResearchPaper
 from celery import shared_task
 from django.contrib.auth import get_user_model
 
-from .models import (DeepReview, LiteratureProject, PaperReviewNote,
-                     ResearchNotebookSection, Topic)
+from .models import (
+    DeepReview,
+    LiteratureProject,
+    PaperReviewNote,
+    ResearchNotebookSection,
+    Topic,
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()

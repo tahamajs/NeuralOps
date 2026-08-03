@@ -9,8 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import ExperimentDataset, SavedVisualization
-from .serializers import (ExperimentDatasetSerializer,
-                          SavedVisualizationSerializer)
+from .serializers import ExperimentDatasetSerializer, SavedVisualizationSerializer
 
 logger = logging.getLogger(__name__)
 

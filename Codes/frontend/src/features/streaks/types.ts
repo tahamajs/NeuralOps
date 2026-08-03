@@ -46,4 +46,3 @@ export interface LeaderboardEntry {
   longest_streak: number;
   total_active_days: number;
 }
-

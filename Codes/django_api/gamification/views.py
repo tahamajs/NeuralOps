@@ -6,12 +6,22 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import (AchievementUnlock, Badge, ContributionEvent,
-                     PremiumFeature, UserBadge, UserStreak)
-from .serializers import (AchievementUnlockSerializer, BadgeSerializer,
-                          ContributionEventSerializer,
-                          PremiumFeatureSerializer, UserBadgeSerializer,
-                          UserStreakSerializer)
+from .models import (
+    AchievementUnlock,
+    Badge,
+    ContributionEvent,
+    PremiumFeature,
+    UserBadge,
+    UserStreak,
+)
+from .serializers import (
+    AchievementUnlockSerializer,
+    BadgeSerializer,
+    ContributionEventSerializer,
+    PremiumFeatureSerializer,
+    UserBadgeSerializer,
+    UserStreakSerializer,
+)
 
 logger = logging.getLogger(__name__)
 

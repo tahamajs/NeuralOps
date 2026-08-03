@@ -1,4 +1,3 @@
-import json
 import uuid
 from unittest.mock import MagicMock, patch
 
@@ -11,9 +10,11 @@ from django.test import TestCase, TransactionTestCase, override_settings
 from django_api.asgi import application
 from experiment.models import Experiment, TrainingRun, TrainingSnapshot
 from experiment.runners import run_compression, run_evaluation, run_training
-from experiment.serializers import (ExperimentSerializer,
-                                    TrainingRunSerializer,
-                                    TrainingSnapshotSerializer)
+from experiment.serializers import (
+    ExperimentSerializer,
+    TrainingRunSerializer,
+    TrainingSnapshotSerializer,
+)
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -258,7 +259,9 @@ class ConfigEndpointTests(TestCase):
     def test_list_models(self):
         resp = self.client.get("/api/config/models/")
         self.assertEqual(resp.status_code, 200)
-        model_names = [m["name"] if isinstance(m, dict) else m for m in resp.data["models"]]
+        model_names = [
+            m["name"] if isinstance(m, dict) else m for m in resp.data["models"]
+        ]
         self.assertIn("distilbert-base-uncased", model_names)
 
     def test_list_tasks(self):
@@ -379,7 +382,9 @@ class TrainingRunViewTests(TestCase):
 
     def test_start_train_new_experiment(self):
         resp = self.client.post(
-            "/api/experiments/start_train/", {"name": "Training", "config": {"epochs": 1}}, format="json"
+            "/api/experiments/start_train/",
+            {"name": "Training", "config": {"epochs": 1}},
+            format="json",
         )
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
         run = TrainingRun.objects.first()
@@ -477,10 +482,12 @@ class RateLimitTests(TestCase):
 
     def test_anon_throttle_register(self):
         from api.views import AnonBurstRateThrottle
+
         with patch.object(AnonBurstRateThrottle, "rate", "2/min"):
             for i in range(3):
                 resp = self.client.post(
-                    "/api/auth/register/", {"username": f"user{i}", "password": "Strong1"}
+                    "/api/auth/register/",
+                    {"username": f"user{i}", "password": "Strong1"},
                 )
             self.assertEqual(resp.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 

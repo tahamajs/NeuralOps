@@ -1,11 +1,12 @@
+from celery import shared_task
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from integrations.models import SandboxAuditLog, SandboxSession
+from integrations.serializers import SandboxSessionSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from integrations.models import SandboxSession, SandboxAuditLog
-from integrations.serializers import SandboxSessionSerializer, SandboxAuditLogSerializer
-from celery import shared_task
+
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])

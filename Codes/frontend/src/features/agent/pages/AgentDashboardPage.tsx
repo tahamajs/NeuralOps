@@ -29,7 +29,8 @@ const QUICK_STARTS = [
     color: "#818cf8",
     title: "Research Agent",
     desc: "Search papers, build citation graphs, synthesize literature",
-    prompt: "Search for recent papers about efficient transformer attention mechanisms",
+    prompt:
+      "Search for recent papers about efficient transformer attention mechanisms",
   },
   {
     icon: FlaskConical,
@@ -43,21 +44,25 @@ const QUICK_STARTS = [
     color: "#f59e0b",
     title: "Code Agent",
     desc: "Write, debug, and review Python ML code",
-    prompt: "Help me implement a custom attention layer with Galerkin approximation",
+    prompt:
+      "Help me implement a custom attention layer with Galerkin approximation",
   },
   {
     icon: FileText,
     color: "#f472b6",
     title: "Paper Agent",
     desc: "Draft, edit, and format LaTeX research papers",
-    prompt: "Help me write the introduction section of my paper on SVD attention",
+    prompt:
+      "Help me write the introduction section of my paper on SVD attention",
   },
 ];
 
 export default function AgentDashboardPage() {
   const navigate = useNavigate();
 
-  const { data: sessions, isLoading: sessionsLoading } = useQuery<ChatSession[]>({
+  const { data: sessions, isLoading: sessionsLoading } = useQuery<
+    ChatSession[]
+  >({
     queryKey: ["agentSessions"],
     queryFn: async () => (await api.get("/agents/chats/")).data,
     refetchInterval: 10_000,
@@ -69,7 +74,13 @@ export default function AgentDashboardPage() {
       try {
         return (await api.get("/agents/status/")).data;
       } catch {
-        return { status: "offline", model: "Unknown", tools_count: 0, active_sessions: 0, ws_enabled: false } as AgentStatus;
+        return {
+          status: "offline",
+          model: "Unknown",
+          tools_count: 0,
+          active_sessions: 0,
+          ws_enabled: false,
+        } as AgentStatus;
       }
     },
     refetchInterval: 15_000,
@@ -84,13 +95,35 @@ export default function AgentDashboardPage() {
     navigate(`/agent/${id}`);
   };
 
-  const sessionsArray = Array.isArray(sessions) ? sessions : ((sessions as any)?.results || []);
+  const sessionsArray = Array.isArray(sessions)
+    ? sessions
+    : (sessions as any)?.results || [];
 
   const stats = [
-    { label: "Total Sessions", value: sessionsArray.length, icon: MessageSquare, color: "#818cf8" },
-    { label: "Tools Available", value: status?.tools_count ?? 0, icon: Wrench, color: "#34d399" },
-    { label: "Active Sessions", value: status?.active_sessions ?? 0, icon: Activity, color: "#f59e0b" },
-    { label: "AI Model", value: status?.model ?? "—", icon: Zap, color: "#f472b6" },
+    {
+      label: "Total Sessions",
+      value: sessionsArray.length,
+      icon: MessageSquare,
+      color: "#818cf8",
+    },
+    {
+      label: "Tools Available",
+      value: status?.tools_count ?? 0,
+      icon: Wrench,
+      color: "#34d399",
+    },
+    {
+      label: "Active Sessions",
+      value: status?.active_sessions ?? 0,
+      icon: Activity,
+      color: "#f59e0b",
+    },
+    {
+      label: "AI Model",
+      value: status?.model ?? "—",
+      icon: Zap,
+      color: "#f472b6",
+    },
   ];
 
   return (
@@ -146,7 +179,10 @@ export default function AgentDashboardPage() {
               <div className="flex items-start gap-3">
                 <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${qs.color}22`, border: `1px solid ${qs.color}44` }}
+                  style={{
+                    background: `${qs.color}22`,
+                    border: `1px solid ${qs.color}44`,
+                  }}
                 >
                   <qs.icon size={18} style={{ color: qs.color }} />
                 </div>
@@ -168,11 +204,15 @@ export default function AgentDashboardPage() {
           Recent Sessions
         </h2>
         {sessionsLoading ? (
-          <div className="flex justify-center py-8"><Spinner /></div>
+          <div className="flex justify-center py-8">
+            <Spinner />
+          </div>
         ) : !sessionsArray || sessionsArray.length === 0 ? (
           <Card className="text-center py-12">
             <Bot size={32} className="text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400">No sessions yet. Start a new chat above.</p>
+            <p className="text-slate-400">
+              No sessions yet. Start a new chat above.
+            </p>
           </Card>
         ) : (
           <div className="space-y-2">
@@ -191,9 +231,13 @@ export default function AgentDashboardPage() {
                   </div>
                   <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                     <Clock size={10} />
-                    {formatDistanceToNow(new Date(session.updated_at), { addSuffix: true })}
+                    {formatDistanceToNow(new Date(session.updated_at), {
+                      addSuffix: true,
+                    })}
                     {session.message_count && session.message_count > 0 ? (
-                      <span className="ml-2 text-slate-600">· {session.message_count} messages</span>
+                      <span className="ml-2 text-slate-600">
+                        · {session.message_count} messages
+                      </span>
                     ) : null}
                   </div>
                 </div>

@@ -37,9 +37,13 @@ class ASVDAttention(BaseAttention):
         self.value_s = nn.Parameter(torch.ones(self.rank))
         self.value_vh = nn.Parameter(torch.randn(self.rank, config.hidden_size) * 0.02)
 
-        self.out_proj_u = nn.Parameter(torch.randn(config.hidden_size, self.rank) * 0.02)
+        self.out_proj_u = nn.Parameter(
+            torch.randn(config.hidden_size, self.rank) * 0.02
+        )
         self.out_proj_s = nn.Parameter(torch.ones(self.rank))
-        self.out_proj_vh = nn.Parameter(torch.randn(self.rank, self.all_head_size) * 0.02)
+        self.out_proj_vh = nn.Parameter(
+            torch.randn(self.rank, self.all_head_size) * 0.02
+        )
 
         self.dropout = nn.Dropout(config.dropout)
 
@@ -50,7 +54,9 @@ class ASVDAttention(BaseAttention):
         """Apply activation scales to the right singular vectors for ASVD."""
         if scales is not None:
             if not isinstance(scales, torch.Tensor):
-                scales = torch.tensor(scales, device=self.query_vh.device, dtype=self.query_vh.dtype)
+                scales = torch.tensor(
+                    scales, device=self.query_vh.device, dtype=self.query_vh.dtype
+                )
             if scales.dim() == 1:
                 scales = scales.unsqueeze(0)
             self.query_vh.data.mul_(scales)

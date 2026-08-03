@@ -7,9 +7,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Solution, SupportTicket
-from .serializers import (FeedbackSerializer, SolutionSerializer,
-                          SupportTicketCreateSerializer,
-                          SupportTicketSerializer, TicketMessageSerializer)
+from .serializers import (
+    FeedbackSerializer,
+    SolutionSerializer,
+    SupportTicketCreateSerializer,
+    SupportTicketSerializer,
+    TicketMessageSerializer,
+)
 from .tasks import process_ticket_task
 
 logger = logging.getLogger(__name__)

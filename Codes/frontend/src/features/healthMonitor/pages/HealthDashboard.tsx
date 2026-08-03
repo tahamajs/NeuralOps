@@ -126,9 +126,14 @@ export default function HealthDashboard({ onClose }: { onClose?: () => void }) {
               </span>
             </div>
             <div className="p-2 overflow-auto">
-              {(Array.isArray(driftMonitors) ? driftMonitors : (driftMonitors?.results ?? [])).slice(0, 3).map((m) => (
-                <FeatureHealthCard key={m.id} monitor={m} />
-              ))}
+              {(Array.isArray(driftMonitors)
+                ? driftMonitors
+                : (driftMonitors?.results ?? [])
+              )
+                .slice(0, 3)
+                .map((m) => (
+                  <FeatureHealthCard key={m.id} monitor={m} />
+                ))}
             </div>
           </div>
           <div key="performance" className="glass-terminal">
@@ -138,9 +143,14 @@ export default function HealthDashboard({ onClose }: { onClose?: () => void }) {
               </span>
             </div>
             <div className="p-2 grid grid-cols-2 gap-2">
-              {(Array.isArray(performanceMetrics) ? performanceMetrics : (performanceMetrics?.results ?? [])).slice(-4).map((m) => (
-                <HealthMetricGauge key={m.metric_type} metric={m} />
-              ))}
+              {(Array.isArray(performanceMetrics)
+                ? performanceMetrics
+                : (performanceMetrics?.results ?? [])
+              )
+                .slice(-4)
+                .map((m) => (
+                  <HealthMetricGauge key={m.metric_type} metric={m} />
+                ))}
             </div>
           </div>
           <div key="services" className="glass-terminal">
@@ -154,7 +164,11 @@ export default function HealthDashboard({ onClose }: { onClose?: () => void }) {
                 Object.entries(systemHealth.services).map(([name, s]) => (
                   <div key={name} className="flex justify-between items-center">
                     <span className="capitalize">{name}</span>
-                    <Badge variant={(s as any).status === "healthy" ? "success" : "failed"}>
+                    <Badge
+                      variant={
+                        (s as any).status === "healthy" ? "success" : "failed"
+                      }
+                    >
                       {(s as any).status}
                     </Badge>
                   </div>

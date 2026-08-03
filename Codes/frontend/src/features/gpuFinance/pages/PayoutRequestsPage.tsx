@@ -100,7 +100,8 @@ export default function PayoutRequestsPage({
       {(PayoutForm as any)({
         open: showForm,
         onClose: () => setShowForm(false),
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payout-requests"] })
+        onSuccess: () =>
+          queryClient.invalidateQueries({ queryKey: ["payout-requests"] }),
       })}
     </div>
   );

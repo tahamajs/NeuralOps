@@ -1,8 +1,16 @@
 from django.db.models import Avg
 from rest_framework import serializers
 
-from .models import (Bid, ComputeJob, ComputeOrder, FavoriteListing,
-                     GPUListing, GPUModelSpec, JobEvent, PricingRule)
+from .models import (
+    Bid,
+    ComputeJob,
+    ComputeOrder,
+    FavoriteListing,
+    GPUListing,
+    GPUModelSpec,
+    JobEvent,
+    PricingRule,
+)
 
 
 class GPUModelSpecSerializer(serializers.ModelSerializer):

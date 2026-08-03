@@ -136,8 +136,11 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? "N/A"} \\\\
   const compileMut = useMutation({
     mutationFn: async (source: string) => {
       // Simulate compilation delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      return { pdf_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" };
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return {
+        pdf_url:
+          "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      };
     },
     onMutate: () => {
       setCompileStatus("compiling");
@@ -149,9 +152,7 @@ Value & ${acc} & ${loss} & ${metrics.eval_f1?.toFixed(4) ?? "N/A"} \\\\
     },
     onError: (err: any) => {
       setCompileStatus("error");
-      setCompileError(
-        err.message || "Compilation failed",
-      );
+      setCompileError(err.message || "Compilation failed");
     },
   });
 

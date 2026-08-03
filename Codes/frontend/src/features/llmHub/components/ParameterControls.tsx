@@ -10,7 +10,10 @@ interface ParameterControlsProps {
   onChange: (params: any) => void;
 }
 
-export function ParameterControls({ parameters, onChange }: ParameterControlsProps) {
+export function ParameterControls({
+  parameters,
+  onChange,
+}: ParameterControlsProps) {
   const updateParam = (key: string, value: number) => {
     onChange({
       ...parameters,
@@ -31,9 +34,13 @@ export function ParameterControls({ parameters, onChange }: ParameterControlsPro
           <div className="flex justify-between items-center mb-1 text-slate-400">
             <span className="flex items-center gap-1">
               Temperature
-              <span title="Controls randomness of output"><HelpCircle size={10} className="text-slate-600" /></span>
+              <span title="Controls randomness of output">
+                <HelpCircle size={10} className="text-slate-600" />
+              </span>
             </span>
-            <span className="font-mono text-neon-blue font-bold">{parameters.temperature.toFixed(2)}</span>
+            <span className="font-mono text-neon-blue font-bold">
+              {parameters.temperature.toFixed(2)}
+            </span>
           </div>
           <input
             type="range"
@@ -41,7 +48,9 @@ export function ParameterControls({ parameters, onChange }: ParameterControlsPro
             max="1.5"
             step="0.05"
             value={parameters.temperature}
-            onChange={(e) => updateParam("temperature", parseFloat(e.target.value))}
+            onChange={(e) =>
+              updateParam("temperature", parseFloat(e.target.value))
+            }
             className="w-full accent-neon-blue h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer"
           />
         </div>
@@ -51,9 +60,13 @@ export function ParameterControls({ parameters, onChange }: ParameterControlsPro
           <div className="flex justify-between items-center mb-1 text-slate-400">
             <span className="flex items-center gap-1">
               Max Tokens
-              <span title="Max number of tokens to generate"><HelpCircle size={10} className="text-slate-600" /></span>
+              <span title="Max number of tokens to generate">
+                <HelpCircle size={10} className="text-slate-600" />
+              </span>
             </span>
-            <span className="font-mono text-purple-400 font-bold">{parameters.max_tokens}</span>
+            <span className="font-mono text-purple-400 font-bold">
+              {parameters.max_tokens}
+            </span>
           </div>
           <input
             type="range"
@@ -61,7 +74,9 @@ export function ParameterControls({ parameters, onChange }: ParameterControlsPro
             max="4000"
             step="50"
             value={parameters.max_tokens}
-            onChange={(e) => updateParam("max_tokens", parseInt(e.target.value))}
+            onChange={(e) =>
+              updateParam("max_tokens", parseInt(e.target.value))
+            }
             className="w-full accent-purple-500 h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer"
           />
         </div>
@@ -71,9 +86,13 @@ export function ParameterControls({ parameters, onChange }: ParameterControlsPro
           <div className="flex justify-between items-center mb-1 text-slate-400">
             <span className="flex items-center gap-1">
               Top P
-              <span title="Nucleus sampling threshold"><HelpCircle size={10} className="text-slate-600" /></span>
+              <span title="Nucleus sampling threshold">
+                <HelpCircle size={10} className="text-slate-600" />
+              </span>
             </span>
-            <span className="font-mono text-emerald-400 font-bold">{parameters.top_p.toFixed(2)}</span>
+            <span className="font-mono text-emerald-400 font-bold">
+              {parameters.top_p.toFixed(2)}
+            </span>
           </div>
           <input
             type="range"

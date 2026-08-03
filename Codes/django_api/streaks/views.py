@@ -9,8 +9,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import DailyActivity, Streak, WeeklySummary
-from .serializers import (DailyActivitySerializer, StreakSerializer,
-                          WeeklySummarySerializer)
+from .serializers import (
+    DailyActivitySerializer,
+    StreakSerializer,
+    WeeklySummarySerializer,
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()

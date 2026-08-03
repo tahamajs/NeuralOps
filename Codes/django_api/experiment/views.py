@@ -19,8 +19,11 @@ from rest_framework.response import Response
 from .jobs import push_update, start_job, stop_all_jobs, stop_job
 from .models import Experiment, TrainingRun, TrainingSnapshot
 from .runners import run_compression, run_evaluation, run_training
-from .serializers import (ExperimentSerializer, TrainingRunSerializer,
-                          TrainingSnapshotSerializer)
+from .serializers import (
+    ExperimentSerializer,
+    TrainingRunSerializer,
+    TrainingSnapshotSerializer,
+)
 
 # ----------------------------------------------------------------------
 # Optional deep‑diff library – fallback to simple dict diff if missing

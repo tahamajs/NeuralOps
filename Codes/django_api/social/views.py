@@ -8,8 +8,14 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import (ActivityFeed, Connection, Discussion, GroupMembership,
-                     PublicationAlert, ResearchGroup)
+from .models import (
+    ActivityFeed,
+    Connection,
+    Discussion,
+    GroupMembership,
+    PublicationAlert,
+    ResearchGroup,
+)
 from .serializers import *
 
 logger = logging.getLogger(__name__)

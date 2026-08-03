@@ -24,7 +24,9 @@ export default function TagDetailPage() {
           {tag?.description || "No description yet."}
         </p>
       </Card>
-      <div className="text-slate-400 text-center py-8">Questions for this tag will appear here.</div>
+      <div className="text-slate-400 text-center py-8">
+        Questions for this tag will appear here.
+      </div>
     </div>
   );
 }

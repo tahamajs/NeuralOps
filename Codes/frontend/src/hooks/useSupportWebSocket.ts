@@ -18,14 +18,14 @@ export function useSupportWebSocket() {
     setIsThinking(true);
     setResponse("");
     setSteps(["Parsing user query", "Searching internal knowledge base"]);
-    
+
     // Simulate AI response stream
     setTimeout(() => {
       setSteps((prev) => [...prev, "Synthesizing explanation"]);
       setTimeout(() => {
         setIsThinking(false);
         setResponse(
-          `Here is how you can approach your query: **${msg}**\n\n1. Check your network configuration.\n2. Ensure your backend services are running.\n3. Verify your API keys.`
+          `Here is how you can approach your query: **${msg}**\n\n1. Check your network configuration.\n2. Ensure your backend services are running.\n3. Verify your API keys.`,
         );
       }, 1000);
     }, 1000);
@@ -37,7 +37,7 @@ export function useSupportWebSocket() {
     setTimeout(() => {
       setIsThinking(false);
       setResponse(
-        `### Support Ticket Received\n\n**Title**: ${problem.title}\n**Severity**: ${problem.severity}\n\nOur team has received this report and is analyzing the code. You will receive updates here.`
+        `### Support Ticket Received\n\n**Title**: ${problem.title}\n**Severity**: ${problem.severity}\n\nOur team has received this report and is analyzing the code. You will receive updates here.`,
       );
     }, 1500);
   }, []);

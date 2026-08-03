@@ -1,7 +1,12 @@
 from django.contrib import admin
 
-from .models import (AIModelFeedback, AnnotationGuideline, AnnotationProject,
-                     AnnotationReview, DataTask)
+from .models import (
+    AIModelFeedback,
+    AnnotationGuideline,
+    AnnotationProject,
+    AnnotationReview,
+    DataTask,
+)
 
 
 @admin.register(AnnotationProject)

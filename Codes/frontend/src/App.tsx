@@ -1,220 +1,220 @@
 // src/App.tsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ThemeProvider } from 'next-themes'
-import { HardwareProvider } from './features/hardware/context/HardwareContext'
-import { MainLayout } from './components/layout/MainLayout'
-import FloatingWindowRenderer from './components/floating/FloatingWindow'
-import FloatingWindowBar from './components/floating/FloatingWindowBar'
-import { useWindowStore } from './store/windowStore'
-import { DockableWindow } from './components/DockableWindow'
-import { WindowLauncher } from './components/WindowLauncher'
-import { WorkspaceManager } from './components/WorkspaceManager'
-import { Toaster } from './components/ui/Toast'
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
+import { HardwareProvider } from "./features/hardware/context/HardwareContext";
+import { MainLayout } from "./components/layout/MainLayout";
+import FloatingWindowRenderer from "./components/floating/FloatingWindow";
+import FloatingWindowBar from "./components/floating/FloatingWindowBar";
+import { useWindowStore } from "./store/windowStore";
+import { DockableWindow } from "./components/DockableWindow";
+import { WindowLauncher } from "./components/WindowLauncher";
+import { WorkspaceManager } from "./components/WorkspaceManager";
+import { Toaster } from "./components/ui/Toast";
 
 // ========================
 // 1. Core / Layout Pages (used in Router)
 // ========================
-import LandingPage from './features/auth/pages/LandingPage'
-import DocsPage from './features/auth/pages/DocsPage'
-import LoginPage from './features/auth/pages/LoginPage'
-import RegisterPage from './features/auth/pages/RegisterPage'
-import DashboardPage from './features/dashboard/pages/DashboardPage'
-import ExperimentListPage from './features/experiments/pages/ExperimentListPage'
-import ExperimentDetailPage from './features/experiments/pages/ExperimentDetailPage'
-import LauncherPage from './features/launcher/pages/LauncherPage'
-import MarketplacePage from './features/marketplace/pages/MarketplacePage'
-import MyOrdersPage from './features/marketplace/pages/MyOrdersPage'
-import MyJobsPage from './features/marketplace/pages/MyJobsPage'
-import JobDetailPage from './features/marketplace/pages/JobDetailPage'
-import BillingPage from './features/marketplace/pages/BillingPage'
-import UsagePage from './features/marketplace/pages/UsagePage'
-import LeaderboardPage from './features/marketplace/pages/LeaderboardPage'
-import ReputationPage from './features/marketplace/pages/ReputationPage'
-import NotesListPage from './features/notes/pages/NotesListPage'
-import NoteDetailPage from './features/notes/pages/NoteDetailPage'
-import NoteCreatePage from './features/notes/pages/NoteCreatePage'
-import PaperEditorPage from './features/paper/pages/PaperEditorPage'
-import UserProfilePage from './features/profile/pages/UserProfilePage'
-import SystemStatusPage from './features/system/pages/SystemStatusPage'
-import NotFoundPage from './features/NotFoundPage'
+import LandingPage from "./features/auth/pages/LandingPage";
+import DocsPage from "./features/auth/pages/DocsPage";
+import LoginPage from "./features/auth/pages/LoginPage";
+import RegisterPage from "./features/auth/pages/RegisterPage";
+import DashboardPage from "./features/dashboard/pages/DashboardPage";
+import ExperimentListPage from "./features/experiments/pages/ExperimentListPage";
+import ExperimentDetailPage from "./features/experiments/pages/ExperimentDetailPage";
+import LauncherPage from "./features/launcher/pages/LauncherPage";
+import MarketplacePage from "./features/marketplace/pages/MarketplacePage";
+import MyOrdersPage from "./features/marketplace/pages/MyOrdersPage";
+import MyJobsPage from "./features/marketplace/pages/MyJobsPage";
+import JobDetailPage from "./features/marketplace/pages/JobDetailPage";
+import BillingPage from "./features/marketplace/pages/BillingPage";
+import UsagePage from "./features/marketplace/pages/UsagePage";
+import LeaderboardPage from "./features/marketplace/pages/LeaderboardPage";
+import ReputationPage from "./features/marketplace/pages/ReputationPage";
+import NotesListPage from "./features/notes/pages/NotesListPage";
+import NoteDetailPage from "./features/notes/pages/NoteDetailPage";
+import NoteCreatePage from "./features/notes/pages/NoteCreatePage";
+import PaperEditorPage from "./features/paper/pages/PaperEditorPage";
+import UserProfilePage from "./features/profile/pages/UserProfilePage";
+import SystemStatusPage from "./features/system/pages/SystemStatusPage";
+import NotFoundPage from "./features/NotFoundPage";
 
 // ========================
 // 2. Floating Windows (used in DockableWindow componentMap)
 // ========================
 // Terminal & Chat
-import TerminalPanel from './features/terminal/components/TerminalPanel'
-import { ChatPanel } from './features/chat/components/ChatPanel'
-import FloatingNotesEditor from './features/notes/components/FloatingNotesEditor'
-import PaperEditorPanel from './features/paper/components/PaperEditorPanel'
+import TerminalPanel from "./features/terminal/components/TerminalPanel";
+import { ChatPanel } from "./features/chat/components/ChatPanel";
+import FloatingNotesEditor from "./features/notes/components/FloatingNotesEditor";
+import PaperEditorPanel from "./features/paper/components/PaperEditorPanel";
 
 // Marketplace & GPU
-import GPUMarketplacePage from './features/marketplace/pages/GPUMarketplacePage'
-import GPUTradingTerminal from './features/marketplace/pages/GPUTradingTerminal'
-import AgenticMarketplacePage from './features/marketplaceAI/pages/AgenticMarketplacePage'
-import ComparisonBuilder from './features/marketplaceAI/pages/ComparisonBuilder'
-import ProviderDashboardPage from './features/marketplace/pages/ProviderDashboardPage'
-import DisputeHandlingPage from './features/marketplace/pages/DisputeHandlingPage'
+import GPUMarketplacePage from "./features/marketplace/pages/GPUMarketplacePage";
+import GPUTradingTerminal from "./features/marketplace/pages/GPUTradingTerminal";
+import AgenticMarketplacePage from "./features/marketplaceAI/pages/AgenticMarketplacePage";
+import ComparisonBuilder from "./features/marketplaceAI/pages/ComparisonBuilder";
+import ProviderDashboardPage from "./features/marketplace/pages/ProviderDashboardPage";
+import DisputeHandlingPage from "./features/marketplace/pages/DisputeHandlingPage";
 
 // Experiments & Analysis
-import ExperimentListWindow from './features/experiments/pages/ExperimentListPage'
-import ResearchAnalysisPage from './features/analysis/pages/ResearchAnalysisPage'
-import AdvancedAnalyticsPage from './features/analytics/pages/AdvancedAnalyticsPage'
-import AcceleratorDashboard from './features/accelerator/pages/AcceleratorDashboard'
-import HPODashboard from './features/hpo/pages/HPODashboard'
-import SweepDetailPage from './features/hpo/pages/SweepDetailPage'
-import RecommendationListPage from './features/recommender/pages/RecommendationListPage'
-import FailureAnalysisPage from './features/forensics/pages/FailureAnalysisPage'
+import ExperimentListWindow from "./features/experiments/pages/ExperimentListPage";
+import ResearchAnalysisPage from "./features/analysis/pages/ResearchAnalysisPage";
+import AdvancedAnalyticsPage from "./features/analytics/pages/AdvancedAnalyticsPage";
+import AcceleratorDashboard from "./features/accelerator/pages/AcceleratorDashboard";
+import HPODashboard from "./features/hpo/pages/HPODashboard";
+import SweepDetailPage from "./features/hpo/pages/SweepDetailPage";
+import RecommendationListPage from "./features/recommender/pages/RecommendationListPage";
+import FailureAnalysisPage from "./features/forensics/pages/FailureAnalysisPage";
 
 // AI & Research Co‑pilot
-import IdeaTournamentPage from './features/coscientist/pages/IdeaTournamentPage'
-import HypothesisBrowser from './features/coscientist/pages/HypothesisBrowser'
-import DeepResearchPage from './features/research/pages/DeepResearchPage'
-import AutonomousPipelineMonitor from './features/autonomous/pages/AutonomousPipelineMonitor'
-import StepEditor from './features/autonomous/pages/StepEditor'
-import CodeAssistantPage from './features/codingAssistant/pages/CodeAssistantPage'
+import IdeaTournamentPage from "./features/coscientist/pages/IdeaTournamentPage";
+import HypothesisBrowser from "./features/coscientist/pages/HypothesisBrowser";
+import DeepResearchPage from "./features/research/pages/DeepResearchPage";
+import AutonomousPipelineMonitor from "./features/autonomous/pages/AutonomousPipelineMonitor";
+import StepEditor from "./features/autonomous/pages/StepEditor";
+import CodeAssistantPage from "./features/codingAssistant/pages/CodeAssistantPage";
 
 // Literature & Discovery
-import LiteratureMapPage from './features/literature/pages/LiteratureMapPage'
-import CitationGraphViewer from './features/literature/pages/CitationGraphViewer'
-import LiteratureSynthesizer from './features/researchDiscovery/pages/LiteratureSynthesizer'
-import HypothesisGenerator from './features/researchDiscovery/pages/HypothesisGenerator'
-import ResearchDatabaseExplorer from './features/researchDiscovery/pages/ResearchDatabaseExplorer'
-import GrantMatcher from './features/researchDiscovery/pages/GrantMatcher'
+import LiteratureMapPage from "./features/literature/pages/LiteratureMapPage";
+import CitationGraphViewer from "./features/literature/pages/CitationGraphViewer";
+import LiteratureSynthesizer from "./features/researchDiscovery/pages/LiteratureSynthesizer";
+import HypothesisGenerator from "./features/researchDiscovery/pages/HypothesisGenerator";
+import ResearchDatabaseExplorer from "./features/researchDiscovery/pages/ResearchDatabaseExplorer";
+import GrantMatcher from "./features/researchDiscovery/pages/GrantMatcher";
 
 // Impact Predictor
-import ImpactScorePage from './features/impactPredictor/pages/ImpactScorePage'
-import ProjectLeaderboard from './features/impactPredictor/pages/ProjectLeaderboard'
+import ImpactScorePage from "./features/impactPredictor/pages/ImpactScorePage";
+import ProjectLeaderboard from "./features/impactPredictor/pages/ProjectLeaderboard";
 
 // Collaborator Matching & Expert Wall
-import CollaboratorSuggestionPage from './features/collaborator/pages/CollaboratorSuggestionPage'
-import MatchHistoryList from './features/collaborator/pages/MatchHistoryList'
-import ExpertDirectoryPage from './features/expertWall/pages/ExpertDirectoryPage'
-import ProjectApplicationPanel from './features/expertWall/pages/ProjectApplicationPanel'
+import CollaboratorSuggestionPage from "./features/collaborator/pages/CollaboratorSuggestionPage";
+import MatchHistoryList from "./features/collaborator/pages/MatchHistoryList";
+import ExpertDirectoryPage from "./features/expertWall/pages/ExpertDirectoryPage";
+import ProjectApplicationPanel from "./features/expertWall/pages/ProjectApplicationPanel";
 
 // Gamification & Streaks
-import StreakHeatmapPage from './features/streaks/pages/StreakHeatmapPage'
-import WeeklySummaryViewer from './features/streaks/pages/WeeklySummaryViewer'
-import BadgeWallPage from './features/gamification/pages/BadgeWallPage'
-import ContributionLeaderboard from './features/gamification/pages/ContributionLeaderboard'
+import StreakHeatmapPage from "./features/streaks/pages/StreakHeatmapPage";
+import WeeklySummaryViewer from "./features/streaks/pages/WeeklySummaryViewer";
+import BadgeWallPage from "./features/gamification/pages/BadgeWallPage";
+import ContributionLeaderboard from "./features/gamification/pages/ContributionLeaderboard";
 
 // Admin, Organizations, Community (Floating versions – reuse pages)
-import AdminDashboard from './features/admin/pages/AdminDashboard'
-import ClusterOverviewPage from './features/cluster/pages/ClusterOverviewPage'
-import OrganizationListPage from './features/organizations/pages/OrganizationListPage'
-import QuestionListPage from './features/community/pages/QuestionListPage'
-import UserProfileWindow from './features/profile/pages/UserProfilePage'
+import AdminDashboard from "./features/admin/pages/AdminDashboard";
+import ClusterOverviewPage from "./features/cluster/pages/ClusterOverviewPage";
+import OrganizationListPage from "./features/organizations/pages/OrganizationListPage";
+import QuestionListPage from "./features/community/pages/QuestionListPage";
+import UserProfileWindow from "./features/profile/pages/UserProfilePage";
 
 // 3D Model Viewer & Federated Learning
-import ModelViewerPage from './features/modelViewer/pages/ModelViewerPage'
-import FLRunPage from './features/federated/pages/FLRunPage'
+import ModelViewerPage from "./features/modelViewer/pages/ModelViewerPage";
+import FLRunPage from "./features/federated/pages/FLRunPage";
 
 // Anomaly & HPO (floating versions)
-import AnomalyListPage from './features/anomaly/pages/AnomalyListPage'
-import AnomalyDetailPage from './features/anomaly/pages/AnomalyDetailPage'
-import HPORunsPage from './features/hpo/pages/HPORunsPage'
+import AnomalyListPage from "./features/anomaly/pages/AnomalyListPage";
+import AnomalyDetailPage from "./features/anomaly/pages/AnomalyDetailPage";
+import HPORunsPage from "./features/hpo/pages/HPORunsPage";
 
 // Community Lab
-import LabsListPage from './features/communityLab/pages/LabsListPage'
-import LabDetailPage from './features/communityLab/pages/LabDetailPage'
+import LabsListPage from "./features/communityLab/pages/LabsListPage";
+import LabDetailPage from "./features/communityLab/pages/LabDetailPage";
 
 // Datasets
-import DatasetListPage from './features/datasets/pages/DatasetListPage'
-import DatasetDetailPage from './features/datasets/pages/DatasetDetailPage'
+import DatasetListPage from "./features/datasets/pages/DatasetListPage";
+import DatasetDetailPage from "./features/datasets/pages/DatasetDetailPage";
 
 // LLM Hub
-import LLMProviderList from './features/llmHub/pages/LLMProviderList'
-import LLMPlayground from './features/llmHub/pages/LLMPlayground'
-import PromptLibrary from './features/llmHub/pages/PromptLibrary'
-import EvaluationSuiteRunner from './features/llmHub/pages/EvaluationSuiteRunner'
-import CostDashboard from './features/llmHub/pages/CostDashboard'
-import MemoryManager from './features/llmHub/pages/MemoryManager'
-import ToolCatalog from './features/llmHub/pages/ToolCatalog'
-import ArenaBattlePage from './features/llmHub/pages/ArenaBattlePage'
-import GuardrailEditor from './features/llmHub/pages/GuardrailEditor'
+import LLMProviderList from "./features/llmHub/pages/LLMProviderList";
+import LLMPlayground from "./features/llmHub/pages/LLMPlayground";
+import PromptLibrary from "./features/llmHub/pages/PromptLibrary";
+import EvaluationSuiteRunner from "./features/llmHub/pages/EvaluationSuiteRunner";
+import CostDashboard from "./features/llmHub/pages/CostDashboard";
+import MemoryManager from "./features/llmHub/pages/MemoryManager";
+import ToolCatalog from "./features/llmHub/pages/ToolCatalog";
+import ArenaBattlePage from "./features/llmHub/pages/ArenaBattlePage";
+import GuardrailEditor from "./features/llmHub/pages/GuardrailEditor";
 
 // MLOps
-import FeatureStoreBrowser from './features/mlops/pages/FeatureStoreBrowser'
-import DriftMonitorList from './features/mlops/pages/DriftMonitorList'
-import AlertDashboard from './features/mlops/pages/AlertDashboard'
-import PerformanceSnapshotView from './features/mlops/pages/PerformanceSnapshotView'
+import FeatureStoreBrowser from "./features/mlops/pages/FeatureStoreBrowser";
+import DriftMonitorList from "./features/mlops/pages/DriftMonitorList";
+import AlertDashboard from "./features/mlops/pages/AlertDashboard";
+import PerformanceSnapshotView from "./features/mlops/pages/PerformanceSnapshotView";
 
 // Governance
-import AuditLogDashboard from './features/governance/pages/AuditLogDashboard'
-import ComplianceReportView from './features/governance/pages/ComplianceReportView'
-import ContractSigningUI from './features/governance/pages/ContractSigningUI'
-import SecurityScanResults from './features/governance/pages/SecurityScanResults'
-import AccessPolicyEditor from './features/governance/pages/AccessPolicyEditor'
+import AuditLogDashboard from "./features/governance/pages/AuditLogDashboard";
+import ComplianceReportView from "./features/governance/pages/ComplianceReportView";
+import ContractSigningUI from "./features/governance/pages/ContractSigningUI";
+import SecurityScanResults from "./features/governance/pages/SecurityScanResults";
+import AccessPolicyEditor from "./features/governance/pages/AccessPolicyEditor";
 
 // Integrations
-import CloudConnectionWizard from './features/integrations/pages/CloudConnectionWizard'
-import WebhookListPage from './features/integrations/pages/WebhookListPage'
-import SandboxSessionView from './features/integrations/pages/SandboxSessionView'
-import PluginMarketplace from './features/integrations/pages/PluginMarketplace'
+import CloudConnectionWizard from "./features/integrations/pages/CloudConnectionWizard";
+import WebhookListPage from "./features/integrations/pages/WebhookListPage";
+import SandboxSessionView from "./features/integrations/pages/SandboxSessionView";
+import PluginMarketplace from "./features/integrations/pages/PluginMarketplace";
 
 // Experiment Explorer
-import HyperparameterExplorer from './features/experimentExplorer/pages/HyperparameterExplorer'
-import CustomDashboardBuilder from './features/experimentExplorer/pages/CustomDashboardBuilder'
-import SQLQueryEditor from './features/experimentExplorer/pages/SQLQueryEditor'
+import HyperparameterExplorer from "./features/experimentExplorer/pages/HyperparameterExplorer";
+import CustomDashboardBuilder from "./features/experimentExplorer/pages/CustomDashboardBuilder";
+import SQLQueryEditor from "./features/experimentExplorer/pages/SQLQueryEditor";
 
 // Live Dashboards
-import LiveDashboardList from './features/liveDashboards/pages/LiveDashboardList'
-import DashboardBuilder from './features/liveDashboards/pages/DashboardBuilder'
+import LiveDashboardList from "./features/liveDashboards/pages/LiveDashboardList";
+import DashboardBuilder from "./features/liveDashboards/pages/DashboardBuilder";
 
 // Model Hub
-import ModelRegistryList from './features/modelHub/pages/ModelRegistryList'
-import ApprovalRequestView from './features/modelHub/pages/ApprovalRequestView'
-import PromotionPanel from './features/modelHub/pages/PromotionPanel'
-import ModelAccessManager from './features/modelHub/pages/ModelAccessManager'
-import ModelCatalogSearch from './features/modelHub/pages/ModelCatalogSearch'
+import ModelRegistryList from "./features/modelHub/pages/ModelRegistryList";
+import ApprovalRequestView from "./features/modelHub/pages/ApprovalRequestView";
+import PromotionPanel from "./features/modelHub/pages/PromotionPanel";
+import ModelAccessManager from "./features/modelHub/pages/ModelAccessManager";
+import ModelCatalogSearch from "./features/modelHub/pages/ModelCatalogSearch";
 
 // Playground (prompt/model/tool testing)
-import PromptPlayground from './features/playground/pages/PromptPlayground'
-import ModelComparisonView from './features/playground/pages/ModelComparisonView'
-import ToolTestConsole from './features/playground/pages/ToolTestConsole'
+import PromptPlayground from "./features/playground/pages/PromptPlayground";
+import ModelComparisonView from "./features/playground/pages/ModelComparisonView";
+import ToolTestConsole from "./features/playground/pages/ToolTestConsole";
 
 // Health Monitor
-import DriftMonitorSetup from './features/healthMonitor/pages/DriftMonitorSetup'
-import AlertHistory from './features/healthMonitor/pages/AlertHistory'
-import HealthDashboard from './features/healthMonitor/pages/HealthDashboard'
+import DriftMonitorSetup from "./features/healthMonitor/pages/DriftMonitorSetup";
+import AlertHistory from "./features/healthMonitor/pages/AlertHistory";
+import HealthDashboard from "./features/healthMonitor/pages/HealthDashboard";
 
 // Annotation
-import AnnotationProjectList from './features/annotation/pages/AnnotationProjectList'
-import LabelingInterface from './features/annotation/pages/LabelingInterface'
-import AIPreLabelingPanel from './features/annotation/pages/AIPreLabelingPanel'
-import ReviewQueue from './features/annotation/pages/ReviewQueue'
+import AnnotationProjectList from "./features/annotation/pages/AnnotationProjectList";
+import LabelingInterface from "./features/annotation/pages/LabelingInterface";
+import AIPreLabelingPanel from "./features/annotation/pages/AIPreLabelingPanel";
+import ReviewQueue from "./features/annotation/pages/ReviewQueue";
 
 // Inference
-import InferenceEndpointManager from './features/inference/pages/InferenceEndpointManager'
-import PipelineRunner from './features/inference/pages/PipelineRunner'
-import CTCDTrigger from './features/inference/pages/CTCDTrigger'
-import ModelDistillationWizard from './features/inference/pages/ModelDistillationWizard'
-import MultiNodeTrainingLauncher from './features/inference/pages/MultiNodeTrainingLauncher'
+import InferenceEndpointManager from "./features/inference/pages/InferenceEndpointManager";
+import PipelineRunner from "./features/inference/pages/PipelineRunner";
+import CTCDTrigger from "./features/inference/pages/CTCDTrigger";
+import ModelDistillationWizard from "./features/inference/pages/ModelDistillationWizard";
+import MultiNodeTrainingLauncher from "./features/inference/pages/MultiNodeTrainingLauncher";
 
 // Protocols
-import ProtocolListPage from './features/protocols/pages/ProtocolListPage'
-import ProtocolBuilder from './features/protocols/pages/ProtocolBuilder'
+import ProtocolListPage from "./features/protocols/pages/ProtocolListPage";
+import ProtocolBuilder from "./features/protocols/pages/ProtocolBuilder";
 
 // GPU Finance
-import FuturesTradingPage from './features/gpuFinance/pages/FuturesTradingPage'
-import ComputeIndexPage from './features/gpuFinance/pages/ComputeIndexPage'
-import InvoiceManager from './features/gpuFinance/pages/InvoiceManager'
-import PayoutRequestsPage from './features/gpuFinance/pages/PayoutRequestsPage'
-import SubscriptionPlansPage from './features/gpuFinance/pages/SubscriptionPlansPage'
+import FuturesTradingPage from "./features/gpuFinance/pages/FuturesTradingPage";
+import ComputeIndexPage from "./features/gpuFinance/pages/ComputeIndexPage";
+import InvoiceManager from "./features/gpuFinance/pages/InvoiceManager";
+import PayoutRequestsPage from "./features/gpuFinance/pages/PayoutRequestsPage";
+import SubscriptionPlansPage from "./features/gpuFinance/pages/SubscriptionPlansPage";
 
 // Social (extra)
-import GroupDiscussionPage from './features/social/pages/GroupDiscussionPage'
-import SuggestedResearchersPage from './features/social/pages/SuggestedResearchersPage'
+import GroupDiscussionPage from "./features/social/pages/GroupDiscussionPage";
+import SuggestedResearchersPage from "./features/social/pages/SuggestedResearchersPage";
 
-import SupportHubPage from './features/support/pages/SupportHubPage'
-import NewPaperProjectPage from './features/paper/pages/NewPaperProjectPage'
+import SupportHubPage from "./features/support/pages/SupportHubPage";
+import NewPaperProjectPage from "./features/paper/pages/NewPaperProjectPage";
 // Agent pages
-import AgentDashboardPage from './features/agent/pages/AgentDashboardPage'
-import AgentChatPage from './features/agent/pages/AgentChatPage'
-import AgentToolsPage from './features/agent/pages/AgentToolsPage'
-import AgentSessionsListPage from './features/agent/pages/AgentSessionsListPage'
-import PaperLibraryPage from './features/agent/pages/PaperLibraryPage'
-import PromptTestingPage from './features/agent/pages/PromptTestingPage'
+import AgentDashboardPage from "./features/agent/pages/AgentDashboardPage";
+import AgentChatPage from "./features/agent/pages/AgentChatPage";
+import AgentToolsPage from "./features/agent/pages/AgentToolsPage";
+import AgentSessionsListPage from "./features/agent/pages/AgentSessionsListPage";
+import PaperLibraryPage from "./features/agent/pages/PaperLibraryPage";
+import PromptTestingPage from "./features/agent/pages/PromptTestingPage";
 // ========================
 // 3. Component Map for DockableWindow (complete merged)
 // ========================
@@ -223,12 +223,12 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   terminal: TerminalPanel,
   chat: ChatPanel,
   notes: FloatingNotesEditor,
-  'paper-editor': PaperEditorPanel,
+  "paper-editor": PaperEditorPanel,
   marketplace: GPUMarketplacePage,
   gpumarket: GPUTradingTerminal,
-  'marketplace-ai': AgenticMarketplacePage,
-  'comparison-builder': ComparisonBuilder,
-  'provider-dashboard': ProviderDashboardPage,
+  "marketplace-ai": AgenticMarketplacePage,
+  "comparison-builder": ComparisonBuilder,
+  "provider-dashboard": ProviderDashboardPage,
   disputes: DisputeHandlingPage,
   support: SupportHubPage,
 
@@ -250,35 +250,35 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   tournament: IdeaTournamentPage,
   hypotheses: HypothesisBrowser,
   research: DeepResearchPage,
-  'pipeline-monitor': AutonomousPipelineMonitor,
-  'step-editor': StepEditor,
-  'coding-assistant': CodeAssistantPage,
+  "pipeline-monitor": AutonomousPipelineMonitor,
+  "step-editor": StepEditor,
+  "coding-assistant": CodeAssistantPage,
 
   // Literature
-  'literature-map': LiteratureMapPage,
-  'citation-graph': CitationGraphViewer,
-  'literature-synthesizer': LiteratureSynthesizer,
-  'hypothesis-generator': HypothesisGenerator,
-  'database-explorer': ResearchDatabaseExplorer,
-  'grant-matcher': GrantMatcher,
+  "literature-map": LiteratureMapPage,
+  "citation-graph": CitationGraphViewer,
+  "literature-synthesizer": LiteratureSynthesizer,
+  "hypothesis-generator": HypothesisGenerator,
+  "database-explorer": ResearchDatabaseExplorer,
+  "grant-matcher": GrantMatcher,
 
   // Impact
-  'impact-score': ImpactScorePage,
-  'project-leaderboard': ProjectLeaderboard,
+  "impact-score": ImpactScorePage,
+  "project-leaderboard": ProjectLeaderboard,
   leaderboard: ContributionLeaderboard, // Contribution leaderboard
 
   // Collaboration
-  'collaborator-suggestions': CollaboratorSuggestionPage,
-  'match-history': MatchHistoryList,
-  'expert-directory': ExpertDirectoryPage,
-  'project-application': ProjectApplicationPanel,
-  'group-discussions': GroupDiscussionPage,
-  'suggested-researchers': SuggestedResearchersPage,
+  "collaborator-suggestions": CollaboratorSuggestionPage,
+  "match-history": MatchHistoryList,
+  "expert-directory": ExpertDirectoryPage,
+  "project-application": ProjectApplicationPanel,
+  "group-discussions": GroupDiscussionPage,
+  "suggested-researchers": SuggestedResearchersPage,
 
   // Gamification & Streaks
-  'streak-heatmap': StreakHeatmapPage,
-  'weekly-summary': WeeklySummaryViewer,
-  'badge-wall': BadgeWallPage,
+  "streak-heatmap": StreakHeatmapPage,
+  "weekly-summary": WeeklySummaryViewer,
+  "badge-wall": BadgeWallPage,
 
   // Admin & Org
   admin: AdminDashboard,
@@ -300,8 +300,8 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   dataset_detail: DatasetDetailPage,
 
   // LLM Hub
-  'llm-providers': LLMProviderList,
-  playground: LLMPlayground,           // 'playground' maps to LLMPlayground (Prompt Playground)
+  "llm-providers": LLMProviderList,
+  playground: LLMPlayground, // 'playground' maps to LLMPlayground (Prompt Playground)
   prompts: PromptLibrary,
   evaluations: EvaluationSuiteRunner,
   costs: CostDashboard,
@@ -311,74 +311,74 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   guardrails: GuardrailEditor,
 
   // MLOps
-  'feature-store': FeatureStoreBrowser,
-  'drift-monitors': DriftMonitorList,
+  "feature-store": FeatureStoreBrowser,
+  "drift-monitors": DriftMonitorList,
   alerts: AlertDashboard,
   performance: PerformanceSnapshotView,
 
   // Governance
-  'audit-logs': AuditLogDashboard,
+  "audit-logs": AuditLogDashboard,
   compliance: ComplianceReportView,
   contracts: ContractSigningUI,
-  'security-scans': SecurityScanResults,
-  'access-policies': AccessPolicyEditor,
+  "security-scans": SecurityScanResults,
+  "access-policies": AccessPolicyEditor,
 
   // Integrations
-  'cloud-connection': CloudConnectionWizard,
+  "cloud-connection": CloudConnectionWizard,
   webhooks: WebhookListPage,
   sandbox: SandboxSessionView,
   plugins: PluginMarketplace,
 
   // Experiment Explorer
-  'hyperparameter-explorer': HyperparameterExplorer,
-  'dashboard-builder': CustomDashboardBuilder,
-  'sql-editor': SQLQueryEditor,
+  "hyperparameter-explorer": HyperparameterExplorer,
+  "dashboard-builder": CustomDashboardBuilder,
+  "sql-editor": SQLQueryEditor,
 
   // Live Dashboards
-  'live-dashboards': LiveDashboardList,
-  'live-dashboard-builder': DashboardBuilder, // note: different from CustomDashboardBuilder – distinct purpose
+  "live-dashboards": LiveDashboardList,
+  "live-dashboard-builder": DashboardBuilder, // note: different from CustomDashboardBuilder – distinct purpose
 
   // Model Hub
-  'model-registry': ModelRegistryList,
+  "model-registry": ModelRegistryList,
   approvals: ApprovalRequestView,
   promotions: PromotionPanel,
-  'access-manager': ModelAccessManager,
+  "access-manager": ModelAccessManager,
   catalog: ModelCatalogSearch,
 
   // Playground (prompt/model/tool)
-  'prompt-playground': PromptPlayground,
-  'model-comparison': ModelComparisonView,
-  'tool-test-console': ToolTestConsole,
+  "prompt-playground": PromptPlayground,
+  "model-comparison": ModelComparisonView,
+  "tool-test-console": ToolTestConsole,
 
   // Health Monitor
-  'drift-monitor': DriftMonitorSetup,
-  'alert-history': AlertHistory,
-  'health-dashboard': HealthDashboard,
+  "drift-monitor": DriftMonitorSetup,
+  "alert-history": AlertHistory,
+  "health-dashboard": HealthDashboard,
 
   // Annotation
-  'annotation-projects': AnnotationProjectList,
+  "annotation-projects": AnnotationProjectList,
   labeling: LabelingInterface,
-  'pre-label': AIPreLabelingPanel,
-  'review-queue': ReviewQueue,
+  "pre-label": AIPreLabelingPanel,
+  "review-queue": ReviewQueue,
 
   // Inference
-  'inference-endpoints': InferenceEndpointManager,
-  'pipeline-runner': PipelineRunner,
-  'ctc-triggers': CTCDTrigger,
+  "inference-endpoints": InferenceEndpointManager,
+  "pipeline-runner": PipelineRunner,
+  "ctc-triggers": CTCDTrigger,
   distillation: ModelDistillationWizard,
-  'multi-node-training': MultiNodeTrainingLauncher,
+  "multi-node-training": MultiNodeTrainingLauncher,
 
   // Protocols
   protocols: ProtocolListPage,
-  'protocol-builder': ProtocolBuilder,
+  "protocol-builder": ProtocolBuilder,
 
   // GPU Finance
   futures: FuturesTradingPage,
-  'compute-index': ComputeIndexPage,
+  "compute-index": ComputeIndexPage,
   invoices: InvoiceManager,
   payouts: PayoutRequestsPage,
   subscriptions: SubscriptionPlansPage,
-}
+};
 
 // ========================
 // 4. QueryClient
@@ -391,13 +391,13 @@ const queryClient = new QueryClient({
       staleTime: 10000,
     },
   },
-})
+});
 
 // ========================
 // 5. Main App Component
 // ========================
 function App() {
-  const { windows } = useWindowStore()
+  const { windows } = useWindowStore();
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -413,16 +413,28 @@ function App() {
               <Route element={<MainLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/experiments" element={<ExperimentListPage />} />
-                <Route path="/experiments/:id" element={<ExperimentDetailPage />} />
+                <Route
+                  path="/experiments/:id"
+                  element={<ExperimentDetailPage />}
+                />
                 <Route path="/launcher" element={<LauncherPage />} />
                 <Route path="/marketplace" element={<MarketplacePage />} />
                 <Route path="/marketplace/orders" element={<MyOrdersPage />} />
                 <Route path="/marketplace/jobs" element={<MyJobsPage />} />
-                <Route path="/marketplace/jobs/:jobId" element={<JobDetailPage />} />
+                <Route
+                  path="/marketplace/jobs/:jobId"
+                  element={<JobDetailPage />}
+                />
                 <Route path="/marketplace/billing" element={<BillingPage />} />
                 <Route path="/marketplace/usage" element={<UsagePage />} />
-                <Route path="/marketplace/leaderboard" element={<LeaderboardPage />} />
-                <Route path="/marketplace/reputation" element={<ReputationPage />} />
+                <Route
+                  path="/marketplace/leaderboard"
+                  element={<LeaderboardPage />}
+                />
+                <Route
+                  path="/marketplace/reputation"
+                  element={<ReputationPage />}
+                />
                 <Route path="/notes" element={<NotesListPage />} />
                 <Route path="/notes/new" element={<NoteCreatePage />} />
                 <Route path="/notes/:id" element={<NoteDetailPage />} />
@@ -435,7 +447,10 @@ function App() {
                 {/* Agent routes */}
                 <Route path="/agent" element={<AgentDashboardPage />} />
                 <Route path="/agent/tools" element={<AgentToolsPage />} />
-                <Route path="/agent/sessions" element={<AgentSessionsListPage />} />
+                <Route
+                  path="/agent/sessions"
+                  element={<AgentSessionsListPage />}
+                />
                 <Route path="/agent/papers" element={<PaperLibraryPage />} />
                 <Route path="/agent/prompts" element={<PromptTestingPage />} />
                 <Route path="/agent/:sessionId" element={<AgentChatPage />} />
@@ -447,13 +462,17 @@ function App() {
             <div className="fixed inset-0 z-50 overflow-hidden pointer-events-none">
               <div className="pointer-events-auto">
                 {windows.map((win) => {
-                  const Component = componentMap[win.type]
-                  if (!Component) return null
+                  const Component = componentMap[win.type];
+                  if (!Component) return null;
                   return (
                     <DockableWindow key={win.id} window={win}>
-                      <Component onClose={() => useWindowStore.getState().removeWindow(win.id)} />
+                      <Component
+                        onClose={() =>
+                          useWindowStore.getState().removeWindow(win.id)
+                        }
+                      />
                     </DockableWindow>
-                  )
+                  );
                 })}
                 <WindowLauncher />
                 <WorkspaceManager />
@@ -466,7 +485,7 @@ function App() {
         </ThemeProvider>
       </HardwareProvider>
     </QueryClientProvider>
-  )
+  );
 }
 
-export default App
+export default App;

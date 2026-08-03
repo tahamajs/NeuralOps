@@ -6,7 +6,7 @@ export function useInferenceWebSocket(runId: string | null) {
   const [status, setStatus] = useState<string>("idle");
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const { token } = useAuthStore() as any;;
+  const { token } = useAuthStore() as any;
 
   const connect = useCallback(() => {
     if (!runId) return;

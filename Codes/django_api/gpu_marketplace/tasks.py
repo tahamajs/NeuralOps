@@ -77,8 +77,8 @@ def provision_job(job_id: str):
     JobEvent.objects.create(job=job, event_type="provisioning")
 
     # Dispatch to provider agent via Channels WebSocket group
-    from channels.layers import get_channel_layer
     from asgiref.sync import async_to_sync
+    from channels.layers import get_channel_layer
 
     channel_layer = get_channel_layer()
     if channel_layer:
@@ -91,8 +91,8 @@ def provision_job(job_id: str):
                         "id": str(job.id),
                         "docker_image": job.docker_image,
                         "command": job.command,
-                    }
-                }
+                    },
+                },
             )
             logger.info(f"Dispatched job {job.id} to provider listing {job.listing.id}")
         except Exception as e:

@@ -9,8 +9,7 @@ from celery import shared_task
 from django.utils import timezone
 
 from .insight_engine import analyze_user_experiments
-from .models import (ExperimentInsight, ExperimentRecommendation,
-                     ExperimentSummary)
+from .models import ExperimentInsight, ExperimentRecommendation, ExperimentSummary
 
 logger = logging.getLogger(__name__)
 

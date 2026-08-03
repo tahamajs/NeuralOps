@@ -143,11 +143,21 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
     terminalInstance.current = term;
     connectWebSocket();
 
-    const safeFit = (fitAddon: FitAddon, ws: WebSocket | null, term: Terminal) => {
+    const safeFit = (
+      fitAddon: FitAddon,
+      ws: WebSocket | null,
+      term: Terminal,
+    ) => {
       try {
         fitAddon.fit();
         if (ws?.readyState === WebSocket.OPEN && term.cols && term.rows) {
-          ws.send(JSON.stringify({ type: "resize", cols: term.cols, rows: term.rows }));
+          ws.send(
+            JSON.stringify({
+              type: "resize",
+              cols: term.cols,
+              rows: term.rows,
+            }),
+          );
         }
       } catch (err) {
         // Ignore xterm dimension errors when container is hidden

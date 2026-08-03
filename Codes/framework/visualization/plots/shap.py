@@ -39,8 +39,7 @@ def plot_shap(history, metrics, config, output_dir, opts):
 
     # Load model and tokenizer
     try:
-        from transformers import (AutoModelForSequenceClassification,
-                                  AutoTokenizer)
+        from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
         model = AutoModelForSequenceClassification.from_pretrained(str(model_path))
         tokenizer = AutoTokenizer.from_pretrained(str(tokenizer_path))

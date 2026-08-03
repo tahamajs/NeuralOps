@@ -5,13 +5,18 @@ plus global GPU metrics (temperature, fan, power, clock speeds).
 Uses pynvml for global stats and nvidia‑smi for per‑process details
 (because pynvml per‑process utilization is unreliable for concurrent processes).
 """
-import subprocess, threading, time, logging, json
+
+import logging
+import subprocess
+import threading
+import time
 from typing import Optional
 
 logger = logging.getLogger("neuralops.gpu_monitor")
 
 try:
     import pynvml
+
     HAS_NVML = True
 except ImportError:
     HAS_NVML = False
@@ -22,11 +27,12 @@ class LiveGPUMonitor:
     Continuously collects GPU metrics and process lists.
     Runs in a background thread, pushing snapshots to a callback.
     """
+
     def __init__(self, interval_seconds: float = 1.0):
         self.interval = interval_seconds
         self._running = False
         self._thread: Optional[threading.Thread] = None
-        self._callbacks = []          # list of callable(gpu_snapshot_dict)
+        self._callbacks = []  # list of callable(gpu_snapshot_dict)
         self._nvml_ok = False
         self._gpu_count = 0
 
@@ -86,9 +92,9 @@ class LiveGPUMonitor:
         processes = self._get_processes()
 
         return {
-            'timestamp': time.time(),
-            'gpus': gpus,
-            'processes': processes,
+            "timestamp": time.time(),
+            "gpus": gpus,
+            "processes": processes,
         }
 
     # ── NVML path ───────────────────────────────────────────────
@@ -118,54 +124,77 @@ class LiveGPUMonitor:
                 except Exception:
                     proc_count = 0
 
-                gpus.append({
-                    'index': i,
-                    'name': pynvml.nvmlDeviceGetName(h).decode() if isinstance(pynvml.nvmlDeviceGetName(h), bytes) else pynvml.nvmlDeviceGetName(h),
-                    'vram_total_mb': mem.total // (1024 * 1024),
-                    'vram_used_mb': mem.used // (1024 * 1024),
-                    'vram_free_mb': mem.free // (1024 * 1024),
-                    'vram_pct': round(mem.used / mem.total * 100, 1),
-                    'gpu_util_pct': util.gpu,
-                    'memory_util_pct': util.memory,
-                    'temperature_c': temp,
-                    'fan_speed_pct': fan,
-                    'power_watts': round(power, 1),
-                    'sm_clock_mhz': clocks,
-                    'mem_clock_mhz': mem_clk,
-                    'process_count': proc_count,
-                })
+                gpus.append(
+                    {
+                        "index": i,
+                        "name": (
+                            pynvml.nvmlDeviceGetName(h).decode()
+                            if isinstance(pynvml.nvmlDeviceGetName(h), bytes)
+                            else pynvml.nvmlDeviceGetName(h)
+                        ),
+                        "vram_total_mb": mem.total // (1024 * 1024),
+                        "vram_used_mb": mem.used // (1024 * 1024),
+                        "vram_free_mb": mem.free // (1024 * 1024),
+                        "vram_pct": round(mem.used / mem.total * 100, 1),
+                        "gpu_util_pct": util.gpu,
+                        "memory_util_pct": util.memory,
+                        "temperature_c": temp,
+                        "fan_speed_pct": fan,
+                        "power_watts": round(power, 1),
+                        "sm_clock_mhz": clocks,
+                        "mem_clock_mhz": mem_clk,
+                        "process_count": proc_count,
+                    }
+                )
             except Exception:
-                gpus.append({'index': i, 'error': 'NVML read failed'})
+                gpus.append({"index": i, "error": "NVML read failed"})
         return gpus
 
     # ── Fallback: nvidia-smi parsing ────────────────────────────
     def _snapshot_nvidia_smi(self) -> list:
         gpus = []
         try:
-            out = subprocess.check_output([
-                'nvidia-smi',
-                '--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,utilization.memory,temperature.gpu,fan.speed,power.draw,clocks.sm,clocks.mem',
-                '--format=csv,noheader,nounits',
-            ], timeout=5).decode()
-            for line in out.strip().split('\n'):
-                parts = [x.strip() for x in line.split(',')]
+            out = subprocess.check_output(
+                [
+                    "nvidia-smi",
+                    "--query-gpu=index,name,memory.total,memory.used,memory.free,utilization.gpu,utilization.memory,temperature.gpu,fan.speed,power.draw,clocks.sm,clocks.mem",
+                    "--format=csv,noheader,nounits",
+                ],
+                timeout=5,
+            ).decode()
+            for line in out.strip().split("\n"):
+                parts = [x.strip() for x in line.split(",")]
                 if len(parts) >= 12:
-                    gpus.append({
-                        'index': int(parts[0]),
-                        'name': parts[1],
-                        'vram_total_mb': int(parts[2]),
-                        'vram_used_mb': int(parts[3]),
-                        'vram_free_mb': int(parts[4]),
-                        'vram_pct': round(int(parts[3]) / max(int(parts[2]), 1) * 100, 1),
-                        'gpu_util_pct': int(parts[5]),
-                        'memory_util_pct': int(parts[6]),
-                        'temperature_c': int(parts[7]),
-                        'fan_speed_pct': int(parts[8]) if parts[8] != '[Not Supported]' else 0,
-                        'power_watts': float(parts[9]) if parts[9] != '[Not Supported]' else 0.0,
-                        'sm_clock_mhz': int(parts[10]) if parts[10] != '[Not Supported]' else 0,
-                        'mem_clock_mhz': int(parts[11]) if parts[11] != '[Not Supported]' else 0,
-                        'process_count': 0,
-                    })
+                    gpus.append(
+                        {
+                            "index": int(parts[0]),
+                            "name": parts[1],
+                            "vram_total_mb": int(parts[2]),
+                            "vram_used_mb": int(parts[3]),
+                            "vram_free_mb": int(parts[4]),
+                            "vram_pct": round(
+                                int(parts[3]) / max(int(parts[2]), 1) * 100, 1
+                            ),
+                            "gpu_util_pct": int(parts[5]),
+                            "memory_util_pct": int(parts[6]),
+                            "temperature_c": int(parts[7]),
+                            "fan_speed_pct": (
+                                int(parts[8]) if parts[8] != "[Not Supported]" else 0
+                            ),
+                            "power_watts": (
+                                float(parts[9])
+                                if parts[9] != "[Not Supported]"
+                                else 0.0
+                            ),
+                            "sm_clock_mhz": (
+                                int(parts[10]) if parts[10] != "[Not Supported]" else 0
+                            ),
+                            "mem_clock_mhz": (
+                                int(parts[11]) if parts[11] != "[Not Supported]" else 0
+                            ),
+                            "process_count": 0,
+                        }
+                    )
         except Exception as e:
             logger.warning("nvidia-smi fallback failed: %s", e)
         return gpus
@@ -184,42 +213,52 @@ class LiveGPUMonitor:
                             name = pynvml.nvmlSystemGetProcessName(p.pid).decode()
                         except Exception:
                             name = f"pid_{p.pid}"
-                        procs.append({
-                            'pid': p.pid,
-                            'name': name,
-                            'gpu_index': i,
-                            'used_gpu_memory_mb': p.usedGpuMemory // (1024 * 1024),
-                        })
+                        procs.append(
+                            {
+                                "pid": p.pid,
+                                "name": name,
+                                "gpu_index": i,
+                                "used_gpu_memory_mb": p.usedGpuMemory // (1024 * 1024),
+                            }
+                        )
                     for p in pynvml.nvmlDeviceGetGraphicsRunningProcesses(h):
                         try:
                             name = pynvml.nvmlSystemGetProcessName(p.pid).decode()
                         except Exception:
                             name = f"pid_{p.pid}"
-                        procs.append({
-                            'pid': p.pid,
-                            'name': name,
-                            'gpu_index': i,
-                            'used_gpu_memory_mb': p.usedGpuMemory // (1024 * 1024),
-                        })
+                        procs.append(
+                            {
+                                "pid": p.pid,
+                                "name": name,
+                                "gpu_index": i,
+                                "used_gpu_memory_mb": p.usedGpuMemory // (1024 * 1024),
+                            }
+                        )
             except Exception:
                 pass
 
         # Supplement with nvidia-smi for process info if NVML gave nothing
         if not procs:
             try:
-                out = subprocess.check_output([
-                    'nvidia-smi', '--query-compute-apps=pid,process_name,used_memory',
-                    '--format=csv,noheader,nounits',
-                ], timeout=5).decode()
-                for line in out.strip().split('\n'):
-                    parts = [x.strip() for x in line.split(',')]
+                out = subprocess.check_output(
+                    [
+                        "nvidia-smi",
+                        "--query-compute-apps=pid,process_name,used_memory",
+                        "--format=csv,noheader,nounits",
+                    ],
+                    timeout=5,
+                ).decode()
+                for line in out.strip().split("\n"):
+                    parts = [x.strip() for x in line.split(",")]
                     if len(parts) >= 3:
-                        procs.append({
-                            'pid': int(parts[0]),
-                            'name': parts[1],
-                            'gpu_index': 0,
-                            'used_gpu_memory_mb': int(parts[2]),
-                        })
+                        procs.append(
+                            {
+                                "pid": int(parts[0]),
+                                "name": parts[1],
+                                "gpu_index": 0,
+                                "used_gpu_memory_mb": int(parts[2]),
+                            }
+                        )
             except Exception:
                 pass
         return procs

@@ -1,7 +1,13 @@
 from django.contrib import admin
 
-from .models import (Artifact, NoteComment, NoteLink, Notification, Protocol,
-                     ShareableLink)
+from .models import (
+    Artifact,
+    NoteComment,
+    NoteLink,
+    Notification,
+    Protocol,
+    ShareableLink,
+)
 
 
 @admin.register(ShareableLink)

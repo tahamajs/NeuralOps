@@ -23,7 +23,8 @@ export default function NotFoundPage() {
           Anomaly Detected: Page Not Found
         </h2>
         <p className="text-slate-400 text-lg mb-10 max-w-lg mx-auto">
-          The research endpoint or platform resource you requested has either been moved, deleted, or never existed in the NeuralOps continuum.
+          The research endpoint or platform resource you requested has either
+          been moved, deleted, or never existed in the NeuralOps continuum.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -48,15 +49,24 @@ export default function NotFoundPage() {
             Suggested Routing
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <button onClick={() => navigate("/launcher")} className="glass p-4 rounded-xl text-center hover:bg-white/10 transition-colors">
+            <button
+              onClick={() => navigate("/launcher")}
+              className="glass p-4 rounded-xl text-center hover:bg-white/10 transition-colors"
+            >
               <p className="text-white font-medium text-sm">Launch Pad</p>
               <p className="text-xs text-slate-400 mt-1">Start a new run</p>
             </button>
-            <button onClick={() => navigate("/experiments")} className="glass p-4 rounded-xl text-center hover:bg-white/10 transition-colors">
+            <button
+              onClick={() => navigate("/experiments")}
+              className="glass p-4 rounded-xl text-center hover:bg-white/10 transition-colors"
+            >
               <p className="text-white font-medium text-sm">Experiments</p>
               <p className="text-xs text-slate-400 mt-1">View active traces</p>
             </button>
-            <button onClick={() => navigate("/marketplace")} className="glass p-4 rounded-xl text-center hover:bg-white/10 transition-colors">
+            <button
+              onClick={() => navigate("/marketplace")}
+              className="glass p-4 rounded-xl text-center hover:bg-white/10 transition-colors"
+            >
               <p className="text-white font-medium text-sm">GPU Hub</p>
               <p className="text-xs text-slate-400 mt-1">Acquire compute</p>
             </button>

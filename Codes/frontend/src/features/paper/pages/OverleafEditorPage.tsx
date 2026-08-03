@@ -28,8 +28,7 @@ export default function OverleafEditorPage() {
   // Fetch project data (files list)
   const { data: project, isLoading } = useQuery({
     queryKey: ["paperProject", projectId],
-    queryFn: async () =>
-      (await api.get(`/paper/projects/${projectId}/`)).data,
+    queryFn: async () => (await api.get(`/paper/projects/${projectId}/`)).data,
     enabled: !!projectId,
   });
 

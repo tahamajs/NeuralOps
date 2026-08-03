@@ -9,13 +9,21 @@ from rest_framework.response import Response
 
 from .ai_assistant import AIAssistant
 from .label_studio_client import LabelStudioClient
-from .models import (AIModelFeedback, AnnotationGuideline, AnnotationProject,
-                     AnnotationReview, DataTask)
-from .serializers import (AIModelFeedbackSerializer,
-                          AnnotationGuidelineSerializer,
-                          AnnotationProjectDetailSerializer,
-                          AnnotationProjectListSerializer,
-                          AnnotationReviewSerializer, DataTaskSerializer)
+from .models import (
+    AIModelFeedback,
+    AnnotationGuideline,
+    AnnotationProject,
+    AnnotationReview,
+    DataTask,
+)
+from .serializers import (
+    AIModelFeedbackSerializer,
+    AnnotationGuidelineSerializer,
+    AnnotationProjectDetailSerializer,
+    AnnotationProjectListSerializer,
+    AnnotationReviewSerializer,
+    DataTaskSerializer,
+)
 
 logger = logging.getLogger(__name__)
 

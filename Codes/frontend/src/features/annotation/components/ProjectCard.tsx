@@ -70,7 +70,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
 
       <div className="grid grid-cols-3 gap-2 mt-4">
         <Link to={`/annotation/project/${project.id}/label`}>
-          <Button size="sm" className="w-full flex items-center justify-center gap-1">
+          <Button
+            size="sm"
+            className="w-full flex items-center justify-center gap-1"
+          >
             <Play size={10} /> Label
           </Button>
         </Link>

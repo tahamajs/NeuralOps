@@ -1,7 +1,12 @@
 export function getAuthToken(): string {
   const local = localStorage.getItem("token");
   if (local) return local;
-  return document.cookie.split("; ").find((row) => row.startsWith("authToken="))?.split("=")[1] || "";
+  return (
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("authToken="))
+      ?.split("=")[1] || ""
+  );
 }
 
 export function setAuthToken(token: string): void {

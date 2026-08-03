@@ -72,4 +72,3 @@ class GriffinSSDBlock(BaseAttention):
             if attention_mask.dim() == 2:
                 out = out * attention_mask.unsqueeze(-1)
         return out, None
-

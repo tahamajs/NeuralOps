@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from .models import (ExperimentInsight, ExperimentRecommendation,
-                     ExperimentSummary)
+from .models import ExperimentInsight, ExperimentRecommendation, ExperimentSummary
 
 
 class ExperimentInsightSerializer(serializers.ModelSerializer):

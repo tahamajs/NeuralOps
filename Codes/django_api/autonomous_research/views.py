@@ -6,8 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import (PipelineArtifact, PipelineStep, PipelineTemplate,
-                     ResearchPipeline)
+from .models import PipelineArtifact, PipelineStep, PipelineTemplate, ResearchPipeline
 from .serializers import *
 from .tasks import run_pipeline_async
 

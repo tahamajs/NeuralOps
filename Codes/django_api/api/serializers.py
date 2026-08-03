@@ -1,8 +1,11 @@
-from experiment.models import (ActivityLog, Experiment, TrainingRun,
-                               TrainingSnapshot)
-from framework.core.registry import (ATTENTION_REGISTRY, LOSS_REGISTRY,
-                                     METHOD_REGISTRY, OPTIMIZER_REGISTRY,
-                                     TRAINER_REGISTRY)
+from experiment.models import ActivityLog, Experiment, TrainingRun, TrainingSnapshot
+from framework.core.registry import (
+    ATTENTION_REGISTRY,
+    LOSS_REGISTRY,
+    METHOD_REGISTRY,
+    OPTIMIZER_REGISTRY,
+    TRAINER_REGISTRY,
+)
 from rest_framework import serializers
 
 

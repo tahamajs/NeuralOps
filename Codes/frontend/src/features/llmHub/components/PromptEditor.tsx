@@ -18,7 +18,9 @@ export function PromptEditor({ initialPrompt, onSave }: PromptEditorProps) {
   useEffect(() => {
     const matches = template.match(/\{\{([^}]+)\}\}/g);
     if (matches) {
-      const vars = Array.from(new Set(matches.map((m) => m.replace(/\{\{|\}\}/g, "").trim())));
+      const vars = Array.from(
+        new Set(matches.map((m) => m.replace(/\{\{|\}\}/g, "").trim())),
+      );
       setVariables(vars as string[]);
     } else {
       setVariables([]);
@@ -32,7 +34,10 @@ export function PromptEditor({ initialPrompt, onSave }: PromptEditorProps) {
     onSave({
       name,
       template,
-      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+      tags: tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
       variables,
     });
   };
@@ -61,7 +66,9 @@ export function PromptEditor({ initialPrompt, onSave }: PromptEditorProps) {
           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 font-mono focus:border-neon-blue/50 transition-colors"
         />
         <p className="text-[10px] text-slate-500 mt-1">
-          Use double curly braces <code className="text-neon-blue font-bold">{"{{variable}}"}</code> to define custom variables.
+          Use double curly braces{" "}
+          <code className="text-neon-blue font-bold">{"{{variable}}"}</code> to
+          define custom variables.
         </p>
       </div>
 
@@ -73,7 +80,10 @@ export function PromptEditor({ initialPrompt, onSave }: PromptEditorProps) {
           </div>
           <div className="flex flex-wrap gap-1.5">
             {variables.map((v) => (
-              <span key={v} className="px-2.5 py-0.5 rounded-md bg-neon-blue/10 border border-neon-blue/20 text-xs font-mono text-neon-blue">
+              <span
+                key={v}
+                className="px-2.5 py-0.5 rounded-md bg-neon-blue/10 border border-neon-blue/20 text-xs font-mono text-neon-blue"
+              >
                 {v}
               </span>
             ))}
@@ -90,7 +100,10 @@ export function PromptEditor({ initialPrompt, onSave }: PromptEditorProps) {
       />
 
       <div className="flex gap-3 justify-end pt-4 border-t border-white/10">
-        <Button type="submit" className="bg-neon-blue hover:bg-neon-blue/80 text-white w-full">
+        <Button
+          type="submit"
+          className="bg-neon-blue hover:bg-neon-blue/80 text-white w-full"
+        >
           Save Prompt Template
         </Button>
       </div>

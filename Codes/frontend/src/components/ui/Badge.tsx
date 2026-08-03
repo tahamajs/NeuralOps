@@ -32,9 +32,31 @@ interface BadgeProps extends VariantProps<typeof badgeVariants> {
   status?: VariantProps<typeof badgeVariants>["variant"] | string;
 }
 
-export const Badge = ({ variant, status, children, className, dot }: BadgeProps) => {
+export const Badge = ({
+  variant,
+  status,
+  children,
+  className,
+  dot,
+}: BadgeProps) => {
   const resolvedVariant = (variant || status || "neutral") as any;
-  const activeVariant = ["queued", "running", "completed", "failed", "stopped", "pending", "active", "paused", "neutral", "success", "warning", "info", "secondary"].includes(resolvedVariant) ? resolvedVariant : "neutral";
+  const activeVariant = [
+    "queued",
+    "running",
+    "completed",
+    "failed",
+    "stopped",
+    "pending",
+    "active",
+    "paused",
+    "neutral",
+    "success",
+    "warning",
+    "info",
+    "secondary",
+  ].includes(resolvedVariant)
+    ? resolvedVariant
+    : "neutral";
 
   return (
     <span className={cn(badgeVariants({ variant: activeVariant }), className)}>

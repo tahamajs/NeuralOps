@@ -22,7 +22,7 @@ export function useTradingWebSocket(gpuModel: string) {
       [1.16, 150],
       [1.15, 800],
     ],
-    last_price: 1.20,
+    last_price: 1.2,
   });
 
   useEffect(() => {

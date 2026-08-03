@@ -582,8 +582,7 @@ def launch_config_options(request):
     """Return all available options for job creation wizard."""
     try:
         from framework.callbacks import CALLBACK_REGISTRY
-        from framework.core.registry import (ATTENTION_REGISTRY,
-                                             COMPRESSOR_REGISTRY)
+        from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
         from framework.data.augmentation import AUGMENTATION_REGISTRY
         from framework.trainer.losses import LOSS_REGISTRY
         from framework.trainer.methods.registry import METHOD_REGISTRY

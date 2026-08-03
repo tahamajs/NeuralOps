@@ -70,9 +70,13 @@ export const marketplaceApi = {
   // ========================
   getDisputes: (params?: { status?: string }) =>
     api.get<Dispute[]>("/gpu/reputation/disputes/", { params }),
-  getDispute: (id: string) => api.get<Dispute>(`/gpu/reputation/disputes/${id}/`),
+  getDispute: (id: string) =>
+    api.get<Dispute>(`/gpu/reputation/disputes/${id}/`),
   raiseDispute: (jobId: string, reason: string, description: string) =>
-    api.post(`/gpu/reputation/disputes/raise/${jobId}/`, { reason, description }),
+    api.post(`/gpu/reputation/disputes/raise/${jobId}/`, {
+      reason,
+      description,
+    }),
   respondToDispute: (id: string, response: string) =>
     api.post(`/gpu/reputation/disputes/${id}/respond/`, { response }),
   resolveDispute: (id: string, resolution: string, refundAmount?: number) =>

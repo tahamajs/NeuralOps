@@ -1,6 +1,7 @@
 # integrations/apps.py
 from django.apps import AppConfig
 
+
 class IntegrationsConfig(AppConfig):
     name = "integrations"
 
@@ -8,6 +9,6 @@ class IntegrationsConfig(AppConfig):
         # Dynamically add plugin API routes when Django starts
         pass
 
+
 def _register_plugin_route(route_config):
     pass
-
