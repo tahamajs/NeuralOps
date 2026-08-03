@@ -154,8 +154,7 @@ const ConfigHistoryDiff = ({ runId }: { runId: string }) => {
   const [diff, setDiff] = useState<any>(null);
   const { data: history } = useQuery({
     queryKey: ["configHistory", runId],
-    queryFn: async () =>
-      (await api.get(`/runs/${runId}/config/history/`)).data,
+    queryFn: async () => (await api.get(`/runs/${runId}/config/history/`)).data,
   });
   const versions = history?.versions || [];
   const options = versions.map((v: any) => ({
@@ -516,9 +515,7 @@ export default function ExperimentMonitorPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() =>
-              window.open(`/runs/${id}/paper_preview/`, "_blank")
-            }
+            onClick={() => window.open(`/runs/${id}/paper_preview/`, "_blank")}
           >
             📄 PDF Preview
           </Button>

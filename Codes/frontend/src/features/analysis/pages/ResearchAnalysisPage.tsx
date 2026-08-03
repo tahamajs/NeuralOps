@@ -59,7 +59,10 @@ export default function ResearchAnalysisPage() {
         const res = await api.get("/runs/?all=true");
         return res.data;
       } catch (err) {
-        console.warn("Backend /runs/ endpoint failed, returning mock run list", err);
+        console.warn(
+          "Backend /runs/ endpoint failed, returning mock run list",
+          err,
+        );
         return [
           {
             id: "run-1",
@@ -71,14 +74,14 @@ export default function ResearchAnalysisPage() {
               model_name: "bert-base-uncased",
               epochs: 3,
               batch_size: 32,
-              learning_rate: 2e-5
+              learning_rate: 2e-5,
             },
             final_metrics: {
               eval_accuracy: 0.852,
               eval_loss: 0.342,
-              eval_f1: 0.891
+              eval_f1: 0.891,
             },
-            created_at: new Date(Date.now() - 3600000).toISOString()
+            created_at: new Date(Date.now() - 3600000).toISOString(),
           },
           {
             id: "run-2",
@@ -90,14 +93,14 @@ export default function ResearchAnalysisPage() {
               model_name: "bert-base-uncased",
               epochs: 3,
               batch_size: 32,
-              learning_rate: 2e-5
+              learning_rate: 2e-5,
             },
             final_metrics: {
               eval_accuracy: 0.865,
               eval_loss: 0.315,
-              eval_f1: 0.902
+              eval_f1: 0.902,
             },
-            created_at: new Date(Date.now() - 7200000).toISOString()
+            created_at: new Date(Date.now() - 7200000).toISOString(),
           },
           {
             id: "run-3",
@@ -109,14 +112,14 @@ export default function ResearchAnalysisPage() {
               model_name: "bert-base-uncased",
               epochs: 5,
               batch_size: 64,
-              learning_rate: 3e-5
+              learning_rate: 3e-5,
             },
             final_metrics: {
               eval_accuracy: 0.781,
-              eval_loss: 0.512
+              eval_loss: 0.512,
             },
-            created_at: new Date().toISOString()
-          }
+            created_at: new Date().toISOString(),
+          },
         ];
       }
     },
@@ -130,14 +133,18 @@ export default function ResearchAnalysisPage() {
         const res = await api.get(ENDPOINTS.NOTES.LIST);
         return res.data?.results ?? [];
       } catch (err) {
-        console.warn("Backend notes endpoint failed, returning mock notes", err);
+        console.warn(
+          "Backend notes endpoint failed, returning mock notes",
+          err,
+        );
         return [
           {
             id: "note-1",
-            content: "Using Griffin SSD shows standard accuracy drops of only ~1% while saving ~40% latency in BERT-base models.",
+            content:
+              "Using Griffin SSD shows standard accuracy drops of only ~1% while saving ~40% latency in BERT-base models.",
             created_at: new Date(Date.now() - 1800000).toISOString(),
-            run: "run-1"
-          }
+            run: "run-1",
+          },
         ];
       }
     },
@@ -175,7 +182,7 @@ export default function ResearchAnalysisPage() {
       filtered = filtered.filter((r) => r.config?.task_name === filterTask);
     if (filterAttention)
       filtered = filtered.filter(
-         (r) => r.config?.attention_type === filterAttention,
+        (r) => r.config?.attention_type === filterAttention,
       );
     if (filterStatus)
       filtered = filtered.filter((r) => r.status === filterStatus);

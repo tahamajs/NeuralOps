@@ -7,8 +7,7 @@ import { BarChart3 } from "lucide-react";
 export default function NoteStatisticsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["noteStats"],
-    queryFn: async () =>
-      (await api.get("/notes/v1/notes/statistics/")).data,
+    queryFn: async () => (await api.get("/notes/v1/notes/statistics/")).data,
   });
 
   if (isLoading) return <Spinner />;

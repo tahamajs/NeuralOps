@@ -115,4 +115,3 @@ class BAMUMoEBlock(BaseAttention):
                 mask = attention_mask
             out = out * mask
         return out, None
-

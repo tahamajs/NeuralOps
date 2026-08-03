@@ -9,8 +9,12 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import (auc, average_precision_score,
-                             precision_recall_curve, roc_curve)
+from sklearn.metrics import (
+    auc,
+    average_precision_score,
+    precision_recall_curve,
+    roc_curve,
+)
 
 logger = logging.getLogger(__name__)
 

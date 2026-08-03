@@ -7,8 +7,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import (CitationPath, PaperFeedItem, PaperGraphCache,
-                     PaperRecommendation, ResearchLandscape)
+from .models import (
+    CitationPath,
+    PaperFeedItem,
+    PaperGraphCache,
+    PaperRecommendation,
+    ResearchLandscape,
+)
 from .serializers import *
 from .tasks import generate_recommendations_for_user
 

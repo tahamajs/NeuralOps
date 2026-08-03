@@ -5,7 +5,7 @@ export function TableWidget({ data, config }: any) {
     return <div className="text-slate-500 text-xs p-4">No data available</div>;
   }
 
-  const keys = Object.keys(data[0] || {}).filter(k => k !== "id");
+  const keys = Object.keys(data[0] || {}).filter((k) => k !== "id");
 
   return (
     <div className="overflow-x-auto w-full h-full max-h-[220px]">
@@ -23,8 +23,13 @@ export function TableWidget({ data, config }: any) {
           {data.slice(0, 10).map((row: any, i: number) => (
             <tr key={i} className="hover:bg-slate-800/30">
               {keys.map((k) => (
-                <td key={k} className="px-3 py-1.5 border-b border-slate-800/50">
-                  {typeof row[k] === "object" ? JSON.stringify(row[k]) : String(row[k])}
+                <td
+                  key={k}
+                  className="px-3 py-1.5 border-b border-slate-800/50"
+                >
+                  {typeof row[k] === "object"
+                    ? JSON.stringify(row[k])
+                    : String(row[k])}
                 </td>
               ))}
             </tr>

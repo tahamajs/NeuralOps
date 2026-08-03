@@ -42,9 +42,7 @@ class AdaSVDCompressor(BaseCompressor):
             return self.model, self.get_compression_stats()
 
         # 2. Compute total original parameters
-        sum(
-            p.numel() for p in self.model.parameters() if p.requires_grad
-        )
+        sum(p.numel() for p in self.model.parameters() if p.requires_grad)
 
         # 3. Assign ranks proportionally, keeping target_params after compression
         for name, module in self.model.named_modules():

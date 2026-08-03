@@ -18,12 +18,19 @@ export const experimentExplorerAPI = {
   // Dashboard layouts (Mocked)
   getDashboardLayouts: async () => ({ data: [] }),
   getDashboardLayout: async (id: string) => ({ data: {} as DashboardLayout }),
-  saveDashboardLayout: async (layout: Partial<DashboardLayout>) => ({ data: layout as DashboardLayout }),
-  updateDashboardLayout: async (id: string, layout: Partial<DashboardLayout>) => ({ data: layout as DashboardLayout }),
+  saveDashboardLayout: async (layout: Partial<DashboardLayout>) => ({
+    data: layout as DashboardLayout,
+  }),
+  updateDashboardLayout: async (
+    id: string,
+    layout: Partial<DashboardLayout>,
+  ) => ({ data: layout as DashboardLayout }),
   deleteDashboardLayout: async (id: string) => ({ data: null }),
 
   // SQL Editor (Mocked)
   getSQLConnections: async () => ({ data: [] }),
-  executeSQL: async (connectionId: string, query: string) => ({ data: {} as SQLQueryResult }),
+  executeSQL: async (connectionId: string, query: string) => ({
+    data: {} as SQLQueryResult,
+  }),
   getSchemaInfo: async (connectionId: string) => ({ data: {} }),
 };

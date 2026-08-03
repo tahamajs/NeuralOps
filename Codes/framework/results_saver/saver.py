@@ -165,15 +165,17 @@ class ResultsSaver:
     def _generate_plots(self, history, final_metrics):
         try:
             import matplotlib.pyplot as plt
-            from framework.analysis.plotting import (plot_accuracy_curves,
-                                                     plot_confusion_matrix,
-                                                     plot_gpu_memory,
-                                                     plot_gradient_flow,
-                                                     plot_loss_curves,
-                                                     plot_lr_schedule,
-                                                     plot_radar_chart,
-                                                     plot_rank_allocation,
-                                                     plot_training_time)
+            from framework.analysis.plotting import (
+                plot_accuracy_curves,
+                plot_confusion_matrix,
+                plot_gpu_memory,
+                plot_gradient_flow,
+                plot_loss_curves,
+                plot_lr_schedule,
+                plot_radar_chart,
+                plot_rank_allocation,
+                plot_training_time,
+            )
 
             opts = self.cfg.plot_options
             dpi = opts.get("dpi", 150)

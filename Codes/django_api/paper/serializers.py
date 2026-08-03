@@ -1,8 +1,15 @@
 # paper/serializers.py
 from rest_framework import serializers
 
-from .models import (PaperComment, PaperCompile, PaperFile, PaperProject,
-                     PaperShareLink, PaperTemplate, PaperVersion)
+from .models import (
+    PaperComment,
+    PaperCompile,
+    PaperFile,
+    PaperProject,
+    PaperShareLink,
+    PaperTemplate,
+    PaperVersion,
+)
 
 
 class PaperFileSerializer(serializers.ModelSerializer):

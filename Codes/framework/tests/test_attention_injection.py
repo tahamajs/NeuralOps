@@ -15,6 +15,7 @@ class TestAttentionInjection:
             import framework.attentions
             from framework.core.attention_utils import inject_attention
             from transformers import DistilBertConfig, DistilBertModel
+
             config = DistilBertConfig(
                 vocab_size=100,
                 dim=768,
@@ -25,7 +26,11 @@ class TestAttentionInjection:
             model = DistilBertModel(config)
             inject_attention(model, "full", copy_weights=False)
             # Verify forward pass still works
-            dummy = model.distilbert.transformer.layer[0].attention if hasattr(model, "distilbert") else model.transformer.layer[0].attention
+            dummy = (
+                model.distilbert.transformer.layer[0].attention
+                if hasattr(model, "distilbert")
+                else model.transformer.layer[0].attention
+            )
             import torch
 
             x = torch.randn(2, 8, 768)

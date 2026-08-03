@@ -13,8 +13,7 @@ export default function BulkNotesPage() {
 
   const { data: notes = [] } = useQuery({
     queryKey: ["notes"],
-    queryFn: async () =>
-      (await api.get("/notes/v1/notes/")).data.results || [],
+    queryFn: async () => (await api.get("/notes/v1/notes/")).data.results || [],
   });
 
   const deleteMutation = useMutation({

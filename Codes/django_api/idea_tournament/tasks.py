@@ -20,8 +20,14 @@ def run_tournament(self, tournament_id: str):
     if tournament.status != "running":
         return
 
-    from .agents import (EvolutionAgent, GenerationAgent, MetaReviewAgent,
-                         ProximityAgent, RankingAgent, ReflectionAgent)
+    from .agents import (
+        EvolutionAgent,
+        GenerationAgent,
+        MetaReviewAgent,
+        ProximityAgent,
+        RankingAgent,
+        ReflectionAgent,
+    )
 
     gen_agent = GenerationAgent()
     prox_agent = ProximityAgent()

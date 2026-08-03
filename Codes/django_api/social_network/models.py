@@ -82,7 +82,11 @@ class GroupMembership(models.Model):
         ("member", "Member"),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="groupmembership_network")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="groupmembership_network",
+    )
     group = models.ForeignKey(ResearchGroup, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="member")
     joined_at = models.DateTimeField(auto_now_add=True)
@@ -104,7 +108,9 @@ class Discussion(models.Model):
         ResearchGroup, on_delete=models.CASCADE, related_name="discussions"
     )
     author = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="discussions_network"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="discussions_network",
     )
     title = models.CharField(max_length=300)
     content = models.TextField(blank=True)
@@ -167,7 +173,9 @@ class ActivityFeed(models.Model):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activities_network"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="activities_network",
     )
     activity_type = models.CharField(max_length=30, choices=ACTIVITY_TYPES)
     title = models.CharField(max_length=300)

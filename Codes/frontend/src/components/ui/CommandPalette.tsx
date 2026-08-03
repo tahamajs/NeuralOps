@@ -61,14 +61,12 @@ export function CommandPalette() {
       title: "Open Terminal",
       icon: <Terminal size={16} />,
       action: () =>
-        useFloatingWindowStore
-          .getState()
-          .addWindow({
-            id: "terminal",
-            title: "Terminal",
-            icon: ">_",
-            content: "terminal",
-          }),
+        useFloatingWindowStore.getState().addWindow({
+          id: "terminal",
+          title: "Terminal",
+          icon: ">_",
+          content: "terminal",
+        }),
     },
     {
       id: "profile",

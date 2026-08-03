@@ -23,19 +23,21 @@ export function TerminalEmulator({ sessionId }: { sessionId: string }) {
     term.open(terminalRef.current);
     fitAddon.fit();
     termRef.current = term;
-    integrationsAPI
-      .getSandboxWebSocketUrl(sessionId)
-      .then((wsUrl: any) => {
-        const ws = new WebSocket(wsUrl);
-        ws.onopen = () =>
-          term.write("\r\n\x1b[32mConnected to sandbox\x1b[0m\r\n$ ");
-        ws.onmessage = (msg) => {
-          const messageData = (msg as any).data || msg;
-          term.write(typeof messageData === "string" ? messageData : JSON.stringify(messageData));
-        };
-        wsRef.current = ws;
-        term.onData((data) => ws.send(JSON.stringify({ type: "input", data })));
-      });
+    integrationsAPI.getSandboxWebSocketUrl(sessionId).then((wsUrl: any) => {
+      const ws = new WebSocket(wsUrl);
+      ws.onopen = () =>
+        term.write("\r\n\x1b[32mConnected to sandbox\x1b[0m\r\n$ ");
+      ws.onmessage = (msg) => {
+        const messageData = (msg as any).data || msg;
+        term.write(
+          typeof messageData === "string"
+            ? messageData
+            : JSON.stringify(messageData),
+        );
+      };
+      wsRef.current = ws;
+      term.onData((data) => ws.send(JSON.stringify({ type: "input", data })));
+    });
     const resize = () => fitAddon.fit();
     window.addEventListener("resize", resize);
     return () => {

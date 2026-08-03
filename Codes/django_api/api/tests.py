@@ -1,8 +1,6 @@
-import json
 import uuid
 from unittest.mock import MagicMock, patch
 
-from api.views import BurstRateThrottle
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
@@ -12,9 +10,11 @@ from django.test import TestCase, TransactionTestCase
 from django_api.asgi import application
 from experiment.models import Experiment, TrainingRun, TrainingSnapshot
 from experiment.runners import run_compression, run_evaluation, run_training
-from experiment.serializers import (ExperimentSerializer,
-                                    TrainingRunSerializer,
-                                    TrainingSnapshotSerializer)
+from experiment.serializers import (
+    ExperimentSerializer,
+    TrainingRunSerializer,
+    TrainingSnapshotSerializer,
+)
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -394,6 +394,7 @@ class RateLimitTests(TestCase):
     def test_anon_throttle_register(self):
         # Temporarily lower the rate to 2/min for this test
         from api.views import AnonBurstRateThrottle
+
         with patch.object(AnonBurstRateThrottle, "rate", "2/min"):
             for i in range(3):
                 resp = self.client.post(
@@ -519,23 +520,24 @@ class RunnerTests(TestCase):
 
 class NewEndpointTests(TestCase):
     def setUp(self):
-        from rest_framework.test import APIClient
         from django.contrib.auth.models import User
-        self.user = User.objects.create_user(username="testuser_new", password="testpass_new")
+
+        self.user = User.objects.create_user(
+            username="testuser_new", password="testpass_new"
+        )
         self.client, _, _ = create_authenticated_client(self.user)
 
     def test_prompt_endpoints(self):
         from llm_hub.models import PromptTemplate, PromptVersion
+
         prompt = PromptTemplate.objects.create(
-            user=self.user,
-            name="test_prompt",
-            description="Test Description"
+            user=self.user, name="test_prompt", description="Test Description"
         )
         PromptVersion.objects.create(
             prompt=prompt,
             version_number=1,
             content="Hello {input}",
-            created_by=self.user
+            created_by=self.user,
         )
 
         # test prompt list
@@ -567,13 +569,10 @@ class NewEndpointTests(TestCase):
 
     def test_data_lineage_endpoint(self):
         from experiment.models import Experiment, TrainingRun
-        exp = Experiment.objects.create(
-            name="test_exp"
-        )
+
+        exp = Experiment.objects.create(name="test_exp")
         run = TrainingRun.objects.create(
-            experiment=exp,
-            name="test_run",
-            config={"dataset_name": "IMDB"}
+            experiment=exp, name="test_run", config={"dataset_name": "IMDB"}
         )
         resp = self.client.get(f"/api/runs/{run.id}/lineage/")
         self.assertEqual(resp.status_code, 200)
@@ -581,28 +580,25 @@ class NewEndpointTests(TestCase):
 
     def test_model_lineage_endpoint(self):
         from jobscheduler.models import Job
-        from model_versioning.models import ModelVersion, ModelLineage
-        job = Job.objects.create(
-            name="test_job"
-        )
+        from model_versioning.models import ModelLineage, ModelVersion
+
+        job = Job.objects.create(name="test_job")
         parent_mv = ModelVersion.objects.create(
             run=job,
             version="1.0.0",
             version_number=1,
             artifact_path="models/1.0.0.pt",
-            storage_tier="hot"
+            storage_tier="hot",
         )
         mv = ModelVersion.objects.create(
             run=job,
             version="2.0.0",
             version_number=2,
             artifact_path="models/2.0.0.pt",
-            storage_tier="hot"
+            storage_tier="hot",
         )
         ModelLineage.objects.create(
-            parent=parent_mv,
-            child=mv,
-            relationship_type="fine_tuned"
+            parent=parent_mv, child=mv, relationship_type="fine_tuned"
         )
 
         resp = self.client.get(f"/api/models/{mv.id}/lineage/")

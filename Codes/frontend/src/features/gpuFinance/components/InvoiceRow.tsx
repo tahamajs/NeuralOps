@@ -10,11 +10,16 @@ interface InvoiceRowProps {
 export function InvoiceRow({ invoice, onDownload }: InvoiceRowProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "paid": return "success";
-      case "draft": return "secondary";
-      case "open": return "warning";
-      case "overdue": return "failed";
-      default: return "info";
+      case "paid":
+        return "success";
+      case "draft":
+        return "secondary";
+      case "open":
+        return "warning";
+      case "overdue":
+        return "failed";
+      default:
+        return "info";
     }
   };
 
@@ -24,18 +29,19 @@ export function InvoiceRow({ invoice, onDownload }: InvoiceRowProps) {
         #{invoice.invoice_number}
       </td>
       <td className="px-4 py-3 text-slate-300">
-        {invoice.description || `GPU Lease Billing for Period ${invoice.period_start || ""} - ${invoice.period_end || ""}`}
+        {invoice.description ||
+          `GPU Lease Billing for Period ${invoice.period_start || ""} - ${invoice.period_end || ""}`}
       </td>
       <td className="px-4 py-3 font-mono font-bold text-neon-mint">
         ${parseFloat(invoice.total_usd || 0).toFixed(2)}
       </td>
       <td className="px-4 py-3">
-        <Badge variant={getStatusColor(invoice.status)}>
-          {invoice.status}
-        </Badge>
+        <Badge variant={getStatusColor(invoice.status)}>{invoice.status}</Badge>
       </td>
       <td className="px-4 py-3 text-slate-500 font-mono">
-        {invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : "N/A"}
+        {invoice.due_date
+          ? new Date(invoice.due_date).toLocaleDateString()
+          : "N/A"}
       </td>
       <td className="px-4 py-3 text-right">
         <button

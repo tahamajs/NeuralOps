@@ -6,8 +6,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import (ExperimentInsight, ExperimentRecommendation,
-                     ExperimentSummary)
+from .models import ExperimentInsight, ExperimentRecommendation, ExperimentSummary
 from .serializers import *
 from .tasks import generate_insights_for_user
 

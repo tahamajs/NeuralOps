@@ -1,7 +1,12 @@
 from django.contrib import admin
 
-from .models import (Hypothesis, HypothesisReview, MetaReview, ResearchSession,
-                     TournamentMatch)
+from .models import (
+    Hypothesis,
+    HypothesisReview,
+    MetaReview,
+    ResearchSession,
+    TournamentMatch,
+)
 
 admin.site.register(ResearchSession)
 admin.site.register(Hypothesis)

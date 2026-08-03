@@ -8,8 +8,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import AnalysisResult, ChatSession, Recommendation
-from .serializers import (AnalysisResultSerializer, ChatMessageSerializer,
-                          ChatSessionSerializer, RecommendationSerializer)
+from .serializers import (
+    AnalysisResultSerializer,
+    ChatMessageSerializer,
+    ChatSessionSerializer,
+    RecommendationSerializer,
+)
 from .tasks import run_periodic_analysis
 
 logger = logging.getLogger(__name__)

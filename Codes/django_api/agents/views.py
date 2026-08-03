@@ -6,17 +6,36 @@ from rest_framework import generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from .models import (AgentSession, ChatMessage, ChatSession, CitationEdge,
-                     ResearchPaper, TrainingAnalysis)
+from .models import (
+    AgentSession,
+    ChatMessage,
+    ChatSession,
+    CitationEdge,
+    ResearchPaper,
+    TrainingAnalysis,
+)
 from .monitor import monitor_training_run
-from .paper_recommender import (get_paper_recommendations_for_run,
-                                get_recommendations_from_saved_papers,
-                                search_papers_for_topic)
-from .serializers import (ChatMessageSerializer, ChatSessionSerializer,
-                          ResearchPaperSerializer, TrainingAnalysisSerializer)
-from .tools import (analyze_training, annotate_paper, get_citation_graph,
-                    save_paper, search_library, search_papers,
-                    suggest_next_experiment, test_prompt_template)
+from .paper_recommender import (
+    get_paper_recommendations_for_run,
+    get_recommendations_from_saved_papers,
+    search_papers_for_topic,
+)
+from .serializers import (
+    ChatMessageSerializer,
+    ChatSessionSerializer,
+    ResearchPaperSerializer,
+    TrainingAnalysisSerializer,
+)
+from .tools import (
+    analyze_training,
+    annotate_paper,
+    get_citation_graph,
+    save_paper,
+    search_library,
+    search_papers,
+    suggest_next_experiment,
+    test_prompt_template,
+)
 
 
 # ----------------------------------------------------------------------
@@ -76,13 +95,19 @@ def send_message(request, session_id):
     # Try LangGraph orchestrator first
     try:
         from .orchestrator import LangGraphAgent
+
         agent = LangGraphAgent(str(session.id))
         result = agent.run(text)
-        assistant_content = result.get("response", str(result)) if isinstance(result, dict) else str(result)
+        assistant_content = (
+            result.get("response", str(result))
+            if isinstance(result, dict)
+            else str(result)
+        )
     except ImportError:
         pass
     except Exception as exc:
         import logging
+
         logging.getLogger(__name__).warning("LangGraphAgent failed: %s", exc)
 
     # Fallback: rule-based intelligent responses
@@ -96,7 +121,10 @@ def send_message(request, session_id):
                 "💾 **Save to Library**: Found papers can be saved to your personal library.\n\n"
                 "⚠️ *Note: The AI backend is currently starting up. Please try again in a moment or check the system status.*"
             )
-        elif any(w in tl for w in ["experiment", "train", "model", "bert", "gpt", "lora", "fine-tun"]):
+        elif any(
+            w in tl
+            for w in ["experiment", "train", "model", "bert", "gpt", "lora", "fine-tun"]
+        ):
             assistant_content = (
                 "I understand you want to configure an experiment. Here's what I need:\n\n"
                 "🔬 **Model**: Which base model? (e.g. bert-base-uncased, distilbert)\n"
@@ -139,7 +167,9 @@ def send_message(request, session_id):
             )
 
     # Save assistant response
-    ChatMessage.objects.create(session=session, role="assistant", content=assistant_content)
+    ChatMessage.objects.create(
+        session=session, role="assistant", content=assistant_content
+    )
 
     messages = ChatMessage.objects.filter(session=session).order_by("created_at")
     serializer = ChatMessageSerializer(messages, many=True)
@@ -483,15 +513,18 @@ def research_plan_status(request, plan_id):
 def list_tools(request):
     """List all available tools in ToolRegistry."""
     from agents.tools import ToolRegistry
+
     tools_list = []
     for tool_name, tool_info in ToolRegistry._tools.items():
-        tools_list.append({
-            "name": tool_info["name"],
-            "description": tool_info["description"],
-            "category": tool_info["category"],
-            "requires_confirmation": tool_info["requires_confirmation"],
-            "parameters": {},
-        })
+        tools_list.append(
+            {
+                "name": tool_info["name"],
+                "description": tool_info["description"],
+                "category": tool_info["category"],
+                "requires_confirmation": tool_info["requires_confirmation"],
+                "parameters": {},
+            }
+        )
     return Response(tools_list)
 
 
@@ -500,12 +533,16 @@ def list_tools(request):
 def agent_status(request):
     """Get the current operational status of the agent subsystem."""
     from agents.tools import ToolRegistry
-    active_sessions = AgentSession.objects.filter(user=request.user, status="active").count()
-    return Response({
-        "status": "operational",
-        "model": "claude-3-5-sonnet",
-        "tools_count": len(ToolRegistry._tools),
-        "active_sessions": active_sessions,
-        "ws_enabled": True
-    })
 
+    active_sessions = AgentSession.objects.filter(
+        user=request.user, status="active"
+    ).count()
+    return Response(
+        {
+            "status": "operational",
+            "model": "claude-3-5-sonnet",
+            "tools_count": len(ToolRegistry._tools),
+            "active_sessions": active_sessions,
+            "ws_enabled": True,
+        }
+    )

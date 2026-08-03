@@ -34,7 +34,10 @@ export const modelHubAPI = {
     request.get<ApprovalRequest>(`/model-hub/approvals/${id}/`),
 
   submitApproval: (id: string, action: ApprovalAction, comment?: string) =>
-    request.post<any>(`/model-hub/approvals/${id}/review/`, { action, comment }),
+    request.post<any>(`/model-hub/approvals/${id}/review/`, {
+      action,
+      comment,
+    }),
 
   // Promotion
   getPromotionRequests: () =>
@@ -73,5 +76,7 @@ export const modelHubAPI = {
 
   // Catalog search (full‑text search)
   searchCatalog: (params: CatalogSearchParams) =>
-    request.get<PaginatedResponse<Model>>("/model-hub/catalog/search/", { params }),
+    request.get<PaginatedResponse<Model>>("/model-hub/catalog/search/", {
+      params,
+    }),
 };

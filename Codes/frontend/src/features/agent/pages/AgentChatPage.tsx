@@ -29,7 +29,8 @@ export default function AgentChatPage() {
   const [showCitationGraph, setShowCitationGraph] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, loading, sending, wsStatus, sendMessage } = useAgentChat(sessionId);
+  const { messages, loading, sending, wsStatus, sendMessage } =
+    useAgentChat(sessionId);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -127,25 +128,26 @@ export default function AgentChatPage() {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto scrollbar-thin px-2 space-y-1">
-          {(Array.isArray(messages) ? messages : []).length === 0 && !loading && (
-            <div className="flex flex-col items-center justify-center h-full text-slate-500">
-              <Bot size={48} className="mb-4 text-slate-600" />
-              <p className="text-sm">
-                How can I help with your research today?
-              </p>
-              <div className="grid grid-cols-2 gap-2 mt-6 max-w-lg">
-                {quickPrompts.map((prompt, i) => (
-                  <button
-                    key={i}
-                    onClick={() => sendMessage(prompt)}
-                    className="text-left text-xs glass-hover px-3 py-2 rounded-xl border border-white/5 text-slate-400 hover:text-white hover:border-white/10 transition-all"
-                  >
-                    {prompt}
-                  </button>
-                ))}
+          {(Array.isArray(messages) ? messages : []).length === 0 &&
+            !loading && (
+              <div className="flex flex-col items-center justify-center h-full text-slate-500">
+                <Bot size={48} className="mb-4 text-slate-600" />
+                <p className="text-sm">
+                  How can I help with your research today?
+                </p>
+                <div className="grid grid-cols-2 gap-2 mt-6 max-w-lg">
+                  {quickPrompts.map((prompt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => sendMessage(prompt)}
+                      className="text-left text-xs glass-hover px-3 py-2 rounded-xl border border-white/5 text-slate-400 hover:text-white hover:border-white/10 transition-all"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
           {(Array.isArray(messages) ? messages : []).map((msg) => (
             <ChatMessageBubble key={msg.id} msg={msg} />
           ))}

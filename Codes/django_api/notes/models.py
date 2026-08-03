@@ -328,7 +328,9 @@ class WebhookSubscription(models.Model):
     """External webhook endpoints."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notes_webhooks")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="notes_webhooks"
+    )
     url = models.URLField(max_length=500)
     events = models.JSONField(default=list, blank=True)
     secret = models.CharField(max_length=100, blank=True)

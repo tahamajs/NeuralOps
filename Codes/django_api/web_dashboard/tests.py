@@ -106,17 +106,23 @@ class WebDashboardViewTests(TestCase):
     def test_job_detail_redirect_if_not_logged_in(self):
         url = reverse("dashboard_job_detail", kwargs={"job_id": self.run.id})
         response = self.client.get(url)
-        self.assertRedirects(response, f"/login/?next={url}", fetch_redirect_response=False)
+        self.assertRedirects(
+            response, f"/login/?next={url}", fetch_redirect_response=False
+        )
 
     def test_dashboard_redirect_if_not_logged_in(self):
         url = reverse("dashboard_dashboard")
         response = self.client.get(url)
-        self.assertRedirects(response, f"/login/?next={url}", fetch_redirect_response=False)
+        self.assertRedirects(
+            response, f"/login/?next={url}", fetch_redirect_response=False
+        )
 
     def test_statistics_redirect_if_not_logged_in(self):
         url = reverse("dashboard_statistics")
         response = self.client.get(url)
-        self.assertRedirects(response, f"/login/?next={url}", fetch_redirect_response=False)
+        self.assertRedirects(
+            response, f"/login/?next={url}", fetch_redirect_response=False
+        )
 
     # ------------------------------------------------------------------
     # API endpoints (using APIClient)
@@ -420,4 +426,6 @@ class WebDashboardViewTests(TestCase):
         url = f"/dashboard/job/{self.run.id}/?next={quote(target)}"
         response = self.client.get(url)
         # Should redirect to login with next parameter
-        self.assertRedirects(response, f"/login/?next={url}", fetch_redirect_response=False)
+        self.assertRedirects(
+            response, f"/login/?next={url}", fetch_redirect_response=False
+        )

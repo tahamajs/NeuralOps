@@ -10,14 +10,20 @@ import {
 export const researchDiscoveryAPI = {
   // Literature synthesis
   synthesizeLiterature: (query: string, limit?: number) =>
-    request.post<SynthesisResult>("/research-discovery/literature/synthesize/", {
-      query,
-      limit,
-    }),
+    request.post<SynthesisResult>(
+      "/research-discovery/literature/synthesize/",
+      {
+        query,
+        limit,
+      },
+    ),
   getLiteratureMap: (paperId: string, depth: number = 2) =>
-    request.get<LiteratureMap>(`/research-discovery/literature/map/${paperId}/`, {
-      params: { depth },
-    }),
+    request.get<LiteratureMap>(
+      `/research-discovery/literature/map/${paperId}/`,
+      {
+        params: { depth },
+      },
+    ),
 
   // Hypothesis generation
   generateHypotheses: (goal: string, parameters?: any) =>
@@ -43,7 +49,9 @@ export const researchDiscoveryAPI = {
       limit,
     }),
   getDatabaseStatus: () =>
-    request.get<Record<string, boolean>>("/research-discovery/databases/status/"),
+    request.get<Record<string, boolean>>(
+      "/research-discovery/databases/status/",
+    ),
 
   // Grant matching
   matchGrants: (profile: any) =>

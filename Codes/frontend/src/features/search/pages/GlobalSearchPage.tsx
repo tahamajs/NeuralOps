@@ -12,8 +12,7 @@ export default function GlobalSearchPage() {
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const { data, isLoading } = useQuery({
     queryKey: ["globalSearch", debouncedQuery],
-    queryFn: async () =>
-      (await api.get(`/search/?q=${debouncedQuery}`)).data,
+    queryFn: async () => (await api.get(`/search/?q=${debouncedQuery}`)).data,
     enabled: debouncedQuery.length > 0,
   });
 

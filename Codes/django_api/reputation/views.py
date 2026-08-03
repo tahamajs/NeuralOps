@@ -7,12 +7,20 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from .models import (Recommendation, ReputationEvent, ReputationScore,
-                     ReputationSnapshot, ReputationWeight)
-from .serializers import (RecommendationSerializer, ReputationEventSerializer,
-                          ReputationScoreSerializer,
-                          ReputationSnapshotSerializer,
-                          ReputationWeightSerializer)
+from .models import (
+    Recommendation,
+    ReputationEvent,
+    ReputationScore,
+    ReputationSnapshot,
+    ReputationWeight,
+)
+from .serializers import (
+    RecommendationSerializer,
+    ReputationEventSerializer,
+    ReputationScoreSerializer,
+    ReputationSnapshotSerializer,
+    ReputationWeightSerializer,
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()

@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (CitationPath, PaperFeedItem, PaperGraphCache,
-                     PaperRecommendation, ResearchLandscape)
+from .models import (
+    CitationPath,
+    PaperFeedItem,
+    PaperGraphCache,
+    PaperRecommendation,
+    ResearchLandscape,
+)
 
 
 class PaperGraphCacheSerializer(serializers.ModelSerializer):

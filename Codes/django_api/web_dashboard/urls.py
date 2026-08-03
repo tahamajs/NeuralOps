@@ -6,6 +6,7 @@ urlpatterns = [
     # ─── HTML Pages (SPA fallback / direct access) ─────────────
     path("", views.index, name="dashboard_index"),
     path("dashboard/", views.dashboard, name="dashboard"),
+    path("dashboard/home/", views.dashboard, name="dashboard_dashboard"),
     path("dashboard/job/<uuid:job_id>/", views.job_detail, name="dashboard_job_detail"),
     # ─── Authentication API ────────────────────────────────────
     path("api/register/", views.api_register, name="api_register"),
@@ -24,6 +25,7 @@ urlpatterns = [
     ),
     # ─── Dashboard Statistics & Config ─────────────────────────
     path("api/dashboard/stats/", views.dashboard_stats, name="dashboard_stats"),
+    path("api/dashboard/statistics/", views.dashboard_stats, name="dashboard_statistics"),
     path(
         "api/dashboard/settings/", views.dashboard_settings, name="dashboard_settings"
     ),

@@ -1,7 +1,12 @@
 from django.contrib import admin
 
-from .models import (Recommendation, ReputationEvent, ReputationScore,
-                     ReputationSnapshot, ReputationWeight)
+from .models import (
+    Recommendation,
+    ReputationEvent,
+    ReputationScore,
+    ReputationSnapshot,
+    ReputationWeight,
+)
 
 
 @admin.register(ReputationWeight)

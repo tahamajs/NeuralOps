@@ -44,8 +44,7 @@ export default function JobDetailPage() {
   }, [job]);
 
   const saveNotes = useMutation({
-    mutationFn: (notes: string) =>
-      api.post(`/jobs/${jobId}/notes/`, { notes }),
+    mutationFn: (notes: string) => api.post(`/jobs/${jobId}/notes/`, { notes }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["job", jobId] }),
   });

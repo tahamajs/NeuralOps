@@ -1,7 +1,11 @@
 from rest_framework import serializers
 
-from .models import (ComparisonSet, ComplianceCheck, MarketplaceQuery,
-                     SmartRecommendation)
+from .models import (
+    ComparisonSet,
+    ComplianceCheck,
+    MarketplaceQuery,
+    SmartRecommendation,
+)
 
 
 class MarketplaceQuerySerializer(serializers.ModelSerializer):

@@ -6,9 +6,12 @@ interface SuggestionChipsProps {
   onSelect: (content: string) => void;
 }
 
-export function SuggestionChips({ suggestions, onSelect }: SuggestionChipsProps) {
+export function SuggestionChips({
+  suggestions,
+  onSelect,
+}: SuggestionChipsProps) {
   if (!suggestions.length) return null;
-  
+
   return (
     <div className="flex flex-wrap gap-2">
       {suggestions.map((suggestion, i) => (

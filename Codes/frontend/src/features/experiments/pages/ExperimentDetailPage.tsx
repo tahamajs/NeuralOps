@@ -134,7 +134,9 @@ export default function ExperimentDetailPage() {
             </div>
             <div>
               <span className="text-slate-400">Branch:</span>{" "}
-              <span className="text-white">{(experiment as any).git_branch || "—"}</span>
+              <span className="text-white">
+                {(experiment as any).git_branch || "—"}
+              </span>
             </div>
             <div>
               <span className="text-slate-400">DVC Hash:</span>{" "}
@@ -194,5 +196,3 @@ export default function ExperimentDetailPage() {
     </div>
   );
 }
-
-

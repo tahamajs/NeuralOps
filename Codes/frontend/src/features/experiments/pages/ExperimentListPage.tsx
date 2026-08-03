@@ -59,7 +59,7 @@ export default function ExperimentListPage() {
           {(PaginationControls as any)({
             page,
             total: totalPages,
-            onChange: setPage
+            onChange: setPage,
           })}
         </>
       )}

@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (AIModelFeedback, AnnotationGuideline, AnnotationProject,
-                     AnnotationReview, DataTask)
+from .models import (
+    AIModelFeedback,
+    AnnotationGuideline,
+    AnnotationProject,
+    AnnotationReview,
+    DataTask,
+)
 
 
 class AnnotationProjectListSerializer(serializers.ModelSerializer):

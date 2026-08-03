@@ -6,8 +6,11 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .engine import (calculate_opportunity_index, generate_creative_variants,
-                     generate_recommendations)
+from .engine import (
+    calculate_opportunity_index,
+    generate_creative_variants,
+    generate_recommendations,
+)
 from .models import *
 from .serializers import *
 

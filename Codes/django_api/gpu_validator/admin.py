@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import (ProofOfCompute, ValidatorNode, Verification,
-                     VerificationTask)
+from .models import ProofOfCompute, ValidatorNode, Verification, VerificationTask
 
 
 @admin.register(ValidatorNode)

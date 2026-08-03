@@ -6,8 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Authorship, Citation, Publication
-from .serializers import (CitationSerializer, PublicationSerializer,
-                          ReviewSerializer)
+from .serializers import CitationSerializer, PublicationSerializer, ReviewSerializer
 
 
 class StandardPagination(PageNumberPagination):

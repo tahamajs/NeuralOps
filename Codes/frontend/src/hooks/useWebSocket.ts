@@ -17,13 +17,16 @@ export function useWebSocket(experimentId: string | undefined) {
     const connect = () => {
       if (retries > 3) {
         setWsStatus("error");
-        store.addLog("Max connection retries reached. Assuming backend is mocked.");
+        store.addLog(
+          "Max connection retries reached. Assuming backend is mocked.",
+        );
         return;
       }
       setWsStatus("connecting");
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const wsUrl =
-        (import.meta as any).env?.VITE_WS_URL || `${protocol}://${window.location.host}`;
+        (import.meta as any).env?.VITE_WS_URL ||
+        `${protocol}://${window.location.host}`;
       const url = `${wsUrl}/ws/experiments/${experimentId}/`;
       const socket = new WebSocket(url);
       wsRef.current = socket;
@@ -72,8 +75,11 @@ export function useWebSocket(experimentId: string | undefined) {
         setWsStatus("closed");
         retries++;
         if (retries <= 3) {
-          store.addLog(`Connection closed. Reconnecting in 3s... (Attempt ${retries}/3)`);
-          if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+          store.addLog(
+            `Connection closed. Reconnecting in 3s... (Attempt ${retries}/3)`,
+          );
+          if (reconnectTimerRef.current)
+            clearTimeout(reconnectTimerRef.current);
           reconnectTimerRef.current = setTimeout(connect, 3000);
         }
       };

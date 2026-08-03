@@ -1,5 +1,6 @@
-from django.urls import path, re_path
 from api import views as api_views
+from django.urls import path, re_path
+
 from . import views
 
 urlpatterns = [

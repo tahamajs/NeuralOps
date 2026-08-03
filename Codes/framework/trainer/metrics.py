@@ -1,8 +1,13 @@
 import numpy as np
 from scipy.stats import pearsonr, spearmanr
-from sklearn.metrics import (accuracy_score, f1_score, matthews_corrcoef,
-                             mean_absolute_error, mean_squared_error,
-                             precision_recall_fscore_support)
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    matthews_corrcoef,
+    mean_absolute_error,
+    mean_squared_error,
+    precision_recall_fscore_support,
+)
 
 
 def compute_accuracy(predictions, labels):

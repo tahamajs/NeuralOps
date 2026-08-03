@@ -5,8 +5,7 @@ from .base import COMPRESSOR_REGISTRY, BaseCompressor
 class MovementPruning(BaseCompressor):
     def apply(self, model, amount=0.3, **kwargs):
         try:
-            from neural_compressor import (MovementPruning,
-                                           MovementPruningConfig)
+            from neural_compressor import MovementPruning, MovementPruningConfig
 
             config = MovementPruningConfig(
                 pruning_frequency=100, sparsity_decay_type="exp"

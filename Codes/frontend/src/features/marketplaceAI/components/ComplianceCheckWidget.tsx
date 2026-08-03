@@ -1,27 +1,41 @@
 import React from "react";
 import { ComplianceCheck } from "../types";
-import { ShieldCheck, ShieldAlert, Calendar, CheckCircle, XCircle } from "lucide-react";
+import {
+  ShieldCheck,
+  ShieldAlert,
+  Calendar,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 
 interface ComplianceCheckWidgetProps {
   complianceUpdates: Record<string, ComplianceCheck>;
 }
 
-export function ComplianceCheckWidget({ complianceUpdates }: ComplianceCheckWidgetProps) {
+export function ComplianceCheckWidget({
+  complianceUpdates,
+}: ComplianceCheckWidgetProps) {
   const updates = Object.values(complianceUpdates);
 
   if (updates.length === 0) {
     return (
       <div className="glass p-6 rounded-lg text-center text-slate-400">
         <ShieldCheck className="mx-auto h-12 w-12 text-slate-600 mb-2" />
-        <p className="font-semibold text-white">No Compliance Checks Performed Yet</p>
-        <p className="text-sm mt-1">Request compliance checks on GPU listings to see audit results here.</p>
+        <p className="font-semibold text-white">
+          No Compliance Checks Performed Yet
+        </p>
+        <p className="text-sm mt-1">
+          Request compliance checks on GPU listings to see audit results here.
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-white mb-2">Compliance Audit Records</h2>
+      <h2 className="text-xl font-bold text-white mb-2">
+        Compliance Audit Records
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {updates.map((check) => {
           const isCompliant = check.status === "compliant";
@@ -68,7 +82,10 @@ export function ComplianceCheckWidget({ complianceUpdates }: ComplianceCheckWidg
                     </h4>
                     <ul className="space-y-1">
                       {check.passed_checks.map((rule, idx) => (
-                        <li key={idx} className="flex items-center text-xs text-slate-400">
+                        <li
+                          key={idx}
+                          className="flex items-center text-xs text-slate-400"
+                        >
                           <CheckCircle className="w-3.5 h-3.5 text-green-500/70 mr-1.5 shrink-0" />
                           {rule}
                         </li>
@@ -84,7 +101,10 @@ export function ComplianceCheckWidget({ complianceUpdates }: ComplianceCheckWidg
                     </h4>
                     <ul className="space-y-1">
                       {check.failed_checks.map((rule, idx) => (
-                        <li key={idx} className="flex items-center text-xs text-slate-400">
+                        <li
+                          key={idx}
+                          className="flex items-center text-xs text-slate-400"
+                        >
                           <XCircle className="w-3.5 h-3.5 text-rose-500/70 mr-1.5 shrink-0" />
                           {rule}
                         </li>

@@ -18,7 +18,7 @@ export default function GuardrailEditor({ onClose }: { onClose?: () => void }) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [testText, setTestText] = useState("");
   const [testResult, setTestResult] = useState<any>(null);
-  
+
   const [newName, setNewName] = useState("");
   const [type, setType] = useState("input");
   const [action, setAction] = useState("block");

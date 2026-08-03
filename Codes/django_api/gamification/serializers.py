@@ -1,8 +1,14 @@
 from rest_framework import serializers
 
-from .models import (AchievementUnlock, Badge, ContributionEvent,
-                     LeaderboardSnapshot, PremiumFeature, UserBadge,
-                     UserStreak)
+from .models import (
+    AchievementUnlock,
+    Badge,
+    ContributionEvent,
+    LeaderboardSnapshot,
+    PremiumFeature,
+    UserBadge,
+    UserStreak,
+)
 
 
 class BadgeSerializer(serializers.ModelSerializer):

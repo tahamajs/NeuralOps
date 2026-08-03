@@ -348,7 +348,9 @@ class ModelAccessControl(models.Model):
         ModelVersion, on_delete=models.CASCADE, related_name="access_controls"
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="versioning_model_access"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="versioning_model_access",
     )
     access_level = models.CharField(
         max_length=20, choices=ACCESS_LEVELS, default="read"
@@ -446,7 +448,9 @@ class ModelUsageLog(models.Model):
         ModelVersion, on_delete=models.CASCADE, related_name="usage_logs"
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="versioning_model_usage"
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="versioning_model_usage",
     )
     action = models.CharField(max_length=20, choices=ACTION_TYPES)
     metadata = models.JSONField(default=dict, blank=True)

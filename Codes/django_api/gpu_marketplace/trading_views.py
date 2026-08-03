@@ -7,8 +7,12 @@ from rest_framework.response import Response
 
 from .matching_engine import match_order
 from .models import Candlestick, Portfolio, Trade, TradeOrder
-from .trading_serializers import (CandlestickSerializer, PortfolioSerializer,
-                                  TradeOrderSerializer, TradeSerializer)
+from .trading_serializers import (
+    CandlestickSerializer,
+    PortfolioSerializer,
+    TradeOrderSerializer,
+    TradeSerializer,
+)
 
 logger = logging.getLogger(__name__)
 

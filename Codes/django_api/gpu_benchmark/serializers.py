@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from .models import (BenchmarkResult, BenchmarkRun, BenchmarkSuite,
-                     BenchmarkTest, ListingBenchmarkScore)
+from .models import (
+    BenchmarkResult,
+    BenchmarkRun,
+    BenchmarkSuite,
+    BenchmarkTest,
+    ListingBenchmarkScore,
+)
 
 
 class BenchmarkTestSerializer(serializers.ModelSerializer):

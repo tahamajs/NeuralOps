@@ -8,8 +8,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Dashboard, DashboardWidget, SavedSQLQuery
-from .serializers import (DashboardSerializer, DashboardWidgetSerializer,
-                          SavedSQLQuerySerializer)
+from .serializers import (
+    DashboardSerializer,
+    DashboardWidgetSerializer,
+    SavedSQLQuerySerializer,
+)
 
 logger = logging.getLogger(__name__)
 

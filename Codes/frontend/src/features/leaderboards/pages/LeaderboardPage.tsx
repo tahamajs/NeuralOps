@@ -87,7 +87,8 @@ export default function LeaderboardPage() {
 
   const { data: activityData } = useQuery({
     queryKey: ["leaderboard", "activity", currentUser?.id],
-    queryFn: () => (communityAPI as any).getContributionHeatmap(currentUser?.id),
+    queryFn: () =>
+      (communityAPI as any).getContributionHeatmap(currentUser?.id),
     enabled: !!currentUser,
   });
 

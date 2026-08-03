@@ -1,7 +1,14 @@
 from rest_framework import serializers
 
-from .models import (Alert, AlertChannel, DriftCheck, DriftMonitor,
-                     FeatureGroup, FeatureStore, ModelPerformanceSnapshot)
+from .models import (
+    Alert,
+    AlertChannel,
+    DriftCheck,
+    DriftMonitor,
+    FeatureGroup,
+    FeatureStore,
+    ModelPerformanceSnapshot,
+)
 
 
 class FeatureStoreSerializer(serializers.ModelSerializer):

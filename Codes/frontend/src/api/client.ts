@@ -99,7 +99,11 @@ api.interceptors.response.use(
     const url = error.config?.url || "";
     const isGet = error.config?.method?.toLowerCase() === "get";
 
-    if (error.response?.status === 404 || error.response?.status === 500 || !error.response) {
+    if (
+      error.response?.status === 404 ||
+      error.response?.status === 500 ||
+      !error.response
+    ) {
       // 1. Experiments list
       if (url.includes("/experiments/") && isGet) {
         return {
@@ -108,16 +112,24 @@ api.interceptors.response.use(
               id: "1c615fbe-7d0e-42ea-b195-27ee5e049867",
               name: "BERT attention compression",
               status: "completed",
-              config: { task_name: "mrpc", attention_type: "griffin_ssd", epochs: 3 },
+              config: {
+                task_name: "mrpc",
+                attention_type: "griffin_ssd",
+                epochs: 3,
+              },
               final_metrics: { eval_accuracy: 0.852, eval_loss: 0.342 },
-              created_at: new Date().toISOString()
-            }
-          ]
+              created_at: new Date().toISOString(),
+            },
+          ],
         };
       }
       // 2. Runs details or run compare/diff
       if (url.includes("/runs/") && isGet) {
-        if (url.endsWith("/runs/") || url.includes("/runs/?") || url.includes("/runs/all/")) {
+        if (
+          url.endsWith("/runs/") ||
+          url.includes("/runs/?") ||
+          url.includes("/runs/all/")
+        ) {
           return {
             data: [
               {
@@ -130,14 +142,14 @@ api.interceptors.response.use(
                   model_name: "bert-base-uncased",
                   epochs: 3,
                   batch_size: 32,
-                  learning_rate: 2e-5
+                  learning_rate: 2e-5,
                 },
                 final_metrics: {
                   eval_accuracy: 0.852,
                   eval_loss: 0.342,
-                  eval_f1: 0.891
+                  eval_f1: 0.891,
                 },
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
               },
               {
                 id: "run-2",
@@ -149,25 +161,31 @@ api.interceptors.response.use(
                   model_name: "bert-base-uncased",
                   epochs: 3,
                   batch_size: 32,
-                  learning_rate: 2e-5
+                  learning_rate: 2e-5,
                 },
                 final_metrics: {
                   eval_accuracy: 0.865,
                   eval_loss: 0.315,
-                  eval_f1: 0.902
+                  eval_f1: 0.902,
                 },
-                created_at: new Date(Date.now() - 7200000).toISOString()
-              }
-            ]
+                created_at: new Date(Date.now() - 7200000).toISOString(),
+              },
+            ],
           };
         }
         if (url.includes("/analysis/")) {
           return {
             data: {
-              overview: "This run successfully trained a compressed attention model.",
-              suggestions: ["Try increasing the learning rate slightly", "Fine-tune with more epochs"],
-              bottlenecks: ["SVD decomposition on Layer 11 took 14.2% longer than average"]
-            }
+              overview:
+                "This run successfully trained a compressed attention model.",
+              suggestions: [
+                "Try increasing the learning rate slightly",
+                "Fine-tune with more epochs",
+              ],
+              bottlenecks: [
+                "SVD decomposition on Layer 11 took 14.2% longer than average",
+              ],
+            },
           };
         }
         if (url.includes("/artifacts/")) {
@@ -175,69 +193,115 @@ api.interceptors.response.use(
             data: [
               { name: "model.safetensors", size: "418 MB", type: "weights" },
               { name: "config.json", size: "1.2 KB", type: "config" },
-              { name: "training_args.bin", size: "4.5 KB", type: "args" }
-            ]
+              { name: "training_args.bin", size: "4.5 KB", type: "args" },
+            ],
           };
         }
         if (url.includes("/lineage/")) {
           return {
             data: {
               nodes: [
-                { id: "1", label: "bert-base-uncased (Base Model)", type: "model" },
+                {
+                  id: "1",
+                  label: "bert-base-uncased (Base Model)",
+                  type: "model",
+                },
                 { id: "2", label: "glue/mrpc (Dataset)", type: "dataset" },
-                { id: "3", label: "SVD Compression (Operator)", type: "process" },
-                { id: "4", label: "Compressed Griffin SSD Model", type: "output" }
+                {
+                  id: "3",
+                  label: "SVD Compression (Operator)",
+                  type: "process",
+                },
+                {
+                  id: "4",
+                  label: "Compressed Griffin SSD Model",
+                  type: "output",
+                },
               ],
               edges: [
                 { source: "1", target: "3" },
                 { source: "2", target: "3" },
-                { source: "3", target: "4" }
-              ]
-            }
+                { source: "3", target: "4" },
+              ],
+            },
           };
         }
         if (url.includes("/model-card/")) {
           return {
             data: {
               model_name: "griffin-ssd-bert-mrpc",
-              description: "BERT-base-uncased compressed with Griffin-SSD attention, fine-tuned on GLUE MRPC.",
+              description:
+                "BERT-base-uncased compressed with Griffin-SSD attention, fine-tuned on GLUE MRPC.",
               parameters: { layers: 12, hidden_size: 768, attention_heads: 12 },
-              performance: { accuracy: 0.852, f1: 0.891 }
-            }
+              performance: { accuracy: 0.852, f1: 0.891 },
+            },
           };
         }
         if (url.includes("/snapshots/")) {
           return {
             data: [
-              { step: 100, loss: 0.89, val_loss: 0.74, created_at: new Date().toISOString() },
-              { step: 200, loss: 0.62, val_loss: 0.51, created_at: new Date().toISOString() },
-              { step: 300, loss: 0.34, val_loss: 0.35, created_at: new Date().toISOString() }
-            ]
+              {
+                step: 100,
+                loss: 0.89,
+                val_loss: 0.74,
+                created_at: new Date().toISOString(),
+              },
+              {
+                step: 200,
+                loss: 0.62,
+                val_loss: 0.51,
+                created_at: new Date().toISOString(),
+              },
+              {
+                step: 300,
+                loss: 0.34,
+                val_loss: 0.35,
+                created_at: new Date().toISOString(),
+              },
+            ],
           };
         }
         if (url.includes("/config/history/")) {
           return {
             data: [
-              { version: 1, description: "Base run config", snapshot: { lr: 2e-5, batch_size: 32 }, created_at: new Date(Date.now() - 3600000).toISOString() },
-              { version: 2, description: "Updated hyperparameters", snapshot: { lr: 3e-5, batch_size: 32 }, created_at: new Date().toISOString() }
-            ]
+              {
+                version: 1,
+                description: "Base run config",
+                snapshot: { lr: 2e-5, batch_size: 32 },
+                created_at: new Date(Date.now() - 3600000).toISOString(),
+              },
+              {
+                version: 2,
+                description: "Updated hyperparameters",
+                snapshot: { lr: 3e-5, batch_size: 32 },
+                created_at: new Date().toISOString(),
+              },
+            ],
           };
         }
         if (url.includes("/config/compare/")) {
           return {
             data: {
               diff: {
-                learning_rate: { left: 2e-5, right: 3e-5, changed: true }
-              }
-            }
+                learning_rate: { left: 2e-5, right: 3e-5, changed: true },
+              },
+            },
           };
         }
         if (url.includes("/metrics/")) {
           return {
             data: {
-              "loss": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.9, 0.7, 0.4, 0.2, 0.1] },
-              "accuracy": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.5, 0.65, 0.8, 0.9, 0.95] }
-            }
+              loss: {
+                type: "scalar",
+                steps: [1, 2, 3, 4, 5],
+                values: [0.9, 0.7, 0.4, 0.2, 0.1],
+              },
+              accuracy: {
+                type: "scalar",
+                steps: [1, 2, 3, 4, 5],
+                values: [0.5, 0.65, 0.8, 0.9, 0.95],
+              },
+            },
           };
         }
         if (url.includes("/history/")) {
@@ -245,8 +309,8 @@ api.interceptors.response.use(
             data: [
               { step: 100, loss: 0.89, accuracy: 0.62 },
               { step: 200, loss: 0.62, accuracy: 0.75 },
-              { step: 300, loss: 0.34, accuracy: 0.85 }
-            ]
+              { step: 300, loss: 0.34, accuracy: 0.85 },
+            ],
           };
         }
         if (url.includes("/environment/")) {
@@ -255,8 +319,8 @@ api.interceptors.response.use(
               os: "Ubuntu 22.04 LTS",
               python_version: "3.10.12",
               cuda_version: "12.1",
-              pytorch_version: "2.1.2+cu121"
-            }
+              pytorch_version: "2.1.2+cu121",
+            },
           };
         }
         // Generic single run detail
@@ -271,15 +335,15 @@ api.interceptors.response.use(
               model_name: "bert-base-uncased",
               epochs: 3,
               batch_size: 32,
-              learning_rate: 2e-5
+              learning_rate: 2e-5,
             },
             final_metrics: {
               eval_accuracy: 0.852,
               eval_loss: 0.342,
-              eval_f1: 0.891
+              eval_f1: 0.891,
             },
-            created_at: new Date().toISOString()
-          }
+            created_at: new Date().toISOString(),
+          },
         };
       }
       // 3. Jobs details & metrics
@@ -287,17 +351,35 @@ api.interceptors.response.use(
         if (url.includes("/metrics/")) {
           return {
             data: {
-              "loss": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.9, 0.7, 0.4, 0.2, 0.1] },
-              "accuracy": { type: "scalar", steps: [1, 2, 3, 4, 5], values: [0.5, 0.65, 0.8, 0.9, 0.95] }
-            }
+              loss: {
+                type: "scalar",
+                steps: [1, 2, 3, 4, 5],
+                values: [0.9, 0.7, 0.4, 0.2, 0.1],
+              },
+              accuracy: {
+                type: "scalar",
+                steps: [1, 2, 3, 4, 5],
+                values: [0.5, 0.65, 0.8, 0.9, 0.95],
+              },
+            },
           };
         }
         if (url.includes("/config/history/")) {
           return {
             data: [
-              { version: 1, description: "Initial job launch parameters", snapshot: { lr: 2e-5, batch_size: 32 }, created_at: new Date(Date.now() - 3600000).toISOString() },
-              { version: 2, description: "Optimized learning rate for faster convergence", snapshot: { lr: 3e-5, batch_size: 32 }, created_at: new Date().toISOString() }
-            ]
+              {
+                version: 1,
+                description: "Initial job launch parameters",
+                snapshot: { lr: 2e-5, batch_size: 32 },
+                created_at: new Date(Date.now() - 3600000).toISOString(),
+              },
+              {
+                version: 2,
+                description: "Optimized learning rate for faster convergence",
+                snapshot: { lr: 3e-5, batch_size: 32 },
+                created_at: new Date().toISOString(),
+              },
+            ],
           };
         }
       }
@@ -313,14 +395,15 @@ api.interceptors.response.use(
           const pathAfterNotes = url.split("/notes/v1/notes/")[1] || "";
           const urlParts = pathAfterNotes.split("?")[0].split("/");
           const noteId = urlParts[0];
-          
+
           if (noteId && noteId !== "" && !noteId.startsWith("?")) {
             // Note detail
             return {
               data: {
                 id: noteId,
                 title: "Research note analysis",
-                content: "<p>Using Griffin SSD shows standard accuracy drops of only ~1% while saving ~40% latency in BERT-base models.</p>",
+                content:
+                  "<p>Using Griffin SSD shows standard accuracy drops of only ~1% while saving ~40% latency in BERT-base models.</p>",
                 author_username: "researcher_alpha",
                 tags: ["analysis", "bert", "griffin_ssd"],
                 is_public: true,
@@ -329,11 +412,11 @@ api.interceptors.response.use(
                 version: 1,
                 reply_count: 0,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
+                updated_at: new Date().toISOString(),
+              },
             };
           }
-          
+
           // Note list
           return {
             data: {
@@ -342,7 +425,8 @@ api.interceptors.response.use(
                 {
                   id: "note-1",
                   title: "BERT Griffin-SSD Latency Gains",
-                  content: "<p>Using Griffin SSD shows standard accuracy drops of only ~1% while saving ~40% latency in BERT-base models.</p>",
+                  content:
+                    "<p>Using Griffin SSD shows standard accuracy drops of only ~1% while saving ~40% latency in BERT-base models.</p>",
                   author_username: "researcher_alpha",
                   tags: ["analysis", "bert", "griffin_ssd"],
                   is_public: true,
@@ -351,12 +435,13 @@ api.interceptors.response.use(
                   version: 1,
                   reply_count: 0,
                   created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
+                  updated_at: new Date().toISOString(),
                 },
                 {
                   id: "note-2",
                   title: "Attention Compression Pipeline Notes",
-                  content: "<p>Explored SVD decomposition on layer 11. Suggests fine-tuning with 5 epochs instead of 3 for convergence stability.</p>",
+                  content:
+                    "<p>Explored SVD decomposition on layer 11. Suggests fine-tuning with 5 epochs instead of 3 for convergence stability.</p>",
                   author_username: "researcher_beta",
                   tags: ["hpo", "pipeline"],
                   is_public: false,
@@ -365,10 +450,10 @@ api.interceptors.response.use(
                   version: 1,
                   reply_count: 1,
                   created_at: new Date(Date.now() - 3600000).toISOString(),
-                  updated_at: new Date().toISOString()
-                }
-              ]
-            }
+                  updated_at: new Date().toISOString(),
+                },
+              ],
+            },
           };
         } else {
           // POST / PATCH / DELETE
@@ -388,8 +473,8 @@ api.interceptors.response.use(
                 version: 1,
                 reply_count: 0,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
+                updated_at: new Date().toISOString(),
+              },
             };
           }
           if (method === "patch") {
@@ -407,8 +492,8 @@ api.interceptors.response.use(
                 version: 2,
                 reply_count: 0,
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }
+                updated_at: new Date().toISOString(),
+              },
             };
           }
           return { data: { success: true } };
@@ -421,12 +506,12 @@ api.interceptors.response.use(
           return {
             data: {
               total_earned: 1250.75,
-              pending_earnings: 120.50,
+              pending_earnings: 120.5,
               total_hours_provided: 320,
               active_listings: 1,
               average_rating: 4.8,
-              dispute_rate: 0.02
-            }
+              dispute_rate: 0.02,
+            },
           };
         }
         if (url.includes("/revenue/")) {
@@ -438,14 +523,17 @@ api.interceptors.response.use(
               { date: "2026-07-04", amount: 35.0 },
               { date: "2026-07-05", amount: 40.0 },
               { date: "2026-07-06", amount: 22.0 },
-              { date: "2026-07-07", amount: 48.0 }
-            ]
+              { date: "2026-07-07", amount: 48.0 },
+            ],
           };
         }
         if (url.includes("/usage/")) {
           return {
             data: {
-              hourly_distribution: Array.from({ length: 24 }, (_, i) => ({ hour: i, hours: Math.floor(Math.random() * 20) + 5 })),
+              hourly_distribution: Array.from({ length: 24 }, (_, i) => ({
+                hour: i,
+                hours: Math.floor(Math.random() * 20) + 5,
+              })),
               daily_distribution: [
                 { day: "Mon", hours: 45 },
                 { day: "Tue", hours: 50 },
@@ -453,14 +541,14 @@ api.interceptors.response.use(
                 { day: "Thu", hours: 60 },
                 { day: "Fri", hours: 55 },
                 { day: "Sat", hours: 30 },
-                { day: "Sun", hours: 25 }
+                { day: "Sun", hours: 25 },
               ],
               top_gpu_models: [
                 { model: "NVIDIA H100 PCIe 80GB", hours: 180 },
                 { model: "NVIDIA A100-SXM4-80GB", hours: 100 },
-                { model: "NVIDIA RTX 4090 24GB", hours: 40 }
-              ]
-            }
+                { model: "NVIDIA RTX 4090 24GB", hours: 40 },
+              ],
+            },
           };
         }
       }

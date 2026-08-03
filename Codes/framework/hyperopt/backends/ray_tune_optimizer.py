@@ -50,8 +50,9 @@ class RayTuneOptimizer(BaseOptimizer):
         if algo_str == "OptunaSearch":
             from ray.tune.search.optuna import OptunaSearch as SearchAlgo
         elif algo_str == "RandomSearch":
-            from ray.tune.search.basic_variant import \
-                BasicVariantGenerator as SearchAlgo
+            from ray.tune.search.basic_variant import (
+                BasicVariantGenerator as SearchAlgo,
+            )
         else:
             SearchAlgo = None
 

@@ -1,7 +1,11 @@
 import { create } from "zustand";
 import api from "../../../api/client";
 import { ENDPOINTS } from "../../../api/endpoints";
-import { getAuthToken, setAuthToken, removeAuthToken } from "../../../utils/authUtils";
+import {
+  getAuthToken,
+  setAuthToken,
+  removeAuthToken,
+} from "../../../utils/authUtils";
 
 interface AuthState {
   user: { username: string; email?: string } | null;

@@ -10,6 +10,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path
+
 # ----------------------------------------------------------------------
 # Local imports – adjust paths if your apps live elsewhere
 # ----------------------------------------------------------------------
@@ -46,8 +47,6 @@ urlpatterns = [
     path("api/terminal/", include("terminal.urls")),
     path("api/paper/", include("paper.urls")),
     path("api/portfolios/", include("portfolios.urls")),
-    
-    
     # ------------------------------------------------------------------
     # Discovery, exploration & dashboards
     # ------------------------------------------------------------------

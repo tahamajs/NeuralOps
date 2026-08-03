@@ -30,7 +30,9 @@ export function EvaluationResultCard({ result }: EvaluationResultCardProps) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/5 p-3 rounded-lg border border-white/5">
         {Object.entries(result.scores || {}).map(([metric, score]) => (
           <div key={metric}>
-            <span className="text-slate-500 block uppercase tracking-wider text-[9px] mb-0.5">{metric}</span>
+            <span className="text-slate-500 block uppercase tracking-wider text-[9px] mb-0.5">
+              {metric}
+            </span>
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-slate-900 h-1.5 rounded-full overflow-hidden">
                 <div
@@ -48,8 +50,15 @@ export function EvaluationResultCard({ result }: EvaluationResultCardProps) {
 
       <div className="flex justify-between items-center text-[10px] text-slate-500">
         <span>
-          Tokens: <strong className="text-slate-300 font-mono">{result.token_usage.input}</strong> in /{" "}
-          <strong className="text-slate-300 font-mono">{result.token_usage.output}</strong> out
+          Tokens:{" "}
+          <strong className="text-slate-300 font-mono">
+            {result.token_usage.input}
+          </strong>{" "}
+          in /{" "}
+          <strong className="text-slate-300 font-mono">
+            {result.token_usage.output}
+          </strong>{" "}
+          out
         </span>
         <button
           onClick={() => setExpanded(!expanded)}

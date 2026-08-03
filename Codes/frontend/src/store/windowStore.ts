@@ -4,7 +4,10 @@ import { persist } from "zustand/middleware";
 /** crypto.randomUUID() is only available in HTTPS secure contexts.
  *  This polyfill works on plain HTTP (LAN access, etc.) as well. */
 const uuid = (): string => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   // Fallback: RFC 4122 v4 UUID using Math.random

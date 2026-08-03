@@ -25,7 +25,8 @@ export default function ModelVersionsPage() {
   });
 
   if (isLoading) return <Spinner />;
-  if (!versions.length) return <EmptyState title="No versions found for this model." />;
+  if (!versions.length)
+    return <EmptyState title="No versions found for this model." />;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -51,10 +52,7 @@ export default function ModelVersionsPage() {
               >
                 Publish to Hub
               </Button>
-              <a
-                href={`/model-versioning/versions/${v.id}/download/`}
-                download
-              >
+              <a href={`/model-versioning/versions/${v.id}/download/`} download>
                 <Button size="sm" variant="ghost">
                   Download
                 </Button>

@@ -12,8 +12,12 @@ export const mlopsAPI = {
   // Feature Store (Mocked structural endpoints)
   getFeatureGroups: async () => ({ data: [] }),
   getFeatureGroup: async (id: string) => ({ data: {} as FeatureGroup }),
-  createFeatureGroup: async (data: Partial<FeatureGroup>) => ({ data: data as FeatureGroup }),
-  updateFeatureGroup: async (id: string, data: Partial<FeatureGroup>) => ({ data }),
+  createFeatureGroup: async (data: Partial<FeatureGroup>) => ({
+    data: data as FeatureGroup,
+  }),
+  updateFeatureGroup: async (id: string, data: Partial<FeatureGroup>) => ({
+    data,
+  }),
   deleteFeatureGroup: async (id: string) => ({ data: null }),
   ingestFeatures: (groupId: string, records: any[]) =>
     request.post(`/mlops/features/ingest/`, { records }), // the backend actually has /features/ingest/
@@ -24,22 +28,32 @@ export const mlopsAPI = {
 
   // Drift Monitoring (Mocked)
   getDriftMonitors: async () => ({ data: [] }),
-  createDriftMonitor: async (data: Partial<DriftMonitor>) => ({ data: data as DriftMonitor }),
+  createDriftMonitor: async (data: Partial<DriftMonitor>) => ({
+    data: data as DriftMonitor,
+  }),
   deleteDriftMonitor: async (id: string) => ({ data: null }),
   getDriftChecks: async (monitorId: string, limit?: number) => ({ data: [] }),
   runDriftCheck: async (monitorId: string) => ({ data: {} as DriftCheck }),
 
   // Alerts (Mocked)
-  getAlerts: async (params?: { status?: string; severity?: string }) => ({ data: [] }),
+  getAlerts: async (params?: { status?: string; severity?: string }) => ({
+    data: [],
+  }),
   acknowledgeAlert: async (id: string) => ({ data: null }),
   resolveAlert: async (id: string) => ({ data: null }),
   getAlertChannels: async () => ({ data: [] }),
-  createAlertChannel: async (data: Partial<AlertChannel>) => ({ data: data as AlertChannel }),
+  createAlertChannel: async (data: Partial<AlertChannel>) => ({
+    data: data as AlertChannel,
+  }),
   deleteAlertChannel: async (id: string) => ({ data: null }),
   testAlertChannel: async (id: string) => ({ data: null }),
 
   // Performance Snapshots (Mocked)
   getPerformanceSnapshots: async (params?: any) => ({ data: [] }),
-  getSnapshotDetail: async (id: string) => ({ data: {} as PerformanceSnapshot }),
-  triggerSnapshot: async (modelId: string) => ({ data: {} as PerformanceSnapshot }),
+  getSnapshotDetail: async (id: string) => ({
+    data: {} as PerformanceSnapshot,
+  }),
+  triggerSnapshot: async (modelId: string) => ({
+    data: {} as PerformanceSnapshot,
+  }),
 };

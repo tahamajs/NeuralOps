@@ -8,8 +8,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .agent import check_compliance, generate_explanation, parse_query
-from .models import (ComparisonSet, ComplianceCheck, MarketplaceQuery,
-                     SmartRecommendation)
+from .models import (
+    ComparisonSet,
+    ComplianceCheck,
+    MarketplaceQuery,
+    SmartRecommendation,
+)
 from .serializers import *
 
 logger = logging.getLogger(__name__)

@@ -27,7 +27,7 @@ export default function AnomalyDetailPage({
     enabled: !!anomalyId,
   });
 
-  const anomaly = (anomalyRaw as any);
+  const anomaly = anomalyRaw as any;
 
   const resolveMutation = useMutation({
     mutationFn: () => anomalyAPI.resolveAnomaly(anomalyId!, true),

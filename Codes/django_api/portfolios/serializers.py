@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from .models import (ActivityEvent, Endorsement, Portfolio, ShowcaseItem,
-                     WidgetEmbed)
+from .models import ActivityEvent, Endorsement, Portfolio, ShowcaseItem, WidgetEmbed
 
 
 class ShowcaseItemSerializer(serializers.ModelSerializer):

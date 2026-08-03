@@ -17,8 +17,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 
 sys.path.insert(0, os.getcwd())
@@ -31,8 +31,6 @@ BASE_MODELS = ["distilbert-base-uncased"]
 DATASETS = ["cola", "mrpc", "qnli", "qqp", "rte", "sst2", "stsb", "wnli", "mnli"]
 
 # Populate registries – import all modules to ensure decorators are executed
-import framework.attentions
-import framework.compressors   # if you have a compressors package
 
 ALL_ATTENTIONS = sorted([k for k in ATTENTION_REGISTRY.keys() if k != "full"])
 ALL_COMPRESSORS = sorted([k for k in COMPRESSOR_REGISTRY.keys()])
@@ -49,14 +47,33 @@ MASTER_CSV = BASE_DIR / "all_results.csv"
 
 # Skip known broken modules (optional)
 SKIP_ATTENTIONS = {
-    "compressed_attention_layer", "compressed_attention_layer_energy",
-    "lola_attn", "asvd", "bam_umoe", "cluster", "fusion_attn",
-    "mixattention_moska", "nha_compressor", "rala_compressor",
-    "jamba_info", "optimized_hybrid_attention", "spectra_v2",
-    "template_compressor", "template_attention", "adaptive_compressor",
-    "tt_compressor", "aegis_v5", "xattention", "progressive_token_pruning",
-    "eat", "phantom", "regla", "compression_unified_rope", "simple_ssm"
+    "compressed_attention_layer",
+    "compressed_attention_layer_energy",
+    "lola_attn",
+    "asvd",
+    "bam_umoe",
+    "cluster",
+    "fusion_attn",
+    "mixattention_moska",
+    "nha_compressor",
+    "rala_compressor",
+    "jamba_info",
+    "optimized_hybrid_attention",
+    "spectra_v2",
+    "template_compressor",
+    "template_attention",
+    "adaptive_compressor",
+    "tt_compressor",
+    "aegis_v5",
+    "xattention",
+    "progressive_token_pruning",
+    "eat",
+    "phantom",
+    "regla",
+    "compression_unified_rope",
+    "simple_ssm",
 }
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -65,15 +82,29 @@ def load_or_create_master_csv():
     if MASTER_CSV.exists():
         df = pd.read_csv(MASTER_CSV)
     else:
-        df = pd.DataFrame(columns=[
-            "timestamp", "base_model", "dataset", "exp_type", "name",
-            "method", "seed", "accuracy", "loss", "duration_seconds",
-            "num_parameters", "start_time", "end_time"
-        ])
+        df = pd.DataFrame(
+            columns=[
+                "timestamp",
+                "base_model",
+                "dataset",
+                "exp_type",
+                "name",
+                "method",
+                "seed",
+                "accuracy",
+                "loss",
+                "duration_seconds",
+                "num_parameters",
+                "start_time",
+                "end_time",
+            ]
+        )
     return df
 
+
 def safe_numeric(series):
-    return pd.to_numeric(series, errors='coerce')
+    return pd.to_numeric(series, errors="coerce")
+
 
 def save_cumulative_plot(df, output_path, since_run=None):
     df = df.copy()
@@ -96,41 +127,69 @@ def save_cumulative_plot(df, output_path, since_run=None):
         plt.close()
         print(f"📊 Saved cumulative plot: {output_path}")
 
+
 def run_single_experiment(base_model, dataset, exp_type, name, method, seed, args):
     """
     Launch a single experiment using the unified run.py script.
     Returns a dict with the result row.
     """
     if exp_type == "attention":
-        exp_name = f"attn_{name}_{method}_{dataset}_{base_model.replace('/', '_')}_s{seed}"
+        exp_name = (
+            f"attn_{name}_{method}_{dataset}_{base_model.replace('/', '_')}_s{seed}"
+        )
         cmd = [
-            sys.executable, "run.py",
-            "--model", base_model,
-            "--attn_type", name,
-            "--compressor", "none",
-            "--method", method,
-            "--task", dataset,
-            "--seed", str(seed),
-            "--output_dir", str(BASE_DIR),
-            "--exp_name", exp_name,
-            "--epochs", str(args.num_epochs),
-            "--batch_size", "16",
-            "--rank", "32",
+            sys.executable,
+            "run.py",
+            "--model",
+            base_model,
+            "--attn_type",
+            name,
+            "--compressor",
+            "none",
+            "--method",
+            method,
+            "--task",
+            dataset,
+            "--seed",
+            str(seed),
+            "--output_dir",
+            str(BASE_DIR),
+            "--exp_name",
+            exp_name,
+            "--epochs",
+            str(args.num_epochs),
+            "--batch_size",
+            "16",
+            "--rank",
+            "32",
         ]
     else:
-        exp_name = f"comp_{name}_{method}_{dataset}_{base_model.replace('/', '_')}_s{seed}"
+        exp_name = (
+            f"comp_{name}_{method}_{dataset}_{base_model.replace('/', '_')}_s{seed}"
+        )
         cmd = [
-            sys.executable, "run.py",
-            "--model", base_model,
-            "--attn_type", "full",
-            "--compressor", name,
-            "--method", method,
-            "--task", dataset,
-            "--seed", str(seed),
-            "--output_dir", str(BASE_DIR),
-            "--exp_name", exp_name,
-            "--epochs", str(args.num_epochs),
-            "--batch_size", "16",
+            sys.executable,
+            "run.py",
+            "--model",
+            base_model,
+            "--attn_type",
+            "full",
+            "--compressor",
+            name,
+            "--method",
+            method,
+            "--task",
+            dataset,
+            "--seed",
+            str(seed),
+            "--output_dir",
+            str(BASE_DIR),
+            "--exp_name",
+            exp_name,
+            "--epochs",
+            str(args.num_epochs),
+            "--batch_size",
+            "16",
         ]
 
     if args.max_train_samples > 0:
@@ -161,11 +220,10 @@ def run_single_experiment(base_model, dataset, exp_type, name, method, seed, arg
     log_file = output_dir / "run.log"
     with open(log_file, "w") as f:
         process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, bufsize=1
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
         )
         for line in process.stdout:
-            print(line, end='')
+            print(line, end="")
             f.write(line)
         process.wait()
 
@@ -199,14 +257,19 @@ def run_single_experiment(base_model, dataset, exp_type, name, method, seed, arg
         "end_time": end_iso,
     }
 
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--max_train_samples", type=int, default=DEFAULT_MAX_TRAIN_SAMPLES)
+    parser.add_argument(
+        "--max_train_samples", type=int, default=DEFAULT_MAX_TRAIN_SAMPLES
+    )
     parser.add_argument("--num_epochs", type=int, default=DEFAULT_NUM_EPOCHS)
-    parser.add_argument("--save_visuals", action="store_true", default=DEFAULT_SAVE_VISUALS)
+    parser.add_argument(
+        "--save_visuals", action="store_true", default=DEFAULT_SAVE_VISUALS
+    )
     parser.add_argument("--use_ema", action="store_true")
     parser.add_argument("--gradient_clip_norm", type=float, default=None)
     parser.add_argument("--attention_heatmap_steps", type=int, default=0)
@@ -225,15 +288,18 @@ def main():
     attentions = [a for a in ALL_ATTENTIONS if a not in SKIP_ATTENTIONS]
     compressors = [c for c in ALL_COMPRESSORS if c not in SKIP_ATTENTIONS]
     if args.limit_attentions:
-        attentions = attentions[:args.limit_attentions]
+        attentions = attentions[: args.limit_attentions]
     if args.limit_compressors:
-        compressors = compressors[:args.limit_compressors]
+        compressors = compressors[: args.limit_compressors]
 
-    methods = ["baseline"]   # expand as needed
+    methods = ["baseline"]  # expand as needed
 
-    total = len(BASE_MODELS) * len(DATASETS) * (
-        len(attentions) * len(methods) + len(compressors) * len(methods)
-    ) * len(SEEDS)
+    total = (
+        len(BASE_MODELS)
+        * len(DATASETS)
+        * (len(attentions) * len(methods) + len(compressors) * len(methods))
+        * len(SEEDS)
+    )
     print(f"Total experiments: {total}")
     print(f"Already completed: {completed_runs}")
     print(f"Resume mode: {args.resume}")
@@ -247,23 +313,31 @@ def main():
                     for seed in SEEDS:
                         if args.resume:
                             mask = (
-                                (results_df["base_model"] == base_model) &
-                                (results_df["dataset"] == dataset) &
-                                (results_df["exp_type"] == "attention") &
-                                (results_df["name"] == attn) &
-                                (results_df["method"] == method) &
-                                (results_df["seed"] == seed)
+                                (results_df["base_model"] == base_model)
+                                & (results_df["dataset"] == dataset)
+                                & (results_df["exp_type"] == "attention")
+                                & (results_df["name"] == attn)
+                                & (results_df["method"] == method)
+                                & (results_df["seed"] == seed)
                             )
                             if not results_df[mask].empty:
                                 continue
-                        row = run_single_experiment(base_model, dataset, "attention", attn, method, seed, args)
-                        results_df = pd.concat([results_df, pd.DataFrame([row])], ignore_index=True)
+                        row = run_single_experiment(
+                            base_model, dataset, "attention", attn, method, seed, args
+                        )
+                        results_df = pd.concat(
+                            [results_df, pd.DataFrame([row])], ignore_index=True
+                        )
                         completed_runs += 1
                         run_counter += 1
                         results_df.to_csv(MASTER_CSV, index=False)
                         print(f"✅ {completed_runs}/{total} runs completed")
                         if run_counter % PLOT_EVERY_N_RUNS == 0:
-                            save_cumulative_plot(results_df, BASE_DIR / f"cumulative_{completed_runs}.png", completed_runs)
+                            save_cumulative_plot(
+                                results_df,
+                                BASE_DIR / f"cumulative_{completed_runs}.png",
+                                completed_runs,
+                            )
 
             # Compressors
             for comp in compressors:
@@ -271,23 +345,31 @@ def main():
                     for seed in SEEDS:
                         if args.resume:
                             mask = (
-                                (results_df["base_model"] == base_model) &
-                                (results_df["dataset"] == dataset) &
-                                (results_df["exp_type"] == "compressor") &
-                                (results_df["name"] == comp) &
-                                (results_df["method"] == method) &
-                                (results_df["seed"] == seed)
+                                (results_df["base_model"] == base_model)
+                                & (results_df["dataset"] == dataset)
+                                & (results_df["exp_type"] == "compressor")
+                                & (results_df["name"] == comp)
+                                & (results_df["method"] == method)
+                                & (results_df["seed"] == seed)
                             )
                             if not results_df[mask].empty:
                                 continue
-                        row = run_single_experiment(base_model, dataset, "compressor", comp, method, seed, args)
-                        results_df = pd.concat([results_df, pd.DataFrame([row])], ignore_index=True)
+                        row = run_single_experiment(
+                            base_model, dataset, "compressor", comp, method, seed, args
+                        )
+                        results_df = pd.concat(
+                            [results_df, pd.DataFrame([row])], ignore_index=True
+                        )
                         completed_runs += 1
                         run_counter += 1
                         results_df.to_csv(MASTER_CSV, index=False)
                         print(f"✅ {completed_runs}/{total} runs completed")
                         if run_counter % PLOT_EVERY_N_RUNS == 0:
-                            save_cumulative_plot(results_df, BASE_DIR / f"cumulative_{completed_runs}.png", completed_runs)
+                            save_cumulative_plot(
+                                results_df,
+                                BASE_DIR / f"cumulative_{completed_runs}.png",
+                                completed_runs,
+                            )
 
     # Final plots
     save_cumulative_plot(results_df, BASE_DIR / "final_cumulative_plot.png")
@@ -295,12 +377,13 @@ def main():
         index=["base_model", "exp_type", "name"],
         columns="dataset",
         values="accuracy",
-        aggfunc="mean"
+        aggfunc="mean",
     )
     pivot.to_csv(BASE_DIR / "pivot_summary.csv")
     print("\n🎉 ALL EXPERIMENTS COMPLETED")
     print(f"Master CSV: {MASTER_CSV}")
     print(f"Pivot summary: {BASE_DIR / 'pivot_summary.csv'}")
+
 
 if __name__ == "__main__":
     main()

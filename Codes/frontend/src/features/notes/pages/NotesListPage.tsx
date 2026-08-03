@@ -145,7 +145,10 @@ export default function NotesListPage() {
                 />
               )}
               {note.shared_with?.length > 0 && (
-                <span title={`Shared with ${note.shared_with.join(", ")}`} className="absolute top-2 right-8 text-neon-blue">
+                <span
+                  title={`Shared with ${note.shared_with.join(", ")}`}
+                  className="absolute top-2 right-8 text-neon-blue"
+                >
                   <Users size={12} />
                 </span>
               )}

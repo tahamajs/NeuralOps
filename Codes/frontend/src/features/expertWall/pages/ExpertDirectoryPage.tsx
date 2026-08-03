@@ -38,7 +38,10 @@ export default function ExpertDirectoryPage({
   } = useQuery({
     queryKey: ["experts", filters, searchTerm],
     queryFn: () =>
-      (expertWallAPI as any).getExperts({ ...filters, search: searchTerm || undefined }),
+      (expertWallAPI as any).getExperts({
+        ...filters,
+        search: searchTerm || undefined,
+      }),
   });
 
   const { data: stats } = useQuery({

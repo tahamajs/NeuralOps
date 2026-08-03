@@ -47,9 +47,7 @@ export const literatureAPI = {
   getLandscapes: () =>
     api.get<ResearchLandscape[]>("/literature/discovery/landscapes/"),
   getLandscapeDetail: (landscapeId: string) =>
-    api.get<any>(
-      `/literature/discovery/landscapes/${landscapeId}/`,
-    ),
+    api.get<any>(`/literature/discovery/landscapes/${landscapeId}/`),
   generateLandscape: (topic: string) =>
     api.post("/literature/discovery/landscapes/generate/", { topic }),
 

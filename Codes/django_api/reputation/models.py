@@ -195,7 +195,9 @@ class Recommendation(models.Model):
         related_name="reputation_user_recommendations",
     )
     paper = models.ForeignKey(
-        "agents.ResearchPaper", on_delete=models.CASCADE, related_name="reputation_paper_recommendations"
+        "agents.ResearchPaper",
+        on_delete=models.CASCADE,
+        related_name="reputation_paper_recommendations",
     )
     score = models.FloatField(default=0.0, help_text="Recommendation strength (0–1)")
     reason = models.TextField(blank=True)

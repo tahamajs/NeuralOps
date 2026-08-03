@@ -1,7 +1,12 @@
 from django.contrib import admin
 
-from .models import (CodeGenerationSession, CodeMessage, CodeReview,
-                     GeneratedCode, TestGeneration)
+from .models import (
+    CodeGenerationSession,
+    CodeMessage,
+    CodeReview,
+    GeneratedCode,
+    TestGeneration,
+)
 
 admin.site.register(CodeGenerationSession)
 admin.site.register(CodeMessage)

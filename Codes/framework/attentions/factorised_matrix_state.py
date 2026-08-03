@@ -28,7 +28,9 @@ class FactorisedMatrixState(nn.Module):
             hidden_states = hidden_states * mask
 
         outputs = []
-        state = torch.zeros(B, D, D, device=hidden_states.device, dtype=hidden_states.dtype)
+        state = torch.zeros(
+            B, D, D, device=hidden_states.device, dtype=hidden_states.dtype
+        )
         for t in range(N):
             xt = hidden_states[:, t, :]  # (B, D)
             state = state + (xt.unsqueeze(-1) @ xt.unsqueeze(1))
@@ -39,4 +41,3 @@ class FactorisedMatrixState(nn.Module):
         if mask is not None:
             out = out * mask
         return out, None
-
