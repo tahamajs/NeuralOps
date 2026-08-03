@@ -1,5 +1,5 @@
 """
-Nyströmformer: linear‑time attention via Nyström approximation.
+Nyströmformer Attention – Nyström‑based low‑rank kernel approximation.
 Paper: https://arxiv.org/abs/2102.03902
 """
 
@@ -9,94 +9,84 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.base import BaseAttention
+from framework.core.attention_mask import get_token_valid_mask
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-def _compute_moore_penrose(A: torch.Tensor, iters: int = 6) -> torch.Tensor:
-    r"""Compute the Moore-Penrose pseudoinverse using iterative Newton-Schulz method:
-    $$X_{k+1} = X_k (2I - A X_k)$$
-    where $X_0 = A^\top / \|A\|_F^2$.
-    """
-    norm_A: torch.Tensor = torch.linalg.norm(A, dim=(-2, -1), keepdim=True)
-    X: torch.Tensor = A.transpose(-2, -1) / (norm_A + 1e-8)
-    I: torch.Tensor = torch.eye(A.size(-1), device=A.device).unsqueeze(0).unsqueeze(0)
-    for _ in range(iters):
-        X = torch.matmul(X, 2 * I - torch.matmul(A, X))
-    return X
-
-
 @ATTENTION_REGISTRY.register("nystrom")
-class NystromAttention(BaseAttention):
-    r"""Nyströmformer Linear Attention Mechanism.
+class NystromAttention(nn.Module):
+    r"""Nyströmformer: Linear Complexity Self-Attention via Nyström Landmark Approximation (Xiong et al., 2021).
 
-    Approximates the full $N \times N$ attention matrix $S = \text{softmax}(Q K^\top / \sqrt{d_k})$
-    using the Nyström matrix decomposition with $m \ll N$ landmark points:
-    $$\tilde{S} = F_1 F_2^+ F_3$$
-    where $F_1 = \text{softmax}(Q \tilde{K}^\top / \sqrt{d_k}) \in \mathbb{R}^{N \times m}$,
-    $F_2 = \text{softmax}(\tilde{Q} \tilde{K}^\top / \sqrt{d_k}) \in \mathbb{R}^{m \times m}$, and
-    $F_3 = \text{softmax}(\tilde{Q} K^\top / \sqrt{d_k}) \in \mathbb{R}^{m \times N}$, with $F_2^+$
-    evaluated via the iterative Newton-Schulz algorithm.
+    Approximates standard $\mathcal{O}(N^2)$ attention using $m \ll N$ landmark tokens:
+    $$\hat{A} = \hat{F}_1 \hat{F}_2^+ \hat{F}_3$$
+    $$\hat{F}_1 = \text{softmax}\left(\frac{Q \tilde{K}^\top}{\sqrt{d_k}}\right) \in \mathbb{R}^{N \times m}, \quad \hat{F}_2 = \text{softmax}\left(\frac{\tilde{Q} \tilde{K}^\top}{\sqrt{d_k}}\right) \in \mathbb{R}^{m \times m}, \quad \hat{F}_3 = \text{softmax}\left(\frac{\tilde{Q} K^\top}{\sqrt{d_k}} + M\right) \in \mathbb{R}^{m \times N}$$
+    $$\text{Attention}_{\text{Nyström}}(Q, K, V) = \hat{F}_1 \left( \hat{F}_2^+ \left( \hat{F}_3 V \right) \right)$$
 
     Computational Complexity:
-        - Time Complexity: $\mathcal{O}(B \cdot H \cdot (N \cdot m \cdot d_k + m^3 \cdot \text{iters}))$
-        - Memory Complexity: $\mathcal{O}(B \cdot H \cdot N \cdot m)$ vs $\mathcal{O}(B \cdot H \cdot N^2)$
+        - Time: $\mathcal{O}(B \cdot H \cdot (N \cdot m \cdot d_k + m^3))$
+        - Memory: $\mathcal{O}(B \cdot H \cdot (N \cdot m + m \cdot d_k))$ vs $\mathcal{O}(B \cdot H \cdot N^2)$
 
     Tensor Dimensions:
         - hidden_states: $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
-        - Output: Tuple of $([B, N, D], \text{Optional}[B, H, N, N])$.
+        - Output: Tuple of $([B, N, D], \text{None})$.
     """
 
     def __init__(
         self,
         config: Any,
-        rank: Optional[int] = 64,
+        num_landmarks: Optional[int] = None,
         pinv_iterations: int = 6,
-        residual: bool = True,
-        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
     ) -> None:
-        if rank is None:
-            rank = 64
-        super().__init__(config, rank)
-        self.pinv_iterations: int = pinv_iterations
-        self.residual: bool = residual
-
+        super().__init__()
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
-        self.rank: int = rank
+
+        self.num_landmarks: int = getattr(
+            config,
+            "num_landmarks",
+            num_landmarks if num_landmarks is not None else getattr(config, "num_landmarks", 64),
+        )
+        self.pinv_iterations: int = pinv_iterations
 
         self.query: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.key: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.value: nn.Linear = nn.Linear(config.hidden_size, self.all_head_size)
         self.out_proj: nn.Linear = nn.Linear(self.all_head_size, config.hidden_size)
-        dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
+
+        # Aliases
+        self.q_proj = self.query
+        self.k_proj = self.key
+        self.v_proj = self.value
+
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
+        )
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
-        if pretrained_attn is not None:
-            self.copy_weights(pretrained_attn)
+    def _iterative_pinv(self, A: torch.Tensor, iters: int = 6) -> torch.Tensor:
+        r"""Compute Moore-Penrose pseudo-inverse using iterative Schulz updates."""
+        # A: (B, H, m, m)
+        # Compute ||A||_1 and ||A||_inf
+        norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
+        norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
+        alpha = 1.0 / (norm_1 * norm_inf + 1e-7)
 
-    def copy_weights(self, src: Any) -> None:
-        """Copy weights and biases from pretrained multi-head attention module."""
-        with torch.no_grad():
-            self.query.weight.copy_(src.q_lin.weight)
-            if src.q_lin.bias is not None:
-                self.query.bias.copy_(src.q_lin.bias)
-            self.key.weight.copy_(src.k_lin.weight)
-            if src.k_lin.bias is not None:
-                self.key.bias.copy_(src.k_lin.bias)
-            self.value.weight.copy_(src.v_lin.weight)
-            if src.v_lin.bias is not None:
-                self.value.bias.copy_(src.v_lin.bias)
-            self.out_proj.weight.copy_(src.out_lin.weight)
-            if src.out_lin.bias is not None:
-                self.out_proj.bias.copy_(src.out_lin.bias)
+        # V_0 = alpha * A^T
+        V = alpha * A.transpose(-2, -1)
+        I = torch.eye(A.size(-1), device=A.device, dtype=A.dtype).unsqueeze(0).unsqueeze(0)
 
-    def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
-        """ reshape."""
-        return x.view(batch_size, -1, self.num_heads, self.head_dim).permute(
-            0, 2, 1, 3
-        )
+        for _ in range(iters):
+            # V_{k+1} = V_k (2I - A V_k)
+            V = torch.matmul(V, 2.0 * I - torch.matmul(A, V))
+        return V
 
     def forward(
         self,
@@ -106,92 +96,59 @@ class NystromAttention(BaseAttention):
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Forward pass using Nyström low-rank attention factorisation.
+        """Forward pass for true O(N) linear Nyströmformer attention."""
+        B, N, D = hidden_states.shape
+        H, d = self.num_heads, self.head_dim
+        device = hidden_states.device
+        dtype = hidden_states.dtype
 
-        Args:
-            hidden_states (torch.Tensor): Input tensor `[Batch, SeqLen, HiddenDim]`.
-            attention_mask (Optional[torch.Tensor]): Binary or additive mask.
-            head_mask (Optional[torch.Tensor]): Head mask tensor.
-            output_attentions (bool): Whether to return attention weights.
-            **kwargs (Any): Additional parameters.
+        Q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
+        K: torch.Tensor = self.key(hidden_states).view(B, N, H, d).transpose(1, 2)
+        V: torch.Tensor = self.value(hidden_states).view(B, N, H, d).transpose(1, 2)
 
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]: Reconstructed output and optional attention matrix.
-        """
-        batch_size, seq_len, _ = hidden_states.shape
-        Q: torch.Tensor = self._reshape(self.query(hidden_states), batch_size)
-        K: torch.Tensor = self._reshape(self.key(hidden_states), batch_size)
-        V: torch.Tensor = self._reshape(self.value(hidden_states), batch_size)
+        m = min(self.num_landmarks, N)
 
-        num_landmarks: int = self.rank
-        if seq_len % num_landmarks == 0:
-            seg = seq_len // num_landmarks
-            Q_land: torch.Tensor = Q.reshape(
-                batch_size, self.num_heads, num_landmarks, seg, self.head_dim
-            ).mean(dim=3)
-            K_land: torch.Tensor = K.reshape(
-                batch_size, self.num_heads, num_landmarks, seg, self.head_dim
-            ).mean(dim=3)
-        else:
-            idx = torch.linspace(
-                0,
-                seq_len - 1,
-                num_landmarks,
-                dtype=torch.long,
-                device=hidden_states.device,
-            )
-            Q_land = Q[:, :, idx, :]
-            K_land = K[:, :, idx, :]
+        # Landmark extraction via adaptive average pooling over sequence dimension
+        # Q: (B, H, N, d) -> transpose to (B*H, d, N) for pooling
+        Q_flat = Q.reshape(B * H, N, d).transpose(1, 2)
+        K_flat = K.reshape(B * H, N, d).transpose(1, 2)
 
-        scale: float = 1.0 / (self.head_dim**0.5)
-        F1: torch.Tensor = torch.matmul(Q, K_land.transpose(-2, -1)) * scale
-        F2: torch.Tensor = torch.matmul(Q_land, K_land.transpose(-2, -1)) * scale
-        F3: torch.Tensor = torch.matmul(Q_land, K.transpose(-2, -1)) * scale
+        Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m).transpose(1, 2).reshape(B, H, m, d)
+        K_landmarks = F.adaptive_avg_pool1d(K_flat, m).transpose(1, 2).reshape(B, H, m, d)
 
-        F2_pinv: torch.Tensor = _compute_moore_penrose(F2, self.pinv_iterations)
-        attn: torch.Tensor = torch.matmul(F1, torch.matmul(F2_pinv, F3))
+        scale = d**-0.5
+        # Kernel 1: Q @ K_landmarks^T -> (B, H, N, m)
+        F1 = F.softmax(torch.matmul(Q, K_landmarks.transpose(-2, -1)) * scale, dim=-1)
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                mask = attention_mask[:, None, None, :].to(dtype=attn.dtype)
-                attn = attn + (1.0 - mask) * -1e9
-            else:
-                attn = attn + attention_mask
+        # Kernel 2: Q_landmarks @ K_landmarks^T -> (B, H, m, m)
+        F2 = F.softmax(torch.matmul(Q_landmarks, K_landmarks.transpose(-2, -1)) * scale, dim=-1)
 
-        probs: torch.Tensor = F.softmax(attn, dim=-1)
-        probs = self.dropout(probs)
+        # Kernel 3: Q_landmarks @ K^T -> (B, H, m, N)
+        scores3 = torch.matmul(Q_landmarks, K.transpose(-2, -1)) * scale
 
-        context: torch.Tensor = torch.matmul(probs, V)
-        if self.residual:
-            context = context + V
-        context = (
-            context.permute(0, 2, 1, 3)
-            .contiguous()
-            .view(batch_size, seq_len, self.all_head_size)
-        )
+        valid_mask = get_token_valid_mask(attention_mask, B, N, device)  # (B, N)
+        mask_expanded = valid_mask.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N)
+        scores3 = scores3.masked_fill(~mask_expanded, -10000.0)
+        F3 = F.softmax(scores3, dim=-1)
+
+        # Compute F2^+
+        F2_pinv = self._iterative_pinv(F2, iters=self.pinv_iterations)
+
+        # Associative linear multiplication: O(N * m * d)
+        # step1 = F3 @ V: (B, H, m, d)
+        step1 = torch.matmul(F3, V)
+        # step2 = F2_pinv @ step1: (B, H, m, d)
+        step2 = torch.matmul(F2_pinv, step1)
+        # context = F1 @ step2: (B, H, N, d)
+        context = torch.matmul(F1, step2)
+
+        context = self.dropout(context)
+        if head_mask is not None:
+            context = context * head_mask
+
+        # Mask padding queries
+        context = context * valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
         out: torch.Tensor = self.out_proj(context)
 
-        if output_attentions:
-            return out, attn
         return out, None
-
-
-def inject_nystrom(
-    layer: Any,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Any,
-) -> NystromAttention:
-    """Injection helper for Nyström attention."""
-    rank: int = getattr(comp_config, "rank", 64)
-    residual: bool = getattr(comp_config, "residual", True)
-    new_attn: NystromAttention = NystromAttention(
-        config=model_config,
-        rank=rank,
-        residual=residual,
-        pretrained_attn=old_attn,
-    )
-    layer.attention = new_attn
-    return new_attn

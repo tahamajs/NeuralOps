@@ -1,215 +1,175 @@
 """
-ASVD Attention: Activation‑Aware Singular Value Decomposition for Attention Compression
+ASVD (Activation‑aware Singular Value Decomposition) Attention.
+Paper: https://arxiv.org/abs/2307.07382
 """
 
+import math
 from typing import Any, Optional, Tuple, Union
 
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from framework.core.base import BaseAttention
+from framework.core.attention_mask import apply_attention_mask
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-@ATTENTION_REGISTRY.register("asvd")
-class ASVDAttention(BaseAttention):
-    r"""Activation-Aware Singular Value Decomposition (ASVD) Attention.
+class ASVDLinear(nn.Module):
+    r"""Low-rank factorized linear layer with explicit singular value scaling: $y = ((x V^\top) \odot \Sigma) U^\top + b$."""
 
-    Compresses attention projection weight matrices $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$
-    by scaling weights by the empirical input channel activation magnitude $S_X = \text{diag}(\mathbf{s}_X)$,
-    performing low-rank truncated SVD on the scaled weight $W S_X = U \Sigma V^\top$, and absorbing scales back:
-    $$W = (U \Sigma) (V^\top S_X^{-1})$$
-    $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^\top}{\sqrt{d_k}} + M\right) V$$
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = rank
+
+        self.U = nn.Parameter(torch.empty(out_features, rank))
+        self.S = nn.Parameter(torch.empty(rank))
+        self.V = nn.Parameter(torch.empty(rank, in_features))
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter("bias", None)
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        nn.init.orthogonal_(self.U)
+        nn.init.ones_(self.S)
+        nn.init.orthogonal_(self.V)
+        if self.bias is not None:
+            nn.init.zeros_(self.bias)
+
+    def set_svd_factors(self, U: torch.Tensor, V: torch.Tensor, S: Optional[torch.Tensor] = None) -> None:
+        with torch.no_grad():
+            self.U.copy_(U)
+            self.V.copy_(V)
+            if S is not None:
+                self.S.copy_(S)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x: (*, in_features)
+        # 1. x @ V.T -> (*, rank)
+        Vx = F.linear(x, self.V)
+        # 2. scale by S
+        SVx = Vx * self.S
+        # 3. SVx @ U.T -> (*, out_features)
+        out = F.linear(SVx, self.U)
+        if self.bias is not None:
+            out = out + self.bias
+        return out
+
+
+@ATTENTION_REGISTRY.register("asvd")
+class ASVDAttention(nn.Module):
+    r"""ASVD Attention with Factored Low-Rank Matrix Decomposition.
 
     Computational Complexity:
-        - Parameter Footprint: $\mathcal{O}(4 \cdot r \cdot (d + d_{\text{all}}))$
-        - Time: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k + B \cdot N \cdot d \cdot d_{\text{all}})$
+        - Factorized Projections: $\mathcal{O}(B \cdot N \cdot r \cdot (d + d_{\text{all}}))$
+        - Attention Scoring: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k)$
 
     Tensor Dimensions:
         - hidden_states: $[B, N, D]$ where $B$ is batch size, $N$ is sequence length, and $D$ is hidden dimension.
-        - attention_mask: Optional $[B, N]$ or $[B, 1, 1, N]$.
-        - Output: Tuple of $([B, N, D], \text{Optional}[B, H, N, N])$.
+        - Output: Tuple of $([B, N, D], \text{None})$.
     """
 
     def __init__(
         self,
         config: Any,
-        rank: int = 64,
-        activation_scales: Optional[Union[torch.Tensor, np.ndarray]] = None,
+        rank: Optional[int] = None,
+        pretrained_attn: Optional[nn.Module] = None,
+        **kwargs: Any,
     ) -> None:
-        super().__init__(config, rank)
+        super().__init__()
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
-        self.rank: int = rank
-
-        self.query_u: nn.Parameter = nn.Parameter(
-            torch.randn(self.all_head_size, self.rank) * 0.02
-        )
-        self.query_s: nn.Parameter = nn.Parameter(torch.ones(self.rank))
-        self.query_vh: nn.Parameter = nn.Parameter(
-            torch.randn(self.rank, config.hidden_size) * 0.02
+        self.hidden_size: int = config.hidden_size
+        self.rank: int = getattr(
+            config,
+            "asvd_rank",
+            rank if rank is not None else getattr(config, "rank", 32),
         )
 
-        self.key_u: nn.Parameter = nn.Parameter(
-            torch.randn(self.all_head_size, self.rank) * 0.02
-        )
-        self.key_s: nn.Parameter = nn.Parameter(torch.ones(self.rank))
-        self.key_vh: nn.Parameter = nn.Parameter(
-            torch.randn(self.rank, config.hidden_size) * 0.02
-        )
+        self.query: ASVDLinear = ASVDLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
+        self.key: ASVDLinear = ASVDLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
+        self.value: ASVDLinear = ASVDLinear(self.hidden_size, self.all_head_size, self.rank, bias=True)
+        self.out_proj: ASVDLinear = ASVDLinear(self.all_head_size, self.hidden_size, self.rank, bias=True)
 
-        self.value_u: nn.Parameter = nn.Parameter(
-            torch.randn(self.all_head_size, self.rank) * 0.02
-        )
-        self.value_s: nn.Parameter = nn.Parameter(torch.ones(self.rank))
-        self.value_vh: nn.Parameter = nn.Parameter(
-            torch.randn(self.rank, config.hidden_size) * 0.02
-        )
+        # Aliases
+        self.q_proj = self.query
+        self.k_proj = self.key
+        self.v_proj = self.value
 
-        self.out_proj_u: nn.Parameter = nn.Parameter(
-            torch.randn(config.hidden_size, self.rank) * 0.02
+        dropout_p = getattr(
+            config,
+            "dropout",
+            getattr(
+                config,
+                "hidden_dropout_prob",
+                getattr(config, "attention_probs_dropout_prob", 0.1),
+            ),
         )
-        self.out_proj_s: nn.Parameter = nn.Parameter(torch.ones(self.rank))
-        self.out_proj_vh: nn.Parameter = nn.Parameter(
-            torch.randn(self.rank, self.all_head_size) * 0.02
-        )
-
-        dropout_p = getattr(config, "dropout", getattr(config, "hidden_dropout_prob", getattr(config, "attention_probs_dropout_prob", 0.1)))
         self.dropout: nn.Dropout = nn.Dropout(dropout_p)
 
-        if activation_scales is not None:
-            self.apply_activation_scales(activation_scales)
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
 
-    def apply_activation_scales(
-        self, scales: Optional[Union[torch.Tensor, np.ndarray]]
-    ) -> None:
-        """Apply activation scales to the right singular vectors for ASVD calibration."""
-        if scales is not None:
-            if not isinstance(scales, torch.Tensor):
-                scales_t = torch.tensor(
-                    scales, device=self.query_vh.device, dtype=self.query_vh.dtype
-                )
-            else:
-                scales_t = scales
-            if scales_t.dim() == 1:
-                scales_t = scales_t.unsqueeze(0)
-            self.query_vh.data.mul_(scales_t)
-            self.key_vh.data.mul_(scales_t)
-            self.value_vh.data.mul_(scales_t)
-            self.out_proj_vh.data.mul_(scales_t)
+    def _decompose_and_set(self, target_linear: ASVDLinear, src_weight: torch.Tensor, src_bias: Optional[torch.Tensor]) -> None:
+        with torch.no_grad():
+            W = src_weight.float()
+            U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r = min(self.rank, U.size(1), Vt.size(0))
+            target_linear.U.data[:, :r] = U[:, :r].to(target_linear.U.dtype)
+            target_linear.S.data[:r] = S[:r].to(target_linear.S.dtype)
+            target_linear.V.data[:r, :] = Vt[:r, :].to(target_linear.V.dtype)
+            if src_bias is not None and target_linear.bias is not None:
+                target_linear.bias.data.copy_(src_bias)
 
-    def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
-        """ reshape."""
-        x = x.view(batch_size, -1, self.num_heads, self.head_dim)
-        return x.permute(0, 2, 1, 3)
+    def copy_weights(self, src: Any) -> None:
+        """Decompose and copy weights from any HuggingFace or PyTorch MHA module."""
+        from framework.core.adapters import UniversalAdapter
+
+        for proj, target in [("q", self.query), ("k", self.key), ("v", self.value), ("o", self.out_proj)]:
+            try:
+                w, b = UniversalAdapter.get_weight_bias(src, proj)
+                self._decompose_and_set(target, w, b)
+            except Exception:
+                pass
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
+        head_mask: Optional[torch.Tensor] = None,
+        output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        """Forward pass for activation-aware decomposed attention.
+        """Forward pass for factorized ASVD attention."""
+        B, N, D = hidden_states.shape
+        H, d = self.num_heads, self.head_dim
 
-        Args:
-            hidden_states (torch.Tensor): Input activations of shape `[Batch, SeqLen, HiddenDim]`.
-            attention_mask (Optional[torch.Tensor]): Attention mask tensor.
-            **kwargs (Any): Additional parameters.
+        q: torch.Tensor = self.query(hidden_states).view(B, N, H, d).transpose(1, 2)
+        k: torch.Tensor = self.key(hidden_states).view(B, N, H, d).transpose(1, 2)
+        v: torch.Tensor = self.value(hidden_states).view(B, N, H, d).transpose(1, 2)
 
-        Returns:
-            Tuple[torch.Tensor, Optional[torch.Tensor]]: Contextualized representation and optional attention weights.
-        """
-        batch_size, seq_len, _ = hidden_states.shape
+        scale: float = d**-0.5
+        scores: torch.Tensor = torch.matmul(q, k.transpose(-2, -1)) * scale
+        scores = apply_attention_mask(scores, attention_mask)
 
-        W_q: torch.Tensor = (self.query_u * self.query_s) @ self.query_vh
-        W_k: torch.Tensor = (self.key_u * self.key_s) @ self.key_vh
-        W_v: torch.Tensor = (self.value_u * self.value_s) @ self.value_vh
-        W_o: torch.Tensor = (self.out_proj_u * self.out_proj_s) @ self.out_proj_vh
+        attn: torch.Tensor = F.softmax(scores, dim=-1)
+        attn = self.dropout(attn)
 
-        Q: torch.Tensor = (
-            F.linear(hidden_states, W_q, None)
-            .view(batch_size, seq_len, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        K: torch.Tensor = (
-            F.linear(hidden_states, W_k, None)
-            .view(batch_size, seq_len, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
-        V: torch.Tensor = (
-            F.linear(hidden_states, W_v, None)
-            .view(batch_size, seq_len, self.num_heads, self.head_dim)
-            .permute(0, 2, 1, 3)
-        )
+        if head_mask is not None:
+            attn = attn * head_mask
 
-        scale: float = 1.0 / (self.head_dim**0.5)
-        scores: torch.Tensor = torch.matmul(Q, K.transpose(-2, -1)) * scale
+        context: torch.Tensor = torch.matmul(attn, v)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        out: torch.Tensor = self.out_proj(context)
 
-        if attention_mask is not None:
-            scores = scores + attention_mask.unsqueeze(1)
-
-        probs: torch.Tensor = F.softmax(scores, dim=-1)
-        probs = self.dropout(probs)
-
-        context: torch.Tensor = torch.matmul(probs, V)
-        context = (
-            context.permute(0, 2, 1, 3)
-            .contiguous()
-            .view(batch_size, seq_len, self.all_head_size)
-        )
-
-        out: torch.Tensor = F.linear(context, W_o)
-        if kwargs.get("output_attentions"):
-            return (out, probs)
-        return (out, None)
-
-    @staticmethod
-    def from_module(
-        module: Any,
-        rank: int,
-        activation_scales: Optional[Union[torch.Tensor, np.ndarray]] = None,
-    ) -> "ASVDAttention":
-        """Create ASVDAttention by SVD of the original module's weights."""
-        attn = ASVDAttention(module, rank, activation_scales)
-        w_qkv = module.in_proj_weight.data.cpu().numpy()
-        w_o = module.out_proj.weight.data.cpu().numpy()
-        all_head = module.embed_dim * module.num_heads
-        W_q = w_qkv[:all_head, :]
-        W_k = w_qkv[all_head : 2 * all_head, :]
-        W_v = w_qkv[2 * all_head :, :]
-
-        def decomposed_weights(
-            W: np.ndarray, rank: int
-        ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-            """Decomposed weights."""
-            U, S, Vh = np.linalg.svd(W, full_matrices=False)
-            U_r = U[:, :rank]
-            S_r = S[:rank]
-            Vh_r = Vh[:rank, :]
-            return (
-                torch.tensor(U_r, dtype=torch.float32),
-                torch.tensor(S_r, dtype=torch.float32),
-                torch.tensor(Vh_r, dtype=torch.float32),
-            )
-
-        qu, qs, qvh = decomposed_weights(W_q, rank)
-        ku, ks, kvh = decomposed_weights(W_k, rank)
-        vu, vs, vvh = decomposed_weights(W_v, rank)
-        ou, os, ovh = decomposed_weights(w_o, rank)
-
-        attn.query_u.data = qu
-        attn.query_s.data = qs
-        attn.query_vh.data = qvh
-        attn.key_u.data = ku
-        attn.key_s.data = ks
-        attn.key_vh.data = kvh
-        attn.value_u.data = vu
-        attn.value_s.data = vs
-        attn.value_vh.data = vvh
-        attn.out_proj_u.data = ou
-        attn.out_proj_s.data = os
-        attn.out_proj_vh.data = ovh
-        return attn
+        return out, attn if output_attentions else None

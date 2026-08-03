@@ -13,6 +13,7 @@ from .architecture import (
     get_ffn_modules,
     get_transformer_layers,
 )
+from .attention_mask import apply_attention_mask, get_token_valid_mask
 from .attention_utils import available_attention_types, inject_attention
 from .base import BaseAttention, BaseCompressor
 from .compression_engine import CompressionPipeline, compress_model
