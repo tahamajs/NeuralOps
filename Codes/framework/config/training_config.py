@@ -23,8 +23,8 @@ class TrainingConfig:
     save_only_model: bool = True
     eval_strategy: str = "epoch"
     eval_steps: int = 500
-    metric_for_best_model: str = "eval_accuracy"
-    greater_is_better: bool = True
+    metric_for_best_model: str = "eval_loss"
+    greater_is_better: bool = False
     fp16: bool = False
     bf16: bool = False
     report_to: str = "none"
