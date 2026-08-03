@@ -109,10 +109,21 @@ class ResultsSaver:
     # ------------------------------------------------------------------
     def _write_json(self, rel_path: str, obj) -> None:
         """ write json."""
+        def _default_serializer(o):
+            if hasattr(o, "to_dict") and callable(o.to_dict):
+                return o.to_dict()
+            if hasattr(o, "__dict__"):
+                return {k: v for k, v in o.__dict__.items() if not k.startswith("_")}
+            if isinstance(o, (datetime, Path)):
+                return str(o)
+            if hasattr(o, "value"):
+                return o.value
+            return str(o)
+
         fp = self.run_dir / rel_path
         fp.parent.mkdir(exist_ok=True)
         with open(fp, "w") as f:
-            json.dump(obj, f, indent=2)
+            json.dump(obj, f, indent=2, default=_default_serializer)
 
     def _write_text(self, rel_path: str, text: str) -> None:
         """ write text."""
