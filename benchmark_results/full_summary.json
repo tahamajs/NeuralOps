@@ -1,0 +1,128 @@
+{
+  "sst2___bert-base-uncased___full": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "full",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___bert-base-uncased___svd": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "svd",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___bert-base-uncased___xattention": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "xattention",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___bert-base-uncased___linformer": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "linformer",
+    "status": "FAILED",
+    "error": "'BertAttention' object has no attribute 'q_lin'"
+  },
+  "sst2___bert-base-uncased___performer": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "performer",
+    "status": "FAILED",
+    "error": "'BertAttention' object has no attribute 'q_lin'"
+  },
+  "sst2___bert-base-uncased___nystrom": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "nystrom",
+    "status": "FAILED",
+    "error": "'BertAttention' object has no attribute 'q_lin'"
+  },
+  "sst2___bert-base-uncased___asvd": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "asvd",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___bert-base-uncased___gqa": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "gqa",
+    "status": "FAILED",
+    "error": "The size of tensor a (256) must match the size of tensor b (768) at non-singleton dimension 0"
+  },
+  "sst2___bert-base-uncased___lsh": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "lsh",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___distilbert-base-uncased___full": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "full",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___distilbert-base-uncased___svd": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "svd",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___distilbert-base-uncased___xattention": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "xattention",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___distilbert-base-uncased___linformer": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "linformer",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___distilbert-base-uncased___performer": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "performer",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___distilbert-base-uncased___nystrom": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "nystrom",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___distilbert-base-uncased___asvd": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "asvd",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  },
+  "sst2___distilbert-base-uncased___gqa": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "gqa",
+    "status": "FAILED",
+    "error": "The size of tensor a (256) must match the size of tensor b (768) at non-singleton dimension 0"
+  },
+  "sst2___distilbert-base-uncased___lsh": {
+    "task": "sst2",
+    "model": "distilbert-base-uncased",
+    "attention": "lsh",
+    "status": "FAILED",
+    "error": "DataConfig.__init__() got an unexpected keyword argument 'task_name'. Did you mean 'task_type'?"
+  }
+}
