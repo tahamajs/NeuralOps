@@ -26,6 +26,13 @@ def inject_attention(
     """
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     config = getattr(model, "config", None)
+    if config is not None and not hasattr(config, "dropout"):
+        dropout_val = getattr(
+            config,
+            "hidden_dropout_prob",
+            getattr(config, "attention_probs_dropout_prob", 0.1),
+        )
+        setattr(config, "dropout", dropout_val)
     arch = detect_architecture(model)
     adapter = get_adapter(arch)
 
