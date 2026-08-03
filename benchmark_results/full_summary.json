@@ -3,7 +3,18 @@
     "task": "sst2",
     "model": "bert-base-uncased",
     "attention": "full",
+    "epochs": 3,
+    "status": "SUCCESS",
+    "train_loss": 0.6981375280511443,
+    "eval_loss": null,
+    "eval_accuracy": null,
+    "elapsed_seconds": 344.28
+  },
+  "sst2___bert-base-uncased___svd": {
+    "task": "sst2",
+    "model": "bert-base-uncased",
+    "attention": "svd",
     "status": "FAILED",
-    "error": "create_dataloader() missing 1 required positional argument: 'config'"
+    "error": "Cannot convert a MPS Tensor to float64 dtype as the MPS framework doesn't support float64. Please use float32 instead."
   }
 }
