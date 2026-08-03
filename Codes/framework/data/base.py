@@ -53,6 +53,36 @@ def preprocess_function(examples, tokenizer, config: DataConfig) -> Any:
     text1 = examples.get(config.text_column_1) if config.text_column_1 else None
     text2 = examples.get(config.text_column_2) if config.text_column_2 else None
 
+    # Fallback auto-detection for text columns if specified column is missing
+    if text1 is None:
+        for col in ["sentence", "text", "sentence1", "premise", "question", "inputs", "input"]:
+            if col in examples:
+                text1 = examples[col]
+                break
+        if text1 is None and hasattr(examples, "keys"):
+            for k in examples.keys():
+                if k not in ("label", "labels", "idx", "id"):
+                    text1 = examples[k]
+                    break
+
+    if text2 is None and config.text_column_2:
+        for col in ["sentence2", "hypothesis", "context"]:
+            if col in examples:
+                text2 = examples[col]
+                break
+
+    if text1 is not None:
+        if isinstance(text1, list):
+            text1 = [str(x) if x is not None else "" for x in text1]
+        elif not isinstance(text1, str):
+            text1 = str(text1)
+
+    if text2 is not None:
+        if isinstance(text2, list):
+            text2 = [str(x) if x is not None else "" for x in text2]
+        elif not isinstance(text2, str):
+            text2 = str(text2)
+
     tokenizer_kwargs = {
         "truncation": config.truncation,
         "padding": config.padding,
@@ -102,7 +132,8 @@ def preprocess_function(examples, tokenizer, config: DataConfig) -> Any:
         if text1 is not None and text2 is not None:
             tokenized = tokenizer(text1, text2, **tokenizer_kwargs)
         else:
-            tokenized = tokenizer(text1 or text2, **tokenizer_kwargs)
+            text_input = text1 if text1 is not None else text2
+            tokenized = tokenizer(text_input, **tokenizer_kwargs)
         if config.task_type == TaskType.REGRESSION:
             tokenized["labels"] = [float(l) for l in examples[config.label_column]]
         else:
