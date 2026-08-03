@@ -35,7 +35,9 @@ class GriffinSSDBlock(BaseAttention):
         self.ssd_proj = nn.Linear(self.dim, self.dim, bias=False)
         self.out_proj = nn.Linear(self.dim, self.dim)
 
-    def forward(self, x, mask=None, **kwargs):
+    def forward(self, x, attention_mask=None, mask=None, **kwargs):
+        if attention_mask is None and mask is not None:
+            attention_mask = mask
         B, L, D = x.shape
 
         # Local sliding window (causal)
@@ -47,11 +49,27 @@ class GriffinSSDBlock(BaseAttention):
         causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
         window = (idx.unsqueeze(1) - idx.unsqueeze(0)) < self.window_size
         local_mask = ~(causal & window)
-        scores = scores.masked_fill(local_mask.unsqueeze(0), float("-inf"))
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                pad_mask = attention_mask.unsqueeze(1) == 0  # (B, 1, L)
+                scores = scores.masked_fill(pad_mask, float("-1e9"))
+        scores = scores.masked_fill(local_mask.unsqueeze(0), float("-1e9"))
         local_out = torch.bmm(F.softmax(scores, dim=-1), v_local)
 
         # Global linear attention
         q_global = self.ssd_proj(x)
-        global_out = ssd_kernel(q_global, self.W_k(x), self.W_v(x))
+        k_global = self.W_k(x)
+        v_global = self.W_v(x)
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                m = attention_mask.unsqueeze(-1)
+                k_global = k_global * m
+                v_global = v_global * m
+        global_out = ssd_kernel(q_global, k_global, v_global)
 
-        return self.out_proj(local_out + global_out), None
+        out = self.out_proj(local_out + global_out)
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                out = out * attention_mask.unsqueeze(-1)
+        return out, None
+
