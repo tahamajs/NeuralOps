@@ -20,13 +20,28 @@ def load_hf_model(
     Returns:
         model, tokenizer
     """
-    config = AutoConfig.from_pretrained(
-        model_name, num_labels=num_labels, cache_dir=cache_dir
-    )
-    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
-    model = AutoModelForSequenceClassification.from_pretrained(
-        model_name, config=config, cache_dir=cache_dir, **kwargs
-    )
+    try:
+        config = AutoConfig.from_pretrained(
+            model_name, num_labels=num_labels, cache_dir=cache_dir
+        )
+    except OSError:
+        config = AutoConfig.from_pretrained(
+            model_name, num_labels=num_labels, cache_dir=cache_dir, local_files_only=True
+        )
+
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+    except OSError:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir, local_files_only=True)
+
+    try:
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, config=config, cache_dir=cache_dir, **kwargs
+        )
+    except OSError:
+        model = AutoModelForSequenceClassification.from_pretrained(
+            model_name, config=config, cache_dir=cache_dir, local_files_only=True, **kwargs
+        )
     return model, tokenizer
 
 
