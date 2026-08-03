@@ -552,3 +552,8 @@ def plot_training_history(history: dict, save_path: str) -> None:
     ax.grid(True, alpha=0.3)
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
     plt.close()
+
+
+plot_loss_curves = plot_loss_curve
+plot_accuracy_curves = plot_accuracy_curve
+plot_gradient_flow = plot_training_time
