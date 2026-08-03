@@ -62,6 +62,8 @@ class ExperimentConfig:
     use_gate: bool = True
     progressive: bool = True
     config: Optional[str] = None  # for YAML file path
+    glue_base_path: Optional[str] = None  # path to local GLUE parquet files
+    compression_rank: int = 64  # rank for SVD compression
 
     def to_dict(self) -> Dict[str, Any]:
         """To dict."""

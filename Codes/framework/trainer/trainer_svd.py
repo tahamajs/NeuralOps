@@ -1,5 +1,5 @@
 import time
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 import psutil

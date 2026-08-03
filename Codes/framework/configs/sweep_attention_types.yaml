@@ -1,0 +1,10 @@
+# Sweep: compare multiple attention types
+model_name:  distilbert-base-uncased
+task:        sst2
+epochs:      2
+batch_size:  16
+lr:          2.0e-5
+seeds:       [42, 123, 456]
+attn_types:  [full, nha, lsh, xattention, cluster_attention]
+output_dir:  ./results/sweeps
+log_dir:     ./logs
