@@ -38,11 +38,15 @@ class CustomLoopTrainer(BaseTrainer):
         self.kwargs = kwargs
 
     def _make_loader(self, dataset, shuffle=False) -> Any:
-        """ make loader."""
+        """Make DataLoader optimized for high-throughput GPU training."""
+        pin = self.device.type in ["cuda", "mps"]
+        num_workers = self.config.get("num_workers", 0)
         return DataLoader(
             dataset,
             batch_size=self.config.get("batch_size", 16),
             shuffle=shuffle,
+            pin_memory=pin,
+            num_workers=num_workers,
             collate_fn=dataset.collate_fn if hasattr(dataset, "collate_fn") else None,
         )
 
