@@ -125,9 +125,26 @@ def create_trainer(
     save_total_limit: int = 2,
     load_best_model_at_end: bool = True,
     metric_for_best_model: str = "eval_accuracy",
+    compute_metrics: Optional[Callable] = None,
     **kwargs,
 ) -> SVDAwareTrainer:
     """Build and return trainer."""
+    if eval_dataset is None:
+        eval_strategy = "no"
+        load_best_model_at_end = False
+
+    trainer_kwarg_names = {
+        "visualizer",
+        "pre_train_callback",
+        "post_train_callback",
+        "log_attention_maps",
+        "attention_layers",
+        "callbacks",
+        "optimizers",
+    }
+    trainer_kwargs = {k: v for k, v in kwargs.items() if k in trainer_kwarg_names}
+    training_args_kwargs = {k: v for k, v in kwargs.items() if k not in trainer_kwarg_names}
+
     training_args = TrainingArguments(
         output_dir=output_dir,
         learning_rate=learning_rate,
@@ -140,15 +157,17 @@ def create_trainer(
         save_strategy=save_strategy,
         save_total_limit=save_total_limit,
         load_best_model_at_end=load_best_model_at_end,
-        metric_for_best_model=metric_for_best_model,
-        greater_is_better=True,
-        logging_steps=50,
+        metric_for_best_model=metric_for_best_model if eval_dataset is not None else None,
+        greater_is_better=True if eval_dataset is not None else None,
+        logging_steps=training_args_kwargs.pop("logging_steps", 50),
         report_to="none",
-        **kwargs,
+        **training_args_kwargs,
     )
     return SVDAwareTrainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        compute_metrics=compute_metrics,
+        **trainer_kwargs,
     )
