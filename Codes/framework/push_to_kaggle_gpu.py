@@ -91,9 +91,20 @@ def prepare_kernel(command_str: str):
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Fix: downgrade PyTorch to version compatible with P100 (sm_60 / CUDA 11.x)\n",
-                    "!pip install -q torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121\n",
-                    "print('✓ PyTorch 2.3.1 (cu121) installed — P100 compatible')\n"
+                    "# ── CRITICAL FIX: Install PyTorch 2.1.2 + cu118 (LAST version supporting P100 sm_60) ──\n",
+                    "# PyTorch 2.2+ dropped sm_60 support; 2.1.2+cu118 is the last compatible build.\n",
+                    "import subprocess, sys\n",
+                    "subprocess.check_call([\n",
+                    "    sys.executable, '-m', 'pip', 'install', '-q', '--force-reinstall',\n",
+                    "    'torch==2.1.2', 'torchvision==0.16.2', 'torchaudio==2.1.2',\n",
+                    "    '--index-url', 'https://download.pytorch.org/whl/cu118'\n",
+                    "])\n",
+                    "subprocess.check_call([\n",
+                    "    sys.executable, '-m', 'pip', 'install', '-q',\n",
+                    "    'datasets', 'transformers', 'accelerate', 'evaluate',\n",
+                    "    'scipy', 'scikit-learn', 'deepdiff', 'matplotlib', 'asgiref', 'channels'\n",
+                    "])\n",
+                    "print('✓ PyTorch 2.1.2+cu118 installed — P100/sm_60 fully supported')\n"
                 ]
             },
             {
@@ -102,12 +113,14 @@ def prepare_kernel(command_str: str):
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Install missing requirements\n",
-                    "!pip install -q datasets transformers accelerate evaluate scipy scikit-learn deepdiff matplotlib asgiref channels\n",
-                    "import os, sys, shutil, torch\n",
-                    "print(f'GPU Available: {torch.cuda.is_available()}')\n",
-                    "if torch.cuda.is_available():\n",
-                    "    print(f'GPU Device: {torch.cuda.get_device_name(0)}')\n"
+                    "# Verify GPU + correct PyTorch version\n",
+                    "import subprocess, sys\n",
+                    "result = subprocess.run([sys.executable, '-c',\n",
+                    "    'import torch; print(f\"PyTorch {torch.__version__} | CUDA available: {torch.cuda.is_available()}\"); '\n",
+                    "    'torch.cuda.is_available() and print(f\"GPU: {torch.cuda.get_device_name(0)}\") '\n",
+                    "], capture_output=True, text=True)\n",
+                    "print(result.stdout)\n",
+                    "if result.stderr: print('STDERR:', result.stderr[:500])\n"
                 ]
             },
             {
