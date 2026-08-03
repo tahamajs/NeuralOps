@@ -91,6 +91,17 @@ def prepare_kernel(command_str: str):
                 "metadata": {},
                 "outputs": [],
                 "source": [
+                    "# Fix: downgrade PyTorch to version compatible with P100 (sm_60 / CUDA 11.x)\n",
+                    "!pip install -q torch==2.3.1 torchvision==0.18.1 torchaudio==2.3.1 --index-url https://download.pytorch.org/whl/cu121\n",
+                    "print('✓ PyTorch 2.3.1 (cu121) installed — P100 compatible')\n"
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
                     "# Install missing requirements\n",
                     "!pip install -q datasets transformers accelerate evaluate scipy scikit-learn deepdiff matplotlib asgiref channels\n",
                     "import os, sys, shutil, torch\n",
@@ -134,7 +145,7 @@ def prepare_kernel(command_str: str):
                 "outputs": [],
                 "source": [
                     "# Execute pipeline command\n",
-                    f"!python run_kaggle.py {command_str}\n"
+                    f"!{command_str}\n"
                 ]
             },
             {
@@ -186,7 +197,7 @@ def prepare_kernel(command_str: str):
         "is_private": "true",
         "enable_gpu": "true",
         "enable_internet": "true",
-        "accelerator": "gpu",
+        "accelerator": "T4x2",
         "dataset_sources": [DATASET_SLUG],
         "competition_sources": [],
         "kernel_sources": []
