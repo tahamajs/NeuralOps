@@ -124,7 +124,7 @@ def create_trainer(
     save_strategy: str = "epoch",
     save_total_limit: int = 2,
     load_best_model_at_end: bool = True,
-    metric_for_best_model: str = "eval_accuracy",
+    metric_for_best_model: str = "eval_loss",
     compute_metrics: Optional[Callable] = None,
     **kwargs,
 ) -> SVDAwareTrainer:
@@ -156,6 +156,11 @@ def create_trainer(
     save_total_limit = training_args_kwargs.pop("save_total_limit", save_total_limit)
     load_best_model_at_end = training_args_kwargs.pop("load_best_model_at_end", load_best_model_at_end)
     metric_for_best_model = training_args_kwargs.pop("metric_for_best_model", metric_for_best_model)
+    if compute_metrics is None:
+        metric_for_best_model = "eval_loss"
+    greater_is_better = training_args_kwargs.pop("greater_is_better", None)
+    if greater_is_better is None and eval_dataset is not None:
+        greater_is_better = False if "loss" in metric_for_best_model else True
 
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -170,7 +175,7 @@ def create_trainer(
         save_total_limit=save_total_limit,
         load_best_model_at_end=load_best_model_at_end,
         metric_for_best_model=metric_for_best_model if eval_dataset is not None else None,
-        greater_is_better=True if eval_dataset is not None else None,
+        greater_is_better=greater_is_better if eval_dataset is not None else None,
         logging_steps=training_args_kwargs.pop("logging_steps", 50),
         report_to=training_args_kwargs.pop("report_to", "none"),
         remove_unused_columns=False,
