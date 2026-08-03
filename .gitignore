@@ -199,3 +199,6 @@ cache/
 **/cache/
 *.ckpt
 test_marker.txt
+# Kaggle deploy temporary files and output artifacts
+kaggle_deploy_temp/
+results_kaggle_gpu/
