@@ -64,13 +64,17 @@ class HuggingFaceTrainer(BaseTrainer):
             "save_strategy": self.config.get("save_strategy", "epoch"),
             "save_total_limit": self.config.get("save_total_limit", 2),
             "load_best_model_at_end": self.config.get("load_best_model_at_end", True) if self.eval_dataset is not None else False,
-            "metric_for_best_model": self.config.get(
-                "metric_for_best_model", "eval_loss"
-            ),
+            "metric_for_best_model": self.config.get("metric_for_best_model", "eval_loss"),
             "fp16": self.config.get("fp16", False),
             "logging_dir": str(self.results_manager.log_dir),
-            "logging_steps": self.config.get("logging_steps", 50),
+            "logging_steps": self.config.get("logging_steps", 10),
             "report_to": "none",
+            # Disable safetensors to avoid RuntimeError from shared-memory tensors in custom attention modules
+            "save_safetensors": False,
+            # GPU throughput
+            "dataloader_pin_memory": True,
+            "dataloader_num_workers": self.config.get("num_workers", 0),
+            "remove_unused_columns": False,
         }
         self._trainer = create_trainer(
             model=self.model,
