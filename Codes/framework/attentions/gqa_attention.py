@@ -41,12 +41,17 @@ class GroupedQueryAttention(nn.Module):
     ) -> None:
         super().__init__()
         self.num_heads: int = config.num_attention_heads
-        default_kv = max(1, self.num_heads // 4) if self.num_heads >= 4 else 1
-        self.num_kv_heads: int = getattr(
-            config,
-            "num_key_value_heads",
-            num_kv_heads if num_kv_heads is not None else getattr(config, "num_kv_heads", default_kv),
-        )
+        
+        # Ensure num_kv_heads is an exact divisor of num_heads
+        divisors = [d for d in range(1, self.num_heads + 1) if self.num_heads % d == 0]
+        req_kv = getattr(config, "num_key_value_heads", num_kv_heads)
+        if req_kv is not None and req_kv in divisors:
+            self.num_kv_heads: int = req_kv
+        else:
+            # Pick a valid divisor <= num_heads // 2 (or 1)
+            valid_divisors = [d for d in divisors if d <= max(1, self.num_heads // 2)]
+            self.num_kv_heads: int = valid_divisors[-1] if valid_divisors else 1
+
         self.head_dim: int = config.hidden_size // self.num_heads
         self.hidden_size: int = config.hidden_size
 
