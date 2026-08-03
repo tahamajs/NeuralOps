@@ -134,10 +134,17 @@ def preprocess_function(examples, tokenizer, config: DataConfig) -> Any:
         else:
             text_input = text1 if text1 is not None else text2
             tokenized = tokenizer(text_input, **tokenizer_kwargs)
-        if config.task_type == TaskType.REGRESSION:
-            tokenized["labels"] = [float(l) for l in examples[config.label_column]]
-        else:
-            tokenized["labels"] = [int(l) for l in examples[config.label_column]]
+        label_col = config.label_column
+        if label_col not in examples:
+            for candidate in ["label", "labels", "target", "gold_label"]:
+                if candidate in examples:
+                    label_col = candidate
+                    break
+        if label_col in examples:
+            if config.task_type == TaskType.REGRESSION:
+                tokenized["labels"] = [float(l) for l in examples[label_col]]
+            else:
+                tokenized["labels"] = [int(l) for l in examples[label_col]]
         return tokenized
 
     if config.task_type == TaskType.QA:
@@ -187,16 +194,20 @@ def preprocess_function(examples, tokenizer, config: DataConfig) -> Any:
 
 def create_dataloader(dataset, tokenizer, config: DataConfig, **kwargs) -> DataLoader:
     """
-    Create a DataLoader from a HuggingFace Dataset, applying preprocessing.
+    Create a DataLoader from a HuggingFace Dataset, applying preprocessing if not already tokenized.
     """
-    processed = dataset.map(
-        lambda examples: preprocess_function(examples, tokenizer, config),
-        batched=True,
-        remove_columns=dataset.column_names,
-    )
-    columns = ["input_ids", "attention_mask", "labels"]
-    if config.task_type == TaskType.QA:
-        columns = ["input_ids", "attention_mask", "start_positions", "end_positions"]
+    if "input_ids" in dataset.column_names and "attention_mask" in dataset.column_names:
+        processed = dataset
+    else:
+        processed = dataset.map(
+            lambda examples: preprocess_function(examples, tokenizer, config),
+            batched=True,
+            remove_columns=dataset.column_names,
+        )
+    columns = [
+        col for col in ["input_ids", "attention_mask", "labels", "start_positions", "end_positions"]
+        if col in processed.column_names
+    ]
     processed.set_format(type="torch", columns=columns)
     return DataLoader(
         processed,
