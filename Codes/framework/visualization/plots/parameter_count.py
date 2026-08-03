@@ -6,6 +6,7 @@ logger = logging.getLogger(__name__)
 def plot_parameter_distribution(history, metrics, config, output_dir, opts):
     # This plot needs the model object, which is not available in history.
     # Store the parameter count as a JSON file during training and read it here.
+    """Plot parameter distribution."""
     param_path = output_dir.parent / "artifacts" / "param_counts.json"
     if not param_path.exists():
         logger.info("Parameter count plot requested but no param_counts.json saved.")

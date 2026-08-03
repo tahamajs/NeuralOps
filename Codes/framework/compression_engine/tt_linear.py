@@ -103,7 +103,8 @@ class TTLinearLayer(nn.Module):
 
         # Try to split into 2 factors each
         # Find integer divisors close to sqrt
-        def divisors(n):
+        def divisors(n) -> Any:
+            """Divisors."""
             divs = []
             for i in range(1, int(np.sqrt(n)) + 1):
                 if n % i == 0:
@@ -116,7 +117,7 @@ class TTLinearLayer(nn.Module):
         return (p1, p2), (q1, q2)
 
     @classmethod
-    def from_linear(cls, linear_layer: nn.Linear, tt_rank: int = 16):
+    def from_linear(cls, linear_layer: nn.Linear, tt_rank: int = 16) -> Any:
         """
         Create a TTLinearLayer from an existing nn.Linear by decomposing its weight
         matrix into TT‑format using TT‑SVD (via tensorly or a custom implementation).
@@ -230,7 +231,9 @@ class TTLinearLayer(nn.Module):
     @staticmethod
     def _get_shape(in_f: int, out_f: int) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
         # Balanced factorisation into 2 factors (can be extended)
-        def divisors(n):
+        """ get shape."""
+        def divisors(n) -> Any:
+            """Divisors."""
             divs = []
             for i in range(1, int(np.sqrt(n)) + 1):
                 if n % i == 0:
@@ -400,6 +403,7 @@ class TTLinearLayer(nn.Module):
         # Use torch.einsum iteratively.
         # We need to contract all cores into a single tensor.
         # Start with first core as a 4D tensor: (1, p1, q1, r1)
+        """ materialize weight."""
         self.cores[0]  # (1, p1, q1, r1)
         for core in self.cores[1:]:
             # full shape (r_left, p1, q1, ..., p_{i-1}, q_{i-1}, r_prev)
@@ -457,6 +461,7 @@ class TTLinearLayer(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Materialise weight for forward (inefficient but works)
+        """Forward pass."""
         orig_shape = x.shape
         if x.dim() > 2:
             x = x.view(-1, self.in_features)

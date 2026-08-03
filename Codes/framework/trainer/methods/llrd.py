@@ -9,7 +9,8 @@ from .registry import register_method
 logger = logging.getLogger(__name__)
 
 
-def get_llrd_param_groups(model, base_lr, weight_decay, decay):
+def get_llrd_param_groups(model, base_lr, weight_decay, decay) -> Any:
+    """Return the llrd param groups."""
     no_decay = ["bias", "LayerNorm.weight", "layer_norm.weight", "layernorm.weight"]
     max_layer = -1
     for name, _ in model.named_parameters():
@@ -73,7 +74,8 @@ def get_llrd_param_groups(model, base_lr, weight_decay, decay):
 
 
 @register_method("llrd")
-def apply_llrd(model, config):
+def apply_llrd(model, config) -> None:
+    """Apply llrd."""
     logger.info(
         "LLRD registered. Use --method llrd to enable layer‑wise learning rates."
     )

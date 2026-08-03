@@ -6,8 +6,10 @@ logger = logging.getLogger(__name__)
 EXPORTERS = {}
 
 
-def _register(fmt):
-    def decorator(fn):
+def _register(fmt) -> Any:
+    """ register."""
+    def decorator(fn) -> Any:
+        """Decorator."""
         EXPORTERS[fmt] = fn
         return fn
 
@@ -15,7 +17,8 @@ def _register(fmt):
 
 
 @_register("onnx")
-def export_onnx(model, input_example, output_dir):
+def export_onnx(model, input_example, output_dir) -> None:
+    """Export onnx."""
     import torch
 
     path = os.path.join(output_dir, "model.onnx")
@@ -24,7 +27,8 @@ def export_onnx(model, input_example, output_dir):
 
 
 @_register("torchscript")
-def export_torchscript(model, input_example, output_dir):
+def export_torchscript(model, input_example, output_dir) -> None:
+    """Export torchscript."""
     import torch
 
     traced = torch.jit.trace(model, input_example)
@@ -34,10 +38,12 @@ def export_torchscript(model, input_example, output_dir):
 
 
 @_register("tflite")
-def export_tflite(model, input_example, output_dir):
+def export_tflite(model, input_example, output_dir) -> None:
+    """Export tflite."""
     logger.warning("TFLite export requires TensorFlow – skipped")
 
 
 @_register("tensorrt")
-def export_tensorrt(model, input_example, output_dir):
+def export_tensorrt(model, input_example, output_dir) -> None:
+    """Export tensorrt."""
     logger.warning("TensorRT export requires trtexec – skipped")

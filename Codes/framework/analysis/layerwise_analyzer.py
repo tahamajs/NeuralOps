@@ -8,7 +8,7 @@ from scipy.spatial.distance import cosine
 
 
 class LayerwiseAnalyzer:
-    def __init__(self, model, tokenizer, device: Optional[str] = None):
+    def __init__(self, model, tokenizer, device: Optional[str] = None) -> None:
         self.model = model
         self.tokenizer = tokenizer
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -17,16 +17,19 @@ class LayerwiseAnalyzer:
         self.hooks = []
 
     def _get_device(self) -> str:
+        """ get device."""
         if torch.cuda.is_available():
             return "cuda"
         if torch.backends.mps.is_available():
             return "mps"
         return "cpu"
 
-    def register_hooks(self):
+    def register_hooks(self) -> None:
+        """Register hooks."""
         self.hidden_states = []
 
-        def hook_fn(module, input, output):
+        def hook_fn(module, input, output) -> None:
+            """Hook fn."""
             hs = (
                 output[0].detach().cpu()
                 if isinstance(output, tuple)
@@ -39,12 +42,14 @@ class LayerwiseAnalyzer:
                 hook = module.register_forward_hook(hook_fn)
                 self.hooks.append(hook)
 
-    def remove_hooks(self):
+    def remove_hooks(self) -> None:
+        """Remove hooks."""
         for hook in self.hooks:
             hook.remove()
         self.hooks = []
 
     def analyze(self, texts: List[str], batch_size: int = 8) -> Dict[str, Any]:
+        """Analyze."""
         self.register_hooks()
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
@@ -79,6 +84,7 @@ class LayerwiseAnalyzer:
 
 
 def estimate_intrinsic_dimension(hidden_states: np.ndarray, k: int = 5) -> float:
+    """Estimate intrinsic dimension."""
     N, D = hidden_states.shape
     if N < k + 1:
         return float(D)

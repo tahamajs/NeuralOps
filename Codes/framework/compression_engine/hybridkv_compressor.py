@@ -42,7 +42,8 @@ class HybridKVCompressor(BaseCompressor):
         dynamic_ratio = (norm_var > threshold).float().mean().item()
         return "dynamic" if dynamic_ratio > 0.3 else "static"
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear) and self._is_attention_proj(name):
                 W = module.weight.data
@@ -79,6 +80,7 @@ class HybridKVCompressor(BaseCompressor):
 
     @staticmethod
     def _is_attention_proj(name: str) -> bool:
+        """ is attention proj."""
         attn_keywords = [
             "q_lin",
             "k_lin",
@@ -95,7 +97,8 @@ class HybridKVCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("hybridkv")
-def hybridkv_factory(model, comp_config):
+def hybridkv_factory(model, comp_config) -> Any:
+    """Hybridkv factory."""
     budget = getattr(comp_config, "hybridkv_budget", 0.3)
     static_ratio = getattr(comp_config, "hybridkv_static_ratio", 0.7)
     compressor = HybridKVCompressor(model, budget=budget, static_ratio=static_ratio)

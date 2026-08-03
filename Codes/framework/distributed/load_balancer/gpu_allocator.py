@@ -63,7 +63,7 @@ class GPUAllocator:
             cls._instance._initialised = False
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         if self._initialised:
             return
         self._gpus: Dict[str, List[GPUInfo]] = {}  # node → GPU list
@@ -112,14 +112,17 @@ class GPUAllocator:
     # ── Properties ──────────────────────────────────────────────────
     @property
     def num_nodes(self) -> int:
+        """Num nodes."""
         return len(self._gpus)
 
     @property
     def total_gpus(self) -> int:
+        """Total gpus."""
         return sum(len(v) for v in self._gpus.values())
 
     @property
     def available_gpus(self) -> int:
+        """Available gpus."""
         with self._lock:
             return sum(
                 1 for gpus in self._gpus.values() for g in gpus if not g.is_allocated

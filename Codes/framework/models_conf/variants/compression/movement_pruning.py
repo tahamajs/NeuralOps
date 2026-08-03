@@ -3,7 +3,8 @@ from .base import COMPRESSOR_REGISTRY, BaseCompressor
 
 @COMPRESSOR_REGISTRY.register("movement_pruning")
 class MovementPruning(BaseCompressor):
-    def apply(self, model, amount=0.3, **kwargs):
+    def apply(self, model, amount=0.3, **kwargs) -> Any:
+        """Execute the apply operation and return results."""
         try:
             from neural_compressor import MovementPruning, MovementPruningConfig
 

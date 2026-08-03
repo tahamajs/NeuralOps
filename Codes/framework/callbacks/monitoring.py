@@ -10,11 +10,12 @@ logger = logging.getLogger(__name__)
 class WandbCallback(TrainerCallback):
     """Logs metrics to Weights & Biases."""
 
-    def __init__(self, project: str = "transformer-toolkit"):
+    def __init__(self, project: str = "transformer-toolkit") -> None:
         self.project = project
         self._wandb = None
 
-    def on_train_begin(self, args, state, control, **kwargs):
+    def on_train_begin(self, args, state, control, **kwargs) -> None:
+        """On train begin."""
         try:
             import wandb
 
@@ -23,7 +24,8 @@ class WandbCallback(TrainerCallback):
         except ImportError:
             logger.warning("wandb not installed")
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
+    def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+        """On log."""
         if self._wandb and logs:
             self._wandb.log(logs)
 
@@ -31,11 +33,12 @@ class WandbCallback(TrainerCallback):
 class TensorBoardCallback(TrainerCallback):
     """Logs to TensorBoard."""
 
-    def __init__(self, log_dir: str = "./runs"):
+    def __init__(self, log_dir: str = "./runs") -> None:
         self.log_dir = log_dir
         self._writer = None
 
-    def on_train_begin(self, args, state, control, **kwargs):
+    def on_train_begin(self, args, state, control, **kwargs) -> None:
+        """On train begin."""
         try:
             from torch.utils.tensorboard import SummaryWriter
 
@@ -43,7 +46,8 @@ class TensorBoardCallback(TrainerCallback):
         except ImportError:
             logger.warning("tensorboard not installed")
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
+    def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+        """On log."""
         if self._writer and logs:
             for k, v in logs.items():
                 if isinstance(v, (int, float)):
@@ -53,10 +57,11 @@ class TensorBoardCallback(TrainerCallback):
 class TerminalCallback(TrainerCallback):
     """Broadcasts training logs to a terminal group (WebSocket)."""
 
-    def __init__(self, sender_func):
+    def __init__(self, sender_func) -> None:
         self.send = sender_func
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
+    def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+        """On log."""
         if logs:
             self.send(f"Step {state.global_step}: {logs}")
 
@@ -64,11 +69,12 @@ class TerminalCallback(TrainerCallback):
 class WebSocketCallback(TrainerCallback):
     """Pushes training updates via a generic WebSocket sender."""
 
-    def __init__(self, group_name: str, channel_layer=None):
+    def __init__(self, group_name: str, channel_layer=None) -> None:
         self.group_name = group_name
         self.channel_layer = channel_layer
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
+    def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+        """On log."""
         if self.channel_layer and logs:
             from asgiref.sync import async_to_sync
 

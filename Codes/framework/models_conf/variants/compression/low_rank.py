@@ -7,6 +7,7 @@ from .base import COMPRESSOR_REGISTRY, BaseCompressor
 class LowRankCompressor(BaseCompressor):
     def apply(self, model, rank=64, **kwargs):
         # Replace Linear layers with low‑rank SVD approximations (simplified)
+        """Execute the apply operation and return results."""
         for name, module in model.named_children():
             if isinstance(module, torch.nn.Linear):
                 U, S, V = torch.svd(module.weight.data)

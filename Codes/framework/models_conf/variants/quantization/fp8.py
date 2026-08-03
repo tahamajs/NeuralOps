@@ -3,7 +3,8 @@ from .base import QUANTIZER_REGISTRY, BaseQuantizer
 
 @QUANTIZER_REGISTRY.register("fp8")
 class FP8Quantizer(BaseQuantizer):
-    def apply(self, model, **kwargs):
+    def apply(self, model, **kwargs) -> Any:
+        """Execute the apply operation and return results."""
         try:
             import transformer_engine.pytorch as te
 

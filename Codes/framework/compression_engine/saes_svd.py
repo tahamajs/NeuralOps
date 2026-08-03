@@ -11,7 +11,8 @@ class SAESSVDCompressorV2(BaseCompressor):
         super().__init__(model, name="saes_svd_v2", **kwargs)
         self.rank_ratio = rank_ratio
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float()
@@ -24,7 +25,8 @@ class SAESSVDCompressorV2(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("saes_svd_v2")
-def saes_svd_v2_factory(model, comp_config):
+def saes_svd_v2_factory(model, comp_config) -> Any:
+    """Saes svd v2 factory."""
     rank_ratio = getattr(comp_config, "rank_ratio", 0.7)
     compressor = SAESSVDCompressorV2(model, rank_ratio)
     compressed_model, _ = compressor.compress()

@@ -1,15 +1,13 @@
-from abc import ABC, abstractmethod
+"""
+Training modules re-exported for convenience.
+"""
 
+from framework.trainer import HuggingFaceTrainer
+from framework.experiment_logging import ResultsManager
+from framework.evaluation.metrics import get_task_metrics
 
-class BaseTrainer(ABC):
-    """
-    Base class for all trainers in the framework.
-    """
-
-    @abstractmethod
-    def train(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    def evaluate(self, *args, **kwargs):
-        pass
+__all__ = [
+    "HuggingFaceTrainer",
+    "ResultsManager",
+    "get_task_metrics",
+]

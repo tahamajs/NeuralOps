@@ -7,7 +7,8 @@ from .base import SELECTOR_REGISTRY, BaseSelector
 
 @SELECTOR_REGISTRY.register("quality_based")
 class QualityBasedSelector(BaseSelector):
-    def select(self, client_ids, round_history):
+    def select(self, client_ids, round_history) -> Any:
+        """Select."""
         num = max(1, int(self.config.clients_per_round * self.config.num_clients))
         if not round_history:
             return list(

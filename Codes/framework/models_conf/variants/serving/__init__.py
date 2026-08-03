@@ -5,5 +5,6 @@ from .triton import TritonServer
 from .vllm import VLLMServer
 
 
-def list_servers():
+def list_servers() -> Any:
+    """List servers."""
     return list(SERVER_REGISTRY.keys())

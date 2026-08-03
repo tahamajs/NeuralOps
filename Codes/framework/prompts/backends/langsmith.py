@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 class LangSmithBackend:
     """Persist prompts to LangSmith Prompt Hub."""
 
-    def __init__(self, api_key: str = "", project: str = "default"):
+    def __init__(self, api_key: str = "", project: str = "default") -> None:
         self.api_key = api_key
         self.project = project
         self._client = None

@@ -7,6 +7,6 @@ PEFT_REGISTRY = Registry("peft_methods")
 
 class BasePEFT(ABC):
     @abstractmethod
-    def apply(self, model, **kwargs):
+    def apply(self, model, **kwargs) -> None:
         """Return the adapted model."""
         pass

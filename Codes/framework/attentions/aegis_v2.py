@@ -163,6 +163,7 @@ class AegisAttentionV2(nn.Module):
         mask_2d = token_valid  # (B, N) bool, True = valid
 
         def lr(lin1: nn.Linear, lin2: nn.Linear, x: torch.Tensor) -> torch.Tensor:
+            """Lr."""
             return lin2(lin1(x))
 
         Q = lr(self.q_proj1, self.q_proj2, hidden_states)
@@ -196,6 +197,7 @@ class AegisAttentionV2(nn.Module):
 
         # ---- Global linear attention ----
         def phi(x: torch.Tensor) -> torch.Tensor:
+            """Phi."""
             return F.elu(x) + 1.0
 
         if self.prune_gate is not None:

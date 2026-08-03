@@ -13,7 +13,8 @@ class ProxSparsePruner(BaseCompressor):
         self.lambda_prox = lambda_prox
         self.steps = steps
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -31,7 +32,8 @@ class ProxSparsePruner(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("proxsparse")
-def proxsparse_factory(model, comp_config):
+def proxsparse_factory(model, comp_config) -> Any:
+    """Proxsparse factory."""
     sparsity = getattr(comp_config, "proxsparse_sparsity", 0.5)
     lambda_prox = getattr(comp_config, "proxsparse_lambda", 0.01)
     steps = getattr(comp_config, "proxsparse_steps", 5)

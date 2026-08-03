@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def push(run_id, run_dir, cfg):
+def push(run_id, run_dir, cfg) -> None:
     """Push model as OCI artifact using ORAS CLI."""
     try:
         import subprocess

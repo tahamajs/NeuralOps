@@ -4,8 +4,7 @@ Universal model loading, custom compressed architectures, and Hub utilities.
 
 from .custom_models import CompressedBertModel, HybridBertForSequenceClassification
 from .hub_utils import POPULAR_MODELS, get_model_info, search_models
-from .loaders import (
-    load_compressed_model,
+from .core_loaders import (    load_compressed_model,
     load_hf_model,
     load_hybrid_svd_model,
     load_model,

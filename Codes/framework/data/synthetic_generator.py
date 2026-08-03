@@ -83,6 +83,7 @@ TEMPLATES_NEG = [
 
 
 def _clean_text(text: str) -> str:
+    """ clean text."""
     text = re.sub(r"\s+", " ", text).strip()
     text = text[0].upper() + text[1:] if text else text
     if text and text[-1] not in string.punctuation:
@@ -91,6 +92,7 @@ def _clean_text(text: str) -> str:
 
 
 def _generate_batch(domain_key: str, size: int, label: int, is_positive: bool) -> list:
+    """ generate batch."""
     vocab = DEFAULT_DOMAINS.get(domain_key, DEFAULT_DOMAINS["movies"])
     templates = TEMPLATES_POS if is_positive else TEMPLATES_NEG
     prep_phrases = (

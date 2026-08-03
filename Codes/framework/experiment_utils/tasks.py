@@ -18,7 +18,7 @@ from framework.experiment.orchestrator import MegaOrchestrator
 # -------------------------------------------------------------------------
 # WebSocket broadcaster
 # -------------------------------------------------------------------------
-def broadcast_terminal(msg: str):
+def broadcast_terminal(msg: str) -> None:
     """Send a log message to the terminal WebSocket group."""
     try:
         channel_layer = get_channel_layer()
@@ -40,7 +40,8 @@ class WSMessageQueue:
         return cls._instance
 
     @staticmethod
-    def send(experiment_id: str, data: dict):
+    def send(experiment_id: str, data: dict) -> None:
+        """Send."""
         try:
             channel_layer = get_channel_layer()
             async_to_sync(channel_layer.group_send)(
@@ -53,7 +54,7 @@ class WSMessageQueue:
 # -------------------------------------------------------------------------
 # Background training runner
 # -------------------------------------------------------------------------
-def run_training_async(experiment, stop_event: threading.Event):
+def run_training_async(experiment, stop_event: threading.Event) -> None:
     """
     Main entry point called by Django in a background thread.
 
@@ -66,18 +67,21 @@ def run_training_async(experiment, stop_event: threading.Event):
     run_id = str(experiment.id)
     base_dir = Path(settings.MEDIA_ROOT) / "experiments"
 
-    def log(msg: str):
+    def log(msg: str) -> None:
+        """Log."""
         experiment.logs = (experiment.logs or "") + msg + "\n"
         experiment.save(update_fields=["logs"])
         WSMessageQueue.send(run_id, {"type": "log", "data": msg})
         broadcast_terminal(msg)
 
-    def update_status(status: str):
+    def update_status(status: str) -> None:
+        """Update status."""
         experiment.status = status
         experiment.save(update_fields=["status"])
         WSMessageQueue.send(run_id, {"type": "status", "status": status})
 
-    def progress_callback(current: int, total: int, pct: float):
+    def progress_callback(current: int, total: int, pct: float) -> None:
+        """Progress callback."""
         experiment.current_step = current
         experiment.total_steps = total
         experiment.estimated_remaining_seconds = (total - current) * 0.1  # crude
@@ -104,9 +108,11 @@ def run_training_async(experiment, stop_event: threading.Event):
 
     def log_callback(msg: str):
         # Called by the orchestrator for log messages
+        """Log callback."""
         log(msg)
 
-    def final_callback(metrics: dict):
+    def final_callback(metrics: dict) -> None:
+        """Final callback."""
         experiment.config["final_metrics"] = metrics
         experiment.save(update_fields=["config"])
         WSMessageQueue.send(run_id, {"type": "final", "data": metrics})
@@ -138,7 +144,7 @@ def run_training_async(experiment, stop_event: threading.Event):
         update_status("failed")
 
 
-def save_artifacts(experiment, final_metrics: dict):
+def save_artifacts(experiment, final_metrics: dict) -> None:
     """Save model, plots, history, etc. to the experiment's media directory."""
     output_dir = Path(settings.MEDIA_ROOT) / "experiments" / str(experiment.id)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -188,10 +194,11 @@ class AIAssistant:
     Uses a callable LLM function for decision making.
     """
 
-    def __init__(self, llm_function):
+    def __init__(self, llm_function) -> None:
         self.llm = llm_function
 
-    def monitor(self, exp_id: str, metrics_history: list):
+    def monitor(self, exp_id: str, metrics_history: list) -> None:
+        """Monitor."""
         last_losses = [m.get("loss") for m in metrics_history[-5:] if "loss" in m]
         if len(last_losses) >= 5 and all(
             abs(last_losses[i] - last_losses[i - 1]) < 0.01 for i in range(1, 5)

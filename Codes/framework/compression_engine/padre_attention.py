@@ -45,7 +45,8 @@ class PADReAttention(BaseAttention):
         head_mask: torch.Tensor = None,
         output_attentions: bool = False,
         **kwargs,
-    ):
+    ) -> Any:
+        """Forward pass."""
         B, N, _ = hidden_states.shape
         Q = self._reshape(self.query(hidden_states), B)  # (B, H, N, D)
         K = self._reshape(self.key(hidden_states), B)
@@ -100,5 +101,6 @@ class PADReAttention(BaseAttention):
         output = self.out_proj(context)
         return (output, attn_weights) if output_attentions else (output,)
 
-    def get_ortho_loss(self):
+    def get_ortho_loss(self) -> Any:
+        """Get ortho loss."""
         return torch.tensor(0.0, device=self.out_proj.weight.device)

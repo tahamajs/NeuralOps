@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class HyperOptimizer:
     """Simple grid/random search HPO. Replace with Optuna/Ray for production."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any]) -> None:
         self.backend = config.get("backend", "grid")
         self.num_trials = config.get("num_trials", 10)
         self.search_space = config.get("search_space", {})
@@ -16,6 +16,7 @@ class HyperOptimizer:
         self, objective_fn: Callable[[Dict[str, Any]], float]
     ) -> Dict[str, Any]:
         # Minimal grid search
+        """Optimize."""
         best_score = -1e9
         best_params = {}
         list(self.search_space.keys())

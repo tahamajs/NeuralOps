@@ -8,7 +8,8 @@ from framework.data.preprocessing import preprocess_function as build_preprocess
 from transformers import AutoTokenizer
 
 
-def load_and_preprocess_data(config):
+def load_and_preprocess_data(config) -> Any:
+    """Load and preprocess data from disk or config."""
     try:
         from django.conf import settings
 

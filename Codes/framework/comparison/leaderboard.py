@@ -9,6 +9,7 @@ def generate_leaderboard(
     sort_by: str = "mean",
     ascending: bool = False,
 ) -> pd.DataFrame:
+    """Generate leaderboard."""
     df = group_stats.copy()
     df = df.sort_values(by=sort_by, ascending=ascending)
     df.reset_index(drop=True, inplace=True)

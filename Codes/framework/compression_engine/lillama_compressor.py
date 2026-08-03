@@ -13,13 +13,16 @@ class LiLLaMACompressor(BaseCompressor):
         self.rank = rank
         self.calibration_texts = calibration_texts or ["Distill"]
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         self.model.eval()
         activations = {}
         hooks = []
 
-        def make_hook(name):
-            def hook(module, input, output):
+        def make_hook(name) -> Any:
+            """Make hook."""
+            def hook(module, input, output) -> None:
+                """Hook."""
                 activations[name] = (input[0].detach(), output.detach())
 
             return hook
@@ -64,7 +67,8 @@ class LiLLaMACompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("lillama")
-def lillama_factory(model, comp_config):
+def lillama_factory(model, comp_config) -> Any:
+    """Lillama factory."""
     rank = getattr(comp_config, "lillama_rank", 64)
     tokenizer = getattr(model, "tokenizer", None)
     if tokenizer is None:

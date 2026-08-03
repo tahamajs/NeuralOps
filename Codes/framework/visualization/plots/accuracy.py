@@ -3,7 +3,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 
-def plot_accuracy_curve(history, metrics, config, output_dir, opts):
+def plot_accuracy_curve(history, metrics, config, output_dir, opts) -> Any:
+    """Plot accuracy curve."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "eval_accuracy" in h]
     acc = [h["eval_accuracy"] for h in history if "eval_accuracy" in h]
     if not steps:

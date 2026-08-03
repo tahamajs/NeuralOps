@@ -14,11 +14,13 @@ class MLoRQCompressor(BaseCompressor):
         self.bits_candidates = bits_candidates
 
     @staticmethod
-    def _param_size(shape, bits):
+    def _param_size(shape, bits) -> Any:
+        """ param size."""
         return shape[0] * shape[1] * bits
 
     @staticmethod
-    def _quantize(tensor, bits):
+    def _quantize(tensor, bits) -> Any:
+        """ quantize."""
         if bits >= 32:
             return tensor.float()
         t = tensor.float()
@@ -28,7 +30,8 @@ class MLoRQCompressor(BaseCompressor):
         scale = (max_v - min_v) / (2**bits - 1)
         return torch.round((t - min_v) / scale) * scale + min_v
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         layers = []
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
@@ -72,7 +75,8 @@ class MLoRQCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("mlorq")
-def mlorq_factory(model, comp_config):
+def mlorq_factory(model, comp_config) -> Any:
+    """Mlorq factory."""
     total_budget_mb = getattr(comp_config, "mlorq_budget_mb", 500)
     bits_candidates = getattr(comp_config, "mlorq_bits_candidates", [2, 4, 8])
     compressor = MLoRQCompressor(

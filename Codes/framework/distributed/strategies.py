@@ -17,11 +17,15 @@ class BaseStrategy(ABC):
         self.config = config
 
     @abstractmethod
-    def wrap_model(self, model, **kw): ...
+    def wrap_model(self, model, **kw):
+        """Wrap the model with the distributed strategy and return it."""
+        ...
     def setup(self):
+        """Initialise resources and configuration."""
         pass
 
     def cleanup(self):
+        """Cleanup."""
         if dist.is_initialized():
             dist.destroy_process_group()
 
@@ -29,12 +33,14 @@ class BaseStrategy(ABC):
 @STRATEGY_REGISTRY.register("none")
 class NoStrategy(BaseStrategy):
     def wrap_model(self, model, **kw):
+        """Wrap model."""
         return model
 
 
 @STRATEGY_REGISTRY.register("ddp")
 class DDPStrategy(BaseStrategy):
     def setup(self):
+        """Initialise resources and configuration."""
         os.environ.setdefault("MASTER_ADDR", self.config.master_addr)
         os.environ.setdefault("MASTER_PORT", str(self.config.master_port))
         if not dist.is_initialized():
@@ -42,6 +48,7 @@ class DDPStrategy(BaseStrategy):
         torch.cuda.set_device(int(os.environ.get("LOCAL_RANK", 0)))
 
     def wrap_model(self, model, **kw):
+        """Wrap model."""
         local_rank = int(os.environ.get("LOCAL_RANK", 0))
         model = model.to(local_rank)
         return torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank])
@@ -50,11 +57,13 @@ class DDPStrategy(BaseStrategy):
 @STRATEGY_REGISTRY.register("fsdp")
 class FSDPStrategy(BaseStrategy):
     def setup(self):
+        """Initialise resources and configuration."""
         if not dist.is_initialized():
             dist.init_process_group(backend="nccl")
         torch.cuda.set_device(int(os.environ.get("LOCAL_RANK", 0)))
 
     def wrap_model(self, model, **kw):
+        """Wrap model."""
         from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
         from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
         from transformers.models.bert.modeling_bert import BertLayer
@@ -65,6 +74,7 @@ class FSDPStrategy(BaseStrategy):
 @STRATEGY_REGISTRY.register("deepspeed")
 class DeepSpeedStrategy(BaseStrategy):
     def wrap_model(self, model, **kw):
+        """Wrap model."""
         try:
             import deepspeed
         except ImportError:

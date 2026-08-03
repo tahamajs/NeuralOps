@@ -44,10 +44,12 @@ class TLinFormerAttention(BaseAttention):
         nn.init.xavier_uniform_(self.proj_k)
         nn.init.xavier_uniform_(self.proj_v)
 
-    def _reshape(self, x, batch_size):
+    def _reshape(self, x, batch_size) -> Any:
+        """ reshape."""
         return x.view(batch_size, -1, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
 
-    def forward(self, hidden_states, attention_mask=None, **kwargs):
+    def forward(self, hidden_states, attention_mask=None, **kwargs) -> Any:
+        """Forward pass."""
         B, N, _ = hidden_states.shape
         # Clamp N to max_seq_len for safety (if longer, truncate or handle dynamically)
         effective_N = min(N, self.max_seq_len)

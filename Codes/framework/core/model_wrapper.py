@@ -32,7 +32,7 @@ class UnifiedTransformerConfig:
         attention_rank: Optional[int] = None,
         attention_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs,
-    ):
+    ) -> None:
         self.attention_type = attention_type
         self.attention_rank = attention_rank
         self.attention_kwargs = attention_kwargs or {}
@@ -50,6 +50,7 @@ class UnifiedTransformerConfig:
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "UnifiedTransformerConfig":
+        """From dict."""
         return cls(**d)
 
 
@@ -64,7 +65,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
 
     def __init__(
         self, model: nn.Module, custom_config: Optional[UnifiedTransformerConfig] = None
-    ):
+    ) -> None:
         super().__init__()
         self.model = model
         self.config = getattr(model, "config", None)  # HF model config
@@ -80,7 +81,7 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
         rank: Optional[int] = None,
         copy_weights: bool = True,
         **kwargs,
-    ):
+    ) -> Any:
         """
         Inject a custom attention variant into all layers.
         This method also records the choice so it can be saved.
@@ -98,19 +99,22 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
     # ------------------------------------------------------------------
     # Freezing / parameter count
     # ------------------------------------------------------------------
-    def freeze_layers(self, num_layers_to_freeze: int = 0):
+    def freeze_layers(self, num_layers_to_freeze: int = 0) -> Any:
+        """Freeze layers."""
         layers = get_transformer_layers(self.model)
         for i, layer in enumerate(layers):
             for param in layer.parameters():
                 param.requires_grad = i >= num_layers_to_freeze
         return self
 
-    def unfreeze_all(self):
+    def unfreeze_all(self) -> Any:
+        """Unfreeze all."""
         for param in self.model.parameters():
             param.requires_grad = True
         return self
 
     def get_parameter_count(self) -> Dict[str, int]:
+        """Return the parameter count."""
         total = sum(p.numel() for p in self.model.parameters())
         trainable = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
         return {"total": total, "trainable": trainable, "frozen": total - trainable}
@@ -172,10 +176,11 @@ class UnifiedTransformerModel(nn.Module, PyTorchModelHubMixin):
     # ------------------------------------------------------------------
     # Other methods
     # ------------------------------------------------------------------
-    def forward(self, *args, **kwargs):
+    def forward(self, *args, **kwargs) -> Any:
+        """Forward pass — compute module output from inputs."""
         return self.model(*args, **kwargs)
 
-    def save_pretrained(self, save_directory: str):
+    def save_pretrained(self, save_directory: str) -> None:
         """Convenience wrapper – delegates to the mixin."""
         super().save_pretrained(save_directory)
 

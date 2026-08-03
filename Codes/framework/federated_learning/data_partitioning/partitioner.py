@@ -28,7 +28,7 @@ class DataPartitioner:
         alpha: float = 0.5,
         num_classes: int = 2,
         seed: int = 42,
-    ):
+    ) -> None:
         self.num_clients = num_clients
         self.partition_type = PartitionType(partition_type)
         self.alpha = alpha
@@ -46,14 +46,14 @@ class DataPartitioner:
             return self._non_iid_quantity_skew(dataset)
         return self._iid_partition(dataset)
 
-    def _iid_partition(self, dataset):
+    def _iid_partition(self, dataset) -> Any:
         """Equally split dataset randomly."""
         n = len(dataset)
         indices = np.random.permutation(n)
         splits = np.array_split(indices, self.num_clients)
         return [self._subset(dataset, s) for s in splits]
 
-    def _non_iid_label_skew(self, dataset):
+    def _non_iid_label_skew(self, dataset) -> Any:
         """
         Dirichlet distribution over labels – each client gets a different
         proportion of labels (Hsu et al. 2019).
@@ -83,7 +83,7 @@ class DataPartitioner:
                 start += cnt
         return [self._subset(dataset, np.array(idx)) for idx in client_indices]
 
-    def _non_iid_quantity_skew(self, dataset):
+    def _non_iid_quantity_skew(self, dataset) -> Any:
         """
         Different clients get different amounts of data (power‑law like).
         """
@@ -103,7 +103,7 @@ class DataPartitioner:
             start += sz
         return client_data
 
-    def _get_labels(self, dataset):
+    def _get_labels(self, dataset) -> Any:
         """Extract labels from dataset. Override for custom datasets."""
         if hasattr(dataset, "targets"):
             return np.array(dataset.targets)
@@ -117,7 +117,7 @@ class DataPartitioner:
             labels.append(y if isinstance(y, int) else y.item())
         return np.array(labels)
 
-    def _subset(self, dataset, indices):
+    def _subset(self, dataset, indices) -> Any:
         """Return a subset of the dataset."""
         try:
             from torch.utils.data import Subset

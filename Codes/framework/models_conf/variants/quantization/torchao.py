@@ -3,7 +3,8 @@ from .base import QUANTIZER_REGISTRY, BaseQuantizer
 
 @QUANTIZER_REGISTRY.register("torchao")
 class TorchAOQuantizer(BaseQuantizer):
-    def apply(self, model, method="int4_weight_only", **kwargs):
+    def apply(self, model, method="int4_weight_only", **kwargs) -> Any:
+        """Execute the apply operation and return results."""
         try:
             from torchao.quantization import quantize_
 

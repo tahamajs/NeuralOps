@@ -12,7 +12,7 @@ from transformers import AutoModelForSequenceClassification, BertConfig, BertMod
 # CompressedBertModel – SVD on embeddings, simple TransformerEncoder layers
 # ----------------------------------------------------------------------
 class CompressedBertModel(nn.Module):
-    def __init__(self, model_path: str, rank: int, num_labels: int):
+    def __init__(self, model_path: str, rank: int, num_labels: int) -> None:
         super().__init__()
         config = BertConfig.from_pretrained(model_path)
         self.hidden_size = config.hidden_size
@@ -69,7 +69,8 @@ class CompressedBertModel(nn.Module):
         self.final_layer_norm = nn.LayerNorm(rank)
         self.classifier = nn.Linear(rank, num_labels)
 
-    def forward(self, input_ids, attention_mask=None):
+    def forward(self, input_ids, attention_mask=None) -> Any:
+        """Forward pass — compute module output from inputs."""
         batch_size, seq_len = input_ids.shape
         word_embeds = self.word_embeddings(input_ids)
         position_ids = torch.arange(seq_len, dtype=torch.long, device=input_ids.device)
@@ -98,16 +99,17 @@ class CompressedBertModel(nn.Module):
 class DirectSVDEncoderLayer(nn.Module):
     """Placeholder – replace with your actual implementation."""
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__()
         self.linear = nn.Linear(config.hidden_size, config.hidden_size)
 
-    def forward(self, hidden_states):
+    def forward(self, hidden_states) -> Any:
+        """Forward pass — compute module output from inputs."""
         return (self.linear(hidden_states),)
 
 
 class HybridBertWithDirectSVDBert(BertModel):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.encoder = nn.ModuleList(
             [DirectSVDEncoderLayer(config) for _ in range(config.num_hidden_layers)]
@@ -115,6 +117,7 @@ class HybridBertWithDirectSVDBert(BertModel):
 
     def forward(self, input_ids=None, attention_mask=None, **kwargs):
         # Use parent embeddings but our own encoder
+        """Forward pass — compute module output from inputs."""
         if input_ids is not None:
             input_shape = input_ids.size()
         else:
@@ -145,12 +148,13 @@ class HybridBertWithDirectSVDBert(BertModel):
 
 
 class HybridBertForSequenceClassification(nn.Module):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__()
         self.bert = HybridBertWithDirectSVDBert(config)
         self.classifier = nn.Linear(config.hidden_size, config.num_labels)
 
-    def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs):
+    def forward(self, input_ids=None, attention_mask=None, labels=None, **kwargs) -> Any:
+        """Forward pass — compute module output from inputs."""
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
         pooled = outputs[1]
         logits = self.classifier(pooled)

@@ -13,7 +13,7 @@ AGGREGATOR_REGISTRY = Registry("fl_aggregators")
 class BaseAggregator(ABC):
     """Interface for federated learning aggregation strategies."""
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         self.config = config
 
     @abstractmethod

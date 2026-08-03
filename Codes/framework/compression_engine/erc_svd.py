@@ -11,14 +11,16 @@ class ERCCompressor(BaseCompressor):
         super().__init__(model, name="erc", **kwargs)
         self.allowed_error = allowed_error
 
-    def _compress_layer(self, W):
+    def _compress_layer(self, W) -> Any:
+        """ compress layer."""
         U, S, Vt = torch.linalg.svd(W.float(), full_matrices=False)
         energy = torch.cumsum(S**2, dim=0) / (S**2).sum()
         idx = torch.where(energy >= (1 - self.allowed_error))[0]
         rank = idx[0].item() + 1 if len(idx) > 0 else 1
         return U[:, :rank] @ torch.diag(S[:rank]) @ Vt[:rank, :]
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 module.weight.data = self._compress_layer(module.weight.data)
@@ -27,7 +29,8 @@ class ERCCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("erc")
-def erc_factory(model, comp_config):
+def erc_factory(model, comp_config) -> Any:
+    """Erc factory."""
     allowed_error = getattr(comp_config, "erc_allowed_error", 0.01)
     compressor = ERCCompressor(model, allowed_error)
     compressed_model, _ = compressor.compress()

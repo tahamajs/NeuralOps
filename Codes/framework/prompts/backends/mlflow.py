@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class MLflowBackend:
     """Store prompts in the MLflow Prompt Registry."""
 
-    def __init__(self, tracking_uri: str = ""):
+    def __init__(self, tracking_uri: str = "") -> None:
         self.tracking_uri = tracking_uri
         try:
             import mlflow
@@ -17,7 +17,8 @@ class MLflowBackend:
         except ImportError:
             logger.warning("MLflow not installed – MLflow backend disabled")
 
-    def save(self, name: str, template: str, version: int, commit_message: str):
+    def save(self, name: str, template: str, version: int, commit_message: str) -> None:
+        """Save."""
         try:
             import mlflow
 
@@ -32,6 +33,7 @@ class MLflowBackend:
             logger.exception("MLflow save failed: %s", e)
 
     def load(self, name: str, alias: str = "production") -> Optional[str]:
+        """Load."""
         try:
             import mlflow
 

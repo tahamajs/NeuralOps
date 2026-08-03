@@ -10,7 +10,7 @@ import torch
 
 
 class ModelProfiler:
-    def __init__(self, model, device=None):
+    def __init__(self, model, device=None) -> None:
         self.model = model
         self.device = device or next(model.parameters()).device
         self.hooks = []
@@ -19,6 +19,7 @@ class ModelProfiler:
         self._current_timings = {}
 
     def _get_layer_name(self, name: str) -> str:
+        """ get layer name."""
         parts = name.split(".")
         filtered = [
             p
@@ -27,15 +28,18 @@ class ModelProfiler:
         ]
         return ".".join(filtered) if filtered else name
 
-    def start_profiling(self):
-        def pre_hook_fn(module, input, name):
+    def start_profiling(self) -> None:
+        """Start profiling."""
+        def pre_hook_fn(module, input, name) -> None:
+            """Pre hook fn."""
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             self._current_timings[name] = time.perf_counter()
             if torch.cuda.is_available():
                 self.memory_usage[name].append(torch.cuda.memory_allocated() / 1024**2)
 
-        def post_hook_fn(module, input, output, name):
+        def post_hook_fn(module, input, output, name) -> None:
+            """Post hook fn."""
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             if name in self._current_timings:
@@ -56,12 +60,14 @@ class ModelProfiler:
                 )
                 self.hooks.extend([pre, post])
 
-    def stop_profiling(self):
+    def stop_profiling(self) -> None:
+        """Stop profiling."""
         for hook in self.hooks:
             hook.remove()
         self.hooks = []
 
     def get_report(self) -> Dict[str, Dict[str, float]]:
+        """Return the report."""
         report = {}
         for name in self.timings:
             times = self.timings[name]
@@ -81,11 +87,13 @@ class ModelProfiler:
             }
         return report
 
-    def save_report(self, path: str):
+    def save_report(self, path: str) -> None:
+        """Persist report to disk."""
         with open(path, "w") as f:
             json.dump(self.get_report(), f, indent=2)
 
-    def print_report(self):
+    def print_report(self) -> None:
+        """Print report."""
         report = self.get_report()
         print("\n" + "=" * 60)
         print("PROFILING REPORT")
@@ -107,6 +115,7 @@ class ModelProfiler:
 def measure_inference_latency(
     model, dataloader, device, num_samples: int = 100, warmup: int = 10
 ) -> Dict[str, float]:
+    """Measure inference latency."""
     model.eval()
     model.to(device)
     latencies = []
@@ -145,6 +154,7 @@ def measure_inference_latency(
 def measure_memory_usage(
     model, dataloader, device, num_samples: int = 10
 ) -> Dict[str, float]:
+    """Measure memory usage."""
     model.eval()
     model.to(device)
     peak_memory = []
@@ -167,7 +177,8 @@ def measure_memory_usage(
 
 
 @contextmanager
-def profile_context(model, profiler: Optional[ModelProfiler] = None):
+def profile_context(model, profiler: Optional[ModelProfiler] = None) -> None:
+    """Profile context."""
     if profiler is None:
         profiler = ModelProfiler(model)
     profiler.start_profiling()

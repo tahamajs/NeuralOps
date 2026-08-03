@@ -11,6 +11,7 @@ import pandas as pd
 def compute_metrics(
     predictions: np.ndarray, labels: np.ndarray, task: str = "classification"
 ) -> Dict[str, float]:
+    """Compute and return metrics."""
     from scipy.stats import pearsonr, spearmanr
     from sklearn.metrics import accuracy_score, f1_score, matthews_corrcoef
 
@@ -34,6 +35,7 @@ def compute_metrics(
 
 
 def aggregate_results(results_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Aggregate results."""
     if not results_list:
         return {}
     aggregated = {}
@@ -49,31 +51,35 @@ def aggregate_results(results_list: List[Dict[str, Any]]) -> Dict[str, Any]:
 class MetricsTracker:
     """Tracks per‑step metrics and saves as JSON lines."""
 
-    def __init__(self, filepath: str):
+    def __init__(self, filepath: str) -> None:
         self.filepath = filepath
         self.records: List[Dict[str, Any]] = []
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
     def log(
         self, metrics: Dict[str, Any], step: Optional[int] = None, flush: bool = False
-    ):
+    ) -> None:
+        """Log."""
         entry = {"step": step} if step is not None else {}
         entry.update(metrics)
         self.records.append(entry)
         if flush:
             self._flush()
 
-    def _flush(self):
+    def _flush(self) -> None:
+        """ flush."""
         if self.filepath:
             with open(self.filepath, "a") as f:
                 for rec in self.records:
                     f.write(json.dumps(rec) + "\n")
             self.records.clear()
 
-    def save(self):
+    def save(self) -> None:
+        """Save."""
         self._flush()
 
     def to_dataframe(self) -> pd.DataFrame:
+        """To dataframe."""
         all_records = []
         if os.path.exists(self.filepath):
             with open(self.filepath, "r") as f:

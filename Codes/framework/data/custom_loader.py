@@ -82,6 +82,7 @@ def load_dataset_from_file(
 
 
 def _detect_text_column(df: pd.DataFrame) -> Optional[str]:
+    """ detect text column."""
     candidates = ["text", "sentence", "prompt", "question", "content", "body"]
     for col in candidates:
         if col in df.columns:
@@ -95,6 +96,7 @@ def _detect_text_column(df: pd.DataFrame) -> Optional[str]:
 
 
 def _detect_label_column(df: pd.DataFrame) -> Optional[str]:
+    """ detect label column."""
     candidates = ["label", "labels", "class", "target", "gold", "answer"]
     for col in candidates:
         if col in df.columns:

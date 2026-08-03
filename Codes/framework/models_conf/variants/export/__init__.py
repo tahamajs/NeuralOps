@@ -5,5 +5,6 @@ from .tflite import TFLiteExporter
 from .torchscript import TorchScriptExporter
 
 
-def list_exporters():
+def list_exporters() -> Any:
+    """List exporters."""
     return list(EXPORTER_REGISTRY.keys())

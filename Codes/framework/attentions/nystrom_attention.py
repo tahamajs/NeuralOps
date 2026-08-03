@@ -92,6 +92,7 @@ class NystromAttention(BaseAttention):
                 self.out_proj.bias.copy_(src.out_lin.bias)
 
     def _reshape(self, x: torch.Tensor, batch_size: int) -> torch.Tensor:
+        """ reshape."""
         return x.view(batch_size, -1, self.num_heads, self.head_dim).permute(
             0, 2, 1, 3
         )

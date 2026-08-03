@@ -10,7 +10,8 @@ from transformers import DataCollatorWithPadding, TrainingArguments
 logger = logging.getLogger(__name__)
 
 
-def setup_trainer(model, tokenizer, dataset, config, tracker, logger):
+def setup_trainer(model, tokenizer, dataset, config, tracker, logger) -> Any:
+    """Setup trainer."""
     metric_map = {
         "cola": "eval_matthews_correlation",
         "stsb": "eval_pearson",

@@ -52,6 +52,7 @@ class ROASTLinear(nn.Module):
     def forward(self, x):
         # Build weight matrix from tiles
         # Start with a zero matrix of padded size
+        """Forward pass."""
         out_padded = self.tiles_out * self.tile_size
         in_padded = self.tiles_in * self.tile_size
         W = torch.zeros(out_padded, in_padded, device=x.device, dtype=x.dtype)
@@ -110,7 +111,8 @@ class ROASTCompressor(BaseCompressor):
         self.n_buckets = n_buckets
         self.tile_size = tile_size
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 new_layer = ROASTLinear.from_linear(
@@ -122,7 +124,8 @@ class ROASTCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _get_parent(self, full_name):
+    def _get_parent(self, full_name) -> Any:
+        """ get parent."""
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:

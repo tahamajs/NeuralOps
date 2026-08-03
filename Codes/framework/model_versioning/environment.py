@@ -8,6 +8,7 @@ from typing import Any, Dict
 
 
 def get_git_info() -> dict:
+    """Return the git info."""
     try:
         from git import Repo
 
@@ -23,6 +24,7 @@ def get_git_info() -> dict:
 
 
 def get_dvc_commit() -> str:
+    """Return the dvc commit."""
     try:
         r = subprocess.run(
             ["git", "log", "-1", "--format=%H", "--", "*.dvc"],
@@ -35,6 +37,7 @@ def get_dvc_commit() -> str:
 
 
 def get_pip_freeze() -> str:
+    """Return the pip freeze."""
     try:
         r = subprocess.run(
             [sys.executable, "-m", "pip", "freeze"], capture_output=True, text=True
@@ -45,6 +48,7 @@ def get_pip_freeze() -> str:
 
 
 def get_conda_env() -> str:
+    """Return the conda env."""
     try:
         r = subprocess.run(["conda", "env", "export"], capture_output=True, text=True)
         return r.stdout if r.returncode == 0 else ""
@@ -53,6 +57,7 @@ def get_conda_env() -> str:
 
 
 def capture_environment(output_dir: str) -> Dict[str, Any]:
+    """Capture environment."""
     env = {
         "timestamp": datetime.datetime.now().isoformat(),
         "platform": platform.platform(),

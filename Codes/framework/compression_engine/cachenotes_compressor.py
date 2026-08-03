@@ -57,7 +57,8 @@ class CacheNotesCompressor(BaseCompressor):
         self.task_type = task_type
         self.keep_ratio = keep_ratio
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data
@@ -87,7 +88,8 @@ class CacheNotesCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cachenotes")
-def cachenotes_factory(model, comp_config):
+def cachenotes_factory(model, comp_config) -> Any:
+    """Cachenotes factory."""
     task_type = getattr(comp_config, "cachenotes_task", "qa")
     keep_ratio = getattr(comp_config, "cachenotes_keep_ratio", 0.3)
     compressor = CacheNotesCompressor(model, task_type=task_type, keep_ratio=keep_ratio)

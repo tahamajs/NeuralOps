@@ -37,10 +37,12 @@ TASK_COLUMNS = {
 
 
 def get_metric_name(task: str) -> str:
+    """Return the metric name."""
     return TASK_METRICS.get(task, "accuracy")
 
 
 def get_num_labels(task: str, dataset=None) -> int:
+    """Return the num labels."""
     if task == "stsb":
         return 1
     if task in TASK_NUM_LABELS:
@@ -51,4 +53,5 @@ def get_num_labels(task: str, dataset=None) -> int:
 
 
 def get_text_columns(task: str) -> list:
+    """Return the text columns."""
     return TASK_COLUMNS.get(task, ["sentence"])

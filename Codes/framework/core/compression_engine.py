@@ -18,7 +18,7 @@ class CompressionPipeline:
         model: nn.Module,
         config: Dict[str, Any],
         tokenizer=None,
-    ):
+    ) -> None:
         self.model = model
         self.config = config
         self.tokenizer = tokenizer
@@ -26,6 +26,7 @@ class CompressionPipeline:
             self.model.tokenizer = tokenizer
 
     def run(self) -> nn.Module:
+        """Execute the run operation and return results."""
         compressors_cfg = self.config.get("compressors", [])
         if not compressors_cfg:
             print("No compressors specified. Returning original model.")

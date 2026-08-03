@@ -30,7 +30,7 @@ class WorkloadSampler(Sampler):
         shuffle: bool = True,
         drop_last: bool = False,
         seed: int = 42,
-    ):
+    ) -> None:
         """
         Args:
             dataset: PyTorch Dataset
@@ -55,7 +55,7 @@ class WorkloadSampler(Sampler):
         )
         self._build_batches()
 
-    def _build_batches(self):
+    def _build_batches(self) -> None:
         """Create balanced batches using a greedy bin‑packing algorithm."""
         indices = np.arange(len(self.costs))
         if self.shuffle:
@@ -111,7 +111,7 @@ class LoadBalancedDataLoader(DataLoader):
         num_workers: int = 0,
         pin_memory: bool = False,
         **kwargs,
-    ):
+    ) -> None:
         sampler = WorkloadSampler(
             dataset=dataset,
             batch_size=batch_size,
@@ -139,7 +139,7 @@ class BatchSizeBalancer:
         per_gpu_batch = balancer.compute_batch_sizes(global_batch_size=128)
     """
 
-    def __init__(self, gpu_infos: List):
+    def __init__(self, gpu_infos: List) -> None:
         """
         Args:
             gpu_infos: list of GPUInfo objects from the GPUAllocator

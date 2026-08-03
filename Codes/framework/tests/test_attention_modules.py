@@ -67,6 +67,7 @@ class TestOutputFiniteness:
         ),
     )
     def test_output_is_finite(self, key, hidden_states, model_config):
+        """Test output is finite."""
         attn = build_attention(key, model_config)
         out = attn(hidden_states)
         if isinstance(out, tuple):
@@ -95,6 +96,7 @@ class TestZeroShotFidelity:
     def test_zero_shot_fidelity(
         self, key, hidden_states, model_config, distilbert_attention
     ):
+        """Test zero shot fidelity."""
         if distilbert_attention is None:
             pytest.skip("No pretrained DistilBERT attention available")
 
@@ -137,6 +139,7 @@ class TestGradientFlow:
         ),
     )
     def test_gradient_flow(self, key, small_hidden_states, model_config):
+        """Test gradient flow."""
         attn = build_attention(key, model_config)
         x = small_hidden_states.clone().requires_grad_(True)
 
@@ -171,6 +174,7 @@ class TestPaddingMask:
     def test_padding_mask_output(
         self, key, hidden_states, attention_mask, model_config
     ):
+        """Test padding mask output."""
         attn = build_attention(key, model_config)
         # Pass the binary mask; modules should internally convert it
         try:
@@ -205,6 +209,7 @@ class TestMultiHeadCompatibility:
         ),
     )
     def test_multi_head_no_error(self, key, small_hidden_states, model_config):
+        """Test multi head no error."""
         attn = build_attention(key, model_config)
         try:
             attn(small_hidden_states)
@@ -225,6 +230,7 @@ class TestReturnFormat:
         ),
     )
     def test_returns_tuple(self, key, small_hidden_states, model_config):
+        """Test returns tuple."""
         attn = build_attention(key, model_config)
         out = attn(small_hidden_states)
         assert isinstance(out, tuple), f"{key}: must return a tuple, got {type(out)}"

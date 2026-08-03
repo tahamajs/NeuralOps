@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 
 
-def plot_gpu_memory(history, metrics, config, output_dir, opts):
+def plot_gpu_memory(history, metrics, config, output_dir, opts) -> Any:
+    """Plot gpu memory."""
     steps_gpu = [h.get("step", i) for i, h in enumerate(history) if "gpu_mem" in h]
     mem = [h["gpu_mem"] for h in history if "gpu_mem" in h]
     steps_cpu = [h.get("step", i) for i, h in enumerate(history) if "cpu_mem" in h]

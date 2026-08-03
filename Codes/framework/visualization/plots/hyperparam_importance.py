@@ -11,7 +11,8 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def plot_hyperparam_importance(history, metrics, config, output_dir, opts):
+def plot_hyperparam_importance(history, metrics, config, output_dir, opts) -> Any:
+    """Plot hyperparam importance."""
     runs_dir = Path(output_dir).parent.parent
     run_dirs = sorted(runs_dir.glob("*/artifacts/final_metrics.json"))
     if len(run_dirs) < 10:

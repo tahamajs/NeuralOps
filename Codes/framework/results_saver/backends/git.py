@@ -5,7 +5,8 @@ import subprocess
 logger = logging.getLogger(__name__)
 
 
-def git_commit_and_push(run_dir, cfg):
+def git_commit_and_push(run_dir, cfg) -> None:
+    """Git commit and push."""
     try:
         import git
     except ImportError:

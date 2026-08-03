@@ -65,7 +65,7 @@ def load_glue_local(task_name: str, base_path: str) -> DatasetDict:
     return DatasetDict(splits)
 
 
-def get_num_labels_and_is_regression(task_name: str):
+def get_num_labels_and_is_regression(task_name: str) -> Any:
     """Return (num_labels, is_regression) for GLUE tasks."""
     t = task_name.lower()
     if t == "stsb":

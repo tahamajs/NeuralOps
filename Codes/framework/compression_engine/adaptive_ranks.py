@@ -15,7 +15,8 @@ class AdaptiveTransformerCompressor(BaseCompressor):
         self.energy_threshold = energy_threshold
         self.min_rank = min_rank
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         print(
             f"🔧 Starting Compression (Threshold: {self.energy_threshold}, "
             f"Min Rank: {self.min_rank})"
@@ -55,7 +56,8 @@ class AdaptiveTransformerCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("adaptive_svd")
-def adaptive_svd_factory(model, comp_config):
+def adaptive_svd_factory(model, comp_config) -> Any:
+    """Adaptive svd factory."""
     energy_threshold = getattr(comp_config, "energy_threshold", 0.95)
     min_rank = getattr(comp_config, "min_rank", 16)
     compressor = AdaptiveTransformerCompressor(

@@ -405,6 +405,7 @@ class SparsePruningCallback(TrainerCallback):
     def on_step_end(
         self, args: Any, state: Any, control: Any, **kwargs: Any
     ) -> None:
+        """On step end."""
         if state.global_step > 0 and state.global_step % self.prune_freq == 0:
             for layer in self.model.distilbert.transformer.layer:
                 attn = layer.attention

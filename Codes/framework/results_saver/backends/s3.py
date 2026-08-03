@@ -4,7 +4,8 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def push(run_dir, cfg):
+def push(run_dir, cfg) -> None:
+    """Push."""
     try:
         import boto3
     except ImportError:

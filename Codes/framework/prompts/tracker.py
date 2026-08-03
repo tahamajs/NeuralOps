@@ -17,7 +17,7 @@ class PromptVersion:
 
 
 class PromptTracker:
-    def __init__(self, storage_path: str = "./prompts"):
+    def __init__(self, storage_path: str = "./prompts") -> None:
         self.storage_path = storage_path
         self._versions: List[PromptVersion] = []
         import os
@@ -31,6 +31,7 @@ class PromptTracker:
         parent_id: str = None,
         metadata: Dict = None,
     ) -> PromptVersion:
+        """Register."""
         vid = hashlib.sha256(
             f"{template}{datetime.now().isoformat()}".encode()
         ).hexdigest()[:12]
@@ -47,6 +48,7 @@ class PromptTracker:
         return v
 
     def render(self, version_id: str, values: Dict[str, Any]) -> str:
+        """Render."""
         v = next((x for x in self._versions if x.id == version_id), None)
         if v is None:
             raise KeyError(f"Version {version_id} not found")
@@ -54,6 +56,7 @@ class PromptTracker:
         return v.template.format(**all_vars)
 
     def compare(self, v1: str, v2: str) -> Dict[str, Any]:
+        """Compare."""
         a = next((x for x in self._versions if x.id == v1), None)
         b = next((x for x in self._versions if x.id == v2), None)
         return {
@@ -66,6 +69,7 @@ class PromptTracker:
             ),
         }
 
-    def _save(self, v: PromptVersion):
+    def _save(self, v: PromptVersion) -> None:
+        """ save."""
         with open(f"{self.storage_path}/{v.id}.json", "w") as f:
             json.dump(v.__dict__, f, indent=2, default=str)

@@ -27,7 +27,7 @@ class FLServer:
         server.run(client_data, train_fn)
     """
 
-    def __init__(self, config: FLConfig, global_model: torch.nn.Module):
+    def __init__(self, config: FLConfig, global_model: torch.nn.Module) -> None:
         self.config = config
         self.global_model = global_model
         self.aggregator = AGGREGATOR_REGISTRY.resolve(config.aggregation.value)(config)
@@ -116,7 +116,7 @@ class FLServer:
         final_metrics["round_history"] = self.round_history
         return final_metrics
 
-    def _compute_update(self, global_model, client_model):
+    def _compute_update(self, global_model, client_model) -> Any:
         """Compute the difference between client and global model."""
         global_state = global_model.state_dict()
         client_state = (
@@ -132,7 +132,7 @@ class FLServer:
                 )
         return update
 
-    def _apply_update(self, global_model, update):
+    def _apply_update(self, global_model, update) -> None:
         """Apply aggregated update to the global model."""
         state = global_model.state_dict()
         for k in update:
@@ -140,7 +140,7 @@ class FLServer:
                 state[k] += torch.tensor(update[k], dtype=state[k].dtype)
         global_model.load_state_dict(state)
 
-    def _get_client_weight(self, idx, data):
+    def _get_client_weight(self, idx, data) -> Any:
         """Return client weight (default: dataset size)."""
         if hasattr(data, "__len__"):
             return len(data)

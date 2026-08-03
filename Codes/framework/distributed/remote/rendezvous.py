@@ -15,7 +15,7 @@ class InternetRendezvous:
     use to exchange their actual reachable addresses.
     """
 
-    def __init__(self, server_url: str, job_id: str, auth_token: str):
+    def __init__(self, server_url: str, job_id: str, auth_token: str) -> None:
         self.server_url = server_url
         self.job_id = job_id
         self.auth_token = auth_token

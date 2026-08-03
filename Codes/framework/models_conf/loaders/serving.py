@@ -3,5 +3,6 @@
 SERVER_REGISTRY = {}
 
 
-def list_servers():
+def list_servers() -> Any:
+    """List servers."""
     return []

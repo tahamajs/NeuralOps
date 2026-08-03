@@ -13,6 +13,7 @@ def load_results_from_directories(
     group_names: Optional[List[str]] = None,
     metric: str = "eval_accuracy",
 ) -> Dict[str, np.ndarray]:
+    """Load results from directories from disk or config."""
     groups: Dict[str, List[float]] = {}
     for i, d in enumerate(dirs):
         name = group_names[i] if group_names else Path(d).name
@@ -32,6 +33,7 @@ def load_results_from_django(
     metric: str = "final_metrics__eval_accuracy",
     group_by: str = "config__attn_type",
 ) -> pd.DataFrame:
+    """Load results from django from disk or config."""
     records = []
     for run in runs:
         metrics = run.final_metrics or {}
@@ -52,4 +54,5 @@ def load_results_from_glue_results(
     csv_path: str,
     metric: str = "accuracy",
 ) -> pd.DataFrame:
+    """Load results from glue results from disk or config."""
     return pd.read_csv(csv_path)

@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 
 def save_experiment_results(
     run, trainer, tokenizer, history, final_metrics, output_dir="results"
-):
+) -> Any:
+    """Persist experiment results to disk."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     exp_name = f"{run.config.get('task_name', 'task')}_{run.config.get('model_name', 'model')}_{str(run.id)[:8]}_{timestamp}"
     save_path = Path(output_dir) / exp_name

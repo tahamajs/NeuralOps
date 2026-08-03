@@ -5,7 +5,8 @@ from .base import EXPORTER_REGISTRY, BaseExporter
 
 @EXPORTER_REGISTRY.register("tensorrt")
 class TensorRTExporter(BaseExporter):
-    def export(self, model, output_path, input_example=None, **kwargs):
+    def export(self, model, output_path, input_example=None, **kwargs) -> Any:
+        """Export."""
         try:
             import torch_tensorrt
         except ImportError:

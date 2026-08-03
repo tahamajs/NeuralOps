@@ -9,7 +9,8 @@ from sklearn.metrics import confusion_matrix as sklearn_cm
 logger = logging.getLogger(__name__)
 
 
-def plot_confusion_matrix(history, metrics, config, output_dir, opts):
+def plot_confusion_matrix(history, metrics, config, output_dir, opts) -> Any:
+    """Plot confusion matrix."""
     preds_path = Path(output_dir).parent / "artifacts" / "eval_predictions.json"
     if not preds_path.exists():
         logger.info("Confusion matrix requested but no eval_predictions.json found.")

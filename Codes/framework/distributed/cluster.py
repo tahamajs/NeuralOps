@@ -30,7 +30,7 @@ class NodeSpec:
 class ClusterManager:
     """Manages GPU machines over SSH — sync code, launch torchrun."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._nodes: List[NodeSpec] = []
         self._master: Optional[NodeSpec] = None
 
@@ -43,7 +43,8 @@ class ClusterManager:
         ssh_key: str = "~/.ssh/id_rsa",
         role: NodeRole = NodeRole.WORKER,
         gpu_count: int = 0,
-    ):
+    ) -> None:
+        """Add node."""
         node = NodeSpec(
             hostname=hostname or public_ip,
             public_ip=public_ip,
@@ -58,7 +59,8 @@ class ClusterManager:
             self._master = node
         logger.info("Added node: %s", node.hostname)
 
-    def sync_code(self, local_dir: str, remote_dir: str = "~/workspace"):
+    def sync_code(self, local_dir: str, remote_dir: str = "~/workspace") -> None:
+        """Sync code."""
         for node in self._nodes:
             self._run(node, f"mkdir -p {remote_dir}", quiet=True)
             subprocess.run(
@@ -82,7 +84,8 @@ class ClusterManager:
         nproc_per_node: int = 1,
         nnodes: int = 0,
         working_dir: str = "~/workspace",
-    ):
+    ) -> None:
+        """Launch."""
         if nnodes == 0:
             nnodes = len(self._nodes)
         nodes = self._nodes[:nnodes]
@@ -110,6 +113,7 @@ class ClusterManager:
         logger.info("Training finished on %d nodes.", nnodes)
 
     def check_gpus(self) -> Dict[str, int]:
+        """Check gpus."""
         result = {}
         for node in self._nodes:
             out = self._run(
@@ -123,6 +127,7 @@ class ClusterManager:
     def _run(
         self, node: NodeSpec, cmd: str, quiet: bool = False, capture: bool = False
     ) -> Optional[str]:
+        """ run."""
         ssh = (
             f"ssh -i {node.ssh_key_path} -p {node.ssh_port} "
             f"-o StrictHostKeyChecking=no {node.ssh_user}@{node.public_ip} '{cmd}'"

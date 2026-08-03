@@ -13,7 +13,8 @@ class ADMMPruner(BaseCompressor):
         self.rho = rho
         self.max_iter = max_iter
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -32,7 +33,8 @@ class ADMMPruner(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("admm_pruner")
-def admm_pruner_factory(model, comp_config):
+def admm_pruner_factory(model, comp_config) -> Any:
+    """Admm pruner factory."""
     sparsity = getattr(comp_config, "admm_pruner_sparsity", 0.5)
     rho = getattr(comp_config, "admm_pruner_rho", 0.1)
     max_iter = getattr(comp_config, "admm_pruner_max_iter", 5)

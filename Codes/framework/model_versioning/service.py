@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 # Dummy fallback
 class _DummyManager:
     def __getattr__(self, name):
-        def dummy(*args, **kwargs):
+        def dummy(*args, **kwargs) -> None:
+            """Dummy."""
             return None
 
         return dummy
@@ -34,7 +35,8 @@ class ModelVersionService:
     """Complete model version lifecycle management."""
 
     @staticmethod
-    def _get_model():
+    def _get_model() -> Any:
+        """ get model."""
         try:
             from model_versioning.models import ModelVersion
 
@@ -55,6 +57,7 @@ class ModelVersionService:
         config: Optional[VersioningConfig] = None,
         extra_files: Optional[Dict[str, str]] = None,  # {filename: path}
     ) -> Optional[Any]:
+        """Build and return version."""
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return None
@@ -118,14 +121,16 @@ class ModelVersionService:
         return record
 
     @staticmethod
-    def get_latest(run):
+    def get_latest(run) -> Any:
+        """Return the latest."""
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return None
         return run.model_versions.order_by("-version_number").first()
 
     @staticmethod
-    def list_versions(run, only_tags=None, metric_gt=None):
+    def list_versions(run, only_tags=None, metric_gt=None) -> Any:
+        """List versions."""
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return []
@@ -138,7 +143,8 @@ class ModelVersionService:
         return qs.order_by("-version_number")
 
     @staticmethod
-    def load_version(version_id, map_location="cpu"):
+    def load_version(version_id, map_location="cpu") -> Any:
+        """Load version from disk or config."""
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return None
@@ -157,7 +163,8 @@ class ModelVersionService:
             return None
 
     @staticmethod
-    def apply_cleanup(run, config: VersioningConfig):
+    def apply_cleanup(run, config: VersioningConfig) -> None:
+        """Apply cleanup."""
         ModelVersion = ModelVersionService._get_model()
         if ModelVersion is _DummyModelVersion:
             return
@@ -174,7 +181,8 @@ class ModelVersionService:
         logger.info("Cleaned up %d versions for run %s", len(to_delete), run.id)
 
     @staticmethod
-    def delete_version(version, config: VersioningConfig = None):
+    def delete_version(version, config: VersioningConfig = None) -> None:
+        """Delete version."""
         try:
             if os.path.exists(version.artifact_path):
                 if os.path.isdir(version.artifact_path):
@@ -194,7 +202,8 @@ class ModelVersionService:
     # Backend helpers
     # ------------------------------------------------------------------
     @staticmethod
-    def _push_to_backends(artifact_path, cfg):
+    def _push_to_backends(artifact_path, cfg) -> None:
+        """ push to backends."""
         for backend in cfg.storage_backends:
             try:
                 {
@@ -236,6 +245,7 @@ class ModelVersionService:
     def _pull_from_backends(version) -> Optional[str]:
         # Try to restore the artifact from any configured backend
         # (simplified; uses the version's stored storage_tier)
+        """ pull from backends."""
         tiers = version.storage_tier.split(",") if version.storage_tier else []
         for tier in tiers:
             try:
@@ -253,4 +263,5 @@ class ModelVersionService:
     @staticmethod
     def _delete_from_backend(version, backend: StorageBackend):
         # similar to push, but calls delete
+        """ delete from backend."""
         pass

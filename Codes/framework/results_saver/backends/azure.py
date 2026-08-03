@@ -4,7 +4,8 @@ import os
 logger = logging.getLogger(__name__)
 
 
-def push(run_dir, cfg):
+def push(run_dir, cfg) -> None:
+    """Push."""
     try:
         from azure.storage.blob import BlobServiceClient
     except ImportError:

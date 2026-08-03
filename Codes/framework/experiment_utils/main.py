@@ -38,10 +38,11 @@ try:
 except ImportError:
 
     class TrainerLoggingCallback:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *args, **kwargs) -> None:
             pass
 
-        def on_log(self, args, state, control, logs=None, **kwargs):
+        def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+            """On log."""
             if logs:
                 logging.getLogger(__name__).info(f"Step {state.global_step}: {logs}")
 
@@ -52,28 +53,32 @@ logger = logging.getLogger(__name__)
 
 
 class DjangoCallback(TrainerCallback):
-    def __init__(self, progress_cb, log_cb, final_cb, stop_event=None):
+    def __init__(self, progress_cb, log_cb, final_cb, stop_event=None) -> None:
         self.progress_cb = progress_cb
         self.log_cb = log_cb
         self.final_cb = final_cb
         self.stop_event = stop_event
         self._total_steps = None
 
-    def on_train_begin(self, args, state, control, **kwargs):
+    def on_train_begin(self, args, state, control, **kwargs) -> None:
+        """On train begin."""
         self._total_steps = state.max_steps
 
-    def on_log(self, args, state, control, logs=None, **kwargs):
+    def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+        """On log."""
         if self.log_cb:
             self.log_cb(state.global_step, logs or {})
 
-    def on_step_end(self, args, state, control, **kwargs):
+    def on_step_end(self, args, state, control, **kwargs) -> None:
+        """On step end."""
         if self.stop_event and self.stop_event.is_set():
             control.should_training_stop = True
         if self.progress_cb and self._total_steps:
             pct = (state.global_step / self._total_steps) * 100
             self.progress_cb(state.global_step, self._total_steps, pct)
 
-    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs) -> None:
+        """On evaluate."""
         if self.log_cb and metrics:
             self.log_cb(state.global_step, metrics)
 
@@ -84,7 +89,8 @@ def run_training(
     progress_callback=None,
     log_callback=None,
     final_callback=None,
-):
+) -> Any:
+    """Run training."""
     if isinstance(config, dict):
         cfg = data_ExperimentConfig()
         for k, v in config.items():
@@ -168,7 +174,8 @@ def run_training(
     return eval_results
 
 
-def run_evaluation(config, model_path):
+def run_evaluation(config, model_path) -> Any:
+    """Run evaluation."""
     if isinstance(config, dict):
         cfg = data_ExperimentConfig()
         for k, v in config.items():
@@ -219,7 +226,8 @@ def run_evaluation(config, model_path):
     return {k.replace("eval_", ""): v for k, v in eval_result.items()}
 
 
-def run_compression(config, output_dir):
+def run_compression(config, output_dir) -> Any:
+    """Run compression."""
     if isinstance(config, dict):
         cfg = data_ExperimentConfig()
         for k, v in config.items():
@@ -263,7 +271,8 @@ def run_compression(config, output_dir):
     return stats
 
 
-def main():
+def main() -> None:
+    """Main."""
     from experiment_logging.logger import LoggingConfig, MetricsTracker, setup_logging
     from framework.experiment_utils.config import build_config_from_args
 
@@ -324,7 +333,8 @@ def main():
 
     # Custom callback for tracker
     class TrackerCallback(TrainerCallback):
-        def on_log(self, args, state, control, logs=None, **kwargs):
+        def on_log(self, args, state, control, logs=None, **kwargs) -> None:
+            """On log."""
             if logs:
                 for k, v in logs.items():
                     tracker.log(k, v, step=state.global_step)

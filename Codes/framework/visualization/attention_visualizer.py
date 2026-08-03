@@ -15,14 +15,15 @@ from .base import BaseVisualizer
 
 
 class SVDAttentionVisualizer(BaseVisualizer):
-    def __init__(self, output_dir: str = "visualizations"):
+    def __init__(self, output_dir: str = "visualizations") -> None:
         super().__init__(output_dir)
         self.colormap = LinearSegmentedColormap.from_list(
             "custom", ["#440154", "#3B528B", "#21908C", "#5DC963", "#FDE725"]
         )
         self._setup_style()
 
-    def _setup_style(self):
+    def _setup_style(self) -> None:
+        """ setup style."""
         plt.style.use("seaborn-v0_8-darkgrid")
         sns.set_palette("husl")
 
@@ -38,6 +39,7 @@ class SVDAttentionVisualizer(BaseVisualizer):
         save: bool = True,
         show: bool = False,
     ) -> Optional[str]:
+        """Plot attention heatmap."""
         fig, ax = plt.subplots(figsize=(12, 10))
         sns.heatmap(
             attention_matrix,
@@ -70,6 +72,7 @@ class SVDAttentionVisualizer(BaseVisualizer):
         task_name: str = "task",
         save: bool = True,
     ) -> Optional[str]:
+        """Plot attention entropy."""
         epsilon = 1e-10
         entropy = -np.sum(
             attention_matrix * np.log(attention_matrix + epsilon), axis=-1
@@ -99,6 +102,7 @@ class SVDAttentionVisualizer(BaseVisualizer):
         task_name: str = "task",
         save: bool = True,
     ) -> Optional[str]:
+        """Plot attention difference."""
         difference = np.abs(full_attention - svd_attention)
         fig, axes = plt.subplots(1, 3, figsize=(18, 5))
         sns.heatmap(full_attention, cmap=self.colormap, ax=axes[0], cbar=False)
@@ -129,6 +133,7 @@ class SVDAttentionVisualizer(BaseVisualizer):
         head_idx: int = 0,
         save: bool = True,
     ) -> tuple:
+        """Analyze singular values."""
         U, s, Vt = np.linalg.svd(attention_matrix, full_matrices=False)
         cumulative_energy = np.cumsum(s**2) / np.sum(s**2)
         fig, axes = plt.subplots(1, 2, figsize=(14, 5))
@@ -157,7 +162,8 @@ class SVDAttentionVisualizer(BaseVisualizer):
             self._save_figure(fig, filename, dpi=150)
         return s, cumulative_energy
 
-    def compute_subspace_alignment(self, full_attention, svd_attention):
+    def compute_subspace_alignment(self, full_attention, svd_attention) -> Any:
+        """Compute and return subspace alignment."""
         U_full, _, _ = np.linalg.svd(full_attention, full_matrices=False)
         U_svd, _, _ = np.linalg.svd(svd_attention, full_matrices=False)
         min_dim = min(U_full.shape[1], U_svd.shape[1])
@@ -168,7 +174,8 @@ class SVDAttentionVisualizer(BaseVisualizer):
 
     def plot_subspace_alignment(
         self, angles, rank, model_name, task_name, layer_idx, head_idx, save=True
-    ):
+    ) -> Any:
+        """Plot subspace alignment."""
         fig, ax = plt.subplots(figsize=(10, 6))
         ax.plot(angles, "o-", color="#5DC963", markersize=6, linewidth=1.5)
         ax.set_xlabel("Principal Angle Index")
@@ -192,7 +199,8 @@ class SVDAttentionVisualizer(BaseVisualizer):
         layers=[0, 4, 8, 11],
         heads=[0, 6, 11],
         save=True,
-    ):
+    ) -> Any:
+        """Plot layer analysis grid."""
         fig, axes = plt.subplots(len(layers), len(heads), figsize=(16, 16))
         for i, layer in enumerate(layers):
             for j, head in enumerate(heads):
@@ -213,7 +221,8 @@ class SVDAttentionVisualizer(BaseVisualizer):
             return self._save_figure(fig, filename, dpi=150)
         return filename
 
-    def plot_rank_comparison(self, results_dict, task_name, save=True):
+    def plot_rank_comparison(self, results_dict, task_name, save=True) -> Any:
+        """Plot rank comparison."""
         ranks = sorted(
             [
                 int(r)
@@ -244,7 +253,8 @@ class SVDAttentionVisualizer(BaseVisualizer):
             return self._save_figure(fig, filename, dpi=150)
         return filename
 
-    def plot_model_comparison(self, all_model_results, task_name, save=True):
+    def plot_model_comparison(self, all_model_results, task_name, save=True) -> Any:
+        """Plot model comparison."""
         fig, ax = plt.subplots(figsize=(12, 6))
         colors = ["#440154", "#3B528B", "#21908C", "#5DC963", "#FDE725"]
         markers = ["o", "s", "^", "D", "v"]
@@ -275,7 +285,8 @@ class SVDAttentionVisualizer(BaseVisualizer):
 
     def generate_training_plots(
         self, training_logs, model_name, task_name, rank, save=True
-    ):
+    ) -> Any:
+        """Generate training plots."""
         epochs = [log["epoch"] for log in training_logs]
         losses = [log["loss"] for log in training_logs]
         eval_scores = [

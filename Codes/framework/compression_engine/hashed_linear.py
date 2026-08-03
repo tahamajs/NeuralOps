@@ -13,7 +13,7 @@ _PRIME2 = 2246822519
 _PRIME3 = 3266489917
 
 
-def fast_hash(indices_i, indices_j, n_buckets):
+def fast_hash(indices_i, indices_j, n_buckets) -> Any:
     """Vectorized hash: (i * PRIME1 + j * PRIME2) % n_buckets."""
     return ((indices_i * _PRIME1 + indices_j * _PRIME2) % n_buckets).long()
 
@@ -49,6 +49,7 @@ class HashedLinear(nn.Module):
 
     def forward(self, x):
         # Reconstruct weight matrix from table and hash indices
+        """Forward pass."""
         W = self.weight_table[self.hash_idx]  # (out, in)
         return F.linear(x, W, self.bias)
 

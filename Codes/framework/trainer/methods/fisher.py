@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 
 def compute_fisher_importance(
     model, dataset, tokenizer, task_keys, config, target_substrings=None
-):
+) -> Any:
+    """Compute and return fisher importance."""
     if target_substrings is None:
         target_substrings = ["query", "key", "value", "dense"]
 
@@ -25,7 +26,8 @@ def compute_fisher_importance(
     indices = np.random.choice(len(dataset), sample_size, replace=False)
     sampled = dataset.select(indices)
 
-    def collate_fn(batch):
+    def collate_fn(batch) -> Any:
+        """Collate fn."""
         if sent2_key is None:
             texts = [ex[sent1_key] for ex in batch]
             enc = tokenizer(
@@ -91,7 +93,8 @@ def compute_fisher_importance(
 
 
 @register_method("fisher_lora")
-def apply_fisher_lora(model, config):
+def apply_fisher_lora(model, config) -> None:
+    """Apply fisher lora."""
     logger.info(
         "Fisher‑LoRA method called – but requires dataset, tokenizer, task_keys. "
         "Use a wrapper in training script to call compute_fisher_importance with actual data."

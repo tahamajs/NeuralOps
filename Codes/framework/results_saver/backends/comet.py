@@ -3,7 +3,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def track(run_id, run_dir, metrics, params, cfg):
+def track(run_id, run_dir, metrics, params, cfg) -> None:
+    """Track."""
     try:
         from comet_ml import Experiment
     except ImportError:

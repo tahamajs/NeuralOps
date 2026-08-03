@@ -16,6 +16,7 @@ class A3Compressor(BaseCompressor):
         self.rank = rank
 
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear) and (
                 "attention" in name.lower() or "attn" in name.lower()
@@ -33,6 +34,7 @@ class A3Compressor(BaseCompressor):
 # ✅ Register a factory function, not the class
 @COMPRESSOR_REGISTRY.register("a3")
 def a3_compressor_factory(model: nn.Module, comp_config) -> nn.Module:
+    """A3 compressor factory."""
     rank = getattr(comp_config, "a3_rank", 64)
     compressor = A3Compressor(model, rank=rank)
     compressed_model, _ = compressor.compress()

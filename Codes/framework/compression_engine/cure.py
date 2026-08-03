@@ -9,7 +9,7 @@ from framework.core.base import BaseCompressor
 from framework.core.registry import COMPRESSOR_REGISTRY
 
 
-def cur_compress(weight, rank):
+def cur_compress(weight, rank) -> Any:
     """
     Approximate weight matrix W as C @ U @ R, where C and R are column/row subsets.
     """
@@ -39,7 +39,8 @@ class CURMoECompressor(BaseCompressor):
         super().__init__(model, name="cur_moe", **kwargs)
         self.rank = rank
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear) and "expert" in name:
                 module.weight.data = cur_compress(module.weight.data, self.rank)
@@ -48,7 +49,8 @@ class CURMoECompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cur_moe")
-def cur_moe_factory(model, comp_config):
+def cur_moe_factory(model, comp_config) -> Any:
+    """Cur moe factory."""
     rank = getattr(comp_config, "cur_moe_rank", 64)
     method = getattr(comp_config, "cur_moe_method", "leverage")
     compressor = CURMoECompressor(model, rank=rank, method=method)

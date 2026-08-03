@@ -29,7 +29,8 @@ class SALRLayer(nn.Module):
         mask = (torch.rand(r, r) < (1 - sparsity)).float()
         self.register_buffer("mask", mask)
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
+        """Forward pass."""
         S_sparse = self.S * self.mask[: self.rank, : self.rank]
         W = self.U @ torch.diag(S_sparse) @ self.Vt
         return x @ W.T + self.bias
@@ -42,7 +43,8 @@ class SALRCompressor(BaseCompressor):
         self.sparsity = sparsity
         self.compressed_layers = []
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 new_layer = SALRLayer(module, self.rank, self.sparsity)
@@ -53,7 +55,8 @@ class SALRCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _get_parent(self, full_name):
+    def _get_parent(self, full_name) -> Any:
+        """ get parent."""
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
@@ -62,7 +65,8 @@ class SALRCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("salr")
-def salr_factory(model, comp_config):
+def salr_factory(model, comp_config) -> Any:
+    """Salr factory."""
     rank = getattr(comp_config, "salr_rank", 64)
     sparsity = getattr(comp_config, "salr_sparsity", 0.5)
     compressor = SALRCompressor(model, rank=rank, sparsity=sparsity)

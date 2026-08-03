@@ -11,7 +11,8 @@ class SwiftSVDCompressor(BaseCompressor):
         super().__init__(model, name="swift_svd", **kwargs)
         self.rank_ratio = rank_ratio
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 W = module.weight.data.float()
@@ -26,7 +27,8 @@ class SwiftSVDCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("swift_svd")
-def swift_svd_factory(model, comp_config):
+def swift_svd_factory(model, comp_config) -> Any:
+    """Swift svd factory."""
     rank_ratio = getattr(comp_config, "swift_svd_rank_ratio", 0.5)
     compressor = SwiftSVDCompressor(model, rank_ratio)
     compressed_model, _ = compressor.compress()

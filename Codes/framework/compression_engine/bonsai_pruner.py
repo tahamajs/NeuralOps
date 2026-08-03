@@ -11,7 +11,8 @@ class BonsaiPruner(BaseCompressor):
         self.sparsity = sparsity
         self.steps = steps
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float()
@@ -31,7 +32,8 @@ class BonsaiPruner(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("bonsai")
-def bonsai_factory(model, comp_config):
+def bonsai_factory(model, comp_config) -> Any:
+    """Bonsai factory."""
     sparsity = getattr(comp_config, "bonsai_sparsity", 0.5)
     steps = getattr(comp_config, "bonsai_steps", 10)
     compressor = BonsaiPruner(model, sparsity=sparsity, steps=steps)

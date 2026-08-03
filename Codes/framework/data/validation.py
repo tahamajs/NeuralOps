@@ -17,10 +17,11 @@ class ValidationReport:
 
 
 class DataValidator:
-    def __init__(self, schema: Dict[str, Any] = None):
+    def __init__(self, schema: Dict[str, Any] = None) -> None:
         self.schema = schema or {}
 
     def validate(self, dataset: Dict[str, np.ndarray]) -> ValidationReport:
+        """Validate."""
         issues = []
         for col, values in dataset.items():
             v = np.array(values)

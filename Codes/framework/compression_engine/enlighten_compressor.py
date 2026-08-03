@@ -12,7 +12,8 @@ class ENLightenCompressor(BaseCompressor):
         self.rank = rank
         self.sparsity = sparsity
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -41,7 +42,8 @@ class ENLightenCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("enlighten")
-def enlighten_factory(model, comp_config):
+def enlighten_factory(model, comp_config) -> Any:
+    """Enlighten factory."""
     rank = getattr(comp_config, "enlighten_rank", 64)
     sparsity = getattr(comp_config, "enlighten_sparsity", 0.5)
     compressor = ENLightenCompressor(model, rank=rank, sparsity=sparsity)

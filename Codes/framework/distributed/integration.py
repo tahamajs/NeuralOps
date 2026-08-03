@@ -15,6 +15,7 @@ def wrap_with_distributed(
     model: torch.nn.Module,
     job_id: str,
 ) -> torch.nn.Module:
+    """Wrap with distributed."""
     cfg = DistributedConfig(
         **{
             k: v
@@ -41,6 +42,7 @@ def wrap_with_distributed(
 
 
 def cleanup_distributed(model: torch.nn.Module, job_id: str) -> None:
+    """Cleanup distributed."""
     cfg = getattr(model, "_dist_cfg", None)
     if cfg and cfg.gpu_ids:
         GPUManager().release(job_id)

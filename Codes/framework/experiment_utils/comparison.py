@@ -32,17 +32,19 @@ class ExperimentComparator:
     Inspired by ZenML's comparison tool, MLflow compare, and RagaAI diff.
     """
 
-    def __init__(self, run_ids: List[str], baseline_id: Optional[str] = None):
+    def __init__(self, run_ids: List[str], baseline_id: Optional[str] = None) -> None:
         self.run_ids = run_ids
         self.baseline_id = baseline_id or (run_ids[0] if run_ids else None)
         self.runs: List[TrainingRun] = []
 
-    def load_runs(self):
+    def load_runs(self) -> None:
+        """Load runs from disk or config."""
         self.runs = list(
             TrainingRun.objects.filter(id__in=self.run_ids).order_by("created_at")
         )
 
     def compare(self) -> ComparisonResult:
+        """Compare."""
         self.load_runs()
         if len(self.runs) < 2:
             raise ValueError("Need at least 2 runs to compare")
@@ -65,6 +67,7 @@ class ExperimentComparator:
         return result
 
     def _build_metrics_table(self) -> List[Dict[str, Any]]:
+        """ build metrics table."""
         rows = []
         for run in self.runs:
             metrics = run.final_metrics or {}
@@ -88,6 +91,7 @@ class ExperimentComparator:
         return rows
 
     def _build_config_diff(self) -> Dict[str, Any]:
+        """ build config diff."""
         configs = {str(r.id): r.config for r in self.runs}
         first_id = str(self.runs[0].id)
         diffs = {}
@@ -106,6 +110,7 @@ class ExperimentComparator:
         }
 
     def _build_hyperparameter_table(self) -> List[Dict[str, Any]]:
+        """ build hyperparameter table."""
         hp_keys = [
             "learning_rate",
             "batch_size",
@@ -129,6 +134,7 @@ class ExperimentComparator:
         return rows
 
     def _build_metric_deltas(self, baseline: TrainingRun) -> List[Dict[str, Any]]:
+        """ build metric deltas."""
         base_metrics = baseline.final_metrics or {}
         deltas = []
         metric_keys = [
@@ -194,6 +200,7 @@ class ExperimentComparator:
         return {"dimensions": dimensions, "data": data}
 
     def _find_best_run(self) -> Optional[str]:
+        """ find best run."""
         best = None
         best_acc = -1
         for run in self.runs:
@@ -204,6 +211,7 @@ class ExperimentComparator:
         return best
 
     def _generate_summary(self, result: ComparisonResult) -> str:
+        """ generate summary."""
         lines = [f"Comparison of {len(self.runs)} runs."]
         if result.best_run_id:
             best_run = next(

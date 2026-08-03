@@ -6,5 +6,6 @@ from .gptq import GPTQQuantizer
 from .torchao import TorchAOQuantizer
 
 
-def list_quantizers():
+def list_quantizers() -> Any:
+    """List quantizers."""
     return list(QUANTIZER_REGISTRY.keys())

@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 logger = logging.getLogger(__name__)
 
 
-def plot_robustness(history, metrics, config, output_dir, opts):
+def plot_robustness(history, metrics, config, output_dir, opts) -> Any:
+    """Plot robustness."""
     rob_path = Path(output_dir).parent / "artifacts" / "robustness.json"
     if not rob_path.exists():
         logger.info("Robustness plot requires robustness.json (perturbation data).")

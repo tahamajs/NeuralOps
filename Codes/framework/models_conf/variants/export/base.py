@@ -7,6 +7,6 @@ EXPORTER_REGISTRY = Registry("exporters")
 
 class BaseExporter(ABC):
     @abstractmethod
-    def export(self, model, output_path: str, **kwargs):
+    def export(self, model, output_path: str, **kwargs) -> None:
         """Export the model to the specified format."""
         pass

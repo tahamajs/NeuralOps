@@ -9,7 +9,7 @@ COMPRESSION_REGISTRY = Registry("fl_compression")
 
 
 class BaseCompressor(ABC):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         self.config = config
 
     @abstractmethod

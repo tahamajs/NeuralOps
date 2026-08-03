@@ -13,7 +13,8 @@ class SLiMCompressor(BaseCompressor):
         self.sparsity = sparsity
         self.rank = rank
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float().cpu().numpy()
@@ -50,7 +51,8 @@ class SLiMCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("slim")
-def slim_factory(model, comp_config):
+def slim_factory(model, comp_config) -> Any:
+    """Slim factory."""
     bits = getattr(comp_config, "slim_bits", 4)
     sparsity = getattr(comp_config, "slim_sparsity", 0.5)
     rank = getattr(comp_config, "slim_rank", 8)

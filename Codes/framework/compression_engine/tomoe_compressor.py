@@ -44,6 +44,7 @@ class ToMoELinear(nn.Module):
 
     def forward(self, x):
         # x: (..., in_features)
+        """Forward pass."""
         logits = self.router(x)  # (..., E)
         topk_vals, topk_idx = torch.topk(logits, self.top_k, dim=-1)
         topk_vals = torch.softmax(topk_vals, dim=-1)
@@ -82,7 +83,8 @@ class ToMoECompressor(BaseCompressor):
         self.num_experts = num_experts
         self.top_k = top_k
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear) and (
                 "ffn" in name.lower() or "intermediate" in name.lower()
@@ -95,7 +97,8 @@ class ToMoECompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _get_parent(self, full_name):
+    def _get_parent(self, full_name) -> Any:
+        """ get parent."""
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:

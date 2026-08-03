@@ -9,14 +9,15 @@ from .base import AGGREGATOR_REGISTRY, BaseAggregator
 class SCAFFOLDAggregator(BaseAggregator):
     """SCAFFOLD aggregation with control variates."""
 
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.server_control = {}
         self.client_controls = {}  # client_id -> control variate
 
     def aggregate(
         self, global_model, client_updates, client_weights, round_num, client_ids=None
-    ):
+    ) -> Any:
+        """Aggregate."""
         avg_update = self.compute_weighted_average(client_updates, client_weights)
 
         # Update server control variate

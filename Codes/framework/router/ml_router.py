@@ -23,7 +23,7 @@ class TfidfRouter(TrainableRouter):
         max_features: int = 5000,
         ngram_range: Tuple[int, int] = (1, 2),
         **lr_kwargs
-    ):
+    ) -> None:
         self.pipeline = Pipeline(
             [
                 (
@@ -40,12 +40,14 @@ class TfidfRouter(TrainableRouter):
         self.is_trained = False
 
     def train(self, texts: List[str], labels: List[str], **kwargs) -> "TfidfRouter":
+        """Fit the model on the provided dataset."""
         self.pipeline.fit(texts, labels)
         self.classes_ = self.pipeline.classes_
         self.is_trained = True
         return self
 
     def route(self, text: str) -> Tuple[str, Dict[str, float]]:
+        """Route."""
         if not self.is_trained:
             raise RuntimeError("Model not trained. Call train() first.")
         probs = self.pipeline.predict_proba([text])[0]
@@ -53,12 +55,15 @@ class TfidfRouter(TrainableRouter):
         return pred, dict(zip(self.pipeline.classes_, probs))
 
     def can_route(self, text: str) -> bool:
+        """Can route."""
         return self.is_trained and len(text.strip()) > 0
 
-    def save(self, path: str):
+    def save(self, path: str) -> None:
+        """Save."""
         joblib.dump(self.pipeline, path)
 
-    def load(self, path: str):
+    def load(self, path: str) -> None:
+        """Load."""
         self.pipeline = joblib.load(path)
         self.classes_ = self.pipeline.classes_
         self.is_trained = True
@@ -76,7 +81,7 @@ class FastTextRouter(TrainableRouter, nn.Module):
         num_classes: int = 7,
         max_seq_len: int = 128,
         dropout: float = 0.3,
-    ):
+    ) -> None:
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.fc1 = nn.Linear(embedding_dim, hidden_dim)
@@ -90,6 +95,7 @@ class FastTextRouter(TrainableRouter, nn.Module):
         self.to(self._device)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass — compute module output from inputs."""
         emb = self.embedding(x)
         pooled = emb.mean(dim=1)
         pooled = self.dropout(torch.relu(self.fc1(pooled)))
@@ -104,7 +110,8 @@ class FastTextRouter(TrainableRouter, nn.Module):
         batch_size: int = 32,
         lr: float = 0.001,
         validation_split: float = 0.1,
-    ):
+    ) -> Any:
+        """Train model."""
         import torch.optim as optim
         from sklearn.model_selection import train_test_split
         from torch.utils.data import DataLoader, TensorDataset
@@ -160,7 +167,8 @@ class FastTextRouter(TrainableRouter, nn.Module):
         self.is_trained = True
         return history
 
-    def _evaluate(self, loader, criterion):
+    def _evaluate(self, loader, criterion) -> Any:
+        """ evaluate."""
         self.eval()
         total_loss, correct, total = 0, 0, 0
         with torch.no_grad():
@@ -175,6 +183,7 @@ class FastTextRouter(TrainableRouter, nn.Module):
         return total_loss / len(loader), correct / total
 
     def route(self, text: str) -> Tuple[str, Dict[str, float]]:
+        """Route."""
         if not self.is_trained or not hasattr(self, "tokenizer"):
             raise RuntimeError("Model not trained or tokenizer missing")
         ids = self.tokenizer(text)[: self.max_seq_len]
@@ -190,9 +199,11 @@ class FastTextRouter(TrainableRouter, nn.Module):
         return pred_label, scores
 
     def can_route(self, text: str) -> bool:
+        """Can route."""
         return self.is_trained and hasattr(self, "tokenizer")
 
-    def save(self, path: str):
+    def save(self, path: str) -> None:
+        """Save."""
         torch.save(
             {
                 "model_state_dict": self.state_dict(),
@@ -202,7 +213,8 @@ class FastTextRouter(TrainableRouter, nn.Module):
             path,
         )
 
-    def load(self, path: str, map_location=None):
+    def load(self, path: str, map_location=None) -> None:
+        """Load."""
         checkpoint = torch.load(path, map_location=map_location)
         self.load_state_dict(checkpoint["model_state_dict"])
         self.classes_ = checkpoint["classes"]

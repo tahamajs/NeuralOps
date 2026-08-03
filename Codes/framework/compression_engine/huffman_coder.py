@@ -7,7 +7,7 @@ import torch
 
 class HuffmanCoder:
     @staticmethod
-    def encode(weights: torch.Tensor):
+    def encode(weights: torch.Tensor) -> Any:
         """Return (encoded_bits, code_map) for a weight tensor."""
         flat = weights.view(-1).tolist()
         freq = {}
@@ -30,7 +30,7 @@ class HuffmanCoder:
         return encoded, code_map
 
     @staticmethod
-    def decode(encoded, code_map):
+    def decode(encoded, code_map) -> Any:
         """Decode a list of bit strings back to weight values."""
         reverse_map = {v: k for k, v in code_map.items()}
         return [reverse_map[bits] for bits in encoded]

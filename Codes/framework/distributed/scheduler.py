@@ -43,7 +43,7 @@ class JobSpec:
 class DistributedJobScheduler:
     """Priority queue that dispatches jobs to available GPUs."""
 
-    def __init__(self, policy=SchedulingPolicy.PRIORITY):
+    def __init__(self, policy=SchedulingPolicy.PRIORITY) -> None:
         self.policy = policy
         self._lock = threading.Lock()
         self._queue: List[JobSpec] = []
@@ -60,6 +60,7 @@ class DistributedJobScheduler:
         duration: float = 3600.0,
         user: str = "anonymous",
     ) -> str:
+        """Submit."""
         jid = f"job-{int(time.time()*1000)}"
         job = JobSpec(
             priority=priority,
@@ -76,6 +77,7 @@ class DistributedJobScheduler:
         return jid
 
     def cancel(self, job_id: str) -> bool:
+        """Cancel."""
         with self._lock:
             if job_id in self._running:
                 self.allocator.release(job_id)
@@ -89,6 +91,7 @@ class DistributedJobScheduler:
         return False
 
     def status(self) -> Dict:
+        """Status."""
         with self._lock:
             return {
                 "queue_size": len(self._queue),
@@ -96,16 +99,19 @@ class DistributedJobScheduler:
                 "available_gpus": self.allocator.available_gpus,
             }
 
-    def run_loop(self, train_fn: Callable, tick: float = 2.0):
+    def run_loop(self, train_fn: Callable, tick: float = 2.0) -> None:
+        """Run loop."""
         logger.info("Scheduler started with %s", self.policy.value)
         while not self._stop.is_set():
             self._tick(train_fn)
             time.sleep(tick)
 
-    def stop(self):
+    def stop(self) -> None:
+        """Stop."""
         self._stop.set()
 
-    def _tick(self, train_fn):
+    def _tick(self, train_fn) -> None:
+        """ tick."""
         with self._lock:
             free = self.allocator.available_gpus
             while self._queue and free > 0:
@@ -126,7 +132,8 @@ class DistributedJobScheduler:
                     heapq.heappush(self._queue, job)
                     break
 
-    def _exec(self, job: JobSpec, train_fn):
+    def _exec(self, job: JobSpec, train_fn) -> None:
+        """ exec."""
         try:
             train_fn(job)
             job.state = JobState.COMPLETED

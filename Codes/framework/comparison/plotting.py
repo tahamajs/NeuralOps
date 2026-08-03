@@ -12,6 +12,7 @@ def plot_critical_difference_diagram(
     output_path: Optional[str] = None,
     figsize: Tuple[int, int] = (10, 4),
 ) -> Optional[str]:
+    """Plot critical difference diagram."""
     names = list(groups.keys())
     n = len(names)
     if n < 2:
@@ -90,6 +91,7 @@ def plot_pairwise_comparison_heatmap(
     output_path: Optional[str] = None,
     figsize: Tuple[int, int] = (8, 6),
 ) -> Optional[str]:
+    """Plot pairwise comparison heatmap."""
     names = sorted(groups.keys())
     n = len(names)
     if n < 2:

@@ -10,6 +10,7 @@ import pandas as pd
 def generate_html_report(
     df: pd.DataFrame, output_dir: str, title: str = "Analysis Report"
 ) -> str:
+    """Generate html report."""
     os.makedirs(output_dir, exist_ok=True)
     html = f"""<!DOCTYPE html>
 <html><head><meta charset='utf-8'><title>{title}</title>
@@ -27,6 +28,7 @@ def generate_html_report(
 def generate_latex_table(
     df: pd.DataFrame, output_path: str, caption: str = "Results"
 ) -> str:
+    """Generate latex table."""
     lines = [
         r"\begin{table}[htbp]\centering",
         r"\caption{" + caption + "}",
@@ -51,6 +53,7 @@ def generate_latex_table(
 def generate_full_report(
     df: pd.DataFrame, output_dir: str, experiment_name: str = "experiment"
 ) -> str:
+    """Generate full report."""
     os.makedirs(output_dir, exist_ok=True)
     plots_dir = os.path.join(output_dir, "plots")
     from .plotting import create_comprehensive_plots, plot_tradeoff
@@ -65,6 +68,7 @@ def generate_full_report(
 
 
 def generate_interactive_report(df: pd.DataFrame, output_dir: str) -> str:
+    """Generate interactive report."""
     os.makedirs(output_dir, exist_ok=True)
     import plotly.graph_objects as go
 

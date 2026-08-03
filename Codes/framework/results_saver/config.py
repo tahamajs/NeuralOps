@@ -77,5 +77,6 @@ class SaveConfig:
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "SaveConfig":
+        """From dict."""
         valid = {k for k in d if k in cls.__dataclass_fields__}
         return cls(**{k: d[k] for k in valid})

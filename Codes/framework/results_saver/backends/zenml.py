@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def track(run_id, run_dir, metrics, params, cfg):
+def track(run_id, run_dir, metrics, params, cfg) -> None:
     """Log results as a ZenML step artifact."""
     try:
         from zenml.artifacts.artifact_config import ArtifactConfig

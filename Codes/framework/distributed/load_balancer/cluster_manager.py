@@ -49,7 +49,7 @@ class ClusterManager:
                                 nproc_per_node=4, nnodes=2)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._nodes: List[NodeSpec] = []
         self._master: Optional[NodeSpec] = None
 

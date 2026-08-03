@@ -7,11 +7,12 @@ from .base import COMPRESSION_REGISTRY, BaseCompressor
 
 @COMPRESSION_REGISTRY.register("stc")
 class STCCompressor(BaseCompressor):
-    def __init__(self, config):
+    def __init__(self, config) -> None:
         super().__init__(config)
         self.fraction = config.compression_topk_fraction
 
-    def compress(self, update):
+    def compress(self, update) -> Any:
+        """Compress the target module or tensor."""
         compressed = {}
         for k, v in update.items():
             v_flat = v.flatten()
@@ -21,7 +22,8 @@ class STCCompressor(BaseCompressor):
             compressed[k] = (values, top_indices.copy(), v.shape)
         return compressed
 
-    def decompress(self, compressed):
+    def decompress(self, compressed) -> Any:
+        """Decompress the target module or tensor."""
         decompressed = {}
         for k, (values, indices, shape) in compressed.items():
             arr = np.zeros(np.prod(shape), dtype=np.float32)

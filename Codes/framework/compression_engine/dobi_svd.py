@@ -22,13 +22,15 @@ class DobiSVDLinearLayer(nn.Module):
             self.register_parameter("bias", None)
         self.reset_parameters()
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
+        """Reset parameters."""
         nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))
         if self.bias is not None:
             bound = 1 / math.sqrt(self.in_features)
             nn.init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, x):
+    def forward(self, x) -> Any:
+        """Forward pass."""
         max_rank = min(self.in_features, self.out_features)
         effective_rank = max(1, int(self.rank_ratio * max_rank))
         U, S, Vt = torch.linalg.svd(self.weight, full_matrices=False)
@@ -45,7 +47,8 @@ class DobiSVDCompressor(BaseCompressor):
         super().__init__(model, name="dobi", **kwargs)
         self.init_rank_ratio = init_rank_ratio
 
-    def compress(self):
+    def compress(self) -> Any:
+        """Compress the target module using this strategy."""
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 new_layer = DobiSVDLinearLayer(
@@ -60,7 +63,8 @@ class DobiSVDCompressor(BaseCompressor):
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
 
-    def _get_parent(self, full_name):
+    def _get_parent(self, full_name) -> Any:
+        """ get parent."""
         parts = full_name.split(".")
         parent = self.model
         for part in parts[:-1]:
@@ -69,7 +73,8 @@ class DobiSVDCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("dobi")
-def dobi_factory(model, comp_config):
+def dobi_factory(model, comp_config) -> Any:
+    """Dobi factory."""
     init_rank_ratio = getattr(comp_config, "dobi_init_rank_ratio", 0.5)
     compressor = DobiSVDCompressor(model, init_rank_ratio=init_rank_ratio)
     compressed_model, _ = compressor.compress()

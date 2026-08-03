@@ -106,6 +106,7 @@ class KroneckerLinear(nn.Module):
                 self.register_parameter("bias", None)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Forward pass."""
         if self.can_decompose:
             # W = A ⊗ B
             # Efficient computation: (X @ B^T) @ A^T ? Not exactly.

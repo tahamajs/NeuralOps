@@ -8,7 +8,8 @@ from scipy.ndimage import uniform_filter1d
 logger = logging.getLogger(__name__)
 
 
-def plot_loss_curve(history, metrics, config, output_dir, opts):
+def plot_loss_curve(history, metrics, config, output_dir, opts) -> Any:
+    """Plot loss curve."""
     steps = [h.get("step", i) for i, h in enumerate(history) if "loss" in h]
     train = [h["loss"] for h in history if "loss" in h]
     eval_steps = [h.get("step", i) for i, h in enumerate(history) if "eval_loss" in h]

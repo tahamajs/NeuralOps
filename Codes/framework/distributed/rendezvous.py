@@ -12,12 +12,13 @@ logger = logging.getLogger(__name__)
 class InternetRendezvous:
     """Key‑value store on a central server for worker address exchange."""
 
-    def __init__(self, server_url: str, job_id: str, auth_token: str):
+    def __init__(self, server_url: str, job_id: str, auth_token: str) -> None:
         self.server_url = server_url
         self.job_id = job_id
         self.auth_token = auth_token
 
     def set_address(self, rank: int, host: str, port: int) -> bool:
+        """Set the address."""
         try:
             r = requests.post(
                 f"{self.server_url}/api/remote/rendezvous/set/",
@@ -37,6 +38,7 @@ class InternetRendezvous:
     def wait_for_peers(
         self, rank: int, world_size: int, timeout: int = 300
     ) -> Optional[Dict[int, tuple]]:
+        """Wait for peers."""
         deadline = time.time() + timeout
         while time.time() < deadline:
             try:

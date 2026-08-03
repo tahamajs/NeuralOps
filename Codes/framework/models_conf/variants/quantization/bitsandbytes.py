@@ -8,7 +8,8 @@ from .base import QUANTIZER_REGISTRY, BaseQuantizer
 class BitsAndBytesQuantizer(BaseQuantizer):
     def apply(
         self, model, load_in_4bit=True, bnb_4bit_compute_dtype="float16", **kwargs
-    ):
+    ) -> Any:
+        """Execute the apply operation and return results."""
         quant_config = BitsAndBytesConfig(
             load_in_4bit=load_in_4bit,
             bnb_4bit_compute_dtype=getattr(torch, bnb_4bit_compute_dtype),
