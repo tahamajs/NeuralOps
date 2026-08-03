@@ -90,6 +90,37 @@ class ResultsManager:
         """Return the checkpoint dir."""
         return str(self.checkpoint_dir)
 
+    def push_to_hf(self, repo_id: Optional[str] = None) -> None:
+        """Push full run results (models, plots, metrics) to HuggingFace Hub."""
+        from framework.results_saver.backends import huggingface as hf_backend
+        cfg = {"hf_options": {"repo_id": repo_id}} if repo_id else self.config
+        hf_backend.push(self.experiment_name, self.run_dir, cfg)
+
+    def generate_summary_report(self, final_metrics: Optional[Dict[str, Any]] = None) -> None:
+        """Generate structured markdown and json summary reports for the run."""
+        summary = {
+            "experiment_name": self.experiment_name,
+            "run_dir": str(self.run_dir),
+            "total_steps": len(self.history),
+            "config": self.config,
+            "final_metrics": final_metrics or (self.history[-1] if self.history else {}),
+            "timestamp": datetime.now().isoformat(),
+        }
+        summary_path = self.run_dir / "run_summary.json"
+        with open(summary_path, "w") as f:
+            json.dump(summary, f, indent=2)
+
+        card_path = self.run_dir / "run_summary.md"
+        with open(card_path, "w") as f:
+            f.write(f"# Run Summary: {self.experiment_name}\n\n")
+            f.write(f"- **Timestamp**: {summary['timestamp']}\n")
+            f.write(f"- **Total Logging Steps**: {summary['total_steps']}\n")
+            f.write(f"- **Run Directory**: `{self.run_dir}`\n\n")
+            f.write("## Final Metrics\n```json\n")
+            f.write(json.dumps(summary["final_metrics"], indent=2))
+            f.write("\n```\n")
+        self.logger.info(f"Generated structured run summary report at {card_path}")
+
     def wrap_trainer(self, trainer) -> Any:
         """Add standard callbacks and metrics logging to a Hugging Face Trainer."""
         try:

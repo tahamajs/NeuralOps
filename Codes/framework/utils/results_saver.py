@@ -1,58 +1,77 @@
-import json
+"""
+Unified ResultsSaver re-exported under framework.utils.results_saver
+Integrates persistence, structured markdown/json report generation, Django API compatibility,
+and Hugging Face Hub uploads.
+"""
+
 import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from framework.results_saver.saver import ResultsSaver as PrimaryResultsSaver
+from framework.results_saver.backends import huggingface as hf_backend
+
 logger = logging.getLogger(__name__)
 
 
-class ResultsSaver:
+class ResultsSaver(PrimaryResultsSaver):
+    """
+    Enhanced ResultsSaver compatible with Django API, experiment runners, and CLI scripts.
+    Supports structured report generation and Hugging Face Hub uploads.
+    """
+
     def __init__(
         self, run_id: str, base_dir: Path, config: Optional[Dict[str, Any]] = None
     ) -> None:
-        self.run_id = run_id
-        self.base_dir = base_dir / str(run_id)
+        super().__init__(run_id=run_id, base_dir=base_dir, config=config)
         self.config = config or {}
-        self.base_dir.mkdir(parents=True, exist_ok=True)
+        self.legacy_base_dir = Path(base_dir) / str(run_id)
+        self.legacy_base_dir.mkdir(parents=True, exist_ok=True)
 
     def save_config(self, config: Dict[str, Any]) -> None:
-        """Persist config to disk."""
-        config_path = self.base_dir / "config.json"
-        with open(config_path, "w") as f:
-            json.dump(config, f, indent=2)
-        logger.info(f"Saved config to {config_path}")
+        """Persist config to disk in structured format."""
+        self.config = config
+        self._save_config(config)
+        self._write_json("../config.json", config)
+        logger.info(f"Saved structured config to {self.run_dir}")
 
     def save_history(self, history: Dict[str, Any]) -> None:
-        """Persist history to disk."""
-        history_path = self.base_dir / "history.json"
-        with open(history_path, "w") as f:
-            json.dump(history, f, indent=2)
-        logger.info(f"Saved history to {history_path}")
+        """Persist training history to disk."""
+        self._save_history(history)
+        self._write_json("../history.json", history)
+        logger.info(f"Saved training history to {self.run_dir}")
 
     def save_final_metrics(self, metrics: Dict[str, Any]) -> None:
-        """Persist final metrics to disk."""
-        metrics_path = self.base_dir / "final_metrics.json"
-        with open(metrics_path, "w") as f:
-            json.dump(metrics, f, indent=2)
-        logger.info(f"Saved metrics to {metrics_path}")
+        """Persist final metrics and generate run report."""
+        self._save_final_metrics(metrics)
+        self._write_json("../final_metrics.json", metrics)
+        self._generate_run_report(metrics)
+        logger.info(f"Saved final metrics and generated run report to {self.run_dir}")
 
     def generate_plots(self, history: Dict[str, Any]) -> None:
         """Generate plots."""
-        plot_dir = self.base_dir / "plots"
-        plot_dir.mkdir(exist_ok=True)
-        # Placeholder for plot generation logic
-        logger.info(f"Plots would be generated in {plot_dir}")
+        self._generate_plots(history, {})
 
     def should_save_model(self, metrics: Dict[str, Any]) -> bool:
-        """Should save model."""
-        if not self.config.get("save_as_version", True):
-            return False
-        if "eval_accuracy" in metrics:
-            return metrics["eval_accuracy"] > 0.7
-        return True
+        """Evaluate whether heavy model artifacts should be saved."""
+        return self.should_save_heavy(metrics)
 
     def handle_storage_backend(self) -> None:
-        """Handle storage backend."""
-        backend = self.config.get("storage_backend", "local")
-        if backend != "local":
-            logger.info(f"Storage backend {backend} not implemented")
+        """Execute configured storage backends including HuggingFace Hub."""
+        self.push_all()
+
+    def push_to_hf(self, repo_id: Optional[str] = None) -> None:
+        """Upload complete run artifacts to HuggingFace Hub for resource management."""
+        cfg = {"hf_options": {"repo_id": repo_id}} if repo_id else self.cfg
+        hf_backend.push(self.run_id, self.run_dir, cfg)
+
+    def _generate_run_report(self, metrics: Dict[str, Any]) -> None:
+        """Generate structured run summary report."""
+        report = {
+            "run_id": self.run_id,
+            "status": "COMPLETED",
+            "metrics": metrics,
+            "config": self.config or (self.cfg.to_dict() if hasattr(self.cfg, "to_dict") else str(self.cfg)),
+        }
+        self._write_json("artifacts/run_report.json", report)
+        self._save_model_card(self.config or {}, metrics)
