@@ -9,6 +9,7 @@ Paper: "DeltaKV: Residual-Based KV Cache Compression via Long-Range Similarity"
        Hao et al., arXiv:2602.08005.
 Registered as 'delta_kv'.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

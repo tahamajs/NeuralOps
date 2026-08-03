@@ -1,4 +1,5 @@
 """Activation‑Aware Subspace Projection via randomized SVD. Registered as 'subspace_projection'."""
+from typing import Any
 
 import torch
 import torch.nn as nn

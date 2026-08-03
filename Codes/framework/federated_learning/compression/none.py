@@ -1,4 +1,5 @@
 """No compression – identity."""
+from typing import Any
 
 from .base import COMPRESSION_REGISTRY, BaseCompressor
 

@@ -1,4 +1,5 @@
 """AST: semi-structured 2:4 sparsity. Registered as 'ast_pruner'."""
+from typing import Any
 
 import numpy as np
 import torch

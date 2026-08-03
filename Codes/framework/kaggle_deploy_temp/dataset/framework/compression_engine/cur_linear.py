@@ -1,6 +1,7 @@
 """
 CURLinear: drop‑in replacement for nn.Linear using CUR decomposition.
 """
+from typing import Any
 
 import numpy as np
 import torch

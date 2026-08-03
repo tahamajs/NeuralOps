@@ -1,4 +1,5 @@
 """FLAT-LLM: Activation‑aware dimension pruning via PCA. Registered as 'flat_llm'."""
+from typing import Any
 
 import numpy as np
 import torch

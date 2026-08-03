@@ -2,6 +2,7 @@
 Central registry for training methods (LoRA, Fisher, etc.).
 Each entry maps a string name to a callable (model, config, ...).
 """
+from typing import Any
 
 METHOD_REGISTRY = {}
 

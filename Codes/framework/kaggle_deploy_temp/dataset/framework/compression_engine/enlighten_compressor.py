@@ -1,4 +1,5 @@
 """ENLighten: low‑rank SVD + 2:4 structured sparsity (photonic‑aligned). Registered as 'enlighten'."""
+from typing import Any
 
 import numpy as np
 import torch

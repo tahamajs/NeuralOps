@@ -1,4 +1,5 @@
 """PyTorch DistributedDataParallel – single machine, multi‑GPU."""
+from typing import Any
 
 import os
 

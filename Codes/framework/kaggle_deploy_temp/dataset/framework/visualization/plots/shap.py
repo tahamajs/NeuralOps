@@ -2,6 +2,7 @@
 SHAP explanation – local interpretability via SHAP values for the model on a sample.
 Requires shap to be installed. If not, logs a warning and skips.
 """
+from typing import Any
 
 import json
 import logging

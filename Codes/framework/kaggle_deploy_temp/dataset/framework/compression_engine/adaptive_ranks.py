@@ -2,6 +2,7 @@
 Adaptive Transformer Compressor: automatically compresses all
 nn.MultiheadAttention layers using energy‑threshold SVD.
 """
+from typing import Any
 
 import torch.nn as nn
 from framework.attentions.compressed_attention import CompressedAttentionLayer

@@ -1,4 +1,5 @@
 """SLiM: one‑shot quantisation, 2:4 sparsity, low‑rank correction. Registered as 'slim'."""
+from typing import Any
 
 import numpy as np
 import torch

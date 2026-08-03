@@ -1,4 +1,5 @@
 """Mamba-Shedder: sensitivity-based structured pruning. Registered as 'mamba_shedder'."""
+from typing import Any
 
 import torch
 import torch.nn as nn

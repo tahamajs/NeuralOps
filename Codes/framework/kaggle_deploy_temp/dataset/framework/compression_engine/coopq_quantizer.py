@@ -1,4 +1,5 @@
 """CoopQ: Shapley‑inspired per‑layer bit allocation. Registered as 'coopq'."""
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

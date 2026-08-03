@@ -1,4 +1,5 @@
 """Bonsai: Iterative Magnitude Pruning (IMP). Registered as 'bonsai'."""
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

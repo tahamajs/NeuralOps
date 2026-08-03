@@ -1,4 +1,5 @@
 """FLAP: Fluctuation-based Adaptive Structured Pruning. Registered as 'flap'."""
+from typing import Any
 
 import numpy as np
 import torch

@@ -9,6 +9,7 @@ Paper: "CacheNotes: Task-aware key-value cache compression for reasoning-intensi
         knowledge tasks." Corallo et al., EACL 2026.
 Registered as 'cachenotes'.
 """
+from typing import Any
 
 import torch
 import torch.nn as nn

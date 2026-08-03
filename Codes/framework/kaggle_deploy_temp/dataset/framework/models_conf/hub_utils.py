@@ -1,4 +1,5 @@
 """Search and list HuggingFace Hub models."""
+from typing import Any
 
 import threading
 import time

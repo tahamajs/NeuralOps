@@ -1,3 +1,4 @@
+from typing import Any, List
 from .base import COMPRESSOR_REGISTRY, BaseCompressor
 from .distillation import DistillationCompressor
 from .low_rank import LowRankCompressor

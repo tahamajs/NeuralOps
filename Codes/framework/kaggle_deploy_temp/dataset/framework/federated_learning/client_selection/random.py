@@ -1,4 +1,5 @@
 """Random client selection."""
+from typing import Any
 
 import random
 

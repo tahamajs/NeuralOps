@@ -1,4 +1,5 @@
 """Comprehensive plotting functions for model analysis."""
+from typing import Any
 
 import json
 import os

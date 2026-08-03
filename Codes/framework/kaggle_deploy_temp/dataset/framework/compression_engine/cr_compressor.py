@@ -3,6 +3,7 @@ CR (Interpolative Decomposition) Compressor.
 Decomposes W ≈ C @ V^T, where C are actual columns of W.
 Registered as 'cr'.
 """
+from typing import Any
 
 import numpy as np
 import torch

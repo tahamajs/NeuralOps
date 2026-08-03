@@ -1,4 +1,5 @@
 """Swift-SVD: closed‑form SVD with rank ratio. Registered as 'swift_svd'."""
+from typing import Any
 
 import torch
 import torch.nn as nn

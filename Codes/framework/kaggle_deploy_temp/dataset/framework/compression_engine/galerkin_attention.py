@@ -5,6 +5,7 @@ Paper: https://arxiv.org/abs/2105.14906
 This attention mechanism projects keys and values onto a low‑rank subspace
 using a random sketching matrix, reducing the complexity from O(N²) to O(N·rank).
 """
+from typing import Any
 
 import math
 from typing import Optional, Tuple

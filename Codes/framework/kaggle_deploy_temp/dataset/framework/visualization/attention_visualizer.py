@@ -1,6 +1,7 @@
 """
 Comprehensive attention visualizer for SVD compression analysis.
 """
+from typing import Any
 
 from typing import List, Optional
 

@@ -6,6 +6,7 @@ Paper: "KV Cache Transform Coding for Compact Storage in LLM Inference"
        Staniszewski & Lancucki, ICLR 2026.
 Registered as 'kvtc'.
 """
+from typing import Any
 
 import numpy as np
 import torch

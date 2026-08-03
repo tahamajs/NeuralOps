@@ -1,4 +1,5 @@
 # framework/visualization/plotters/matplotlib_plotter.py
+from typing import Any
 import matplotlib.pyplot as plt
 
 from ..plotter import PLOTTER_REGISTRY, BasePlotter

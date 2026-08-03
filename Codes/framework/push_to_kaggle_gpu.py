@@ -90,7 +90,7 @@ def prepare_kernel(command_str: str):
                 "outputs": [],
                 "source": [
                     "# Install missing requirements\n",
-                    "!pip install -q datasets transformers accelerate evaluate scipy scikit-learn deepdiff matplotlib\n",
+                    "!pip install -q datasets transformers accelerate evaluate scipy scikit-learn deepdiff matplotlib asgiref\n",
                     "import os, sys, shutil, torch\n",
                     "print(f'GPU Available: {torch.cuda.is_available()}')\n",
                     "if torch.cuda.is_available():\n",

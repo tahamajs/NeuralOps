@@ -1,4 +1,5 @@
 """Robust PCA: decompose W = L + S, keep L as low‑rank. Registered as 'rpca'."""
+from typing import Any
 
 import numpy as np
 import torch

@@ -1,4 +1,5 @@
 """Swift‑SVD Activation‑aware via cross‑covariance. Registered as 'swift_svd_act'."""
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

@@ -2,6 +2,7 @@
 
 The contrastive loss is applied on the client side; the server aggregation is identical to FedAvg.
 """
+from typing import Any
 
 from .base import AGGREGATOR_REGISTRY, BaseAggregator
 

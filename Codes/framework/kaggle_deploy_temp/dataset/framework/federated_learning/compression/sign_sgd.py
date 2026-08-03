@@ -1,4 +1,5 @@
 """signSGD – compress gradients to just their signs (Bernstein et al. 2018)."""
+from typing import Any
 
 import numpy as np
 

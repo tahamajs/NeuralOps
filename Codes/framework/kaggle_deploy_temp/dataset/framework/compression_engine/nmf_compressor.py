@@ -1,4 +1,5 @@
 """NMF: Non‑negative Matrix Factorization approximation. Registered as 'nmf'."""
+from typing import Any
 
 import torch
 from framework.core.base import BaseCompressor

@@ -1,4 +1,5 @@
 """Quality‑based client selection – choose clients with highest recent accuracy."""
+from typing import Any
 
 import numpy as np
 

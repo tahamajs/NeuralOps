@@ -1,4 +1,5 @@
 """Huffman coding for weight compression. Standalone utility."""
+from typing import Any
 
 import heapq
 
