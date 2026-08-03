@@ -52,6 +52,10 @@ class ExperimentTracker:
             config_dict: Hyperparameter dictionary (for WandB).
             tracking_uri: MLflow tracking URI.
         """
+        if hasattr(backend, "value"):
+            backend = str(backend.value)
+        elif not isinstance(backend, str):
+            backend = str(backend)
         backend = backend.lower()
         if backend not in self.BACKEND_MAP:
             raise ValueError(

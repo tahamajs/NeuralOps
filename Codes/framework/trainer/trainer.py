@@ -145,12 +145,24 @@ def create_trainer(
     trainer_kwargs = {k: v for k, v in kwargs.items() if k in trainer_kwarg_names}
     training_args_kwargs = {k: v for k, v in kwargs.items() if k not in trainer_kwarg_names}
 
+    per_device_train_batch_size = training_args_kwargs.pop("per_device_train_batch_size", batch_size)
+    per_device_eval_batch_size = training_args_kwargs.pop("per_device_eval_batch_size", batch_size)
+    learning_rate = training_args_kwargs.pop("learning_rate", learning_rate)
+    num_train_epochs = training_args_kwargs.pop("num_train_epochs", epochs)
+    warmup_ratio = training_args_kwargs.pop("warmup_ratio", warmup_ratio)
+    max_grad_norm = training_args_kwargs.pop("max_grad_norm", max_grad_norm)
+    eval_strategy = training_args_kwargs.pop("eval_strategy", eval_strategy)
+    save_strategy = training_args_kwargs.pop("save_strategy", save_strategy)
+    save_total_limit = training_args_kwargs.pop("save_total_limit", save_total_limit)
+    load_best_model_at_end = training_args_kwargs.pop("load_best_model_at_end", load_best_model_at_end)
+    metric_for_best_model = training_args_kwargs.pop("metric_for_best_model", metric_for_best_model)
+
     training_args = TrainingArguments(
         output_dir=output_dir,
         learning_rate=learning_rate,
-        per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
-        num_train_epochs=epochs,
+        per_device_train_batch_size=per_device_train_batch_size,
+        per_device_eval_batch_size=per_device_eval_batch_size,
+        num_train_epochs=num_train_epochs,
         warmup_ratio=warmup_ratio,
         max_grad_norm=max_grad_norm,
         eval_strategy=eval_strategy,
@@ -160,7 +172,8 @@ def create_trainer(
         metric_for_best_model=metric_for_best_model if eval_dataset is not None else None,
         greater_is_better=True if eval_dataset is not None else None,
         logging_steps=training_args_kwargs.pop("logging_steps", 50),
-        report_to="none",
+        report_to=training_args_kwargs.pop("report_to", "none"),
+        remove_unused_columns=False,
         **training_args_kwargs,
     )
     return SVDAwareTrainer(
