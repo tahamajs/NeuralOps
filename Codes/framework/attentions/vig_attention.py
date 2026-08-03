@@ -136,7 +136,11 @@ class ViGAttention(BaseAttention):
         # valid shape (B, N_pad) -> reshape to grid and select axis
         valid_grid = valid.view(B, H, W).permute(0, 2, 1)  # (B, W, H)
         valid_row = (
-            valid_grid.reshape(B, Hh * W, H).unsqueeze(-2).to(k_row.dtype)
+            valid_grid.unsqueeze(1)
+            .expand(B, Hh, W, H)
+            .reshape(B, Hh * W, H)
+            .unsqueeze(-2)
+            .to(k_row.dtype)
         )  # (B, Hh*W, 1, H)
         k_row_lin = k_row_lin * valid_row
         v_row = v_row * valid_row
@@ -165,8 +169,9 @@ class ViGAttention(BaseAttention):
         k_col_lin = F.elu(k_col_flat) + 1.0
 
         valid_col = (
-            valid.reshape(B, H, W)
-            .permute(0, 2, 1)
+            valid.view(B, H, W)
+            .unsqueeze(1)
+            .expand(B, Hh, H, W)
             .reshape(B * Hh * H, W)
             .unsqueeze(-1)
             .to(k_col_lin.dtype)
@@ -182,15 +187,13 @@ class ViGAttention(BaseAttention):
         out_col_flat = torch.einsum("b n d, b d e -> b n e", q_col_lin, kv_col) / (
             denom_col + 1e-8
         )
-        out_col = out_col_flat.view(B, Hh, H, W, Dh).permute(
-            0, 1, 3, 2, 4
-        )  # (B, Hh, W, H, Dh) -> later to (B, Hh, H, W, Dh)
+        out_col = out_col_flat.view(B, Hh, H, W, Dh)  # (B, Hh, H, W, Dh)
 
         # Gates
         gate_row = (
-            gates[:, :, 0:1].permute(0, 3, 1, 2).reshape(B, Hh, H, W, 1)
+            gates[:, :, 0].view(B, H, W, Hh, 1).permute(0, 3, 1, 2, 4)
         )  # (B, Hh, H, W, 1)
-        gate_col = gates[:, :, 1:2].permute(0, 3, 1, 2).reshape(B, Hh, H, W, 1)
+        gate_col = gates[:, :, 1].view(B, H, W, Hh, 1).permute(0, 3, 1, 2, 4)
 
         out = gate_row * out_row + gate_col * out_col  # (B, Hh, H, W, Dh)
         out = out.permute(0, 2, 3, 1, 4).reshape(B, total, D)

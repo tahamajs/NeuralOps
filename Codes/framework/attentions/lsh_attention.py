@@ -107,9 +107,9 @@ class LSHAttention(nn.Module):
                     qh = q_hash[b, h]  # (N,)
                     kh = k_hash[b, h]
                     # Find unique hash codes present in both Q and K
-                    unique_codes = torch.intersect1d(
-                        qh.unique(sorted=False), kh.unique(sorted=False)
-                    )
+                    qh_u = qh.unique()
+                    kh_u = kh.unique()
+                    unique_codes = qh_u[torch.isin(qh_u, kh_u)]
                     if len(unique_codes) == 0:
                         continue
                     # For each bucket

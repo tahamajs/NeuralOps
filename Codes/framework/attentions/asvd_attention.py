@@ -25,21 +25,21 @@ class ASVDAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.rank = rank
 
-        self.query_u = nn.Parameter(torch.empty(self.all_head_size, self.rank))
-        self.query_s = nn.Parameter(torch.empty(self.rank))
-        self.query_vh = nn.Parameter(torch.empty(self.rank, config.hidden_size))
+        self.query_u = nn.Parameter(torch.randn(self.all_head_size, self.rank) * 0.02)
+        self.query_s = nn.Parameter(torch.ones(self.rank))
+        self.query_vh = nn.Parameter(torch.randn(self.rank, config.hidden_size) * 0.02)
 
-        self.key_u = nn.Parameter(torch.empty(self.all_head_size, self.rank))
-        self.key_s = nn.Parameter(torch.empty(self.rank))
-        self.key_vh = nn.Parameter(torch.empty(self.rank, config.hidden_size))
+        self.key_u = nn.Parameter(torch.randn(self.all_head_size, self.rank) * 0.02)
+        self.key_s = nn.Parameter(torch.ones(self.rank))
+        self.key_vh = nn.Parameter(torch.randn(self.rank, config.hidden_size) * 0.02)
 
-        self.value_u = nn.Parameter(torch.empty(self.all_head_size, self.rank))
-        self.value_s = nn.Parameter(torch.empty(self.rank))
-        self.value_vh = nn.Parameter(torch.empty(self.rank, config.hidden_size))
+        self.value_u = nn.Parameter(torch.randn(self.all_head_size, self.rank) * 0.02)
+        self.value_s = nn.Parameter(torch.ones(self.rank))
+        self.value_vh = nn.Parameter(torch.randn(self.rank, config.hidden_size) * 0.02)
 
-        self.out_proj_u = nn.Parameter(torch.empty(config.hidden_size, self.rank))
-        self.out_proj_s = nn.Parameter(torch.empty(self.rank))
-        self.out_proj_vh = nn.Parameter(torch.empty(self.rank, self.all_head_size))
+        self.out_proj_u = nn.Parameter(torch.randn(config.hidden_size, self.rank) * 0.02)
+        self.out_proj_s = nn.Parameter(torch.ones(self.rank))
+        self.out_proj_vh = nn.Parameter(torch.randn(self.rank, self.all_head_size) * 0.02)
 
         self.dropout = nn.Dropout(config.dropout)
 
@@ -103,7 +103,9 @@ class ASVDAttention(BaseAttention):
         )
 
         out = F.linear(context, W_o)
-        return (out, None) if kwargs.get("output_attentions") else (out,)
+        if kwargs.get("output_attentions"):
+            return (out, probs)
+        return (out, None)
 
     @staticmethod
     def from_module(module, rank, activation_scales=None):

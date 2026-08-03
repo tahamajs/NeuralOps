@@ -31,7 +31,7 @@ class KDAAttention(nn.Module):
             kt = k[:, :, t, :]
             vt = v[:, :, t, :]
             decay = torch.sigmoid(self.beta).view(1, H, 1, 1)
-            h = decay * h + (kt.unsqueeze(-1) @ vt.unsqueeze(1))
+            h = decay * h + (kt.unsqueeze(-1) @ vt.unsqueeze(-2))
             out_t = (h @ qt.unsqueeze(-1)).squeeze(-1)
             outputs.append(out_t)
         out = torch.stack(outputs, dim=2)  # (B, H, L, d)
