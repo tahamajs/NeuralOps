@@ -105,15 +105,26 @@ class HymbaTransXBlock(BaseAttention):
         v = self.W_v(x_rope).view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
 
         scale = self.head_dim**-0.5
-        attn1 = F.softmax(torch.matmul(q1, k1.transpose(-2, -1)) * scale, dim=-1)
-        attn2 = F.softmax(torch.matmul(q2, k2.transpose(-2, -1)) * scale, dim=-1)
+        scores1 = torch.matmul(q1, k1.transpose(-2, -1)) * scale
+        scores2 = torch.matmul(q2, k2.transpose(-2, -1)) * scale
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                pad_mask = (attention_mask == 0).unsqueeze(1).unsqueeze(2)  # (B, 1, 1, L)
+                scores1 = scores1.masked_fill(pad_mask, float("-1e9"))
+                scores2 = scores2.masked_fill(pad_mask, float("-1e9"))
+        attn1 = F.softmax(scores1, dim=-1)
+        attn2 = F.softmax(scores2, dim=-1)
         diff_attn = F.relu(attn1 - 0.5 * attn2)
         A_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, D)
 
         M_out = self.mamba(x_rope)
         alpha = torch.sigmoid(self.alpha)
         out = self.out_proj(x + alpha * A_out + (1 - alpha) * M_out)
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                out = out * attention_mask.unsqueeze(-1)
         return out, None
+
 
 
 # Injection function
