@@ -125,12 +125,17 @@ class SVDAwareTrainer(Trainer):
         return super()._determine_best_metric(metrics, trial=trial)
 
     def _cleanup_memory(self) -> None:
-        """ cleanup memory."""
+        """Free GPU/MPS/CPU memory after each training run."""
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        if torch.backends.mps.is_available():
-            torch.mps.empty_cache()
+            if hasattr(torch.cuda, "ipc_collect"):
+                torch.cuda.ipc_collect()
+        if hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
+            try:
+                torch.mps.empty_cache()
+            except Exception:
+                pass
 
 
 def create_trainer(
@@ -185,6 +190,12 @@ def create_trainer(
     if greater_is_better is None and eval_dataset is not None:
         greater_is_better = False if "loss" in metric_for_best_model else True
 
+    # Pop GPU-specific optional args that may not exist in all transformers versions
+    save_safetensors = training_args_kwargs.pop("save_safetensors", False)
+    dataloader_pin_memory = training_args_kwargs.pop("dataloader_pin_memory", True)
+    dataloader_num_workers = training_args_kwargs.pop("dataloader_num_workers", 0)
+    _ = training_args_kwargs.pop("remove_unused_columns", None)  # handled below
+
     training_args = TrainingArguments(
         output_dir=output_dir,
         learning_rate=learning_rate,
@@ -199,10 +210,14 @@ def create_trainer(
         load_best_model_at_end=load_best_model_at_end,
         metric_for_best_model=metric_for_best_model if eval_dataset is not None else None,
         greater_is_better=greater_is_better if eval_dataset is not None else None,
-        logging_steps=training_args_kwargs.pop("logging_steps", 1),
+        logging_steps=training_args_kwargs.pop("logging_steps", 10),
         disable_tqdm=False,
         report_to=training_args_kwargs.pop("report_to", "none"),
         remove_unused_columns=False,
+        # Critical: avoids safetensors RuntimeError when custom attn modules have shared-memory params
+        save_safetensors=save_safetensors,
+        dataloader_pin_memory=dataloader_pin_memory,
+        dataloader_num_workers=dataloader_num_workers,
         **training_args_kwargs,
     )
     return SVDAwareTrainer(
