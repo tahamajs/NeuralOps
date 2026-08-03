@@ -40,9 +40,9 @@ from typing import Any, Dict, List, Optional
 # Bootstrap: add framework root to sys.path so bare `python main.py` works
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent
-_PROJECT = _HERE.parent.parent          # Codes/
-if str(_PROJECT) not in sys.path:
-    sys.path.insert(0, str(_PROJECT))
+_CODES = _HERE.parent  # /Users/tahamajs/Documents/uni/Project/Codes
+if str(_CODES) not in sys.path:
+    sys.path.insert(0, str(_CODES))
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
@@ -70,6 +70,7 @@ def _import_framework():
     from framework.trainer.callbacks import MemoryCallback, SVDAttentionCallback, TimeCallback
     from framework.trainer.metrics import get_task_metrics
     from framework.utils.replace_attention import replace_attention
+    import framework.compression_engine  # auto-register all compressors
     from framework.pipeline.result_writer import ResultWriter
 
     return dict(
@@ -347,6 +348,7 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
         )
 
     fw["set_seed"](cfg.seed)
+    torch = fw["torch"]
     device = fw["get_device"]()
     exp_name = cfg.exp_name or f"compress_{compressor_name}_{cfg.task}"
     out_dir = Path(cfg.output_dir) / exp_name
@@ -356,14 +358,31 @@ def run_compress(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     model = fw["AutoModelForSequenceClassification"].from_pretrained(cfg.model_name)
     tokenizer = fw["AutoTokenizer"].from_pretrained(cfg.model_name)
     model.to(device)
+    model.tokenizer = tokenizer
 
     orig_mb = sum(p.numel() * p.element_size() for p in model.parameters()) / 1024**2
 
     logger.info("Applying compressor: %s", compressor_name)
     compressor_cls = COMPRESSOR_REGISTRY.resolve(compressor_name)
     rank = getattr(cfg, "compression_rank", 64)
-    compressor = compressor_cls(model, rank=rank)
-    compressed_model = compressor.compress()
+    try:
+        compressor = compressor_cls(model, rank=rank)
+    except TypeError:
+        try:
+            compressor = compressor_cls(model, cfg)
+        except TypeError:
+            try:
+                compressor = compressor_cls(model)
+            except TypeError:
+                compressor = compressor_cls(model, rank=rank, tokenizer=tokenizer)
+    if hasattr(compressor, "compress"):
+        res = compressor.compress()
+        compressed_model = res[0] if isinstance(res, tuple) else res
+    elif callable(compressor) and not isinstance(compressor, torch.nn.Module):
+        res = compressor()
+        compressed_model = res[0] if isinstance(res, tuple) else res
+    else:
+        compressed_model = getattr(compressor, "model", model)
 
     comp_mb = sum(p.numel() * p.element_size() for p in compressed_model.parameters()) / 1024**2
     ratio = orig_mb / comp_mb if comp_mb > 0 else 1.0

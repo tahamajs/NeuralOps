@@ -12,7 +12,7 @@ import psutil
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.conf import settings
-from framework.experiment.orchestrator import MegaOrchestrator
+from framework.experiment_utils.orchestrator import MegaOrchestrator
 
 
 # -------------------------------------------------------------------------

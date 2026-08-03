@@ -49,8 +49,8 @@ class AASVDCompressor(BaseCompressor):
         inputs = self.tokenizer(
             self.calibration_texts, return_tensors="pt", padding=True, truncation=True
         )
-        if next(self.model.parameters()).is_cuda:
-            inputs = {k: v.cuda() for k, v in inputs.items()}
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) for k, v in inputs.items()}
         with torch.no_grad():
             self.model(**inputs)
 
@@ -61,8 +61,8 @@ class AASVDCompressor(BaseCompressor):
             if isinstance(module, torch.nn.Linear) and name in activations:
                 inp = activations[name].view(-1, activations[name].size(-1)).float()
                 # Anchor directions from input SVD
-                U_inp, _, _ = torch.linalg.svd(inp, full_matrices=False)
-                anchor = U_inp[:, : self.rank].cpu().numpy()  # (in_features, rank)
+                _, _, Vh_inp = torch.linalg.svd(inp, full_matrices=False)
+                anchor = Vh_inp[: self.rank, :].cpu().numpy().T  # (in_features, rank)
 
                 W = module.weight.data.float().cpu().numpy()
                 # Project W onto anchor space
