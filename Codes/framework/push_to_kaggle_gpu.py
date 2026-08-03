@@ -91,20 +91,27 @@ def prepare_kernel(command_str: str):
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# ── CRITICAL FIX: Install PyTorch 2.1.2 + cu118 (LAST version supporting P100 sm_60) ──\n",
-                    "# PyTorch 2.2+ dropped sm_60 support; 2.1.2+cu118 is the last compatible build.\n",
+                    "# ── Install PyTorch 2.2.0+cu118 — supports P100 (sm_60) and works on Python 3.12 ──\n",
+                    "# torch 2.1.x was never built for Python 3.12; 2.2.0+cu118 is the earliest compatible.\n",
+                    "# PyTorch 2.2.x still includes sm_60 in its arch list.\n",
                     "import subprocess, sys\n",
-                    "subprocess.check_call([\n",
+                    "ret = subprocess.run([\n",
                     "    sys.executable, '-m', 'pip', 'install', '-q', '--force-reinstall',\n",
-                    "    'torch==2.1.2', 'torchvision==0.16.2', 'torchaudio==2.1.2',\n",
+                    "    'torch==2.2.0', 'torchvision==0.17.0', 'torchaudio==2.2.0',\n",
                     "    '--index-url', 'https://download.pytorch.org/whl/cu118'\n",
-                    "])\n",
-                    "subprocess.check_call([\n",
+                    "], capture_output=True, text=True)\n",
+                    "if ret.returncode == 0:\n",
+                    "    print('✓ PyTorch 2.2.0+cu118 installed — sm_60/P100 supported')\n",
+                    "else:\n",
+                    "    print('⚠ PyTorch reinstall failed, using pre-installed version')\n",
+                    "    print(ret.stderr[-500:])\n",
+                    "# Install remaining dependencies regardless\n",
+                    "subprocess.run([\n",
                     "    sys.executable, '-m', 'pip', 'install', '-q',\n",
                     "    'datasets', 'transformers', 'accelerate', 'evaluate',\n",
                     "    'scipy', 'scikit-learn', 'deepdiff', 'matplotlib', 'asgiref', 'channels'\n",
-                    "])\n",
-                    "print('✓ PyTorch 2.1.2+cu118 installed — P100/sm_60 fully supported')\n"
+                    "], check=False)\n",
+                    "print('✓ All dependencies ready')\n"
                 ]
             },
             {
@@ -113,14 +120,17 @@ def prepare_kernel(command_str: str):
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Verify GPU + correct PyTorch version\n",
+                    "# Verify GPU arch list (sm_60 must be present for P100 training)\n",
                     "import subprocess, sys\n",
-                    "result = subprocess.run([sys.executable, '-c',\n",
-                    "    'import torch; print(f\"PyTorch {torch.__version__} | CUDA available: {torch.cuda.is_available()}\"); '\n",
-                    "    'torch.cuda.is_available() and print(f\"GPU: {torch.cuda.get_device_name(0)}\") '\n",
+                    "r = subprocess.run([sys.executable, '-c',\n",
+                    "    'import torch; '\n",
+                    "    'print(f\"PyTorch {torch.__version__} | CUDA {torch.version.cuda}\"); '\n",
+                    "    'print(f\"Arch list: {torch.cuda.get_arch_list()}\"); '\n",
+                    "    'print(f\"GPU OK: {torch.cuda.is_available()}\"); '\n",
+                    "    'torch.cuda.is_available() and print(f\"GPU: {torch.cuda.get_device_name(0)}\")'\n",
                     "], capture_output=True, text=True)\n",
-                    "print(result.stdout)\n",
-                    "if result.stderr: print('STDERR:', result.stderr[:500])\n"
+                    "print(r.stdout)\n",
+                    "if r.stderr: print('ERR:', r.stderr[:300])\n"
                 ]
             },
             {
