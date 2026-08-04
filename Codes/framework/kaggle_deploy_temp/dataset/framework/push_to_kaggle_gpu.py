@@ -91,12 +91,46 @@ def prepare_kernel(command_str: str):
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Install missing requirements\n",
-                    "!pip install -q datasets transformers accelerate evaluate scipy scikit-learn deepdiff matplotlib asgiref channels\n",
-                    "import os, sys, shutil, torch\n",
-                    "print(f'GPU Available: {torch.cuda.is_available()}')\n",
-                    "if torch.cuda.is_available():\n",
-                    "    print(f'GPU Device: {torch.cuda.get_device_name(0)}')\n"
+                    "# ── Install PyTorch 2.2.0+cu118 — supports P100 (sm_60) and works on Python 3.12 ──\n",
+                    "# torch 2.1.x was never built for Python 3.12; 2.2.0+cu118 is the earliest compatible.\n",
+                    "# PyTorch 2.2.x still includes sm_60 in its arch list.\n",
+                    "import subprocess, sys\n",
+                    "ret = subprocess.run([\n",
+                    "    sys.executable, '-m', 'pip', 'install', '-q', '--force-reinstall',\n",
+                    "    'torch==2.2.0', 'torchvision==0.17.0', 'torchaudio==2.2.0',\n",
+                    "    '--index-url', 'https://download.pytorch.org/whl/cu118'\n",
+                    "], capture_output=True, text=True)\n",
+                    "if ret.returncode == 0:\n",
+                    "    print('✓ PyTorch 2.2.0+cu118 installed — sm_60/P100 supported')\n",
+                    "else:\n",
+                    "    print('⚠ PyTorch reinstall failed, using pre-installed version')\n",
+                    "    print(ret.stderr[-500:])\n",
+                    "# Install remaining dependencies regardless\n",
+                    "subprocess.run([\n",
+                    "    sys.executable, '-m', 'pip', 'install', '-q',\n",
+                    "    'datasets', 'transformers', 'accelerate', 'evaluate',\n",
+                    "    'scipy', 'scikit-learn', 'deepdiff', 'matplotlib', 'asgiref', 'channels'\n",
+                    "], check=False)\n",
+                    "print('✓ All dependencies ready')\n"
+                ]
+            },
+            {
+                "cell_type": "code",
+                "execution_count": None,
+                "metadata": {},
+                "outputs": [],
+                "source": [
+                    "# Verify GPU arch list (sm_60 must be present for P100 training)\n",
+                    "import subprocess, sys\n",
+                    "r = subprocess.run([sys.executable, '-c',\n",
+                    "    'import torch; '\n",
+                    "    'print(f\"PyTorch {torch.__version__} | CUDA {torch.version.cuda}\"); '\n",
+                    "    'print(f\"Arch list: {torch.cuda.get_arch_list()}\"); '\n",
+                    "    'print(f\"GPU OK: {torch.cuda.is_available()}\"); '\n",
+                    "    'torch.cuda.is_available() and print(f\"GPU: {torch.cuda.get_device_name(0)}\")'\n",
+                    "], capture_output=True, text=True)\n",
+                    "print(r.stdout)\n",
+                    "if r.stderr: print('ERR:', r.stderr[:300])\n"
                 ]
             },
             {
@@ -134,7 +168,7 @@ def prepare_kernel(command_str: str):
                 "outputs": [],
                 "source": [
                     "# Execute pipeline command\n",
-                    f"!python run_kaggle.py {command_str}\n"
+                    f"!{command_str}\n"
                 ]
             },
             {
@@ -186,6 +220,7 @@ def prepare_kernel(command_str: str):
         "is_private": "true",
         "enable_gpu": "true",
         "enable_internet": "true",
+        "accelerator": "T4x2",
         "dataset_sources": [DATASET_SLUG],
         "competition_sources": [],
         "kernel_sources": []

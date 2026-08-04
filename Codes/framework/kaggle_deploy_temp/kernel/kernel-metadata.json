@@ -7,6 +7,7 @@
   "is_private": "true",
   "enable_gpu": "true",
   "enable_internet": "true",
+  "accelerator": "T4x2",
   "dataset_sources": [
     "tahamaj/efficient-attention-code"
   ],
