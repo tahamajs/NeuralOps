@@ -15,6 +15,7 @@ import argparse
 import json
 import os
 import shutil
+import tempfile
 import sys
 import time
 import subprocess
@@ -26,7 +27,7 @@ KERNEL_SLUG = f"{USERNAME}/efficient-attention-gpu-runner"
 
 FRAMEWORK_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = FRAMEWORK_DIR.parent.parent
-BUILD_DIR = FRAMEWORK_DIR / "kaggle_deploy_temp"
+BUILD_DIR = Path(tempfile.mkdtemp(prefix="kaggle_deploy_", dir=str(FRAMEWORK_DIR)))
 
 
 def prepare_code_dataset():
@@ -219,6 +220,7 @@ def prepare_kernel(command_str: str):
         "kernel_type": "notebook",
         "is_private": "true",
         "enable_gpu": "true",
+        # Keep internet enabled so Hugging Face / model downloads work on Kaggle.
         "enable_internet": "true",
         "accelerator": "T4x2",
         "dataset_sources": [DATASET_SLUG],
