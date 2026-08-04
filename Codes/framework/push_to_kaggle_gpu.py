@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Kaggle GPU Automated Remote Runner
+Kaggle GPU Automated Remote Runner.
 ==================================
 Packages your framework code, uploads it to Kaggle Datasets, launches a Kaggle GPU Kernel (T4/P100),
 monitors the execution status in real-time, and downloads the trained model & results back to your machine.
@@ -13,10 +13,8 @@ Usage:
 
 import argparse
 import json
-import os
 import shutil
 import tempfile
-import sys
 import time
 import subprocess
 from pathlib import Path
@@ -27,7 +25,17 @@ KERNEL_SLUG = f"{USERNAME}/efficient-attention-gpu-runner"
 
 FRAMEWORK_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = FRAMEWORK_DIR.parent.parent
-BUILD_DIR = Path(tempfile.mkdtemp(prefix="kaggle_deploy_", dir=str(FRAMEWORK_DIR)))
+# Keep Kaggle build artifacts out of the repository tree so stale temp copies
+# cannot be mistaken for the live deploy payload.
+BUILD_DIR = Path(tempfile.mkdtemp(prefix="kaggle_deploy_", dir=tempfile.gettempdir()))
+KAGGLE_CLI = PROJECT_DIR / ".venv" / "bin" / "kaggle"
+
+
+def kaggle_cmd(*args: str) -> list[str]:
+    """Build a Kaggle CLI command that prefers the project venv binary."""
+    if KAGGLE_CLI.exists():
+        return [str(KAGGLE_CLI), *args]
+    return ["kaggle", *args]
 
 
 def prepare_code_dataset():
@@ -40,7 +48,8 @@ def prepare_code_dataset():
 
     # Copy files while ignoring large temp/cache dirs
     ignore = shutil.ignore_patterns(
-        "__pycache__", ".git", ".venv", "venv", "results", "logs", "kaggle_deploy_temp", "*.pyc", ".DS_Store"
+        "__pycache__", ".git", ".venv", "venv", "results", "logs",
+        "kaggle_deploy_temp", "kaggle_deploy_*", "*.pyc", ".DS_Store"
     )
     shutil.copytree(FRAMEWORK_DIR, ds_dir / "framework", ignore=ignore)
 
@@ -55,11 +64,11 @@ def prepare_code_dataset():
 
     # Upload or update Kaggle Dataset
     print(f"☁️ Uploading dataset to Kaggle ({DATASET_SLUG})...")
-    res = subprocess.run(["kaggle", "datasets", "list", "--mine"], capture_output=True, text=True)
+    res = subprocess.run(kaggle_cmd("datasets", "list", "--mine"), capture_output=True, text=True)
     if DATASET_SLUG in res.stdout or "efficient-attention-code" in res.stdout:
-        cmd = ["kaggle", "datasets", "version", "-p", str(ds_dir), "-m", "Updated framework codebase", "--dir-mode", "zip"]
+        cmd = kaggle_cmd("datasets", "version", "-p", str(ds_dir), "-m", "Updated framework codebase", "--dir-mode", "zip")
     else:
-        cmd = ["kaggle", "datasets", "create", "-p", str(ds_dir), "--dir-mode", "zip"]
+        cmd = kaggle_cmd("datasets", "create", "-p", str(ds_dir), "--dir-mode", "zip")
 
     res = subprocess.run(cmd, capture_output=True, text=True)
     print(res.stdout)
@@ -230,13 +239,22 @@ def prepare_kernel(command_str: str):
     with open(kernel_dir / "kernel-metadata.json", "w") as f:
         json.dump(kmeta, f, indent=2)
 
+    # Fail fast if the generated metadata ever regresses and internet is not enabled.
+    with open(kernel_dir / "kernel-metadata.json", "r") as f:
+        written_kmeta = json.load(f)
+    if written_kmeta.get("enable_internet") != "true":
+        raise RuntimeError(
+            f"Kaggle kernel metadata must enable internet, found: {written_kmeta.get('enable_internet')!r}"
+        )
+    print("✓ Verified Kaggle kernel metadata: enable_internet=true")
+
     return kernel_dir
 
 
 def push_and_monitor(kernel_dir: Path):
     """Push kernel to Kaggle GPU and monitor execution progress."""
     print(f"🚀 Step 3: Pushing job to Kaggle GPU ({KERNEL_SLUG})...")
-    res = subprocess.run(["kaggle", "kernels", "push", "-p", str(kernel_dir)], capture_output=True, text=True)
+    res = subprocess.run(kaggle_cmd("kernels", "push", "-p", str(kernel_dir)), capture_output=True, text=True)
     print(res.stdout)
     if res.returncode != 0:
         print(f"❌ Kernel push error: {res.stderr}")
@@ -247,7 +265,7 @@ def push_and_monitor(kernel_dir: Path):
 
     start_time = time.time()
     while True:
-        res = subprocess.run(["kaggle", "kernels", "status", KERNEL_SLUG], capture_output=True, text=True)
+        res = subprocess.run(kaggle_cmd("kernels", "status", KERNEL_SLUG), capture_output=True, text=True)
         status_line = res.stdout.strip()
         elapsed = int(time.time() - start_time)
         print(f"[{elapsed}s] {status_line}")
@@ -275,14 +293,14 @@ def fetch_results():
     out_dir = FRAMEWORK_DIR / "results_kaggle_gpu"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    res = subprocess.run(["kaggle", "kernels", "output", KERNEL_SLUG, "-p", str(out_dir)], capture_output=True, text=True)
+    res = subprocess.run(kaggle_cmd("kernels", "output", KERNEL_SLUG, "-p", str(out_dir)), capture_output=True, text=True)
     print(res.stdout)
     print(f"✅ Results downloaded to: {out_dir}")
 
 
 def check_status():
     """Check current status of the Kaggle GPU kernel."""
-    res = subprocess.run(["kaggle", "kernels", "status", KERNEL_SLUG], capture_output=True, text=True)
+    res = subprocess.run(kaggle_cmd("kernels", "status", KERNEL_SLUG), capture_output=True, text=True)
     print(res.stdout)
 
 
