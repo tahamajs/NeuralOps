@@ -30,7 +30,7 @@ def setup_kaggle_environment():
         print("ℹ Standard environment detected")
 
     # Required packages check
-    reqs = ["datasets", "transformers", "accelerate", "evaluate", "scipy", "sklearn", "deepdiff", "matplotlib"]
+    reqs = ["datasets", "transformers", "accelerate", "evaluate", "scipy", "sklearn", "deepdiff", "matplotlib", "asgiref", "channels"]
     missing = []
     for req in reqs:
         try:
