@@ -1,133 +1,80 @@
-# Adaptive SVD Attention – Paper‑Style Explanation
+# Adaptive SVD Attention: Frozen Truncated SVD Base with Trainable Low-Rank Residual Adapters
 
-**Paper Reference**  
-This module adapts the idea of factorising pre‑trained weights via truncated singular value decomposition, combined with lightweight trainable residual adapters. The design is inspired by low‑rank adaptation techniques (LoRA, Compacter) and singular value decomposition for model compression.
+## 1. Abstract & Theoretical Motivation
+Adaptive SVD Attention (`AdaptiveSVDAttention`, registered as `adaptive_svd_attn`) presents a parameter-efficient fine-tuning (PEFT) attention sub-layer that combines a frozen, truncated Singular Value Decomposition (SVD) base projection with lightweight, trainable low-rank residual adapters ($W \approx U V + A B$). Full-rank Multi-Head Attention linear transformations ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) account for significant parameter memory overhead. Adaptive SVD Attention addresses this by factorizing each projection matrix into a high-energy frozen SVD base $W_{\text{svd}} = U V$ (where $U \in \mathbb{R}^{d_{\text{out}} \times r_{\text{svd}}}, V \in \mathbb{R}^{r_{\text{svd}} \times d_{\text{in}}}$) and a low-rank trainable residual adapter $W_{\text{adapter}} = A B$ (where $A \in \mathbb{R}^{d_{\text{out}} \times r_{\text{res}}}, B \in \mathbb{R}^{r_{\text{res}} \times d_{\text{in}}}$). By initializing the frozen base via truncated SVD from pretrained checkpoints under the Eckart–Young–Mirsky theorem, Adaptive SVD Attention provides zero-shot fidelity while restricting downstream parameter updates to $< 1\%$ of original projection weights.
 
----
+## 2. Mathematical Derivations & Formulations
+Let $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ denote an uncompressed pretrained linear weight matrix with optional bias $b \in \mathbb{R}^{d_{\text{out}}}$. Its full-rank Singular Value Decomposition is:
+$$W_0 = \bar{U} \Sigma \bar{V}^\top = \sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i \bar{u}_i \bar{v}_i^\top$$
+where $\bar{U} \in \mathbb{R}^{d_{\text{out}} \times k}$, $\Sigma = \text{diag}(\sigma_1, \dots, \sigma_k)$ with $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k \ge 0$, and $\bar{V} \in \mathbb{R}^{d_{\text{in}} \times k}$.
 
-## 1. Introduction
+Under SVD rank restriction $r_{\text{svd}} \le k$, the frozen base factors $U \in \mathbb{R}^{d_{\text{out}} \times r_{\text{svd}}}$ and $V \in \mathbb{R}^{r_{\text{svd}} \times d_{\text{in}}}$ are initialized as:
+$$U = \bar{U}_{:, :r_{\text{svd}}} \text{diag}(\sigma_{1:r_{\text{svd}}}), \qquad V = \bar{V}_{:r_{\text{svd}}, :}^\top$$
 
-Large pre‑trained language models contain millions of parameters in their attention projections alone. Fine‑tuning all of them is expensive, and simply discarding parameters (e.g., reducing the hidden size) often harms the knowledge embedded in the original weights. The **Adaptive SVD Attention** module strikes a balance: it retains a low‑rank approximation of the pre‑trained projection matrices while adding a very small, fully trainable residual component that can recover the lost fidelity for a specific downstream task. The result is a parameter‑efficient attention block that starts from a high‑quality frozen approximation and only tunes a handful of extra parameters.
+To absorb truncation residual error and enable downstream task adaptation, a trainable low-rank adapter pair $A \in \mathbb{R}^{d_{\text{out}} \times r_{\text{res}}}$ and $B \in \mathbb{R}^{r_{\text{res}} \times d_{\text{in}}}$ ($r_{\text{res}} \ll r_{\text{svd}}$) is initialized via Kaiming uniform initialization:
+$$A_{i, j} \sim \mathcal{U}\left(-\sqrt{\frac{5}{r_{\text{res}}}}, \sqrt{\frac{5}{r_{\text{res}}}}\right), \qquad B_{i, j} \sim \mathcal{U}\left(-\sqrt{\frac{5}{d_{\text{in}}}}, \sqrt{\frac{5}{d_{\text{in}}}}\right)$$
 
-In the present implementation, the module is designed as a drop‑in replacement for a DistilBERT self‑attention layer. It factorises every projection matrix—query, key, value, and output—independently, using the truncated SVD of the original weight to initialise the frozen part, and adds a rank‑\(r_{\text{res}}\) adapter pair to capture task‑specific adjustments.
+For input token activations $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$, the combined adaptive forward linear operator computes:
+$$y = \text{AdaptiveSVDLinear}(X) = \underbrace{X V^\top U^\top}_{\text{Frozen SVD Base}} + \underbrace{X B^\top A^\top}_{\text{Trainable Adapter}} + b$$
 
----
+Applying this factorized operator to $Q, K, V, O$ yields:
+$$Q = \text{AdaptiveSVDLinear}_Q(X) \in \mathbb{R}^{B \times N \times D}, \quad K = \text{AdaptiveSVDLinear}_K(X) \in \mathbb{R}^{B \times N \times D}, \quad V = \text{AdaptiveSVDLinear}_V(X) \in \mathbb{R}^{B \times N \times D}$$
+$$S = \frac{Q K^\top}{\sqrt{d_h}} + M_{\text{attn}}, \qquad P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1))$$
+$$C_{\text{head}} = P V \in \mathbb{R}^{B \times H \times N \times d_h}$$
+$$O = \text{AdaptiveSVDLinear}_O(\text{Reshape}(C_{\text{head}})) \in \mathbb{R}^{B \times N \times D}$$
 
-## 2. Mathematical Formulation
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
+The step-by-step tensor operations across Adaptive SVD Attention layers proceed as follows:
 
-### 2.1 Standard Projection
+1. **Input Tensor**: $X \in \mathbb{R}^{B \times N \times D}$
+2. **Parallel Base & Adapter Down-Projections ($Q, K, V$)**:
+   - Query frozen SVD down-projection: $Q_{\text{svd, low}} = X V_Q^\top \in \mathbb{R}^{B \times N \times r_{\text{svd}}}$
+   - Query adapter down-projection: $Q_{\text{adap, low}} = X B_Q^\top \in \mathbb{R}^{B \times N \times r_{\text{res}}}$
+3. **Up-Projections & Combination**:
+   - Query up-projection: $Q_{\text{full}} = Q_{\text{svd, low}} U_Q^\top + Q_{\text{adap, low}} A_Q^\top + b_Q \in \mathbb{R}^{B \times N \times D}$
+   - Key projections: $K_{\text{full}} = (X V_K^\top) U_K^\top + (X B_K^\top) A_K^\top + b_K \in \mathbb{R}^{B \times N \times D}$
+   - Value projections: $V_{\text{full}} = (X V_V^\top) U_V^\top + (X B_V^\top) A_V^\top + b_V \in \mathbb{R}^{B \times N \times D}$
+4. **Multi-Head Layout Conversion**:
+   - $Q, K, V \to [B, N, H, d_h] \xrightarrow{\text{transpose}(1, 2)} [B, H, N, d_h]$
+5. **Attention Scoring & Masking**:
+   - $S = Q K^\top / \sqrt{d_h} \in \mathbb{R}^{B \times H \times N \times N}$
+   - Mask addition: $S \leftarrow \text{apply\_attention\_mask}(S, \text{mask})$
+6. **Softmax & Context Weighted Aggregation**:
+   - $P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times N}$
+   - $C_{\text{head}} = P V \in \mathbb{R}^{B \times H \times N \times d_h}$
+7. **Head Concatenation & Output Adaptive Projection**:
+   - $\tilde{C} = \text{Reshape}(C_{\text{head}}) \in \mathbb{R}^{B \times N \times D}$
+   - $O = (\tilde{C} V_O^\top) U_O^\top + (\tilde{C} B_O^\top) A_O^\top + b_O \in \mathbb{R}^{B \times N \times D}$
 
-A linear projection in a standard attention layer is
+## 4. Analytical Complexity Profiling
+- **FLOPs Computation**:
+  - Frozen SVD GEMMs ($X V^\top U^\top$): $4 \times 2 B N D r_{\text{svd}} = 8 B N D r_{\text{svd}}$ FLOPs
+  - Adapter GEMMs ($X B^\top A^\top$): $4 \times 2 B N D r_{\text{res}} = 8 B N D r_{\text{res}}$ FLOPs
+  - Subtotal Projection FLOPs: $8 B N D (r_{\text{svd}} + r_{\text{res}})$ FLOPs
+  - Multi-Head Score ($Q K^\top$): $2 B N^2 D$ FLOPs
+  - Context Aggregation ($P V$): $2 B N^2 D$ FLOPs
+  - Total Layer FLOPs: $8 B N D (r_{\text{svd}} + r_{\text{res}}) + 4 B N^2 D$
+- **MAC Operations**:
+  - SVD + Adapter Projections: $4 B N D (r_{\text{svd}} + r_{\text{res}})$ MACs
+  - Attention Matrices: $2 B N^2 D$ MACs
+- **Memory Footprint & Trainable Parameter Reduction**:
+  - Total Projection Parameters: $4 \times [(d_{\text{out}} + d_{\text{in}}) (r_{\text{svd}} + r_{\text{res}}) + d_{\text{out}}]$
+  - Trainable Parameters (Adapters + Biases): $4 \times [ (d_{\text{out}} + d_{\text{in}}) r_{\text{res}} + d_{\text{out}} ]$
+  - For $D = 768, r_{\text{svd}} = 32, r_{\text{res}} = 8$: Total parameters $= 494,592$ (Compression Ratio $= 4.77\times$ vs uncompressed $2,359,296$).
+  - Trainable parameters $= 4 \times [1536 \times 8 + 768] = 52,224$ (Trainable Reduction Ratio $= 45.18\times$).
 
-\[
-\mathbf{y} = \mathbf{W} \mathbf{x} + \mathbf{b},
-\]
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+- **Dual GEMM Execution Latency**:
+  Evaluating two separate low-rank matrix pairs ($X V^\top U^\top$ and $X B^\top A^\top$) per linear projection increases kernel launch overhead and GPU memory instruction counts compared to fused LoRA execution.
+- **Asymmetric Adapter Initialization**:
+  Kaiming uniform initialization of both $A$ and $B$ matrices causes initial adapter output $A B X$ to be non-zero, perturbing zero-shot SVD output fidelity at step 0. Standard LoRA zero-initialization of $A$ ($A = 0$) should be enforced.
+- **Fixed SVD Rank Allocation**:
+  Fixing $r_{\text{svd}}$ uniformly across all attention projections ignores non-uniform singular value decay spectra, forcing high-entropy layers to suffer higher truncation errors.
 
-where \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\) and \(\mathbf{b} \in \mathbb{R}^{d_{\text{out}}}\). In DistilBERT, \(d_{\text{in}} = d_{\text{out}} = d_{\text{model}}\) for Q, K, V, and output.
-
-### 2.2 Decomposition into SVD Base and Residual Adapter
-
-The proposed **AdaptiveSVDLinear** layer decomposes \(\mathbf{W}\) as
-
-\[
-\mathbf{W}_{\text{eff}} = \mathbf{U} \mathbf{V} \;+\; \mathbf{A} \mathbf{B},
-\]
-
-where  
-- \(\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}\), \(\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}\) – **frozen**, initialised from the truncated SVD of the pre‑trained weight \(\mathbf{W}_{\text{pretrained}}\).  
-- \(\mathbf{A} \in \mathbb{R}^{d_{\text{out}} \times r_{\text{res}}}\), \(\mathbf{B} \in \mathbb{R}^{r_{\text{res}} \times d_{\text{in}}}\) – **trainable**, small residual adapters (typically \(r_{\text{res}} \ll r \ll \min(d_{\text{out}}, d_{\text{in}})\)).
-
-The forward pass computes
-
-\[
-\mathbf{y} = \mathbf{U}(\mathbf{V}\mathbf{x}) + \mathbf{A}(\mathbf{B}\mathbf{x}) + \mathbf{b}.
-\]
-
-Biases \(\mathbf{b}\) are copied from the original linear layer and remain trainable (or frozen, depending on the training regime).
-
-### 2.3 Truncated SVD Initialisation
-
-Given the pre‑trained weight \(\mathbf{W}_{\text{pret}} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\), its compact SVD is
-
-\[
-\mathbf{W}_{\text{pret}} = \mathbf{U}_{\text{full}} \mathbf{S} \mathbf{V}_{\text{full}}^\top,
-\]
-
-where \(\mathbf{S}\) is the diagonal matrix of singular values. A rank‑\(r\) approximation is obtained by keeping the first \(r\) columns of \(\mathbf{U}_{\text{full}}\) and rows of \(\mathbf{V}_{\text{full}}^\top\), absorbing the singular values into \(\mathbf{U}\):
-
-\[
-\mathbf{U}_r = \mathbf{U}_{\text{full}[:,:r]} \, \mathbf{S}_{[:r,:r]}, \qquad
-\mathbf{V}_r = \mathbf{V}_{\text{full}[:r,:]}.
-\]
-
-This yields the best rank‑\(r\) approximation of \(\mathbf{W}_{\text{pret}}\) in the Frobenius norm (Eckart–Young–Mirsky theorem). The factors are then frozen, so the model’s initial behaviour very closely matches the original, minus a small error that the residual adapters can later learn to correct.
-
-### 2.4 Overall Attention Computation
-
-The **AdaptiveSVDAttention** module uses four independent `AdaptiveSVDLinear` instances for Q, K, V, and O. The rest of the forward pass is identical to standard scaled dot‑product attention:
-
-\[
-\begin{aligned}
-\mathbf{Q} &= \text{AdaptiveSVDLinear}_Q(\mathbf{H}), \quad \mathbf{K} = \text{AdaptiveSVDLinear}_K(\mathbf{H}), \quad \mathbf{V} = \text{AdaptiveSVDLinear}_V(\mathbf{H}) \\
-\mathbf{S} &= \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}} \\
-\mathbf{A} &= \text{softmax}(\mathbf{S} + \text{mask}) \\
-\mathbf{C} &= \mathbf{A} \mathbf{V} \\
-\mathbf{O} &= \text{AdaptiveSVDLinear}_O(\mathbf{C})
-\end{aligned}
-\]
-
-Padding masks are applied by adding \(-\infty\) to illegal positions before softmax.
-
----
-
-## 3. Implementation Details
-
-### 3.1 `AdaptiveSVDLinear` – Low‑Rank Factorised Linear Layer
-
-**Constructor parameters**  
-- `in_features`, `out_features` – dimensions.  
-- `svd_rank` – rank \(r\) of the SVD part.  
-- `residual_rank` – rank \(r_{\text{res}}\) of the trainable adapter. If set to 0, the residual adapter is disabled, yielding a pure frozen low‑rank projection.  
-- `bias` – boolean indicating whether a bias term is used.
-
-**Parameter initialisation**  
-- `U` and `V` are initialised orthogonally, then overwritten by `set_svd_factors()`.  
-- `A` and `B` use Kaiming uniform initialisation to promote gradient flow.  
-- Bias is zero‑initialised.
-
-**`set_svd_factors(U, V)`**  
-Copies the provided SVD factor tensors into the corresponding parameters, ensuring that the base approximation is locked to the pre‑trained decomposition.
-
-**`forward(x)`**  
-Computes `F.linear(x, V)`, then `F.linear(..., U)`. If residual adapters exist, adds `F.linear(F.linear(x, B), A)`. Finally adds bias.
-
-### 3.2 `AdaptiveSVDAttention` – Complete Attention Module
-
-**Constructor**  
-Requires the pre‑trained attention object to extract original `q_lin, k_lin, v_lin, out_lin` linear layers.  
-For each projection:  
-1. Instantiate `AdaptiveSVDLinear` with the same dimensions, `svd_rank`, `residual_rank`, and the presence of bias.  
-2. Run `_init_svd_part()`, which performs the truncated SVD on the original weight (in float32 for numerical stability) and calls `set_svd_factors` to lock the frozen part. Biases are copied directly.
-
-**Forward pass**  
-Standard multi‑head attention: reshape to `(batch, heads, seq, head_dim)`, compute scores, apply mask, softmax, dropout, aggregate, and output projection. All computations use the factorised linear layers.
-
-### 3.3 Integration with the Framework
-
-The injection function `inject_adaptive_svd_attn` is registered as `"adaptive_svd_attn"` in `ATTENTION_REGISTRY`. It reads configuration parameters `svd_rank`, `residual_rank`, and `dropout` from the compression config, constructs the new attention module, and replaces `layer.attention`. This allows the adaptive SVD attention to be inserted into any DistilBERT layer without modifying the training loop.
-
----
-
-## 4. Discussion
-
-The key advantage of the Adaptive SVD Attention is its **excellent zero‑shot retention** combined with **extreme parameter efficiency**. Because the frozen SVD part captures the vast majority of the original weight’s energy (typically >95% for moderate ranks), the model’s output immediately after injection is almost indistinguishable from the full model. The residual adapters, often comprising less than 1% of the original parameters, can then be fine‑tuned to recover the small performance drop and adapt the representations to the target domain.
-
-This approach also has an interesting regularisation effect: the low‑rank constraints prevent overfitting, and the separation of frozen linguistic knowledge from trainable task‑specific adaptation encourages more robust transfer. Compared to methods that only reparameterise with a low‑rank matrix (e.g., LoRA), the SVD initialisation provides a much stronger prior because it explicitly aligns the factorisation with the pretrained weight’s singular value structure.
-
-One limitation is that the residual adapter rank must be chosen carefully; too small, and the adapter cannot fully compensate for the SVD approximation error; too large, and the parameter savings diminish. In practice, a residual rank of 8–16 is often sufficient for moderate SVD ranks (32–64).
-
----
-
-## 5. Conclusion
-
-Adaptive SVD Attention provides a mathematically grounded method for compressing attention layers while preserving most of the pre‑trained model’s quality. By decomposing each projection into a frozen truncated SVD base and a tiny trainable residual, it achieves a sweet spot between full fine‑tuning and complete freezing, making it well‑suited for resource‑constrained downstream tasks.
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+- **Fused SVD + Adapter Matmul Kernel**:
+  Construct a Triton kernel that computes $Y = X \begin{bmatrix} V \\ B \end{bmatrix}^\top \begin{bmatrix} U & A \end{bmatrix}^\top + b$ in a single pass. Concatenating factor matrices along rank dimension reduces 4 linear kernel calls to 2.
+- **Zero-Initialized Adapter Scaling**:
+  Initialize adapter matrix $A = 0$ and introduce scaling hyperparameter $\gamma = \frac{\alpha}{r_{\text{res}}}$: $W_{\text{eff}} = U V + \gamma A B$. This guarantees exact zero-shot equivalence to truncated SVD at step 0: $W_{\text{eff}}\big|_{t=0} = U V$.
+- **FlashAttention Integration**:
+  Stream intermediate adaptive projections $Q, K, V$ directly into FlashAttention-2 / FlashAttention-3 Triton kernels to compute online softmax attention without storing $N \times N$ score matrices in GPU memory.

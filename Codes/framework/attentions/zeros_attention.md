@@ -1,161 +1,178 @@
-# ZeroSAttention: Zero‑Mean ReLU Linear Attention
+# ZeroS Attention: Zero-Mean Normalized Linear Attention
 
-**Abstract**  
-We present **ZeroSAttention**, a lightweight linear attention module that replaces the standard softmax self‑attention with a simple, efficient alternative based on the ReLU feature map and a zero‑mean key normalisation. The module projects the input to queries, keys, and values in the usual multi‑head manner. Before computing the attention, the keys are centered by subtracting their mean along the sequence dimension, which helps to stabilise the linear attention and reduce variance. The queries and centered keys are then passed through a ReLU activation (with a small positive offset) to ensure non‑negativity. The attention output is obtained via the associative form of linear attention: a key‑value memory matrix of size \(d \times d\) is accumulated, and the output is normalised by the dot product of the query and the sum of the key features. The entire operation has complexity \(O(N d^2)\) per head, which is linear in sequence length \(N\) and independent of the feature dimension squared. ZeroSAttention is implemented as a drop‑in replacement for the self‑attention layer in DistilBERT and is registered within the compression framework under the key `"zeros"`. This paper provides a rigorous mathematical description of the zero‑mean centering, the ReLU‑based linear attention, and the normalisation strategy, along with implementation details and a discussion of its potential benefits and limitations.
+## 1. Abstract & Theoretical Motivation
+Linear attention frameworks eliminate quadratic $N \times N$ attention matrices by using non-negative feature maps $\phi(\mathbf{x})$ and matrix product associativity. However, un-centered key activation vectors often suffer from directional bias and common-mode component domination, which causes rank collapse in accumulated key-value memory states.
 
----
-
-## 1. Introduction
-
-Linear attention mechanisms (Katharopoulos et al., 2020) avoid the quadratic complexity of softmax attention by substituting the exponential kernel with a simpler feature map \(\phi(\mathbf{q})^\top \phi(\mathbf{k})\). The resulting computation can be rearranged to yield \(O(N d^2)\) time and memory, making it attractive for long sequences. A common choice for \(\phi\) is \(\operatorname{ELU}(x)+1\), which is positive and preserves gradient flow. However, the quality of the approximation and the training stability can vary. The **ZeroSAttention** module explores a different combination: it uses **ReLU** as the feature map (with a small constant added to avoid division by zero) and applies **zero‑mean centering** to the keys before the activation. This centering reduces the mean of the key vectors, which can stabilise the linear attention by preventing any one direction from dominating the key‑value memory. The module also uses a standard normalisation denominator that ensures the output is a weighted average of the values.
-
-The design is intentionally minimal, with no additional learnable parameters beyond the standard projections. The result is a fast, simple, and differentiable attention alternative that can be easily plugged into existing Transformer architectures. The module is designed as a drop‑in replacement for DistilBERT’s self‑attention layer and is integrated into the compression framework via the `ATTENTION_REGISTRY`.
-
-In this paper, we detail the mathematical formulation of ZeroSAttention, including the zero‑mean operation, the ReLU feature map, the linear attention recurrence, and the normalisation. We also discuss the implementation, the computational complexity, and the potential trade‑offs compared to full softmax attention.
+Zero-Mean Linear Attention (ZeroS Attention) resolves this issue by introducing sequence-mean centering to key representations prior to non-negative feature mapping. By projecting keys onto a zero-mean subspace $\widetilde{\mathbf{K}} = \mathbf{K} - \mathbb{E}_N[\mathbf{K}]$, ZeroS Attention removes stationary DC biases, improving feature variance distribution across heads while preserving linear computational time and memory complexity $\mathcal{O}(N d^2)$.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
-
-Let \(\mathbf{X} \in \mathbb{R}^{B \times N \times D}\) be the input hidden states, where \(B\) is the batch size, \(N\) the sequence length, and \(D\) the model dimension. The module applies three learned linear projections to obtain multi‑head queries, keys, and values:
+Given input sequence representations $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, query, key, and value matrices are projected for head $h \in \{1, \dots, H\}$:
 
 \[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V,
+\mathbf{Q}_h = \mathbf{X} \mathbf{W}_Q^{(h)} \in \mathbb{R}^{B \times N \times d}, \quad \mathbf{K}_h = \mathbf{X} \mathbf{W}_K^{(h)} \in \mathbb{R}^{B \times N \times d}, \quad \mathbf{V}_h = \mathbf{X} \mathbf{W}_V^{(h)} \in \mathbb{R}^{B \times N \times d}
 \]
 
-with \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times D}\) (since the module uses a full‑size projection, splitting into heads afterwards). The tensors are reshaped to separate \(H\) heads, each of dimension \(d_h = D/H\):
+### 1. Sequence Zero-Mean Centering
+Key vectors are centered along sequence dimension $N$ to subtract the sequence-wide expectation:
 
 \[
-\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d_h}.
+\overline{\mathbf{K}}_h = \frac{1}{N} \sum_{i=1}^N \mathbf{K}_{h, i, :} \in \mathbb{R}^{B \times 1 \times d}
+\]
+\[
+\widetilde{\mathbf{K}}_h = \mathbf{K}_h - \overline{\mathbf{K}}_h \in \mathbb{R}^{B \times N \times d}
 \]
 
-### 2.2 Zero‑Mean Key Centering
-
-Before applying the feature map, the keys are centered by subtracting their mean over the sequence length:
+### 2. Non-Negative Rectified Feature Mapping
+Rectified Linear Unit (ReLU) activations map query and centered key representations into non-negative manifolds:
 
 \[
-\tilde{\mathbf{K}} = \mathbf{K} - \frac{1}{N} \sum_{j=1}^{N} \mathbf{K}_{:, :, j, :},
+\widehat{\mathbf{Q}}_h = \operatorname{ReLU}(\mathbf{Q}_h) + \epsilon \in \mathbb{R}_+^{B \times N \times d}
+\]
+\[
+\widehat{\mathbf{K}}_h = \operatorname{ReLU}(\widetilde{\mathbf{K}}_h) + \epsilon \in \mathbb{R}_+^{B \times N \times d}
 \]
 
-where the mean is computed per head and per batch element, and broadcast back over the sequence dimension. This operation ensures that the sum of the key vectors along the sequence has zero mean, which can improve the conditioning of the key‑value memory and prevent drift in the state.
-
-### 2.3 ReLU Feature Map
-
-To obtain a non‑negative feature representation, the ReLU activation is applied to both queries and the centered keys, with a small epsilon added to avoid strictly zero vectors (which would cause division‑by‑zero in the normalisation):
+### 3. Associative Linear Attention Accumulation
+Associative sequence multiplication computes the $d \times d$ outer product state matrix $\mathbf{S}_{KV} \in \mathbb{R}^{B \times H \times d \times d}$ and normalizer vector $\mathbf{k}_{\text{sum}} \in \mathbb{R}^{B \times H \times 1 \times d}$:
 
 \[
-\phi_Q(\mathbf{q}) = \operatorname{ReLU}(\mathbf{q}) + \varepsilon, \qquad
-\phi_K(\tilde{\mathbf{k}}) = \operatorname{ReLU}(\tilde{\mathbf{k}}) + \varepsilon,
+\mathbf{S}_{KV, h} = \widehat{\mathbf{K}}_h^\top \mathbf{V}_h = \sum_{j=1}^N \widehat{\mathbf{K}}_{h, j, :}^\top \mathbf{V}_{h, j, :} \in \mathbb{R}^{B \times d \times d}
+\]
+\[
+\mathbf{k}_{\text{sum}, h} = \sum_{j=1}^N \widehat{\mathbf{K}}_{h, j, :} \in \mathbb{R}^{B \times 1 \times d}
 \]
 
-where \(\varepsilon = 10^{-8}\). The ReLU ensures that the feature vectors lie in the non‑negative orthant, making the subsequent linear attention well‑defined.
-
-### 2.4 Linear Attention via Key‑Value Memory
-
-Standard softmax attention computes \(\mathbf{C} = \operatorname{softmax}(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d}}) \mathbf{V}\). Linear attention replaces the softmax with the product of feature maps:
+### 4. Normalized Output Readout
+Unnormalized numerator $\mathbf{N}_h \in \mathbb{R}^{B \times N \times d}$ and denominator $\mathbf{D}_h \in \mathbb{R}^{B \times N \times 1}$ are derived via:
 
 \[
-\mathbf{C}_i \approx \frac{\phi(\mathbf{q}_i)^\top \sum_{j} \phi(\tilde{\mathbf{k}}_j) \mathbf{v}_j^\top}{\phi(\mathbf{q}_i)^\top \sum_{j} \phi(\tilde{\mathbf{k}}_j)}.
+\mathbf{N}_h = \widehat{\mathbf{Q}}_h \mathbf{S}_{KV, h} \in \mathbb{R}^{B \times N \times d}
+\]
+\[
+\mathbf{D}_h = \widehat{\mathbf{Q}}_h \mathbf{k}_{\text{sum}, h}^\top + \epsilon \in \mathbb{R}^{B \times N \times 1}
+\]
+\[
+\mathbf{O}_h = \frac{\mathbf{N}_h}{\mathbf{D}_h} \in \mathbb{R}^{B \times N \times d}
 \]
 
-In ZeroSAttention, the numerator and denominator are computed via the associative property. First, the key‑value memory matrix \(\mathbf{KV} \in \mathbb{R}^{B \times H \times d_h \times d_h}\) is formed:
+Multi-head outputs are concatenated and linearly projected back:
 
 \[
-\mathbf{KV} = \sum_{j=1}^{N} \phi_K(\tilde{\mathbf{k}}_j) \otimes \mathbf{v}_j.
+\mathbf{Y} = \operatorname{Concat}(\mathbf{O}_1, \dots, \mathbf{O}_H) \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
 \]
-
-This is implemented as a batch operation: `torch.einsum('bhnk,bhnd->bhkd', k_nonneg, v)` where the index \(k\) runs over the feature dimension and \(d\) over the value dimension. The resulting tensor is a per‑head matrix of size \(d_h \times d_h\). Next, the key sum \(\mathbf{Z} \in \mathbb{R}^{B \times H \times 1 \times d_h}\) is computed:
-
-\[
-\mathbf{Z} = \sum_{j=1}^{N} \phi_K(\tilde{\mathbf{k}}_j).
-\]
-
-Then, for each query position, the output is obtained by:
-
-\[
-\mathbf{C} = \frac{\mathbf{Q} \,\mathbf{KV}}{\mathbf{Q} \,\mathbf{Z}^\top + \varepsilon}.
-\]
-
-In practice, \(\mathbf{Q} \,\mathbf{KV}\) is a batched matrix‑matrix multiplication giving shape \((B, H, N, d_h)\), and the denominator is computed as \(\mathbf{Q} \mathbf{Z}^\top\) (where \(\mathbf{Z}^\top\) has shape \((B, H, d_h, 1)\)) resulting in shape \((B, H, N, 1)\). The division is broadcast over the feature dimension.
-
-### 2.5 Output Projection
-
-After the context \(\mathbf{C}\) is obtained, the heads are concatenated back to shape \((B, N, D)\) and passed through a final output linear layer \(\mathbf{W}_O\):
-
-\[
-\mathbf{Y} = \mathbf{C}_{\text{flat}} \mathbf{W}_O + \mathbf{b}_O.
-\]
-
-The module returns a tuple \((\mathbf{Y}, \text{None})\) for compatibility.
-
-### 2.6 Complexity
-
-The memory state \(\mathbf{KV}\) has size \(O(H \cdot d_h^2) = O(D \cdot d_h)\), which is independent of sequence length. The per‑head operations cost \(O(N d_h^2)\), leading to total time \(O(N D d_h)\). For \(D = 768\), \(d_h = 64\), this is approximately 49k operations per token, which is linear in \(N\) and much cheaper than the \(O(N^2 d_h)\) of full attention for long sequences. The zero‑mean centering and ReLU add negligible overhead.
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **Class `ZeroSAttention`** inherits from `BaseAttention` and is registered as `"zeros"` in the `ATTENTION_REGISTRY`.
-- **Constructor**:
-  - `config`: provides `hidden_size` and `num_attention_heads`.
-  - `rank`: ignored (kept for interface compatibility).
-  - Creates `W_q`, `W_k`, `W_v`, `out` as `nn.Linear` layers with bias (default).
-- **Forward**:
-  1. Project inputs to Q, K, V, reshape to multi‑head `(B, H, N, d_h)`.
-  2. Center keys: `k_centered = k - k.mean(dim=2, keepdim=True)`.
-  3. Apply ReLU with epsilon: `q_nonneg = relu(q) + 1e-8`, `k_nonneg = relu(k_centered) + 1e-8`.
-  4. Compute `kv = einsum('bhnk,bhnd->bhkd', k_nonneg, v)` (note: indices here treat `k` as feature dim, producing `(B, H, d_h, d_h)`).
-  5. Compute `k_sum = k_nonneg.sum(dim=2, keepdim=True)` → `(B, H, 1, d_h)`.
-  6. `num = torch.matmul(q_nonneg, kv)` → `(B, H, N, d_h)`.
-  7. `den = torch.matmul(q_nonneg, k_sum.transpose(-2,-1)) + 1e-8` → `(B, H, N, 1)`.
-  8. `out = num / den`.
-  9. Reshape, output projection.
-  10. Return `(out, None)`.
-
-- **Mask handling**: The forward method accepts an `attention_mask` argument but does **not** use it. Padding tokens are not masked from the key‑value memory or the normalisation, which can be problematic for variable‑length sequences. A correct implementation should zero out the keys and values of padding positions before aggregation, or at least mask them in the sum. This is a known limitation.
-
-- **No dropout on attention weights**: Unlike standard attention, there is no explicit attention weight matrix; dropout could be applied to the values or context, but it is not included here.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"zeros"` in the compression configuration. No additional hyperparameters are required beyond the model config. Example injection via framework:
-
-```python
-comp_config.attention_type = "zeros"
+```
+Input Hidden States X [B, N, D]
+  │
+  ├──> Linear Projections (W_Q, W_K, W_V) -> Q, K, V [B, H, N, d]
+  │
+  ├──> Sequence Key Zero-Centering:
+  │    Mean_K = mean(K, dim=2, keepdim=True) ───────────> [B, H, 1, d]
+  │    K_centered = K - Mean_K ─────────────────────────> [B, H, N, d]
+  │
+  ├──> Non-Negative ReLU Feature Maps:
+  │    ├──> Q_nonneg = ReLU(Q) + 1e-8 ──────────────────> [B, H, N, d]
+  │    └──> K_nonneg = ReLU(K_centered) + 1e-8 ─────────> [B, H, N, d]
+  │
+  ├──> Associative State Accumulation:
+  │    ├──> KV = einsum('bhnk, bhnd -> bhkd', K_nonneg, V) -> [B, H, d, d]
+  │    └──> K_sum = sum(K_nonneg, dim=2, keepdim=True) ──> [B, H, 1, d]
+  │
+  ├──> Context Readout & Normalization:
+  │    ├──> Num = Q_nonneg @ KV ─────────────────────────> [B, H, N, d]
+  │    ├──> Den = Q_nonneg @ (K_sum)^T + 1e-8 ──────────> [B, H, N, 1]
+  │    └──> Context = Num / Den ────────────────────────> [B, H, N, d]
+  │
+  └──> Reshape & Output Projection:
+       Y = Reshape(Context) @ W_O ──────────────────────> [B, N, D]
 ```
 
-Manual instantiation:
+### Detailed Shape Progression Table
+
+| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| 1 | Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
+| 2 | Multi-Head Reshape | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
+| 3 | Sequence Key Mean Reduction | `K: [B, H, N, d]` | `Mean_K: [B, H, 1, d]` |
+| 4 | Sequence Zero-Centering | `K: [B, H, N, d]`, `Mean_K` | `K_centered: [B, H, N, d]` |
+| 5 | Non-Negative ReLU Transformation | `Q, K_centered: [B, H, N, d]` | `Q_nonneg, K_nonneg: [B, H, N, d]` |
+| 6 | State Matrix Accumulation | `K_nonneg: [B, H, N, d]`, `V: [B, H, N, d]` | `KV: [B, H, d, d]` |
+| 7 | Sum Reduction Normalizer | `K_nonneg: [B, H, N, d]` | `K_sum: [B, H, 1, d]` |
+| 8 | Unnormalized Output Product | `Q_nonneg: [B, H, N, d]`, `KV: [B, H, d, d]` | `Num: [B, H, N, d]` |
+| 9 | Normalization Denominator | `Q_nonneg: [B, H, N, d]`, `K_sum^T` | `Den: [B, H, N, 1]` |
+| 10 | Element-wise Division | `Num: [B, H, N, d]`, `Den: [B, H, N, 1]` | `Context: [B, H, N, d]` |
+| 11 | Output Linear Projection | `Context: [B, H, N, d]` | `Y: [B, N, D]` |
+
+---
+
+## 4. Analytical Complexity Profiling
+
+### FLOP & MAC Counting
+1. **Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
+2. **Key Mean Centering**: $2 B H N d = 2 B N D$ additions.
+3. **ReLU Activation**: $2 B H N d = 2 B N D$ comparison operations.
+4. **State Accumulation ($\widehat{\mathbf{K}}^\top \mathbf{V}$)**: $2 B H N d^2 = 2 B N D d$ FLOPs.
+5. **Context Readout ($\widehat{\mathbf{Q}} \mathbf{S}_{KV}$)**: $2 B H N d^2 = 2 B N D d$ FLOPs.
+6. **Denominator Calculation ($\widehat{\mathbf{Q}} \mathbf{k}_{\text{sum}}^\top$)**: $2 B H N d = 2 B N D$ FLOPs.
+
+**Total Computational Cost**:
+\[
+\text{Total FLOPs} = 8 B N D^2 + 4 B N D d + 6 B N D
+\]
+
+For head dimension $d = D/H$ (e.g., $d=64$), $4 B N D d \ll 4 B N^2 D$, providing linear complexity $\mathcal{O}(N)$.
+
+### Memory Footprint & Tensor Store
+- **Parameters**: $4 D^2$ floats.
+- **Activation Memory**:
+  - Centered & Rectified Tensors ($\widehat{\mathbf{Q}}, \widehat{\mathbf{K}}$): $2 B H N d = 2 B N D$ floats.
+  - State Accumulator Matrix ($\mathbf{S}_{KV}$): $B H d^2 = B D d$ floats.
+  - Denominator Vector ($\mathbf{D}$): $B H N$ floats.
+  - Peak Activation Memory: $\mathcal{O}(B N D + B D d)$.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+1. **Non-Causal Mean Centering Dependency**: Evaluating $k - \text{mean}(k)$ across the full sequence dimension $N$ requires accessing future tokens, making ZeroS Attention non-causal and unsuitable for autoregressive streaming generation.
+2. **ReLU Zero Sparsity Saturation**: When key representations fall below zero ($\widetilde{\mathbf{K}} < 0$), ReLU outputs zero ($\operatorname{ReLU}(\widetilde{\mathbf{K}}) = 0$). If too many tokens saturate at zero, key-value memory state $\mathbf{S}_{KV}$ suffers from feature sparsity collapse.
+3. **Division Instability**: Small denominator values $\mathbf{D} \to 0$ cause floating-point overflow during FP16 inference, requiring dynamic numerical stabilization ($\epsilon \ge 10^{-5}$).
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Memory Access & Vectorization Barriers
+Naive PyTorch evaluates `k - k.mean(dim=2)` and `torch.einsum("bhnk,bhnd->bhkd", k, v)` via separate tensor memory allocations, writing intermediate centered keys back to DRAM.
+
+### High-Performance Triton Kernel Fusion Strategy
+1. **Fused Key Reduction & State Outer Product Kernel**: Implement a Triton kernel that computes the sequence mean $\overline{\mathbf{K}}$ in SRAM registers, subtracts the mean on-the-fly, applies ReLU, and accumulates outer products into $\mathbf{S}_{KV}$ directly in shared memory.
+
 ```python
-attn = ZeroSAttention(config=model_config)
-layer.attention = attn
+# Triton Pseudocode for Fused ZeroS Linear Kernel
+@triton.jit
+def _zeros_fused_linear_kernel(
+    Q_ptr, K_ptr, V_ptr, Out_ptr,
+    N, D, d: tl.constexpr, BLOCK_N: tl.constexpr
+):
+    # Pass 1: Compute sequence mean K_mean [d] in SRAM registers
+    k_sum = tl.zeros([d], dtype=tl.float32)
+    for n in range(0, N, BLOCK_N):
+        k_tile = tl.load(K_ptr + n * d + offsets_d)
+        k_sum += tl.sum(k_tile, axis=0)
+    k_mean = k_sum / N
+    
+    # Pass 2: Stream K, center on-the-fly: k_centered = relu(k - k_mean) + eps
+    # Accumulate outer product KV = k_centered.T @ v inside SRAM registers
+    
+    # Pass 3: Stream Q, apply relu(q) + eps, and compute Out = (q @ KV) / Denom
 ```
 
-The linear layers are randomly initialised; for zero‑shot performance, an injection function should copy the pretrained Q, K, V, O weights (e.g., from `old_attn`). The module can be fine‑tuned to adapt the linear projections and the output layer.
-
----
-
-## 5. Discussion
-
-ZeroSAttention embodies a minimalistic approach to linear attention. By using ReLU and zero‑mean centering, it avoids the complexity of exponential maps or random features while still achieving linear complexity. The zero‑mean operation helps to distribute the key magnitudes more evenly, potentially preventing the memory from being dominated by a few large keys. The ReLU + epsilon ensures positivity without sacrificing simplicity.
-
-However, the method has several drawbacks compared to full softmax attention or more sophisticated kernel approximations:
-
-- **Lack of exponential sharpening**: Softmax attention provides a highly peaked distribution, which can be crucial for focusing on specific tokens. ReLU‑based linear attention tends to produce broader attention patterns, which may reduce precision in tasks requiring sharp focus.
-- **No masking**: The absence of mask handling means padded sequences will contaminate the memory and normalisation, degrading performance. Adding mask support is essential for practical use.
-- **Unbounded memory growth**: The key‑value memory \(\mathbf{KV}\) grows with the sum of key‑value outer products, which can become large for long sequences. The normalisation denominator compensates, but the numerator may still produce large outputs. The ReLU + epsilon limits the minimal feature value to \(\varepsilon\), but large values can still accumulate.
-- **Potential for rank collapse**: The \(d_h \times d_h\) memory matrix may become low‑rank if the keys lie in a low‑dimensional subspace, leading to loss of information. Centering may help by diversifying the key directions.
-
-Despite these issues, ZeroSAttention is a useful baseline for linear attention. It is simple to implement, computationally efficient, and can serve as a starting point for further enhancements (e.g., adding a gating mechanism, using ELU instead of ReLU, or incorporating relative position encodings).
-
-In the context of the compression framework, it provides an alternative that drastically reduces memory and compute for long sequences while preserving a familiar projection structure.
-
----
-
-## 6. Conclusion
-
-We have presented ZeroSAttention, a zero‑mean ReLU linear attention module. The method centers the keys, applies ReLU, and performs linear attention via a \(d \times d\) key‑value memory with proper normalisation. It achieves linear time and constant memory in sequence length, making it suitable for efficient sequence processing. The module is integrated into the DistilBERT compression framework as a drop‑in replacement for standard self‑attention. Future work should incorporate proper padding mask support and explore the combination of the zero‑mean trick with other feature maps to further improve accuracy and stability. ZeroSAttention demonstrates that even the simplest non‑linearity, when paired with a careful normalisation, can yield a functional efficient attention mechanism.
+2. **Shared Memory Placement for $\mathbf{S}_{KV}$**: Pin the small $d \times d$ state matrix in GPU Shared Memory (`smem`), maximizing arithmetic intensity across sequence processing loops.

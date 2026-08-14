@@ -1,218 +1,183 @@
-# LEKAv3: Linear‑Time Efficient Kernel Attention with Multi‑Scale Features, Value‑Based Landmark Selection, and Adaptive Gating
+# LEKAv3: Linear-Time Efficient Kernel Attention with Value-Scored Semantic Landmarks and Multi-Scale RFF
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **LEKAv3**, an improved version of the Linear‑time Efficient Kernel Attention that refines the landmark‑based global attention paradigm with several advancements: (1) **multi‑scale random Fourier features** using two fixed projection matrices for richer kernel approximation; (2) a **value‑aware landmark scorer** that selects the most informative tokens based on their value projections, rather than key features; (3) a **learnable correction matrix** that transforms the selected landmark values; and (4) a **per‑head gating mechanism** that adaptively blends the sparse landmark attention output with a small local window attention. The module operates in linear time \(O(N \cdot L \cdot F + N \cdot W \cdot d_h)\) while preserving both global and local context. All linear projection weights are initialised from a pretrained DistilBERT attention layer for zero‑shot transfer. LEKAv3 is registered in the compression framework as a drop‑in replacement for standard self‑attention, offering a stronger baseline than its predecessors. This paper provides a full mathematical description of each component and the overall architecture.
+Standard Multi-Head Self-Attention (MHSA) scales quadratically $\mathcal{O}(N^2)$ with sequence length $N$, posing prohibitive computational and memory bottlenecks. While random feature kernel attention linearizes attention to $\mathcal{O}(N \cdot F \cdot d_h)$, it struggles with spatial over-smoothing and loss of associative memory. Furthermore, key-based landmark selection heuristics frequently select redundant tokens that carry minimal semantic value.
 
----
-
-## 1. Introduction
-
-Linear attention methods replace the quadratic softmax kernel with a feature map \(\phi(\mathbf{q})^\top \phi(\mathbf{k})\), enabling \(O(N d^2)\) computation. To further reduce the constant factor and focus capacity on the most relevant tokens, the landmark approach (introduced in LEKAv2) compresses the key‑value set to a fixed number of salient landmarks. However, LEKAv2 relied on key‑based features for landmark scoring and used learnable random projections, which may overfit or lose important input‑dependent information. **LEKAv3** improves upon this by:
-
-- Using **fixed**, multi‑scale random Fourier features that are not updated during training, stabilising the kernel approximation.
-- Selecting landmarks based on the **value vectors** themselves, which are more directly tied to the information content to be propagated.
-- Retaining the correction matrix and per‑head blending gate from V2, but with a simplified gate parameterisation.
-- Integrating these components into a clean, efficient pipeline with zero‑shot weight transfer.
-
-In this paper, we detail the mathematical formulation of each component, the architectural changes from V2, and the implementation specifics. We also discuss the advantages and remaining limitations of the LEKAv3 design.
+**LEKAv3** (Linear-time Efficient Kernel Attention v3) presents an advanced hybrid attention mechanism incorporating four core innovations:
+1. **Value-State Semantic Landmark Selection**: Unlike traditional landmark models that evaluate keys or queries, LEKAv3 dynamically scores tokens via an MLP operating directly on Value representations $V \in \mathbb{R}^{B \times H \times N \times d_h}$, ensuring landmarks are selected based on semantic output information content.
+2. **Multi-Scale Random Fourier Feature (RFF) Mapping**: Query and key vectors are projected into a multi-scale trigonometric space using dual random projection matrices ($F_1$ and $F_2 = F_1 / 2$), capturing both broad sequence context and fine-grained feature correlations.
+3. **Value Correction Tensor Transformation**: Employs a learnable per-head transformation tensor $W_{\text{corr}} \in \mathbb{R}^{H \times d_h \times d_h}$ to adapt gathered landmark values prior to context contraction.
+4. **Gated Softpick Landmark & Local Window Fusion**: Blends Softpick rectified landmark attention ($C_{\text{land}}$) with local sliding-window softmax attention ($C_{\text{local}}$) via a learnable per-head sigmoidal gating parameter $g$.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
+### 2.1 Multi-Scale Random Fourier Feature Mapping
+For projected queries and keys $Q, K \in \mathbb{R}^{B \times H \times N \times d_h}$, multi-scale random projections $W_1 \in \mathbb{R}^{d_h \times F_1}$ and $W_2 \in \mathbb{R}^{d_h \times F_2}$ (where $F_2 = F_1 / 2$) generate trigonometric feature maps:
 
-Given hidden states \(\mathbf{H} \in \mathbb{R}^{B \times N \times D}\), the module first computes standard multi‑head projections:
+$$P_1 = x W_1 \implies \phi_1(x) = \frac{1}{\sqrt{F_1}} \left[ \cos(P_1), \; \sin(P_1) \right] \in \mathbb{R}^{B \times H \times N \times 2F_1}$$
 
-\[
-\mathbf{Q} = \mathbf{H} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{H} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{H} \mathbf{W}_V,
-\]
+$$P_2 = x W_2 \implies \phi_2(x) = \frac{1}{\sqrt{F_2}} \left[ \cos(P_2), \; \sin(P_2) \right] \in \mathbb{R}^{B \times H \times N \times 2F_2}$$
 
-with weight matrices \(\mathbf{W}_* \in \mathbb{R}^{D \times (H d_h)}\) and biases. The tensors are reshaped to \((B, H, N, d_h)\).
+$$\phi(x) = \left[ \phi_1(x), \; \phi_2(x) \right] \in \mathbb{R}^{B \times H \times N \times d_{\text{feat}}}, \quad d_{\text{feat}} = 2F_1 + 2F_2$$
 
-### 2.2 Multi‑Scale Random Fourier Features
+### 2.2 Value-State Semantic Landmark Selection (`select_landmarks`)
+Token importance scores are predicted directly from Value states $V \in \mathbb{R}^{B \times H \times N \times d_h}$ using a two-layer bottleneck network:
 
-Two random projection matrices are stored as fixed buffers (not trainable):
+$$\text{Scores}_{\text{land}} = \text{Linear}_2\left( \text{GELU}\left( \text{Linear}_1( V ) \right) \right) \in \mathbb{R}^{B \times H \times N}$$
 
-- \(\mathbf{R}_1 \in \mathbb{R}^{d_h \times F}\) where \(F\) = `feature_dim` (default 128).
-- \(\mathbf{R}_2 \in \mathbb{R}^{d_h \times F/2}\).
+The top-$L_{\max}$ landmark token indices $\mathcal{I}_{\text{land}} \in \{1, \dots, N\}^{L_{\max}}$ are extracted:
 
-These are initialised from a standard normal distribution once and never updated. The **multi‑scale** feature map \(\phi(\mathbf{x})\) is constructed by projecting \(\mathbf{x}\) with both matrices, applying cosine and sine, and concatenating the results:
+$$\mathcal{I}_{\text{land}} = \text{TopK}\left( \text{Scores}_{\text{land}}, L_{\max}, \text{dim}=-1 \right)$$
 
-\[
-\phi(\mathbf{x}) = \frac{1}{\sqrt{F}} \big[ \cos(\mathbf{x}\mathbf{R}_1), \sin(\mathbf{x}\mathbf{R}_1) \big] \;\oplus\; \frac{1}{\sqrt{F/2}} \big[ \cos(\mathbf{x}\mathbf{R}_2), \sin(\mathbf{x}\mathbf{R}_2) \big],
-\]
+Key features $\phi(K)$ and Value representations $V$ are gathered at landmark indices:
 
-where \(\oplus\) denotes concatenation. The total feature dimension is \(2F + 2(F/2) = 3F\). The two scales allow the kernel to capture similarities at different resolutions.
+$$K_{\text{land}} = \text{gather}\left( \phi(K), \mathcal{I}_{\text{land}} \right) \in \mathbb{R}^{B \times H \times L_{\max} \times d_{\text{feat}}}$$
 
-Thus, we obtain \(\mathbf{Q}_\phi \in \mathbb{R}^{B \times H \times N \times 3F}\) and \(\mathbf{K}_\phi\) similarly.
+$$V_{\text{land}} = \text{gather}\left( V, \mathcal{I}_{\text{land}} \right) \in \mathbb{R}^{B \times H \times L_{\max} \times d_h}$$
 
-### 2.3 Value‑Based Landmark Selection
+Gathered landmark values are adjusted by learnable correction tensor $W_{\text{corr}} \in \mathbb{R}^{H \times d_h \times d_h}$:
 
-Unlike LEKAv2 which scored key features, LEKAv3 selects landmarks based on the **value vectors** themselves, which carry the information that will be propagated. A small scoring MLP is applied to each value token (per head):
+$$V_{\text{adj}} = V_{\text{land}} W_{\text{corr}} \in \mathbb{R}^{B \times H \times L_{\max} \times d_h}$$
 
-\[
-s_{i,h} = \operatorname{MLP}(\mathbf{V}_{i,h}), \quad \text{MLP}: \text{Linear}(d_h \to 32) \to \text{GELU} \to \text{Linear}(32 \to 1).
-\]
+### 2.3 Rectified Softpick Landmark Attention
+Landmark score logits evaluate inner products between query features $\phi(Q)$ and landmark key features $K_{\text{land}}$:
 
-The top‑\(L\) scores are selected (\(L = \text{num\_landmarks}\), default 32). If \(N \le L\), no selection is performed (all tokens are used). The corresponding key features and values are gathered:
+$$S_{\text{land}} = \phi(Q) K_{\text{land}}^T \in \mathbb{R}^{B \times H \times N \times L_{\max}}$$
 
-\[
-\mathbf{K}_{\text{land}} \in \mathbb{R}^{B \times H \times L \times 3F}, \qquad
-\mathbf{V}_{\text{land}} \in \mathbb{R}^{B \times H \times L \times d_h}.
-\]
+**Softpick** rectified activation with temperature scaling $T$ normalizes probabilities:
 
-This value‑based selection is motivated by the observation that tokens with large values (in magnitude or after transformation) are often the most informative for the attention aggregation.
+$$m_i = \max_l S_{\text{land}, i, l}, \quad e_{i, l} = \exp\left( \frac{S_{\text{land}, i, l} - m_i}{T} \right)$$
 
-### 2.4 Correction Matrix
+$$p_{i, l} = \frac{\max\left(0, e_{i, l} - \exp(-m_i / T)\right)}{\sum_k \max\left(0, e_{i, k} - \exp(-m_i / T)\right) + \epsilon}$$
 
-As in LEKAv2, a per‑head correction matrix \(\mathbf{W}_{\text{corr}} \in \mathbb{R}^{H \times d_h \times d_h}\) (initialised to the identity) is applied to the landmark values:
+$$C_{\text{land}} = p \cdot V_{\text{adj}} \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-\[
-\tilde{\mathbf{V}}_{\text{land}} = \mathbf{V}_{\text{land}} \mathbf{W}_{\text{corr}}.
-\]
+### 2.4 Local Window Attention & Sigmoidal Gate Fusion
+Local sliding window attention evaluates scaled dot-product attention within local radius $W_{\text{local}}$:
 
-This linear transformation allows the model to adjust the compressed values to better represent the full set, compensating for information loss due to landmark selection.
+$$S_{\text{local}, i, j} = \frac{Q_i K_j^T}{\sqrt{d_h}} + M^{\text{window}}_{i, j}, \quad M^{\text{window}}_{i, j} = \begin{cases} 0 & |i - j| \le \lfloor W_{\text{local}} / 2 \rfloor \\ -\infty & \text{otherwise} \end{cases}$$
 
-### 2.5 Sparse Landmark Attention with Softpick
+$$C_{\text{local}} = \text{Softmax}\left( S_{\text{local}} \right) V \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-Attention weights between query features \(\mathbf{Q}_\phi\) and landmark key features \(\mathbf{K}_{\text{land}}\) are computed via a simple dot product:
+Landmark context $C_{\text{land}}$ and local context $C_{\text{local}}$ are interpolated via learnable per-head gate parameter $g \in \mathbb{R}^H$:
 
-\[
-\mathbf{S}^{\text{land}} = \mathbf{Q}_\phi \, \mathbf{K}_{\text{land}}^\top \quad \in \mathbb{R}^{B \times H \times N \times L}.
-\]
+$$\alpha = \sigma(g) \in [0, 1]^H$$
 
-The **Softpick** activation is then applied to encourage sparsity:
+$$C = \alpha \odot C_{\text{land}} + (1 - \alpha) \odot C_{\text{local}} \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-\[
-\mathbf{A}^{\text{land}} = \operatorname{Softpick}(\mathbf{S}^{\text{land}}, \text{dim}=-1),
-\]
+Reshaping into $[B, N, H \cdot d_h]$, the output is projected back to model dimension $D$:
 
-where Softpick is a rectified softmax that can produce exact zero probabilities (same as in previous LEKA versions). Dropout is applied to these attention weights. The landmark context is then:
-
-\[
-\mathbf{C}_{\text{land}} = \mathbf{A}^{\text{land}} \tilde{\mathbf{V}}_{\text{land}} \quad \in \mathbb{R}^{B \times H \times N \times d_h}.
-\]
-
-### 2.6 Local Window Attention
-
-To capture fine‑grained short‑range dependencies, a local sliding window attention is computed on the original (non‑feature) queries, keys, and values. A symmetric window of size \(W\) (local_window_size, default 3) is defined:
-
-\[
-M^{\text{local}}_{ij} = \begin{cases}
-1 & \text{if } |i - j| \le \lfloor W/2 \rfloor, \\
-0 & \text{otherwise.}
-\end{cases}
-\]
-
-Local scores are computed via scaled dot product:
-
-\[
-\mathbf{S}^{\text{local}} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}},
-\]
-
-and positions outside the window are masked with \(-\infty\). Standard softmax is applied, followed by matrix multiplication with \(\mathbf{V}\):
-
-\[
-\mathbf{C}_{\text{local}} = \operatorname{softmax}(\mathbf{S}^{\text{local}} + \text{mask}) \mathbf{V}.
-\]
-
-### 2.7 Per‑Head Adaptive Gating
-
-A learnable scalar parameter \(\gamma_h\) per head (initialised to \(0\)) controls the blending between the landmark and local outputs. The effective gate is obtained via sigmoid:
-
-\[
-\alpha_h = \sigma(\gamma_h).
-\]
-
-The final context for head \(h\) is a convex combination:
-
-\[
-\mathbf{C}_h = \alpha_h \cdot \mathbf{C}_{\text{land},h} + (1 - \alpha_h) \cdot \mathbf{C}_{\text{local},h}.
-\]
-
-This allows each head to dynamically learn whether to rely more on the global (landmark) or local (window) information.
-
-### 2.8 Output Projection and Masking
-
-The combined context is reshaped to \((B, N, H d_h)\) and passed through a final linear output projection:
-
-\[
-\mathbf{Y} = \mathbf{C}_{\text{flat}} \mathbf{W}_O + \mathbf{b}_O.
-\]
-
-**Attention mask handling**: As in LEKAv2, a mask of various dimensions is converted to a 2D boolean tensor `token_valid`. This mask is used to set attention scores for invalid query positions to \(-\infty\) in the landmark attention (before Softpick). However, the local window attention does **not** receive this mask, meaning padding tokens can still be attended to within the window. Also, the landmark key‑value aggregation does not mask out padding tokens, which can distort the global context. This is a known limitation to be addressed in future versions.
-
-### 2.9 Complexity
-
-The complexity is dominated by:
-- Computing features: \(O(N \cdot H \cdot d_h \cdot F) = O(N \cdot D \cdot F)\).
-- Landmark selection: \(O(N \cdot H \cdot d_h) = O(N \cdot D)\) for scoring.
-- Landmark attention: \(O(N \cdot H \cdot L \cdot F) = O(N \cdot D \cdot L \cdot F / d_h)\).
-- Local window: \(O(N \cdot H \cdot W \cdot d_h) = O(N \cdot D \cdot W)\).
-
-With typical values (\(F=128, L=32, W=3, d_h=64\)), the landmark attention is the largest term but still linear in \(N\). Memory for the feature maps is \(O(N \cdot D \cdot F / d_h)\), which can be high but manageable.
+$$Y = \text{Reshape}(C) W_O + b_O \in \mathbb{R}^{B \times N \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 Class Structure
-
-`LEKAV3Attention` inherits from `BaseAttention` (which provides interface compatibility) and is registered as `"leka_v3"`.
-
-Key attributes:
-- `query`, `key`, `value`, `out_proj`: linear layers (copied from pretrained).
-- `proj1`, `proj2`: fixed random buffers of shapes \((d_h, F)\) and \((d_h, F/2)\).
-- `landmark_scorer`: a two‑layer MLP (Linear(\(d_h\), 32) → GELU → Linear(32, 1)).
-- `W_corr`: correction matrix parameter of shape \((H, d_h, d_h)\).
-- `gate`: per‑head scalar parameter (shape \(H\)), no bias.
-- `local_window_size`, `num_landmarks`, `feature_dim`: hyperparameters from `comp_config`.
-
-### 3.2 Forward Pass Steps
-
-1. Project inputs → Q, K, V multi‑head.
-2. Compute \(\phi(Q), \phi(K)\) using fixed multi‑scale projections.
-3. Select landmarks by scoring V with the MLP, gathering top‑\(L\) K_features and V.
-4. Apply correction matrix to gathered V.
-5. Compute landmark attention scores (dot product Q_features and K_land), mask invalid query positions, apply Softpick and dropout, multiply by corrected V.
-6. Compute local attention scores, apply window mask, softmax, multiply by V.
-7. Blend with per‑head gate (sigmoid).
-8. Reshape, output projection.
-9. Return `(output, None)`.
-
-### 3.3 Weight Transfer
-
-The injection function `inject_leka_v3` copies the pretrained attention weights from `old_attn` (which has `q_lin`, `k_lin`, etc.) to the corresponding linear layers, ensuring that the module starts from a strong initialisation. The other components (random projections, scorer, correction matrix, gate) are randomly initialised.
+| Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
+| :--- | :--- | :--- | :--- |
+| **Input State** | $X$ | $[B, N, D]$ | Base activation state |
+| **Linear Projections Q/K/V** | $Q, K, V$ | $[B, N, D] \to [B, H, N, d_h]$ | Multi-head view split |
+| **Multi-Scale RFF Mapping** | $\phi(Q), \phi(K)$ | $[B, H, N, d_h] \to [B, H, N, d_{\text{feat}}]$ | Dual projection $\cos/\sin$ concatenation |
+| **Value Semantic Scoring** | $\text{Scores}_{\text{land}}$ | $[B, H, N, d_h] \to [B, H, N]$ | Two-layer MLP operating on Value $V$ |
+| **Top-L Landmark Gather** | $K_{\text{land}}, V_{\text{land}}$| $[B, H, N, \dots] \to [B, H, L_{\max}, \dots]$ | Value-driven top-$L_{\max}$ token gather |
+| **Value Correction Tensor** | $V_{\text{adj}}$ | $[B, H, L_{\max}, d_h] \times [H, d_h, d_h] \to [B, H, L_{\max}, d_h]$ | Tensor product $V_{\text{land}} W_{\text{corr}}$ |
+| **Landmark Softpick Attn** | $C_{\text{land}}$ | $[B, H, N, d_{\text{feat}}] \times [B, H, L_{\max}, d_{\text{feat}}]^T \to [B, H, N, d_h]$ | Rectified Softpick value contraction |
+| **Local Sliding Window** | $C_{\text{local}}$ | $[B, H, N, d_h] \times [B, H, N, d_h]^T \to [B, H, N, d_h]$ | Band-masked softmax attention |
+| **Sigmoidal Gate Fusion** | $C$ | $[B, H, N, d_h]$ | $\sigma(g) C_{\text{land}} + (1 - \sigma(g)) C_{\text{local}}$ |
+| **Output GEMM** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, D]$ | Layer output projection |
 
 ---
 
-## 4. Usage and Configuration
+## 4. Analytical Complexity Profiling
 
-The module is activated by setting the attention type to `"leka_v3"`. The configurable hyperparameters (from `comp_config`) are:
+### 4.1 Floating Point Operations (FLOPs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $F_1, F_2$ RFF feature dimensions ($d_{\text{feat}} = 2F_1 + 2F_2$), $L_{\max}$ landmark count, and $W_{\text{local}}$ local window width.
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `num_landmarks` | 32 | Number of landmark tokens \(L\). |
-| `feature_dim` | 128 | Base feature dimension \(F\) (total output dim \(3F\)). |
-| `local_window_size` | 3 | Width of the local attention window. |
-| `dropout` | 0.1 | Dropout rate on landmark attention weights. |
+1. **Linear Q, K, V Projections**:
+   $$\text{FLOPs}_{\text{proj}} = 3 \times 2 B N D^2 = 6 B N D^2$$
+2. **Multi-Scale RFF Feature Mapping**:
+   $$\text{FLOPs}_{\text{rff}} = 2 B N D (F_1 + F_2)$$
+3. **Value Semantic Landmark Scoring**:
+   - Bottleneck MLP operating on $V$: $2 B H N d_h (32) + 2 B H N (32) (1) = 64 B N D + 64 B H N$
+   $$\text{FLOPs}_{\text{score}} \approx 64 B N D$$
+4. **Value Correction & Landmark Softpick Attention**:
+   - Value correction tensor product $V_{\text{land}} W_{\text{corr}}$: $2 B H L_{\max} d_h^2 = 2 B L_{\max} D d_h$
+   - Landmark score product $\phi(Q) K_{\text{land}}^T$: $2 B H N L_{\max} d_{\text{feat}}$
+   - Softpick & Value contraction $p V_{\text{adj}}$: $2 B H N L_{\max} d_h = 2 B N L_{\max} D$
+   $$\text{FLOPs}_{\text{land}} = 2 B L_{\max} D d_h + 2 B H N L_{\max} d_{\text{feat}} + 2 B N L_{\max} D$$
+5. **Local Sliding Window Attention**:
+   $$\text{FLOPs}_{\text{local}} = 4 B N D W_{\text{local}}$$
 
-The injection function handles weight copying automatically.
+**Total FLOP Count**:
+
+$$\text{FLOPs}_{\text{total}} \approx 6 B N D^2 + 2 B H N L_{\max} d_{\text{feat}} + 2 B N L_{\max} D + 4 B N D W_{\text{local}}$$
+
+### 4.2 Memory Footprint & Bandwidth
+- **Parameter Footprint**:
+  $$\Theta = 4 D^2 + (d_h F_1 + d_h F_2) + \Theta_{\text{v\_scorer}} + H d_h^2 = 4 D^2 + d_h (F_1 + F_2) + 33 d_h + H d_h^2$$
+- **Activation Footprint**:
+  - Landmark feature buffers: $\mathcal{O}(B H L_{\max} d_{\text{feat}})$
+  - Landmark attention matrix: $\mathcal{O}(B H N L_{\max})$
+  - Local window logits: $\mathcal{O}(B H N W_{\text{local}})$
+  - Total Memory: $\mathcal{O}\left(B N D + B H N L_{\max} + B H N W_{\text{local}}\right)$
 
 ---
 
-## 5. Discussion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-LEKAv3 represents a mature step in the LEKA lineage. By fixing the random projections, it avoids additional trainable parameters in the feature map, which may improve generalisation. The shift from key‑based to value‑based landmark scoring is a clever design choice: values contain the actual content that will be aggregated, so selecting landmarks based on values directly targets the most impactful tokens. The correction matrix continues to provide a flexible post‑hoc adjustment, and the per‑head gate allows adaptive fusion.
+### 5.1 Value-State Landmark Score Saturation
+- **Mechanism**: The landmark MLP scorer evaluates $\text{MLP}(V)$. If value states $V$ saturate due to large norm values in deep network layers, the MLP output logits flatten, leading to random Top-k landmark selection.
+- **Mitigation**: Apply RMSNorm to Value states $V$ before feeding into `landmark_scorer`.
 
-However, several issues remain. The landmark scoring is followed by a hard top‑\(k\), which is non‑differentiable. Training of the scorer requires a straight‑through estimator or a soft top‑\(k\), neither of which is implemented. The local window still lacks mask integration, so padding tokens are included. The feature map dimension \(3F\) can be large (e.g., 384 for \(F=128\)), leading to significant memory usage for the features. The dynamic landmark count mentioned in the docstring is not actually implemented (the number is fixed).
+### 5.2 Value Correction Matrix Identity Collapse
+- **Mechanism**: $W_{\text{corr}}$ is initialized to identity matrices $I_{d_h}$. If learning rates are too high, $W_{\text{corr}}$ weights can drift towards zero, truncating landmark value output.
 
-Despite these, LEKAv3 provides a strong, efficient attention alternative that balances global and local processing. It is well‑suited for tasks with moderate to long sequences where full attention is expensive, and where both short‑range syntax and long‑range semantics matter.
+### 5.3 Softpick Temperature Gradient Lock
+- **Mechanism**: Setting Softpick temperature $T < 0.2$ causes aggressive tail subtraction, zeroing off-diagonal landmark probabilities and locking backpropagation gradients.
 
 ---
 
-## 6. Conclusion
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
-We have presented LEKAv3, an improved linear‑time kernel attention module with multi‑scale fixed random features, value‑based landmark selection, a correction matrix, and a gated fusion with local window attention. The design achieves linear complexity while preserving global context and local detail. The module is integrated into the DistilBERT compression framework with zero‑shot weight transfer, making it a practical drop‑in replacement for standard self‑attention. Future work will focus on making landmark selection differentiable, adding full mask support, and exploring dynamic landmark counts to further enhance efficiency and accuracy.
+```
++-----------------------------------------------------------------------------------+
+|                        Triton Hardware Execution Graph                            |
+|                                                                                   |
+|  Input X [B, N, D] ---> [Fused QKV Projection GEMM Kernel] ---> Q, K, V           |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                  |       |
+|        v                                                                  v       |
+| [Triton Multi-Scale RFF Kernel]                   [Triton Value Scorer Engine]    |
+|  - SRAM Parallel Dual Cos/Sin Projections          - SRAM Bottleneck MLP on V     |
+|  - Write Concatenated \phi(Q), \phi(K) Features    - Top-k Bitonic Landmark Gather|
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                          |
+|        +---> [Triton Fused Landmark Softpick & Local Window Kernel]              |
+|               - Load Landmark K_land, V_land into SRAM                            |
+|               - Compute Softpick Attn + Tile Local Window SDPA                    |
+|               - Elementwise Sigmoidal Gate Fusion                                 |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                          |
+|        +---> [Fused Output GEMM Kernel] ---> Output Y [B, N, D]                   |
++-----------------------------------------------------------------------------------+
+```
+
+### 6.1 Triton Strategy 1: Multi-Scale RFF Mapping & Feature Concatenation
+- Construct a single vectorized Triton kernel loading input $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times d_h}$ into SRAM.
+- Evaluate dual projections $X_i W_1$ and $X_i W_2$ in SRAM registers, compute trigonometric features, and write concatenated feature map $\phi(X_i) \in \mathbb{R}^{\text{BLOCK\_M} \times d_{\text{feat}}}$ directly to main DRAM.
+
+### 6.2 Triton Strategy 2: Shared-Memory Value Landmark Scorer Kernel
+- Compute Value-based MLP scores $\text{MLP}(V)$ in shared memory.
+- Perform a parallel bitonic top-$k$ selection across sequence blocks to extract landmark indices $\mathcal{I}_{\text{land}}$.
+- Gather $K_{\text{land}}$ and $V_{\text{land}}$ vectors into continuous SRAM buffers, avoiding fragmented global memory reads.
+
+### 6.3 Triton Strategy 3: Fused Landmark Softpick & Local Window Kernel
+- Process sequence blocks of size `BLOCK_M = 64`.
+- Load continuous landmark key-value buffers $K_{\text{land}}, V_{\text{land}}$ into shared memory. Compute landmark Softpick attention context $C_{\text{land}}$ in register files.
+- Simultaneously compute local sliding-window attention $C_{\text{local}}$ and perform element-wise sigmoidal gate interpolation in SRAM before writing final context output $C$ to global DRAM.

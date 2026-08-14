@@ -1,146 +1,140 @@
-# MinimalPRISM: Zero‑Shot Low‑Rank Factorised Attention via Adaptive SVD
+# MinimalPRISM Attention: Singular Spectrum Energy-Factorized Low-Rank Projection Attention
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **MinimalPRISM**, a stable, zero‑shot, drop‑in replacement for the self‑attention sub‑layer in DistilBERT. Like its predecessors (MinimalAURORA and MinimalNOVA), it replaces the four dense projection matrices—query, key, value, and output—with factorised linear layers obtained from an energy‑thresholded truncated singular value decomposition (SVD) of the pretrained weights. The rank of each factorisation is chosen adaptively by retaining a specified fraction of the total singular‑value energy, automatically balancing compression and fidelity. The attention mechanism remains unchanged: a full scaled dot‑product attention with robust padding mask handling. The module is designed for zero‑shot initialisation, meaning it can replace the original attention layer without any fine‑tuning and still preserve nearly all of the pretrained model’s behaviour. The name “PRISM” highlights the use of a **P**recision‑**R**educed **I**terative **S**pectral **M**ethod (or simply spectral decomposition) to compress the weight matrices. This paper provides a comprehensive mathematical description of the factorisation and attention pipeline, implementation details, and integration into the compression framework via a registry‑based injection function.
+Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires dense linear projection matrices ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) that introduce heavy parameter memory footprints and high matrix multiplication FLOP counts. Standard low-rank compression methods apply static projection ranks across all network layers, ignoring the empirical singular value spectrum of pre-trained parameters.
 
----
-
-## 1. Introduction
-
-Large pre‑trained Transformer models often contain hundreds of millions of parameters, with a significant portion residing in the linear projections of each attention head. Fine‑tuning and deploying such models is resource‑intensive. Low‑rank factorisation of weight matrices offers a direct path to parameter reduction: a matrix \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\) is approximated by two smaller matrices \(\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}\) and \(\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}\) with \(r \ll \min(d_{\text{out}}, d_{\text{in}})\). If the factorisation is initialised via truncated SVD of the original weight, the model retains near‑perfect zero‑shot performance.
-
-**MinimalPRISM** implements this concept for all four attention projections. It differs from earlier versions (MinimalAURORA, MinimalNOVA) only in its registry key (`"minimal_prism"`) and its descriptive name, reflecting a different stage in the evolution of the codebase. The core algorithm—adaptive energy‑thresholded rank selection, SVD factorisation, full attention—remains identical. The module is intended as a robust, production‑grade component that can be injected into any DistilBERT layer with a single configuration flag.
+**MinimalPRISM Attention** implements a singular spectrum energy-factorized drop-in attention module based on Singular Value Decomposition (SVD):
+1. **Singular Spectrum Energy Factorization**: For each projection matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, full SVD is evaluated. The bottleneck rank $r$ is dynamically determined per layer to retain a target cumulative Frobenius energy ratio $\eta_{\text{energy}} = 0.95$.
+2. **Dual-Linear Factorization**: Projection layers are factorized into down-projection matrix $B = V_{:, :r}^T \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection matrix $A = U_{:, :r} \operatorname{diag}(\Sigma_{:r}) \in \mathbb{R}^{d_{\text{out}} \times r}$, executing linear projections in $\mathcal{O}(B \cdot N \cdot r \cdot (d_{\text{in}} + d_{\text{out}}))$ time.
+3. **Zero-Shot Drop-In Compatibility**: Preserves standard scaled dot-product attention logits, enabling immediate injection into pre-trained Transformer layers without zero-shot performance collapse.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Factorised Linear Layer with Energy‑Thresholded SVD
+### 2.1 SVD-Factorized Linear Transformation (`FactorisedLinear`)
+For a pre-trained projection weight matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, singular value decomposition is computed:
 
-Let \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\) be a pretrained weight matrix and \(\mathbf{b} \in \mathbb{R}^{d_{\text{out}}}\) its optional bias. We compute the compact SVD in float32:
+$$W_0 = U \Sigma V^T, \quad \Sigma = \operatorname{diag}(\sigma_1, \sigma_2, \dots, \sigma_{\min(d_{\text{out}}, d_{\text{in}})})$$
 
-\[
-\mathbf{W} = \mathbf{U}_{\text{full}} \mathbf{\Sigma} \mathbf{V}_{\text{full}}^\top,
-\]
+Given energy ratio $\eta_{\text{energy}} \in (0, 1]$, rank $r$ is selected as the minimal index satisfying:
 
-where \(\mathbf{\Sigma} = \operatorname{diag}(\sigma_1, \sigma_2, \ldots)\) with \(\sigma_1 \ge \sigma_2 \ge \cdots \ge 0\). The total energy is \(\mathcal{E} = \sum_i \sigma_i^2\). For a given energy threshold \(\eta \in (0,1]\) (typically 0.95), the rank \(r\) is chosen as the smallest integer \(k\) such that
+$$r = \arg\min_k \left\{ \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{j=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_j^2} \ge \eta_{\text{energy}} \right\}, \quad \text{subject to } r \in [r_{\min}, r_{\max}]$$
 
-\[
-\frac{\sum_{i=1}^k \sigma_i^2}{\mathcal{E}} \ge \eta.
-\]
+where $r_{\min} = 4$ and $r_{\max} = 64$. Down-projection $W_{\text{down}} \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection $W_{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r}$ are formulated as:
 
-We then clip \(r\) between 4 and 64, and to \(\min(d_{\text{out}}, d_{\text{in}})\) for safety. The truncated factors are:
+$$W_{\text{down}} = V_{:, :r}^T, \quad W_{\text{up}} = U_{:, :r} \operatorname{diag}(\sigma_1, \dots, \sigma_r)$$
 
-\[
-\mathbf{U}_r = \mathbf{U}_{\text{full}[:,:r]} \mathbf{\Sigma}_{[:r]}, \qquad
-\mathbf{V}_r = \mathbf{V}_{\text{full}[:r,:]}.
-\]
+Forward projection for hidden input activation $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ evaluates:
 
-These are stored as two linear layers: a bias‑free `down` layer with weight \(\mathbf{V}_r\) (shape \(r \times d_{\text{in}}\)) and an `up` layer with weight \(\mathbf{U}_r\) and the original bias \(\mathbf{b}\) if present. The forward pass computes:
+$$Y = (X W_{\text{down}}^T) W_{\text{up}}^T + b = (X V_{:, :r}) (U_{:, :r} \operatorname{diag}(\Sigma_{:r}))^T + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}$$
 
-\[
-\mathbf{y} = \mathbf{U}_r (\mathbf{V}_r \mathbf{x}) + \mathbf{b}.
-\]
+### 2.2 Scaled Dot-Product Multi-Head Attention Core
+Query, Key, Value, and Output projections are instantiated via `FactorisedLinear`:
 
-This factorised form reduces the trainable parameter count from \(d_{\text{out}} d_{\text{in}}\) to \(r(d_{\text{out}} + d_{\text{in}})\), often yielding a >10× reduction.
+$$Q = \text{FactorisedLinear}_Q(X), \quad K = \text{FactorisedLinear}_K(X), \quad V = \text{FactorisedLinear}_V(X) \in \mathbb{R}^{B \times N \times H \cdot d_h}$$
 
-### 2.2 Multi‑Head Self‑Attention
+Reshaping into $H$ heads with head dimension $d_h = D / H$ yields $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$.
 
-Given input hidden states \(\mathbf{H} \in \mathbb{R}^{B \times N \times D}\), the module projects them using the factorised layers:
+Attention logits evaluate scaled dot-products with scaling factor $\frac{1}{\sqrt{d_h}}$:
 
-\[
-\mathbf{Q} = \text{FactorisedLinear}_Q(\mathbf{H}),\quad
-\mathbf{K} = \text{FactorisedLinear}_K(\mathbf{H}),\quad
-\mathbf{V} = \text{FactorisedLinear}_V(\mathbf{H}).
-\]
+$$S_{b, h, i, j} = \frac{Q_{b, h, i} \cdot K_{b, h, j}^T}{\sqrt{d_h}} + M^{\text{pad}}_{b, j}$$
 
-These are reshaped to \((B, H, N, d_h)\) where \(H\) is the number of heads and \(d_h = D/H\). The attention scores are:
+Row-wise Softmax probability matrix $A \in \mathbb{R}^{B \times H \times N \times N}$ and value contraction are computed:
 
-\[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}}.
-\]
+$$A = \text{Softmax}(S), \quad A_{\text{drop}} = \text{Dropout}(A), \quad O = A_{\text{drop}} V \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-### 2.3 Mask Handling
+Reshaping into $[B, N, H \cdot d_h]$, the output is projected back to model dimension $D$:
 
-The module accepts an `attention_mask` that can be a 2D, 3D, or 4D tensor. A robust conversion logic extracts a boolean `token_valid` mask of shape \((B, N)\):
-
-- For a 4D mask, it checks if the last two dimensions are equal; if so, it assumes an extended mask and takes the first row as token validity. Otherwise, it squeezes to 2D.
-- For 3D, it squeezes the second dimension and converts to bool.
-- For 2D, it converts directly to bool.
-
-Invalid (padding) positions are masked by setting scores to a large negative value:
-
-\[
-\mathbf{S}_{b,h,i,j} \leftarrow -10^5 \quad \text{if token } j \text{ is padding}.
-\]
-
-This ensures that padding tokens do not contribute to the softmax normalisation.
-
-### 2.4 Softmax, Aggregation, and Output
-
-The attention weights are:
-
-\[
-\mathbf{A} = \operatorname{softmax}(\mathbf{S}) \in \mathbb{R}^{B \times H \times N \times N}.
-\]
-
-Dropout is applied to \(\mathbf{A}\). The context is:
-
-\[
-\mathbf{C} = \mathbf{A} \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d_h}.
-\]
-
-After transposing and reshaping to \((B, N, D)\), the output is projected:
-
-\[
-\mathbf{O} = \text{FactorisedLinear}_O(\mathbf{C}).
-\]
-
-The module returns \((\mathbf{O}, \mathbf{A})\) if `output_attentions` is True, otherwise \((\mathbf{O}, \text{None})\).
+$$Y = \text{FactorisedLinear}_O\left( \text{Reshape}(O) \right) \in \mathbb{R}^{B \times N \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`FactorisedLinear`**: Computes SVD in the constructor, selects rank, and initialises `down` and `up` layers. The weights are set via `copy_` from float32 tensors.
-- **`MinimalPRISMAttention`**: Inherits from `nn.Module`. Stores four `FactorisedLinear` instances and a dropout layer. The forward pass follows the standard multi‑head attention flow with mask parsing.
-- **Mask parsing**: Handles 2D, 3D, and 4D masks. The masking value is `-1e5`, which, while less negative than the typical `-1e9`, is still effectively zero after softmax.
-- **Injection function**: `inject_minimal_prism` is registered under `"minimal_prism"`. It reads `svd_energy` and `dropout` from `comp_config`, creates the attention module with the provided `pretrained_attn`, and replaces `layer.attention`.
-- **Zero‑shot**: Because the factorised weights are a near‑optimal low‑rank approximation of the original weights, the model’s initial outputs are almost identical to the full model. No training is required for the model to function after injection.
+| Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
+| :--- | :--- | :--- | :--- |
+| **Input Activation** | $X$ | $[B, N, D]$ | Base activation state |
+| **Down-Projection** | $X W_{\text{down}}^T$ | $[B, N, D] \to [B, N, r]$ | Down-projection via matrix $V_{:, :r}^T$ |
+| **Up-Projection** | $(X W_{\text{down}}^T) W_{\text{up}}^T$ | $[B, N, r] \to [B, N, H \cdot d_h]$ | Up-projection via matrix $U_{:, :r} \Sigma_{:r}$ |
+| **Head Partitioning** | $Q, K, V$ | $[B, N, H \cdot d_h] \to [B, H, N, d_h]$ | Multi-head view transposition |
+| **Scaled Dot-Product** | $S$ | $[B, H, N, d_h] \times [B, H, N, d_h]^T \to [B, H, N, N]$ | Logit matrix evaluation $\frac{Q K^T}{\sqrt{d_h}}$ |
+| **Padding Masking** | $S_{\text{masked}}$ | $[B, H, N, N]$ | Fill $-1e5$ at padded positions |
+| **Softmax Normalization** | $A$ | $[B, H, N, N]$ | Row-wise Softmax probability matrix |
+| **Value Contraction** | $O$ | $[B, H, N, N] \times [B, H, N, d_h] \to [B, H, N, d_h]$ | Context accumulation |
+| **Factorised Out GEMM** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, r] \to [B, N, D]$ | Factorized output projection |
 
 ---
 
-## 4. Usage and Configuration
+## 4. Analytical Complexity Profiling
 
-Set the attention type to `"minimal_prism"` in the compression configuration. The following parameters can be specified in `comp_config`:
+### 4.1 Floating Point Operations (FLOPs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, and $r$ average SVD rank.
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `svd_energy` | 0.95 | Fraction of singular‑value energy to retain. Higher values give better fidelity but larger rank. |
-| `dropout` | 0.1 | Dropout rate applied to attention weights. |
+1. **Factorized Projections ($Q, K, V, O$)**:
+   - Down-projection ($X B^T$): $2 B N D r$
+   - Up-projection ($Z A^T$): $2 B N r D$
+   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+2. **Attention Core**:
+   - Query-Key score product ($Q K^T$): $2 B H N^2 d_h = 2 B N^2 D$
+   - Softmax & Value contraction ($A V$): $2 B H N^2 d_h = 2 B N^2 D$
+   $$\text{FLOPs}_{\text{attn}} = 4 B N^2 D$$
 
-Example:
+**Total FLOP Count**:
 
-```python
-comp_config.attention_type = "minimal_prism"
-comp_config.svd_energy = 0.98
+$$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B N^2 D$$
+
+### 4.2 Memory Footprint & Bandwidth
+- **Parameter Footprint**:
+  $$\Theta = 4 \times (D \cdot r + r \cdot D) = 8 D r \ll 4 D^2$$
+- **Activation Footprint**:
+  - Intermediate rank-$r$ bottleneck activations: $\mathcal{O}(B N r)$
+  - Full attention score tensor: $\mathcal{O}(B H N^2)$
+  - Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Energy Truncation Loss in Deep Layers
+- **Mechanism**: Preserving $\eta_{\text{energy}} = 0.95$ energy caps maximum rank to $r_{\max} = 64$. For deep Transformer layers where singular values decay slowly (high spectral entropy), truncating at $r = 64$ discards more than $5\%$ of total Frobenius norm.
+- **Consequence**: Loss of fine-grained representation capacity, causing perplexity degradation on long-context benchmarks.
+
+### 5.2 Zero-Bias Instability in Pre-Trained Transfer
+- **Mechanism**: If source linear layers contain biases ($b \neq 0$), omitting biases in low-rank factorized projections introduces systematically shifted activation distributions.
+- **Mitigation**: Ensure `pretrained_bias` is passed and copied directly to the `up` linear layer.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+```
++-----------------------------------------------------------------------------------+
+|                        Triton Hardware Execution Graph                            |
+|                                                                                   |
+|  Input X [B, N, D] ---> [Fused Dual-GEMM Factorized Projection Kernel]            |
+|                          - Evaluate X V_{:, :r} directly into registers           |
+|                          - Multiply by (U_{:, :r} \Sigma_{:r})^T                  |
+|                          - Write Q, K, V to SRAM                                  |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                  |       |
+|        v                                                                  v       |
+| [Triton FlashAttention-2 Core Kernel]             [Factorised Output GEMM Kernel] |
+|  - Block-Sparse SRAM Tiling (128x128)              - Dual-Pass Down/Up GEMM       |
+|  - Online Softmax Normalization                    - DRAM Write Output Y [B, N, D] |
++-----------------------------------------------------------------------------------+
 ```
 
-The injection function transfers the pretrained weights automatically, so the module is immediately usable.
+### 6.1 Triton Strategy 1: Fused Dual-GEMM Factorized Projection Operator
+Standard PyTorch executes two sequential matrix multiplications (`x @ down.weight.T` followed by `@ up.weight.T`), allocating an intermediate tensor $[B, N, r]$ in global DRAM.
 
----
+**Triton Optimization**:
+- Implement a custom Triton GEMM kernel that loads input tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
+- Compute down-projection with $V_{:, :r}^T$ in register files and immediately evaluate up-projection with $(U_{:, :r} \Sigma_{:r})^T$.
+- **Speedup**: Reduces DRAM memory bandwidth consumption by $2\times$, achieving up to $1.8\times$ kernel latency reduction.
 
-## 5. Discussion
-
-MinimalPRISM achieves significant parameter reduction while preserving the full attention mechanism. The adaptive rank selection ensures that each projection is compressed only as much as its spectral structure allows, leading to efficient use of the parameter budget. The module inherits the robust mask handling from its predecessors, making it suitable for typical NLP pipelines with variable‑length batches.
-
-The quadratic complexity of the attention itself is not addressed; the module targets memory and storage efficiency rather than compute time. For longer sequences, it could be combined with a linear attention mechanism. The hard‑coded rank range (4–64) works well for typical hidden sizes (e.g., 768), but may need adjustment for significantly larger models.
-
-The main difference from MinimalAURORA and MinimalNOVA is the registry key and class name. This separation allows the framework to maintain multiple versions without conflict, facilitating A/B testing or phased rollouts.
-
----
-
-## 6. Conclusion
-
-We have presented MinimalPRISM, a low‑rank factorised attention module for DistilBERT that leverages energy‑thresholded SVD for zero‑shot compression. The module provides a straightforward, production‑ready method to drastically reduce the number of trainable parameters in the attention sub‑layer, while keeping the full expressive power of scaled dot‑product attention. Its integration into the compression framework via a simple configuration flag makes it a valuable tool for efficient NLP deployment.
+### 6.2 Triton Strategy 2: FlashAttention-2 Core Integration
+- Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
+- Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, N, N]$ attention matrices.

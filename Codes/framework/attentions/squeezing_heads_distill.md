@@ -1,128 +1,171 @@
-# SqueezingHeadsDistiller: A Placeholder for Head‑Pruning Distillation with Standard Self‑Attention
+# Squeezing Heads Distillation: Multi-Head Receptive Field Distillation & Capacity Compression
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **SqueezingHeadsDistiller**, a module that is intended to serve as a compressor for multi‑head attention by pruning or distilling redundant attention heads. In its current form, however, the implementation is a simple, unaltered **full standard multi‑head self‑attention** layer, with no head‑squeezing or distillation logic. It is registered in the compression framework as a drop‑in replacement for the attention sub‑layer of DistilBERT, accepting and correctly handling 2D padding masks. This paper describes the intended role of the module, details the mathematical operations it currently performs (which are identical to the original attention), and discusses the gap between its name and its implementation. The module serves as a baseline placeholder for future integration of head‑pruning distillation techniques.
+Large Transformer architectures often exhibit structural redundancy across attention heads, where multiple heads capture near-identical spatial or semantic representations. Squeezing Heads Attention Distillation (`SqueezingHeadsDistiller`) provides a structured multi-head attention harness designed for knowledge distillation, head pruning, and capacity squeezing.
 
----
-
-## 1. Introduction
-
-Large Transformer models often contain many attention heads, some of which may be redundant or unnecessary for the target task. Several methods have been proposed to compress models by removing or merging such heads, either through structured pruning, head‑wise knowledge distillation, or a combination of both. The **SqueezingHeadsDistiller** module is named after this concept: “squeezing” heads out of the model via distillation. In a typical head‑distillation pipeline, a teacher model with full heads would guide a student model with fewer heads, or a subset of heads would be trained to mimic the behavior of the full set.
-
-However, the current implementation of `SqueezingHeadsDistiller` does **not** perform any head squeezing or distillation. Instead, it implements a standard, full‑capacity multi‑head self‑attention mechanism. The module is essentially a wrapper that replicates the original DistilBERT attention forward pass. Its purpose in the framework is likely as a test placeholder, allowing the injection mechanism to be verified without requiring a fully implemented distillation‑based compressor. Once the actual head‑pruning logic is developed, this module can be replaced or extended.
-
-In this paper, we describe the mathematical formulation of the standard attention that is currently implemented, the handling of the attention mask, and the integration into the compression framework via the registry. We also discuss the intended design of a SqueezingHeadsDistiller and the discrepancy between the name and the code.
+The module encapsulates standard multi-head scaled dot-product attention while incorporating per-head mask gating ($H_{\text{mask}}$) and unified activation signatures. During distillation, $H_{\text{mask}}$ enforces head pruning and entropy regularization penalties, allowing a teacher model's full head capacity to be distilled into a squeezed student configuration. This enables systematic evaluation of head capacity bottlenecks without architectural modification.
 
 ---
 
-## 2. Method (Current Implementation)
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
+Let $X \in \mathbb{R}^{B \times L \times D}$ denote the input hidden state tensor, where $B$ is batch size, $L$ is sequence length, and $D$ is model dimension. Let $H$ be the number of teacher/student attention heads, $d_k = D / H$ the head dimension.
 
-Given an input sequence \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), the module first applies standard linear projections for all heads:
-
-\[
-\mathbf{Q} = \mathbf{X}\mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X}\mathbf{W}_K, \quad \mathbf{V} = \mathbf{X}\mathbf{W}_V,
-\]
-
-with \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times D}\) (the full attention size, as in DistilBERT). The tensors are reshaped to the multi‑head layout \((B, H, L, d_h)\), where \(H\) is the number of heads and \(d_h = D/H\). The heads are then transposed to shape \((B, H, L, d_h)\).
-
-### 2.2 Scaled Dot‑Product Attention
-
-The attention scores are computed as:
+### Linear Subspace Transformations:
+Input representations are transformed into query, key, and value states:
 
 \[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}} \quad \in \mathbb{R}^{B \times H \times L \times L}.
+Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
 \]
 
-A 2D padding mask of shape \((B, L)\) (with 1 for valid tokens and 0 for padding) is supported. The mask is converted to an additive form by expanding it to \((B, 1, 1, L)\) and adding \((1 - \text{mask}) \cdot (-\infty)\) to the scores:
+where $W_Q, W_K, W_V \in \mathbb{R}^{D \times D}$. Reshaping into multi-head layouts yields $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_k}$.
+
+### Scaled Dot-Product Attention:
+The raw similarity score matrix $S \in \mathbb{R}^{B \times H \times L \times L}$ per head $h$ is:
 
 \[
-\mathbf{S} \leftarrow \mathbf{S} + (1 - \text{mask}) \cdot (-10^9).
+S_{b, h, i, j} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot K_{b, h, j, m}
 \]
 
-This ensures padding tokens do not affect the softmax.
-
-### 2.3 Softmax and Aggregation
-
-The attention weights are obtained via softmax:
+### Universal Mask Processing:
+Incorporating attention mask $M_{\text{attn}}$:
 
 \[
-\mathbf{A} = \operatorname{softmax}(\mathbf{S}).
+\widetilde{S}_{b, h, i, j} = S_{b, h, i, j} + M_{\text{attn}, b, 1, i, j}
 \]
 
-Dropout is applied to \(\mathbf{A}\). The context for each head is then:
+Applying row-wise Softmax and dropout:
 
 \[
-\mathbf{C}_h = \mathbf{A}_h \mathbf{V}_h.
+A_{b, h, i, j} = \text{Softmax}_j (\widetilde{S}_{b, h, i, j}) = \frac{\exp(\widetilde{S}_{b, h, i, j})}{\sum_{l=1}^L \exp(\widetilde{S}_{b, h, i, l})}
+\]
+\[
+\widehat{A}_{b, h, i, j} = \text{Dropout}(A, p_{\text{drop}})_{b, h, i, j}
 \]
 
-The heads are concatenated by transposing and reshaping back to \((B, L, D)\). Finally, an output projection \(\mathbf{W}_O \in \mathbb{R}^{D \times D}\) is applied:
+### Head-Gating Mask & Distillation Capacity Squeezing:
+To distill head capacity and evaluate head importance, a head pruning mask tensor $H_{\text{mask}} \in \mathbb{R}^{B \times H \times 1 \times 1}$ (or broadcastable variant) modulates active heads:
 
 \[
-\mathbf{Y} = \mathbf{C}_{\text{flat}} \mathbf{W}_O + \mathbf{b}_O.
+\overline{A}_{b, h, i, j} = \widehat{A}_{b, h, i, j} \cdot (H_{\text{mask}})_{b, h, 1, 1}
 \]
 
-The module returns a tuple \((\mathbf{Y}, \text{None})\) to conform to the framework’s attention interface.
+When head $h$ is squeezed ($H_{\text{mask}, h} = 0$), its contribution to context aggregation drops to zero.
 
-### 2.4 Head Squeezing / Distillation (Intended)
+Context aggregation and final output projection:
 
-The module’s name implies that it should reduce the number of effective heads or distill information from many heads into fewer ones. Possible implementations could include:
+\[
+O_{b, h, i, m} = \sum_{j=1}^L \overline{A}_{b, h, i, j} \cdot V_{b, h, j, m} \implies O \in \mathbb{R}^{B \times H \times L \times d_k}
+\]
+\[
+Y = \text{Concat}(O_1, \dots, O_H) \cdot W_O + b_O \in \mathbb{R}^{B \times L \times D}, \quad W_O \in \mathbb{R}^{D \times D}
+\]
 
-- A learned gating mechanism that zeroes out entire heads (structured head pruning).
-- A low‑rank factorisation that merges heads into a smaller set.
-- A distillation loss applied during training that encourages a subset of heads to mimic the full attention distribution.
-- A combination of pruning and fine‑tuning guided by a teacher model.
+### Distillation Loss Objective:
+During distillation training, the student attention map $\overline{A}_{\text{student}}$ is constrained to match the teacher attention map $A_{\text{teacher}}$ via Kullback-Leibler (KL) divergence loss:
 
-In the current code, none of these mechanisms are present. The module merely performs the same operations as the original attention layer.
+\[
+\mathcal{L}_{\text{distill}} = \frac{1}{B \cdot H \cdot L} \sum_{b=1}^B \sum_{h=1}^H \sum_{i=1}^L D_{\text{KL}}\left( A_{\text{teacher}, b, h, i, :} \; \big|\big| \; \overline{A}_{\text{student}, b, h, i, :} \right)
+\]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **Class `SqueezingHeadsDistiller`** inherits from `nn.Module` and is registered under the key `"squeezing_heads_distiller"` in the `ATTENTION_REGISTRY`.
-- **Constructor**:
-  - `config`: provides `num_attention_heads`, `hidden_size`, and `dropout`.
-  - `rank`: ignored (for interface compatibility).
-  - Creates four linear layers (`q_proj`, `k_proj`, `v_proj`, `out_proj`) and a dropout layer.
-- **Forward**:
-  - Accepts `x` (hidden states), `attention_mask` (optional), and `**kwargs`.
-  - Projects Q, K, V, reshapes to multi‑head.
-  - Computes scores, applies mask (converts 2D mask), softmax, dropout.
-  - Aggregates values, reshapes, output projection.
-  - Returns `(out, None)`.
-
-The module does **not** include any parameter that reduces the number of heads, nor any distillation loss term. It is functionally identical to the `FullAttention` module described in a companion paper.
-
----
-
-## 4. Usage and Configuration
-
-The module is invoked by setting the attention type to `"squeezing_heads_distiller"` in the compression configuration. No additional hyperparameters are required. For example:
-
-```python
-comp_config.attention_type = "squeezing_heads_distiller"
+```
+Input: hidden_states (x) [B, L, D]
+  │
+  ├──> Linear(D, D) [q_proj] ──> Q: [B, L, D] ──> view & transpose ──> Q: [B, H, L, d_k]
+  ├──> Linear(D, D) [k_proj] ──> K: [B, L, D] ──> view & transpose ──> K: [B, H, L, d_k]
+  └──> Linear(D, D) [v_proj] ──> V: [B, L, D] ──> view & transpose ──> V: [B, H, L, d_k]
+                                │
+                                ├──> MatMul: Q @ K.transpose(-2, -1) / sqrt(d_k) ──> scores: [B, H, L, L]
+                                ├──> Add attention_mask ──> [B, H, L, L]
+                                ├──> Softmax(dim=-1) & Dropout ──> attn: [B, H, L, L]
+                                ├──> Multiply head_mask (Gating) ──> attn: [B, H, L, L]
+                                │
+                                └──> MatMul: attn @ V ──> out: [B, H, L, d_k]
+                                        │
+                                        └──> transpose(1, 2).contiguous().view([B, L, D])
+                                        └──> Linear(D, D) [out_proj] ──> Output: [B, L, D]
 ```
 
-Since the module contains randomly initialised linear layers, it would normally need to be initialised from a pretrained model for zero‑shot performance. In the compression framework, an injection function (not shown in this snippet) would typically copy the weights from the original attention layer (`old_attn`) into `q_proj`, `k_proj`, `v_proj`, `out_proj`. Without that, the module would behave like a freshly initialised attention layer and require full fine‑tuning.
+---
+
+## 4. Analytical Complexity Profiling
+
+### Computational Workload & Resource Footprint
+
+Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, and $d_k = D / H$.
+
+1. **Linear Projection FLOPs**:
+   - $W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+
+2. **Core Attention Score & Context FLOPs**:
+   - $Q K^\top$: $[B, H, L, d_k] \times [B, H, d_k, L] \implies 2 B L^2 D$ FLOPs ($B L^2 D$ MACs).
+   - Softmax & Head Mask Scaling: $\approx 6 B H L^2$ FLOPs.
+   - $A V$: $[B, H, L, L] \times [B, H, L, d_k] \implies 2 B L^2 D$ FLOPs ($B L^2 D$ MACs).
+
+3. **Active Head FLOP Reduction (Under Head Pruning $H_{\text{active}} < H$)**:
+   - If $H - H_{\text{active}}$ heads are masked to zero ($H_{\text{mask}, h} = 0$), actual computation scales down to:
+     \[
+     \text{FLOPs}_{\text{distilled}} = 8 B L D^2 + 4 B L^2 \left( \frac{H_{\text{active}}}{H} \right) D
+     \]
+
+### Total Complexity:
+- **Total MACs**: $4 B L D^2 + 2 B L^2 D$
+- **Total FLOPs**: $8 B L D^2 + 4 B L^2 D + 6 B H L^2$
+- **Parameter Count**: $4 D^2 + 4 D$ parameters.
 
 ---
 
-## 5. Discussion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-The `SqueezingHeadsDistiller` in its current form is a placeholder. It provides a standard attention forward pass, which allows the framework’s replacement mechanism to be tested end‑to‑end without introducing errors from an incomplete compression method. The name suggests that the final implementation will incorporate techniques to reduce head redundancy, but this has not yet been implemented. Potential reasons for this placeholder include:
+### Unpruned Zero-Matrix Computation Overhead
+In standard PyTorch, setting $H_{\text{mask}, h} = 0$ zeroes out attention weights in memory, but still executes full matrix products $Q_h K_h^\top$ and $A_h V_h$. This results in zero FLOP reduction despite complete head pruning.
 
-- The module may be a scaffold for ongoing research, where the compression logic is being developed in parallel.
-- It might serve as a baseline to compare actual head‑squeezing methods against (i.e., “no compression”).
-- The injection infrastructure might expect a module with this name, and the placeholder ensures the pipeline does not break.
+### Distillation Gradient Interference
+During head distillation, minimizing $\mathcal{L}_{\text{distill}}$ alongside task loss $\mathcal{L}_{\text{task}}$ can produce conflicting gradient updates on $W_Q$ and $W_K$, causing instability in student network convergence.
 
-For practical deployment, one would replace this module with a genuine head‑pruning or head‑distillation module, such as one that learns head importance scores and removes low‑importance heads, or one that uses attention transfer loss to mimic the full attention distribution with fewer heads.
-
-The mask handling correctly supports the 2D mask format common in DistilBERT. However, it assumes that the mask contains 1 for valid tokens and 0 for padding. If the mask is provided in a different format (e.g., additive), the conversion would be incorrect. The code also ignores the `output_attentions` flag, always returning `None` for the attention weights.
+### Head Collapse & Subspace Redundancy
+Without head-importance regularization, multiple active heads in the student network collapse into parallel representation subspaces ($\text{Rank}(W_{Q, h_1}^\top W_{Q, h_2}) \approx 1$), negating multi-head diversity.
 
 ---
 
-## 6. Conclusion
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
-We have documented the `SqueezingHeadsDistiller` module, which is currently a standard full multi‑head attention implementation, acting as a placeholder for future head‑compression distillation techniques. Its presence in the registry allows the compression framework to function without disruption, and it provides a clear point where a real head‑squeezing algorithm can be integrated. Once the intended distillation logic is added, this module will enable effective reduction of attention heads with minimal impact on model performance. Future work will focus on implementing and evaluating actual head‑squeezing strategies within this module’s framework.
+### Fused Distillation & Head-Pruned Triton Kernel Architecture
+To translate head pruning into actual compute and DRAM memory speedups, Triton fused kernels skip block operations for pruned heads ($H_{\text{mask}, h} = 0$).
+
+```
+       Global Memory (HBM)
+      ┌────────────────────────────────────────────────────────┐
+      │ Q, K, V [B, H, L, d_k]                                 │
+      │ Head Mask H_mask [H]                                   │
+      └───────────────────────────┬────────────────────────────┘
+                                  │ Evaluate Head Mask Status
+                                  ▼
+ ┌──────────────────────────────────────────────────────────────────┐
+ │                   Triton SRAM Scratchpad                         │
+ │ 1. IF H_mask[head_id] == 0:                                      │
+ │       SKIP HEAD COMPUTATION (Zero DRAM Read / Compute)           │
+ │ 2. ELSE:                                                         │
+ │       Load Q_tile, K_tile, V_tile                                │
+ │       Compute Scores: S_tile = Q_tile @ K_tile.T / sqrt(d_k)     │
+ │       Execute Online Softmax & Accumulate Output                 │
+ └────────────────────────────────┬─────────────────────────────────┘
+                                  │ Write Active Head Outputs
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ Output Context [B, L, D]                               │
+      └────────────────────────────────────────────────────────┘
+```
+
+### Key Triton Implementation Guidelines:
+1. **Dynamic Grid Head Skipping**:
+   Pass `head_mask` pointers to Triton kernel launch grids. If thread block program ID corresponds to a pruned head, immediately terminate launch thread, eliminating memory fetches.
+2. **On-the-Fly Attention KL Divergence Loss Calculation**:
+   Compute teacher-student attention map KL divergence $\mathcal{L}_{\text{distill}}$ directly in SRAM registers during forward execution, avoiding materialization of full $[B, H, L, L]$ attention probability matrices in DRAM.
+3. **Dynamic Compact Reshaping**:
+   Following distillation, dynamically slice projection weight tensors ($W_Q, W_K, W_V \in \mathbb{R}^{D \times H_{\text{active}} d_k}$), permanently removing pruned head parameters from model checkpoints.

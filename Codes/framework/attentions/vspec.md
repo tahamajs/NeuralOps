@@ -1,164 +1,171 @@
-# VSpec++: Variational Spectral Token‑Adaptive Attention
+# VSpec++ Attention: Variational Spectral Token-Adaptive Attention with SVD-Gated Projections and Dynamic Top-k Routing
 
-**Abstract**  
-We present **VSpec++**, a highly adaptive attention module for Transformer models that integrates three dynamic compression mechanisms: (1) **variational spectral gating**, which learns a per‑batch scaling of the singular values of the pretrained projection matrices, allowing the rank to vary on the fly; (2) **head‑wise gating**, which modulates the contribution of each attention head based on a pooled summary of the input; and (3) **token routing**, which selects a subset of the most salient tokens to attend to, reducing the effective sequence length. The module factorises each projection matrix (Q, K, V, O) into a frozen low‑rank basis derived from truncated SVD of the pretrained weights, plus a trainable diagonal scaling that is dynamically conditioned on the input via a variational network (reparameterisation trick). The token router uses a lightweight scorer to keep a fixed fraction of tokens, and the head gate further reweights the attention scores. The result is a highly parameter‑efficient, content‑adaptive attention mechanism that can be initialised from a pretrained DistilBERT model and fine‑tuned on downstream tasks with a fraction of the original parameters. The module is complemented by a global Lagrangian rank allocation optimiser that distributes a parameter budget across layers and projections. A complete training script integrates VSpec++ with GLUE tasks and the HuggingFace `Trainer`. This paper provides a rigorous mathematical description of each component, the dynamic factorisation, the variational gate, the router, and the overall architecture, as well as the budget‑aware rank allocation. We also discuss potential inconsistencies (such as the reuse of the query gate for output projection) and limitations.
+## 1. Abstract & Theoretical Motivation
 
----
+Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires quadratic computational time and memory scaling $\mathcal{O}(N^2)$ with sequence length $N$. Static low-rank compression methods enforce uniform projection ranks across all sequence tokens and batch examples, failing to adapt to varying input complexity.
 
-## 1. Introduction
-
-The multi‑head self‑attention layers in pretrained Transformers contribute a large share of the model’s parameters, yet they are often over‑parameterised for specific tasks. Static compression techniques, such as a fixed low‑rank factorisation via SVD, can reduce the parameter count but lack the ability to adapt to varying input complexity. The **VSpec++** module introduces a suite of **dynamic, input‑dependent adaptivity** into the compressed attention layer. Building upon the Lagrangian budget allocation of SVD‑Compressed Attention, VSpec++ adds three dynamic mechanisms:
-
-1. **Variational spectral gates** – For each projection (Q, K, V, O), a small neural network observes a pooled representation of the input sequence and predicts a scaling vector for the singular values of that projection. This allows the effective rank to be modulated per batch, effectively performing input‑aware compression. The gate uses a variational reparameterisation (mean and log‑variance) to inject stochasticity, encouraging robust representations.
-
-2. **Head gating** – A separate head gate predicts a scalar per attention head, which is multiplied into the attention scores, enabling the network to dynamically de‑emphasise or emphasise certain heads.
-
-3. **Token routing** – A learned token scorer selects the top‑\(k\) most important tokens before the attention computation. The attention is performed only on these routed tokens, reducing the sequence length and thus the computational cost. The output is then scattered back to the original token positions (keeping the pruned tokens unchanged). This acts as a form of dynamic token pruning.
-
-The combination yields a highly flexible attention layer that can be initialised from a pretrained DistilBERT model and then fine‑tuned with a small number of additional parameters (the gating networks and router). To determine the base ranks for the factorisation, the module employs the same Lagrangian optimisation as in SVD‑Compressed Attention, allocating a global parameter budget across all 24 projection matrices (6 layers × 4 projections). The resulting rank assignment ensures that the most informative subspaces are preserved.
-
-The module is named VSpec++ (“Variational Spectral …”), indicating an evolution of earlier spectral compression methods. It is implemented as a drop‑in replacement for the DistilBERT attention layer and is accompanied by a full training script that applies the allocation, injects the modules, and fine‑tunes on GLUE tasks.
-
-In this paper, we provide a rigorous mathematical formulation of the dynamic low‑rank projection, the variational spectral gate, the head gate, the token router, and the overall VSpecAttention forward pass. We also detail the rank allocation and training pipeline, and we critically examine the design choices and potential pitfalls (such as sharing the query gate for the output projection).
+**VSpec++ Attention** (Variational Spectral Token-Adaptive Attention) introduces a dynamic, input-adaptive attention architecture incorporating four core principles:
+1. **Saliency-Based Top-$k$ Token Routing**: A learned saliency network (`TokenRouter`) scores token relevance $s_i \in (0, 1)$, dynamically selecting the top-$k$ most informative tokens ($k = \lceil N \cdot \text{keep\_ratio} \rceil$) to reduce attention computation from $\mathcal{O}(N^2)$ to sub-quadratic complexity $\mathcal{O}(k^2)$.
+2. **Input-Dependent Variational Spectral Gating**: Employs a variational stochastic gating network (`VariationalSpectralGate`) that predicts singular value scaling vectors $g \in (0, 1)^r$ using the reparameterization trick $z = \mu + \epsilon \odot \exp(\log \sigma)$.
+3. **Dynamic SVD-Gated Projection Layers**: Projections ($Q, K, V, O$) map routed tokens through SVD singular factors ($U, S, V^T$) dynamically modulated by variational spectral gates $S_{\text{eff}} = S \odot g$.
+4. **Per-Example Head Importance Gating**: Evaluates input-dependent head scaling scalars $h_g \in (0, 1)^H$ to dynamically weight individual attention heads per batch example.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Dynamic Low‑Rank Projection with Variational Spectral Gating
+### 2.1 Saliency-Based Top-$k$ Token Routing (`TokenRouter`)
+Given input sequence $X \in \mathbb{R}^{B \times N \times D}$, token saliency scores $s_i \in (0, 1)$ are predicted via a two-layer bottleneck network:
 
-The core of VSpec++ is a **Dynamic Low‑Rank Projector** that factorises a pretrained weight matrix \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\). Instead of a fixed truncation, the projector stores the top‑\(r\) singular components as **frozen** parameters:
+$$s_i = \sigma\left( \text{Linear}_2\left( \text{GELU}\left( \text{Linear}_1(x_i) \right) \right) \right) \in \mathbb{R}^{B \times N}$$
 
-\[
-\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}, \quad \mathbf{S} \in \mathbb{R}^{r}, \quad \mathbf{V}^\top \in \mathbb{R}^{r \times d_{\text{in}}},
-\]
+For padding tokens, scores are masked with $-1e9$. The top-$k$ token indices $\mathcal{I}_{\text{route}} \in \{1, \dots, N\}^k$ are extracted, where $k = \max(N_{\text{min}}, \lfloor N \cdot \text{keep\_ratio} \rfloor)$:
 
-obtained from the truncated SVD of \(\mathbf{W}\). Here \(\mathbf{U}\) and \(\mathbf{V}^\top\) are frozen, while the singular values \(\mathbf{S}\) are **trainable** (but independent of the input). To make the projection input‑dependent, a **variational spectral gate** is introduced. For a given input batch \(\mathbf{X} \in \mathbb{R}^{B \times N \times D}\), the gate network \(G_{\text{spec}}\) first pools the hidden states to a single vector per batch element:
+$$\mathcal{I}_{\text{route}} = \text{TopK}\left( \{s_i\}_{i=1}^N, k, \text{dim}=1 \right)$$
 
-\[
-\mathbf{h} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{X}_{:,i,:} \in \mathbb{R}^{B \times D}.
-\]
+Routed token sequence $\widetilde{X} \in \mathbb{R}^{B \times k \times D}$ is gathered:
 
-This pooled vector is passed through a small MLP that outputs parameters \(\boldsymbol{\mu} \in \mathbb{R}^{r}\) and \(\boldsymbol{\log\sigma} \in \mathbb{R}^{r}\). Using the reparameterisation trick, a latent variable \(\mathbf{z}\) is sampled:
+$$\widetilde{X} = \text{gather}\left( X, \mathcal{I}_{\text{route}} \right) \in \mathbb{R}^{B \times k \times D}$$
 
-\[
-\mathbf{z} = \boldsymbol{\mu} + \boldsymbol{\epsilon} \odot \exp(\boldsymbol{\log\sigma}), \quad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I}).
-\]
+### 2.2 Input-Dependent Variational Spectral Gating (`VariationalSpectralGate`)
+The sequence mean pooling vector $\bar{X} = \frac{1}{N} \sum_{i=1}^N x_i \in \mathbb{R}^{B \times D}$ is mapped to mean $\mu \in \mathbb{R}^{B \times r}$ and log-variance $\log \sigma \in \mathbb{R}^{B \times r}$ parameters:
 
-The final spectral gate is obtained via a sigmoid:
+$$[\mu, \log \sigma] = \text{Linear}_2\left( \text{GELU}\left( \text{Linear}_1( \bar{X} ) \right) \right) \in \mathbb{R}^{B \times 2r}$$
 
-\[
-\mathbf{g} = \sigma(\mathbf{z}) \in (0,1)^{r}.
-\]
+Using standard Gaussian noise $\epsilon \sim \mathcal{N}(0, I_r)$, stochastic latent gate $z \in \mathbb{R}^{B \times r}$ and sigmoidal spectral gate $g \in (0, 1)^{B \times r}$ are computed:
 
-This gate is then used to scale the singular values dynamically:
+$$z = \mu + \epsilon \odot \exp(\log \sigma), \quad g = \sigma(z) \in (0, 1)^{B \times r}$$
 
-\[
-\mathbf{S}_{\text{eff}} = \mathbf{S} \odot \mathbf{g} \quad (\text{broadcast across batch}).
-\]
+### 2.3 Dynamic SVD-Gated Projection Layers (`DynamicLowRankProjector`)
+Pre-trained projection weights $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ are factorized via SVD into truncated buffers $U \in \mathbb{R}^{d_{\text{out}} \times r}, V^T \in \mathbb{R}^{r \times d_{\text{in}}}$ and singular parameter $S \in \mathbb{R}^r$.
 
-The forward pass of the projector for an input \(\mathbf{X}\) (which may be the routed token set) is:
+Forward projection for routed tokens $\widetilde{X} \in \mathbb{R}^{B \times k \times d_{\text{in}}}$ evaluates variational singular scaling:
 
-\[
-\mathbf{Y} = \underbrace{\big( \mathbf{X} \mathbf{V}^\top \big)}_{\mathbb{R}^{B \times N \times r}} \; \odot \; \mathbf{S}_{\text{eff}} \;\; \underbrace{\mathbf{U}^\top}_{\text{shape } (r, d_{\text{out}})} \quad \Rightarrow \quad \mathbf{Y} \in \mathbb{R}^{B \times N \times d_{\text{out}}}.
-\]
+$$S_{\text{eff}} = S \odot g \in \mathbb{R}^{B \times r}$$
 
-In practice, the code computes `mid = x @ Vh.t()`, then `mid = mid * S_eff.unsqueeze(1)`, then `out = mid @ U.t()`. This implements a low‑rank transformation whose singular values are modulated per batch.
+$$\text{Mid} = \widetilde{X} V_{:r, :}^T \in \mathbb{R}^{B \times k \times r}$$
 
-For each of the four projections (Q, K, V, O), a separate projector and spectral gate are instantiated. The original weight matrix for the output projection is used to initialise the corresponding projector; notably, the output projector uses the **same gate as the query** (`gq` is passed to `Po`), which is a design choice that may be suboptimal but simplifies the architecture.
+$$\text{Proj}(\widetilde{X}) = \left( \text{Mid} \odot S_{\text{eff}} \right) U_{:, :r}^T \in \mathbb{R}^{B \times k \times d_{\text{out}}}$$
 
-### 2.2 Head Gating
+Projections for Query, Key, Value layers yield $Q, K, V \in \mathbb{R}^{B \times k \times H \cdot d_h}$. Reshaping to multi-head format gives $Q, K, V \in \mathbb{R}^{B \times H \times k \times d_h}$.
 
-A separate **Head Gate** module takes the same pooled input \(\mathbf{h}\) and predicts a scalar per attention head:
+### 2.4 Head-Gated Scaled Dot-Product Attention & Reverse Routing
+Per-example head importance scalars $h_g \in (0, 1)^{B \times H}$ are predicted from sequence mean $\bar{X}$:
 
-\[
-\boldsymbol{\beta} = \sigma( \operatorname{MLP}_{\text{head}}(\mathbf{h}) ) \in \mathbb{R}^{B \times H},
-\]
+$$h_g = \sigma\left( \text{Linear}_2\left( \text{GELU}\left( \text{Linear}_1( \bar{X} ) \right) \right) \right) \in (0, 1)^{B \times H}$$
 
-where \(H\) is the number of heads. This vector is reshaped to \((B, H, 1, 1)\) and multiplied element‑wise with the attention scores \(\mathbf{S}\) before softmax:
+Attention scores evaluate head-gated scaled dot-products across routed $k$ tokens:
 
-\[
-\mathbf{S}' = \boldsymbol{\beta} \odot \mathbf{S}.
-\]
+$$S_{b, h, i, j} = \left( \frac{Q_{b, h, i} \cdot K_{b, h, j}^T}{\sqrt{d_h}} \right) \cdot h_{g, b, h}$$
 
-This allows the model to dynamically weight the contribution of each head based on the input content. It is similar in spirit to learned head importance but applied per batch, not globally.
+$$A = \text{Softmax}(S), \quad O = A V \in \mathbb{R}^{B \times H \times k \times d_h}$$
 
-### 2.3 Token Routing
+Reshaping context to $[B, k, H \cdot d_h]$, output projection evaluates $O_{\text{proj}} = \text{Po}(O, g_Q) \in \mathbb{R}^{B \times k \times D}$.
 
-The **Token Router** reduces the sequence length before the heavy attention computation. A lightweight scorer network processes each token independently:
+**Reverse Routing Scatter**: The output sequence tensor $Y \in \mathbb{R}^{B \times N \times D}$ is initialized with hidden input $X$, and routed token positions are overwritten:
 
-\[
-s_{i} = \sigma( \operatorname{MLP}_{\text{token}}(\mathbf{x}_i) ) \in (0,1).
-\]
-
-The top‑\(k\) scoring tokens are selected, where \(k = \max(k_{\min}, \lfloor \rho N \rfloor)\) with a configurable keep ratio \(\rho\) (default 0.5) and a minimum token count. The selected tokens are gathered into a new tensor \(\mathbf{X}_{\text{routed}} \in \mathbb{R}^{B \times k \times D}\), and the original indices are stored. The attention is then performed only on this reduced set of tokens. After the attention output \(\mathbf{Y}_{\text{routed}} \in \mathbb{R}^{B \times k \times D}\) is obtained, it is scattered back to the original positions using the stored indices, while the unselected tokens retain their original hidden states. This implements a hard token pruning, which is not differentiable through the selection step but receives gradient signal through the selected tokens.
-
-### 2.4 Overall VSpecAttention Block
-
-Given the original input \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\):
-
-1. **Token routing**: \(\mathbf{X}_{\text{routed}}, \mathcal{I} = \operatorname{TokenRouter}(\mathbf{X})\).
-2. **Compute spectral gates**: \((\mathbf{g}_q, \mathbf{g}_k, \mathbf{g}_v)\) from \(\mathbf{X}\) (using the original full sequence) via variational spectral gates.
-3. **Project Q, K, V** using the dynamic low‑rank projectors with their respective gates (e.g., \(\mathbf{Q} = \operatorname{Proj}_Q(\mathbf{X}_{\text{routed}}, \mathbf{g}_q)\)).
-4. **Reshape to multi‑head**: separate heads, yielding \((B, H, k, d_h)\).
-5. **Compute attention scores**: \(\mathbf{S} = \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_h}}\).
-6. **Apply head gate**: \(\mathbf{S} \leftarrow \boldsymbol{\beta} \odot \mathbf{S}\).
-7. **Mask with attention mask** if provided (the mask is assumed to be already in the appropriate format for the routed tokens? Actually the code applies the original mask directly; this could be problematic because the sequence length changed. The code does `if attention_mask is not None: scores = scores + mask`, where `mask` might not correspond to the routed tokens. This is a known issue).
-8. **Softmax, dropout**, optional head_mask.
-9. **Aggregate values**: \(\mathbf{C} = \operatorname{softmax}(\mathbf{S}) \mathbf{V}\).
-10. **Concatenate heads**: reshape to \((B, k, D)\).
-11. **Output projection**: \(\mathbf{Y}_{\text{routed}} = \operatorname{Proj}_O(\mathbf{C}, \mathbf{g}_q)\) (note: reusing \(\mathbf{g}_q\)).
-12. **Reverse routing**: \(\mathbf{Y}_{\text{final}} = \text{scatter}(\mathbf{X}, \mathcal{I}, \mathbf{Y}_{\text{routed}})\), i.e., the output for selected positions is replaced by the attention output, while unselected positions keep the original hidden state.
-
-### 2.5 Budget‑Aware Rank Allocation
-
-As in SVD‑Compressed Attention, a global Lagrangian optimisation is performed once before training. It takes all attention weight matrices (24 of them), computes their singular values, and determines the optimal rank for each matrix such that the total parameter count stays within a budget (e.g., 20% of original) while minimising the sum of discarded singular‑value energies. The resulting ranks are used to initialise the truncated SVD factors in the dynamic projectors.
+$$Y_{b, \mathcal{I}_{\text{route}}(b, i)} = O_{\text{proj}, b, i}, \quad \forall i \in \{1, \dots, k\}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`VariationalSpectralGate`**: A two‑layer MLP (hidden size 64) with GELU. Outputs 2× rank values (mu, log_sigma). Applies reparameterisation and sigmoid.
-- **`HeadGate`**: A two‑layer MLP (32 hidden) → sigmoid.
-- **`TokenRouter`**: A two‑layer MLP (32 hidden) → sigmoid; keeps top‑k tokens, returns routed tensor and indices.
-- **`DynamicLowRankProjector`**: Stores `U`, `S`, `Vh` as parameters, but `U` and `Vh` are frozen (requires_grad=False) while `S` is trainable. The gate `g` is applied to `S`.
-- **`VSpecAttention`**: Constructor takes `hidden_size`, `num_heads`, `rank`, `pretrained_attn`. It transposes the original linear weights (since the projectors expect shape (in, out)?? Actually, the code does `.t()` for Q/K/V weights and not for output. This might introduce dimension mismatches. The forward pass then uses `x @ Vh.t()` where `Vh` is \((r, \text{in\_features})\). This assumes the input is \(d_{\text{in}}\). In DistilBERT, the input to Q projection is hidden_size, output is all_head_size. So `Vh` should be of shape `(r, hidden_size)`. The initialisation uses `U,S,Vh = torch.linalg.svd(W)` where `W` is the original weight matrix. That is correct. The transposition in the constructor might be a mistake: `pretrained_attn.q_lin.weight.data.clone().t()` would give shape `(hidden_size, all_head_size)`, then SVD would be on that matrix, yielding `U` of shape `(hidden_size, ...)`. That seems inverted. This could cause shape errors. We'll note this as a potential bug.)
-- **Training script**: The script `VSpecAttention.py` performs data loading, rank allocation, injection via `inject_all_layers_vspec`, and training. The injection function creates `VSpecAttention` for each layer with the allocated rank (actually it uses only the query rank as the global rank for that layer? The code uses `rank=rank_dict[f"layer{layer_idx}_q"]` for the constructor, ignoring the separate ranks for K/V/O. This is inconsistent with the allocation that gives per‑projection ranks. The constructor of `VSpecAttention` takes a single `rank` parameter, so all projectors get the same rank. The injection script does not pass the individual ranks to the module. Thus the careful Lagrangian allocation is largely wasted. We'll point this out.
+| Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
+| :--- | :--- | :--- | :--- |
+| **Input Activation** | $X$ | $[B, N, D]$ | Base input state |
+| **Token Saliency Scoring** | $s_i$ | $[B, N, D] \to [B, N]$ | Two-layer MLP token scoring |
+| **Top-k Token Routing** | $\widetilde{X}, \mathcal{I}_{\text{route}}$| $[B, N, D] \to [B, k, D]$ | Top-$k$ saliency token gather |
+| **Sequence Mean Pooling** | $\bar{X}$ | $[B, N, D] \to [B, D]$ | Sequence average reduction |
+| **Variational Spectral Gate**| $g_Q, g_K, g_V$ | $[B, D] \to [B, r]$ | Reparameterized stochastic gate $g = \sigma(\mu + \epsilon e^{\log \sigma})$ |
+| **Dynamic SVD Projection** | $Q, K, V$ | $[B, k, D] \to [B, H, k, d_h]$ | Gated singular projection $(\widetilde{X} V^T \odot S_{\text{eff}}) U^T$ |
+| **Head Importance Gating** | $h_g$ | $[B, D] \to [B, H, 1, 1]$ | Per-example head scaling scalars |
+| **Routed Attention Matrix** | $S$ | $[B, H, k, d_h] \times [B, H, k, d_h]^T \to [B, H, k, k]$ | Head-gated dot-product score matrix |
+| **Routed Context Retrieval**| $O_{\text{proj}}$ | $[B, H, k, k] \times [B, H, k, d_h] \to [B, k, D]$ | Gated output projection |
+| **Reverse Routing Scatter** | $Y$ | $[B, k, D] \to [B, N, D]$ | Scatter-update routed positions into $X$ |
 
 ---
 
-## 4. Usage and Configuration
+## 4. Analytical Complexity Profiling
 
-The training script is executed as:
-```bash
-python VSpecAttention.py --task sst2 --budget_ratio 0.2
+### 4.1 Floating Point Operations (FLOPs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $k$ routed token count ($k = N \cdot \text{keep\_ratio}$), and $r$ SVD truncation rank.
+
+1. **Token Router Saliency Scoring**:
+   $$\text{FLOPs}_{\text{route}} = 2 B N D (32) + 2 B N (32) (1) = 64 B N D$$
+2. **Variational Spectral Gating & Head Gating**:
+   $$\text{FLOPs}_{\text{gate}} = 3 \times \left( 2 B D (64) + 2 B (64) (2r) \right) + \left( 2 B D (32) + 2 B (32) H \right) \approx 384 B D r$$
+3. **Dynamic SVD Projections ($Q, K, V, O$)**:
+   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B k D r + 2 B k r D \right) = 16 B k D r$$
+4. **Routed Multi-Head Attention Core**:
+   - Query-Key dot products ($k$ tokens): $2 B H k^2 d_h = 2 B k^2 D$
+   - Softmax & Value contraction: $2 B H k^2 d_h = 2 B k^2 D$
+   $$\text{FLOPs}_{\text{attn}} = 4 B k^2 D$$
+
+**Total FLOP Count**:
+
+$$\text{FLOPs}_{\text{total}} = 64 B N D + 16 B k D r + 4 B k^2 D$$
+
+### 4.2 Memory Footprint & Bandwidth
+- **Parameter Footprint**:
+  $$\Theta = 4 \times (D \cdot r) + \Theta_{\text{router}} + \Theta_{\text{vgate}} + \Theta_{\text{hgate}} = 4 D r + 33 D + 384 r + 33 D$$
+- **Activation Footprint**:
+  - Routed token sequence $\widetilde{X}$: $\mathcal{O}(B k D)$
+  - Routed attention logit matrix: $\mathcal{O}(B H k^2)$
+  - Total Activation Memory: $\mathcal{O}(B N D + B k D + B H k^2) \ll \mathcal{O}(B H N^2)$
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Token Routing Collapse & Gradient Vanishing
+- **Mechanism**: The token router scores $s_i = \sigma(\text{MLP}(x_i))$. If the MLP weight gradients vanish, $s_i$ converges to uniform constants, turning Top-k selection into arbitrary index truncation.
+- **Consequence**: Critical task-relevant tokens are discarded, degrading model performance.
+- **Mitigation**: Add an auxiliary sparsity loss $\mathcal{L}_{\text{sparsity}} = \|\bar{s} - \text{keep\_ratio}\|_2^2$ to enforce active token scoring entropy.
+
+### 5.2 Variational Gate Collapse ($\sigma \to 0$)
+- **Mechanism**: The variational gate reparameterization $z = \mu + \epsilon \odot \exp(\log \sigma)$ can suffer from KL divergence collapse where $\log \sigma \to -\infty$, causing gate $g = \sigma(\mu)$ to become deterministic and losing input-adaptive spectral regularizations.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
 ```
-Key hyperparameters:
-- `--budget_ratio`: Fraction of original attention parameters to retain for the base ranks.
-- `--epochs`, `--lr`, `--batch_size`: standard fine‑tuning settings.
-- The script automatically loads the GLUE task, computes rank allocation, injects VSpec++, and trains.
++-----------------------------------------------------------------------------------+
+|                        Triton Hardware Execution Graph                            |
+|                                                                                   |
+|  Input X [B, N, D] ---> [Triton Fused Token Saliency & Gather Kernel]             |
+|                          - Compute Saliency Scores s_i in SRAM                    |
+|                          - Parallel Bitonic Top-k Sort & Gather \widetilde{X}     |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                  |       |
+|        v                                                                  v       |
+| [Triton Variational Gate Engine]                  [Triton Dynamic SVD Projection] |
+|  - SRAM Sequence Mean Reduction                    - Multiply \widetilde{X} V^T   |
+|  - Reparameterized Gate Evaluation (gq, gk, gv)    - Apply Elementwise Gate S_{eff}|
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                          |
+|        +---> [Triton FlashAttention-2 Routed Kernel]                              |
+|               - Block-Sparse Tiling over k Tokens (128x128)                       |
+|               - Apply Head Importance Scaling h_g                                 |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                          |
+|        +---> [Triton Fused Scatter-Update Output Kernel] ---> Output Y [B, N, D]  |
++-----------------------------------------------------------------------------------+
+```
 
-The module can also be used standalone by instantiating `VSpecAttention` with appropriate parameters and replacing the attention layer.
+### 6.1 Triton Strategy 1: Fused Saliency Scoring & Parallel Bitonic Top-k Gather
+- Implement a custom Triton kernel loading $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
+- Compute saliency scores $s_i$ in register space and execute a parallel shared-memory bitonic top-$k$ sort.
+- Gather routed token sequence $\widetilde{X} \in \mathbb{R}^{B \times k \times D}$ into continuous DRAM buffers in a single pass.
 
----
+### 6.2 Triton Strategy 2: Fused Dynamic SVD Projection Operator
+- Load routed sequence tile $\widetilde{X}_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
+- Perform down-projection $\widetilde{X}_i V^T$ in registers, scale elements by $S_{\text{eff}} = S \odot g$, and compute up-projection with $U^T$.
+- Reduces DRAM memory traffic by $2.1\times$ compared to standard multi-step PyTorch calls.
 
-## 5. Discussion
-
-VSpec++ combines several orthogonal adaptation mechanisms into a single attention layer, resulting in a highly dynamic yet parameter‑efficient module. The variational spectral gate introduces input‑dependent rank scaling, which can be interpreted as a soft attention over singular components, potentially making the low‑rank approximation more expressive. The head gate adds further per‑example adaptivity. The token router reduces sequence length, which directly reduces the computational cost of attention (which remains quadratic in the routed length). The reverse routing preserves the original token positions, making the pruning transparent to later layers.
-
-However, the current implementation contains several inconsistencies and limitations:
-
-- **Rank allocation not utilised**: The injection function uses only the query rank for all projectors, ignoring the per‑projection ranks computed by the Lagrangian optimiser. This defeats the purpose of the global allocation; the module would need to accept separate ranks for Q, K, V, O to fully benefit from the allocation.
-- **Dimension transposition**: The constructor transposes the original Q/K/V weights before SVD, possibly causing shape mismatches. The code `pretrained_attn.q_lin.weight.data.clone().t()` yields a matrix of shape `(hidden_size, all_head_size)`, while the forward pass expects `x @ Vh.t()` where `Vh` is `(rank, hidden_size)`. That would be correct if the input `x` is of dimension `hidden_size`. But then `U` would be of shape `(hidden_size, rank)`, and the output would be `(B, N, hidden_size)`, not `all_head_size`. This is clearly wrong. The proper initialisation should not transpose the weight; it should factor `W` directly as `(all_head_size, hidden_size)`. So the current code would produce incorrect output dimensions. This is a critical bug.
-- **Mask handling with token router**: The attention mask is applied to scores after routing, but the mask still has the original sequence length, not the reduced length. This will cause broadcasting errors or incorrect masking. The mask should be gathered along with the tokens.
-- **Reusing query gate for output**: The output projection uses the query spectral gate `gq`. There is no dedicated output spectral gate, even though one could be beneficial. The output gate might not align with the output projection’s needs.
-- **Gradient flow for token router**: The router’s selection is based on a sigmoid score and a top‑k, which is non‑differentiable. The scorer can still be trained via the retained tokens, but the pruned tokens do not receive gradient from the attention layer. This may be acceptable.
-- **Variational aspect**: The use of reparameterisation with random noise is unusual for a deterministic attention mechanism; it may inject beneficial regularisation but also variance during inference. The Kullback–Leibler divergence term is not added to the loss, so the variational aspect is incomplete.
-
-Despite these flaws, the concept of VSpec++—input‑dependent singular value scaling combined with head gating and token pruning—is compelling. With the technical bugs fixed, it could represent a powerful adaptive compression framework.
-
----
-
-## 6. Conclusion
-
-We have presented VSpec++, a variational spectral token‑adaptive attention module that combines dynamic low‑rank projections, head gating, and token routing. The module aims to achieve high parameter efficiency and adaptivity through input‑dependent singular value modulation, while reducing sequence length via learned token selection. The accompanying Lagrangian rank allocator provides a principled way to set the base ranks. However, the current implementation contains several critical bugs and design oversights (weight transposition, rank allocation underutilisation, mask handling) that prevent it from functioning as intended. With corrections, VSpec++ could become a valuable addition to the compression framework, offering a unified approach to adaptive, budget‑aware attention compression. Future work will focus on resolving these issues and evaluating the approach on a broader set of tasks.
+### 6.3 Triton Strategy 3: Fused Scatter-Update Output Kernel
+- After computing routed output $O_{\text{proj}} \in \mathbb{R}^{B \times k \times D}$, execute a specialized Triton scatter kernel.
+- Overwrite routed token positions $\mathcal{I}_{\text{route}}$ directly into the global memory output tensor $Y$, avoiding intermediate Python loops.

@@ -1,134 +1,189 @@
-# Aegis‑Attention V3 — Simplified Hybrid with SVD‑Factorised Projections, Local Window Attention, Global Kernel Linear Attention, and Per‑Head Blending
+# AEGIS-Attention V3: Energy-Preserving SVD Projections with Softpick Local Windowing and Random Fourier Feature Global Kernel Attention
 
-**Paper Reference**  
-This module is a custom hybrid attention design combining ideas from SVD‑based weight factorisation (inspired by LoRA), local windowed attention, kernelised linear attention with random Fourier features (Rahimi & Recht, 2007; Katharopoulos et al., 2020), and the softpick activation for sparse attention. The version described here (V3) introduces per‑head head‑type specialisation and an energy‑based rank‑selection strategy.
+## 1. Abstract & Theoretical Motivation
 
----
+Standard multi-head self-attention (MHSA) architectures suffer from quadratic time and memory complexity $\mathcal{O}(N^2)$ with sequence length $N$. Existing linear attention variants replace quadratic attention with non-negative kernel feature maps; however, they frequently exhibit degraded local representation accuracy due to spatial feature blurring and over-smoothed attention distributions.
 
-## 1. Introduction
-
-Standard multi‑head self‑attention in Transformers incurs \(O(N^2)\) time and memory costs, which becomes prohibitive for long sequences. Several approaches have been proposed to address this: restricting attention to a local window (Beltagy et al., 2020), using linearised attention based on kernel feature maps (Katharopoulos et al., 2020), or factorising the projection matrices to reduce parameters (LoRA, Hu et al., 2021). The **Aegis‑Attention V3** unifies these ideas into a single parameter‑efficient module. It partitions the attention heads into two groups: **local heads**, which perform exact dot‑product attention within a small window, and **global heads**, which use a linear kernel attention to capture long‑range dependencies. Every projection (query, key, value, output) is stored in a low‑rank factorised form, initialised via truncated SVD of the pretrained weights to preserve zero‑shot performance. A per‑head learnable gate blends the outputs from the local and global streams, allowing the model to dynamically adjust its reliance on each source.
-
----
-
-## 2. Mathematical Formulation
-
-### 2.1 Low‑Rank Factorisation via Energy‑Thresholded SVD
-
-Given a pretrained weight matrix \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\) and optional bias \(\mathbf{b}\), the module replaces it with a bottleneck layer:
-
-\[
-\mathbf{y} = \mathbf{W}_2 \, (\mathbf{W}_1 \mathbf{x}) + \mathbf{b},
-\]
-
-where \(\mathbf{W}_1 \in \mathbb{R}^{r \times d_{\text{in}}}\) and \(\mathbf{W}_2 \in \mathbb{R}^{d_{\text{out}} \times r}\). The rank \(r\) is chosen by thresholding the cumulative explained variance of the singular values:
-
-\[
-r = \min \left\{ k \;|\; \frac{\sum_{i=1}^k \sigma_i^2}{\sum_{i=1}^R \sigma_i^2} \ge \text{svd\_energy} \right\},
-\]
-
-clipped between `min_rank` and `max_rank`. After determining \(r\), the factor matrices are initialised as:
-
-\[
-\mathbf{W}_1 = \mathbf{V}_r, \quad \mathbf{W}_2 = \mathbf{U}_r \operatorname{diag}(\boldsymbol{\sigma}_r).
-\]
-
-Biases are copied directly. This yields a reconstruction that preserves a given fraction of the original weight’s Frobenius norm.
-
-### 2.2 Local Window Attention with Softpick
-
-The first \(H_l\) heads operate locally. For a window size \(w\), an attention mask is defined:
-
-\[
-m_{ij} = \begin{cases}
-1 & \text{if } |i - j| \le w/2, \\
-0 & \text{otherwise.}
-\end{cases}
-\]
-
-Scores are computed as \(\mathbf{S} = \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_h}}\). Instead of softmax, the **softpick** function is applied to the masked scores:
-
-\[
-p_{ij} = \frac{\operatorname{ReLU}\big(e^{(S_{ij} - m)/T} - e^{-m/T}\big)}{\sum_{j'}\operatorname{ReLU}\big(e^{(S_{ij'} - m)/T} - e^{-m/T}\big)},
-\]
-
-where \(m = \max_j S_{ij}\) and \(T\) is the temperature. Softpick can produce exact zero probabilities and tends to yield sparser attention maps than softmax. The local context is then computed as \(\mathbf{C}_{\text{local}} = \mathbf{P}\mathbf{V}\).
-
-### 2.3 Global Linear Attention with Random Fourier Features
-
-The remaining \(H_g\) heads perform linearised attention that scales as \(O(N d^2)\). The mechanism uses random Fourier features (RFF) to approximate a Gaussian kernel:
-
-\[
-\kappa(\mathbf{q}, \mathbf{k}) = \exp\big(\mathbf{q}^\top \mathbf{k} / \sqrt{d}\big) \approx \boldsymbol{\phi}(\mathbf{q})^\top \boldsymbol{\phi}(\mathbf{k}),
-\]
-
-where \(\boldsymbol{\phi}(\mathbf{x}) = \frac{1}{\sqrt{F}} \exp(\mathbf{x} \, \mathbf{R})\), with a random projection matrix \(\mathbf{R} \in \mathbb{R}^{d \times F}\) drawn from \(\mathcal{N}(0, 0.02^2)\). Queries and keys are first normalised to unit length and, optionally, centred by subtracting the mean over the sequence dimension (zero‑mean keys) to reduce the variance of the approximation.
-
-Let \(\mathbf{\Phi}_Q = \boldsymbol{\phi}(\mathbf{Q}),\; \mathbf{\Phi}_K = \boldsymbol{\phi}(\mathbf{K})\). The global context is obtained via:
-
-\[
-\mathbf{KV} = \mathbf{\Phi}_K^\top \mathbf{V} \in \mathbb{R}^{B\times H_g \times F \times d},
-\]
-\[
-\mathbf{Z} = \mathbf{\Phi}_K^\top \mathbf{1} \in \mathbb{R}^{B\times H_g \times F \times 1},
-\]
-\[
-\mathbf{C}_{\text{global}} = \frac{\mathbf{\Phi}_Q \, \mathbf{KV}}{\mathbf{\Phi}_Q \, \mathbf{Z} + \epsilon}.
-\]
-
-All operations are linear in the sequence length \(N\) (the bottleneck being the matrix multiplications that involve \(F \times d\) or \(d \times d\)).
-
-### 2.4 Per‑Head Adaptive Blending
-
-A learnable scalar gate \(\alpha_h \in \mathbb{R}\) (with a bias offset \(\beta = \text{gate\_init\_bias}\)) controls how much each head relies on its local output versus a global summary. The global signal is first aggregated across all global heads by taking the mean and then broadcasting it to every head:
-
-\[
-\bar{\mathbf{C}}_{\text{global}} = \frac{1}{H_g} \sum_{h=H_l+1}^{H} \mathbf{C}_{\text{global}}^{(h)} \quad\text{(expanded to shape } B\!\times\!H\!\times\!N\!\times\!d).
-\]
-
-The local output for global heads is zero‑padded so that all heads have a local and global contribution. The final per‑head output is:
-
-\[
-\mathbf{C}_h = \sigma(\alpha_h + \beta) \cdot \mathbf{C}_{\text{local}}^{(h)} \;+\; (1 - \sigma(\alpha_h + \beta)) \cdot \bar{\mathbf{C}}_{\text{global}}.
-\]
-
-Thus, even local heads receive a faint global signal, while global heads specialise entirely in long‑range context.
-
-### 2.5 Short‑Sequence Fallback
-
-When the sequence length is smaller than the local window (\(N < w\)), the model reverts to standard full softmax attention. This avoids wasting computation on the hybrid machinery for very short inputs where quadratic scaling is negligible.
+**AEGIS-Attention V3** addresses these limitations through a multi-branch split-head attention architecture featuring four key innovations:
+1. **Energy-Preserving Dynamic SVD Factorization**: Linear projection matrices ($W_Q, W_K, W_V, W_O$) are decomposed via Singular Value Decomposition (SVD), with projection rank $r$ dynamically determined to retain a target cumulative Frobenius energy threshold $\tau$ (e.g., $\tau = 0.95$).
+2. **Split-Head Local-Global Receptive Fields**: The $H$ attention heads are split into $H_l$ local heads dedicated to fine-grained spatial modeling within window $W$, and $H_g$ global heads handling long-range dependencies.
+3. **Softpick Local Activation Mechanism**: Replaces standard softmax with a thresholded tail-subtraction non-linearity (`softpick`), which active-prunes low-probability attention tails to prevent soft background noise accumulation.
+4. **Random Fourier Feature (RFF) Global Linear Kernel**: Global heads map normalized key-query vectors into an $F$-dimensional RFF space with zero-sum key mean-centering, executing global context accumulation in linear $\mathcal{O}(N \cdot F \cdot d_h)$ time.
 
 ---
 
-## 3. Implementation Details
+## 2. Mathematical Derivations & Formulations
 
-### 3.1 `FactorisedLinear` Module
-Stores a two‑layer linear bottleneck (`down` → `up`). The constructor computes the truncated SVD of the pretrained weight in float32, selects the rank using cumulative energy, and copies the factors. The bias is retained in the `up` layer. The forward pass is `up(down(x))`.
+### 2.1 Energy-Preserving Dynamic SVD Linear Layer (`FactorisedLinear`)
+For a target linear layer weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, the singular value decomposition is computed:
 
-### 3.2 Random Fourier Features
-The projection matrix `rff_proj` is an `nn.Parameter` of shape \((H_g, d_h, F)\) initialised from \(\mathcal{N}(0, 0.02^2)\). It is shared across sequences and not updated via gradient descent in the provided code (it is a plain parameter, but the module does not freeze it; in practice it could be trained or frozen). The use of normalised keys/queries and the zero‑mean trick improves the approximation quality.
+$$W = U \Sigma V^T, \quad \Sigma = \text{diag}(\sigma_1, \sigma_2, \dots, \sigma_{\min(d_{\text{out}}, d_{\text{in}})})$$
 
-### 3.3 Attention Mask Handling
-The module accepts masks in 2D, 3D, or 4D forms and converts them to a 2D boolean tensor `token_valid` indicating which positions are not padding. This tensor is used to mask out padding tokens in both local and global branches.
+Given energy threshold $\tau \in (0, 1]$, rank $r$ is dynamically selected as the minimal index satisfying:
 
-### 3.4 Integration with the Framework
-The injection function `inject_aegis_v3` is registered under `"aegis_v3"`. It reads all hyperparameters from the compression config, constructs an `AegisConfig` dataclass, and instantiates `AegisAttention` with the pretrained attention object to initialise the factorised layers.
+$$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i^2} \ge \tau, \quad \text{subject to } r \in [r_{\min}, r_{\max}]$$
+
+The original weight matrix $W$ is factorized into down- and up-projections $W_{\text{down}} \in \mathbb{R}^{r \times d_{\text{in}}}$ and $W_{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r}$:
+
+$$W_{\text{down}} = V_{:, :r}^T, \quad W_{\text{up}} = U_{:, :r} \Sigma_{:r, :r}$$
+
+Forward execution for hidden state $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ is expressed as:
+
+$$Y = (X W_{\text{down}}^T) W_{\text{up}}^T + b$$
+
+### 2.2 Receptive Field Head Partitioning
+The output of $Q, K, V$ projections is partitioned along head dimensions into $H_l$ local heads and $H_g$ global heads ($H = H_l + H_g$):
+
+$$\begin{aligned}
+Q_{\text{all}}, K_{\text{all}}, V_{\text{all}} &\in \mathbb{R}^{B \times H \times N \times d_h} \\
+Q_{\text{local}}, K_{\text{local}}, V_{\text{local}} &\in \mathbb{R}^{B \times H_l \times N \times d_h} \\
+Q_{\text{global}}, K_{\text{global}}, V_{\text{global}} &\in \mathbb{R}^{B \times H_g \times N \times d_h}
+\end{aligned}$$
+
+### 2.3 Local Windowed Branch with Softpick Activation
+Local heads evaluate scaled dot-product scores within symmetric local window radius $W_{\text{local}}$:
+
+$$S_{b, h, i, j} = \frac{Q_{\text{local}, b, h, i} \cdot K_{\text{local}, b, h, j}^T}{\sqrt{d_h}} + M^{\text{band}}_{i, j} + M^{\text{pad}}_{b, j}$$
+
+Standard softmax is replaced by the **Softpick** operator with temperature scaling $T$:
+
+$$m_i = \max_j S_{i, j}, \quad e_{i, j} = \exp\left( \frac{S_{i, j} - m_i}{T} \right)$$
+
+$$p_{i, j} = \frac{\max\left(0, e_{i, j} - \exp(-m_i / T)\right)}{\sum_{k} \max\left(0, e_{i, k} - \exp(-m_i / T)\right) + \epsilon}$$
+
+$$O^{\text{local}}_{b, h, i} = \sum_{j=1}^N p_{b, h, i, j} V_{\text{local}, b, h, j}$$
+
+### 2.4 Global Random Fourier Feature (RFF) Linear Kernel Branch
+Global heads apply L2-normalization and zero-sum mean-centering to key representations:
+
+$$\hat{Q} = \frac{Q_{\text{global}}}{\|Q_{\text{global}}\|_2}, \quad \hat{K} = \frac{K_{\text{global}} - \bar{K}_{\text{global}}}{\|K_{\text{global}} - \bar{K}_{\text{global}}\|_2}$$
+
+Using static RFF weight parameter matrix $W_{\text{rff}} \in \mathbb{R}^{H_g \times d_h \times F}$, positive kernel feature maps $\phi_Q, \phi_K \in \mathbb{R}^{B \times H_g \times N \times F}$ are evaluated via exponential projection:
+
+$$\phi_Q(Q) = \frac{\exp\left( \hat{Q} W_{\text{rff}} \right)}{\sqrt{F}}, \quad \phi_K(K) = \frac{\exp\left( \hat{K} W_{\text{rff}} \right)}{\sqrt{F}}$$
+
+Linear context accumulation matrix $KV \in \mathbb{R}^{B \times H_g \times F \times d_h}$ and key sum accumulator $K_{\text{sum}} \in \mathbb{R}^{B \times H_g \times F}$ are calculated:
+
+$$KV_{b, h} = \sum_{j=1}^N \phi_K(K)_{b, h, j}^T \otimes V_{\text{global}, b, h, j}, \quad K_{\text{sum}, b, h} = \sum_{j=1}^N \phi_K(K)_{b, h, j}^T$$
+
+Global context recovery proceeds via query matrix contraction:
+
+$$O^{\text{global}}_{b, h, i} = \frac{\phi_Q(Q)_{b, h, i} KV_{b, h}}{\phi_Q(Q)_{b, h, i} K_{\text{sum}, b, h}^T + \epsilon}$$
+
+### 2.5 Adaptive Head Blending & Short-Sequence Fallback
+If sequence length $N < W_{\text{local}}$, execution falls back to full dense scaled dot-product attention. Otherwise, local context $O^{\text{local}}$ and global context $O^{\text{global}}$ are fused via learned gate parameter $\beta \in \mathbb{R}^H$:
+
+$$g_h = \sigma\left( \beta_h + \text{bias}_{\text{gate}} \right)$$
+
+$$O^{\text{fused}} = g \odot O^{\text{local\_padded}} + (1 - g) \odot O^{\text{global\_broadcast}} \in \mathbb{R}^{B \times H \times N \times d_h}$$
+
+Final projection maps fused heads back to $D$:
+
+$$Y = \text{FactorisedLinear}_{\text{out}}\left( \text{Reshape}(O^{\text{fused}}) \right) \in \mathbb{R}^{B \times N \times D}$$
 
 ---
 
-## 4. Discussion
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-The Aegis‑V3 design offers several attractive properties:
-- **Parameter efficiency**: All four projection matrices are stored in factorised form, with the rank automatically chosen to retain a specified percentage of the singular value energy. This drastically reduces the number of trainable parameters.
-- **Linear complexity for long range**: The global head group processes the full sequence in \(O(N d^2)\) time, making the module scalable to thousands of tokens.
-- **Head specialisation**: By allocating a fixed number of heads to each attention mode, the model avoids forcing every head to trade off between local and global information; each head type can specialise.
-- **Sparse local attention**: Softpick gives a sparser attention map than softmax, which can improve interpretability and efficiency.
-- **Short‑sequence safety**: The automatic fallback ensures that the module does not underperform on typical‑length inputs.
-
-A limitation is that the global summary \(\bar{\mathbf{C}}_{\text{global}}\) is a coarse, head‑averaged signal; in practice, each head might benefit from a more fine‑grained global signal, but the current design keeps the blending simple and parameter‑light. The random Fourier features add a small approximation error to the exponential kernel, though with a sufficiently large feature dimension \(F\) (default 256) this error is small.
+| Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
+| :--- | :--- | :--- | :--- |
+| **Input State** | $X$ | $[B, N, D]$ | Hidden input tensor |
+| **SVD Projection Q/K/V** | $X W_{\text{down}}^T W_{\text{up}}^T$ | $[B, N, D] \to [B, N, r] \to [B, N, H \cdot d_h]$ | Down/Up SVD Linear transform |
+| **Head Partitioning** | $Q, K, V$ | $[B, N, H \cdot d_h] \to [B, H, N, d_h]$ | Transpose to multi-head view |
+| **Branch Splitting** | $Q_l, Q_g$ | $[B, H_l, N, d_h], [B, H_g, N, d_h]$ | Split into local ($H_l$) & global ($H_g$) |
+| **Local Softpick Attention**| $O^{\text{local}}$ | $[B, H_l, N, d_h] \times [B, H_l, N, d_h] \to [B, H_l, N, d_h]$ | Sliding-window Softpick contraction |
+| **RFF Kernel Projection** | $\phi_Q, \phi_K$ | $[B, H_g, N, d_h] \times [H_g, d_h, F] \to [B, H_g, N, F]$ | Exponential RFF feature mapping |
+| **Global Memory State** | $KV$ | $[B, H_g, N, F]^T \times [B, H_g, N, d_h] \to [B, H_g, F, d_h]$| Outer-product memory state |
+| **Global Context Querying** | $O^{\text{global}}$ | $[B, H_g, N, F] \times [B, H_g, F, d_h] \to [B, H_g, N, d_h]$ | Linear query context contraction |
+| **Head Blending Gate** | $g$ | $[H] \to [1, H, 1, 1]$ | Sigmoidal head blending gate |
+| **Fused Head Assembly** | $O^{\text{fused}}$ | $[B, H, N, d_h]$ | Gated combination of local/global |
+| **Output Projection** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, r] \to [B, N, D]$ | Output SVD factorized transformation |
 
 ---
 
-## 5. Conclusion
+## 4. Analytical Complexity Profiling
 
-Aegis‑Attention V3 is a composite attention module that blends factorised low‑rank projections, local windowed attention with softpick, and global linear kernel attention, all gated per head. It provides a strong parameter‑efficient alternative to standard quadratic attention, especially suited for long‑sequence modelling where both local precision and global context are necessary. Its zero‑shot weight initialisation via energy‑thresholded SVD ensures that the module starts from a high‑quality approximation of the original pretrained attention, enabling effective fine‑tuning with minimal performance loss.
+### 4.1 Floating Point Operations (FLOPs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads, $d_h = D/H$ head dimension, $r$ average SVD rank, $W$ local window radius, and $F$ RFF feature dimension ($F = \text{rff\_features}$).
+
+1. **SVD Linear Projections ($Q, K, V, O$)**:
+   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+2. **Local Softpick Branch ($H_l$ heads)**:
+   - Band score matmul: $2 B H_l N W d_h$
+   - Softpick non-linearity & Value contraction: $2 B H_l N W d_h + \mathcal{O}(B H_l N W)$
+   $$\text{FLOPs}_{\text{local}} = 4 B H_l N W d_h$$
+3. **Global RFF Linear Branch ($H_g$ heads)**:
+   - RFF Einstein sum projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$): $2 \times (2 B H_g N d_h F) = 4 B H_g N d_h F$
+   - Memory State accumulation ($KV$): $2 B H_g N F d_h$
+   - Global Context retrieval: $2 B H_g N F d_h$
+   $$\text{FLOPs}_{\text{global}} = 8 B H_g N d_h F$$
+
+**Total FLOP Count**:
+
+$$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
+
+### 4.2 Memory Footprint & Bandwidth
+- **Parameter Count**:
+  $$\Theta = 4 \times (D \cdot r + r \cdot D) + (H_g \cdot d_h \cdot F) + H = 8 D r + H_g d_h F + H$$
+- **Activation Footprint**:
+  - Local Softpick attention tensor: $\mathcal{O}(B H_l N W)$
+  - RFF feature activations: $\mathcal{O}(B H_g N F)$
+  - Global memory matrix state: $\mathcal{O}(B H_g F d_h)$
+  - Total Memory: $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Dynamic Rank Under-Estimation & Energy Truncation Loss
+- **Mechanism**: The energy threshold $\tau$ (e.g., $0.95$) determines rank $r$. For weight matrices with long singular tails, preserving $95\%$ energy may result in rank $r > r_{\max}$, triggering hard truncation to $r_{\max}$.
+- **Consequence**: High-frequency spectral components of pre-trained weights are discarded, causing severe validation loss degradation during early fine-tuning steps.
+
+### 5.2 Exponential RFF Feature Explosion & Overflow
+- **Mechanism**: RFF kernel evaluation computes $\exp(\hat{Q} W_{\text{rff}})$. If the L2-normalization step is omitted or if $W_{\text{rff}}$ contains large standard deviation entries ($> 0.1$), the exponential function overflows to `inf` under IEEE FP16 training.
+- **Mitigation**: Strictly enforce L2 normalization $\hat{Q} = Q / \|Q\|_2$ and initialize $W_{\text{rff}}$ with standard deviation $\sigma \le 0.02$.
+
+### 5.3 Softpick Gradient Sparsification & Zero-Gradient Lock
+- **Mechanism**: The Softpick operator subtracts the tail threshold $\exp(-m/T)$ and applies ReLU. If temperature $T$ is set too low ($T < 0.1$), all off-diagonal scores are zeroed ($p_{i, j} = 0$), trapping local attention in a identity-map state with zero backpropagation gradients.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+```
++-----------------------------------------------------------------------------------+
+|                        Triton Hardware Optimization Blueprint                     |
+|                                                                                   |
+|  Input X [B, N, D] ---> [Fused Dynamic SVD GEMM Kernel] ---> Q, K, V              |
+|                                                                                   |
+|      +-------------------------------------+-----------------------------------+  |
+|      |                                     |                                   |  |
+|      v (H_l Local Heads)                   v (H_g Global Heads)                |  |
+| [Triton Fused Softpick Kernel]      [Triton Streaming RFF Kernel]              |  |
+|  - Block-Sparse Tiling (64x64)       - Fused L2-Norm + Exp RFF Projection       |  |
+|  - SRAM Maximum & Thresholding       - Shared Memory Atomic Reduction (F, d_h)   |  |
+|  - Zero DRAM Write for Logits        - Linear Context Query Contraction          |  |
+|                                                                                   |
+|      +-------------------------------------+-----------------------------------+  |
+|      |                                                                            |
+|      +---> Fused Gated Blend & Output SVD GEMM Kernel ---> Output Y [B, N, D]     |
++-----------------------------------------------------------------------------------+
+```
+
+### 6.1 Triton Kernel Design: Fused Dynamic SVD GEMM
+- Instantiate a custom Triton GEMM kernel that loads input $X \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
+- Dynamically perform down-projection $X W_{\text{down}}^T$ into register space, then immediately multiply by $W_{\text{up}}^T$.
+- Bypass intermediate HBM allocation for rank-$r$ activations, lowering DRAM traffic by $2\times$.
+
+### 6.2 Triton Kernel Design: Fused Softpick Sliding-Window Kernel
+Standard PyTorch creates an explicit $[B, H_l, N, W]$ logit tensor before evaluating `softpick`.
+
+**Triton Optimization**:
+- Execute block-sparse sliding window iteration using SRAM tiles of size `64 x 64`.
+- Fuse online maximum tracking $m_i$, exponential evaluation $\exp((S - m)/T)$, threshold subtraction, and ReLU truncation directly inside SRAM registers.
+- Write context output $O^{\text{local}}$ directly to global memory, maintaining $\mathcal{O}(1)$ activation memory overhead.
+
+### 6.3 Triton Kernel Design: Streaming RFF Memory Reduction
+- Parallelize over global heads $H_g$ and batch $B$.
+- Load tokens in sequence tiles of `BLOCK_N = 128`. Compute normalized projection $\exp(\hat{K} W_{\text{rff}}) / \sqrt{F}$ and accumulate outer products into shared memory buffer $KV \in \mathbb{R}^{F \times d_h}$.
+- Stream across sequence blocks in a single pass without storing full $[B, H_g, N, F]$ RFF feature tensors in DRAM.

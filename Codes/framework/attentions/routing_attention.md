@@ -1,162 +1,301 @@
-# Routing Attention: Dynamic Clustering for Sparse Self‑Attention
+# Routing Attention: Content-Adaptive Query-Centric Clustering via Head-Wise Online K-Means
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Standard Multi-Head Self-Attention (MHSA) computes dense $L \times L$ token interaction matrices, imposing quadratic time and memory complexity $\mathcal{O}(L^2 d)$. Static sparse attention patterns—such as fixed sliding windows or factorized strided strides—impose rigid structural priors that fail to reflect dynamic, content-dependent semantic dependencies in natural language.
 
-We present **Routing Attention**, a sparse self‑attention module that partitions the query tokens into a fixed number of clusters via a lightweight, iterative k‑means assignment, and then performs exact dot‑product attention **within each cluster**. The clustering is based on the query vectors themselves, ensuring that tokens with similar query patterns attend to the same set of keys. This content‑adaptive sparsity reduces the effective number of pairwise comparisons from \(O(L^2)\) to \(O(L K)\), where \(K\) is the number of clusters (e.g., 32). The cluster centroids are initialised from the first \(K\) query vectors and refined for a few iterations, making the method fast and differentiable in the forward pass (with a straight‑through approximation for the argmin). The module is designed as a drop‑in replacement for the self‑attention layer in DistilBERT, integrating seamlessly with the compression framework via the registry. This paper provides a rigorous mathematical description of the clustering algorithm, the attention mechanism, and the overall architecture.
+**Routing Attention (`RoutingAttention`)** introduces a dynamic, content-adaptive sparse attention paradigm by partitioning query representations into discrete geometric clusters via head-wise online $k$-means clustering. Rather than enforcing fixed spatial receptive fields, Routing Attention groups query vectors into $K$ cluster centroids based on Euclidean affinity in feature space. Intra-cluster attention is subsequently restricted to key-value pairs belonging to the same cluster assignment.
 
----
-
-## 1. Introduction
-
-Standard multi‑head self‑attention incurs a quadratic cost in the sequence length \(L\) because every query attends to every key. To reduce this burden, one can restrict attention to a subset of keys, either via fixed patterns (local windows) or via content‑based sparsity. **Routing Attention** adopts a **content‑based clustering approach**: the query vectors are grouped into \(K\) clusters, and each token attends only to the keys and values belonging to the same cluster. The underlying hypothesis is that queries that are similar (in the sense of being close in Euclidean distance) are likely to attend to similar sets of keys; therefore, clustering queries and performing intra‑cluster attention is a good approximation to full attention.
-
-The clustering is performed by a simplified k‑means algorithm executed directly on the query tensors. After a few iterations (default 3), each query is assigned to the nearest centroid. The attention computation is then carried out independently for each cluster, and the outputs are scattered back to the original positions. This approach is reminiscent of the **Reformer**’s LSH bucketing but uses a soft, differentiable clustering (though the argmin is not differentiable, gradients still flow to the queries via the cluster centroids and the within‑cluster attention). The module also shares the cluster structure across all heads (the centroids are the same for all heads? Actually, the clustering is performed separately per head, which is more flexible). The design is simple, avoids the need for a separate hashing function, and can adapt to the geometry of the queries.
-
-In this paper, we detail the mathematical formulation of the k‑means clustering within the attention forward pass, the intra‑cluster attention, and the integration into the compression framework.
+By clustering sequence queries into $K$ partitions of average size $L / K$, Routing Attention bounds interaction matrices from $L^2$ to $\sum_{k=1}^K (L/K)^2 \approx L^2 / K$. When setting $K \approx \sqrt{L}$, theoretical complexity drops to $\mathcal{O}(L^{1.5} d)$, combining content-adaptive long-range routing with sub-quadratic execution scalability.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
+### 2.1 Multi-Head Projections & Masking
+Given hidden states $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, linear transformations project inputs into Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) spaces:
+$$\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V \quad \in \mathbb{R}^{B \times H \times L \times d_h}$$
+where $H$ is the head count and $d_h = D / H$.
 
-Let \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\) be the input hidden states. As usual, we project to queries, keys, and values for all heads:
+If a valid sequence mask $\mathbf{V}_{\text{valid}} \in \{0, 1\}^{B \times L}$ is supplied, padded tokens are masked out prior to clustering:
+$$\mathbf{Q} \leftarrow \mathbf{Q} \odot \mathbf{V}_{\text{valid}}, \quad \mathbf{K} \leftarrow \mathbf{K} \odot \mathbf{V}_{\text{valid}}, \quad \mathbf{V} \leftarrow \mathbf{V} \odot \mathbf{V}_{\text{valid}}$$
 
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V,
-\]
+### 2.2 Head-Wise Online $k$-Means Clustering
+For each head $h \in \{1, \dots, H\}$, $K = \min(\text{num\_clusters}, L)$ initial centroids $\mathbf{C}^{(0)} \in \mathbb{R}^{B \times H \times K \times d_h}$ are initialized from the first $K$ query positions:
+$$\mathbf{C}_{b, h, k, :}^{(0)} = \mathbf{Q}_{b, h, k, :} \quad \forall k \in \{0, \dots, K-1\}$$
 
-with \(\mathbf{W}_Q,\mathbf{W}_K,\mathbf{W}_V \in \mathbb{R}^{D \times (H d_h)}\). The tensors are reshaped to \((B, H, L, d_h)\) and transposed to the head‑first layout \((B, H, L, d_h)\).
+For $t = 1, \dots, T$ iterations (where $T = \text{n\_iters}$):
 
-### 2.2 Centroid Initialisation and Iterative Refinement
+1. **Nearest Centroid Assignment**:
+   $$\mathbf{D}_{b, h, i, k}^{(t)} = \|\mathbf{Q}_{b, h, i, :} - \mathbf{C}_{b, h, k, :}^{(t-1)}\|_2^2$$
+   $$c_{b, h, i}^{(t)} = \operatorname{arg\,min}_{k \in \{0, \dots, K-1\}} \mathbf{D}_{b, h, i, k}^{(t)} \quad \in \{0, \dots, K-1\}^{B \times H \times L}$$
 
-The clustering is performed **independently for each head**. For a given head, let its query tensor be \(\mathbf{Q}_h \in \mathbb{R}^{B \times L \times d_h}\) (we omit the head index for clarity but keep the batch). The number of clusters is \(K = \min(K_{\text{max}}, L)\), where \(K_{\text{max}}\) is the `num_clusters` hyperparameter (default 32). The initial centroids are taken as the first \(K\) query tokens along the sequence dimension:
+2. **Centroid Update Step**:
+   $$\mathbf{C}_{b, h, k, :}^{(t)} = \frac{\sum_{i=1}^L \mathbb{I}\left(c_{b, h, i}^{(t)} = k\right) \mathbf{Q}_{b, h, i, :}}{\max\left(1, \sum_{i=1}^L \mathbb{I}\left(c_{b, h, i}^{(t)} = k\right)\right)}$$
 
-\[
-\mathbf{c}_k^{(0)} = \mathbf{Q}_{[:, k, :]} \quad \text{for } k = 0, \dots, K-1.
-\]
+### 2.3 Intra-Cluster Masked Attention & Score Accumulation
+Following final cluster assignments $c \in \{0, \dots, K-1\}^{B \times H \times L}$, intra-cluster attention is computed across all $K$ partitions. For cluster $k$:
 
-Thus, the centroids have shape \((B, K, d_h)\).
+1. **Binary Cluster Masking**:
+   $$\mathbf{M}_{b, h, i, 1}^{(k)} = \mathbb{I}\left(c_{b, h, i} = k\right) \quad \in \{0, 1\}^{B \times H \times L \times 1}$$
+   $$\mathbf{Q}^{(k)} = \mathbf{Q} \odot \mathbf{M}^{(k)}, \quad \mathbf{K}^{(k)} = \mathbf{K} \odot \mathbf{M}^{(k)}, \quad \mathbf{V}^{(k)} = \mathbf{V} \odot \mathbf{M}^{(k)}$$
 
-For each iteration \(t = 1, \dots, T\) (where \(T\) is `n_iters`, default 3):
+2. **Intra-Cluster Scaled Dot-Product Attention**:
+   $$\mathbf{S}^{(k)} = \frac{\mathbf{Q}^{(k)} \left(\mathbf{K}^{(k)}\right)^\top}{\sqrt{d_h}} \quad \in \mathbb{R}^{B \times H \times L \times L}$$
 
-1. **Assignment**: Each query is assigned to the nearest centroid based on Euclidean distance:
-   \[
-   a_{i}^{(t)} = \arg\min_{k \in \{1,\dots,K\}} \|\mathbf{q}_i - \mathbf{c}_k^{(t-1)}\|_2.
-   \]
-   This is implemented via `torch.cdist` and `torch.argmin`.
+   Padding tokens are masked out with $-10^9$:
+   $$\mathbf{S}_{b, h, i, j}^{(k)} \leftarrow \begin{cases} \mathbf{S}_{b, h, i, j}^{(k)} & \text{if } \mathbf{V}_{\text{valid}, b, j} = 1 \\ -10^9 & \text{otherwise} \end{cases}$$
 
-2. **Update**: Each centroid is updated to the mean of the queries assigned to it:
-   \[
-   \mathbf{c}_k^{(t)} = \frac{\sum_{i: a_i = k} \mathbf{q}_i}{\max(1, \sum_{i: a_i = k} 1)}.
-   \]
+3. **Softmax & Context Weighted Accumulation**:
+   $$\mathbf{A}^{(k)} = \operatorname{Softmax}\left( \mathbf{S}^{(k)} \right) \in \mathbb{R}^{B \times H \times L \times L}$$
+   $$\mathbf{O}^{(k)} = \mathbf{A}^{(k)} \mathbf{V}^{(k)} \quad \in \mathbb{R}^{B \times H \times L \times d_h}$$
 
-The final assignment after \(T\) iterations is used for the attention mask.
+4. **Global Accumulation**:
+   Since $\mathbf{Q}^{(k)}$ and $\mathbf{K}^{(k)}$ are zeroed outside cluster $k$, context outputs $\mathbf{O}^{(k)}$ are accumulated directly across all $K$ clusters:
+   $$\mathbf{O}_{\text{final}} = \sum_{k=0}^{K-1} \mathbf{O}^{(k)} \quad \in \mathbb{R}^{B \times H \times L \times d_h}$$
 
-### 2.3 Intra‑Cluster Attention
-
-After the final cluster assignments \(\mathbf{A} \in \{0,\dots,K-1\}^{B \times H \times L}\), the output is computed cluster by cluster. For each cluster \(k\):
-
-- A binary mask \(\mathbf{M}_k \in \{0,1\}^{B \times H \times L \times 1}\) is formed, where \(M_{k,b,h,i} = 1\) iff token \(i\) belongs to cluster \(k\).
-- The queries, keys, and values are masked by multiplying element‑wise with \(\mathbf{M}_k\). This zeroes out tokens not in the cluster, though they remain in the tensors. (A more efficient implementation would gather only the relevant indices.)
-- Scaled dot‑product attention is computed:
-  \[
-  \mathbf{S}_k = \frac{(\mathbf{Q} \odot \mathbf{M}_k) (\mathbf{K} \odot \mathbf{M}_k)^\top}{\sqrt{d_h}}.
-  \]
-  Because the non‑cluster tokens have zero queries/keys, their scores are zero, and after softmax they will be ignored.
-- Softmax is applied, dropout is applied, and the context is obtained:
-  \[
-  \mathbf{C}_k = \operatorname{softmax}(\mathbf{S}_k) (\mathbf{V} \odot \mathbf{M}_k).
-  \]
-- The per‑cluster outputs are accumulated: \(\mathbf{C} = \sum_{k=1}^K \mathbf{C}_k\).
-
-Since a token belongs to exactly one cluster, its contribution to the final output comes from exactly one term in the sum.
-
-### 2.4 Output Projection
-
-The aggregated context is reshaped to \((B, L, H d_h)\) and projected:
-
-\[
-\mathbf{Y} = \mathbf{C}_{\text{flat}} \mathbf{W}_O + \mathbf{b}_O.
-\]
-
-The module returns \((\mathbf{Y}, \text{None})\).
-
-### 2.5 Complexity
-
-The cost of k‑means is \(O(B H L K d_h \cdot T)\). The intra‑cluster attention cost is roughly \(O(B H \sum_{k} L_k^2 d_h)\), where \(L_k\) is the size of cluster \(k\). In the worst case, one cluster may contain all tokens, leading to \(O(L^2)\); but in practice, clusters tend to be balanced, giving approximately \(O(B H (L^2/K) d_h)\). For \(K \propto L\), this becomes \(O(L)\), but with a constant \(K=32\) it is quadratic with a reduced factor. This is similar to other clustering‑based sparse attention schemes.
+### 2.4 Output Reshaping & Linear Projection
+The multi-head output $\mathbf{O}_{\text{final}}$ is transposed to sequence-first format, reshaped to $\mathbb{R}^{B \times L \times D}$, and mapped through the output projection $\mathbf{W}_O$:
+$$\mathbf{Y} = \operatorname{Reshape}\left( \mathbf{O}_{\text{final}} \right) \mathbf{W}_O \quad \in \mathbb{R}^{B \times L \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`RoutingAttention`** inherits from `nn.Module` and is registered as `"routing"` in the `ATTENTION_REGISTRY`.
-- Constructor parameters:
-  - `config`: provides `num_attention_heads`, `hidden_size`, `dropout`.
-  - `num_clusters` (default 32): the number of clusters \(K\).
-  - `n_iters` (default 3): number of k‑means iterations.
-  - Standard linear layers for Q, K, V, O, and dropout.
-- **`_kmeans_assign`**: Given queries \(\mathbf{Q}\) of shape \((B, H, L, d_h)\) and centroids \((B, H, K, d_h)\), computes pairwise Euclidean distance via `torch.cdist` and returns the index of the closest centroid. This function is used both during the iterative update and for the final assignment.
-- **Forward**:
-  1. Project Q, K, V.
-  2. Initialise centroids as first \(K\) query tokens along the length dimension.
-  3. For `n_iters` iterations:
-     a. Assign each query to nearest centroid.
-     b. Update centroids by averaging queries in each cluster (using a loop over clusters).
-  4. Compute final cluster assignments.
-  5. Initialise output tensor to zeros.
-  6. For each cluster \(k\):
-     - Build boolean mask via `(cluster_ids == k).unsqueeze(-1)`.
-     - If no tokens in this cluster, skip.
-     - Multiply Q, K, V by mask (zeroing non‑members).
-     - Compute attention scores, softmax, dropout, weighted sum of V.
-     - Add to output.
-  7. Reshape, output projection.
-- The loop over clusters is implemented in Python, which is acceptable for \(K=32\) but could be slow for larger \(K\). The method would benefit from batched scatter/gather operations.
+| Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | Q, K, V Projections | `[B, L, D]` | `[B, H, L, d_h]` | Linear projection & split into $H$ heads |
+| 2 | Valid Masking | `[B, H, L, d_h]`, `Mask`| `[B, H, L, d_h]` | Zero out query/key vectors at padding positions |
+| 3 | Centroid Init | `[B, H, L, d_h]` | `[B, H, K, d_h]` | Slice first $K$ queries as initial centroids |
+| 4 | Pairwise Distance | `Q`, `Centroids` | `[B, H, L, K]` | Batch Euclidean distance computation (`cdist`) |
+| 5 | Nearest Assignment | `[B, H, L, K]` | `[B, H, L]` | `argmin(dist, dim=-1)` cluster assignment |
+| 6 | Centroid Update Loop | `[B, H, L, d_h]`, `c` | `[B, H, K, d_h]` | Masked arithmetic mean across tokens ($T$ iterations) |
+| 7 | Cluster Loop ($k=1..K$)| `[B, H, L]` | `[B, H, L, 1]` | Create elementwise boolean mask $\mathbb{I}(c == k)$ |
+| 8 | Masked Score Matmul | `Qk`, `Kk` | `[B, H, L, L]` | Scaled matmul $(Q \odot M_k)(K \odot M_k)^T / \sqrt{d_h}$ |
+| 9 | Softmax & Context | `Scores`, `Vk` | `[B, H, L, d_h]` | Softmax attention weight multiplication with $V \odot M_k$ |
+| 10| Accumulate & Output | `[B, H, L, d_h]` | `[B, L, D]` | Accumulate `out += out_k`, reshape, project $W_O$ |
 
-- **Mask handling**: The `attention_mask` parameter is accepted but **not used** in this implementation. Padding tokens could be placed in any cluster and would influence both the centroid computation and the attention. A production version would need to exclude padding tokens from k‑means and attention.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"routing"` in the compression config. The configurable hyperparameters are:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `num_clusters` | 32 | Number of clusters \(K\). |
-| `n_iters` | 3 | Number of k‑means iterations. |
-| `dropout` | (from config) | Dropout on attention weights. |
-
-Example injection:
-```python
-comp_config.attention_type = "routing"
-comp_config.num_clusters = 64
-comp_config.n_iters = 5
+```
+                       [B, L, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+      Q, K, V Projections          Valid Padding Mask
+      [B, H, L, d_h]               [B, 1, 1, L]
+             │                           │
+             └─────────────┬─────────────┘
+                           ▼
+              Zero-Mask Padding Positions
+                           │
+                           ▼
+          Initialize Centroids C^(0) = Q[:, :, :K, :]
+                           │
+                           ▼
+           Iterative Head-Wise K-Means (T Steps)
+           - cdist(Q, Centroids) -> argmin -> cluster_ids [B, H, L]
+           - Centroid Mean Updates
+                           │
+                           ▼
+              Iterate over Clusters k (0..K-1)
+                           │
+                           ▼
+           Mask Q, K, V with Cluster Mask M_k = I(c == k)
+                           │
+                           ▼
+           Matmul Q_k @ K_k.T -> Scores [B, H, L, L]
+                           │
+                           ▼
+           Apply Padding Mask (-1e9) & Softmax
+                           │
+                           ▼
+           Context Out_k = Softmax(Scores) @ V_k
+                           │
+                           ▼
+           Accumulate: out += Out_k
+                           │
+                           ▼
+           Reshape & Linear Projection W_O
+                           │
+                           ▼
+                      [B, L, D] Output
 ```
 
-Manual instantiation:
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 FLOPs Computation Breakdown
+Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_h = D/H$, $K$ total clusters, and $T$ $k$-means iterations.
+
+1. **Linear Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$)**:
+   $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
+2. **Iterative $k$-Means Clustering**:
+   In each iteration $t \in \{1, \dots, T\}$:
+   - Pairwise distance (`cdist`): $3 B H L K d_h = 3 B L K D$ FLOPs.
+   - Centroid mean update: $2 B H L d_h = 2 B L D$ FLOPs.
+   Across $T$ iterations:
+   $$\operatorname{FLOPs}_{\text{kmeans}} = T \cdot (3 B L K D + 2 B L D) = 3 T B L K D + 2 T B L D$$
+3. **Sequential Cluster Attention Loop**:
+   The Python loop executes $K$ iterations. In iteration $k$, full $L \times L$ attention scores are calculated:
+   - Matmul $\mathbf{Q}^{(k)} \left(\mathbf{K}^{(k)}\right)^\top$: $2 B H L^2 d_h = 2 B L^2 D$ FLOPs.
+   - Matmul $\mathbf{A}^{(k)} \mathbf{V}^{(k)}$: $2 B H L^2 d_h = 2 B L^2 D$ FLOPs.
+   Across $K$ iterations in the un-optimized loop:
+   $$\operatorname{FLOPs}_{\text{attn\_naive}} = K \times 4 B L^2 D = 4 K B L^2 D$$
+   *(Note: In an optimized packed cluster implementation, FLOPs scale as $4 B L (L / K) D = \frac{4 B L^2 D}{K}$)*.
+4. **Output Projection ($\mathbf{W}_O$)**:
+   $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
+
+$$\text{Total Naive FLOPs} = 8 B L D^2 + 3 T B L K D + 2 T B L D + 4 K B L^2 D$$
+
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} \approx 4 B L D^2 + 1.5 T B L K D + 2 K B L^2 D$$
+- **Peak Activation Memory**:
+  - Distance Tensor: $B \cdot H \cdot L \cdot K \times 4 \text{ bytes}$
+  - Cluster Masks: $B \cdot H \cdot L \cdot 1 \times 4 \text{ bytes}$
+  - Attention Score Tensor per iteration: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$
+  - Peak Memory: $\mathcal{O}(B H L^2 + B H L K)$ due to un-fused $L \times L$ attention allocation inside the cluster loop.
+
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
+- **Un-Fused PyTorch Routing Attention**: $\mathcal{O}(K L^2 D + T L K D)$ compute — **$K \times$ slower** than standard attention due to repeating full $L \times L$ matrix multiplies $K$ times!
+- **Optimized Grouped Routing Attention**: $\mathcal{O}\left(T L K D + \frac{L^2 D}{K}\right)$ compute, delivering optimal $\frac{L^2}{K}$ scale execution.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 The Sequential Matrix Multiplication Trap
+In `RoutingAttention.forward`:
 ```python
-attn = RoutingAttention(config=model_config, num_clusters=64, n_iters=5)
-layer.attention = attn
+for k in range(num_clusters):
+    Qk = Q * mask
+    Kk = K * mask
+    Vk = V * mask
+    scores = torch.matmul(Qk, Kk.transpose(-2, -1)) * scale # [B, H, L, L]
+    out += torch.matmul(attn, Vk)
+```
+Instead of gathering tokens in cluster $k$ into compact tensors of shape `[N_k, d_h]`, the code performs full matrix multiplication on `[B, H, L, d_h]` tensors $K$ separate times!
+- **Computational Slowdown**: Executes $K$ full $L \times L$ dense matrix multiplications, multiplying FLOPs and latency by $K \times$ instead of dividing by $K$.
+
+### 5.2 Initial Centroid Bias & Cold-Start Cluster Collapse
+The initial centroids are assigned as the first $K$ tokens of the sequence: `centroids = Q[:, :, :num_clusters, :]`.
+- **First-Token Bias**: If initial tokens are prefix formatting tokens (e.g., `<bos>`, system prompts, or whitespace), the initial centroids cluster around non-informative noise.
+- **Dead Centroid Traps**: If no query assigns to centroid $k$ (`mask.sum() == 0`), the iteration skips updating centroid $k$. The centroid remains locked as a dead node, reducing effective cluster capacity below $K$.
+
+### 5.3 Straight-Through Gradient Blocking in Clustering
+The hard assignment $c_i = \operatorname{arg\,min}_k \mathbf{D}_{i, k}$ has zero derivative almost everywhere ($\frac{\partial c_i}{\partial \mathbf{Q}} = 0$).
+- Gradients flowing from the loss function $\mathcal{L}$ pass through intra-cluster attention $\operatorname{Softmax}(\mathbf{Q}^{(k)} (\mathbf{K}^{(k)})^\top)$, but **do not backpropagate through the $k$-means cluster assignment step**.
+- The query projection $\mathbf{W}_Q$ cannot learn to optimize cluster geometry directly, creating a disconnect between feature projection and geometric routing.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+To convert Routing Attention into a true sub-quadratic kernel, sequence tokens must be physically re-ordered (permuted) into contiguous cluster buckets in SRAM before executing dense attention.
+
+### 6.1 Triton Hardware Acceleration Layout
+
+```
++-----------------------------------------------------------------------------------+
+|                        TRITON ROUTING ATTENTION PIPELINE                          |
++-----------------------------------------------------------------------------------+
+|  1. FUSED ROUTING K-MEANS KERNEL                                                  |
+|     - Loads Q [B, H, L, d_h] into SRAM blocks.                                    |
+|     - Evaluates cdist(Q, Centroids) and argmin in register files.                 |
+|     - Updates centroid locations in-place using atomic warp sum reductions.       |
+|                                                                                   |
+|  2. CLUSTER SORT & TOKEN PACKING KERNEL                                           |
+|     - Sorts query, key, value tokens by assigned cluster ID: perm = argsort(c).   |
+|     - Packs sorted tokens into contiguous memory buffers Q_pack, K_pack, V_pack.  |
+|     - Constructs cluster boundary array: offsets = [0, N0, N0+N1, ...].           |
+|                                                                                   |
+|  3. FUSED GROUPED CLUSTER FLASHATTENTION KERNEL                                   |
+|     - Grid launched over active cluster offsets.                                  |
+|     - Loads contiguous Q_k, K_k, V_k tile of size [N_k, d_h].                    |
+|     - Computes dense FlashAttention ONLY over [N_k, N_k] tile size.               |
+|     - Un-permutes output vectors directly into final destination Y[perm].         |
++-----------------------------------------------------------------------------------+
 ```
 
-No zero‑shot weight transfer is performed; linear layers are randomly initialised. For best results, fine‑tuning is required.
+### 6.2 Implementation Code Blueprint (Triton Grouped Permutation Kernel)
 
----
+```python
+import triton
+import triton.language as tl
 
-## 5. Discussion
+@triton.jit
+def _routing_grouped_flash_attn_kernel(
+    Q_packed_ptr, K_packed_ptr, V_packed_ptr, Out_packed_ptr,
+    Offsets_ptr,
+    stride_qb, stride_qh, stride_qm, stride_qd,
+    stride_kb, stride_kh, stride_kn, stride_kd,
+    stride_vb, stride_vh, stride_vn, stride_vd,
+    stride_ob, stride_oh, stride_om, stride_od,
+    scale,
+    BLOCK_M: tl.constexpr,
+    BLOCK_N: tl.constexpr,
+    D_K: tl.constexpr
+):
+    cluster_id = tl.program_id(axis=0)
+    head_id = tl.program_id(axis=1)
+    batch_id = tl.program_id(axis=2)
 
-Routing Attention offers an intriguing data‑driven sparsity pattern: by clustering queries, it dynamically adapts the attention pattern to the content. Tokens that are “looking for” similar information (as represented by their query vectors) will attend to the same subset of keys. This is more flexible than fixed‑window or strided patterns and does not require any additional learned parameters for the routing (the k‑means uses only the query vectors themselves).
+    # Fetch dynamic token boundaries for target cluster
+    c_start = tl.load(Offsets_ptr + cluster_id)
+    c_end = tl.load(Offsets_ptr + cluster_id + 1)
+    c_len = c_end - c_start
 
-However, there are several practical issues. The k‑means algorithm with `argmin` is not differentiable with respect to the queries; the centroids are updated but the assignment is discrete. While the attention within a cluster provides gradient signal to the queries (via the softmax), the clustering itself is fixed during the backward pass (straight‑through). This may hinder learning optimal query representations for clustering. A fully differentiable soft clustering (e.g., using Gumbel‑Softmax or EM‑like soft assignments) could be explored.
+    if c_len <= 0:
+        return
 
-The current implementation processes clusters sequentially, which is inefficient for large \(K\). A batched version using scatter operations would be more suited for GPU. The lack of padding mask handling is a significant limitation; padding tokens can corrupt the centroids and cluster assignments. A fix would be to mask the queries before k‑means and only cluster valid tokens, which requires variable‑length handling.
+    offs_d = tl.arange(0, D_K)
 
-Nevertheless, Routing Attention provides a clean example of combining classical clustering algorithms with deep learning attention mechanisms. It serves as a baseline for more advanced routing‑based sparse attention methods.
+    # Process query tiles strictly inside cluster memory bounds
+    for m_offset in range(0, c_len, BLOCK_M):
+        offs_m = c_start + m_offset + tl.arange(0, BLOCK_M)
+        mask_m = offs_m < c_end
 
----
+        q_ptrs = Q_packed_ptr + batch_id * stride_qb + head_id * stride_qh + (offs_m[:, None] * stride_qm + offs_d[None, :])
+        q = tl.load(q_ptrs, mask=mask_m[:, None], other=0.0)
 
-## 6. Conclusion
+        m_i = tl.full([BLOCK_M], float("-inf"), dtype=tl.float32)
+        l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
+        acc = tl.zeros([BLOCK_M, D_K], dtype=tl.float32)
 
-We have described Routing Attention, a self‑attention module that uses k‑means clustering of query vectors to partition the attention computation into intra‑cluster chunks. This content‑adaptive sparsity reduces the effective cost of attention while maintaining the ability to capture global dependencies across tokens with similar query patterns. Integrated into the DistilBERT compression framework, the module offers a simple yet conceptually interesting alternative to standard attention. Future work will focus on differentiable clustering, efficient cluster‑wise parallelisation, and proper padding mask integration.
+        # Iterate over key tiles ONLY belonging to this cluster
+        for n_offset in range(0, c_len, BLOCK_N):
+            offs_n = c_start + n_offset + tl.arange(0, BLOCK_N)
+            mask_n = offs_n < c_end
+
+            k_ptrs = K_packed_ptr + batch_id * stride_kb + head_id * stride_kh + (offs_n[None, :] * stride_kn + offs_d[:, None])
+            k = tl.load(k_ptrs, mask=mask_n[None, :], other=0.0)
+
+            # Compute intra-cluster score S = Q @ K.T
+            s = tl.dot(q, k) * scale
+            s = tl.where(mask_m[:, None] & mask_n[None, :], s, float("-inf"))
+
+            # Online Softmax update
+            m_ij = tl.max(s, axis=1)
+            m_new = tl.maximum(m_i, m_ij)
+            p = tl.exp(s - m_new[:, None])
+            l_new = tl.exp(m_i - m_new) * l_i + tl.sum(p, axis=1)
+
+            acc_scale = tl.exp(m_i - m_new)
+            acc = acc * acc_scale[:, None]
+
+            v_ptrs = V_packed_ptr + batch_id * stride_vb + head_id * stride_vh + (offs_n[:, None] * stride_vn + offs_d[None, :])
+            v = tl.load(v_ptrs, mask=mask_n[:, None], other=0.0)
+            acc = tl.dot(p.to(v.dtype), v, acc)
+
+            l_i = l_new
+            m_i = m_new
+
+        # Final Softmax Normalization
+        acc = acc / l_i[:, None]
+        out_ptrs = Out_packed_ptr + batch_id * stride_ob + head_id * stride_oh + (offs_m[:, None] * stride_om + offs_d[None, :])
+        tl.store(out_ptrs, acc.to(Out_packed_ptr.dtype.element_ty), mask=mask_m[:, None])
+```
+
+### 6.3 Hardware Acceleration Summary
+1. **$K \times$ Real Compute Speedup**: Packing tokens into contiguous cluster blocks limits matrix multiplications to $\sum N_k^2 \approx \frac{L^2}{K}$, delivering true sub-quadratic hardware throughput.
+2. **Zero Redundant FLOPs**: Replaces $K$ full-matrix operations with variable-length grouped tile processing, eliminating 100% of masked zero computation.

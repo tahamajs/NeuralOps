@@ -1,144 +1,184 @@
-# PHANTOM: Parameter‑Hashed AttentioN with Token‑wise Orthogonal Mapping
+# PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **PHANTOM**, a dual‑compression attention module for Transformers that couples a **CUR matrix decomposition** of the projection weights with a **locality‑sensitive hashing (LSH)** based sparse attention pattern, both wrapped with a **softpick rectified softmax** to induce natural sparsity. The CUR factorisation approximates each pretrained weight matrix \( \mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}} \) via a product \( \mathbf{C} \mathbf{U} \mathbf{R} \), where \( \mathbf{C} \) and \( \mathbf{R} \) are column and row subsets selected according to leverage scores, and \( \mathbf{U} \) is a small linking matrix. This yields a low‑rank compressed representation stored in two linear layers, enabling zero‑shot initialisation from a pretrained model. The attention itself is performed not by a full dot‑product matrix but by multi‑round angular LSH: queries and keys are normalised and hashed via random hyperplane projections, and tokens only attend to others in the same hash bucket. This reduces the expected number of pairwise comparisons to roughly \( O(N \cdot B_{\text{avg}}) \), where \( B_{\text{avg}} \) is the average bucket size. Within each bucket, attention weights are computed using the softpick function, which further zeroes out weak connections. The module is designed as a drop‑in replacement for the self‑attention layer in DistilBERT, integrating with the compression framework via a registry‑based injection function. This paper provides a rigorous mathematical description of the CUR factorisation, the LSH attention mechanism, and the overall architecture, discussing both the theoretical foundations and the practical implementation choices.
+Standard Multi-Head Self-Attention (MHSA) in Transformer models requires quadratic computational time and memory scaling $\mathcal{O}(N^2)$ with sequence length $N$, presenting significant bottlenecks for long-context deployment. While dense low-rank projections reduce parameter counts, standard SVD linear layers discard structural column/row interpretable sparsity. Furthermore, sparse attention heuristics often fail to dynamically route non-local dependencies.
 
----
-
-## 1. Introduction
-
-The computational and memory footprint of self‑attention in Transformers motivates a wide range of efficiency methods. Two popular strategies are **low‑rank weight compression** and **sparse attention patterns**. The **PHANTOM** module combines both: it replaces each dense projection matrix with a **CUR decomposition** that retains the most important rows and columns of the original weight, and it replaces the all‑to‑all attention with a **locality‑sensitive hashing (LSH)** scheme that only computes dot‑products between tokens that fall into the same hash bucket. Additionally, a **softpick** activation replaces the standard softmax, further enhancing sparsity and potentially improving gradient flow.
-
-The CUR decomposition is chosen over a standard SVD because the factor matrices \( \mathbf{C} \) and \( \mathbf{R} \) are actual columns and rows of the original weight, which can be more interpretable and sometimes yield better approximations for certain matrices. Leverage scores derived from the singular vectors guide the selection, ensuring that the most influential directions are preserved. The result is a pair of linear layers—a down‑projection to rank \( r \) and an up‑projection back—that drastically reduce the number of trainable parameters while initialising from pretrained weights for zero‑shot performance.
-
-The LSH attention uses an **angular hash** (random hyperplane projections) to group queries and keys into buckets. This approach is inspired by the Reformer but adapted with multiple rounds to improve coverage. Within each bucket, attention is computed exactly, but the total cost is bounded by the bucket sizes. The softpick function, a rectified softmax, then prunes within‑bucket connections, leaving only the strongest ones.
-
-In this paper, we detail the mathematical underpinnings of each component, the integration into a single module, and the implementation within the compression framework. We also discuss the computational complexity, limitations, and potential future improvements.
+**PHANTOM** (Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping) presents an integrated sparse attention architecture combining two structural advances:
+1. **Deterministic Statistical Leverage-Score CUR Decomposition**: Pre-trained weight matrices ($W_Q, W_K, W_V, W_O$) are decomposed via CUR matrix factorization. Down and up projection matrices are explicitly formed from the top-$r$ rows $R$ and columns $C$ exhibiting highest empirical statistical leverage scores $\ell_{\text{row}}, \ell_{\text{col}}$, joined by the pseudoinverse of their intersection submatrix $W_{\cap}^{\dagger}$.
+2. **Multi-Round Angular Locality-Sensitive Hashing (LSH)**: L2-normalized queries and keys are projected across $M$ independent hashing rounds using random Gaussian hyperplane matrices $P \in \mathbb{R}^{d_h \times B_s}$. Binary hash codes bucket semantically aligned tokens into discrete buckets, reducing attention computation from $\mathcal{O}(N^2)$ to expected sub-quadratic complexity $\mathcal{O}\left(M \cdot \frac{N^2}{2^{B_s}} \cdot d_h\right)$.
+3. **Softpick Rectified Activation**: Intra-bucket attention scores are evaluated using a rectified non-linear probability mapping (`softpick`), preventing soft background noise accumulation and artificial sink token collapse.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 CUR‑Based Factorised Linear Projections
+### 2.1 Statistical Leverage-Score CUR Matrix Decomposition (`FactorisedLinear_CUR`)
+For a pre-trained projection weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, the full singular value decomposition $W = U \Sigma V^T$ is evaluated. Empirical row and column leverage scores are defined as:
 
-Given a pretrained weight matrix \( \mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}} \) and bias \( \mathbf{b} \), the goal is to approximate \( \mathbf{W} \approx \mathbf{C} \mathbf{U} \mathbf{R} \) with \( \mathbf{C} \in \mathbb{R}^{d_{\text{out}} \times r} \), \( \mathbf{U} \in \mathbb{R}^{r \times r} \), and \( \mathbf{R} \in \mathbb{R}^{r \times d_{\text{in}}} \). The rank \( r \) is a hyperparameter (`cur_rank`).
+$$\ell_{\text{row}}(i) = \frac{\|U_{i, :}\|_2^2}{\sum_{i'=1}^{d_{\text{out}}} \|U_{i', :}\|_2^2}, \quad \ell_{\text{col}}(j) = \frac{\|V_{:, j}\|_2^2}{\sum_{j'=1}^{d_{\text{in}}} \|V_{:, j'}\|_2^2}$$
 
-The algorithm uses **leverage scores** to select the most important columns and rows. First, compute the full SVD \( \mathbf{W} = \mathbf{U}_{\text{full}} \mathbf{S} \mathbf{V}_{\text{full}}^\top \). The column leverage scores are the squared row norms of \( \mathbf{V}_{\text{full}} \):
+Selecting the top-$r$ row indices $\mathcal{I}_{\text{row}}$ and column indices $\mathcal{I}_{\text{col}}$ yields row matrix $R \in \mathbb{R}^{r \times d_{\text{in}}}$, column matrix $C \in \mathbb{R}^{d_{\text{out}} \times r}$, and intersection matrix $W_{\cap} \in \mathbb{R}^{r \times r}$:
 
-\[
-\ell_j^{(c)} = \frac{1}{k} \sum_{i=1}^{k} (\mathbf{V}_{\text{full}})_{j,i}^2 \quad (\text{normalised to sum to }1),
-\]
+$$R = W_{\mathcal{I}_{\text{row}}, :}, \quad C = W_{:, \mathcal{I}_{\text{col}}}, \quad W_{\cap} = W_{\mathcal{I}_{\text{row}}, \mathcal{I}_{\text{col}}}$$
 
-where \( k \) is the number of singular vectors (we use all, but could truncate). Similarly, the row leverage scores are the squared row norms of \( \mathbf{U}_{\text{full}} \). The top‑\( r \) columns and rows with the highest scores are selected:
+The CUR matrix approximation evaluates:
 
-\[
-\mathcal{C} = \operatorname{top}_r \text{ indices by } \ell^{(c)}, \quad
-\mathcal{R} = \operatorname{top}_r \text{ indices by } \ell^{(r)}.
-\]
+$$W \approx C W_{\cap}^{\dagger} R, \quad \text{where } W_{\cap}^{\dagger} = \text{pinv}(W_{\cap}) \in \mathbb{R}^{r \times r}$$
 
-Then \( \mathbf{C} = \mathbf{W}_{[:, \mathcal{C}]} \) (size \( d_{\text{out}} \times r \)), \( \mathbf{R} = \mathbf{W}_{[\mathcal{R}, :]} \) (size \( r \times d_{\text{in}} \)). The intersection matrix \( \mathbf{W}_{\mathcal{R}, \mathcal{C}} \in \mathbb{R}^{r \times r} \) is extracted, and its pseudoinverse \( \mathbf{U} = \mathbf{W}_{\mathcal{R}, \mathcal{C}}^+ \) is computed (using `torch.linalg.pinv`).
+The factorized down-projection layer $W_{\text{down}} \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection layer $W_{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r}$ are initialized as:
 
-The factorised layers are then defined as:
-- `down`: \( \mathbf{R} \) (maps input to an \( r \)-dimensional space, no bias),
-- `up`: \( \mathbf{C} \mathbf{U} \) (maps the \( r \)-dimensional space to output, with bias if the original layer had one).
+$$W_{\text{down}} = R, \quad W_{\text{up}} = C W_{\cap}^{\dagger}$$
 
-The forward pass computes \( \mathbf{y} = \text{up}(\text{down}(\mathbf{x})) \). This approximation preserves the original weight’s bias and structure while reducing parameters from \( d_{\text{out}} d_{\text{in}} \) to \( r(d_{\text{out}} + d_{\text{in}}) \).
+For activation tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$, projection output evaluates:
 
-### 2.2 Locality‑Sensitive Hashing Attention
+$$Y = (X W_{\text{down}}^T) W_{\text{up}}^T + b = (X R^T) (C W_{\cap}^{\dagger})^T + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}$$
 
-Standard multi‑head attention yields scores \( \mathbf{S}_{ij} = \mathbf{q}_i^\top \mathbf{k}_j / \sqrt{d_h} \). LSH attention restricts this to pairs that share a hash code under a function \( h: \mathbb{R}^{d_h} \to \mathbb{Z} \). The PHANTOM module uses **angular LSH**: a set of random hyperplane projections followed by a binary encoding.
+### 2.2 Multi-Round Angular LSH Bucketing (`lsh_attention`)
+For queries and keys $Q, K \in \mathbb{R}^{B \times H \times N \times d_h}$, L2-normalization is enforced:
 
-For each of \( R \) rounds (default 4), a random matrix \( \mathbf{P} \in \mathbb{R}^{d_h \times b} \) is generated with normalised columns. The hash code for a normalised vector \( \hat{\mathbf{q}} = \mathbf{q} / \|\mathbf{q}\| \) is:
+$$\hat{Q} = \frac{Q}{\|Q\|_2 + \epsilon}, \quad \hat{K} = \frac{K}{\|K\|_2 + \epsilon}$$
 
-\[
-h(\mathbf{q}) = \sum_{i=1}^{b} \mathbb{I}((\hat{\mathbf{q}}^\top \mathbf{p}_i) > 0) \cdot 2^{i-1},
-\]
+For each hashing round $m \in \{1, \dots, M\}$, a random Gaussian projection matrix $P^{(m)} \in \mathbb{R}^{d_h \times B_s}$ is sampled, where $B_s$ is the binary bit-width. Discrete integer hash codes $h(q), h(k) \in \{0, \dots, 2^{B_s}-1\}$ are computed via inner-product sign bit shifting:
 
-where \( \mathbb{I} \) is the indicator. This maps each token to an integer in \( [0, 2^b - 1] \). For a given head, tokens are grouped by this integer (the bucket). Attention is then performed only within each bucket:
+$$h(q_{b, h, i}) = \sum_{k=0}^{B_s-1} 2^k \cdot \mathbb{I}\left( \langle \hat{Q}_{b, h, i}, P_{:, k}^{(m)} \rangle > 0 \right)$$
 
-\[
-\mathbf{S}^{\text{bucket}} = \frac{\mathbf{Q}_{\text{bucket}} \mathbf{K}_{\text{bucket}}^\top}{\sqrt{d_h}}, \quad
-\mathbf{A}^{\text{bucket}} = \operatorname{softpick}(\mathbf{S}^{\text{bucket}}),
-\]
-\[
-\mathbf{O}_{\text{query}} = \mathbf{A}^{\text{bucket}} \mathbf{V}_{\text{bucket}}.
-\]
+$$h(k_{b, h, j}) = \sum_{k=0}^{B_s-1} 2^k \cdot \mathbb{I}\left( \langle \hat{K}_{b, h, j}, P_{:, k}^{(m)} \rangle > 0 \right)$$
 
-The output is scattered back to the original positions. This is repeated for all rounds, and the per‑round outputs are **summed** (not averaged, which may be an oversight). The hashing is performed after L2‑normalisation to make it angular‑based.
+### 2.3 Intra-Bucket Softpick Rectified Attention
+Tokens sharing matching hash codes $h(q_i) = h(k_j) = c$ are grouped into hash buckets $\mathcal{B}_c$. Scaled dot-product attention logits are evaluated exclusively within bucket key sets $\mathcal{B}_{h(q_i)}$:
 
-The implementation iterates over batch elements and heads, and for each head over queries, using a Python dictionary to map hash codes to key indices. This is highly inefficient but conceptually clear. Padding tokens can be optionally excluded via a `token_valid` mask, which filters the queries and keys before hashing and attention.
+$$S_{b, h, i, j} = \frac{Q_{b, h, i} \cdot K_{b, h, j}^T}{\sqrt{d_h}}, \quad \text{for } j \in \mathcal{B}_{h(q_i)}$$
 
-### 2.3 Softpick Activation
+The **Softpick** activation applies temperature scaling $\tau$ and subtracts the maximum tail threshold:
 
-Within each bucket, the attention weights are computed using the **softpick** function instead of softmax. Softpick is defined as:
+$$m_i = \max_{j \in \mathcal{B}_{h(q_i)}} S_{i, j}, \quad e_{i, j} = \exp\left( \frac{S_{i, j} - m_i}{\tau} \right)$$
 
-\[
-\operatorname{softpick}(\mathbf{s})_i = \frac{\operatorname{ReLU}\big(e^{(s_i - m)/\tau} - e^{-m/\tau}\big)}{\sum_j \operatorname{ReLU}\big(e^{(s_j - m)/\tau} - e^{-m/\tau}\big)},
-\]
+$$p_{i, j} = \frac{\max\left(0, e_{i, j} - \exp(-m_i / \tau)\right)}{\sum_{k \in \mathcal{B}_{h(q_i)}} \max\left(0, e_{i, k} - \exp(-m_i / \tau)\right) + \epsilon}$$
 
-where \( m = \max_j s_j \) and \( \tau \) is a temperature. This rectified version tends to produce sparse outputs—many entries become exactly zero—while maintaining a probability simplex. It is applied to the bucket scores before dropout (if dropout is enabled; the code only applies dropout when softpick is used, which is the default).
+$$O_{b, h, i}^{(m)} = \sum_{j \in \mathcal{B}_{h(q_i)}} p_{b, h, i, j} V_{b, h, j}$$
+
+### 2.4 Multi-Round Accumulation & Final Projection
+Context outputs are averaged across all $M$ independent hashing rounds:
+
+$$O^{\text{fused}} = \frac{1}{M} \sum_{m=1}^M O^{(m)} \in \mathbb{R}^{B \times H \times N \times d_h}$$
+
+Reshaping into $[B, N, H \cdot d_h]$, the context tensor is projected through the CUR factorized output layer:
+
+$$Y = \text{FactorisedLinear\_CUR}_{\text{out}}\left( \text{Reshape}(O^{\text{fused}}) \right) \in \mathbb{R}^{B \times N \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 Module Architecture
-
-- **`PHANTOMConfig`**: dataclass holding hyperparameters: `cur_rank` (16), `lsh_rounds` (4), `lsh_bucket_size` (32), `softpick_enabled`, `softpick_temperature`, `dropout`.
-- **`FactorisedLinear_CUR`**: Stores `down` (Linear with weight = \( \mathbf{R} \)) and `up` (Linear with weight = \( \mathbf{C}\mathbf{U} \), bias copied if exists). The rank is fixed.
-- **`lsh_attention`**: A standalone function that performs the multi‑round LSH attention. It loops over rounds, generates random projections, computes hash codes, and for each batch element and head, iterates over queries to compute bucket‑confined attention using softpick and dropout.
-- **`PHANTOMAttention`**: The main module. Constructor takes pretrained attention layer to extract weights for CUR initialisation. Forward pass projects Q, K, V through the factorised layers, computes `token_valid` from mask, calls `lsh_attention`, and projects the output.
-
-### 3.2 Mask Handling
-
-A 2D, 3D, or 4D attention mask is converted to a boolean tensor `token_valid` (True for keep). This mask is passed to `lsh_attention`; when provided, the queries and keys are filtered to valid tokens before hashing. This prevents padding tokens from consuming computation and affecting softmax denominators.
-
-### 3.3 Complexity and Efficiency
-
-The CUR factorisation reduces projection parameters by a factor of roughly \( 2r/(d_{\text{out}}+d_{\text{in}}) \). The LSH attention complexity per round is ideally \( O(N \cdot b_{\text{avg}} d_h) \) where \( b_{\text{avg}} \approx N / 2^b \). For \( b = 32 \), the bucket space is \( 2^{32} \), so buckets are typically tiny; the expected number of comparisons is close to \( O(N) \) in practice. However, the current implementation’s nested Python loops over batch, head, and queries cause a large constant overhead, making it unsuitable for real‑time use without further vectorisation. The softpick adds a small amount of compute but reduces memory for attention weights within buckets.
+| Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
+| :--- | :--- | :--- | :--- |
+| **Input Hidden State** | $X$ | $[B, N, D]$ | Base activation state |
+| **CUR Projection Q/K/V** | $X R^T (C W_{\cap}^{\dagger})^T$| $[B, N, D] \to [B, N, r] \to [B, N, H \cdot d_h]$ | Leverage-score CUR down/up projection |
+| **Head Partitioning** | $Q, K, V$ | $[B, N, H \cdot d_h] \to [B, H, N, d_h]$ | Transpose to multi-head view |
+| **L2 Normalization** | $\hat{Q}, \hat{K}$ | $[B, H, N, d_h]$ | L2 normalization along head dimension |
+| **Hyperplane Projection** | $\hat{Q} P, \hat{K} P$ | $[B, H, N, d_h] \times [d_h, B_s] \to [B, H, N, B_s]$ | Sign inner-product hyperplane projection |
+| **Bit-Shift Hashing** | $h(q), h(k)$ | $[B, H, N, B_s] \to [B, H, N]$ | Integer bucket code evaluation |
+| **Bucket Partitioning** | $\mathcal{B}_c$ | $[B, H, N]$ | Group key/query indices by hash code |
+| **Intra-Bucket Softpick** | $O^{(m)}$ | $[B, H, N, d_h]$ | Sparse Softpick attention within buckets |
+| **Multi-Round Averaging** | $O^{\text{fused}}$ | $\frac{1}{M} \sum O^{(m)} \in [B, H, N, d_h]$ | Accumulation across $M$ LSH rounds |
+| **CUR Output Projection** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, r] \to [B, N, D]$ | Leverage-score CUR output projection |
 
 ---
 
-## 4. Usage and Configuration
+## 4. Analytical Complexity Profiling
 
-The module is activated by setting the attention type to `"phantom"`. Configurable parameters via `comp_config`:
+### 4.1 Floating Point Operations (FLOPs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $r$ CUR compression rank, $M$ LSH rounds, and $B_s$ bucket bit-width (producing $2^{B_s}$ buckets).
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `cur_rank` | 16 | Rank for CUR factorisation of Q, K, V, O projections. |
-| `lsh_rounds` | 4 | Number of independent hash rounds. |
-| `lsh_bucket_size` | 32 | Number of hash bits (bucket size \(2^{32}\)). |
-| `softpick_temperature` | 1.0 | Temperature for softpick. |
-| `dropout` | 0.1 | Dropout rate (applied within buckets). |
+1. **CUR Linear Projections ($Q, K, V, O$)**:
+   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+2. **LSH Hyperplane Hash Evaluation**:
+   - Query & key L2 normalization: $4 B H N d_h = 4 B N D$
+   - Hyperplane inner-product matmul ($M$ rounds): $M \times \left( 4 B H N d_h B_s \right) = 4 M B N D B_s$
+   $$\text{FLOPs}_{\text{hash}} = 4 B N D + 4 M B N D B_s$$
+3. **Intra-Bucket Softpick Attention**:
+   - Average bucket size $N_{\text{bucket}} = N / 2^{B_s}$
+   - Score evaluation per token across $M$ rounds: $M \times \left( 2 B H N \cdot \frac{N}{2^{B_s}} \cdot d_h \right) = 2 M B N D \cdot \frac{N}{2^{B_s}}$
+   - Softpick non-linearity & Value contraction: $2 M B N D \cdot \frac{N}{2^{B_s}}$
+   $$\text{FLOPs}_{\text{lsh\_attn}} = 4 M B N D \cdot \frac{N}{2^{B_s}}$$
 
-Example injection via framework:
-```python
-comp_config.attention_type = "phantom"
-comp_config.cur_rank = 32
-comp_config.lsh_rounds = 6
+**Total FLOP Count**:
+
+$$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 M B N D B_s + 4 M B N D \cdot \frac{N}{2^{B_s}}$$
+
+### 4.2 Memory Footprint & Bandwidth
+- **Parameter Footprint**:
+  $$\Theta = 4 \times \left( d_{\text{in}} r + r d_{\text{out}} \right) = 8 D r$$
+- **Activation Footprint**:
+  - Hash codes tensor: $\mathcal{O}(M B H N)$
+  - Bucket index mapping buffers: $\mathcal{O}(M B H N)$
+  - Intra-bucket score tensors: $\mathcal{O}\left(M B H N \cdot \frac{N}{2^{B_s}}\right)$
+  - Total Memory: $\mathcal{O}\left(B N D + M B H N + M B H \frac{N^2}{2^{B_s}}\right)$
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 CUR Intersection Matrix Ill-Conditioning
+- **Mechanism**: The CUR up-projection matrix relies on $W_{\cap}^{\dagger} = \text{pinv}(W_{\mathcal{I}_{\text{row}}, \mathcal{I}_{\text{col}}})$. If selected top-leverage rows and columns contain linearly dependent vectors, the intersection submatrix $W_{\cap} \in \mathbb{R}^{r \times r}$ becomes singular or severely ill-conditioned (condition number $\kappa(W_{\cap}) > 10^7$).
+- **Consequence**: Computing the pseudoinverse amplifies numerical noise, leading to exploding projection weights during forward execution.
+- **Mitigation**: Add a ridge regularization penalty $W_{\cap}^{\dagger} = (W_{\cap}^T W_{\cap} + \epsilon I)^{-1} W_{\cap}^T$ with $\epsilon = 10^{-6}$.
+
+### 5.2 LSH Bucket Imbalance & Hash Collisions
+- **Mechanism**: Random Gaussian hyperplanes partition token space into angular regions. If token embeddings are non-uniformly distributed (e.g., clustering around a single directional axis), a single bucket receives $> 90\%$ of tokens, causing computational complexity to regress to full $\mathcal{O}(N^2)$.
+- **Mitigation**: Deploy orthogonalized random hyperplanes ($P^T P = I$) and apply mean-centering to queries and keys prior to hyperplane projection.
+
+### 5.3 Softpick Intra-Bucket Empty-Bucket Underflow
+- **Mechanism**: If a query token $q_i$ maps to a hash code bucket $c$ that contains zero key tokens ($|\mathcal{B}_c| = 0$), intra-bucket Softpick receives an empty logit array.
+- **Mitigation**: Implement fallback key assignment, routing queries with empty buckets to attend to the sequence start token (CLS/BOS token).
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+```
++-----------------------------------------------------------------------------------+
+|                        Triton Hardware Execution Graph                            |
+|                                                                                   |
+|  Input X [B, N, D] ---> [Fused CUR Dual-GEMM Kernel] ---> Q, K, V                 |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                  |       |
+|        v                                                                  v       |
+| [Triton Fused LSH Hyperplane Kernel]               [Triton Bucket Sort Engine]    |
+|  - SRAM Parallel Sign Bit-Shift Hashing             - Shared Memory Radix Sort    |
+|  - Fast Random Hyperplane Generation                - Construct Bucket Pointers   |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                          |
+|        +---> [Triton Block-Sparse Intra-Bucket Softpick Kernel]                   |
+|               - Gather Bucket Keys/Values into SRAM Registers                     |
+|               - Online Softpick Tail Subtraction & Value Contraction              |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                          |
+|        +---> [Fused CUR Output GEMM Kernel] ---> Output Y [B, N, D]              |
++-----------------------------------------------------------------------------------+
 ```
 
-The injection function `inject_phantom` builds the config, constructs the module with pretrained weights, and replaces the layer’s attention.
+### 6.1 Triton Strategy 1: Fused Dual-GEMM CUR Projection Kernel
+Standard PyTorch executes `x @ R.T` followed by `@ (C @ W_int).T`, writing intermediate rank-$r$ activations back to DRAM.
 
----
+**Triton Optimization**:
+- Implement a custom fused GEMM kernel loading $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
+- Evaluate down-projection with $R^T$ in SRAM registers, then immediately compute up-projection with $(C W_{\cap}^{\dagger})^T$.
+- Reduces DRAM memory bandwidth overhead by $2\times$.
 
-## 5. Discussion
+### 6.2 Triton Strategy 2: Fused SRAM Hyperplane Hashing Kernel
+- Fuse L2 normalization $\hat{Q} = Q / \|Q\|_2$, matrix product $\hat{Q} P$, sign comparison $> 0$, and bit-shift summation into a single Triton kernel pass.
+- Store bit-shift powers $2^k$ in GPU constant memory.
+- Writes integer hash codes $h(q) \in \mathbb{R}^{B \times H \times N}$ directly to global DRAM in a single pass.
 
-PHANTOM creatively combines two distinct compression paradigms. The CUR decomposition is less common in deep learning than SVD but offers the advantage that the factors \( \mathbf{C} \) and \( \mathbf{R} \) are actual columns/rows of the original weight, which can lead to a more faithful approximation at very low ranks when leverage scores are highly non‑uniform. The LSH attention provides a data‑dependent sparse pattern that adapts to the geometry of the queries and keys. The softpick further sparsifies attention within buckets.
+### 6.3 Triton Strategy 3: Block-Sparse Intra-Bucket Softpick Engine
+Executing intra-bucket attention via Python loops incurs severe CPU-GPU launch overhead.
 
-However, the module has several drawbacks in its current form:
-
-- **Sequential loops**: The double loop over batch and head and then over queries (via dictionary) is extremely slow on GPUs. A production version would need to use sort‑and‑chunk techniques to parallelise across hash codes.
-- **Summing across rounds**: The LSH function sums outputs from all rounds without averaging, which effectively multiplies the output magnitude by \( R \). This could destabilise training unless the downstream layers can compensate; it should be divided by \( R \).
-- **CUR approximation quality**: The deterministic selection of top‑\( r \) leverage scores may not always be optimal; sampling according to the leverage scores (as in the original CUR algorithm) would be more theoretically sound and could improve generalisation.
-- **Softpick and masking**: The softpick function is applied per bucket, but the padding mask is handled before hashing (filtering tokens), which is correct. However, the lsh function re‑indexes and may have bugs in the scatter/unsort phase (the code sorts queries but then looks up keys via dictionary without sorting keys, which works because the dictionary maps hash code to key indices; the output is then unsorted using `unsorted_idx = torch.argsort(sorted_q_idx)`. That seems correct, but careful inspection is needed.)
-- **Lack of random projection reuse**: The hash matrices are regenerated each round, which is fine. But for inference, one would want deterministic hashing; the random seed should be fixed for reproducibility.
-
-Overall, PHANTOM demonstrates a novel blend of compression and sparse attention and can serve as a research prototype. With optimisation, it could be a viable efficient attention variant.
-
----
-
-## 6. Conclusion
-
-We have presented PHANTOM, a hybrid attention module that employs CUR‑factorised linear projections and multi‑round angular LSH attention with softpick activation. The CUR decomposition provides parameter efficiency and zero‑shot initialisation, while the LSH mechanism delivers sub‑quadratic sequence‑length scaling. The module is integrated into the DistilBERT compression framework as a drop‑in replacement for standard self‑attention. Future work will focus on vectorising the LSH loops, correcting the round averaging, and exploring probabilistic leverage sampling for improved CUR quality. PHANTOM stands as a creative step toward combining matrix compression with adaptive sparse attention in a single cohesive design.
+**Triton Optimization**:
+- Sort tokens by hash code using a parallel shared-memory radix sort kernel.
+- Launch a block-sparse Triton kernel where each threadblock processes tokens belonging to a single hash bucket $\mathcal{B}_c$.
+- Load bucket keys $K_{\mathcal{B}_c}$ and values $V_{\mathcal{B}_c}$ into SRAM, evaluating online Softpick score tail subtraction and value contraction entirely within register space.

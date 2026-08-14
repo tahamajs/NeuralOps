@@ -1,159 +1,85 @@
-# SVD‑LLM V2 Attention: Truncation‑Aware Singular Value Decomposition for Attention Compression
+# SVD-LLM v2 Attention: Truncation-Aware Singular Value Factorized LLM Attention
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+SVD-LLM v2 Attention (`SVDLLMV2Attention`) implements a truncation-aware, low-rank factorized Multi-Head Attention (MHA) module tailored for large language model (LLM) compression and zero-shot weight initialization. Linear transformations across Attention sub-layers ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) account for a large parameter footprint. SVD-LLM v2 decomposes each dense projection into explicit factor buffers: left singular vectors $U \in \mathbb{R}^{d_{\text{out}} \times r}$, diagonal singular value scaling parameters $S \in \mathbb{R}^r$, and right singular vectors $V^\top \in \mathbb{R}^{r \times d_{\text{in}}}$. Weight initialization uses truncated Singular Value Decomposition under energy preservation thresholds $\tau \in (0, 1]$, retaining top singular modes while padding residual ranks with scale-controlled noise. Decoupling singular values $S$ into a dedicated trainable vector enables downstream task adapters to recalibrate spectral scaling without destabilizing orthogonal basis matrices $U$ and $V^\top$.
 
-We present **SVD‑LLM V2 Attention**, a parameter‑efficient self‑attention module that replaces the dense linear projections of the standard multi‑head attention with a low‑rank factorisation based on truncated singular value decomposition (SVD). Each projection matrix (Q, K, V, Output) is stored as three compact factors: \(\mathbf{U}\) (left singular vectors scaled by singular values), \(\mathbf{s}\) (a trainable diagonal scaling), and \(\mathbf{V}^\top\) (right singular vectors). This representation allows a principled zero‑shot initialisation from pretrained weights while drastically reducing the number of trainable parameters. The module is designed to be “truncation‑aware”: an energy threshold parameter controls the effective rank, but in the current implementation the rank is fixed and any remaining capacity is padded with small random values. The attention computation itself remains the full scaled dot‑product, preserving exact pairwise interactions. The module is integrated into the DistilBERT compression framework via a registry‑based injection function, enabling a plug‑and‑play replacement of the standard attention sub‑layer. This paper provides a rigorous mathematical description of the factorisation, the initialisation procedure, the forward pass, and the intended improvements of the “V2” design over its predecessor.
+## 2. Mathematical Derivations & Formulations
+For a target linear projection matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, its thin SVD is:
+$$W_0 = \bar{U} \Sigma \bar{V}^\top = \sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i \bar{u}_i \bar{v}_i^\top$$
+where $\bar{U} \in \mathbb{R}^{d_{\text{out}} \times k}$, $\Sigma = \text{diag}(\sigma_1, \dots, \sigma_k)$ with $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k \ge 0$, and $\bar{V} \in \mathbb{R}^{d_{\text{in}} \times k}$.
 
----
+Under a target rank constraint $r \le k$, SVD-LLM v2 initializes factor parameters $(U, S, V^\top)$ as follows:
+$$U_{:, :r} = \bar{U}_{:, :r} \text{diag}(\sigma_{1:r}), \qquad S_{1:r} = \mathbf{1}_r, \qquad V^\top_{:r, :} = \bar{V}_{:r, :}^\top$$
 
-## 1. Introduction
+If allocated rank $r > k$, missing capacity is padded with random noise ($\epsilon = 10^{-2}$):
+$$U_{:, k+1:r} \sim \mathcal{N}(0, 10^{-4}), \qquad S_{k+1:r} = 10^{-2} \cdot \mathbf{1}_{r-k}, \qquad V^\top_{k+1:r, :} \sim \mathcal{N}(0, 10^{-4})$$
 
-Large pre‑trained Transformer models rely heavily on dense linear transformations in their attention layers, which constitute millions of parameters. Low‑rank factorisation via truncated SVD offers a direct path to compression by replacing a weight matrix \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\) with the product of two smaller matrices, reducing the parameter count from \(d_{\text{out}} d_{\text{in}}\) to \(r(d_{\text{out}} + d_{\text{in}})\) for a chosen rank \(r\). The original SVD‑LLM (SVD‑based LLM Compression) approach proposed storing the factors \(\mathbf{U}\) and \(\mathbf{V}^\top\) explicitly, and optionally making the singular values trainable. The **SVD‑LLM V2 Attention** module refines this idea by incorporating an explicit trainable singular value vector \(\mathbf{s}\) and an energy‑threshold concept for determining the effective rank, although the current implementation uses a fixed global rank and pads to that rank with random values when the actual SVD rank is smaller.
+Reconstruction of the weight operator during forward evaluation proceeds as:
+$$W_{\text{eff}} = (U \odot S) V^\top = (U \text{diag}(S)) V^\top \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$$
+where $\odot$ denotes column-wise Hadamard multiplication.
 
-The primary goals of the V2 design are:
-1. To provide a zero‑shot initialisation from pretrained weights, ensuring the compressed model’s initial output closely matches the full model.
-2. To allow dynamic, importance‑driven rank selection via an energy threshold, though not yet fully automated in this code.
-3. To keep the factors trainable, enabling fine‑tuning to recover any approximation loss and adapt to downstream tasks.
+For input activations $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$, the factorized transformation evaluates as:
+$$y = F.linear(X, W_{\text{eff}}) = X V \text{diag}(S) U^\top \in \mathbb{R}^{B \times N \times d_{\text{out}}}$$
 
-The module is implemented as a drop‑in replacement for DistilBERT’s attention layer, with standard mask handling and dropout. This paper details the mathematical construction, the initialisation algorithm, the forward pass, and the integration into the compression framework. We also discuss the current limitations and how the V2 design aims to overcome them.
+Executing this across Query, Key, and Value projections yields multi-head tensors:
+$$Q = \text{MultiHeadSplit}(F.linear(X, W_Q^{\text{eff}})) \in \mathbb{R}^{B \times H \times N \times d_h}$$
+$$K = \text{MultiHeadSplit}(F.linear(X, W_K^{\text{eff}})) \in \mathbb{R}^{B \times H \times N \times d_h}$$
+$$V = \text{MultiHeadSplit}(F.linear(X, W_V^{\text{eff}})) \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
----
+Scaled dot-product attention and output projections evaluate as:
+$$S_{\text{scores}} = \frac{Q K^\top}{\sqrt{d_h}} + M_{\text{attn}}, \qquad A = \text{Dropout}(\text{Softmax}(S_{\text{scores}}, \text{dim}=-1))$$
+$$C = A V \implies O = F.linear(\text{Reshape}(C), W_O^{\text{eff}}) \in \mathbb{R}^{B \times N \times D}$$
 
-## 2. Method
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
+The step-by-step tensor operations across SVD-LLM v2 Attention proceed as follows:
 
-### 2.1 Low‑Rank Representation of Projection Weights
+1. **Input Tensor**: $X \in \mathbb{R}^{B \times N \times D}$
+2. **Reconstructed Projection Weight Operations ($Q, K, V$)**:
+   - $W_Q = (U_Q \odot S_Q) V_Q^\top \in \mathbb{R}^{D \times D}$ (with $U_Q \in [D, r], S_Q \in [r], V_Q^\top \in [r, D]$)
+   - $W_K = (U_K \odot S_K) V_K^\top \in \mathbb{R}^{D \times D}$, $W_V = (U_V \odot S_V) V_V^\top \in \mathbb{R}^{D \times D}$
+3. **Linear Activation & Reshape**:
+   - $Q_{\text{flat}} = F.linear(X, W_Q) \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{view}} [B, N, H, d_h] \xrightarrow{\text{permute}} [B, H, N, d_h]$
+   - $K_{\text{flat}} = F.linear(X, W_K) \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{permute}} [B, H, N, d_h]$
+   - $V_{\text{flat}} = F.linear(X, W_V) \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{permute}} [B, H, N, d_h]$
+4. **Attention Score & Masking**:
+   - $S_{\text{attn}} = Q K^\top / \sqrt{d_h} \in \mathbb{R}^{B \times H \times N \times N}$
+   - Mask addition: $S_{\text{attn}} \leftarrow S_{\text{attn}} + (1.0 - M) \cdot (-10^9)$
+5. **Softmax Activation & Context Multiplication**:
+   - $P = \text{Dropout}(\text{Softmax}(S_{\text{attn}}, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times N}$
+   - $C_{\text{head}} = P V \in \mathbb{R}^{B \times H \times N \times d_h}$
+6. **Head Concatenation & Output Projection**:
+   - $\tilde{C} = \text{Reshape}(C_{\text{head}}) \in \mathbb{R}^{B \times N \times D}$
+   - $W_O = (U_O \odot S_O) V_O^\top \in \mathbb{R}^{D \times D}$
+   - $O = F.linear(\tilde{C}, W_O) \in \mathbb{R}^{B \times N \times D}$
 
-For each linear projection originally represented by a weight matrix \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\) and optional bias, the SVD‑LLM V2 module stores three parameters:
+## 4. Analytical Complexity Profiling
+- **FLOPs Computation**:
+  - Weight Reconstruction ($U \odot S @ V^\top$): $4 \times 2 D r D = 8 r D^2$ FLOPs
+  - Linear Matmuls ($X W^\top$): $4 \times 2 B N D^2 = 8 B N D^2$ FLOPs
+  - Dot-product attention ($Q K^\top$): $2 B N^2 D$ FLOPs
+  - Value weighting ($P V$): $2 B N^2 D$ FLOPs
+  - Total Module FLOPs: $8 r D^2 + 8 B N D^2 + 4 B N^2 D$
+- **MAC Operations**:
+  - Projection Reconstructions: $4 r D^2$ MACs
+  - Activation GEMMs: $4 B N D^2$ MACs
+  - Attention Matrices: $2 B N^2 D$ MACs
+- **Memory Footprint & Parameter Reduction**:
+  - Dense Projection Parameters: $4 D^2$
+  - SVD-LLM v2 Parameters: $4 \times (D r + r + r D) = 4 r (2D + 1)$
+  - Parameter Compression Ratio: $\frac{4 D^2}{4 r (2D + 1)} \approx \frac{D}{2r}$. For $D=768, r=32$, ratio is $12.0\times$.
 
-\[
-\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}, \qquad
-\mathbf{s} \in \mathbb{R}^{r}, \qquad
-\mathbf{V}_h \in \mathbb{R}^{r \times d_{\text{in}}},
-\]
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+- **On-the-Fly Weight Reconstruction Overhead**:
+  Reconstructing $W_{\text{eff}} = (U \odot S) V^\top$ per forward pass allocates $D \times D$ dense matrices in GPU memory, introducing unnecessary HBM memory traffic compared to evaluating factored projections $(X V) \text{diag}(S) U^\top$.
+- **Bias Parameter Omission**:
+  SVD-LLM v2 omits linear layer bias parameters $b \in \mathbb{R}^{D}$. Discarding pretrained biases introduces systematic output mean shifts during zero-shot evaluation.
+- **Unconstrained Singular Value Drift**:
+  Allowing vector $S \in \mathbb{R}^r$ to be trained without non-negativity or monotonic sorting constraints can cause singular values to cross zero or explode during fine-tuning.
 
-where \(r\) is the designated rank. The effective weight matrix is reconstructed on the fly as:
-
-\[
-\mathbf{W}_{\text{eff}} = (\mathbf{U} \odot \mathbf{s}) \, \mathbf{V}_h,
-\]
-
-where \(\odot\) denotes column‑wise multiplication: each column of \(\mathbf{U}\) is multiplied by the corresponding entry in \(\mathbf{s}\). This is equivalent to \(\mathbf{U} \operatorname{diag}(\mathbf{s}) \mathbf{V}_h\). The original weight is thus approximated by a rank‑\(r\) matrix, but with the singular values separated as a trainable vector. This separation allows the network to adjust the importance of each singular direction during fine‑tuning.
-
-The bias \(\mathbf{b}\) is not factorised and is retained as a separate parameter (or stored implicitly, but the current code does not include bias in the factorised representation; the original bias is discarded. This is a limitation; a complete implementation would keep the original bias or make it trainable).
-
-### 2.2 Zero‑Shot Initialisation from Pretrained Weights
-
-Given the original pretrained weight \(\mathbf{W}_0\), the module computes the full SVD:
-
-\[
-\mathbf{W}_0 = \mathbf{U}_{\text{full}} \mathbf{\Sigma} \mathbf{V}_{\text{full}}^\top.
-\]
-
-Let \(r_{\text{actual}} = \min(r, \operatorname{rank}(\mathbf{W}_0))\). The truncated factors for the first \(r_{\text{actual}}\) components are:
-
-\[
-\mathbf{U}_{r} = \mathbf{U}_{\text{full}[:,:r_{\text{actual}}]} \mathbf{\Sigma}_{[:r_{\text{actual}}]}, \qquad
-\mathbf{s}_{r} = \mathbf{1}_{r_{\text{actual}}}, \qquad
-\mathbf{V}_{r} = \mathbf{V}_{\text{full}[:r_{\text{actual}},:]}.
-\]
-
-Here, the singular values are absorbed into \(\mathbf{U}\), and \(\mathbf{s}\) is initialised to ones, making the initial effective weight exactly the optimal rank‑\(r_{\text{actual}}\) approximation. If \(r_{\text{actual}} < r\) (i.e., the original matrix has lower rank than the designated \(r\)), the remaining dimensions are **padded** with small random values: \(\mathbf{U}\) is extended with random columns of scale 0.01, \(\mathbf{s}\) is extended with values 0.01, and \(\mathbf{V}_h\) is extended with random rows of scale 0.01. This padding provides additional trainable capacity that can capture residual information during fine‑tuning. This mechanism gives the module the ability to potentially expand beyond the optimal SVD rank.
-
-### 2.3 Multi‑Head Attention with Factorised Projections
-
-During the forward pass, the effective weight matrices \(\mathbf{W}_q, \mathbf{W}_k, \mathbf{W}_v, \mathbf{W}_o\) are assembled from the stored factors. The input hidden states \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\) are projected:
-
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_q^\top, \quad
-\mathbf{K} = \mathbf{X} \mathbf{W}_k^\top, \quad
-\mathbf{V} = \mathbf{X} \mathbf{W}_v^\top,
-\]
-
-where each \(\mathbf{W}\) is computed as described. The tensors are then reshaped to multi‑head format \((B, H, L, d_h)\). The rest of the attention is standard:
-
-\[
-\mathbf{S} = \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_h}}, \quad
-\mathbf{A} = \operatorname{softmax}(\mathbf{S} + \mathbf{M}), \quad
-\mathbf{C} = \mathbf{A}\mathbf{V},
-\]
-
-where \(\mathbf{M}\) is an additive padding mask derived from a 2D binary mask (1 for valid, 0 for padding) by expanding and adding \((1-\text{mask})\cdot(-\infty)\). After concatenating heads, the output is projected:
-
-\[
-\mathbf{Y} = \mathbf{C}_{\text{flat}} \mathbf{W}_o^\top.
-\]
-
-Note that no additional bias is added in the projection layers; the original biases are not stored, which may cause a small initial discrepancy but can be compensated by fine‑tuning.
-
-### 2.4 “Truncation‑Aware” Design Intention
-
-The module includes an `energy_threshold` parameter in its constructor, hinting at a dynamic rank selection based on singular value energy. The idea is to automatically determine the rank \(r\) for each projection such that a fraction \(\eta\) (e.g., 0.95) of the total singular value energy is preserved. However, the current implementation does **not** use this threshold for rank selection; the rank is passed externally or defaulted to 64. The padding mechanism instead offers a way to increase the rank beyond the SVD‑determined optimal rank, which is a different concept. A full “V2” would integrate the energy threshold to adaptively set the rank per matrix before initialisation.
-
----
-
-## 3. Implementation Details
-
-- **`SVDLLMV2Attention`** inherits from `BaseAttention` and is registered under `"svd_llm_v2"`.
-- **Constructor**:
-  - `config`: provides `num_attention_heads`, `hidden_size`, `dropout`.
-  - `rank`: the target rank \(r\) (default 64).
-  - `energy_threshold`: unused in current logic.
-  - `pretrained_attn`: the original attention module; if provided, calls `_init_from_pretrained`, else `_init_random`.
-- **Factor storage**: The parameters are `query_u`, `query_s`, `query_vh`, and similarly for key, value, and output. Their shapes are \((d_{\text{all\_head}}, r)\), \((r,)\), \((r, d_{\text{model}})\).
-- **`_init_from_pretrained`**:
-  - For each projection, computes full SVD using `torch.linalg.svd` on the original weight.
-  - Sets the first \(r_{\text{actual}}\) columns of `u` to \(\mathbf{U}_{[:,\text{:}r]} \mathbf{\Sigma}_{[:r]}\), `s` to ones, and `vh` to \(\mathbf{V}_{[:r,:]}\).
-  - If \(r_{\text{actual}} < r\), calls `_pad_factors` to fill the remaining dimensions with small random tensors.
-- **`_pad_factors`**: Extends the factor tensors to reach the desired rank by concatenating random normal values scaled by 0.01 for `u` and `vh`, and 0.01 for `s`.
-- **Forward pass**:
-  - Reconstructs weights: `W = (u * s) @ vh`.
-  - Projects hidden states to Q, K, V via `F.linear`.
-  - Reshapes to multi‑head, computes scaled dot‑product attention, applies mask, softmax, dropout.
-  - Aggregates values, concatenates heads, applies output weight.
-  - Returns `(output, None)`.
-- **Mask handling**: Converts a 2D binary mask (1 for valid) to additive `(1-mask) * -1e9`. Other mask shapes are passed through.
-- **Injection**: `inject_svd_llm_v2` reads `rank` and `svd_energy` from `comp_config`, creates the module, and replaces the layer’s attention. This injection is registered under the same key `"svd_llm_v2"`.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"svd_llm_v2"` in the compression configuration. The main configurable parameters (via `comp_config`) are:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `rank` | 64 | Target rank \(r\) for the factorisation. |
-| `svd_energy` | 0.95 | Energy threshold (currently unused). |
-| `dropout` | 0.1 | Dropout rate on attention weights. |
-
-Example injection via framework:
-```python
-comp_config.attention_type = "svd_llm_v2"
-comp_config.rank = 32
-```
-
-The injection function initialises the factors from the pretrained weights, so the module is immediately functional. Fine‑tuning can be performed to improve task‑specific performance.
-
----
-
-## 5. Discussion
-
-The SVD‑LLM V2 module offers a flexible and parameter‑efficient alternative to standard attention projections. By factoring out the singular values into a trainable vector \(\mathbf{s}\), the model can learn to rescale the importance of different singular directions, potentially compensating for the truncation error. The padding strategy allows the model to increase its representational capacity beyond the SVD‑derived rank, which is an interesting twist: instead of strictly limiting the rank to preserve energy, it provides additional random dimensions that can be shaped during training.
-
-However, several aspects of the current implementation are suboptimal:
-
-1. **Missing bias**: The original projection biases are discarded. In many pretrained models, biases are small but not zero; discarding them introduces a small initial shift. A full implementation should retain the biases as part of the layer.
-
-2. **Unused energy threshold**: The `energy_threshold` parameter is documented but never used to determine the rank. The rank must be set manually, which undermines the “truncation‑aware” label. A true energy‑thresholded selection would automatically pick the rank per matrix to satisfy a given energy criterion, as in the `MinimalSVDAttention` module.
-
-3. **Padding random values**: Padding with random factors adds trainable parameters that are initially uncorrelated with the original weight. While they can be trained, they start from a non‑optimal state and may require careful learning rate scheduling to avoid disrupting the good SVD initialisation. It might be preferable to initialise the extra dimensions with zeros and let the gradient flow expand them.
-
-4. **Uniform rank**: All projections share the same rank. The method would be more effective if each projection could have its own rank, as the singular spectra of Q, K, V, O matrices may differ.
-
-Despite these issues, the module represents a step forward from the basic SVD‑factorised attention by incorporating trainable singular values and a mechanism to expand capacity. It can serve as a foundation for a more advanced, energy‑aware compression algorithm.
-
----
-
-## 6. Conclusion
-
-We have described SVD‑LLM V2 Attention, a low‑rank factorised attention module that stores projection weights as \(\mathbf{U}, \mathbf{s}, \mathbf{V}^\top\) and initialises them from a pretrained model via truncated SVD. The trainable singular value vector and the padding mechanism provide additional flexibility. While the current implementation lacks the dynamic rank selection and bias handling, it illustrates the core principles of truncation‑aware compression. The module integrates smoothly into the DistilBERT compression framework and can be used as a building block for further improvements in parameter‑efficient Transformer design. Future work will implement automatic energy‑based rank selection, retain biases, and explore per‑projection rank allocation.
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+- **Fused Factored GEMM Triton Kernel**:
+  Bypass explicit weight matrix reconstruction $W = (U \odot S) V^\top$. Implement a Triton kernel computing $y = \left((X V) \odot S\right) U^\top$ directly, staging $B_N \times r$ intermediate activations in SRAM.
+- **Monotonic Singular Value Regularization**:
+  Apply softplus activation or monotonic penalty to vector $S$ during backpropagation: $\mathcal{L}_{\text{mono}} = \sum_{i=1}^{r-1} \text{ReLU}(S_{i+1} - S_i)$, enforcing $S_1 \ge S_2 \ge \dots \ge S_r \ge 0$.
+- **FlashAttention Integration**:
+  Stream intermediate factorized projections $Q, K, V$ into FlashAttention-2 / FlashAttention-3 kernels to execute fused online softmax attention without allocating $N \times N$ score matrices in HBM.

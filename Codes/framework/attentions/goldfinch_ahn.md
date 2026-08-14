@@ -1,185 +1,171 @@
-# GoldFinch‑AHN Block: Short‑Term Sliding Window + Long‑Term Gated DeltaNet Memory
+# GoldFinch-AHN: Adaptive Hybrid Network Combining Sliding Window and Gated DeltaNet Memory
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Standard Transformer self-attention enforces global $N \times N$ token comparisons, incurring quadratic time and memory cost $\mathcal{O}(N^2)$. However, sequence modeling requires capturing both short-range local correlations and long-range historical context. GoldFinch-AHN (Adaptive Hybrid Network) addresses this dual requirement by integrating a hybrid architectural design.
 
-We introduce the **GoldFinch‑AHN Block**, a hybrid attention‑recurrent module that combines a short‑term causal sliding window attention with a long‑term memory based on a Gated DeltaNet layer. A learned scalar gate dynamically interpolates between the two information sources for each token, allowing the model to flexibly adjust its reliance on recent local context versus a persistent global memory. The block is designed as a drop‑in replacement for standard self‑attention in Transformers, and it aims to capture both fine‑grained local dependencies and long‑range temporal structure while maintaining linear complexity in the window size and memory size. The short‑term attention is computed using exact scaled dot‑product within a fixed window, while the long‑term stream uses a recurrent network (placeholder for GatedDeltaNet) that processes the sequence sequentially or via a fast update rule, keeping a compressed state. This paper details the architecture, the mathematical formulation of the windowed attention and the gating mechanism, and the integration into a DistilBERT‑style framework.
-
----
-
-## 1. Introduction
-
-Self‑attention mechanisms in Transformers allow each token to attend to all others, but the quadratic cost has motivated hybrid designs that combine a local attention window with a global memory. The GoldFinch‑AHN (Adaptive Hybrid Network) Block implements such a hybrid by splitting the information flow into two parallel streams:
-
-- A **short‑term sliding window** attention that uses a causal mask and a local window to capture immediate context.
-- A **long‑term memory** realised through a Gated DeltaNet layer (or a placeholder thereof), which maintains a recurrent state that summarizes all past tokens.
-
-A token‑wise gate blends the outputs of the two streams, giving the model the capacity to decide, at each position, whether to rely on recent history or on the long‑term memory. This design is motivated by the observation that many language tasks require both local syntax (well captured by a narrow window) and topic‑level coherence (requiring a longer memory), and a simple gate can successfully combine them.
-
-In the following sections, we detail the method, present the mathematical equations, discuss the placeholder nature of the GatedDeltaNetLayer, and describe the implementation.
+GoldFinch-AHN couples a local causal sliding-window attention mechanism with a long-range Gated DeltaNet recurrent memory stream. Dynamic, input-conditioned scalar gating coefficients $g = \sigma(\mathbf{X} \mathbf{W}_{\text{gate}} + \mathbf{b}_{\text{gate}}) \in [0, 1]$ continuously blend short-term local representations with long-term recurrent memory features, providing linear computational complexity $\mathcal{O}(N W + N D)$.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Projections
-
-Given an input sequence \(\mathbf{H} \in \mathbb{R}^{B \times L \times D}\) (batch size \(B\), sequence length \(L\), hidden size \(D\)), the block first computes three linear projections without bias:
+Given an input representation sequence $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, GoldFinch-AHN projects queries, keys, and values:
 
 \[
-\mathbf{Q} = \mathbf{H} \mathbf{W}_Q, \quad
-\mathbf{K} = \mathbf{H} \mathbf{W}_K, \quad
-\mathbf{V} = \mathbf{H} \mathbf{W}_V,
+\mathbf{Q} = \mathbf{X} \mathbf{W}_Q \in \mathbb{R}^{B \times N \times D}, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K \in \mathbb{R}^{B \times N \times D}, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V \in \mathbb{R}^{B \times N \times D}
 \]
 
-where \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{V}_Q \in \mathbb{R}^{D \times D}\). Note that the projections are applied to the full hidden dimension without splitting into multiple heads; the block operates in a “single‑head” fashion (or equivalently, all heads are fused). This simplifies the design and is suitable when the overall model already has multiple layers.
-
-### 2.2 Short‑Term Causal Sliding Window Attention
-
-The short‑term output is computed using a causal windowed attention. The raw attention scores are:
+### 1. Short-Term Causal Sliding-Window Attention Stream
+Raw dot-product scores are scaled and masked using a causal sliding-window constraint matrix $\mathbf{M}_{\text{window}} \in \{0, -\infty\}^{N \times N}$:
 
 \[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{D}} \quad \in \mathbb{R}^{B \times L \times L}.
+\mathbf{S}_{i, j} = \frac{\mathbf{q}_i \mathbf{k}_j^\top}{\sqrt{D}} + (\mathbf{M}_{\text{window}})_{i, j}
 \]
 
-A binary mask is constructed that allows attention only to past tokens within a window of size \(W\) (the `window_size` hyperparameter). Formally, for position \(i\), the allowed keys are those positions \(j\) such that:
+where the valid spatial connectivity is restricted to causal positions within window radius $W_{\text{size}}$:
 
 \[
-0 \le i - j \le W-1 \quad \text{and} \quad j \le i.
+(\mathbf{M}_{\text{window}})_{i, j} = \begin{cases} 0 & \text{if } 0 \le i - j < W_{\text{size}} \\ -\infty & \text{otherwise} \end{cases}
 \]
 
-The mask is defined as:
+Softmax probability mapping over the local window yields short-term context:
 
 \[
-M_{ij} = \begin{cases}
-1 & \text{if } j \le i \text{ and } i - j < W,\\
-0 & \text{otherwise}.
-\end{cases}
+\mathbf{A}^{\text{short}} = \operatorname{softmax}(\mathbf{S}, \text{dim}=-1) \in \mathbb{R}^{B \times N \times N}, \quad \mathbf{O}^{\text{short}} = \mathbf{A}^{\text{short}} \mathbf{V} \in \mathbb{R}^{B \times N \times D}
 \]
 
-Positions with \(M_{ij} = 0\) have their scores set to \(-\infty\). The attention weights are then:
+### 2. Long-Term Gated DeltaNet Memory Stream
+Long-term context is processed through a recurrent memory projection layer:
 
 \[
-\mathbf{A} = \operatorname{softmax}(\mathbf{S} + \log(-\infty) \cdot (1 - M)),
+\mathbf{O}^{\text{long}} = \operatorname{DeltaNet}(\mathbf{X}) = \mathbf{X} \mathbf{W}_{\text{mem}} + \mathbf{b}_{\text{mem}} \in \mathbb{R}^{B \times N \times D}
 \]
 
-and the short‑term output is:
+### 3. Adaptive Gated Context Blending
+Input-conditioned dynamic gating weights $\mathbf{g} \in \mathbb{R}^{B \times N \times 1}$ are generated via linear transformation and sigmoid activation:
 
 \[
-\mathbf{O}_{\text{short}} = \mathbf{A} \mathbf{V}.
+\mathbf{g} = \sigma(\mathbf{X} \mathbf{W}_{\text{gate}} + \mathbf{b}_{\text{gate}}) \in [0, 1]^{B \times N \times 1}
 \]
 
-This is analogous to a local, causal window commonly used in autoregressive models; it restricts each token’s view to its immediate left context, reducing the complexity from \(O(L^2 D)\) to \(O(L W D)\).
-
-### 2.3 Long‑Term Memory via GatedDeltaNetLayer
-
-The long‑term stream processes the input sequence through a recurrent layer called `GatedDeltaNetLayer`. In the provided code, this layer is a placeholder—simply a linear projection—but the intended design is a gated recurrent unit with a state that carries information from the past. In a full implementation, the GatedDeltaNet would maintain a hidden state \(\mathbf{c}_t \in \mathbb{R}^D\) that evolves as:
+The final hybrid output blends short-term window attention and long-term memory representations:
 
 \[
-\mathbf{f}_t = \sigma(\mathbf{W}_f \mathbf{x}_t + \mathbf{U}_f \mathbf{c}_{t-1}),
-\]
-\[
-\mathbf{i}_t = \sigma(\mathbf{W}_i \mathbf{x}_t + \mathbf{U}_i \mathbf{c}_{t-1}),
-\]
-\[
-\tilde{\mathbf{c}}_t = \tanh(\mathbf{W}_c \mathbf{x}_t + \mathbf{U}_c \mathbf{c}_{t-1}),
-\]
-\[
-\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t,
-\]
-\[
-\mathbf{h}_t = \mathbf{c}_t.
+\mathbf{O}_{\text{hybrid}} = \mathbf{g} \odot \mathbf{O}^{\text{short}} + (1 - \mathbf{g}) \odot \mathbf{O}^{\text{long}} \in \mathbb{R}^{B \times N \times D}
 \]
 
-However, here the placeholder is a simple linear layer, so the long‑term output is just \(\mathbf{O}_{\text{long}} = \mathbf{x} \mathbf{W}_{\text{delta}}\). For the purpose of explanation, we treat it as a black‑box recurrent memory that produces a tensor of shape \((B, L, D)\) summarising the past.
-
-### 2.4 Adaptive Gating
-
-A token‑wise gate \(\mathbf{g} \in \mathbb{R}^{B \times L \times 1}\) is computed from the original hidden states:
+Applying the final linear projection yields:
 
 \[
-\mathbf{g} = \sigma(\mathbf{H} \mathbf{w}_g + b_g),
+\mathbf{Y} = \mathbf{O}_{\text{hybrid}} \mathbf{W}_O + \mathbf{b}_O \in \mathbb{R}^{B \times N \times D}
 \]
-
-where \(\mathbf{w}_g \in \mathbb{R}^{D \times 1}\) and \(b_g\) is a bias. The gate is then used to interpolate between the short‑term and long‑term outputs:
-
-\[
-\mathbf{O} = \mathbf{O}_{\text{short}} \odot \mathbf{g} + \mathbf{O}_{\text{long}} \odot (1 - \mathbf{g}).
-\]
-
-This convex combination allows each token to dynamically balance its reliance on immediate context versus the broader memory.
-
-### 2.5 Output Projection
-
-The blended output is projected back to dimension \(D\) using an output matrix \(\mathbf{W}_O \in \mathbb{R}^{D \times D}\):
-
-\[
-\mathbf{Y} = \mathbf{O} \mathbf{W}_O.
-\]
-
-The final output is returned as a tuple \((\mathbf{Y}, \text{None})\) for compatibility with the framework’s attention interface.
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 GoldFinchAHNBlock Class
+```
+Input Hidden States X [B, N, D]
+  │
+  ├──> Linear Projections (W_Q, W_K, W_V) -> Q, K, V [B, N, D]
+  │
+  ├──> Compute Score Matrix: S = Q @ K^T / sqrt(D) ───> [B, N, N]
+  │
+  ├──> Construct Causal Sliding Window Mask:
+  │    Mask_val = ~( (i >= j) & (i - j < W_size) ) ───> [N, N]
+  │    S_masked = S.masked_fill(Mask_val, -inf) ───────> [B, N, N]
+  │
+  ├──> Short-Term Context Readout:
+  │    A_short = Softmax(S_masked, dim=-1) ────────────> [B, N, N]
+  │    Out_short = A_short @ V ────────────────────────> [B, N, D]
+  │
+  ├──> Long-Term Gated DeltaNet Stream:
+  │    Out_long = DeltaNet(X) = X @ W_mem + b_mem ─────> [B, N, D]
+  │
+  ├──> Dynamic Input-Conditioned Gate Computation:
+  │    g = Sigmoid(X @ W_gate + b_gate) ───────────────> [B, N, 1]
+  │
+  └──> Context Blending & Output Projection:
+       Out_fused = g * Out_short + (1 - g) * Out_long -> [B, N, D]
+       Y = Out_fused @ W_O + b_O ──────────────────────> [B, N, D]
+```
 
-- **Inheritance**: Inherits from `BaseAttention`, which may provide additional hooks (e.g., orthogonal loss).
-- **Constructor parameters**:
-  - `config`: contains `hidden_size` (\(D\)).
-  - `rank`: unused, kept for interface consistency.
-  - `window_size` (default 256): the size of the sliding window.
-- **Layers**:
-  - `W_q`, `W_k`, `W_v`: linear projections for query, key, value.
-  - `delta_mem`: instance of `GatedDeltaNetLayer` (placeholder). The constructor passes `use_spectral_norm=True`, suggesting that the full implementation may use spectral normalisation for stability.
-  - `gate`: linear layer \(D \rightarrow 1\).
-  - `out_proj`: final linear projection.
+### Detailed Shape Progression Table
 
-- **Forward**:
-  1. Computes Q, K, V.
-  2. Computes attention scores using batch matrix multiplication: `torch.bmm(q, k.transpose(1, 2)) / sqrt(D)`. The tensors are of shape \((B, L, D)\).
-  3. Constructs a causal window mask using `torch.arange(L)`. The mask `causal` is lower‑triangular; `window` restricts to indices where \(i - j < W\). The combined mask is their logical AND. Scores are masked with `-inf` for invalid positions.
-  4. Applies softmax to get attention weights and computes `short_out = bmm(attn, v)`.
-  5. Computes `long_out = self.delta_mem(x)`.
-  6. Computes gate `g = sigmoid(gate(x))`.
-  7. Blends: `out = out_proj(g * short_out + (1-g) * long_out)`.
-  8. Returns `(out, None)`.
-
-The module does not include dropout in the provided snippet; it could be added after the gate or in the attention.
-
-### 3.2 Placeholder GatedDeltaNetLayer
-
-The stub `GatedDeltaNetLayer` is a single linear layer (`net = nn.Linear(d_model, d_model)`). Its `forward` just applies the linear transform, meaning the “long‑term memory” in this implementation is a simple linear projection of the input. While this serves as a placeholder, the design intention is to replace it with a true recurrent or linear‑attention‑based memory that accumulates information over time. The flag `use_spectral_norm` is accepted but not used in the stub.
-
-### 3.3 Integration
-
-The block is registered under `"goldfinch_ahn"` in `ATTENTION_REGISTRY`. The injection function (not shown) would replace the standard attention layer with this block, likely initialising the projections from pretrained weights if needed.
-
----
-
-## 4. Usage and Configuration
-
-The block can be injected via the framework’s configuration by setting the attention type to `"goldfinch_ahn"`. The relevant hyperparameters that can be passed through `comp_config` are:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `window_size` | 256 | Width of the sliding window for short‑term attention. |
-| `rank` | (ignored) | Kept for interface compatibility. |
-
-No other special configuration is needed for the placeholder version. To upgrade to a true long‑term memory, one would replace the stub with a proper GatedDeltaNet implementation.
+| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| 1 | Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
+| 2 | Score Batch MatMul ($\mathbf{Q} \mathbf{K}^\top$) | `Q: [B, N, D]`, `K^T: [B, D, N]` | `S: [B, N, N]` |
+| 3 | Apply Window Mask | `S: [B, N, N]`, `Mask_val: [N, N]` | `S_masked: [B, N, N]` |
+| 4 | Softmax Probability Mapping | `S_masked: [B, N, N]` | `A_short: [B, N, N]` |
+| 5 | Short-Term Context Matrix Product | `A_short: [B, N, N]`, `V: [B, N, D]` | `Out_short: [B, N, D]` |
+| 6 | Long-Term Delta Memory | `X: [B, N, D]`, `W_mem: [D, D]` | `Out_long: [B, N, D]` |
+| 7 | Dynamic Gate Computation | `X: [B, N, D]`, `W_gate: [D, 1]` | `g: [B, N, 1]` |
+| 8 | Convex Gate Combination | `Out_short, Out_long, g` | `Out_fused: [B, N, D]` |
+| 9 | Output Linear Projection | `Out_fused: [B, N, D]`, `W_O: [D, D]` | `Y: [B, N, D]` |
 
 ---
 
-## 5. Discussion
+## 4. Analytical Complexity Profiling
 
-The GoldFinch‑AHN block offers a lightweight hybrid model that is particularly suited for long sequences. The short‑term window ensures that local dependencies are captured with high precision, while the long‑term stream provides a global context that does not grow in computational cost with distance. The gate, conditioned on the token’s hidden state, allows the model to learn when to trust the recent window (e.g., for syntactic agreement) versus when to rely on the memory (e.g., for topic tracking or coreference).
+### FLOP & MAC Counting
+1. **Linear Projections ($W_Q, W_K, W_V, W_O, W_{\text{mem}}, W_{\text{gate}}$)**: $6 \times (2 B N D^2) = 12 B N D^2$ FLOPs.
+2. **Short-Term Window Matrix Product ($\mathbf{Q} \mathbf{K}^\top$)**: $2 B N W_{\text{size}} D$ FLOPs (evaluating only non-masked window pairs).
+3. **Value Aggregation ($\mathbf{A}^{\text{short}} \mathbf{V}$)**: $2 B N W_{\text{size}} D$ FLOPs.
+4. **Dynamic Gating & Blending**: $3 B N D$ FLOPs.
 
-A key limitation is that the current long‑term memory is just a linear projection, which does not actually maintain a stateful memory. The full GatedDeltaNetLayer should be incorporated to realise the intended benefits. Additionally, the block operates on a single‑head, full‑dimensional representation, which may limit its capacity compared to multi‑head attention. Splitting the projection into multiple heads could improve expressiveness. The causal mask is hard‑coded, making the block suitable only for autoregressive tasks; for bidirectional encoding, the causal condition would need to be removed. Finally, padding masks are not handled in the current code; tokens beyond the sequence length would be attended to in the short‑term attention unless explicitly masked.
+**Total Computational Cost**:
+\[
+\text{Total FLOPs} = 12 B N D^2 + 4 B N W_{\text{size}} D + 3 B N D
+\]
 
-Despite these gaps, the block provides a clear template for exploring hybrid attention‑recurrent designs, and with a proper long‑term memory, it could match or exceed the performance of full attention on long‑range tasks while remaining efficient.
+When window radius $W_{\text{size}} \ll N$, attention computation scales linearly with sequence length $N$.
+
+### Memory Footprint & Tensor Store
+- **Parameters**: $5 D^2 + D$ floats.
+- **Activation Memory**:
+  - Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$): $3 B N D$ floats.
+  - Window Scores Matrix ($\mathbf{S}$): $B N^2$ (or $B N W_{\text{size}}$ with block sparse storage) floats.
+  - Gating Weights ($\mathbf{g}$): $B N$ floats.
+  - Peak Memory Footprint: $\mathcal{O}(B N D + B N W_{\text{size}})$.
 
 ---
 
-## 6. Conclusion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-We have described the GoldFinch‑AHN Block, a hybrid module that marries a causal sliding window attention with a gated recurrent memory. The token‑wise gating mechanism dynamically fuses the two sources, offering a balance between local precision and global context. The placeholder GatedDeltaNetLayer marks the spot for a future recurrent memory, and when fully implemented, the block promises linear complexity in both sequence length and memory size. Its integration into the DistilBERT framework via the registry makes it a convenient experimental tool for efficient sequence modelling.
+1. **Un-fused Dense Score Matrix Instantiation**: Naive PyTorch allocates a full $B \times N \times N$ score matrix prior to applying mask `scores.masked_fill`, consuming $\mathcal{O}(N^2)$ DRAM memory despite window truncation.
+2. **Simplified DeltaNet Abstraction**: The current `GatedDeltaNetLayer` uses a static linear projection (`nn.Linear`) rather than dynamic recurrent state tracking, limiting long-term memory capacity.
+3. **Absence of Head Specialization**: The code operates on single 3D tensors $[B, N, D]$ without splitting into multiple heads, preventing multi-head feature subspace diversity.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Memory Access & Vectorization Barriers
+Naive PyTorch instantiates full $B \times N \times N$ attention tensors in DRAM, writing unmasked `-inf` values to global GPU memory.
+
+### High-Performance Triton Kernel Fusion Strategy
+1. **Fused Sliding Window FlashAttention Kernel**: Implement a Triton kernel that streams queries $\mathbf{Q}_i$ and keys $\mathbf{K}_j$ in SRAM tiles of size `BLOCK_N = 64`. Skip all key blocks outside the causal window range $i - W_{\text{size}} \le j \le i$, avoiding memory allocation for non-causal entries.
+
+```python
+# Triton Pseudocode for Fused Sliding Window Flash Kernel
+@triton.jit
+def _goldfinch_fused_window_kernel(
+    Q_ptr, K_ptr, V_ptr, Out_ptr,
+    N, D, W_SIZE: tl.constexpr, BLOCK_N: tl.constexpr
+):
+    # Load Query block [BLOCK_N, D]
+    q = tl.load(Q_ptr + offsets_q)
+    
+    # Loop over key blocks within window range: max(0, i - W_SIZE) to i
+    for j in range(start_j, end_j, BLOCK_N):
+        k = tl.load(K_ptr + offsets_k)
+        scores = tl.dot(q, tl.trans(k)) * scale
+        
+        # Apply causal & window bounds in SRAM registers
+        scores = tl.where(causal_window_mask, scores, -1e9)
+        p = tl.softmax(scores)
+        acc += tl.dot(p, v)
+```
+
+2. **Fused DeltaNet & Gating Pipeline**: Fuse long-term linear memory evaluation and sigmoid gating directly into the output write loop, avoiding intermediate DRAM writes for $\mathbf{O}^{\text{long}}$ and $\mathbf{g}$.

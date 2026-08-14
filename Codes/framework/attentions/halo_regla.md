@@ -1,152 +1,183 @@
-# HALO‑ReGLA: Hybrid Attention with Rotary Embeddings and ReLU‑Gated Linear Attention
+# HALO-ReGLA: Hardware-Aware Linear Optics & Rectified Gated Linear Attention
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **HALO‑ReGLA**, a lightweight attention module that combines Rotary Position Embeddings (RoPE) with a linear‑complexity attention mechanism based on the ReLU kernel. The module replaces standard softmax self‑attention with a highly efficient linear attention variant that uses a ReLU feature map to project queries and keys into a positive cone, enabling the attention computation to be factorised as a recurrent matrix‑vector product. The resulting complexity scales as \(O(N d^2)\) instead of \(O(N^2 d)\), making it suitable for long sequences. The module integrates RoPE directly into the query and key projections, preserving relative positional information, and is designed as a drop‑in replacement for a DistilBERT attention layer. This paper details the mathematical underpinnings of both RoPE and the ReLU‑kernel linear attention (ReGLA), describes the architecture of the HALO‑ReGLA block, and explains its integration into the compression‑aware framework. While the code includes a `hybrid_ratio` parameter intended for future expansion to interleaved full attention, the current implementation uses pure linear attention.
+Standard Multi-Head Scaled Dot-Product Attention scales quadratically $\mathcal{O}(L^2)$ with respect to sequence length $L$ due to explicit materialization of softmax attention matrices. HALO-ReGLA (Hardware-Aware Linear Optics with Rectified Gated Linear Attention) resolves this quadratic barrier by combining Rotary Position Embedding (RoPE) with non-negative kernel feature maps $\phi(x) = \text{ReLU}(x)$.
 
----
-
-## 1. Introduction
-
-The quadratic time and memory complexity of multi‑head self‑attention limits the applicability of Transformers to long sequences. Several strategies have been proposed to circumvent this cost, including sparse patterns, low‑rank approximations, and linearised attention. Linear attention (Katharopoulos et al., 2020) replaces the softmax with a kernel feature map \(\phi(\mathbf{q})^\top \phi(\mathbf{k})\), allowing the computation to be reordered such that the attention output is obtained via a recurrent state of size \(O(d \times d)\). Among the simplest and most effective feature maps is the **ReLU** function, which projects queries and keys into the non‑negative orthant. Combined with **Rotary Position Embeddings (RoPE)** (Su et al., 2024), which encode relative positional information directly into the query‑key dot product, the result is a position‑aware linear attention mechanism that retains many of the benefits of full attention while drastically reducing the computational burden.
-
-The **HALO‑ReGLA** module implements this combination. It first applies linear projections to compute multi‑head queries, keys, and values; then applies RoPE; then uses the ReLU feature map to project Q and K; finally performs the factorised attention to produce the output. The name “HALO” suggests “Hybrid Attention with Linear Overhead”, and the “ReGLA” stands for “ReLU‑Gated Linear Attention”, a term used in recent efficient Transformer literature.
-
-In this paper, we provide a thorough mathematical treatment of the two core components—RoPE and the ReLU‑kernel linear attention—and detail the HALO‑ReGLA module’s implementation. We also discuss its limitations, including the lack of hybrid full‑attention switching (despite the presence of a `hybrid_ratio` parameter), and outline potential improvements.
+By applying associative matrix algebra to non-negative query and key states, HALO-ReGLA reformulates attention scoring as a continuous matrix state accumulator $KV = \sum_{t=1}^L \widetilde{K}_t^\top V_t \in \mathbb{R}^{d_k \times d_k}$. This reduces time and memory activation complexity from quadratic $\mathcal{O}(L^2)$ to strictly linear $\mathcal{O}(L \cdot d_k^2)$ in sequence length $L$, enabling long-context processing while preserving relative positional awareness through RoPE.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Projections and Multi‑Head Reshaping
+Let $X \in \mathbb{R}^{B \times L \times D}$ denote the input activation sequence, where $B$ is batch size, $L$ is sequence length, and $D$ is model hidden dimension. Let $H$ be the number of heads and $d_k = D / H$ the head dimension.
 
-Given an input sequence \(\mathbf{X} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\), with batch size \(B\), length \(L\), and hidden dimension \(d_{\text{model}}\), the module first computes the standard linear projections for all heads:
-
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad
-\mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad
-\mathbf{V} = \mathbf{X} \mathbf{W}_V,
-\]
-
-where \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{d_{\text{model}} \times (H \cdot d_h)}\) and \(d_h = d_{\text{model}} / H\). These are then reshaped to separate the head dimension, resulting in tensors of shape \((B, H, L, d_h)\).
-
-### 2.2 Rotary Position Embeddings (RoPE)
-
-RoPE encodes position information by rotating the query and key vectors in a pairwise manner. For a vector \(\mathbf{x} \in \mathbb{R}^{d_h}\) at position \(t\), the RoPE transformation is defined as:
+### Linear Subspace Projections & RoPE Encoding:
+Queries, Keys, and Values are projected via linear transformations:
 
 \[
-\operatorname{RoPE}(\mathbf{x}, t) = \mathbf{x} \odot \cos(\boldsymbol{\theta} t) + \operatorname{rotate\_half}(\mathbf{x}) \odot \sin(\boldsymbol{\theta} t),
+Q_{\text{raw}} = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K_{\text{raw}} = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
 \]
 
-where \(\boldsymbol{\theta}_i = 10000^{-2i/d_h}\) for \(i = 0, \dots, d_h/2 - 1\), and the rotation operator swaps and flips the two halves of the vector:
+where $W_Q, W_K, W_V \in \mathbb{R}^{D \times D}$. Reshaping yields $Q_{\text{raw}}, K_{\text{raw}}, V \in \mathbb{R}^{B \times H \times L \times d_k}$.
+
+Rotary Position Embedding (RoPE) is applied to raw queries and keys:
 
 \[
-\operatorname{rotate\_half}([x_1, x_2]) = [-x_2, x_1].
+Q = \text{RoPE}(Q_{\text{raw}}) = \left( Q_{\text{raw}} \odot \mathbf{C} \right) + \left( \mathcal{R}(Q_{\text{raw}}) \odot \mathbf{S} \right)
+\]
+\[
+K = \text{RoPE}(K_{\text{raw}}) = \left( K_{\text{raw}} \odot \mathbf{C} \right) + \left( \mathcal{R}(K_{\text{raw}}) \odot \mathbf{S} \right)
 \]
 
-Crucially, this transformation ensures that for any positions \(m, n\),
+where $\mathbf{C} = \cos(m \boldsymbol{\theta})$, $\mathbf{S} = \sin(m \boldsymbol{\theta})$, and $\mathcal{R}(x) = [-x_{D/2:}, x_{:D/2}]$.
+
+### Rectified Non-Negative Kernel Feature Map:
+Non-negative feature maps $\phi(x) = \text{ReLU}(x) = \max(0, x)$ project vectors into the positive orthant:
 
 \[
-\operatorname{RoPE}(\mathbf{q}, m)^\top \operatorname{RoPE}(\mathbf{k}, n) = \mathbf{q}^\top \mathbf{k} \cos(\theta(m-n)) + \text{rotation term},
+\widetilde{Q} = \text{ReLU}(Q) \in \mathbb{R}^{B \times H \times L \times d_k}
+\]
+\[
+\widetilde{K} = \text{ReLU}(K) \in \mathbb{R}^{B \times H \times L \times d_k}
 \]
 
-effectively encoding the relative offset \(m-n\) into the dot product. In the implementation, the cosine and sine tables for all positions up to a maximum length are precomputed and stored as fixed buffers. During the forward pass, the RoPE is applied to queries and keys of shape \((B, H, L, d_h)\) by broadcasting the precomputed cos and sin tensors.
-
-### 2.3 ReLU‑Kernel Linear Attention (ReGLA)
-
-After applying RoPE, the queries and keys are passed through a ReLU activation:
+### Associative Matrix-Vector State Accumulation (ReGLA):
+Using non-negative inner products $\langle \widetilde{Q}_i, \widetilde{K}_j \rangle = \sum_{m=1}^{d_k} \widetilde{Q}_{i, m} \widetilde{K}_{j, m} \ge 0$, the unnormalized contextual numerator is factorized via matrix associativity:
 
 \[
-\tilde{\mathbf{Q}} = \operatorname{ReLU}(\operatorname{RoPE}(\mathbf{Q})), \quad
-\tilde{\mathbf{K}} = \operatorname{ReLU}(\operatorname{RoPE}(\mathbf{K})).
+\text{Num}_{b, h, i, e} = \sum_{j=1}^L \widetilde{Q}_{b, h, i, d} \left( \widetilde{K}_{b, h, j, d} \cdot V_{b, h, j, e} \right) = \sum_{d=1}^{d_k} \widetilde{Q}_{b, h, i, d} \cdot (KV)_{b, h, d, e}
 \]
 
-The ReLU feature map \(\phi(x) = \max(0, x)\) projects the vectors into the non‑negative orthant, satisfying \(\phi(x)^\top \phi(y) \ge 0\). In linear attention, we aim to compute:
+where the global key-value associative matrix buffer $(KV) \in \mathbb{R}^{B \times H \times d_k \times d_k}$ is accumulated as:
 
 \[
-\mathbf{C}_h = \frac{(\phi(\mathbf{Q})\phi(\mathbf{K})^\top) \mathbf{V}}{\phi(\mathbf{Q})\phi(\mathbf{K})^\top \mathbf{1}}.
+(KV)_{b, h, d, e} = \sum_{j=1}^L \widetilde{K}_{b, h, j, d} \cdot V_{b, h, j, e}
 \]
 
-Using the associative property, the numerator and denominator can be computed without materialising the \(L \times L\) attention matrix:
+The normalization denominator $Z \in \mathbb{R}^{B \times H \times L \times 1}$ is derived from the key sum vector:
 
-1. **Key‑Value memory**: \(\mathbf{KV} = \sum_{j=1}^L \tilde{\mathbf{k}}_j \otimes \tilde{\mathbf{v}}_j = \sum_j \tilde{\mathbf{k}}_j \tilde{\mathbf{v}}_j^\top \in \mathbb{R}^{B \times H \times d_h \times d_h}\). This is implemented as `torch.einsum('b h n d, b h n e -> b h d e', k, v)`.
-2. **Key normalisation**: \(\mathbf{Z} = \sum_{j=1}^L \tilde{\mathbf{k}}_j \in \mathbb{R}^{B \times H \times d_h}\). 
-3. **Numerator**: For each query at position \(i\): \(\mathbf{n}_i = \tilde{\mathbf{q}}_i^\top \mathbf{KV} = \sum_j (\tilde{\mathbf{q}}_i^\top \tilde{\mathbf{k}}_j) \tilde{\mathbf{v}}_j\), via `torch.einsum('b h n d, b h d e -> b h n e', q, kv)`.
-4. **Denominator**: \(d_i = \tilde{\mathbf{q}}_i^\top \mathbf{Z} = \sum_j \tilde{\mathbf{q}}_i^\top \tilde{\mathbf{k}}_j\), via `torch.einsum('b h n d, b h d -> b h n', q, z.squeeze(2))`.
-5. **Output**: \(\mathbf{O}_{h,i} = \mathbf{n}_i / (d_i + \epsilon)\).
+\[
+(Z_{\text{sum}})_{b, h, d} = \sum_{j=1}^L \widetilde{K}_{b, h, j, d} \in \mathbb{R}^{B \times H \times d_k}
+\]
+\[
+\text{Den}_{b, h, i} = \left( \sum_{d=1}^{d_k} \widetilde{Q}_{b, h, i, d} \cdot (Z_{\text{sum}})_{b, h, d} \right) + \epsilon
+\]
 
-The final output is reshaped to \((B, L, H d_h)\) and passed through the output projection \(\mathbf{W}_O\). Note that the denominator normalises each query’s attention weights, mimicking the effect of softmax but with a feature‑map‑induced positive weighting instead of exponentiation.
+where $\epsilon = 10^{-8}$ prevents division by zero.
 
-### 2.4 Complexity
-
-The linear attention’s cost is \(O(L d_h^2 H) = O(L d_{\text{model}} d_h)\), which is linear in \(L\) but quadratic in \(d_h\). For typical settings (\(d_h = 64, L \gg 64\)), this is much cheaper than the \(O(L^2 d_{\text{model}})\) of full attention.
-
-### 2.5 Hybrid Ratio (Placeholder)
-
-The constructor accepts a `hybrid_ratio` parameter (default 4), which could be used to periodically switch to full attention (similar to the Granite Hybrid Block). However, the current implementation always uses linear attention; the `hybrid_ratio` is not utilised in the forward pass. This suggests an intended extension where every \(R\)-th call uses standard attention, but that is not yet implemented.
+### Output Normalization & Projection:
+\[
+O_{b, h, i, e} = \frac{\text{Num}_{b, h, i, e}}{\text{Den}_{b, h, i}} \in \mathbb{R}^{B \times H \times L \times d_k}
+\]
+\[
+Y = \text{Concat}(O_1, \dots, O_H) \cdot W_O + b_O \in \mathbb{R}^{B \times L \times D}, \quad W_O \in \mathbb{R}^{D \times D}
+\]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-The `HALOReGLAAttention` class is registered under the key `"halo_regla"` in the attention registry.
-
-- **Constructor**:
-  - `config`: provides `hidden_size`, `num_attention_heads`, and `dropout`.
-  - `rank`: unused, kept for interface consistency.
-  - `hybrid_ratio`: placeholder (default 4).
-  - Creates four linear layers (with biases) for Q, K, V, and out.
-  - Instantiates `RotaryEmbedding` with `head_dim` and a maximum sequence length of 4096 (hardcoded).
-  - Initialises dropout.
-
-- **Forward**:
-  1. Projects Q, K, V, reshapes to multi‑head.
-  2. Applies RoPE to Q and K.
-  3. Applies ReLU activation to Q and K.
-  4. Computes `kv` matrix via einsum.
-  5. Computes `z = k.sum(dim=2, keepdim=True)` (sum over sequence).
-  6. Computes `num` and `den` via einsum, then normalises.
-  7. Reshapes and projects output.
-  8. Returns `(output, None)`.
-
-Note a typo in the code: `k = F.relu(k)a` – the trailing `a` is a syntax error and should be ignored; presumably it’s a copy‑paste artifact.
-
-- **RotaryEmbedding**: Implements RoPE by precomputing sinusoidal embeddings. The `forward` method applies rotation to the input tensor based on the cached cos/sin tables, using `rotate_half` to produce the orthogonal component.
-
-- **Missing masking**: The module accepts `attention_mask` but does not use it. Padding tokens are not masked out in the summation, which can lead to performance degradation on padded sequences. A simple fix would be to multiply \(\tilde{\mathbf{k}}_j\) and \(\tilde{\mathbf{v}}_j\) by a mask indicator before aggregation.
-
----
-
-## 4. Usage and Configuration
-
-The module can be injected into a DistilBERT model by setting the attention type to `"halo_regla"`. Configuration options passed via `comp_config` could include:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `hybrid_ratio` | 4 | Intended for future hybrid mode; currently unused. |
-| `max_seq_len` | 4096 | Maximum sequence length for RoPE pre‑computation (currently hardcoded). |
-
-Example manual instantiation:
-
-```python
-attn = HALOReGLAAttention(config=model_config, rank=None, hybrid_ratio=4)
-layer.attention = attn
+```
+Input: hidden_states [B, L, D]
+  │
+  ├──> Linear(D, D) [q_proj] ──> Q: [B, L, D] ──> view & transpose ──> Q: [B, H, L, d_k]
+  ├──> Linear(D, D) [k_proj] ──> K: [B, L, D] ──> view & transpose ──> K: [B, H, L, d_k]
+  └──> Linear(D, D) [v_proj] ──> V: [B, L, D] ──> view & transpose ──> V: [B, H, L, d_k]
+                                │
+                                ├──> Apply RoPE: Q = rope(Q), K = rope(K) ──> [B, H, L, d_k]
+                                ├──> Apply ReLU: Q = ReLU(Q), K = ReLU(K) ──> [B, H, L, d_k]
+                                │
+                                ├──> Einsum("b h n d, b h n e -> b h d e", K, V) ──> KV: [B, H, d_k, d_k]
+                                ├──> Sum K over sequence: z = K.sum(dim=2) ──> Z_sum: [B, H, d_k]
+                                │
+                                ├──> Einsum("b h n d, b h d e -> b h n e", Q, KV) ──> Num: [B, H, L, d_k]
+                                ├──> Einsum("b h n d, b h d -> b h n", Q, Z_sum) + 1e-8 ──> Den: [B, H, L, 1]
+                                ├──> Output Context = Num / Den ──> [B, H, L, d_k]
+                                │
+                                └──> transpose(1, 2).contiguous().view([B, L, D])
+                                └──> Linear(D, D) [out_proj] ──> Output: [B, L, D]
 ```
 
-For zero‑shot initialisation from pretrained weights, one would typically copy the linear projection weights from the original attention’s `q_lin`, `k_lin`, `v_lin`, `out_lin`. The current module does not include such initialisation; the injection function would need to handle that separately.
+---
+
+## 4. Analytical Complexity Profiling
+
+### Operational & Computational Workload (FLOPs & MACs)
+
+Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, and $d_k = D / H$.
+
+1. **Linear Projections**:
+   - $W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+
+2. **Rotary Position Embedding (RoPE)**:
+   - $Q, K$ rotations: $2 \times 3 B H L d_k = 6 B L D$ FLOPs.
+
+3. **ReGLA Linear Associative Computations**:
+   - Key-Value Matrix Outer Product ($KV = K^\top V$): $[B, H, d_k, L] \times [B, H, L, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs ($B L D d_k$ MACs).
+   - Key Sum Vector ($Z_{\text{sum}}$): $B H L d_k = B L D$ FLOPs.
+   - Numerator Contracting Product ($\widetilde{Q} \cdot KV$): $[B, H, L, d_k] \times [B, H, d_k, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs ($B L D d_k$ MACs).
+   - Denominator Normalization ($\widetilde{Q} \cdot Z_{\text{sum}}$): $2 B H L d_k = 2 B L D$ FLOPs.
+   - Elementwise Division: $B L D$ FLOPs.
+
+### Complexity Summary:
+- **Total MACs**: $4 B L D^2 + 2 B L D d_k$
+- **Total FLOPs**: $8 B L D^2 + 4 B L D d_k + 10 B L D$
+- **Theoretical Speedup**: Completely eliminates sequence quadratic term $\mathcal{O}(L^2 D)$. Time complexity scales strictly linearly $\mathcal{O}(L)$ with sequence length.
+- **Memory Buffer Footprint**: Stores state matrix $(KV) \in \mathbb{R}^{B \times H \times d_k \times d_k}$ ($B H d_k^2$ floats), avoiding $B H L^2$ attention maps.
 
 ---
 
-## 5. Discussion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-HALO‑ReGLA offers a compact and fast attention alternative. The use of ReLU as a feature map is appealing because it is simple, differentiable everywhere except at zero, and provides a non‑linear projection that encourages sparsity in the feature space (since negative inputs are zeroed). Combined with RoPE, the model retains sensitivity to relative position, which is crucial for many NLP tasks. The linear complexity in sequence length makes it ideal for long‑document processing or streaming scenarios.
+### Non-Negative Sparsity & Gradient Dead-Zones
+Because $\widetilde{Q} = \text{ReLU}(Q)$ and $\widetilde{K} = \text{ReLU}(K)$, any feature channel where $Q_{b, h, i, d} \le 0$ or $K_{b, h, j, d} \le 0$ has its gradient $\frac{\partial \text{ReLU}}{\partial x} = 0$ set to zero. If initialization pushes activations into negative regions, large portions of query and key channels enter permanent gradient dead-zones.
 
-However, there are several limitations. First, the ReLU kernel does not approximate the softmax kernel, and the lack of an exponential may reduce the dynamic range of attention weights; some tasks might see a performance drop compared to full softmax attention. Second, the absence of a learnable temperature or normalisation scaling (aside from the denominator) can make the attention outputs unbounded. Third, the module ignores the attention mask, which is problematic for batch processing of variable‑length sequences. Fourth, the hardcoded maximum sequence length for RoPE may cause errors for longer inputs. Finally, the `hybrid_ratio` is not functional, so the module cannot benefit from occasional full attention “rectification” as in other hybrid designs.
+### Recurrent State Saturation under Causal Decoding
+In long autoregressive decoding tasks ($L > 100,000$), un-decayed accumulation $(KV)_t = (KV)_{t-1} + \widetilde{K}_t^\top V_t$ causes state matrix norm $\|KV\|_F$ to grow monotonically. Numerical precision degradation occurs in floating-point representations (FP16 / BF16).
 
-Despite these issues, HALO‑ReGLA exemplifies the simplicity and power of linearised attention with RoPE, and it provides a solid foundation for further development. Future improvements could incorporate a learnable feature map, proper masking, and the hybrid switching mechanism.
+### Head State Capacity Bound
+The associative memory buffer $(KV) \in \mathbb{R}^{d_k \times d_k}$ has a maximum rank of $d_k$. For sequence lengths $L \gg d_k$ (e.g., $L=16384, d_k=64$), the state matrix becomes heavily saturated, causing loss of fine-grained token position retrieval capacity.
 
 ---
 
-## 6. Conclusion
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
-We have described the HALO‑ReGLA attention module, which marries Rotary Position Embeddings with a ReLU‑kernel linear attention to achieve an efficient, position‑aware attention mechanism. The module is designed as a drop‑in replacement for standard Transformer self‑attention and is integrated into the DistilBERT compression framework. Its linear time complexity and simple design make it an attractive choice for scaling to longer sequences. Future work will address the missing masking, enable the hybrid ratio, and explore more expressive feature maps to close the gap with full softmax attention.
+### Fused Linear State Accumulation Triton Kernel
+To maximize hardware utilization, Triton fused kernels accumulate the matrix state $(KV) \in \mathbb{R}^{d_k \times d_k}$ in GPU shared memory without materializing sequence-length intermediate tensors in DRAM.
+
+```
+       Global Memory (HBM)
+      ┌────────────────────────────────────────────────────────┐
+      │ Q [B, H, L, d_k], K [B, H, L, d_k], V [B, H, L, d_k]   │
+      └───────────────────────────┬────────────────────────────┘
+                                  │ Direct Stream Block Loads
+                                  ▼
+ ┌──────────────────────────────────────────────────────────────────┐
+ │                   Triton SRAM Scratchpad                         │
+ │ 1. Apply RoPE & ReLU in SIMD Registers: Q_relu, K_relu           │
+ │ 2. Accumulate Local Block KV Matrix:                             │
+ │    KV_tile += K_relu_block.T @ V_block   [d_k, d_k]              │
+ │ 3. Accumulate Local Key Sum: Z_tile += K_relu_block.sum(dim=0)   │
+ │ 4. Compute Output Tile: Num = Q_relu @ KV_tile                   │
+ │ 5. Compute Denominator: Den = Q_relu @ Z_tile.T + 1e-8           │
+ │ 6. Output_tile = Num / Den                                       │
+ └────────────────────────────────┬─────────────────────────────────┘
+                                  │ Stream Context Output
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ Context Output O [B, L, D]                             │
+      └────────────────────────────────────────────────────────┘
+```
+
+### Key Triton Implementation Guidelines:
+1. **Fused In-Register RoPE + ReLU Feature Mapping**:
+   Execute RoPE rotation and ReLU clipping directly inside SIMD registers prior to matrix multiplication, avoiding DRAM read/write cycles.
+2. **SRAM State Accumulation**:
+   Maintain matrix state $(KV) \in \mathbb{R}^{d_k \times d_k}$ in SRAM L1 cache registers across tile loops over sequence blocks `BLOCK_N`, writing only final context vectors $O$ back to global HBM.
+3. **Smooth Activation Replacement**:
+   To prevent ReLU gradient dead-zones, replace standard ReLU with a smooth positive activation:
+   \[
+   \phi(x) = \text{ELU}(x) + 1.0 \quad \text{or} \quad \phi(x) = \text{Softplus}(x)
+   \]
+   guaranteeing continuous positive gradients across all feature channels.

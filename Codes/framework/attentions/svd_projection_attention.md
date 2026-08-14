@@ -1,145 +1,78 @@
-# SVD Projection Attention: Low‑Rank Factorised Self‑Attention with Direct U·V Reconstruction
+# SVD Projection Attention: Explicit Low-Rank Matrix Reconstruction Multi-Head Attention
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+SVD Projection Attention (`SVDProjectionAttention`) introduces a low-rank multi-head self-attention module that compresses query, key, value, and output projection operators ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) via explicit low-rank matrix reconstruction $W = U V$. Rather than evaluating two sequential linear layer projections ($x V^\top U^\top$), `SVDProjectionLinear` computes explicit weight reconstruction $W = U V \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ on-the-fly where $U \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\text{in}}}$. Weight initialization absorbs singular value magnitudes $\Sigma$ directly into orthogonal left-singular vectors $U$, yielding zero-shot model compatibility under the Eckart–Young–Mirsky theorem. By retaining full multi-head quadratic softmax self-attention over sequence length $N$, SVD Projection Attention achieves up to $12\times$ parameter compression (at $r=32, D=768$) while preserving downstream task performance.
 
-We present **SVD Projection Attention**, a parameter‑efficient drop‑in replacement for the multi‑head self‑attention sub‑layer in Transformer models. The module factorises each dense projection matrix (query, key, value, output) into two smaller matrices \(\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}\) and \(\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}\), whose product directly reconstructs the effective weight \(\mathbf{W} = \mathbf{U}\mathbf{V}\). The factorisation is initialised from the pretrained weights via truncated singular value decomposition (SVD), ensuring a near‑lossless zero‑shot transfer: the compressed model’s output is almost identical to the original pretrained model at the start. The rank \(r\) is a hyperparameter that controls the compression ratio. The attention mechanism remains the standard scaled dot‑product, preserving exact token interactions. The module is designed for DistilBERT and integrates into the compression framework via a registry‑based injection function. This paper provides a rigorous mathematical description of the factorisation, the SVD‑based initialisation, the overall attention pipeline, and a comparison with other SVD‑based modules.
+## 2. Mathematical Derivations & Formulations
+Let $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ denote an uncompressed pretrained projection weight matrix. Its thin SVD factor decomposition is:
+$$W_0 = \bar{U} \Sigma \bar{V}^\top = \sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i \bar{u}_i \bar{v}_i^\top$$
+where $\bar{U} \in \mathbb{R}^{d_{\text{out}} \times k}$, $\Sigma = \text{diag}(\sigma_1, \dots, \sigma_k)$ with $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k \ge 0$, and $\bar{V} \in \mathbb{R}^{d_{\text{in}} \times k}$.
 
----
+Under low-rank constraint $r \le k$, singular value matrix $\Sigma_{:r}$ is absorbed into factor $U \in \mathbb{R}^{d_{\text{out}} \times r}$:
+$$U = \bar{U}_{:, :r} \text{diag}(\sigma_1, \dots, \sigma_r), \qquad V = \bar{V}_{:r, :}^\top \in \mathbb{R}^{r \times d_{\text{in}}}$$
 
-## 1. Introduction
+Reconstruction of the low-rank projection matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ proceeds dynamically:
+$$W = U V = \bar{U}_{:, :r} \text{diag}(\sigma_{1:r}) \bar{V}_{:r, :}^\top$$
 
-Large pre‑trained Transformer models devote a significant portion of their parameters to the linear projections inside each attention head. Compressing these matrices via low‑rank factorisation is a well‑established technique. A weight matrix \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\) can be replaced by the product of two smaller matrices, reducing the parameter count from \(d_{\text{out}} d_{\text{in}}\) to \(r(d_{\text{out}} + d_{\text{in}})\), where \(r \ll \min(d_{\text{out}}, d_{\text{in}})\). 
+For token activation input $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$, the reconstructed linear operation evaluates as:
+$$\text{SVDProjLinear}(X) = X W^\top + b = X (U V)^\top + b$$
 
-The **SVD Projection Attention** module follows this paradigm. Unlike some variants that store three factors (U, S, Vh) and absorb singular values into a separate vector, this module uses a straightforward decomposition: the effective weight is simply \(\mathbf{U} \times \mathbf{V}\). The singular values are implicitly absorbed into either \(\mathbf{U}\) or \(\mathbf{V}\) during initialisation. This design is simpler and reduces the number of parameters slightly, while still allowing a high‑quality zero‑shot initialisation via truncated SVD.
+The complete multi-head attention module computes projections for $Q, K, V, O$:
+$$Q = X (U_Q V_Q)^\top + b_Q, \quad K = X (U_K V_K)^\top + b_K, \quad V = X (U_V V_V)^\top + b_V$$
+$$S = \frac{Q K^\top}{\sqrt{d_h}} + M_{\text{additive}}, \qquad A = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1))$$
+$$C = A V \in \mathbb{R}^{B \times H \times N \times d_h}$$
+$$O = \text{Reshape}(C) (U_O V_O)^\top + b_O \in \mathbb{R}^{B \times N \times D}$$
 
-The module is intended as a direct alternative to the `SVDLinearAttention` module but with a different internal organisation. It inherits the same zero‑shot weight transfer philosophy and retains the exact multi‑head attention mechanism. In this paper, we detail the mathematical construction, the factorised linear layer, the initialisation procedure, and the integration into the compression framework.
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
+The step-by-step execution path and shape transformations are traced below:
 
----
+1. **Input Tensor**: $X \in \mathbb{R}^{B \times N \times D}$
+2. **Dynamic Weight Matrix Reconstruction ($Q, K, V$)**:
+   - $W_Q = U_Q V_Q \in \mathbb{R}^{D \times D}$ (where $U_Q \in \mathbb{R}^{D \times r}$, $V_Q \in \mathbb{R}^{r \times D}$)
+   - $W_K = U_K V_K \in \mathbb{R}^{D \times D}$, $W_V = U_V V_V \in \mathbb{R}^{D \times D}$
+3. **Linear Operations & Head Separation**:
+   - $Q_{\text{flat}} = X W_Q^\top + b_Q \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{view}} [B, N, H, d_h] \xrightarrow{\text{transpose}} [B, H, N, d_h]$
+   - $K_{\text{flat}} = X W_K^\top + b_K \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{transpose}} [B, H, N, d_h]$
+   - $V_{\text{flat}} = X W_V^\top + b_V \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{transpose}} [B, H, N, d_h]$
+4. **Attention Score & Masking**:
+   - $S = Q K^\top / \sqrt{d_h} \in \mathbb{R}^{B \times H \times N \times N}$
+   - Mask processing: $S = S + (1.0 - M) \cdot (-10^9)$
+5. **Softmax & Value Weighted Aggregation**:
+   - $P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times N}$
+   - $C_{\text{head}} = P V \in \mathbb{R}^{B \times H \times N \times d_h}$
+6. **Head Concatenation & Output Weight Reconstruction**:
+   - $\tilde{C} = \text{Reshape}(C_{\text{head}}) \in \mathbb{R}^{B \times N \times D}$
+   - $W_O = U_O V_O \in \mathbb{R}^{D \times D}$
+   - $O = \tilde{C} W_O^\top + b_O \in \mathbb{R}^{B \times N \times D}$
 
-## 2. Method
+## 4. Analytical Complexity Profiling
+- **FLOPs Computation**:
+  - Weight Reconstruction ($U V$ per projection): $4 \times 2 D r D = 8 r D^2$ FLOPs
+  - Reconstructed Linear Matmul ($X W^\top$): $4 \times 2 B N D^2 = 8 B N D^2$ FLOPs
+  - Dot-product attention ($Q K^\top$): $2 B N^2 D$ FLOPs
+  - Context weighting ($P V$): $2 B N^2 D$ FLOPs
+  - Total Module FLOPs: $8 r D^2 + 8 B N D^2 + 4 B N^2 D$
+- **MAC Operations**:
+  - Matrix Reconstruction: $4 r D^2$ MACs
+  - Projection Matmuls: $4 B N D^2$ MACs
+  - Multi-Head Attention: $2 B N^2 D$ MACs
+- **Memory Footprint & Parameter Reduction**:
+  - Uncompressed Projection Parameters: $4 D^2$
+  - SVD Projection Parameters: $4 \times (D r + r D) = 8 r D$
+  - Parameter Reduction Ratio: $\frac{4 D^2}{8 r D} = \frac{D}{2r}$. For $D=768, r=32$, ratio is $12.0\times$.
 
-### 2.1 Low‑Rank Factorised Linear Layer
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+- **Materialization Memory Overhead**:
+  Reconstructing $W = U V \in \mathbb{R}^{D \times D}$ during forward passes materializes dense $D \times D$ matrices in GPU RAM. This negates matrix GEMM speedups compared to factored execution ($X V^\top U^\top$), adding memory bandwidth overhead.
+- **Asymmetric Gradient Conditioning**:
+  Absorbing singular values $\Sigma$ entirely into $U$ ($U = \bar{U} \Sigma$) leaves $V$ as a pure orthogonal matrix ($V V^\top = I_r$). Gradient updates to $U$ exhibit much larger magnitudes than updates to $V$, causing instability during AdamW optimization.
+- **Uniform Rank Bottleneck**:
+  Setting static rank $r$ across all projections causes truncation errors in high-entropy layers where singular spectra decay slowly.
 
-A standard linear transformation \(\mathbf{y} = \mathbf{W}\mathbf{x} + \mathbf{b}\) is replaced by the composition of two smaller linear operations:
-
-\[
-\mathbf{y} = \mathbf{U} (\mathbf{V} \mathbf{x}) + \mathbf{b},
-\]
-
-where \(\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}\) maps the input to an intermediate \(r\)-dimensional space, and \(\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}\) maps it to the output dimension. In the forward pass, the effective weight matrix \(\mathbf{W}_{\text{eff}} = \mathbf{U} \mathbf{V}\) is never materialised; instead, two successive matrix multiplications are performed. This reduces the number of trainable parameters from \(d_{\text{out}} d_{\text{in}}\) to \(r(d_{\text{out}} + d_{\text{in}})\), plus the optional bias.
-
-The `SVDProjectionLinear` class implements this: it stores `self.U` and `self.V` as `nn.Parameter` tensors of appropriate shapes, and the forward method computes `weight = self.U @ self.V` and then applies `F.linear(x, weight, self.bias)`. Although this materialises the full weight on‑the‑fly, the gradient computation still acts on the factors, keeping the parameter count low.
-
-### 2.2 Zero‑Shot Initialisation via Truncated SVD
-
-To ensure the compressed model starts from a strong initial point, the factors are initialised from the pretrained weight matrix \(\mathbf{W}_0\) using its truncated SVD. Let
-
-\[
-\mathbf{W}_0 = \mathbf{U}_{\text{full}} \mathbf{\Sigma} \mathbf{V}_{\text{full}}^\top
-\]
-
-be the full SVD, with singular values \(\sigma_1 \ge \sigma_2 \ge \dots\). For a chosen rank \(r\), we keep the top \(r\) components:
-
-\[
-\mathbf{U}_r = \mathbf{U}_{\text{full}[:,:r]} \mathbf{\Sigma}_{[:r,:r]}, \qquad
-\mathbf{V}_r = \mathbf{V}_{\text{full}[:r,:]}.
-\]
-
-The factor matrices of the `SVDProjectionLinear` layer are then set as:
-
-- `self.U.data[:, :r] = U_r` (shape \(d_{\text{out}} \times r\))
-- `self.V.data[:r, :] = V_r` (shape \(r \times d_{\text{in}}\))
-
-The bias, if present, is copied directly from the original layer. With this assignment, \(\mathbf{U}\mathbf{V} = \mathbf{U}_r \mathbf{V}_r\) is exactly the best rank‑\(r\) approximation of \(\mathbf{W}_0\) in Frobenius norm (Eckart–Young–Mirsky theorem). Therefore, the initial output of the compressed attention module is nearly identical to that of the original, enabling zero‑shot deployment.
-
-The same procedure is applied independently to the query, key, value, and output projections. The rank \(r\) is a global hyperparameter shared across all four projections.
-
-### 2.3 Multi‑Head Self‑Attention with Factorised Projections
-
-The `SVDProjectionAttention` module mirrors the standard multi‑head attention. Given input hidden states \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\):
-
-\[
-\mathbf{Q} = \text{SVDProj}_Q(\mathbf{X}),\quad
-\mathbf{K} = \text{SVDProj}_K(\mathbf{X}),\quad
-\mathbf{V} = \text{SVDProj}_V(\mathbf{X}).
-\]
-
-These tensors, each of shape \((B, L, H d_h)\), are reshaped to \((B, H, L, d_h)\) to separate heads. Attention scores are computed as:
-
-\[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}}.
-\]
-
-If a 2D padding mask is provided (shape \((B, L)\) with 1 for valid tokens), it is expanded to \((B, 1, 1, L)\) and converted to an additive bias \((1 - \text{mask}) \cdot (-10^9)\) to mask out padding positions. Softmax and dropout are applied to obtain attention weights \(\mathbf{A}\). The context for each head is:
-
-\[
-\mathbf{C}_h = \mathbf{A}_h \mathbf{V}_h.
-\]
-
-The heads are concatenated back to shape \((B, L, H d_h)\) and projected through the factorised output layer:
-
-\[
-\mathbf{Y} = \text{SVDProj}_O(\mathbf{C}).
-\]
-
-The module returns \((\mathbf{Y}, \mathbf{A})\) if `output_attentions=True`, otherwise \((\mathbf{Y}, \text{None})\).
-
-### 2.4 Parameter Efficiency
-
-For a DistilBERT with hidden size 768, each standard projection matrix has \(768 \times 768 = 589,824\) parameters. With a rank \(r = 32\), a factorised projection requires only \(768 \times 32 + 32 \times 768 = 49,152\) parameters, a **12× reduction**. Across four projections, the total parameter count for the attention sub‑layer drops from approximately 2.36 million to 0.2 million. The attention computation itself remains quadratic in sequence length, so the module is focused on parameter compression rather than compute efficiency.
-
----
-
-## 3. Implementation Details
-
-- **`SVDProjectionLinear`**:
-  - Stores `U` (out_features × rank) and `V` (rank × in_features) as parameters, and an optional `bias`.
-  - The reset method initialises with Kaiming uniform if no SVD initialisation is performed.
-  - The forward method reconstructs the weight `U @ V` and uses `F.linear` with the bias.
-- **`SVDProjectionAttention`**:
-  - Constructor accepts `model_config`, `rank`, `dropout`, and `pretrained_attn`.
-  - Creates four `SVDProjectionLinear` instances.
-  - Calls `_init_from_linear` for each projection, which computes the truncated SVD of the original weight and copies the factors.
-- **Mask handling**:
-  - Supports 2D binary masks by adding `(1 - mask) * -1e9`. Other mask shapes are passed through as‑is.
-- **Injection**: The function `inject_svd_proj_attn` is registered under the key `"svd_proj_attn"`. It reads `svd_rank` and `dropout` from the compression config and creates the module, replacing `layer.attention`. The pretrained weights are automatically transferred.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"svd_proj_attn"` in the compression configuration. The primary configurable parameter is the rank:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `svd_rank` | 32 | Rank \(r\) for the low‑rank factorisation. |
-| `dropout` | 0.1 | Dropout rate on attention weights. |
-
-Example:
-```python
-comp_config.attention_type = "svd_proj_attn"
-comp_config.svd_rank = 48
-```
-
-The injection function handles the initialisation, so no further steps are required for zero‑shot inference. Fine‑tuning can be performed to adapt the low‑rank factors to a downstream task.
-
----
-
-## 5. Discussion
-
-The SVD Projection Attention module is one of several SVD‑based compression modules in the framework (alongside `svd_linear_attn`, `svd_llm_v2`, `minimal_svd`, etc.). Its distinguishing feature is the direct reconstruction of the weight matrix via a simple matrix multiplication \(\mathbf{U}\mathbf{V}\), without an explicit diagonal singular value vector. This simplifies the forward pass and reduces the number of trainable parameters by one vector per projection. 
-
-The initialisation strategy ensures a high‑fidelity zero‑shot transfer, as the truncated SVD provides the optimal low‑rank approximation. The rank is uniform across all projections, which may not be optimal—more advanced modules like `svd_compressed` allocate ranks per matrix based on energy thresholds. However, the simplicity of a single global rank makes it easy to tune and deploy.
-
-Potential improvements include:
-- Per‑projection rank selection based on singular value decay.
-- Retaining the original bias if the pretrained layer has one (the code already does this).
-- Adding a trainable diagonal scaling similar to `svd_llm_v2` to allow the model to adjust singular values during fine‑tuning.
-
-Despite these, the module stands as a clean, reliable baseline for parameter‑efficient attention. It demonstrates that a straightforward low‑rank factorisation, when carefully initialised, can achieve dramatic compression with negligible initial loss.
-
----
-
-## 6. Conclusion
-
-We have described SVD Projection Attention, a compact attention module that replaces dense linear projections with a factorised form \(\mathbf{W} = \mathbf{U}\mathbf{V}\), initialised from pretrained weights via truncated SVD. The design preserves the full attention mechanism while drastically reducing the parameter count. Its zero‑shot capability and simple integration into the DistilBERT compression framework make it a practical tool for memory‑constrained deployment. Future work may incorporate per‑layer rank adaptation and dynamic scaling to further enhance flexibility and compression rates.
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+- **Fused Low-Rank Subspace GEMM Kernel**:
+  Replace $W = U V$ reconstruction with fused low-rank Triton GEMMs: $Y = (X V^\top) U^\top + b$. This avoids instantiating $D \times D$ intermediate weight matrices in global HBM.
+- **Symmetric Singular Value Balance**:
+  Initialize factor matrices symmetrically: $U \leftarrow \bar{U}_{:, :r} \Sigma_{:r}^{1/2}$ and $V \leftarrow \Sigma_{:r}^{1/2} \bar{V}_{:r, :}^\top$. This balances condition numbers $\kappa(U) = \kappa(V) = \sqrt{\kappa(W_0)}$, preventing vanishing gradients in FP16 training.
+- **FlashAttention Integration**:
+  Stream intermediate factorized projections $Q, K, V$ into FlashAttention-2 Triton kernels to execute fused online softmax attention without allocating $N \times N$ score matrices in GPU memory.
