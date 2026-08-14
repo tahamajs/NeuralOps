@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", async () => {
     // Initialize Mermaid
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    if (window.mermaid) {
+        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+    }
 
     const navContent = document.getElementById("nav-content");
     const searchInput = document.getElementById("search-input");
@@ -13,18 +15,29 @@ document.addEventListener("DOMContentLoaded", async () => {
     let allItems = [];
 
     // Mobile Menu Toggle
-    mobileMenuBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("open");
-    });
+    if (mobileMenuBtn && sidebar) {
+        mobileMenuBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("open");
+        });
+    }
 
-    // Fetch catalog
+    // Fetch catalog with multiple path fallbacks
     try {
-        const response = await fetch("catalog.json");
+        let response = await fetch("catalog.json");
+        if (!response.ok) {
+            response = await fetch("Docs/catalog.json");
+        }
+        if (!response.ok) {
+            response = await fetch("./catalog.json");
+        }
         catalogData = await response.json();
         buildSidebar(catalogData);
     } catch (error) {
         console.error("Failed to load catalog:", error);
-        markdownContainer.innerHTML = `<div style="color:red; text-align:center;">Failed to load module catalog.</div>`;
+        markdownContainer.innerHTML = `<div style="color:#ef4444; text-align:center; padding: 40px;">
+            <h3>Failed to load module catalog</h3>
+            <p>Please make sure <code>catalog.json</code> exists.</p>
+        </div>`;
     }
 
     function buildSidebar(data) {
@@ -44,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 const titleDiv = document.createElement("div");
                 titleDiv.className = "nav-section-title";
-                titleDiv.textContent = sec.title;
+                titleDiv.textContent = `${sec.title} (${data[sec.key].length})`;
                 sectionDiv.appendChild(titleDiv);
 
                 const ul = document.createElement("ul");
@@ -64,7 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     li.addEventListener("click", () => {
                         document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
                         li.classList.add("active");
-                        if (window.innerWidth <= 768) sidebar.classList.remove("open");
+                        if (window.innerWidth <= 768 && sidebar) sidebar.classList.remove("open");
                         loadMarkdown(item);
                     });
 
@@ -78,72 +91,117 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // Search Filtering
-    searchInput.addEventListener("input", (e) => {
-        const query = e.target.value.toLowerCase();
-        const navItems = document.querySelectorAll(".nav-item");
-        
-        navItems.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            if (text.includes(query)) {
-                item.style.display = "block";
-            } else {
-                item.style.display = "none";
-            }
+    if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase();
+            const navItems = document.querySelectorAll(".nav-item");
+            
+            navItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(query)) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            });
         });
-    });
+    }
 
     // Marked options setup for mermaid
-    const renderer = new marked.Renderer();
-    const originalCodeRenderer = renderer.code.bind(renderer);
-    renderer.code = function(code, language, isEscaped) {
-        if (language === 'mermaid') {
-            return `<div class="mermaid">${code}</div>`;
-        }
-        return originalCodeRenderer(code, language, isEscaped);
-    };
-    marked.setOptions({ renderer });
+    if (window.marked) {
+        const renderer = new marked.Renderer();
+        const originalCodeRenderer = renderer.code.bind(renderer);
+        renderer.code = function(code, language, isEscaped) {
+            if (language === 'mermaid') {
+                return `<div class="mermaid">${code}</div>`;
+            }
+            return originalCodeRenderer(code, language, isEscaped);
+        };
+        marked.setOptions({ renderer });
+    }
 
     async function loadMarkdown(item) {
-        currentDocTitle.textContent = item.title;
-        markdownContainer.innerHTML = `<div style="text-align:center; padding: 50px; color: #94a3b8;">Loading document...</div>`;
+        if (currentDocTitle) currentDocTitle.textContent = item.title;
+        markdownContainer.innerHTML = `<div style="text-align:center; padding: 50px; color: #94a3b8;">
+            <div style="font-size: 1.2rem; margin-bottom: 10px;">Loading ${item.title}...</div>
+        </div>`;
         
-        try {
-            const response = await fetch(item.path);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
-            let markdownText = await response.text();
-            
-            // Fix relative links in markdown if they refer to other md files
-            markdownText = markdownText.replace(/\]\(([^)]+)\.md\)/g, "](javascript:void(0))");
+        // Candidate paths to support both local serving, docs subfolder, and root GitHub Pages
+        const candidatePaths = [
+            item.path,
+            item.path.replace(/^\.\.\//, ""),
+            item.path.replace(/^\.\.\//, "./"),
+            `./${item.path}`,
+            `Codes/framework/attentions/${item.id}`,
+            `Codes/framework/compression_engine/${item.id}`,
+            `../Codes/framework/attentions/${item.id}`,
+            `../Codes/framework/compression_engine/${item.id}`
+        ];
 
-            const htmlContent = marked.parse(markdownText);
-            markdownContainer.innerHTML = htmlContent;
+        let markdownText = null;
+        for (const candidate of candidatePaths) {
+            try {
+                const response = await fetch(candidate);
+                if (response.ok) {
+                    markdownText = await response.text();
+                    break;
+                }
+            } catch (err) {
+                // Continue to next candidate
+            }
+        }
+        
+        if (markdownText !== null) {
+            try {
+                // Fix relative links in markdown if they refer to other md files
+                markdownText = markdownText.replace(/\]\(([^)]+)\.md\)/g, "](javascript:void(0))");
 
-            // Render Math
-            renderMathInElement(markdownContainer, {
-                delimiters: [
-                    {left: '$$', right: '$$', display: true},
-                    {left: '$', right: '$', display: false},
-                    {left: '\\(', right: '\\)', display: false},
-                    {left: '\\[', right: '\\]', display: true}
-                ],
-                throwOnError : false
-            });
+                const htmlContent = marked.parse(markdownText);
+                markdownContainer.innerHTML = htmlContent;
 
-            // Render Mermaid
-            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                // Render Math (KaTeX)
+                if (window.renderMathInElement) {
+                    renderMathInElement(markdownContainer, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false
+                    });
+                }
 
-            // Render Code Highlighting
-            Prism.highlightAllUnder(markdownContainer);
-            
-            // Scroll to top
-            document.querySelector('.content-wrapper').scrollTop = 0;
+                // Render Mermaid
+                if (window.mermaid) {
+                    const mermaidElements = document.querySelectorAll('.mermaid');
+                    if (mermaidElements.length > 0) {
+                        mermaid.init(undefined, mermaidElements);
+                    }
+                }
 
-        } catch (error) {
-            console.error("Failed to load markdown:", error);
+                // Render Code Highlighting
+                if (window.Prism) {
+                    Prism.highlightAllUnder(markdownContainer);
+                }
+                
+                // Scroll to top
+                const contentWrapper = document.querySelector('.content-wrapper');
+                if (contentWrapper) contentWrapper.scrollTop = 0;
+
+            } catch (renderError) {
+                console.error("Rendering error:", renderError);
+                markdownContainer.innerHTML = `<div style="text-align:center; padding: 50px; color: #f87171;">
+                    <h3>Rendering Error</h3>
+                    <p>${renderError.message}</p>
+                </div>`;
+            }
+        } else {
+            console.error("Failed to load markdown from all candidate paths for", item);
             markdownContainer.innerHTML = `<div style="text-align:center; padding: 50px; color: #f87171;">
                 <h3>Error Loading Document</h3>
-                <p>Could not fetch the documentation for ${item.title}.</p>
+                <p>Could not fetch the documentation for <strong>${item.title}</strong>.</p>
+                <p style="font-size:0.85rem; color:#94a3b8; margin-top:10px;">Tried candidate paths: <code>${candidatePaths.slice(0, 3).join(', ')}</code></p>
             </div>`;
         }
     }
