@@ -1,6 +1,6 @@
 # EAT: Efficient Attention Transformer Block with Progressive Token Pruning
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Multi-Head Self-Attention (MHSA) and Feed-Forward Networks (FFN) in standard Transformer blocks maintain a fixed sequence length $L$ across all model layers. In deep networks, many tokens correspond to redundant syntax, background noise, or uninformative punctuation. Maintaining these non-essential tokens through deep layers wastes memory and quadratic FLOPs $\mathcal{O}(L^2 d)$ in subsequent attention operations.
 
 **EAT (Efficient Attention Transformer Block)** introduces dynamic length reduction by integrating a **Progressive Token Pruning** sub-network directly into the Transformer layer pipeline. EAT executes standard Multi-Head Self-Attention and Feed-Forward feature synthesis, then evaluates token-level salience scores to extract a top-$k$ informative token subset $\mathcal{I}_{\text{keep}}$. Non-essential tokens are dynamically dropped, reducing the active sequence length from $L$ to $L' = \lfloor \gamma \cdot L \rfloor$ (where $\gamma < 1$).
@@ -9,7 +9,7 @@ By progressively shrinking sequence length across Transformer depth ($L_0 > L_1 
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Multi-Head Self-Attention Sub-Layer
 Given input activations $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) projections yield:
@@ -47,7 +47,7 @@ $$\mathbf{T}_{\text{idx}}^{\text{new}} = \operatorname{Gather}\left( \mathbf{T}_
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -58,17 +58,16 @@ $$\mathbf{T}_{\text{idx}}^{\text{new}} = \operatorname{Gather}\left( \mathbf{T}_
 | 5 | Feed-Forward MLP | `[B, L, D]` | `[B, L, D]` | 2-layer MLP with GELU ($D \to 4D \to D$) |
 | 6 | Residual Add & Norm 2 | `[B, L, D]` | `[B, L, D]` | Add intermediate residual & apply LayerNorm |
 | 7 | Salience Scoring | `[B, L, D]` | `[B, L]` | Evaluate token importance scores |
-| 8 | Top-$L'$ Index Extraction| `[B, L]` | `[B, L']` | Extract top-$L'$ indices $\mathcal{I}_{\text{keep}}$ ($L' \le L$) |
-| 9 | Token Gathering | `[B, L, D]`, `Indices`| `[B, L', D]` | Slice tensor along sequence axis to pruned length $L'$ |
-| 10| Index Alignment | `[B, L]`, `Indices` | `[B, L']` | Gather original position tracking indices |
+| 8 | Top-$k$ Prune Extract | `[B, L]`, `L'` | `[B, L']` | Extract top-$L'$ token indices $\mathcal{I}_{\text{keep}}$ |
+| 9 | Token Gathering | `[B, L, D]`, `Indices` | `[B, L', D]` | Gather retained tokens into compact output buffer |
 
 ```
                        [B, L, D] Input Tensor
                            │
        ┌───────────────────┴───────────────────┐
        │ Residual                              ▼
-       │                      Multi-Head Self-Attention
-       │                         Key Padding Mask [B, L]
+       │                     Multi-Head Self-Attention
+       │                           [B, L, D]
        │                                       │
        └───────────────────┬───────────────────┘
                            ▼
@@ -76,107 +75,92 @@ $$\mathbf{T}_{\text{idx}}^{\text{new}} = \operatorname{Gather}\left( \mathbf{T}_
                            │
        ┌───────────────────┴───────────────────┐
        │ Residual                              ▼
-       │                      Position-wise FFN Network
-       │                         GELU(X W_1 + b_1) W_2
+       │                     Position-wise Feed-Forward MLP
+       │                      GELU(X W1 + b1) W2 + b2
+       │                           [B, L, D]
        │                                       │
        └───────────────────┬───────────────────┘
                            ▼
                Residual Add & LayerNorm 2 (X^(2))
                            │
-       ┌───────────────────┴───────────────────┐
-       │ Prune Layer == None                   │ Prune Layer Active
-       ▼                                       ▼
-Return [B, L, D] Output             Token Salience Scoring S(X^(2))
-                                               │
-                                               ▼
-                                    Top-L' Selection (L' <= L)
-                                    Indices I_keep [B, L']
-                                               │
-                                               ▼
-                                    Gather Pruned Activations
-                                    X_pruned [B, L', D]
-                                               │
-                                               ▼
-                                    Gather Position Tracker T_idx
-                                               │
-                                               ▼
-                                    Return [B, L', D] Output
+                           ▼
+              Progressive Token Pruning (Optional)
+              - Salience Score s = ScoreNet(X^(2)) -> [B, L]
+              - Top-k Index Extraction: I_keep -> [B, L']
+              - Gather Retained Tokens -> [B, L', D]
+                           │
+                           ▼
+              [B, L', D] Output & Updated Indices
 ```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
-Let $B$ be batch size, $L$ input sequence length, $D$ hidden dimension, $d_{\text{ffn}} = 4D$, and $L'$ pruned sequence length ($L' = \lfloor \gamma L \rfloor$).
+Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ attention heads, $d_h = D/H$, and $\gamma$ pruning retention ratio ($L' = \gamma L$).
 
-1. **Multi-Head Self-Attention (MHA)**:
+1. **Multi-Head Self-Attention (MHSA)**:
    - Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}$): $8 B L D^2$
-   - Score Matmul ($\mathbf{Q} \mathbf{K}^\top$) & Context Matmul ($\mathbf{A} \mathbf{V}$): $4 B H L^2 d_h = 4 B L^2 D$
-   $$\operatorname{FLOPs}_{\text{mha}} = 8 B L D^2 + 4 B L^2 D$$
+   - Score matmul & context matmul: $4 B H L^2 d_h = 4 B D L^2$
+   $$\operatorname{FLOPs}_{\text{mhsa}} = 8 B L D^2 + 4 B D L^2$$
 2. **Position-wise Feed-Forward Network (FFN)**:
-   - Inner projection ($D \to 4D$): $2 B L D (4D) = 8 B L D^2$
-   - Outer projection ($4D \to D$): $2 B L (4D) D = 8 B L D^2$
+   - Expansion $D \to 4D$ and projection $4D \to D$: $2 \times (2 B L D (4D)) = 16 B L D^2$
    $$\operatorname{FLOPs}_{\text{ffn}} = 16 B L D^2$$
-3. **Layer Normalizations & Residual Additions**:
-   $$\operatorname{FLOPs}_{\text{norm}} = 6 B L D$$
-4. **Progressive Token Pruning Stage**:
-   - Salience scoring projection ($D \to 1$): $2 B L D$
-   - Top-$k$ sorting: $B \cdot L \log L'$
+3. **Progressive Token Pruning Stage**:
+   - Salience scoring: $2 B L D$ FLOPs.
+   - Top-$k$ sorting: $B L \log L'$ FLOPs.
    $$\operatorname{FLOPs}_{\text{prune}} = 2 B L D + B L \log L'$$
 
-$$\text{Total Block FLOPs} = 24 B L D^2 + 4 B L^2 D + 8 B L D + B L \log L'$$
+$$\text{Total Block FLOPs} = 24 B L D^2 + 4 B D L^2 + 2 B L D + B L \log L'$$
 
-Downstream layers receive length $L' = \gamma L$, dropping downstream attention FLOPs from $\mathcal{O}(L^2 D)$ to $\mathcal{O}(\gamma^2 L^2 D)$.
+Downstream Transformer layer $\ell+1$ operates on reduced length $L'$, cutting its per-layer FLOPs by:
+$$\Delta \text{FLOPs}_{\text{downstream}} = 4 B D (L^2 - L'^2) + 24 B (L - L') D^2 = 4 B D L^2 (1 - \gamma^2) + 24 B L D^2 (1 - \gamma)$$
 
 ### 4.2 MACs & Memory Footprint Analysis
 - **Multiply-Accumulate Operations (MACs)**:
-  $$\text{Total MACs} \approx 12 B L D^2 + 2 B L^2 D + B L D$$
+  $$\text{Total MACs} \approx 12 B L D^2 + 2 B D L^2$$
 - **Peak Activation Memory**:
   - Attention Score Tensor: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$
-  - Intermediate FFN Activation Buffer: $B \cdot L \cdot 4D \times 2 \text{ bytes}$
-  - Pruned Output Buffer: $B \cdot L' \cdot D \times 2 \text{ bytes}$.
-  - Subsequent layer activation memory drops by factor $L' / L = \gamma$.
+  - Intermediate FFN Buffer: $B \cdot L \cdot 4D \times 2 \text{ bytes}$
+  - Pruned Output Buffer: $B \cdot L' \cdot D \times 2 \text{ bytes}$
+  - Memory scales as $\mathcal{O}(B H L^2 + B L D)$.
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Transformer Layer**: $\mathcal{O}(L^2 D + L D^2)$ compute, $\mathcal{O}(L^2 H + L D)$ memory.
-- **EAT Block with Progressive Pruning**: Compounds length reduction across $M$ layers ($L_0 \to L_1 \to \dots \to L_M$). Total attention compute across $M$ layers drops from $M \cdot L_0^2 D$ to $\sum_{m=0}^{M-1} L_m^2 D \ll M L_0^2 D$.
+- **Standard Transformer Layer Stack**: $\mathcal{O}(M \cdot L^2 D)$ compute across $M$ layers.
+- **EAT Progressive Pruning Stack**: $\mathcal{O}\left( D \sum_{\ell=1}^M L_\ell^2 \right)$ compute, where $L_\ell = \gamma^\ell L_0$. Asymptotically bounds total attention compute to $\mathcal{O}\left( \frac{1}{1 - \gamma^2} L_0^2 D \right)$, making deep Transformer inference up to $3\times$ faster.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-### 5.1 Non-Gatherable Positional Encoding Disconnect
-When tokens are physically pruned from $L \to L'$:
-```python
-x, new_indices = self.prune_layer(x)
-```
-- **Spatial Position Distortion**: If static sinusoidal or absolute positional embeddings were added at layer 0, gathering activations $x[:, \mathcal{I}_{\text{keep}}, :]$ without updating rotary or relative positional bias causes remaining tokens to appear adjacent, corrupting relative distance metrics in deeper layers.
-- **Resolution Loss**: Relative Attention Bias matrices of size $L \times L$ fail to broadcast against pruned shapes $L' \times L'$ without explicit index gathering.
+### 5.1 Ragged Tensor Memory Fragmentation
+When sequence lengths prune dynamically per sequence in a batch ($L'_{b, 1} \neq L'_{b, 2}$):
+- **Batch Realignment Overhead**: Standard PyTorch tensor layouts require padding all batch items to $\max(L'_b)$, wasting VRAM and CPU cycles on padded dummy tokens.
+- **Memory Thrashing**: Continuous reallocation of dynamic tensor shapes (`[B, L', D]`) causes host CUDA memory allocator fragmentation.
 
-### 5.2 Dynamic Sequence Length Batching Stalls
-In batched multi-GPU execution ($B > 1$):
-- If `ProgressiveTokenPruning` evaluates top-$k$ independently per sample in a batch, sample 1 might retain $L'_1$ tokens while sample 2 retains $L'_2$ tokens ($L'_1 \neq L'_2$).
-- **Batch Asynchrony**: Un-even sequence lengths break standard dense tensor representations `[B, L', D]`, forcing CPU synchronization, dynamic padding, or nested ragged tensors that stall GPU SIMD hardware throughput.
+### 5.2 Irreversible Context Pruning & Information Erasure
+Progressive token pruning is a hard, one-way decision ($\mathcal{I}_{\text{keep}} \subset \{1, \dots, L\}$).
+- **False Positive Pruning**: If a critical entity token (e.g., a rare medical term or negated verb) receives a low salience score at early layer $\ell=2$, it is permanently dropped.
+- **Error Propagation**: Downstream layers $\ell > 2$ can never recover dropped tokens, causing severe semantic drift and hallucination on complex reasoning tasks.
 
-### 5.3 Irreversible Early Pruning Errors (False-Positive Eviction)
-Token pruning is a hard, non-backpropagable step ($\operatorname{Gather}(x, \mathcal{I}_{\text{keep}})$).
-- **Early-Layer Information Loss**: In early layers (e.g., Layer 1 or 2), token representations are un-refined. If a critical keyword is incorrectly assigned a low salience score, it is permanently dropped.
-- **Zero Gradient Recovery**: Evicted tokens receive zero gradients during backpropagation ($\nabla_{\mathbf{X}_{\text{evicted}}} \mathcal{L} = 0$), preventing early layers from correcting misclassified token salience.
+### 5.3 Non-Differentiable Top-$k$ Indexing
+The selection $\operatorname{TopK}(\mathbf{s}_{\text{salience}}, L')$ is non-differentiable ($\frac{\partial \operatorname{TopK}}{\partial \mathbf{s}} = 0$).
+- Gradients cannot backpropagate through token dropping choices during training without specialized Gumbel-Softmax relaxations or straight-through estimators, risking suboptimal score network training.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-To prevent dynamic sequence lengths from breaking GPU batch execution, EAT requires a fused Triton Token Pruning & Re-Ordering kernel operating on contiguous memory buffers.
+To optimize Progressive Token Pruning, EAT requires a custom Triton kernel that fuses salience scoring, Bitonic Top-$k$ sorting, and contiguous SRAM token re-packing.
 
-### 6.1 Triton Hardware Acceleration Layout
+### 6.1 Triton Hardware Acceleration Pipeline Layout
 
 ```
 +-----------------------------------------------------------------------------------+
 |                           TRITON FUSED EAT PIPELINE                               |
 +-----------------------------------------------------------------------------------+
-|  1. FUSED ATTENTION & LN KERNEL                                                   |
+|  1. FUSED FLASHATTENTION & LN1 + FFN + LN2 KERNEL                                 |
 |     - Computes FlashAttention and LN1 + LN2 in SRAM registers.                    |
 |     - Writes intermediate output X_2 [B, L, D].                                   |
 +-----------------------------------------------------------------------------------+
@@ -244,3 +228,12 @@ def _eat_fused_token_prune_pack_kernel(
 ### 6.3 Hardware Optimization Impact
 1. **Dynamic Memory Compaction**: Re-packing pruned tokens into contiguous global memory arrays `[B, L', D]` restores full GPU SIMD vectorization for subsequent Transformer layers.
 2. **Compound Downstream Speedup**: Dropping sequence length from $L_0 \to L'$ yields an immediate $\left(\frac{L'}{L_0}\right)^2$ reduction in downstream Multi-Head Attention latency.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Differentiable Soft Token Merging (ToMe)**: Replace hard token dropping with weighted average token merging ($X_{\text{merged}} = \mathbf{P} X$), preserving $100\%$ of key information while reducing token count.
+2. **Feedback Memory Buffer for Dropped Tokens**: Route dropped non-essential tokens into a global summary memory vector $\mathbf{m}_{\text{summary}}$, allowing downstream layers to retrieve compressed background context.
+3. **Adaptive Entropy-Guided Pruning Schedules**: Dynamically select retention ratio $\gamma_\ell$ based on attention layer entropy: preserve $100\%$ sequence length in high-entropy layers and prune aggressively in low-entropy layers.
+4. **FP8 Quantized Token Salience Scoring**: Perform salience score projections $\mathbf{s} = \mathbf{X} \mathbf{w}$ using FP8 (E4M3) operations to minimize scoring overhead.

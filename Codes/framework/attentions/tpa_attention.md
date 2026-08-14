@@ -1,211 +1,200 @@
-# Tensor Product Attention (TPA): Factorized Multiplicative Query-Key Subspace Expansion
+# TPAttention: Tensor Product Attention with Factorised Query-Key Projections
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-Standard Multi-Head Attention (MHA) computes attention scores using linear projections that capture basic inner products between query and key vectors. Tensor Product Attention (TPA) extends this formulation by constructing queries and keys through the tensor outer product of two lower-rank factorized sub-vectors:
+Tensor Product Attention (`TPAttention`) introduces a polynomial kernel projection paradigm that factorizes traditional dense Query and Key projections into outer tensor products of low-rank vectors. In standard Multi-Head Attention, computing Query and Key projections $Q, K \in \mathbb{R}^{B \times H \times N \times d_k}$ requires full rank matrix parameters $W_Q, W_K \in \mathbb{R}^{D \times D}$.
 
-\[
-q_{h, i} = q_{1, h, i} \otimes q_{2, h, i} \in \mathbb{R}^{r^2}, \quad k_{h, j} = k_{1, h, j} \otimes k_{2, h, j} \in \mathbb{R}^{r^2}
-\]
-
-where $r$ is the factorized subspace rank ($r \ll d_k$).
-
-By factorizing the projection parameters into dual linear streams ($W_{Q_1}, W_{Q_2}$ and $W_{K_1}, W_{K_2}$), TPA parameterizes an effective $r^2$-dimensional attention space using only $2 \times H \cdot r \cdot D$ parameters per stream. This outer-product expansion generates higher-order multiplicative polynomial similarity kernels between token states, providing richer feature interaction manifolds at reduced linear projection cost.
+`TPAttention` replaces standard $D \to D$ linear maps with pair-factorised projections: $q_1, q_2 \in \mathbb{R}^{B \times N \times H \times r}$ and $k_1, k_2 \in \mathbb{R}^{B \times N \times H \times r}$, where factor rank $r \ll d_k$ (typically $r = 8$). By constructing full head states via the Kronecker/outer tensor product $Q = q_1 \otimes q_2$ and $K = k_1 \otimes k_2$, the effective Query and Key head dimension expands to $r^2$. This parameterization creates high-order polynomial similarity kernels ($\langle q_1 \otimes q_2, k_1 \otimes k_2 \rangle = \langle q_1, k_1 \rangle \cdot \langle q_2, k_2 \rangle$) while significantly reducing per-token linear projection parameter counts and FLOPs.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Let $X \in \mathbb{R}^{B \times L \times D}$ be the input activation sequence, where $B$ is batch size, $L$ is sequence length, and $D$ is model dimension. Let $H$ be the number of attention heads, $d_k = D / H$ the head dimension, and $r$ the factorized rank per head.
+Let $X \in \mathbb{R}^{B \times N \times D}$ denote input activations. Let $H$ be the number of attention heads, $d_h = D / H$ value head dimension, and $r$ the factor rank per head.
 
-### Dual Low-Rank Subspace Factorization Projections:
-The input hidden states are mapped into paired rank-$r$ subspaces for queries and keys:
+### Factorised Subspace Projections:
+Input activations are projected into two low-rank factor vectors for Query and Key, and standard projections for Value:
 
 \[
-q_1 = X W_{Q1} \in \mathbb{R}^{B \times L \times (H \cdot r)}, \quad W_{Q1} \in \mathbb{R}^{D \times (H \cdot r)}
+q_1 = X W_{Q1} \in \mathbb{R}^{B \times N \times (H \cdot r)}, \quad q_2 = X W_{Q2} \in \mathbb{R}^{B \times N \times (H \cdot r)}
 \]
 \[
-q_2 = X W_{Q2} \in \mathbb{R}^{B \times L \times (H \cdot r)}, \quad W_{Q2} \in \mathbb{R}^{D \times (H \cdot r)}
+k_1 = X W_{K1} \in \mathbb{R}^{B \times N \times (H \cdot r)}, \quad k_2 = X W_{K2} \in \mathbb{R}^{B \times N \times (H \cdot r)}
 \]
 \[
-k_1 = X W_{K1} \in \mathbb{R}^{B \times L \times (H \cdot r)}, \quad W_{K1} \in \mathbb{R}^{D \times (H \cdot r)}
-\]
-\[
-k_2 = X W_{K2} \in \mathbb{R}^{B \times L \times (H \cdot r)}, \quad W_{K2} \in \mathbb{R}^{D \times (H \cdot r)}
+V = X W_V \in \mathbb{R}^{B \times N \times (H \cdot d_h)}, \quad W_V \in \mathbb{R}^{D \times (H \cdot d_h)}
 \]
 
-Value states use standard multi-head linear projection:
+Reshaping into multi-head layouts: $q_1, q_2, k_1, k_2 \in \mathbb{R}^{B \times N \times H \times r}$.
+
+### Tensor Outer Product Expansion via Einstein Summation:
+The composite Query and Key tensors $Q, K \in \mathbb{R}^{B \times N \times H \times r^2}$ are derived via head-wise outer products using `torch.einsum`:
 
 \[
-V = X W_V \in \mathbb{R}^{B \times L \times D}, \quad W_V \in \mathbb{R}^{D \times D}
-\]
-
-Reshaping yields $q_1, q_2, k_1, k_2 \in \mathbb{R}^{B \times L \times H \times r}$ and $V \in \mathbb{R}^{B \times H \times L \times d_k}$.
-
-### Tensor Outer-Product Subspace Synthesis:
-For query head $h$ at token position $i$, the effective query vector $Q_{h, i} \in \mathbb{R}^{r^2}$ is synthesized via Kronecker / outer product:
-
-\[
-(Q_{h, i})_{a, b} = (q_{1, h, i})_a \cdot (q_{2, h, i})_b, \quad a, b \in \{1, \dots, r\}
+Q_{b, n, h, i, j} = q_{1, b, n, h, i} \cdot q_{2, b, n, h, j} \implies Q = \text{reshape}(Q, [B, N, H, r^2])
 \]
 \[
-Q_{h, i} = \text{Vec}(q_{1, h, i} \otimes q_{2, h, i}) \in \mathbb{R}^{r^2}
+K_{b, n, h, i, j} = k_{1, b, n, h, i} \cdot k_{2, b, n, h, j} \implies K = \text{reshape}(K, [B, N, H, r^2])
 \]
 
-Similarly, for key head $h$ at token position $j$:
+Transposing layouts to multi-head shape $[B, H, N, r^2]$.
+
+### Scaled Dot-Product Attention & Tensor Kernel Identity:
+Affinity scores are scaled by factor $\frac{1}{\sqrt{r}}$ (or $1/r$):
 
 \[
-K_{h, j} = \text{Vec}(k_{1, h, j} \otimes k_{2, h, j}) \in \mathbb{R}^{r^2}
+S_{b, h, m, n} = \frac{1}{\sqrt{r}} \sum_{p=1}^{r^2} Q_{b, h, m, p} \cdot K_{b, h, n, p}
 \]
 
-In batched tensor notation using Einstein summation:
+By the algebraic tensor product inner product identity:
 
 \[
-Q = \text{Reshape}\left(\text{Einsum}("blhi, blhj \to blhij", q_1, q_2)\right) \in \mathbb{R}^{B \times H \times L \times r^2}
-\]
-\[
-K = \text{Reshape}\left(\text{Einsum}("blhi, blhj \to blhij", k_1, k_2)\right) \in \mathbb{R}^{B \times H \times L \times r^2}
+\sum_{p=1}^{r^2} (q_1 \otimes q_2)_p (k_1 \otimes k_2)_p = \left(\sum_{i=1}^r q_{1, i} k_{1, i}\right) \cdot \left(\sum_{j=1}^r q_{2, j} k_{2, j}\right) = (q_1^\top k_1) \cdot (q_2^\top k_2)
 \]
 
-### Factorized Kernel Inner-Product:
-The unnormalized similarity score between query position $i$ and key position $j$ evaluates to:
+Softmax normalization, dropout, and context output aggregation proceed as:
 
 \[
-\langle Q_{h, i}, K_{h, j} \rangle = \sum_{a=1}^r \sum_{b=1}^r (q_{1, h, i})_a (q_{2, h, i})_b \cdot (k_{1, h, j})_a (k_{2, h, j})_b = \left( q_{1, h, i}^\top k_{1, h, j} \right) \cdot \left( q_{2, h, i}^\top k_{2, h, j} \right)
-\]
-
-This proves that the inner product of the $r^2$-dimensional outer products equals the scalar product of two rank-$r$ inner products.
-
-Scaling by factor $\frac{1}{\sqrt{r}}$ and adding mask $M \in \mathbb{R}^{B \times 1 \times L \times L}$:
-
-\[
-S_{b, h, i, j} = \frac{1}{\sqrt{r}} \left( \sum_{m=1}^{r^2} Q_{b, h, i, m} \cdot K_{b, h, j, m} \right) + M_{b, 1, i, j}
+A_{b, h, m, n} = \text{Softmax}_n (S_{b, h, m, n} + M_{b, 1, m, n})
 \]
 \[
-A_{b, h, i, j} = \text{Softmax}_j (S_{b, h, i, j}), \quad \widehat{A} = \text{Dropout}(A, p_{\text{drop}})
+O_{b, h, m, l} = \sum_{n=1}^N \text{Dropout}(A)_{b, h, m, n} \cdot V_{b, h, n, l} \implies O \in \mathbb{R}^{B \times H \times N \times d_h}
 \]
 \[
-O = \widehat{A} V \in \mathbb{R}^{B \times H \times L \times d_k} \implies \text{Reshaped Context} \in \mathbb{R}^{B \times L \times D}
-\]
-\[
-Y = \text{Context} \cdot W_O \in \mathbb{R}^{B \times L \times D}, \quad W_O \in \mathbb{R}^{D \times D}
+Y = \text{Concat}(O_1, \dots, O_H) W_O + b_O \in \mathbb{R}^{B \times N \times D}
 \]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Tensor Shape | Transformation / Operation | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Input activation batch | `[B, N, D]` |
+| **Factor Projections** | `[B, N, D]` | `self.q_proj1(X)`, `q_proj2`, `k_proj1`, `k_proj2` | `q1, q2, k1, k2: [B, N, H, r]` |
+| **Value Projection** | `[B, N, D]` | `self.v_proj(X).view(B, N, H, d_h)` | `V: [B, N, H, d_h]` |
+| **Tensor Product Einsum** | `q1, q2: [B, N, H, r]` | `torch.einsum("blhi,blhj->blhij", q1, q2)` | `Q, K: [B, N, H, r*r]` |
+| **Multi-Head Permute** | `[B, N, H, r*r]` | `.permute(0, 2, 1, 3)` | `Q, K: [B, H, N, r*r]` |
+| **Score Matrix MatMul** | `Q: [B, H, N, r*r]`, `K: [B, H, N, r*r]` | `torch.matmul(Q, K.transpose(-2, -1)) / sqrt(r)` | `[B, H, N, N]` |
+| **Softmax & Value Agg** | `scores`, `V` | `apply_mask` + `softmax` + `matmul(attn, V)` | `[B, H, N, d_h]` |
+| **Concat & Out Projection**| `context` | `.permute(0, 2, 1, 3).view(B, N, D)` + `out_proj` | `[B, N, D]` |
+
+### Architectural Flowchart Diagram
 
 ```
-Input: hidden_states [B, L, D]
-  │
-  ├──> Linear(D, H * r) [q_proj1] ──> q1: [B, L, H, r]
-  ├──> Linear(D, H * r) [q_proj2] ──> q2: [B, L, H, r]
-  ├──> Linear(D, H * r) [k_proj1] ──> k1: [B, L, H, r]
-  ├──> Linear(D, H * r) [k_proj2] ──> k2: [B, L, H, r]
-  └──> Linear(D, D)     [v_proj]  ──> v:  [B, L, H, d_k]
-                                │
-                                ├──> Einsum("blhi,blhj->blhij", q1, q2) ──> view ──> Q: [B, H, L, r*r]
-                                ├──> Einsum("blhi,blhj->blhij", k1, k2) ──> view ──> K: [B, H, L, r*r]
-                                ├──> Permute v ──> v: [B, H, L, d_k]
-                                │
-                                ├──> MatMul: Q @ K.transpose(-2, -1) / sqrt(r) ──> scores: [B, H, L, L]
-                                ├──> Add attention_mask ──> [B, H, L, L]
-                                ├──> Softmax(dim=-1) & Dropout & Head Mask ──> attn: [B, H, L, L]
-                                │
-                                └──> MatMul: attn @ v ──> out: [B, H, L, d_k]
+                        Input: hidden_states [B, N, D]
                                         │
-                                        └──> permute(0, 2, 1, 3).contiguous().view([B, L, D])
-                                        └──> Linear(D, D) [out_proj] ──> Output: [B, L, D]
+     ┌───────────────────┬──────────────┴──────────────┬───────────────────┐
+     ▼                   ▼                             ▼                   ▼
+Linear(D, H*r) [q1] Linear(D, H*r) [q2]       Linear(D, H*r) [k1] Linear(D, H*r) [k2]
+     │                   │                             │                   │
+q1: [B, N, H, r]    q2: [B, N, H, r]          k1: [B, N, H, r]    k2: [B, N, H, r]
+     │                   │                             │                   │
+     └─────────┬─────────┘                             └─────────┬─────────┘
+               ▼                                                 ▼
+      Einsum: q1 ⊗ q2                                   Einsum: k1 ⊗ k2
+               │                                                 │
+      Q: [B, H, N, r*r]                                 K: [B, H, N, r*r]
+               │                                                 │
+               └────────────────────────┬────────────────────────┘
+                                        ▼
+                          MatMul: Q @ K.T / sqrt(r)
+                                        │
+                                scores: [B, H, N, N]
+                                        │
+                            Apply Mask & Softmax
+                                        │
+                               attn: [B, H, N, N]
+                                        │
+                                        ├─── MatMul: attn @ V [B, H, N, d_h]
+                                        │
+                               context: [B, N, D]
+                                        │
+                               Linear(D, D) [out_proj]
+                                        │
+                                Output: [B, N, D]
 ```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### Parameter & Computational FLOPs Breakdown
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_h = D/H$, and $r$ factor rank.
 
-Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, $d_k = D / H$, and $r$ factorized rank.
+1. **Linear Projections**:
+   - $W_{Q1}, W_{Q2}, W_{K1}, W_{K2}$: $4 \times (2 B N D (H r)) = 8 B N D H r$ FLOPs.
+   - $W_V, W_O$: $4 B N D^2$ FLOPs.
+   - *Total Projection Cost*: $4 B N D^2 + 8 B N D H r$ FLOPs.
 
-1. **Parameter Footprint**:
-   - Standard Query/Key Projections: $2 D^2$.
-   - TPA Factorized Query/Key Projections ($W_{Q1}, W_{Q2}, W_{K1}, W_{K2}$): $4 \times D \cdot (H \cdot r) = 4 D H r$.
-   - Value & Output Projections ($W_V, W_O$): $2 D^2$.
-   - Total Parameters: $2 D^2 + 4 D H r$.
-   - For $D=768, H=12, r=8$:
-     - Standard Q/K: $2 \times 768^2 = 1,179,648$ parameters.
-     - TPA Q/K: $4 \times 768 \times 96 = 294,912$ parameters ($75\%$ reduction in Q/K parameter footprint).
+2. **Tensor Product Expansion (`einsum`)**:
+   - $Q = q_1 \otimes q_2$: $2 B N H r^2$ FLOPs.
+   - $K = k_1 \otimes k_2$: $2 B N H r^2$ FLOPs.
 
-2. **Computational FLOPs & MACs**:
-   - Low-Rank Projections ($W_{Q1}, W_{Q2}, W_{K1}, W_{K2}$): $4 \times 2 B L D H r = 8 B L D H r$ FLOPs ($4 B L D H r$ MACs).
-   - Outer-Product Einsum: $2 \times 2 B L H r^2 = 4 B L H r^2$ FLOPs.
-   - Core Score Calculation ($Q K^\top$): $[B, H, L, r^2] \times [B, H, r^2, L] \implies 2 B H L^2 r^2$ FLOPs ($B H L^2 r^2$ MACs).
-   - Context Aggregation ($A V$): $[B, H, L, L] \times [B, H, L, d_k] \implies 2 B H L^2 d_k = 2 B L^2 D$ FLOPs.
-   - Value & Output Projections ($W_V, W_O$): $4 B L D^2$ FLOPs.
+3. **Core Attention Workload**:
+   - MatMul score $Q K^\top$: $2 B H N^2 r^2$ FLOPs.
+   - Softmax & Masking: $7 B H N^2$ FLOPs.
+   - MatMul context $A V$: $2 B H N^2 d_h = 2 B N^2 D$ FLOPs.
 
-- **Total MACs**: $4 B L D H r + B H L^2 r^2 + 2 B L D^2 + B L^2 D$
-- **Total FLOPs**: $8 B L D H r + 4 B L H r^2 + 2 B H L^2 r^2 + 4 B L D^2 + 2 B L^2 D$
+4. **Total Workload Summary**:
+   - **Total MACs**: $2 B N D^2 + 4 B N D H r + B N H r^2 + B H N^2 (r^2 + d_h)$
+   - **Total FLOPs**: $4 B N D^2 + 8 B N D H r + 4 B N H r^2 + 2 B H N^2 r^2 + 2 B N^2 D + 7 B H N^2$
 
----
-
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-
-### Explicit Einsum Memory Expansion Overhead
-In naive PyTorch, calling `torch.einsum("blhi,blhj->blhij", q1, q2)` explicitly materializes a 5D intermediate tensor of size $[B, L, H, r, r]$ before flattening to $[B, L, H, r^2]$. For $r=16$, this tensor allocates $256$ floats per token head, introducing intermediate memory bandwidth overhead.
-
-### Score Variance Scaling Misalignment
-TPA uses scale factor $\frac{1}{\sqrt{r}}$ instead of the canonical inner-product scale factor $\frac{1}{r} = \frac{1}{\sqrt{r^2}}$. Because $Q$ and $K$ vectors live in $\mathbb{R}^{r^2}$, the expected variance of unnormalized dot-products scale proportionally with $r^2$:
-
-\[
-\text{Var}(\langle Q, K \rangle) = \mathcal{O}(r^2)
-\]
-
-Scaling by $\frac{1}{\sqrt{r}}$ leaves residual variance of order $\mathcal{O}(r^{\frac{3}{2}})$, causing pre-softmax score saturation and vanishing gradients as rank $r$ increases.
-
-### Rank Degeneracy in Paired Subspace Projections
-If $W_{Q1}$ and $W_{Q2}$ collapse into parallel subspaces during training ($\text{cos}(W_{Q1}, W_{Q2}) \approx 1$), the outer product tensor degenerates into a symmetric rank-1 matrix, discarding polynomial expressiveness.
+### Parameter Footprint Analysis
+- **Standard MHA Parameter Count**: $4 D^2 + 4 D$ floats.
+- **TPAttention Parameter Count**:
+  \[
+  \text{Params}_{\text{TPA}} = 2 D^2 + 4 D H r + 2 D \text{ floats}
+  \]
+  For $D = 4096, H = 32, r = 8$:
+  - Standard MHA QKV+O projections: $4 \times 4096^2 = 67,108,864$ parameters.
+  - TPA QKV+O projections: $2(4096)^2 + 4(4096)(32)(8) \approx 37,748,736$ parameters (**43.7% parameter reduction on QKV projections**).
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Fused Factorized Inner-Product Triton Kernel
-Because $\langle q_{1, h, i} \otimes q_{2, h, i}, k_{1, h, j} \otimes k_{2, h, j} \rangle = (q_{1, h, i}^\top k_{1, h, j}) \cdot (q_{2, h, i}^\top k_{2, h, j})$, hardware kernels can compute scores directly from rank-$r$ vectors, bypassing the $r^2$ outer-product expansion entirely.
+### Rank Saturation in Outer Products
+If factor rank $r$ is too small ($r \le 4$), outer product tensors $Q = q_1 \otimes q_2$ become constrained to low numerical rank spaces in $\mathbb{R}^{r^2}$, limiting expressive power compared to unconstrained dense matrices.
+
+### Materialization of Intermediate Tensor Product Buffers
+Evaluating `torch.einsum("blhi,blhj->blhij", q1, q2)` creates intermediate 5D tensors of shape $[B, N, H, r, r]$ before flattening to $[B, H, N, r^2]$, increasing peak activation memory if executed in un-fused PyTorch.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel for TPAttention eliminates intermediate $r^2$ tensor materialization by computing the tensor product similarity on-the-fly inside SRAM using the factor inner product identity $(q_1^\top k_1) \cdot (q_2^\top k_2)$.
 
 ```
-       Global Memory (HBM)
-      ┌────────────────────────────────────────────────────────┐
-      │ q1, q2 [B, H, L, r]                                    │
-      │ k1, k2 [B, H, L, r]                                    │
-      │ V [B, H, L, d_k]                                       │
-      └───────────────────────────┬────────────────────────────┘
-                                  │ Direct Tile Load (Rank r)
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ q1, q2, k1, k2: [B, N, H, r]                                │
+   │ V: [B, H, N, d_h]                                           │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Direct Factor Tile Loading
                                   ▼
- ┌──────────────────────────────────────────────────────────────────┐
- │                   Triton SRAM Scratchpad                         │
- │ 1. Load Rank-r Tiles: q1_tile, q2_tile, k1_tile, k2_tile         │
- │ 2. Compute Factorized Scores:                                    │
- │    S1_tile = q1_tile @ k1_tile.T  [BLOCK_M, BLOCK_N]            │
- │    S2_tile = q2_tile @ k2_tile.T  [BLOCK_M, BLOCK_N]            │
- │ 3. Hadamard Product Score Fusion:                                │
- │    S_ij = (S1_tile * S2_tile) / r                                │
- │ 4. Execute Online Softmax & Accumulate Output Tile O_tile        │
- └────────────────────────────────┬─────────────────────────────────┘
-                                  │
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Load Factor Tiles q1_i, q2_i [BLOCK_M, r]                   │
+ │ 2. Load Factor Tiles k1_j, k2_j [BLOCK_N, r]                   │
+ │ 3. Compute Dual Scores: S1_ij = q1_i @ k1_j.T, S2_ij = q2_i @ k2_j.T│
+ │ 4. Compute Fused Score: S_ij = (S1_ij * S2_ij) / sqrt(r)       │
+ │ 5. Online Softmax & Accumulate V_j Tile                        │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Write Context Output
                                   ▼
-      ┌────────────────────────────────────────────────────────┐
-      │ Output O [B, H, L, d_k]                                │
-      └────────────────────────────────────────────────────────┘
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Context Output: O [B, H, N, d_h]                            │
+   └─────────────────────────────────────────────────────────────┘
 ```
 
-### Triton Implementation Guidelines:
-1. **Mathematical Hadamard Score Fusion**:
-   Avoid materializing $r^2$-dimensional vectors in DRAM. Compute two smaller $[BLOCK\_M, BLOCK\_N]$ matrix products in SRAM registers and multiply them element-wise:
-   ```python
-   # Inside Triton Kernel
-   scores = (tl.dot(q1, k1.T) * tl.dot(q2, k2.T)) * (1.0 / rank)
-   ```
-   This reduces score computation complexity from $\mathcal{O}(B H L^2 r^2)$ to $\mathcal{O}(B H L^2 r)$, achieving substantial speedups.
-2. **Corrected Variance Scaling**:
-   Enforce mathematically rigorous variance scaling $\frac{1}{r}$ inside the fused Triton kernel to guarantee numerical stability across arbitrary rank choices ($r \in [4, 32]$).
-3. **Register-Level Vectorized Reduction**:
-   Utilize 128-bit SIMD registers to execute parallel rank-$r$ dot products, keeping activation memory footprint at $\mathcal{O}(B \cdot H \cdot L \cdot r)$ throughout forward and backward passes.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Higher-Order Tensor Products**: Extend to 3-factor tensor products $Q = q_1 \otimes q_2 \otimes q_3 \in \mathbb{R}^{r^3}$ for cubic polynomial attention kernels.
+2. **Spectral Rank Factorization**: Initialize $q_1, q_2$ via SVD rank decomposition of pretrained MHA query weights for zero-shot compression.
+3. **TPAttention + GQA Fusion**: Combine Tensor Product factorized queries with Grouped-Query shared values for sub-quadratic memory footprint during inference.

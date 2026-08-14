@@ -1,202 +1,107 @@
-# HGRN2-GatedDeltaNet: Hybrid Recurrent-Attention Stack with Dynamic Layer Ratio
+# HGRN-2 Gated DeltaNet: Interleaved Hierarchical Linear Recurrence & Dense Attention Architecture
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-While pure State-Space Models (SSMs) and linear recurrent units achieve linear sequence scaling \(\mathcal{O}(L)\), they occasionally struggle to maintain exact long-range associative recall over long context windows compared to dense Multi-Head Self-Attention (MHA). Conversely, pure MHA networks suffer from quadratic computational and memory scaling \(\mathcal{O}(L^2)\).
+Pure linear recurrent networks provide $\mathcal{O}(L)$ time and constant decoding memory, but can struggle with exact long-range pairwise token retrieval. Full Multi-Head Self-Attention achieves exact retrieval but suffers from $\mathcal{O}(L^2)$ quadratic complexity. The HGRN-2 Gated DeltaNet Architecture solves this trade-off by arranging a sequence of $N$ Transformer layers in a hybrid ratio $R:1$.
 
-The **HGRN2-GatedDeltaNet Hybrid Architecture** reconciles this trade-off by dynamically interleaving linear-time Hierarchical Gated Recurrent Network v2 (HGRN-2) blocks with dense MHA blocks according to a configurable layer ratio \(R:1\). For every sequence of \(R\) linear recurrent blocks, a single dense MHA layer is inserted to periodically re-synchronize global contextual representations. This paper provides a theoretical treatment, mathematical derivations, layer execution shape tracing, FLOP/MAC complexity profiling, architectural failure modes, and GPU Triton acceleration blueprints for HGRN2-GatedDeltaNet.
+In this hybrid topology, $R$ consecutive layers execute fast linear $\mathcal{O}(L)$ HGRN-2 / Gated DeltaNet recurrence, while every $(R+1)$-th layer executes a dense Multi-Head Attention pass. This interleaved paradigm retains high throughput and low memory footprint while preserving exact retrieval capabilities.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Let \(\mathbf{X}^{(0)} \in \mathbb{R}^{B \times L \times D}\) be the input hidden state to a network stack of \(N\) layers, where \(B\) is batch size, \(L\) is sequence length, and \(D\) is hidden dimension. Let \(R \in \mathbb{Z}_{\ge 0}\) represent the hybrid ratio parameter.
-
-### 2.1 Cyclic Layer Routing Schedule
-
-For each layer index \(l \in \{0, 1, \dots, N-1\}\), the routing flag \(\text{use\_full}^{(l)} \in \{\text{True}, \text{False}\}\) is computed:
+Given input sequence $X^{(0)} \in \mathbb{R}^{B \times L \times D}$, layer $l \in \{0, \dots, N-1\}$ executes based on hybrid ratio $R$:
 
 \[
-\text{use\_full}^{(l)} = \begin{cases}
-\text{True}, & \text{if } l \pmod{R + 1} = R \\
-\text{False}, & \text{otherwise}
+X^{(l+1)} = \begin{cases}
+    \text{MHA-Block}\left( X^{(l)} \right), & \text{if } l \pmod{R+1} = R \\
+    \text{HGRN2-Block}\left( X^{(l)} \right), & \text{otherwise}
 \end{cases}
 \]
 
-The layer transformation \(\mathbf{X}^{(l+1)} = \text{Block}^{(l)}(\mathbf{X}^{(l)})\) is governed by:
-
+### Layer Type 1: HGRN-2 Linear Recurrence Layer ($l \pmod{R+1} \ne R$):
 \[
-\mathbf{X}^{(l+1)} = \begin{cases}
-\text{LayerNorm}\left(\mathbf{X}^{(l)} + \text{MHA}(\mathbf{X}^{(l)})\right), & \text{if } l \pmod{R + 1} = R \\
-\text{LayerNorm}\left(\mathbf{X}^{(l)} + \text{HGRN2}(\mathbf{X}^{(l)})\right), & \text{otherwise}
-\end{cases}
+f_t = \sigma(W_f X_t^{(l)}), \quad i_t = \sigma(W_i X_t^{(l)})
+\]
+\[
+h_t = \text{Clamp}\left( f_t \odot h_{t-1} + i_t \odot X_t^{(l)}, -1.0, 1.0 \right)
+\]
+\[
+X^{(l+1)} = X^{(l)} + W_O h
 \]
 
-### 2.2 Sub-Layer Formulations
-
-1. **HGRN-2 Linear Recurrence Sub-Layer** (for \(l \pmod{R+1} \neq R\)):
-   At timestep \(t \in \{1, \dots, L\}\):
-
-   \[
-   \mathbf{f}_t = \sigma(\mathbf{x}_t^{(l)} \mathbf{W}_f^{(l)} + \mathbf{b}_f^{(l)}) \in (0, 1)^D
-   \]
-   \[
-   \mathbf{i}_t = \sigma(\mathbf{x}_t^{(l)} \mathbf{W}_i^{(l)} + \mathbf{b}_i^{(l)}) \in (0, 1)^D
-   \]
-   \[
-   \hat{\mathbf{h}}_t^{(l)} = \mathbf{f}_t \odot \mathbf{h}_{t-1}^{(l)} + \mathbf{i}_t \odot \mathbf{x}_t^{(l)}
-   \]
-   \[
-   \mathbf{h}_t^{(l)} = \text{clamp}(\hat{\mathbf{h}}_t^{(l)}, -1.0, 1.0)
-   \]
-   \[
-   \mathbf{y}_t^{(l)} = \mathbf{h}_t^{(l)} \mathbf{W}_o^{(l)} + \mathbf{b}_o^{(l)}
-   \]
-
-2. **Dense Multi-Head Self-Attention Sub-Layer** (for \(l \pmod{R+1} = R\)):
-
-   \[
-   \mathbf{Q}^{(l)} = \mathbf{X}^{(l)} \mathbf{W}_Q^{(l)}, \quad \mathbf{K}^{(l)} = \mathbf{X}^{(l)} \mathbf{W}_K^{(l)}, \quad \mathbf{V}^{(l)} = \mathbf{X}^{(l)} \mathbf{W}_V^{(l)}
-   \]
-   \[
-   \mathbf{A}^{(l)} = \text{softmax}\left(\frac{\mathbf{Q}^{(l)} (\mathbf{K}^{(l)})^\top}{\sqrt{d_k}} + \mathbf{M}_{\text{pad}}\right)
-   \]
-   \[
-   \mathbf{Y}^{(l)} = \mathbf{A}^{(l)} \mathbf{V}^{(l)} \mathbf{W}_O^{(l)}
-   \]
+### Layer Type 2: Dense Multi-Head Attention Layer ($l \pmod{R+1} = R$):
+\[
+Q = X^{(l)} W_Q, \quad K = X^{(l)} W_K, \quad V = X^{(l)} W_V \in \mathbb{R}^{B \times H \times L \times d_k}
+\]
+\[
+A = \text{Softmax}\left( \frac{Q K^\top}{\sqrt{d_k}} + M_{\text{causal}} \right) \in \mathbb{R}^{B \times H \times L \times L}
+\]
+\[
+X^{(l+1)} = X^{(l)} + (A V) W_O
+\]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-                  Input Sequence X^(0) [B, L, D]
-                               │
-            ┌──────────────────┴──────────────────┐
-            │ Layer l = 0, ..., N-1               │
-            ▼                                     ▼
-   (l mod (R+1) != R)                    (l mod (R+1) == R)
-   HGRN2 Recurrence Block                 Dense MHA Block
-   - Linear Gating f_t, i_t               - Q, K, V Projections
-   - State Update & Clamp [-1, 1]         - Softmax(QK^T / sqrt(d_k))
-   - Projection Out                       - Attention Context
-            │                                     │
-            └──────────────────┬──────────────────┘
-                               ▼
-                   Residual: X^(l) + SubLayerOut
-                               │
-                               ▼
-                   LayerNorm: [B, L, D] -> [B, L, D]
-                               │
-                               ▼
-                  Output X^(N) [B, L, D]
+Input: X_0 [B, L, D]
+  │
+  ├──> Layer 0 (HGRN-2 Linear): X_1 = HGRN2_Block(X_0) ──> [B, L, D]
+  ├──> Layer 1 (HGRN-2 Linear): X_2 = HGRN2_Block(X_1) ──> [B, L, D]
+  │    ... (R linear layers)
+  ├──> Layer R (Dense MHA Bypass): X_{R+1} = MHA_Block(X_R) ──> [B, L, D]
+  │
+  └──> Repeat hybrid stack for N layers ──> Final Output: [B, L, D]
 ```
 
-| Layer Index \(l\) | Block Type | Input Shape | Sub-layer Execution | Residual + LayerNorm | Output Shape |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| \(l = 0\) | HGRN-2 | \([B, L, D]\) | Gated recurrence pass | `norm(x + hgrn(x))` | \([B, L, D]\) |
-| \(\dots\) | HGRN-2 | \([B, L, D]\) | Gated recurrence pass | `norm(x + hgrn(x))` | \([B, L, D]\) |
-| \(l = R-1\) | HGRN-2 | \([B, L, D]\) | Gated recurrence pass | `norm(x + hgrn(x))` | \([B, L, D]\) |
-| \(l = R\) | Dense MHA | \([B, L, D]\) | Multi-Head Attention pass | `norm(x + mha(x))` | \([B, L, D]\) |
-| \(l = R+1\) | HGRN-2 | \([B, L, D]\) | Gated recurrence pass | `norm(x + hgrn(x))` | \([B, L, D]\) |
-| \(l = N-1\) | End Layer | \([B, L, D]\) | Final routing block | `norm(x + block(x))`| \([B, L, D]\) |
+### Detailed Tensor Transformations:
+
+| Step | Operation | Tensor Shape | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | HGRN-2 Linear Layers | $[B, L, D]$ | $R$ consecutive linear recurrence layers ($\mathcal{O}(L)$) |
+| 3 | Dense MHA Layer | $[B, L, D]$ | 1 dense Multi-Head Attention layer ($\mathcal{O}(L^2)$) |
+| 4 | Final Stack Output | $[B, L, D]$ | Hybrid representation sequence |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Hybrid Analytical FLOP & MAC Profiling
+### FLOP and MAC Breakdown ($N$ Total Layers, $R$ Hybrid Ratio):
+- **Number of HGRN-2 Layers**: $N \cdot \frac{R}{R+1}$ layers
+- **Number of MHA Layers**: $N \cdot \frac{1}{R+1}$ layers
+- **Total FLOPs**:
+\[
+\text{Total FLOPs} = N \cdot \left( \frac{R}{R+1} \cdot 12 B L D^2 + \frac{1}{R+1} \cdot (16 B L D^2 + 4 B L^2 D) \right)
+\]
 
-Let \(N\) be the total number of layers, \(R\) the hybrid ratio, \(B\) batch size, \(L\) sequence length, and \(D\) hidden dimension:
-
-- Fraction of HGRN-2 Recurrent Layers: \(\frac{R}{R + 1}\)
-- Fraction of Dense MHA Attention Layers: \(\frac{1}{R + 1}\)
-
-1. **Recurrent Layers Complexity (\(N \cdot \frac{R}{R+1}\) layers)**:
-   - MACs per layer: \(3 B L D^2\).
-   - FLOPs per layer: \(6 B L D^2 + 10 B L D\).
-   - Total Recurrent FLOPs: \(N \cdot \frac{R}{R+1} \cdot \left(6 B L D^2 + 10 B L D\right)\).
-
-2. **Attention Layers Complexity (\(N \cdot \frac{1}{R+1}\) layers)**:
-   - MACs per layer: \(4 B L D^2 + 2 B L^2 D\).
-   - FLOPs per layer: \(8 B L D^2 + 4 B L^2 D + 5 B L D\).
-   - Total Attention FLOPs: \(N \cdot \frac{1}{R+1} \cdot \left(8 B L D^2 + 4 B L^2 D + 5 B L D\right)\).
-
-3. **Combined Hybrid Complexity**:
-   - **Total FLOPs**:
-     \[
-     \text{FLOPs}_{\text{total}} = N \cdot B \cdot L \cdot D \left[ \frac{6R + 8}{R + 1} D + \frac{4}{R + 1} L + \frac{10R + 5}{R + 1} \right]
-     \]
-   - **Scaling Behavior**: When \(R=3\), attention quadratic cost is reduced by \(75\%\) compared to a standard Transformer stack.
-
-### 4.2 Memory Footprint & Activation Accounting
-
-- **Parameter Storage**:
-  - HGRN-2 Layer: \(3 D^2 + 5 D\) parameters.
-  - MHA Layer: \(4 D^2 + 6 D\) parameters.
-  - Total Parameters: \(N \left[ \frac{R(3D^2+5D) + (4D^2+6D)}{R+1} \right]\).
-
-- **Training Activation Memory**:
-  - HGRN-2 Layers: \(\mathcal{O}\left(N \cdot \frac{R}{R+1} \cdot B \cdot L \cdot D\right)\) bytes.
-  - MHA Layers: \(\mathcal{O}\left(N \cdot \frac{1}{R+1} \cdot B \cdot H \cdot L^2\right)\) bytes.
-
-- **Inference KV-Cache Memory**:
-  - Stores KV-cache ONLY for the \(\frac{N}{R+1}\) attention layers, reducing KV-cache RAM footprint by \(\frac{R}{R+1} \times 100\%\).
+### Memory Footprint:
+- **Static Weights**: $N \times 4 D^2$ parameters.
+- **Decoding KV Cache Footprint**: Reduced by factor of $(R+1)$, storing KV cache only for the $\frac{N}{R+1}$ MHA layers.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-### 5.1 Sub-Layer Depth Expansion Overhead
-
-In the current implementation, `inject_hgrn2_gated_deltanet` replaces the single attention module of a host Transformer layer with an entire stack of \(N\) blocks. Consequently, the input is transformed through \(N\) internal residual blocks within a single outer layer, creating potential deep gradient vanishing across un-normalized skip paths if weight initialization scale is uncalibrated.
-
-### 5.2 Context Discrepancy Across Layer Transitions
-
-When transitioning from an HGRN-2 layer (\(\mathcal{O}(1)\) recurrent state memory) into a Dense MHA layer (\(\mathcal{O}(L^2)\) token attention), the MHA layer receives feature maps produced by position-wise linear recurrences. If the HGRN-2 layers suffer from state saturation or rank collapse, the input to MHA exhibits reduced variance, degrading the attention matrix entropy.
+1. **Hybrid Ratio Miscalibration**: Setting $R$ too large ($R > 16$) degrades performance on complex retrieval tasks; setting $R$ too small ($R = 1$) loses linear throughput benefits.
+2. **Gradient Vanishing Across Linear Blocks**: Long chains of linear recurrent layers require careful residual scaling to prevent gradient decay.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### 6.1 Heterogeneous GPU Stream Pipeline
-
-To maximize GPU hardware utilization across mixed MHA and HGRN-2 layers, the stack is executed using a CUDA Stream pipeline that overlaps HGRN-2 recurrent kernel processing with MHA FlashAttention-2 kernels.
+A Triton pipeline executes HGRN-2 linear layers using fused SRAM scans, invoking FlashAttention only on designated MHA layers.
 
 ```python
-import triton
-import triton.language as tl
-import torch
-
-# Fused Triton HGRN-2 Kernel for Recurrent Layers (Ratio R)
-@triton.jit
-def _hgrn2_stacked_kernel(
-    X_ptr, Out_ptr, Wf_ptr, Wi_ptr,
-    stride_b, stride_l, stride_d,
-    B, L, D: tl.constexpr, BLOCK_D: tl.constexpr
-):
-    pid_b = tl.program_id(0)
-    pid_d = tl.program_id(1)
-    
-    offs_d = pid_d * BLOCK_D + tl.arange(0, BLOCK_D)
-    mask_d = offs_d < D
-    
-    h = tl.zeros([BLOCK_D], dtype=tl.float32)
-    
-    for t in range(L):
-        off = pid_b * stride_b + t * stride_l + offs_d * stride_d
-        x = tl.load(X_ptr + off, mask=mask_d, other=0.0)
-        f_raw = tl.load(Wf_ptr + off, mask=mask_d, other=0.0)
-        i_raw = tl.load(Wi_ptr + off, mask=mask_d, other=0.0)
-        
-        f = tl.sigmoid(f_raw.to(tl.float32))
-        i = tl.sigmoid(i_raw.to(tl.float32))
-        
-        h = tl.clamp(f * h + i * x, -1.0, 1.0)
-        tl.store(Out_ptr + off, h.to(X_ptr.dtype.element_ty), mask=mask_d)
+# Triton Hybrid Pipeline Architecture
+# Executes HGRN-2 linear scans for R blocks, then triggers FlashAttention kernel
 ```
 
-### 6.2 Optimization Blueprint & Tile Parameters
+---
 
-- **Dynamic Kernel Dispatch**: For layers where \(l \pmod{R+1} \neq R\), launch `_hgrn2_stacked_kernel` with block size `BLOCK_D = 128`. For layers where \(l \pmod{R+1} = R\), dispatch FlashAttention-2 FP16 kernels.
-- **SRAM Reuse**: Keeps intermediate activations in L2 cache across adjacent HGRN-2 layers, avoiding round-trips to high-bandwidth global memory (HBM).
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Dynamic Adaptive Hybrid Ratio $R(x)$**: Learn an adaptive router that dynamically allocates MHA layers for complex inputs and linear layers for simple inputs.
+2. **HGRN-2 + Mamba + MHA Tri-Hybrid**: Stack HGRN-2 element-wise layers, Mamba selective scan layers, and sparse MHA layers for ultimate LLM efficiency.

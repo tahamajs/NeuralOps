@@ -1,7 +1,6 @@
 # NEXUS: Neural Efficient X-scoring Unified Sparse Attention with Multi-Scale Block Gating and Random Fourier Feature Rectification
 
-## 1. Abstract & Theoretical Motivation
-
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) in Transformer models requires quadratic computational time and memory scaling $\mathcal{O}(N^2)$ with sequence length $N$. Existing sparse attention techniques enforce rigid local windows (losing global context), heuristic token dropping (degrading accuracy), or linearized kernels (suffering from spatial over-smoothing).
 
 **NEXUS** (Neural Efficient X-scoring Unified Sparse Attention) introduces a unified multi-scale sparse attention paradigm incorporating six synergistic mechanisms:
@@ -14,7 +13,7 @@ Standard Multi-Head Self-Attention (MHSA) in Transformer models requires quadrat
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Sequence Partitioning & XAttention Antidiagonal Block Scoring
 Input sequence $X \in \mathbb{R}^{B \times N \times D}$ is partitioned into $M = \lceil N / B_s \rceil$ blocks of block size $B_s$. Query and Key tensors $Q, K \in \mathbb{R}^{B \times H \times N \times d_h}$ are subsampled at stride $\sigma$:
@@ -77,27 +76,60 @@ $$Y = \text{Reshape}\left( O^{\text{dss}} \text{ or } O^{\text{rectify}} \right)
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
 | :--- | :--- | :--- | :--- |
-| **Input Hidden State** | $X$ | $[B, N, D]$ | Base activation state |
-| **Linear Projection Q/K/V** | $Q, K, V$ | $[B, N, D] \to [B, H, N, d_h]$ | Multi-head view transposition |
-| **Subsampled Token Scoring**| $Q_{\text{sample}}, K_{\text{sample}}$ | $[B, H, N, d_h] \to [B, H, N/\sigma, d_h]$ | Strided sequence subsampling |
-| **XAttention Block Scoring**| $S_{bi, bj}$ | $[B, H, N/\sigma, d_h] \to [B, H, M, M]$ | Coarse block interaction matmul |
-| **Top-k Inter-Block Selection**| $\mathcal{K}_{bi}$ | $[B, H, M, M] \to [B, H, M, k]$ | Top-$k$ block index extraction |
-| **Seer Gating Prediction** | $g_{\text{seer}}$ | $[B, H, D] \to [B, H, 1, 1]$ | Bottleneck MLP capacity prediction |
-| **Active Key-Value Concatenation**| $K_{\text{active}}, V_{\text{active}}$ | $[B, H, N_{\text{active}}, d_h]$ | Intra + inter-block tensor cat |
-| **Stripe Granularity Masking**| $M^{\text{stripe}}$ | $[B_s, N_{\text{active}}]$ | Fine-grained band-stripe mask |
-| **Softpick Score Contraction**| $O^{\text{dss}}$ | $[B, H, B_s, N_{\text{active}}] \times [B, H, N_{\text{active}}, d_h] \to [B, H, N, d_h]$ | Rectified Softpick value product |
-| **Global RFF Rectification** | $O^{\text{rectify}}$ | $[B, H, N, d_h] \times [d_h, F] \to [B, H, N, d_h]$ | Periodic RFF linear attention |
-| **Output Linear GEMM** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, D]$ | Layer output projection |
+| **Input Hidden State** | $X$ | `[B, N, D]` | Base activation state |
+| **Linear Projection Q/K/V** | $Q, K, V$ | `[B, N, D] -> [B, H, N, d_h]` | Multi-head view transposition |
+| **Subsampled Token Scoring**| $Q_{\text{sample}}, K_{\text{sample}}$ | `[B, H, N, d_h] -> [B, H, N/\sigma, d_h]` | Strided sequence subsampling |
+| **XAttention Block Scoring**| $S_{bi, bj}$ | `[B, H, N/\sigma, d_h] -> [B, H, M, M]` | Coarse block interaction matmul |
+| **Top-k Inter-Block Selection**| $\mathcal{K}_{bi}$ | `[B, H, M, M] -> [B, H, M, k]` | Top-$k$ block index extraction |
+| **Seer Gating Prediction** | $g_{\text{seer}}$ | `[B, H, D] -> [B, H, 1, 1]` | Bottleneck MLP capacity prediction |
+| **Active Key-Value Concatenation**| $K_{\text{active}}, V_{\text{active}}$ | `[B, H, N_{\text{active}}, d_h]` | Intra + inter-block tensor cat |
+| **Stripe Granularity Masking**| $M^{\text{stripe}}$ | `[B_s, N_{\text{active}}]` | Fine-grained band-stripe mask |
+| **Softpick Score Contraction**| $O^{\text{dss}}$ | `[B, H, B_s, N_{\text{active}}] * [B, H, N_{\text{active}}, d_h] -> [B, H, N, d_h]` | Rectified Softpick value product |
+| **Global RFF Rectification** | $O^{\text{rectify}}$ | `[B, H, N, d_h] * [d_h, F] -> [B, H, N, d_h]` | Periodic RFF linear attention |
+| **Output Linear GEMM** | $Y$ | `[B, N, H * d_h] -> [B, N, D]` | Layer output projection |
+
+```
+                       [B, N, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     Q, K, V Projections         Check Rectify Layer
+      [B, H, N, d_h]             (l % L_rectify == 0 -> Spectraformer RFF)
+             │                           │
+     ┌───────┴───────┐                   │
+     ▼               ▼                   ▼
+Strided XAttention  Seer Gating     Global RFF Linear Attention
+Block Scorer        Predict k_seer   phi(Q) @ KV / (phi(Q) @ Z)
+Shape: [B, H, M, M] Shape: [B, H]    Shape: [B, H, N, d_h]
+     │               │                   │
+     └───────┬───────┘                   │
+             ▼                           │
+      Select Top-k Inter-Blocks K_active │
+             │                           │
+             ▼                           │
+      Apply AnchorAttention Stripe Mask  │
+             │                           │
+             ▼                           │
+      Dual-Stage Softpick Attn O_dss     │
+      Shape: [B, H, N, d_h]              │
+             │                           │
+             └─────────────┬─────────────┘
+                           ▼
+                 Output Linear GEMM W_O
+                           │
+                           ▼
+                     [B, N, D] Output
+```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Floating Point Operations (FLOPs)
+### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $B_s$ block size, $k$ top-k inter-blocks, $\sigma$ XAttention stride, $S_w$ stripe width, and $F$ RFF feature dimension.
 
 1. **Linear Projections ($Q, K, V, O$)**:
@@ -117,17 +149,23 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 
 $$\text{FLOPs}_{\text{sparse}} = 8 B N D^2 + \frac{2 B N^2 D}{\sigma^2} + 4 B N D B_s (1 + k)$$
 
-### 4.2 Memory Footprint & Bandwidth
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} = 4 B N D^2 + \frac{B N^2 D}{\sigma^2} + 2 B N D B_s (1 + k)$$
 - **Parameter Footprint**:
-  $$\Theta = 4 D^2 + \Theta_{\text{seer}} + \Theta_{\text{rff}} = 4 D^2 + 4 d_h r_{\text{gate}} + d_h F$$
+  $$\Theta = 4 D^2 + 4 d_h r_{\text{gate}} + d_h F$$
 - **Activation Footprint**:
   - Block score matrix: $\mathcal{O}(B H M^2)$
   - Active key/value buffers: $\mathcal{O}(B H N (1 + k) B_s)$
   - Total Memory: $\mathcal{O}\left(B N D + B H \left( \frac{N}{B_s} \right)^2 + B H N k B_s\right) \ll \mathcal{O}(B H N^2)$
 
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
+- **NEXUS Unified Sparse Attention**: $\mathcal{O}\left(N \cdot \left( D^2 + \frac{N D}{\sigma^2} + D B_s (1 + k) \right)\right)$ compute. On sequences where $N = 64,000$, NEXUS achieves up to $22\times$ memory reduction.
+
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### 5.1 XAttention Subsampling Misalignment & Block Omission
 - **Mechanism**: XAttention evaluates coarse block interactions using strided subsampling ($\sigma = 2$). If critical query-key interactions occur in a localized spike between sampled token indices, the block score $S_{bi, bj}$ drops below the top-$k$ threshold.
@@ -143,7 +181,7 @@ $$\text{FLOPs}_{\text{sparse}} = 8 B N D^2 + \frac{2 B N^2 D}{\sigma^2} + 4 B N 
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -164,7 +202,7 @@ $$\text{FLOPs}_{\text{sparse}} = 8 B N D^2 + \frac{2 B N^2 D}{\sigma^2} + 4 B N 
 |               - Load Intra + Top-k Inter-Block Keys into SRAM                     |
 |               - Apply Stripe Band Mask & Online Softpick Normalization            |
 |               - Write Context Output to Global Memory                             |
-|                                                                                   |
+|
 |        +------------------------------------------------------------------+       |
 |        |                                                                          |
 |        +---> [Fused Output GEMM Kernel] ---> Output Y [B, N, D]                   |
@@ -186,3 +224,12 @@ Standard PyTorch implementations collect inter-block key tensors via `torch.cat`
 ### 6.3 Triton Strategy 3: Periodic RFF Streaming Linear Engine
 - For rectification layers ($l \pmod{L_{\text{rectify}}} == 0$), execute a streaming RFF linear attention kernel.
 - Stream sequence blocks of size `BLOCK_N = 128` to accumulate outer products into shared memory buffer $KV \in \mathbb{R}^{F \times d_h}$, bypassing global memory allocations for feature activations $\phi(K)$.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **FAVOR+ Positive Orthogonal Random Feature Map Integration**: Replace naive exponential RFF projections $\exp(\text{Norm}(x) W_{\text{rff}})$ in global rectification layers with FAVOR+ orthogonal QR matrices $\Pi \in \mathbb{R}^{d_h \times F}$, eliminating kernel variance and numerical instability.
+2. **FlashAttention-3 FP8 Tile Quantization**: Execute the dual-stage stripe attention kernel using 8-bit floating point precision (E4M3) on NVIDIA Hopper GPUs, quadrupling intra-block matmul throughput.
+3. **Decoupled Local-Global Head Heterogeneity**: Allocate $75\%$ of heads to localized strided block sparse FlashAttention ($k = 4, S_w = 4$) and $25\%$ of heads to unconstrained global linear RFF attention, eliminating global rectification layer switching.
+4. **Adaptive Hierarchical Macro/Micro Block Tiling**: Implement 2-level macro ($B_{\text{macro}} = 256$) and micro ($B_{\text{micro}} = 32$) block hierarchies, achieving logarithmic $\mathcal{O}(\log M)$ routing on 1M-token contexts.

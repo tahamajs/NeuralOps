@@ -1,160 +1,145 @@
-# HLA Attention: Hadamard Linear Recurrent Outer-Product Attention
+# HLA Attention: Hadamard Linear Attention via Outer-Product Associative Recurrence
 
-## 1. Abstract & Theoretical Motivation
-Standard softmax self-attention tracks full sequence pairs through an explicit $N \times N$ Gram matrix $\mathbf{A} = \operatorname{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right)$, leading to quadratic time and space requirements $\mathcal{O}(N^2)$. Hadamard Linear Attention (HLA) replaces explicit score computation with causal outer-product recurrence over a matrix memory state $\mathbf{H}_t \in \mathbb{R}^{d \times d}$.
+## 1. Executive Abstract & Architectural Motivation
 
-HLA tracks historic sequence information by incrementally accumulating key-value outer products $\mathbf{k}_t^\top \mathbf{v}_t$ into a head-wise associative memory matrix $\mathbf{H}_t$. Query vectors read out context representations directly via matrix-vector multiplication $\mathbf{o}_t = \mathbf{q}_t \mathbf{H}_t$. This drops attention computation to strictly linear time $\mathcal{O}(N d^2)$ and constant recurrent memory $\mathcal{O}(d^2)$, enabling efficient streaming autoregressive generation.
+Standard Multi-Head Attention scales quadratically $\mathcal{O}(L^2)$ in sequence length $L$, creating a bottleneck for long-context execution. Hadamard Linear Attention (HLA Attention) eliminates the explicit $L \times L$ attention matrix by maintaining a running associative 2D state matrix $H_t \in \mathbb{R}^{d_k \times d_k}$ per head across time steps.
+
+At each token position $t$, HLA Attention computes the outer product of Key vectors $K_t$ and Value vectors $V_t$, accumulating them into the state matrix $H_t = H_{t-1} + K_t \otimes V_t$. Query vectors $Q_t$ interact directly with $H_t$ via matrix-vector multiplication. By using matrix associativity, HLA reduces time complexity to $\mathcal{O}(L \cdot d_k^2)$ and retains a constant $\mathcal{O}(d_k^2)$ memory footprint during causal autoregressive decoding.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Given input sequence tensor $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, query, key, and value vectors for head $h \in \{1, \dots, H\}$ at position $t \in \{1, \dots, N\}$ are generated via linear transformations:
+Given input sequence representations $X \in \mathbb{R}^{B \times L \times D}$, queries, keys, and values are projected as:
 
 \[
-\mathbf{q}_t^{(h)} = \mathbf{x}_t \mathbf{W}_Q^{(h)} \in \mathbb{R}^d, \quad \mathbf{k}_t^{(h)} = \mathbf{x}_t \mathbf{W}_K^{(h)} \in \mathbb{R}^d, \quad \mathbf{v}_t^{(h)} = \mathbf{x}_t \mathbf{W}_V^{(h)} \in \mathbb{R}^d
+Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
 \]
 
-Valid sequence tokens are masked prior to state updates to eliminate padding artifacts:
+Multi-head formatting yields $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_k}$ with $d_k = D / H$.
+
+### Outer-Product State Recurrence:
+The hidden associative state matrix $H_t \in \mathbb{R}^{B \times H \times d_k \times d_k}$ is initialized to zero ($H_0 = \mathbf{0}$) and updated recursively:
 
 \[
-\widetilde{\mathbf{k}}_t^{(h)} = \mathbf{k}_t^{(h)} \odot m_t, \quad \widetilde{\mathbf{v}}_t^{(h)} = \mathbf{v}_t^{(h)} \odot m_t
+H_t = H_{t-1} + K_t \otimes V_t = H_{t-1} + K_t^\top V_t \in \mathbb{R}^{B \times H \times d_k \times d_k}
 \]
 
-where $m_t \in \{0, 1\}$ is the scalar token valid mask.
-
-### Causal Recurrent State Accumulation
-The associative memory state matrix $\mathbf{H}_t^{(h)} \in \mathbb{R}^{d \times d}$ is initialized to $\mathbf{H}_0^{(h)} = \mathbf{0}_{d \times d}$. At each step $t$, the state matrix accumulates the rank-1 outer product of key and value vectors:
+### Query Context Extraction:
+The contextualized output vector $O_t \in \mathbb{R}^{B \times H \times d_k}$ for query $Q_t$ is evaluated as:
 
 \[
-\mathbf{H}_t^{(h)} = \mathbf{H}_{t-1}^{(h)} + \widetilde{\mathbf{k}}_t^{(h)} \otimes \widetilde{\mathbf{v}}_t^{(h)} = \mathbf{H}_{t-1}^{(h)} + (\widetilde{\mathbf{k}}_t^{(h)})^\top \widetilde{\mathbf{v}}_t^{(h)} \in \mathbb{R}^{d \times d}
+O_t = Q_t H_t = \sum_{j=1}^t \left( Q_t K_j^\top \right) V_j \in \mathbb{R}^{B \times H \times d_k}
 \]
 
-Using Einstein tensor contraction:
+Stacking outputs across all sequence steps $t = 1, \dots, L$ produces $O \in \mathbb{R}^{B \times H \times L \times d_k}$.
+
+### Final Output Projection:
+Multi-head outputs are concatenated and projected to model dimension $D$:
 
 \[
-(\mathbf{H}_t^{(h)})_{d_1, d_2} = (\mathbf{H}_{t-1}^{(h)})_{d_1, d_2} + (\widetilde{\mathbf{k}}_t^{(h)})_{d_1} (\widetilde{\mathbf{v}}_t^{(h)})_{d_2}
-\]
-
-Unrolling the recurrence reveals an un-decayed cumulative sum of outer products:
-
-\[
-\mathbf{H}_t^{(h)} = \sum_{j=1}^t (\widetilde{\mathbf{k}}_j^{(h)})^\top \widetilde{\mathbf{v}}_j^{(h)}
-\]
-
-### Query Context Readout
-The contextual output vector $\mathbf{o}_t^{(h)} \in \mathbb{R}^d$ is generated by multiplying the query vector $\mathbf{q}_t^{(h)}$ with the accumulated state matrix $\mathbf{H}_t^{(h)}$:
-
-\[
-\mathbf{o}_t^{(h)} = \mathbf{q}_t^{(h)} \mathbf{H}_t^{(h)} = \sum_{j=1}^t \left( \mathbf{q}_t^{(h)} (\widetilde{\mathbf{k}}_j^{(h)})^\top \right) \widetilde{\mathbf{v}}_j^{(h)} \in \mathbb{R}^d
-\]
-
-Outputs across heads are concatenated and linearly projected back:
-
-\[
-\mathbf{y}_t = \operatorname{Concat}(\mathbf{o}_t^{(1)}, \dots, \mathbf{o}_t^{(H)}) \mathbf{W}_O \in \mathbb{R}^D
+Y = \text{Concat}(O_1, \dots, O_H) W_O \in \mathbb{R}^{B \times L \times D}
 \]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-Input Hidden States X [B, N, D]
+Input: hidden_states [B, L, D]
   │
-  ├──> Linear Projections (W_Q, W_K, W_V) -> Q, K, V [B, H, N, d]
-  │
-  ├──> Mask Padding: K = K * Valid_Mask, V = V * Valid_Mask
-  │
-  ├──> Recurrent Loop (for t in 1...N):
-  │    ├──> Extract Step Vectors: q_t, k_t, v_t [B, H, d]
-  │    ├──> Outer Product Accumulation:
-  │    │    H_t = H_{t-1} + einsum('bhd, bhe -> bhde', k_t, v_t) ──> [B, H, d, d]
-  │    └──> Query State Readout:
-  │         Out_t = einsum('bhd, bhde -> bhe', q_t, H_t) ─────────> [B, H, d]
-  │
-  ├──> Stack Timesteps & Reshape ─────────────────────────────────> [B, N, H * d = D]
-  └──> Output Linear Projection: Y = Out @ W_O ───────────────────> [B, N, D]
+  ├──> Q = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
+  ├──> K = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
+  └──> V = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
+         │
+         ├──> Recurrent Loop over sequence steps t = 1 ... L:
+         │      ├──> Outer Product: K_t.transpose(-2, -1) @ V_t ──> [B, H, d_k, d_k]
+         │      ├──> State Recurrence: H_t = H_{t-1} + OuterProduct ──> [B, H, d_k, d_k]
+         │      └──> Query Interaction: O_t = Q_t @ H_t ──> [B, H, d_k]
+         │
+         ├──> Stack outputs across L ──> Context: [B, H, L, d_k]
+         ├──> transpose(1, 2) ──> contiguous() ──> [B, L, D]
+         └──> Linear(D, D)(Context) ──> Output: [B, L, D]
 ```
 
-### Detailed Shape Progression Table
+### Detailed Tensor Transformations:
 
-| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| Step | Operation | Tensor Shape | Description |
 | :--- | :--- | :--- | :--- |
-| 1 | Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
-| 2 | Multi-Head Permute | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
-| 3 | Token Masking | `K, V: [B, H, N, d]`, `Mask: [B, 1, N, 1]` | `K, V: [B, H, N, d]` |
-| 4 | Recurrent State Init | N/A | `H_0: [B, H, d, d]` |
-| 5 | Step $t$ Key-Value Outer Product | `k_t: [B, H, d]`, `v_t: [B, H, d]` | `Outer_t: [B, H, d, d]` |
-| 6 | State Matrix Accumulation | `H_{t-1}: [B, H, d, d]`, `Outer_t` | `H_t: [B, H, d, d]` |
-| 7 | Step $t$ Query Readout | `q_t: [B, H, d]`, `H_t: [B, H, d, d]` | `out_t: [B, H, d]` |
-| 8 | Timestep Stacking | `out_t: [B, H, d]` across $N$ steps | `Out: [B, H, N, d]` |
-| 9 | Output Projection | `Out: [B, N, D]` | `Y: [B, N, D]` |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | Linear Projections | $[B, H, L, d_k]$ | $Q, K, V$ states |
+| 3 | Outer Product ($K_t \otimes V_t$) | $[B, H, d_k, d_k]$ | Rank-1 outer-product memory update per step |
+| 4 | State Matrix Accumulation | $[B, H, d_k, d_k]$ | Cumulative memory state $H_t = H_{t-1} + K_t^\top V_t$ |
+| 5 | Query State Projection | $[B, H, d_k]$ | Per-step context extraction $O_t = Q_t H_t$ |
+| 6 | Sequence Stacking | $[B, H, L, d_k]$ | Concatenated multi-head context tensor |
+| 7 | Out Projection | $[B, L, D]$ | Projection $W_O$ to model dimension $D$ |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP & MAC Counting
-1. **Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
-2. **Sequential Outer-Product Recurrence Loop ($N$ steps)**:
-   - Outer Product ($\mathbf{k}_t^\top \mathbf{v}_t$): $2 B H d^2$ FLOPs per step.
-   - State Addition ($\mathbf{H}_{t-1} + \Delta\mathbf{H}$): $B H d^2$ operations per step.
-   - Query Readout ($\mathbf{q}_t \mathbf{H}_t$): $2 B H d^2$ FLOPs per step.
-   - Total Recurrent Compute: $N \times (5 B H d^2) = 5 B N H d^2 = 5 B N D d$ FLOPs.
+### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $d_k$: Head Dim):
+- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
+- **Outer Product Memory Updates ($K_t^\top V_t$)**: $L \times (2 B H d_k^2) = 2 B L H d_k^2 = 2 B L D d_k$ FLOPs
+- **State Accumulation ($H_{t-1} + \text{Outer}$)**: $L \times (B H d_k^2) = B L D d_k$ FLOPs
+- **Query Matrix Multiplication ($Q_t H_t$)**: $L \times (2 B H d_k^2) = 2 B L D d_k$ FLOPs
+- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
 
-**Total Computational Cost**:
-\[
-\text{Total FLOPs} = 8 B N D^2 + 5 B N D d
-\]
+**Total Complexity**:
+- **Total MACs**: $4 B L D^2 + 2 B L D d_k$
+- **Total FLOPs**: $8 B L D^2 + 5 B L D d_k$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
 
-For head dimension $d = D/H$ (e.g., $d=64$), $5 B N D d \ll 4 B N^2 D$, producing linear scaling $\mathcal{O}(N)$.
-
-### Memory Footprint & Tensor Store
-- **Parameters**: $4 D^2$ floats.
-- **Activation Memory**:
-  - Recurrent State Matrix $\mathbf{H}_t$: $B H d^2 = B D d$ floats.
-  - Intermediate Step Outputs: $B H N d = B N D$ floats.
-  - Peak Activation Memory: $\mathcal{O}(B N D + B D d)$.
+### Memory Footprint:
+- **Static Weights**: $4 D^2$ parameters.
+- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot d_k^2)$ per step during decoding, completely bypassing quadratic $L^2$ memory storage.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Python Sequential Loop Latency**: Python `for t in range(L)` loops introduce GPU kernel launch latency bottlenecks for large sequence lengths $N$, causing GPU hardware under-utilization during standard forward propagation.
-2. **Unbounded Memory State Growth**: Because $\mathbf{H}_t$ accumulates outer products without exponential decay or normalization, entries in $\mathbf{H}_t$ grow linearly with sequence length $N$, leading to gradient explosion over long contexts.
-3. **Finite Matrix Capacity Limit**: Storing full context inside a $d \times d$ matrix creates an information bottleneck when $N \gg d^2$.
+1. **Unbounded Memory Magnitude Explosion**: Because $H_t = H_{t-1} + K_t^\top V_t$ lacks decay or normalization factors, $H_t$ norms grow monotonically over long sequence horizons ($L > 65536$), causing floating-point overflow.
+2. **Lack of Recency Bias**: Without exponential decay factors, early tokens contribute equal weight to $H_t$ as recent tokens, impairing performance on localized context tasks.
+3. **Sequential Loop Overhead in PyTorch**: Python `for t in range(L)` loops incur CPU launch latency overhead unless replaced with parallel chunk scan kernels.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### Memory Access & Vectorization Barriers
-Naive PyTorch updates the state matrix via sequential step loops, repeatedly reading and writing $B \times H \times d \times d$ tensors back to DRAM at every timestep.
-
-### High-Performance Triton Kernel Fusion Strategy
-1. **Parallel Prefix Scan Formulation**: Express the outer-product recurrence as a parallel prefix sum (Scan). Compute cumulative sums over key-value outer products in sequence chunks using GPU parallel scan algorithms.
-
-\[
-\mathbf{H}_t = \text{ParallelCumSum}\left( \mathbf{k}_j^\top \mathbf{v}_j \right)
-\]
-
-2. **Chunked Recurrent Scan Kernel**: Implement a Triton kernel that loads sequence tiles of size `BLOCK_N = 64` into Shared Memory (`smem`). Compute intra-block outer products in parallel and merge inter-block states using a tree reduction scan.
+A Triton kernel for HLA Attention implements parallel chunk scan algorithms, dividing sequence length $L$ into blocks and executing intra-chunk GEMM with inter-chunk state accumulation.
 
 ```python
-# Triton Pseudocode for Parallel Chunked HLA Scan
+# Triton Parallel Scan Kernel Blueprint for HLA Attention
+import triton
+import triton.language as tl
+
 @triton.jit
-def _hla_fused_chunked_scan_kernel(
+def _hla_chunk_scan_kernel(
     Q_ptr, K_ptr, V_ptr, Out_ptr,
-    N, D, H, d: tl.constexpr, BLOCK_N: tl.constexpr
+    stride_qb, stride_qh, stride_ql, stride_qd,
+    L, d_k,
+    BLOCK_L: tl.constexpr
 ):
-    # Load sequence block Q, K, V into SRAM [BLOCK_N, d]
-    k_block = tl.load(K_ptr + offsets_k)
-    v_block = tl.load(V_ptr + offsets_v)
+    pid_bh = tl.program_id(0)
     
-    # Compute intra-block outer products using register GEMM
-    # Compute parallel prefix sum across BLOCK_N tiles
-    # Accumulate inter-block state H_block [d, d] in Shared Memory
+    # Persistent State Memory in SRAM [d_k, d_k]
+    h_state = tl.zeros((d_k, d_k), dtype=tl.float32)
+    
+    for t in range(L):
+        q = tl.load(Q_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
+        k = tl.load(K_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
+        v = tl.load(V_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k))
+        
+        # Accumulate outer product
+        h_state += k[:, None] * v[None, :]
+        out_t = tl.sum(q[:, None] * h_state, axis=0)
+        
+        tl.store(Out_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d_k), out_t)
 ```
 
-3. **In-place Recurrent Decoding for Inference**: For streaming single-token generation ($N=1$), maintain state $\mathbf{H}_t$ in GPU L1 cache, updating it with a single rank-1 outer product matrix kernel to achieve minimal latency.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Gated HLA (Hadamard DeltaNet)**: Introduce learnable dynamic decay gates $f_t = \sigma(W_f x_t)$ to modulate memory accumulation: $H_t = f_t \odot H_{t-1} + K_t^\top V_t$.
+2. **HLA-Mamba SSM Integration**: Combine HLA associative matrix states with continuous-time State Space Model discretization parameters ($\Delta t$).
+3. **Low-Rank Factorized State Matrices**: Represent 2D state matrix $H_t$ as factorized low-rank vectors $U_t V_t^\top$ to further reduce FLOPs for large head dimensions ($d_k > 128$).

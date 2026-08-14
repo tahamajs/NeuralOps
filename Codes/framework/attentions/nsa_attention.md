@@ -1,6 +1,6 @@
 # Native Sparse Attention: Hybrid Local Sliding-Window and Dynamic Top-k Global Routing
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Dense Multi-Head Self-Attention (MHSA) scales quadratically $\mathcal{O}(L^2 d)$ with sequence length $L$, computing pairwise attention interactions across all token pairs regardless of semantic distance. Purely localized attention models enforce fixed spatial windows of size $W$, reducing computational complexity to $\mathcal{O}(L \cdot W \cdot d)$, but completely sever long-range associative dependencies across distant sequence positions.
 
 **Native Sparse Attention (`NativeSparseAttention`)** unifies high-precision local syntactic modeling with dynamic, content-adaptive long-range routing. The attention pattern is constructed as the explicit boolean union of two complementary structural masks:
@@ -11,7 +11,7 @@ By combining $W$-bounded local attention with $k$-sparse global routing, NSA red
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Multi-Head Projection
 Given hidden states $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) matrices are generated via linear projections:
@@ -55,7 +55,7 @@ $$\mathbf{Y} = \operatorname{Reshape}(\mathbf{O}) \mathbf{W}_O \quad \in \mathbb
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -110,7 +110,7 @@ $$\mathbf{Y} = \operatorname{Reshape}(\mathbf{O}) \mathbf{W}_O \quad \in \mathbb
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_h = D/H$, $W$ local window half-width, and $k$ top-$k$ non-local keys.
@@ -146,7 +146,7 @@ $$\text{Total Naive FLOPs} = 8 B L D^2 + 2 B L^2 D + 2 B D L (2W + k)$$
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 The Dense Score Matrix Materialization Memory Trap
 In `NativeSparseAttention.forward`:
@@ -173,7 +173,7 @@ If sequence length $L = 100,000$ and hyperparameter settings are $W = 128, k = 3
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To achieve true linear-scaling $\mathcal{O}(L \cdot (2W + k))$, Native Sparse Attention requires a custom Triton GPU kernel that evaluates sliding-window attention and non-local top-$k$ routing without materializing dense $L \times L$ matrices.
 
@@ -264,7 +264,7 @@ def _nsa_fused_local_global_kernel(
         acc_scale = tl.exp(m_i - m_new)
         acc = acc * acc_scale[:, None]
 
-        v_ptrs = V_ptr + pid_b * stride_vb + pid_h * stride_vh + (offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd)
+        v_ptrs = V_ptr + pid_b * stride_vb + pid_h * stride_vh + (offs_n[:, None] * stride_vn + offs_d[:, None] * stride_vd)
         v = tl.load(v_ptrs)
         acc = tl.dot(p.to(v.dtype), v, acc)
 
@@ -280,3 +280,12 @@ def _nsa_fused_local_global_kernel(
 ### 6.3 Hardware Optimization Impact
 1. **Zero Matrix Allocation**: Computes local sliding-window attention directly in SRAM registers, dropping VRAM allocation from $\mathcal{O}(B H L^2)$ to zero.
 2. **Fused Register Rescaling**: Online Softmax rescales local and global attention accumulators in SRAM, eliminating intermediate GPU memory writebacks.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **DeepSeek-Style Coarse Block Key Compression**: Group keys into blocks of size $B_{\text{block}} = 64$ and compute coarse block-level routing scores before selecting individual top-$k$ tokens, cutting top-$k$ search overhead by $64\times$.
+2. **Dynamic Gumbel-Softmax Top-$k$ Masking**: Replace non-differentiable hard `topk` indexing with continuous straight-through Gumbel-Softmax selection to enable end-to-end backpropagation through non-local key projections.
+3. **Decoupled Local-Global Head Heterogeneity**: Allocate $75\%$ of attention heads exclusively to ultra-fast local FlashAttention ($W = 256, k = 0$) and $25\%$ of heads exclusively to global routed FlashAttention ($W = 0, k = 64$).
+4. **FP8 Quantized Native Sparse Attention**: Execute sliding-window FlashAttention and non-local block routing using FP8 (E4M3) Tensor Cores on NVIDIA Hopper/Blackwell GPUs.

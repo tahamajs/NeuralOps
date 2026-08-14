@@ -1,6 +1,6 @@
 # BAM-UMoE: Unified Mixture-of-Experts Attention Replacement Block
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) computes pairwise similarity matrices of size $L \times L$, scaling quadratically with sequence length $L$. In contexts where token-to-token cross-attention provides marginal utility relative to its computational expense, **BAM-UMoE (Block-Attention Replacement via Unified Mixture-of-Experts)** replaces quadratic attention mechanisms entirely. Instead of inter-token matrix multiplication, BAM-UMoE formulates Transformer layer transformations as a sequence of parameter-efficient, token-wise conditional routing computations over specialized expert sub-networks.
 
 The core architecture consists of two stacked **Unified Mixture-of-Experts (UMoE)** blocks with top-$k$ routing: a QKV-MoE that projects input representations into unified feature spaces, followed by an FFN-MoE that handles high-dimensional non-linear feature synthesis. By bypassing pairwise sequence attention, BAM-UMoE achieves linear complexity $\mathcal{O}(L \cdot k \cdot D^2)$ with respect to sequence length, providing an asymptotic speedup and memory footprint reduction. 
@@ -9,7 +9,7 @@ This model shifts the computational paradigm from *sequence-level token interact
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Unified Mixture-of-Experts (`UnifiedMoE`) Routing
 Given an input feature tensor $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, the routing gate computes expert logit activations $\mathbf{R}$ across $E$ candidate experts:
@@ -56,7 +56,7 @@ The overall `BAMUMoEBlock` executes the following sequence:
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -126,7 +126,7 @@ The overall `BAMUMoEBlock` executes the following sequence:
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $E$ total experts, and $k$ top active experts.
@@ -169,7 +169,7 @@ $$\text{Total FLOPs} = 56 B L E D^2 + 2 B L D^2 + 4 B L D E + 8 B L k D$$
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Naive Torch Stack Memory Allocation Explosion
 In the Python implementation:
@@ -192,7 +192,7 @@ In router gate $\operatorname{Softmax}\left(\operatorname{TopK}(\mathbf{X} \math
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To convert BAM-UMoE into true conditional computation, execution must avoid evaluating all $E$ experts and eliminate intermediate stack buffers.
 
@@ -262,3 +262,12 @@ def _umoe_scatter_kernel(
 1. **True Conditional Computation**: Compute is strictly bounded by $\mathcal{O}(k \cdot B \cdot L \cdot D^2)$ instead of $\mathcal{O}(E \cdot B \cdot L \cdot D^2)$.
 2. **Zero Stack Allocation**: Eliminates `torch.stack` intermediate tensors, reducing peak memory usage from $\mathcal{O}(B L E D)$ to $\mathcal{O}(B L k D)$.
 3. **Tensor Core Utilization**: Re-ordering tokens into contiguous expert blocks enables dense matrix multiplication (`tl.dot`) targeting Tensor Cores at full hardware utilization.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Hybrid Inter-Token SSM + UMoE Layer Interleaving**: Interleave lightweight 1D linear recurrences (such as Mamba-2 or RWKV-6) every $N$ layers to provide spatial sequence context aggregation while retaining $\mathcal{O}(L)$ compute scaling.
+2. **Auxiliary Load-Balanced Soft Router Loss**: Integrate sequence-level expert balancing cross-entropy constraints into $W_{\text{gate}}$ training to prevent expert starvation and maximize capacity utilization.
+3. **Shared Expert Base Architecture**: Allocate $1$ or $2$ shared static experts that process all tokens unconditionally, combined with $E-2$ dynamically routed top-$k$ experts to capture invariant domain knowledge.
+4. **FP8 Block Quantized Expert Weights**: Quantize expert linear weights $W_{1, e}, W_{2, e}$ to FP8 (E4M3), enabling fitting 64+ experts into H100 SXM SRAM/VRAM without dynamic DRAM swapping.

@@ -1,7 +1,6 @@
 # AEGIS-Attention V6: Unified Hybrid Attention with SVD+LoRA Dual-Path Projections and Positive Orthogonal Random Feature (FAVOR+) Global Kernel Attention
 
-## 1. Abstract & Theoretical Motivation
-
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) in Transformer models imposes quadratic computational time complexity $\mathcal{O}(N^2)$ and memory allocation scaling with respect to sequence length $N$. While local sliding-window attention restricts computational overhead to $\mathcal{O}(N \cdot W)$, it sacrifices long-range contextual modeling. Conversely, global linearized attention variants offer linear scaling $\mathcal{O}(N \cdot m \cdot d_h)$ but suffer from spatial over-smoothing and numerical instability in kernel exponentiation.
 
 **AEGIS-Attention V6** establishes a unified hybrid attention framework combining four architectural advances:
@@ -12,7 +11,7 @@ Standard Multi-Head Self-Attention (MHSA) in Transformer models imposes quadrati
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 SVD+LoRA Dual-Path Projection (`FactorisedLowRankProjection`)
 For input tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$, linear projections ($Q, K, V, O$) are evaluated through parallel SVD singular basis scaling and LoRA adaptation:
@@ -77,28 +76,58 @@ $$Y = \text{FactorisedLowRankProjection}_{\text{out}}\left( \text{Reshape}(O^{\t
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Variable | Shape Transformation | Mathematical Operation |
 | :--- | :--- | :--- | :--- |
-| **Input Activation** | $X$ | $[B, N, D]$ | Base activation state |
-| **SVD+LoRA Projection Q/K/V**| $X V \text{diag}(S) U^T + X B^T A^T$| $[B, N, D] \to [B, N, H \cdot d_h]$ | Dual-path low-rank projection |
-| **Head Partitioning** | $Q, K, V$ | $[B, N, H \cdot d_h] \to [B, H, N, d_h]$ | Multi-head view transposition |
-| **RMSNorm Pre-Norm** | $\hat{Q}, \hat{K}$ | $[B, H, N, d_h]$ | Root-mean-square normalization |
-| **Tiled Local Attention** | $O^{\text{local}}$ | $[B, H, N, d_h] \to [B, H, N, d_h]$ | Tiled local sliding-window SDPA |
-| **FAVOR+ Feature Mapping** | $\phi(\hat{Q}), \phi(\hat{K})$ | $[B, H, N, d_h] \times [d_h, m] \to [B, H, N, m]$ | $\frac{1}{\sqrt{m}} \exp\left( x \Pi - \frac{\|x\|^2}{2} \right)$ |
-| **Query & Input Gating** | $g_Q, g_{\text{in}}$ | $[B, H, N, 1], [B, H, N, 1]$ | Sigmoidal gating evaluation |
-| **Global FAVOR+ Accumulator**| $M^{\text{global}}, Z^{\text{global}}$| $[B, H, N, m] \times [B, H, N, d_h] \to [B, H, m, d_h]$ | Linear key-value outer product |
-| **Global Query Retrieval** | $O^{\text{global}}$ | $[B, H, N, m] \times [B, H, m, d_h] \to [B, H, N, d_h]$ | $\frac{\tilde{Q}_{\text{feat}} M^{\text{global}}}{\tilde{Q}_{\text{feat}} Z^{\text{global}} + \epsilon}$ |
-| **Context Fusion Gating** | $\alpha$ | $[B, H, N, 3 d_h] \to [B, H, N, 1]$ | $\sigma(\text{MLP}([X, O^{\text{local}}, O^{\text{global}}]))$ |
-| **Branch Combination** | $O^{\text{fused}}$ | $[B, H, N, d_h]$ | $(1 - \alpha) O^{\text{local}} + \alpha O^{\text{global}}$ |
-| **Dual-Path Out Projection**| $Y$ | $[B, N, H \cdot d_h] \to [B, N, D]$ | SVD+LoRA output projection |
+| **Input Activation** | $X$ | `[B, N, D]` | Base activation state |
+| **SVD+LoRA Projection Q/K/V**| $X V \text{diag}(S) U^T + X B^T A^T$| `[B, N, D] -> [B, N, H * d_h]` | Dual-path low-rank projection |
+| **Head Partitioning** | $Q, K, V$ | `[B, N, H * d_h] -> [B, H, N, d_h]` | Multi-head view transposition |
+| **RMSNorm Pre-Norm** | $\hat{Q}, \hat{K}$ | `[B, H, N, d_h]` | Root-mean-square normalization |
+| **Tiled Local Attention** | $O^{\text{local}}$ | `[B, H, N, d_h] -> [B, H, N, d_h]` | Tiled local sliding-window SDPA |
+| **FAVOR+ Feature Mapping** | $\phi(\hat{Q}), \phi(\hat{K})$ | `[B, H, N, d_h] * [d_h, m] -> [B, H, N, m]` | $\frac{1}{\sqrt{m}} \exp\left( x \Pi - \frac{\|x\|^2}{2} \right)$ |
+| **Query & Input Gating** | $g_Q, g_{\text{in}}$ | `[B, H, N, 1]`, `[B, H, N, 1]` | Sigmoidal gating evaluation |
+| **Global FAVOR+ Accumulator**| $M^{\text{global}}, Z^{\text{global}}$| `[B, H, N, m] * [B, H, N, d_h] -> [B, H, m, d_h]` | Linear key-value outer product |
+| **Global Query Retrieval** | $O^{\text{global}}$ | `[B, H, N, m] * [B, H, m, d_h] -> [B, H, N, d_h]` | $\frac{\tilde{Q}_{\text{feat}} M^{\text{global}}}{\tilde{Q}_{\text{feat}} Z^{\text{global}} + \epsilon}$ |
+| **Context Fusion Gating** | $\alpha$ | `[B, H, N, 3 d_h] -> [B, H, N, 1]` | $\sigma(\text{MLP}([X, O^{\text{local}}, O^{\text{global}}]))$ |
+| **Branch Combination** | $O^{\text{fused}}$ | `[B, H, N, d_h]` | $(1 - \alpha) O^{\text{local}} + \alpha O^{\text{global}}$ |
+| **Dual-Path Out Projection**| $Y$ | `[B, N, H * d_h] -> [B, N, D]` | SVD+LoRA output projection |
+
+```
+                       [B, N, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+  SVD+LoRA Q, K, V Projections     Gating Evaluation: g_in = sig(W_in X)
+   [B, H, N, d_h]                  g_Q = sig(W_Q Q)
+             │                           │
+     ┌───────┴───────┐                   │
+     ▼               ▼                   ▼
+Tiled Local SDPA  RMSNorm -> FAVOR+  Modulate: Q_feat * g_Q, K_feat * g_in
+Shape: [B, H, N, d_h] phi(Q), phi(K)     │
+     │               │                   ▼
+     │               └──────────> Outer Product Memory: K_feat^T @ V_g [B, H, m, d_h]
+     │                                   │
+     │                                   ▼
+     │                            Global Context: Q_feat @ M / (Q_feat @ Z)
+     │                                   │
+     └───────────────┬───────────────────┘
+                     ▼
+      Context Fusion Gate: alpha = sig(MLP([X, O_local, O_global]))
+      O_fused = (1 - alpha) * O_local + alpha * O_global
+                     │
+                     ▼
+      Dual-Path SVD+LoRA Output Projection
+                     │
+                     ▼
+               [B, N, D] Output
+```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Floating Point Operations (FLOPs)
+### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $r_{\text{svd}}$ SVD rank, $r_{\text{lora}}$ LoRA rank, $W$ local window radius, and $m$ FAVOR+ random feature dimension.
 
 1. **SVD+LoRA Projections ($Q, K, V, O$)**:
@@ -118,22 +147,26 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 4. **Context Fusion Gating & Output Assembly**:
    $$\text{FLOPs}_{\text{fusion}} = 2 B N H (3 d_h) + 3 B N D = 9 B N D$$
 
-**Total FLOP Count**:
-
 $$\text{FLOPs}_{\text{total}} \approx 16 B N D (r_{\text{svd}} + r_{\text{lora}}) + 4 B N D W + 6 B N m d_h + 9 B N D$$
 
-### 4.2 Memory Footprint & Bandwidth
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} \approx 8 B N D (r_{\text{svd}} + r_{\text{lora}}) + 2 B N D W + 3 B N m d_h + 4.5 B N D$$
 - **Parameter Footprint**:
-  $$\Theta = 4 \times \left( r_{\text{svd}} + D r_{\text{lora}} + r_{\text{lora}} D \right) + (d_h \cdot m) + \Theta_{\text{gating}} = 4 r_{\text{svd}} + 8 D r_{\text{lora}} + d_h m + 3 D$$
+  $$\Theta = 4 r_{\text{svd}} + 8 D r_{\text{lora}} + d_h m + 3 D$$
 - **Activation Footprint**:
   - Local tiled outputs: $\mathcal{O}(B H N d_h)$
   - FAVOR+ random feature tensor $\phi(\hat{Q})$: $\mathcal{O}(B H N m)$
   - Global memory accumulator matrix $M^{\text{global}}$: $\mathcal{O}(B H m d_h)$
   - Total Activation Memory: $\mathcal{O}(B N D + B H N m + B H m d_h)$
 
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
+- **AEGIS-Attention V6**: $\mathcal{O}\left(N (D (r_{\text{svd}} + r_{\text{lora}}) + W D + m d_h)\right)$ compute, $\mathcal{O}(N D + H m d_h)$ memory footprint.
+
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 LoRA Adapter Singular Vector Interference
 - **Mechanism**: The projection matrix combines frozen SVD basis $U \text{diag}(S) V^T$ with trainable LoRA adapter $A B^T$. If LoRA update $A B^T$ aligns with discarded singular vectors of $W_0$, gradient dynamics can destabilize the singular value scaling vector $S$, leading to divergence during early training.
@@ -148,7 +181,7 @@ $$\text{FLOPs}_{\text{total}} \approx 16 B N D (r_{\text{svd}} + r_{\text{lora}}
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -187,3 +220,12 @@ Standard PyTorch executes four independent GEMM calls per projection (`x @ V`, s
 - Parallelize across batch $B$ and heads $H$.
 - Load sequence tiles of size `BLOCK_N = 128`. Compute RMSNorm, projection $x \Pi$, clamping, and exponential activation in shared memory.
 - Accumulate key-value outer products into shared memory matrix $M^{\text{global}} \in \mathbb{R}^{m \times d_h}$ in a single streaming pass, bypassing global memory writes for feature activations $\phi(K)$.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **State-Space Model (SSM) Recurrent FAVOR+ Decay**: Integrate exponential temporal decay factors $\lambda \in (0, 1)$ into FAVOR+ memory state accumulation $M_t = \lambda M_{t-1} + \tilde{K}_{\text{feat}, t}^T \otimes \tilde{V}_t$, unifying linear kernel attention with Mamba selective scans.
+2. **FlashAttention-3 FP8 Quantized Tiled Execution**: Execute local tiled window attention using FP8 (E4M3) precision on NVIDIA Hopper GPUs, quadrupling localized matrix math throughput.
+3. **Decoupled Local/Global Head Heterogeneity**: Allocate $75\%$ of attention heads exclusively to ultra-fast local FlashAttention ($W = 128, m = 0$) and $25\%$ of heads exclusively to global FAVOR+ linear attention ($W = 0, m = 128$).
+4. **Structured Low-Rank Tensor-Train (TT) Projections**: Replace SVD dual-linear layers with 3-core Tensor Train matrix factorizations, compressing linear projection parameters down to rank $r = 8$.

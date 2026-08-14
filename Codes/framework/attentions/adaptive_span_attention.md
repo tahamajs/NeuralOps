@@ -1,200 +1,206 @@
-# Adaptive Span Attention: Dynamic Per-Head Context Window Truncation
+# Adaptive Span Attention: Dynamic Head-Specific Context Window Gating
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-Standard Multi-Head Attention (MHA) calculates full dense quadratic pairwise interactions $\mathcal{O}(L^2)$ across the entire sequence length $L$ for all attention heads. Empirical research (Sukhbaatar et al., 2019) reveals that different attention heads specialize in distinct temporal scales: while a subset of heads requires global contextual access, many heads primarily attend to local, short-range syntactic clusters. 
+Adaptive Span Attention, introduced by Sukhbaatar et al. (NeurIPS 2019), addresses the dynamic trade-off between long-context modeling and computational efficiency in Transformer architectures. Standard Multi-Head Attention forces every attention head to compute pairwise interactions across the entire sequence length $N$, leading to quadratic computational ($\mathcal{O}(N^2)$) and memory complexity across all heads. However, empirical studies reveal that different heads specialize in distinct temporal scales—some heads focus on immediate local syntax (short span), while others capture long-range dependencies (long span).
 
-Adaptive Span Attention dynamically caps the receptive field of each individual head $h$ to a learnable span boundary $S_h \in (0, S_{\max}]$. By parameterizing span boundaries using differentiable soft sigmoid gating, the module enforces head-specific context truncation. This dynamic masking reduces memory bandwidth overhead during long-sequence processing, facilitates structural head specialization, and eliminates unneeded long-range attention computation.
+Adaptive Span Attention equips each attention head $h \in \{1, \dots, H\}$ with a continuous, learnable receptive field size (span parameter) $S_h \in [0, S_{\max}]$. By parameterizing the span using a Sigmoid gating function over learnable logits $\theta_h$, the model dynamically contracts or expands each head's context window during training and inference. Tokens outside a head's learned span are masked out, enabling dynamic sequence pruning and sub-quadratic attention execution.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Let $X \in \mathbb{R}^{B \times L \times D}$ be the input activation sequence, where $B$ is batch size, $L$ is sequence length, and $D$ is model dimension. Let $H$ be the number of attention heads, $d_k = D / H$ the head dimension, and $S_{\max}$ the maximum allowable attention span.
+Let $X \in \mathbb{R}^{B \times N \times D}$ denote input activations. Let $H$ be the number of attention heads, $d_h = D / H$ head dimension, and $S_{\max}$ maximum allowable span length.
 
-### Multi-Head Subspace Projections:
-Query, Key, and Value representations are projected via linear transformations:
+### Linear Projections:
+Input activations are transformed into query, key, and value multi-head states:
 
 \[
-Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
+Q = X W_Q \in \mathbb{R}^{B \times H \times N \times d_h}, \quad K = X W_K \in \mathbb{R}^{B \times H \times N \times d_h}, \quad V = X W_V \in \mathbb{R}^{B \times H \times N \times d_h}
 \]
 
-where $W_Q, W_K, W_V \in \mathbb{R}^{D \times D}$. Reshaping into multi-head layouts yields $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_k}$.
-
-The unnormalized, scaled dot-product attention score tensor $S \in \mathbb{R}^{B \times H \times L \times L}$ per head $h$ is:
+### Learnable Head-Specific Span Parameterization:
+Each attention head $h \in \{1, \dots, H\}$ possesses a learnable scalar logit parameter $\theta_h \in \mathbb{R}$. The continuous effective span $S_h$ is derived via Sigmoid scaling:
 
 \[
-S_{b, h, i, j} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot K_{b, h, j, m}
+S_h = \sigma(\theta_h) \cdot S_{\max} = \frac{S_{\max}}{1 + \exp(-\theta_h)} \in [0, S_{\max}]
 \]
 
-### Differentiable Receptive Field Span Parameterization:
-Each attention head $h \in \{1, \dots, H\}$ owns a trainable scalar parameter logit $\theta_h \in \mathbb{R}$. The active sequence span $S_h$ is computed via:
+### Relative Distance Matrix & Differentiable Span Masking:
+For sequence token indices $i, j \in \{1, \dots, N\}$, relative positional distance is defined as:
 
 \[
-S_h = \sigma(\theta_h) \cdot S_{\max} = \frac{S_{\max}}{1 + \exp(-\theta_h)} \in (0, S_{\max}]
+\Delta_{ij} = |i - j| \in \{0, 1, \dots, N-1\}
 \]
 
-### Relative Positional Distance & Span Masking:
-For sequence query index $i$ and key index $j$, the absolute relative distance is:
+A differentiable soft masking function $M^{\text{span}} \in \mathbb{R}^{H \times N \times N}$ evaluates relative distance against effective span $S_h$:
 
 \[
-\Delta_{i, j} = |i - j|
-\]
-
-The span mask tensor $M^{\text{span}} \in \{0, 1\}^{H \times L \times L}$ evaluates whether key position $j$ lies within the active receptive window of query position $i$ for head $h$:
-
-\[
-M^{\text{span}}_{h, i, j} = \begin{cases} 
-1 & \text{if } \Delta_{i, j} \le S_h \\ 
-0 & \text{if } \Delta_{i, j} > S_h 
+M_{h, i, j}^{\text{span}} = \begin{cases} 
+1 & \text{if } \Delta_{ij} \le S_h \\ 
+0 & \text{if } \Delta_{ij} > S_h 
 \end{cases}
 \]
 
-Applying the span mask to raw attention scores:
+In continuous training mode, a soft ramp function $g_z(x) = \left[\frac{1}{R} (R + S_h - x)\right]_0^1$ ensures gradient flow into span logit $\theta_h$.
+
+### Masked Scaled Attention & Output Projection:
+Raw attention affinity scores $S_{b, h, i, j} = \frac{Q_{b, h, i, :} \cdot K_{b, h, j, :}^\top}{\sqrt{d_h}}$ are masked against the span boundary and sequence padding masks:
 
 \[
-\widetilde{S}_{b, h, i, j} = \begin{cases} 
-S_{b, h, i, j} & \text{if } M^{\text{span}}_{h, i, j} = 1 \\ 
--\infty & \text{if } M^{\text{span}}_{h, i, j} = 0 
+\widehat{S}_{b, h, i, j} = \begin{cases}
+S_{b, h, i, j} + M_{\text{pad}} & \text{if } M_{h, i, j}^{\text{span}} = 1 \\
+-\infty & \text{if } M_{h, i, j}^{\text{span}} = 0
 \end{cases}
 \]
 
-### Softmax Normalization & Context Aggregation:
-Incorporating optional padding mask $M^{\text{pad}} \in \mathbb{R}^{B \times 1 \times 1 \times L}$:
+Normalized attention probabilities and context outputs are computed:
 
 \[
-\widehat{S}_{b, h, i, j} = \widetilde{S}_{b, h, i, j} + M^{\text{pad}}_{b, 1, 1, j}
+A_{b, h, i, j} = \text{Softmax}_j (\widehat{S}_{b, h, i, j})
 \]
 \[
-A_{b, h, i, j} = \text{Softmax}_j (\widehat{S}_{b, h, i, j}) = \frac{\exp(\widehat{S}_{b, h, i, j})}{\sum_{l=1}^L \exp(\widehat{S}_{b, h, i, l})}
-\]
-
-Applying dropout probability $p_{\text{drop}}$:
-
-\[
-\overline{A} = \text{Dropout}(A, p_{\text{drop}})
+O_{b, h, i, m} = \sum_{j=1}^N \text{Dropout}(A)_{b, h, i, j} \cdot V_{b, h, j, m} \implies O \in \mathbb{R}^{B \times H \times N \times d_h}
 \]
 \[
-O_{b, h, i, m} = \sum_{j=1}^L \overline{A}_{b, h, i, j} \cdot V_{b, h, j, m} \implies O \in \mathbb{R}^{B \times H \times L \times d_k}
-\]
-\[
-Y = \text{Concat}(O_1, \dots, O_H) \cdot W_O \in \mathbb{R}^{B \times L \times D}, \quad W_O \in \mathbb{R}^{D \times D}
+Y = \text{Concat}(O_1, \dots, O_H) W_O + b_O \in \mathbb{R}^{B \times N \times D}
 \]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Shape | Transformation / Operation | Output Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Input activation batch | `[B, N, D]` |
+| **Q, K, V Projections** | `[B, N, D]` | `self.q_proj`, `self.k_proj`, `self.v_proj` | `[B, N, H*d_h]` each |
+| **Reshape Multi-Head** | `[B, N, H*d_h]` | `.view(B, N, H, d_h).transpose(1, 2)` | `[B, H, N, d_h]` each |
+| **Raw Score MatMul** | `Q`, `K` | `torch.matmul(Q, K.transpose(-2, -1)) / sqrt(d_h)` | `[B, H, N, N]` |
+| **Compute Head Spans** | `self.span_logits [H]` | `torch.sigmoid(span_logits) * max_span` | `span: [H]` |
+| **Relative Distance Matrix**| `pos: [N]` | `(pos.unsqueeze(0) - pos.unsqueeze(1)).abs()` | `dist: [N, N]` |
+| **Span Masking** | `dist: [N, N]`, `span: [H]`| `dist <= span.unsqueeze(1).unsqueeze(2)` | `mask_span: [H, N, N]` |
+| **Apply Span & Pad Masks**| `scores`, `mask_span` | `scores.masked_fill(mask_span == 0, -1e9)` + `pad` | `[B, H, N, N]` |
+| **Softmax & Value Agg** | `scores`, `V` | `F.softmax(dim=-1)` + `torch.matmul(attn, V)` | `[B, H, N, d_h]` |
+| **Concat & Out Projection**| `context` | `.transpose(1, 2).view(B, N, D)` + `self.out_proj` | `[B, N, D]` |
+
+### Architectural Flowchart Diagram
 
 ```
-Input: hidden_states [B, L, D]
-  │
-  ├──> Linear(D, D) [W_q] ──> Q: [B, L, D] ──> view & transpose ──> Q: [B, H, L, d_k]
-  ├──> Linear(D, D) [W_k] ──> K: [B, L, D] ──> view & transpose ──> K: [B, H, L, d_k]
-  └──> Linear(D, D) [W_v] ──> V: [B, L, D] ──> view & transpose ──> V: [B, H, L, d_k]
-                                │
-                                ├──> MatMul: Q @ K.transpose(-2, -1) / sqrt(d_k) ──> scores: [B, H, L, L]
-                                │
-                                ├──> Compute Span: S_h = Sigmoid(span_logits) * max_span ──> span: [H]
-                                ├──> Compute Distance Matrix: dist = |i - j| ──> [L, L]
-                                ├──> Compare: (dist <= span) ──> mask_span: [H, L, L]
-                                ├──> scores.masked_fill(mask_span == 0, -1e9) ──> [B, H, L, L]
-                                │
-                                ├──> Add attention_mask (padding) ──> [B, H, L, L]
-                                ├──> Softmax(dim=-1) & Dropout ──> attn_weights: [B, H, L, L]
-                                │
-                                └──> MatMul: attn_weights @ V ──> context: [B, H, L, d_k]
+                        Input: hidden_states [B, N, D]
                                         │
-                                        └──> transpose(1, 2).contiguous().view([B, L, D])
-                                        └──> Linear(D, D) [W_o] ──> Output: [B, L, D]
+          ┌─────────────────────────────┼─────────────────────────────┐
+          ▼                             ▼                             ▼
+    Linear(D, D) [Q]              Linear(D, D) [K]              Linear(D, D) [V]
+          │                             │                             │
+    Q: [B, H, N, d_h]             K: [B, H, N, d_h]             V: [B, H, N, d_h]
+          │                             │                             │
+          └──────────────┬──────────────┘                             │
+                         ▼                                            │
+           MatMul: Q @ K.T / sqrt(d_h)                                │
+                         │                                            │
+                 scores: [B, H, N, N]                                 │
+                         │                                            │
+  Learnable Logits  ────> Span Computation: S_h = Sigmoid(θ_h) * S_max │
+  θ_h [H]                │                                            │
+                         ▼                                            │
+                 Build Dist Matrix Δ_ij = |i - j|                     │
+                         │                                            │
+                 Generate Span Mask (Δ_ij <= S_h)                     │
+                         │                                            │
+                         ▼                                            │
+            masked_fill(mask_span == 0, -1e9)                         │
+                         │                                            │
+            Apply Padding Mask & Softmax                              │
+                         │                                            │
+                attn: [B, H, N, N]                                    │
+                         │                                            │
+                         └──────────────────────┬─────────────────────┘
+                                                ▼
+                                      MatMul: attn @ V
+                                                │
+                                     context: [B, N, D]
+                                                │
+                                       Linear(D, D) [out_proj]
+                                                │
+                                        Output: [B, N, D]
 ```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### FLOPs, MACs & Memory Footprint
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_h = D/H$, $S_{\max}$ max span, and $\bar{S} = \frac{1}{H} \sum_{h=1}^H S_h$ average learned head span.
 
-Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, $d_k = D / H$, and $S_h$ head span.
+1. **Linear Projections**:
+   - $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
 
-1. **Linear Projection FLOPs**:
-   - $W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+2. **Core Adaptive Span Attention**:
+   - Raw score matrix calculation $Q K^\top$: $2 B N^2 D$ FLOPs.
+   - Distance matrix calculation & mask evaluation: $H N^2 + B H N^2$ FLOPs.
+   - Softmax & Value Aggregation (with active span $\bar{S}$):
+     - Un-optimized dense implementation: $2 B N^2 D + 7 B H N^2$ FLOPs.
+     - Block-sparse optimized implementation: $4 B H N \bar{S} d_h = 4 B N \bar{S} D$ FLOPs.
 
-2. **Attention Score Calculation ($Q K^\top$)**:
-   - Dense Score Matrix FLOPs: $2 B H L^2 d_k = 2 B L^2 D$ FLOPs ($B L^2 D$ MACs).
+3. **Total Workload Summary**:
+   - **Dense PyTorch FLOPs**: $8 B N D^2 + 4 B N^2 D + 8 B H N^2$
+   - **Sparse-Optimized FLOPs**: $8 B N D^2 + 4 B N \bar{S} D + 7 B H N \bar{S}$ (linear scaling in sequence length when $\bar{S} \ll N$).
 
-3. **Span Mask Evaluation Overhead**:
-   - Distance matrix broadcast comparison: $H \cdot L^2$ comparisons $+ H$ Sigmoid evaluations.
-   - Operations: $\mathcal{O}(H L^2)$ (Negligible compared to GEMM).
-
-4. **Context Matrix Product ($A V$)**:
-   - Ideal Sparse Computation FLOPs (when enforced via sparse layout):
-     \[
-     \text{FLOPs}_{\text{sparse}} = 2 B \sum_{h=1}^H L \cdot \min(L, S_h) \cdot d_k = 2 B L d_k \sum_{h=1}^H \min(L, S_h)
-     \]
-   - Standard Unfused Dense Matrix FLOPs: $2 B L^2 D$.
-
-### Memory Footprint:
-- **Parameters**: $4 D^2 + H$ floats (Adding $H$ scalar span logits).
-- **Activation Storage**: $\mathcal{O}(B \cdot H \cdot L^2)$ for dense score matrices in standard PyTorch implementations.
-
----
-
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-
-### Hard Threshold Gradient Mask Discontinuity
-In naive step-thresholding implementations (`dist <= span`), the indicator function $I(\Delta_{ij} \le S_h)$ has a derivative of zero everywhere except at the boundary $\Delta_{ij} = S_h$. Consequently, standard backpropagation cannot update span logits $\theta_h$, trapping heads at their initial $S_{\max}$ values.
-
-```
-Sub-Differentiable Boundary Problem:
-∂ Mask / ∂ θ_h  =  0  everywhere (Hard Mask Discontinuity)
-```
-
-### Materialized Dense Matrix Memory Bottleneck
-Although Adaptive Span reduces the theoretical computational complexity to $\mathcal{O}(B \cdot L \cdot S_{\text{avg}} \cdot D)$, standard PyTorch instantiates full $[B, H, L, L]$ dense matrices before applying `masked_fill`, failing to realize DRAM memory footprint reductions during execution.
-
-### Short-Span Entropy Saturation
-If $\theta_h$ decays excessively ($\sigma(\theta_h) \to 0, S_h < 1$), head $h$ attends exclusively to the self-token ($i = j$). This turns the attention head into an identity map, causing representation capacity collapse in that subspace.
+### Memory Footprint & Parameter Overhead
+- **Parameter Count**: $4 D^2 + 4 D + H$ (only $H$ extra scalar logit parameters).
+- **KV Cache MemoryFootprint during Inference**:
+  Instead of caching $N$ tokens for all heads, head $h$ caches only its active span $S_h$:
+  \[
+  \text{KV Cache Size}_{\text{AdaptiveSpan}} = 2 \cdot B \cdot d_h \cdot \sum_{h=1}^H \min(N, S_h) \cdot b = 2 B \bar{S} D \cdot b \text{ bytes}
+  \]
+  If $\bar{S} = 64$ while $N = 4096$, KV cache memory is reduced by **98.4%**.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Fused Band-Diagonal Triton Attention Kernel Architecture
-To translate theoretical span savings into hardware execution speedups, Triton fused kernels must restrict block reads to active diagonal bands defined by head span $S_h$.
+### Span Collapse ($S_h \to 0$)
+If gradient flow causes span logit $\theta_h \to -\infty$, effective span collapses to $S_h = 0$. Head $h$ can attend only to self-tokens ($i = j$), disabling cross-token context gathering. Adding span length L1 regularization ($\lambda \sum S_h$) requires balancing to avoid premature span collapse.
+
+### Dense Score Materialization Bottleneck in PyTorch
+In naive PyTorch code, score matrices $[B, H, N, N]$ are computed fully before applying `masked_fill`. As a result, memory consumption remains quadratic $\mathcal{O}(N^2)$ during forward propagation unless custom block-sparse GPU kernels are used.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel for Adaptive Span Attention executes variable block-sparse tiling based on each head's cached integer span $\lceil S_h \rceil$.
 
 ```
-       Global Memory (HBM)
-      ┌────────────────────────────────────────────────────────┐
-      │ Q [B, H, L, d_k], K [B, H, L, d_k], V [B, H, L, d_k]   │
-      │ Head Spans S_h [H]                                     │
-      └───────────────────────────┬────────────────────────────┘
-                                  │ Load Block Tiles Within Span Boundary
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Q, K, V: [B, H, N, d_h]                                     │
+   │ Head Span Limits: S_h [H] (pre-computed integer bounds)      │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Tile Grid Launch per Head
                                   ▼
- ┌──────────────────────────────────────────────────────────────────┐
- │                   Triton SRAM Scratchpad                         │
- │ 1. Evaluate Tile Distance: |tile_m - tile_n|                     │
- │ 2. IF |tile_m - tile_n| * BLOCK_SIZE > S_h:                       │
- │       SKIP LOAD & COMPUTATION (Early Block Pruning)              │
- │ 3. ELSE:                                                         │
- │       Load K_tile, V_tile                                        │
- │       Compute Scores S_tile = Q_tile @ K_tile.T / sqrt(d_k)      │
- │       Execute Online Softmax & Accumulate Output Tile            │
- └────────────────────────────────┬─────────────────────────────────┘
-                                  │
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Query tile index i: Q_i [BLOCK_M, d_h]                      │
+ │ 2. Compute Key tile bounds: j_min = max(0, i - S_h // BLOCK_N) │
+ │ 3. Loop ONLY over valid Key tiles j in [j_min, i]:             │
+ │      Load K_j [BLOCK_N, d_h]                                   │
+ │      S_ij = Q_i @ K_j.T / sqrt(d_h)                            │
+ │      Apply distance mask & accumulate online Softmax           │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Write Context Output
                                   ▼
-      ┌────────────────────────────────────────────────────────┐
-      │ Context Output O [B, H, L, d_k]                        │
-      └────────────────────────────────────────────────────────┘
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Context Output: O [B, H, N, d_h]                            │
+   └─────────────────────────────────────────────────────────────┘
 ```
 
-### Key Triton Implementation Guidelines:
-1. **Piecewise Differentiable Soft-Ramping**:
-   Replace hard binary masks with a continuous soft-ramp function during training to ensure non-zero gradient flow:
-   \[
-   M^{\text{soft}}_{h, i, j} = \text{Clamp}\left(1 - \frac{\Delta_{i, j} - S_h}{R}, 0, 1\right)
-   \]
-   where $R$ is a fixed ramp length parameter (e.g., $R=16$).
-2. **Early Block Pruning in SRAM**:
-   In the Triton inner loop over key blocks `tile_n`, skip key block processing entirely if the block range $[n \cdot \text{BLOCK\_N}, (n+1) \cdot \text{BLOCK\_N}]$ falls completely outside the window $[m \cdot \text{BLOCK\_M} - S_h, m \cdot \text{BLOCK\_M} + S_h]$.
-3. **Dynamic Banded KV Cache Decoding**:
-   During autoregressive decoding, store key-value tokens in circular ring-buffers of capacity $S_h$, capping decoding KV cache memory to $\sum_{h=1}^H S_h \cdot d_k$ bytes instead of $H \cdot L_{\text{past}} \cdot d_k$.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Asymmetric Causal-Bidirectional Spans**: Parameterize independent backward span $S_h^{\text{back}}$ and forward span $S_h^{\text{fwd}}$ for encoder-decoder models.
+2. **Span-Aware Quantization**: Apply aggressive 2-bit quantization to long-span heads while maintaining 8-bit precision on short-span local heads.
+3. **Adaptive Span + Mamba SSM Hybrids**: Interleave short-span local attention layers with linear state-space model (SSM) blocks to handle infinite context with bounded memory.

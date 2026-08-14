@@ -1,202 +1,136 @@
-# HGRN2-Outer: Gated Outer-Product Matrix-State Recurrent Attention
+# HGRN-2 Outer: Outer-Product Associative Matrix State Linear Recurrence Block
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-Standard self-attention mechanisms compute quadratic dot-product token dependencies \(\mathcal{O}(L^2)\). While vector-state linear recurrences (such as standard SSMs or vector HGRN) compress context into a 1D state \(\mathbf{h}_t \in \mathbb{R}^D\), they suffer from constrained memory capacity when attempting to retain associative token-key-value correlations. The **HGRN2-Outer Block** addresses this capacity barrier by extending the recurrent state from a 1D vector to a 2D associative matrix \(\mathbf{S}_t \in \mathbb{R}^{D \times D}\).
+Standard Multi-Head Attention requires materializing an $L \times L$ attention matrix, scaling quadratically $\mathcal{O}(L^2)$ in time and space. The HGRN-2 Outer Block (Hierarchically Gated Recurrent Network v2 Outer Product) extends element-wise HGRN-2 recurrence to 2D associative state matrices $S_t \in \mathbb{R}^{D \times D}$.
 
-At each timestep, HGRN2-Outer updates \(\mathbf{S}_t\) via a convex combination of decayed historical memory and the outer-product of projected key-value features \(\mathbf{k}_t \otimes \mathbf{v}_t\). The row-wise decay is dynamically governed by a sigmoid forget gate \(\mathbf{f}_t \in (0, 1)^D\). This matrix-state paradigm achieves linear time scaling \(\mathcal{O}(L D^2)\) with respect to sequence length, providing quadratic \(\mathcal{O}(D^2)\) parameter-state capacity per sequence step without incurring token-token attention matrix storage.
-
----
-
-## 2. Mathematical Derivations & Formulations
-
-Let \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\) represent the input sequence tensor. The matrix state tensor \(\mathbf{S}_t \in \mathbb{R}^{B \times D \times D}\) is initialized as \(\mathbf{S}_0 = \mathbf{0}_{B \times D \times D}\).
-
-### 2.1 Feature Projections & Gating
-
-For token timestep \(t \in \{1, \dots, L\}\) with activation \(\mathbf{x}_t = \mathbf{X}_{:, t, :} \in \mathbb{R}^{B \times D}\):
-
-1. **Forget Gate Vector**:
-   \[
-   \mathbf{f}_t = \sigma(\mathbf{x}_t \mathbf{W}_f + \mathbf{b}_f) \quad \in (0, 1)^{B \times D}
-   \]
-
-2. **Key Projection**:
-   \[
-   \mathbf{k}_t = \mathbf{x}_t \mathbf{W}_k + \mathbf{b}_k \quad \in \mathbb{R}^{B \times D}
-   \]
-
-3. **Value Projection**:
-   \[
-   \mathbf{v}_t = \mathbf{x}_t \mathbf{W}_v + \mathbf{b}_v \quad \in \mathbb{R}^{B \times D}
-   \]
-
-   where \(\mathbf{W}_f, \mathbf{W}_k, \mathbf{W}_v \in \mathbb{R}^{D \times D}\) and \(\mathbf{b}_f, \mathbf{b}_k, \mathbf{b}_v \in \mathbb{R}^D\).
-
-### 2.2 Gated Associative Matrix State Recurrence
-
-The 2D associative matrix state \(\mathbf{S}_t \in \mathbb{R}^{B \times D \times D}\) is updated via element-wise broadcasted interpolation between previous state \(\mathbf{S}_{t-1}\) and current key-value outer product \(\mathbf{k}_t \mathbf{v}_t^\top \in \mathbb{R}^{B \times D \times D}\):
-
-\[
-\mathbf{S}_t = \left(\mathbf{f}_t \otimes \mathbf{1}_D^\top\right) \odot \mathbf{S}_{t-1} + \left((1 - \mathbf{f}_t) \otimes \mathbf{1}_D^\top\right) \odot \left(\mathbf{k}_t \mathbf{v}_t^\top\right)
-\]
-
-Expanding tensor indexing for batch sample \(b\), row \(i\), and column \(j\):
-
-\[
-\mathbf{S}_{t, b, i, j} = \mathbf{f}_{t, b, i} \cdot \mathbf{S}_{t-1, b, i, j} + (1 - \mathbf{f}_{t, b, i}) \cdot \left(\mathbf{k}_{t, b, i} \cdot \mathbf{v}_{t, b, j}\right)
-\]
-
-### 2.3 State Query Readout & Output Projection
-
-The updated matrix state \(\mathbf{S}_t\) is queried directly by multiplying with the current input vector \(\mathbf{x}_t\):
-
-\[
-\mathbf{y}_t = \mathbf{S}_t \mathbf{x}_t = \sum_{j=1}^D \mathbf{S}_{t, :, :, j} \cdot \mathbf{x}_{t, :, j} \quad \in \mathbb{R}^{B \times D}
-\]
-
-The sequence of readouts \(\mathbf{y}_1, \dots, \mathbf{y}_L\) is stacked into tensor \(\mathbf{Y} \in \mathbb{R}^{B \times L \times D}\) and passed through output linear map \(\mathbf{W}_{\text{out}} \in \mathbb{R}^{D \times D}\):
-
-\[
-\mathbf{O} = \mathbf{Y} \mathbf{W}_{\text{out}} + \mathbf{b}_{\text{out}} \quad \in \mathbb{R}^{B \times L \times D}
-\]
-
-The module outputs the tuple \((\mathbf{O}, \text{None})\).
+HGRN-2 Outer updates memory state $S_t$ via convex interpolation between past memory $S_{t-1}$ and current key-value outer product $k_t \otimes v_t$: $S_t = f_t \odot S_{t-1} + (1 - f_t) \odot (k_t v_t^\top)$. Query inputs $x_t$ interact directly with $S_t$ via matrix-vector multiplication $y_t = S_t x_t$. This formulation combines 2D matrix associative expressivity with linear $\mathcal{O}(L \cdot D^2)$ execution and constant $\mathcal{O}(D^2)$ decoding memory.
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 2. Mathematical Formulations & Derivations
 
-| Step | Layer / Operation | Input Tensor & Shape | Output Tensor & Shape | Shape Transformation |
-| :--- | :--- | :--- | :--- | :--- |
-| **0** | Matrix State Init | `None` / `state` | `S` \([B, D, D]\) | Initialized via `torch.zeros(B, D, D)` |
-| **1** | Token Slice Step \(t\) | `hidden_states` \([B, L, D]\) | `xt` \([B, D]\) | Extract `hidden_states[:, t]` |
-| **2** | Forget Gate | `xt` \([B, D]\) | `f` \([B, D]\) | \(\sigma(\text{W\_f}(\mathbf{x}_t))\) |
-| **3** | Key Projection | `xt` \([B, D]\) | `k` \([B, D]\) | \(\text{W\_k}(\mathbf{x}_t)\) |
-| **4** | Value Projection | `xt` \([B, D]\) | `v` \([B, D]\) | \(\text{W\_v}(\mathbf{x}_t)\) |
-| **5** | Outer Product | `k` \([B, D, 1]\), `v` \([B, 1, D]\)| `outer` \([B, D, D]\) | `k.unsqueeze(-1) @ v.unsqueeze(1)` |
-| **6** | Matrix Recurrence Update | `f` \([B, D, 1]\), `S`, `outer` | `S` \([B, D, D]\) | `f_u * S + (1 - f_u) * outer` |
-| **7** | Matrix-Vector Readout | `S` \([B, D, D]\), `xt` \([B, D, 1]\)| `yt` \([B, D]\) | `(S @ xt.unsqueeze(-1)).squeeze(-1)` |
-| **8** | Sequence Stack | List of \(L \times [B, D]\) | `stacked` \([B, L, D]\) | `torch.stack(outputs, dim=1)` |
-| **9** | Output GEMM | `stacked` \([B, L, D]\) | `out` \([B, L, D]\) | `self.out_proj(stacked)` |
-
----
-
-## 4. Analytical Complexity Profiling
-
-### 4.1 FLOP & MAC Breakdown
-
-For sequence length \(L\), feature size \(D\), batch size \(B\):
-
-1. **Linear Projections (`W_f`, `W_k`, `W_v`, `out_proj`)**:
-   - 4 GEMM operations per token sequence: \(4 \times (B \cdot L \cdot D \times D)\).
-   - MACs: \(4 B \cdot L \cdot D^2\).
-   - FLOPs: \(8 B \cdot L \cdot D^2\).
-2. **Outer Product (`k` \(\otimes\) `v`)**:
-   - Outer product per step \(t\): \(B \cdot D^2\) multiplications.
-   - FLOPs: \(B \cdot L \cdot D^2\).
-3. **Gated Matrix Update**:
-   - Element-wise multiplications and addition over \(B \times D \times D\) tensor: \(3 B \cdot D^2\) FLOPs.
-   - Total FLOPs: \(3 B \cdot L \cdot D^2\).
-4. **Matrix-Vector Readout (`S @ xt`)**:
-   - Matrix-vector multiplication of \((B \times D \times D)\) by \((B \times D \times 1)\): \(B \cdot D^2\) MACs \(\rightarrow 2 B \cdot D^2\) FLOPs per step.
-   - Total FLOPs: \(2 B \cdot L \cdot D^2\).
-5. **Total Theoretical Complexity**:
-   - **Total MACs**: \(5 B \cdot L \cdot D^2\)
-   - **Total FLOPs**: \(14 B \cdot L \cdot D^2 + 4 B \cdot L \cdot D\)
-
-### 4.2 Memory Footprint Accounting
-
-- **Parameter Count**:
-  - \(\mathbf{W}_f, \mathbf{W}_k, \mathbf{W}_v, \mathbf{W}_{\text{out}}\): \(4 \times (D^2 + D) = 4 D^2 + 4 D\) parameters.
-  - Storage Footprint (FP16/BF16): \(8 D^2 + 8 D\) bytes.
-
-- **Training Activation Memory**:
-  - Retaining matrix state sequence \(\mathbf{S}_1 \dots \mathbf{S}_L\) for backward auto-differentiation requires storing \(B \cdot L \cdot D^2\) float16 values.
-  - Training Memory: \(\approx 2 \cdot B \cdot L \cdot D^2\) bytes (can be reduced via gradient checkpointing or custom backward pass).
-
-- **Inference Recurrent Memory**:
-  - State matrix footprint per sequence: \(\mathcal{O}(B \cdot D^2)\). For \(D=768\), \(D^2 \approx 5.89 \times 10^5\) elements \(\approx 1.18\) MB per batch item.
-
----
-
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-
-### 5.1 Quadratic Matrix State Memory Footprint \(\mathcal{O}(D^2)\)
-
-While HGRN2-Outer achieves linear time in sequence length \(L\), its recurrent state size scales quadratically with feature dimension \(D^2\). For large models (\(D = 4096\)), each sequence requires storing a state matrix of size \(4096 \times 4096 = 1.67 \times 10^7\) elements (33.5 MB in FP16 per sequence per layer), consuming substantial GPU SRAM and DRAM bandwidth during state transfers.
-
-### 5.2 Matrix Rank Contraction & Information Loss
-
-The key-value update is a rank-1 matrix addition:
+Given input sequence representations $X \in \mathbb{R}^{B \times L \times D}$, key, value, and forget gate states are projected as:
 
 \[
-\Delta \mathbf{S}_t = (1 - \mathbf{f}_t) \odot (\mathbf{k}_t \mathbf{v}_t^\top)
+k_t = W_k x_t \in \mathbb{R}^D, \quad v_t = W_v x_t \in \mathbb{R}^D
+\]
+\[
+f_t = \sigma(W_f x_t + b_f) \in (0, 1)^D \quad \text{(Dynamic Forget Gate)}
 \]
 
-If the forget gate values \(\mathbf{f}_t\) decay too rapidly (\(\mathbf{f}_t \to 0\)), historical state memory is completely wiped out, collapsing \(\mathbf{S}_t\) to a strict rank-1 outer product matrix \(\mathbf{k}_t \mathbf{v}_t^\top\). Consequently, the expressive capacity degenerates to instantaneous position-wise projection.
+### Convex Outer-Product Associative Recurrence:
+Memory matrix $S_t \in \mathbb{R}^{B \times D \times D}$ is initialized to zero ($S_0 = \mathbf{0}$) and updated via convex combination:
 
-### 5.3 Lack of Multi-Head Partitioning
+\[
+S_t = f_t \odot S_{t-1} + (1 - f_t) \odot \left( k_t \otimes v_t \right) = f_t \odot S_{t-1} + (1 - f_t) \odot (k_t v_t^\top) \in \mathbb{R}^{B \times D \times D}
+\]
 
-The matrix state operates across the entire dimension \(D\) in a single block. Lacking multi-head partitioning, independent feature subspaces are forced to share the same row-wise forget gates \(\mathbf{f}_t\), preventing the model from decoupling short-range syntactic memory from long-range semantic memory.
+### Query State Readout & Output Projection:
+Input vector $x_t$ queries memory state $S_t$:
+
+\[
+y_t = S_t x_t \in \mathbb{R}^{B \times D}
+\]
+
+Stacking $y_t$ across time steps produces $Y = \text{Concat}(y_1, \dots, y_L) W_{\text{out}} \in \mathbb{R}^{B \times L \times D}$.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 3. Step-by-Step Tensor Execution Trace
 
-### 6.1 Fused Matrix-State Chunked Scan Architecture
+```
+Input: hidden_states [B, L, D]
+  │
+  ├──> Linear(D, D)[W_k] ──> k_t: [B, L, D]
+  ├──> Linear(D, D)[W_v] ──> v_t: [B, L, D]
+  ├──> Linear(D, D)[W_f] ──> Sigmoid ──> Forget Gate f_t: [B, L, D]
+  │
+  ├──> Recurrent Loop over sequence steps t = 1 ... L:
+  │      ├──> Outer Product: k_t.unsqueeze(-1) @ v_t.unsqueeze(-2) ──> [B, D, D]
+  │      ├──> Convex Interpolation: S_t = f_t * S_{t-1} + (1 - f_t) * OuterProduct ──> [B, D, D]
+  │      └──> State Readout: y_t = (S_t @ x_t.unsqueeze(-1)).squeeze(-1) ──> [B, D]
+  │
+  ├──> Stack states across L ──> Y_stack: [B, L, D]
+  └──> Linear(D, D)[W_out](Y_stack) ──> Output: [B, L, D]
+```
 
-To bypass sequential Python loops and manage the \(\mathcal{O}(D^2)\) SRAM footprint, we implement a custom Triton kernel that computes chunked associative matrix updates in GPU SRAM.
+### Detailed Tensor Transformations:
+
+| Step | Operation | Tensor Shape | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | Projections ($W_k, W_v, W_f$) | $[B, L, D]$ | Key, Value, and Forget Gate activations |
+| 3 | Outer Product ($k_t \otimes v_t$) | $[B, D, D]$ | Rank-1 memory update per step |
+| 4 | Convex State Recurrence | $[B, D, D]$ | $S_t = f_t \odot S_{t-1} + (1-f_t) \odot (k_t v_t^\top)$ |
+| 5 | Query Readout ($S_t x_t$) | $[B, D]$ | Context extraction per step |
+| 6 | Out Projection | $[B, L, D]$ | Projection $W_{\text{out}}$ to model dimension $D$ |
+
+---
+
+## 4. Analytical Complexity & Hardware Profiling
+
+### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Model Dim):
+- **Input Projections ($W_k, W_v, W_f$)**: $6 B L D^2$ FLOPs
+- **Outer Product Calculations ($k_t v_t^\top$)**: $L \times (2 B D^2) = 2 B L D^2$ FLOPs
+- **Convex State Accumulation**: $L \times (3 B D^2) = 3 B L D^2$ FLOPs
+- **Query Readout ($S_t x_t$)**: $L \times (2 B D^2) = 2 B L D^2$ FLOPs
+- **Output Projection ($W_{\text{out}}$)**: $2 B L D^2$ FLOPs
+
+**Total Complexity**:
+- **Total MACs**: $7.5 B L D^2$
+- **Total FLOPs**: $15 B L D^2$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+
+### Memory Footprint:
+- **Static Weights**: $4 D^2$ parameters.
+- **Decoding Memory Footprint**: Bounded by $\mathcal{O}(B \cdot D^2)$ state memory per sequence.
+
+---
+
+## 5. Failure Modes, Rank Collapse & Edge Cases
+
+1. **State Saturation under $f_t \to 1$**: If forget gate $f_t \to 1$, new outer products are ignored, freezing state $S_t$.
+2. **Memory Erase under $f_t \to 0$**: If $f_t \to 0$, past memory is completely wiped, reducing the model to 1-step windowing.
+3. **Sequential Loop Latency in Unfused Execution**: PyTorch step loops introduce CPU launch latencies.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel for HGRN-2 Outer implements parallel chunk scan algorithms, keeping 2D matrix state $S_t$ inside GPU SRAM.
 
 ```python
+# Triton Parallel Scan Blueprint for HGRN-2 Outer
 import triton
 import triton.language as tl
-import torch
 
 @triton.jit
-def _hgrn2_outer_fused_kernel(
-    K_ptr, V_ptr, F_ptr, X_ptr, Out_ptr,
-    stride_b, stride_l, stride_d,
-    B, L, D: tl.constexpr,
+def _hgrn2_outer_chunk_kernel(
+    X_ptr, K_ptr, V_ptr, F_ptr, Out_ptr,
+    stride_xb, stride_xl, stride_xd,
+    L, D,
     BLOCK_D: tl.constexpr
 ):
     pid_b = tl.program_id(0)
-    pid_r = tl.program_id(1) # Row block
-    pid_c = tl.program_id(2) # Column block
     
-    offs_r = pid_r * BLOCK_D + tl.arange(0, BLOCK_D)
-    offs_c = pid_c * BLOCK_D + tl.arange(0, BLOCK_D)
-    
-    mask_r = offs_r < D
-    mask_c = offs_c < D
-    
-    # Allocate 2D tile state in GPU Shared Memory / Registers
-    S_tile = tl.zeros([BLOCK_D, BLOCK_D], dtype=tl.float32)
-    
+    s_state = tl.zeros((D, D), dtype=tl.float32)
     for t in range(L):
-        # Offsets
-        off_k = pid_b * stride_b + t * stride_l + offs_r * stride_d
-        off_v = pid_b * stride_b + t * stride_l + offs_c * stride_d
-        off_f = pid_b * stride_b + t * stride_l + offs_r * stride_d
+        x_t = tl.load(X_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D))
+        k_t = tl.load(K_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D))
+        v_t = tl.load(V_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D))
+        f_t = tl.load(F_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D))
         
-        k_t = tl.load(K_ptr + off_k, mask=mask_r, other=0.0)
-        v_t = tl.load(V_ptr + off_v, mask=mask_c, other=0.0)
-        f_raw = tl.load(F_ptr + off_f, mask=mask_r, other=0.0)
+        # Convex interpolation
+        s_state = f_t[:, None] * s_state + (1.0 - f_t[:, None]) * (k_t[:, None] * v_t[None, :])
+        y_t = tl.sum(s_state * x_t[:, None], axis=0)
         
-        f_t = tl.sigmoid(f_raw.to(tl.float32)) # [BLOCK_D]
-        
-        # Outer product tile [BLOCK_D, BLOCK_D]
-        outer_tile = k_t[:, None] * v_t[None, :]
-        
-        # Gated matrix update
-        f_broadcast = f_t[:, None]
-        S_tile = f_broadcast * S_tile + (1.0 - f_broadcast) * outer_tile
-        
-    # Readout computation can be chained in SRAM prior to global store
+        tl.store(Out_ptr + pid_b * stride_xb + t * stride_xl + tl.arange(0, D), y_t)
 ```
 
-### 6.2 SRAM Tiling & Block Configuration
+---
 
-- **Tiling Dimensions (`BLOCK_D`)**: Selected as 64 or 128 to fit within 48KB/96KB SRAM shared memory blocks per SM.
-- **Asynchronous Pipeline Loading**: Key, value, and forget projections are pre-computed in batched GEMM launches prior to kernel execution.
-- **Tensor Core Matrix Multiply-Accumulate**: Integrates warp-level matrix operations (`tl.dot`) for computing the readout product \(\mathbf{y}_t = \mathbf{S}_t \mathbf{x}_t\), achieving >80% peak TFLOP efficiency.
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **HGRN-2 Outer + Mamba Hybrid**: Interleave HGRN-2 Outer matrix blocks with Mamba selective scan modules.
+2. **Multi-Head Outer Product States**: Partition dimension $D$ into $H$ heads to maintain lower-dimensional $d_k \times d_k$ state matrices.
+3. **FP8 Quantized Matrix Memory**: Quantize 2D state matrix $S_t$ to FP8 format for 2x memory reduction.

@@ -1,193 +1,203 @@
-# Span-Expanded Attention: External Memory Span Expansion with Parallel HyLoRA Adaptation
+# Span-Expanded Attention: Receptive Field Extension with Parallel HyLoRA Adaptation
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-Extending the receptive field of Transformer architectures beyond the physical training sequence length typically incurs severe compute and memory activation costs. Span-Expanded Attention addresses this challenge by combining external Key-Value (KV) memory span expansion with parallel Hybrid Low-Rank Adaptation (HyLoRA).
+Span-Expanded Attention (`SpanExpandedAttention`) provides an architectural framework designed to expand Transformer attention receptive fields while maintaining parameter efficiency. Standard Multi-Head Attention is constrained by sequence length bottlenecks ($L$), making context expansion costly during fine-tuning or long-document processing.
 
-Rather than recomputing representations over long context windows, queries attend directly to pre-computed, external KV memory buffers of length $L_{\text{span}}$. To maintain domain adaptability and prevent capacity degradation when attending to external memory, a parallel low-rank residual pathway (HyLoRA) modulates hidden states concurrently with attention aggregation. This decoupled dual-pathway architecture enables zero-shot context expansion alongside parameter-efficient fine-tuning.
+Span-Expanded Attention addresses this challenge through a dual-path design:
+1. **Receptive Field Extension**: The Key-Value receptive field is extended across an expanded span window ($L_{\text{span}}$) via external or cached Key-Value buffers (`kv_cache`), decoupling query sequence length from key-value memory capacity.
+2. **Parallel HyLoRA Adaptation**: Parameter adaptation is accomplished by running a parallel low-rank bottleneck adaptation branch ($W_A \in \mathbb{R}^{D \times r}, W_B \in \mathbb{R}^{r \times D}$) alongside the attention computation. The residual output of the HyLoRA path is added directly to the context states prior to final output projection.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Let $X \in \mathbb{R}^{B \times L \times D}$ denote the input hidden activation tensor, where $B$ is batch size, $L$ is input sequence length, and $D$ is model dimension. Let $H$ be the number of attention heads, $d_k = D / H$ the head dimension, and $r$ the rank of the HyLoRA adaptation bottleneck.
+Let $X \in \mathbb{R}^{B \times L \times D}$ denote the input activation tensor, where $B$ is batch size, $L$ is sequence length, and $D$ is hidden dimension. Let $H$ be the number of attention heads, $d = D / H$ head dimension, $L_{\text{span}}$ key-value span length, and $r$ rank of the parallel HyLoRA branch.
 
-### Multi-Head Query Projection:
-\[
-Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad W_Q \in \mathbb{R}^{D \times D}
-\]
-Reshaped into multi-head tensor format: $Q \in \mathbb{R}^{B \times H \times L \times d_k}$.
-
-### Dual-Mode Key-Value Resolution:
-1. **Cached External Memory Span Mode**:
-   If an external cached memory tuple $(K_{\text{cache}}, V_{\text{cache}}) \in \mathbb{R}^{B \times L_{\text{span}} \times d_k} \times \mathbb{R}^{B \times L_{\text{span}} \times d_k}$ is provided:
-   \[
-   K = \text{Expand}(K_{\text{cache}}, \text{shape}=[B, H, L_{\text{span}}, d_k])
-   \]
-   \[
-   V = \text{Expand}(V_{\text{cache}}, \text{shape}=[B, H, L_{\text{span}}, d_k])
-   \]
-2. **Local Self-Attention Mode**:
-   If no cache is provided ($L_{\text{span}} = L$):
-   \[
-   K = X W_K \in \mathbb{R}^{B \times H \times L \times d_k}, \quad V = X W_V \in \mathbb{R}^{B \times H \times L \times d_k}
-   \]
-   where $W_K, W_V \in \mathbb{R}^{D \times D}$.
-
-### Span-Expanded Attention Matrix Calculation:
-The attention score matrix $S \in \mathbb{R}^{B \times H \times L \times L_{\text{span}}}$ is computed as:
+### Subspace Projections & Span Memory Buffering:
+Queries are projected from input activations $X$:
 
 \[
-S_{b, h, i, j} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot K_{b, h, j, m}
+Q = X W_Q \in \mathbb{R}^{B \times L \times (H \cdot d)} \implies Q \in \mathbb{R}^{B \times H \times L \times d}
 \]
 
-Incorporating additive mask $M \in \mathbb{R}^{B \times 1 \times L \times L_{\text{span}}}$ and row-wise Softmax:
+Keys and Values are derived either from input $X$ or retrieved from an external span cache `kv_cache` ($(K_{\text{cache}}, V_{\text{cache}}) \in \mathbb{R}^{B \times L_{\text{span}} \times D}$):
 
 \[
-\widetilde{S}_{b, h, i, j} = S_{b, h, i, j} + M_{b, 1, i, j}
+K = \begin{cases}
+X W_K \in \mathbb{R}^{B \times H \times L \times d} & \text{if } \text{kv\_cache is None} \\
+\text{expand}(K_{\text{cache}}) \in \mathbb{R}^{B \times H \times L_{\text{span}} \times d} & \text{if } \text{kv\_cache is provided}
+\end{cases}
 \]
 \[
-A_{b, h, i, j} = \text{Softmax}_j (\widetilde{S}_{b, h, i, j}) = \frac{\exp(\widetilde{S}_{b, h, i, j})}{\sum_{l=1}^{L_{\text{span}}} \exp(\widetilde{S}_{b, h, i, l})}
+V = \begin{cases}
+X W_V \in \mathbb{R}^{B \times H \times L \times d} & \text{if } \text{kv\_cache is None} \\
+\text{expand}(V_{\text{cache}}) \in \mathbb{R}^{B \times H \times L_{\text{span}} \times d} & \text{if } \text{kv\_cache is provided}
+\end{cases}
 \]
 
-If head mask $H_{\text{mask}} \in \mathbb{R}^{B \times H \times L \times L_{\text{span}}}$ is provided: $\widehat{A} = A \odot H_{\text{mask}}$.
-
-The attention context aggregation yields:
+### Scaled Dot-Product Span Attention:
+Pairwise score computation and softmax routing proceed over the expanded sequence length $L_{\text{span}}$:
 
 \[
-O_{\text{attn}, b, h, i, m} = \sum_{j=1}^{L_{\text{span}}} \widehat{A}_{b, h, i, j} \cdot V_{b, h, j, m} \implies O_{\text{attn}} \in \mathbb{R}^{B \times L \times D}
+S_{b, h, i, j} = \frac{1}{\sqrt{d}} \sum_{m=1}^d Q_{b, h, i, m} \cdot K_{b, h, j, m}, \quad \forall j \in \{1, \dots, L_{\text{span}}\}
+\]
+\[
+A_{b, h, i, j} = \text{Softmax}_j (S_{b, h, i, j} + M_{b, 1, i, j})
+\]
+\[
+O_{\text{attn}} = \text{Concat}\left(\sum_{j=1}^{L_{\text{span}}} (\overline{A} \odot H_{\text{mask}})_{b, h, i, j} \cdot V_{b, h, j, m}\right) \in \mathbb{R}^{B \times L \times D}
 \]
 
 ### Parallel HyLoRA Residual Adaptation:
-Concurrently with attention, the input activation $X$ passes through a low-rank bottleneck:
+Concurrently, a low-rank residual projection branch processes input $X$ via low-rank matrices $W_A \in \mathbb{R}^{D \times r}$ and $W_B \in \mathbb{R}^{r \times D}$:
 
 \[
 O_{\text{LoRA}} = (X W_A) W_B \in \mathbb{R}^{B \times L \times D}
 \]
 
-where $W_A \in \mathbb{R}^{D \times r}$ and $W_B \in \mathbb{R}^{r \times D}$.
-
-### Fused Output Combination:
-The contextual output and LoRA adaptation residuals are combined before output projection:
+### Fused Residual Aggregation & Final Output Projection:
+The attention context representation and HyLoRA residual projection are summed elementwise and passed through output projection $W_O \in \mathbb{R}^{D \times D}$ and bias $b_O$:
 
 \[
 O_{\text{fused}} = O_{\text{attn}} + O_{\text{LoRA}} \in \mathbb{R}^{B \times L \times D}
 \]
 \[
-Y = O_{\text{fused}} W_O + b_O \in \mathbb{R}^{B \times L \times D}, \quad W_O \in \mathbb{R}^{D \times D}
+Y = O_{\text{fused}} W_O + b_O \in \mathbb{R}^{B \times L \times D}
 \]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Tensor Shape | Transformation / Operation | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, L, D]` | Input activation batch | `[B, L, D]` |
+| **Query Projection** | `[B, L, D]` | `self.W_q(X).view(B, L, H, d).transpose(1, 2)` | `[B, H, L, d]` |
+| **KV Span Retrieval** | `[B, L, D]` or `kv_cache` | `self.W_k(X)` / `unsqueeze(1).expand(...)` | `[B, H, L_span, d]` each |
+| **Score Matrix MatMul** | `Q: [B, H, L, d]`, `K: [B, H, L_span, d]` | `torch.matmul(q, k.transpose(-2, -1)) / sqrt(d)` | `[B, H, L, L_span]` |
+| **Mask & Softmax** | `scores` | `scores + attention_mask` + `F.softmax` | `[B, H, L, L_span]` |
+| **Value Aggregation** | `attn`, `V` | `torch.matmul(attn, v)` | `[B, H, L, d]` |
+| **Reshape Context** | `[B, H, L, d]` | `.transpose(1, 2).contiguous().view(B, L, D)` | `O_attn: [B, L, D]` |
+| **HyLoRA Branch** | `[B, L, D]` | `self.lora_B(self.lora_A(X))` | `O_LoRA: [B, L, D]` |
+| **Fused Residual Sum** | `O_attn`, `O_LoRA` | `O_attn + O_LoRA` | `O_fused: [B, L, D]` |
+| **Out Projection** | `O_fused` | `self.out_proj(O_fused)` | `Output: [B, L, D]` |
+
+### Architectural Flowchart Diagram
 
 ```
-Input: hidden_states [B, L, D]
-  │
-  ├──> Linear(D, D, bias=False) [W_q] ──> Q: [B, L, D] ──> view & transpose ──> Q: [B, H, L, d_k]
-  │
-  ├──> IF kv_cache IS NOT NONE:
-  │      k_cache, v_cache [B, L_span, d_k] ──> unsqueeze & expand ──> K, V: [B, H, L_span, d_k]
-  │    ELSE:
-  │      Linear(D, D) [W_k, W_v] ──> view & transpose ──> K, V: [B, H, L, d_k]
-  │
-  ├──> MatMul: Q @ K.transpose(-2, -1) / sqrt(d_k) ──> scores: [B, H, L, L_span]
-  ├──> Add attention_mask ──> [B, H, L, L_span]
-  ├──> Softmax(dim=-1) & Head Mask ──> attn: [B, H, L, L_span]
-  ├──> MatMul: attn @ V ──> context: [B, H, L, d_k]
-  ├──> Transpose & Contiguous View ──> O_attn: [B, L, D]
-  │
-  ├──> IF use_lora IS TRUE:
-  │      Linear(D, r, bias=False) [lora_A] ──> [B, L, r]
-  │      Linear(r, D, bias=False) [lora_B] ──> O_LoRA: [B, L, D]
-  │      Add Residual: O_fused = O_attn + O_LoRA ──> [B, L, D]
-  │
-  └──> Linear(D, D) [out_proj] ──> Output: [B, L, D]
+                        Input: hidden_states [B, L, D]
+                                        │
+          ┌─────────────────────────────┼─────────────────────────────┐
+          ▼                             ▼                             ▼
+    Linear(D, D) [W_q]            KV Cache Check                Linear(D, r) [lora_A]
+          │                             │                             │
+    Q: [B, H, L, d]           ┌─────────┴─────────┐             Linear(r, D) [lora_B]
+          │                   ▼                   ▼                   │
+          │             Compute W_k, W_v    Expand Cache        O_LoRA: [B, L, D]
+          │                   │                   │                   │
+          │            K, V: [B, H, L_span, d] ───┘                   │
+          │                             │                             │
+          └──────────────┬──────────────┘                             │
+                         ▼                                            │
+          MatMul: Q @ K.T / sqrt(d)                                   │
+                         │                                            │
+                 scores: [B, H, L, L_span]                            │
+                         │                                            │
+             Apply Attention Mask & Softmax                           │
+                         │                                            │
+                attn: [B, H, L, L_span]                               │
+                         │                                            │
+                         └──────────────────────┬─────────────────────┘
+                                                ▼
+                                      MatMul: attn @ V
+                                                │
+                                     O_attn: [B, L, D]
+                                                │
+                                                ├─── Add O_LoRA
+                                                │
+                                      O_fused: [B, L, D]
+                                                │
+                                       Linear(D, D) [out_proj]
+                                                │
+                                        Output: [B, L, D]
 ```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### Computational Overhead & Workload (FLOPs & MACs)
-
-Let $B$ be batch size, $L$ sequence length, $L_{\text{span}}$ memory span length, $D$ model dimension, $H$ heads, $d_k = D / H$, and $r$ LoRA rank.
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $L$ query length, $L_{\text{span}}$ key-value span length, $D$ hidden dimension, $H$ heads, $d = D/H$, and $r$ LoRA rank.
 
 1. **Linear Projections**:
-   - $W_Q$: $2 B L D^2$ FLOPs ($B L D^2$ MACs).
-   - Local $W_K, W_V$ (when no cache): $4 B L D^2$ FLOPs ($2 B L D^2$ MACs).
-   - Output Projection ($W_O$): $2 B L D^2$ FLOPs ($B L D^2$ MACs).
+   - Query projection $W_Q$: $2 B L D^2$ FLOPs.
+   - Key/Value projections $W_K, W_V$ (if uncached): $4 B L D^2$ FLOPs.
+   - Output projection $W_O$: $2 B L D^2$ FLOPs.
+2. **Parallel HyLoRA Adaptation**:
+   - $W_A$ projection ($D \to r$): $2 B L D r$ FLOPs.
+   - $W_B$ projection ($r \to D$): $2 B L r D$ FLOPs.
+   - *Total HyLoRA Cost*: $4 B L D r$ FLOPs ($2 B L D r$ MACs).
+3. **Core Span Attention Computation**:
+   - $Q K^\top$ MatMul: $2 B H L L_{\text{span}} d = 2 B L L_{\text{span}} D$ FLOPs.
+   - Softmax & Masking: $7 B H L L_{\text{span}}$ FLOPs.
+   - $A V$ MatMul: $2 B L L_{\text{span}} D$ FLOPs.
 
-2. **Parallel HyLoRA Branch ($W_A, W_B$)**:
-   - $W_A$: $[B, L, D] \times [D, r] \implies 2 B L D r$ FLOPs ($B L D r$ MACs).
-   - $W_B$: $[B, L, r] \times [r, D] \implies 2 B L D r$ FLOPs ($B L D r$ MACs).
-   - Total HyLoRA FLOPs: $4 B L D r$.
+4. **Total Complexity Summary**:
+   - **Total MACs**: $4 B L D^2 + 2 B L D r + 2 B L L_{\text{span}} D$ (assuming un-cached KV).
+   - **Total FLOPs**: $8 B L D^2 + 4 B L D r + 4 B L L_{\text{span}} D + 7 B H L L_{\text{span}}$
 
-3. **Core Span Attention Operations ($Q K^\top$ & $A V$)**:
-   - $Q K^\top$: $[B, H, L, d_k] \times [B, H, d_k, L_{\text{span}}] \implies 2 B H L L_{\text{span}} d_k = 2 B L L_{\text{span}} D$ FLOPs.
-   - Softmax overhead: $\approx 5 B H L L_{\text{span}}$ FLOPs.
-   - $A V$: $[B, H, L, L_{\text{span}}] \times [B, H, L_{\text{span}}, d_k] \implies 2 B L L_{\text{span}} D$ FLOPs.
-
-### Total FLOPs & MACs Summary:
-- **Total MACs (Cached Mode)**: $2 B L D^2 + 2 B L D r + 2 B L L_{\text{span}} D$
-- **Total FLOPs (Cached Mode)**: $4 B L D^2 + 4 B L D r + 4 B L L_{\text{span}} D + 5 B H L L_{\text{span}}$
-- **Parameter Footprint**: $4 D^2 + 2 D r$ (Adding $2 D r$ parameters for HyLoRA, e.g., for $D=768, r=8$, adding $12,288$ parameters).
-
----
-
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-
-### Unprojected Cache Dimension Mismatch
-In `SpanExpandedAttention`, external cache expansion relies on `k_cache.unsqueeze(1).expand(-1, self.num_heads, -1, -1)`. If `k_cache` is passed with shape $[B, L_{\text{span}}, d_k]$ instead of $[B, L_{\text{span}}, D]$, broadcasting fails. If $K_{\text{cache}}$ was generated with a different projection matrix, domain misalignment occurs.
-
-### HyLoRA Rank Bottleneck
-Because $O_{\text{LoRA}} = X W_A W_B$, the rank of the parallel adaptation stream is bounded by $r$:
-
-\[
-\text{rank}(O_{\text{LoRA}}) \le \min(L, r) = r
-\]
-
-If $r \ll D$ (e.g., $r=4$), the adaptation pathway cannot represent high-frequency feature transformations, leading to underfitting during fine-tuning on complex out-of-distribution targets.
-
-### High Memory Bandwidth Pressure under Long Spans
-When $L_{\text{span}} \gg 4096$, storing and fetching uncompressed external cache tensors $K_{\text{cache}}, V_{\text{cache}} \in \mathbb{R}^{B \times H \times L_{\text{span}} \times d_k}$ from HBM saturates GPU memory bandwidth lanes.
+### Memory Footprint & Parameter Count
+- **Parameter Count**: $4 D^2 + D + 2 D r$ floats.
+- **KV Cache Memory Footprint**:
+  \[
+  \text{KV Cache Size} = 2 \cdot B \cdot H \cdot L_{\text{span}} \cdot d \cdot b = 2 B L_{\text{span}} D \cdot b \text{ bytes}
+  \]
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Fused Dual-Stream Triton Attention-LoRA Kernel Architecture
-To maximize execution speedups, Triton kernels fuse the parallel HyLoRA GEMM computations directly with the FlashAttention score calculation.
+### Span Memory Expansion Latency
+When $L_{\text{span}} \gg L$ (e.g. $L = 512, L_{\text{span}} = 16,384$), computing score matrix $[B, H, L, L_{\text{span}}]$ becomes bound by HBM transfer rate, requiring block-based flash attention stream processing.
+
+### HyLoRA Branch Rank Deficiency
+If LoRA rank $r$ is too low ($r \le 2$), the adaptation subspace $W_A W_B$ suffers rank collapse, failing to provide meaningful residual corrections to the primary span attention output.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel fuses the attention matrix product over span length $L_{\text{span}}$ and the parallel HyLoRA projection into shared memory registers.
 
 ```
-       Global Memory (HBM)
-      ┌────────────────────────────────────────────────────────┐
-      │ Q [B, H, L, d_k]                                       │
-      │ K_cache [B, H, L_span, d_k], V_cache [B, H, L_span, d_k]│
-      │ X [B, L, D], W_A [D, r], W_B [r, D]                    │
-      └───────────────────────────┬────────────────────────────┘
-                                  │ Concurrent Tile Loading
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Q: [B, H, L, d], K, V: [B, H, L_span, d]                    │
+   │ HyLoRA Weights: W_A [D, r], W_B [r, D]                      │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Load Tiles
                                   ▼
- ┌──────────────────────────────────────────────────────────────────┐
- │                   Triton SRAM Scratchpad                         │
- │ 1. Compute LoRA Stream: O_lora = X_tile @ W_A @ W_B              │
- │ 2. Compute Span Attention Stream:                                │
- │    S_tile = Q_tile @ K_cache_tile.T / sqrt(d_k)                  │
- │    P_tile = Softmax(S_tile)                                      │
- │    O_attn = P_tile @ V_cache_tile                                │
- │ 3. Fuse In-Register Residual: O_fused = O_attn + O_lora          │
- └────────────────────────────────┬─────────────────────────────────┘
-                                  │ Write Directly to Output Projection
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Compute Span Score Tile: S_ij = Q_i @ K_j.T / sqrt(d)       │
+ │ 2. Online Softmax & Accumulate V_j Tile -> O_attn_i            │
+ │ 3. Compute Parallel HyLoRA Tile: O_lora_i = (X_i @ W_A) @ W_B  │
+ │ 4. Fuse Add: O_fused_i = O_attn_i + O_lora_i                   │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Write Output
                                   ▼
-      ┌────────────────────────────────────────────────────────┐
-      │ Output O [B, L, D]                                     │
-      └────────────────────────────────────────────────────────┘
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Output Tensor: Y [B, L, D]                                  │
+   └─────────────────────────────────────────────────────────────┘
 ```
 
-### Triton Implementation Guidelines:
-1. **Asynchronous Memory Cache Streaming**:
-   Utilize NVIDIA Hopper / Ampere Tensor Memory Accelerator (TMA) asynchronous copy instructions to prefetch external memory tiles $K_{\text{cache}}, V_{\text{cache}}$ into shared memory, hiding DRAM latency behind warp compute pipelines.
-2. **Double-Buffered LoRA GEMM Fusion**:
-   Compute the low-rank projection $X W_A W_B$ during the initial SRAM tile load of $Q$, overlapping matrix multiplications across SM warp groups.
-3. **KV Cache Compression Interface**:
-   Quantize $K_{\text{cache}}$ and $V_{\text{cache}}$ to FP8 (`fp8_e4m3fn`) or INT8 in HBM, executing dynamic de-quantization inside Triton SRAM registers prior to matrix multiplication.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Dynamic HyLoRA Rank Scaling**: Dynamically scale rank $r$ based on token difficulty metrics derived from attention entropy.
+2. **Compressed Span Cache Quantization**: Quantize $L_{\text{span}}$ key-value cache entries to INT4 precision to enable $100\text{k}+$ token context windows on single-GPU setups.
+3. **Hierarchical Span Aggregation**: Tree-aggregate past key-value span tokens into low-rank summary vectors to accelerate ultra-long context decoding.

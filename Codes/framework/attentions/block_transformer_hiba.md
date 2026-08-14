@@ -1,6 +1,6 @@
 # Block Transformer HIBA: Hierarchical Intra-Block and Inter-Block Attention with Periodic Dense Rectification
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Dense Multi-Head Self-Attention (MHSA) computes pairwise interaction matrices of size $L \times L$, scaling quadratically $\mathcal{O}(L^2 d)$ in time and memory. Purely localized block-sparse attention models isolate token attention within non-overlapping contiguous windows of size $B_{\text{size}}$, reducing compute to $\mathcal{O}(L \cdot B_{\text{size}} \cdot d)$. However, local block isolation prevents information propagation across distant sequence segments, causing **attention fragmentation** and loss of global context.
 
 **Block Transformer HIBA (Hierarchical Intra-Block and Inter-Block Attention)** addresses this trade-off through a tri-part architectural design:
@@ -12,7 +12,7 @@ This hierarchical approach achieves $\mathcal{O}\left(L \cdot (B_{\text{size}} +
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Multi-Head Projection and Spatial Partitioning
 Given input sequence activations $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) projections are defined as:
@@ -63,7 +63,7 @@ $$\mathbf{Y} = \operatorname{Reshape}(\mathbf{O}) \mathbf{W}_O \quad \in \mathbb
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -115,7 +115,7 @@ Softmax(Q K^T / sqrt(d_h)) V         Sequence split into M Blocks
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_h = D/H$, $B_{\text{size}}$ block size, $M = L / B_{\text{size}}$, $k_{\text{inter}}$ top-$k$ inter-block tokens, and $T_{\text{rect}}$ rectification interval.
@@ -150,7 +150,7 @@ $$\text{Average Per-Layer FLOPs} = 8 B L D^2 + 4 B D L B_{\text{size}} + 2 B D L
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 The Inter-Block Score Matrix Memory Leak
 In `_inter_block_sparse`:
@@ -184,7 +184,7 @@ if (block_idx + 1) * self.block_size < total_len:
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To make HIBA truly sub-quadratic and eliminate quadratic VRAM allocations, inter-block top-$k$ scoring must use coarse block centroids instead of per-token dense comparisons.
 
@@ -248,7 +248,7 @@ def _hiba_fused_sparse_inter_kernel(
     l_i = tl.zeros([B_SIZE], dtype=tl.float32)
     acc = tl.zeros([B_SIZE, D_K], dtype=tl.float32)
 
-    idx_base = TopK_Block_Idx_ptr + batch_id * stride_idx_b + head_id * stride_idx_h + block_id * stride_idx_m
+    idx_base = TopK_Block_Idx_ptr + batch_id * stride_idx_b + head_id * stride_qh + block_id * stride_idx_m
 
     # Loop ONLY over routed top-k inter-block indices
     for k_idx in range(K_BLOCKS):
@@ -289,3 +289,12 @@ def _hiba_fused_sparse_inter_kernel(
 ### 6.3 Hardware Optimization Impact
 1. **Elimination of Dense Inter-Block Masks**: Centroid block routing eliminates the allocation of $[L_b, L - L_b]$ dense score matrices and masks, dropping memory usage to $\mathcal{O}(L \cdot B_{\text{size}})$.
 2. **Synchronized Global Rectification**: Explicit layer depth passing (`layer_idx`) ensures dense rectification passes occur concurrently across all layers at exact intervals $T_{\text{rect}}$.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Adaptive Rectification Thresholding**: Replace fixed layer intervals $T_{\text{rect}}$ with dynamic entropy monitoring: trigger global dense rectification only when intra-block attention perplexity drops below critical bounds.
+2. **Strict Causal Inter-Block Masking**: Restrict inter-block key selection $K_{\neg b}$ strictly to prior blocks $j < b$ to support causal decoder LLM inference without lookahead leakage.
+3. **Hierarchical Block Centroid Tree Top-$k$**: Abstract blocks into binary spatial trees ($B_1 \subset B_2$) to perform logarithmic $\mathcal{O}(\log M)$ inter-block key selection.
+4. **FP8 Block-Sparse Rectification**: Execute dense rectification layers using FP8 (E4M3) Tensor Cores to reduce memory footprint by $4\times$ during global context recovery.

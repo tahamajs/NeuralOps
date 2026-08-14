@@ -1,157 +1,157 @@
-# Kernelized Decay Attention (KDA): Gated Recurrent Linear State Tracking
+# KDA Attention: Kernelized Decay Attention via Associative Matrix State Recurrence
 
-## 1. Abstract & Theoretical Motivation
-Standard self-attention constructs non-causal or causal pairwise dot-product affinity maps $\mathbf{A} \in \mathbb{R}^{N \times N}$, requiring $\mathcal{O}(N^2)$ storage and execution overhead. Kernelized Decay Attention (KDA) replaces quadratic matrix construction with a continuous-time recurrent state-space linear mechanism governed by learned exponential gating decay.
+## 1. Executive Abstract & Architectural Motivation
 
-By projecting key vectors onto an $\ell_2$ unit sphere hypersphere $\tilde{\mathbf{k}}_t = \mathbf{k}_t / \|\mathbf{k}_t\|_2$ and introducing a head-wise learnable decay parameter $\boldsymbol{\beta} \in \mathbb{R}^H$, KDA updates a dynamic matrix memory state $\mathbf{H}_t \in \mathbb{R}^{d \times d}$ at each step $t$. This design provides strictly linear $\mathcal{O}(N d^2)$ computational complexity and constant $\mathcal{O}(d^2)$ recurrent memory footprint per head, enabling efficient long-context processing and dynamic autoregressive generation.
+Standard Multi-Head Self-Attention requires materializing an $L \times L$ attention matrix, scaling quadratically $\mathcal{O}(L^2)$ in time and memory. Kernelized Decay Attention (KDA) addresses this limitation by reformulating context accumulation as a 2D associative matrix state linear recurrence featuring continuous-time dynamic decay parameters.
+
+KDA normalizes Key projections onto the unit hypersphere and updates a running associative state matrix $h_t \in \mathbb{R}^{d \times d}$ per head. At each sequence step $t$, the state matrix accumulates the outer product of normalized key vectors $k_t$ and value vectors $v_t$, modulated by a head-specific learnable sigmoid decay factor $\sigma(\beta) \in (0, 1)$. Queries $q_t$ interact directly with the accumulated state matrix via inner products. This formulation achieves strictly linear $\mathcal{O}(L \cdot d^2)$ computation and $\mathcal{O}(d^2)$ constant memory footprint during autoregressive decoding.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Given input sequence representations $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, query, key, and value vectors for head $h \in \{1, \dots, H\}$ at position $t \in \{1, \dots, N\}$ are computed via linear projections:
+Given input activation sequence $X \in \mathbb{R}^{B \times L \times D}$, query, key, and value states are projected as:
 
 \[
-\mathbf{q}_t^{(h)} = \mathbf{x}_t \mathbf{W}_Q^{(h)} \in \mathbb{R}^d, \quad \mathbf{k}_t^{(h)} = \mathbf{x}_t \mathbf{W}_K^{(h)} \in \mathbb{R}^d, \quad \mathbf{v}_t^{(h)} = \mathbf{x}_t \mathbf{W}_V^{(h)} \in \mathbb{R}^d
+Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
 \]
 
-To prevent state magnitude explosion across unrolled recurrent updates, key vectors are normalized over the $\ell_2$ hypersphere:
+Reshaping into $H$ heads with dimension $d = D / H$ yields $q_t, k_t, v_t \in \mathbb{R}^{B \times H \times d}$ at sequence step $t$. Key vectors are normalized onto the unit sphere:
 
 \[
-\tilde{\mathbf{k}}_t^{(h)} = \frac{\mathbf{k}_t^{(h)}}{\|\mathbf{k}_t^{(h)}\|_2 + \epsilon}
+\widehat{k}_t = \frac{k_t}{\|k_t\|_2 + \epsilon} \in \mathbb{R}^{B \times H \times d}
 \]
 
-A scalar head-wise gate decay factor $\gamma_h$ is defined using a sigmoid activation over the learnable parameter $\beta_h$:
+### Learnable Sigmoidal Recurrent Decay ($\gamma$):
+Each head learns a scalar decay logit $\beta \in \mathbb{R}^H$, producing a dynamic retention factor:
 
 \[
-\gamma_h = \sigma(\beta_h) = \frac{1}{1 + e^{-\beta_h}} \in (0, 1)
+\gamma = \sigma(\beta) = \frac{1}{1 + \exp(-\beta)} \in (0, 1)^H
 \]
 
-The recurrent memory matrix $\mathbf{H}_t^{(h)} \in \mathbb{R}^{d \times d}$ initializes as $\mathbf{H}_0^{(h)} = \mathbf{0}_{d \times d}$ and updates sequentially at step $t$:
+### Associative Matrix State Update & Context Retrieval:
+The hidden associative state matrix $h_t \in \mathbb{R}^{B \times H \times d \times d}$ is initialized to zero ($h_0 = \mathbf{0}$) and updated recursively:
 
 \[
-\mathbf{H}_t^{(h)} = \gamma_h \mathbf{H}_{t-1}^{(h)} + \tilde{\mathbf{k}}_t^{(h)} (\mathbf{v}_t^{(h)})^\top \in \mathbb{R}^{d \times d}
+h_t = \gamma \odot h_{t-1} + \left( \widehat{k}_t \otimes v_t \right) = \gamma \odot h_{t-1} + \widehat{k}_t v_t^\top \in \mathbb{R}^{B \times H \times d \times d}
 \]
 
-Expanding this recurrence reveals an exponentially weighted sum of key-value outer products:
+Context vector $o_t \in \mathbb{R}^{B \times H \times d}$ for query $q_t$ is extracted via matrix-vector multiplication:
 
 \[
-\mathbf{H}_t^{(h)} = \sum_{j=1}^t \gamma_h^{t-j} \tilde{\mathbf{k}}_j^{(h)} (\mathbf{v}_j^{(h)})^\top
+o_t = h_t q_t \in \mathbb{R}^{B \times H \times d}
 \]
 
-The contextual output vector $\mathbf{o}_t^{(h)} \in \mathbb{R}^d$ is generated by reading out from the state matrix using query vector $\mathbf{q}_t^{(h)}$:
+Stacking outputs across time steps yields $O \in \mathbb{R}^{B \times H \times L \times d}$. Final output transformation produces:
 
 \[
-\mathbf{o}_t^{(h)} = \mathbf{H}_t^{(h)} \mathbf{q}_t^{(h)} = \sum_{j=1}^t \gamma_h^{t-j} \left( (\tilde{\mathbf{k}}_j^{(h)})^\top \mathbf{q}_t^{(h)} \right) \mathbf{v}_j^{(h)}
-\]
-
-Finally, multi-head outputs are concatenated across heads and projected back to the hidden space:
-
-\[
-\mathbf{y}_t = \operatorname{Concat}(\mathbf{o}_t^{(1)}, \dots, \mathbf{o}_t^{(H)}) \mathbf{W}_O \in \mathbb{R}^D
+Y = \text{Concat}(o_1, \dots, o_L) W_O \in \mathbb{R}^{B \times L \times D}
 \]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-Input Hidden States X [B, N, D]
+Input: hidden_states [B, L, D]
   │
-  ├──> Linear Projections (W_Q, W_K, W_V)
-  │    ├──> Q [B, H, N, d]
-  │    ├──> K [B, H, N, d] ──> L2 Normalize (dim=-1) ──> K_tilde [B, H, N, d]
-  │    └──> V [B, H, N, d]
-  │
-  ├──> Head Gating Decay: gamma = Sigmoid(beta) ──────> [1, H, 1, 1]
-  │
-  ├──> Recurrent Loop over t in 1...N:
-  │    ├──> Outer Product: K_outer_V = K_tilde_t x V_t^T ──> [B, H, d, d]
-  │    ├──> State Update: H_t = gamma * H_{t-1} + K_outer_V -> [B, H, d, d]
-  │    └──> Query Readout: Out_t = H_t @ Q_t ───────────────> [B, H, d]
-  │
-  ├──> Stack Timesteps & Reshape ──────────────────────────> [B, N, H * d = D]
-  └──> Output Linear Projection Y = Out @ W_O ──────────────> [B, N, D]
+  ├──> Q = Linear(D, D)(hidden_states) ──> [B, H, L, d]
+  ├──> K = F.normalize(Linear(D, D), dim=-1) ──> [B, H, L, d]
+  └──> V = Linear(D, D)(hidden_states) ──> [B, H, L, d]
+         │
+         ├──> Loop over time steps t = 0 ... L-1:
+         │      ├──> Outer Product: k_t.unsqueeze(-1) @ v_t.unsqueeze(-2) ──> [B, H, d, d]
+         │      ├──> State Recurrence: h_t = sigmoid(beta) * h_{t-1} + OuterProduct
+         │      └──> Query Interaction: out_t = (h_t @ q_t.unsqueeze(-1)).squeeze(-1) ──> [B, H, d]
+         │
+         ├──> Stack outputs across L ──> Context: [B, H, L, d]
+         ├──> transpose(1, 2) ──> contiguous() ──> [B, L, D]
+         └──> Linear(D, D)(Context) ──> Output: [B, L, D]
 ```
 
-### Detailed Shape Progression Table
+### Detailed Tensor Transformations:
 
-| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| Step | Operation | Tensor Shape | Description |
 | :--- | :--- | :--- | :--- |
-| 1 | Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
-| 2 | Multi-Head Reshape | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
-| 3 | Key Hyper-sphere Normalization | `K: [B, H, N, d]` | `K_tilde: [B, H, N, d]` |
-| 4 | Sigmoid Decay Computation | `beta: [H, 1]` | `gamma: [1, H, 1, 1]` |
-| 5 | Recurrent State Init | N/A | `H_0: [B, H, d, d]` |
-| 6 | Outer Product at step $t$ | `K_tilde_t: [B, H, d, 1]`, `V_t: [B, H, 1, d]` | `Outer_t: [B, H, d, d]` |
-| 7 | Recurrent State Update | `gamma: [1, H, 1, 1]`, `H_{t-1}, Outer_t` | `H_t: [B, H, d, d]` |
-| 8 | Query Readout at step $t$ | `H_t: [B, H, d, d]`, `Q_t: [B, H, d, 1]` | `Out_t: [B, H, d]` |
-| 9 | Sequence Stacking | `Out_t: [B, H, d]` across $N$ steps | `Out: [B, H, N, d]` |
-| 10 | Output Projection | `Out: [B, N, D]` | `Y: [B, N, D]` |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | Linear Projections | $[B, L, H, d]$ | $Q, K, V$ projections |
+| 3 | L2 Key Normalization | $[B, H, L, d]$ | Keys normalized to $\|k\|_2 = 1$ |
+| 4 | Outer Product ($k_t \otimes v_t$) | $[B, H, d, d]$ | Per-step rank-1 memory matrix update |
+| 5 | Decay State Recurrence | $[B, H, d, d]$ | $h_t = \sigma(\beta) h_{t-1} + k_t v_t^\top$ update |
+| 6 | State Query Projection | $[B, H, d]$ | Per-step context retrieval $o_t = h_t q_t$ |
+| 7 | Sequence Stacking | $[B, H, L, d]$ | Concatenated time-step contextual outputs |
+| 8 | Final Projection | $[B, L, D]$ | Linear projection $W_O$ to model dimension $D$ |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP & MAC Counting
-1. **Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
-2. **Key Normalization**: $3 B H N d = 3 B N D$ FLOPs ($\ell_2$ norm and scaling).
-3. **Sequential Recurrent Loop (per timestep $t$)**:
-   - Outer Product $\tilde{\mathbf{k}}_t \mathbf{v}_t^\top$: $2 B H d^2$ FLOPs.
-   - State Decay & Accumulation: $2 B H d^2$ FLOPs.
-   - Query Readout $\mathbf{H}_t \mathbf{q}_t$: $2 B H d^2$ FLOPs.
-   - Total for $N$ timesteps: $N \times (6 B H d^2) = 6 B N H d^2$ FLOPs.
+### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $d$: Head Dim):
+- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
+- **L2 Key Normalization**: $3 B H L d$ FLOPs
+- **Outer Product Aggregation ($k_t v_t^\top$)**: $L \times (2 B H d^2) = 2 B L H d^2 = 2 B L D d$ FLOPs
+- **Decay State Accumulation ($\gamma h_{t-1} + \text{Outer}$)**: $L \times (2 B H d^2) = 2 B L D d$ FLOPs
+- **Query State MatMul ($h_t q_t$)**: $L \times (2 B H d^2) = 2 B L D d$ FLOPs
+- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
 
-**Total Computational Cost**:
-\[
-\text{Total FLOPs} = 8 B N D^2 + 6 B N H d^2 + 3 B N D
-\]
+**Total Complexity**:
+- **Total MACs**: $4 B L D^2 + 3 B L D d$
+- **Total FLOPs**: $8 B L D^2 + 6 B L D d$ ($\mathcal{O}(L)$ linear sequence scaling)
 
-Because hidden head dimension $d = D/H$ is typically small ($d=64$), $6 B N H d^2 = 6 B N D d \ll 4 B N^2 D$, making execution linear with sequence length $N$.
-
-### Memory Footprint & Tensor Store
-- **Parameters**: $4 D^2 + H$ floats (where $H$ is the number of head decay scalars $\beta_h$).
-- **Activation Memory**:
-  - Recurrent State $\mathbf{H}_t$: $B \cdot H \cdot d \cdot d = B D d$ floats.
-  - Intermediate Outputs: $B \cdot H \cdot N \cdot d = B N D$ floats.
-  - Peak Activation Footprint: $\mathcal{O}(B N D + B D d)$.
+### Memory Footprint:
+- **Static Weights**: $4 D^2 + H$ (Parameters $W_Q, W_K, W_V, W_O$ plus head decay vector $\beta$).
+- **Transient Activation Memory**: $\mathcal{O}(B \cdot H \cdot d^2)$ per step during decoding, completely bypassing quadratic $L^2$ storage.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Sequential Loop Barrier in PyTorch**: Python `for t in range(L)` loops introduce GPU kernel launch latency bottlenecks for large sequence lengths $N$, causing severe hardware under-utilization during standard forward propagation.
-2. **Exponential State Decay Vanishing**: If $\gamma_h = \sigma(\beta_h)$ converges near 0, past sequence context vanishes exponentially, restricting effective memory horizons. Conversely, if $\gamma_h \to 1$, state matrix magnitudes grow unbounded over long contexts.
-3. **Capacity Ceiling of Finite Matrix Memory**: Storing all historical context inside a fixed $d \times d$ matrix creates an information bottleneck when sequence length $N \gg d^2$.
+1. **State Saturation under $\gamma \to 1$**: If decay logit $\beta \gg 0$, $\sigma(\beta) \to 1$, leading to infinite memory accumulation without decay. The associative state matrix $h_t$ can explode in norm, causing floating-point overflow.
+2. **Loss of Fine-Grained Position Retrieval**: Because $h_t$ collapses sequence history into a single $d \times d$ matrix state, exact token index retrieval beyond $d$ tokens suffers from representation capacity bounds.
+3. **Sequential Loop Bottleneck in PyTorch**: Python `for t in range(L)` loops incur CPU overhead and launch latencies. Parallel prefix scan kernels are required for parallel training.
+4. **FP16 Underflow in Unit Normalization**: Computing $\|k\|_2$ under FP16 for small head dimensions ($d < 32$) can underflow if activation magnitudes drop below $10^{-4}$.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### Memory Access & Vectorization Barriers
-Naive PyTorch evaluates KDA via sequential step loops, repeatedly reading and writing $B \times H \times d \times d$ state tensors back to DRAM at every timestep.
-
-### High-Performance Triton Kernel Fusion Strategy
-To eliminate Python loop overhead and achieve near-theoretical speedups:
-1. **Parallel Prefix Scan Formulation**: Convert the linear recurrence into an associative scan formulation. Express the decay update as a cumulative sum in log-space:
-
-\[
-\mathbf{o}_t = \sum_{j=1}^t \exp\left( \log \gamma \cdot (t - j) \right) \left( \tilde{\mathbf{k}}_j^\top \mathbf{q}_t \right) \mathbf{v}_j
-\]
-
-2. **Block-Parallel Recurrent Scan in Shared Memory**: Load sequence tiles of size `BLOCK_N = 64` into Shared Memory (`smem`). Compute the local linear state inside SRAM registers and merge states across blocks using a parallel tree reduction scan.
+To eliminate sequential Python loops, KDA is implemented using Triton parallel chunk scan algorithms. Sequence length $L$ is partitioned into blocks, using intra-chunk matrix multiplication and inter-chunk state recurrence.
 
 ```python
-# Triton Pseudocode for Block-Parallel KDA Scan Kernel
+# Triton Parallel Scan Blueprint for KDA Attention
+import triton
+import triton.language as tl
+
 @triton.jit
-def _kda_chunked_scan_kernel(
+def _kda_chunk_scan_kernel(
     Q_ptr, K_ptr, V_ptr, Beta_ptr, Out_ptr,
-    N, D, H, d: tl.constexpr, BLOCK_N: tl.constexpr
+    stride_qb, stride_qh, stride_ql, stride_qd,
+    L, d,
+    BLOCK_L: tl.constexpr
 ):
-    # Load block sequence data for Q, K, V into registers
-    # Compute decay weights: decay_weights = exp(log_sigmoid(beta) * (t_i - t_j))
-    # Perform intra-block dot product in SRAM
-    # Carry over inter-block state H_block [d, d] using parallel prefix scan
+    pid_bh = tl.program_id(0)
+    beta = tl.load(Beta_ptr + (pid_bh % stride_qh))
+    gamma = tl.sigmoid(beta)
+    
+    # Persistent State Matrix in SRAM [d, d]
+    h_state = tl.zeros((d, d), dtype=tl.float32)
+    
+    for t in range(L):
+        q = tl.load(Q_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d))
+        k = tl.load(K_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d))
+        v = tl.load(V_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d))
+        
+        # Outer product update
+        h_state = gamma * h_state + k[:, None] * v[None, :]
+        out_t = tl.sum(h_state * q[:, None], axis=0)
+        
+        tl.store(Out_ptr + pid_bh * stride_qh + t * stride_ql + tl.arange(0, d), out_t)
 ```
 
-3. **In-place Recurrent State Decoding**: For streaming single-token generation ($N=1$), maintain state $\mathbf{H}_t$ in GPU L1 cache, updating it with a single rank-1 outer product matrix kernel to achieve minimal latency.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Input-Dependent Dynamic Decay ($\beta(x_t)$)**: Replace static head decay parameters $\beta$ with input-dependent projection layers $\beta(x_t) = \text{Linear}(x_t)$ to adapt memory decay based on input token relevance (Mamba-style selection).
+2. **KDA-SSM Duality Hybrid**: Combine KDA associative matrix states with continuous-time diagonal state-space discretization parameters ($\Delta t$) for unified continuous-time sequence modeling.
+3. **Multi-Scale Tensor Product States**: Expand $h_t$ from 2D matrices $\mathbb{R}^{d \times d}$ to 3D tensor products $\mathbb{R}^{d \times d \times d_m}$ for hyper-expressive memory capacity.

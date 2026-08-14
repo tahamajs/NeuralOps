@@ -1,153 +1,163 @@
-# Linformer Attention: Linear-Complexity Low-Rank Sequence Projection
+# Linformer Attention: Linear-Complexity Sequence Projection via Low-Rank Matrix Factorization
 
-## 1. Abstract & Theoretical Motivation
-The computational bottleneck of standard multi-head self-attention lies in the quadratic scaling of time and space complexities \(\mathcal{O}(N^2)\) with respect to sequence length \(N\). Linformer (Wang et al., 2020) circumvents this bottleneck by leveraging a fundamental theoretical insight: the attention weight matrix \(\mathbf{A} \in \mathbb{R}^{N \times N}\) is typically low-rank in empirical deep models. 
+## 1. Executive Abstract & Architectural Motivation
 
-Mathematically, Linformer projects the sequence length dimensions of the Key (\(\mathbf{K}\)) and Value (\(\mathbf{V}\)) matrices from \(N\) down to a fixed, hyperparameterized low-rank dimension \(k \ll N\) using learnable linear projection operators \(\mathbf{E}, \mathbf{F} \in \mathbb{R}^{k \times N_{\text{max}}}\). By reducing the key-value sequence length prior to computing scaled dot-product attention, Linformer converts the quadratic \(\mathcal{O}(N^2 d)\) complexity into a linear relationship \(\mathcal{O}(N k d)\), permitting scalable inference and training across extended context windows.
+Standard Multi-Head Self-Attention (Vaswani et al., 2017) computes pairwise token interactions across length $L$, incurring an $\mathcal{O}(L^2)$ computational and memory complexity wall. Linformer (Wang et al., 2020) mitigates this bottleneck by proving empirically and theoretically that the normalized attention matrix $A \in \mathbb{R}^{L 	imes L}$ is low-rank. 
+
+The core architectural motivation of Linformer is to decompose the key and value sequence length projections down to a fixed, compact parameter $k \ll L$. By applying linear projection matrices $E, F \in \mathbb{R}^{k 	imes L}$ along the sequence length dimension, Linformer compresses the key and value representations from $\mathbb{R}^{L 	imes d}$ to $\mathbb{R}^{k 	imes d}$. This enables scaled dot-product attention to be computed in $\mathcal{O}(L \cdot k)$ time and memory, maintaining linear scaling with respect to sequence length $L$. Linformer is particularly effective for long-document processing where $L \gg k$.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Given an input representation tensor \(\mathbf{X} \in \mathbb{R}^{B \times N \times D}\), where \(B\) is batch size, \(N\) is sequence length, and \(D\) is the model hidden dimension, standard projections yield query, key, and value matrices for head \(h \in \{1, \dots, H\}\) with head dimension \(d = D / H\):
+Given input sequence representations $X \in \mathbb{R}^{B 	imes L 	imes D}$, Linformer projects $X$ into query, key, and value subspaces:
 
 \[
-\mathbf{Q}_h = \mathbf{X} \mathbf{W}_Q^{(h)} \in \mathbb{R}^{B \times N \times d}, \quad \mathbf{K}_h = \mathbf{X} \mathbf{W}_K^{(h)} \in \mathbb{R}^{B \times N \times d}, \quad \mathbf{V}_h = \mathbf{X} \mathbf{W}_V^{(h)} \in \mathbb{R}^{B \times N \times d}
+Q = X W_Q \in \mathbb{R}^{B 	imes L 	imes D}, \quad K = X W_K \in \mathbb{R}^{B 	imes L 	imes D}, \quad V = X W_V \in \mathbb{R}^{B 	imes L 	imes D}
 \]
 
-Linformer defines two sequence projection parameters \(\mathbf{E}, \mathbf{F} \in \mathbb{R}^{k \times N_{\text{max}}}\). For an active sequence length \(N \le N_{\text{max}}\), active slices \(\mathbf{E}_{\text{act}} = \mathbf{E}_{:, :N}\) and \(\mathbf{F}_{\text{act}} = \mathbf{F}_{:, :N}\) are extracted. First, token-level zero-masking is applied to prevent padding contamination:
+Partitioning into $H$ heads with head dimension $d_k = D / H$ yields $Q_h, K_h, V_h \in \mathbb{R}^{B 	imes H 	imes L 	imes d_k}$.
+
+To compress sequence length, head-specific or parameter-shared linear projection matrices $E_h, F_h \in \mathbb{R}^{k 	imes L}$ project sequence dimensions of $K_h$ and $V_h$:
 
 \[
-\widetilde{\mathbf{K}}_h = \mathbf{K}_h \odot \mathbf{M}_{\text{valid}}, \quad \widetilde{\mathbf{V}}_h = \mathbf{V}_h \odot \mathbf{M}_{\text{valid}}
+\widetilde{K}_h = E_h K_h \in \mathbb{R}^{B 	imes H 	imes k 	imes d_k}, \quad \widetilde{V}_h = F_h V_h \in \mathbb{R}^{B 	imes H 	imes k 	imes d_k}
 \]
 
-where \(\mathbf{M}_{\text{valid}} \in \{0, 1\}^{B \times 1 \times N \times 1}\). The sequence dimensions of keys and values are then linearly projected:
+The scaled dot-product score matrix $S_h \in \mathbb{R}^{B 	imes H 	imes L 	imes k}$ is computed as:
 
 \[
-\mathbf{K}_{\text{proj}, h} = \mathbf{E}_{\text{act}} \widetilde{\mathbf{K}}_h \in \mathbb{R}^{B \times k \times d}, \quad \mathbf{V}_{\text{proj}, h} = \mathbf{F}_{\text{act}} \widetilde{\mathbf{V}}_h \in \mathbb{R}^{B \times k \times d}
+S_h = rac{Q_h \widetilde{K}_h^	op}{\sqrt{d_k}} \in \mathbb{R}^{B 	imes H 	imes L 	imes k}
 \]
 
-Specifically, for each batch instance \(b\) and head \(h\):
+Applying row-wise Softmax along the compressed dimension $k$:
 
 \[
-(\mathbf{K}_{\text{proj}, h})_{b, i, m} = \sum_{j=1}^N (\mathbf{E}_{\text{act}})_{i, j} (\widetilde{\mathbf{K}}_h)_{b, j, m}, \quad \forall i \in \{1, \dots, k\}, m \in \{1, \dots, d\}
+A_h = 	ext{Softmax}_k (S_h) \in \mathbb{R}^{B 	imes H 	imes L 	imes k}
 \]
 
-The scaled dot-product attention score tensor \(\mathbf{S}_h \in \mathbb{R}^{B \times N \times k}\) and attention weights \(\mathbf{A}_h \in \mathbb{R}^{B \times N \times k}\) are derived via:
+Context aggregation yields head representation $O_h \in \mathbb{R}^{B 	imes H 	imes L 	imes d_k}$:
 
 \[
-\mathbf{S}_h = \frac{\mathbf{Q}_h \mathbf{K}_{\text{proj}, h}^\top}{\sqrt{d}}, \quad \mathbf{A}_h = \operatorname{softmax}\left(\mathbf{S}_h, \text{dim}=-1\right)
+O_h = A_h \widetilde{V}_h = 	ext{Softmax}\left( rac{Q_h (E_h K_h)^	op}{\sqrt{d_k}} ight) (F_h V_h)
 \]
 
-Contextual aggregation produces the head output \(\mathbf{O}_h \in \mathbb{R}^{B \times N \times d}\):
+Finally, head outputs are concatenated and projected to model dimension $D$:
 
 \[
-\mathbf{O}_h = \left( \mathbf{A}_h \mathbf{V}_{\text{proj}, h} \right) \odot \mathbf{M}_{\text{valid}}
-\]
-
-Finally, multi-head contexts are concatenated and linearly projected back to hidden dimension \(D\):
-
-\[
-\mathbf{Y} = \operatorname{Concat}(\mathbf{O}_1, \dots, \mathbf{O}_H) \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
+	ext{Context} = 	ext{Concat}(O_1, \dots, O_H) \in \mathbb{R}^{B 	imes L 	imes D}, \quad Y = 	ext{Context} \cdot W_O \in \mathbb{R}^{B 	imes L 	imes D}
 \]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-Input Tensor: X [B, N, D]
+Input: hidden_states [B, L, D]
   │
-  ├──> Linear Projections (W_Q, W_K, W_V)
-  │    │
-  │    ├──> Q [B, H, N, d]
-  │    ├──> K [B, H, N, d] ──> Mask Padding ──> [B, H, N, d]
-  │    └──> V [B, H, N, d] ──> Mask Padding ──> [B, H, N, d]
-  │
-  ├──> Slice Projections E_act, F_act [k, N]
-  │    │
-  │    ├──> K_proj = matmul(E_act, K) ──> [B, H, k, d]
-  │    └──> V_proj = matmul(F_act, V) ──> [B, H, k, d]
-  │
-  ├──> Attention Score Computation
-  │    S = Q @ K_proj^T / sqrt(d) ───────> [B, H, N, k]
-  │    A = Softmax(S, dim=-1) ───────────> [B, H, N, k]
-  │    A_drop = Dropout(A) ──────────────> [B, H, N, k]
-  │
-  ├──> Context Aggregation & Out Projection
-  │    Context = A_drop @ V_proj ────────> [B, H, N, d]
-  │    Mask Queries ─────────────────────> [B, H, N, d]
-  │    Transpose & Flatten ──────────────> [B, N, H * d = D]
-  │    Y = Context @ W_O ────────────────> [B, N, D]
+  ├──> Q = Linear(D, D)(hidden_states) ──> [B, L, H, d_k] ──> transpose(1, 2) ──> [B, H, L, d_k]
+  ├──> K = Linear(D, D)(hidden_states) ──> [B, L, H, d_k] ──> transpose(1, 2) ──> [B, H, L, d_k]
+  └──> V = Linear(D, D)(hidden_states) ──> [B, L, H, d_k] ──> transpose(1, 2) ──> [B, H, L, d_k]
+         │
+         ├──> Compressed K: E @ K ──> [B, H, k, d_k]
+         ├──> Compressed V: F @ V ──> [B, H, k, d_k]
+         │
+         ├──> MatMul: Q @ Compressed_K.T / sqrt(d_k) ──> Scores: [B, H, L, k]
+         ├──> Softmax(dim=-1) ──> Attn Map: [B, H, L, k]
+         ├──> MatMul: Attn @ Compressed_V ──> Context: [B, H, L, d_k]
+         │
+         └──> transpose(1, 2) ──> contiguous() ──> [B, L, D]
+         └──> Linear(D, D)(Context) ──> Output: [B, L, D]
 ```
 
-### Detailed Shape Progression Table
+### Detailed Tensor Transformations:
 
-| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| Step | Operation | Tensor Shape | Description |
 | :--- | :--- | :--- | :--- |
-| 1 | Query/Key/Value Projections | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
-| 2 | Multi-Head Reshape | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
-| 3 | Token Masking | `K, V: [B, H, N, d]`, `Mask: [B, 1, N, 1]` | `K_masked, V_masked: [B, H, N, d]` |
-| 4 | Projection Matrix Slicing | `E, F: [k, N_max]` | `E_act, F_act: [k, N]` |
-| 5 | Key Sequence Compression | `E_act: [k, N]`, `K_masked: [B, H, N, d]` | `K_proj: [B, H, k, d]` |
-| 6 | Value Sequence Compression | `F_act: [k, N]`, `V_masked: [B, H, N, d]` | `V_proj: [B, H, k, d]` |
-| 7 | Query-Key MatMul | `Q: [B, H, N, d]`, `K_proj^T: [B, H, d, k]` | `S: [B, H, N, k]` |
-| 8 | Softmax & Dropout | `S: [B, H, N, k]` | `A: [B, H, N, k]` |
-| 9 | Context Matrix Product | `A: [B, H, N, k]`, `V_proj: [B, H, k, d]` | `Context: [B, H, N, d]` |
-| 10 | Query Padding Re-masking | `Context: [B, H, N, d]`, `Mask: [B, 1, N, 1]` | `Context_masked: [B, H, N, d]` |
-| 11 | Concatenation & Out Projection | `Context_masked: [B, H, N, d]` | `Y: [B, N, D]` |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | $W_Q, W_K, W_V$ Projections | $[B, L, H, d_k]$ | Projections into $H$ attention heads |
+| 3 | Transpose Head Format | $[B, H, L, d_k]$ | Standard multi-head layout |
+| 4 | Sequence Projection ($E K, F V$) | $[B, H, k, d_k]$ | Key and Value sequence length compressed to $k$ |
+| 5 | Score Matrix Computation | $[B, H, L, k]$ | Pairwise interactions between $L$ queries and $k$ landmarks |
+| 6 | Softmax Normalization | $[B, H, L, k]$ | Normalized attention routing weights |
+| 7 | Value Context Aggregation | $[B, H, L, d_k]$ | Weighted sum over $k$ compressed value vectors |
+| 8 | Head Concatenation & Out Proj | $[B, L, D]$ | Final projection to hidden space |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP & MAC Counting
-1. **Projection Linears (\(W_Q, W_K, W_V\))**: \(3 \times 2 B N D^2 = 6 B N D^2\) FLOPs (3 MACs per element).
-2. **Sequence Compression MatMuls (\(\mathbf{E}_{\text{act}} \mathbf{K}, \mathbf{F}_{\text{act}} \mathbf{V}\))**: 
-   - \(2 \times (2 B H k N d) = 4 B N k D\) FLOPs.
-3. **Attention Score MatMul (\(\mathbf{Q} \mathbf{K}_{\text{proj}}^\top\))**:
-   - \(2 B H N k d = 2 B N k D\) FLOPs.
-4. **Context Weighted Sum (\(\mathbf{A} \mathbf{V}_{\text{proj}}\))**:
-   - \(2 B H N k d = 2 B N k D\) FLOPs.
-5. **Output Projection (\(W_O\))**: \(2 B N D^2\) FLOPs.
+### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $k$: Projection Rank):
+- **Input Projections ($W_Q, W_K, W_V$)**: $3 	imes (2 B L D^2) = 6 B L D^2$ FLOPs
+- **Sequence Linear Projections ($E K, F V$)**: $2 	imes (2 B H \cdot k \cdot L \cdot d_k) = 4 B L k D$ FLOPs
+- **Score Matrix Computation ($Q \widetilde{K}^	op$)**: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
+- **Softmax Normalization**: $pprox 5 B H L k$ FLOPs
+- **Context Matrix Multiplication ($A \widetilde{V}$)**: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
+- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
 
-**Total Computational Cost**:
-\[
-\text{Total FLOPs} = 8 B N D^2 + 8 B N k D
-\]
+**Total Complexity**:
+- **Total MACs**: $4 B L D^2 + 4 B L k D$
+- **Total FLOPs**: $8 B L D^2 + 8 B L k D$ (Linear in $L$)
 
-Compared to standard attention's \(8 B N D^2 + 4 B N^2 D\), the sequence-dependent compute transitions from quadratic \(\mathcal{O}(N^2)\) to strictly linear \(\mathcal{O}(N k)\).
-
-### Memory Footprint & Tensor Store
-- **Parameters**: \(4 D^2 + 2 k N_{\text{max}}\) floats.
-- **Activation Memory**:
-  - Q, K, V Tensors: \(3 \times B \cdot H \cdot N \cdot d = 3 B N D\)
-  - Projected Key/Value Tensors: \(2 \times B \cdot H \cdot k \cdot d = 2 B k D\)
-  - Attention Map: \(B \cdot H \cdot N \cdot k\)
-  - Peak Memory: \(\mathcal{O}(B N D + B H N k)\), maintaining a minimal peak compared to \(\mathcal{O}(B H N^2)\).
+### Memory Footprint:
+- **Static Weights**: $4 D^2 + 2 H \cdot k \cdot L$ (if projection weights $E, F$ are parametrized per length $L$).
+- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot L \cdot k)$, eliminating the $\mathcal{O}(B \cdot H \cdot L^2)$ memory wall.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Fixed Spatial Grid & Dynamic Length Generalization**: The projection parameters \(\mathbf{E}, \mathbf{F} \in \mathbb{R}^{k \times N_{\text{max}}}\) rely on fixed sequence index coordinates. If inputs exceed \(N_{\text{max}}\), fallback zero-padding is triggered (`F.pad`), leading to uninitialized kernel weights and loss of positional coherence.
-2. **Global Parameter Sharing & Position Instability**: Linformer uses non-position-aware linear parameters \(\mathbf{E}, \mathbf{F}\). For tasks requiring fine-grained token alignment or causal autoregressive modeling, static global projection compresses sequence histories indiscriminately across time, preventing strictly causal masking.
-3. **Low-Rank Collapse**: When \(k\) is selected such that \(k < \text{rank}(\mathbf{A})\), information bottlenecking occurs. Spectral energy distributions in deep layers often demand higher effective ranks, causing information loss for long-tail token dependencies.
+1. **Fixed Sequence Length Parameterization**: Standard Linformer binds projection matrices $E, F \in \mathbb{R}^{k 	imes L}$ to a pre-defined maximum sequence length $L$. Dynamic sequence lengths require interpolation or adaptive pooling.
+2. **Subspace Rank Collapse ($k < 	ext{rank}(A)$)**: When sequence content features high entropy and broad context dispersion, projecting down to $k$ dimensions causes information loss and rank collapse in attention weights.
+3. **Causal Masking Incompatibility**: Linformer sequence projections $E, F$ pool information across the entire sequence length $L$. Applying causal masks breaks linear complexity benefits because lower triangular triangularity is destroyed by length projection.
+4. **FP16 Numerical Underflow**: Under FP16 precision, long sequence projections ($L > 16384$) accumulate large inner products before projection, requiring FP32 accumulator registers.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### Memory Access & Vectorization Barriers
-In standard PyTorch, computing \(\mathbf{E}_{\text{act}} \mathbf{K}\) requires materializing intermediate tensors in DRAM. Linformer requires dual contraction steps: sequence projection followed by standard head dot-product.
+To maximize hardware utilization, Linformer execution avoids writing intermediate $[B, H, L, k]$ attention matrices to GPU High-Bandwidth Memory (HBM). Instead, a fused Triton kernel tiles sequence length $L$ into `BLOCK_M` (e.g., 64) and compressed dimension $k$ into `BLOCK_K` (e.g., 64).
 
+```python
+# Triton Fused Linformer Kernel Blueprint (Conceptual)
+import triton
+import triton.language as tl
+
+@triton.jit
+def _linformer_fused_kernel(
+    Q_ptr, K_comp_ptr, V_comp_ptr, Out_ptr,
+    stride_qb, stride_qh, stride_ql, stride_qd,
+    stride_kb, stride_kh, stride_kk, stride_kd,
+    L, k, d_k,
+    BLOCK_M: tl.constexpr, BLOCK_K: tl.constexpr
+):
+    pid_m = tl.program_id(0)
+    pid_bh = tl.program_id(1)
+    
+    # Load query block [BLOCK_M, d_k]
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_d = tl.arange(0, d_k)
+    q = tl.load(Q_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :])
+    
+    acc = tl.zeros((BLOCK_M, d_k), dtype=tl.float32)
+    # Loop over compressed dimension k
+    for k_idx in range(0, k, BLOCK_K):
+        offs_k = k_idx + tl.arange(0, BLOCK_K)
+        k_comp = tl.load(K_comp_ptr + pid_bh * stride_kh + offs_k[None, :] * stride_kk + offs_d[:, None])
+        v_comp = tl.load(V_comp_ptr + pid_bh * stride_kh + offs_k[:, None] * stride_kk + offs_d[None, :])
+        
+        # Compute fused Q @ K_comp^T
+        s = tl.dot(q, k_comp) / tl.sqrt(d_k.to(tl.float32))
+        p = tl.softmax(s, dim=-1)
+        acc += tl.dot(p, v_comp)
+        
+    tl.store(Out_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :], acc)
 ```
-DRAM <──> Read K [B, H, N, d] & E [k, N] ──> Compute K_proj ──> Write DRAM [B, H, k, d]
-DRAM <──> Read Q [B, H, N, d] & K_proj ──> Compute Scores ──> Write DRAM [B, H, N, k]
-```
 
-### High-Performance Triton Kernel Fusion Strategy
-To reach peak hardware efficiency on NVIDIA H100/A100 GPUs:
-1. **Fused Sequence Projection & Q-K Reduction Kernel**: Fuse the multiplication \(\mathbf{E} \mathbf{K}\) directly into the FlashAttention tile loop. Load block-tiles of \(\mathbf{K}\) of size `BLOCK_N`, multiply on-chip by sub-blocks of \(\mathbf{E}\), accumulate in SRAM registers for `K_proj`, and immediately compute dot-products with \(\mathbf{Q}\).
-2. **Static Tensor Cores Layout**: Allocate layout tiles of `BLOCK_N = 64` and `BLOCK_K = 32`. Keep \(\mathbf{E}_{\text{act}}\) resident in L1 Caches across sequence blocks to maximize SRAM throughput.
-3. **Causal Compatibility via Chunking**: Extend the kernel to handle block-diagonal causal projection matrices to enable causal autoregressive inference.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Dynamic Adaptive Pooling Linformer**: Replace static weight matrices $E, F$ with adaptive continuous convolutions or 1D average/max pooling layers to handle arbitrary variable-length sequences seamlessly.
+2. **Causal Block-Linformer Hybrid**: Combine local sliding-window causal attention for recent tokens with global Linformer sequence projection for past historical tokens.
+3. **State-Space Linformer Integration**: Interleave Linformer projection layers with Mamba selective scan modules to achieve high-throughput multi-modal long-context processing.

@@ -1,6 +1,6 @@
 # Routing Attention: Content-Adaptive Query-Centric Clustering via Head-Wise Online K-Means
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) computes dense $L \times L$ token interaction matrices, imposing quadratic time and memory complexity $\mathcal{O}(L^2 d)$. Static sparse attention patterns—such as fixed sliding windows or factorized strided strides—impose rigid structural priors that fail to reflect dynamic, content-dependent semantic dependencies in natural language.
 
 **Routing Attention (`RoutingAttention`)** introduces a dynamic, content-adaptive sparse attention paradigm by partitioning query representations into discrete geometric clusters via head-wise online $k$-means clustering. Rather than enforcing fixed spatial receptive fields, Routing Attention groups query vectors into $K$ cluster centroids based on Euclidean affinity in feature space. Intra-cluster attention is subsequently restricted to key-value pairs belonging to the same cluster assignment.
@@ -9,7 +9,7 @@ By clustering sequence queries into $K$ partitions of average size $L / K$, Rout
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Multi-Head Projections & Masking
 Given hidden states $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, linear transformations project inputs into Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) spaces:
@@ -59,7 +59,7 @@ $$\mathbf{Y} = \operatorname{Reshape}\left( \mathbf{O}_{\text{final}} \right) \m
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -121,7 +121,7 @@ $$\mathbf{Y} = \operatorname{Reshape}\left( \mathbf{O}_{\text{final}} \right) \m
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_h = D/H$, $K$ total clusters, and $T$ $k$-means iterations.
@@ -162,7 +162,7 @@ $$\text{Total Naive FLOPs} = 8 B L D^2 + 3 T B L K D + 2 T B L D + 4 K B L^2 D$$
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 The Sequential Matrix Multiplication Trap
 In `RoutingAttention.forward`:
@@ -189,7 +189,7 @@ The hard assignment $c_i = \operatorname{arg\,min}_k \mathbf{D}_{i, k}$ has zero
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To convert Routing Attention into a true sub-quadratic kernel, sequence tokens must be physically re-ordered (permuted) into contiguous cluster buckets in SRAM before executing dense attention.
 
@@ -299,3 +299,12 @@ def _routing_grouped_flash_attn_kernel(
 ### 6.3 Hardware Acceleration Summary
 1. **$K \times$ Real Compute Speedup**: Packing tokens into contiguous cluster blocks limits matrix multiplications to $\sum N_k^2 \approx \frac{L^2}{K}$, delivering true sub-quadratic hardware throughput.
 2. **Zero Redundant FLOPs**: Replaces $K$ full-matrix operations with variable-length grouped tile processing, eliminating 100% of masked zero computation.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Cosine-Similarity Centroid Normalization**: Replace Euclidean distance $\|\mathbf{Q} - \mathbf{C}\|_2^2$ with unit-sphere cosine similarity $\frac{\mathbf{Q} \mathbf{C}^\top}{\|\mathbf{Q}\| \|\mathbf{C}\|}$ to prevent magnitude outliers from distorting cluster assignments.
+2. **Dynamic Adaptive Cluster Radius**: Dynamically split or merge clusters during training based on intra-cluster variance, ensuring uniform cluster size $|C_k| \approx L / K$.
+3. **Overlapping Multi-Centroid Soft Assignment**: Assign queries to the top-2 nearest centroids with continuous Softmax weights to prevent hard boundary artifacts.
+4. **FP8 Quantized Online K-Means Scan**: Accelerate centroid distance calculation using FP8 (E4M3/E5M2) tensor operations to reduce clustering overhead to $<5\%$ of total runtime.

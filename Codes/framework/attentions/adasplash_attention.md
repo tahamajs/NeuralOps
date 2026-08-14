@@ -1,167 +1,170 @@
-# AdaSplash Attention: Tsallis 1.5-Entmax Regularized Sparse Activation
+# AdaSplash Attention: Adaptive Sparse-Splash Top-k Dynamic Context Routing
 
-## 1. Abstract & Theoretical Motivation
-Standard softmax self-attention utilizes exponential normalization $\operatorname{softmax}(\mathbf{z})_i = \frac{e^{z_i}}{\sum_j e^{z_j}}$, assigning strictly positive non-zero probabilities to every key token across the sequence. Consequently, standard attention matrices are dense, spending compute on irrelevant tokens and suffering from noise accumulation across long context lengths.
+## 1. Executive Abstract & Architectural Motivation
 
-AdaSplash Attention resolves this by replacing standard softmax activation with the Tsallis $\alpha$-entmax family, specifically 1.5-entmax (Peters et al., 2019; Correia et al., 2019). 1.5-entmax optimizes an entropy-regularized objective derived from Tsallis 1.5-entropy. Unlike softmax, 1.5-entmax projects attention logits onto a simplex boundary, introducing exact zeros into the activation distribution. This produces adaptive, sparse, and interpretable attention weights with controllable sparsity thresholds.
+Standard Softmax attention assigns non-zero probability mass to every sequence position, causing attention leakage across irrelevant context tokens and inducing computational inefficiency. AdaSplash Attention addresses this limitation by replacing the standard Softmax operator with Tsallis 1.5-entmax sparse activation mapping (Peters et al., 2019; Correia et al., 2019).
 
----
-
-## 2. Mathematical Derivations & Formulations
-
-For a given score vector $\mathbf{z} \in \mathbb{R}^N$, the general $\alpha$-entmax transformation solves the constrained optimization problem:
-
-\[
-\operatorname{entmax}_\alpha(\mathbf{z}) = \arg\max_{\mathbf{p} \in \Delta^N} \left( \mathbf{p}^\top \mathbf{z} + H_\alpha(\mathbf{p}) \right)
-\]
-
-where $\Delta^N = \{ \mathbf{p} \in \mathbb{R}_+^N \mid \sum_{i=1}^N p_i = 1 \}$ is the probability simplex, and $H_\alpha(\mathbf{p})$ is the Tsallis $\alpha$-entropy defined for $\alpha = 1.5$ as:
-
-\[
-H_{1.5}(\mathbf{p}) = \frac{1}{1.5 (1.5 - 1)} \left( 1 - \sum_{i=1}^N p_i^{1.5} \right) = 4 \left( 1 - \sum_{i=1}^N p_i^{1.5} \right)
-\]
-
-Solving the KKT dual formulation yields the closed-form thresholded mapping:
-
-\[
-\operatorname{entmax}_{1.5}(\mathbf{z}) = \left[ \frac{1}{2} (\mathbf{z} - \tau^* \mathbf{1}_N) \right]_+^2
-\]
-
-where $[\cdot]_+ = \max(\cdot, 0)$, and $\tau^* \in \mathbb{R}$ is the unique Lagrange multiplier enforcing normalization $\sum_{i=1}^N p_i = 1$.
-
-To evaluate $\operatorname{entmax}_{1.5}$ efficiently on modern hardware without explicit sorting, AdaSplash implements an iterative fixed-point normalization scheme. Starting from initial softmax probabilities $\mathbf{p}^{(0)} = \operatorname{softmax}(\mathbf{z})$, the algorithm updates:
-
-\[
-\mathbf{q}^{(t)} = \sqrt{\mathbf{p}^{(t)}}, \quad \tau^{(t)} = \sum_{i=1}^N q_i^{(t)} p_i^{(t)}, \quad \mathbf{p}^{(t+1)} = \frac{\mathbf{q}^{(t)}}{\tau^{(t)} + \epsilon}
-\]
-
-Iterating for $T_{\text{iter}}$ steps converges rapidly to the target sparse distribution $\mathbf{p}^* = \operatorname{entmax}_{1.5}(\mathbf{z})$.
-
-Given input $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, query, key, and value matrices are computed:
-
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V \in \mathbb{R}^{B \times H \times N \times d}
-\]
-
-Scaled similarity logits $\mathbf{S} \in \mathbb{R}^{B \times H \times N \times N}$ are computed and masked:
-
-\[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} + (1 - \mathbf{M}_{\text{float}}) \cdot (-10^9)
-\]
-
-Applying 1.5-entmax yields sparse attention weights $\mathbf{A} \in \mathbb{R}^{B \times H \times N \times N}$, followed by context readout:
-
-\[
-\mathbf{A} = \operatorname{entmax}_{1.5}(\mathbf{S}), \quad \mathbf{O} = (\mathbf{A} \mathbf{V}) \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
-\]
+The 1.5-entmax activation function explicitly project attention score distributions onto the simplex boundary, yielding exact zero probabilities for low-scoring tokens. By integrating an iterative fixed-point algorithm to dynamically solve the entmax thresholding multiplier $\tau$, AdaSplash creates sparse, highly interpretable context routing maps. This eliminates redundant key-value memory access overhead and sharpens attention focus on high-relevance tokens.
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 2. Mathematical Formulations & Derivations
+
+Given input activation sequence $X \in \mathbb{R}^{B \times L \times D}$, queries, keys, and values are projected as:
+
+\[
+Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
+\]
+
+Multi-head formatting yields $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_k}$ with $d_k = D / H$.
+
+Unnormalized scaled dot-product logits with optional attention mask $M$ are computed as:
+
+\[
+S = \frac{Q K^\top}{\sqrt{d_k}} + M_{\text{mask}} \in \mathbb{R}^{B \times H \times L \times L}
+\]
+
+### Tsallis 1.5-Entmax Activation Mapping:
+For score logit vector $z \in \mathbb{R}^L$, the 1.5-entmax transformation is defined as:
+
+\[
+\text{entmax}_{1.5}(z) = \left[ \frac{1}{2} (z - \tau \mathbf{1}) \right]_+^2
+\]
+
+where $[a]_+ = \max(a, 0)$ enforces exact non-negativity and sparsity, and $\tau \in \mathbb{R}$ is the unique Lagrange multiplier satisfying the normalization constraint $\sum_{j=1}^L p_j = 1$.
+
+### Fixed-Point Iterative Normalization:
+Because $\tau$ cannot be solved in closed form, AdaSplash employs fixed-point iterations starting from $p^{(0)} = \text{Softmax}(z)$:
+
+\[
+q^{(t)} = \sqrt{p^{(t)}} \in \mathbb{R}^{B \times H \times L \times L}
+\]
+\[
+\tau^{(t)} = \sum_{j=1}^L q_{i, j}^{(t)} p_{i, j}^{(t)} \in \mathbb{R}^{B \times H \times L \times 1}
+\]
+\[
+p^{(t+1)} = \frac{q^{(t)}}{\tau^{(t)} + \epsilon}
+\]
+
+Upon convergence ($|p^{(t+1)} - p^{(t)}|_\infty < \epsilon$), sparse probability matrix $A = p^{(T)}$ is obtained.
+
+### Context Aggregation & Output Projection:
+Sparse attention probabilities aggregate value representations:
+
+\[
+O = A V \in \mathbb{R}^{B \times H \times L \times d_k}, \quad Y = \text{Concat}(O_1, \dots, O_H) W_O \in \mathbb{R}^{B \times L \times D}
+\]
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-Input Hidden States X [B, N, D]
+Input: hidden_states [B, L, D]
   │
-  ├──> Projections (W_Q, W_K, W_V) -> Q, K, V [B, H, N, d]
-  │
-  ├──> Similarity Matrix: S = Q @ K^T / sqrt(d) ──────> [B, H, N, N]
-  │
-  ├──> Apply Mask: S = S + (1 - Mask) * (-1e9) ─────────> [B, H, N, N]
-  │
-  ├──> Iterative 1.5-Entmax Fixed-Point Normalization (T_iter steps):
-  │    ├──> Initial Probabilities: p^(0) = Softmax(S, dim=-1) -> [B, H, N, N]
-  │    ├──> q^(t) = sqrt(p^(t)) ────────────────────────> [B, H, N, N]
-  │    ├──> tau^(t) = sum(q^(t) * p^(t), dim=-1) ────────> [B, H, N, 1]
-  │    └──> p^(t+1) = q^(t) / (tau^(t) + eps) ──────────> [B, H, N, N]
-  │
-  ├──> Dropout: A = Dropout(p^(final)) ─────────────────> [B, H, N, N]
-  │
-  └──> Context Readout & Out Projection:
-       Context = A @ V ─────────────────────────────────> [B, H, N, d]
-       Y = Context @ W_O ───────────────────────────────> [B, N, D]
+  ├──> Q = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
+  ├──> K = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
+  └──> V = Linear(D, D)(hidden_states) ──> [B, H, L, d_k]
+         │
+         ├──> MatMul: Q @ K.T / sqrt(d_k) ──> Logits S: [B, H, L, L]
+         ├──> Additive Masking (S + M_mask) ──> [B, H, L, L]
+         │
+         ├──> Fixed-Point 1.5-Entmax Loop (t = 0 ... T-1):
+         │      ├──> p_0 = Softmax(S, dim=-1)
+         │      ├──> q_t = sqrt(p_t)
+         │      ├──> tau_t = sum(q_t * p_t, dim=-1)
+         │      └──> p_{t+1} = q_t / tau_t
+         │
+         ├──> Sparse Attention Matrix A = p_T ──> [B, H, L, L] (Exact Zeros)
+         ├──> Dropout(A) ──> [B, H, L, L]
+         ├──> MatMul: A @ V ──> Context: [B, H, L, d_k]
+         │
+         └──> transpose(1, 2) ──> contiguous() ──> [B, L, D]
+         └──> Linear(D, D)(Context) ──> Output: [B, L, D]
 ```
 
-### Detailed Shape Progression Table
+### Detailed Tensor Transformations:
 
-| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| Step | Operation | Tensor Shape | Description |
 | :--- | :--- | :--- | :--- |
-| 1 | Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
-| 2 | Reshape to Multi-Head | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
-| 3 | Query-Key MatMul | `Q: [B, H, N, d]`, `K^T: [B, H, d, N]` | `S: [B, H, N, N]` |
-| 4 | Additive Masking | `S: [B, H, N, N]`, `Mask: [B, 1, 1, N]` | `S_masked: [B, H, N, N]` |
-| 5 | Initial Softmax $p^{(0)}$ | `S_masked: [B, H, N, N]` | `p_0: [B, H, N, N]` |
-| 6 | Fixed-Point Iteration $t$ | `p_t: [B, H, N, N]` | `p_{t+1}: [B, H, N, N]` |
-| 7 | Context Matrix Product | `A: [B, H, N, N]`, `V: [B, H, N, d]` | `Context: [B, H, N, d]` |
-| 8 | Output Linear Projection | `Context: [B, H, N, d]` | `Y: [B, N, D]` |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | $W_Q, W_K, W_V$ Projections | $[B, H, L, d_k]$ | Query, Key, Value states |
+| 3 | Scaled Logits Computation | $[B, H, L, L]$ | Dense pairwise dot-product score matrix $S$ |
+| 4 | Softmax Initialization | $[B, H, L, L]$ | Initial dense probabilities $p^{(0)}$ |
+| 5 | Fixed-Point Entmax Iterations | $[B, H, L, L]$ | Fixed-point update $p^{(t+1)} = \sqrt{p^{(t)}} / \tau$ |
+| 6 | Sparse Thresholding | $[B, H, L, L]$ | Probability matrix with exact zeros |
+| 7 | Value Context Aggregation | $[B, H, L, d_k]$ | Sparse matrix multiplication $A V$ |
+| 8 | Output Projection | $[B, L, D]$ | Projection $W_O$ to model dimension $D$ |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP & MAC Counting
-1. **Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
-2. **Score Matrix Product ($\mathbf{Q} \mathbf{K}^\top$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
-3. **Fixed-Point Entmax Iterations ($T_{\text{iter}}$ steps)**:
-   - Initial Softmax: $3 B H N^2$ FLOPs.
-   - Square root ($\sqrt{p}$): $B H N^2$ FLOPs per step.
-   - Reduction sum ($\tau = \sum q_i p_i$): $2 B H N^2$ FLOPs per step.
-   - Element-wise division ($q / \tau$): $B H N^2$ FLOPs per step.
-   - Total Entmax Compute: $B H N^2 (3 + 4 T_{\text{iter}})$.
-4. **Context Matrix Product ($\mathbf{A} \mathbf{V}$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
+### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $T_{\text{iter}}$: Entmax Iterations):
+- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
+- **Score Matrix Logits ($Q K^\top$)**: $2 B H L^2 d_k = 2 B L^2 D$ FLOPs
+- **Fixed-Point Entmax Loop ($T_{\text{iter}}$ iterations)**: $T_{\text{iter}} \times (6 B H L^2) = 6 T_{\text{iter}} B H L^2$ FLOPs
+- **Context Aggregation ($A V$)**: $2 B H L^2 d_k = 2 B L^2 D$ FLOPs
+- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
 
-**Total Computational Cost**:
-\[
-\text{Total FLOPs} = 8 B N D^2 + 4 B N^2 D + B H N^2 (3 + 4 T_{\text{iter}})
-\]
+**Total Complexity**:
+- **Total MACs**: $4 B L D^2 + 2 B L^2 D + 3 T_{\text{iter}} B H L^2$
+- **Total FLOPs**: $8 B L D^2 + 4 B L^2 D + 6 T_{\text{iter}} B H L^2$
 
-For $T_{\text{iter}}=10$, entmax iteration adds $\sim 43 B H N^2$ element-wise operations on top of matrix products.
-
-### Memory Footprint & Tensor Store
-- **Parameters**: $4 D^2$ floats.
-- **Activation Memory**:
-  - Scores & Probabilities ($\mathbf{S}, \mathbf{p}^{(t)}, \mathbf{q}^{(t)}$): $3 \times B H N^2$ floats.
-  - Tau Normalization Vector ($\boldsymbol{\tau}^{(t)}$): $B H N$ floats.
-  - Peak Activation Memory: $\mathcal{O}(B N D + B H N^2)$.
+### Memory Footprint:
+- **Static Weights**: $4 D^2$ parameters.
+- **Transient Activation Memory**: $\mathcal{O}(B \cdot H \cdot L^2)$ for attention score logit buffers.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Fixed-Point Iteration Overhead**: Running $T_{\text{iter}}=10$ sequential loops across full $N \times N$ activation tensors introduces un-fused DRAM access overhead, slowing down training relative to fused CUDA FlashAttention kernels.
-2. **Simplex Saturation & Gradient Vanishing**: When scores $\mathbf{z}$ contain extreme variance, entmax projects weights directly onto the boundary of the simplex (exact zero weights). For zeroed positions, gradients $\frac{\partial \mathbf{p}_i}{\partial \mathbf{z}_j} = 0$, halting weight updates for those tokens.
-3. **Quadratic Scaling Limit**: Because AdaSplash computes explicit $N \times N$ score matrices prior to sparse entmax mapping, space and time complexities remain quadratic $\mathcal{O}(N^2)$.
+1. **Complete Sparsity Collapse (Zero Gradient)**: If score logit initialization assigns negative values with high dispersion, entmax can truncate all attention probabilities to zero for specific queries, causing gradient disconnection.
+2. **Fixed-Point Non-Convergence**: Near uniform probability distributions, fixed-point iterations $p^{(t+1)} = \sqrt{p^{(t)}} / \tau$ converge slowly, exceeding default iteration bounds ($T_{\text{iter}} = 10$).
+3. **FP16 Square-Root Underflow**: Computing $\sqrt{p}$ under FP16 for small non-zero probabilities ($p < 10^{-7}$) underflows to zero, prematurely altering sparsity boundaries.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### Memory Access & Vectorization Barriers
-Naive PyTorch implementations load and store full $B \times H \times N \times N$ attention tensors $T_{\text{iter}}$ times back and forth from GPU HBM during entmax updates, bottlenecking memory bandwidth.
-
-### High-Performance Triton Kernel Fusion Strategy
-1. **Fused SRAM Bisection / Fixed-Point Entmax**: Implement a fused Triton block-kernel that loads tiles of $\mathbf{Q}$ and $\mathbf{K}$ into SRAM registers, computes dot-product scores, and executes fixed-point entmax iterations entirely within shared memory without writing intermediate $N \times N$ tensors to DRAM.
+Standard PyTorch entmax materializes intermediate matrices during each fixed-point iteration in HBM. A Triton implementation fuses the iterative loop into SRAM, loading score logits once and storing only active sparse entries.
 
 ```python
-# Triton Pseudocode for Fused Entmax Flash Kernel
+# Triton Fused 1.5-Entmax Kernel Blueprint
+import triton
+import triton.language as tl
+
 @triton.jit
-def _adasplash_fused_entmax_kernel(
-    Q_ptr, K_ptr, V_ptr, Out_ptr,
-    N, D, BLOCK_N: tl.constexpr, T_ITER: tl.constexpr
+def _entmax15_fused_kernel(
+    Logits_ptr, Out_ptr,
+    stride_b, stride_h, stride_l,
+    L, N_ITER: tl.constexpr,
+    BLOCK_L: tl.constexpr
 ):
-    # Load Query block [BLOCK_N, D]
-    q = tl.load(Q_ptr + offsets_q)
-    # Stream Key blocks [BLOCK_N, D] & Compute scores in SRAM
-    scores = tl.dot(q, tl.trans(k)) * scale
+    pid_m = tl.program_id(0)
+    pid_bh = tl.program_id(1)
     
-    # Execute Entmax Fixed-Point loop inside SRAM registers
-    p = tl.softmax(scores, dim=-1)
-    for i in range(T_ITER):
-        q_sqrt = tl.sqrt(p)
-        tau = tl.sum(q_sqrt * p, axis=-1, keep_dims=True)
-        p = q_sqrt / (tau + 1e-12)
+    offs_l = tl.arange(0, BLOCK_L)
+    logits = tl.load(Logits_ptr + pid_bh * stride_h + pid_m * stride_l + offs_l)
+    
+    # Initialize p = softmax(logits)
+    max_logit = tl.max(logits, axis=0)
+    p = tl.exp(logits - max_logit)
+    p = p / tl.sum(p, axis=0)
+    
+    # Fixed-Point Iterative Loop in SRAM
+    for _ in range(N_ITER):
+        q = tl.sqrt(p)
+        tau = tl.sum(q * p, axis=0)
+        p = q / (tau + 1e-12)
         
-    # Multiply by V directly in SRAM registers
-    acc += tl.dot(p, v)
+    tl.store(Out_ptr + pid_bh * stride_h + pid_m * stride_l + offs_l, p)
 ```
 
-2. **Block-Sparse SRAM Skip**: Because entmax produces exact zeros, tiles where $\max(\mathbf{z}) < \tau^*$ can be dynamically pruned in SRAM, skipping the downstream matrix product with $\mathbf{V}$ to save tensor core cycles.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Hardware-Accelerated Block-Sparse Entmax**: Combine 1.5-entmax thresholding with FlashAttention block-tiling to drop entire zero tiles, enabling $\mathcal{O}(L \log L)$ speedups.
+2. **Adaptive Learnable Alpha Entmax ($\alpha(x)$)**: Dynamically project $\alpha \in [1.0, 2.0]$ per token to transition smoothly between dense Softmax ($\alpha = 1.0$) and ultra-sparse entmax ($\alpha = 1.5$).
+3. **AdaSplash-Mamba Dynamic Gating**: Use entmax sparse masks to gate Mamba selective state updates, preventing noise accumulation from low-relevance tokens.
