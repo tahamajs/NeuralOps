@@ -162,6 +162,8 @@ packages = [
     "framework.federated_learning",
     "framework.trainer",
     "framework.utils",
+    "framework.evaluation",
+    "framework.pipeline",
     "framework.models",
     "framework.training",
 ]

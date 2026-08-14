@@ -1,23 +1,116 @@
 """
-NeuralOps Core ML Framework
+NeuralOps Core ML Framework & Efficient Transformer Toolkit.
 
-A unified, modular, and highly efficient toolkit for custom attention mechanisms,
-distributed training, hyperparameter optimization, and federated learning.
+A unified, modular, and high-performance toolkit for custom attention mechanisms,
+model compression (SVD, quantization, pruning, distillation), distributed training,
+hyperparameter optimization, federated learning, data loading, benchmarking,
+and interactive visualization.
 """
+
+import importlib
+from typing import Any, List
 
 __version__ = "0.1.0"
 
-# Expose core functionality at the top level for easy imports
-try:
-    from .models import BaseModel
-    from .training import BaseTrainer
-except ImportError:
-    pass
+# Symbol to (module_path, attr_name) mapping for fast, lazy resolution
+_LAZY_EXPORTS = {
+    # Core Interfaces & Registries
+    "BaseAttention": ("framework.core.base", "BaseAttention"),
+    "BaseCompressor": ("framework.core.base", "BaseCompressor"),
+    "ATTENTION_REGISTRY": ("framework.core.registry", "ATTENTION_REGISTRY"),
+    "COMPRESSOR_REGISTRY": ("framework.core.registry", "COMPRESSOR_REGISTRY"),
+    "available_attention_types": ("framework.core.registry", "available_attention_types"),
+    "register_attention": ("framework.core.registry", "register_attention"),
+    "register_compressor": ("framework.core.registry", "register_compressor"),
+    "inject_attention": ("framework.core.attention_utils", "inject_attention"),
+    "compress_model": ("framework.core.compression_engine", "compress_model"),
+    "CompressionPipeline": ("framework.core.compression_engine", "CompressionPipeline"),
+    "detect_architecture": ("framework.core.architecture", "detect_architecture"),
+    "UnifiedTransformerConfig": ("framework.core.model_wrapper", "UnifiedTransformerConfig"),
+    "UnifiedTransformerModel": ("framework.core.model_wrapper", "UnifiedTransformerModel"),
+    "MultiModeBenchmarkRunner": ("framework.core.multi_mode_benchmark", "MultiModeBenchmarkRunner"),
+    
+    # Models
+    "BaseModel": ("framework.models", "BaseModel"),
+    
+    # Trainers & Metrics
+    "BaseTrainer": ("framework.trainer.base_trainer", "BaseTrainer"),
+    "HuggingFaceTrainer": ("framework.trainer.hf_trainer", "HuggingFaceTrainer"),
+    "CustomLoopTrainer": ("framework.trainer.custom_loop_trainer", "CustomLoopTrainer"),
+    "TrainerRegistry": ("framework.trainer.registry", "TrainerRegistry"),
+    "get_task_metrics": ("framework.trainer.metrics", "get_task_metrics"),
+    "aggregate_results": ("framework.trainer.metrics", "aggregate_results"),
+    
+    # Data & Benchmark Datasets
+    "DataConfig": ("framework.data.base", "DataConfig"),
+    "TaskType": ("framework.data.base", "TaskType"),
+    "create_dataloader": ("framework.data.base", "create_dataloader"),
+    "preprocess_function": ("framework.data.base", "preprocess_function"),
+    "ExperimentConfig": ("framework.data.dataset_loader", "ExperimentConfig"),
+    "load_dataset": ("framework.data.dataset_loader", "load_dataset"),
+    "load_glue_local": ("framework.data.glue_loader", "load_glue_local"),
+    "GLUE_TASK_KEYS": ("framework.data.glue_loader", "GLUE_TASK_KEYS"),
+    "BenchmarkDatasetInfo": ("framework.data.benchmark_datasets", "BenchmarkDatasetInfo"),
+    "BenchmarkDatasetRegistry": ("framework.data.benchmark_datasets", "BenchmarkDatasetRegistry"),
+    "load_benchmark_dataset": ("framework.data.benchmark_datasets", "load_benchmark_dataset"),
+    "generate_synthetic_data": ("framework.data.synthetic_generator", "generate_synthetic_data"),
+    "run_universal_generation": ("framework.data.synthetic_generator", "run_universal_generation"),
+    
+    # Benchmark & Pipeline
+    "build_attention_module": ("framework.benchmark_attention", "build_attention_module"),
+    "benchmark_single_module": ("framework.benchmark_attention", "benchmark_single_module"),
+    "run_benchmark_suite": ("framework.benchmark_attention", "run_benchmark_suite"),
+    "ResultWriter": ("framework.pipeline.result_writer", "ResultWriter"),
+    
+    # Evaluation & Robustness
+    "ABTester": ("framework.evaluation.ab_testing", "ABTester"),
+    "ABTestResult": ("framework.evaluation.ab_testing", "ABTestResult"),
+    "FairnessEvaluator": ("framework.evaluation.fairness", "FairnessEvaluator"),
+    "FairnessReport": ("framework.evaluation.fairness", "FairnessReport"),
+    "LabelQualityDetector": ("framework.evaluation.label_quality", "LabelQualityDetector"),
+    "LabelQualityReport": ("framework.evaluation.label_quality", "LabelQualityReport"),
+    "RetrainDecision": ("framework.evaluation.retraining", "RetrainDecision"),
+    "RetrainPolicy": ("framework.evaluation.retraining", "RetrainPolicy"),
+    "RetrainingOrchestrator": ("framework.evaluation.retraining", "RetrainingOrchestrator"),
+    "RobustnessReport": ("framework.evaluation.robustness", "RobustnessReport"),
+    "TextAdversarialTester": ("framework.evaluation.robustness", "TextAdversarialTester"),
+    
+    # Visualization & Dashboards
+    "BaseVisualizer": ("framework.visualization.base", "BaseVisualizer"),
+    "VISUALIZER_REGISTRY": ("framework.visualization.base", "VISUALIZER_REGISTRY"),
+    "PLOT_REGISTRY": ("framework.visualization.plot_registry", "PLOT_REGISTRY"),
+    "register_default_plots": ("framework.visualization.plot_registry", "register_default_plots"),
+    "generate_csv_summary": ("framework.visualization.report_generator", "generate_csv_summary"),
+    "generate_html_report": ("framework.visualization.report_generator", "generate_html_report"),
+    "generate_latex_table": ("framework.visualization.report_generator", "generate_latex_table"),
+    "plot_accuracy_vs_rank": ("framework.visualization.report_generator", "plot_accuracy_vs_rank"),
+    "plot_radar_chart": ("framework.visualization.report_generator", "plot_radar_chart"),
+    "plot_attention_heatmap": ("framework.visualization.benchmark_visualizer", "plot_attention_heatmap"),
+    "plot_singular_value_decay": ("framework.visualization.benchmark_visualizer", "plot_singular_value_decay"),
+    "plot_kv_cache_scaling": ("framework.visualization.benchmark_visualizer", "plot_kv_cache_scaling"),
+    "plot_pareto_frontier": ("framework.visualization.benchmark_visualizer", "plot_pareto_frontier"),
+    "plot_dataset_radar_chart": ("framework.visualization.benchmark_visualizer", "plot_dataset_radar_chart"),
+    "plot_layerwise_sparsity_rank": ("framework.visualization.benchmark_visualizer", "plot_layerwise_sparsity_rank"),
+    "generate_dashboard_html": ("framework.visualization.dashboard_generator", "generate_dashboard_html"),
+    "generate_summary_json": ("framework.visualization.dashboard_generator", "generate_summary_json"),
+    "set_plot_style": ("framework.visualization.utils", "set_plot_style"),
+    "save_figure": ("framework.visualization.utils", "save_figure"),
+    "get_color_palette": ("framework.visualization.utils", "get_color_palette"),
+    "create_custom_colormap": ("framework.visualization.utils", "create_custom_colormap"),
+}
 
-# We explicitly do not import all submodules here to avoid circular dependencies
-# and unnecessary heavy imports (like PyTorch) unless specifically requested.
+__all__: List[str] = ["__version__"] + sorted(list(_LAZY_EXPORTS.keys()))
 
-__all__ = [
-    "BaseModel",
-    "BaseTrainer",
-]
+
+def __getattr__(name: str) -> Any:
+    if name in _LAZY_EXPORTS:
+        module_path, attr_name = _LAZY_EXPORTS[name]
+        module = importlib.import_module(module_path)
+        val = getattr(module, attr_name)
+        globals()[name] = val  # cache attribute on module
+        return val
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+def __dir__() -> List[str]:
+    return sorted(list(globals().keys()) + __all__)

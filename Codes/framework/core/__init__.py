@@ -38,4 +38,5 @@ from .registry import (
     VISUALIZER_REGISTRY,
     list_all_components,
 )
+from .multi_mode_benchmark import MultiModeBenchmarkRunner, SUPPORTED_MODES
 from .utils import format_number, get_device, human_readable_time, set_seed
