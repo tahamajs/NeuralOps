@@ -333,18 +333,69 @@ body {
     background-color: rgba(255, 255, 255, 0.02);
 }
 
-/* KaTeX tweaks */
-.katex-display {
+/* KaTeX Math Styling */
+.katex {
+    font-size: 1.05em;
+    color: #e2e8f0;
+}
+
+.katex-display-container {
+    margin: 1.6em 0;
+    padding: 16px 20px;
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 1em 0;
+    text-align: center;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.katex-display-container .katex-display {
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.katex-error {
+    color: #f87171 !important;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    border: 1px dashed rgba(239, 68, 68, 0.3);
+}
+
+/* Copy Code Button */
+.copy-code-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.copy-code-btn:hover {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
 }
 
 /* Mermaid tweaks */
 .mermaid {
-    background-color: #fff;
+    background-color: var(--bg-card);
     padding: 20px;
     border-radius: 8px;
+    border: 1px solid var(--border);
     margin: 2em 0;
     overflow-x: auto;
     text-align: center;

@@ -1,7 +1,21 @@
 document.addEventListener("DOMContentLoaded", async () => {
     // Initialize Mermaid
     if (window.mermaid) {
-        mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+        mermaid.initialize({ 
+            startOnLoad: false, 
+            theme: 'dark',
+            securityLevel: 'loose',
+            themeVariables: {
+                darkMode: true,
+                background: '#16181d',
+                primaryColor: '#3b82f6',
+                primaryTextColor: '#f8fafc',
+                primaryBorderColor: '#60a5fa',
+                lineColor: '#94a3b8',
+                secondaryColor: '#1e293b',
+                tertiaryColor: '#0f172a'
+            }
+        });
     }
 
     const navContent = document.getElementById("nav-content");
@@ -19,6 +33,143 @@ document.addEventListener("DOMContentLoaded", async () => {
         mobileMenuBtn.addEventListener("click", () => {
             sidebar.classList.toggle("open");
         });
+    }
+
+    // Configure Marked Renderer
+    if (window.marked) {
+        const renderer = new marked.Renderer();
+        const originalCodeRenderer = renderer.code.bind(renderer);
+        renderer.code = function(code, language, isEscaped) {
+            if (language === 'mermaid') {
+                return `<div class="mermaid">${code}</div>`;
+            }
+            return originalCodeRenderer(code, language, isEscaped);
+        };
+        marked.setOptions({ 
+            renderer: renderer,
+            gfm: true,
+            breaks: false
+        });
+    }
+
+    // Robust LaTeX Math Macros
+    const KATEX_MACROS = {
+        "\\bm": "\\boldsymbol",
+        "\\mathbf": "\\boldsymbol",
+        "\\llbracket": "[\\![",
+        "\\rrbracket": "]\\!]",
+        "\\diag": "\\operatorname{diag}",
+        "\\rank": "\\operatorname{rank}",
+        "\\Tr": "\\operatorname{Tr}",
+        "\\softmax": "\\operatorname{Softmax}",
+        "\\argmin": "\\operatorname*{arg\\,min}",
+        "\\argmax": "\\operatorname*{arg\\,max}",
+        "\\E": "\\mathbb{E}",
+        "\\Var": "\\operatorname{Var}"
+    };
+
+    function escapeHtml(str) {
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function safeRenderKaTeX(tex, isDisplay) {
+        if (typeof katex === "undefined") {
+            return isDisplay ? `<pre class="katex-fallback">${escapeHtml(tex)}</pre>` : `<code>${escapeHtml(tex)}</code>`;
+        }
+        try {
+            return katex.renderToString(tex, {
+                displayMode: isDisplay,
+                throwOnError: false,
+                trust: true,
+                strict: false,
+                macros: KATEX_MACROS
+            });
+        } catch (err) {
+            console.warn("KaTeX compilation warning:", tex, err);
+            return `<span class="katex-error" title="${escapeHtml(err.message)}">${escapeHtml(tex)}</span>`;
+        }
+    }
+
+    // Comprehensive Markdown + LaTeX Parsing Pipeline
+    function renderMarkdownWithKaTeX(markdownText) {
+        if (!markdownText) return "";
+
+        // 1. Sanitize local markdown cross-references
+        let processed = markdownText.replace(/\]\(([^)]+)\.md\)/g, "](javascript:void(0))");
+
+        // 2. Protect Code Blocks (fenced ```...``` and inline `...`)
+        const codeBlocks = [];
+        processed = processed.replace(/(```[\s\S]*?```)/g, (match) => {
+            const id = codeBlocks.length;
+            codeBlocks.push(match);
+            return `%%%CODEBLOCK_${id}%%%`;
+        });
+
+        const inlineCodes = [];
+        processed = processed.replace(/(`[^`\n]+?`)/g, (match) => {
+            const id = inlineCodes.length;
+            inlineCodes.push(match);
+            return `%%%INLINECODE_${id}%%%`;
+        });
+
+        // 3. Extract Display Math Blocks ($$...$$, \[...\], \begin{...}...\end{...})
+        const mathBlocks = [];
+        const displayMathRegex = /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]|(\\begin\{(?:equation\*?|align\*?|aligned|gather\*?|pmatrix|bmatrix|matrix|cases)\}[\s\S]*?\\end\{(?:equation\*?|align\*?|aligned|gather\*?|pmatrix|bmatrix|matrix|cases)\})/g;
+
+        processed = processed.replace(displayMathRegex, (match, p1, p2, p3) => {
+            let tex = (p1 !== undefined ? p1 : (p2 !== undefined ? p2 : p3)).trim();
+            const id = mathBlocks.length;
+            mathBlocks.push(tex);
+            return `\n\n%%%MATHBLOCK_${id}%%%\n\n`;
+        });
+
+        // 4. Extract Inline Math (\(...\) and $...$)
+        const mathInlines = [];
+        const inlineMathRegex = /\\\(([\s\S]*?)\\\)|\$(?!\s)([^\$\n\r]+?)(?<!\s)\$/g;
+
+        processed = processed.replace(inlineMathRegex, (match, p1, p2) => {
+            let tex = (p1 !== undefined ? p1 : p2).trim();
+            const id = mathInlines.length;
+            mathInlines.push(tex);
+            return `%%%MATHINLINE_${id}%%%`;
+        });
+
+        // 5. Restore Code Blocks before passing to Marked
+        for (let i = 0; i < codeBlocks.length; i++) {
+            processed = processed.replace(`%%%CODEBLOCK_${i}%%%`, codeBlocks[i]);
+        }
+        for (let i = 0; i < inlineCodes.length; i++) {
+            processed = processed.replace(`%%%INLINECODE_${i}%%%`, inlineCodes[i]);
+        }
+
+        // 6. Convert Markdown to HTML
+        let html = marked.parse(processed);
+
+        // 7. Inject Rendered Display Math
+        for (let i = 0; i < mathBlocks.length; i++) {
+            const tex = mathBlocks[i];
+            const rendered = `<div class="katex-display-container">${safeRenderKaTeX(tex, true)}</div>`;
+            const pWrapped = new RegExp(`<p>\\s*%%%MATHBLOCK_${i}%%%\\s*<\\/p>`, "g");
+            if (pWrapped.test(html)) {
+                html = html.replace(pWrapped, rendered);
+            } else {
+                html = html.replace(new RegExp(`%%%MATHBLOCK_${i}%%%`, "g"), rendered);
+            }
+        }
+
+        // 8. Inject Rendered Inline Math
+        for (let i = 0; i < mathInlines.length; i++) {
+            const tex = mathInlines[i];
+            const rendered = safeRenderKaTeX(tex, false);
+            html = html.replace(new RegExp(`%%%MATHINLINE_${i}%%%`, "g"), rendered);
+        }
+
+        return html;
     }
 
     // Fetch catalog with multiple path fallbacks
@@ -107,26 +258,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Marked options setup for mermaid
-    if (window.marked) {
-        const renderer = new marked.Renderer();
-        const originalCodeRenderer = renderer.code.bind(renderer);
-        renderer.code = function(code, language, isEscaped) {
-            if (language === 'mermaid') {
-                return `<div class="mermaid">${code}</div>`;
-            }
-            return originalCodeRenderer(code, language, isEscaped);
-        };
-        marked.setOptions({ renderer });
-    }
-
     async function loadMarkdown(item) {
         if (currentDocTitle) currentDocTitle.textContent = item.title;
         markdownContainer.innerHTML = `<div style="text-align:center; padding: 50px; color: #94a3b8;">
             <div style="font-size: 1.2rem; margin-bottom: 10px;">Loading ${item.title}...</div>
         </div>`;
         
-        // Candidate paths to support both local serving, docs subfolder, and root GitHub Pages
+        // Candidate paths to support local serving, docs subfolder, and gh-pages branch
         const candidatePaths = [
             item.path,
             item.path.replace(/^\.\.\//, ""),
@@ -153,30 +291,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         if (markdownText !== null) {
             try {
-                // Fix relative links in markdown if they refer to other md files
-                markdownText = markdownText.replace(/\]\(([^)]+)\.md\)/g, "](javascript:void(0))");
-
-                const htmlContent = marked.parse(markdownText);
+                // Render Markdown with KaTeX math protection
+                const htmlContent = renderMarkdownWithKaTeX(markdownText);
                 markdownContainer.innerHTML = htmlContent;
 
-                // Render Math (KaTeX)
-                if (window.renderMathInElement) {
-                    renderMathInElement(markdownContainer, {
-                        delimiters: [
-                            {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false},
-                            {left: '\\(', right: '\\)', display: false},
-                            {left: '\\[', right: '\\]', display: true}
-                        ],
-                        throwOnError: false
-                    });
-                }
-
-                // Render Mermaid
+                // Render Mermaid Diagrams
                 if (window.mermaid) {
-                    const mermaidElements = document.querySelectorAll('.mermaid');
-                    if (mermaidElements.length > 0) {
-                        mermaid.init(undefined, mermaidElements);
+                    try {
+                        const mermaidElements = document.querySelectorAll('.mermaid');
+                        if (mermaidElements.length > 0) {
+                            mermaid.init(undefined, mermaidElements);
+                        }
+                    } catch (mErr) {
+                        console.warn("Mermaid init error:", mErr);
                     }
                 }
 
@@ -184,8 +311,29 @@ document.addEventListener("DOMContentLoaded", async () => {
                 if (window.Prism) {
                     Prism.highlightAllUnder(markdownContainer);
                 }
+
+                // Add Copy Buttons to Code Blocks
+                document.querySelectorAll('.markdown-body pre').forEach(pre => {
+                    if (!pre.querySelector('.copy-code-btn')) {
+                        const btn = document.createElement('button');
+                        btn.className = 'copy-code-btn';
+                        btn.textContent = 'Copy';
+                        btn.addEventListener('click', async () => {
+                            const code = pre.querySelector('code')?.innerText || pre.innerText;
+                            try {
+                                await navigator.clipboard.writeText(code);
+                                btn.textContent = 'Copied!';
+                                setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+                            } catch (e) {
+                                btn.textContent = 'Failed';
+                            }
+                        });
+                        pre.style.position = 'relative';
+                        pre.appendChild(btn);
+                    }
+                });
                 
-                // Scroll to top
+                // Scroll to top of content
                 const contentWrapper = document.querySelector('.content-wrapper');
                 if (contentWrapper) contentWrapper.scrollTop = 0;
 
@@ -197,7 +345,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 </div>`;
             }
         } else {
-            console.error("Failed to load markdown from all candidate paths for", item);
+            console.error("Failed to load markdown from candidate paths for", item);
             markdownContainer.innerHTML = `<div style="text-align:center; padding: 50px; color: #f87171;">
                 <h3>Error Loading Document</h3>
                 <p>Could not fetch the documentation for <strong>${item.title}</strong>.</p>
