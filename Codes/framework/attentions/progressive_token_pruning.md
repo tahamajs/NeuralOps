@@ -1,138 +1,209 @@
-# Progressive Token Pruning: Learnable Dynamic Token Reduction for Efficient Transformers
+# Progressive Token Pruning: Learnable Saliency Scoring and Monotonic Sequence Compaction
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Dense Multi-Head Self-Attention (MHSA) in Transformer architectures scales quadratically $\mathcal{O}(L^2 d)$ with sequence length $L$. In deep models, sequence representations contain substantial spatial redundancy, as background tokens, stop-words, and repetitive punctuation contribute minimal utility to final task predictions. Processing these non-essential tokens across all layers consumes massive memory bandwidth and FLOPs.
 
-We present **Progressive Token Pruning**, a lightweight, learnable module that dynamically reduces the number of tokens in a Transformer sequence by removing those deemed least important at each layer. A simple linear scorer, followed by a sigmoid activation, assigns an importance score to each token based on its current hidden representation. A fixed keep ratio determines how many tokens are retained, and the top‑\(k\) scoring tokens are gathered while preserving their original sequence order. The module can be inserted between Transformer layers (or after the feed‑forward sub‑layer) to progressively compress the sequence, leading to significant computational savings in deeper layers while maintaining task performance. The method requires minimal additional parameters—just a single linear layer per pruning stage—and is trained end‑to‑end with the main model. This paper provides a rigorous mathematical description of the token scoring and selection mechanism, the training considerations, and the integration of the module into a Transformer pipeline.
+**Progressive Token Pruning (`ProgressiveTokenPruning`)** provides an adaptive, data-driven sequence compaction module that dynamically prunes uninformative token vectors along sequence length $L$. The layer applies a lightweight, learnable scoring projection $W_s \in \mathbb{R}^{D \times 1}$ to map token embeddings to continuous saliency scores $s \in (0, 1)$. Given a retention ratio $\rho \in (0, 1]$, the top-$k$ ($k = \lfloor \rho \cdot L \rfloor$) most salient tokens are extracted. Crucially, the extracted token indices are sorted monotonically prior to gathering, preserving original relative sequence ordering and relative positional embedding alignment.
 
----
-
-## 1. Introduction
-
-Transformers process sequences of tokens with a computational cost that scales quadratically with the sequence length in the self‑attention sub‑layers. For many tasks, not all tokens are equally informative; some tokens (e.g., punctuation, articles, or redundant context words) contribute less to the final representation. Token pruning methods aim to identify and remove such tokens on‑the‑fly, reducing the effective sequence length for subsequent layers and thereby lowering the overall computational burden.
-
-**Progressive Token Pruning** implements a simple, parameter‑efficient token removal strategy. For each position in the sequence, a **scoring network**—a single linear transformation followed by a sigmoid—computes an importance score. The scores are used to select the top \(k = \lfloor \rho \cdot L \rfloor\) tokens, where \(\rho \in (0,1)\) is a predefined keep ratio. The selected tokens are then gathered in the original order, so that positional information is preserved (the relative ordering of tokens is retained, though absolute positions may change; a positional embedding update may be needed in practice). The pruned sequence is passed to the next layer, while the removed tokens are discarded.
-
-This module is designed to be inserted after a Transformer layer’s feed‑forward network (or between layers), progressively reducing the sequence length. Because the scorer is trained jointly with the model, the pruning becomes task‑aware and can adapt to the specific needs of downstream tasks. The method adds only \(d_{\text{model}}\) additional parameters per pruning stage (a single weight matrix of size \(d_{\text{model}} \times 1\) plus bias), making it extremely lightweight.
-
-In this paper, we formalise the token importance scoring, the top‑\(k\) selection, and the reordering process. We also discuss the training dynamics, the integration with the DistilBERT compression framework, and the trade‑offs of progressive pruning.
+By reducing sequence length from $L$ to $k \le L$ with minimal parameter overhead ($\mathcal{O}(D)$ parameters), Progressive Token Pruning compounds exponential compute and memory savings down Transformer hierarchies.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Token Importance Scoring
+### 2.1 Learnable Token Saliency Scoring
+Given hidden sequence representation $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, a linear scoring layer parameterizes token-level salience weights $\mathbf{W}_s \in \mathbb{R}^{D \times 1}$ and bias $b_s \in \mathbb{R}$:
+$$\mathbf{z} = \mathbf{X} \mathbf{W}_s + b_s \quad \in \mathbb{R}^{B \times L \times 1}$$
 
-Given an input tensor \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), where \(B\) is the batch size, \(L\) the sequence length, and \(D\) the hidden dimension, a scoring network computes a scalar importance for each token:
+Sigmoid activation maps logit activations to normalized saliency probabilities $\mathbf{s} \in (0, 1)^{B \times L}$:
+$$\mathbf{s}_{b, i} = \sigma\left( \mathbf{z}_{b, i, 1} \right) = \frac{1}{1 + \exp\left( -\mathbf{z}_{b, i, 1} \right)}, \quad \forall i \in \{1, \dots, L\}$$
 
-\[
-s_{b,i} = \sigma(\mathbf{W}_s \mathbf{x}_{b,i} + b_s),
-\]
+### 2.2 Top-$k$ Selection & Monotonic Order Preservation
+Given retention ratio $\rho \in (0, 1]$, the number of tokens retained per sequence is:
+$$k = \max\left( 1, \lfloor \rho \cdot L \rfloor \right)$$
 
-where \(\mathbf{W}_s \in \mathbb{R}^{1 \times D}\) is a weight vector (or equivalently a linear layer with output size 1), \(b_s\) is a bias, and \(\sigma\) is the sigmoid function. The score \(s_{b,i} \in (0,1)\) reflects the predicted relevance of token \(i\) in batch element \(b\). The sigmoid ensures scores are normalised between 0 and 1, though they are not required to sum to 1.
+1. **Top-$k$ Extraction**:
+   For each batch sequence $b \in \{1, \dots, B\}$, the indices $\mathcal{U}_b$ corresponding to the $k$ highest saliency scores are extracted:
+   $$\mathcal{U}_b = \operatorname{TopK}\left( \mathbf{s}_{b, :}, k \right) \quad \in \{1, \dots, L\}^k$$
 
-### 2.2 Top‑\(k\) Selection with Keep Ratio
+2. **Monotonic Index Sorting**:
+   Because top-$k$ selection re-orders index entries by descending score magnitude, direct gathering would corrupt sequential relative positions. Monotonic ascending sorting resolves this:
+   $$\mathcal{I}_b = \operatorname{Sort}_{\text{ascending}}\left( \mathcal{U}_b \right) \quad \in \{1, \dots, L\}^k$$
+   such that $\mathcal{I}_{b, 1} < \mathcal{I}_{b, 2} < \dots < \mathcal{I}_{b, k}$.
 
-A global keep ratio \(\rho \in (0,1]\) (e.g., 0.8) determines the number of tokens to retain:
+### 2.3 Index Gathering & Sequence Compaction
+The hidden activation tensor $\mathbf{X}$ is gathered along the sequence axis using the sorted index matrix $\mathcal{I} \in \mathbb{N}^{B \times k}$:
+$$\mathbf{X}_{\text{pruned}, b, j, :} = \mathbf{X}_{b, \mathcal{I}_{b, j}, :} \quad \forall j \in \{1, \dots, k\}$$
+$$\mathbf{X}_{\text{pruned}} = \operatorname{Gather}\left( \mathbf{X}, \text{dim}=1, \text{index}=\mathcal{I} \right) \quad \in \mathbb{R}^{B \times k \times D}$$
 
-\[
-k = \max(1, \lfloor \rho \cdot L \rfloor).
-\]
-
-For each batch element, the indices of the \(k\) tokens with the highest scores are obtained:
-
-\[
-\mathcal{I}_b = \operatorname{TopK}(\mathbf{s}_b, k),
-\]
-
-where \(\mathbf{s}_b \in \mathbb{R}^L\) is the vector of scores for batch element \(b\). The `torch.topk` function returns both the values and the indices, and we discard the values.
-
-### 2.3 Order Preservation
-
-To maintain the original sequential order of the tokens (which is important for positional encodings and for the model to interpret the sequence correctly), the selected indices are sorted in ascending order:
-
-\[
-\tilde{\mathcal{I}}_b = \operatorname{sort}(\mathcal{I}_b).
-\]
-
-Sorting ensures that even though the tokens were selected by their scores, they appear in the same relative order as in the original sequence. For example, if the original positions were 2, 5, 1, 8, sorting gives 1, 2, 5, 8. This is crucial because the positional embeddings (if not updated) would otherwise be inconsistent. However, after pruning, the absolute positions have changed; typically, the model re‑embeds the pruned sequence with new positional indices corresponding to the new positions 1,2,...,k. In a progressive pruning pipeline, this re‑indexing must be handled by the layer that calls the pruner (e.g., by passing new token indices).
-
-### 2.4 Token Gathering
-
-The pruned sequence is formed by gathering the token representations at the selected positions:
-
-\[
-\tilde{\mathbf{X}}_{b} = \operatorname{gather}(\mathbf{X}_b, \tilde{\mathcal{I}}_b),
-\]
-
-resulting in a tensor of shape \((B, k, D)\). The module returns both the pruned sequence and the sorted indices (for potential use in updating token‑level masks or positional information).
-
-### 2.5 Training and Gradient Flow
-
-The top‑\(k\) selection is a discrete operation that is not differentiable with respect to the scores. However, because the selected tokens are gathered and the rest are discarded, gradients can still flow through the selected tokens back to the parameters that produced those tokens (including the scorer weights). The straight‑through estimator is implicitly used: the scorer receives gradients only from the tokens that were retained, providing a signal to increase the scores of useful tokens and decrease the scores of discarded ones. This is effective in practice, as the scorer learns to assign higher importance to tokens that are necessary for the task.
+The module outputs the compacted tensor $\mathbf{X}_{\text{pruned}} \in \mathbb{R}^{B \times k \times D}$ and the monotonically sorted index map $\mathcal{I} \in \mathbb{N}^{B \times k}$.
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **Class `ProgressiveTokenPruning`** inherits from `nn.Module` and is registered under `"progressive_token_pruning"` in the `ATTENTION_REGISTRY`. This registration suggests that the module can be used as a replacement for an attention layer (though it is a pruning module, not an attention module). In the context of the compression framework, it might be intended to replace the entire attention block with a pruner (perhaps as an extreme compression) or to be used as a sub‑layer within a larger block.
-- **Constructor**:
-  - `d_model`: the hidden dimension \(D\).
-  - `keep_ratio`: the fraction \(\rho\) of tokens to keep (default 0.8).
-  - `self.score_network`: a linear layer mapping \(D \to 1\) (so weight shape \(1 \times D\)) with a bias.
-- **Forward**:
-  1. Compute scores using sigmoid: `scores = sigmoid(score_network(x)).squeeze(-1)` → shape \((B, L)\).
-  2. Compute \(k = \max(1, \text{int}(L * \text{keep\_ratio}))\).
-  3. Get top‑\(k\) indices via `torch.topk(scores, k, dim=-1)` → indices shape \((B, k)\).
-  4. Sort the indices along the last dimension to preserve order.
-  5. Gather the tokens: `pruned_x = x.gather(1, indices.unsqueeze(-1).expand(-1, -1, D))`.
-  6. Return `(pruned_x, indices)`.
+| Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | Input Hidden States | - | `[B, L, D]` | Input activation sequence of length $L$ |
+| 2 | Saliency Score Logits| `[B, L, D]` | `[B, L, 1]` | Linear map via $W_s \in \mathbb{R}^{D \times 1}$ |
+| 3 | Sigmoid Normalization | `[B, L, 1]` | `[B, L]` | Squeeze last dim & apply Sigmoid activation |
+| 4 | Top-$k$ Extraction | `[B, L]` | `[B, k]` | Extract top-$k$ indices ($k = \lfloor \rho L \rfloor$) |
+| 5 | Monotonic Sorting | `[B, k]` | `[B, k]` | Sort indices ascending along sequence axis |
+| 6 | Index Expansion | `[B, k]` | `[B, k, D]` | `unsqueeze(-1).expand(-1, -1, D)` |
+| 7 | Activation Gather | `[B, L, D]`, `Indices`| `[B, k, D]` | Compact tensor along sequence dimension |
 
-The module does not modify positional embeddings; the calling code is responsible for updating the position IDs if necessary.
-
----
-
-## 4. Usage and Configuration
-
-The module can be injected into a model by setting the attention type to `"progressive_token_pruning"` in the compression configuration. The relevant hyperparameter is `keep_ratio`:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `keep_ratio` | 0.8 | Fraction of tokens to retain after pruning. |
-
-Example injection via framework:
-```python
-comp_config.attention_type = "progressive_token_pruning"
-comp_config.keep_ratio = 0.9
+```
+                       [B, L, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     Saliency Score Network      Input Activations X
+     Linear(D -> 1)              [B, L, D]
+             │                           │
+             ▼                           │
+     Sigmoid Normalization               │
+     Scores s [B, L]                     │
+             │                           │
+             ▼                           │
+     Top-k Selection (k = rho * L)       │
+     Indices U [B, k]                    │
+             │                           │
+             ▼                           │
+     Monotonic Ascending Sort            │
+     Sorted Indices I [B, k]             │
+             │                           │
+             └─────────────┬─────────────┘
+                           ▼
+              Gather Compacted Activations
+              X_pruned [B, k, D]
+                           │
+                           ▼
+          Tuple: (X_pruned, Sorted_Indices)
 ```
 
-Manual instantiation:
-```python
-pruner = ProgressiveTokenPruning(d_model=768, keep_ratio=0.9)
-pruned_x, indices = pruner(hidden_states)
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 FLOPs Computation Breakdown
+Let $B$ be batch size, $L$ input sequence length, $D$ hidden dimension, $\rho$ retention ratio, and $k = \lfloor \rho \cdot L \rfloor$.
+
+1. **Saliency Score Projection**:
+   $$\operatorname{FLOPs}_{\text{score}} = 2 B L D$$
+2. **Top-$k$ Extraction & Sorting**:
+   - Top-$k$ heap search: $B \cdot L \log k$ FLOPs.
+   - Bitonic monotonic sort: $B \cdot k \log k$ FLOPs.
+   $$\operatorname{FLOPs}_{\text{topk\_sort}} = B L \log k + B k \log k$$
+3. **Tensor Gathering Operation**:
+   $$\operatorname{FLOPs}_{\text{gather}} = B k D \quad (\text{Memory copy operation})$$
+
+$$\text{Total FLOPs} = 2 B L D + B k D + B L \log k + B k \log k$$
+
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} \approx B L D$$
+- **Peak Activation Memory**:
+  - Score Tensor: $B \cdot L \times 4 \text{ bytes}$
+  - Kept Index Tensor: $B \cdot k \times 8 \text{ bytes}$
+  - Compacted Output Activation Buffer: $B \cdot k \cdot D \times 2 \text{ bytes}$ (FP16/BF16).
+  - Memory Footprint drops from $2 B L D$ to $2 B k D$ bytes.
+
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Sequence Layer**: $\mathcal{O}(L D)$ compute, $\mathcal{O}(L D)$ memory footprint.
+- **Progressive Token Pruning**: $\mathcal{O}(L D + k D)$ compute, $\mathcal{O}(k D)$ downstream memory footprint.
+- Downstream layer attention FLOPs drop by $\left(\frac{k}{L}\right)^2 = \rho^2 \times$.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Straight-Through Non-Differentiability & Gradient Disconnect
+The index extraction $\mathcal{U} = \operatorname{TopK}(\mathbf{s}, k)$ and sorting operations are discrete step functions.
+- **Zero Gradient Derivative**: $\frac{\partial \mathcal{I}}{\partial \mathbf{s}} = 0$ everywhere.
+- **Pruning Scorer Disconnect**: Gradients flowing from task loss $\mathcal{L}$ pass through gathered features $\mathbf{X}_{\text{pruned}}$, but **do not backpropagate through $\operatorname{TopK}$ to optimize the scoring weights $\mathbf{W}_s$**.
+- Without soft relaxation (e.g., Gumbel-Softmax or straight-through estimator scaling $\mathbf{X} \cdot \mathbf{s}$), scoring weights $\mathbf{W}_s$ remain un-optimized or rely purely on heuristic initialization.
+
+### 5.2 Dynamic Length Ragged Tensor Stalls in Multi-GPU Training
+If batch size $B > 1$ and token pruning evaluates dynamic scores:
+- In variable sequence contexts, sorting indices $\mathcal{I}_b$ for sample 1 might pick different semantic boundaries than sample 2.
+- If $k$ varies per sample ($k_1 \neq k_2$), rectangular tensor format `[B, k, D]` collapses, producing ragged arrays that force costly CPU host fallback and re-padding overhead.
+
+### 5.3 Eviction Cascades & Premature Feature Destruction
+If $\rho = 0.5$ across 6 consecutive pruning layers:
+- Layer 1: $L \to 0.5 L$
+- Layer 2: $0.5 L \to 0.25 L$
+- Layer 6: $L \to 0.015 L$ ($1.5\%$ of tokens remaining!).
+- **Severe Context Starvation**: Exponential compounding reduces sequence length to a tiny fragment, destroying essential multi-token syntactic structures before deep layers can process them.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+To achieve full hardware acceleration and prevent dynamic memory fragmentation, Progressive Token Pruning requires a custom Triton GPU kernel executing fused scoring, warp bitonic top-$k$ sorting, and contiguous SRAM token gathering.
+
+### 6.1 Triton Hardware Acceleration Pipeline Layout
+
+```
++-----------------------------------------------------------------------------------+
+|                        TRITON FUSED PTP PIPELINE                                  |
++-----------------------------------------------------------------------------------+
+|  1. FUSED SALIENCY SCORE & BITONIC TOP-K KERNEL                                   |
+|     - Loads X [B, L, D] into SRAM.                                                |
+|     - Computes s_i = sigmoid(X @ W_s + b_s) in register files.                    |
+|     - Executes Bitonic Top-k sort across L elements in warp registers.            |
+|     - Sorts top-k indices monotonically ascending: I_sorted = sort(topk_idx).      |
+|                                                                                   |
+|  2. CONTIGUOUS SRAM GATHER & RE-PACKING KERNEL                                    |
+|     - Indirect reads X[b, I_sorted[b, j], :] using hardware pointers.             |
+|     - Writes packed, aligned tensor X_pruned [B, k, D] directly to device memory.   |
+|     - Eliminates intermediate PyTorch torch.gather memory allocations.            |
++-----------------------------------------------------------------------------------+
 ```
 
-Since this module replaces an attention layer in the registry, it is expected that the surrounding code (e.g., `replace_attention`) will handle the wiring correctly. In a typical Transformer, one would insert this pruner after the feed‑forward network, not as a replacement for the entire attention mechanism. The registration as an attention replacement may be a misuse or a shorthand for a broader block replacement. Care must be taken to ensure that the pruner is integrated at the correct position (e.g., after the FFN and before the next layer).
+### 6.2 Implementation Code Blueprint (Triton Fused Prune & Pack Kernel)
 
----
+```python
+import triton
+import triton.language as tl
 
-## 5. Discussion
+@triton.jit
+def _ptp_fused_score_sort_pack_kernel(
+    X_ptr, W_score_ptr, Out_ptr, Indices_ptr,
+    stride_xb, stride_xl, stride_xd,
+    stride_ob, stride_ok, stride_od,
+    stride_ib, stride_ik,
+    L_ORIG: tl.constexpr,
+    K_KEEP: tl.constexpr,
+    D: tl.constexpr
+):
+    batch_id = tl.program_id(axis=0)
+    offs_d = tl.arange(0, D)
 
-Progressive Token Pruning offers a simple yet effective approach to sequence compression. Its key advantages are:
-- **Minimal parameters**: only \(D\) additional weights per pruning stage.
-- **Speed**: the scoring, top‑\(k\), and gathering operations are efficient on GPUs.
-- **Task‑adaptive**: the scorer is trained end‑to‑end, learning which tokens are dispensable for the specific task.
-- **Order preservation**: sorting ensures the sequence order is maintained, which is critical for language understanding.
+    # Base pointers for batch
+    x_batch = X_ptr + batch_id * stride_xb
+    out_batch = Out_ptr + batch_id * stride_ob
+    idx_batch = Indices_ptr + batch_id * stride_ib
 
-However, there are several limitations and considerations:
-- **Fixed keep ratio**: The fraction is constant across all layers and samples, which may not be optimal. Dynamic or learned ratios could improve flexibility.
-- **Non‑differentiable selection**: The top‑\(k\) operation blocks gradient flow to discarded tokens. This can cause the scorer to receive no feedback from tokens that were dropped, possibly leading to suboptimal assignment if important tokens are initially dropped and never recovered. Warm‑up training with no pruning or a gradually decreasing keep ratio is often necessary.
-- **Positional encoding update**: The pruner returns new indices, but the positional encodings must be adjusted accordingly. If the pruner is inserted inside a layer, the subsequent layers must recalculate positional embeddings for the shortened sequence. In standard DistilBERT, positional embeddings are added only at the first layer; pruning would require either re‑adding positional embeddings or using relative positional encoding (e.g., RoPE) that handles varying positions naturally. If absolute positions are used, the model would misinterpret the new positions. This module does not handle that; the caller must manage it.
-- **Usage as attention replacement**: Registering a token pruning module in the attention registry is unconventional. It suggests that the module might be used in an extreme compression scenario where the entire attention and FFN are replaced by a simple pruning step (perhaps followed by a tiny network). However, in the provided snippet, there is no attention at all—only pruning. This would cripple the model unless the pruning is intended to be part of a larger block that still includes attention (e.g., as in EATBlock). This misuse may be specific to the testing or modular design of the framework.
+    # Load scoring weight vector into SRAM
+    w_score = tl.load(W_score_ptr + offs_d)
 
-Despite these caveats, the core pruning logic is sound and widely used in the literature (e.g., Learned Token Pruning, DynamicViT). It serves as a building block for more complex efficient Transformer designs.
+    # Note: In Triton, we compute saliency scores s_i for i in 0..L_ORIG,
+    # perform bitonic top-k sort to extract K_KEEP indices,
+    # and sort indices monotonically. Below illustrates the indirect gather step:
 
----
+    for k_idx in range(K_KEEP):
+        # Fetch monotonically sorted token index
+        source_idx = tl.load(idx_batch + k_idx * stride_ik)
 
-## 6. Conclusion
+        # Indirect load token representation [D]
+        x_ptrs = x_batch + source_idx * stride_xl + offs_d * stride_xd
+        token_vec = tl.load(x_ptrs)
 
-We have described Progressive Token Pruning, a lightweight, learnable module that dynamically reduces the sequence length by retaining the most important tokens. The scoring network, top‑\(k\) selection, and order‑preserving gathering form a simple yet effective pipeline. When integrated appropriately into a Transformer model, it can significantly reduce computation in deeper layers with minimal loss in accuracy. Future improvements could include dynamic keep ratios, better handling of positional encodings, and integration with attention modules that natively support variable sequence lengths. The module stands as a clear example of how a small amount of task‑specific learning can lead to substantial efficiency gains in Transformer inference.
+        # Store into contiguous packed output buffer
+        out_ptrs = out_base + k_idx * stride_ok + offs_d * stride_od
+        tl.store(out_ptrs, token_vec)
+```
+
+### 6.3 Hardware Acceleration Summary
+1. **Fused In-Register Sorting**: Bitonic sorting in warp registers eliminates global DRAM reads and writes for intermediate score matrices.
+2. **SIMD Alignment Preservation**: Packing gathered vectors into contiguous FP16 memory blocks `[B, k, D]` maximizes memory bus utilization for all downstream Transformer layers.

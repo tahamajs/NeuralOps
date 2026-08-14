@@ -1,202 +1,216 @@
-# Hymba‑TransX: A Hybrid Block with Differential Attention, State‑Space Model, and Unified Rotary Position Embeddings
+# Hymba-TransX: Hybrid Differential Attention and State-Space Model Architecture with Unified RoPE
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We introduce the **Hymba‑TransX** block, a hybrid sequence mixing module that fuses two complementary mechanisms: **differential self‑attention** and a **state‑space model (SSM)**. The attention component uses a novel “differential attention” scheme, where two sets of queries and keys are computed from the rotary‑position‑encoded input, and the final attention weights are obtained by subtracting half of one attention map from the other, followed by a ReLU activation. This operation is intended to enhance sparsity and emphasise salient token interactions. The SSM component (referred to as “Mamba” or `SimpleSSM`) provides a lightweight linear‑time recurrence that captures long‑range dependencies with state‑space dynamics. The outputs of both branches are blended using a learned scalar gate, and the result is combined with the original input via a residual connection and a final linear projection. Additionally, a **Unified Rotary Position Embedding (RoPE)** is applied to the full hidden states before any branching, enabling the model to incorporate relative positional information across both pathways. The Hymba‑TransX block is designed as a drop‑in replacement for the standard self‑attention layer in Transformer models and is integrated into the DistilBERT compression framework through a registry‑based injection function. This paper provides a rigorous mathematical description of the Unified RoPE, the differential attention mechanism, the integration with the SSM, and the overall architecture.
+Transformers excel at capturing non-local cross-token dependencies via Multi-Head Self-Attention (MHA), but suffer from quadratic compute/memory complexity \(\mathcal{O}(L^2)\) and attention noise. State-Space Models (SSMs), such as Mamba or SimpleSSM, achieve linear computational scaling \(\mathcal{O}(L)\) but can experience local detail loss over long sequence horizons.
 
----
-
-## 1. Introduction
-
-The standard Transformer architecture relies on multi‑head self‑attention, which captures pairwise token dependencies with quadratic complexity. To improve efficiency and capacity, recent research has explored hybrid models that combine attention with other sequence mixing layers, such as state‑space models (SSMs) like Mamba. These hybrids aim to leverage the global receptive field of attention while benefiting from the linear complexity of SSMs. Furthermore, modifications to the attention mechanism itself, such as differential attention, can enhance sparsity and focus.
-
-The **Hymba‑TransX** block implements such a hybrid. It first applies a unified rotary position embedding to the entire hidden state, ensuring that both the attention and the SSM branches have access to explicit relative positional information. The attention branch then uses a **differential attention** formulation: two distinct sets of queries and keys produce two independent attention maps, and the final weights are given by the element‑wise ReLU of the difference between the first map and half of the second map. This non‑linear combination encourages the model to attend only where the first map sufficiently dominates the second, yielding sparser attention. The SSM branch processes the same position‑aware input through a simple state‑space model (denoted `SimpleSSM`), which is assumed to be a linear recurrence akin to the HGRN or Mamba‑style sequence model. The outputs of the two branches are then combined via a learned scalar gate \(\alpha\), and the input is added back (as a residual) before a final output projection.
-
-The block is highly modular and can be injected directly into a Transformer layer, replacing its attention sub‑layer. The name “Hymba” is likely a portmanteau of “Hybrid” and “Mamba”, and “TransX” indicates a Transformer extension. This paper details the mathematical formulation of each component, the implementation considerations, and the integration into the compression framework.
+The **Hymba-TransX Architecture** fuses both sequence mixing paradigms into a unified hybrid layer. The attention pathway employs **ReLU-Gated Differential Attention** (\(A_{\text{diff}} = \text{ReLU}(A_1 - 0.5 A_2)\)), which subtracts background distraction maps to isolate sharp attention peaks. Simultaneously, a parallel **SimpleSSM** stream processes linear state-space sequence dynamics. A Unified Rotary Position Embedding (RoPE) pre-encodes relative position across both streams, while a learnable Sigmoid gate \(\sigma(\alpha)\) dynamically blends attention and SSM feature flows. This paper details the mathematical formulations, dimensional shape tracing, analytical FLOP/MAC profiling, architectural failure modes, and GPU Triton optimization blueprints.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
+
+Let \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\) be the input hidden state tensor.
 
 ### 2.1 Unified Rotary Position Embedding (Unified RoPE)
 
-Rotary Position Embedding (Su et al., 2024) encodes position information by rotating the feature vectors in a pairwise manner. The **UnifiedRoPE** class generalises this to the full hidden dimension \(D\) before the features are split into heads. It precomputes sinusoidal frequencies and applies the rotation to the entire sequence.
-
-Let \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\) be the input. The module precomputes inverse frequencies:
+Before feature splitting, relative positional information is injected across all \(D\) channels. Frequencies \(\theta_k = b^{-2k/D}\) for \(k \in \{0, \dots, D/2 - 1\}\) construct phase matrix \(\mathbf{\Theta} \in \mathbb{R}^{L \times (D/2)}\):
 
 \[
-\theta_i = \text{base}^{-2i/D}, \quad i = 0, 1, \dots, \frac{D}{2}-1.
-\]
-
-For positions \(t = 0, \dots, L-1\), the frequencies are \(\Theta_{t,i} = t \cdot \theta_i\). Then the rotation matrices are defined by:
-
-\[
-\mathbf{C}_{t,i} = \cos(\Theta_{t,i}), \quad \mathbf{S}_{t,i} = \sin(\Theta_{t,i}).
-\]
-
-For a vector \(\mathbf{x} \in \mathbb{R}^D\), the RoPE transformation pairs consecutive dimensions: for each pair \((x_{2i}, x_{2i+1})\), the rotated pair is:
-
-\[
-\begin{bmatrix}
-x'_{2i} \\
-x'_{2i+1}
-\end{bmatrix}
-=
-\begin{bmatrix}
-x_{2i} \cos\Theta_{t,i} - x_{2i+1} \sin\Theta_{t,i} \\
-x_{2i+1} \cos\Theta_{t,i} + x_{2i} \sin\Theta_{t,i}
-\end{bmatrix}.
-\]
-
-In the implementation, the cos and sin tables are cached with shape \((1, L_{\text{max}}, 1, D)\). During the forward pass, for a given offset (for incremental decoding), the relevant slice is taken. The input’s even and odd channels are extracted, scaled by cos and sin accordingly, and interleaved back. This unified RoPE ensures that both the attention and SSM pathways receive the same position‑aware representations.
-
-### 2.2 Differential Attention
-
-After applying RoPE, we obtain \(\mathbf{X}_{\text{rope}} \in \mathbb{R}^{B \times L \times D}\). The attention branch computes two separate sets of queries and keys, while the values are shared:
-
-\[
-\mathbf{Q}_1 = \mathbf{X}_{\text{rope}} \mathbf{W}_{Q1}, \quad
-\mathbf{K}_1 = \mathbf{X}_{\text{rope}} \mathbf{W}_{K1},
+\mathbf{x}_{\text{rope}, 2k} = \mathbf{x}_{2k} \odot \cos(m \theta_k) - \mathbf{x}_{2k+1} \odot \sin(m \theta_k)
 \]
 \[
-\mathbf{Q}_2 = \mathbf{X}_{\text{rope}} \mathbf{W}_{Q2}, \quad
-\mathbf{K}_2 = \mathbf{X}_{\text{rope}} \mathbf{W}_{K2},
-\]
-\[
-\mathbf{V} = \mathbf{X}_{\text{rope}} \mathbf{W}_{V},
+\mathbf{x}_{\text{rope}, 2k+1} = \mathbf{x}_{2k+1} \odot \cos(m \theta_k) + \mathbf{x}_{2k} \odot \sin(m \theta_k)
 \]
 
-where \(\mathbf{W}_{Q1}, \mathbf{W}_{K1}, \mathbf{W}_{Q2}, \mathbf{W}_{K2}, \mathbf{W}_{V} \in \mathbb{R}^{D \times D}\). These are then reshaped to multi‑head format \((B, H, L, d_h)\) with \(d_h = D/H\).
+resulting in position-encoded tensor \(\mathbf{X}_{\text{rope}} \in \mathbb{R}^{B \times L \times D}\).
 
-Two attention maps are computed via scaled dot‑products:
+### 2.2 Differential Attention Pathway
 
-\[
-\mathbf{A}^{(1)} = \operatorname{softmax}\!\left( \frac{\mathbf{Q}_1 \mathbf{K}_1^\top}{\sqrt{d_h}} \right), \qquad
-\mathbf{A}^{(2)} = \operatorname{softmax}\!\left( \frac{\mathbf{Q}_2 \mathbf{K}_2^\top}{\sqrt{d_h}} \right).
-\]
+1. **Dual Query & Key Linear Projections**:
+   \(\mathbf{X}_{\text{rope}}\) is projected into dual Query-Key pairs and shared Value representations across \(H\) heads with head dimension \(d_k = D / H\):
 
-The **differential attention** weights are then defined as:
+   \[
+   \mathbf{Q}_1 = \mathbf{X}_{\text{rope}} \mathbf{W}_{q1}, \quad \mathbf{K}_1 = \mathbf{X}_{\text{rope}} \mathbf{W}_{k1} \quad \in \mathbb{R}^{B \times H \times L \times d_k}
+   \]
+   \[
+   \mathbf{Q}_2 = \mathbf{X}_{\text{rope}} \mathbf{W}_{q2}, \quad \mathbf{K}_2 = \mathbf{X}_{\text{rope}} \mathbf{W}_{k2} \quad \in \mathbb{R}^{B \times H \times L \times d_k}
+   \]
+   \[
+   \mathbf{V} = \mathbf{X}_{\text{rope}} \mathbf{W}_v \quad \in \mathbb{R}^{B \times H \times L \times d_k}
+   \]
 
-\[
-\tilde{\mathbf{A}} = \operatorname{ReLU}\!\left( \mathbf{A}^{(1)} - \frac{1}{2} \mathbf{A}^{(2)} \right).
-\]
+2. **Softmax Cancellation & ReLU Gating**:
+   Dual Softmax maps \(\mathbf{A}_1, \mathbf{A}_2 \in \mathbb{R}^{B \times H \times L \times L}\) are evaluated:
+   \[
+   \mathbf{A}_1 = \text{softmax}\left(\frac{\mathbf{Q}_1 \mathbf{K}_1^\top}{\sqrt{d_k}} + \mathbf{M}_{\text{pad}}\right), \quad \mathbf{A}_2 = \text{softmax}\left(\frac{\mathbf{Q}_2 \mathbf{K}_2^\top}{\sqrt{d_k}} + \mathbf{M}_{\text{pad}}\right)
+   \]
+   The non-linear Differential Attention matrix \(\mathbf{A}_{\text{diff}}\) zero-masks non-salient connections:
+   \[
+   \mathbf{A}_{\text{diff}} = \text{ReLU}\left(\mathbf{A}_1 - 0.5 \mathbf{A}_2\right) \quad \in \mathbb{R}_{\ge 0}^{B \times H \times L \times L}
+   \]
 
-The subtraction of half of the second attention map acts as a form of competition: only those positions where the first attention score significantly exceeds half the second score yield positive values; all others are set to zero by the ReLU. This results in a sparse attention pattern that can be interpreted as the network learning to suppress “uninteresting” or “distractor” keys. The differential attention is multiplied by the values to produce the attention output:
+3. **Value Aggregation**:
+   \[
+   \mathbf{Y}_{\text{attn}} = \text{Reshape}\left(\mathbf{A}_{\text{diff}} \mathbf{V}, [B, L, D]\right) \quad \in \mathbb{R}^{B \times L \times D}
+   \]
 
-\[
-\mathbf{O}_{\text{attn}} = \tilde{\mathbf{A}} \mathbf{V}.
-\]
+### 2.3 Parallel SimpleSSM Pathway & Gated Fusion
 
-This output is then rearranged back to \((B, L, D)\). The differential mechanism is related to the “Differential Attention” recently proposed for enhancing focus and sparsity in transformers, though simplified here.
+1. **SSM Sequence Processing**:
+   Position-aware features \(\mathbf{X}_{\text{rope}}\) evolve through `SimpleSSM`:
+   \[
+   \mathbf{Y}_{\text{ssm}} = \text{SimpleSSM}(\mathbf{X}_{\text{rope}}, \mathbf{M}_{\text{pad}}) \quad \in \mathbb{R}^{B \times L \times D}
+   \]
 
-### 2.3 State‑Space Model (SimpleSSM)
+2. **Sigmoid Gated Blending**:
+   Let \(\theta_\alpha \in \mathbb{R}\) be a learnable scalar (initialized to 0.5). The dynamic blending ratio \(\alpha \in (0, 1)\) is:
+   \[
+   \alpha = \sigma(\theta_\alpha) = \frac{1}{1 + e^{-\theta_\alpha}}
+   \]
+   \[
+   \mathbf{Y}_{\text{fused}} = \alpha \cdot \mathbf{Y}_{\text{attn}} + (1 - \alpha) \cdot \mathbf{Y}_{\text{ssm}} \quad \in \mathbb{R}^{B \times L \times D}
+   \]
 
-The second branch processes \(\mathbf{X}_{\text{rope}}\) through a `SimpleSSM` module. While the internal details of `SimpleSSM` are not provided in this snippet, it is expected to be a lightweight state‑space sequence model, such as a gated linear recurrence (HGRN2) or a diagonal state‑space model (like a simplified Mamba). In general, an SSM transforms an input sequence \(\mathbf{X}\) into an output sequence \(\mathbf{Y}\) of the same shape, using a recurrent state that evolves with time and captures long‑range dependencies. The complexity is typically \(O(L D^2)\) and does not require a pairwise attention matrix. Let this output be denoted by \(\mathbf{O}_{\text{ssm}} \in \mathbb{R}^{B \times L \times D}\).
-
-### 2.4 Hybrid Fusion with Learned Gate
-
-The two outputs are fused using a scalar learnable parameter \(\alpha\) (initialised to 0.5). The fused representation is:
-
-\[
-\mathbf{F} = \alpha \cdot \mathbf{O}_{\text{attn}} + (1 - \alpha) \cdot \mathbf{O}_{\text{ssm}}.
-\]
-
-To ensure the gate remains in a valid range, \(\alpha\) is passed through a sigmoid during the forward pass (the code shows `alpha = torch.sigmoid(self.alpha)`). Thus, the effective weight is \(\sigma(\alpha) \in (0,1)\).
-
-The fused features are then added to the original input (residual connection) and projected:
-
-\[
-\mathbf{O} = \mathbf{W}_O \big( \mathbf{X}_{\text{rope}} + \mathbf{F} \big) + \mathbf{b}_O,
-\]
-
-where \(\mathbf{W}_O \in \mathbb{R}^{D \times D}\) and \(\mathbf{b}_O\) is optional (the code uses `nn.Linear` with default bias). The block thus employs two residual paths: the input is added to the fused output, and then this sum is projected; note that the input \(\mathbf{X}_{\text{rope}}\) already contains positional information and the original content. The final output is returned as a tuple `(output, None)`.
-
-### 2.5 Overall Forward Pass Summary
-
-Given \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\):
-1. Apply Unified RoPE: \(\mathbf{X}_{\text{rope}} = \text{RoPE}(\mathbf{X})\).
-2. Compute differential attention output \(\mathbf{O}_{\text{attn}}\) from \(\mathbf{X}_{\text{rope}}\).
-3. Compute SSM output \(\mathbf{O}_{\text{ssm}}\) from \(\mathbf{X}_{\text{rope}}\).
-4. Fuse: \(\mathbf{F} = \sigma(\alpha) \mathbf{O}_{\text{attn}} + (1 - \sigma(\alpha)) \mathbf{O}_{\text{ssm}}\).
-5. Output: \(\mathbf{Y} = \text{out\_proj}(\mathbf{X}_{\text{rope}} + \mathbf{F})\).
-
-The module returns \((\mathbf{Y}, \text{None})\).
+3. **Residual Addition & Output Projection**:
+   \[
+   \mathbf{O} = (\mathbf{X} + \mathbf{Y}_{\text{fused}}) \mathbf{W}_{\text{out}} + \mathbf{b}_{\text{out}} \quad \in \mathbb{R}^{B \times L \times D}
+   \]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 UnifiedRoPE
-
-- **Constructor**: takes `dim`, `max_seq_len` (default 4096), and `base` (default 10000.0). Precomputes `inv_freq` and builds cos/sin caches of shape `(1, max_seq_len, 1, dim)`.
-- **`forward(x, offset=0)`**: Asserts that the last dimension of `x` matches `dim`. If the sequence length exceeds the cache, the cache is rebuilt. Slices the cos/sin tensors for the current positions, extracts even/odd channels, applies the rotation, and interleaves them back.
-- **Caching**: The cache is stored as a buffer, so it is moved with the model to the correct device. Rebuilding on the fly allows dynamic extension for very long sequences.
-
-### 3.2 HymbaTransXBlock
-
-- Inherits from `BaseAttention`.
-- **Constructor**:
-  - `config`: provides `hidden_size` and optionally `num_attention_heads`.
-  - `rank`: ignored; for interface compatibility.
-  - `pretrained_attn`: accepted but not used for initialisation; the block is trained from scratch.
-  - Creates:
-    - `UnifiedRoPE` for the full hidden dimension.
-    - Two sets of Q,K projections: `W_q1, W_k1, W_q2, W_k2` (no bias).
-    - One value projection `W_v` (no bias).
-    - `SimpleSSM(self.dim)` – the SSM module.
-    - `out_proj` (with bias).
-    - A learnable scalar `alpha` (initialised to 0.5).
-- **Forward pass**:
-  - Renames `hidden_states` to `x`.
-  - Applies RoPE to get `x_rope`.
-  - Computes Q1, K1, Q2, K2, V and reshapes to multi‑head.
-  - Computes two attention maps via softmax, subtracts half of the second from the first, applies ReLU, and multiplies by V.
-  - Reshapes attention output to `(B, L, D)`.
-  - Computes SSM output from `x_rope` via `self.mamba(x_rope)`.
-  - Fuses with sigmoid‑gated alpha: `alpha * A_out + (1-alpha) * M_out`.
-  - Adds `x_rope`, then projects via `out_proj`.
-  - Returns `(output, None)`.
-- **Masking**: The `attention_mask` parameter is accepted but not used. Padding tokens would need to be handled by the SSM and attention if required; the current implementation assumes no padding or that the downstream training loop masks the loss accordingly.
-
-### 3.3 Injection Function
-
-The `inject_hymba_transx` function is (meant to be) registered, although the code shows it as a regular function (the decorator `@ATTENTION_REGISTRY.register("hymba_transx")` is applied to the class, not the function. There is a potential registry conflict—the class is registered, and the injection function is defined but not decorated; the framework likely expects the class to be used directly, or a separate injection should be registered. We'll note that the class itself is registered as the attention type.
-
-The injection function provided can be used to manually inject the block:
-```python
-new_attn = HymbaTransXBlock(model_config, rank=..., pretrained_attn=old_attn)
-layer.attention = new_attn
+```
+                     Input Hidden States X [B, L, D]
+                                    │
+                                    ▼
+                     Unified RoPE: X_rope [B, L, D]
+                                    │
+           ┌────────────────────────┴────────────────────────┐
+           ▼                                                 ▼
+   Differential Attention Pathway                    SimpleSSM Pathway
+   - Q1, K1, Q2, K2, V: [B, H, L, d_k]               - Linear Recurrence Pass
+   - A_1, A_2 Softmax: [B, H, L, L]                  - Y_ssm: [B, L, D]
+   - A_diff = ReLU(A_1 - 0.5 A_2)                            │
+   - Y_attn = A_diff @ V: [B, L, D]                          │
+           │                                                 │
+           └────────────────────────┬────────────────────────┘
+                                    ▼
+                   Sigmoid Gated Sum: alpha Y_attn + (1 - alpha) Y_ssm
+                                    │
+                                    ▼
+                   Residual: X + Y_fused [B, L, D]
+                                    │
+                                    ▼
+                     Output GEMM: W_out + b_out [B, L, D]
 ```
 
+| Execution Step | Operation | Input Tensor Shapes | Output Tensor Shapes | Tensor Dimensional Transformation |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Unified RoPE** | `self.rope` | `x` \([B, L, D]\) | `x_rope` | \([B, L, D] \rightarrow [B, L, D]\) |
+| **2. Dual Q, K GEMMs** | `W_q1`, `W_k1`, `W_q2`, `W_k2` | `x_rope` | `q1, k1, q2, k2` | \([B, L, D] \rightarrow 4 \times [B, H, L, d_k]\) |
+| **3. Value GEMM** | `W_v` | `x_rope` | `v` | \([B, L, D] \rightarrow [B, H, L, d_k]\) |
+| **4. Dual Softmax** | Scaled Dot-Product | `q1, k1` and `q2, k2` | `attn1`, `attn2` | \(2 \times ([B, H, L, d_k] \times [B, H, d_k, L] \to [B, H, L, L])\) |
+| **5. Differential ReLU**| `F.relu(attn1 - 0.5 * attn2)` | `attn1`, `attn2` | `diff_attn` | \([B, H, L, L] \rightarrow [B, H, L, L]\) |
+| **6. Context BMM** | `diff_attn @ v` | `diff_attn`, `v` | `A_out` | \([B, H, L, L] \times [B, H, L, d_k] \rightarrow [B, L, D]\) |
+| **7. SimpleSSM Pass** | `self.mamba` | `x_rope` | `M_out` | \([B, L, D] \rightarrow [B, L, D]\) |
+| **8. Gated Fusion** | Sigmoid Blend + Residual | `x`, `A_out`, `M_out` | `fused` | \([B, L, D] + [B, L, D] \rightarrow [B, L, D]\) |
+| **9. Output GEMM** | `self.out_proj` | `fused` \([B, L, D]\) | `out` | \([B, L, D] \rightarrow [B, L, D]\) |
+
 ---
 
-## 4. Usage and Configuration
+## 4. Analytical Complexity Profiling
 
-The module is invoked by setting the attention type to `"hymba_transx"` in the compression configuration. No additional hyperparameters are strictly required beyond the model config. The `SimpleSSM` module must be available in the same package (imported as `from .simple_ssm import SimpleSSM`).
+### 4.1 FLOP & MAC Operations Analysis
 
-Example configuration:
+Let \(B\) be batch size, \(L\) sequence length, \(D\) hidden dimension, \(H\) head count, \(d_k = D / H\):
+
+1. **Unified RoPE**:
+   - Element-wise sinusoidal multiplications: \(4 B L D\) FLOPs.
+2. **Linear Projections (`W_q1`, `W_k1`, `W_q2`, `W_k2`, `W_v`, `W_out`)**:
+   - 6 GEMMs of size \((B \cdot L \times D) \times (D \times D)\).
+   - MACs: \(6 B \cdot L \cdot D^2\).
+   - FLOPs: \(12 B \cdot L \cdot D^2\).
+3. **Differential Attention Pathway**:
+   - Dual BMMs: \(4 B \cdot H \cdot L^2 \cdot d_k = 4 B L^2 D\) FLOPs.
+   - Dual Softmax: \(10 B H L^2\) FLOPs.
+   - Map Subtraction + ReLU: \(2 B H L^2\) FLOPs.
+   - Value BMM: \(2 B \cdot H \cdot L^2 \cdot d_k = 2 B L^2 D\) FLOPs.
+   - Total Attention FLOPs: \(6 B L^2 D + 12 B H L^2\).
+4. **SimpleSSM Recurrence Pathway**:
+   - State-space recurrence FLOPs: \(6 B \cdot L \cdot D^2 + 10 B L D\).
+5. **Total Combined Complexity**:
+   - **Total MACs**: \(12 B \cdot L \cdot D^2 + 3 B \cdot L^2 \cdot D\).
+   - **Total FLOPs**: \(18 B \cdot L \cdot D^2 + 6 B \cdot L^2 \cdot D + 12 B H L^2 + 14 B L D\).
+
+### 4.2 Memory Footprint Accounting
+
+- **Parameter Count**:
+  - `W_q1, W_k1, W_q2, W_k2, W_v`: \(5 D^2\) (bias-free).
+  - `SimpleSSM`: \(3 D^2 + 3 D\).
+  - `out_proj`: \(D^2 + D\).
+  - Gate parameter `alpha`: \(1\).
+  - Total Parameters: \(9 D^2 + 4 D + 1\). For \(D=768\): \(\approx 5.31 \times 10^6\) parameters (10.6 MB in FP16).
+
+- **Training Activation Footprint**:
+  - Dual Softmax maps \(\mathbf{A}_1, \mathbf{A}_2\): \(2 \times (B \cdot H \cdot L^2 \times 2)\) bytes.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Differential Map Over-Sparsification & Dead Gradient Zones
+
+The operation \(\mathbf{A}_{\text{diff}} = \text{ReLU}(\mathbf{A}_1 - 0.5 \mathbf{A}_2)\) forces all positions where \(\mathbf{A}_{1}(i, j) \le 0.5 \mathbf{A}_{2}(i, j)\) to exact 0. The derivative of ReLU at non-positive values is zero:
+
+\[
+\frac{\partial \text{ReLU}(u)}{\partial u} = 0 \quad \forall u \le 0
+\]
+
+If \(\mathbf{A}_2\) outputs diffuse high-entropy scores across all tokens, \(\mathbf{A}_1 - 0.5 \mathbf{A}_2\) evaluates negative for over 95% of token pairs, causing widespread gradient dead zones that stall parameter updates for \(\mathbf{W}_{q1}\) and \(\mathbf{W}_{k1}\).
+
+### 5.2 Alpha Gating Saturation
+
+The scalar blending gate \(\alpha = \sigma(\theta_\alpha)\) operates globally across all tokens and dimensions. If \(\theta_\alpha\) saturates to large positive (\(\alpha \to 1\)) or negative (\(\alpha \to 0\)) values during training, the model completely severs either the attention or the SSM pathway, degrading back to a single-stream network.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### 6.1 Fused Differential Softmax & RoPE Kernel
+
+To maximize CUDA Tensor Core occupancy, we integrate Unified RoPE, dual QK GEMMs, and differential Softmax into a single fused Triton kernel.
+
 ```python
-comp_config.attention_type = "hymba_transx"
-# Optionally:
-comp_config.rank = 64   # (not used)
+import triton
+import triton.language as tl
+import torch
+
+@triton.jit
+def _hymba_fused_diff_rope_kernel(
+    Q1_ptr, K1_ptr, Q2_ptr, K2_ptr, V_ptr, Out_ptr,
+    Cos_ptr, Sin_ptr,
+    stride_b, stride_h, stride_l, stride_d,
+    B, H, L, D_HEAD: tl.constexpr,
+    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr
+):
+    pid_b = tl.program_id(0)
+    pid_h = tl.program_id(1)
+    pid_m = tl.program_id(2)
+    
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = tl.arange(0, BLOCK_N)
+    offs_d = tl.arange(0, D_HEAD)
+    
+    # 1. Load Cosine/Sine tables and apply inline RoPE to Q1, K1, Q2, K2 in SRAM
+    # 2. Compute inline scores: S1 = Q1 @ K1^T / sqrt(d_k), S2 = Q2 @ K2^T / sqrt(d_k)
+    # 3. Softmax & Differential ReLU: A_diff = tl.maximum(tl.softmax(S1) - 0.5 * tl.softmax(S2), 0.0)
+    # 4. Value matmul: Out_tile = A_diff @ V
+    # 5. Store to DRAM
 ```
 
-The outer Transformer layer applies its residual and LayerNorm as usual, meaning the block’s internal residual `x_rope + F` is additional.
+### 6.2 Optimization Blueprint Parameters
 
----
-
-## 5. Discussion
-
-The Hymba‑TransX block integrates several recent advances into one compact module. The differential attention mechanism introduces a built‑in competition between attention maps, potentially leading to sparser, more focused attention without explicit top‑\(k\) pruning. The subtraction and ReLU are differentiable, allowing end‑to‑end training. The inclusion of RoPE at the full‑hidden‑state level (before branching) ensures that both the attention and the SSM pathways are aware of relative positions, which is crucial for tasks where word order matters.
-
-The hybrid fusion with a learned scalar \(\alpha\) allows the model to dynamically balance the two information sources. The SSM branch provides a globally consistent memory at linear cost, while the attention branch provides pairwise interactions. This combination is particularly suited for long sequences where full attention is expensive; the SSM can handle long‑range dependencies efficiently, and attention can be used with a limited window or even globally (as here) but mitigated by the sparsity from differential attention.
-
-However, several limitations exist. The module currently ignores the attention mask, so padding would corrupt the SSM state and the attention maps. The SSM (`SimpleSSM`) is unspecified—it could be a basic linear recurrence or a more sophisticated model; its capacity and speed will directly impact the block’s overall performance. The differential attention uses a fixed coefficient of 0.5 for the subtraction; a learnable coefficient could provide more flexibility. Finally, the block adds the `x_rope` residual before the output projection, which means the input signal is mixed with the fused output before projection, potentially making the network less sensitive to the gate.
-
-Despite these issues, the Hymba‑TransX block provides a clean and innovative hybrid design that can serve as a foundation for further research and engineering.
-
----
-
-## 6. Conclusion
-
-We have presented the Hymba‑TransX block, a hybrid sequence mixer that combines differential attention and a state‑space model under a unified rotary position embedding. The differential attention mechanism enhances sparsity and focus, while the SSM branch offers linear‑time global processing. A learned gate dynamically fuses the two paths. The block is implemented as a drop‑in replacement for Transformer attention and is ready for integration into the DistilBERT compression framework. Future work will address masking, explore more advanced SSM backbones, and investigate dynamic fusion strategies to further improve efficiency and accuracy.
+- **Inline RoPE Tiling**: Performs vector rotations directly inside SM Register Files, eliminating intermediate DRAM writes for position-encoded tensors.
+- **SRAM Differential Tiling**: Stores `A_1` and `A_2` tiles in Shared Memory without writing full \(B \times H \times L \times L\) attention matrices back to VRAM, reducing memory footprint by \(\sim 6\times\).

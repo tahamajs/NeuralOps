@@ -1,163 +1,288 @@
-# MoBA Attention: Block‑Sparse Attention via Top‑k Block Selection
+# MoBA Attention: Mixture-of-Block Attention via Centroid Cosine Routing
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Standard Multi-Head Self-Attention (MHSA) computes dense pairwise token interactions across sequence length $L$, incurring quadratic computational time complexity $\mathcal{O}(L^2 d)$ and memory footprint $\mathcal{O}(L^2 + L d)$. For long-context language modeling, this quadratic bottleneck severely restricts context length. **MoBA (Mixture-of-Block Attention)** addresses this limitation by reformulating fine-grained token-to-token attention as a two-stage hierarchical sparse routing process. 
 
-We present **MoBA Attention (Mixture of Block Attention)**, a block‑sparse self‑attention module that reduces the quadratic complexity of standard attention by partitioning the sequence into fixed‑size blocks and restricting each query to attend only to the top‑\(k\) blocks that are predicted to be most relevant. Block importance is estimated by averaging the query and key representations within each block to form block representatives, and then scoring them via dot products. The query block then attends to all tokens within the selected key‑value blocks. This yields a complexity of \(O(L \cdot k B)\) where \(B\) is the block size and \(k\) is the number of selected blocks, significantly lower than \(O(L^2)\) when \(k B \ll L\). The module is implemented as a drop‑in replacement for standard self‑attention in Transformers, with configurable block size and top‑\(k\). This paper provides a complete mathematical description of the block gating, the gathering mechanism, and the per‑block attention, along with implementation details and discussion of its current limitations, especially regarding padding and masking.
+The sequence of length $L$ is partitioned into uniform contiguous blocks of size $B_{\text{sz}}$. Rather than calculating dense interactions between all tokens, MoBA abstracts each block into a single spatial centroid vector via uniform arithmetic mean pooling. Inter-block affinity scores are derived by computing scaled dot-product similarities between query block centroids and key block centroids. For each query block, MoBA dynamically selects the top-$k$ most relevant key-value blocks based on these centroid affinities. Fine-grained dense attention is subsequently executed strictly between the query tokens within the block and the tokens belonging to the $k$ routed key-value blocks. 
 
----
-
-## 1. Introduction
-
-Standard multi‑head self‑attention requires computing a full \(L \times L\) attention matrix, which is prohibitive for long sequences. Sparse attention mechanisms reduce this cost by allowing each token to attend to only a subset of tokens. **MoBA (Mixture of Block Attention)** is a block‑based sparse attention approach that partitions the sequence into equal‑sized blocks and selects the most important blocks for each query block based on a simple average‑pooling similarity score. Once the top‑\(k\) key blocks are identified, full attention is computed between the query tokens in that block and the tokens from the selected key blocks, resulting in a block‑sparse pattern.
-
-The MoBA module described here offers a straightforward implementation of this idea, with padding to ensure the sequence length is a multiple of the block size, and a Python loop over query blocks. The method is conceptually similar to the block‑sparse attention used in models like BigBird and Longformer, but with a dynamic selection of blocks rather than a fixed pattern.
+This hierarchical routing scheme reduces the memory footprint and computational complexity of attention matrix generation from $\mathcal{O}(L^2)$ to $\mathcal{O}\left(\frac{L^2}{B_{\text{sz}}^2} d + L k B_{\text{sz}} d\right)$. When the condition $k B_{\text{sz}} \ll L$ holds, MoBA achieves linear scale behavior relative to sequence length for token-level attention while incurring only a minimal quadratic overhead at the coarse block-centroid level.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
+### 2.1 Multi-Head Projection and Block Partitioning
+Let $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ denote the input hidden states sequence. The linear projections for Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) are defined as:
+$$\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V$$
+where $\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times D}$. Reshaping into $H$ heads with head dimension $d_k = D / H$ yields tensors $\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times L \times d_k}$.
 
-Given input hidden states \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), the module applies linear projections to obtain queries, keys, and values for all heads:
+To handle arbitrary sequence lengths $L$, zero-padding is applied along the spatial dimension to ensure $L_p = \lceil L / B_{\text{sz}} \rceil \cdot B_{\text{sz}}$. The number of blocks is $n_b = L_p / B_{\text{sz}}$. The padded tensors are partitioned into contiguous blocks:
+$$\mathbf{Q}_b, \mathbf{K}_b, \mathbf{V}_b \in \mathbb{R}^{B \times H \times n_b \times B_{\text{sz}} \times d_k}$$
 
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad
-\mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad
-\mathbf{V} = \mathbf{X} \mathbf{W}_V,
-\]
+### 2.2 Centroid Reduction and Inter-Block Routing Matrix
+For each block $i \in \{1, \dots, n_b\}$, representative centroid vectors $\bar{\mathbf{Q}}_i$ and $\bar{\mathbf{K}}_j$ are derived via spatial arithmetic averaging:
+$$\bar{\mathbf{Q}}_i = \frac{1}{B_{\text{sz}}} \sum_{t=1}^{B_{\text{sz}}} \mathbf{Q}_b[:, :, i, t, :] \quad \in \mathbb{R}^{B \times H \times d_k}$$
+$$\bar{\mathbf{K}}_j = \frac{1}{B_{\text{sz}}} \sum_{t=1}^{B_{\text{sz}}} \mathbf{K}_b[:, :, j, t, :] \quad \in \mathbb{R}^{B \times H \times d_k}$$
 
-with \(\mathbf{W}_* \in \mathbb{R}^{D \times (H d_h)}\). The tensors are reshaped to \((B, H, L, d_h)\) and transposed to the head‑first layout \((B, H, L, d_h)\).
+The coarse inter-block affinity routing matrix $\mathbf{S}^{\text{block}} \in \mathbb{R}^{B \times H \times n_b \times n_b}$ is evaluated by computing scaled inner products between query block centroids and key block centroids:
+$$\mathbf{S}^{\text{block}}_{i, j} = \frac{\bar{\mathbf{Q}}_i \bar{\mathbf{K}}_j^\top}{\sqrt{d_k}}$$
 
-### 2.2 Block Partitioning and Padding
+### 2.3 Sparse Top-k Gating and Index Selection
+For each query block $i$, a discrete top-$k$ routing operation identifies the indices $\mathcal{I}_i$ of the $k$ key-value blocks with the highest affinity scores:
+$$\mathcal{I}_i = \operatorname{TopK}\left(\mathbf{S}^{\text{block}}_{i, :}, k\right) \in \{1, \dots, n_b\}^k$$
+where $k = \min(\text{top\_k}, n_b)$. The selected key and value block tensors are gathered and flattened along the token dimension:
+$$\mathbf{K}_{\text{sel}, i} = \operatorname{Gather}\left(\mathbf{K}_b, \mathcal{I}_i\right) \in \mathbb{R}^{B \times H \times (k \cdot B_{\text{sz}}) \times d_k}$$
+$$\mathbf{V}_{\text{sel}, i} = \operatorname{Gather}\left(\mathbf{V}_b, \mathcal{I}_i\right) \in \mathbb{R}^{B \times H \times (k \cdot B_{\text{sz}}) \times d_k}$$
 
-Let \(B_s\) be the `block_size` (default 64). The sequence length \(L\) may not be a multiple of \(B_s\). To facilitate block operations, the module pads the sequence length to the next multiple of \(B_s\) by appending zeros to \(\mathbf{Q}, \mathbf{K}, \mathbf{V}\) along the length dimension. Let the padded length be \(L_p = \lceil L / B_s \rceil \times B_s\). The number of blocks is \(n_b = L_p / B_s\).
+### 2.4 Block-Sparse Attention Computation & Reassembly
+For query block $i$, local dense attention is computed between $\mathbf{Q}_{b, i} \in \mathbb{R}^{B \times H \times B_{\text{sz}} \times d_k}$ and the routed key matrix $\mathbf{K}_{\text{sel}, i}$:
+$$\mathbf{A}_i = \operatorname{Softmax}\left( \frac{\mathbf{Q}_{b, i} \mathbf{K}_{\text{sel}, i}^\top}{\sqrt{d_k}} \right) \in \mathbb{R}^{B \times H \times B_{\text{sz}} \times (k \cdot B_{\text{sz}})}$$
+$$\mathbf{O}_{b, i} = \mathbf{A}_i \mathbf{V}_{\text{sel}, i} \in \mathbb{R}^{B \times H \times B_{\text{sz}} \times d_k}$$
 
-### 2.3 Block Gating via Mean Pooling
-
-For each head, the padded queries and keys are reshaped into blocks:
-
-\[
-\mathbf{Q}_b \in \mathbb{R}^{B \times H \times n_b \times B_s \times d_h}, \quad
-\mathbf{K}_b \in \mathbb{R}^{B \times H \times n_b \times B_s \times d_h}.
-\]
-
-We then compute a representative for each block by averaging over the block’s tokens:
-
-\[
-\bar{\mathbf{Q}}_{b,i} = \frac{1}{B_s} \sum_{j=1}^{B_s} \mathbf{Q}_{b,i,j}, \qquad
-\bar{\mathbf{K}}_{b,i} = \frac{1}{B_s} \sum_{j=1}^{B_s} \mathbf{K}_{b,i,j},
-\]
-
-yielding tensors of shape \((B, H, n_b, d_h)\). The block‑level attention scores (or gate scores) are computed as the scaled dot product between these representatives:
-
-\[
-\mathbf{S}^{\text{block}} = \frac{\bar{\mathbf{Q}} \bar{\mathbf{K}}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times n_b \times n_b}.
-\]
-
-### 2.4 Top‑k Block Selection
-
-For each query block \(i\), we select the \(k\) key blocks with the highest scores, where \(k = \min(\text{top\_k}, n_b)\):
-
-\[
-\mathcal{T}_i = \operatorname{TopK}(\mathbf{S}^{\text{block}}_{:,:,i,:}, k).
-\]
-
-The indices \(\mathcal{T}_i\) have shape \((B, H, k)\).
-
-### 2.5 Block‑Sparse Attention
-
-For each query block \(i\), we gather the corresponding key and value blocks from \(\mathbf{K}_b\) and \(\mathbf{V}_b\) using the indices \(\mathcal{T}_i\). The gathered tensors have shape \((B, H, k, B_s, d_h)\), and we flatten the selected blocks into a single key set of size \(k B_s\):
-
-\[
-\mathbf{K}_{\text{sel},i} = \text{flatten}( \mathbf{K}_b[:, :, \mathcal{T}_i, :, :] ), \qquad
-\mathbf{V}_{\text{sel},i} = \text{flatten}( \mathbf{V}_b[:, :, \mathcal{T}_i, :, :] ),
-\]
-
-where flattening concatenates the block dimension with the token dimension, resulting in shapes \((B, H, k B_s, d_h)\). The query tokens from block \(i\) (of shape \((B, H, B_s, d_h)\)) then compute attention scores with this combined key set:
-
-\[
-\mathbf{S}_i = \frac{\mathbf{Q}_{b,i} \mathbf{K}_{\text{sel},i}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times B_s \times (k B_s)}.
-\]
-
-Softmax is applied to obtain attention weights \(\mathbf{A}_i\), dropout is applied, and the output for block \(i\) is:
-
-\[
-\mathbf{O}_{b,i} = \mathbf{A}_i \mathbf{V}_{\text{sel},i} \in \mathbb{R}^{B \times H \times B_s \times d_h}.
-\]
-
-### 2.6 Reassembling and Output
-
-The per‑block outputs are placed into an output tensor of shape \((B, H, L_p, d_h)\). The padded portion (beyond \(L\)) is then discarded, and the tensor is reshaped to \((B, L, D)\) and projected with \(\mathbf{W}_O\).
-
-### 2.7 Complexity
-
-The block‑level scoring costs \(O(B H n_b^2 d_h) = O(B H (L/B_s)^2 d_h) = O(B D L^2 / B_s^2)\), which is quadratic in the number of blocks but typically much smaller than \(L^2\) for large \(B_s\). The attention within each query block costs \(O(B H B_s \cdot k B_s \cdot d_h) = O(B D L k B_s / B_s?) Actually the total attention cost is \(O(B H n_b \cdot B_s \cdot k B_s \cdot d_h) = O(B D L \cdot k B_s)\). For \(B_s = 64\), \(k=4\), this is \(O(256 B D L)\), a significant reduction over \(O(B D L^2)\). The overall complexity is sub‑quadratic, dominated by the block gating and the sparse attention.
+The individual output blocks $\mathbf{O}_{b, i}$ are concatenated along the block dimension to reconstruct the padded sequence output $\mathbf{O}_p \in \mathbb{R}^{B \times H \times L_p \times d_k}$. The padding tokens beyond original length $L$ are un-padded (sliced), reshaped to $\mathbb{R}^{B \times L \times D}$, and mapped through the output projection linear layer:
+$$\mathbf{Y} = \operatorname{Slice}\left(\mathbf{O}_p, :L\right) \mathbf{W}_O \in \mathbb{R}^{B \times L \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`MoBAAttention`** inherits from `nn.Module` and is registered as `"moba"`.
-- Constructor:
-  - `config`: provides `num_attention_heads`, `hidden_size`, `dropout`.
-  - `block_size`: size of each block (default 64).
-  - `top_k`: number of blocks selected per query block (default 4).
-- Layers: standard Q, K, V, O linear projections and dropout.
-- **Forward**:
-  1. Project and reshape to multi‑head.
-  2. Pad to multiple of `block_size`.
-  3. Reshape to blocks: \((B, H, n_b, B_s, d)\).
-  4. Compute block scores using mean‑pooled Q and K.
-  5. Get top‑\(k\) indices per query block.
-  6. Loop over blocks (Python `for` loop):
-     - Gather the selected K and V blocks using `torch.gather`.
-     - Compute attention scores between the query block and gathered keys.
-     - Softmax, dropout, weighted sum.
-     - Store the result in the output tensor.
-  7. Remove padding, reshape, output projection.
-  8. Return `(out, None)`.
-- **Mask handling**: The code does **not** use `attention_mask`. Padded tokens (the extra zeros added to reach a multiple of \(B_s\)) participate in block averaging and attention, which can skew the block representatives and the attention weights. A proper implementation should mask out these padding tokens during averaging and attention, or avoid padding by using variable‑length block schemes.
-- **Inefficiency**: The loop over blocks is implemented in Python, which is slow for large \(n_b\); a batched gather with a scatter operation would be more efficient.
+| Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | Projections | `[B, L, D]` | `[B, H, L, d_k]` | Linear map via $W_Q, W_K, W_V$ & split heads |
+| 2 | Spatial Padding | `[B, H, L, d_k]` | `[B, H, L_p, d_k]` | Zero pad to $L_p = n_b \times B_{\text{sz}}$ |
+| 3 | Block Partition | `[B, H, L_p, d_k]` | `[B, H, n_b, B_{\text{sz}}, d_k]` | Reshape sequence into $n_b$ contiguous blocks |
+| 4 | Centroid Reduction | `[B, H, n_b, B_{\text{sz}}, d_k]` | `[B, H, n_b, d_k]` | Arithmetic mean across $B_{\text{sz}}$ dimension |
+| 5 | Block Scoring | `[B, H, n_b, d_k]` | `[B, H, n_b, n_b]` | Scaled matmul $\bar{\mathbf{Q}} \bar{\mathbf{K}}^\top / \sqrt{d_k}$ |
+| 6 | Top-$k$ Selection | `[B, H, n_b, n_b]` | `[B, H, n_b, k]` | Hard top-$k$ index extraction along last dim |
+| 7 | Block Gathering | `[B, H, n_b, B_{\text{sz}}, d_k]`, `TopK` | `[B, H, k \cdot B_{\text{sz}}, d_k]` | Gather selected key/value blocks per query block |
+| 8 | Per-Block Attention| `Q_i`, `K_sel`, `V_sel` | `[B, H, B_{\text{sz}}, d_k]` | Dense attention between $B_{\text{sz}}$ queries and $k B_{\text{sz}}$ keys |
+| 9 | Unpad & Output | `[B, H, n_b, B_{\text{sz}}, d_k]` | `[B, L, D]` | Concatenate, slice to $L$, linear projection $W_O$ |
 
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"moba"` in the compression configuration. The relevant hyperparameters are:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `block_size` | 64 | Size of each block. |
-| `top_k` | 4 | Number of blocks selected per query block. |
-| `dropout` | (from config) | Dropout rate on attention weights. |
-
-Example injection:
-```python
-comp_config.attention_type = "moba"
-comp_config.block_size = 128
-comp_config.top_k = 8
+```
+                       [B, L, D] Input Tensor
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+          Q-Proj        K-Proj        V-Proj
+             │             │             │
+             └─────────────┼─────────────┘
+                           ▼
+                  [B, H, L_p, d_k] (Zero Padded)
+                           │
+                           ▼
+                 [B, H, n_b, B_sz, d_k]
+                           │
+         ┌─────────────────┴─────────────────┐
+         ▼                                   ▼
+  Centroid Mean Pooling             Block Tokens (Qb, Kb, Vb)
+  Qb_mean, Kb_mean [B, H, n_b, d_k]         │
+         │                                   │
+         ▼                                   │
+   Block Scores [B, H, n_b, n_b]             │
+         │                                   │
+         ▼                                   │
+   Top-k Indices [B, H, n_b, k]              │
+         │                                   │
+         └─────────────────┬─────────────────┘
+                           ▼
+              Gather Selected K_sel, V_sel 
+             [B, H, k * B_sz, d_k] Per Block
+                           │
+                           ▼
+              Query-Block Attention & Softmax
+             [B, H, B_sz, k * B_sz] Score Matrix
+                           │
+                           ▼
+              Block Context Accumulation
+             [B, H, B_sz, d_k] per block
+                           │
+                           ▼
+              Unpad & Linear Projection W_O
+                           │
+                           ▼
+                      [B, L, D] Output
 ```
 
-Manual instantiation:
-```python
-attn = MoBAAttention(config=model_config, block_size=128, top_k=8)
-layer.attention = attn
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 FLOPs Computation Breakdown
+Let $B$ be batch size, $H$ number of heads, $d_k$ head dimension ($D = H d_k$), $L$ sequence length, $n_b = L / B_{\text{sz}}$ number of blocks, $B_{\text{sz}}$ block size, and $k$ number of routed blocks.
+
+1. **Linear Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$)**:
+   $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 \cdot B \cdot L \cdot D^2 = 6 B L D^2$$
+2. **Block Centroid Mean Pooling**:
+   $$\operatorname{FLOPs}_{\text{centroid}} = 2 \times B \cdot H \cdot n_b \cdot B_{\text{sz}} \cdot d_k = 2 B L D$$
+3. **Inter-Block Score Matrix Computation**:
+   $$\operatorname{FLOPs}_{\text{block\_score}} = 2 \cdot B \cdot H \cdot n_b^2 \cdot d_k = 2 B H d_k \left(\frac{L}{B_{\text{sz}}}\right)^2 = \frac{2 B D L^2}{B_{\text{sz}}^2}$$
+4. **Top-$k$ Sorting**:
+   $$\operatorname{FLOPs}_{\text{topk}} \approx B \cdot H \cdot n_b \cdot (n_b \log k)$$
+5. **Per-Block Sparse Attention**:
+   For each of the $n_b$ query blocks, attention matmul $\mathbf{Q}_i \mathbf{K}_{\text{sel}, i}^\top$ requires $2 \cdot B_{\text{sz}} \cdot (k B_{\text{sz}}) \cdot d_k$ FLOPs, and context matmul $\mathbf{A}_i \mathbf{V}_{\text{sel}, i}$ requires $2 \cdot B_{\text{sz}} \cdot (k B_{\text{sz}}) \cdot d_k$ FLOPs.
+   Across all $n_b$ blocks:
+   $$\operatorname{FLOPs}_{\text{attn}} = n_b \times \left( 4 \cdot B \cdot H \cdot B_{\text{sz}} \cdot k B_{\text{sz}} \cdot d_k \right) = 4 B H d_k L k B_{\text{sz}} = 4 B D L k B_{\text{sz}}$$
+6. **Output Projection ($\mathbf{W}_O$)**:
+   $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
+
+$$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_{\text{sz}}^2} + 4 B D L k B_{\text{sz}} + 2 B L D$$
+
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} \approx 4 B L D^2 + \frac{B D L^2}{B_{\text{sz}}^2} + 2 B D L k B_{\text{sz}}$$
+- **Peak Activation Memory**:
+  - Unpadded/Padded Q, K, V tensors: $3 \times B \cdot L_p \cdot D \times 2 \text{ bytes}$ (FP16/BF16)
+  - Centroid matrices: $2 \times B \cdot H \cdot n_b \cdot d_k \times 2 \text{ bytes}$
+  - Block Affinity Score matrix: $B \cdot H \cdot n_b \cdot n_b \times 2 \text{ bytes}$
+  - Gathered $K_{\text{sel}}, V_{\text{sel}}$ (in sequential block loop): $2 \times B \cdot H \cdot k B_{\text{sz}} \cdot d_k \times 2 \text{ bytes}$ per iteration.
+  - Per-block attention matrix: $B \cdot H \cdot B_{\text{sz}} \cdot (k B_{\text{sz}}) \times 2 \text{ bytes}$.
+
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(L^2 d + L D^2)$ compute, $\mathcal{O}(L^2 H)$ memory.
+- **MoBA Attention**: $\mathcal{O}\left(L D^2 + \frac{L^2 D}{B_{\text{sz}}^2} + L k B_{\text{sz}} D\right)$ compute, $\mathcal{O}\left(\frac{L^2 H}{B_{\text{sz}}^2} + L k B_{\text{sz}} H\right)$ memory.
+- When $B_{\text{sz}} = 64, k = 4$, block scaling reduces quadratic matrix elements by a factor of $B_{\text{sz}}^2 = 4096 \times$.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Centroid Arithmetic Mean Information Loss
+The coarse routing phase compresses an entire block of $B_{\text{sz}}$ tokens into a single mean vector $\bar{\mathbf{Q}}_i = \frac{1}{B_{\text{sz}}} \sum \mathbf{Q}_{i, t}$. This spatial mean pooling acts as an isotropic low-pass filter:
+1. **High-Frequency Token Erasure**: Outlier tokens with high magnitude (e.g., sink tokens, initial punctuation, or salient keywords) become heavily diluted by non-informative background tokens.
+2. **False Negative Routing**: If a critical key token is located in a key block whose remaining tokens have opposite directionality, the centroid vector $\bar{\mathbf{K}}_j$ suffers destructive cancellation, producing an artificially low block affinity score $S^{\text{block}}_{i, j}$. Consequently, the routing step drops the block containing the crucial token.
+
+### 5.2 Discrete Routing Non-Differentiability & Gradient Starvation
+The discrete selection $\operatorname{TopK}(\mathbf{S}^{\text{block}}_{i, :}, k)$ is a hard thresholding operation. Because $\frac{\partial \operatorname{TopK}}{\partial \mathbf{S}^{\text{block}}} = 0$ almost everywhere:
+- Gradients cannot backpropagate directly through the discrete routing decisions to adjust the projection matrices $\mathbf{W}_Q, \mathbf{W}_K$ specifically for block routing.
+- Blocks not selected in the top-$k$ receive zero gradient updates during the backward pass ($\nabla_{\mathbf{K}_{\text{unselected}}} \mathcal{L} = 0$), leading to cold-start routing collapse where early-selected blocks dominate future routing indefinitely.
+
+### 5.3 Rank Collapse in Block Subspaces
+When sequence length $L$ grows extremely large, key block centroids $\bar{\mathbf{K}}_j$ tend to converge toward the global mean of the token distribution due to the Law of Large Numbers. This reduces the variance across block centroids, causing $\operatorname{Rank}(\mathbf{S}^{\text{block}}) \ll n_b$. The resulting routing matrix becomes isotropic, leading to random or uniform block selection that degrades task performance to that of random block sampling.
+
+### 5.4 Python Loop Overhead and Unmasked Zero-Padding Artifacts
+- **Sequential Execution Trap**: Executing an explicit Python `for i in range(nb):` loop incurs substantial host-to-device kernel launch overhead, stalling GPU SM execution pipelines when $n_b$ is large.
+- **Padding Pollution**: Zero-padding to length $L_p$ introduces zero vectors into the final block. Without explicit boolean attention masking, zero vectors alter the block mean magnitude $\frac{1}{B_{\text{sz}}} \sum \mathbf{Q}$, distorting cosine affinity and participating in softmax exponentiation ($\exp(0) = 1$), causing non-zero probability leakage to dummy tokens.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+To overcome the performance bottlenecks of sequential Python loops and unfused gather/scatter operations, MoBA requires a specialized GPU custom kernel written in Triton.
+
+### 6.1 Triton Kernel Architecture Blueprint
+The hardware pipeline unifies block centroid computation, top-$k$ routing, dynamic index gathering, and FlashAttention-style online softmax into a fused grid operator.
+
+```
++-----------------------------------------------------------------------------------+
+|                            TRITON FUSED MOBA KERNEL                               |
++-----------------------------------------------------------------------------------+
+|  1. BLOCK CENTROID KERNEL (Grid: [B, H, n_b])                                     |
+|     - Loads Q, K block [B_sz, d_k] into SRAM SRAM_Q, SRAM_K.                      |
+|     - Executes warp reduction sum along B_sz dimension.                           |
+|     - Stores Q_mean, K_mean into global device memory [B, H, n_b, d_k].           |
++-----------------------------------------------------------------------------------+
+|  2. BLOCKAffinity & TOP-K KERNEL (Grid: [B, H, n_b])                              |
+|     - Loads Q_mean_i and all K_mean [n_b, d_k].                                   |
+|     - Computes dot product S[n_b] in register file.                               |
+|     - Performs bitonic top-k sort across n_b elements in register/shared memory.  |
+|     - Writes top-k block indices [B, H, n_b, k] directly to SRAM/Global Buffer.   |
++-----------------------------------------------------------------------------------+
+|  3. FUSED BLOCK-SPARSE ATTENTION KERNEL (Grid: [B, H, n_b])                       |
+|     - Loads Q_i block [B_sz, d_k].                                                |
+|     - Loop over k (1..k):                                                         |
+|         * Fetch target block id = idx[k_idx].                                     |
+|         * Indirect memory load K_block, V_block [B_sz, d_k] via hardware pointer. |
+|         * Compute S_block = Q_i @ K_block.T * scale.                              |
+|         * Online Softmax update (m_new, d_new, O_acc).                            |
+|     - Store final O_i [B_sz, d_k] back to global memory.                         |
++-----------------------------------------------------------------------------------+
 ```
 
-No zero‑shot weight transfer is performed; the linear layers are randomly initialised. To preserve pretrained knowledge, the injection function should copy the original projection weights, which is not implemented in this snippet.
+### 6.2 Implementation Code Blueprint (Triton JIT Pattern)
 
----
+```python
+import triton
+import triton.language as tl
 
-## 5. Discussion
+@triton.jit
+def _moba_fused_block_attn_kernel(
+    Q_ptr, K_ptr, V_ptr, TopK_Idx_ptr, Out_ptr,
+    stride_qb, stride_qh, stride_qn, stride_qd,
+    stride_kb, stride_kh, stride_kn, stride_kd,
+    stride_vb, stride_vh, stride_vn, stride_vd,
+    stride_ob, stride_oh, stride_on, stride_od,
+    stride_idx_b, stride_idx_h, stride_idx_q, stride_idx_k,
+    scale,
+    B_sz: tl.constexpr,
+    D_K: tl.constexpr,
+    K_TOP: tl.constexpr
+):
+    # Program Identifiers
+    pid_q_block = tl.program_id(axis=0)
+    pid_head = tl.program_id(axis=1)
+    pid_batch = tl.program_id(axis=2)
 
-MoBA provides a simple and effective block‑sparse attention pattern. By averaging within blocks and selecting the most similar blocks, it approximates the full attention matrix while drastically reducing computation. The top‑\(k\) mechanism is dynamic and can adapt to each query block, unlike fixed patterns. The block size and top‑\(k\) parameters offer a direct trade‑off between speed and accuracy.
+    # Offset pointers for current batch & head
+    q_block_ptr = Q_ptr + pid_batch * stride_qb + pid_head * stride_qh + pid_q_block * stride_qn
+    out_block_ptr = Out_ptr + pid_batch * stride_ob + pid_head * stride_oh + pid_q_block * stride_on
 
-However, several limitations are present. The padding to multiples of \(B_s\) introduces dummy tokens that are not masked, potentially distorting the attention. The block averaging is naive—outliers could skew the representative. The loop over blocks is not optimised for GPU execution. Also, the module does not support causal masks; it is purely bidirectional. For autoregressive tasks, a causal variant would need to modify block selection to only past blocks.
+    # Load Query block [B_sz, D_K] into SRAM
+    offs_m = tl.arange(0, B_sz)
+    offs_d = tl.arange(0, D_K)
+    q_ptrs = q_block_ptr + (offs_m[:, None] * stride_qd + offs_d[None, :])
+    q = tl.load(q_ptrs) # [B_sz, D_K]
 
-Despite these, the module demonstrates the core idea of block‑sparse attention with learned (or score‑based) block selection, and can serve as a baseline for more sophisticated sparse attention methods.
+    # Initialize Online Softmax Accumulators
+    m_i = tl.full([B_sz], float("-inf"), dtype=tl.float32)
+    l_i = tl.zeros([B_sz], dtype=tl.float32)
+    acc = tl.zeros([B_sz, D_K], dtype=tl.float32)
 
----
+    # Pointer to top-k block indices for current query block
+    idx_base_ptr = TopK_Idx_ptr + pid_batch * stride_idx_b + pid_head * stride_idx_h + pid_q_block * stride_idx_q
 
-## 6. Conclusion
+    # Iterate over routed key blocks
+    for k_idx in range(K_TOP):
+        # Read target key block index from indices tensor
+        target_k_block = tl.load(idx_base_ptr + k_idx * stride_idx_k)
 
-We have described MoBA Attention, a block‑sparse self‑attention module that partitions the sequence into blocks and restricts each query to attend to the top‑\(k\) key blocks identified via block‑average similarity. The method achieves sub‑quadratic complexity and is implemented as a drop‑in replacement for standard attention in DistilBERT. Future work will address padding masking, more efficient block gathering, and extension to causal scenarios. MoBA provides a valuable building block for efficient Transformers.
+        # Indirect Load Key block [B_sz, D_K]
+        k_ptrs = K_ptr + pid_batch * stride_kb + pid_head * stride_kh + target_k_block * stride_kn + (offs_m[None, :] * stride_kd + offs_d[:, None])
+        k = tl.load(k_ptrs) # [D_K, B_sz]
+
+        # Compute inner product S = Q @ K.T * scale -> [B_sz, B_sz]
+        s = tl.dot(q, k) * scale
+
+        # Online Softmax updates
+        m_ij = tl.max(s, axis=1)
+        m_new = tl.maximum(m_i, m_ij)
+        p = tl.exp(s - m_new[:, None])
+        l_new = tl.exp(m_i - m_new) * l_i + tl.sum(p, axis=1)
+
+        # Rescale prior accumulator
+        acc_scale = tl.exp(m_i - m_new)
+        acc = acc * acc_scale[:, None]
+
+        # Indirect Load Value block [B_sz, D_K]
+        v_ptrs = V_ptr + pid_batch * stride_vb + pid_head * stride_vh + target_k_block * stride_vn + (offs_m[:, None] * stride_vd + offs_d[None, :])
+        v = tl.load(v_ptrs)
+
+        # Accumulate context: acc += P @ V
+        p_cast = p.to(v.dtype)
+        acc = tl.dot(p_cast, v, acc)
+
+        # Update stats
+        l_i = l_new
+        m_i = m_new
+
+    # Final Softmax Normalization
+    acc = acc / l_i[:, None]
+
+    # Store computed block back to Global Memory
+    o_ptrs = out_block_ptr + (offs_m[:, None] * stride_od + offs_d[None, :])
+    tl.store(o_ptrs, acc.to(Out_ptr.dtype.element_ty))
+```
+
+### 6.3 Memory Access and SRAM Cache Optimization
+1. **Coalesced Memory Access**: By storing $\mathbf{K}$ and $\mathbf{V}$ tensors in block-contiguous memory layouts `[B, H, n_b, B_sz, d_k]`, indirect pointer calculations load continuous 128-byte DRAM segments, maximizing memory bus bandwidth.
+2. **SRAM Accumulation**: Queries $\mathbf{Q}_i$ remain pinned in high-speed SRAM registers across all $k$ iterations, eliminating repetitive DRAM re-reads.
+3. **Register-Level Bitonic Top-k**: For typical routing configurations ($n_b \le 512, k \le 16$), top-$k$ block indexing is computed strictly within warp registers, avoiding costly global memory round trips.

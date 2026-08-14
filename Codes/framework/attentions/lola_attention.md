@@ -1,160 +1,172 @@
-# LoLA Attention: Low‑Rank Linear Attention with Sparse Caching
+# LoLA Attention: Factorized Low-Rank Projection with Triple-Memory Cache
 
-**Paper Reference**  
-LoLA: Low‑Rank Linear Attention With Sparse Caching (2025)  
-https://arxiv.org/abs/2509.58281
+## 1. Abstract & Theoretical Motivation
+Standard Transformer self-attention computes query-key affinity over full history sequences, scaling quadratically $\mathcal{O}(N^2)$ in time and memory. Low-Rank Linear Attention with Sparse Caching (LoLA Attention) combines low-rank linear projection factorizations with a hybrid triple-memory state caching system.
 
----
-
-## 1. Introduction
-
-Standard self‑attention in Transformers scales quadratically with the sequence length, making it impractical for long documents. Several efficient attention variants have been proposed, including low‑rank approximations and sparse memory mechanisms. **LoLA (Low‑Rank Linear Attention)** combines two key ideas: (1) **low‑rank factorisation of the query, key, value, and output projections** to drastically reduce parameters while retaining most of the pretrained model’s knowledge, and (2) a **three‑memory caching system**—recent, sparse, and low‑rank—that allows the model to attend to an effectively infinite context with constant memory footprint. The cache is updated on‑the‑fly during inference (or training) and provides additional keys and values for the attention computation, enabling training‑free retrieval augmentation.
-
-The LoLA attention module implemented here is a drop‑in replacement for a DistilBERT attention layer. It uses zero‑shot initialisation of the low‑rank projection matrices from the pretrained weights via truncated SVD. This paper details the architecture, the mathematical formulation of the low‑rank projections and caching system, and the integration into the compression framework.
+LoLA factorizes high-dimensional projection weight matrices $\mathbf{W} \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ into rank-constrained pairs $\mathbf{W} \approx \mathbf{U} \mathbf{V}$ where $\mathbf{U} \in \mathbb{R}^{D_{\text{out}} \times r}, \mathbf{V} \in \mathbb{R}^{r \times D_{\text{in}}}$. To maintain long-context memory without quadratic explosion, LoLA maintains three persistent key-value memory partitions: (1) Recent Sliding Window Cache, (2) Subsampled Sparse Historical Cache, and (3) SVD Truncated Low-Rank Buffer. This hybrid mechanism maintains bounded memory consumption while capturing long-range multi-scale dependencies.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Low‑Rank Factorised Projections
-
-Each of the standard attention projections—query, key, value, and output—is replaced by a low‑rank factorised linear layer `LowRankLinear`. Given a pretrained weight matrix \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\), we approximate it as the product of two much smaller matrices \(\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times r}\) and \(\mathbf{V} \in \mathbb{R}^{r \times d_{\text{in}}}\), where \(r \ll \min(d_{\text{out}}, d_{\text{in}})\). The forward computation is:
+Given input hidden state $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, low-rank linear transformations compute query, key, value, and output projections with rank $r \ll D$:
 
 \[
-\mathbf{y} = \mathbf{U} (\mathbf{V} \mathbf{x}) + \mathbf{b},
+\mathbf{Q} = (\mathbf{X} \mathbf{V}_Q^\top) \mathbf{U}_Q^\top + \mathbf{b}_Q \in \mathbb{R}^{B \times H \times N \times d}
+\]
+\[
+\mathbf{K} = (\mathbf{X} \mathbf{V}_K^\top) \mathbf{U}_K^\top + \mathbf{b}_K \in \mathbb{R}^{B \times H \times N \times d}
+\]
+\[
+\mathbf{V} = (\mathbf{X} \mathbf{V}_V^\top) \mathbf{U}_V^\top + \mathbf{b}_V \in \mathbb{R}^{B \times H \times N \times d}
 \]
 
-thus avoiding the storage and multiplication of the full \(d_{\text{out}} \times d_{\text{in}}\) matrix. The bias is retained if present in the original layer.
+where $\mathbf{V}_{(\cdot)} \in \mathbb{R}^{r \times D}$ and $\mathbf{U}_{(\cdot)} \in \mathbb{R}^{D \times r}$.
 
-**Initialisation via SVD** – For a pretrained linear layer, we perform the full SVD \(\mathbf{W} = \mathbf{U}_{\text{full}} \mathbf{S} \mathbf{V}_{\text{full}}^\top\) and take the top \(r\) singular values and vectors, storing:
+### Triple-Memory System Caching ($\mathcal{C}$)
+LoLA aggregates historical key-value states into a unified memory context $\mathbf{K}_{\text{comb}} = [\mathbf{K} \;\|\; \mathbf{K}_{\text{cache}}]$ and $\mathbf{V}_{\text{comb}} = [\mathbf{V} \;\|\; \mathbf{V}_{\text{cache}}]$ across three memory layers:
+1. **Recent Cache ($\mathcal{C}_{\text{recent}}$)**: Sliding window of size $W_{\text{max}}$ storing raw recent keys/values:
+   \[
+   \mathcal{C}_{\text{recent}} = \{ \mathbf{k}_t, \mathbf{v}_t \}_{t=N - W_{\text{max}} + 1}^N
+   \]
+2. **Subsampled Sparse Cache ($\mathcal{C}_{\text{sparse}}$)**: Uniformly subsampled stride-4 tokens from older history:
+   \[
+   \mathcal{C}_{\text{sparse}} = \{ \mathbf{k}_{4i}, \mathbf{v}_{4i} \}_{i=1}^{N/4}
+   \]
+3. **SVD Low-Rank Compressed Buffer ($\mathcal{C}_{\text{lr}}$)**: Truncated SVD top-$k_{\text{rank}}$ reconstruction of past states:
+   \[
+   \mathbf{K}_{\text{lr}} = \mathbf{U}_{:k_{\text{rank}}} \boldsymbol{\Sigma}_{:k_{\text{rank}}} \mathbf{V}_{:k_{\text{rank}}}^\top \in \mathbb{R}^{k_{\text{rank}} \times d}
+   \]
+
+### Scaled Multi-Memory Attention Scores
+Scores are computed separately over current inputs and retrieved memory partitions, weighted by dynamic scaling parameters $\gamma_{\text{lr}}$ and $\gamma_{\text{cache}}$:
 
 \[
-\mathbf{U} = \mathbf{U}_{\text{full}}[:,:r] \operatorname{diag}(\sqrt{\mathbf{s}_r})?, \quad
-\mathbf{V} = \operatorname{diag}(\sqrt{\mathbf{s}_r}) \mathbf{V}_{\text{full}}[:r, :].
+\mathbf{S}_{\text{current}} = \gamma_{\text{lr}} \cdot \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}, \quad \mathbf{S}_{\text{cache}} = \gamma_{\text{cache}} \cdot \frac{\mathbf{Q} \mathbf{K}_{\text{cache}}^\top}{\sqrt{d}}
+\]
+\[
+\mathbf{S}_{\text{concat}} = [\mathbf{S}_{\text{current}} \;\|\; \mathbf{S}_{\text{cache}}] \in \mathbb{R}^{B \times H \times N \times (N + C)}
 \]
 
-In the provided code, the factor matrices are initialised as:
-
-- `self.U` = \(\mathbf{U}_{\text{full}}[:,:r] \cdot \mathbf{S}_{[:r]}\) (absorbing the full singular values into U)
-- `self.V` = \(\mathbf{V}_{\text{full}}[:r, :]\)
-
-This yields \(\mathbf{U}\mathbf{V} \approx \mathbf{W}_{\text{full}}\), the optimal rank‑\(r\) approximation. Biases are directly copied.
-
-### 2.2 Three‑Memory Caching System
-
-The `LowRankCache` maintains three distinct key‑value stores that are updated after each forward pass (or token step, in autoregressive mode). The current implementation simplifies by using only the first batch element and first head, accumulating the three caches as fixed‑size tensors. The caches are:
-
-- **Recent cache** – a sliding window of the most recent `max_len` key‑value pairs.
-- **Sparse cache** – a subsampled version (e.g., every 4th token) of the recent history, also capped to half of `max_len`.
-- **Low‑rank cache** – obtained by applying truncated SVD to the recent keys (and similarly to values), retaining only the top `low_rank_k` components. This acts as a compressed, global summary of the recent context.
-
-During inference, these caches provide a fixed‑size set of auxiliary keys and values that supplement the current sequence’s attention.
-
-### 2.3 Low‑Rank Global Attention
-
-For the current input sequence of length \(N\), we compute the standard scaled dot‑product attention scores using the low‑rank projected queries, keys, and values:
+After applying softmax over concatenated sequence dimension $(N + C)$:
 
 \[
-\mathbf{S}^{\text{global}} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}} \cdot \alpha_{\text{LR}},
+\mathbf{A} = \operatorname{softmax}(\mathbf{S}_{\text{concat}} + \mathbf{M}_{\text{mask}}, \text{dim}=-1) \in \mathbb{R}^{B \times H \times N \times (N + C)}
 \]
-
-where \(\alpha_{\text{LR}} = \text{self.LR\_scale}\) is a learnable scalar that controls the contribution of the current sequence’s attention. This is then augmented by the cached content.
-
-### 2.4 Sparse Cache Retrieval
-
-If the cache is non‑empty, we expand the cached keys and values (concatenated from recent, sparse, and low‑rank stores) to match the batch and head dimensions, yielding \(\mathbf{K}^{\text{cache}}, \mathbf{V}^{\text{cache}} \in \mathbb{R}^{B \times H \times C \times d_h}\), where \(C\) is the total number of cached tokens. The scores against the cached keys are computed as:
-
 \[
-\mathbf{S}^{\text{cache}} = \frac{\mathbf{Q} (\mathbf{K}^{\text{cache}})^\top}{\sqrt{d_h}} \cdot \beta,
+\mathbf{O} = (\mathbf{A} \mathbf{V}_{\text{comb}}) \mathbf{W}_{\text{out}} \in \mathbb{R}^{B \times N \times D}
 \]
-
-where \(\beta = \text{self.sparse\_gate}\) is another learnable scalar weighting the cached contribution. The full attention scores are obtained by concatenating the global and cached scores along the last dimension:
-
-\[
-\mathbf{S} = \left[ \mathbf{S}^{\text{global}} \;\|\; \mathbf{S}^{\text{cache}} \right] \in \mathbb{R}^{B \times H \times N \times (N + C)}.
-\]
-
-Similarly, the value tensor is concatenated:
-
-\[
-\mathbf{V}^{\text{combined}} = \left[ \mathbf{V} \;\|\; \mathbf{V}^{\text{cache}} \right] \in \mathbb{R}^{B \times H \times (N + C) \times d_h}.
-\]
-
-Softmax is applied to the concatenated scores, and the output is the weighted sum of the combined values. The learnable scales \(\alpha_{\text{LR}}\) and \(\beta\) allow the model to learn the relative importance of the current sequence and the cached memory.
-
-### 2.5 Masking and Padding
-
-The standard attention mask is extended to cover the cached keys (which are always valid). This ensures that the padded positions in the current sequence do not influence the output, while the cache is fully unmasked.
-
-### 2.6 Output Projection
-
-The resulting context is reshaped and passed through the low‑rank output projection \(\mathbf{W}_O\). The module returns the output and optionally the attention weights.
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 `LowRankLinear`
-- Inherits from `nn.Module`.
-- Stores `U` and `V` parameters with orthogonal initialisation, and optional bias.
-- Forward: `x → Vx → U(Vx) + bias`.
-- A method `set_low_rank_factors` allows explicit assignment for weight transfer.
+```
+Input Hidden States X [B, N, D]
+  │
+  ├──> Factorized Low-Rank Projections (U, V):
+  │    ├──> Q = (X @ V_q^T) @ U_q^T + b_q ─────────────> [B, H, N, d]
+  │    ├──> K = (X @ V_k^T) @ U_k^T + b_k ─────────────> [B, H, N, d]
+  │    └──> V = (X @ V_v^T) @ U_v^T + b_v ─────────────> [B, H, N, d]
+  │
+  ├──> Retrieve Memory Buffers from Cache:
+  │    K_cache, V_cache = Cache.get_cached() ──────────> [C, d]
+  │    Expand to Batch & Heads ────────────────────────> [B, H, C, d]
+  │
+  ├──> Dual Score Multiplication:
+  │    ├──> S_current = gamma_lr * (Q @ K^T) / sqrt(d) ─> [B, H, N, N]
+  │    ├──> S_cache = gamma_cache * (Q @ K_c^T)/sqrt(d)-> [B, H, N, C]
+  │    └──> S_concat = Cat([S_current, S_cache]) ──────> [B, H, N, N + C]
+  │
+  ├──> Softmax & Value Aggregation:
+  │    A = Softmax(S_concat) ──────────────────────────> [B, H, N, N + C]
+  │    V_comb = Cat([V, V_cache]) ─────────────────────> [B, H, N + C, d]
+  │    Context = A @ V_comb ───────────────────────────> [B, H, N, d]
+  │
+  └──> Update Cache with SVD & Low-Rank Out Projection:
+       Cache.update(K, V)
+       Y = (Context @ V_out^T) @ U_out^T ──────────────> [B, N, D]
+```
 
-### 3.2 `LowRankCache`
-- Maintains three tensors: `recent_k`, `recent_v`, `sparse_k`, `sparse_v`, `low_rank_k`, `low_rank_v` as buffers.
-- The `update` method currently operates only on the first batch element and first head (a simplification that would need to be extended for full multi‑head, multi‑batch operation).
-- The `get_cached` method concatenates all three stores into a single pair of tensors.
+### Detailed Shape Progression Table
 
-### 3.3 `LoLAAttention`
-- Constructor accepts `model_config`, `rank`, `dropout`, `pretrained_attn`, and `comp_config`.
-- Initialises four `LowRankLinear` projections and copies pretrained weights using `_init_from_linear`, which performs the SVD truncation.
-- Creates the `LowRankCache` with configurable `max_seq_len` and `low_rank_cache_size`.
-- Defines learnable scalars `LR_scale` (initial value 0.5) and `sparse_gate` (0.5).
-- The forward pass:
-  1. Projects Q, K, V.
-  2. Computes global scores, multiplies by `LR_scale`.
-  3. Retrieves cached K,V; if present, computes cache scores, concatenates scores and values.
-  4. Extends mask (if any) to cover the cached tokens.
-  5. Softmax, dropout, weighted sum.
-  6. Reshapes, applies output projection.
-  7. Updates the cache with the current K,V (for future steps).
-- The cache update occurs at every forward pass; for incremental inference, it should be called per token.
-
-### 3.4 Integration
-Registered under `"lola_attn"` via the injection function `inject_lola_attn`, which reads parameters from `comp_config` and initialises the module using the pretrained attention layer.
-
----
-
-## 4. Usage and Configuration
-
-The module is injected by setting the attention type to `"lola_attn"`. Relevant configuration keys (in `comp_config`):
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `rank` | 32 | Rank for the low‑rank projections. |
-| `dropout` | 0.1 | Dropout rate. |
-| `max_seq_len` | 128 | Maximum size of the recent cache window. |
-| `low_rank_cache_size` | 16 | Rank of the low‑rank SVD cache. |
-
-The injection function copies pretrained weights from the original attention layer.
+| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| 1 | Low-Rank Inner Product ($x V_Q^\top$) | `X: [B, N, D]`, `V_q: [r, D]` | `Vx: [B, N, r]` |
+| 2 | Low-Rank Outer Product ($Vx U_Q^\top$) | `Vx: [B, N, r]`, `U_q: [D, r]` | `Q: [B, N, D]` -> `[B, H, N, d]` |
+| 3 | Memory Cache Retrieval | Memory buffers | `K_cache, V_cache: [B, H, C, d]` |
+| 4 | Current Sequence Scores | `Q: [B, H, N, d]`, `K^T: [B, H, d, N]` | `S_lr: [B, H, N, N]` |
+| 5 | Cache Sequence Scores | `Q: [B, H, N, d]`, `K_cache^T: [B, H, d, C]` | `S_cache: [B, H, N, C]` |
+| 6 | Concatenate Attention Scores | `S_lr: [B, H, N, N]`, `S_cache: [B, H, N, C]` | `S_concat: [B, H, N, N + C]` |
+| 7 | Softmax Normalization | `S_concat: [B, H, N, N + C]` | `A: [B, H, N, N + C]` |
+| 8 | Value Memory Product | `A: [B, H, N, N + C]`, `V_comb: [B, H, N + C, d]` | `Context: [B, H, N, d]` |
+| 9 | Output Low-Rank Linear | `Context: [B, N, D]` | `Y: [B, N, D]` |
 
 ---
 
-## 5. Discussion
+## 4. Analytical Complexity Profiling
 
-LoLA Attention presents a powerful framework for efficient inference on long sequences. The low‑rank projections drastically reduce the parameter count (by a factor of about \(2r / d_{\text{model}}\)) and can be initialised from pretrained weights with minimal loss. The three‑memory cache provides a dynamic, training‑free augmentation of the context window: the recent cache captures fine‑grained local details, the sparse cache retains temporally diverse information, and the low‑rank cache gives a compressed global view. The learnable scales allow the model to adaptively blend these sources.
+### FLOP & MAC Counting
+1. **Low-Rank Linear Projections ($W_Q, W_K, W_V, W_O$)**:
+   - Standard linear requires $2 B N D^2$ per projection.
+   - Low-Rank factorized requires $2 \times (2 B N D r) = 4 B N D r$ FLOPs.
+   - Total for 4 projections: $16 B N D r$ FLOPs.
+2. **Current Sequence Score Product ($\mathbf{Q} \mathbf{K}^\top$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
+3. **Cache Sequence Score Product ($\mathbf{Q} \mathbf{K}_{\text{cache}}^\top$)**: $2 B H N C d = 2 B N C D$ FLOPs.
+4. **Value Memory Product ($\mathbf{A} \mathbf{V}_{\text{comb}}$)**: $2 B H N (N + C) d = 2 B N (N + C) D$ FLOPs.
 
-However, the current implementation has several simplifications:
+**Total Computational Cost**:
+\[
+\text{Total FLOPs} = 16 B N D r + 4 B N^2 D + 4 B N C D
+\]
 
-- The cache update operates on a single batch element and head, which limits parallelism and is not suitable for batched inference. A production version would manage per‑batch, per‑head caches.
-- The cache size is fixed; for very long sequences, the low‑rank SVD and sliding window may discard useful older information.
-- The sparse cache uses a fixed stride (every 4th token) – a more sophisticated importance sampling could be beneficial.
-- The attention mechanism concatenates the cached keys and values to the current ones, making the total attended length \(N + C\). While \(C\) is constant, the memory and computation per token still scale linearly with \(N\), not constant; however, the current sequence length \(N\) is often kept manageable (e.g., truncated to a window) while the cache provides long‑range history, achieving near‑constant memory overall.
+When $r \ll D$ (e.g., $r=32, D=768$), projection compute drops significantly compared to standard attention's $8 B N D^2$.
 
-Despite these, LoLA Attention represents a promising direction for efficient Transformers and aligns well with the compression framework’s goal of reducing resource usage while retaining performance.
+### Memory Footprint & Tensor Store
+- **Parameters**: Factorized tensors $\mathbf{U}, \mathbf{V}$ require $4 \times (D r + D r) = 8 D r$ parameters (vs $4 D^2$).
+- **Activation Memory**:
+  - Combined Keys/Values: $2 B H (N + C) d = 2 B (N + C) D$ floats.
+  - Concatenated Scores: $B H N (N + C)$ floats.
+  - Cache Buffers ($\mathcal{C}_{\text{recent}}, \mathcal{C}_{\text{sparse}}, \mathcal{C}_{\text{lr}}$): $(W_{\text{max}} + \frac{W_{\text{max}}}{2} + k_{\text{rank}}) D$ floats.
+  - Peak Memory: $\mathcal{O}(B N D + B H N (N + C))$.
 
 ---
 
-## 6. Conclusion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-We have presented LoLA Attention, a low‑rank linear attention module augmented with a three‑memory sparse caching system. The combination of SVD‑initialised factorised projections and a dynamic cache enables efficient, high‑quality attention with a fixed‑size memory footprint. The module is seamlessly integrated into DistilBERT via the compression registry and can be used as a drop‑in replacement for standard self‑attention. Future refinements will address batched caching, adaptive sparse sampling, and integration with incremental decoding for truly infinite context.
+1. **CPU/GPU SVD Inversion Latency**: Truncated SVD calls `torch.linalg.svd` inside `LowRankCache.update` run on CPU/GPU tensors synchronously during training/inference steps. SVD operations disrupt CUDA stream parallelism and introduce significant latency.
+2. **Cache Memory Leak in Single-Batch Ingestion**: The current cache implementation indexes hardcoded batch slice `K[0, 0]`, limiting multi-batch inference and leading to cross-batch memory bleed when $B > 1$.
+3. **Low-Rank Expressivity Ceiling**: Highly factorized projection rank $r \ll D$ risks under-fitting fine-grained spatial token representations in early model layers.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Memory Access & Vectorization Barriers
+Naive PyTorch executes `torch.cat` to concatenate current sequence tensors with historical cache buffers $K_{\text{cache}}$, causing dynamic DRAM allocations and memory fragmentation.
+
+### High-Performance Triton Kernel Fusion Strategy
+1. **Fused Dual-Stream Memory Flash Kernel**: Implement a Triton kernel that loads current query blocks $[BLOCK\_N, d]$ into SRAM, while concurrently streaming current keys and persistent cache buffers from separate GPU DRAM pointers without materializing concatenated tensors.
+
+```python
+# Triton Pseudocode for Dual-Stream Cache LoLA Kernel
+@triton.jit
+def _lola_dual_stream_kernel(
+    Q_ptr, K_ptr, V_ptr, K_cache_ptr, V_cache_ptr, Out_ptr,
+    N, C, D, BLOCK_N: tl.constexpr, BLOCK_C: tl.constexpr
+):
+    # Load Query tile [BLOCK_N, d]
+    q = tl.load(Q_ptr + offsets_q)
+    
+    # Stream current keys K [BLOCK_N, d] -> compute S_lr in SRAM
+    k = tl.load(K_ptr + offsets_k)
+    s_lr = tl.dot(q, tl.trans(k)) * scale * gamma_lr
+    
+    # Stream cache keys K_cache [BLOCK_C, d] -> compute S_cache in SRAM
+    k_c = tl.load(K_cache_ptr + offsets_kc)
+    s_cache = tl.dot(q, tl.trans(k_c)) * scale * gamma_cache
+    
+    # Online Softmax over concatenated logits [S_lr, S_cache] inside registers
+```
+
+2. **Asynchronous GPU SVD Power Iteration**: Replace exact `torch.linalg.svd` calls with 2 iterations of Power Method matrix decomposition running inside GPU registers during backward execution to update the low-rank cache asynchronously.

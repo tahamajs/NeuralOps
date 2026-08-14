@@ -1,147 +1,90 @@
-# SPECTRA‑v2: Sparse Per‑Head Efficient Context Transformer with Rectified Attention
+# SPECTRA-v2: Sparse Per-Head Efficient Context Transformer with Rectified Attention
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+SPECTRA-v2 (`SpectraV2Attention`, registered as `spectra_v2`) establishes a hybrid sparse-attention architecture unifying local intra-block full attention, relative-position-biased inter-block top-$k$ routing, per-head adaptive attention spans, and periodic global Random Fourier Feature (RFF) rectification. Quadratic self-attention scaling $\mathcal{O}(N^2)$ creates computational bottlenecks in long-context Transformers. SPECTRA-v2 addresses this by partitioning sequences into local blocks of size $B_s$, evaluating exact intra-block attention, and selecting the top-$k_{\text{inter}}$ candidates per query from adjacent blocks under relative position distance biases. To prevent context fragmentation across deep layers, every $R_{\text{rect}}$-th layer bypasses block sparsity entirely, deploying an $\mathcal{O}(N \cdot d_r)$ Random Fourier Feature kernel ("AKS") for global context refresh. This hybrid design delivers sub-quadratic $\mathcal{O}(N \cdot (B_s + k_{\text{inter}}) \cdot d_h)$ complexity while maintaining long-range context fidelity.
 
-We present **SPECTRA‑v2**, a hybrid sparse attention module for Transformers that integrates three complementary mechanisms: (1) **intra‑block full attention** combined with **per‑query inter‑block top‑k selection** (enriched by a relative position bias), (2) a soft, **adaptive per‑head span** to gently limit attention range, and (3) a **periodic global rectification** via orthogonal random Fourier features (RFF) to prevent context fragmentation. The block‑sparse pattern is constructed on the fly: each token attends to all tokens within its local block and additionally to a small, dynamically chosen set of the highest‑scoring tokens from adjacent blocks. The relative position bias encourages the selection of tokens that preserve the original order, while the adaptive span provides a learnable distance decay. Every \(R\)-th layer, the sparse attention is replaced by a global linear attention pass that guarantees a full‑context refresh. The module is designed as a drop‑in replacement for the self‑attention layer in DistilBERT, with zero‑shot weight transfer from a pretrained model and a clean, registry‑based injection. This paper provides a rigorous mathematical formulation of each component, the block‑sparse attention algorithm, and the overall architecture.
+## 2. Mathematical Derivations & Formulations
+Given token activation sequence $X \in \mathbb{R}^{B \times N \times D}$, linear projections derive multi-head query, key, and value tensors $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$ ($d_h = D / H$).
 
----
+### 1. Adaptive Per-Head Span Gating
+For sequence length $N$, a soft distance-decay mask $M_{\text{span}} \in \mathbb{R}^{H \times N \times N}$ is evaluated using learnable head-wise span parameters $s_h \in \mathbb{R}$:
+$$M_{\text{span}}[h, i, j] = \ln \left( \sigma\left( 5.0 \cdot (s_h - |i - j|) \right) + 10^{-9} \right)$$
+where $\sigma(\cdot)$ is the sigmoid function.
 
-## 1. Introduction
+### 2. Block-Sparse Intra & Inter-Block Top-$k$ Routing
+The sequence is partitioned into blocks of size $B_s = 64$. For query block $b \in \{1, \dots, \lceil N / B_s \rceil\}$ covering sequence interval $[s, e)$:
+- **Intra-Block Attention**: $Q_b = Q[:, :, s:e, :]$, $K_{\text{intra}} = K[:, :, s:e, :]$, $V_{\text{intra}} = V[:, :, s:e, :]$.
+- **Inter-Block Candidate Gathering**: Inter-block keys $K_{\text{inter}}$ and values $V_{\text{inter}}$ are gathered from adjacent blocks $b-1$ and $b+1$.
+- **Relative Position Bias**: For query position $p_q \in [s, e)$ and candidate key position $p_k$, relative distance is clipped to $\delta = \text{clamp}(p_q - p_k, -d_{\text{max}}, d_{\text{max}}) + d_{\text{max}}$. Inter-block scores incorporate relative positional bias parameters $B_{\text{rel}} \in \mathbb{R}^{H \times (2 d_{\text{max}} + 1)}$:
+  $$\text{Score}_{\text{inter}} = \frac{Q_b K_{\text{inter}}^\top}{\sqrt{d_h}} + B_{\text{rel}}[:, \delta]$$
+- **Top-$k$ Candidate Selection**: For each query token, extract top $k_{\text{inter}}$ keys/values:
+  $$\mathcal{K}_{\text{sel}} = \text{TopK}(\text{Score}_{\text{inter}}, k_{\text{inter}}), \qquad \mathcal{V}_{\text{sel}} = \text{Gather}(V_{\text{inter}}, \mathcal{K}_{\text{sel}})$$
+- **Combined Block Context Evaluation**:
+  $$S_{\text{block}} = \frac{Q_b [K_{\text{intra}}, \mathcal{K}_{\text{sel}}]^\top}{\sqrt{d_h}} + M_{\text{span}}[:, s:e, s:e]$$
+  $$A_{\text{block}} = \text{Dropout}(\text{Softmax}(S_{\text{block}}, \text{dim}=-1))$$
+  $$O_b = A_{\text{block}} [V_{\text{intra}}, \mathcal{V}_{\text{sel}}] \in \mathbb{R}^{B \times H \times B_s \times d_h}$$
 
-Standard multi‑head self‑attention computes all pairwise dot‑products, leading to \(O(L^2)\) time and memory. Block‑sparse attention methods reduce this cost by partitioning the sequence into blocks and restricting inter‑block interactions to a selected subset. The **SPECTRA‑v2** module refines this idea with three key innovations:
+### 3. Periodic Global RFF Rectification (Every $R_{\text{rect}}$ Layers)
+At layers where $l \pmod{R_{\text{rect}}} == 0$, block-sparse attention is substituted by a Random Fourier Feature (RFF) linear attention pass. Feature maps $\phi(x) \in \mathbb{R}^{B \times H \times N \times 2 d_r}$ project queries and keys using random weight matrix $W_{\text{rff}} \in \mathbb{R}^{d_h \times d_r}$:
+$$\phi(x) = \frac{1}{d_r^{1/4}} \begin{bmatrix} \cos(x W_{\text{rff}}) & \sin(x W_{\text{rff}}) \end{bmatrix}$$
+$$O_{\text{rect}} = \frac{\phi(Q) (\phi(K)^\top V)}{\phi(Q) (\phi(K)^\top \mathbf{1}) + 10^{-8}} \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-- **Per‑query top‑k inter‑block selection with relative bias**: Instead of selecting whole blocks (as in MoBA or BigBird), each query token individually chooses the top‑\(k\) key tokens from its adjacent blocks. A learned relative position bias guides this selection, favouring tokens that are roughly in the same relative order, thus preserving the sequential structure.
-- **Adaptive per‑head span**: A learnable scalar per head defines a soft window that gradually reduces attention scores for distant tokens, even within the intra‑block set. This acts as a fine‑grained control on the attention range.
-- **Periodic global rectification**: To prevent information isolation across blocks, every \(R\)-th layer (e.g., every 4th) performs a full global linear attention using orthogonal random features (the “AKS” kernel), which approximates softmax attention in linear time.
+Final multi-head outputs are concatenated and projected via output weight $W_O$:
+$$O = \text{Reshape}(O_{\text{context}}) W_O + b_O \in \mathbb{R}^{B \times N \times D}$$
 
-The module also supports standard padding masks and can be initialised directly from a pretrained DistilBERT attention layer, ensuring zero‑shot performance. The name SPECTRA stands for **Sp**arse **E**fficient **C**ontext **T**ransformer with **R**ectified **A**ttention; the “v2” indicates the corrected top‑k logic and the addition of relative position bias.
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
+The step-by-step tensor execution path across SPECTRA-v2 is traced below:
 
----
+1. **Input Representation**: $X \in \mathbb{R}^{B \times N \times D}$
+2. **Dense Multi-Head Projections**:
+   - $Q = \text{Reshape}(X W_Q + b_Q) \in \mathbb{R}^{B \times H \times N \times d_h}$
+   - $K = \text{Reshape}(X W_K + b_K) \in \mathbb{R}^{B \times H \times N \times d_h}$
+   - $V = \text{Reshape}(X W_V + b_V) \in \mathbb{R}^{B \times H \times N \times d_h}$
+3. **Validity Mask Ingestion**:
+   - Normalize arbitrary 2D/3D/4D mask to $T_{\text{valid}} \in \{0, 1\}^{B \times N}$
+4. **Layer Branch Dispatch**:
+   - **If Layer is Rectification Layer ($l \pmod{R_{\text{rect}}} == 0$)**:
+     - Evaluate $\phi_Q, \phi_K \in \mathbb{R}^{B \times H \times N \times 2 d_r}$ using RFF kernel
+     - $K V_{\text{rff}} = \phi_K^\top V \in \mathbb{R}^{B \times H \times 2 d_r \times d_h}$, $Z_{\text{rff}} = \phi_K^\top \mathbf{1} \in \mathbb{R}^{B \times H \times 2 d_r \times 1}$
+     - $C_{\text{rect}} = \frac{\phi_Q K V_{\text{rff}}}{\phi_Q Z_{\text{rff}} + 10^{-8}} \in \mathbb{R}^{B \times H \times N \times d_h}$
+   - **Else (Block-Sparse Layer)**:
+     - Iterate across blocks $b = 1 \dots \lceil N / B_s \rceil$:
+       - Slice $Q_b \in [B, H, B_s, d_h]$, $K_{\text{intra}}, V_{\text{intra}} \in [B, H, B_s, d_h]$
+       - Gather adjacent candidates $K_{\text{inter}}, V_{\text{inter}}$
+       - Add relative position bias $B_{\text{rel}}[\delta]$
+       - Top-$k$ selection $\implies \mathcal{K}_{\text{sel}}, \mathcal{V}_{\text{sel}} \in [B, H, B_s \cdot k_{\text{inter}}, d_h]$
+       - Evaluate $S_{\text{block}} = Q_b [K_{\text{intra}}, \mathcal{K}_{\text{sel}}]^\top / \sqrt{d_h} + M_{\text{span}}$
+       - Softmax and value aggregate $\implies O_b \in [B, H, B_s, d_h]$
+     - Concatenate block outputs $\implies C_{\text{sparse}} \in \mathbb{R}^{B \times H \times N \times d_h}$
+5. **Mask Application & Output Projection**:
+   - $C_{\text{final}} = C_{\text{context}} \cdot T_{\text{valid}}$
+   - $O = \text{Reshape}(C_{\text{final}}) W_O + b_O \in \mathbb{R}^{B \times N \times D}$
 
-## 2. Method
+## 4. Analytical Complexity Profiling
+- **FLOPs Computation**:
+  - Dense Linear Projections ($Q, K, V, O$): $8 B N D^2$ FLOPs
+  - Block-Sparse Attention ($N / B_s$ blocks): $2 B H N (B_s + k_{\text{inter}}) d_h = 2 B N (B_s + k_{\text{inter}}) D$ FLOPs
+  - Top-$k$ Inter-Block Sorting: $\mathcal{O}(B H N \cdot 2 B_s \log k_{\text{inter}})$ FLOPs
+  - Periodic RFF Rectification Layer: $4 B N D d_r$ FLOPs
+  - Total Module FLOPs (Block-Sparse Layer): $8 B N D^2 + 2 B N (B_s + k_{\text{inter}}) D + \mathcal{O}(N \log k_{\text{inter}})$
+- **MAC Operations**:
+  - Linear Projections: $4 B N D^2$ MACs
+  - Block-Sparse Attention: $B N (B_s + k_{\text{inter}}) D$ MACs
+- **Memory Footprint & KV Cache**:
+  - Block Attention Map Storage: $[B, H, B_s, B_s + k_{\text{inter}}]$ per block vs $[B, H, N, N]$ (Memory Reduction Ratio $= \frac{N}{B_s + k_{\text{inter}}}\times$).
 
-### 2.1 Multi‑Head Projections
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+- **Adjacent Block Horizon Isolation**:
+  Inter-block candidate gathering only inspects immediately adjacent blocks ($b-1$ and $b+1$). Tokens requiring long-range interactions across non-adjacent blocks rely entirely on periodic RFF layers, leading to context loss in non-rectifying layers.
+- **Top-$k$ Gather GPU Memory Fragmentation**:
+  Extracting top-$k$ indices per query position using `torch.gather` on 5D expanded tensors creates uncoalesced DRAM memory accesses, degrading GPU memory throughput.
+- **Static Span Parameter Underflow**:
+  When adaptive span parameters $s_h$ shrink during optimization ($s_h < 1.0$), log-mask $M_{\text{span}}$ severely attenuates intra-block scores, causing local attention collapse.
 
-Given an input sequence \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), the module applies standard linear projections for all heads:
-
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V,
-\]
-
-with \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times (H d_h)}\). These are reshaped to the multi‑head layout \((B, H, L, d_h)\).
-
-### 2.2 Block Partitioning and Adaptive Span Logit
-
-The sequence is divided into blocks of size \(B_s\) (default 64). Let the number of blocks be \(N_b = \lceil L / B_s \rceil\).
-
-An **adaptive span** is implemented via a learnable per‑head scalar \(s_h \in \mathbb{R}\) (initialised to a large value, e.g., 512). For a given head, a soft log‑mask is constructed based on the token distances:
-
-\[
-M_{ij}^{(h)} = \log\bigl( \sigma\bigl( (s_h - |i-j|) \cdot 5 \bigr) + \varepsilon \bigr),
-\]
-
-where \(\sigma\) is the sigmoid. This produces a value near 0 (log‑1) for distances well within the span, and a large negative logit for distances far beyond the span. This logit is added to the attention scores, thereby softly down‑weighting far‑away tokens. The steepness factor 5 makes the transition relatively sharp.
-
-### 2.3 Intra‑Block Full Attention + Per‑Query Inter‑Block Top‑k with Relative Bias
-
-For each block \(b\) spanning indices \([s, e)\) (where \(s = b \cdot B_s\), \(e = \min(s+B_s, L)\)), the following steps are performed:
-
-1. **Intra‑block**: All tokens within the block attend to each other without restriction. The scores are computed as \(\mathbf{S}_{\text{intra}} = \frac{\mathbf{Q}_b \mathbf{K}_b^\top}{\sqrt{d_h}}\), and the adaptive span logit \(M^{(h)}\) (sliced to the block) is added.
-
-2. **Inter‑block candidates**: Tokens from the immediately adjacent blocks—left block (if \(b>0\)) and right block (if \(b < N_b-1\))—are considered as inter‑block candidates. (Only one block on each side is used; the comment says “previous and next block”.)
-
-   For a query token at position \(i\) in block \(b\), we compute its attention scores with all candidate tokens from the left and right blocks. Before selection, a **relative position bias** is added to the scores. The bias is learned per head and depends on the clipped relative distance:
-
-   \[
-   \delta = \operatorname{clamp}(i - j, -d_{\max}, d_{\max}),
-   \]
-   where \(d_{\max}\) is the max relative distance (default 128). The bias is stored as a table of shape \((H, 2 d_{\max} + 1)\). Adding this bias encourages the model to prefer tokens with certain relative positions, helping to preserve the order of information.
-
-3. **Per‑query top‑k selection**: For each query token individually, the top‑\(k\) highest scoring inter‑block tokens are selected (after bias addition). This yields \(k \cdot B_s\) selected keys and values for the whole block (since each token in the block can choose its own top‑\(k\)). The implementation gathers these per‑token selections and forms a combined key–value tensor of size \((B, H, B_s \cdot k, d_h)\).
-
-4. **Combined attention**: The intra‑block keys and values are concatenated with the selected inter‑block keys and values. The final attention scores are computed over this combined set, softmax is applied, and the values are aggregated. The adaptive span logit is applied only to the intra‑block part.
-
-5. **Masking**: If a padding mask is provided (as a boolean tensor `token_valid` of shape \((B, L)\)), it is used to mask out invalid keys: both intra‑block and inter‑block keys that are padding are set to \(-\infty\) before softmax.
-
-### 2.4 Periodic Global Rectification
-
-Every \(R\)-th layer (controlled by `rectify_interval`, default 4), the sparse attention is **bypassed** entirely. Instead, the module uses a global linear attention mechanism based on **random Fourier features (RFF)**. The feature map is:
-
-\[
-\phi(\mathbf{x}) = \frac{1}{\sqrt[4]{F}} \bigl[ \cos(\mathbf{x}\mathbf{P}),\; \sin(\mathbf{x}\mathbf{P}) \bigr],
-\]
-
-where \(\mathbf{P} \in \mathbb{R}^{d_h \times F}\) is a learnable random projection matrix (initialised from \(\mathcal{N}(0, 0.02^2)\)). The linear attention output is:
-
-\[
-\mathbf{KV} = \phi(\mathbf{K})^\top \mathbf{V},\quad
-\mathbf{Z} = \phi(\mathbf{K})^\top \mathbf{1},\quad
-\mathbf{C} = \frac{\phi(\mathbf{Q}) \mathbf{KV}}{\phi(\mathbf{Q}) \mathbf{Z} + \epsilon}.
-\]
-
-This operation captures the global context in linear time and serves to re‑establish long‑range connections that may have been lost in the sparse layers.
-
-### 2.5 Output Projection and Masking
-
-After the context is computed (either sparse or global), the output is multiplied by the token validity mask (zeroing out padding positions). The heads are then concatenated and projected with \(\mathbf{W}_O\) (and dropout applied). The module returns a tuple `(output, None)`.
-
----
-
-## 3. Implementation Details
-
-- **`SpectraV2Attention`** is registered under `"spectra_v2"` via the injection function `inject_spectra_v2`.
-- **Configuration**: Hyperparameters are stored in the `SpectraConfig` dataclass, with sensible defaults (block_size=64, top_k_inter=16, adaptive_span=True, rectify_interval=4, etc.).
-- **Zero‑shot weight transfer**: The injection function copies the pretrained `q_lin`, `k_lin`, `v_lin`, `out_lin` weights into the corresponding linear layers of SPECTRA‑v2, ensuring the model starts from the pretrained state.
-- **Adaptive span**: The span logit is added only to intra‑block scores. The span parameter is clamped to a minimum of 1.0 and is per‑head, allowing different heads to learn different effective ranges.
-- **Relative position bias**: A table of shape `(num_heads, 2*max_dist+1)` is learned. During attention, the relative distances between query and candidate key are computed, clipped, and used to index this table. The bias is added to the inter‑block scores before top‑k selection, influencing which tokens are kept.
-- **Global rectification**: Implemented via the `SimpleRFFKernel` class. The random projection matrix is learnable (a parameter), but its variance is small. The rectification layer is active only when `(layer_idx % rectify_interval == 0)` and `aks_enabled` is True.
-- **Mask handling**: A robust `_get_token_valid_mask` method converts 2D, 3D, or 4D masks to a boolean `(B, L)` validity tensor. This mask is used in the sparse attention to set invalid key scores to -1e9, and to zero out padding positions in the final output.
-- **Complexity**: The intra‑block attention costs \(O(L B_s d_h)\). The inter‑block selection costs \(O(L k d_h)\) per layer, plus the overhead of top‑k per query. With \(k=16\) and \(B_s=64\), the total cost per token is approximately \(O((B_s + 2k) d_h)\), which is linear in \(L\). The global rectification layer costs \(O(L F d_h)\), also linear.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"spectra_v2"`. The relevant parameters in `comp_config` include:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `block_size` | 64 | Size of local blocks. |
-| `top_k_inter` | 16 | Number of inter‑block tokens selected per query. |
-| `adaptive_span` | True | Whether to use per‑head learnable span. |
-| `max_span` | 512.0 | Initial value for the adaptive span parameter. |
-| `rectify_interval` | 4 | Frequency of global rectification layers. |
-| `rff_features` | 128 | Feature dimension \(F\) for the RFF kernel. |
-| `use_rel_pos_bias` | True | Whether to use relative position bias for inter‑block selection. |
-| `rel_pos_max_distance` | 128 | Maximum clipped relative distance for bias. |
-| `dropout` | 0.1 | Dropout rate on attention weights and output. |
-
-Example injection:
-```python
-comp_config.attention_type = "spectra_v2"
-comp_config.block_size = 128
-comp_config.top_k_inter = 32
-```
-
-The injection function copies pretrained weights, so the model can be used directly for inference or fine‑tuned.
-
----
-
-## 5. Discussion
-
-SPECTRA‑v2 presents a carefully balanced sparse attention design. The intra‑block full attention ensures that local dependencies are captured with high fidelity. The per‑query top‑k inter‑block selection is a fine‑grained way to extend the receptive field without committing to entire blocks; by adding a learned relative position bias, the selection becomes order‑aware, which is particularly beneficial for positional tasks. The adaptive span allows each head to specialise its effective range, and the periodic global rectification prevents the cumulative effect of many sparse layers from isolating tokens.
-
-However, the method has some limitations:
-
-- The inter‑block candidates are restricted to adjacent blocks only (one left and one right). This limits the maximum distance for long‑range interactions. For very long sequences, a token cannot attend to far‑away positions unless the global rectification layer intervenes. Extending to a wider set of blocks (or using landmarks) could improve long‑range capability.
-- The top‑k selection is per‑query, which increases the computational effort compared to block‑wise selection. For large \(L\), the cost of top‑k (roughly \(O(L \log k)\)) could be noticeable, but it is still linear.
-- The relative position bias adds a small parameter overhead but significantly helps in preserving order. However, it might not be sufficient for tasks requiring precise absolute position tracking.
-- The global rectification uses a simple RFF kernel with a learnable projection; while effective, it might suffer from the same approximation error as any random feature method. The variance could be reduced by using orthogonal features (as in FAVOR+), but the current implementation uses plain random features (the `SimpleRFFKernel` uses `torch.randn` without orthogonalisation).
-
-Despite these, the module offers a rich set of features that can be tuned for different tasks. Its modular design and zero‑shot initialisation make it a practical drop‑in replacement for standard attention in DistilBERT.
-
----
-
-## 6. Conclusion
-
-We have presented SPECTRA‑v2, an advanced sparse attention module that combines intra‑block full attention with per‑query top‑k inter‑block selection, adaptive per‑head spans, relative position bias, and periodic global rectification. The design achieves sub‑quadratic complexity while preserving both local and long‑range dependencies through a hybrid scheme. The module is integrated into the compression framework with zero‑shot weight transfer, making it an excellent candidate for efficient fine‑tuning and deployment of Transformer models on long sequences. Future work may explore extending the inter‑block range and incorporating more sophisticated global kernels.
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+- **Fused Block-Sparse Inter-Block Triton Kernel**:
+  Construct a dedicated Triton block-sparse kernel that computes intra-block GEMM and inter-block top-$k$ selection directly within GPU L1 cache/SRAM tiles. This eliminates 5D tensor expansions and global DRAM gathers.
+- **Orthogonal RFF Projection Initialization**:
+  Replace random Gaussian matrix $W_{\text{rff}} \sim \mathcal{N}(0, 0.02^2)$ with orthogonal QR decomposition (FAVOR+ / Orthogonal Random Features). This reduces kernel variance and guarantees exact softmax approximation.
+- **FlashAttention Integration for Rectification Layers**:
+  Pass RFF feature projections $\phi_Q, \phi_K$ directly into fused linear FlashAttention kernels to evaluate linear memory state updates without allocating $[B, H, N, 2 d_r]$ intermediate feature tensors.

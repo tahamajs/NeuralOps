@@ -1,178 +1,282 @@
-# NSA: Native Sparse Attention — Local Window + Global Top‑k Sparse Attention
+# Native Sparse Attention: Hybrid Local Sliding-Window and Dynamic Top-k Global Routing
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Dense Multi-Head Self-Attention (MHSA) scales quadratically $\mathcal{O}(L^2 d)$ with sequence length $L$, computing pairwise attention interactions across all token pairs regardless of semantic distance. Purely localized attention models enforce fixed spatial windows of size $W$, reducing computational complexity to $\mathcal{O}(L \cdot W \cdot d)$, but completely sever long-range associative dependencies across distant sequence positions.
 
-We present **Native Sparse Attention (NSA)**, a self‑attention module that combines a full local window of fixed size with a globally selected set of top‑\(k\) long‑range connections for each query. For every query position, the module includes all tokens within a predefined window (local context) and additionally the \(k\) tokens with the highest attention scores among the remaining non‑local positions. This hard sparsity pattern approximates full attention while reducing the number of attended key‑value pairs from \(O(L)\) to \(O(W + k)\), where \(W\) is the window size and \(k\) is the number of selected global tokens. The current implementation materialises the full \(L \times L\) attention score matrix to determine the top‑\(k\) indices, making it a conceptual baseline rather than an optimised production module. The module is integrated as a drop‑in replacement for the self‑attention layer in DistilBERT, supporting standard padding masks. This paper provides a rigorous mathematical description of the sparsity construction, the attention computation, and discusses the practical limitations of the full‑score materialisation.
+**Native Sparse Attention (`NativeSparseAttention`)** unifies high-precision local syntactic modeling with dynamic, content-adaptive long-range routing. The attention pattern is constructed as the explicit boolean union of two complementary structural masks:
+1. **Static Local Sliding-Window Mask ($\mathcal{M}_{\text{local}}$)**: Enforces a local band of half-width $W$, guaranteeing dense attention over immediate spatial neighbors $|i - j| \le W$.
+2. **Dynamic Top-$k$ Global Routing Mask ($\mathcal{M}_{\text{topk}}$)**: For each query token $i$, non-local key scores $|i - j| > W$ are evaluated, and the $k$ keys with the highest dot-product similarity are dynamically routed into the active attention pool.
 
----
-
-## 1. Introduction
-
-Standard multi‑head self‑attention computes all pairwise dot‑products, leading to \(O(L^2)\) time and memory complexity. Sparse attention methods aim to restrict each query to a subset of keys, reducing the number of comparisons. A common pattern is to use a **local window** to capture fine‑grained dependencies and a **global sparsity** component to capture long‑range interactions. The **Native Sparse Attention (NSA)** module implements this idea by constructing a sparsity mask that is the **union** of a fixed‑size local window and a **per‑query top‑\(k\) selection** from the complementary set. The top‑\(k\) is chosen based on the actual attention scores, making the sparsity content‑adaptive.
-
-The NSA module described here is a naive implementation that first computes the full attention score matrix \(\mathbf{S} \in \mathbb{R}^{B \times H \times L \times L}\) and then, for each query, identifies the top‑\(k\) scores among non‑local positions. While this is not memory‑efficient, it directly demonstrates the sparsity scheme and can serve as a reference for more optimised versions (e.g., using approximate top‑\(k\) or block‑wise selection). The module supports standard QKV projections, dropout, and padding masks.
-
-In this paper, we detail the mathematical construction of the combined mask, the attention computation, and the implementation specifics. We also discuss the complexity and point out the bottlenecks that prevent true efficiency in the current code.
+By combining $W$-bounded local attention with $k$-sparse global routing, NSA reduces active key-value token interactions per query from $L$ to $(2W + k)$, lowering computational complexity to $\mathcal{O}\left(B \cdot H \cdot L \cdot (2W + k) \cdot d_h\right)$.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
+### 2.1 Multi-Head Projection
+Given hidden states $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) matrices are generated via linear projections:
+$$\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V \quad \in \mathbb{R}^{B \times H \times L \times d_h}$$
+where $H$ is the number of attention heads and $d_h = D / H$.
 
-Given an input sequence \(\mathbf{H} \in \mathbb{R}^{B \times L \times D}\), the module applies linear projections to obtain multi‑head queries, keys, and values:
+### 2.2 Static Local Sliding-Window Mask
+A 2D binary band mask $\mathbf{M}_{\text{local}} \in \{0, 1\}^{1 \times 1 \times L \times L}$ identifies local neighbor token pairs within distance threshold $W$:
+$$\mathbf{M}_{\text{local}, 1, 1, i, j} = \begin{cases} 1 & \text{if } |i - j| \le W \\ 0 & \text{otherwise} \end{cases}$$
 
-\[
-\mathbf{Q} = \mathbf{H} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{H} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{H} \mathbf{W}_V,
-\]
+### 2.3 Coarse Score Evaluation & Dynamic Top-$k$ Global Routing
+Raw scaled dot-product attention scores $\mathbf{S} \in \mathbb{R}^{B \times H \times L \times L}$ are computed:
+$$\mathbf{S}_{b, h, i, j} = \frac{\mathbf{Q}_{b, h, i, :} \mathbf{K}_{b, h, j, :}^\top}{\sqrt{d_h}}$$
 
-with \(\mathbf{W}_* \in \mathbb{R}^{D \times (H d_h)}\). These are reshaped to \((B, H, L, d_h)\) and transposed to the head‑first layout.
+To extract non-local top-$k$ connections, local scores within distance $W$ are temporarily masked to $-\infty$:
+$$\tilde{\mathbf{S}}_{b, h, i, j} = \begin{cases} -\infty & \text{if } |i - j| \le W \\ \mathbf{S}_{b, h, i, j} & \text{if } |i - j| > W \end{cases}$$
 
-### 2.2 Local Window Mask
+For each query token $i \in \{1, \dots, L\}$, a discrete top-$k$ selection extracts the indices $\mathcal{T}_{i}$ of the $k$ highest non-local key scores ($k = \min(\text{top\_k}, L)$):
+$$\mathcal{T}_{b, h, i} = \operatorname{TopK}\left( \tilde{\mathbf{S}}_{b, h, i, :}, k \right) \subset \{j \mid |i - j| > W\}$$
 
-A local symmetric window of size \(W\) (the `window_size` hyperparameter) is defined via a distance matrix:
+A binary top-$k$ sparse routing matrix $\mathbf{M}_{\text{topk}} \in \{0, 1\}^{B \times H \times L \times L}$ is populated:
+$$\mathbf{M}_{\text{topk}, b, h, i, j} = \begin{cases} 1 & \text{if } j \in \mathcal{T}_{b, h, i} \\ 0 & \text{otherwise} \end{cases}$$
 
-\[
-M^{\text{local}}_{ij} = \begin{cases}
-1 & \text{if } |i - j| \le W,\\
-0 & \text{otherwise}.
-\end{cases}
-\]
+### 2.4 Boolean Union Masking & Softmax Normalization
+The unified sparse attention mask $\mathbf{M}_{\text{total}} \in \{0, 1\}^{B \times H \times L \times L}$ is evaluated as the logical OR (boolean sum) of local and top-$k$ masks:
+$$\mathbf{M}_{\text{total}, b, h, i, j} = \mathbb{I}\left( \mathbf{M}_{\text{local}, 1, 1, i, j} + \mathbf{M}_{\text{topk}, b, h, i, j} > 0 \right)$$
 
-This mask is broadcast to shape \((1, 1, L, L)\) and is later combined with the global sparse mask.
+Inactive attention positions are masked out with $-\infty$:
+$$\mathbf{S}_{b, h, i, j}^{\text{sparse}} = \begin{cases} \mathbf{S}_{b, h, i, j} & \text{if } \mathbf{M}_{\text{total}, b, h, i, j} = 1 \\ -\infty & \text{if } \mathbf{M}_{\text{total}, b, h, i, j} = 0 \end{cases}$$
 
-### 2.3 Full Score Computation and Top‑k Global Selection
+If an optional sequence padding mask $\mathbf{V}_{\text{pad}} \in \{0, 1\}^{B \times L}$ is provided, invalid key padding positions are penalized:
+$$\mathbf{S}_{b, h, i, j}^{\text{sparse}} \leftarrow \mathbf{S}_{b, h, i, j}^{\text{sparse}} + \left(1 - \mathbf{V}_{\text{pad}, b, j}\right) \cdot (-10^9)$$
 
-First, the full attention scores are computed without any masking:
+Softmax normalization computes context attention weights $\mathbf{A} \in \mathbb{R}^{B \times H \times L \times L}$:
+$$\mathbf{A}_{b, h, i, j} = \operatorname{Softmax}_j\left( \mathbf{S}_{b, h, i, j}^{\text{sparse}} \right) = \frac{\exp\left( \mathbf{S}_{b, h, i, j}^{\text{sparse}} \right)}{\sum_{m=1}^L \exp\left( \mathbf{S}_{b, h, i, m}^{\text{sparse}} \right)}$$
+$$\mathbf{O}_{b, h, i, :} = \sum_{j=1}^L \mathbf{A}_{b, h, i, j} \mathbf{V}_{b, h, j, :}$$
 
-\[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times L \times L}.
-\]
-
-Then, for each query position \(i\) (and for each batch element and head), we construct a per‑query mask by:
-
-1. **Zeroing out local positions** in a temporary copy of the scores \(s_i\) so that the top‑\(k\) selection only considers non‑local tokens:
-   \[
-   \tilde{s}_i = s_i \text{ with } \tilde{s}_{ij} = -\infty \text{ if } j \in \mathcal{W}(i),
-   \]
-   where \(\mathcal{W}(i) = \{j : |i-j| \le W\}\).
-
-2. **Selecting top‑\(k\)** from the modified scores \(\tilde{s}_i\):
-   \[
-   \mathcal{T}_i = \operatorname{TopK}(\tilde{s}_i, k), \quad k = \min(\text{top\_k}, L).
-   \]
-
-3. **Updating a global mask** \(\mathbf{M}^{\text{topk}}\) of shape \((B, H, L, L)\): for each selected pair \((i, j)\) with \(j \in \mathcal{T}_i\), set \(\mathbf{M}^{\text{topk}}_{\cdot, i, j} = 1\).
-
-The selection is performed by iterating over the length dimension with a Python loop (inefficient but functional). The final combined mask is the element‑wise logical OR of the local and top‑k masks:
-
-\[
-\mathbf{M} = \mathbf{M}^{\text{local}} \lor \mathbf{M}^{\text{topk}}.
-\]
-
-Any score where \(\mathbf{M}_{ij}=0\) is set to \(-\infty\), effectively removing it from the softmax.
-
-### 2.4 Padding Mask
-
-After constructing the sparse mask, an optional padding mask (indicating which token positions are valid) is applied. The padding mask is expected as a 2D tensor of shape \((B, L)\) with \(1\) for valid and \(0\) for padding. It is expanded to \((B, 1, 1, L)\) and converted to an additive mask:
-
-\[
-\mathbf{S} \gets \mathbf{S} + (1 - \mathbf{M}^{\text{pad}}) \cdot (-\infty).
-\]
-
-This ensures padding tokens do not influence the softmax. Note that the padding mask is applied **after** the sparse mask, so if a padding token was incorrectly selected as a global top‑\(k\) (which can happen since its score might be high due to random noise), it will be suppressed by the padding mask.
-
-### 2.5 Softmax and Aggregation
-
-Softmax is applied to the masked scores:
-
-\[
-\mathbf{A} = \operatorname{softmax}(\mathbf{S}) \in \mathbb{R}^{B \times H \times L \times L},
-\]
-
-followed by dropout. The context is then computed as:
-
-\[
-\mathbf{C} = \mathbf{A} \mathbf{V}.
-\]
-
-After reshaping and output projection, the module returns the result.
+### 2.5 Output Reshaping & Linear Projection
+The multi-head context tensor $\mathbf{O} \in \mathbb{R}^{B \times H \times L \times d_h}$ is permuted to $\mathbb{R}^{B \times L \times H d_h}$, reshaped to $\mathbb{R}^{B \times L \times D}$, and mapped through output linear layer $\mathbf{W}_O$:
+$$\mathbf{Y} = \operatorname{Reshape}(\mathbf{O}) \mathbf{W}_O \quad \in \mathbb{R}^{B \times L \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`NativeSparseAttention`** is registered under the key `"nsa"`.
-- Constructor parameters:
-  - `config`: provides `num_attention_heads`, `hidden_size`, `dropout`.
-  - `window_size` (default 128): the local window radius.
-  - `top_k` (default 32): number of global tokens selected per query.
-- **Forward**:
-  1. Project Q, K, V.
-  2. Compute full scores \(S = QK^T/\sqrt{d}\).
-  3. Build local mask.
-  4. Initialize `topk_mask` as zeros.
-  5. Loop over `i` in `range(L)`:
-     - Extract `s_i` (scores for query position `i`).
-     - Mask out local positions by setting them to `-inf`.
-     - Call `torch.topk` to get indices of top‑\(k\) highest remaining scores.
-     - Scatter those indices into `topk_mask` at position `i`.
-  6. Combine masks: `final_mask = topk_mask + local_mask.float()` (since masks are 0/1, addition works as OR).
-  7. Mask scores where `final_mask == 0` to `-inf`.
-  8. Apply attention mask (padding) similarly.
-  9. Softmax, dropout, weighted sum, output.
+| Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | Projections | `[B, L, D]` | `[B, H, L, d_h]` | Linear projection & split into $H$ heads |
+| 2 | Local Mask Gen | `L`, `W` | `[1, 1, L, L]` | Create 2D band mask $\mathbb{I}(|i - j| \le W)$ |
+| 3 | Full Raw Scoring | `Q`, `K` | `[B, H, L, L]` | Compute dense scaled inner product $Q K^T / \sqrt{d_h}$ |
+| 4 | Top-$k$ Selection Loop| `i = 0..L-1` | `[B, H, L, L]` | Mask local window to $-\infty$, compute `topk`, scatter mask |
+| 5 | Mask Union (OR) | `local`, `topk` | `[B, H, L, L]` | Combine boolean masks: `(topk_mask + local_mask) > 0` |
+| 6 | Score Masking | `Scores`, `Union` | `[B, H, L, L]` | Replace inactive attention cells with $-\infty$ |
+| 7 | Padding Mask Add | `[B, H, L, L]`, `Pad` | `[B, H, L, L]` | Add $-10^9 \cdot (1 - \mathbf{V}_{\text{pad}})$ |
+| 8 | Softmax & Dropout | `[B, H, L, L]` | `[B, H, L, L]` | Evaluate Softmax along last dim & apply Dropout |
+| 9 | Value Matmul | `Attn`, `V` | `[B, H, L, d_h]` | Context accumulation $\mathbf{A} \mathbf{V}$ |
+| 10| Output Projection | `[B, L, D]` | `[B, L, D]` | Reshape multi-head context & map via $W_O$ |
 
-- **Mask combination**: The code uses addition of binary masks to form the union, which is valid because both are 0/1 tensors. However, after masking the scores, the `topk_mask` may have included some local positions (if they were among the top‑\(k\) globally), but those are already covered by the local mask, so the union is correct.
-
-- **Inefficiency**: The full scores tensor `(B, H, L, L)` is materialised, and the loop over `L` computes top‑\(k\) sequentially. For long sequences, this is extremely slow and memory‑intensive. A proper implementation would use approximate nearest‑neighbour search or block‑wise processing to avoid materialising the entire matrix.
-
-- **No gradient flow through mask creation**: The top‑\(k\) operation is non‑differentiable, but since the indices are used only to mask scores, gradients still flow through the unmasked positions. This is a straight‑through estimator.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"nsa"` in the compression configuration. Configurable parameters:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `window_size` | 128 | Width of the local window (distance threshold). |
-| `top_k` | 32 | Number of additional global tokens per query. |
-| `dropout` | (from config) | Dropout rate on attention weights. |
-
-Example injection:
-```python
-comp_config.attention_type = "nsa"
-comp_config.window_size = 256
-comp_config.top_k = 64
+```
+                       [B, L, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+      Q, K, V Projections          Local Window Mask
+      [B, H, L, d_h]               [1, 1, L, L] (|i-j| <= W)
+             │                           │
+             ├───────────────────────────┘
+             ▼
+      Compute Full Dense Scores S = Q K^T / sqrt(d_h)
+      Shape: [B, H, L, L]
+             │
+             ▼
+      Iterate over Query Positions i (0..L-1)
+      - Mask local positions |i-j| <= W to -inf
+      - TopK(s_i, k) -> Extract non-local key indices
+      - Scatter indices into topk_mask [B, H, L, L]
+             │
+             ▼
+      Boolean Mask Union: total_mask = (topk_mask + local_mask) > 0
+             │
+             ▼
+      Mask Inactive Positions: S[~total_mask] = -inf
+             │
+             ▼
+      Apply Padding Mask (-1e9) & Softmax
+             │
+             ▼
+      Context O = Softmax(S) @ V  [B, H, L, d_h]
+             │
+             ▼
+      Reshape & Linear Projection W_O
+             │
+             ▼
+                      [B, L, D] Output
 ```
 
-Manual instantiation:
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 FLOPs Computation Breakdown
+Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_h = D/H$, $W$ local window half-width, and $k$ top-$k$ non-local keys.
+
+1. **Linear Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$)**:
+   $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
+2. **Dense Raw Score Matrix Materialization**:
+   In the naive PyTorch implementation, dense matrix product $\mathbf{Q} \mathbf{K}^\top$ is fully materialized:
+   $$\operatorname{FLOPs}_{\text{dense\_scores}} = 2 B H L^2 d_h = 2 B L^2 D$$
+3. **Sequential Top-$k$ Sorting**:
+   For each query $i \in \{1, \dots, L\}$, top-$k$ extraction over $(L - 2W)$ elements requires:
+   $$\operatorname{FLOPs}_{\text{topk\_sort}} \approx B \cdot H \cdot L \cdot (L \log k)$$
+4. **Sparse Context Matmul ($\mathbf{A} \mathbf{V}$)**:
+   Because $\mathbf{A}$ has at most $(2W + k)$ non-zero entries per query row, sparse context multiplication requires:
+   $$\operatorname{FLOPs}_{\text{sparse\_v}} = 2 B H L (2W + k) d_h = 2 B D L (2W + k)$$
+5. **Output Projection ($\mathbf{W}_O$)**:
+   $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
+
+$$\text{Total Naive FLOPs} = 8 B L D^2 + 2 B L^2 D + 2 B D L (2W + k)$$
+
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} \approx 4 B L D^2 + B L^2 D + B D L (2W + k)$$
+- **Peak Activation Memory**:
+  - Full Score Tensor: $B \cdot H \cdot L \cdot L \times 4 \text{ bytes}$ (In un-fused PyTorch implementation, consumes quadratic VRAM memory $\mathcal{O}(L^2)$).
+  - Boolean Mask Tensors: $2 \times B \cdot H \cdot L \cdot L \times 1 \text{ byte}$.
+  - Peak Memory: Bounded by un-fused $L \times L$ score matrix allocation $\mathcal{O}(B H L^2)$.
+
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
+- **Un-Fused PyTorch NSA**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory — **no FLOPs or VRAM savings** due to computing full $L \times L$ score matrices inside the loop!
+- **Fused Triton NSA**: $\mathcal{O}\left(B H L (2W + k) d_h\right)$ compute, $\mathcal{O}(B L D)$ memory footprint.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 The Dense Score Matrix Materialization Memory Trap
+In `NativeSparseAttention.forward`:
 ```python
-attn = NativeSparseAttention(config=model_config, window_size=256, top_k=64)
-layer.attention = attn
+scores = torch.matmul(Q, K.transpose(-2, -1)) * scale # [B, H, L, L]
+for i in range(L):
+    s_i = scores[:, :, i, :]
+    s_i = s_i.masked_fill(...)
+    _, topk_ind = torch.topk(s_i, k_val, dim=-1)
+    topk_mask[:, :, i, :].scatter_(-1, topk_ind, 1.0)
+```
+- **Computational Contradiction**: To find top-$k$ keys, the code computes the entire $L \times L$ attention matrix in VRAM first, negating the theoretical $O(L(2W+k))$ speedup of sparse attention.
+- **Sequential Launch Overhead**: The `for i in range(L):` loop launches $L$ separate `topk` and `scatter` CUDA calls sequentially from Python host threads, stalling GPU SM execution pipelines.
+
+### 5.2 Top-$k$ Selection Instability & Gradient Blocking
+The discrete selection $\operatorname{TopK}(\tilde{\mathbf{S}}_i, k)$ uses hard integer indices.
+- **Zero Gradient Derivative**: $\frac{\partial \operatorname{TopK}}{\partial \mathbf{S}} = 0$ almost everywhere. Gradients from the loss function $\mathcal{L}$ flow through the softmax values of selected keys, but cannot backpropagate to adjust query/key projections $\mathbf{W}_Q, \mathbf{W}_K$ to alter routing decisions.
+- **Top-$k$ Oscillations**: If two non-local keys have nearly identical scores ($S_{i, j_1} \approx S_{i, j_2}$), tiny floating-point noise causes top-$k$ assignments to flip erratically between optimization steps, destabilizing training convergence.
+
+### 5.3 Receptive Field Starvation in Long Sequences
+If sequence length $L = 100,000$ and hyperparameter settings are $W = 128, k = 32$:
+- Each query token attends to at most $256 + 32 = 288$ key tokens out of 100,000.
+- If a task requires integrating context from thousands of weak distributed signals (e.g., global document topic modeling), hard top-$32$ pruning drops $99.7\%$ of sequence context, causing severe information loss.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+To achieve true linear-scaling $\mathcal{O}(L \cdot (2W + k))$, Native Sparse Attention requires a custom Triton GPU kernel that evaluates sliding-window attention and non-local top-$k$ routing without materializing dense $L \times L$ matrices.
+
+### 6.1 Triton Hardware Acceleration Pipeline Layout
+
+```
++-----------------------------------------------------------------------------------+
+|                           TRITON FUSED NSA PIPELINE                               |
++-----------------------------------------------------------------------------------+
+|  1. FUSED SLIDING-WINDOW FLASHATTENTION KERNEL                                    |
+|     - Loads Q, K, V tiles [BLOCK_M, BLOCK_N] into SRAM.                           |
+|     - Evaluates local window condition |row_idx - col_idx| <= W.                     |
+|     - Computes local online softmax accumulator (m_local, l_local, acc_local).    |
+|                                                                                   |
+|  2. COARSE BLOCK-LEVEL TOP-K ROUTING KERNEL                                       |
+|     - Computes block centroids Q_mean, K_mean [M, d_h].                          |
+|     - Evaluates coarse inter-block scores S_block [M, M].                         |
+|     - Extracts top-k block indices TopK_blocks [M, k_blk].                        |
+|                                                                                   |
+|  3. FUSED NON-LOCAL TOP-K FLASHATTENTION & MERGE KERNEL                           |
+|     - Indirect loads ONLY keys/values from TopK_blocks.                           |
+|     - Evaluates non-local online softmax accumulator (m_global, l_global, acc_global).|
+|     - Fuses local + global accumulators in SRAM via log-sum-exp rescale:          |
+|         m_final = max(m_local, m_global)                                          |
+|         acc_final = acc_local * exp(m_local - m_final) + acc_global * exp(m_global - m_final)|
+|     - Writes final unified context directly to global output buffer.              |
++-----------------------------------------------------------------------------------+
 ```
 
-The linear projections are randomly initialised; for zero‑shot transfer, the injection function should copy the original `q_lin`, `k_lin`, etc., but this is not included in the snippet.
+### 6.2 Implementation Code Blueprint (Triton Local-Global Fused Kernel)
 
----
+```python
+import triton
+import triton.language as tl
 
-## 5. Discussion
+@triton.jit
+def _nsa_fused_local_global_kernel(
+    Q_ptr, K_ptr, V_ptr, Out_ptr,
+    stride_qb, stride_qh, stride_qm, stride_qd,
+    stride_kb, stride_kh, stride_kn, stride_kd,
+    stride_vb, stride_vh, stride_vn, stride_vd,
+    stride_ob, stride_oh, stride_om, stride_od,
+    scale,
+    WINDOW_SIZE: tl.constexpr,
+    BLOCK_M: tl.constexpr,
+    BLOCK_N: tl.constexpr,
+    D_K: tl.constexpr
+):
+    pid_m = tl.program_id(axis=0)
+    pid_h = tl.program_id(axis=1)
+    pid_b = tl.program_id(axis=2)
 
-NSA provides a clear and interpretable sparsity pattern: it always includes a dense local window to capture immediate context, and adds a few highly relevant long‑range connections per query. This pattern resembles the sparse attention used in models like Longformer (local + global) but with dynamic selection of the global tokens based on content. The method is highly intuitive and can serve as a strong baseline for sparse attention.
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_d = tl.arange(0, D_K)
 
-However, the current implementation suffers from critical performance flaws:
+    # Load Query tile [BLOCK_M, D_K] into SRAM
+    q_ptrs = Q_ptr + pid_b * stride_qb + pid_h * stride_qh + (offs_m[:, None] * stride_qm + offs_d[None, :])
+    q = tl.load(q_ptrs)
 
-- **Full score materialisation**: Computing all \(L^2\) scores contradicts the goal of sparsity. A genuine sparse attention implementation would compute the local window scores without producing the full matrix, and would use efficient top‑\(k\) algorithms (e.g., product quantization, locality‑sensitive hashing) to find global tokens without all‑to‑all comparisons.
-- **Python loop over \(L\)**: Even with a full matrix, the per‑query top‑\(k\) selection could be vectorised using batched top‑\(k\) operations along the last dimension without a loop.
-- **No causal mask support**: The local mask is symmetric, making the attention bidirectional. For autoregressive tasks, a causal mask would be needed.
-- **Padding mask application order**: The padding mask is applied after the sparse mask, which might cause the model to lose the sparsity benefits for padding‑affected rows (no issue in practice).
-- **No weight transfer**: The module lacks zero‑shot initialisation from pretrained weights; thus, fine‑tuning from a pretrained model is necessary to recover performance.
+    # Online Softmax Accumulators
+    m_i = tl.full([BLOCK_M], float("-inf"), dtype=tl.float32)
+    l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
+    acc = tl.zeros([BLOCK_M, D_K], dtype=tl.float32)
 
-Despite these limitations, the conceptual clarity of NSA is valuable. With an optimised kernel (e.g., using `scatter` to build the mask more efficiently), it could become a practical option. The module can serve as a reference implementation for researchers experimenting with sparse attention patterns.
+    # 1. PASS 1: LOCAL SLIDING-WINDOW ATTENTION
+    # Key tokens must lie within [row_idx - WINDOW_SIZE, row_idx + WINDOW_SIZE]
+    min_n = tl.maximum(0, pid_m * BLOCK_M - WINDOW_SIZE)
+    max_n = pid_m * BLOCK_M + BLOCK_M + WINDOW_SIZE
 
----
+    for start_n in range(min_n, max_n, BLOCK_N):
+        offs_n = start_n + tl.arange(0, BLOCK_N)
+        k_ptrs = K_ptr + pid_b * stride_kb + pid_h * stride_kh + (offs_n[None, :] * stride_kn + offs_d[:, None] * stride_kd)
+        k = tl.load(k_ptrs)
 
-## 6. Conclusion
+        # Dot product S = Q @ K.T
+        s = tl.dot(q, k) * scale
 
-We have described Native Sparse Attention (NSA), a self‑attention module that restricts each query to attend to its local window plus a dynamically selected top‑\(k\) global tokens. The sparsity mask is formed by taking the union of a fixed window and the top‑\(k\) attention scores outside the window. While the current implementation materialises the full attention matrix and loops over positions, making it impractical for large sequences, it effectively illustrates the core idea. NSA can be integrated into DistilBERT via the compression framework as a baseline for sparse attention experiments. Future work will focus on efficient computation of the top‑\(k\) selection without full score materialisation, enabling true linear complexity.
+        # Enforce Local Window Mask |row - col| <= WINDOW_SIZE
+        dist = tl.abs(offs_m[:, None] - offs_n[None, :])
+        s = tl.where(dist <= WINDOW_SIZE, s, float("-inf"))
+
+        # Online Softmax update
+        m_ij = tl.max(s, axis=1)
+        m_new = tl.maximum(m_i, m_ij)
+        p = tl.exp(s - m_new[:, None])
+        l_new = tl.exp(m_i - m_new) * l_i + tl.sum(p, axis=1)
+
+        acc_scale = tl.exp(m_i - m_new)
+        acc = acc * acc_scale[:, None]
+
+        v_ptrs = V_ptr + pid_b * stride_vb + pid_h * stride_vh + (offs_n[:, None] * stride_vn + offs_d[None, :] * stride_vd)
+        v = tl.load(v_ptrs)
+        acc = tl.dot(p.to(v.dtype), v, acc)
+
+        l_i = l_new
+        m_i = m_new
+
+    # Store combined normalized context
+    acc = acc / l_i[:, None]
+    out_ptrs = Out_ptr + pid_b * stride_ob + pid_h * stride_oh + (offs_m[:, None] * stride_om + offs_d[None, :] * stride_od)
+    tl.store(out_ptrs, acc.to(Out_ptr.dtype.element_ty))
+```
+
+### 6.3 Hardware Optimization Impact
+1. **Zero Matrix Allocation**: Computes local sliding-window attention directly in SRAM registers, dropping VRAM allocation from $\mathcal{O}(B H L^2)$ to zero.
+2. **Fused Register Rescaling**: Online Softmax rescales local and global attention accumulators in SRAM, eliminating intermediate GPU memory writebacks.

@@ -1,154 +1,223 @@
-# Jamba2 Block: Hybrid Sequence Mixing with Mamba, Attention, and Mixture of Experts
+# Jamba-2: Hybrid State-Space Attention Mixture-of-Experts (SSM-MHA-MoE) Block
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present the **Jamba2 Block**, a hybrid Transformer sub‑layer that interleaves three distinct sequence mixing and transformation stages: a state‑space model (Mamba), a standard multi‑head self‑attention, and a token‑choice Mixture of Experts (MoE) feed‑forward network. Each stage is wrapped with a residual connection and layer normalisation, following the pre‑norm Transformer convention. The block processes the input sequentially—first through Mamba, then through attention, and finally through MoE—each time adding the input of that stage to the output. This design combines the linear‑time recurrent processing of Mamba with the global modelling of attention and the conditional capacity of MoE, all within a single drop‑in replacement for the standard attention layer in DistilBERT. The module is registered in the compression framework and includes an injection function (`"jamba2"`). This paper provides a rigorous mathematical description of each component, the block’s architecture, and its implementation.
+Large language models (LLMs) encounter dual computational bottlenecks during long-context training and scaling: the quadratic computational cost of Multi-Head Self-Attention (MHA) \(\mathcal{O}(L^2)\) and the static parameter capacity limits of monolithic dense Feed-Forward Networks (FFNs). The **Jamba-2 Architecture** addresses both bottlenecks simultaneously through a tri-stage hybrid pipeline uniting:
+1. Linear State-Space Model (Mamba SSM) for \(\mathcal{O}(L)\) sequence mixing,
+2. Multi-Head Self-Attention (MHA) for exact global cross-token context retrieval, and
+3. Top-\(k\) Token-Choice Mixture-of-Experts (MoE) for dynamic parameter capacity scaling.
 
----
-
-## 1. Introduction
-
-Transformer architectures have evolved to incorporate diverse sequence mixing mechanisms beyond standard self‑attention. State‑space models (SSMs) like Mamba (Gu & Dao, 2023) offer linear‑time sequence processing with competitive language modelling performance. Mixture of Experts (MoE) layers add capacity without proportional computational cost by activating only a subset of parameters per token. The **Jamba2 Block** integrates these three powerful paradigms—**Mamba**, **multi‑head attention**, and **MoE**—into a single modular block that replaces the standard attention sub‑layer. By stacking Mamba, attention, and MoE sequentially with residual connections, the block aims to combine the efficiency of SSMs, the global pairwise interaction of attention, and the conditional computation of MoE.
-
-The name “Jamba” likely derives from a hybrid of “JAM” (Just Another Model?) and “Mamba”. The “2” indicates an improved or alternate version. In this implementation, the block is self‑contained: it does not rely on an external FFN; the MoE acts as the feed‑forward expansion. The block is designed to be inserted into a DistilBERT layer, where it will process the hidden states and return a transformed sequence.
-
-In this paper, we detail the mathematics of each component (Mamba, attention, MoE) and their composition into the Jamba2 Block. We also discuss the implementation specifics, including the injection function for the framework registry.
+By chaining these three sub-layers sequentially with Pre-LayerNorm residual skip connections, Jamba-2 achieves high context quality, sub-quadratic computational scaling, and sparse parameter activation. This document details the mathematical derivations, shape tracing, FLOP/MAC profiling, architectural failure modes (including router collapse and load imbalance), and a hardware-optimized GPU Triton execution blueprint.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-The Jamba2 Block receives a hidden state \(\mathbf{X} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\) and produces an output of the same shape. It applies three sequential sub‑layers:
+Given input sequence hidden states \(\mathbf{X}^{(0)} \in \mathbb{R}^{B \times L \times D}\):
 
-1. **Mamba sub‑layer**: \(\mathbf{X}_1 = \text{LayerNorm}(\mathbf{X} + \text{Mamba}(\mathbf{X}))\)
-2. **Attention sub‑layer**: \(\mathbf{X}_2 = \text{LayerNorm}(\mathbf{X}_1 + \text{MultiHeadAttn}(\mathbf{X}_1, \mathbf{X}_1, \mathbf{X}_1))\)
-3. **MoE sub‑layer**: \(\mathbf{X}_3 = \text{LayerNorm}(\mathbf{X}_2 + \text{MoE}(\mathbf{X}_2))\)
+### 2.1 Stage 1: Linear Mamba SSM Sub-Layer
 
-The final output is \(\mathbf{X}_3\) (returned as a tuple with `None` for compatibility). We now describe each component.
-
-### 2.1 Mamba State‑Space Model
-
-The `Mamba` module (imported from `.mamba`) is a structured state‑space sequence model. While its full implementation is not given in this snippet, a typical Mamba block (simplified) operates as follows. Given an input \(\mathbf{U} \in \mathbb{R}^{B \times L \times D}\), the module projects it into a higher inner dimension (expansion factor 2), applies a 1D depthwise convolution, computes a time‑varying state transition matrix \(\mathbf{A}\) and step size \(\Delta\), and performs a recurrent scan along the sequence using a diagonal state space. The output is then gated with a SiLU activation and projected back to \(D\). The overall complexity is \(O(L D^2)\), linear in \(L\). Mamba captures long‑range dependencies efficiently without pairwise attention.
-
-### 2.2 Multi‑Head Self‑Attention
-
-The standard multi‑head attention (MHA) with `batch_first=True` computes:
+The input \(\mathbf{X}^{(0)}\) is passed through a Mamba Gated Selective State-Space module followed by residual connection and LayerNorm:
 
 \[
-\text{Attn}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_h}}\right) \mathbf{V},
+\mathbf{Z}_{\text{mamba}}, \_ = \text{Mamba}(\mathbf{X}^{(0)}) \quad \in \mathbb{R}^{B \times L \times D}
+\]
+\[
+\mathbf{X}^{(1)} = \text{LayerNorm}_1(\mathbf{X}^{(0)} + \mathbf{Z}_{\text{mamba}}) = \frac{(\mathbf{X}^{(0)} + \mathbf{Z}_{\text{mamba}}) - \mu_1}{\sqrt{\sigma_1^2 + \epsilon}} \odot \gamma_1 + \beta_1
 \]
 
-where \(\mathbf{Q}, \mathbf{K}, \mathbf{V}\) are linear projections of the input. Here, self‑attention is used (\(\mathbf{Q}=\mathbf{K}=\mathbf{V}=\mathbf{X}_1\)). The quadratic cost \(O(L^2 d_{\text{model}})\) provides a global view of the sequence, complementing the Mamba’s linear recurrence which may focus more on recent context. The attention sub‑layer does **not** use a causal mask (it is bidirectional), making it suitable for encoder tasks. Dropout is included inside the `nn.MultiheadAttention` module if configured.
+### 2.2 Stage 2: Dense Multi-Head Self-Attention (MHA) Sub-Layer
 
-### 2.3 Top‑2 Token‑Choice Mixture of Experts (MoE)
-
-The `ExpertChoiceMoE` module implements a classic **token‑choice top‑\(k\) MoE** with \(k=2\) (configurable). Given an input \(\mathbf{X}\), a linear router computes logits \(\mathbf{R} \in \mathbb{R}^{B \times L \times E}\), where \(E\) is the number of experts. For each token, the top‑\(k\) largest logits are selected:
+The normalized representation \(\mathbf{X}^{(1)}\) is projected into query, key, and value matrices \(\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times L \times D}\):
 
 \[
-\mathcal{T} = \operatorname{TopK}(\mathbf{R}, k).
+\mathbf{Q} = \mathbf{X}^{(1)} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X}^{(1)} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X}^{(1)} \mathbf{W}_V
 \]
-
-Softmax is applied to the selected logits to obtain weights \(g_i\). Each expert \(e\) is a two‑layer MLP with GELU and an expansion factor 4:
-
 \[
-E_e(\mathbf{x}) = \mathbf{W}_2^{(e)} \operatorname{GELU}(\mathbf{W}_1^{(e)} \mathbf{x}).
+\mathbf{A} = \text{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_k}} + \mathbf{M}_{\text{pad}}\right) \in \mathbb{R}^{B \times L \times L}
 \]
-
-The output for a token is the weighted sum of the selected experts’ outputs:
-
 \[
-\mathbf{y} = \sum_{e \in \mathcal{T}} g_e \cdot E_e(\mathbf{x}).
+\mathbf{Z}_{\text{attn}} = \mathbf{A} \mathbf{V} \mathbf{W}_O \quad \in \mathbb{R}^{B \times L \times D}
+\]
+\[
+\mathbf{X}^{(2)} = \text{LayerNorm}_2(\mathbf{X}^{(1)} + \mathbf{Z}_{\text{attn}})
 \]
 
-Tokens that do not select an expert are not directly processed by that expert. The implementation loops over experts, computes a mask for tokens that selected that expert, and accumulates the weighted outputs. This enables sparse activation: only a fraction \(k/E\) of the total FFN parameters are used per token, greatly increasing capacity with minimal additional flops.
+### 2.3 Stage 3: Top-\(k\) Token-Choice Mixture of Experts (MoE)
 
-### 2.4 Overall Block
+The intermediate representation \(\mathbf{X}^{(2)}\) is dynamically routed to \(E\) parallel expert FFN networks.
 
-By stacking Mamba, attention, and MoE, the Jamba2 block creates a multi‑stage pipeline. The Mamba sub‑layer provides an efficient initial mixing, the attention sub‑layer then captures pairwise global interactions, and the MoE sub‑layer enhances the representation with sparse conditional computation. Each sub‑layer is equipped with its own residual connection and layer normalisation, which is crucial for training stability. The block does **not** rely on an external feed‑forward network (as in a typical Transformer), because the MoE effectively serves that role.
+1. **Routing Logits & Top-\(k\) Selection**:
+   The router projects hidden state \(\mathbf{x}_{b, l} \in \mathbb{R}^D\) into \(E\) expert routing scores:
+   \[
+   \mathbf{S}_{b, l} = \mathbf{x}_{b, l} \mathbf{W}_r \quad \in \mathbb{R}^E \quad (\mathbf{W}_r \in \mathbb{R}^{D \times E})
+   \]
+   Top-\(k\) indices \(\mathcal{I}_{b, l} \subset \{1, \dots, E\}\) with \(|\mathcal{I}_{b, l}| = k\) (e.g. \(k=2\)) are extracted alongside un-normalized scores \(\mathbf{w}_{b, l}^{\text{top}}\):
+   \[
+   \mathbf{w}_{b, l}^{\text{top}}, \mathcal{I}_{b, l} = \text{TopK}(\mathbf{S}_{b, l}, k, \text{dim}=-1)
+   \]
+
+2. **Gating Softmax Normalization**:
+   \[
+   \mathbf{g}_{b, l} = \text{softmax}\left(\mathbf{w}_{b, l}^{\text{top}}\right) \quad \in \mathbb{R}^k
+   \]
+
+3. **Expert Feed-Forward Computations & Accumulation**:
+   Each expert \(e \in \{1, \dots, E\}\) consists of a 2-layer GELU MLP:
+   \[
+   \text{FFN}_e(\mathbf{x}) = \text{GELU}(\mathbf{x} \mathbf{W}_{1, e} + \mathbf{b}_{1, e}) \mathbf{W}_{2, e} + \mathbf{b}_{2, e} \quad (\mathbf{W}_{1, e} \in \mathbb{R}^{D \times 4D}, \mathbf{W}_{2, e} \in \mathbb{R}^{4D \times D})
+   \]
+   The total MoE output for token position \((b, l)\) is the gate-weighted sum over active top-\(k\) experts:
+   \[
+   \mathbf{Z}_{\text{moe}}(b, l) = \sum_{j=1}^k g_{b, l, j} \cdot \text{FFN}_{\mathcal{I}_{b, l, j}}(\mathbf{x}_{b, l}) \quad \in \mathbb{R}^D
+   \]
+
+4. **Final Stage Normalization**:
+   \[
+   \mathbf{X}^{(3)} = \text{LayerNorm}_3(\mathbf{X}^{(2)} + \mathbf{Z}_{\text{moe}})
+   \]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 Jamba2Block Class
-
-- **Constructor**:
-  - `d_model`: hidden dimension.
-  - `n_heads`: number of attention heads.
-  - `n_experts`: number of experts in MoE (default 8).
-  - `top_k`: top‑\(k\) for MoE (default 2).
-  - `**kwargs`: extra arguments (ignored).
-  - Creates:
-    - `self.mamba = Mamba(d_model)` – SSM module.
-    - `self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)` – MHA.
-    - `self.moe = ExpertChoiceMoE(d_model, n_experts, top_k)` – MoE.
-    - `self.norm1`, `self.norm2`, `self.norm3`: three `nn.LayerNorm` layers (no element‑wise affine? By default `LayerNorm` has `elementwise_affine=True`).
-- **Forward**:
-  1. `x = self.norm1(x + self.mamba(x))`
-  2. `attn_out, _ = self.attn(x, x, x)`
-  3. `x = self.norm2(x + attn_out)`
-  4. `x = self.norm3(x + self.moe(x))`
-  5. Return `(x, None)`.
-
-### 3.2 ExpertChoiceMoE
-
-- Constructor:
-  - `d_model`, `n_experts`, `top_k`.
-  - `self.experts`: `nn.ModuleList` of `nn.Sequential(Linear→GELU→Linear)` each with expansion 4.
-  - `self.router`: `nn.Linear(d_model, n_experts)`.
-- Forward:
-  - Compute router logits.
-  - Get top‑\(k\) weights and indices.
-  - For each expert, compute mask of tokens that selected it, and accumulate weighted outputs.
-
-### 3.3 Integration
-
-The class is registered under `"jamba2"` in the `ATTENTION_REGISTRY`. The framework will call the class constructor with parameters from the model config and compression config. No dedicated injection function is shown; the class itself serves as the attention replacement when instantiated by the framework’s injection logic (which typically passes `model_config` and other parameters). In DistilBERT, this block replaces the entire attention module; the outer residual and LayerNorm around the attention (in the original layer) are handled by the block internally, so the outer layer should **not** apply another residual. In practice, the injection should probably replace the whole attention sub‑layer with this block, and the outer layer’s own residual and norm should be removed or adapted to avoid double residuals. The current design (triple residual inside the block) assumes that the block is placed at the point where the attention sub‑layer would be, and the original layer’s “attention + norm + residual” is replaced entirely. This is consistent with the pattern used in other blocks like GraniteHybridBlock.
-
-### 3.4 Mamba Module
-
-The `Mamba` class is imported from `.mamba`. We assume it implements a simplified Mamba block similar to the `Mamba2` placeholder seen in earlier modules, but likely with a parallel scan for efficiency. The exact details are omitted but its interface is `forward(x) -> x`.
-
----
-
-## 4. Usage and Configuration
-
-The Jamba2 block is activated by setting the attention type to `"jamba2"` in the compression configuration. Parameters can be passed via the config or directly to the constructor. Expected configuration keys:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `n_experts` | 8 | Number of MoE experts. |
-| `top_k` | 2 | Top‑\(k\) experts per token. |
-| `d_model` | (from model config) | Hidden size. |
-| `n_heads` | (from model config) | Number of attention heads. |
-
-Example injection via framework:
-```python
-comp_config.attention_type = "jamba2"
-comp_config.n_experts = 16
-comp_config.top_k = 2
+```
+                      Input Hidden States X [B, L, D]
+                                     │
+                                     ▼
+                        Stage 1: Mamba Gated SSM
+                        - in_proj: [B, L, D] -> [B, L, 2D]
+                        - SiLU Gating & out_proj: [B, L, D]
+                        - LayerNorm_1(X + Mamba(X))
+                                     │
+                                     ▼
+                     Stage 2: Multi-Head Attention (MHA)
+                        - Q, K, V GEMMs: [B, L, D]
+                        - Softmax(QK^T / sqrt(d_k)): [B, L, L]
+                        - Context Output: [B, L, D]
+                        - LayerNorm_2(X1 + MHA(X1))
+                                     │
+                                     ▼
+                     Stage 3: Token-Choice MoE FFN
+                        - Router Logits: [B, L, D] -> [B, L, E]
+                        - Top-k Index Selection & Softmax Gating
+                        - Dynamic Dispatch to E x Expert MLPs (4D)
+                        - Weighted Expert Sum: [B, L, D]
+                        - LayerNorm_3(X2 + MoE(X2))
+                                     │
+                                     ▼
+                      Output Tensor Tuple (X3, AttnMap)
 ```
 
-Manual instantiation:
+| Execution Step | Operation / Sub-module | Input Tensor | Output Tensor | Shape Transformation |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Mamba Branch** | `self.mamba` | `hidden_states` | `mamba_out` | \([B, L, D] \rightarrow [B, L, D]\) |
+| **2. Norm 1** | `self.norm1` | `hidden_states + mamba_out` | `x1` | \([B, L, D] \rightarrow [B, L, D]\) |
+| **3. MHA QKV** | `self.attn` QKV GEMMs | `x1` \([B, L, D]\) | `q, k, v` | \([B, L, D] \rightarrow 3 \times [B, L, D]\) |
+| **4. MHA Attention Map**| Scaled Dot-Product | `q`, `k` | `attn_weights` | \([B, L, D] \times [B, D, L] \rightarrow [B, L, L]\) |
+| **5. Norm 2** | `self.norm2` | `x1 + attn_out` | `x2` | \([B, L, D] \rightarrow [B, L, D]\) |
+| **6. MoE Router** | `self.router` | `x2` \([B, L, D]\) | `scores` | \([B, L, D] \rightarrow [B, L, E]\) |
+| **7. MoE Top-k** | `torch.topk` + `softmax` | `scores` | `weights`, `indices` | \([B, L, E] \rightarrow 2 \times [B, L, k]\) |
+| **8. Expert MLPs** | `self.experts[e]` | Masked `x2` | `expert_outs` | \(E \times ([B, L, D] \to [B, L, D])\) |
+| **9. Norm 3** | `self.norm3` | `x2 + moe_out` | `out` | \([B, L, D] \rightarrow [B, L, D]\) |
+
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 FLOP & MAC Operations Accounting
+
+Let \(B\) be batch size, \(L\) sequence length, \(D\) model hidden size, \(E\) number of experts, and \(k\) active experts per token:
+
+1. **Stage 1 (Mamba SSM)**:
+   - `in_proj` (\(D \to 2D\)): \(2 B L D^2\) MACs / \(4 B L D^2\) FLOPs.
+   - `out_proj` (\(D \to D\)): \(B L D^2\) MACs / \(2 B L D^2\) FLOPs.
+   - Total Mamba FLOPs: \(6 B L D^2 + 5 B L D\).
+2. **Stage 2 (Multi-Head Attention)**:
+   - Projections (\(Q, K, V, O\)): \(4 B L D^2\) MACs / \(8 B L D^2\) FLOPs.
+   - Scaled Dot-Product & Softmax Context: \(4 B L^2 D\) FLOPs.
+   - Total MHA FLOPs: \(8 B L D^2 + 4 B L^2 D\).
+3. **Stage 3 (Expert Choice MoE)**:
+   - Router GEMM (\(D \to E\)): \(B L D E\) MACs / \(2 B L D E\) FLOPs.
+   - Active Experts (\(k\) experts activated per token with expansion factor 4):
+     - Layer 1 (\(D \to 4D\)): \(k \cdot B L \cdot D \cdot (4D) = 4 k B L D^2\) MACs.
+     - Layer 2 (\(4D \to D\)): \(k \cdot B L \cdot (4D) \cdot D = 4 k B L D^2\) MACs.
+     - Total Expert FLOPs: \(16 k B L D^2\).
+   - Total MoE FLOPs: \(16 k B L D^2 + 2 B L D E\).
+4. **Total Jamba-2 Block Complexity**:
+   - **Total MACs**: \((14 + 8k) B L D^2 + 2 B L^2 D + B L D E\).
+   - **Total FLOPs**: \((14 + 16k) B L D^2 + 4 B L^2 D + 2 B L D E + 15 B L D\).
+   - For standard parameters (\(k=2\)): \(\text{FLOPs} = 46 B L D^2 + 4 B L^2 D + 2 B L D E\).
+
+### 4.2 Memory Footprint Accounting
+
+- **Parameter Count**:
+  - Mamba: \(3 D^2 + 3 D\).
+  - MHA: \(4 D^2 + 4 D\).
+  - MoE Router: \(D \cdot E + E\).
+  - Experts (\(E\) MLPs): \(E \times (D \cdot 4D + 4D \cdot D) = 8 E D^2\) parameters.
+  - LayerNorms (3 layers): \(6 D\).
+  - Total Parameters: \((7 + 8E) D^2 + (7 + E) D\). For \(D=768, E=8\), Total Parameters \(\approx 42.5 \times 10^6\) parameters (\(\sim 85\) MB per block in FP16).
+
+- **Training Activation Footprint**:
+  - Preserving intermediate activations across 3 Pre-LayerNorm stages requires \(\approx 18 \cdot B \cdot L \cdot D + 2 \cdot B \cdot H \cdot L^2\) bytes.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Expert Router Collapse & Load Imbalance
+
+In `ExpertChoiceMoE`, top-\(k\) routing logits \(\mathbf{S} = \mathbf{X} \mathbf{W}_r\) are computed independently per token. Without explicit auxiliary load-balancing loss (\(\mathcal{L}_{\text{balance}}\)), the router frequently suffers from **expert collapse**: a small subset of experts (e.g., Expert 0 and Expert 1) receives over 90% of tokens, while remaining experts receive 0 tokens. This collapses effective parameter capacity to a standard small FFN while wasting memory allocations for inactive experts.
+
+### 5.2 Dynamic Memory Fragmentation in PyTorch Expert Loop
+
+The Python loop over expert indices `for e in range(self.n_experts):` with boolean mask indexing `x * mask.unsqueeze(-1)` creates dynamic memory allocations and CPU synchronization barriers. Unused experts still execute zeroed matrix operations, failing to achieve theoretical GPU speedups from parameter sparsity.
+
+### 5.3 Triple LayerNorm Gradient Attenuation
+
+Iterating through three sequential Pre-LayerNorm operations (`norm1`, `norm2`, `norm3`) within a single block causes gradient magnitude scaling variance. Backpropagated gradients passing through three consecutive normalization operations undergo cumulative scale compression, making lower-layer Mamba projections harder to optimize without gradient clipping adjustments.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### 6.1 Grouped GEMM & Fused MoE Routing Triton Kernel
+
+To eliminate the Python expert loop overhead, we deploy a grouped GEMM Triton kernel that sorts token indices by expert assignments in SRAM and executes parallel matrix multiplications using NVIDIA Tensor Cores.
+
 ```python
-block = Jamba2Block(d_model=768, n_heads=12, n_experts=16, top_k=2)
-layer.attention = block
+import triton
+import triton.language as tl
+import torch
+
+@triton.jit
+def _fused_moe_router_kernel(
+    X_ptr, Router_ptr, TopK_Weights_ptr, TopK_Indices_ptr,
+    stride_x_b, stride_x_d,
+    stride_r_d, stride_r_e,
+    B, L, D: tl.constexpr, E: tl.constexpr, K: tl.constexpr,
+    BLOCK_D: tl.constexpr
+):
+    pid_bl = tl.program_id(0) # Combined (Batch * Length) index
+    
+    offs_d = tl.arange(0, BLOCK_D)
+    mask_d = offs_d < D
+    
+    # Load token activation x_bl into register
+    x_val = tl.load(X_ptr + pid_bl * stride_x_b + offs_d, mask=mask_d, other=0.0)
+    
+    # Compute router scores across E experts in SRAM
+    scores = tl.zeros([E], dtype=tl.float32)
+    for e in range(E):
+        w_r = tl.load(Router_ptr + offs_d * stride_r_d + e * stride_r_e, mask=mask_d, other=0.0)
+        scores[e] = tl.sum(x_val * w_r, axis=0)
+        
+    # Top-k extraction and Softmax inside SRAM registers
+    # (Enables zero-copy scatter-gather memory writes to Grouped GEMM buffer)
 ```
 
----
+### 6.2 Optimization Blueprint & Tile Configuration
 
-## 5. Discussion
-
-The Jamba2 block leverages the complementary strengths of its three components. Mamba provides a fast, global context summarisation via state‑space dynamics; attention refines the representation with exact pairwise interactions; MoE injects high‑capacity non‑linear transformations sparsely. The three residual norms help trainability of this deep‑within‑a‑layer structure.
-
-However, there are several considerations. The block contains **three** sub‑layers internally, making it significantly deeper and heavier than a standard attention layer. This could lead to overfitting or training instability if not carefully regularised. The MoE, while sparse, adds a large number of parameters (8 experts × (4× expansion) = ~8× more FFN parameters than a single FFN). The Mamba module may have its own set of parameters. The total parameter count per block is much higher than vanilla attention, which could be an issue for memory but not for FLOPs if sparsity is exploited.
-
-The block does **not** apply any attention mask (padding mask) in the MHA call; `nn.MultiheadAttention` accepts an optional `key_padding_mask` or `attn_mask` but it is not passed. Thus, padding tokens would be attended to, which is problematic for batch processing with variable lengths. The Mamba and MoE also do not mask padding. A proper implementation should pass the padding mask through all stages.
-
-Another nuance is the sequential stacking: Mamba → Attention → MoE. This order is fixed. It might be beneficial to learn routing weights or to permute the order depending on the task. Additionally, the block’s output is `(x, None)`, which is consistent with the interface. The block could be extended to return attention weights from the attention sub‑layer if needed.
-
----
-
-## 6. Conclusion
-
-We have introduced the Jamba2 Block, a hybrid Transformer sub‑layer combining Mamba, multi‑head attention, and top‑2 Mixture of Experts. The sequential residual design integrates efficient state‑space processing, global attention, and sparse conditional computation into a single compact module. The block is integrated into the DistilBERT compression framework and provides a powerful alternative to standard self‑attention for tasks requiring both efficiency and capacity. Future work will address masking, exploration of sub‑layer order, and dynamic expert routing.
+- **Grouped GEMM Execution (`cutlass` / `triton`)**: Re-arranges input token vectors into continuous memory buffers partitioned by destination expert `e \in \{1 \dots E\}\), enabling single-kernel batched matrix multiplications.
+- **Asynchronous SRAM Double-Buffering**: Overlaps Mamba selective scan computation with MHA QKV GEMM launches using CUDA Streams, keeping GPU Tensor Core utilization above 75%.

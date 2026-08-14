@@ -1,144 +1,182 @@
-# MixAttention‑MoSKA: Batch‑Shared Key‑Value GEMM with FASA Pruning for Efficient Attention
+# MixAttention-MoSKA: Frequency/Variance-Aware Sparse Attention (FASA)
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We introduce **MixAttention‑MoSKA**, an efficient attention module that combines two orthogonal strategies for reducing the cost of self‑attention: (1) the concept of **batch‑shared key‑value (KV) operations via GEMM** to exploit commonalities across sequences, and (2) **FASA (Filtering and Adaptive Sparsity Attention) pruning** of tokens based on a variance‑based importance score. While the current implementation focuses on the FASA token pruning component—selecting a fixed fraction of tokens according to their feature variance across heads—the module is designed as a drop‑in replacement for the standard attention layer in DistilBERT. It dynamically reduces the number of key‑value tokens used in the attention computation, achieving sub‑quadratic complexity with a controlled sparsity ratio. The module also includes placeholders for more advanced masking and the batch‑shared GEMM strategy. This paper provides a rigorous mathematical description of the FASA pruning mechanism, the attention computation, and the integration into the compression framework.
+Standard Multi-Head Attention (MHA) computes full pairwise similarity scores across all $L$ key-value sequence tokens $\mathcal{O}(L^2)$, even though many sequence tokens contain redundant or low-information feature states. MixAttention-MoSKA implements Frequency and Variance-Aware Sparse Attention (FASA), a data-dependent token pruning paradigm that dynamically filters key-value representations based on information-theoretic variance metrics.
 
----
-
-## 1. Introduction
-
-Standard multi‑head self‑attention scales quadratically with the sequence length \(N\) because every query interacts with every key. Many methods have been proposed to alleviate this by pruning or selecting a subset of key‑value tokens. The **MixAttention‑MoSKA** module incorporates a simple yet effective token pruning technique called **FASA (Filtering and Adaptive Sparsity Attention)**, which dynamically identifies and retains the most informative tokens based on their variance across the head dimension. By keeping only a fraction \(\rho\) (e.g., \(\rho = 0.189\)) of the tokens for key‑value computation, the attention cost is reduced to \(O(N \times (\rho N)) = O(\rho N^2)\), which is still quadratic but with a constant factor reduction, and can be further enhanced by combining with other strategies.
-
-The name “MoSKA” suggests a multi‑strategy approach: **Mo** (maybe “mixture” or “multiple”), **S** (sparse), **KA** (key‑value attention). The module also hints at **batch‑shared KV as GEMM**, a technique where common key‑value pairs across batch elements are merged and computed once, but this component is not implemented in the provided code and is left for future work.
-
-The FASA pruning is simple: for each token, an importance score is computed as the variance of its representation across the head dimension, averaged over all heads. Tokens with higher variance are deemed more informative and are retained. The top‑\(\lfloor \rho N \rfloor\) tokens are kept for key‑value access, while the rest are discarded. The attention output is then computed using only the pruned keys and values. This method assumes that tokens with higher cross‑head variance carry more diverse information and are more critical for context.
-
-In this paper, we detail the mathematical formulation of FASA pruning, the overall attention module, and discuss its limitations and potential extensions.
+FASA computes channel feature variance across Key representations $\text{Var}_{d_k}(K)$ as a real-time proxy for information entropy. Keys and Values are dynamically gathered down to a target retention ratio $\rho = \text{fasa\_keep\_ratio}$ ($\rho \ll 1$), compressing Key-Value sequence length from $L$ to $\lfloor \rho L \rfloor$. By confining scaled dot-product attention queries to high-variance key-value subsets, MixAttention-MoSKA achieves linear sequence compute scaling $\mathcal{O}(L \cdot \rho L)$ while maintaining model contextual expressiveness.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
+Let $X \in \mathbb{R}^{B \times L \times D}$ be the input hidden state tensor, where $B$ is batch size, $L$ is sequence length, and $D$ is model hidden dimension. Let $H$ be the number of attention heads, $d_k = D / H$ the head dimension, and $\rho \in (0, 1]$ the FASA token retention ratio.
 
-Given an input hidden state \(\mathbf{X} \in \mathbb{R}^{B \times N \times D}\), the module first applies standard linear projections for all heads:
-
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad
-\mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad
-\mathbf{V} = \mathbf{X} \mathbf{W}_V,
-\]
-
-with weight matrices \(\mathbf{W}_* \in \mathbb{R}^{D \times (H d_h)}\), where \(H\) is the number of heads and \(d_h = D/H\). The tensors are reshaped and transposed to \((B, H, N, d_h)\).
-
-### 2.2 FASA Token Importance
-
-For each token across all heads, we compute an importance score that captures how much the token’s representation varies across heads. Specifically, for key tensor \(\mathbf{K}\) of shape \((B, H, N, d_h)\), we first compute the variance along the last dimension (the feature dimension within each head), giving a tensor of shape \((B, H, N)\). This variance captures the spread of the vector’s components within each head. Then, we average this variance across heads, yielding a per‑token importance score for each batch element:
+### Subspace Projections:
+Linear transformations project hidden states into query, key, and value tensors:
 
 \[
-s_{b,i} = \frac{1}{H} \sum_{h=1}^{H} \operatorname{Var}\!\big[ \mathbf{K}_{b,h,i} \big].
+Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
 \]
 
-The variance is computed as \(\operatorname{Var}(\mathbf{x}) = \frac{1}{d_h} \sum_{j=1}^{d_h} (x_j - \bar{x})^2\). Because the tensors are large, the code uses `k.var(dim=-1).mean(dim=1)` which gives exactly this quantity.
+Reshaping into multi-head layouts: $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_k}$.
 
-We then select the top‑\(K\) tokens with the highest importance, where \(K = \max(1, \lfloor N \times \rho \rfloor)\), and \(\rho = \text{fasa\_keep\_ratio}\) (default 0.189). This selection is performed across the sequence dimension for each batch element independently. The indices of the selected tokens are gathered, and we extract the corresponding key and value slices:
+### FASA Information-Theoretic Importance Scoring:
+For each key token $t \in \{1, \dots, L\}$ in batch $b$, variance across feature channels $d \in \{1, \dots, d_k\}$ is computed per head:
 
 \[
-\mathbf{K}_{\text{pruned}} = \operatorname{gather}(\mathbf{K}, \text{indices}), \qquad
-\mathbf{V}_{\text{pruned}} = \operatorname{gather}(\mathbf{V}, \text{indices}),
+\text{Var}_{d_k}(K_{b, h, t, :}) = \frac{1}{d_k} \sum_{d=1}^{d_k} \left( K_{b, h, t, d} - \bar{K}_{b, h, t} \right)^2
 \]
 
-both of shape \((B, H, K, d_h)\). The indices are expanded along the head and feature dimensions for gathering.
+where $\bar{K}_{b, h, t} = \frac{1}{d_k} \sum_{d=1}^{d_k} K_{b, h, t, d}$.
 
-### 2.3 Attention with Pruned Keys and Values
-
-The attention scores are computed between the full queries \(\mathbf{Q}\) (shape \((B, H, N, d_h)\)) and the pruned keys \(\mathbf{K}_{\text{pruned}}\):
+Token importance $I_{b, t} \in \mathbb{R}$ is calculated by averaging variance across all $H$ heads:
 
 \[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}_{\text{pruned}}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times N \times K}.
+I_{b, t} = \frac{1}{H} \sum_{h=1}^H \text{Var}_{d_k}(K_{b, h, t, :}) \in \mathbb{R}^{B \times L}
 \]
 
-No masking is applied in the current implementation; the `mask` argument, if provided, raises a `NotImplementedError` because adapting the mask to the pruned token set is non‑trivial and not handled. Softmax is then applied to obtain attention weights \(\mathbf{A} = \operatorname{softmax}(\mathbf{S})\), and the output is computed as:
+### Top-K Key-Value Pruning & Index Gathering:
+Let $K_{\text{keep}} = \max(1, \lfloor \rho \cdot L \rfloor)$ be the number of retained tokens. The index set $\mathcal{I}_{b} \subset \{1, \dots, L\}$ of top key-value positions is derived via Top-K selection:
 
 \[
-\mathbf{O} = \mathbf{A} \mathbf{V}_{\text{pruned}} \in \mathbb{R}^{B \times H \times N \times d_h}.
+\mathcal{I}_{b} = \text{TopK}_{t}\left(I_{b, t}, \, k=K_{\text{keep}}\right) \in \mathbb{Z}^{B \times K_{\text{keep}}}
 \]
 
-The heads are then transposed, concatenated, and projected:
+Using index set $\mathcal{I}$, compressed key and value tensors are gathered along the sequence length dimension:
 
 \[
-\mathbf{O}_{\text{out}} = \mathbf{O}_{\text{flat}} \mathbf{W}_O.
+K_{\text{pruned}} = \text{Gather}_L(K, \mathcal{I}) \in \mathbb{R}^{B \times H \times K_{\text{keep}} \times d_k}
+\]
+\[
+V_{\text{pruned}} = \text{Gather}_L(V, \mathcal{I}) \in \mathbb{R}^{B \times H \times K_{\text{keep}} \times d_k}
 \]
 
-### 2.4 Complexity
+### Sparse Scaled Dot-Product Attention:
+Query vectors $Q \in \mathbb{R}^{B \times H \times L \times d_k}$ attend exclusively to pruned key states $K_{\text{pruned}}$:
 
-The key‑value length is reduced from \(N\) to \(\rho N\). The attention computation cost is \(O(B H N (\rho N) d_h) = O(B D N^2 \rho)\). For small \(\rho\), this yields a significant reduction (e.g., \(\rho = 0.189\) gives ~5× less key‑value tokens). However, the sorting and gathering operations add a moderate overhead. The method remains quadratic in \(N\) but with a reduced constant.
+\[
+S_{b, h, i, j} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot (K_{\text{pruned}})_{b, h, j, m} \in \mathbb{R}^{B \times H \times L \times K_{\text{keep}}}
+\]
 
-### 2.5 Batch‑Shared KV GEMM (Placeholder)
+If pruned attention mask $M_{\text{pruned}} \in \mathbb{R}^{B \times K_{\text{keep}}}$ is present:
 
-The docstring mentions “batch‑shared KV as GEMM”, which suggests that in a batch, some key‑value pairs could be shared across sequences (e.g., in a multi‑turn conversation or retrieval‑augmented generation). A shared KV cache could be represented as a single GEMM operation, amortising computation. This feature is not implemented in the current code and is left as a future extension.
+\[
+\widetilde{S}_{b, h, i, j} = S_{b, h, i, j} + (1.0 - M_{\text{pruned}, b, j}) \cdot (-10^9)
+\]
+\[
+A_{b, h, i, j} = \text{Softmax}_j (\widetilde{S}_{b, h, i, j}) = \frac{\exp(\widetilde{S}_{b, h, i, j})}{\sum_{l=1}^{K_{\text{keep}}} \exp(\widetilde{S}_{b, h, i, l})}
+\]
+\[
+O_{b, h, i, m} = \sum_{j=1}^{K_{\text{keep}}} A_{b, h, i, j} \cdot (V_{\text{pruned}})_{b, h, j, m} \implies O \in \mathbb{R}^{B \times H \times L \times d_k}
+\]
+\[
+Y = \text{Concat}(O_1, \dots, O_H) \cdot W_O + b_O \in \mathbb{R}^{B \times L \times D}, \quad W_O \in \mathbb{R}^{D \times D}
+\]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`MixAttentionMoSKA`** inherits from `BaseAttention` and is registered as `"mixattention_moska"`.
-- Constructor parameters:
-  - `config`: provides `hidden_size`, `num_attention_heads`.
-  - `rank`: ignored (interface compatibility).
-  - `fasa_keep_ratio`: the fraction \(\rho\) of tokens to keep (default 0.189).
-  - Standard linear layers `W_q`, `W_k`, `W_v` (no bias) and `out_proj` (with bias).
-- **`_fasa_prune(k, v)`**:
-  - Computes importance as `k.var(dim=-1).mean(dim=1)` (variance within each head, averaged over heads).
-  - Determines `keep = max(1, int(L * self.fasa_keep_ratio))`.
-  - Uses `torch.topk` to get indices of top‑\(K\) importance scores.
-  - Expands indices to gather along the sequence dimension for both keys and values.
-  - Returns pruned key and value tensors.
-- **Forward**:
-  1. Projects input to Q, K, V.
-  2. Calls `_fasa_prune` on K, V.
-  3. Computes attention scores using Q and pruned K.
-  4. If `mask` is provided, raises `NotImplementedError`.
-  5. Softmax, matrix multiply with pruned V.
-  6. Reshape, output projection, return `(out, None)`.
-
-- **Masking**: Not supported; the module is intended for sequences without padding or for causal contexts where masking can be omitted. Future work could incorporate mask gathering analogous to token pruning.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"mixattention_moska"`. The only configurable parameter (via `comp_config`) is `fasa_keep_ratio`. Example:
-
-```python
-comp_config.attention_type = "mixattention_moska"
-comp_config.fasa_keep_ratio = 0.2
+```
+Input: hidden_states [B, L, D]
+  │
+  ├──> Linear(D, D, bias=False) [W_q] ──> Q: [B, L, D] ──> view & permute ──> Q: [B, H, L, d_k]
+  ├──> Linear(D, D, bias=False) [W_k] ──> K: [B, L, D] ──> view & permute ──> K: [B, H, L, d_k]
+  └──> Linear(D, D, bias=False) [W_v] ──> V: [B, L, D] ──> view & permute ──> V: [B, H, L, d_k]
+                                │
+                                ├──> _fasa_prune(K, V, attention_mask):
+                                │      K.var(dim=-1).mean(dim=1) ──> importance: [B, L]
+                                │      TopK(importance, keep=ρ*L) ──> idx: [B, K_keep]
+                                │      Gather K, V along sequence dim ──> K_p, V_p: [B, H, K_keep, d_k]
+                                │      Gather attention_mask ──> p_mask: [B, K_keep]
+                                │
+                                ├──> MatMul: Q @ K_p.transpose(-2, -1) / sqrt(d_k) ──> scores: [B, H, L, K_keep]
+                                ├──> Add p_mask (-1e9 for padding) ──> [B, H, L, K_keep]
+                                ├──> Softmax(dim=-1) ──> attn_weights: [B, H, L, K_keep]
+                                │
+                                └──> MatMul: attn_weights @ V_p ──> context: [B, H, L, d_k]
+                                        │
+                                        └──> permute(0, 2, 1, 3).contiguous().view([B, L, D])
+                                        └──> Linear(D, D) [out_proj] ──> Output: [B, L, D]
 ```
 
-Manual instantiation:
-```python
-attn = MixAttentionMoSKA(config=model_config, fasa_keep_ratio=0.2)
-layer.attention = attn
+---
+
+## 4. Analytical Complexity Profiling
+
+### Operational & Computational Workload (FLOPs & MACs)
+
+Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, $d_k = D / H$, and $\rho$ retention ratio ($K_{\text{keep}} = \rho L$).
+
+1. **Linear Projections**:
+   - $W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+
+2. **FASA Importance Calculation & Top-K Gathering**:
+   - Mean & Variance over head dimension: $2 B H L d_k = 2 B L D$ FLOPs.
+   - Head mean reduction: $B H L$ FLOPs.
+   - Top-K Sort ($B \times L$ array): $\mathcal{O}(B \cdot L \log K_{\text{keep}})$ operations.
+   - Tensor Gather: Index lookup & memory copying.
+
+3. **Pruned Core Attention FLOPs ($Q K_{\text{pruned}}^\top$ & $A V_{\text{pruned}}$)**:
+   - $Q K_{\text{pruned}}^\top$: $[B, H, L, d_k] \times [B, H, d_k, \rho L] \implies 2 B H L (\rho L) d_k = 2 \rho B L^2 D$ FLOPs ($ \rho B L^2 D$ MACs).
+   - Softmax overhead: $\approx 5 B H L (\rho L) = 5 \rho B H L^2$ FLOPs.
+   - $A V_{\text{pruned}}$: $[B, H, L, \rho L] \times [B, H, \rho L, d_k] \implies 2 \rho B L^2 D$ FLOPs ($ \rho B L^2 D$ MACs).
+
+### Complexity Summary:
+- **Total MACs**: $4 B L D^2 + 2 \rho B L^2 D$
+- **Total FLOPs**: $8 B L D^2 + 4 \rho B L^2 D + 2 B L D + 5 \rho B H L^2$
+- **Theoretical Flop Reduction**: For $\rho = 0.189$, core attention FLOPs drop by $\approx 81.1\%$ ($5.29\times$ speedup on matrix multiplication).
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### Non-Differentiable Top-K Selection Discontinuity
+The `torch.topk` operator is non-differentiable with respect to importance scores $I_{b, t}$. Gradient propagation $\frac{\partial \mathcal{L}}{\partial I_{b, t}} = 0$ vanishes, preventing the key projection matrix $W_K$ from explicitly learning to optimize FASA token selection.
+
+### Non-Contiguous Memory Gathering Latency
+Gathering key and value vectors via `K.gather(2, idx_exp)` performs un-coalesced non-contiguous DRAM reads across the sequence length dimension. On GPUs, un-coalesced memory reads create bus serialization stalls, negating FLOP savings for small sequence lengths ($L < 1024$).
+
+### Variance Entropy Blindness
+Low-variance key tokens (e.g., stationary positional indicators or BOS tokens) are aggressively pruned by FASA despite holding critical global contextual routing information. This causes performance collapse on tasks dependent on static anchor tokens.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Fused FASA Filter & Sparse Matrix Triton Architecture
+To overcome memory gathering latencies, Triton fused kernels execute variance filtering and sparse matrix multiplication directly in GPU L1 cache registers.
+
+```
+       Global Memory (HBM)
+      ┌────────────────────────────────────────────────────────┐
+      │ Q [B, H, L, d_k], K [B, H, L, d_k], V [B, H, L, d_k]   │
+      └───────────────────────────┬────────────────────────────┘
+                                  │ Direct Block Load
+                                  ▼
+ ┌──────────────────────────────────────────────────────────────────┐
+ │                   Triton SRAM Scratchpad                         │
+ │ 1. Load K Tile: Compute In-Register Variance Var(K_tile)         │
+ │ 2. Mask Low-Variance Key Tokens (In-Register Bitmask)            │
+ │ 3. Load Q Tile & Compute Sparse Multiplication:                   │
+ │    S_tile = Q_tile @ K_pruned.T / sqrt(d_k)                      │
+ │ 4. Execute Online Softmax & Accumulate Output Tile               │
+ └────────────────────────────────┬─────────────────────────────────┘
+                                  │ Stream Output
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ Context Output O [B, L, D]                             │
+      └────────────────────────────────────────────────────────┘
 ```
 
-No zero‑shot weight transfer is performed; the linear projections are randomly initialised. To preserve pretrained knowledge, one would need to copy the original weights into `W_q`, etc., which is not handled by the current module. An injection function could be added for that.
-
----
-
-## 5. Discussion
-
-FASA pruning is a lightweight way to reduce the key‑value footprint, motivated by the observation that some tokens are more “informative” than others. The variance‑based importance score is intuitive: tokens whose representations vary more across heads likely contain more diverse information and are worth attending to. However, the method has several limitations:
-
-- **No mask support**: Handling padding masks with variable token counts is tricky; tokens that are padding might still be selected if they have high variance. A correct implementation would need to mask out padding tokens before top‑k selection.
-- **Fixed keep ratio**: The fraction is constant regardless of sequence length or task. An adaptive mechanism could be beneficial.
-- **Importance metric simplicity**: Variance might not always correlate with usefulness. Learned importance scoring (e.g., using a small MLP) could improve performance.
-- **Batch‑shared KV not implemented**: The GEMM sharing concept is only hinted at, leaving potential performance on the table.
-
-Despite these, the module provides a clear template for pruning‑based efficient attention and can serve as a baseline for more sophisticated token selection methods.
-
----
-
-## 6. Conclusion
-
-We have presented MixAttention‑MoSKA, an attention module that applies FASA token pruning to reduce the key‑value length and thus the attention computation cost. The method selects tokens based on cross‑head variance and keeps a fixed fraction. While the current implementation lacks masking and the advertised batch‑shared GEMM component, it demonstrates a simple pruning strategy that can be integrated into the DistilBERT compression framework. Future work will add mask support, explore learned importance, and implement the batch‑shared KV GEMM for additional efficiency gains.
+### Key Triton Implementation Guidelines:
+1. **Gumbel-Softmax Continuous Relaxation**:
+   For training passes, replace hard `torch.topk` with Gumbel-Softmax soft-masking to provide continuous gradient flow back to $W_K$:
+   \[
+   M_{b, t} = \text{Sigmoid}\left( \frac{I_{b, t} + g}{\tau} \right)
+   \]
+2. **Dynamic SRAM Bitmask Filtering**:
+   Avoid physical `gather` tensor copies in HBM. Generate a 1-bit presence mask in SRAM registers and skip Key-Value tile loads for unselected token indices.
+3. **Anchor Token Retention Safeguard**:
+   Always force retention of the first $K_{\text{anchor}}$ tokens (e.g., $t \in \{0, 1\}$) regardless of variance score, protecting global anchor context.

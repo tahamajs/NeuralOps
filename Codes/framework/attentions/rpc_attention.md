@@ -1,120 +1,155 @@
-# RPC Attention: Random Projection Augmented Self‑Attention
+# RPC Attention: Random Projection Compressed Subspace Sketching
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+High-dimensional head space evaluations $d$ in multi-head attention require expensive dot-product calculations across query and key matrices. Random Projection Compressed (RPC) Attention leverages the Johnson-Lindenstrauss (JL) Lemma, which states that any set of vectors in a high-dimensional space can be projected into a significantly lower-dimensional subspace while approximately preserving pairwise distances and inner products.
 
-We present **RPC Attention**, a simple baseline attention module that pre‑processes the query and key vectors of each attention head with a fixed, randomly initialised linear transformation before computing the scaled dot‑product attention. The projection matrices are stored as non‑trainable buffers, one per head, and serve as a fixed random feature map. This design can be seen as a lightweight form of feature decorrelation or as a static approximation to more sophisticated random feature attention mechanisms. The module retains the exact quadratic complexity of standard self‑attention but provides a drop‑in replacement for the self‑attention sub‑layer in DistilBERT within the compression framework. This paper describes the mathematical formulation, implementation, and intended role as a baseline for efficient attention experiments.
-
----
-
-## 1. Introduction
-
-Standard multi‑head self‑attention computes pairwise similarities between queries and keys in the original feature space. Various efficient attention methods use random projections to approximate the softmax kernel (e.g., Performer, RALA). **RPC Attention** (Random Projection Attention) takes a minimalistic step in this direction: it applies a **fixed, random linear transformation** to the query and key tensors of each head before the dot product, without any subsequent non‑linearity or kernel approximation. The transformation is a square matrix (same dimension as the head), initialised from a standard normal distribution and never updated during training. This can be viewed as a form of static feature mixing that decorrelates the input dimensions, potentially improving gradient flow and acting as a regulariser.
-
-The module is intentionally simple, serving as a controlled baseline for more complex random‑feature‑based attention variants. It is integrated into the compression framework via the `ATTENTION_REGISTRY` as a drop‑in replacement for DistilBERT’s self‑attention. This paper provides the mathematical details, implementation notes, and discusses the role of RPC Attention in the broader landscape of efficient Transformers.
+RPC Attention constructs fixed head-wise Gaussian random projection matrices $\mathbf{P} \in \mathbb{R}^{H \times d \times d_p}$, sketching query and key heads down to compressed rank $d_p \ll d$. Computing query-key similarity scores in the sketched manifold reduces FLOP requirements for score matrix generation while maintaining concentration of measure bounds on scalar products.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
-
-Given an input sequence \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), the module first applies standard linear projections to obtain queries, keys, and values for all heads:
+Given input sequence representations $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, multi-head query, key, and value tensors are generated via linear projections for head $h \in \{1, \dots, H\}$:
 
 \[
-\mathbf{Q} = \mathbf{X}\mathbf{W}_Q,\quad \mathbf{K} = \mathbf{X}\mathbf{W}_K,\quad \mathbf{V} = \mathbf{X}\mathbf{W}_V,
+\mathbf{Q}_h = \mathbf{X} \mathbf{W}_Q^{(h)} \in \mathbb{R}^{B \times N \times d}, \quad \mathbf{K}_h = \mathbf{X} \mathbf{W}_K^{(h)} \in \mathbb{R}^{B \times N \times d}, \quad \mathbf{V}_h = \mathbf{X} \mathbf{W}_V^{(h)} \in \mathbb{R}^{B \times N \times d}
 \]
 
-with \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times (H d_h)}\), where \(H\) is the number of heads and \(d_h = D/H\). The tensors are reshaped to the multi‑head layout \((B, H, L, d_h)\) and transposed to \((B, H, L, d_h)\).
+A head-wise Gaussian random projection matrix buffer $\mathbf{P} \in \mathbb{R}^{H \times d \times d_p}$ is initialized with isotropic Gaussian entries $\mathbf{P}_{h, i, j} \sim \mathcal{N}\left(0, \frac{1}{d}\right)$ where $d_p$ is the target projection rank.
 
-### 2.2 Per‑Head Fixed Random Projection
-
-For each head \(h\), a random matrix \(\mathbf{R}_h \in \mathbb{R}^{d_h \times d_h}\) is created once and stored as a non‑trainable buffer. The entries of \(\mathbf{R}_h\) are drawn from a standard normal distribution (using `torch.randn`). This matrix is then used to project the queries and keys of head \(h\):
+Queries and keys are sketched into the $d_p$-dimensional random subspace:
 
 \[
-\tilde{\mathbf{Q}}_h = \mathbf{Q}_h \mathbf{R}_h, \qquad
-\tilde{\mathbf{K}}_h = \mathbf{K}_h \mathbf{R}_h.
+\widetilde{\mathbf{Q}}_h = \mathbf{Q}_h \mathbf{P}_h \in \mathbb{R}^{B \times N \times d_p}, \quad \widetilde{\mathbf{K}}_h = \mathbf{K}_h \mathbf{P}_h \in \mathbb{R}^{B \times N \times d_p}
 \]
 
-The values \(\mathbf{V}_h\) remain unchanged. Since the projection is applied within the \(d_h\)-dimensional head space, it does not reduce dimensionality; it merely rotates (and potentially scales) the feature vectors. The projection is fixed after initialisation and does not receive gradient updates.
-
-### 2.3 Scaled Dot‑Product Attention
-
-The attention scores are computed using the projected queries and keys:
+Specifically, using Einstein summation over head and feature dimensions:
 
 \[
-\mathbf{S}_h = \frac{\tilde{\mathbf{Q}}_h \tilde{\mathbf{K}}_h^\top}{\sqrt{d_h}}.
+\widetilde{\mathbf{Q}}_{b, h, i, e} = \sum_{m=1}^d \mathbf{Q}_{b, h, i, m} \mathbf{P}_{h, m, e}, \quad \forall e \in \{1, \dots, d_p\}
 \]
 
-Softmax is applied to obtain attention weights \(\mathbf{A}_h = \operatorname{softmax}(\mathbf{S}_h)\), and the output context is:
+Scaled similarity logits $\mathbf{S}_h \in \mathbb{R}^{B \times N \times N}$ are computed between sketched query and key representations using scaling factor $d_p^{-1/2}$:
 
 \[
-\mathbf{C}_h = \mathbf{A}_h \mathbf{V}_h.
+\mathbf{S}_h = \frac{\widetilde{\mathbf{Q}}_h \widetilde{\mathbf{K}}_h^\top}{\sqrt{d_p}} + \mathbf{M}_{\text{mask}}
 \]
 
-The per‑head outputs are concatenated, reshaped to \((B, L, D)\), and passed through the output projection \(\mathbf{W}_O\):
+Softmax probability mapping and value aggregation yield the contextual head output:
 
 \[
-\mathbf{Y} = \mathbf{C}_{\text{flat}} \mathbf{W}_O + \mathbf{b}_O.
+\mathbf{A}_h = \operatorname{softmax}\left( \mathbf{S}_h, \text{dim}=-1 \right) \in \mathbb{R}^{B \times N \times N}, \quad \mathbf{O}_h = \mathbf{A}_h \mathbf{V}_h \in \mathbb{R}^{B \times N \times d}
 \]
 
-### 2.4 Rationale
+Multi-head outputs are concatenated and linearly projected back to the hidden space:
 
-If the random matrices were orthonormal, the dot product would be preserved: \((\mathbf{Q}\mathbf{R})(\mathbf{K}\mathbf{R})^\top = \mathbf{Q}\mathbf{K}^\top\). Since they are general random matrices, the dot product is altered. This alteration can be seen as a fixed, data‑independent feature mixing that may help break pathological initialisations or create a more diverse set of attention patterns across heads. It also serves as a minimal augmentation to test whether random projections provide any benefit in a standard attention setting, analogous to the use of fixed random encoders in some neural network architectures.
+\[
+\mathbf{Y} = \operatorname{Concat}(\mathbf{O}_1, \dots, \mathbf{O}_H) \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
+\]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **Class `RPCAttention`** inherits from `nn.Module` and is registered under `"rpc"` in the `ATTENTION_REGISTRY`.
-- **Constructor**:
-  - `config`: provides `num_attention_heads`, `hidden_size`.
-  - `rank`: ignored (for interface compatibility).
-  - `pretrained_attn`: accepted but not used; does not perform weight transfer.
-  - Creates linear layers `W_q`, `W_k`, `W_v`, `out_proj` (with biases).
-  - Initialises a buffer `proj` of shape `(num_heads, head_dim, head_dim)` from a standard normal distribution. This buffer is moved to the appropriate device automatically.
-- **Forward**:
-  1. Project hidden states to Q, K, V and reshape to `(B, H, L, d_h)`.
-  2. Retrieve `proj` and apply to Q and K using `einsum('bhld,hde->bhle', ...)`.
-  3. Compute attention scores with scaling, apply softmax.
-  4. Multiply by V, transpose, reshape, output projection.
-  5. Return `(output, None)`.
-- **Mask handling**: The forward method does **not** accept or use an `attention_mask`. Padding tokens will be processed like regular tokens, potentially causing issues. This omission should be addressed in a production version.
-- **Bug note**: The constructor incorrectly calls `super().__init__(config, rank)`, but the class is defined as inheriting from `nn.Module`, which accepts no arguments. This likely causes an error at runtime; a correct version would call `super().__init__()`. Additionally, the forward method has an unused `pretrained_attn` argument that shadows the constructor parameter.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"rpc"` in the compression configuration. No additional hyperparameters are required. Example injection (assuming the bug is fixed):
-
-```python
-comp_config.attention_type = "rpc"
+```
+Input Hidden States X [B, N, D]
+  │
+  ├──> Linear Projections (W_Q, W_K, W_V) -> Q, K, V [B, H, N, d]
+  │
+  ├──> Random Subspace Projection (Buffer P [H, d, d_p]):
+  │    ├──> Q_feat = einsum('bhld, hde -> bhle', Q, P) ───> [B, H, N, d_p]
+  │    └──> K_feat = einsum('bhld, hde -> bhle', K, P) ───> [B, H, N, d_p]
+  │
+  ├──> Sketched Score MatMul:
+  │    S = (Q_feat @ K_feat^T) / sqrt(d_p) ─────────────> [B, H, N, N]
+  │    S = S + Mask ────────────────────────────────────> [B, H, N, N]
+  │
+  ├──> Softmax & Dropout:
+  │    A = Softmax(S, dim=-1) ──────────────────────────> [B, H, N, N]
+  │    A_drop = Dropout(A) ─────────────────────────────> [B, H, N, N]
+  │
+  └──> Value Aggregation & Output Projection:
+       Context = A_drop @ V ────────────────────────────> [B, H, N, d]
+       Y = Reshape(Context) @ W_O ──────────────────────> [B, N, D]
 ```
 
-Manual instantiation (fixed):
+### Detailed Shape Progression Table
+
+| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| 1 | Input Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
+| 2 | Multi-Head Reshape | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
+| 3 | Query Subspace Sketching | `Q: [B, H, N, d]`, `P: [H, d, d_p]` | `Q_feat: [B, H, N, d_p]` |
+| 4 | Key Subspace Sketching | `K: [B, H, N, d]`, `P: [H, d, d_p]` | `K_feat: [B, H, N, d_p]` |
+| 5 | Sketched Score Product | `Q_feat: [B, H, N, d_p]`, `K_feat^T` | `S: [B, H, N, N]` |
+| 6 | Softmax Normalization | `S: [B, H, N, N]` | `A: [B, H, N, N]` |
+| 7 | Value Context Product | `A: [B, H, N, N]`, `V: [B, H, N, d]` | `Context: [B, H, N, d]` |
+| 8 | Output Projection | `Context: [B, H, N, d]` | `Y: [B, N, D]` |
+
+---
+
+## 4. Analytical Complexity Profiling
+
+### FLOP & MAC Counting
+1. **Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
+2. **Subspace Sketching ($\mathbf{Q} \mathbf{P}, \mathbf{K} \mathbf{P}$)**:
+   - Query Projection: $2 B H N d d_p = 2 B N D d_p$ FLOPs.
+   - Key Projection: $2 B H N d d_p = 2 B N D d_p$ FLOPs.
+3. **Sketched Attention Score Product ($\widetilde{\mathbf{Q}} \widetilde{\mathbf{K}}^\top$)**: $2 B H N^2 d_p$ FLOPs.
+4. **Value Matrix Product ($\mathbf{A} \mathbf{V}$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
+
+**Total Computational Cost**:
+\[
+\text{Total FLOPs} = 8 B N D^2 + 4 B N D d_p + 2 B H N^2 d_p + 2 B N^2 D
+\]
+
+When sketch rank $d_p < d$ (e.g., $d_p = d/2$), score multiplication FLOPs decrease proportionally.
+
+### Memory Footprint & Tensor Store
+- **Parameters**: $4 D^2$ floats. Buffer $\mathbf{P} \in \mathbb{R}^{H \times d \times d_p}$ contains $H d d_p = D d_p$ floats.
+- **Activation Memory**:
+  - Sketched Queries/Keys ($\widetilde{\mathbf{Q}}, \widetilde{\mathbf{K}}$): $2 B H N d_p$ floats.
+  - Score & Softmax Tensors ($\mathbf{S}, \mathbf{A}$): $B H N^2$ floats.
+  - Peak Activation Memory: $\mathcal{O}(B N D + B H N d_p + B H N^2)$.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+1. **Johnson-Lindenstrauss Distortion Variance**: For small values of projection rank $d_p$, random sketching distorts high-dimensional inner product angles. This introduces variance into attention scores, leading to rank collapse and reduced model capacity.
+2. **Static Unlearned Projection Manifold**: Because buffer $\mathbf{P}$ is frozen Gaussian noise, the random subspace cannot dynamically adapt to key-query feature correlation patterns during optimization.
+3. **Persistent $\mathcal{O}(N^2)$ Memory Scaling**: While feature dimension compute drops from $d$ to $d_p$, the attention score matrix $\mathbf{S}$ remains $N \times N$, retaining quadratic space complexity $\mathcal{O}(N^2)$.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Memory Access & Vectorization Barriers
+In standard PyTorch, executing `torch.einsum("bhld,hde->bhle", q, proj)` materializes intermediate sketched tensors $\widetilde{\mathbf{Q}}, \widetilde{\mathbf{K}}$ into DRAM before loading them back for score computation.
+
+### High-Performance Triton Kernel Fusion Strategy
+1. **Fused Sketching & FlashAttention Kernel**: Implement a Triton kernel that loads tiles of $\mathbf{Q}, \mathbf{K}$, and random buffer $\mathbf{P}$ into SRAM registers, executes random projection on-chip, and immediately computes dot-product scores.
+
 ```python
-attn = RPCAttention(config=model_config)  # rank will default to 64 internally
-layer.attention = attn
+# Triton Pseudocode for Fused RPC Flash Kernel
+@triton.jit
+def _rpc_fused_sketch_kernel(
+    Q_ptr, K_ptr, V_ptr, P_ptr, Out_ptr,
+    N, D, d: tl.constexpr, dp: tl.constexpr, BLOCK_N: tl.constexpr
+):
+    # Load Q block [BLOCK_N, d] and P buffer [d, dp] into SRAM
+    q = tl.load(Q_ptr + offsets_q)
+    p = tl.load(P_ptr + offsets_p)
+    
+    # On-chip random projection sketch inside registers
+    q_feat = tl.dot(q, p)  # [BLOCK_N, dp]
+    
+    # Stream K blocks, project K_feat = K @ P in registers, and compute scores
+    k = tl.load(K_ptr + offsets_k)
+    k_feat = tl.dot(k, p)  # [BLOCK_N, dp]
+    scores = tl.dot(q_feat, tl.trans(k_feat)) * scale
+    
+    # Softmax & Accumulate with V directly in SRAM
 ```
 
-Since the module does not initialise from pretrained weights, the linear layers are randomly initialised, and the model must be fine‑tuned.
-
----
-
-## 5. Discussion
-
-RPC Attention is a minimal modification of the standard attention mechanism. By applying a fixed random transformation to queries and keys, it introduces a static, per‑head mixing of features. This can be interpreted as a form of **attention ensembling** where each head operates on a different random rotation of the feature space, potentially increasing the diversity of attention patterns without any learnable parameters. In the context of the compression framework, it serves as a **baseline** for evaluating whether learned random features (as in Performer or RALA) outperform a simple fixed random projection.
-
-However, the module’s utility is limited by several factors:
-- The random matrices are not orthogonal, so the dot product is distorted, which may harm performance.
-- The projection is applied to the same dimension, so there is no reduction in computational complexity; it remains quadratic.
-- The lack of mask support and the `super()` bug render it currently unsuitable for real use without fixes.
-- No pretrained weight transfer means it cannot be used zero‑shot.
-
-If the projection matrices were made learnable, the module would resemble a simple low‑rank adaptation in the feature space, but they are fixed. Thus, RPC Attention is best viewed as a **pedagogical** or **debugging** tool within the framework, rather than a practical efficient attention method.
-
----
-
-## 6. Conclusion
-
-We have described RPC Attention, a simple baseline attention module that applies fixed random projections to queries and keys before the dot product. While it retains the full quadratic complexity of standard attention, it introduces a minimal form of feature mixing that can serve as a reference for more advanced random‑feature‑based attention mechanisms. The module is integrated into the DistilBERT compression framework, though it requires minor fixes to be fully functional. Future work could extend this idea by making the projections learnable or orthogonal, bridging the gap toward true random feature attention.
+2. **Constant Shared Memory Placement for Projection Buffer**: Pre-load projection matrix $\mathbf{P}$ into GPU Shared Memory (`smem`), ensuring high arithmetic intensity across all sequence tile iterations.
