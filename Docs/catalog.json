@@ -111,14 +111,14 @@
             "path": "../Codes/framework/attentions/flash_attention3_fp8.md"
         },
         {
-            "id": "fusion_attn.md",
-            "title": "Full Attention",
-            "path": "../Codes/framework/attentions/fusion_attn.md"
-        },
-        {
             "id": "full_attention.md",
             "title": "Full Attention",
             "path": "../Codes/framework/attentions/full_attention.md"
+        },
+        {
+            "id": "fusion_attn.md",
+            "title": "Full Attention",
+            "path": "../Codes/framework/attentions/fusion_attn.md"
         },
         {
             "id": "gated_delta_net.md",
@@ -668,11 +668,6 @@
             "path": "../Codes/framework/compression_engine/frandi_compressor.md"
         },
         {
-            "id": "grecodec_compressor.md",
-            "title": "FRanDI",
-            "path": "../Codes/framework/compression_engine/grecodec_compressor.md"
-        },
-        {
             "id": "galerkin_attention.md",
             "title": "Galerkin Transformer",
             "path": "../Codes/framework/compression_engine/galerkin_attention.md"
@@ -681,6 +676,11 @@
             "id": "gfws_d_compressor.md",
             "title": "GFWSVD",
             "path": "../Codes/framework/compression_engine/gfws_d_compressor.md"
+        },
+        {
+            "id": "grecodec_compressor.md",
+            "title": "GRECODeC",
+            "path": "../Codes/framework/compression_engine/grecodec_compressor.md"
         },
         {
             "id": "hashed_linear.md",
