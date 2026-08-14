@@ -1,0 +1,38 @@
+name: ✨ Feature Request & New Attention Proposal
+description: Propose a new attention paradigm, compression algorithm, or enhancement
+labels: ["enhancement", "research"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose a new attention mechanism, compression engine, or Triton kernel optimization.
+  - type: dropdown
+    id: proposal_type
+    attributes:
+      label: Proposal Type
+      options:
+        - Novel Attention Mechanism
+        - Compression & Quantization Engine
+        - Hardware / Triton Kernel Optimization
+        - Benchmark Dataset / Metric Integration
+    validations:
+      required: true
+  - type: input
+    id: title_summary
+    attributes:
+      label: Theoretical Paradigm Name
+      placeholder: e.g. Quantum-Spectral-Mamba-v2
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation & Theoretical Rationale
+      description: Why is this module needed and what computational / memory complexity does it improve?
+    validations:
+      required: true
+  - type: textarea
+    id: math_formulation
+    attributes:
+      label: Mathematical Formulation
+      description: KaTeX / LaTeX mathematical equations of the proposed mechanism.
