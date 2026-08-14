@@ -1,1 +1,0 @@
-MPS backend out of memory (MPS allocated: 6.05 GB, other allocations: 2.94 GB, max allowed: 9.07 GB). Tried to allocate 89.42 MB on private pool. Use PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 to disable upper limit for memory allocations (may cause system failure).
