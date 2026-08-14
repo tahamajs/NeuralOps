@@ -1,165 +1,174 @@
-# Hamming Attention Distillation (HAD): Binary Hamming Distance Attention with Top‑k Sparsity
+# Hamming Attention: Continuous Relaxed Binarization & Distance Distillation
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Standard dot-product self-attention requires high-precision floating-point multiplications over real-valued query and key vectors $\mathbf{q}, \mathbf{k} \in \mathbb{R}^d$. This creates high memory consumption and memory bandwidth bottlenecks during inference. Hamming Attention Distillation (HAD) addresses this issue by replacing standard real-valued similarity with continuous differentiable relaxations of binary Hamming distances.
 
-We present **Hamming Attention Distillation (HAD)**, a novel self‑attention module that replaces the standard dot‑product similarity between queries and keys with a similarity based on the **Hamming distance** between binarised representations. Each attention head learns a per‑head scale that, together with a steep tanh, approximates the sign function to convert continuous query and key vectors into binary codes. The attention scores are then computed as the negative Hamming distance, scaled by \(1/\sqrt{d_h}\). This approach yields extremely efficient attention, as Hamming distances can be computed via dot products of binary vectors, and the binary nature opens the door to fast bitwise operations on specialised hardware. Additionally, a **top‑\(k\) sparsity** mechanism retains only the highest‑scoring tokens per query, further reducing computation and memory. The module is designed for distillation: the “HAD” name and the unused `teacher_attention` parameter indicate an intended two‑stage training where a full‑precision teacher guides the binarisation and sparsity patterns, though the current implementation functions independently. This paper details the mathematical formulation of the Hamming attention mechanism, the binarisation strategy, the integration of top‑\(k\) sparsity, and the module’s architecture as a drop‑in replacement for standard self‑attention in DistilBERT.
-
----
-
-## 1. Introduction
-
-The quadratic cost of standard self‑attention motivates research into more efficient attention mechanisms. Binary and quantised representations have recently gained traction because they enable fast, hardware‑friendly operations. The Hamming distance between binary codes is a particularly appealing similarity measure: it can be computed via dot product when codes are represented as ±1 vectors, or via XOR and popcount on bit‑packed vectors. In this work, we introduce **Hamming Attention Distillation (HAD)**, an attention module that computes scores as the negative Hamming distance between binarised queries and keys.
-
-The binarisation is performed by a steep tanh function, which approximates the sign function, and each head learns a scaling factor to control the sharpness and importance of its binary projections. The resulting binary codes lie in a continuous relaxation of \(\{-1,1\}\), making the entire pipeline differentiable. The Hamming distance is computed as \((d_h - \mathbf{q}_b^\top \mathbf{k}_b)/2\), and the negative distance serves as the similarity score. After applying a scaling factor \(1/\sqrt{d_h}\) and a padding mask, the scores are normalised via softmax. Furthermore, a top‑\(k\) sparsity mask is applied to keep only a fraction of the highest‑scoring keys, which reduces the effective attention footprint.
-
-The module’s name includes “Distillation” because a common strategy is to train such a binary attention model by distilling from a full‑precision teacher network. The `forward` method accepts a `teacher_attention` argument (currently ignored) to allow future integration of a distillation loss that aligns the binarised attention distributions with those of a teacher. Even without distillation, the module serves as a standalone efficient attention variant.
-
-In this paper, we provide a complete mathematical exposition of the HAD mechanism, detail the implementation, and discuss its advantages and limitations.
+By projecting query and key representations onto a continuous pseudo-binary hypercube $[-1, 1]^d$ using hyperbolic tangent scaling $\mathbf{q}_b = \tanh(5.0 \cdot \gamma_Q \odot \mathbf{q})$, Hamming Attention evaluates pairwise similarity using normalized Hamming distances $D_H(\mathbf{q}_b, \mathbf{k}_b) = \frac{d - \mathbf{q}_b \mathbf{k}_b^\top}{2}$. Integrating top-$k$ sparsity filtering prunes long-tail token pairs, yielding energy-efficient attention computation suitable for low-power hardware and binarized neural network architectures.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
-
-Let \(\mathbf{X} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\) be the input hidden states. As in standard multi‑head attention, we first project to query, key, and value:
+Given input sequence representations $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, query, key, and value vectors for head $h \in \{1, \dots, H\}$ are generated:
 
 \[
-\mathbf{Q} = \mathbf{X}\mathbf{W}_Q, \quad
-\mathbf{K} = \mathbf{X}\mathbf{W}_K, \quad
-\mathbf{V} = \mathbf{X}\mathbf{W}_V,
+\mathbf{Q}_h = \mathbf{X} \mathbf{W}_Q^{(h)} \in \mathbb{R}^{B \times N \times d}, \quad \mathbf{K}_h = \mathbf{X} \mathbf{W}_K^{(h)} \in \mathbb{R}^{B \times N \times d}, \quad \mathbf{V}_h = \mathbf{X} \mathbf{W}_V^{(h)} \in \mathbb{R}^{B \times N \times d}
 \]
 
-with \(\mathbf{W}_Q,\mathbf{W}_K,\mathbf{W}_V \in \mathbb{R}^{d_{\text{model}} \times (H d_h)}\). These are reshaped to \((B, H, L, d_h)\).
-
-### 2.2 Binarisation with Learned Per‑Head Scales
-
-For each head \(h\), we introduce a learnable scale parameter \(s_q^{(h)} \in \mathbb{R}\) and \(s_k^{(h)} \in \mathbb{R}\). The continuous query and key vectors are first multiplied by their respective scales and then passed through a hard‑tanh‑like function that approximates the sign function:
+### 1. Differentiable Binarization Transformation
+Real-valued vectors are scaled by head-wise learnable parameters $\gamma_Q^{(h)}, \gamma_K^{(h)} > 0$ and projected onto the continuous unit hypercube $[-1, 1]^d$ using a sharp hyperbolic tangent activation:
 
 \[
-\mathbf{q}_b = \tanh\left(5 \cdot s_q^{(h)} \cdot \mathbf{q}\right), \qquad
-\mathbf{k}_b = \tanh\left(5 \cdot s_k^{(h)} \cdot \mathbf{k}\right).
+\mathbf{Q}_{b, h} = \tanh\left( 5.0 \cdot \gamma_Q^{(h)} \odot \mathbf{Q}_h \right) \in [-1, 1]^{B \times N \times d}
+\]
+\[
+\mathbf{K}_{b, h} = \tanh\left( 5.0 \cdot \gamma_K^{(h)} \odot \mathbf{K}_h \right) \in [-1, 1]^{B \times N \times d}
 \]
 
-The factor 5 is a heuristic that makes the tanh steep enough to push most outputs near ±1, while remaining differentiable. This yields vectors whose components lie approximately in the interval \([-1, 1]\), with most entries clustered around the extremes. In the limit of large scaling, this converges to the sign function, producing exact binary codes in \(\{-1, 1\}\).
+As scale factors increase, $\mathbf{Q}_{b, h}$ and $\mathbf{K}_{b, h}$ converge to exact binary bipolar codes $\operatorname{sgn}(\mathbf{Q}_h) \in \{-1, +1\}^d$.
 
-The per‑head scales \(s_q\) and \(s_k\) are stored as parameters of shape \((H, 1)\) and applied via broadcasting. They allow each head to adjust the “confidence” of its binarisation.
-
-### 2.3 Hamming Distance Attention Scores
-
-Given binary (or near‑binary) vectors \(\mathbf{q}_b, \mathbf{k}_b \in \mathbb{R}^{d_h}\), the Hamming distance is defined as the number of positions where the signs differ. For vectors whose elements are in \(\{-1,1\}\) exactly, the dot product is related to the Hamming distance \(d_H\) by:
+### 2. Continuous Hamming Distance Evaluation
+The continuous relaxed Hamming distance between pseudo-binary vectors $\mathbf{q}_b, \mathbf{k}_b \in [-1, 1]^d$ is computed via inner products:
 
 \[
-\mathbf{q}_b^\top \mathbf{k}_b = \sum_{i=1}^{d_h} q_{b,i} k_{b,i} = \#\{i: q_{b,i}=k_{b,i}\} - \#\{i: q_{b,i}\neq k_{b,i}\} = d_h - 2 d_H.
+D_H(\mathbf{q}_b, \mathbf{k}_b) = \frac{d - \mathbf{q}_b \mathbf{k}_b^\top}{2} \in [0, d]
 \]
 
-Hence,
+The negative unnormalized score matrix $\mathbf{S}_h \in \mathbb{R}^{B \times N \times N}$ is derived by scaling the inverse Hamming distance:
 
 \[
-d_H = \frac{d_h - \mathbf{q}_b^\top \mathbf{k}_b}{2}.
+\mathbf{S}_h = -\frac{D_H(\mathbf{Q}_{b, h}, \mathbf{K}_{b, h})}{\sqrt{d}} = \frac{\mathbf{Q}_{b, h} \mathbf{K}_{b, h}^\top - d \mathbf{J}_{N \times N}}{2 \sqrt{d}}
 \]
 
-A smaller Hamming distance indicates higher similarity. Therefore, we define the attention logit as the negative Hamming distance, scaled similarly to standard attention:
+### 3. Top-$K$ Sparsity Masking & Softmax Activation
+To enforce sparsity, top-$k$ thresholding is applied along sequence dimension $N$, retaining $K_{\text{keep}} = \max(1, \lfloor N \cdot \text{ratio} \rfloor)$ entries per row:
 
 \[
-S_{ij} = -\,\frac{d_H(\mathbf{q}_{b,i}, \mathbf{k}_{b,j})}{\sqrt{d_h}} = \frac{\mathbf{q}_{b,i}^\top \mathbf{k}_{b,j} - d_h}{2\sqrt{d_h}}.
+\mathbf{M}_{\text{sparse}, i, j} = \begin{cases} 1 & \text{if } \mathbf{S}_{i, j} \in \operatorname{TopK}(\mathbf{S}_{i, :}, K_{\text{keep}}) \\ 0 & \text{otherwise} \end{cases}
+\]
+\[
+\widetilde{\mathbf{S}}_h = \mathbf{S}_h \odot \mathbf{M}_{\text{sparse}} + (1 - \mathbf{M}_{\text{sparse}}) \cdot (-10^9) + \mathbf{M}_{\text{mask}}
 \]
 
-In practice, the module computes:
+Softmax mapping and value matrix multiplication compute the final head output:
 
 \[
-\text{scores} = -\frac{d_h - \text{dot}}{2\sqrt{d_h}} = \frac{\text{dot} - d_h}{2\sqrt{d_h}}.
+\mathbf{A}_h = \operatorname{softmax}(\widetilde{\mathbf{S}}_h, \text{dim}=-1) \in \mathbb{R}^{B \times N \times N}, \quad \mathbf{O}_h = \mathbf{A}_h \mathbf{V}_h \in \mathbb{R}^{B \times N \times d}
 \]
 
-This is equivalent to taking the standard dot‑product score, shifting it by \(-d_h\), and halving. The softmax is invariant to additive shifts per query row, so the constant term \(-d_h\) does not change the attention distribution; it is therefore omitted in the code (the `_hamming_dist` returns `(q_b.shape[-1] - dot) / 2.0`, then scores are further divided by \(\sqrt{D_h}\)). The effective attention weight for a token pair becomes:
+Multi-head outputs are concatenated and linearly projected back:
 
 \[
-A_{ij} \propto \exp\!\left(\frac{\mathbf{q}_{b,i}^\top \mathbf{k}_{b,j}}{2\sqrt{d_h}}\right).
+\mathbf{Y} = \operatorname{Concat}(\mathbf{O}_1, \dots, \mathbf{O}_H) \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
 \]
-
-Thus, the binarised attention reduces to a scaled dot‑product attention, but with the crucial difference that the vectors \(\mathbf{q}_b,\mathbf{k}_b\) are (approximately) binary, which in hardware can be stored and multiplied using efficient bit operations.
-
-### 2.4 Masking and Sparsity
-
-After computing the scores, a padding mask is applied if provided. The mask is expected as a 2D tensor \((B, L)\) with 1 for valid tokens; it is expanded and converted to an additive mask of \(-\infty\) for invalid positions.
-
-To further reduce computation, a top‑\(k\) sparsity mask is applied: for each query, only the \(k = \max(1, \lfloor L \cdot \text{sparsity\_ratio} \rfloor)\) highest‑scoring keys are kept; all other positions are set to \(-\infty\). This enforces a fixed‑budget sparse attention pattern, where the sparsity ratio controls the fraction of tokens that survive.
-
-### 2.5 Softmax and Aggregation
-
-The masked scores are normalised via softmax, dropout is applied, and the values are aggregated:
-
-\[
-\mathbf{C} = \text{dropout}(\text{softmax}(\tilde{\mathbf{S}})) \mathbf{V}.
-\]
-
-The result is then reshaped and projected by \(\mathbf{W}_O\) to the original dimension. The module returns \((\text{output}, \text{None})\).
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 HammingAttention Class
-
-- **Inheritance**: Extends `BaseAttention` (for compatibility with the framework).
-- **Constructor**:
-  - `config`: provides `num_attention_heads`, `hidden_size`, and `dropout`.
-  - `rank`: unused, kept for interface consistency.
-  - `distill_temperature`: not used in the current code (reserved for distillation).
-  - `sparsity_ratio`: fraction of tokens kept after top‑\(k\) (default 0.5).
-  - Creates four linear projections (Q, K, V, out).
-  - Creates per‑head scales `q_scale` and `k_scale` of shape `(H, 1)`, initialised to 1.
-- **Binarisation**: The static method `_binarize` applies `torch.tanh(5 * scale * tensor)`.
-- **Hamming distance**: `_hamming_dist` computes `(D - dot)/2`.
-- **Forward pass**:
-  1. Projects and reshapes.
-  2. Binarises Q and K.
-  3. Computes scores as `-_hamming_dist / sqrt(d_h)`.
-  4. Applies mask and top‑\(k\) sparsity.
-  5. Softmax, dropout, weighted sum, output projection.
-
-### 3.2 Top‑k Sparsity
-
-The top‑\(k\) mechanism uses `torch.topk` along the last dimension to obtain the indices of the highest scores. A binary mask is then created via `scatter_` and used to mask out non‑selected positions with \(-\infty\). This hard selection is not differentiable with respect to the scores, but the gradients flow through the selected positions only. This can be seen as a straight‑through estimator.
-
-### 3.3 Teacher Distillation (Unused)
-
-The `forward` method accepts a `teacher_attention` parameter, which is intended to provide a target distribution for knowledge distillation. In the current implementation, this parameter is ignored. The distillation would typically involve an additional loss (e.g., KL divergence) between the binarised attention and the teacher’s attention to encourage the binary codes to capture similar pairwise relationships.
-
----
-
-## 4. Usage and Configuration
-
-The module is registered under the key `"hamming"` in `ATTENTION_REGISTRY`. Configuration options that can be passed via `comp_config` include:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `distill_temperature` | 1.0 | Temperature for distillation (currently unused). |
-| `sparsity_ratio` | 0.5 | Fraction of tokens kept per query; 0 means no sparsity. |
-| `rank` | (ignored) | Interface compatibility. |
-
-Example manual instantiation:
-```python
-attn = HammingAttention(config=model_config, distill_temperature=1.0, sparsity_ratio=0.3)
-layer.attention = attn
+```
+Input Hidden States X [B, N, D]
+  │
+  ├──> Linear Projections (W_Q, W_K, W_V) -> Q, K, V [B, H, N, d]
+  │
+  ├──> Differentiable Hyperbolic Binarization:
+  │    ├──> Q_b = Tanh(5.0 * gamma_Q * Q) ──────────────> [B, H, N, d]
+  │    └──> K_b = Tanh(5.0 * gamma_K * K) ──────────────> [B, H, N, d]
+  │
+  ├──> Pairwise Hamming Distance Score Product:
+  │    Dot = Q_b @ K_b^T ───────────────────────────────> [B, H, N, N]
+  │    Dist = (d - Dot) / 2 ────────────────────────────> [B, H, N, N]
+  │    S = -Dist / sqrt(d) ─────────────────────────────> [B, H, N, N]
+  │
+  ├──> Apply Masking & Top-K Sparsification:
+  │    ├──> Additive Mask: S = S + (1 - Mask) * (-1e9)
+  │    ├──> TopK Selection: top_idx = TopK(S, k=K_keep)
+  │    └──> Sparse Masking: S_sparse = S * Sparse_Mask + (1 - Sparse_Mask) * (-1e9)
+  │
+  └──> Softmax & Value Aggregation:
+       A = Softmax(S_sparse, dim=-1) ───────────────────> [B, H, N, N]
+       Context = A @ V ─────────────────────────────────> [B, H, N, d]
+       Y = Reshape(Context) @ W_O ──────────────────────> [B, N, D]
 ```
 
-To use distillation, one would need to modify the training loop to pass `teacher_attention` and compute a distillation loss externally.
+### Detailed Shape Progression Table
+
+| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| 1 | Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
+| 2 | Multi-Head Permute | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
+| 3 | Query Binarization ($\tanh$) | `Q: [B, H, N, d]`, `gamma_Q: [H, 1]` | `Q_b: [B, H, N, d]` |
+| 4 | Key Binarization ($\tanh$) | `K: [B, H, N, d]`, `gamma_K: [H, 1]` | `K_b: [B, H, N, d]` |
+| 5 | Inner Product Matrix | `Q_b: [B, H, N, d]`, `K_b^T: [B, H, d, N]` | `Dot: [B, H, N, N]` |
+| 6 | Hamming Distance Matrix | `Dot: [B, H, N, N]` | `Dist: [B, H, N, N]` |
+| 7 | Top-$K$ Sparsification | `S: [B, H, N, N]`, `sparsity_ratio` | `S_sparse: [B, H, N, N]` |
+| 8 | Softmax Normalization | `S_sparse: [B, H, N, N]` | `A: [B, H, N, N]` |
+| 9 | Context Aggregation | `A: [B, H, N, N]`, `V: [B, H, N, d]` | `Context: [B, H, N, d]` |
+| 10 | Output Linear Projection | `Context: [B, H, N, d]` | `Y: [B, N, D]` |
 
 ---
 
-## 5. Discussion
+## 4. Analytical Complexity Profiling
 
-Hamming Attention Distillation offers a path to extremely efficient attention computation by leveraging binary representations. The use of binarised queries and keys reduces the dot product to a binary operation, which can be implemented with XNOR and bitcount on CPUs/FPGAs, or via fast integer matrix multiply on GPUs. The top‑\(k\) sparsity further reduces the number of expensive value multiplications.
+### FLOP & MAC Counting
+1. **Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
+2. **Binarization Activation ($\tanh$)**: $2 \times (2 B H N d) = 4 B N D$ FLOPs.
+3. **Pseudo-Binary Score Inner Product ($\mathbf{Q}_b \mathbf{K}_b^\top$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
+4. **Top-$K$ Selection**: $\mathcal{O}(B H N^2 \log K_{\text{keep}})$ comparison operations.
+5. **Context Aggregation ($\mathbf{A} \mathbf{V}$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
 
-However, several limitations exist. The current implementation still computes the attention in float32, negating the potential speedup from binary operations. A true deployment‑optimised version would use bit‑packing and custom kernels. The binarisation via `tanh(5*x)` is a soft approximation that may not generalise well to all layers; a more sophisticated straight‑through estimator or the use of Gumbel‑softmax for discrete codes could improve performance. The top‑\(k\) selection is non‑differentiable and may hinder end‑to‑end training without a distillation objective to guide the binary codes.
+**Total Computational Cost**:
+\[
+\text{Total FLOPs} = 8 B N D^2 + 4 B N^2 D + 4 B N D
+\]
 
-The unused `teacher_attention` parameter indicates that the module was designed with distillation in mind. Research on HAD (Zhou et al., 2021) indeed uses a teacher model to supervise the binary attention patterns, ensuring that the binarised attention mimics the softmax distribution of a full‑precision teacher. Integrating such a loss would be the natural next step.
+During quantized inference, floating-point multiplications for $\mathbf{Q}_b \mathbf{K}_b^\top$ convert to bitwise XNOR and POPCOUNT logic operations.
 
-Despite these gaps, the module provides a clear and modular implementation of the HAD concept. It demonstrates how binarisation, Hamming distance, and sparsity can be combined in a single attention block, and it integrates seamlessly with the DistilBERT compression framework.
+### Memory Footprint & Tensor Store
+- **Parameters**: $4 D^2 + 2 H$ floats (where $\gamma_Q, \gamma_K$ contribute $2 H$ scalars).
+- **Activation Memory**:
+  - Pseudo-Binary Vectors ($\mathbf{Q}_b, \mathbf{K}_b$): $2 B H N d = 2 B N D$ floats (or 1-bit quantized integers).
+  - Score & Sparse Mask Tensors ($\mathbf{S}, \mathbf{M}_{\text{sparse}}$): $2 B H N^2$ floats.
+  - Peak Memory Footprint: $\mathcal{O}(B N D + B H N^2)$.
 
 ---
 
-## 6. Conclusion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-We have presented Hamming Attention Distillation (HAD), a novel attention module that binarises queries and keys, computes attention via Hamming distance, and applies top‑\(k\) sparsity. The design is motivated by efficiency, aiming to replace expensive floating‑point dot products with binary operations. While the current implementation serves as a floating‑point prototype and leaves the distillation component as a placeholder, it encapsulates the key ideas of binary attention and provides a foundation for further optimisation and distillation‑based training. Future work will integrate the distillation loss and deploy custom binary kernels to realise the full speed‑up potential.
+1. **Top-$K$ Non-Differentiability**: Sorting via `torch.topk` creates zero gradients $\frac{\partial \mathbf{M}_{\text{sparse}}}{\partial \mathbf{S}} = 0$, requiring straight-through estimators (STE) or soft thresholding to avoid vanishing gradients during backpropagation.
+2. **Hypercube Saturation**: Large scale factors $\gamma > 10.0$ cause $\tanh(5.0 \gamma \mathbf{Q})$ to saturate at $\pm 1$, causing gradient vanishing across early training steps.
+3. **Quadratic Score Footprint**: Because Hamming Attention instantiates dense $N \times N$ score matrices prior to top-$k$ pruning, spatial complexity remains quadratic $\mathcal{O}(N^2)$.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Memory Access & Vectorization Barriers
+In standard PyTorch, executing `torch.topk(scores)` writes full $B \times H \times N \times N$ score matrices back to DRAM before picking top elements.
+
+### High-Performance Triton Kernel Fusion Strategy
+1. **Fused POPCOUNT & Top-$K$ Flash Kernel**: Implement a Triton kernel that packs 1-bit binarized query and key codes into 32-bit integers (`int32`). Compute Hamming distance using hardware POPCOUNT and bitwise XNOR instructions (`__popc(q ^ k)`) directly in SRAM registers.
+
+```python
+# Triton Pseudocode for Fused Bitwise POPCOUNT Hamming Kernel
+@triton.jit
+def _hamming_fused_popcount_kernel(
+    Q_bit_ptr, K_bit_ptr, V_ptr, Out_ptr,
+    N, D, BLOCK_N: tl.constexpr, TOP_K: tl.constexpr
+):
+    # Load packed 1-bit integer query block [BLOCK_N, d_packed]
+    q_packed = tl.load(Q_bit_ptr + offsets_q)
+    k_packed = tl.load(K_bit_ptr + offsets_k)
+    
+    # Compute Hamming distance via hardware Bitwise XNOR & POPCOUNT in SRAM
+    xor_val = q_packed ^ k_packed
+    hamming_dist = tl.popc(xor_val)
+    scores = -hamming_dist * scale
+    
+    # Keep top-K elements in register min-heap without full DRAM sort
+    topk_scores, topk_idx = tl.topk(scores, K=TOP_K)
+    p = tl.softmax(topk_scores)
+    acc += tl.dot(p, v_selected)
+```
+
+2. **Register Min-Heap Sparsification**: Maintain a local min-heap inside GPU registers to retain the top-$K$ elements dynamically without writing non-selected entries to DRAM.

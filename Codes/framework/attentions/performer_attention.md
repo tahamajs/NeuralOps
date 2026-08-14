@@ -1,170 +1,164 @@
-# Performer Attention: Fast Attention Via Positive Orthogonal Random Features (Simplified)
+# Performer Attention: Fast Attention via Positive Orthogonal Random Features (FAVOR+)
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Standard softmax self-attention computes explicit query-key dot-product affinity matrices \(\mathbf{A} = \operatorname{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right) \in \mathbb{R}^{N \times N}\), demanding \(\mathcal{O}(N^2)\) computational complexity and GPU memory. Performer (Choromanski et al., 2021) overcomes this limitation by kernelizing the softmax function through positive orthogonal random feature maps (FAVOR+). 
 
-We present a simplified implementation of the **Performer** attention module, based on the FAVOR+ algorithm (Fast Attention Via Positive Orthogonal Random Features) introduced by Choromanski et al. (2021). This module replaces the quadratic softmax self‑attention with a linear‑complexity approximation using random feature maps. Queries and keys are projected using a per‑head orthogonal random matrix, and a positive feature map (ReLU) is applied to produce non‑negative feature vectors. The attention output is then computed via the associative property of linear attention, resulting in \(O(L d^2)\) time and memory. Unlike the original Performer, this implementation uses a simple ReLU feature map instead of an exponential one, does not include the L2 normalisation term in the kernel approximation, and regenerates the random projection matrix at every forward pass when `redraw_projection` is enabled. The module is integrated as a drop‑in replacement for DistilBERT’s self‑attention layer within the compression framework. This paper details the mathematical construction, the orthogonal random feature generation, and the attention pipeline, while also discussing the deviations from the original paper.
-
----
-
-## 1. Introduction
-
-Multi‑head self‑attention scales quadratically with the sequence length \(L\), posing challenges for long sequences. The **Performer** (Choromanski et al., 2021) introduced a breakthrough linear attention mechanism via **FAVOR+**: a low‑variance approximation of the softmax kernel using **positive orthogonal random features**. By applying an orthogonal random matrix followed by an exponential and a normalisation term, one obtains a feature map that accurately approximates \(\exp(\mathbf{q}^\top \mathbf{k} / \sqrt{d})\). The attention can then be re‑written as a recurrent matrix product, avoiding the \(O(L^2)\) bottleneck.
-
-The module described here adapts the Performer idea but with two notable simplifications:
-1. The feature map is a plain **ReLU** activation applied after projection and scaling, rather than the exponential‑based map.  
-2. The orthogonal random projection matrix is regenerated at each forward pass when `redraw_projection=True` (contrary to the usual fixed projection).  
-
-Despite these differences, the module still performs linear attention with a positive feature map, achieving linear complexity. It is integrated into the compression framework as a baseline for kernel‑based efficient attention.
-
-In this paper, we provide a complete mathematical description of the projection, feature map, linear attention, and the handling of padding masks. We also discuss the impact of the simplifications and the overall architecture.
+By expressing the unnormalized softmax kernel as an inner product of finite-dimensional random feature vectors \(\mathbf{K}_{\operatorname{softmax}}(\mathbf{q}, \mathbf{k}) = \exp\left(\frac{\mathbf{q}^\top \mathbf{k}}{\sqrt{d}}\right) \approx \langle \phi(\mathbf{q}), \phi(\mathbf{k}) \rangle\), the sequence computation can be regrouped via matrix multiplication associativity. This decouples sequence length \(N\) from feature dimension \(m\), yielding strictly linear \(\mathcal{O}(N m d)\) time and memory complexity while maintaining strictly positive kernel values for numerical stability.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections
-
-Let the input be \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\). The module projects to queries, keys, and values for all heads simultaneously:
+Given queries \(\mathbf{Q} \in \mathbb{R}^{B \times H \times N \times d}\), keys \(\mathbf{K} \in \mathbb{R}^{B \times H \times N \times d}\), and values \(\mathbf{V} \in \mathbb{R}^{B \times H \times N \times d}\), we apply a scaling factor of \(d^{-1/4}\) to queries and keys:
 
 \[
-\mathbf{Q} = \mathbf{X}\mathbf{W}_Q,\quad \mathbf{K} = \mathbf{X}\mathbf{W}_K,\quad \mathbf{V} = \mathbf{X}\mathbf{W}_V,
+\widetilde{\mathbf{Q}} = d^{-1/4} \mathbf{Q}, \quad \widetilde{\mathbf{K}} = d^{-1/4} \mathbf{K}
 \]
 
-with \(\mathbf{W}_* \in \mathbb{R}^{D \times (H d_h)}\). The tensors are reshaped to \((B, H, L, d_h)\) via the `_reshape` method, where \(H\) is the number of heads and \(d_h = D/H\).
-
-### 2.2 Orthogonal Random Projection Matrix
-
-For each head \(h\), a random matrix \(\mathbf{R}_h \in \mathbb{R}^{d_h \times R}\) is constructed, where \(R\) is the `rank` (feature dimension, default 256). The matrix is required to have orthonormal columns, which minimises the variance of the kernel approximation (FAVOR+). The construction uses a QR decomposition of a standard normal random matrix:
+The FAVOR+ positive random feature map \(\phi: \mathbb{R}^d \to \mathbb{R}_+^m\) maps each \(d\)-dimensional input vector \(\mathbf{x}\) into an \(m\)-dimensional positive space using an orthogonal projection matrix \(\boldsymbol{\Omega} \in \mathbb{R}^{m \times d}\):
 
 \[
-\mathbf{M}_h \sim \mathcal{N}(0, 1)^{d_h \times R}, \quad
-\mathbf{Q}_h \mathbf{R}_{\text{upper}} = \text{QR}(\mathbf{M}_h),
-\]
-\[
-\mathbf{R}_h = \mathbf{Q}_h \quad (\text{orthonormal columns}).
+\phi(\mathbf{x}) = \frac{1}{\sqrt{m}} \exp\left( \mathbf{x} \boldsymbol{\Omega}^\top - \frac{\|\mathbf{x}\|_2^2}{2} \mathbf{1}_m^\top \right)
 \]
 
-The resulting matrices \(\mathbf{R}_h\) are stacked into a single tensor \(\mathbf{R} \in \mathbb{R}^{H \times d_h \times R}\). The module provides a flag `redraw_projection`: if `True`, \(\mathbf{R}\) is regenerated at each forward call; otherwise, it is stored as a buffer and reused. In typical Performer usage, the matrix is fixed after initialisation to reduce variance across mini‑batches; the redraw option is unusual.
+To guarantee unbiased kernel estimation with minimal variance, \(\boldsymbol{\Omega}\) is constructed by stacking \(m/d\) orthogonal matrices obtained from QR decompositions of isotropic Gaussian matrices \(\mathbf{G} \sim \mathcal{N}(0, \mathbf{I}_{d \times d})\), scaled by row norms \(\|\mathbf{g}_i\|_2\).
 
-### 2.3 Positive Feature Map (ReLU)
-
-The feature map \(\phi: \mathbb{R}^{d_h} \to \mathbb{R}^R\) is defined as:
+For numerical stability against exponent overflow/underflow, maximum logit subtraction is integrated directly into the feature computation:
 
 \[
-\phi(\mathbf{x}) = \operatorname{ReLU}\!\big( \mathbf{x} \mathbf{R}_h \cdot s \big),
-\]
-
-where \(s = 1 / d_h^{1/4}\) is a scaling factor. The ReLU ensures non‑negativity, making the feature map **positive**. In the original Performer, the map is \(\exp(\mathbf{x}\mathbf{R} - \|\mathbf{x}\|^2/2)\), which precisely approximates the Gaussian kernel. Using ReLU alone loses the kernel interpretation but still yields a valid positive feature map for linear attention, often with decent performance.
-
-Thus, for each head, we have:
-
-\[
-\mathbf{Q}^\phi = \phi(\mathbf{Q}), \qquad
-\mathbf{K}^\phi = \phi(\mathbf{K}),
-\]
-
-both of shape \((B, H, L, R)\).
-
-### 2.4 Linear Attention Computation
-
-Linear attention avoids the full \(L \times L\) matrix by computing the key‑value memory:
-
-\[
-\mathbf{KV} = \sum_{j=1}^L \mathbf{K}^\phi_{:,j} \otimes \mathbf{V}_{:,j} \;\in \mathbb{R}^{B \times H \times R \times d_h},
+\mathbf{z}(\mathbf{x}) = \mathbf{x} \boldsymbol{\Omega}^\top - \frac{\|\mathbf{x}\|_2^2}{2} \mathbf{1}_m^\top, \quad \mathbf{m}_{\text{max}} = \max_m (\mathbf{z}(\mathbf{x}))
 \]
 \[
-\mathbf{Z} = \sum_{j=1}^L \mathbf{K}^\phi_{:,j} \;\in \mathbb{R}^{B \times H \times R}.
+\phi(\mathbf{x}) = \frac{1}{\sqrt{m}} \exp\left( \mathbf{z}(\mathbf{x}) - \mathbf{m}_{\text{max}} \right)
 \]
 
-The output for each query is then:
+Applying feature transform \(\phi(\cdot)\) to query and key tensors yields \(\mathbf{Q}' = \phi(\widetilde{\mathbf{Q}}) \in \mathbb{R}_+^{B \times H \times N \times m}\) and \(\mathbf{K}' = \phi(\widetilde{\mathbf{K}}) \odot \mathbf{M}_{\text{valid}} \in \mathbb{R}_+^{B \times H \times N \times m}\).
+
+Using matrix associativity, attention computation is reformulated without instantiating the \(N \times N\) score matrix:
 
 \[
-\mathbf{C}_{h,i} = \frac{\mathbf{Q}^\phi_{h,i} \mathbf{KV}}{\mathbf{Q}^\phi_{h,i} \mathbf{Z} + \epsilon},
+\mathbf{K}\mathbf{V} = (\mathbf{K}')^\top \mathbf{V} \in \mathbb{R}^{B \times H \times m \times d}
 \]
-
-where division is applied after the dot products. In batched form, this is implemented with `einsum`:
-
-- \(\mathbf{KV} = \text{einsum('bhnr,bhnd->bhrd', K\_prime, V)}\)
-- \(\mathbf{K\_sum} = \text{K\_prime.sum(dim=2, keepdim=True)} \;\; \text{(shape (B,H,1,R))}\)
-- \(\mathbf{num} = \text{einsum('bhnr,bhrd->bhnd', Q\_prime, KV)}\)
-- \(\mathbf{den} = \text{einsum('bhnr,bhr->bhn', Q\_prime, K\_sum.squeeze(2)).unsqueeze(-1)} + \epsilon\)
-
-The context is \(\mathbf{C} = \mathbf{num} / \mathbf{den}\).
-
-### 2.5 Padding Mask
-
-A 2D padding mask of shape \((B, L)\) (with 1 for valid tokens) is expanded to \((B, 1, 1, L)\). After the attention output is computed, the mask is used to zero out the context at padding positions:
-
 \[
-\mathbf{C} \leftarrow \mathbf{C} \odot \mathbf{mask.unsqueeze(-1)}.
+\mathbf{k}_{\text{sum}} = \sum_{j=1}^N \mathbf{K}'_{:, :, j, :} \in \mathbb{R}^{B \times H \times 1 \times m}
 \]
-
-This is a simple masking strategy; importantly, it does **not** exclude padding tokens from the key‑value memory \(\mathbf{KV}\) and normalisation \(\mathbf{Z}\), which could bias the normalisation. A correct implementation would zero out \(\mathbf{K}^\phi\) and \(\mathbf{V}\) for padding positions before the summation. This is a known limitation.
-
-### 2.6 Output Projection
-
-After masking, the context is permuted to \((B, L, H, d_h)\), concatenated to \((B, L, H d_h)\), and projected:
-
 \[
-\mathbf{Y} = \mathbf{C}_{\text{flat}} \mathbf{W}_O + \mathbf{b}_O.
+\mathbf{D} = \mathbf{Q}' \mathbf{k}_{\text{sum}}^\top + \epsilon \in \mathbb{R}^{B \times H \times N \times 1}
 \]
-
-The module returns \((\mathbf{Y}, \text{None})\) or \((\mathbf{Y},)\) depending on the `output_attentions` flag.
-
-### 2.7 Complexity
-
-The dominant operations are:
-- Projections: \(O(L D^2)\)
-- Feature map: \(O(L H d_h R) = O(L D R)\)
-- KV accumulation: \(O(L H R d_h) = O(L D R)\)
-- Query‑memory product: \(O(L H R d_h) = O(L D R)\)
-
-Overall time is \(O(L D (D + R))\), linear in \(L\). Memory for the state \(\mathbf{KV}\) is \(O(H R d_h) = O(D R)\), independent of \(L\).
+\[
+\mathbf{O} = \left( \frac{\mathbf{Q}' (\mathbf{K}\mathbf{V})}{\mathbf{D}} \right) \odot \mathbf{M}_{\text{valid}} \in \mathbb{R}^{B \times H \times N \times d}
+\]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **Class `PerformerAttention`** inherits from `BaseAttention`, registered as `"performer"`.
-- Constructor parameters:
-  - `rank`: feature dimension \(R\) (default 256).
-  - `redraw_projection`: whether to regenerate the random projection each forward (default True – atypical).
-  - `pretrained_attn`: not used; projections are randomly initialised.
-- **Projection generation**: `_get_projection_matrix` creates per‑head orthogonal matrices via QR decomposition. The buffer `self.projection` stores them; if `redraw_projection` is True, it is overwritten each call.
-- **Feature map**: `_feature_map` computes `torch.einsum('bhnd,hdr->bhnr', x, proj) * scale`, then applies `torch.relu`.
-- **Linear attention**: implemented as described.
-- **Masking**: Only zeroes output at padding positions; does not mask before accumulation, which can be a source of error.
-
----
-
-## 4. Usage and Configuration
-
-Activated by setting attention type to `"performer"`. Configurable parameters via `comp_config`:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `rank` | 256 | Feature dimension \(R\). |
-| `redraw_projection` | True | Whether to redraw random features each forward. |
-| `dropout` | from config | Dropout on attention weights (applied? actually dropout is defined but never used in forward; it is a mistake). |
-
-Example injection:
-```python
-comp_config.attention_type = "performer"
-comp_config.rank = 128
+```
+Input Hidden States X [B, N, D]
+  │
+  ├──> Linear Projections (W_Q, W_K, W_V)
+  │    └──> Q, K, V [B, H, N, d]
+  │
+  ├──> Scale Queries & Keys: Q, K *= d^(-1/4)
+  │
+  ├──> FAVOR+ Feature Maps:
+  │    ├──> Q' = phi(Q) [B, H, N, m]
+  │    └──> K' = phi(K) * Valid_Mask [B, H, N, m]
+  │
+  ├──> Associative State Accumulation:
+  │    ├──> KV = (K')^T @ V ──────────────> [B, H, m, d]
+  │    └──> K_sum = sum(K', dim=-2) ──────> [B, H, 1, m]
+  │
+  ├──> Linear Readout & Normalization:
+  │    ├──> Num = Q' @ KV ────────────────> [B, H, N, d]
+  │    ├──> Den = Q' @ (K_sum)^T + eps ───> [B, H, N, 1]
+  │    └──> Context = Num / Den ──────────> [B, H, N, d]
+  │
+  └──> Query Masking & Projection:
+       Context = Context * Valid_Mask ───> [B, N, D]
+       Y = Context @ W_O ────────────────> [B, N, D]
 ```
 
-No zero‑shot weight transfer is included; an injection function (not shown) would be needed to copy pretrained weights.
+### Detailed Shape Progression Table
+
+| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| 1 | Input Projections | `X: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
+| 2 | Scale Factor Multiply | `Q, K: [B, H, N, d]` | `Q, K: [B, H, N, d]` |
+| 3 | Query Feature Map | `Q: [B, H, N, d]`, `omega: [m, d]` | `Q': [B, H, N, m]` |
+| 4 | Key Feature Map | `K: [B, H, N, d]`, `omega: [m, d]` | `K': [B, H, N, m]` |
+| 5 | Token Masking | `K': [B, H, N, m]`, `Mask: [B, 1, N, 1]` | `K': [B, H, N, m]` |
+| 6 | State Accumulation KV | `(K')^T: [B, H, m, N]`, `V: [B, H, N, d]` | `KV: [B, H, m, d]` |
+| 7 | Key Sum Reduction | `K': [B, H, N, m]` | `K_sum: [B, H, 1, m]` |
+| 8 | Unnormalized Output | `Q': [B, H, N, m]`, `KV: [B, H, m, d]` | `Num: [B, H, N, d]` |
+| 9 | Denominator Calculation | `Q': [B, H, N, m]`, `(K_sum)^T: [B, H, m, 1]` | `Den: [B, H, N, 1]` |
+| 10 | Element-wise Normalization | `Num: [B, H, N, d]`, `Den: [B, H, N, 1]` | `Context: [B, H, N, d]` |
+| 11 | Output Linear Projection | `Context: [B, H, N, d]` | `Y: [B, N, D]` |
 
 ---
 
-## 5. Discussion
+## 4. Analytical Complexity Profiling
 
-This simplified Performer implementation demonstrates the core linear attention paradigm but deviates significantly from the original FAVOR+ method. The use of ReLU as the feature map discards the exponential kernel approximation and is unlikely to mimic softmax attention well, leading to potential performance degradation on tasks that heavily rely on sharp attention distributions. The redrawing of random projections at each forward adds unnecessary noise and computational overhead; a fixed projection is preferable. Moreover, the omission of proper padding masking in the key‑value accumulation can bias the normalisation, especially in batches with many padding tokens. The dropout layer is defined but never applied to attention weights, further reducing the model’s regularisation.
+### FLOP & MAC Counting
+1. **Linear Projections (\(W_Q, W_K, W_V, W_O\))**: \(8 B N D^2\) FLOPs.
+2. **Feature Mapping (\(\phi(Q), \phi(K)\))**:
+   - Matrix product with \(\boldsymbol{\Omega}\): \(2 \times (2 B H N m d) = 4 B N m D\) FLOPs.
+   - Exponential and normalization ops: \(\mathcal{O}(B H N m)\).
+3. **KV State Accumulation (\((\mathbf{K}')^\top \mathbf{V}\))**: \(2 B H m N d = 2 B N m D\) FLOPs.
+4. **Context Readout (\(\mathbf{Q}' (\mathbf{K}\mathbf{V})\))**: \(2 B H N m d = 2 B N m D\) FLOPs.
+5. **Denominator Projection (\(\mathbf{Q}' \mathbf{k}_{\text{sum}}^\top\))**: \(2 B H N m\) FLOPs.
 
-Despite these weaknesses, the module still provides a linear‑complexity attention mechanism and can serve as a simple baseline for experimenting with random feature maps and orthogonal projections. A production‑ready Performer would include the exponential map, the squared norm correction term, fixed projections, and full mask handling.
+**Total Computational Cost**:
+\[
+\text{Total FLOPs} = 8 B N D^2 + 8 B N m D + 2 B N H m
+\]
+
+For typical settings where \(m \ll N\), computing requirements transition from standard \(\mathcal{O}(N^2)\) to \(\mathcal{O}(N)\).
+
+### Memory Footprint & Tensor Store
+- **Parameters**: \(4 D^2\) floats. Buffer \(\boldsymbol{\Omega} \in \mathbb{R}^{m \times d}\) stores \(m d\) floats.
+- **Activation Memory**:
+  - Transformed Feature Maps \(\mathbf{Q}', \mathbf{K}'\): \(2 B H N m\) floats.
+  - State Tensor \(\mathbf{K}\mathbf{V}\): \(B H m d\) floats.
+  - Denominator Vector \(\mathbf{D}\): \(B H N\) floats.
+  - Peak Memory: \(\mathcal{O}(B N D + B H N m + B H m d)\).
 
 ---
 
-## 6. Conclusion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-We have described a simplified Performer attention module that uses orthogonal random projections and a ReLU positive feature map to achieve linear complexity in sequence length. While it captures the spirit of the original FAVOR+ algorithm, several implementation choices—most notably the ReLU feature map and the lack of mask handling in the KV accumulation—limit its fidelity to the full softmax attention. Nonetheless, the module is a useful pedagogical tool and a starting point for more accurate kernel‑based attention methods within the DistilBERT compression framework. Future work should restore the exponential feature map and proper masking to align with the original Performer.
+1. **Variance Bottleneck in Random Features**: When sequence length \(N\) is short or hidden dimension \(d\) is large, Monte Carlo estimation error in random features leads to noisy attention distributions. If feature count \(m\) is too small (\(m < d\)), estimation variance degrades model accuracy.
+2. **Exponential Recurrent Instability**: Because \(\phi(\mathbf{x})\) uses exponential functions without hard bounds, large dot products \(\mathbf{x} \boldsymbol{\Omega}^\top\) can cause floating-point overflow during FP16 dynamic range execution despite softmax scaling.
+3. **Causal Masking Overhead**: In autoregressive generation, causal prefix summation \(\sum_{j=1}^i \phi(\mathbf{k}_j) \mathbf{v}_j^\top\) introduces sequential dependency, requiring prefix-sum associative scans that increase register pressure on GPUs.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Memory Access & Vectorization Barriers
+In naive PyTorch, materializing intermediate tensors \(\mathbf{Q}'\) and \(\mathbf{K}'\) requires writing \(2 \times B H N m\) elements to HBM, creating significant memory bandwidth overhead.
+
+### High-Performance Triton Kernel Fusion Strategy
+1. **Fused Feature Extraction & State Accumulation**: Implement a custom Triton kernel where \(\mathbf{K}_j\) blocks of size `BLOCK_N` are loaded into SRAM, scaled, and feature mapped \(\phi(\mathbf{K}_j)\) on-the-fly inside GPU registers. 
+2. **SRAM Block Reduction**: Perform key-value outer product accumulation \(\mathbf{K}\mathbf{V} = \sum_j \phi(\mathbf{k}_j)^\top \mathbf{v}_j\) entirely inside GPU L1/SRAM registers using atomic accumulation instructions:
+
+```python
+# Triton Pseudocode Snippet for KV State Accumulation Block
+@triton.jit
+def _performer_kv_accumulate_kernel(
+    K_ptr, V_ptr, Omega_ptr, KV_ptr,
+    N, D, M,
+    BLOCK_N: tl.constexpr, BLOCK_M: tl.constexpr
+):
+    # Load Key block [BLOCK_N, D]
+    k = tl.load(K_ptr + offsets_n[:, None] * D + offsets_d[None, :])
+    # Load Omega block [BLOCK_M, D]
+    omega = tl.load(Omega_ptr + offsets_m[:, None] * D + offsets_d[None, :])
+    # On-chip Feature Map: proj = k @ omega.T -> [BLOCK_N, BLOCK_M]
+    proj = tl.dot(k, tl.trans(omega))
+    k_prime = tl.exp(proj - norm_k)
+    # Compute Outer Product KV_block = k_prime.T @ v -> accumulated into SRAM
+    tl.atomic_add(KV_ptr + offsets_m[:, None] * D + offsets_d[None, :], tl.dot(tl.trans(k_prime), v))
+```
+
+3. **Shared Memory Reuse for Projection Matrix**: Keep \(\boldsymbol{\Omega}\) in GPU Constant Cache or Shared Memory (`smem`), enabling high arithmetic intensity during sequence streaming.

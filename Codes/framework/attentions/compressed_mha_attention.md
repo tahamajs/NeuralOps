@@ -1,157 +1,217 @@
-# ClusterFormer Attention: Token Clustering for Efficient Global Attention
+# Compressed Multi-Head Attention: Joint Truncated SVD Subspace Decomposition
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We introduce **ClusterFormer Attention**, an efficient self‑attention module that reduces the quadratic complexity of standard attention by partitioning tokens into a fixed number of clusters via differentiable *k‑means* clustering, and then performing full attention exclusively within each cluster. By grouping semantically similar tokens, the module retains the ability to model long‑range dependencies—tokens from distant positions can be clustered together—while sharply limiting the number of pairwise comparisons. The clustering is soft and computed per layer, using the hidden states themselves as features. The module is designed as a drop‑in replacement for standard self‑attention in Transformer models, and is well‑suited for long‑sequence tasks where global context is important but full attention is computationally prohibitive.
+Standard Multi-Head Attention (MHA) layers in Transformer models rely on four dense linear projections ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$), requiring $4D^2$ parameters per layer. When scaling Transformer architectures or deploying models in memory-constrained environments, storing and fetching these dense weight matrices creates substantial memory footprint and memory bandwidth overhead.
 
----
-
-## 1. Introduction
-
-Standard multi‑head self‑attention has \(O(N^2)\) time and memory complexity for sequences of length \(N\). Numerous approaches have sought to alleviate this bottleneck, including local windowing, kernelised linear attention, and token‑pruning methods. However, many of these methods sacrifice direct global interaction. **ClusterFormer Attention** takes a different route: it dynamically groups tokens into a small number of clusters (e.g., 64) using a fast, iterative *k‑means* algorithm, and then lets each token attend only to other tokens within the same cluster. Because clustering is based on learned hidden‑state representations, tokens that are semantically related but spatially distant can end up in the same cluster, thereby enabling global information exchange without computing all \(O(N^2)\) pairwise scores.
-
-The cluster assignments are computed per forward pass directly from the hidden states, making the mechanism adaptive to the input. The attention computation becomes \(O(N C^2 / C) = O(N C)\) where \(C\) is the average cluster size, but because the clusters are balanced, the total cost is approximately \(O(N^2 / K)\), where \(K\) is the number of clusters. For a fixed \(K\), this yields linear complexity in \(N\).
-
-In this paper, we describe the architecture and mathematical underpinnings of the ClusterFormer Attention module, discuss its implementation details, and analyse its computational properties.
+Compressed Multi-Head Attention (`CompressedDistilBertAttention`) addresses this by factorizing the joint input space and output space through low-rank Truncated Singular Value Decomposition (SVD). By stacking Query, Key, and Value projection matrices into a unified vertical block matrix $W_{\text{qkv}} = [W_Q; W_K; W_V] \in \mathbb{R}^{3D \times D}$ and decomposing both $W_{\text{qkv}}$ and the output projection $W_{\text{out}} \in \mathbb{R}^{D \times D}$ into orthogonal singular vector bases, the module projects high-dimensional activations through low-rank bottlenecks ($r_{\text{qkv}}, r_{\text{out}} \ll D$). This provides significant parameter compression and computational speedup without structural fine-tuning.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Token Clustering via *k‑means*
+Let $X \in \mathbb{R}^{B \times L \times D}$ be the input hidden state tensor, where $B$ is batch size, $L$ is sequence length, and $D$ is model hidden dimension. Let $H$ be the number of heads and $d_k = D / H$ the head dimension.
 
-Given an input sequence of hidden states \(\mathbf{H} \in \mathbb{R}^{B \times L \times D}\), the first step is to partition the \(L\) tokens into \(K\) clusters. We use a simple batched *k‑means* algorithm with \(T\) iterations (default \(T = 3\)). 
-
-Initialisation: For each batch element, \(K\) initial centroids \(\mathbf{C}^{(0)} \in \mathbb{R}^{B \times K \times D}\) are selected by randomly sampling \(K\) token positions without replacement.
-
-At each iteration \(t = 1, \dots, T\):
-1. **Assignment**: For each token \(i\), its cluster \(a_i\) is the index of the nearest centroid in Euclidean distance:
+### Stacked QKV Matrix Singular Value Decomposition:
+Pretrained projection weights $W_Q, W_K, W_V \in \mathbb{R}^{D \times D}$ are vertically concatenated to form $W_{\text{qkv}} \in \mathbb{R}^{3D \times D}$:
 
 \[
-a_i = \arg\min_{k \in \{1,\dots,K\}} \|\mathbf{h}_i - \mathbf{c}_k\|_2^2.
+W_{\text{qkv}} = \begin{bmatrix} W_Q \\ W_K \\ W_V \end{bmatrix} \in \mathbb{R}^{3D \times D}
 \]
 
-This is done efficiently using `torch.cdist`.
-
-2. **Update**: Each centroid is updated to the mean of the hidden states assigned to it:
+Applying full SVD to $W_{\text{qkv}}$ yields:
 
 \[
-\mathbf{c}_k = \frac{\sum_{i: a_i = k} \mathbf{h}_i}{\max(1, \sum_{i: a_i = k} 1)}.
+W_{\text{qkv}} = U_{\text{qkv}} \Sigma_{\text{qkv}} V_{\text{qkv}}^\top
 \]
 
-After \(T\) iterations, we obtain cluster assignments \(\mathbf{A} \in \{1,\dots,K\}^{B \times L}\) and final centroids \(\mathbf{C} \in \mathbb{R}^{B \times K \times D}\).
-
-### 2.2 Multi‑Head Projections
-
-In parallel, the hidden states are linearly projected to queries, keys, and values for each attention head:
+where $U_{\text{qkv}} \in \mathbb{R}^{3D \times 3D}$ (left singular vectors), $\Sigma_{\text{qkv}} \in \mathbb{R}^{3D \times D}$ (singular values), and $V_{\text{qkv}}^\top \in \mathbb{R}^{D \times D}$ (right singular vectors). Truncating to rank $r_{\text{qkv}} \le \min(3D, D)$:
 
 \[
-\mathbf{Q} = \mathbf{H} \mathbf{W}_Q^\top, \quad
-\mathbf{K} = \mathbf{H} \mathbf{W}_K^\top, \quad
-\mathbf{V} = \mathbf{H} \mathbf{W}_V^\top,
+W_{\text{qkv}} \approx \widetilde{U}_{\text{qkv}} \widetilde{\Sigma}_{\text{qkv}} \widetilde{V}_{\text{qkv}}^\top
 \]
 
-where \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times (H \cdot d_h)}\), and then reshaped to \((B, L, H, d_h)\). All heads share the same cluster assignments, which are computed from \(\mathbf{H}\) (not from the per‑head projections).
+where $\widetilde{U}_{\text{qkv}} \in \mathbb{R}^{3D \times r_{\text{qkv}}}$, $\widetilde{\Sigma}_{\text{qkv}} \in \mathbb{R}^{r_{\text{qkv}} \times r_{\text{qkv}}}$, and $\widetilde{V}_{\text{qkv}}^\top \in \mathbb{R}^{r_{\text{qkv}} \times D}$.
 
-### 2.3 Intra‑Cluster Attention
+### Joint QKV Projection Forward Pass:
+Given input tensor $X \in \mathbb{R}^{B \times L \times D}$:
+1. **Low-Rank Down-Projection**:
+   \[
+   Z_{\text{qkv}} = X \widetilde{V}_{\text{qkv}} \in \mathbb{R}^{B \times L \times r_{\text{qkv}}}
+   \]
+2. **Singular Value Scaling**:
+   \[
+   \widetilde{Z}_{\text{qkv}} = Z_{\text{qkv}} \odot \text{diag}(\widetilde{\Sigma}_{\text{qkv}}) \in \mathbb{R}^{B \times L \times r_{\text{qkv}}}
+   \]
+3. **Up-Projection & Unstacking**:
+   \[
+   QKV_{\text{comp}} = \widetilde{Z}_{\text{qkv}} \widetilde{U}_{\text{qkv}}^\top \in \mathbb{R}^{B \times L \times 3D}
+   \]
+   Partitioning along the last dimension yields queries, keys, and values:
+   \[
+   Q = QKV_{\text{comp}}[:, :, 0:D] + b_q \in \mathbb{R}^{B \times L \times D}
+   \]
+   \[
+   K = QKV_{\text{comp}}[:, :, D:2D] + b_k \in \mathbb{R}^{B \times L \times D}
+   \]
+   \[
+   V = QKV_{\text{comp}}[:, :, 2D:3D] + b_v \in \mathbb{R}^{B \times L \times D}
+   \]
 
-For each cluster \(k = 1, \dots, K\):
-
-- Let \(\mathcal{S}_k = \{ i \mid a_i = k \}\) be the set of tokens assigned to cluster \(k\).
-- Extract the corresponding query, key, and value slices: \(\mathbf{Q}_k, \mathbf{K}_k, \mathbf{V}_k \in \mathbb{R}^{B \times H \times |\mathcal{S}_k| \times d_h}\). Tokens not in the cluster are zeroed out for simplicity in implementation.
-- Compute scaled dot‑product attention **only among the tokens in \(\mathcal{S}_k\)**:
+### Scaled Dot-Product Attention:
+Reshaping $Q, K, V$ into $[B, H, L, d_k]$:
 
 \[
-\mathbf{S}_k = \frac{\mathbf{Q}_k \mathbf{K}_k^\top}{\sqrt{d_h}} + \mathbf{M}_k,
+S = \frac{Q K^\top}{\sqrt{d_k}} + M \in \mathbb{R}^{B \times H \times L \times L}
+\]
+\[
+A = \text{Softmax}(S, \text{dim}=-1), \quad \widehat{A} = \text{Dropout}(A, p)
+\]
+\[
+\text{Context} = \widehat{A} V \in \mathbb{R}^{B \times H \times L \times d_k} \implies \text{Reshaped Context} \in \mathbb{R}^{B \times L \times D}
 \]
 
-where \(\mathbf{M}_k\) is an additive mask that sets positions outside the cluster to \(-\infty\) (i.e., for token pairs where either the query or key is not in cluster \(k\)). In practice, this is done by constructing a boolean mask from the cluster assignments.
-
-- Attention weights: \(\mathbf{A}_k = \operatorname{softmax}(\mathbf{S}_k)\).
-- Output for cluster \(k\): \(\mathbf{O}_k = \mathbf{A}_k \mathbf{V}_k\).
-
-The final output for the whole sequence is the sum of the outputs from all clusters:
+### Truncated SVD Output Projection:
+Pretrained output projection matrix $W_{\text{out}} \in \mathbb{R}^{D \times D}$ is factorized into rank $r_{\text{out}}$ matrices:
 
 \[
-\mathbf{O} = \sum_{k=1}^{K} \mathbf{O}_k.
+W_{\text{out}} \approx \widetilde{U}_{\text{out}} \widetilde{\Sigma}_{\text{out}} \widetilde{V}_{\text{out}}^\top
 \]
 
-Because each token belongs to exactly one cluster, only one term in the sum is non‑zero per token. This sum is equivalent to concatenating per‑cluster outputs and scattering them back to their original positions.
+where $\widetilde{U}_{\text{out}} \in \mathbb{R}^{D \times r_{\text{out}}}$, $\widetilde{\Sigma}_{\text{out}} \in \mathbb{R}^{r_{\text{out}} \times r_{\text{out}}}$, and $\widetilde{V}_{\text{out}}^\top \in \mathbb{R}^{r_{\text{out}} \times D}$.
 
-### 2.4 Output Projection
+The output transformation is computed as:
 
-The aggregated output \(\mathbf{O} \in \mathbb{R}^{B \times H \times L \times d_h}\) is rearranged to \((B, L, H d_h)\) and multiplied by the output weight \(\mathbf{W}_O \in \mathbb{R}^{H d_h \times D}\) to produce the final attention output.
+\[
+Z_{\text{out}} = \text{Context} \cdot \widetilde{V}_{\text{out}} \in \mathbb{R}^{B \times L \times r_{\text{out}}}
+\]
+\[
+\widetilde{Z}_{\text{out}} = Z_{\text{out}} \odot \text{diag}(\widetilde{\Sigma}_{\text{out}}) \in \mathbb{R}^{B \times L \times r_{\text{out}}}
+\]
+\[
+Y = \widetilde{Z}_{\text{out}} \widetilde{U}_{\text{out}}^\top + b_{\text{out}} \in \mathbb{R}^{B \times L \times D}
+\]
 
 ---
 
-## 3. Complexity Analysis
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-Let \(K\) be the number of clusters. With *k‑means*, the assignment step costs \(O(L K D)\) per iteration, and the update step costs \(O(L D)\). For \(T\) iterations, clustering is \(O(T L K D)\). In the attention step, within a cluster of size \(C_k \approx L / K\), the attention cost is \(O(C_k^2 D) = O((L^2 / K^2) D)\). Summing over all \(K\) clusters gives \(O(L^2 D / K)\). The total per‑layer complexity is \(O(T L K D + L^2 D / K)\). For very long sequences where \(L\) dominates, the second term is the main cost, which is reduced by a factor of \(K\) compared to full \(O(L^2 D)\) attention. With \(K\) in the hundreds, significant speedups are achieved while still allowing any token to interact with any other token, as long as they are assigned to the same cluster.
-
----
-
-## 4. Implementation Details
-
-The `ClusterAttention` module inherits from `nn.Module` and is registered under the name `"cluster"` in the `ATTENTION_REGISTRY`.
-
-- **Constructor**: Takes `config` (model configuration), `num_clusters` (default 64), and `n_iters` (default 3). Creates four linear projections (`q_proj`, `k_proj`, `v_proj`, `out_proj`) and dropout.
-- **`_kmeans(x, iters)`**: Implements the batched *k‑means* described above. Returns centroids and cluster IDs. Important: the centroid update loop uses a Python `for` loop over clusters, which can be slow for large \(K\). In practice, a fully vectorized version using scatter operations would be faster.
-- **Forward pass**:
-  1. Project hidden states to Q, K, V.
-  2. Run *k‑means* on the hidden states to obtain `cluster_ids` of shape \((B, L)\).
-  3. Iterate over \(K\) clusters:
-     - Build a mask for tokens belonging to cluster \(k\).
-     - Zero out Q, K, V for non‑members (or use masking in attention scores).
-     - Compute attention scores, add additive mask where `cluster_ids != k`.
-     - Apply softmax, dropout, and multiply with V.
-     - Add to output.
-  4. Reshape and apply output projection.
-
-Note: The current implementation loops over clusters in Python, which is feasible for moderate \(K\) (e.g., 64) but could become a bottleneck. The per‑cluster attention uses full \(O(|S_k|^2)\) attention, which is acceptable because cluster sizes are roughly \(L/K\). No causal masking is applied; for autoregressive decoding, a causal variant would need to be added.
-
-Masking of padding tokens is not explicitly handled; the input `attention_mask` is accepted but not used. For padded sequences, padding tokens would be clustered and could introduce noise. A proper integration would mask them out in the *k‑means* and attention steps.
-
----
-
-## 5. Usage and Configuration
-
-The module is injected through the framework with:
-
-```python
-comp_config.num_clusters = 64
-comp_config.n_iters = 3
+```
+Input: hidden_states [B, L, D]
+  │
+  ├──> MatMul(Vh_qkv.T) ──> [B, L, r_qkv]
+  ├──> Multiply S_qkv ──> proj: [B, L, r_qkv]
+  ├──> MatMul(U_qkv.T) ──> qkv_comp: [B, L, 3D]
+  │
+  ├──> Split into Q, K, V [B, L, D] & Add Biases (b_q, b_k, b_v)
+  ├──> Reshape & Transpose ──> Q, K, V: [B, H, L, d_k]
+  │
+  ├──> MatMul: Q @ K.transpose(-2, -1) / sqrt(d_k) ──> scores: [B, H, L, L]
+  ├──> Add attention_mask ──> [B, H, L, L]
+  ├──> Softmax(dim=-1) & Dropout ──> attn: [B, H, L, L]
+  ├──> MatMul: attn @ V ──> context: [B, H, L, d_k]
+  │
+  ├──> Transpose & Contiguous View ──> context: [B, L, D]
+  ├──> MatMul(Vh_out.T) ──> [B, L, r_out]
+  ├──> Multiply S_out ──> fused: [B, L, r_out]
+  ├──> MatMul(U_out.T) ──> out: [B, L, D]
+  └──> Add bias_out ──> Output: [B, L, D]
 ```
 
-or manually:
+---
 
-```python
-attn = ClusterAttention(
-    config=model_config,
-    num_clusters=64,
-    n_iters=3
-)
-layer.attention = attn
+## 4. Analytical Complexity Profiling
+
+### Parameter & Computational Breakdown
+
+Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, $d_k = D / H$, $r_{\text{qkv}}$ joint QKV SVD rank, and $r_{\text{out}}$ output SVD rank.
+
+1. **Parameter Counts**:
+   - Original Uncompressed Attention Parameters: $3 D^2 (W_Q, W_K, W_V) + D^2 (W_O) = 4 D^2$.
+   - SVD Compressed Parameters:
+     - $V_{\text{qkv}}^\top$: $r_{\text{qkv}} D$
+     - $\Sigma_{\text{qkv}}$: $r_{\text{qkv}}$
+     - $U_{\text{qkv}}^\top$: $3 D r_{\text{qkv}}$
+     - $V_{\text{out}}^\top$: $r_{\text{out}} D$
+     - $\Sigma_{\text{out}}$: $r_{\text{out}}$
+     - $U_{\text{out}}^\top$: $D r_{\text{out}}$
+   - Total Compressed Parameters: $4 D r_{\text{qkv}} + 2 D r_{\text{out}} + r_{\text{qkv}} + r_{\text{out}}$.
+
+2. **Parameter Reduction Ratio (for $D=768, r_{\text{qkv}}=32, r_{\text{out}}=32$)**:
+   - Original: $4 \times 768^2 = 2,359,296$ parameters ($9.44 \text{ MB}$ in FP32).
+   - Compressed: $4(768)(32) + 2(768)(32) + 32 + 32 = 147,520$ parameters ($0.59 \text{ MB}$ in FP32).
+   - **Compression Factor**: $\approx 16.0\times$ parameter footprint reduction ($93.75\%$ savings).
+
+3. **FLOPs & MACs**:
+   - Joint QKV Projections:
+     - Down-projection: $2 B L D r_{\text{qkv}}$ FLOPs ($B L D r_{\text{qkv}}$ MACs).
+     - Up-projection: $2 B L r_{\text{qkv}} (3D) = 6 B L D r_{\text{qkv}}$ FLOPs ($3 B L D r_{\text{qkv}}$ MACs).
+   - Core Attention ($Q K^\top$ & $A V$): $4 B L^2 D$ FLOPs ($2 B L^2 D$ MACs).
+   - Output Projection:
+     - Down-projection: $2 B L D r_{\text{out}}$ FLOPs ($B L D r_{\text{out}}$ MACs).
+     - Up-projection: $2 B L r_{\text{out}} D$ FLOPs ($B L D r_{\text{out}}$ MACs).
+
+- **Total FLOPs**: $8 B L D r_{\text{qkv}} + 4 B L D r_{\text{out}} + 4 B L^2 D$
+- **Total MACs**: $4 B L D r_{\text{qkv}} + 2 B L D r_{\text{out}} + 2 B L^2 D$
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### Singular Value Energy Truncation Loss
+Truncating SVD matrices to low ranks ($r_{\text{qkv}} \ll D$) drops lower-spectrum singular values. If the singular value spectrum of $W_{\text{qkv}}$ decays slowly (high spectral entropy), truncating at $r = 32$ discards significant variance, causing loss of performance in zero-shot tasks without post-SVD fine-tuning.
+
+```
+Singular Value Index (i)  ───>  1 ....... r_qkv ....... D
+Singular Value Magnitude  ───> [██████████░░░░░░░░░░░░░░░]
+                                  │ Retained │ Discarded  │
 ```
 
-Key hyperparameters:
+### Buffer Device Synchronization Latency
+In `CompressedDistilBertAttention`, `Vh_qkv`, `S_qkv`, `U_qkv`, etc., are registered as buffers. If `hidden_states` is moved to GPU dynamically while buffers remain on CPU, runtime device checks trigger `self.U_qkv.to(device)` during the forward pass, inducing host-to-device PCI-e transfers and kernel launch stalls.
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `num_clusters` | 64 | Number of clusters for partitioning tokens. |
-| `n_iters` | 3 | Number of k‑means iterations. |
-
----
-
-## 6. Discussion
-
-ClusterFormer Attention offers a fresh perspective on efficient attention. By clustering tokens before attention, it retains a fully dense attention pattern within each cluster, which can capture rich interactions, while dramatically reducing the total number of comparisons. The method is inherently content‑adaptive: clusters are formed based on the current hidden states, allowing the model to dynamically route information. This is in contrast to fixed‑pattern sparsity (e.g., local windows, strided patterns) which cannot adapt to the content.
-
-However, the module has limitations. The *k‑means* algorithm, despite being fast in practice, adds overhead per layer. The use of hard cluster assignments means that tokens in different clusters cannot interact directly, which may limit global information flow compared to methods that use soft attention over a global set of representatives (e.g., set Transformers, Perceiver). The quality of clustering may degrade if the hidden states are not well‑suited for Euclidean distance; using a learned distance metric could improve performance. Finally, the current implementation does not handle padding or causal masking, limiting its immediate applicability to certain tasks.
-
-Despite these caveats, ClusterFormer provides a simple and interpretable building block for scaling Transformers to longer sequences, and its plug‑and‑play nature facilitates rapid experimentation.
+### Head Coupling via Joint SVD
+By stacking $[W_Q; W_K; W_V]$ into a single matrix before SVD, the singular bases $V_{\text{qkv}}$ are shared across queries, keys, and values. This coupling restricts independent subspace alignment between query and key vectors across distinct heads.
 
 ---
 
-## 7. Conclusion
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
-We have presented ClusterFormer Attention, an efficient self‑attention module that uses *k‑means* clustering to group tokens and restricts attention to within‑cluster interactions. This reduces the complexity from \(O(N^2)\) to \(O(N^2 / K + NK)\), enabling processing of longer sequences while preserving the ability to form global token relationships. The module is easy to integrate into existing Transformer architectures and offers a tunable trade‑off between speed and accuracy via the number of clusters. Future work will extend the method with soft clustering, causal masking, and padding support, as well as explore learned clustering strategies.
+### Fused Low-Rank Linear GEMM Triton Architecture
+Instead of executing two separate sequential PyTorch `torch.matmul` kernel calls for down-projection and up-projection, Triton fuses the low-rank factorized linear transformations into a single CUDA kernel.
+
+```
+       Global Memory (HBM)
+      ┌────────────────────────────────────────────────────────┐
+      │ X [B, L, D]                                            │
+      │ Vh_qkv [r_qkv, D]                                      │
+      │ S_qkv [r_qkv]                                          │
+      │ U_qkv [3D, r_qkv]                                      │
+      └───────────────────────────┬────────────────────────────┘
+                                  │ Fused Tile Read
+                                  ▼
+ ┌──────────────────────────────────────────────────────────────────┐
+ │                   Triton SRAM Scratchpad                         │
+ │ 1. Load X Tile [BLOCK_M, D] & Vh_qkv Tile [r_qkv, D]             │
+ │ 2. Compute Intermediate GEMM: Z_tile = X_tile @ Vh_qkv.T         │
+ │ 3. Scale by S_qkv: Z_scaled = Z_tile * S_qkv                      │
+ │ 4. Compute Up-Projection GEMM: QKV_tile = Z_scaled @ U_qkv.T     │
+ └────────────────────────────────┬─────────────────────────────────┘
+                                  │ Write Direct to Q, K, V Registers
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ Q, K, V Tensors [B, L, D]                              │
+      └────────────────────────────────────────────────────────┘
+```
+
+### Triton Optimization Guidelines:
+1. **Pre-Multiplied Weight Buffers**:
+   During initialization, absorb singular values $S_{\text{qkv}}$ directly into $U_{\text{qkv}}$:
+   \[
+   \widehat{U}_{\text{qkv}} = U_{\text{qkv}} \cdot \text{diag}(S_{\text{qkv}}) \in \mathbb{R}^{3D \times r_{\text{qkv}}}
+   \]
+   This reduces the forward pass computation to two pure GEMM calls ($X V_{\text{qkv}}^\top$ and $Z \widehat{U}_{\text{qkv}}^\top$), eliminating per-element scaling kernel overhead.
+2. **Fused Double-GEMM Kernel**:
+   Write a specialized 2-stage GEMM Triton kernel that retains intermediate low-rank representations $Z \in \mathbb{R}^{\text{BLOCK\_M} \times r_{\text{qkv}}}$ in GPU L1 cache registers, writing output directly into the FlashAttention input layout.
+3. **Weight Fusion for Fine-Tuning**:
+   If fine-tuning is completed, re-materialize dense weights $W_{\text{qkv}}^{\text{reconstructed}} = \widehat{U}_{\text{qkv}} V_{\text{qkv}}^\top \in \mathbb{R}^{3D \times D}$ back into standard single matrix projections, removing all low-rank overhead during inference.

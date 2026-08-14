@@ -1,133 +1,160 @@
-# HLA: Hadamard Linear Attention
+# HLA Attention: Hadamard Linear Recurrent Outer-Product Attention
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Standard softmax self-attention tracks full sequence pairs through an explicit $N \times N$ Gram matrix $\mathbf{A} = \operatorname{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right)$, leading to quadratic time and space requirements $\mathcal{O}(N^2)$. Hadamard Linear Attention (HLA) replaces explicit score computation with causal outer-product recurrence over a matrix memory state $\mathbf{H}_t \in \mathbb{R}^{d \times d}$.
 
-We present **Hadamard Linear Attention (HLA)**, an efficient attention mechanism that replaces the quadratic softmax self‑attention with a linear recurrent form whose feature map is induced by a **Hadamard transform**. By multiplying queries and keys with a fixed Hadamard matrix before the outer‑product accumulation, the method aims to improve the approximation quality of the softmax kernel while maintaining \(O(L d^2)\) time and \(O(d^2)\) memory complexity. The current implementation provides a skeleton that performs the recurrent linear attention loop, but the Hadamard projection step is not yet incorporated; thus, it serves as a baseline vanilla linear attention. The module is designed as a drop‑in replacement for DistilBERT’s self‑attention layer and is registered within the compression framework. This paper describes the intended mathematical formulation using Hadamard matrices, the current implementation, and plans for full integration.
-
----
-
-## 1. Introduction
-
-The quadratic cost of the standard Transformer attention mechanism with respect to sequence length \(L\) motivates the search for scalable alternatives. Linear attention replaces the softmax by a kernel feature map \(\phi(\mathbf{q})^\top \phi(\mathbf{k})\) and rearranges the computation to avoid the \(L \times L\) attention matrix. The quality of the approximation hinges on the choice of feature map. The **Hadamard Linear Attention (HLA)** proposes to use the **Hadamard transform** as the feature map, drawing on the property that the Hadamard matrix is an orthogonal transform that spreads information uniformly, which can act as a random projection to approximate a radial basis function kernel.
-
-In this work, we detail the intended HLA mechanism: before the outer‑product accumulation, queries and keys are multiplied by a fixed Hadamard matrix to improve the kernel approximation. However, the provided code implements only the recurrent linear attention loop without the Hadamard transformation; the projection is left as future work. We therefore describe the full mathematical model and then discuss the current placeholder implementation.
+HLA tracks historic sequence information by incrementally accumulating key-value outer products $\mathbf{k}_t^\top \mathbf{v}_t$ into a head-wise associative memory matrix $\mathbf{H}_t$. Query vectors read out context representations directly via matrix-vector multiplication $\mathbf{o}_t = \mathbf{q}_t \mathbf{H}_t$. This drops attention computation to strictly linear time $\mathcal{O}(N d^2)$ and constant recurrent memory $\mathcal{O}(d^2)$, enabling efficient streaming autoregressive generation.
 
 ---
 
-## 2. Mathematical Formulation (Intended)
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Standard Multi‑Head Projections
-
-Given an input \(\mathbf{X} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\), we first compute queries, keys, and values for \(H\) heads, each of dimension \(d_h = d_{\text{model}}/H\):
+Given input sequence tensor $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, query, key, and value vectors for head $h \in \{1, \dots, H\}$ at position $t \in \{1, \dots, N\}$ are generated via linear transformations:
 
 \[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V,
+\mathbf{q}_t^{(h)} = \mathbf{x}_t \mathbf{W}_Q^{(h)} \in \mathbb{R}^d, \quad \mathbf{k}_t^{(h)} = \mathbf{x}_t \mathbf{W}_K^{(h)} \in \mathbb{R}^d, \quad \mathbf{v}_t^{(h)} = \mathbf{x}_t \mathbf{W}_V^{(h)} \in \mathbb{R}^d
 \]
 
-and reshape to \((B, H, L, d_h)\).
-
-### 2.2 Hadamard Feature Map
-
-A Hadamard matrix \(\mathbf{H} \in \{\pm 1\}^{d_h \times d_h}\) (with columns normalised to unit length) satisfies \(\mathbf{H} \mathbf{H}^\top = \mathbf{I}\). The proposed feature map for a vector \(\mathbf{z} \in \mathbb{R}^{d_h}\) is:
+Valid sequence tokens are masked prior to state updates to eliminate padding artifacts:
 
 \[
-\phi_{\text{Had}}(\mathbf{z}) = \frac{1}{\sqrt{d_h}} \mathbf{H} \mathbf{z}.
+\widetilde{\mathbf{k}}_t^{(h)} = \mathbf{k}_t^{(h)} \odot m_t, \quad \widetilde{\mathbf{v}}_t^{(h)} = \mathbf{v}_t^{(h)} \odot m_t
 \]
 
-Applying this to queries and keys, the kernel estimate becomes:
+where $m_t \in \{0, 1\}$ is the scalar token valid mask.
+
+### Causal Recurrent State Accumulation
+The associative memory state matrix $\mathbf{H}_t^{(h)} \in \mathbb{R}^{d \times d}$ is initialized to $\mathbf{H}_0^{(h)} = \mathbf{0}_{d \times d}$. At each step $t$, the state matrix accumulates the rank-1 outer product of key and value vectors:
 
 \[
-\phi_{\text{Had}}(\mathbf{q})^\top \phi_{\text{Had}}(\mathbf{k}) = \frac{1}{d_h} \mathbf{q}^\top \mathbf{H}^\top \mathbf{H} \mathbf{k} = \frac{1}{d_h} \mathbf{q}^\top \mathbf{k},
+\mathbf{H}_t^{(h)} = \mathbf{H}_{t-1}^{(h)} + \widetilde{\mathbf{k}}_t^{(h)} \otimes \widetilde{\mathbf{v}}_t^{(h)} = \mathbf{H}_{t-1}^{(h)} + (\widetilde{\mathbf{k}}_t^{(h)})^\top \widetilde{\mathbf{v}}_t^{(h)} \in \mathbb{R}^{d \times d}
 \]
 
-which is simply the scaled dot product. However, if we use only a subset of rows of \(\mathbf{H}\) (a truncated Hadamard transform), we obtain a low‑dimensional projection. The intended HLA likely uses a random subset of Hadamard rows (or a Hadamard‑derived random matrix) to create a feature map analogous to random Fourier features but with structured orthogonality.
-
-More generally, the HLA feature map could be defined as:
+Using Einstein tensor contraction:
 
 \[
-\phi_{\text{HLA}}(\mathbf{z}) = \frac{1}{\sqrt{m}} \big[ \exp(\mathbf{H}_m \mathbf{z}) \big],
+(\mathbf{H}_t^{(h)})_{d_1, d_2} = (\mathbf{H}_{t-1}^{(h)})_{d_1, d_2} + (\widetilde{\mathbf{k}}_t^{(h)})_{d_1} (\widetilde{\mathbf{v}}_t^{(h)})_{d_2}
 \]
 
-where \(\mathbf{H}_m \in \mathbb{R}^{m \times d_h}\) consists of \(m\) rows of the Hadamard matrix, and the exponential is applied element‑wise. This yields a positive feature map that approximates a Gaussian kernel, with the Hadamard structure ensuring low variance (similar to the FAVOR+ orthogonal random features).
-
-### 2.3 Linear Attention Recurrence
-
-Using a feature map \(\phi\), the linear attention output is computed via the recurrence:
+Unrolling the recurrence reveals an un-decayed cumulative sum of outer products:
 
 \[
-\mathbf{S}_t = \mathbf{S}_{t-1} + \phi(\mathbf{k}_t) \mathbf{v}_t^\top, \qquad
-\mathbf{o}_t = \phi(\mathbf{q}_t)^\top \mathbf{S}_t,
+\mathbf{H}_t^{(h)} = \sum_{j=1}^t (\widetilde{\mathbf{k}}_j^{(h)})^\top \widetilde{\mathbf{v}}_j^{(h)}
 \]
 
-where \(\mathbf{S}_t \in \mathbb{R}^{B \times H \times m \times d_h}\) (or with dimensions swapped) accumulates the key‑value pairs. The final output for each head is \(\mathbf{o}_t\) and the normalisation denominator is implicit (often \(\phi(\mathbf{q}_t)^\top \sum_{i=1}^t \phi(\mathbf{k}_i)\)). In the identity feature map case, the denominator is omitted, leading to an unnormalised linear attention.
+### Query Context Readout
+The contextual output vector $\mathbf{o}_t^{(h)} \in \mathbb{R}^d$ is generated by multiplying the query vector $\mathbf{q}_t^{(h)}$ with the accumulated state matrix $\mathbf{H}_t^{(h)}$:
 
-### 2.4 Current Implementation: Identity Feature Map
+\[
+\mathbf{o}_t^{(h)} = \mathbf{q}_t^{(h)} \mathbf{H}_t^{(h)} = \sum_{j=1}^t \left( \mathbf{q}_t^{(h)} (\widetilde{\mathbf{k}}_j^{(h)})^\top \right) \widetilde{\mathbf{v}}_j^{(h)} \in \mathbb{R}^d
+\]
 
-The provided HLA module does not apply any Hadamard transform. It directly uses the identity map \(\phi(\mathbf{z}) = \mathbf{z}\), and the recurrence is:
+Outputs across heads are concatenated and linearly projected back:
 
-- State \(\mathbf{H} \in \mathbb{R}^{B \times H \times d_h \times d_h}\) initialised to zero.
-- For \(t = 1\) to \(L\):
-  \[
-  \mathbf{H} \leftarrow \mathbf{H} + \mathbf{k}_t \otimes \mathbf{v}_t,
-  \]
-  \[
-  \mathbf{o}_t = \mathbf{H} \mathbf{q}_t.
-  \]
-- No denominator normalisation is applied.
-
-This is the simplest form of causal linear attention. The name “Hadamard Linear Attention” is aspirational, indicating the intended use of Hadamard matrices; the current code serves as a placeholder that can be extended by inserting the Hadamard feature map before accumulation.
+\[
+\mathbf{y}_t = \operatorname{Concat}(\mathbf{o}_t^{(1)}, \dots, \mathbf{o}_t^{(H)}) \mathbf{W}_O \in \mathbb{R}^D
+\]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 Class Definition
-
-`HLAAttention` inherits from `BaseAttention` and is registered under `"hla"`. The constructor creates standard linear projections for Q, K, V, and output, with no additional parameters.
-
-### 3.2 Forward Pass
-
-1. Project input \(\mathbf{x}\) to Q, K, V, and reshape to \((B, H, L, d_h)\).
-2. Initialise a state tensor \(\mathbf{h}\) of zeros with shape \((B, H, d_h, d_h)\).
-3. Loop over \(t\) from 0 to \(L-1\):
-   - Extract query \(\mathbf{q}_t\), key \(\mathbf{k}_t\), value \(\mathbf{v}_t\).
-   - Update state: \(\mathbf{h} \leftarrow \mathbf{h} + \text{einsum}(k, v)\) (outer product).
-   - Compute output: \(\text{out}_t = \text{einsum}(q, h)\) (matrix‑vector product across the last two dims).
-4. Stack outputs along the time dimension, reshape to \((B, L, D)\), and apply output projection.
-5. Return \((\text{output}, \text{None})\).
-
-The module ignores the `attention_mask` parameter, meaning padding tokens are not masked and will contribute to the state.
-
-### 3.3 Complexity
-
-Per‑step cost is \(O(H \cdot d_h^2) = O(d_{\text{model}} \cdot d_h)\). Total \(O(L \cdot d_{\text{model}} \cdot d_h) \approx O(L D^2)\). The state memory is \(O(H \cdot d_h^2) = O(d_{\text{model}} \cdot d_h)\) per batch element, independent of sequence length.
-
----
-
-## 4. Usage and Configuration
-
-The module is injected by setting the attention type to `"hla"`. No additional configuration parameters are required. For zero‑shot initialisation, the injection function (not shown in this snippet) would typically copy the projection weights from a pretrained attention layer. The current code does not include a dedicated injection function; the registry entry expects a direct class instantiation.
-
-Example manual replacement:
-```python
-new_attn = HLAAttention(config=model_config)
-layer.attention = new_attn
+```
+Input Hidden States X [B, N, D]
+  │
+  ├──> Linear Projections (W_Q, W_K, W_V) -> Q, K, V [B, H, N, d]
+  │
+  ├──> Mask Padding: K = K * Valid_Mask, V = V * Valid_Mask
+  │
+  ├──> Recurrent Loop (for t in 1...N):
+  │    ├──> Extract Step Vectors: q_t, k_t, v_t [B, H, d]
+  │    ├──> Outer Product Accumulation:
+  │    │    H_t = H_{t-1} + einsum('bhd, bhe -> bhde', k_t, v_t) ──> [B, H, d, d]
+  │    └──> Query State Readout:
+  │         Out_t = einsum('bhd, bhde -> bhe', q_t, H_t) ─────────> [B, H, d]
+  │
+  ├──> Stack Timesteps & Reshape ─────────────────────────────────> [B, N, H * d = D]
+  └──> Output Linear Projection: Y = Out @ W_O ───────────────────> [B, N, D]
 ```
 
-The outer Transformer layer still applies a residual connection and LayerNorm.
+### Detailed Shape Progression Table
+
+| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| 1 | Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
+| 2 | Multi-Head Permute | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
+| 3 | Token Masking | `K, V: [B, H, N, d]`, `Mask: [B, 1, N, 1]` | `K, V: [B, H, N, d]` |
+| 4 | Recurrent State Init | N/A | `H_0: [B, H, d, d]` |
+| 5 | Step $t$ Key-Value Outer Product | `k_t: [B, H, d]`, `v_t: [B, H, d]` | `Outer_t: [B, H, d, d]` |
+| 6 | State Matrix Accumulation | `H_{t-1}: [B, H, d, d]`, `Outer_t` | `H_t: [B, H, d, d]` |
+| 7 | Step $t$ Query Readout | `q_t: [B, H, d]`, `H_t: [B, H, d, d]` | `out_t: [B, H, d]` |
+| 8 | Timestep Stacking | `out_t: [B, H, d]` across $N$ steps | `Out: [B, H, N, d]` |
+| 9 | Output Projection | `Out: [B, N, D]` | `Y: [B, N, D]` |
 
 ---
 
-## 5. Discussion
+## 4. Analytical Complexity Profiling
 
-The current HLA module provides a baseline linear attention mechanism without any learned or fixed feature map beyond the identity. While it demonstrates the linear‑complexity recurrence, it does not yet implement the Hadamard transform that gives the method its name. The intended Hadamard‑based feature map could be inserted by modifying the forward pass to include a matrix multiplication with a precomputed Hadamard matrix before the outer‑product update, and potentially a denominator normalisation to stabilise training.
+### FLOP & MAC Counting
+1. **Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
+2. **Sequential Outer-Product Recurrence Loop ($N$ steps)**:
+   - Outer Product ($\mathbf{k}_t^\top \mathbf{v}_t$): $2 B H d^2$ FLOPs per step.
+   - State Addition ($\mathbf{H}_{t-1} + \Delta\mathbf{H}$): $B H d^2$ operations per step.
+   - Query Readout ($\mathbf{q}_t \mathbf{H}_t$): $2 B H d^2$ FLOPs per step.
+   - Total Recurrent Compute: $N \times (5 B H d^2) = 5 B N H d^2 = 5 B N D d$ FLOPs.
 
-The lack of masking and the sequential Python loop are practical limitations that should be addressed in a production version. Parallelisation via a parallel scan algorithm and support for padding masks would make the module fully competitive with other efficient attention implementations.
+**Total Computational Cost**:
+\[
+\text{Total FLOPs} = 8 B N D^2 + 5 B N D d
+\]
 
-Despite these limitations, the skeleton provides a clear template for exploring Hadamard‑based linear attention. The use of a fixed orthogonal transformation (Hadamard) before the outer product is known to reduce the variance of the kernel approximation and can approach the softmax attention quality with lower feature dimension. Future work will integrate the Hadamard transform and evaluate the speed‑accuracy trade‑off on long‑sequence benchmarks.
+For head dimension $d = D/H$ (e.g., $d=64$), $5 B N D d \ll 4 B N^2 D$, producing linear scaling $\mathcal{O}(N)$.
+
+### Memory Footprint & Tensor Store
+- **Parameters**: $4 D^2$ floats.
+- **Activation Memory**:
+  - Recurrent State Matrix $\mathbf{H}_t$: $B H d^2 = B D d$ floats.
+  - Intermediate Step Outputs: $B H N d = B N D$ floats.
+  - Peak Activation Memory: $\mathcal{O}(B N D + B D d)$.
 
 ---
 
-## 6. Conclusion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-We have described Hadamard Linear Attention (HLA), an efficient attention method that ultimately aims to employ the Hadamard transform as a feature map to approximate the softmax kernel. The current implementation provides the recurrent linear attention backbone, ready for the addition of the Hadamard projection. Integrated into the DistilBERT compression framework, the module serves as a foundation for future experimentation with orthogonal feature maps for linear attention. Once the Hadamard transform is incorporated, HLA will offer an appealing combination of low variance, linear complexity, and compatibility with existing Transformer architectures.
+1. **Python Sequential Loop Latency**: Python `for t in range(L)` loops introduce GPU kernel launch latency bottlenecks for large sequence lengths $N$, causing GPU hardware under-utilization during standard forward propagation.
+2. **Unbounded Memory State Growth**: Because $\mathbf{H}_t$ accumulates outer products without exponential decay or normalization, entries in $\mathbf{H}_t$ grow linearly with sequence length $N$, leading to gradient explosion over long contexts.
+3. **Finite Matrix Capacity Limit**: Storing full context inside a $d \times d$ matrix creates an information bottleneck when $N \gg d^2$.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Memory Access & Vectorization Barriers
+Naive PyTorch updates the state matrix via sequential step loops, repeatedly reading and writing $B \times H \times d \times d$ tensors back to DRAM at every timestep.
+
+### High-Performance Triton Kernel Fusion Strategy
+1. **Parallel Prefix Scan Formulation**: Express the outer-product recurrence as a parallel prefix sum (Scan). Compute cumulative sums over key-value outer products in sequence chunks using GPU parallel scan algorithms.
+
+\[
+\mathbf{H}_t = \text{ParallelCumSum}\left( \mathbf{k}_j^\top \mathbf{v}_j \right)
+\]
+
+2. **Chunked Recurrent Scan Kernel**: Implement a Triton kernel that loads sequence tiles of size `BLOCK_N = 64` into Shared Memory (`smem`). Compute intra-block outer products in parallel and merge inter-block states using a tree reduction scan.
+
+```python
+# Triton Pseudocode for Parallel Chunked HLA Scan
+@triton.jit
+def _hla_fused_chunked_scan_kernel(
+    Q_ptr, K_ptr, V_ptr, Out_ptr,
+    N, D, H, d: tl.constexpr, BLOCK_N: tl.constexpr
+):
+    # Load sequence block Q, K, V into SRAM [BLOCK_N, d]
+    k_block = tl.load(K_ptr + offsets_k)
+    v_block = tl.load(V_ptr + offsets_v)
+    
+    # Compute intra-block outer products using register GEMM
+    # Compute parallel prefix sum across BLOCK_N tiles
+    # Accumulate inter-block state H_block [d, d] in Shared Memory
+```
+
+3. **In-place Recurrent Decoding for Inference**: For streaming single-token generation ($N=1$), maintain state $\mathbf{H}_t$ in GPU L1 cache, updating it with a single rank-1 outer product matrix kernel to achieve minimal latency.

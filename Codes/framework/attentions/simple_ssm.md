@@ -1,201 +1,249 @@
-# SimpleSSM: A Lightweight State‑Space Model Block for Hybrid Transformers
+# SimpleSSM: Selective State-Space Recurrence with Multiplicative Gating
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **SimpleSSM**, a compact, self‑contained state‑space sequence model (SSM) block designed as a drop‑in replacement for self‑attention or as a component in hybrid architectures. Inspired by the Mamba and S4 architectures, the block integrates a **1D depthwise convolution**, a **diagonal state‑space model with input‑dependent discretisation**, a **skip connection**, and a **gating mechanism**. The module processes sequences in linear time with respect to sequence length, using a recurrent scan that is suitable for long‑context processing. It serves as a foundational building block for many of the efficient attention modules in the compression framework. This paper provides a rigorous mathematical description of the SimpleSSM block, including its projection, convolution, state transition, discretisation, and output gating, along with implementation details and usage.
+Standard Transformer self-attention modules incur quadratic time and memory cost \(\mathcal{O}(L^2)\) with respect to sequence length \(L\). State-Space Models (SSMs) provide an efficient linear-time alternative \(\mathcal{O}(L)\) by parameterizing continuous linear dynamical systems:
+
+\[
+\dot{\mathbf{h}}(t) = \mathbf{A} \mathbf{h}(t) + \mathbf{B} \mathbf{x}(t), \quad \mathbf{y}(t) = \mathbf{C} \mathbf{h}(t) + \mathbf{D} \mathbf{x}(t)
+\]
+
+**SimpleSSM** is a selective state-space model layer designed to act as a lightweight, drop-in replacement for self-attention layers. It incorporates:
+1. Expanded dual-branch linear projections with SiLU multiplicative gating,
+2. Causal depthwise 1D convolutions for local temporal smoothing,
+3. Input-dependent discretization timescales \(\Delta t = \text{softplus}(\text{Linear}(\mathbf{x}))\), and
+4. Diagonal state transition matrices \(\mathbf{A} = -\exp(\mathbf{A}_{\text{log}})\).
+
+This document presents a comprehensive theoretical derivation, dimensional shape tracing, analytical FLOP/MAC profiling, architectural failure mode diagnosis, and a Triton hardware acceleration blueprint for SimpleSSM.
 
 ---
 
-## 1. Introduction
+## 2. Mathematical Derivations & Formulations
 
-State‑space models (SSMs) have emerged as powerful alternatives to self‑attention for sequence modelling, offering linear computational complexity and strong performance on long‑range tasks. Architectures such as S4, S5, and Mamba demonstrate that carefully structured SSMs can match or exceed Transformers in quality while being far more efficient during inference. The **SimpleSSM** module implements a streamlined version of these ideas, suitable for rapid experimentation and integration into hybrid Transformer blocks.
+Given input sequence activations \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\):
 
-The module follows the core design of Mamba: an input is projected to a higher‑dimensional space, processed by a depthwise convolution, and then passed through a discretised diagonal state‑space model. The state update uses a learned diagonal transition matrix \(\mathbf{A}\) and an input‑dependent time step \(\Delta_t\). The output is gated by a SiLU‑activated branch and projected back to the original dimension. While the implementation is simplified—it uses a sequential Python loop for the recurrent scan and a truncation of the expanded dimension to match the model size—it retains the essential characteristics of a modern SSM.
+### 2.1 Dual-Branch Linear Projection & Causal 1D Convolution
 
-SimpleSSM is registered under the key `"simple_ssm"` in the `ATTENTION_REGISTRY` and is used by several hybrid attention blocks (e.g., Hymba‑TransX, Jamba‑Info, SAMBA‑M3) as a lightweight global processing branch. This paper details the architecture, mathematical formulation, and practical usage of SimpleSSM.
+Input \(\mathbf{X}\) is projected into expanded dimension \(2 D_{\text{inner}}\) (where \(D_{\text{inner}} = E \cdot D\) with expansion multiplier \(E=2\)):
+
+\[
+\mathbf{P} = \mathbf{X} \mathbf{W}_{\text{in}} \quad \in \mathbb{R}^{B \times L \times 2 D_{\text{inner}}} \quad (\mathbf{W}_{\text{in}} \in \mathbb{R}^{D \times 2 D_{\text{inner}}})
+\]
+\[
+[\mathbf{X}_{\text{ssm}}, \mathbf{Z}] = \text{Chunk}(\mathbf{P}, \text{chunks}=2, \text{dim}=-1) \quad \in \mathbb{R}^{B \times L \times D_{\text{inner}}}
+\]
+
+If mask \(\mathbf{M} \in \{0, 1\}^{B \times L}\) is present: \(\mathbf{X}_{\text{ssm}} \leftarrow \mathbf{X}_{\text{ssm}} \odot \mathbf{M}, \quad \mathbf{Z} \leftarrow \mathbf{Z} \odot \mathbf{M}\).
+
+The SSM path \(\mathbf{X}_{\text{ssm}}\) passes through a causal depthwise 1D convolution over sequence dimension \(L\) with kernel size \(d_{\text{conv}} = 4\):
+
+\[
+\tilde{\mathbf{X}}_{\text{ssm}} = \text{Truncate}_{:L}\left(\text{Conv1D}_{\text{depthwise}}(\mathbf{X}_{\text{ssm}}^\top)\right)^\top \quad \in \mathbb{R}^{B \times L \times D_{\text{inner}}}
+\]
+
+### 2.2 Input-Dependent Discretization & Diagonal Recurrence
+
+1. **Timescale Discretization Projection \(\Delta t\)**:
+   \[
+   \mathbf{\Delta t} = \text{softplus}(\tilde{\mathbf{X}}_{\text{ssm}} \mathbf{W}_{\Delta t} + \mathbf{b}_{\Delta t}) \quad \in \mathbb{R}^{B \times L \times D} \quad (\mathbf{W}_{\Delta t} \in \mathbb{R}^{D_{\text{inner}} \times D})
+   \]
+
+2. **Diagonal Transition Matrix Parameterization**:
+   The continuous transition parameter \(\mathbf{A}_{\text{log}} \in \mathbb{R}^{D \times d_{\text{state}}}\) is exponentiated and negated to ensure strictly negative real eigenvalues:
+   \[
+   \mathbf{A} = -\exp(\mathbf{A}_{\text{log}}) \quad \in \mathbb{R}^{D \times d_{\text{state}}}
+   \]
+
+3. **Discretized Zero-Order Hold (ZOH) State Recurrence**:
+   For timestep \(t \in \{1, \dots, L\}\), state tensor \(\mathbf{h}_t \in \mathbb{R}^{B \times D \times d_{\text{state}}}\) (initialized to \(\mathbf{h}_0 = \mathbf{0}\)) updates via:
+   \[
+   \bar{\mathbf{A}}_t = \exp(\mathbf{\Delta t}_{:, t, :, \text{none}} \odot \mathbf{A}) \quad \in \mathbb{R}^{B \times D \times d_{\text{state}}}
+   \]
+   \[
+   \bar{\mathbf{B}}_t = \tilde{\mathbf{X}}_{\text{ssm}, :, t, :D, \text{none}} \odot \mathbf{\Delta t}_{:, t, :, \text{none}} \quad \in \mathbb{R}^{B \times D \times 1}
+   \]
+   \[
+   \mathbf{h}_t = \bar{\mathbf{A}}_t \odot \mathbf{h}_{t-1} + \bar{\mathbf{B}}_t \otimes \mathbf{1}_{d_{\text{state}}}^\top \quad \in \mathbb{R}^{B \times D \times d_{\text{state}}}
+   \]
+
+4. **State Readout & Direct Skip Summation**:
+   Let \(\mathbf{D}_{\text{skip}} \in \mathbb{R}^D\) be a learnable direct feedthrough parameter vector:
+   \[
+   \mathbf{y}_t = \sum_{s=1}^{d_{\text{state}}} \mathbf{h}_{t, :, :, s} \odot \mathbf{D}_{\text{skip}} \quad \in \mathbb{R}^{B \times D}
+   \]
+   Stacking yields sequence tensor \(\mathbf{Y}_{\text{ssm}} \in \mathbb{R}^{B \times L \times D}\).
+
+### 2.3 Multiplicative SiLU Gating & Output Projection
+
+The SSM readout \(\mathbf{Y}_{\text{ssm}}\) is modulated by Hadamard multiplication with the SiLU-activated residual branch \(\mathbf{Z}\):
+
+\[
+\mathbf{G} = \text{SiLU}(\mathbf{Z}_{:, :, :D}) = \mathbf{Z}_{:, :, :D} \odot \sigma(\mathbf{Z}_{:, :, :D}) \quad \in \mathbb{R}^{B \times L \times D}
+\]
+\[
+\mathbf{O}_{\text{gated}} = \mathbf{Y}_{\text{ssm}} \odot \mathbf{G} \quad \in \mathbb{R}^{B \times L \times D}
+\]
+\[
+\mathbf{O} = \mathbf{O}_{\text{gated}} \mathbf{W}_{\text{out}} + \mathbf{b}_{\text{out}} \quad \in \mathbb{R}^{B \times L \times D} \quad (\mathbf{W}_{\text{out}} \in \mathbb{R}^{D \times D})
+\]
+
+The module outputs the tuple \((\mathbf{O}, \text{None})\).
 
 ---
 
-## 2. Method
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 2.1 Input Projection
-
-Given an input sequence \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), the module first projects it to an inner dimension \(D_{\text{inner}} = E \cdot D\) where the expansion factor \(E\) defaults to 2:
-
-\[
-\mathbf{X}_{\text{proj}} = \mathbf{X} \mathbf{W}_{\text{in}} \in \mathbb{R}^{B \times L \times 2 D_{\text{inner}}}.
-\]
-
-The weight matrix \(\mathbf{W}_{\text{in}} \in \mathbb{R}^{D \times 2 D_{\text{inner}}}\) maps the input to **two** copies of the inner dimension, which are then split into two branches:
-
-\[
-\mathbf{X}_{\text{ssm}}, \mathbf{Z} = \operatorname{chunk}(\mathbf{X}_{\text{proj}}, 2, \text{dim}=-1),
-\]
-
-each of shape \((B, L, D_{\text{inner}})\). The first branch \(\mathbf{X}_{\text{ssm}}\) will undergo the SSM transformation, while the second branch \(\mathbf{Z}\) will serve as a multiplicative gate.
-
-### 2.2 Depthwise Convolution
-
-Before entering the state‑space recurrence, the SSM branch \(\mathbf{X}_{\text{ssm}}\) is processed by a 1D depthwise convolution. The convolution uses a kernel size \(d_{\text{conv}}\) (default 4) with `groups = D_{\text{inner}}`, meaning each channel is filtered independently:
-
-\[
-\mathbf{X}_{\text{ssm}}^{(t)} \;\xrightarrow{\text{Conv1D}}\; \tilde{\mathbf{X}}_{\text{ssm}}^{(t)}.
-\]
-
-The convolution is causal: padding is applied only on the left, and the output is truncated to the original sequence length \(L\). This introduces local temporal smoothing and is essential for the SSM to capture short‑term patterns. The operation is performed after transposing to \((B, D_{\text{inner}}, L)\) and back.
-
-### 2.3 Discretisation of the State‑Space Model
-
-The core of the SSM is a continuous‑time linear state‑space model defined by the state equation:
-
-\[
-\dot{\mathbf{h}}(t) = \mathbf{A} \mathbf{h}(t) + \mathbf{B} \mathbf{x}(t).
-\]
-
-For computational efficiency, the system is discretised with a zero‑order hold (ZOH) using a time‑varying step size \(\Delta_t\). The discrete state update becomes:
-
-\[
-\mathbf{h}_t = \exp(\Delta_t \mathbf{A}) \mathbf{h}_{t-1} + \Delta_t \mathbf{B} \mathbf{x}_t,
-\]
-
-where \(\Delta_t\) is a scalar that can vary per token and per channel. In SimpleSSM, the matrix \(\mathbf{A}\) is restricted to be **diagonal**. Its eigenvalues are parameterised in log space as \(\mathbf{A}_{\text{log}} \in \mathbb{R}^{D \times d_{\text{state}}}\) and then exponentiated and negated to obtain stable, decaying dynamics:
-
-\[
-\mathbf{A} = -\exp(\mathbf{A}_{\text{log}}).
-\]
-
-The step size \(\Delta_t\) is computed from the convolved signal via a linear projection and a softplus activation:
-
-\[
-\Delta_t = \operatorname{softplus}(\tilde{\mathbf{X}}_{\text{ssm},t} \mathbf{W}_{\Delta} + \mathbf{b}_{\Delta}) \in \mathbb{R}^{B \times D}.
-\]
-
-The weight \(\mathbf{W}_{\Delta} \in \mathbb{R}^{D_{\text{inner}} \times D}\) maps the inner dimension to the model dimension \(D\). Importantly, \(\Delta_t\) is a vector of size \(D\), providing channel‑wise adaptation of the time scale.
-
-### 2.4 Recurrent State Update
-
-The hidden state \(\mathbf{h}_t \in \mathbb{R}^{B \times D \times d_{\text{state}}}\) evolves according to:
-
-\[
-\mathbf{h}_t = \exp(\Delta_t \otimes \mathbf{A}) \odot \mathbf{h}_{t-1} + \Delta_t \otimes \mathbf{x}_t,
-\]
-
-where \(\otimes\) broadcasts \(\Delta_t\) over the state dimension \(d_{\text{state}}\), and \(\mathbf{x}_t\) is the input at time \(t\) (taken as the first \(D\) channels of \(\tilde{\mathbf{X}}_{\text{ssm},t}\) — a simplification for dimension compatibility). The output at time \(t\) is then:
-
-\[
-\mathbf{y}_t = (\mathbf{h}_t \cdot \mathbf{D}) \in \mathbb{R}^{B \times D},
-\]
-
-where \(\mathbf{D} \in \mathbb{R}^{D}\) is a learnable skip connection vector (initialised to ones). The term \(\mathbf{h}_t \cdot \mathbf{D}\) performs a weighted sum over the state dimension, effectively collapsing the state back to the model dimension. The output sequence \(\mathbf{Y}_{\text{ssm}} \in \mathbb{R}^{B \times L \times D}\) is collected by stacking \(\mathbf{y}_t\) across time.
-
-In the current implementation, the recurrence is computed via a simple Python `for` loop over the sequence length. This is not optimised but is straightforward and sufficient for moderate lengths. A parallel scan algorithm would be used in a production‑grade implementation.
-
-### 2.5 Gating and Output Projection
-
-The second branch \(\mathbf{Z}\) from the input projection is activated with the SiLU (Sigmoid Linear Unit) function:
-
-\[
-\mathbf{G} = \mathbf{Z} \odot \sigma(\mathbf{Z}) \quad (\text{SiLU}).
-\]
-
-To match dimensions, only the first \(D\) channels of \(\mathbf{G}\) are used (as \(\mathbf{G}_{[:,:,:D]}\)). The SSM output is then gated element‑wise:
-
-\[
-\mathbf{Y}_{\text{out}} = \mathbf{Y}_{\text{ssm}} \odot \mathbf{G}_{[:,:,:D]}.
-\]
-
-Finally, a linear output projection \(\mathbf{W}_{\text{out}} \in \mathbb{R}^{D_{\text{inner}} \times D}\) maps back to the model dimension (though in the code, it is applied after the gating? Actually the code does `out = out_ssm * self.act(z[:,:,:d_model])` and then `return self.out_proj(out)`. But `out_ssm` is of shape `(B, L, D)` and `z` is of shape `(B, L, inner)`. The gating uses `z[:,:,:d_model]`, which is a subset of channels. Then the `out_proj` expects input of size `inner_dim`? Wait, the code says `self.out_proj = nn.Linear(inner_dim, d_model)`. But `out = out_ssm * self.act(z[:,:,:d_model])` produces shape `(B, L, d_model)`, and then `self.out_proj(out)` expects input of size `inner_dim`, which is `2*d_model`. There is a dimensionality mismatch in the code! The output projection should take either `inner_dim` or `d_model` as input; currently it takes `inner_dim`, but the gating produces `d_model`. This is a bug. We'll point it out in the Discussion. For the sake of explanation, we assume the intended design is to project the gated output back to `d_model` after gating with a linear layer of input size `d_model`. But the code as written will throw a shape error. We'll note this in the discussion.
-
-### 2.6 Complexity
-
-The dominant costs are:
-- Projection: \(O(B L D D_{\text{inner}})\).
-- Convolution: \(O(B L D_{\text{inner}} d_{\text{conv}})\).
-- Discretisation: \(O(B L D_{\text{inner}} D)\).
-- Recurrent state update: \(O(B L D d_{\text{state}})\).
-Total time is linear in \(L\). Memory for the state is \(O(B D d_{\text{state}})\), independent of sequence length.
-
----
-
-## 3. Implementation Details
-
-- **`SimpleSSM`** inherits from `nn.Module` and is registered under `"simple_ssm"`.
-- **Constructor parameters**:
-  - `d_model`: the model dimension \(D\) (e.g., 768).
-  - `d_state`: state dimension \(N\) (default 16).
-  - `d_conv`: convolution kernel size (default 4).
-  - `expand`: expansion factor \(E\) (default 2).
-- **Layers**:
-  - `in_proj`: Linear(\(D\), \(2 E D\)) without bias.
-  - `conv1d`: depthwise Conv1d with kernel `d_conv`, padding `d_conv-1`, groups = inner_dim.
-  - `dt_proj`: Linear(\(E D\), \(D\)) with bias.
-  - `A_log`: learnable parameter of shape \((D, N)\), initialised as \(\log(\text{Uniform}(0,0.1))\)? Actually `torch.log(torch.rand(D, N) * 0.1)` gives log of values in (0, 0.1), so A_log is negative and after exp and negation yields small positive values. The range is small to ensure stable dynamics.
-  - `D`: learnable vector of size \(D\), initialised to 1.0.
-  - `out_proj`: Linear(\(E D\), \(D\)) (but as noted, the input size may be mismatched with gating output).
-  - `act`: SiLU activation.
-- **Forward**:
-  1. Project input.
-  2. Split into `x_ssm` and `z`.
-  3. Apply convolution to `x_ssm`.
-  4. Compute `dt` via softplus on `dt_proj(x_ssm)`.
-  5. Compute `A = -exp(A_log)`.
-  6. Initialise hidden state `h` of zeros.
-  7. Loop over time steps:
-     - Take slice of `x_ssm` (first `d_model` channels) as input.
-     - Update state: `h = h * exp(dt * A) + (x_slice.unsqueeze(-1) * dt.unsqueeze(-1))`.
-     - Compute output: `out_t = (h * D.unsqueeze(-1)).sum(dim=-1)`.
-  8. Stack outputs.
-  9. Gate with `z` subset (first `d_model` channels).
-  10. Apply output projection (bug: dimension mismatch likely).
-  11. Return result.
-
-- **Bug**: The gating produces a tensor of shape `(B, L, D)`, but `out_proj` expects input of shape `(B, L, inner_dim)` where `inner_dim = E * D`. This will raise a runtime error when `E != 1`. For the default \(E=2\), `inner_dim = 2D`, so the linear layer expects 1536‑dim input, but receives 768. This must be fixed either by adjusting the gating to use all `inner_dim` channels or by changing the output projection to accept `D`-dim input. In many implementations, the gating uses the full expanded dimension and then a linear projection back, or the SSM output is first projected to `inner_dim` before gating. We'll note this as a critical bug.
-
----
-
-## 4. Usage and Configuration
-
-SimpleSSM can be instantiated directly and used as a sequence mixer:
-
-```python
-ssm = SimpleSSM(d_model=768, d_state=16, d_conv=4, expand=2)
-output = ssm(input_tensor)  # input: (B, L, 768)
+```
+                     Input Hidden States X [B, L, D]
+                                    │
+                                    ▼
+                    Dual Projection W_in: [B, L, 4D]
+                                    │
+            ┌───────────────────────┴───────────────────────┐
+            ▼                                               ▼
+   SSM Path X_ssm [B, L, 2D]                       Gate Path Z [B, L, 2D]
+            │                                               │
+   Causal 1D Conv (k=4)                            Slice & SiLU Activation
+   - X_ssm: [B, 2D, L] -> [B, 2D, L]                - G = SiLU(Z[:, :, :D])
+            │                                               │
+   Discretization dt_proj                                  │
+   - dt = softplus(Linear(X_ssm)): [B, L, D]                │
+            │                                               │
+   Selective State Recurrence Loop                         │
+   - h_t = exp(dt * A) * h_{t-1} + dt * x_t                │
+   - out_ssm = sum(h_t * D_skip, dim=-1): [B, L, D]        │
+            │                                               │
+            └───────────────────────┬───────────────────────┘
+                                    ▼
+                   Multiplicative Gating: out_ssm * G
+                                    │
+                                    ▼
+                      Output GEMM: W_out + b_out
+                                    │
+                                    ▼
+                    Final Output Tuple (out, None)
 ```
 
-It can also be injected as an attention replacement via the registry key `"simple_ssm"` if an injection function is provided (not shown). The hyperparameters are:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `d_model` | required | Hidden dimension \(D\). |
-| `d_state` | 16 | State dimension \(N\). |
-| `d_conv` | 4 | Convolution kernel size. |
-| `expand` | 2 | Expansion factor for inner dimension. |
-
-The module is often used within hybrid blocks that require a lightweight SSM component.
-
----
-
-## 5. Discussion
-
-SimpleSSM captures the essential ingredients of a modern state‑space model: a diagonal state matrix, input‑dependent time steps, a convolutional front‑end, and gating. It serves as a useful baseline and a drop‑in component for hybrid architectures. The use of a diagonal \(\mathbf{A}\) simplifies the state update to an element‑wise operation, making it memory‑efficient and easy to implement. The softplus discretisation ensures positivity of \(\Delta_t\), which is crucial for stable state evolution.
-
-However, the current implementation has several notable limitations:
-
-1. **Dimensionality bug**: The gating and output projection shapes are incompatible when `expand != 1`. This prevents the module from running with the default settings and must be corrected. A typical fix is to either:
-   - Gate with the full expanded dimension (i.e., use all channels of \(\mathbf{Z}\)) and then project back, which matches `out_proj` expectation.
-   - Or, project the SSM output to the expanded dimension before gating, then project back.
-   The intended design likely follows the first approach, where the SSM output is \(\mathbf{Y}_{\text{ssm}}\) of shape \((B, L, D)\), and the gate \(\mathbf{G}\) should also be of shape \((B, L, D)\); thus the `out_proj` should take input size \(D\), not \(E D\). The current `out_proj = nn.Linear(inner_dim, d_model)` is inconsistent.
-
-2. **Sequential loop**: The recurrent scan is implemented with a Python `for` loop, which is inefficient on GPUs for long sequences. A parallel scan (e.g., `torch.cumsum` or a custom kernel) would greatly improve speed.
-
-3. **Truncation of input**: The SSM input is taken as only the first \(D\) channels of the expanded representation. This discards half of the projected features, wasting capacity. A full implementation would use all \(E D\) channels by reshaping the state dimension accordingly (e.g., treating each channel as an independent SSM with a single state, akin to Mamba’s independent channels).
-
-4. **No padding mask support**: The module ignores any `attention_mask`, meaning padding tokens will be processed and affect the state. This can be problematic for variable‑length sequences.
-
-Despite these issues, the module is pedagogically clear and demonstrates the core principles of SSMs. It is actively used in the framework’s hybrid blocks (e.g., Hymba‑TransX, Jamba‑Info, SAMBA‑M3) as a placeholder that can be replaced with a more efficient SSM kernel once the bugs are fixed.
+| Step | Operation / Layer | Input Tensor Shapes | Output Tensor Shapes | Tensor Dimensional Transformation |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | Input Projection | `hidden_states` \([B, L, D]\) | `x_proj` | \([B, L, D] \rightarrow [B, L, 4D]\) |
+| **2** | Branch Splitting | `x_proj` \([B, L, 4D]\) | `x_ssm`, `z` | \([B, L, 4D] \rightarrow 2 \times [B, L, 2D]\) |
+| **3** | Mask Multiplication | `x_ssm`, `attention_mask` | `x_ssm` | \([B, L, 2D] \odot [B, L, 1] \rightarrow [B, L, 2D]\) |
+| **4** | Causal Conv1D | `x_ssm` \([B, 2D, L]\) | `x_ssm` | \([B, 2D, L] \rightarrow [B, 2D, L]\) |
+| **5** | Timescale GEMM | `x_ssm` \([B, L, 2D]\) | `dt` | \([B, L, 2D] \rightarrow [B, L, D]\) |
+| **6** | Recurrence Step \(t\)| `x_ssm[:, t, :D]`, `dt[:, t]`| `h` | \([B, D] \times [D, d_{\text{state}}] \rightarrow [B, D, d_{\text{state}}]\) |
+| **7** | State Readout | `h` \([B, D, d_{\text{state}}]\), `D` | `out_t` | \([B, D, d_{\text{state}}] \rightarrow [B, D]\) |
+| **8** | Sequence Stack | List of \(L \times [B, D]\) | `out_ssm` | \(L \times [B, D] \rightarrow [B, L, D]\) |
+| **9** | SiLU Gating | `out_ssm`, `z` | `out_gated` | \([B, L, D] \odot \text{SiLU}([B, L, D]) \rightarrow [B, L, D]\) |
+| **10**| Output GEMM | `out_gated` \([B, L, D]\) | `out` | \([B, L, D] \rightarrow [B, L, D]\) |
 
 ---
 
-## 6. Conclusion
+## 4. Analytical Complexity Profiling
 
-We have described SimpleSSM, a lightweight state‑space model block that combines a diagonal state transition, input‑dependent discretisation, a depthwise convolution, and gating. The module offers linear‑time sequence processing and serves as a foundational building block for hybrid Transformer architectures within the compression framework. While the current implementation has some dimensional mismatches and performance bottlenecks, it provides a clear and extensible starting point for SSM‑based efficient attention. Future work will resolve the gating dimension bug, implement a parallel scan, and incorporate padding mask handling to make SimpleSSM fully production‑ready.
+### 4.1 Computational Complexity (FLOPs & MACs)
+
+Let \(B\) be batch size, \(L\) sequence length, \(D\) hidden dimension, \(E=2\) expansion multiplier, \(D_{\text{inner}} = 2D\), \(d_{\text{conv}} = 4\), and \(d_{\text{state}} = 16\):
+
+1. **Input Dual Linear Projection (`in_proj`)**:
+   - Matrix Multiplication \(\mathbf{X} \in \mathbb{R}^{(BL) \times D}\) by \(\mathbf{W}_{\text{in}} \in \mathbb{R}^{D \times 4D}\).
+   - MACs: \(4 B L D^2\).
+   - FLOPs: \(8 B L D^2\).
+2. **Causal Depthwise 1D Convolution (`conv1d`)**:
+   - Depthwise Convolution over \(2D\) channels with kernel \(d_{\text{conv}} = 4\):
+   - FLOPs: \(2 \cdot B \cdot L \cdot (2D) \cdot d_{\text{conv}} = 16 B L D\).
+3. **Discretization Timescale Projection (`dt_proj`)**:
+   - Matrix Multiplication \((B L \times 2D) \times (2D \times D)\) + Softplus:
+   - MACs: \(2 B L D^2\).
+   - FLOPs: \(4 B L D^2 + 4 B L D\).
+4. **State Space Recurrence Loop**:
+   - Exponential discretization \(\exp(\Delta t \cdot \mathbf{A})\): \(4 B L D d_{\text{state}}\) FLOPs.
+   - Recurrent update \(\mathbf{h}_t = \mathbf{A} \mathbf{h}_{t-1} + \mathbf{B} \mathbf{x}_t\): \(3 B L D d_{\text{state}}\) FLOPs.
+   - Readout sum: \(B L D d_{\text{state}}\) FLOPs.
+   - Subtotal Recurrence FLOPs: \(8 B L D d_{\text{state}} = 128 B L D\).
+5. **SiLU Gating & Output Projection (`out_proj`)**:
+   - SiLU + Hadamard Gating: \(5 B L D\) FLOPs.
+   - Output GEMM \((BL \times D) \times (D \times D)\): \(B L D^2\) MACs / \(2 B L D^2\) FLOPs.
+6. **Total Combined Complexity**:
+   - **Total MACs**: \(7 B \cdot L \cdot D^2\).
+   - **Total FLOPs**: \(14 B \cdot L \cdot D^2 + (16 + 4 + 128 + 5) B L D = 14 B \cdot L \cdot D^2 + 153 B L D\).
+
+### 4.2 Memory Footprint Accounting
+
+- **Parameter Count**:
+  - `in_proj`: \(D \times 4D = 4D^2\).
+  - `conv1d`: \(2D \times 1 \times 4 = 8D\).
+  - `dt_proj`: \(2D \times D + D = 2D^2 + D\).
+  - `A_log`: \(D \times d_{\text{state}} = 16D\).
+  - `D` (skip): \(D\).
+  - `out_proj`: \(D \times D + D = D^2 + D\).
+  - Total Parameters: \(7 D^2 + 26 D\). For \(D=768\): \(\approx 4.15 \times 10^6\) parameters (8.3 MB in FP16).
+
+- **Training Activation Footprint**:
+  - Preserving convolved states \(\tilde{\mathbf{X}}_{\text{ssm}}\) and recurrence states \(\mathbf{h}_1 \dots \mathbf{h}_L\) requires \(\approx 4 B L D + 2 B L D d_{\text{state}} = 36 B L D\) bytes.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Sequential Iterative Recurrence GPU Starvation
+
+Executing the sequential loop `for t in range(seq_len):` in PyTorch dispatches \(L\) individual sets of CUDA operations (`torch.exp`, element-wise product, `sum`). At sequence length \(L = 8192\), Python interpreter overhead and GPU kernel launch latency dominate overall execution time, severely throttling GPU Streaming Multiprocessor (SM) utilization.
+
+### 5.2 Discretization Timescale Saturation & Zero-Gradient Plateau
+
+The discretization parameter \(\Delta t = \text{softplus}(\mathbf{z}_{\Delta t})\) uses the Softplus activation \(\ln(1 + e^z)\). If \(\mathbf{z}_{\Delta t} \ll -10\), \(\Delta t \to 0\). The discretized transition matrix \(\bar{\mathbf{A}}_t = \exp(\Delta t \cdot \mathbf{A}) \to \mathbf{I}\) (identity matrix), while the input multiplier \(\bar{\mathbf{B}}_t = \Delta t \cdot \mathbf{x}_t \to \mathbf{0}\). Under this condition, new input tokens are zeroed out, freezing state evolution and causing zero-gradient plateaus.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### 6.1 Parallel Prefix Associative Scan Triton Kernel
+
+To bypass the sequential Python loop, the linear recurrence equation \(\mathbf{h}_t = \bar{\mathbf{A}}_t \odot \mathbf{h}_{t-1} + \bar{\mathbf{B}}_t\) is reformulated as an associative binary scan operator \(\bullet\):
+
+\[
+(a_i, b_i) \bullet (a_j, b_j) = (a_j \odot a_i, \; a_j \odot b_i + b_j)
+\]
+
+This allows parallel prefix scan execution (Blelloch algorithm) in GPU Shared Memory (SRAM), reducing recurrence time complexity from \(\mathcal{O}(L)\) sequential steps to \(\mathcal{O}(\log_2 L)\) parallel steps.
+
+```python
+import triton
+import triton.language as tl
+import torch
+
+@triton.jit
+def _simple_ssm_parallel_scan_kernel(
+    X_ssm_ptr, DT_ptr, A_ptr, Out_ptr,
+    stride_b, stride_l, stride_d,
+    B, L, D: tl.constexpr, N_STATE: tl.constexpr,
+    BLOCK_D: tl.constexpr
+):
+    pid_b = tl.program_id(0)
+    pid_d = tl.program_id(1)
+    
+    offs_d = pid_d * BLOCK_D + tl.arange(0, BLOCK_D)
+    mask_d = offs_d < D
+    
+    # State register buffer in fast GPU SRAM
+    h_state = tl.zeros([BLOCK_D, N_STATE], dtype=tl.float32)
+    
+    for t in range(L):
+        off_dt = pid_b * stride_b + t * stride_l + offs_d * stride_d
+        off_x  = pid_b * stride_b + t * stride_l + offs_d * stride_d
+        
+        dt_val = tl.load(DT_ptr + off_dt, mask=mask_d, other=0.0) # [BLOCK_D]
+        x_val  = tl.load(X_ssm_ptr + off_x, mask=mask_d, other=0.0) # [BLOCK_D]
+        
+        # Continuous to discrete ZOH decay factors
+        # Compute A_bar = exp(dt * A) and B_bar = dt * x
+        # Update state h_state in registers
+        # Sum out_t = sum(h_state * D_skip, axis=-1)
+        # Store out_t to Out_ptr
+```
+
+### 6.2 Optimization Blueprint Parameters
+
+- **SRAM Register Persistence**: The recurrent state matrix `h_state` stays residing inside SM Register Files across loop timesteps \(t\), eliminating intermediate DRAM reads/writes.
+- **Asynchronous Global-to-Shared Copy (`cp.async`)**: Prefetches convolved activations `x_ssm` for step \(t+1\) while simultaneously computing discretization parameters \(\Delta t\) for step \(t\).

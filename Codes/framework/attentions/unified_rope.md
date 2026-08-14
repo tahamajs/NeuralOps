@@ -1,139 +1,167 @@
-# UnifiedRoPE: A Universal Rotary Position Embedding for Consistent Positional Encoding in Hybrid Architectures
+# Unified Rotary Position Embedding (UnifiedRoPE): Universal Cross-Branch Positional Encoding
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **UnifiedRoPE**, a standalone module that implements **Rotary Position Embedding (RoPE)** as a universal positional encoding layer. Its primary purpose is to provide a single, consistent source of rotational position information that can be shared across multiple branches of a hybrid architecture—such as attention and state‑space model (SSM) pathways—ensuring that all sequence mixing components perceive the same relative position geometry. The module precomputes sinusoidal rotation matrices for all positions up to a maximum sequence length and applies the characteristic pairwise rotation: for each position, the even and odd feature dimensions are rotated by an angle proportional to their frequency band and the token’s position. The rotation formula is \(\operatorname{RoPE}(\mathbf{x}, t) = \mathbf{x} \odot \cos(\boldsymbol{\theta} t) + \operatorname{rotate\_half}(\mathbf{x}) \odot \sin(\boldsymbol{\theta} t)\), where \(\boldsymbol{\theta}_i = 10000^{-2i/d_{\text{model}}}\). UnifiedRoPE can be inserted into any Transformer or hybrid block to inject rotary position information without modifying the underlying sequence mixing logic. The module is registered in the compression framework under the key `"compression_unified_rope"`. This paper provides a rigorous mathematical derivation, implementation details, and a discussion of its role in achieving positional consistency across disparate branches.
+Rotary Position Embedding (RoPE), proposed by Su et al. (2024), embeds relative position geometry by applying complex rotational transformations directly to feature representations. In hybrid Transformer architectures (e.g., combining Scaled Dot-Product Attention with State-Space Models or Recurrent Linear Units), maintaining consistent relative position semantics across distinct structural branches is essential. 
 
----
-
-## 1. Introduction
-
-Position information is crucial for Transformers to process sequence order. Rotary Position Embedding (RoPE) (Su et al., 2024) has become a widely adopted method because it encodes relative position directly into the dot‑product of queries and keys, improving extrapolation to longer sequences. In hybrid architectures that combine attention with other sequence mixing mechanisms (such as state‑space models or convolutions), a common challenge is to provide a unified positional representation: the attention branch typically receives RoPE‑transformed queries and keys, but the non‑attention branch may operate on raw features without position information. This inconsistency can lead to sub‑optimal integration.
-
-The **UnifiedRoPE** module addresses this by implementing RoPE as a self‑contained, pre‑computed rotation that can be applied to the full hidden states **before** they are fed into any sub‑module. By applying the same rotation to all branches, the model ensures that every pathway—attention, SSM, gating networks, etc.—shares an identical positional encoding. This “unified” approach simplifies the design of hybrid blocks and encourages positional coherence throughout the model.
-
-In this paper, we mathematically define the RoPE transformation, detail the precomputation of rotation frequencies, describe the module’s implementation, and discuss its role in the compression framework. The module is designed to be easily integrated into any Transformer layer by simply wrapping the input with the unified rotation.
+UnifiedRoPE (`UnifiedRoPE`) implements a universal, non-parametric rotational position embedding module. By precomputing inverse frequency rotation buffers and applying a unified complex plane rotation across both attention and state-space branches, UnifiedRoPE guarantees cross-branch positional alignment. This eliminates phase mismatches between contextual routing mechanisms while supporting dynamic length extension without fine-tuning.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Rotary Position Embedding (RoPE)
+Let $x \in \mathbb{R}^{B \times L \times D}$ denote the input activation tensor, where $B$ is batch size, $L$ is sequence length, and $D$ is feature dimension (where $D$ is an even integer). Let $\theta_0 = 10000$ be the base frequency scalar.
 
-The RoPE technique encodes position \(t\) by applying a rotation matrix \(\mathbf{R}_t \in \mathbb{R}^{d \times d}\) to the feature vector \(\mathbf{x} \in \mathbb{R}^d\), where \(d\) is the hidden dimension. The rotation is structured to operate on consecutive pairs of dimensions. For a feature vector of even dimension, the rotation is defined as:
-
-\[
-\operatorname{RoPE}(\mathbf{x}, t) = \mathbf{x} \odot \mathbf{C}_t + \operatorname{rotate\_half}(\mathbf{x}) \odot \mathbf{S}_t,
-\]
-
-where
+### Inverse Frequency Precomputation:
+The inverse frequency spectrum $\boldsymbol{\theta} \in \mathbb{R}^{D/2}$ is computed over half the feature channels:
 
 \[
-\mathbf{C}_t = \big[\cos(\theta_0 t), \cos(\theta_0 t), \cos(\theta_1 t), \cos(\theta_1 t), \dots \big],
-\]
-\[
-\mathbf{S}_t = \big[\sin(\theta_0 t), \sin(\theta_0 t), \sin(\theta_1 t), \sin(\theta_1 t), \dots \big],
+\theta_i = \theta_0^{-\frac{2i}{D}} = \frac{1}{\theta_0^{\frac{2i}{D}}}, \quad i \in \left\{0, 1, \dots, \frac{D}{2} - 1\right\}
 \]
 
-and the frequencies are given by
+For sequence positions $m \in \{0, 1, \dots, L_{\max}-1\}$, the outer product produces the phase matrix $\mathbf{\Theta} \in \mathbb{R}^{L_{\max} \times (D/2)}$:
 
 \[
-\theta_i = \text{base}^{-2i / d}, \quad i = 0, 1, \dots, \frac{d}{2} - 1,
+\mathbf{\Theta}_{m, i} = m \cdot \theta_i
 \]
 
-with a default base of \(10000\). The function \(\operatorname{rotate\_half}\) swaps the first half of the vector with the negated second half:
+The phase matrix is concatenated along the feature dimension to form the full embedding tensor $\mathbf{E} \in \mathbb{R}^{L_{\max} \times D}$:
 
 \[
-\operatorname{rotate\_half}([x_1, x_2, \dots, x_{d/2}, x_{d/2+1}, \dots, x_d]) = [-x_{d/2+1}, \dots, -x_d, x_1, \dots, x_{d/2}].
+\mathbf{E}_{m, :} = [\mathbf{\Theta}_{m, :}, \, \mathbf{\Theta}_{m, :}] \in \mathbb{R}^D
 \]
 
-This definition ensures that for any positions \(m, n\), the inner product satisfies:
+Precomputed cosine and sine rotation buffers are registered:
 
 \[
-\operatorname{RoPE}(\mathbf{q}, m)^\top \operatorname{RoPE}(\mathbf{k}, n) = \mathbf{q}^\top \mathbf{k} \cos(\theta(m-n)) + \text{rotation interference term},
+\mathbf{C} = \cos(\mathbf{E}) \in \mathbb{R}^{L_{\max} \times D}, \quad \mathbf{S} = \sin(\mathbf{E}) \in \mathbb{R}^{L_{\max} \times D}
 \]
 
-which effectively embeds the relative position \(m-n\) into the dot product.
-
-### 2.2 Unified Application
-
-In a hybrid block, the input hidden states \(\mathbf{X} \in \mathbb{R}^{B \times L \times d}\) are first passed through the UnifiedRoPE module:
+### Complex Orthogonal Rotation Formulation:
+To apply 2D planar rotations across vector pairs $[x_k, x_{k + D/2}]$, the vector half-rotation operator $\mathcal{R}(x)$ is defined as:
 
 \[
-\tilde{\mathbf{X}} = \operatorname{RoPE}(\mathbf{X}).
+\mathcal{R}(x) = [-x_{:, :, D/2:}, \, x_{:, :, :D/2}] \in \mathbb{R}^{B \times L \times D}
 \]
 
-The rotated states are then distributed to various branches: e.g., for queries and keys in attention, and as input to a state‑space model or gating network. Because the rotation is applied once and shared, all branches operate on position‑aware representations.
-
-### 2.3 Frequency Precomputation
-
-To avoid recomputing trigonometric values at each forward pass, the module precomputes the \(\cos\) and \(\sin\) tables for a maximum sequence length \(L_{\max}\) (default 4096). The frequency vector \(\boldsymbol{\omega} \in \mathbb{R}^{d/2}\) is stored as a buffer. For a given sequence length \(L\), the rotation angles for all positions form a matrix \(\boldsymbol{\Theta} \in \mathbb{R}^{L \times d/2}\) where \(\Theta_{t,i} = t \cdot \omega_i\). The cosine and sine are then cached as tensors of shape \((L, d)\). During the forward pass, the appropriate slice is taken and broadcast to the batch size and head dimensions (if needed). The caching mechanism automatically rebuilds the table if the input sequence exceeds the current maximum length, ensuring dynamic adaptability.
-
-### 2.4 Mathematical Stability and Implementation
-
-The rotation is applied element‑wise using broadcasting. The \(\cos\) and \(\sin\) tensors are reshaped to \((1, L, 1, d)\) to align with input shape \((B, L, d)\). The rotation formula becomes:
+The rotated activation tensor $x_{\text{rot}} \in \mathbb{R}^{B \times L \times D}$ is computed as an elementwise linear combination:
 
 \[
-\mathbf{X}_{\text{rot}} = \mathbf{X} \odot \cos(\boldsymbol{\Theta}) + \text{rotate\_half}(\mathbf{X}) \odot \sin(\boldsymbol{\Theta}).
+x_{\text{rot}} = x \odot \mathbf{C}_{:L} + \mathcal{R}(x) \odot \mathbf{S}_{:L}
 \]
 
-The static method `_rotate_half` performs the swap and negation. The entire operation is differentiable and compatible with mixed‑precision training.
+Explicitly, for feature pair $(x_k, x_{k + D/2})$ at sequence position $m$:
+
+\[
+\begin{bmatrix} (x_{\text{rot}})_k \\ (x_{\text{rot}})_{k + D/2} \end{bmatrix} = \begin{bmatrix} \cos(m \theta_k) & -\sin(m \theta_k) \\ \sin(m \theta_k) & \cos(m \theta_k) \end{bmatrix} \begin{bmatrix} x_k \\ x_{k + D/2} \end{bmatrix}
+\]
+
+### Relative Inner-Product Preservation:
+For query vector $q_i$ at position $i$ and key vector $k_j$ at position $j$, the inner product satisfies:
+
+\[
+\langle \text{RoPE}(q_i, i), \text{RoPE}(k_j, j) \rangle = \text{Re} \left( \sum_{m=0}^{D/2 - 1} (q_i)_m (k_j)_m^* e^{i (i - j) \theta_m} \right) = f(q_i, k_j, i - j)
+\]
+
+This proves that inner-product similarity depends exclusively on the relative distance $\Delta = i - j$, satisfying translational invariance across sequence positions.
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **Class `UnifiedRoPE`** inherits from `nn.Module` and is registered under `"compression_unified_rope"` in the `ATTENTION_REGISTRY`.
-- **Constructor**:
-  - `dim`: feature dimension \(d\) (must be even).
-  - `max_seq_len`: maximum sequence length for precomputation (default 4096).
-  - `base`: base frequency for the inverse frequency computation (default 10000).
-  - Computes `inv_freq` as a 1D tensor of length \(d/2\) and stores it as a buffer.
-  - Calls `_build_cache(max_seq_len)` to precompute `cos_cached` and `sin_cached` of shape `(max_seq_len, dim)`.
-- **`_build_cache(seq_len)`**: Recomputes the frequency matrix and the corresponding cos/sin tables for a new maximum length. This is called automatically if the forward pass encounters a longer sequence.
-- **`forward(x)`**:
-  - Takes input of shape \((B, L, d)\).
-  - If \(L > \text{max\_seq\_len}\), rebuilds cache.
-  - Slices cos and sin tensors to length \(L\), adds batch and head dimensions.
-  - Applies the rotation formula.
-  - Returns the rotated tensor of the same shape.
-- **`_rotate_half`**: Splits the last dimension in half, concatenates `[-second\_half, first\_half]`.
-- **Integration**: The module is designed to be used as a building block within hybrid attention modules (e.g., Hymba‑TransX, SAMBA‑M3) to apply a unified RoPE to the hidden states before branching. It can also be registered as an attention replacement, though it does not perform attention itself; it merely transforms the input.
-
----
-
-## 4. Usage and Configuration
-
-The module can be injected via the framework by setting `attention_type` to `"compression_unified_rope"`. However, since it is a positional encoding layer rather than a full attention module, it is typically used as a sub‑component within other blocks. An example usage within a custom hybrid block:
-
-```python
-rope = UnifiedRoPE(dim=768, max_seq_len=4096)
-x_rope = rope(x)
-# then pass x_rope to both attention and SSM
+```
+Input: x [B, L, D]
+  │
+  ├──> Check if L > max_seq_len ──> IF True: Rebuild Cache _build_cache(L)
+  │
+  ├──> Slice cos_cached[:L] ──> cos: [L, D] ──> view [1, L, D]
+  ├──> Slice sin_cached[:L] ──> sin: [L, D] ──> view [1, L, D]
+  │
+  ├──> _rotate_half(x):
+  │      x1 = x[..., : D//2], x2 = x[..., D//2 :]
+  │      concat(-x2, x1, dim=-1) ──> x_half: [B, L, D]
+  │
+  └──> Elementwise Multiplication & Addition:
+         x_rot = (x * cos) + (x_half * sin) ──> Output: [B, L, D]
 ```
 
-Configuration parameters (passed via `comp_config` or constructor):
+---
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `dim` | required | Feature dimension (must be even). |
-| `max_seq_len` | 4096 | Maximum sequence length for the cached rotation tables. |
-| `base` | 10000 | Base for the inverse frequency computation. |
+## 4. Analytical Complexity Profiling
 
-The module does not require pretrained weight transfer; it has no learnable parameters.
+### Operational & Computational Workload (FLOPs & MACs)
+
+Let $B$ be batch size, $L$ sequence length, $D$ feature dimension, and $L_{\max}$ maximum cached sequence length.
+
+1. **Precomputation Cache Construction (One-time or Dynamic Cache Extension)**:
+   - Outer Product ($t \otimes \theta_i$): $L_{\max} \cdot \frac{D}{2}$ FLOPs.
+   - Trigonometric Evaluations ($\cos, \sin$): $2 \times L_{\max} \cdot D$ FLOPs.
+   - Space: $2 \times L_{\max} \times D \times \text{bytes}$ (Persistent GPU buffers).
+
+2. **Forward Rotation Computations**:
+   - Half-rotation vector negation and concatenation: Zero-copy slicing / reshape.
+   - Broadcast Cosine Multiplication ($x \odot \mathbf{C}$): $B \cdot L \cdot D$ FLOPs.
+   - Broadcast Sine Multiplication ($\mathcal{R}(x) \odot \mathbf{S}$): $B \cdot L \cdot D$ FLOPs.
+   - Vector Sum Addition: $B \cdot L \cdot D$ FLOPs.
+
+### Complexity Totals:
+- **Total FLOPs per Forward Pass**: $3 B L D$ FLOPs.
+- **Total MACs**: $0$ (No matrix multiplication operations).
+- **Parametric Footprint**: $0$ trainable parameters (Non-parametric buffer module).
 
 ---
 
-## 5. Discussion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-UnifiedRoPE provides a clean separation of concerns: position encoding is abstracted into a single, reusable module that can be placed at the input of any hybrid block. Its precomputed tables ensure fast, deterministic application with minimal overhead. By applying the same rotation to all branches, it eliminates the risk of positional inconsistency that could arise when different branches use different position encoding schemes or when one branch lacks position information entirely.
+### Memory Bandwidth Bound Elementwise Execution
+Because RoPE consists purely of elementwise additions and multiplications ($3 B L D$ FLOPs on $2 B L D$ read/write bytes), its arithmetic intensity is extremely low ($\approx 1.5 \text{ FLOP/byte}$). Execution is strictly **memory bandwidth-bound**, incurring memory allocation overhead in naive PyTorch implementations.
 
-One limitation is that the module expects the hidden dimension to be even and operates on the full feature vector. In architectures where the hidden state is split into heads with a different dimension, the rotation should be applied after the head split (as in standard RoPE). However, for hybrid blocks that operate on the full hidden state before splitting, UnifiedRoPE is perfectly suitable. The module also does not support arbitrary position offsets for incremental decoding; this could be added by passing an `offset` parameter, as some other RoPE implementations do.
+### High-Frequency Phase Saturation at Long Sequences
+When sequence length $L$ substantially exceeds precomputed frequencies ($L \gg \frac{1}{\theta_{D/2}}$), high-frequency bands rotate rapidly over $2\pi$ boundaries. This introduces high-frequency phase noise, degrading long-context attention accuracy unless frequency scaling (e.g., YaRN or Linear Scaling) is integrated.
 
-The module is not a standalone attention mechanism; it is a helper component. Its registration in the `ATTENTION_REGISTRY` may be for convenience to allow injection via the same pipeline, but it must be used within a block that actually performs sequence mixing. The compression framework can treat it as a “pseudo‑attention” that transforms the input, and other modules can build on top of it.
+```
+High-Frequency Saturation Phase Degradation:
+Phase Angle = m * θ_i  (Mod 2π)  ──>  Rapid Rotation Instability for L >> 1/θ_min
+```
+
+### Channel Splitting Memory Copy Overhead
+Computing `_rotate_half(x)` using `torch.cat((-x2, x1), dim=-1)` triggers memory reallocation and tensor copying in GPU DRAM, increasing runtime latency compared to strided pointer access.
 
 ---
 
-## 6. Conclusion
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
-We have presented UnifiedRoPE, a modular implementation of Rotary Position Embedding designed to unify positional encoding across multiple branches of hybrid Transformer architectures. The module precomputes and caches rotation tables, applies a consistent rotation to the input, and guarantees that all downstream components share the same positional representation. Its simple, parameter‑free design makes it a convenient building block for the compression framework. Future work could extend it with dynamic offset support and integrate it more tightly with the framework’s injection and training loops. UnifiedRoPE exemplifies the principle of modularity in efficient Transformer design.
+### Fused Elementwise RoPE Triton Kernel Architecture
+To maximize hardware memory bus bandwidth, Triton fuses RoPE rotation, channel splitting, cosine/sine slicing, and elementwise addition into a single CUDA kernel block.
+
+```
+       Global Memory (HBM)
+      ┌────────────────────────────────────────────────────────┐
+      │ Input x [B, L, D]                                      │
+      │ Cosine Buffer cos_cached [L_max, D]                    │
+      │ Sine Buffer sin_cached [L_max, D]                      │
+      └───────────────────────────┬────────────────────────────┘
+                                  │ Coalesced 128-bit Vector Load
+                                  ▼
+ ┌──────────────────────────────────────────────────────────────────┐
+ │                   Triton SRAM Scratchpad                         │
+ │ 1. Load Vector Pairs: x_left = x[i], x_right = x[i + D/2]        │
+ │ 2. Load Frequencies: c_i = cos[l, i], s_i = sin[l, i]            │
+ │ 3. Execute Vector In-Register Rotation:                          │
+ │    rot_left  = x_left  * c_i - x_right * s_i                     │
+ │    rot_right = x_right * c_i + x_left  * s_i                     │
+ └────────────────────────────────┬─────────────────────────────────┘
+                                  │ Direct Coalesced Write
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ Rotated Output x_rot [B, L, D]                         │
+      └────────────────────────────────────────────────────────┘
+```
+
+### Key Triton Implementation Guidelines:
+1. **In-Register Interleaved Rotation**:
+   Instead of concatenating split half-tensors in DRAM, process pairs $(x_i, x_{i + D/2})$ directly in SIMD vector registers, eliminating memory allocations.
+2. **Strided Pointer Arithmetic**:
+   Use strided pointer offsets to read `cos` and `sin` directly from precomputed HBM buffers without slicing or copying tensor slices.
+3. **Fused Attention Pre-Rotation**:
+   Fuse `UnifiedRoPE` directly into the input block loader of FlashAttention kernels, reading $x$, applying rotational shifts in registers, and passing rotated queries and keys directly to SIMD matrix multiplier units.

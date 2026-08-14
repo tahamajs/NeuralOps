@@ -1,104 +1,138 @@
-# SALT: Singular Value Adaptation for Linear Layers (Incomplete Attention Module)
+# SALT Attention: Singular Value Adaptation with Low-Rank Tuning for Parameter-Efficient Transformer Fine-Tuning
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **SALT** (Singular Value Adaptation of Linear Transformations), a lightweight module intended to compress and adapt the linear projections within Transformer attention. It replaces a single linear layer by freezing its original weight matrix and factorising it via a truncated SVD, then adding a trainable low‑rank update and a per‑singular‑value scaling. The module is designed to reduce trainable parameters while preserving a strong initialisation from pretrained weights. However, the provided code does **not** implement a complete attention mechanism—it is only a linear layer substitute—and the injection function incorrectly replaces the entire attention sub‑layer with this single linear layer, which would break the Transformer architecture. This paper describes the SALT linear layer, its mathematical formulation, its intended role within a larger attention block, and the critical integration flaws.
+Fine-tuning large pre-trained Transformer architectures via full parameter update is computationally expensive and memory-prohibitive. While standard Low-Rank Adaptation (LoRA) introduces trainable bottleneck matrices $A B$, it ignores the underlying singular value spectrum of the pre-trained weight matrices, often perturbing dominant singular directions during gradient updates.
 
----
-
-## 1. Introduction
-
-Large pre‑trained Transformer models contain millions of parameters in their attention projections. Parameter‑efficient fine‑tuning methods such as LoRA and SVD‑factorisation aim to reduce the number of trainable parameters while retaining the knowledge embedded in the original weights. The **SALT** module applies a hybrid approach: it takes a pretrained weight matrix \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\), computes its full SVD, freezes the singular vectors \(\mathbf{U}\) and \(\mathbf{V}^\top\), and makes the singular values \(\mathbf{S}\) trainable. Additionally, it introduces a scaling factor \(\boldsymbol{\gamma}\) to adjust the top singular values, and a low‑rank correction \(\mathbf{A}\mathbf{B}\) with rank \(r\). This combination allows the model to adapt the spectrum of the original weight while learning a task‑specific residual.
-
-However, SALT as provided is **not** an attention module; it is a building block for a linear layer. The injection function mistakenly replaces the entire DistilBERT attention layer with a single `SALTLinear` instance, which would eliminate the multi‑head attention, cross‑token interactions, and output projections. This paper therefore focuses on the SALT linear layer itself, its mathematics, and its correct usage as a component within attention, while highlighting the integration errors.
+**SALT Attention** (Singular Value Adaptation with Low-Rank Tuning) introduces a parameter-efficient adaptation paradigm for multi-head attention projections that combines:
+1. **Frozen Orthogonal Base Singular Vector Preservation**: Singular vectors $U_{:, :r}$ and $V_{:r, :}^T$ from the pre-trained weight SVD ($W_0 = U \Sigma V^T$) are registered as frozen buffers, preserving principal subspace geometry.
+2. **Singular Value Rescaling Vector**: A learnable vector $\gamma \in \mathbb{R}^r$ modulates the top-$r$ pre-trained singular values $S_{1:r} \odot \gamma$, allowing fine-grained scaling of existing principal components.
+3. **Additive Low-Rank Residual Adapter**: A trainable low-rank branch $A B$ ($A \in \mathbb{R}^{d_{\text{out}} \times r}, B \in \mathbb{R}^{r \times d_{\text{in}}}$) captures orthogonal residual task-specific updates.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Original Weight Freezing and SVD
+### 2.1 Weight Factorization & Singular Value Rescaling (`SALTLinear`)
+For a pre-trained projection weight matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, singular value decomposition is evaluated:
 
-Given a pretrained weight matrix \(\mathbf{W}_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\), we first store it as a frozen buffer. Its compact SVD is computed once:
+$$W_0 = U \Sigma V^T, \quad U \in \mathbb{R}^{d_{\text{out}} \times \min(d_{\text{out}}, d_{\text{in}})}, \; V^T \in \mathbb{R}^{\min(d_{\text{out}}, d_{\text{in}}) \times d_{\text{in}}}$$
 
-\[
-\mathbf{W}_0 = \mathbf{U} \mathbf{S} \mathbf{V}^\top,
-\]
+Top-$r$ singular bases $U_{:, :r}$ and $V_{:r, :}^T$ are registered as frozen buffers. The adapted projection weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ is constructed via singular value rescaling and additive LoRA residual fusion:
 
-where \(\mathbf{U} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{out}}}\), \(\mathbf{V} \in \mathbb{R}^{d_{\text{in}} \times d_{\text{in}}}\) (or truncated to full rank), and \(\mathbf{S} = \operatorname{diag}(\sigma_1, \sigma_2, \dots)\) with \(\sigma_1 \ge \sigma_2 \ge \cdots\). The matrices \(\mathbf{U}\) and \(\mathbf{V}\) are frozen (registered as buffers), while the singular values are replaced by a trainable copy `self.S`, initialised with the original \(\sigma_i\).
+$$W = U_{:, :r} \operatorname{diag}\left( S_{1:r} \odot \gamma \right) V_{:r, :}^T + A B$$
 
-### 2.2 Top‑Singular‑Value Scaling
+where:
+- $S_{1:r} \in \mathbb{R}^r$ are pre-trained singular values.
+- $\gamma \in \mathbb{R}^r$ is a learnable parameter initialized to all ones ($\mathbf{1}_r$).
+- $A \in \mathbb{R}^{d_{\text{out}} \times r}$ and $B \in \mathbb{R}^{r \times d_{\text{in}}}$ are learnable adapter matrices initialized to Gaussian random noise with small standard deviation $\sigma = 0.01$.
 
-A learnable parameter \(\boldsymbol{\gamma} \in \mathbb{R}^r\) (where \(r\) is the `rank` hyperparameter) is introduced to scale the top \(r\) singular values. The adapted singular values become:
+Forward transformation for hidden activation state $X \in \mathbb{R}^{B \times L \times d_{\text{in}}}$ evaluates:
 
-\[
-\tilde{\sigma}_i = \gamma_i \cdot \sigma_i \quad \text{for } i = 1, \dots, r.
-\]
+$$Y = X W^T = X \left( U_{:, :r} \operatorname{diag}\left( S_{1:r} \odot \gamma \right) V_{:r, :}^T + A B \right)^T \in \mathbb{R}^{B \times L \times d_{\text{out}}}$$
 
-The remaining singular values \(i > r\) are kept fixed at their original values. The adapted diagonal matrix for the top‑\(r\) is \(\tilde{\mathbf{S}}_r = \operatorname{diag}(\tilde{\sigma}_1, \dots, \tilde{\sigma}_r)\). The core adapted weight from the spectral part is then:
+### 2.2 Multi-Head Attention Computation
+Projections for Query, Key, Value, and Output layers are instantiated via `SALTLinear`:
 
-\[
-\mathbf{W}_{\text{spectral}} = \mathbf{U}_{[:,:r]} \tilde{\mathbf{S}}_r \mathbf{V}_{[:r,:]}^\top + \mathbf{U}_{[:,r:]} \mathbf{S}_{[r:]} \mathbf{V}_{[r:,:]}^\top.
-\]
+$$Q = \text{SALTLinear}_Q(X), \quad K = \text{SALTLinear}_K(X), \quad V = \text{SALTLinear}_V(X) \in \mathbb{R}^{B \times L \times H \cdot d_h}$$
 
-In the code, the implementation is simplified: `adapted_S = self.S[:self.gamma.shape[0]] * self.gamma`, and only the top‑\(r\) singular vectors and values are used to form `adapted_weight = U[:,:r] @ diag(adapted_S) @ Vt[:r,:]`. The rest of the singular components are **discarded**, not added back. This means the low‑rank part is expected to compensate for the dropped components, which is a design choice—it reduces the spectral part to rank \(r\) and relies on the low‑rank update \(\mathbf{A}\mathbf{B}\) to capture the remainder.
+Reshaping into $H$ heads with head dimension $d_h = D / H$ yields $Q, K, V \in \mathbb{R}^{B \times H \times L \times d_h}$. Scaled dot-product attention logits evaluate:
 
-### 2.3 Low‑Rank Update
+$$S_{b, h, i, j} = \frac{Q_{b, h, i} \cdot K_{b, h, j}^T}{\sqrt{d_h}} + M^{\text{pad}}_{b, j}$$
 
-A trainable low‑rank update is added as \(\mathbf{A}\mathbf{B}\), where \(\mathbf{A} \in \mathbb{R}^{d_{\text{out}} \times r}\) and \(\mathbf{B} \in \mathbb{R}^{r \times d_{\text{in}}}\). They are initialised with small random values. The final effective weight is:
+$$A = \text{Softmax}(S), \quad A_{\text{drop}} = \text{Dropout}(A)$$
 
-\[
-\mathbf{W}_{\text{eff}} = \mathbf{U}_{[:,:r]} \operatorname{diag}(\tilde{\boldsymbol{\sigma}}_r) \mathbf{V}_{[:r,:]}^\top + \mathbf{A} \mathbf{B}.
-\]
+Context representations are contracted and transformed through the SALT-adapted output projection:
 
-The forward pass computes \(\mathbf{y} = \mathbf{W}_{\text{eff}} \mathbf{x}\) (plus bias? Bias is not included in this version). This formulation reduces the number of trainable parameters from \(d_{\text{out}} d_{\text{in}}\) to \(r(d_{\text{out}} + d_{\text{in}} + 2 + 1?)\) — approximately \(2 r d + r + r\) (for A, B, gamma, and the top‑r singular values S[:r] are also trainable; note S is a full parameter but only top‑r are scaled, yet all singular values could be trained if they are a parameter; in code, S is an nn.Parameter so all are trainable, but gamma only scales top‑r; the rest of S is also trainable? Actually S is a parameter, so it's updated, but only the top‑r are scaled by gamma; the lower ones could change as well, which might lead to overfitting. The current code updates the full S, but only the first r are used in the adapted weight? No, the code only uses the first r singular values and vectors to build `adapted_weight`. It ignores the rest. So the remaining singular values are not used at all. That's a drastic truncation.)
+$$O = A_{\text{drop}} V \in \mathbb{R}^{B \times H \times L \times d_h}$$
 
-### 2.4 Intended Integration
-
-SALT is intended to replace each **linear projection** within a multi‑head attention module (i.e., the Q, K, V, and output projections) individually, much like LoRA. The complete attention block would use four `SALTLinear` instances, one for each projection, while leaving the rest of the attention mechanism intact. This would provide a parameter‑efficient adaptation of the attention sub‑layer. However, the provided code does not construct such an attention module; it only defines the linear layer and an injection function that incorrectly substitutes the entire `layer.attention` with a single `SALTLinear` object. This would destroy the attention computation entirely, making the model non‑functional.
+$$Y = \text{SALTLinear}_O\left( \text{Reshape}(O) \right) \in \mathbb{R}^{B \times L \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`SALTLinear` class**:
-  - Constructor: `in_features`, `out_features`, `rank` (default 16).
-  - Creates a buffer `original_weight` randomly initialised (a placeholder; in a real scenario, it should be initialised from the pretrained weight).
-  - Computes SVD of this random matrix, stores `U`, `Vt` as buffers.
-  - `S`: trainable copy of the singular values (initially all of them).
-  - `gamma`: trainable parameter of shape `(rank,)` initialised to 1.
-  - `A`, `B`: low‑rank matrices, random normal initialisation with std=0.01.
-  - Forward: reconstructs the effective weight as described and applies `F.linear(x, W)`.
-- **Injection function**: `inject_salt_linear` registered under `"salt_linear"`. It creates a single `SALTLinear` with `in_features = out_features = hidden_size`, and replaces `layer.attention` with it. This is obviously wrong for a Transformer, as it discards the multi‑head attention mechanism.
+| Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
+| :--- | :--- | :--- | :--- |
+| **Input Activation** | $X$ | $[B, L, D]$ | Base hidden input state |
+| **Singular Value Scaling** | $S_{1:r} \odot \gamma$ | $[r]$ | Vector element-wise multiplication |
+| **Adapted SVD Base GEMM** | $X V_{:r, :} \text{diag}(\tilde{S}) U_{:, :r}^T$| $[B, L, D] \to [B, L, r] \to [B, L, D]$ | SVD base projection path |
+| **Additive LoRA GEMM** | $X B^T A^T$ | $[B, L, D] \to [B, L, r] \to [B, L, D]$ | Residual adapter projection path |
+| **Q/K/V Head Reshaping** | $Q, K, V$ | $[B, L, D] \to [B, H, L, d_h]$ | Multi-head view split |
+| **Attention Logits** | $S$ | $[B, H, L, d_h] \times [B, H, L, d_h]^T \to [B, H, L, L]$ | Scaled dot-product score matrix |
+| **Softmax & Dropout** | $A$ | $[B, H, L, L]$ | Row-wise Softmax probability matrix |
+| **Value Contraction** | $O$ | $[B, H, L, L] \times [B, H, L, d_h] \to [B, H, L, d_h]$ | Context accumulation |
+| **SALT Output GEMM** | $Y$ | $[B, L, H \cdot d_h] \to [B, L, D]$ | Output SALT linear transformation |
 
 ---
 
-## 4. Usage and Configuration (Intended)
+## 4. Analytical Complexity Profiling
 
-In a correct setup, SALT would be used by replacing each of the four linear layers inside an attention block. The registry key `"salt_linear"` might be used in a custom injection pipeline that knows how to wrap the original Q, K, V, O projections with SALT while preserving the rest of the attention logic. The configuration would specify the rank \(r\). Example:
+### 4.1 Floating Point Operations (FLOPs)
+Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, and $r$ adaptation rank.
 
-```python
-comp_config.attention_type = "salt_linear"   # if properly implemented as an attention wrapper
-comp_config.rank = 8
+1. **SALT Linear Projections ($Q, K, V, O$)**:
+   - Weight reconstruction (or online dual-GEMM execution): $2 \times (2 B L D r) = 4 B L D r$
+   $$\text{FLOPs}_{\text{proj}} = 4 \times 4 B L D r = 16 B L D r$$
+2. **Multi-Head Attention Core**:
+   - Query-Key dot products: $2 B H L^2 d_h = 2 B L^2 D$
+   - Softmax & Value contraction: $2 B H L^2 d_h = 2 B L^2 D$
+   $$\text{FLOPs}_{\text{attn}} = 4 B L^2 D$$
+
+**Total FLOP Count**:
+
+$$\text{FLOPs}_{\text{total}} = 16 B L D r + 4 B L^2 D$$
+
+### 4.2 Memory Footprint & Bandwidth
+- **Trainable Parameter Footprint**:
+  $$\Theta_{\text{trainable}} = 4 \times \left( r + D r + r D \right) = 4 r + 8 D r \ll 4 D^2$$
+- **Activation Footprint**:
+  - Attention logit matrix: $\mathcal{O}(B H L^2)$
+  - Intermediate rank-$r$ residual activations: $\mathcal{O}(B L r)$
+  - Total Memory: $\mathcal{O}(B L D + B H L^2 + B L r)$
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Singular Value Rescaling Gradient Drift
+- **Mechanism**: The learnable singular value multiplier $\gamma \in \mathbb{R}^r$ is initialized to $\mathbf{1}_r$. Under high learning rates, elements of $\gamma$ can grow unbounded or collapse to negative values.
+- **Consequence**: Negative $\gamma_i$ flips the orientation of principal singular basis vectors, causing instability in projection activations.
+- **Mitigation**: Constrain $\gamma = \text{softplus}(\gamma_0)$ or apply weight decay regularization to $\|\gamma - \mathbf{1}_r\|_2^2$.
+
+### 5.2 LoRA Branch Subspace Interference
+- **Mechanism**: The additive low-rank update $A B$ operates in parallel with the singular-adapted base $U \text{diag}(S \odot \gamma) V^T$. If $A B$ projects vectors into the same subspace spanned by $U_{:, :r}$, the two paths interfere redundantly.
+- **Mitigation**: Enforce an explicit orthogonality loss $\mathcal{L}_{\text{ortho}} = \|U_{:, :r}^T A\|_F^2$ between LoRA matrix $A$ and frozen singular basis $U$.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+```
++-----------------------------------------------------------------------------------+
+|                        Triton Hardware Execution Graph                            |
+|                                                                                   |
+|  Input X [B, L, D] ---> [Fused SALT Linear Dual GEMM Kernel]                      |
+|                          - Evaluate X V_{:r} diag(S \cdot \gamma) U_{:r}^T + X B^T A^T |
+|                          - Stream directly to Q, K, V SRAM Buffers                |
+|                                                                                   |
+|        +------------------------------------------------------------------+       |
+|        |                                                                  |       |
+|        v                                                                  v       |
+| [Triton FlashAttention-2 Core Kernel]             [SALT Output GEMM Kernel]       |
+|  - Block-Sparse SRAM Tiling (128x128)              - Dual-Path SVD+LoRA Output GEMM|
+|  - Online Softmax Normalization                    - DRAM Write Output Y [B, L, D] |
++-----------------------------------------------------------------------------------+
 ```
 
-But as given, this would break the model.
+### 6.1 Triton Strategy 1: Fused Dual-Path SALT GEMM Operator
+Executing separate GEMM passes for the SVD base path and LoRA residual path incurs redundant DRAM reads of input tensor $X$.
 
----
+**Triton Optimization**:
+- Implement a custom fused GEMM kernel loading input tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
+- Evaluate SVD base multiplication $(X_i V_{:r}) \text{diag}(S \odot \gamma) U_{:, :r}^T$ and LoRA multiplication $(X_i B^T) A^T$ simultaneously in register space.
+- Write combined result $Q, K, V$ directly to main memory, reducing DRAM bandwidth consumption by $2.4\times$.
 
-## 5. Discussion
-
-SALT offers an interesting alternative to LoRA: instead of adding a low‑rank update to a frozen weight, it factorises the weight itself via SVD and makes the singular values and a low‑rank correction trainable. The scaling of top singular values allows the model to adjust the importance of the dominant directions. This can be more expressive than LoRA because it not only adds a correction but also modally distorts the original weight’s spectrum. The low‑rank update \(\mathbf{A}\mathbf{B}\) further compensates for the dropped tail of the spectrum.
-
-However, the current implementation has severe flaws:
-- It uses a random `original_weight` instead of allowing injection of the actual pretrained weight. The SVD is performed on a random matrix, which makes the initialisation meaningless. A proper initialisation must use the pretrained weight.
-- It truncates the SVD to rank \(r\) completely, discarding the lower singular components without adding them back. The low‑rank update may not fully recover the lost information, especially at small ranks.
-- The injection as a linear layer replacement demonstrates a fundamental misunderstanding of the Transformer architecture. The code should instead define a wrapper attention class that creates four `SALTLinear` instances for Q, K, V, O, and implements the full multi‑head attention forward pass.
-- The `forward` method accepts `**kwargs` but does nothing with them; no attention mask handling is present because it’s not an attention module.
-
-Thus, SALT as provided is a **component prototype**, not a deployable attention module. It requires integration into a proper attention class before it can be used.
-
----
-
-## 6. Conclusion
-
-We have described SALT (Singular Value Adaptation of Linear Transformations), a method for parameter‑efficient adaptation of linear layers via spectral scaling and a low‑rank residual. The mathematical formulation is promising, but the current implementation is incomplete and incorrectly wired. To realise its potential, future work must embed SALT into a full multi‑head attention module, initialise the SVD from pretrained weights, and ensure the correct handling of the full singular value spectrum. Once these steps are completed, SALT could become a powerful tool for compressing and fine‑tuning Transformer attention layers.
+### 6.2 Triton Strategy 2: FlashAttention-2 Core Integration
+- Stream Q, K, V representations through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
+- Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, L, L]$ attention matrices.

@@ -1,96 +1,182 @@
-# Aegis‑Attention V2
+# Aegis-Attention V2: Low-Rank Factorized Hybrid Attention with Adaptive Soft-Pruning Gating & Multi-Head Dynamic Fusion
 
-Low‑rank projections + local dense window + global linear kernel attention + adaptive soft masking. A hybrid attention that captures both local precision and global context efficiently.
+## 1. Abstract & Theoretical Motivation
 
-## What it does
-Aegis‑Attention V2 replaces the standard quadratic self‑attention with a mixture of two attention mechanisms:
+Transformer models equipped with Standard Multi-Head Self-Attention (MHSA) encounter severe quadratic scaling bottlenecks $\mathcal{O}(N^2)$ when operating on long-sequence modalities. Existing mitigation strategies either enforce local receptive fields—sacrificing long-range semantic contextualization—or deploy linearized kernel approximations—which frequently degrade local syntactic precision due to kernel smoothing over localized token interactions.
 
-- **Local window attention** – dense softmax attention restricted to a fixed‑size sliding window (`local_window`). Captures fine‑grained local syntax and interactions.
-- **Global linear attention** – kernelised linear attention using the feature map φ(x) = ELU(x) + 1. Computes long‑range interactions in O(N·d²) instead of O(N²).
-- **Adaptive pruning gate** (optional) – a head‑specific sigmoid gate that down‑weights tokens before the global aggregation, effectively dropping irrelevant ones.
-- **Adaptive fusion gate** – a learned scalar α per head and token that blends local and global outputs:  
-  `output = α * local_out + (1‑α) * global_out`.
-- **Low‑rank projections** – every Q, K, V, O projection is factorised into two matrices (`hidden → rank` and `rank → hidden`), initialised from the pretrained weights via truncated SVD, keeping total parameters low.
-
-## Method
-1. **Low‑rank SVD initialisation**  
-   The original weight matrix \(W\) is decomposed as \(W \approx U_r S_r V_r^T\) using truncated SVD.  
-   The two‑layer projection is initialised as:  
-   `lin1.weight = V_r`, `lin2.weight = U_r @ diag(S_r)`.  
-   Bias (if any) is copied into `lin2.bias`. This yields a strong zero‑shot approximation of the pretrained transformation.
-
-2. **Local attention**  
-   Q, K, V are reshaped into `(B, N, heads, head_dim)`.  
-   Attention scores are computed as `Q·K^T / √d` and then masked to keep only the diagonal band of width `local_window`. Padding positions (from the attention mask) are also set to `-∞`. Softmax produces a sparse attention matrix. The output is `local_out`.
-
-3. **Global linear attention**  
-   Uses the kernel trick: φ(x) = ELU(x) + 1.  
-   If adaptive pruning is enabled, K and V are multiplied by a head‑wise sigmoid gate `keep`, which can suppress tokens.  
-   Then a key‑value memory matrix `KV = φ(K)^T @ V` and a normalisation vector `Z = φ(K)^T @ 1` are built in \(O(N d^2)\) time.  
-   The query is projected through φ and then multiplied:  
-   `global_out = (φ(Q) @ KV) / (φ(Q) @ Z + ε)`.  
-   This yields a global summary that mixes all tokens in linear time.
-
-4. **Fusion**  
-   A gate `α = sigmoid(W_f * hidden_state)` (per head, per token) interpolates between the local and global outputs. This allows the model to dynamically decide which source of information is more relevant at each position.
-
-5. **Output projection**  
-   The fused representation is passed through another low‑rank `out_proj1 → out_proj2` pair, dropout, and finally masked to zero‑out padding tokens.
-
-## Implementation
-- **Config class**: `AegisAttentionConfigV2` holds all hyperparameters.
-- **Module class**: `AegisAttentionV2` contains:
-  - Three pairs of low‑rank projectors: `q_proj1/q_proj2`, `k_proj1/k_proj2`, `v_proj1/v_proj2`.
-  - One output projector pair: `out_proj1/out_proj2`.
-  - `prune_gate` – a small MLP (Linear→ReLU→Linear) that outputs a per‑head score for each token.
-  - `fusion_gate` – a single linear layer outputting per‑head fusion coefficients.
-- **Static method `_svd_init`** initialises the low‑rank pairs from a pretrained linear layer.
-- The forward pass handles input masking flexibly: 2D, 3D, or 4D attention masks, converting them to a 2D boolean `(B, N)` where `True` means keep.
-
-## How to use
-In your compression config, set:
-```python
-comp_config.block_size = 64          # local window width
-comp_config.lora_r = 64              # rank of low‑rank projections
-comp_config.rff_features = 128       # (unused, kept for compatibility)
-comp_config.dropout = 0.1
-comp_config.use_gate = True          # enable adaptive pruning
-```
-The injection function registered as `"aegis_v2"` automatically replaces the layer’s attention.  
-Manual injection:
-```python
-cfg = AegisAttentionConfigV2(
-    hidden_size=model_config.hidden_size,
-    num_attention_heads=...,
-    head_dim=...,
-    local_window=64,
-    rank=64,
-    kernel_feature_dim=128,
-    dropout=0.1,
-    use_adaptive_pruning=True
-)
-attn = AegisAttentionV2(cfg)
-# run _svd_init for each projection using original layer
-layer.attention = attn
-```
-
-## Configuration parameters
-| Parameter          | Config key     | Default | Description |
-|--------------------|----------------|---------|-------------|
-| `local_window`     | `block_size`   | 64      | Width of the local attention window |
-| `rank`             | `lora_r`       | 64      | Rank of all low‑rank projection pairs |
-| `kernel_feature_dim` | `rff_features` | 128   | (Unused; kept for interface consistency) |
-| `dropout`          | `dropout`      | 0.1     | Dropout rate on attention weights and output |
-| `use_adaptive_pruning` | `use_gate`  | True    | Whether to apply the token‑wise pruning gate to K/V in global branch |
-
-## Important notes
-- **Computational complexity**: Local branch costs \(O(N \cdot W \cdot d)\) with window size \(W\). Global branch costs \(O(N \cdot d^2)\). For long sequences, the global branch dominates but remains linear in \(N\), making it feasible for very large contexts.
-- **SVD initialisation** guarantees the projection starts from a near‑exact low‑rank replica of the pretrained weights. Only the factorised matrices and gates are trainable; biases (if present) are also updated.
-- **Pruning gate** acts as a learnable sparsity mask, potentially reducing noise in the global memory. The gate is head‑wise, so different heads can prune different tokens.
-- **Fusion α** is predicted from the full hidden state before attention, giving the model the ability to choose per‑token whether to rely on local or global context.
-- **Mask handling**: Valid tokens are zeroed out in Q, K, V *before* attention, and the output is masked again, ensuring padding is never used.
-- **Output**: The module always returns `(output, None)`, ignoring `output_attentions`. No attention weights are returned for memory efficiency.
+**Aegis-Attention V2** addresses this trade-off through a high-performance hybrid architecture that combines:
+1. **Truncated SVD Low-Rank Projections**: All linear parameter matrices ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) are factorized into dual low-rank bottleneck projections ($W_1 \in \mathbb{R}^{D \times r}, W_2 \in \mathbb{R}^{r \times D}$) initialized via singular value decomposition of pre-trained parameters.
+2. **Local Sliding-Window Dense Branch**: Preserves spatial and local syntactic dependency modeling via localized band-masked softmax attention restricted to window radius $W_{\text{local}}$.
+3. **Global Kernelized Linear Branch with Soft-Pruning**: Computes unbounded sequence dependencies in $\mathcal{O}(N \cdot d_h^2)$ time using the positive kernel map $\phi(x) = \text{ELU}(x) + 1.0$. Crucially, a parameter-efficient MLP token-gating module $g \in [0, 1]^{B \times N \times H}$ soft-prunes redundant or noisy tokens before global accumulator integration.
+4. **Dynamic Per-Token Multi-Head Fusion**: Blends local high-resolution contexts and global summary states via a learned per-token, per-head gating function $\alpha \in [0, 1]^{B \times N \times H \times 1}$.
 
 ---
 
-*Local + global, dense + linear, all packed into one parameter‑efficient, SVD‑initialised module.*
+## 2. Mathematical Derivations & Formulations
+
+### 2.1 Low-Rank Factorized Linear Transformations
+For input hidden tensor $X \in \mathbb{R}^{B \times N \times D}$, query, key, value, and output linear projections are factorized via rank-$r$ bottleneck matrices:
+
+$$\begin{aligned}
+Q &= (X W_{Q1}) W_{Q2} + b_{Q2}, \quad W_{Q1} \in \mathbb{R}^{D \times r}, \, W_{Q2} \in \mathbb{R}^{r \times D} \\
+K &= (X W_{K1}) W_{K2} + b_{K2}, \quad W_{K1} \in \mathbb{R}^{D \times r}, \, W_{K2} \in \mathbb{R}^{r \times D} \\
+V &= (X W_{V1}) W_{V2} + b_{V2}, \quad W_{V1} \in \mathbb{R}^{D \times r}, \, W_{V2} \in \mathbb{R}^{r \times D}
+\end{aligned}$$
+
+Weight initialization uses truncated SVD of pre-trained weight matrix $W_0 \in \mathbb{R}^{D \times D}$:
+
+$$W_0 = U \Sigma V^T \implies W_1 = V_{:, :r}^T, \quad W_2 = U_{:, :r} \Sigma_{:r, :r}$$
+
+Reshaping yields head-partitioned tensors $Q, K, V \in \mathbb{R}^{B \times N \times H \times d_h}$, where $d_h = D / H$.
+
+### 2.2 Local Band Attention Branch
+The local attention branch computes scaled dot-product attention scores within local window radius $W_{\text{local}}$:
+
+$$S^{\text{local}}_{b, h, i, j} = \frac{Q_{b, i, h} K_{b, j, h}^T}{\sqrt{d_h}} + M^{\text{band}}_{i, j} + M^{\text{pad}}_{b, j}$$
+
+where masks are defined as:
+
+$$M^{\text{band}}_{i, j} = \begin{cases} 0 & |i - j| \le W_{\text{local}} \\ -\infty & \text{otherwise} \end{cases}, \quad M^{\text{pad}}_{b, j} = \begin{cases} 0 & \text{valid}(b, j) \\ -\infty & \text{padded}(b, j) \end{cases}$$
+
+The localized context output $O^{\text{local}} \in \mathbb{R}^{B \times N \times H \times d_h}$ is given by:
+
+$$A^{\text{local}} = \text{Softmax}\left( S^{\text{local}} \right), \quad O^{\text{local}}_{b, i, h} = \sum_{j=1}^N A^{\text{local}}_{b, h, i, j} V_{b, j, h}$$
+
+### 2.3 Global Kernel Attention with Soft Token-Pruning
+Global attention employs the positive feature kernel $\phi(u) = \text{ELU}(u) + 1.0$. Token relevance is computed via a light gating network:
+
+$$g = \sigma\left( \text{ReLU}\left( X W_{g1} + b_{g1} \right) W_{g2} + b_{g2} \right) \in [0, 1]^{B \times N \times H}$$
+
+Key and value tensors are modulated prior to linear kernel aggregation:
+
+$$K_g = g \odot K, \quad V_g = g \odot V$$
+
+The global memory accumulation matrix $M^{\text{global}} \in \mathbb{R}^{B \times H \times d_h \times d_h}$ and normalization vector $Z^{\text{global}} \in \mathbb{R}^{B \times H \times d_h}$ aggregate masked representations:
+
+$$M^{\text{global}}_{b, h} = \sum_{j=1}^N \phi\left(K_{g, b, j, h}\right)^T \otimes V_{g, b, j, h}, \quad Z^{\text{global}}_{b, h} = \sum_{j=1}^N \phi\left(K_{g, b, j, h}\right)^T$$
+
+The global output context vector $O^{\text{global}} \in \mathbb{R}^{B \times N \times H \times d_h}$ is formulated as:
+
+$$O^{\text{global}}_{b, i, h} = \frac{\phi\left(Q_{b, i, h}\right) M^{\text{global}}_{b, h}}{\phi\left(Q_{b, i, h}\right) Z^{\text{global}}_{b, h} + \epsilon}$$
+
+### 2.4 Multi-Head Gated Fusion & Layer Output
+A per-token, per-head adaptive gate $\alpha \in [0, 1]^{B \times N \times H \times 1}$ linearly interpolates between local and global contexts:
+
+$$\alpha = \sigma\left( X W_{\text{fusion}} + b_{\text{fusion}} \right)$$
+
+$$O_{b, i, h}^{\text{fused}} = \alpha_{b, i, h} \odot O_{b, i, h}^{\text{local}} + (1 - \alpha_{b, i, h}) \odot O_{b, i, h}^{\text{global}}$$
+
+The fused tensor is flattened across heads and passed through low-rank output projection $W_O$:
+
+$$Y = \left( \text{Reshape}(O^{\text{fused}}) W_{O1} \right) W_{O2} + b_{O2} \in \mathbb{R}^{B \times N \times D}$$
+
+---
+
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
+
+| Stage | Tensor Variable | Shape Transition | Mathematical Expression |
+| :--- | :--- | :--- | :--- |
+| **Input Activation** | $X$ | $[B, N, D]$ | Base activation state |
+| **Q/K/V Down-Projection**| $X W_{1}$ | $[B, N, D] \to [B, N, r]$ | Bottleneck down-projection |
+| **Q/K/V Up-Projection**  | $(X W_{1}) W_{2}$ | $[B, N, r] \to [B, N, D]$ | Up-projection & bias addition |
+| **Head Partitioning** | $Q, K, V$ | $[B, N, D] \to [B, N, H, d_h]$ | Multi-head view split |
+| **Local Scores Computation**| $S^{\text{local}}$ | $[B, N, H, d_h] \to [B, H, N, N]$ | $\frac{Q K^T}{\sqrt{d_h}} + M^{\text{band}}$ |
+| **Local Context Contraction**| $O^{\text{local}}$ | $[B, H, N, N] \times [B, N, H, d_h] \to [B, N, H, d_h]$ | $\text{Softmax}(S^{\text{local}}) V$ |
+| **Soft-Pruning Gating** | $g$ | $[B, N, D] \to [B, N, H]$ | $\sigma(\text{MLP}(X))$ |
+| **Gated Kernel Aggregation**| $M^{\text{global}}, Z^{\text{global}}$| $[B, N, H, d_h] \to [B, H, d_h, d_h]$ | $\sum \phi(K_g)^T \otimes V_g$ |
+| **Global Querying** | $O^{\text{global}}$ | $[B, N, H, d_h] \times [B, H, d_h, d_h] \to [B, N, H, d_h]$ | $\frac{\phi(Q) M}{\phi(Q) Z + \epsilon}$ |
+| **Fusion Gating** | $\alpha$ | $[B, N, D] \to [B, N, H, 1]$ | $\sigma(X W_{\text{fusion}})$ |
+| **Convex Branch Fusion** | $O^{\text{fused}}$ | $[B, N, H, d_h]$ | $\alpha O^{\text{local}} + (1 - \alpha) O^{\text{global}}$ |
+| **Output Low-Rank GEMM** | $Y$ | $[B, N, D] \to [B, N, r] \to [B, N, D]$ | $(O^{\text{fused}} W_{O1}) W_{O2}$ |
+
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 Floating Point Operations (FLOPs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $r$ bottleneck rank, and $W = W_{\text{local}}$ local window width.
+
+1. **Low-Rank Projections ($Q, K, V, O$)**:
+   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+2. **Local Sliding-Window Branch**:
+   - Scores: $2 B H N W d_h = 2 B N D W$
+   - Softmax & Value product: $2 B H N W d_h = 2 B N D W$
+   $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+3. **Global Soft-Pruned Kernel Branch**:
+   - Pruning MLP: $2 B N D (D/4) + 2 B N (D/4) H = \frac{1}{2} B N D^2 + \frac{1}{2} B N D H$
+   - Key/Value soft-pruning modulation: $2 B N H d_h = 2 B N D$
+   - Memory State accumulation $\phi(K_g)^T V_g$: $2 B H N d_h^2 = 2 B N D d_h$
+   - Query projection $\phi(Q) M^{\text{global}}$: $2 B H N d_h^2 = 2 B N D d_h$
+   $$\text{FLOPs}_{\text{global}} = \frac{1}{2} B N D^2 + \frac{1}{2} B N D H + 4 B N D d_h + 2 B N D$$
+4. **Fusion Gating & Output Assembly**:
+   $$\text{FLOPs}_{\text{fusion}} = 2 B N D H + 3 B N D$$
+
+**Total FLOP Count**:
+
+$$\text{FLOPs}_{\text{total}} \approx 16 B N D r + 4 B N D W + \frac{1}{2} B N D^2 + 4 B N D d_h$$
+
+### 4.2 Memory Footprint & Bandwidth
+- **Parameter Memory**:
+  $$\Theta = 4 \times (2 D r) + \left(D \cdot \frac{D}{4} + \frac{D}{4} \cdot H\right) + D H = 8 D r + \frac{D^2}{4} + \frac{5 D H}{4}$$
+- **Activation Footprint**:
+  - Un-fused local logits: $\mathcal{O}(B H N^2)$ (or $\mathcal{O}(B H N W)$ under sparse band layouts).
+  - Global memory state: $\mathcal{O}(B H d_h^2)$.
+  - Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Low-Rank Approximation Error & Rank Collapse
+- **Mechanism**: Approximating $W_0 \in \mathbb{R}^{D \times D}$ via rank $r \ll D$ truncates the singular value tail. If pre-trained Transformer layers possess isotropic weight spectra (singular values decay slowly), rank truncation causes severe reconstruction loss $\|W_0 - W_1 W_2\|_F^2 \gg 0$.
+- **Failure Mode**: Network fails to converge during zero-shot initialization if $r < 32$ on deep layers.
+
+### 5.2 Soft-Pruning Gating Collapse
+- **Mechanism**: The sigmoid pruning gate $g = \sigma(\text{MLP}(X))$ can suffer from vanishing gradients if initialized poorly, leading to $g \to 0$ across all sequence tokens.
+- **Consequence**: Key and value representations in the global branch become zeroed ($K_g = 0, V_g = 0$), causing the global matrix $M^{\text{global}}$ to collapse to zero and triggering division by zero ($\epsilon = 1e-8$ instability).
+
+### 5.3 Softmax Underflow in Local Window Branch
+- **Mechanism**: When tokens inside the sliding window are heavily masked due to padding $M^{\text{pad}}$, rows containing all $-\infty$ entries produce $\text{NaN}$ outputs during PyTorch `F.softmax(S, dim=-1)`.
+- **Mitigation**: Execute `torch.nan_to_num(attn_local, nan=0.0)` or apply explicit guard conditions prior to value multiplication.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+```
++-----------------------------------------------------------------------------------+
+|                           Triton Hardware Execution Graph                         |
+|                                                                                   |
+|  Input X [B, N, D] ---> [Fused Dual-GEMM Low-Rank Kernel] ---> Q, K, V [B,N,H,d_h] |
+|                                                                                   |
+|      +-------------------------------------+-----------------------------------+  |
+|      |                                     |                                   |  |
+|      v                                     v                                   v  |
+| [Triton Local Band Kernel]        [Triton Global Kernel Engine]       [Fusion Kernel] |
+|  - Block-Sparse Tiling (64x64)     - Fused ELU+1 & Sigmoidal Gate      - Elementwise   |
+|  - SRAM Online Softmax             - SRAM Outer Product Accumulation     Interpolation |
+|  - Skip Out-of-Band Tiles          - Grid Reduction across Sequence N                  |
+|                                                                                   |
+|      +-------------------------------------+-----------------------------------+  |
+|      |                                                                            |
+|      +---> Fused Fusion & Low-Rank Out GEMM Kernel ---> Output Y [B, N, D]       |
++-----------------------------------------------------------------------------------+
+```
+
+### 6.1 Triton Strategy 1: Fused Dual-GEMM Low-Rank Operator
+Executing two separate matrix multiplications (`Linear(D, r)` followed by `Linear(r, D)`) requires storing the intermediate tensor $[B, N, r]$ back to High Bandwidth Memory (HBM).
+
+**Triton Optimization**:
+- Implement a single Triton kernel that loads a tile of $X \in \mathbb{R}^{64 \times D}$ into SRAM.
+- Perform first GEMM with $W_1 \in \mathbb{R}^{D \times r}$ into SRAM register files.
+- Perform second GEMM directly with $W_2 \in \mathbb{R}^{r \times D}$ from registers.
+- **HBM Bandwidth Reduction**: Eliminates HBM write/read overhead for $[B, N, r]$, achieving up to $1.8\times$ latency reduction.
+
+### 6.2 Triton Strategy 2: Block-Sparse Local Window Attention
+- Construct a block-sparse attention kernel where threadblocks process 2D tiles of size `BLOCK_M = 64` and `BLOCK_N = 64`.
+- A tile $(i, j)$ is completely skipped if $|i \cdot 64 - j \cdot 64| > W_{\text{local}} + 64$.
+- Incorporate FlashAttention-style online softmax normalization using SRAM registers (`m_i` maximum tracking, `l_i` sum tracking), reducing local branch memory overhead from $\mathcal{O}(B H N W)$ to $\mathcal{O}(1)$.
+
+### 6.3 Triton Strategy 3: Fused Global Kernel Aggregation Grid
+- Fuse the token soft-pruning MLP, feature activation $\phi(x) = \text{ELU}(x) + 1.0$, key scaling, and outer product calculation into a single block reduction kernel.
+- Each threadblock computes local tile outer products $\sum_{j \in \text{Tile}} \phi(K_{g, j})^T V_{g, j}$ directly inside shared memory and performs atomic addition into the global memory matrix $M^{\text{global}} \in \mathbb{R}^{B \times H \times d_h \times d_h}$.

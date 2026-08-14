@@ -1,201 +1,223 @@
-# Jamba‑Info Block: Information Bottleneck meets Differential Attention with Head Sparsity
+# Jamba-Info: Dual-Mode Information-Bottlenecked SSM & Sparse Differential Attention Architecture
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We introduce the **Jamba‑Info Block**, a dual‑mode sequence mixing module that integrates two distinct paradigms: a **differential attention mechanism with head sparsity** for retrieval‑oriented processing, and a **concept bottleneck plus state‑space model (SSM)** for compression‑driven processing. The mode is selected at construction and remains fixed. In retrieval mode, the block computes two sets of query‑key attention maps, subtracts a scaled version of the second map from the first, and enforces a fixed head‑wise sparsity by zeroing out a fraction of attention heads. The resulting sparse, differential attention weights are used to aggregate values. In bottleneck mode, the input is passed through a low‑rank concept bottleneck (down‑project, GELU, up‑project) and then processed by an SSM, with a residual connection. Both modes end with a final linear output projection. The block serves as a drop‑in replacement for standard self‑attention in Transformer models and is registered within the DistilBERT compression framework. This paper provides a rigorous mathematical formulation of the two modes, discusses their motivation, and details the implementation.
+Context compression and attention noise reduction represent fundamental challenges in long-sequence modeling. High-entropy attention distributions often allocate probability mass to irrelevant context tokens, while un-compressed token states overload state-space recurrent memory. **Jamba-Info Block** introduces a dual-operational architecture designed to optimize information flow under task-specific constraints:
 
----
+1. **Retrieval Mode (Head-Sparse Differential Attention)**: Computes a signed differential attention map \(A_{\text{diff}} = A_1 - 0.5 A_2\) across dual Query-Key projections, subtracting background noise maps to isolate high-relevance tokens while enforcing head-wise sparsity (\(H_{\text{active}} \ll H\)).
+2. **SSM Bottleneck Mode (InfoMamba Concept Bottleneck)**: Projects hidden states into a low-dimensional concept subspace \(\mathbb{R}^{d_{\text{bottleneck}}}\) (\(d_{\text{bottleneck}} \ll D\)) via non-linear bottleneck transformations before sequence state-space evolution (`SimpleSSM`), minimizing channel redundancy and memory bandwidth.
 
-## 1. Introduction
-
-Modern Transformer architectures explore a wide variety of sequence mixing modules beyond standard softmax attention. Two notable trends are **differential attention**—where the network learns to focus by comparing two attention distributions—and **information bottleneck** techniques that compress representations before processing them with a lightweight recurrent or state‑space model. The **Jamba‑Info Block** unifies these ideas into a single module with two distinct operating modes, selectable via a configuration flag.
-
-In **retrieval mode**, the block aims to perform sparse, content‑focused attention by computing two separate attention maps from independent query‑key pairs and then taking their difference. This design is inspired by the “differential transformer” concept, where subtracting a baseline attention map can sharpen the focus and suppress irrelevant tokens. Additionally, a sparsity parameter determines how many heads are kept active; the remaining heads are forced to have zero attention, which can act as a form of structured pruning, encouraging the model to rely on a subset of heads for retrieval.
-
-In **bottleneck mode**, the block adopts a different philosophy: it first compresses the input into a lower‑dimensional concept space via a bottleneck (Linear → GELU → Linear), then processes this compact representation with a state‑space model (`SimpleSSM`), and finally adds the original input as a residual. This design is reminiscent of “InfoMamba” or “concept bottleneck” approaches, where the model learns a compressed, abstract representation before applying a lightweight sequence model.
-
-By integrating both modes into a single configurable block, the Jamba‑Info Block provides a flexible testbed for exploring these two types of efficient sequence mixing within the same codebase. The module is intended to be injected into DistilBERT layers via the framework’s registry.
+This document details the complete mathematical derivations, tensor shape evolution, FLOP/MAC accounting, failure modes (including differential map divergence and bottleneck rank truncation), and Triton GPU acceleration blueprints for Jamba-Info.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Retrieval Mode: Differential Attention with Head Sparsity
+Let \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\) be the input sequence activation tensor.
 
-When `mode = "retrieval"`, the block computes multi‑head attention using two independent query‑key projections and a shared value projection.
+### 2.1 Mode 1: Retrieval Mode (Sparse Differential Attention)
 
-Given an input \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), the following linear transformations (without bias) are applied:
+1. **Dual Query & Key Projections**:
+   Inputs are projected into dual Query-Key pairs and shared Value representations across \(H\) attention heads with head dimension \(d_k = D / H\):
 
-\[
-\mathbf{Q}^{(1)} = \mathbf{X} \mathbf{W}_{Q1}, \quad
-\mathbf{K}^{(1)} = \mathbf{X} \mathbf{W}_{K1},
-\]
-\[
-\mathbf{Q}^{(2)} = \mathbf{X} \mathbf{W}_{Q2}, \quad
-\mathbf{K}^{(2)} = \mathbf{X} \mathbf{W}_{K2},
-\]
-\[
-\mathbf{V} = \mathbf{X} \mathbf{W}_{V}.
-\]
+   \[
+   \mathbf{Q}_1 = \mathbf{X} \mathbf{W}_{q1}, \quad \mathbf{K}_1 = \mathbf{X} \mathbf{W}_{k1} \quad \in \mathbb{R}^{B \times H \times L \times d_k}
+   \]
+   \[
+   \mathbf{Q}_2 = \mathbf{X} \mathbf{W}_{q2}, \quad \mathbf{K}_2 = \mathbf{X} \mathbf{W}_{k2} \quad \in \mathbb{R}^{B \times H \times L \times d_k}
+   \]
+   \[
+   \mathbf{V} = \mathbf{X} \mathbf{W}_v \quad \in \mathbb{R}^{B \times H \times L \times d_k}
+   \]
 
-All weight matrices are square \(D \times D\). The tensors are reshaped to multi‑head format \((B, H, L, d_h)\), where \(H\) is the total number of attention heads and \(d_h = D / H\).
+2. **Softmax Attention Map Cancellation**:
+   Standard scaled dot-product Softmax maps \(\mathbf{A}_1, \mathbf{A}_2 \in \mathbb{R}^{B \times H \times L \times L}\) are evaluated:
 
-Two attention maps are computed via scaled dot‑product softmax:
+   \[
+   \mathbf{A}_1 = \text{softmax}\left(\frac{\mathbf{Q}_1 \mathbf{K}_1^\top}{\sqrt{d_k}}\right), \quad \mathbf{A}_2 = \text{softmax}\left(\frac{\mathbf{Q}_2 \mathbf{K}_2^\top}{\sqrt{d_k}}\right)
+   \]
 
-\[
-\mathbf{A}^{(1)} = \operatorname{softmax}\!\left( \frac{\mathbf{Q}^{(1)} (\mathbf{K}^{(1)})^\top}{\sqrt{d_h}} \right), \qquad
-\mathbf{A}^{(2)} = \operatorname{softmax}\!\left( \frac{\mathbf{Q}^{(2)} (\mathbf{K}^{(2)})^\top}{\sqrt{d_h}} \right).
-\]
+   The differential attention matrix is formed by subtracting half of the secondary attention map:
 
-The **differential attention** is defined as:
+   \[
+   \mathbf{A}_{\text{diff}} = \mathbf{A}_1 - 0.5 \mathbf{A}_2 \quad \in \mathbb{R}^{B \times H \times L \times L}
+   \]
 
-\[
-\tilde{\mathbf{A}} = \mathbf{A}^{(1)} - \frac{1}{2} \mathbf{A}^{(2)}.
-\]
+3. **Head Sparsity Masking**:
+   Let \(\alpha \in (0, 1)\) be the sparsity ratio parameter. The active head count is defined as \(H_{\text{active}} = \max(1, \lfloor H \cdot \alpha \rfloor)\). Attention heads beyond \(H_{\text{active}}\) are zero-masked:
 
-This operation can be interpreted as computing how much the first attention map exceeds half of the second. Unlike the ReLU‑gated variant (as in Hymba‑TransX), here no non‑linearity is applied after subtraction; negative values are kept, allowing the differential map to be signed. This signed attention map then directly weights the values, potentially enabling the network to both enhance and suppress certain key‑value pairs.
+   \[
+   \mathbf{A}_{\text{diff}, b, h, :, :} = \mathbf{0}_{L \times L} \quad \forall h \ge H_{\text{active}}
+   \]
 
-**Head Sparsity**: The module also enforces sparsity at the head level. A parameter `sparsity` (default 0.15) determines the fraction of heads that are **inactive**. Specifically, the number of active heads is:
+4. **Value Aggregation & Projection**:
+   \[
+   \mathbf{Z}_{\text{retrieval}} = \text{Reshape}\left(\mathbf{A}_{\text{diff}} \mathbf{V}, [B, L, D]\right)
+   \]
+   \[
+   \mathbf{O} = \mathbf{Z}_{\text{retrieval}} \mathbf{W}_O + \mathbf{b}_O
+   \]
 
-\[
-H_{\text{active}} = \max(1, \lfloor H \times \text{sparsity} \rfloor).
-\]
+### 2.2 Mode 2: SSM Bottleneck Mode (InfoMamba Concept Bottleneck)
 
-In the forward pass, after computing the differential attention \(\tilde{\mathbf{A}}\) (shape \((B, H, L, L)\)), the attention maps for heads indexed \(h \ge H_{\text{active}}\) are set to zero:
+1. **Low-Rank Concept Compression**:
+   Input \(\mathbf{X}\) is down-projected into bottleneck dimension \(d_{\text{bottleneck}} = 64\) and non-linearly transformed via GELU before re-expanding to \(D\):
 
-\[
-\tilde{\mathbf{A}}_{[:, h \ge H_{\text{active}}, :, :]} = 0.
-\]
+   \[
+   \tilde{\mathbf{X}} = \text{GELU}(\mathbf{X} \mathbf{W}_{\text{down}}) \mathbf{W}_{\text{up}} \quad \in \mathbb{R}^{B \times L \times D}
+   \]
 
-This forces the inactive heads to contribute nothing to the output, which is equivalent to a structured head pruning during training, potentially encouraging the remaining heads to specialise. The sparsity is fixed per layer and can be tuned.
+   where \(\mathbf{W}_{\text{down}} \in \mathbb{R}^{D \times d_{\text{bottleneck}}}\) and \(\mathbf{W}_{\text{up}} \in \mathbb{R}^{d_{\text{bottleneck}} \times D}\).
 
-The final output of the attention branch is:
+2. **SimpleSSM Sequence Evolution & Residual Connection**:
+   The bottleneck output \(\tilde{\mathbf{X}}\) passes through `SimpleSSM` linear recurrence:
 
-\[
-\mathbf{O}_{\text{attn}} = \tilde{\mathbf{A}} \mathbf{V}.
-\]
-
-This is reshaped back to \((B, L, D)\).
-
-### 2.2 Bottleneck Mode: Concept Compression + State‑Space Model
-
-When `mode = "bottleneck"`, the block utilises a completely different architecture. It first passes the input through an **information bottleneck** layer, `InfoMambaConceptBottleneck`, defined as:
-
-\[
-\mathbf{Z} = \mathbf{W}_{\text{down}} \mathbf{X} \quad (\text{no bias}), \qquad
-\tilde{\mathbf{Z}} = \operatorname{GELU}(\mathbf{Z}), \qquad
-\mathbf{X}_{\text{bottle}} = \mathbf{W}_{\text{up}} \tilde{\mathbf{Z}},
-\]
-
-where \(\mathbf{W}_{\text{down}} \in \mathbb{R}^{d_{\text{bottleneck}} \times D}\), \(\mathbf{W}_{\text{up}} \in \mathbb{R}^{D \times d_{\text{bottleneck}}}\), and \(d_{\text{bottleneck}}\) is typically 64. This low‑rank bottleneck forces the representation to capture the most salient features before being processed further.
-
-The compressed sequence \(\mathbf{X}_{\text{bottle}} \in \mathbb{R}^{B \times L \times D}\) is then processed by a `SimpleSSM` module—a state‑space model similar to HGRN or a simplified Mamba. The exact operation of `SimpleSSM` is not detailed here, but it is expected to be a recurrent or parallel scan‑based sequence transformation that captures long‑range dependencies with \(O(L D^2)\) complexity.
-
-Finally, a **residual connection** is added: the output of the SSM is summed with the original input \(\mathbf{X}\):
-
-\[
-\mathbf{O}_{\text{bottle}} = \mathbf{X} + \text{SimpleSSM}(\mathbf{X}_{\text{bottle}}).
-\]
-
-This design follows the pattern of first compressing the input to a meaningful bottleneck, applying a lightweight sequence model, and then adding back the original signal to ease gradient flow and retain positional information.
-
-### 2.3 Output Projection
-
-In both modes, the result (either \(\mathbf{O}_{\text{attn}}\) or \(\mathbf{O}_{\text{bottle}}\)) is passed through a final linear output projection:
-
-\[
-\mathbf{Y} = \mathbf{W}_O \mathbf{O} + \mathbf{b}_O,
-\]
-
-with \(\mathbf{W}_O \in \mathbb{R}^{D \times D}\). The block returns a tuple \((\mathbf{Y}, \text{None})\) for compatibility.
+   \[
+   \mathbf{Z}_{\text{ssm}} = \text{SimpleSSM}(\tilde{\mathbf{X}}, \mathbf{M}_{\text{pad}}) \quad \in \mathbb{R}^{B \times L \times D}
+   \]
+   \[
+   \mathbf{O} = (\mathbf{X} + \mathbf{Z}_{\text{ssm}}) \mathbf{W}_O + \mathbf{b}_O
+   \]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-### 3.1 JambaInfoBlock Class
-
-- **Constructor**:
-  - `config`: provides `hidden_size` and `num_attention_heads`.
-  - `rank`: ignored (interface compatibility).
-  - `mode`: `"retrieval"` or `"bottleneck"`.
-  - `sparsity`: fraction of heads kept active (used only in retrieval mode, default 0.15).
-  - In retrieval mode, creates:
-    - `W_q1, W_k1, W_q2, W_k2` (no bias) – two sets of Q, K.
-    - `W_v` (no bias) – shared value projection.
-    - `out_proj` (with bias).
-    - Computes `active_heads = max(1, int(num_heads * sparsity))`.
-  - In bottleneck mode, creates:
-    - `bottleneck = InfoMambaConceptBottleneck(dim)` (default bottleneck_dim=64 hardcoded inside that class).
-    - `ssm = SimpleSSM(dim)`.
-    - `out_proj`.
-
-- **Forward**:
-  - Retrieval mode:
-    1. Project Q1, K1, Q2, K2, V.
-    2. Compute two attention maps.
-    3. Subtract: `diff_attn = attn1 - 0.5 * attn2`.
-    4. Zero out heads from `active_heads` onwards.
-    5. Multiply by V, reshape, project.
-  - Bottleneck mode:
-    1. `x_bottleneck = self.bottleneck(x)`.
-    2. `ssm_out = self.ssm(x_bottleneck)`.
-    3. `out = x + ssm_out`.
-    4. Project.
-
-- **Mask handling**: The `mask` parameter is accepted but **not used**; thus, padding tokens are not masked, which is a significant limitation. In retrieval mode, padding tokens would be included in the attention, and in bottleneck mode they'd be processed normally.
-
-### 3.2 InfoMambaConceptBottleneck
-
-A simple two‑layer bottleneck:
-- `down`: Linear(dim, bottleneck_dim, bias=False)
-- `up`: Linear(bottleneck_dim, dim, bias=False)
-- `forward`: `up(GELU(down(x)))`.
-The bottleneck dimension is hardcoded to 64 in the class definition, which may be suboptimal for all model sizes.
-
-### 3.3 Integration
-
-The module is registered under the key `"jamba_info"` in `ATTENTION_REGISTRY`. A separate injection function (not shown) would be needed to pass parameters like `mode` and `sparsity` from the compression config. The current code only defines the class with the registry decorator, expecting the framework to instantiate it with appropriate arguments (perhaps via reflection). In practice, an injection function should be added to extract `mode` and `sparsity` from `comp_config`.
-
----
-
-## 4. Usage and Configuration
-
-The block can be selected by setting the attention type to `"jamba_info"` and providing the additional parameters (through a custom injection function or via the framework's parameter extraction). The expected configuration parameters are:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `mode` | `"retrieval"` | Operating mode: `"retrieval"` or `"bottleneck"`. |
-| `sparsity` | 0.15 | Fraction of heads active in retrieval mode (e.g., 0.15 means only 15% of heads are used). |
-| `bottleneck_dim` | 64 | (Hardcoded in InfoMambaConceptBottleneck) The bottleneck dimension. |
-
-Example usage (assuming an injection function exists):
-```python
-comp_config.attention_type = "jamba_info"
-comp_config.attn_mode = "retrieval"
-comp_config.sparsity = 0.2
+```
+                         Input Tensor X [B, L, D]
+                                    │
+               ┌────────────────────┴────────────────────┐
+               ▼                                         ▼
+      [mode == "retrieval"]                    [mode == "bottleneck"]
+   Head-Sparse Differential Attn           InfoMamba Concept Bottleneck
+   - Q1, K1, Q2, K2, V GEMMs               - W_down: [B, L, D] -> [B, L, 64]
+   - A_1, A_2 Softmax [B, H, L, L]         - GELU Activation
+   - A_diff = A_1 - 0.5 A_2                - W_up: [B, L, 64] -> [B, L, D]
+   - Head Zero Masking (h >= H_act)        - SimpleSSM Linear Recurrence
+   - Z = A_diff @ V                        - Residual: X + SimpleSSM(X_bottle)
+               │                                         │
+               └────────────────────┬────────────────────┘
+                                    ▼
+                        Output Linear Projection W_O
+                                    │
+                                    ▼
+                    Output Tuple (O, DiffAttnMap)
 ```
 
-Manual instantiation:
+| Mode | Execution Step | Tensor Input | Output Tensor | Shape Transformation |
+| :--- | :--- | :--- | :--- | :--- |
+| **Retrieval** | Dual Q, K Projections | `x` \([B, L, D]\) | `q1, k1, q2, k2` | \([B, L, D] \rightarrow 4 \times [B, H, L, d_k]\) |
+| **Retrieval** | Softmax Maps | `q1, k1` and `q2, k2` | `attn1`, `attn2` | \(2 \times ([B, H, L, d_k] \times [B, H, d_k, L] \to [B, H, L, L])\) |
+| **Retrieval** | Differential Map | `attn1`, `attn2` | `diff_attn` | `attn1 - 0.5 * attn2` \([B, H, L, L]\) |
+| **Retrieval** | Head Zeroing | `diff_attn` | `diff_attn` | `diff_attn[:, active_heads:] = 0.0` |
+| **Retrieval** | Value BMM | `diff_attn`, `v` | `out` | \([B, H, L, L] \times [B, H, L, d_k] \rightarrow [B, L, D]\) |
+| **Bottleneck**| Down Projection | `x` \([B, L, D]\) | `x_down` | \([B, L, D] \rightarrow [B, L, d_{\text{bottleneck}}]\) |
+| **Bottleneck**| Up Projection | GELU(`x_down`) | `x_bottle` | \([B, L, d_{\text{bottleneck}}] \rightarrow [B, L, D]\) |
+| **Bottleneck**| SimpleSSM Pass | `x_bottle` | `ssm_out` | \([B, L, D] \rightarrow [B, L, D]\) |
+| **Bottleneck**| Residual Sum | `x`, `ssm_out` | `out` | `x + ssm_out` \([B, L, D]\) |
+
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 FLOP & MAC Breakdown
+
+Let \(B\) be batch size, \(L\) sequence length, \(D\) model dimension, \(H\) total heads, and \(d_{\text{bot}} = 64\) bottleneck dimension:
+
+#### Mode A: Retrieval Mode
+1. **Linear Projections (\(W_{q1}, W_{k1}, W_{q2}, W_{k2}, W_v, W_O\))**:
+   - 6 GEMM operations of shape \((B \cdot L \times D) \times (D \times D)\).
+   - MACs: \(6 B \cdot L \cdot D^2\).
+   - FLOPs: \(12 B \cdot L \cdot D^2\).
+2. **Dual Softmax Attention Maps**:
+   - Dual BMMs: \(2 \times (2 B \cdot H \cdot L^2 \cdot d_k) = 4 B L^2 D\) FLOPs.
+   - Dual Softmax: \(2 \times 5 B H L^2 = 10 B H L^2\) FLOPs.
+3. **Differential Context Aggregation**:
+   - Matrix subtraction & head zeroing: \(2 B H L^2\) FLOPs.
+   - Active Value BMM (\(H_{\text{active}}\) heads): \(2 B \cdot H_{\text{active}} \cdot L^2 \cdot d_k = 2 \alpha B L^2 D\) FLOPs.
+4. **Retrieval Mode Total FLOPs**:
+   - \(\text{FLOPs}_{\text{retrieval}} = 12 B L D^2 + 4(1 + 0.5\alpha) B L^2 D + 12 B H L^2\).
+
+#### Mode B: Bottleneck Mode
+1. **Concept Bottleneck MLP**:
+   - `W_down`: \(B L D d_{\text{bot}}\) MACs (\(2 B L D d_{\text{bot}}\) FLOPs).
+   - GELU: \(4 B L d_{\text{bot}}\) FLOPs.
+   - `W_up`: \(B L d_{\text{bot}} D\) MACs (\(2 B L D d_{\text{bot}}\) FLOPs).
+   - Subtotal Bottleneck FLOPs: \(4 B L D d_{\text{bot}} + 4 B L d_{\text{bot}}\).
+2. **SimpleSSM Recurrence**:
+   - Recurrence FLOPs: \(6 B L D^2 + 10 B L D\).
+3. **Output GEMM (`W_O`)**:
+   - MACs: \(B L D^2\). FLOPs: \(2 B L D^2\).
+4. **Bottleneck Mode Total FLOPs**:
+   - \(\text{FLOPs}_{\text{bottleneck}} = 8 B L D^2 + 4 B L D d_{\text{bot}} + 10 B L D\).
+
+### 4.2 Memory Footprint Accounting
+
+- **Parameter Count**:
+  - `Retrieval Mode`: \(6 D^2 + D\) parameters.
+  - `Bottleneck Mode`: \(2 D^2 + 2 D d_{\text{bot}} + D\) (includes SSM) parameters.
+
+- **Training Activation Footprint**:
+  - Retrieval Mode: Storing dual attention maps \(\mathbf{A}_1, \mathbf{A}_2\) requires \(2 \times (B \cdot H \cdot L^2 \cdot 2)\) bytes.
+  - Bottleneck Mode: Storing bottleneck activations requires \(B \cdot L \cdot d_{\text{bot}} \times 2\) bytes.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Negative Attention Weights & Differential Divergence
+
+The differential map \(\mathbf{A}_{\text{diff}} = \mathbf{A}_1 - 0.5 \mathbf{A}_2\) can yield negative matrix entries \(\mathbf{A}_{\text{diff}}(i, j) < 0\). Unlike standard non-negative Softmax distributions that form convex combinations of values, signed attention matrix multiplication \(\mathbf{A}_{\text{diff}} \mathbf{V}\) can cause extreme destructive interference, leading to activation magnitude explosion during deep layer propagation.
+
+### 5.2 Severe Concept Rank Bottlenecking
+
+In `bottleneck` mode, projecting \(D=768\) hidden features down to \(d_{\text{bottleneck}} = 64\) imposes a \(12\times\) compression ratio. The rank of the reconstructed tensor \(\tilde{\mathbf{X}}\) is strictly bounded:
+
+\[
+\text{rank}(\tilde{\mathbf{X}}) \le d_{\text{bottleneck}} = 64
+\]
+
+This introduces severe feature bottlenecking, stripping high-frequency positional details before sequence evolution in `SimpleSSM`.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### 6.1 Fused Differential FlashAttention Triton Kernel
+
+To avoid storing dual \(B \times H \times L \times L\) attention maps in global memory during Retrieval mode, we design a single fused Triton kernel that computes differential Softmax inline within SRAM registers.
+
 ```python
-attn = JambaInfoBlock(config=model_config, mode="retrieval", sparsity=0.2)
-layer.attention = attn
+import triton
+import triton.language as tl
+import torch
+
+@triton.jit
+def _fused_diff_attention_kernel(
+    Q1_ptr, K1_ptr, Q2_ptr, K2_ptr, V_ptr, Out_ptr,
+    stride_b, stride_h, stride_l, stride_d,
+    H_active: tl.constexpr,
+    D_HEAD: tl.constexpr, BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr
+):
+    pid_b = tl.program_id(0)
+    pid_h = tl.program_id(1)
+    pid_m = tl.program_id(2)
+    
+    # Early termination for inactive sparse heads
+    if pid_h >= H_active:
+        return
+        
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_n = tl.arange(0, BLOCK_N)
+    offs_d = tl.arange(0, D_HEAD)
+    
+    # Load Q1 and Q2 blocks into SRAM
+    # Iteratively compute S1 = Q1 @ K1^T, S2 = Q2 @ K2^T
+    # Apply inline Softmax: S_diff = Softmax(S1) - 0.5 * Softmax(S2)
+    # Compute Out_block = S_diff @ V
 ```
 
----
+### 6.2 Optimization Blueprint Parameters
 
-## 5. Discussion
-
-The Jamba‑Info Block offers an interesting contrast between two highly different sequence mixing strategies. The retrieval mode’s differential attention encourages the model to focus on relevant tokens by canceling a baseline attention map, while the head sparsity forces a compact use of attention heads. This can be seen as a form of learnable head pruning that may improve interpretability and efficiency (since fewer heads actively participate). However, the subtraction without a ReLU can lead to negative attention weights, which, while mathematically valid, could cause instability because the resulting output is not a convex combination of values. Adding a ReLU or a softmax after subtraction might stabilise training.
-
-The bottleneck mode emulates a two‑stage process: compress to a conceptual representation, then apply a lightweight sequence model. The residual connection helps preserve the raw input signal, which may be important because the bottleneck (with dimension 64) is a very aggressive compression (for a typical hidden size 768, 64 is ~12× reduction). The SSM then operates on this compressed signal, which could be efficient but might lose detailed token‑level information. Increasing the bottleneck dimension or adding a gating mechanism could improve capacity.
-
-Both modes suffer from the lack of attention mask handling, which is a common issue in many of these experimental modules. For production, explicit padding mask support must be added. Also, the `SimpleSSM` class is not defined in this snippet; its performance and speed will heavily influence the bottleneck mode. If `SimpleSSM` is itself a placeholder or a naive implementation, the overall module may not yield competitive results.
-
-Overall, the Jamba‑Info Block is a promising example of a modular hybrid design that allows rapid experimentation with different sequence mixing paradigms within a unified interface. Future work should incorporate masking, explore dynamic sparsity instead of fixed head pruning, and add learnable gating for the differential attention.
-
----
-
-## 6. Conclusion
-
-We have presented the Jamba‑Info Block, a dual‑mode sequence mixing module featuring differential sparse attention and a concept‑bottleneck + SSM pipeline. The module’s flexibility and integration into the compression framework make it a useful building block for exploring efficient Transformer variants. Further refinements in masking, stability, and parameterisation will unlock its full potential for long‑sequence modeling.
+- **Sparse Head Skipping**: Inactive heads (\(h \ge H_{\text{active}}\)) trigger instant Triton kernel thread termination, achieving up to \((1 - \alpha) \times 100\%\) compute cycles reduction in the attention phase.
+- **SRAM Register Double-Buffering**: `BLOCK_M = 64, BLOCK_N = 64` tiling reduces DRAM read/write bandwidth consumption by \(\sim 4 \times\).

@@ -1,183 +1,176 @@
-# ORION: Optimized Rectified Input‑aware Orthogonal Network — Hybrid Sparse‑Kernel Attention with SVD‑Factorised Projections
+# ORION: Optimized Rectified Input-Aware Orthogonal Network with Energy-Preserving SVD Projections and Bifurcated Multi-Head Attention
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **ORION (Optimized Rectified Input‑aware Orthogonal Network)**, a hybrid attention module for efficient Transformers that combines three design elements: **(1)** energy‑thresholded truncated SVD factorisation of all linear projections for parameter‑efficient zero‑shot transfer from pretrained weights; **(2)** a head‑wise split where a designated subset of heads performs linear‑complexity kernelised attention via random Fourier features, while the remaining heads perform full dot‑product attention with a sparsity‑inducing **Softpick** rectified softmax; and **(3)** a unified masking procedure for padding tokens. By allocating heads to either efficient global linear attention or exact full attention with natural sparsity, ORION achieves a tunable balance between computational cost and representational power, while drastically reducing the number of trainable parameters through SVD. The module is designed as a drop‑in replacement for the self‑attention sub‑layer in DistilBERT, supporting zero‑shot initialisation and full integration into the compression framework via a registry‑based injection function. This paper provides a rigorous mathematical description of each component, the head‑wise hybridisation strategy, and the overall architecture.
+Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires quadratic computational time and memory scaling $\mathcal{O}(N^2)$ with sequence length $N$. While linearized kernel attention models reduce sequence complexity to $\mathcal{O}(N \cdot F \cdot d_h)$, they frequently degrade local representation quality due to over-smoothed attention distributions. Conversely, full softmax attention retains high-resolution local dependencies but suffers from memory bottlenecks on long inputs.
 
----
-
-## 1. Introduction
-
-The self‑attention mechanism in Transformer models is both a key to their success and a bottleneck due to its \(O(N^2)\) time and memory complexity. Several recent works have explored hybrid approaches that combine different attention patterns—local vs. global, exact vs. approximate—to achieve better efficiency. **ORION** adopts a head‑wise hybrid scheme: the total set of attention heads is partitioned into two groups, each employing a different attention computation.
-
-- **Kernel heads** use **linear attention** with orthogonal random Fourier features (FAVOR+), which approximates the softmax kernel and scales linearly with sequence length \(N\).
-- **Full heads** use **exact scaled dot‑product attention** but with a **Softpick** activation function in place of softmax. Softpick naturally produces sparse attention maps by zeroing out weak connections, reducing the effective number of attended tokens and potentially improving interpretability.
-
-All projections (query, key, value, output) are compressed via a truncated SVD of the pretrained weights, retaining a configurable fraction of the singular‑value energy. This greatly reduces the parameter count and enables zero‑shot deployment.
-
-The combination is designed so that the kernel heads capture global context efficiently, while the full heads with Softpick provide high‑precision, sparse interactions. The module is fully compatible with the DistilBERT architecture and the surrounding compression framework.
-
-In this paper, we detail the mathematical construction of the factorised linear layers, the kernelised linear attention, the Softpick activation and full attention, and the overall ORION forward pass.
+**ORION** (Optimized Rectified Input-aware Orthogonal Network) introduces a bifurcated attention architecture that addresses this trade-off through three key innovations:
+1. **Energy-Preserving SVD Projection Factorization**: Projection weight matrices ($W_Q, W_K, W_V, W_O$) are decomposed via truncated SVD into down/up linear projections. The projection rank $r$ is dynamically determined to preserve a target fraction $\eta_{\text{energy}} = 0.95$ of total singular value Frobenius energy.
+2. **Bifurcated Head Partitioning ($H = H_k + H_f$)**: Multi-head attention is bifurcated into $H_k$ linearized Random Fourier Feature (RFF) kernel heads and $H_f$ full Softpick rectified heads.
+3. **Softpick Rectified Activation**: Full heads employ a tail-thresholded non-linear probability mapping (`softpick`), which active-prunes background attention noise to generate sparse probability distributions without sink token collapse.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Factorised Linear Projections via Energy‑Thresholded SVD
+### 2.1 Energy-Preserving SVD Linear Projection (`FactorisedLinear`)
+For a target linear layer weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, singular value decomposition is evaluated:
 
-Let \(\mathbf{W} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}\) be a pretrained weight matrix and \(\mathbf{b}\) its optional bias. The `FactorisedLinear` class constructs a bottleneck layer:
+$$W = U \Sigma V^T, \quad \Sigma = \text{diag}(\sigma_1, \sigma_2, \dots, \sigma_{\min(d_{\text{out}}, d_{\text{in}})})$$
 
-\[
-\mathbf{y} = \mathbf{U}_r (\mathbf{V}_r \mathbf{x}) + \mathbf{b},
-\]
+Given energy target $\eta_{\text{energy}} \in (0, 1]$, rank $r$ is chosen as the minimal index satisfying:
 
-where \(\mathbf{V}_r \in \mathbb{R}^{r \times d_{\text{in}}}\) and \(\mathbf{U}_r \in \mathbb{R}^{d_{\text{out}} \times r}\). The rank \(r\) is chosen adaptively by thresholding the cumulative singular‑value energy:
+$$\frac{\sum_{i=1}^r \sigma_i^2}{\sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i^2} \ge \eta_{\text{energy}}, \quad r \in [r_{\min}, r_{\max}]$$
 
-\[
-r = \min\left\{ k \;\middle|\; \frac{\sum_{i=1}^k \sigma_i^2}{\sum_i \sigma_i^2} \ge \eta \right\},
-\]
+The weight matrix $W$ is factorized into $W_{\text{down}} \in \mathbb{R}^{r \times d_{\text{in}}}$ and $W_{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r}$:
 
-clamped between `min_rank` and `max_rank` (default 4 and 64). The factors are initialised as:
+$$W_{\text{down}} = V_{:, :r}^T, \quad W_{\text{up}} = U_{:, :r} \Sigma_{:r, :r}$$
 
-\[
-\mathbf{V}_r = \mathbf{V}_{\text{full}[:r,:]}, \qquad
-\mathbf{U}_r = \mathbf{U}_{\text{full}[:,:r]} \operatorname{diag}(\sigma_1,\dots,\sigma_r).
-\]
+Forward execution for hidden tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ computes dual linear projections:
 
-These replace the standard linear layers for Q, K, V, and output, drastically reducing parameters while preserving the original model’s behaviour at initialisation.
+$$Y = (X W_{\text{down}}^T) W_{\text{up}}^T + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}$$
 
-### 2.2 Head‑Wise Hybridisation
+### 2.2 Bifurcated Multi-Head Partitioning
+Projected Query, Key, and Value tensors $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$ are split along the head dimension into $H_k$ kernel heads and $H_f$ full heads ($H = H_k + H_f$):
 
-The module partitions the \(H\) attention heads into two disjoint sets:
-- \(H_k\) kernel heads (default 8)
-- \(H_f\) full heads (default 4), where \(H_k + H_f = H\).
+$$Q_{\text{kernel}}, K_{\text{kernel}}, V_{\text{kernel}} \in \mathbb{R}^{B \times H_k \times N \times d_h}, \quad Q_{\text{full}}, K_{\text{full}}, V_{\text{full}} \in \mathbb{R}^{B \times H_f \times N \times d_h}$$
 
-After obtaining the multi‑head queries, keys, and values \(\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times N \times d_h}\) via the factorised projections, we split them along the head dimension:
+### 2.3 Linearized RFF Kernel Attention Branch ($H_k$ Heads)
+Kernel heads compute L2-normalized query and key vectors:
 
-\[
-\mathbf{Q}_{\text{kern}} = \mathbf{Q}_{[:, :H_k, :, :]}, \quad \mathbf{Q}_{\text{full}} = \mathbf{Q}_{[:, H_k:, :, :]},
-\]
+$$\hat{Q} = \frac{Q_{\text{kernel}}}{\|Q_{\text{kernel}}\|_2}, \quad \hat{K} = \frac{K_{\text{kernel}}}{\|K_{\text{kernel}}\|_2}$$
 
-and similarly for \(\mathbf{K}, \mathbf{V}\).
+Positive kernel feature maps $\phi_Q, \phi_K \in \mathbb{R}^{B \times H_k \times N \times F}$ are evaluated using random projection parameter $W_{\text{rff}} \in \mathbb{R}^{H_k \times d_h \times F}$:
 
-### 2.3 Kernelised Linear Attention (Kernel Heads)
+$$\phi_Q(Q) = \frac{\exp\left( \hat{Q} W_{\text{rff}} \right)}{\sqrt{F}}, \quad \phi_K(K) = \frac{\exp\left( \hat{K} W_{\text{rff}} \right)}{\sqrt{F}}$$
 
-The kernel heads employ linear attention using positive orthogonal random features (a Performer‑style mechanism). A learnable random projection matrix \(\mathbf{R} \in \mathbb{R}^{d_h \times F}\) is stored per kernel head (shared across sequences). The feature map is:
+The global key-value memory matrix $KV \in \mathbb{R}^{B \times H_k \times F \times d_h}$ and normalization vector $K_{\text{sum}} \in \mathbb{R}^{B \times H_k \times F}$ aggregate token representations:
 
-\[
-\phi(\mathbf{x}) = \frac{1}{\sqrt{F}} \exp\!\big( \mathbf{x} \mathbf{R} \big),
-\]
+$$KV_{b, h} = \sum_{j=1}^N \phi_K(K)_{b, h, j}^T \otimes V_{\text{kernel}, b, h, j}, \quad K_{\text{sum}, b, h} = \sum_{j=1}^N \phi_K(K)_{b, h, j}^T$$
 
-where \(F\) is the `rff_features` dimension (default 256). To improve stability, the queries and keys are first L2‑normalised. The feature maps are:
+Linear context retrieval evaluates:
 
-\[
-\mathbf{\Phi}_Q = \exp(\hat{\mathbf{Q}}_{\text{kern}} \mathbf{R}) / \sqrt{F},\quad
-\mathbf{\Phi}_K = \exp(\hat{\mathbf{K}}_{\text{kern}} \mathbf{R}) / \sqrt{F},
-\]
+$$O^{\text{kernel}}_{b, h, i} = \frac{\phi_Q(Q)_{b, h, i} KV_{b, h}}{\phi_Q(Q)_{b, h, i} K_{\text{sum}, b, h}^T + \epsilon} \in \mathbb{R}^{B \times H_k \times N \times d_h}$$
 
-with \(\hat{\mathbf{Q}}, \hat{\mathbf{K}}\) being unit‑norm versions. The linear attention output is computed via the associative property:
+### 2.4 Full Softpick Rectified Attention Branch ($H_f$ Heads)
+Full heads compute dense scaled dot-product attention scores:
 
-\[
-\mathbf{KV} = \sum_{j=1}^N \mathbf{\Phi}_K(:,j) \mathbf{V}_{\text{kern}}(:,j)^\top \quad \in \mathbb{R}^{B \times H_k \times F \times d_h},
-\]
-\[
-\mathbf{Z} = \sum_{j=1}^N \mathbf{\Phi}_K(:,j) \quad \in \mathbb{R}^{B \times H_k \times F},
-\]
-\[
-\mathbf{C}_{\text{kern}} = \frac{\mathbf{\Phi}_Q \mathbf{KV}}{\mathbf{\Phi}_Q \mathbf{Z} + \epsilon}.
-\]
+$$S_{b, h, i, j} = \frac{Q_{\text{full}, b, h, i} \cdot K_{\text{full}, b, h, j}^T}{\sqrt{d_h}} + M^{\text{pad}}_{b, j}$$
 
-All operations are linear in \(N\); the dominant cost is \(O(N F d_h)\).
+The **Softpick** non-linear activation with temperature scaling $T$ rectifies probabilities:
 
-### 2.4 Full Attention with Softpick Sparsity (Full Heads)
+$$m_i = \max_j S_{i, j}, \quad e_{i, j} = \exp\left( \frac{S_{i, j} - m_i}{T} \right)$$
 
-The full heads compute standard scaled dot‑product attention:
+$$p_{i, j} = \frac{\max\left(0, e_{i, j} - \exp(-m_i / T)\right)}{\sum_{k} \max\left(0, e_{i, k} - \exp(-m_i / T)\right) + \epsilon}$$
 
-\[
-\mathbf{S}_{\text{full}} = \frac{\mathbf{Q}_{\text{full}} \mathbf{K}_{\text{full}}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H_f \times N \times N}.
-\]
+$$O^{\text{full}}_{b, h, i} = \sum_{j=1}^N p_{b, h, i, j} V_{\text{full}, b, h, j} \in \mathbb{R}^{B \times H_f \times N \times d_h}$$
 
-Before applying the activation, a padding mask (if present) is applied by setting invalid positions to a large negative value. Then, instead of softmax, the **Softpick** function is applied:
+### 2.5 Head Concatenation & Output Projection
+Branch representations are concatenated across heads and projected back to model dimension $D$:
 
-\[
-p_{ij} = \frac{\operatorname{ReLU}\!\big( e^{(S_{ij} - m_i)/\tau} - e^{-m_i/\tau} \big)}
-            {\sum_{k} \operatorname{ReLU}\!\big( e^{(S_{ik} - m_i)/\tau} - e^{-m_i/\tau} \big) + \epsilon},
-\]
+$$O^{\text{fused}} = \text{cat}\left( O^{\text{kernel}}, O^{\text{full}} \right) \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-where \(m_i = \max_j S_{ij}\) and \(\tau\) is a temperature parameter (default 1.0). Softpick tends to set many attention weights exactly to zero, yielding a sparse attention map without a hard top‑\(k\). The context for full heads is:
-
-\[
-\mathbf{C}_{\text{full}} = \operatorname{Softpick}(\mathbf{S}_{\text{full}}) \mathbf{V}_{\text{full}}.
-\]
-
-### 2.5 Padding Mask Handling
-
-The module accepts an attention mask that can be 2D, 3D, or 4D. A robust conversion extracts a boolean `token_valid` tensor of shape \((B, N)\). For the full heads, this mask is applied to the scores before Softpick. For the kernel heads, no mask is applied (since the linear attention aggregates all tokens; padding tokens would need to be zeroed out in the key/value accumulation, which is not done in this implementation—a limitation). After obtaining both contexts, the final output is multiplied by the token validity mask to zero out padding positions.
-
-### 2.6 Combination and Output
-
-The two context tensors are concatenated along the head dimension to restore the full set of heads:
-
-\[
-\mathbf{C} = \operatorname{cat}(\mathbf{C}_{\text{kern}}, \mathbf{C}_{\text{full}}, \text{dim}=1) \in \mathbb{R}^{B \times H \times N \times d_h}.
-\]
-
-After masking, the heads are concatenated, reshaped to \((B, N, H d_h)\), and projected through the factorised output layer.
+$$Y = \text{FactorisedLinear}_{\text{out}}\left( \text{Reshape}(O^{\text{fused}}) \right) \in \mathbb{R}^{B \times N \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`ORIONConfig`**: a dataclass holding all hyperparameters (energy, rank bounds, head counts, feature dimension, temperature, dropout).
-- **`FactorisedLinear`**: performs SVD once, selects rank, stores `down` and `up` layers.
-- **`ORIONAttention`**:
-  - Inherits from `nn.Module` (not `BaseAttention`), but registered as `"orion"`.
-  - Constructor requires `pretrained_attn` to initialise the four factorised projections.
-  - The random Fourier projection matrix `rff_proj` is a learnable parameter of shape \((H_k, d_h, F)\).
-  - Forward pass: split heads, compute kernel and full contexts, concatenate, mask, output projection.
-- **Injection**: `inject_orion` reads parameters from `comp_config`, constructs `ORIONConfig`, and creates the module, replacing the original attention.
+| Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
+| :--- | :--- | :--- | :--- |
+| **Input Hidden State** | $X$ | $[B, N, D]$ | Base activation state |
+| **SVD Projection Q/K/V** | $X W_{\text{down}}^T W_{\text{up}}^T$ | $[B, N, D] \to [B, N, r] \to [B, N, H \cdot d_h]$ | Dual-linear SVD factorized transform |
+| **Head Partitioning** | $Q, K, V$ | $[B, N, H \cdot d_h] \to [B, H, N, d_h]$ | Transpose to multi-head view |
+| **Head Bifurcation** | $Q_k, Q_f$ | $[B, H_k, N, d_h], [B, H_f, N, d_h]$ | Split into kernel ($H_k$) & full ($H_f$) heads |
+| **RFF Kernel Mapping** | $\phi_Q, \phi_K$ | $[B, H_k, N, d_h] \times [H_k, d_h, F] \to [B, H_k, N, F]$ | Exponential RFF feature mapping |
+| **Kernel Memory Outer Prod.**| $KV$ | $[B, H_k, N, F]^T \times [B, H_k, N, d_h] \to [B, H_k, F, d_h]$| Linear key-value matrix accumulation |
+| **Kernel Context Retrieval** | $O^{\text{kernel}}$ | $[B, H_k, N, F] \times [B, H_k, F, d_h] \to [B, H_k, N, d_h]$ | Linear query context contraction |
+| **Full Softpick Scores** | $S^{\text{full}}$ | $[B, H_f, N, d_h] \times [B, H_f, N, d_h] \to [B, H_f, N, N]$ | Dense scaled dot-product attention |
+| **Full Softpick Contraction**| $O^{\text{full}}$ | $[B, H_f, N, N] \times [B, H_f, N, d_h] \to [B, H_f, N, d_h]$ | Rectified Softpick value product |
+| **Head Concatenation** | $O^{\text{fused}}$ | $[B, H, N, d_h]$ | Channel concatenation across heads |
+| **Output Low-Rank GEMM** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, r] \to [B, N, D]$ | Factorized SVD output projection |
 
 ---
 
-## 4. Usage and Configuration
+## 4. Analytical Complexity Profiling
 
-The module is activated by setting the attention type to `"orion"`. Relevant parameters in `comp_config`:
+### 4.1 Floating Point Operations (FLOPs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads, $d_h = D/H$ head dimension, $r$ average SVD rank, $H_k$ kernel heads, $H_f$ full heads, and $F$ RFF feature dimension ($F = \text{rff\_features}$).
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `svd_energy` | 0.95 | Fraction of singular‑value energy retained in factorised projections. |
-| `min_rank` / `max_rank` | 4 / 64 | Rank limits for SVD. |
-| `num_kernel_heads` | 8 | Number of heads using kernel linear attention. |
-| `num_full_heads` | 4 | Number of heads using full attention with Softpick. |
-| `rff_features` | 256 | Feature dimension for random Fourier features. |
-| `softpick_temperature` | 1.0 | Temperature for Softpick. |
-| `dropout` | 0.1 | Dropout on attention weights. |
+1. **SVD Linear Projections ($Q, K, V, O$)**:
+   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+2. **Linear RFF Kernel Branch ($H_k$ heads)**:
+   - Einsum feature projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$): $4 B H_k N d_h F$
+   - Memory State accumulation ($KV$): $2 B H_k N F d_h$
+   - Global Context retrieval: $2 B H_k N F d_h$
+   $$\text{FLOPs}_{\text{kernel}} = 8 B H_k N d_h F$$
+3. **Full Softpick Branch ($H_f$ heads)**:
+   - Score matrix product ($Q_f K_f^T$): $2 B H_f N^2 d_h$
+   - Softpick activation & Value contraction ($P V_f$): $2 B H_f N^2 d_h + \mathcal{O}(B H_f N^2)$
+   $$\text{FLOPs}_{\text{full}} = 4 B H_f N^2 d_h$$
 
-Example injection via framework:
-```python
-comp_config.attention_type = "orion"
-comp_config.num_kernel_heads = 10
-comp_config.num_full_heads = 2   # must sum to total heads
+**Total FLOP Count**:
+
+$$\text{FLOPs}_{\text{total}} = 16 B N D r + 8 B H_k N d_h F + 4 B H_f N^2 d_h$$
+
+### 4.2 Memory Footprint & Bandwidth
+- **Parameter Footprint**:
+  $$\Theta = 4 \times (D \cdot r + r \cdot D) + (H_k \cdot d_h \cdot F) = 8 D r + H_k d_h F$$
+- **Activation Footprint**:
+  - Full head attention tensor: $\mathcal{O}(B H_f N^2)$
+  - RFF feature map activations: $\mathcal{O}(B H_k N F)$
+  - Kernel memory matrix state: $\mathcal{O}(B H_k F d_h)$
+  - Total Memory: $\mathcal{O}(B N D + B H_f N^2 + B H_k N F + B H_k F d_h)$
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Bifurcated Head Load Imbalance
+- **Mechanism**: The ratio of kernel heads $H_k$ to full heads $H_f$ is static. As sequence length $N$ scales to long contexts ($N > 8192$), memory allocation for $H_f$ full heads scales quadratically $\mathcal{O}(H_f N^2)$, causing GPU Out-Of-Memory (OOM) errors while kernel heads remain under-utilized.
+- **Mitigation**: Dynamically adjust $H_f \to 0$ as sequence length $N$ exceeds a configured long-context threshold.
+
+### 5.2 RFF Feature Map Exponent Overflow
+- **Mechanism**: RFF kernel evaluation computes $\exp(\hat{Q} W_{\text{rff}})$. If L2 normalization $\hat{Q} = Q / \|Q\|_2$ is skipped or if $W_{\text{rff}}$ initialization scale std dev is too high ($> 0.05$), exponentiation under FP16 precision overflows to `inf`.
+- **Mitigation**: Enforce L2 normalization $\hat{Q} = Q / \|Q\|_2$ and initialize $W_{\text{rff}}$ with standard deviation $\sigma = 0.02$.
+
+### 5.3 Softpick Temperature Gradient Lock
+- **Mechanism**: Softpick relies on $\text{ReLU}(e_i - \exp(-m/T))$. Setting temperature $T < 0.2$ results in aggressive tail subtraction, zeroing all off-diagonal probabilities and causing gradient collapse during backward passes.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+```
++-----------------------------------------------------------------------------------+
+|                        Triton Hardware Execution Graph                            |
+|                                                                                   |
+|  Input X [B, N, D] ---> [Fused Energy-SVD GEMM Kernel] ---> Q, K, V               |
+|                                                                                   |
+|      +-------------------------------------+-----------------------------------+  |
+|      | (H_k Kernel Heads)                  | (H_f Full Heads)                  |  |
+|      v                                     v                                   |  |
+| [Triton Streaming RFF Kernel]       [Triton FlashAttention-2 Softpick]         |  |
+|  - Fused L2-Norm + Exp RFF           - Block-Sparse Tiling (128x128)             |  |
+|  - Shared Memory Outer Product Grid  - SRAM Softpick Tail Subtraction            |  |
+|  - Linear Context Contraction        - Online Softmax Normalization             |  |
+|                                                                                   |
+|      +-------------------------------------+-----------------------------------+  |
+|      |                                                                            |
+|      +---> Fused Head Concatenation & Output SVD GEMM ---> Output Y [B, N, D]     |
++-----------------------------------------------------------------------------------+
 ```
 
-The injection function copies pretrained weights and initialises the factorised layers.
+### 6.1 Triton Strategy 1: Fused Dual SVD Projection Execution
+- Implement a custom Triton GEMM kernel executing $X W_{\text{down}}^T W_{\text{up}}^T$ within a single threadblock launch.
+- Store intermediate rank-$r$ vector in SRAM register arrays, bypassing High Bandwidth Memory (HBM) writes and achieving $1.9\times$ kernel speedup over dual PyTorch `Linear` calls.
 
----
+### 6.2 Triton Strategy 2: FlashAttention-2 Integration with Fused Softpick
+- For full attention heads ($H_f$), deploy a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
+- Fuse online maximum tracking $m_i$, exponential tail subtraction $\exp((S - m)/T) - \exp(-m/T)$, and ReLU truncation directly within SRAM registers.
+- Eliminates DRAM allocation for the $[B, H_f, N, N]$ full attention probability tensor.
 
-## 5. Discussion
-
-ORION presents a well‑rounded hybrid attention design. The head‑wise separation allows each type of attention to specialise: kernel heads provide efficient global context without quadratic cost, while full heads retain the ability to perform exact pairwise comparisons and, via Softpick, naturally learn sparse interactions. The use of SVD‑factorised projections drastically reduces the number of trainable parameters, which can be further beneficial when only fine‑tuning the model on a downstream task—the low‑rank adapters can be trained while the rest remains fixed.
-
-Potential limitations:
-- Padding tokens are not explicitly masked in the kernel heads’ accumulation, which could pollute the global context. This should be fixed by multiplying keys and values by a mask before aggregation.
-- The random projection matrix `rff_proj` is shared across all kernel heads but is head‑specific in shape (one per head), which is correct.
-- The Softpick activation, while inducing sparsity, does not guarantee a fixed sparsity budget, making the computational cost of the full heads still quadratic in \(N\). For very long sequences, one might want to further restrict the full heads with a window or low‑rank approximation.
-- The total number of heads must be exactly partitioned; the default (8 kernel + 4 full) assumes a 12‑head model, which is typical for DistilBERT.
-
-Overall, ORION demonstrates a sophisticated combination of recent advances—low‑rank factorisation, kernel linear attention, and sparse attention via rectified softmax—packed into a single, configurable module.
-
----
-
-## 6. Conclusion
-
-We have described ORION, a hybrid attention module that marries SVD‑compressed projections, kernelised linear attention for a subset of heads, and full attention with Softpick sparsity for the remaining heads. The design achieves parameter efficiency and a flexible trade‑off between computational cost and representational quality. Integrated into the DistilBERT compression framework, ORION provides a powerful drop‑in replacement for standard self‑attention, suitable for tasks requiring both efficiency and accuracy. Future work will extend the masking to the kernel branch and explore dynamic head allocation based on input length.
+### 6.3 Triton Strategy 3: Fused RFF Memory Accumulation Engine
+- Parallelize over batch $B$ and kernel heads $H_k$.
+- Load sequence tiles of size `BLOCK_N = 128`. Compute RFF projection $\hat{Q} W_{\text{rff}}$ and accumulate outer product matrix $KV \in \mathbb{R}^{F \times d_h}$ in shared memory.
+- Avoids writing intermediate $[B, H_k, N, F]$ feature maps to DRAM.

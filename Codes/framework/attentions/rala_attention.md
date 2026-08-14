@@ -1,165 +1,83 @@
-# Rank‑Augmented Linear Attention (RALA) – ICLR 2024
+# Rank-Augmented Linear Attention (RALA): Parametric Low-Rank Kernel Matrix Augmentation
 
-**Paper Reference**  
-Rank‑Augmented Linear Attention (RALA), ICLR 2024.  
-https://arxiv.org/abs/2311.17374
+## 1. Abstract & Theoretical Motivation
+Rank-Augmented Linear Attention (`RALALinearAttention`, registered as `rala`) presents an expressive, linear-time self-attention architecture designed to overcome representational capacity bottlenecks in positive kernel linear attention. Traditional kernelized linear attention reduces sequence length complexity from $\mathcal{O}(N^2)$ to $\mathcal{O}(N \cdot d_h^2)$ using feature maps $\phi(x) = \text{ELU}(x) + 1.0$. However, kernelized feature maps exhibit limited rank expressivity compared to full softmax attention. RALA addresses this by augmenting the linear attention kernel matrix with a parametric, learnable low-rank matrix correction term $R_h = U_h V_h^\top \in \mathbb{R}^{d_h \times d_h}$ (where $U_h, V_h \in \mathbb{R}^{d_h \times r}$ with rank $r \ll d_h$). Controlled by a learnable scaling parameter $\alpha$, RALA injects global parametric cross-feature interactions into associative memory while maintaining strict $\mathcal{O}(N \cdot d_h^2)$ linear sequence scaling.
 
----
+## 2. Mathematical Derivations & Formulations
+Given multi-head query, key, and value representations $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$ derived via linear transformations $W_Q, W_K, W_V \in \mathbb{R}^{D \times D}$, RALA evaluates positive feature maps $\phi(x) = \text{ELU}(x) + 1.0 \ge 0$:
+$$\phi_Q = \text{ELU}(Q) + 1.0, \qquad \phi_K = \text{ELU}(K) + 1.0 \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-## 1. Introduction
+### 1. Standard Linear Kernel Pathway
+The key-value associative memory state matrix $K V \in \mathbb{R}^{B \times H \times d_h \times d_h}$ and normalization vector $Z \in \mathbb{R}^{B \times H \times d_h}$ are accumulated over sequence length $N$:
+$$K V = \sum_{j=1}^N \phi_K[:, :, j, :]^\top V[:, :, j, :] \in \mathbb{R}^{B \times H \times d_h \times d_h}$$
+$$Z = \sum_{j=1}^N \phi_K[:, :, j, :] \in \mathbb{R}^{B \times H \times d_h}$$
 
-Linear attention mechanisms replace the softmax kernel in standard Transformers with a simpler feature map, typically of the form \(\phi(\mathbf{q})^\top \phi(\mathbf{k})\), to avoid the quadratic cost of the full attention matrix. While efficient, linear attention often suffers from a lack of expressiveness because the simple kernel cannot capture the complex interactions that the softmax non‑linearity provides. The **Rank‑Augmented Linear Attention (RALA)** module addresses this by augmenting a standard linear attention (with an ELU+1 feature map) with a **learnable low‑rank correction term**. This correction, parameterised by two small matrices \(\mathbf{U}, \mathbf{V} \in \mathbb{R}^{H \times d_h \times r}\), adds a head‑wise bias to the attention output before the final denominator normalisation. The augmentation allows the model to learn to compensate for the limitations of the ELU kernel, thereby bridging the gap between linear and softmax attention while retaining linear complexity. A learnable scalar \(\alpha\) controls the strength of the augmentation.
+The unaugmented linear context $\text{Out}_{\text{lin}}$ is:
+$$\text{Out}_{\text{lin}} = \frac{\phi_Q K V}{\phi_Q Z^\top + \epsilon} \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-The module is implemented as a drop‑in replacement for the self‑attention layer in DistilBERT, with proper handling of causal/padding masks. This paper provides a rigorous mathematical formulation of RALA, describes its implementation, and discusses its place in the landscape of efficient attention mechanisms.
+### 2. Parametric Low-Rank Augmentation Pathway
+For each attention head $h \in \{1, \dots, H\}$, low-rank correction matrices $U_h, V_h \in \mathbb{R}^{d_h \times r}$ (rank $r = 8$) construct head-wise rank augmentation matrices $R_h$:
+$$R_h = U_h V_h^\top \in \mathbb{R}^{d_h \times d_h}$$
 
----
+The low-rank augmented context $\text{Out}_{\text{aug}}$ is computed by right-multiplying query feature maps $\phi_Q$ with $R_h$:
+$$\text{Out}_{\text{aug}} = \frac{\phi_Q R_h}{\phi_Q Z^\top + \epsilon} \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-## 2. Method
+### 3. Fused Output Representation
+Combining unaugmented linear context and low-rank augmented context yields the complete RALA context representation:
+$$O_{\text{head}} = \text{Out}_{\text{lin}} + \alpha \cdot \text{Out}_{\text{aug}} \in \mathbb{R}^{B \times H \times N \times d_h}$$
+$$O = \text{Reshape}(O_{\text{head}}) W_O + b_O \in \mathbb{R}^{B \times N \times D}$$
+where $\alpha \in \mathbb{R}$ is a learnable scalar initialized to $\alpha = 0.1$.
 
-### 2.1 Background: Linear Attention with ELU+1 Feature Map
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
+The step-by-step tensor operations across RALA Attention are traced below:
 
-Given input queries \(\mathbf{Q}\), keys \(\mathbf{K}\), and values \(\mathbf{V} \in \mathbb{R}^{B \times H \times L \times d_h}\), standard linear attention (Katharopoulos et al., 2020) defines a positive feature map \(\phi(\mathbf{x}) = \operatorname{ELU}(\mathbf{x}) + 1\). The attention output is then computed as:
+1. **Input State**: $X \in \mathbb{R}^{B \times N \times D}$
+2. **Dense Linear Projections**:
+   - $Q_{\text{flat}} = X W_Q + b_Q \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{view}} [B, N, H, d_h] \xrightarrow{\text{transpose}} [B, H, N, d_h]$
+   - $K_{\text{flat}} = X W_K + b_K \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{transpose}} [B, H, N, d_h]$
+   - $V_{\text{flat}} = X W_V + b_V \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{transpose}} [B, H, N, d_h]$
+3. **Feature Map Transformation & Masking**:
+   - $\phi_Q = \text{ELU}(Q) + 1.0 \in \mathbb{R}^{B \times H \times N \times d_h}$
+   - Mask processing: $\phi_K = \text{apply\_linear\_mask}(\text{ELU}(K) + 1.0, \text{mask}) \in \mathbb{R}^{B \times H \times N \times d_h}$
+4. **Associative Memory Reduction**:
+   - $K V = \text{einsum}("b h n d, b h n e \to b h d e", \phi_K, V) \in \mathbb{R}^{B \times H \times d_h \times d_h}$
+   - Normalization vector: $Z = \phi_K.\text{sum}(\text{dim}=2) \in \mathbb{R}^{B \times H \times d_h}$
+   - Denominator: $\mathcal{D} = \text{einsum}("b h n d, b h d \to b h n", \phi_Q, Z).\text{unsqueeze}(-1) + 1e-8 \in \mathbb{R}^{B \times H \times N \times 1}$
+5. **Linear Context & Low-Rank Augmentation**:
+   - $\text{Out}_{\text{lin}} = \text{einsum}("b h n d, b h d e \to b h n e", \phi_Q, K V) / \mathcal{D}$
+   - Low-rank matrix construction: $R = \text{einsum}("h d r, h e r \to h d e", U, V) \in \mathbb{R}^{H \times d_h \times d_h}$
+   - $\text{Out}_{\text{aug}} = \text{einsum}("b h n d, h d e \to b h n e", \phi_Q, R) / \mathcal{D}$
+6. **Augmentation Fusion & Output Projection**:
+   - $O_{\text{head}} = \text{Out}_{\text{lin}} + \alpha \cdot \text{Out}_{\text{aug}} \in \mathbb{R}^{B \times H \times N \times d_h}$
+   - $O = \text{Reshape}(O_{\text{head}}) W_O + b_O \in \mathbb{R}^{B \times N \times D}$
 
-\[
-\mathbf{C}_{\text{lin}} = \frac{\phi(\mathbf{Q})\, \big( \phi(\mathbf{K})^\top \mathbf{V} \big)}
-                         {\phi(\mathbf{Q})\, \big( \phi(\mathbf{K})^\top \mathbf{1} \big)},
-\]
+## 4. Analytical Complexity Profiling
+- **FLOPs Computation**:
+  - Linear Projections ($Q, K, V, O$): $4 \times 2 B N D^2 = 8 B N D^2$ FLOPs
+  - Associative Memory Reduction ($\phi_K^\top V$): $2 B H N d_h^2 = 2 B N D d_h$ FLOPs
+  - Linear Context Aggregation ($\phi_Q K V$): $2 B N D d_h$ FLOPs
+  - Low-Rank Matrix Reconstruction ($U V^\top$): $2 H d_h^2 r$ FLOPs
+  - Low-Rank Augmentation Aggregation ($\phi_Q R$): $2 B N D d_h$ FLOPs
+  - Total Module FLOPs: $8 B N D^2 + 6 B N D d_h + 2 H d_h^2 r$ (Strictly $\mathcal{O}(N)$ in sequence length)
+- **MAC Operations**:
+  - Dense Projections: $4 B N D^2$ MACs
+  - Associative Memory Contractions: $3 B N D d_h$ MACs
+- **Memory Footprint & Parameter Count**:
+  - Projection Parameters: $4 D^2$
+  - Parametric Correction Parameters ($U, V$): $2 \times H \times d_h \times r = 2 r D$. For $D=768, H=12, r=8$, correction parameters $= 2 \times 8 \times 768 = 12,288$ ($< 0.5\%$ extra parameters).
 
-where the division is applied element‑wise after the dot products. This avoids materialising the \(L \times L\) attention matrix and yields \(O(L d_h^2)\) complexity. However, the ELU+1 map is a crude approximation of the exponential softmax kernel and can lose important high‑order interactions.
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+- **Linear Masking Offset Instabilities**:
+  Applying `_apply_linear_mask` by adding $(1 - M) \cdot (-10^9)$ to $\phi_K$ introduces massive negative numbers into positive feature maps. This violates the non-negativity constraint $\phi(x) \ge 0$, causing denominator underflow or NaNs.
+- **Static Parametric Bias Limitations**:
+  Low-rank correction matrix $R_h = U_h V_h^\top$ is static with respect to input sequences $X$. While it learns head-specific global feature interactions, it cannot adapt dynamically to input-dependent token relationships.
+- **Unbounded Augmentation Scaling**:
+  Allowing scalar $\alpha$ to drift unconstrained during optimization can cause $\alpha \cdot \text{Out}_{\text{aug}}$ to dominate $\text{Out}_{\text{lin}}$, degrading associative memory retrieval.
 
-### 2.2 Rank‑Augmented Correction
-
-RALA enhances the linear attention output by adding a **rank‑\(r\) correction term** that operates on the query features before the normalisation denominator. For each head \(h\), two learnable matrices \(\mathbf{U}_h, \mathbf{V}_h \in \mathbb{R}^{d_h \times r}\) are introduced, where \(r\) is a small rank (default 8). The product
-
-\[
-\mathbf{R}_h = \mathbf{U}_h \mathbf{V}_h^\top \in \mathbb{R}^{d_h \times d_h}
-\]
-
-is a low‑rank matrix that acts as an additional “attention kernel”. The augmented output for head \(h\) is:
-
-\[
-\tilde{\mathbf{C}}_h = \frac{\phi(\mathbf{Q}_h) \mathbf{KV} + \alpha \cdot \phi(\mathbf{Q}_h) \mathbf{R}_h}
-                            {\phi(\mathbf{Q}_h) \mathbf{Z} + \epsilon},
-\]
-
-where \(\mathbf{KV} = \sum_j \phi(\mathbf{k}_j) \mathbf{v}_j^\top \in \mathbb{R}^{d_h \times d_h}\), \(\mathbf{Z} = \sum_j \phi(\mathbf{k}_j) \in \mathbb{R}^{d_h}\), and \(\alpha\) is a learnable scalar (initialised to 0.1) that balances the two contributions. The term \(\phi(\mathbf{Q}_h) \mathbf{R}_h\) adds a fixed (but learned) transformation of the query features, independent of the sequence content, which can compensate for the linear attention’s inability to model certain patterns.
-
-The numerator can be seen as \(\phi(\mathbf{Q}_h) \big( \mathbf{KV} + \alpha \mathbf{R}_h \big)\). Since \(\mathbf{R}_h\) does not depend on the sequence, it acts like a per‑head bias in the key–value memory, augmenting the aggregated context with a global, learnable adjustment.
-
-### 2.3 Overall Computation
-
-In batched form, the module computes:
-
-1. **Projections**: \(\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times L \times d_h}\).
-2. **Feature maps**: \(\mathbf{Q}^\phi = \operatorname{ELU}(\mathbf{Q}) + 1\), \(\mathbf{K}^\phi = \operatorname{ELU}(\mathbf{K}) + 1\).
-3. **Key–value memory**: \(\mathbf{KV} = \sum_{j=1}^L \mathbf{K}^\phi_j \otimes \mathbf{V}_j \in \mathbb{R}^{B \times H \times d_h \times d_h}\).
-4. **Normalisation**: \(\mathbf{Z} = \sum_{j=1}^L \mathbf{K}^\phi_j \in \mathbb{R}^{B \times H \times d_h}\).
-5. **Linear output**: \(\mathbf{C}_{\text{lin}} = (\mathbf{Q}^\phi \cdot \mathbf{KV}) / (\mathbf{Q}^\phi \cdot \mathbf{Z} + \epsilon)\).
-6. **Rank correction matrix**: \(\mathbf{R} \in \mathbb{R}^{H \times d_h \times d_h}\) computed as \(\mathbf{R}_{h} = \mathbf{U}_h \mathbf{V}_h^\top\).
-7. **Augmented output**: \(\mathbf{C}_{\text{aug}} = (\mathbf{Q}^\phi \cdot \mathbf{KV} + \alpha \cdot \mathbf{Q}^\phi \cdot \mathbf{R}) / (\mathbf{Q}^\phi \cdot \mathbf{Z} + \epsilon)\).
-   This is implemented as `lin_out + alpha * aug_out`, where `aug_out = (Q^φ · R) / denom`.
-8. **Output projection**: \(\mathbf{Y} = \mathbf{W}_O \mathbf{C}_{\text{aug}}\).
-
-### 2.4 Masking
-
-The module handles padding by applying an additive mask to the key features before aggregation. A 2D attention mask of shape \((B, L)\) with 1 for valid tokens is expanded to \((B, 1, 1, L)\) and converted to a large negative value for padding positions:
-
-\[
-\mathbf{M} = (1 - \text{mask}) \cdot (-\infty),
-\]
-\[
-\mathbf{K}^\phi \leftarrow \mathbf{K}^\phi + \mathbf{M}.
-\]
-
-This ensures that padding tokens do not contribute to the key–value memory \(\mathbf{KV}\) or the normalisation \(\mathbf{Z}\). The mask is applied via `_apply_linear_mask`.
-
-### 2.5 Complexity
-
-The dominant operations are:
-- Projections: \(O(L D^2)\).
-- Computing \(\mathbf{KV}\): \(O(L H d_h^2)\).
-- Matrix‑vector products for output: \(O(L H d_h^2)\).
-- Rank correction: \(O(H d_h^2 r)\) for the matrix formation, and \(O(L H d_h^2)\) for the query multiplication.
-
-All complexity is linear in \(L\), and the rank correction adds only a small constant overhead due to the low rank \(r\) (typically 8). The overall memory is \(O(H d_h^2)\) for the KV state.
-
----
-
-## 3. Implementation Details
-
-- **Class `RALALinearAttention`** inherits from `nn.Module` and is registered as `"rala"` in the attention registry.
-- **Constructor**:
-  - `config`: must contain `hidden_size`, `num_attention_heads`, and optionally `rala_rank` (default 8).
-  - Creates standard Q, K, V, O linear layers.
-  - Initialises learnable parameters:
-    - `U`, `V`: shape \((H, d_h, r)\), random normal initialisation (std=0.02).
-    - `alpha`: scalar, initialised to 0.1.
-  - Activation: GELU is stored but **not used** in the forward pass; the feature map uses ELU. This might be a leftover or for a different version.
-- **Forward**:
-  1. Project and reshape Q, K, V to \((B, H, L, d_h)\).
-  2. Compute feature maps: `q_prime = ELU(q) + 1`, `k_prime = ELU(k) + 1`.
-  3. Apply linear mask to `k_prime` via `_apply_linear_mask` (converts binary mask to additive bias).
-  4. Compute `kv = einsum('b h n d, b h n e -> b h d e', k_prime, v)`.
-  5. Compute `z = k_prime.sum(dim=2)`.
-  6. Compute `denom = einsum('b h n d, b h d -> b h n', q_prime, z).unsqueeze(-1) + 1e-8`.
-  7. `lin_out = einsum('b h n d, b h d e -> b h n e', q_prime, kv) / denom`.
-  8. Compute rank matrix `rank_mat = einsum('h d r, h e r -> h d e', U, V)` → shape \((H, d_h, d_h)\).
-  9. `aug_out = einsum('b h n d, h d e -> b h n e', q_prime, rank_mat) / denom`.
-  10. `output = lin_out + alpha * aug_out`.
-  11. Reshape, output projection.
-  12. Return `output` only (if `output_attentions` is True, returns `(output, None)`).
-- **Mask format**: `_apply_linear_mask` expects a mask of shape \((B, L)\) or \((B, 1, L)\) or higher. It subtracts 1, clamps to 0 (so mask values become 0 for valid, 1 for padding? Actually `(1-mask).clamp(min=0)` yields 0 for valid and positive for padding, then `* -1e9` turns padding into \(-1e9\), valid to 0. That’s correct.) It then adds this to `k` before the softmax-like denominator.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"rala"`. The configurable parameter is:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `rala_rank` | 8 | Rank \(r\) of the correction matrices \(\mathbf{U}, \mathbf{V}\). |
-
-Additionally, the model config provides `hidden_size` and `num_attention_heads`. No weight transfer from pretrained attention is implemented in this snippet; an injection function would be needed to copy the original projections if desired (the constructor does not accept `pretrained_attn`).
-
-Example injection (assuming an injection function is present):
-```python
-comp_config.attention_type = "rala"
-comp_config.rala_rank = 16
-```
-
-Manual instantiation:
-```python
-rala = RALALinearAttention(config)
-layer.attention = rala
-```
-
----
-
-## 5. Discussion
-
-RALA provides a simple yet effective way to enhance linear attention. The addition of a low‑rank learnable kernel \(\mathbf{U}\mathbf{V}^\top\) is a lightweight method to give the model extra flexibility without sacrificing the \(O(L)\) time complexity. Because the correction is independent of the keys and values, it acts as a form of static prior that can capture global patterns across the whole dataset. The scalar \(\alpha\) controls how much the model relies on this augmentation versus the data‑dependent linear attention.
-
-One can interpret the augmented output as:
-
-\[
-\mathbf{C} = \frac{\phi(\mathbf{Q}) (\mathbf{KV} + \alpha \mathbf{R})}{\phi(\mathbf{Q})\mathbf{Z}}.
-\]
-
-Here, \(\alpha \mathbf{R}\) adds a fixed set of “virtual” key–value pairs that are always present, regardless of input. This resembles the addition of a bias or a global memory, as in Set Transformer or global memory tokens.
-
-The method is related to **Tay et al.’s “Synthesizer”** and **“Random Feature Attention”** but with the key difference that the added term is low‑rank and head‑specific. It can also be seen as a special case of **Attention with Linear Biases (ALiBi)** but applied to the linear attention framework.
-
-Potential limitations:
-- The fixed rank \(r\) might need tuning; too small could limit capacity, too large could approach the cost of full attention (since the rank matrix is \(d_h \times d_h\) but low‑rank, its product with Q is \(O(d_h r)\) which is small).
-- The augmentation does not depend on the current input’s sequence content, so it may not be as expressive as data‑dependent kernels. However, it is meant to complement, not replace, the linear attention.
-- The mask handling is correct for binary masks; it expects a 2D mask with 1 for valid. If the pipeline uses 4D masks, the function would need adjustment.
-- The GELU activation in constructor is not used; it might be a leftover.
-
-Despite these, RALA is a clean, principled extension of linear attention. Its inclusion in the compression framework allows for easy experimentation and comparison with other efficient attention mechanisms.
-
----
-
-## 6. Conclusion
-
-We have presented Rank‑Augmented Linear Attention (RALA), an efficient attention module that augments standard linear attention with a learnable, low‑rank correction matrix. The augmentation, parameterised by \(\mathbf{U}, \mathbf{V}\) and gated by a scalar \(\alpha\), provides a static bias to the attention output, helping to compensate for the simplifications of the ELU feature map. The module maintains linear complexity and integrates seamlessly into the DistilBERT compression framework. Future work could explore making the rank adaptive or conditioning the correction on the input to further improve performance. RALA stands as a testament to the idea that small, targeted interventions can significantly close the gap between efficient and full attention.
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+- **Fused Chunk-Wise RALA Kernel**:
+  Implement a custom Triton kernel fusing associative memory contraction ($\phi_K^\top V$), low-rank augmentation ($\phi_Q R$), and denominator normalization into a single CUDA pass, processing sequence tiles $B_N = 64$ in local SRAM.
+- **Zero-Padded Kernel Masking**:
+  Replace additive negative masking with zero-multiplication: $\tilde{\phi}_K = (\text{ELU}(K) + 1.0) \odot M_{\text{valid}}$. This strictly preserves positive feature map bounds $\phi_K \ge 0$ and avoids numerical NaN instabilities.
+- **Bounded Sigmoidal Augmentation Scale**:
+  Reparameterize scaling parameter $\alpha$ as $\alpha = 2 \cdot \sigma(\gamma)$ where $\gamma$ is a trainable logit, bounding the augmentation scaling factor to $(0, 2.0)$ for numerical stability.

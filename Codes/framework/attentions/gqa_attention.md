@@ -1,154 +1,210 @@
-# Grouped Query Attention: Efficient Multi‑Head Attention with Shared Key‑Value Heads
+# Grouped-Query Attention (GQA): Subspace-Grouped Key-Value Sharing for High-Throughput Inference
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present a faithful implementation of **Grouped Query Attention (GQA)**, an efficient variant of multi‑head self‑attention introduced by Ainslie et al. (2023). In GQA, the standard set of query heads is partitioned into groups, and each group shares a single key‑value head. This reduces the memory and computational cost of the key‑value projections by a factor equal to the group size, with minimal impact on quality. The module described in this paper provides a drop‑in replacement for the full self‑attention layer in Transformer models. It accepts standard projection weights for queries, a reduced number of key‑value heads, and performs the necessary expansion via repetition before computing the attention scores and output. The implementation supports optional padding masks and returns a tuple compatible with the surrounding framework. We detail the mathematical formulation, the implementation specifics, and the integration into the compression‑aware registry used for DistilBERT.
+Grouped-Query Attention (GQA), introduced by Ainslie et al. (2023), presents a structural paradigm that bridges Multi-Head Attention (MHA) and Multi-Query Attention (MQA). During autoregressive language model inference, fetching the Key-Value (KV) cache from High-Bandwidth Memory (HBM) to on-chip SRAM creates an acute memory bandwidth bottleneck. While MQA reduces the KV cache footprint by sharing a single KV head across all query heads, it can degrade representation capacity and model quality. 
 
----
-
-## 1. Introduction
-
-Multi‑head attention (MHA) is a core component of Transformer models. In the standard formulation, each of the \(H\) heads independently computes an attention function using its own query, key, and value projections. While powerful, this requires storing and processing \(H\) key and \(H\) value tensors, which can dominate the memory footprint during inference, especially for large models. **Grouped Query Attention (GQA)** mitigates this by allowing multiple query heads to share the same key and value heads. The original MHA is the extreme case where each query head has its own key‑value head (\(H\) groups of size 1), while Multi‑Query Attention (MQA) is the opposite extreme where all heads share a single key‑value head (\(1\) group of size \(H\)). GQA interpolates between these, offering a tunable trade‑off between speed and accuracy.
-
-In this paper, we describe a concise, self‑contained implementation of GQA that can be injected into any Transformer model. The module reduces the number of key and value projections from \(H\) to \(K\) (where \(K \le H\)), stores the smaller projection matrices, and expands the computed keys and values to match the full number of heads via repetition. The attention computation then proceeds as in standard multi‑head attention. This design allows existing pretrained models to be adapted to GQA with minimal code changes and a straightforward reduction in parameters and compute.
+GQA resolves this trade-off by partitioning the $H_Q$ query heads into $H_{KV}$ distinct groups ($1 < H_{KV} < H_Q$), where each group shares a dedicated Key-Value head pair. The compression ratio $\gamma = H_Q / H_{KV}$ balances computational expressiveness and memory traffic. GQA achieves quality comparable to full MHA while substantially diminishing KV cache size, improving batch processing capability and inference decoding throughput.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Motivation and Parameter Sharing
-
-Let the total number of query heads be \(H\) and the number of key‑value heads be \(K\). We assume \(H\) is divisible by \(K\); the group size is then \(G = H / K\). Every group of \(G\) query heads is assigned a single key‑value head. Concretely, for query head index \(h\), the corresponding key‑value head index is \(\lfloor h / G \rfloor\).
-
-### 2.2 Projections
-
-Given an input sequence \(\mathbf{X} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\), the query projection remains unchanged from standard MHA:
+Let $X \in \mathbb{R}^{B \times L \times D}$ denote the input hidden state tensor, where $B$ is batch size, $L$ is sequence length, and $D$ is model dimension. The model features $H_Q$ query heads and $H_{KV}$ key-value heads, with head dimension $d_k = D / H_Q$. The key-value group ratio is defined as:
 
 \[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{W}_Q \in \mathbb{R}^{d_{\text{model}} \times (H \cdot d_h)},
+\gamma = \frac{H_Q}{H_{KV}} \in \mathbb{Z}^+
 \]
 
-where \(d_h = d_{\text{model}} / H\) is the head dimension. The key and value projections, however, output only \(K \cdot d_h\) features:
+The linear projections map hidden states into query, key, and value spaces:
 
 \[
-\mathbf{K}_{\text{small}} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{W}_K \in \mathbb{R}^{d_{\text{model}} \times (K \cdot d_h)},
+Q = X W_Q \in \mathbb{R}^{B \times L \times (H_Q \cdot d_k)}, \quad W_Q \in \mathbb{R}^{D \times (H_Q \cdot d_k)}
 \]
 \[
-\mathbf{V}_{\text{small}} = \mathbf{X} \mathbf{W}_V, \quad \mathbf{W}_V \in \mathbb{R}^{d_{\text{model}} \times (K \cdot d_h)}.
-\]
-
-The shapes of the projected tensors are \((B, L, H \cdot d_h)\) for \(\mathbf{Q}\) and \((B, L, K \cdot d_h)\) for \(\mathbf{K}\) and \(\mathbf{V}\).
-
-### 2.3 Reshaping and Repetition
-
-All three tensors are first reshaped to separate the head dimension:
-
-\[
-\mathbf{Q} \to (B, L, H, d_h),
+K = X W_K \in \mathbb{R}^{B \times L \times (H_{KV} \cdot d_k)}, \quad W_K \in \mathbb{R}^{D \times (H_{KV} \cdot d_k)}
 \]
 \[
-\mathbf{K}_{\text{small}} \to (B, L, K, d_h), \quad
-\mathbf{V}_{\text{small}} \to (B, L, K, d_h).
+V = X W_V \in \mathbb{R}^{B \times L \times (H_{KV} \cdot d_k)}, \quad W_V \in \mathbb{R}^{D \times (H_{KV} \cdot d_k)}
 \]
 
-To align the key and value heads with the queries, each key‑value head is replicated \(G\) times along the head dimension:
+Reshaping into multi-head layouts yields:
 
 \[
-\mathbf{K} = \text{repeat\_interleave}(\mathbf{K}_{\text{small}}, G, \text{dim}=2) \quad \to (B, L, H, d_h),
-\]
-\[
-\mathbf{V} = \text{repeat\_interleave}(\mathbf{V}_{\text{small}}, G, \text{dim}=2) \quad \to (B, L, H, d_h).
+Q \in \mathbb{R}^{B \times H_Q \times L \times d_k}, \quad K \in \mathbb{R}^{B \times H_{KV} \times L \times d_k}, \quad V \in \mathbb{R}^{B \times H_{KV} \times L \times d_k}
 \]
 
-The repetition is exactly the tensor‑level equivalent of assigning the same key‑value head to multiple query heads.
-
-### 2.4 Scaled Dot‑Product Attention
-
-After transposing to the conventional head‑first layout \((B, H, L, d_h)\), the attention computation is identical to standard MHA:
+To compute attention scores across all query heads, key and value tensors are expanded along the head dimension using standard repeat-interleave operations:
 
 \[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}},
+K_{\text{shared}} = \text{RepeatInterleave}(K, \text{repeats}=\gamma, \text{dim}=1) \in \mathbb{R}^{B \times H_Q \times L \times d_k}
 \]
 \[
-\mathbf{A} = \operatorname{softmax}(\mathbf{S} + \mathbf{M}),
-\]
-\[
-\mathbf{C} = \mathbf{A} \mathbf{V}.
+V_{\text{shared}} = \text{RepeatInterleave}(V, \text{repeats}=\gamma, \text{dim}=1) \in \mathbb{R}^{B \times H_Q \times L \times d_k}
 \]
 
-Here \(\mathbf{M}\) is an additive mask derived from the `attention_mask`. If a 2D mask of shape \((B, L)\) with 1 for valid tokens and 0 for padding is provided, it is expanded to \((B, 1, 1, L)\) and turned into \((1 - \text{mask}) \cdot (-\infty)\). Dropout is applied to the attention weights \(\mathbf{A}\).
-
-### 2.5 Output Projection
-
-The context tensor \(\mathbf{C}\) of shape \((B, H, L, d_h)\) is transposed back to \((B, L, H \cdot d_h)\) (i.e., `(B, L, -1)`) and then passed through the output projection:
+Specifically, for a query head $h \in \{0, 1, \dots, H_Q - 1\}$, its corresponding Key-Value index $g(h)$ is given by:
 
 \[
-\mathbf{Y} = \mathbf{C} \mathbf{W}_O, \quad \mathbf{W}_O \in \mathbb{R}^{(H \cdot d_h) \times d_{\text{model}}}.
+g(h) = \left\lfloor \frac{h}{\gamma} \right\rfloor \in \{0, 1, \dots, H_{KV} - 1\}
 \]
 
-The final output is \(\mathbf{Y} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\), and a `None` for the attention weights is returned for interface compatibility.
+The scaled dot-product attention matrix $S \in \mathbb{R}^{B \times H_Q \times L \times L}$ per head $h$ is derived as:
+
+\[
+S_{b, h, i, j} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot K_{b, g(h), j, m}
+\]
+
+Incorporating the universal attention mask $M \in \mathbb{R}^{B \times 1 \times L \times L}$:
+
+\[
+\widetilde{S}_{b, h, i, j} = S_{b, h, i, j} + M_{b, 1, i, j}
+\]
+
+Applying row-wise Softmax over key sequence positions $j$:
+
+\[
+A_{b, h, i, j} = \text{Softmax}_j (\widetilde{S}_{b, h, i, j}) = \frac{\exp\left(\widetilde{S}_{b, h, i, j} - \max_k \widetilde{S}_{b, h, i, k}\right)}{\sum_{l=1}^L \exp\left(\widetilde{S}_{b, h, i, l} - \max_k \widetilde{S}_{b, h, i, k}\right)}
+\]
+
+After applying dropout and optional head masking, the context representation $O \in \mathbb{R}^{B \times H_Q \times L \times d_k}$ is aggregated:
+
+\[
+O_{b, h, i, m} = \sum_{j=1}^L A_{b, h, i, j} \cdot V_{b, g(h), j, m}
+\]
+
+Finally, context heads are concatenated and projected to the output space via $W_O \in \mathbb{R}^{(H_Q \cdot d_k) \times D}$:
+
+\[
+Y = \text{Concat}(O_1, O_2, \dots, O_{H_Q}) \cdot W_O \in \mathbb{R}^{B \times L \times D}
+\]
+
+### Group-Averaged Weight Initialisation:
+When initializing GQA from a pretrained MHA checkpoint, the key and value projection weights are mean-pooled across query head groups:
+
+\[
+W_K^{\text{GQA}}[g, :, :] = \frac{1}{\gamma} \sum_{r=0}^{\gamma - 1} W_K^{\text{MHA}}[g \cdot \gamma + r, :, :]
+\]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-The `GroupedQueryAttention` class is implemented as a PyTorch `nn.Module` and is registered under the key `"gqa"` in the attention registry. The constructor takes two arguments:
-
-- `config`: a configuration object providing `num_attention_heads`, `hidden_size`, and `dropout`.
-- `num_kv_heads` (default 4): the number of key‑value heads \(K\).
-
-The key implementation steps are:
-
-1. **Linear layers**:
-   - `q_proj`: input `hidden_size`, output `num_heads * head_dim`.
-   - `k_proj`: input `hidden_size`, output `num_kv_heads * head_dim`.
-   - `v_proj`: input `hidden_size`, output `num_kv_heads * head_dim`.
-   - `out_proj`: input `num_heads * head_dim`, output `hidden_size`.
-   - Biases are included (default `True` in `nn.Linear`).
-
-2. **Forward pass**:
-   - Compute Q, K, V.
-   - Reshape: Q to \((B, L, H, d_h)\); K, V to \((B, L, K, d_h)\).
-   - Replicate K and V using `torch.repeat_interleave(repeat, dim=2)` where `repeat = H // K`.
-   - Transpose all to \((B, H, L, d_h)\).
-   - Compute scores, scale, apply mask, softmax, dropout.
-   - Multiply with V, transpose back, flatten to \((B, L, H d_h)\).
-   - Apply `out_proj` and return `(output, None)`.
-
-3. **Mask handling**: Supports both 2D masks (which are expanded) and already expanded 4D masks. An additive mask of `-1e9` is used.
-
----
-
-## 4. Usage and Configuration
-
-The module is injected into a Transformer layer by specifying the attention type `"gqa"` in the compression configuration. The relevant hyperparameters that can be passed through `comp_config` or directly:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `num_kv_heads` | 4 | Number of key‑value heads \(K\). Must divide `num_heads`. |
-| `dropout` | from config | Dropout rate on attention weights. |
-
-Example manual instantiation:
-
-```python
-attn = GroupedQueryAttention(config=model_config, num_kv_heads=4)
-layer.attention = attn
+```
+Input: hidden_states [B, L, D]
+  │
+  ├──> Linear(D, H_Q * d_k) [W_q] ──> Q: [B, L, H_Q * d_k] ──> view & transpose ──> Q: [B, H_Q, L, d_k]
+  ├──> Linear(D, H_KV * d_k) [W_k] ──> K: [B, L, H_KV * d_k] ──> view & transpose ──> K: [B, H_KV, L, d_k]
+  └──> Linear(D, H_KV * d_k) [W_v] ──> V: [B, L, H_KV * d_k] ──> view & transpose ──> V: [B, H_KV, L, d_k]
+                                │
+                                ├──> repeat_interleave(γ, dim=1) ──> K_shared: [B, H_Q, L, d_k]
+                                ├──> repeat_interleave(γ, dim=1) ──> V_shared: [B, H_Q, L, d_k]
+                                │
+                                ├──> MatMul: Q @ K_shared.transpose(-2, -1) ──> [B, H_Q, L, L]
+                                ├──> Scale: * (d_k ** -0.5) ──> [B, H_Q, L, L]
+                                ├──> apply_attention_mask(mask) ──> [B, H_Q, L, L]
+                                ├──> Softmax(dim=-1) ──> attn: [B, H_Q, L, L]
+                                ├──> Dropout(p) & Head Mask ──> [B, H_Q, L, L]
+                                │
+                                └──> MatMul: attn @ V_shared ──> context: [B, H_Q, L, d_k]
+                                        │
+                                        └──> transpose(1, 2) ──> [B, L, H_Q, d_k]
+                                        └──> contiguous().view([B, L, H_Q * d_k])
+                                        └──> Linear(H_Q * d_k, D) [W_o] ──> Output: [B, L, D]
 ```
 
-To replicate the original MHA, set `num_kv_heads = num_heads`. For Multi‑Query Attention (MQA), set `num_kv_heads = 1`. The code automatically computes the repeat factor.
+### Shape Tracing Table:
+1. `hidden_states`: $[B, L, D]$
+2. `self.query(hidden_states)`: $[B, L, H_Q \cdot d_k]$
+3. `self.key(hidden_states)`: $[B, L, H_{KV} \cdot d_k]$
+4. `self.value(hidden_states)`: $[B, L, H_{KV} \cdot d_k]$
+5. `q`: $[B, H_Q, L, d_k]$
+6. `k`, `v`: $[B, H_{KV}, L, d_k]$
+7. `k_shared`, `v_shared` (after repeat): $[B, H_Q, L, d_k]$
+8. `scores = Q @ K_shared.T`: $[B, H_Q, L, L]$
+9. `attn = Softmax(scores)`: $[B, H_Q, L, L]$
+10. `context = attn @ V_shared`: $[B, H_Q, L, d_k]$
+11. `out_proj(context)`: $[B, L, D]$
 
 ---
 
-## 5. Discussion
+## 4. Analytical Complexity Profiling
 
-Grouped Query Attention offers a simple yet effective way to compress the attention module. By reducing the key‑value heads, the memory required for the key and value caches during autoregressive decoding drops by a factor of \(H/K\). This is particularly beneficial for large language models deployed in memory‑constrained environments. The implementation described here is exact: it computes the same full attention scores as MHA, just with shared keys and values. As a result, there is no loss of quality due to approximation; the trade‑off is entirely in the capacity of the key‑value projections.
+### Computational Workload (FLOPs & MACs)
 
-One limitation of this implementation is that the repetition of key‑value heads is performed in materialised form, which temporarily creates tensors of size \((B, L, H, d_h)\). For very large \(H\), this can still be memory‑intensive. An optimised implementation would avoid the explicit repetition by using grouped matrix operations or by restructuring the attention computation to directly use the smaller K, V tensors. However, for typical Transformer sizes and sequence lengths, the current approach is simple and efficient enough.
+Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H_Q$ query heads, $H_{KV}$ KV heads, $\gamma = H_Q / H_{KV}$, and $d_k = D / H_Q$.
 
-The module does not copy pretrained weights; in a typical usage, the injection function would initialise the projections from the original layer’s `q_lin`, `k_lin`, `v_lin`, `out_lin`, or train from scratch. For zero‑shot compression, one would need to reduce the rank of the key‑value weight matrices appropriately, which is not handled here. The module assumes that the provided `config` matches the model dimensions.
+1. **Projection Computations**:
+   - $W_Q$: $[B, L, D] \times [D, D] \implies 2 B L D^2$ FLOPs ($B L D^2$ MACs).
+   - $W_K, W_V$: $2 \times [B, L, D] \times [D, \frac{D}{\gamma}] \implies 2 \times 2 B L \frac{D^2}{\gamma} = \frac{4 B L D^2}{\gamma}$ FLOPs ($\frac{2 B L D^2}{\gamma}$ MACs).
+
+2. **Attention Score Matrix & Context ($Q K^\top$ & $A V$)**:
+   - $Q K^\top$: $[B, H_Q, L, d_k] \times [B, H_Q, d_k, L] \implies 2 B L^2 D$ FLOPs.
+   - Softmax overhead: $\approx 5 B H_Q L^2$ FLOPs.
+   - $A V$: $[B, H_Q, L, L] \times [B, H_Q, L, d_k] \implies 2 B L^2 D$ FLOPs.
+
+3. **Output Projection ($W_O$)**:
+   - $[B, L, D] \times [D, D] \implies 2 B L D^2$ FLOPs ($B L D^2$ MACs).
+
+### Total Compute Totals:
+- **Total MACs**: $2 B L D^2 \left(1 + \frac{1}{\gamma}\right) + 2 B L^2 D$
+- **Total FLOPs**: $4 B L D^2 \left(1 + \frac{1}{\gamma}\right) + 4 B L^2 D$
+
+### KV Cache Memory Footprint (Autoregressive Generation $L=1$):
+- **Full MHA Cache Size**: $2 \times B \times L_{\text{past}} \times H_Q \times d_k \times \text{bytes} = 2 B L_{\text{past}} D \times \text{bytes}$
+- **GQA Cache Size**: $2 \times B \times L_{\text{past}} \times H_{KV} \times d_k \times \text{bytes} = \frac{2 B L_{\text{past}} D}{\gamma} \times \text{bytes}$
+- **KV Cache Reduction Factor**: Exact $\gamma = \frac{H_Q}{H_{KV}}$ savings in memory capacity and bandwidth usage.
 
 ---
 
-## 6. Conclusion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-We have presented a clean implementation of Grouped Query Attention, a parameter‑ and memory‑efficient variant of multi‑head attention. The module interleaves multiple query heads with shared key‑value heads, reducing the number of key‑value projections without altering the attention computation. Its plug‑and‑play nature makes it suitable for rapid experimentation with efficient Transformer architectures. Future work could integrate this module with pretrained weight initialisation for seamless compression, and extend it to support causal masking and FlashAttention for further acceleration.
+### Explicit Repetition Memory Overhead
+In standard naive PyTorch implementations, calling `k.repeat_interleave(repeat, dim=1)` explicitly materializes a tensor of size $[B, H_Q, L, d_k]$. This destroys the memory savings during the forward pass of training, adding unnecessary memory allocation latency and SRAM-to-HBM write overhead.
+
+### Subspace Capacity Saturation
+When the grouping factor $\gamma$ is large (e.g., $\gamma = 16$ or $H_{KV} = 1$, corresponding to MQA), a single Key-Value subspace must serve multiple distinct query projections. If query heads attempt to extract orthogonal contextual relationships, the shared KV head suffers from capacity saturation, leading to rank collapse in key representations and reduced model accuracy on long-context tasks.
+
+### Gradient Conflicts in Group-Averaged Adaptations
+When converting a pretrained standard MHA model to GQA via group averaging (`copy_weights`), the loss surface can exhibit sharp gradient spikes during early fine-tuning steps due to the sudden collapse of independent KV directions into a single group mean.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### Broadcasted Stride Indexing in FlashAttention Kernels
+To maximize hardware utilization, Triton fused attention kernels must operate directly on the un-expanded $K, V$ tensors $[B, H_{KV}, L, d_k]$, eliminating the need for `repeat_interleave`.
+
+```
+      Logical Query Head Index (h)
+     ┌────────────────────────────┐
+     │ h ∈ {0, 1, ..., H_Q - 1}   │
+     └──────────────┬─────────────┘
+                    │ Integer Division: g = h // γ
+                    ▼
+     ┌────────────────────────────┐
+     │ g ∈ {0, 1, ..., H_KV - 1}  │
+     └──────────────┬─────────────┘
+                    │
+   ┌────────────────┴────────────────┐
+   │ Loads Q Tile [BLOCK_M, d_k]     │  From Q Head Pointer (h)
+   │ Loads K Tile [BLOCK_N, d_k]     │  From K Head Pointer (g = h // γ)
+   │ Loads V Tile [BLOCK_N, d_k]     │  From V Head Pointer (g = h // γ)
+   └────────────────┬────────────────┘
+                    │ Fused Online Softmax & Accumulation
+                    ▼
+   ┌─────────────────────────────────┐
+   │ Writes O Tile [BLOCK_M, d_k]    │  To Output Head Pointer (h)
+   └─────────────────────────────────┘
+```
+
+### Triton Kernel Implementation Design:
+1. **Strided Memory Addressing**:
+   Define key and value tensor strides such that query head `h` reads key head `h // γ`. The pointer arithmetic for the key tile is:
+   ```python
+   k_ptr = K + batch_id * stride_k_b + (head_id // GROUP_SIZE) * stride_k_h + tile_n * stride_k_n
+   ```
+2. **SRAM Register Reuse**:
+   Because $\gamma$ query warps share the exact same key/value tiles, the key tile loaded into L1 SRAM / Shared Memory can be reused across warp groups, maximizing cache hit rates and eliminating redundant HBM reads.
+3. **Decoded Inference Kernel**:
+   For single-step autoregressive generation ($L_{\text{query}}=1$), write a specialized split-KV Triton decoding kernel that parallelizes sequence length tiles $L_{\text{key}}$ across Thread Blocks, performing a parallel reduction across blocks to achieve peak DRAM bandwidth performance.

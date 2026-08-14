@@ -1,164 +1,202 @@
+# Quality and Capacity-Aware Grouped Query Attention (QCQA): Dynamic Soft-Routing over Compressed Key-Value Subspaces
 
+## 1. Abstract & Theoretical Motivation
 
+Standard Grouped-Query Attention (GQA) assigns a fixed, static mapping between query heads and shared key-value (KV) heads. This rigid structural prior assumes that the spatial and semantic relevance of KV heads remains constant across all tokens and sequence positions. Quality and Capacity-Aware Grouped Query Attention (QCQA) overcomes this limitation by implementing dynamic continuous soft-routing over a compressed set of $H_{KV}$ Key-Value heads.
 
-# QCQA: Quality & Capacity‑Aware Grouped Query Attention
-
-**Abstract**
-
-We introduce **Quality & Capacity‑Aware Grouped Query Attention (QCQA)**, a novel attention mechanism that generalises both Multi‑Query and Grouped Query Attention by allowing each query head to **dynamically soft‑select** which key‑value (KV) heads to attend to, rather than being permanently assigned to a fixed group. A lightweight router network, conditioned solely on the query vector, produces a softmax distribution over the available KV heads. The key and value tensors for each query head are then computed as a weighted mixture of the original KV heads. The rest of the attention pipeline remains the standard scaled dot‑product. This design retains the memory savings of using fewer KV heads while offering more flexibility than fixed groupings. The module is implemented as a drop‑in replacement for the self‑attention layer in DistilBERT and integrates with the compression framework via the registry.
-
----
-
-## 1. Introduction
-
-Multi‑head attention (MHA) stores and processes an independent key and value tensor for each of the \(H\) heads, which is costly during autoregressive decoding where KV caches dominate memory. Multi‑Query Attention (MQA) reduces this to a single shared KV head, while Grouped Query Attention (GQA) partitions the heads into groups that share a KV head. Both enforce a rigid assignment: a query head can only attend to the KV head in its group.
-
-**QCQA** lifts this restriction by introducing a **learnable, per‑query routing mechanism**. For each query head, a small linear router takes the query vector and outputs a softmax score over the \(K\) KV heads. The effective key and value for that query head are then a weighted sum of the original KV heads. This allows different query heads to blend information from multiple KV heads in a content‑dependent manner, potentially overcoming the limitations of fixed grouping. At the same time, because only \(K\) KV heads are stored (with \(K \ll H\)), the KV cache size is reduced by a factor of \(H/K\), similar to GQA.
-
-The router is extremely lightweight (a single linear projection per query head) and adds negligible cost. The mixing operation is batched and efficient. The result is a flexible, capacity‑aware attention variant that can be trained end‑to‑end.
+In QCQA, a query-conditioned linear router network evaluates the feature state of each query vector $q_{b, l, h} \in \mathbb{R}^{d_k}$ at every token position, synthesizing a continuous Softmax routing distribution $\pi_{b, l, h} \in \Delta^{H_{KV}-1}$. Key and Value representations for each query head are dynamically constructed as convex combinations of the compressed KV heads. This approach preserves the KV cache compression benefits of GQA during decoding while dynamically allocating KV subspace capacity based on input token content.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Projections
+Let $X \in \mathbb{R}^{B \times L \times D}$ be the input sequence, where $B$ is batch size, $L$ is sequence length, and $D$ is model dimension. Let $H_Q$ be the number of query heads and $H_{KV}$ be the number of compressed KV heads ($H_{KV} \le H_Q$), with head dimension $d_k = D / H_Q$.
 
-Given an input \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), the module first projects to queries, keys, and values. Let \(H\) be the total number of query heads, \(K\) the number of KV heads (\(K \le H\)), and \(d_h = D/H\) the head dimension.
-
+### Linear Subspace Projections:
 \[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q \in \mathbb{R}^{B \times L \times (H d_h)}, \quad
-\mathbf{K} = \mathbf{X} \mathbf{W}_K \in \mathbb{R}^{B \times L \times (K d_h)}, \quad
-\mathbf{V} = \mathbf{X} \mathbf{W}_V \in \mathbb{R}^{B \times L \times (K d_h)}.
-\]
-
-These are reshaped to separate heads: \(\mathbf{Q} \in \mathbb{R}^{B \times L \times H \times d_h}\), \(\mathbf{K} \in \mathbb{R}^{B \times L \times K \times d_h}\), \(\mathbf{V} \in \mathbb{R}^{B \times L \times K \times d_h}\).
-
-### 2.2 Quality‑Aware Routing
-
-A router network, which is a linear transformation \(\mathbf{W}_R \in \mathbb{R}^{d_h \times K}\) (without bias), maps each query vector \(\mathbf{q}_{b,l,h} \in \mathbb{R}^{d_h}\) to logits over the \(K\) KV heads:
-
-\[
-\mathbf{r}_{b,l,h} = \frac{(\mathbf{q}_{b,l,h} \mathbf{W}_R)}{\tau},
-\]
-
-where \(\tau\) is a temperature hyperparameter (default 1.0) that controls the sharpness of the routing. The routing weights are obtained via softmax:
-
-\[
-\boldsymbol{\alpha}_{b,l,h} = \operatorname{softmax}(\mathbf{r}_{b,l,h}) \in \mathbb{R}^{K}, \quad \sum_{j=1}^K \alpha_{b,l,h,j} = 1.
-\]
-
-These weights reflect the **quality** (relevance) of each KV head for that particular query head and token position.
-
-### 2.3 Capacity‑Aware Mixing
-
-For each query head \(h\), the effective key and value vectors are computed as the weighted sum of the \(K\) KV heads:
-
-\[
-\tilde{\mathbf{K}}_{b,l,h} = \sum_{j=1}^{K} \alpha_{b,l,h,j} \, \mathbf{K}_{b,l,j}, \qquad
-\tilde{\mathbf{V}}_{b,l,h} = \sum_{j=1}^{K} \alpha_{b,l,h,j} \, \mathbf{V}_{b,l,j}.
-\]
-
-This mixing is performed for every token position and batch element. In practice, we flatten the batch and length dimensions, perform a batch matrix multiplication, and reshape:
-
-\[
-\mathbf{K}_{\text{flat}} \in \mathbb{R}^{(BL) \times K \times d_h},\quad
-\boldsymbol{\alpha}_{\text{flat}} \in \mathbb{R}^{(BL) \times H \times K},
+Q = X W_Q \in \mathbb{R}^{B \times L \times (H_Q \cdot d_k)}, \quad W_Q \in \mathbb{R}^{D \times (H_Q \cdot d_k)}
 \]
 \[
-\tilde{\mathbf{K}}_{\text{flat}} = \boldsymbol{\alpha}_{\text{flat}} \mathbf{K}_{\text{flat}} \in \mathbb{R}^{(BL) \times H \times d_h},
+K = X W_K \in \mathbb{R}^{B \times L \times (H_{KV} \cdot d_k)}, \quad W_K \in \mathbb{R}^{D \times (H_{KV} \cdot d_k)}
+\]
+\[
+V = X W_V \in \mathbb{R}^{B \times L \times (H_{KV} \cdot d_k)}, \quad W_V \in \mathbb{R}^{D \times (H_{KV} \cdot d_k)}
 \]
 
-and similarly for \(\tilde{\mathbf{V}}\). The result is a mixed key/value per query head, of shape \((B, L, H, d_h)\).
+Reshaping into head dimensions: $Q \in \mathbb{R}^{B \times L \times H_Q \times d_k}$, $K, V \in \mathbb{R}^{B \times L \times H_{KV} \times d_k}$.
 
-### 2.4 Attention and Output
-
-The mixed keys and values replace the original per‑head KV tensors in the standard attention computation. After transposing to the head‑first layout \((B, H, L, d_h)\),
+### Query-Conditioned Soft-Routing Distribution:
+The linear router $W_R \in \mathbb{R}^{d_k \times H_{KV}}$ projects query vectors into routing logits. For query head $h \in \{1, \dots, H_Q\}$ at sequence position $l$:
 
 \[
-\mathbf{S} = \frac{\mathbf{Q} \tilde{\mathbf{K}}^\top}{\sqrt{d_h}}, \qquad
-\mathbf{A} = \operatorname{softmax}(\mathbf{S} + \mathbf{M}), \qquad
-\mathbf{C} = \mathbf{A} \tilde{\mathbf{V}},
+R_{b, l, h, j} = \frac{1}{\tau} \sum_{m=1}^{d_k} Q_{b, l, h, m} \cdot (W_R)_{m, j}, \quad j \in \{1, \dots, H_{KV}\}
 \]
 
-where \(\mathbf{M}\) is an optional padding mask. Dropout is applied to the attention weights. The output is then concatenated and projected as usual.
+where $\tau > 0$ is the router temperature hyperparameter. The routing weight vector $\pi_{b, l, h} \in \mathbb{R}^{H_{KV}}$ is obtained via row-wise Softmax over KV heads:
 
-### 2.5 Complexity and Memory
+\[
+\pi_{b, l, h, j} = \text{Softmax}_j (R_{b, l, h, j}) = \frac{\exp(R_{b, l, h, j})}{\sum_{j'=1}^{H_{KV}} \exp(R_{b, l, h, j'})}
+\]
 
-The KV cache during generation stores only \(K \times d_h\) features per token instead of \(H \times d_h\), giving a compression ratio of \(H/K\). The router adds a small per‑token overhead of \(O(H \cdot K \cdot d_h)\) for the softmax mixing, which is negligible for typical head counts. The attention complexity remains \(O(L^2 d_h H)\) as in standard MHA, but the method primarily targets KV cache reduction and flexible head assignment rather than attention matrix compression.
+### Dynamic Key-Value Subspace Synthesis:
+Using the routing distribution $\pi$, synthesized key vectors $\widetilde{K} \in \mathbb{R}^{B \times L \times H_Q \times d_k}$ and value vectors $\widetilde{V} \in \mathbb{R}^{B \times L \times H_Q \times d_k}$ are generated via convex combinations:
+
+\[
+\widetilde{K}_{b, l, h, m} = \sum_{j=1}^{H_{KV}} \pi_{b, l, h, j} \cdot K_{b, l, j, m}
+\]
+\[
+\widetilde{V}_{b, l, h, m} = \sum_{j=1}^{H_{KV}} \pi_{b, l, h, j} \cdot V_{b, l, j, m}
+\]
+
+In batched tensor operations, this corresponds to batched matrix multiplication over flattened sequence dimensions:
+
+\[
+\widetilde{K}_{\text{flat}} = \text{BMM}\left(\pi_{\text{flat}}, K_{\text{flat}}\right) \in \mathbb{R}^{(B \cdot L) \times H_Q \times d_k}
+\]
+\[
+\widetilde{V}_{\text{flat}} = \text{BMM}\left(\pi_{\text{flat}}, V_{\text{flat}}\right) \in \mathbb{R}^{(B \cdot L) \times H_Q \times d_k}
+\]
+
+where $\pi_{\text{flat}} \in \mathbb{R}^{(B \cdot L) \times H_Q \times H_{KV}}$ and $K_{\text{flat}}, V_{\text{flat}} \in \mathbb{R}^{(B \cdot L) \times H_{KV} \times d_k}$.
+
+### Scaled Dot-Product Attention:
+Transposing queries and synthesized key-values to $\mathbb{R}^{B \times H_Q \times L \times d_k}$:
+
+\[
+S_{b, h, i, j} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot \widetilde{K}_{b, h, j, m}
+\]
+\[
+\widetilde{S}_{b, h, i, j} = S_{b, h, i, j} + M_{b, 1, i, j}
+\]
+\[
+A_{b, h, i, j} = \text{Softmax}_j (\widetilde{S}_{b, h, i, j})
+\]
+\[
+O_{b, h, i, m} = \sum_{j=1}^L \text{Dropout}(A, p_{\text{drop}})_{b, h, i, j} \cdot \widetilde{V}_{b, h, j, m}
+\]
+\[
+Y = \text{Concat}(O_1, \dots, O_{H_Q}) \cdot W_O \in \mathbb{R}^{B \times L \times D}
+\]
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **`QCQAAttention`** is registered as `"qcqa"` in the `ATTENTION_REGISTRY`.
-- **Constructor parameters**:
-  - `config`: provides `num_attention_heads`, `hidden_size`, `dropout`.
-  - `num_kv_heads`: number of KV heads \(K\) (default 4).
-  - `router_temp`: temperature \(\tau\) for the routing softmax (default 1.0).
-- **Layers**:
-  - `q_proj`: Linear(\(D, H d_h\)).
-  - `k_proj`: Linear(\(D, K d_h\)).
-  - `v_proj`: Linear(\(D, K d_h\)).
-  - `router`: Linear(\(d_h, K\), bias=False) – applied independently per query head.
-  - `out_proj`: Linear(\(H d_h, D\)).
-  - `dropout`: on attention weights.
-- **Forward**:
-  1. Project Q (full heads), K and V (compressed heads).
-  2. Reshape to separate heads.
-  3. Compute route logits from Q using `self.router`, scale by temperature, softmax → routing weights.
-  4. Flatten, mix K and V via batched matrix multiply (using `torch.bmm`).
-  5. Transpose to \((B, H, L, d_h)\).
-  6. Scaled dot‑product attention with mixed keys and values.
-  7. Apply mask (assumes additive mask already, e.g., `0` for valid, `-inf` for padding; the code does `attention_mask.unsqueeze(1)` and adds to scores).
-  8. Softmax, dropout, context computation.
-  9. Reshape and output projection.
-  10. Return `(output, attn_probs)`.
-
-- **Mask handling**: The code expects `attention_mask` to be in an additive format (e.g., a float tensor with `0` for valid tokens and `-1e9` for padding) and adds it directly after unsqueezing to `(B, 1, L)` which broadcasts to `(B, H, L, L)`. This is a common convention but may not match the 2D binary masks often used in DistilBERT. A conversion might be needed in an injection function.
-
-- **Router initialisation**: The router weight is default‑initialised (Kaiming uniform), so initially the mixing is roughly uniform. Temperature can be adjusted to make the routing sharper.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"qcqa"`. Configurable parameters via `comp_config` or constructor:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `num_kv_heads` | 4 | Number of KV heads \(K\). |
-| `router_temp` | 1.0 | Temperature for the routing softmax. |
-
-Example injection:
-```python
-comp_config.attention_type = "qcqa"
-comp_config.num_kv_heads = 8
-comp_config.router_temp = 0.5
+```
+Input: hidden_states [B, L, D]
+  │
+  ├──> Linear(D, H_Q * d_k) [W_q] ──> Q: [B, L, H_Q, d_k]
+  ├──> Linear(D, H_KV * d_k) [W_k] ──> K: [B, L, H_KV, d_k]
+  └──> Linear(D, H_KV * d_k) [W_v] ──> V: [B, L, H_KV, d_k]
+                                │
+                                ├──> Linear(d_k, H_KV) [router] ──> route_logits: [B, L, H_Q, H_KV]
+                                ├──> Softmax(dim=-1) / tau ──> route_weights (π): [B, L, H_Q, H_KV]
+                                │
+                                ├──> Reshape: π_flat [B*L, H_Q, H_KV], K_flat [B*L, H_KV, d_k]
+                                ├──> BMM(π_flat, K_flat) ──> K_mixed: [B, L, H_Q, d_k]
+                                ├──> BMM(π_flat, V_flat) ──> V_mixed: [B, L, H_Q, d_k]
+                                │
+                                ├──> transpose(1, 2) ──> Q, K_mixed, V_mixed: [B, H_Q, L, d_k]
+                                │
+                                ├──> MatMul: Q @ K_mixed.transpose(-2, -1) / sqrt(d_k) ──> [B, H_Q, L, L]
+                                ├──> Add attention_mask ──> [B, H_Q, L, L]
+                                ├──> Softmax(dim=-1) & Dropout ──> attn: [B, H_Q, L, L]
+                                │
+                                └──> MatMul: attn @ V_mixed ──> context: [B, H_Q, L, d_k]
+                                        │
+                                        └──> transpose(1, 2).view([B, L, H_Q * d_k])
+                                        └──> Linear(H_Q * d_k, D) [W_o] ──> Output: [B, L, D]
 ```
 
-No zero‑shot weight transfer is performed in this snippet; the projection weights are randomly initialised. For practical use, an injection function should copy the pretrained weights from the original attention (e.g., initialising the Q projection from the original `q_lin` and splitting/aggregating for K and V, or using a technique to initialise the router). As with many modules in this framework, that step is left to the surrounding pipeline.
+---
+
+## 4. Analytical Complexity Profiling
+
+### FLOPs & MAC Operations Breakdown
+
+Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H_Q$ query heads, $H_{KV}$ key-value heads, $\gamma = H_Q / H_{KV}$, and $d_k = D / H_Q$.
+
+1. **Linear Projections ($W_Q, W_K, W_V$)**:
+   - $W_Q$: $2 B L D^2$ FLOPs ($B L D^2$ MACs).
+   - $W_K, W_V$: $\frac{4 B L D^2}{\gamma}$ FLOPs ($\frac{2 B L D^2}{\gamma}$ MACs).
+
+2. **Query Routing Projection ($W_R$)**:
+   - Operation: $[B \cdot L \cdot H_Q, d_k] \times [d_k, H_{KV}]$.
+   - MACs: $B \cdot L \cdot H_Q \cdot d_k \cdot H_{KV} = B L D H_{KV}$
+   - FLOPs: $2 B L D H_{KV} + \text{Softmax overhead } (\approx 5 B L H_Q H_{KV})$
+
+3. **Dynamic KV Subspace Mixture ($\text{BMM}(\pi, K)$ & $\text{BMM}(\pi, V)$)**:
+   - Operation: $2 \times [B \cdot L, H_Q, H_{KV}] \times [B \cdot L, H_{KV}, d_k]$.
+   - MACs: $2 \times B \cdot L \cdot H_Q \cdot H_{KV} \cdot d_k = 2 B L D H_{KV}$
+   - FLOPs: $4 B L D H_{KV}$
+
+4. **Attention Matrix Computations ($Q K^\top$ & $A V$)**:
+   - MACs: $2 B L^2 D$
+   - FLOPs: $4 B L^2 D$
+
+5. **Output Projection ($W_O$)**:
+   - MACs: $B L D^2$, FLOPs: $2 B L D^2$
+
+### Total Complexity:
+- **Total MACs**: $2 B L D^2 \left(1 + \frac{1}{\gamma}\right) + 3 B L D H_{KV} + 2 B L^2 D$
+- **Total FLOPs**: $4 B L D^2 \left(1 + \frac{1}{\gamma}\right) + 6 B L D H_{KV} + 5 B L H_Q H_{KV} + 4 B L^2 D$
+- **Autoregressive KV Cache Capacity**: $2 B L_{\text{past}} H_{KV} d_k \times \text{bytes} = \frac{2 B L_{\text{past}} D}{\gamma} \times \text{bytes}$.
 
 ---
 
-## 5. Discussion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-QCQA offers an elegant continuum between MHA, GQA, and MQA. With \(K=H\) and a hard routing (one‑hot), it reduces to MHA; with \(K=1\) and equal weights, it becomes MQA; with intermediate \(K\) and uniform weights, it approximates GQA with fixed groups. The learned, soft routing allows the model to discover an optimal sharing pattern for each task and even for each input token.
+### Dynamic KV Synthesis Memory Overhead
+During forward passes in standard PyTorch, synthesizing $\widetilde{K}$ and $\widetilde{V}$ requires allocating intermediate tensors of size $[B, L, H_Q, d_k]$. This quadruples token memory writes back to HBM before computing the attention matrix, negating throughput gains for short sequence lengths.
 
-The mixing of KV heads via a weighted sum can be interpreted as creating a new virtual KV head that combines the representational strengths of several base heads. This is similar in spirit to dynamic convolution or mixture‑of‑experts in the key‑value space. The router is conditioned only on the query, making it lightweight and easy to compute.
+### Router Entropy Collapse
+If the router temperature $\tau$ is too small ($\tau \to 0$), the routing distribution degenerates into a hard ArgMax function, destabilizing gradient propagation to non-selected KV heads. Conversely, high temperatures ($\tau \to \infty$) produce uniform distributions $\pi_{h, j} = \frac{1}{H_{KV}}$, collapsing QCQA to Multi-Query Attention (MQA) with averaged representations.
 
-Potential limitations:
-- **No capacity constraints**: The softmax allows all KV heads to contribute, which could dilute the information. However, the temperature can be tuned, or entropy regularisation could be added to encourage sparser routing.
-- **No shared KV cache across layers**: Each layer has its own set of KV heads; QCQA does not attempt cross‑layer sharing, though the learned routing could implicitly discover reusable patterns.
-- **Mask handling**: As noted, the mask expectation may not align with the standard DistilBERT mask format, requiring an adapter in the injection function.
-- **Initialisation**: Starting with a uniform routing may be suboptimal; pre‑training the router or initialising it to mimic a fixed GQA pattern could accelerate convergence.
-
-Overall, QCQA is a compelling and simple extension of existing grouped attention schemes, providing dynamic, content‑aware head allocation while preserving the memory benefits of KV head reduction.
+### KV Subspace Manifold Degeneracy
+If key heads $K_j$ align into parallel subspaces during training, $\text{rank}(\widetilde{K}_h) < d_k$, causing effective rank collapse in score computation.
 
 ---
 
-## 6. Conclusion
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
-We have presented QCQA, a quality & capacity‑aware grouped query attention module that replaces fixed KV head grouping with a learned, per‑query soft routing mechanism. The design offers the same KV cache compression as GQA while enabling flexible, input‑dependent blending of key‑value information. The module is implemented as a drop‑in replacement for DistilBERT’s self‑attention and is integrated into the compression framework. Future work will address proper pretrained weight initialisation, mask conversion, and exploration of sparsity‑inducing routing regularisation. QCQA represents a step toward more adaptive and efficient attention mechanisms for large‑scale Transformers.
+### Fused Soft-Routing Triton Kernel Architecture
+To achieve optimal execution throughput, routing logic and KV mixture synthesis must be fused directly inside the SRAM inner-loop of Triton FlashAttention.
 
+```
+       Global Memory (HBM)
+      ┌────────────────────────────────────────────────────────┐
+      │ Q [B, H_Q, L, d_k]                                      │
+      │ K [B, H_KV, L, d_k]  <-- Stored Unmixed KV Cache       │
+      │ V [B, H_KV, L, d_k]  <-- Stored Unmixed KV Cache       │
+      │ W_R [d_k, H_KV]                                        │
+      └───────────────────────────┬────────────────────────────┘
+                                  │ Load Q & Router Weights
+                                  ▼
+ ┌──────────────────────────────────────────────────────────────────┐
+ │                   Triton SRAM Scratchpad                         │
+ │ 1. Compute Routing Logits: R_h = Q_tile @ W_R / tau              │
+ │ 2. Compute Softmax Routing Weights: π_h = Softmax(R_h)           │
+ │ 3. Synthesize Mixed KV Tiles On-The-Fly:                         │
+ │    K_mixed = sum_j (π_{h, j} * K_tile[j])                         │
+ │    V_mixed = sum_j (π_{h, j} * V_tile[j])                         │
+ │ 4. Compute Attention Scores: S_tile = Q_tile @ K_mixed.T / sqrt  │
+ │ 5. Online Softmax Accumulation into Output Tile                  │
+ └────────────────────────────────┬─────────────────────────────────┘
+                                  │ Stream Output
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ Output O [B, H_Q, L, d_k]                               │
+      └────────────────────────────────────────────────────────┘
+```
 
-
+### Triton Implementation Guidelines:
+1. **On-Chip Softmax Mixture Fusion**:
+   Avoid materializing $[B, L, H_Q, d_k]$ tensors in DRAM. Keep routing logits $R_{b, l, h, j}$ in SRAM vector registers and perform instantaneous linear combinations over loaded KV tiles.
+2. **Temperature Scheduling**:
+   Implement a dynamic temperature annealing schedule:
+   \[
+   \tau(t) = \tau_{\text{min}} + (\tau_{\text{max}} - \tau_{\text{min}}) \cdot e^{-\lambda t}
+   \]
+   allowing broad subspace exploration early in training followed by sharp, deterministic routing in later epochs.
+3. **Optimized Autoregressive KV Decoding**:
+   During inference decoding ($L_{\text{query}}=1$), read raw unmixed tokens from KV cache $[B, H_{KV}, L_{\text{past}}, d_k]$ and perform single-step fused routing matrix multiplication directly in GPU register files.

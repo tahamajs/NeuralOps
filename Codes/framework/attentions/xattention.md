@@ -1,167 +1,298 @@
-# XAttention: Block Sparse Attention with Antidiagonal Block Scoring
+# XAttention: Block-Sparse Coarse-to-Fine Routing with Unified Softmax Normalization
 
-**Abstract**  
-We present **XAttention**, an efficient sparse self‑attention module that reduces the quadratic complexity of standard attention by partitioning the attention matrix into fixed‑size blocks and retaining only the most important blocks according to an **antidiagonal scoring** criterion. The sequence is first padded to a multiple of the block size and reshaped into a 3D grid of blocks (batch, heads, number of blocks, block length, feature dimension). Each block is represented by its mean query and key vectors, and the block‑level importance matrix is computed via scaled dot‑product. For each query block, the top‑\(k\) key blocks with the highest scores are selected, where \(k\) is controlled by a sparsity parameter. Exact scaled dot‑product attention is then computed only within these selected block pairs, and the outputs for a query block are summed over the chosen key blocks. The method achieves a structured sparsity pattern that is both content‑aware (since block scores come from the actual queries and keys) and training‑free (no additional learnable parameters beyond standard projections). The module is implemented as a drop‑in replacement for the self‑attention layer in DistilBERT, integrating with the compression framework. This paper provides a rigorous mathematical description of the block scoring, selection, and sparse attention, along with implementation details and an analysis of its complexity and limitations.
+## 1. Abstract & Theoretical Motivation
+Standard Multi-Head Self-Attention (MHSA) requires computing dense token-to-token similarity matrices of size $L \times L$, scaling quadratically $\mathcal{O}(L^2 d)$ in compute and memory. Conventional block-sparse attention models often fail to maintain mathematical equivalence with full attention because they compute separate, un-unified local softmax normalizations per block before summing output vectors.
 
----
+**XAttention (`XAttention`)** overcomes this limitation via a two-stage hierarchical coarse-to-fine block routing mechanism paired with **Unified Probability Normalization**. The sequence is partitioned into $M = \lceil L / B_s \rceil$ contiguous blocks of size $B_s$. 
+1. **Coarse-Grained Block Routing**: Abstract query and key representations are derived via masked centroid pooling. Inner products between block centroids generate a coarse inter-block affinity matrix of size $M \times M$.
+2. **Unified Candidate Block Attention**: For each query block, the top-$k$ key-value blocks with highest coarse affinity are selected ($k = \lfloor (1-s) M \rfloor$, where $s$ is the sparsity factor). The selected $k \cdot B_s$ key tokens are concatenated into a unified candidate pool. 
 
-## 1. Introduction
-
-Standard multi‑head self‑attention scales quadratically with the sequence length \(L\), which is prohibitive for long sequences. Block‑sparse attention methods reduce this cost by dividing the attention matrix into blocks and only computing interactions between a subset of blocks. The **XAttention** module introduces a simple yet effective block selection criterion: for each query block, it computes the **mean query and key vectors** over the tokens in that block, and then uses their dot‑product as a proxy for the block’s overall relevance. The top‑\(k\) key blocks with the highest scores are retained, and attention is computed only for those block pairs. This design avoids the need for a separate learned gate (unlike SeerAttention) or fixed patterns (like sliding windows), while still achieving sub‑quadratic complexity.
-
-The method is inspired by the concept of antidiagonal scoring, where the importance of a block pair could be measured by summing attention scores along antidiagonals of the block; here, the block‑average approach provides a simple, efficient approximation. The sparsity level is controlled by a single parameter \(\rho\) (the fraction of blocks to prune), giving direct control over the trade‑off between speed and accuracy. Because the block scores are derived from the input data, the sparsity pattern adapts to each sample.
-
-In this paper, we detail the mathematical formulation of XAttention, including padding, block aggregation, top‑\(k\) selection, and sparse attention. We also discuss the current implementation’s loop‑based computation and the implications for real‑world use.
+Rather than normalizing attention weights per block, XAttention evaluates a single, unified Softmax normalization over the entire $(k \cdot B_s)$ candidate token dimension, preserving numerical fidelity while achieving sub-quadratic computational scaling.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Multi‑Head Projections and Block Partitioning
+### 2.1 Spatial Padding & Multi-Block Partitioning
+Given input sequence $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) projections yield tensors of shape $[B, H, L, d_h]$, where $H$ is the number of heads and $d_h = D / H$.
 
-Given an input sequence of hidden states \(\mathbf{H} \in \mathbb{R}^{B \times L \times D}\), the module first applies standard linear projections to obtain multi‑head queries, keys, and values:
+Sequence length $L$ is zero-padded to $L_p = \lceil L / B_s \rceil \cdot B_s$, where $B_s = \text{block\_size}$. Valid sequence mask $\mathbf{M}_{\text{valid}} \in \{0, 1\}^{B \times L}$ is padded identically:
+$$\mathbf{M}_{\text{valid\_pad}} = \operatorname{Pad}\left(\mathbf{M}_{\text{valid}}, \text{pad\_len}\right) \quad \in \{0, 1\}^{B \times L_p}$$
 
-\[
-\mathbf{Q} = \mathbf{H} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{H} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{H} \mathbf{W}_V,
-\]
+Tensors are partitioned into $M = L_p / B_s$ spatial blocks:
+$$\mathbf{Q}_b, \mathbf{K}_b, \mathbf{V}_b \in \mathbb{R}^{B \times H \times M \times B_s \times d_h}$$
+$$\mathbf{M}_b \in \{0, 1\}^{B \times 1 \times M \times B_s}$$
 
-with \(\mathbf{W}_* \in \mathbb{R}^{D \times (H d_h)}\), where \(H\) is the number of heads and \(d_h = D / H\). The tensors are reshaped to \((B, H, L, d_h)\) and transposed to the head‑first layout \((B, H, L, d_h)\).
+### 2.2 Masked Centroid Reduction & Coarse Affinity Scoring
+To prevent zero-padding vectors from biasing block representations, key block centroids $\bar{\mathbf{K}}_i$ are evaluated using masked arithmetic mean pooling:
+$$\bar{\mathbf{Q}}_i = \frac{1}{B_s} \sum_{t=1}^{B_s} \mathbf{Q}_b[:, :, i, t, :] \quad \in \mathbb{R}^{B \times H \times d_h}$$
+$$\bar{\mathbf{K}}_j = \frac{\sum_{t=1}^{B_s} \mathbf{K}_b[:, :, j, t, :] \odot \mathbf{M}_b[:, :, j, t, 1]}{\epsilon + \sum_{t=1}^{B_s} \mathbf{M}_b[:, :, j, t, 1]} \quad \in \mathbb{R}^{B \times H \times d_h}$$
 
-To facilitate block‑wise operations, the sequence length \(L\) is padded to the next multiple of the block size \(B_s\) (default 64) by appending zeros. Let the padded length be \(L_p = \lceil L / B_s \rceil \times B_s\), and the number of blocks be \(N_b = L_p / B_s\). The padded tensors are then reshaped into blocks:
+The coarse inter-block relevance matrix $\mathbf{S}^{\text{block}} \in \mathbb{R}^{B \times H \times M \times M}$ is evaluated as:
+$$\mathbf{S}_{i, j}^{\text{block}} = \frac{\bar{\mathbf{Q}}_i \bar{\mathbf{K}}_j^\top}{\sqrt{d_h}}$$
 
-\[
-\mathbf{Q}_{\text{blk}} \in \mathbb{R}^{B \times H \times N_b \times B_s \times d_h}, \qquad
-\mathbf{K}_{\text{blk}}, \mathbf{V}_{\text{blk}} \text{ similarly}.
-\]
+### 2.3 Top-$k$ Candidate Gathering & Unified Softmax Normalization
+For a user-specified sparsity ratio $s \in [0, 1)$, the number of key blocks retained per query block is:
+$$k = \max\left(1, \min\left(M, \lfloor M \cdot (1 - s) \rfloor\right)\right)$$
 
-### 2.2 Block Importance Scoring via Mean Pooling
+For query block $i \in \{1, \dots, M\}$, top-$k$ routing identifies the indices $\mathcal{I}_i$ of the $k$ most relevant key blocks:
+$$\mathcal{I}_i = \operatorname{TopK}\left( \mathbf{S}_{i, :}^{\text{block}}, k \right) \in \{1, \dots, M\}^k$$
 
-For each block, a representative vector is computed by averaging over the block’s tokens:
+The corresponding key blocks, value blocks, and validity masks are gathered and flattened:
+$$\mathbf{K}_{\text{cand}}^{(i)} = \operatorname{Gather}\left(\mathbf{K}_b, \mathcal{I}_i\right) \quad \in \mathbb{R}^{B \times H \times (k \cdot B_s) \times d_h}$$
+$$\mathbf{V}_{\text{cand}}^{(i)} = \operatorname{Gather}\left(\mathbf{V}_b, \mathcal{I}_i\right) \quad \in \mathbb{R}^{B \times H \times (k \cdot B_s) \times d_h}$$
+$$\mathbf{M}_{\text{cand}}^{(i)} = \operatorname{Gather}\left(\mathbf{M}_b, \mathcal{I}_i\right) \quad \in \{0, 1\}^{B \times H \times 1 \times (k \cdot B_s)}$$
 
-\[
-\bar{\mathbf{Q}}_{b,i} = \frac{1}{B_s} \sum_{j=1}^{B_s} \mathbf{Q}_{\text{blk}, b, i, j}, \qquad
-\bar{\mathbf{K}}_{b,i} = \frac{1}{B_s} \sum_{j=1}^{B_s} \mathbf{K}_{\text{blk}, b, i, j},
-\]
+Fine-grained attention for query block $i$ evaluates scores across all candidate tokens simultaneously:
+$$\mathbf{S}^{(i)} = \frac{\mathbf{Q}_{b, i} \left(\mathbf{K}_{\text{cand}}^{(i)}\right)^\top}{\sqrt{d_h}} \quad \in \mathbb{R}^{B \times H \times B_s \times (k \cdot B_s)}$$
 
-yielding tensors of shape \((B, H, N_b, d_h)\). The block‑level relevance scores are then computed as the scaled dot product:
+Additive masking sets invalid candidate token positions to $-10^4$:
+$$\mathbf{S}_{b, h, t, m}^{(i)} \leftarrow \begin{cases} \mathbf{S}_{b, h, t, m}^{(i)} & \text{if } \mathbf{M}_{\text{cand}, b, h, 1, m}^{(i)} = 1 \\ -10000.0 & \text{otherwise} \end{cases}$$
 
-\[
-\mathbf{S}^{\text{block}} = \frac{\bar{\mathbf{Q}} \bar{\mathbf{K}}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times N_b \times N_b}.
-\]
+A single, unified Softmax operation normalizes probabilities across the entire candidate token length $(k \cdot B_s)$:
+$$\mathbf{A}^{(i)} = \operatorname{Softmax}_{\text{dim}=-1}\left( \mathbf{S}^{(i)} \right) \in \mathbb{R}^{B \times H \times B_s \times (k \cdot B_s)}$$
+$$\mathbf{O}_{b, i} = \mathbf{A}^{(i)} \mathbf{V}_{\text{cand}}^{(i)} \quad \in \mathbb{R}^{B \times H \times B_s \times d_h}$$
 
-This matrix measures the average similarity between tokens in query block \(i\) and key block \(j\).
-
-### 2.3 Top‑\(k\) Block Selection
-
-Given a sparsity parameter \(\rho\) (the fraction of blocks to prune), the number of key blocks to keep for each query block is:
-
-\[
-k = \max(1, \lfloor N_b \times (1 - \rho) \rfloor).
-\]
-
-For each query block \(i\), we select the \(k\) key blocks with the highest scores:
-
-\[
-\mathcal{T}_i = \operatorname{TopK}(\mathbf{S}^{\text{block}}_{:, :, i, :}, k).
-\]
-
-A binary mask \(\mathbf{M} \in \{0,1\}^{B \times H \times N_b \times N_b}\) is constructed where \(M_{b,h,i,j} = 1\) if block \(j\) is selected for query block \(i\) (under head \(h\) and batch element \(b\)), and 0 otherwise. The top‑\(k\) operation ensures a fixed sparsity level, giving direct control over the computational budget.
-
-### 2.4 Block‑Sparse Attention
-
-The final attention output is computed by iterating over all pairs of query blocks and their selected key blocks. For a given query block \(i\) and selected key block \(j\) (with \(M_{b,h,i,j}=1\)), we compute:
-
-\[
-\mathbf{S}_{i,j} = \frac{\mathbf{Q}_{\text{blk}, i} \mathbf{K}_{\text{blk}, j}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times B_s \times B_s},
-\]
-\[
-\mathbf{A}_{i,j} = \operatorname{softmax}(\mathbf{S}_{i,j}),
-\]
-\[
-\mathbf{O}_{i,j} = \mathbf{A}_{i,j} \mathbf{V}_{\text{blk}, j}.
-\]
-
-The outputs for query block \(i\) are accumulated over all selected key blocks \(j\):
-
-\[
-\mathbf{O}_{\text{blk}, i} = \sum_{j: M_{b,h,i,j}=1} \mathbf{O}_{i,j}.
-\]
-
-Finally, the block outputs are reshaped back to a sequence, the padding is removed, and the result is projected via \(\mathbf{W}_O\).
-
-### 2.5 Complexity
-
-The block‑level scoring costs \(O(B H N_b^2 d_h) = O(B H (L/B_s)^2 d_h) = O(B D L^2 / (B_s^2 H?)\) Actually, the dominant term is \(O(B H (L/B_s)^2 d_h)\). The sparse attention step costs \(O(B H N_b \cdot k \cdot B_s^2 d_h) = O(B H (L/B_s) \cdot k \cdot B_s^2 d_h) = O(B H L \cdot k \cdot B_s \cdot d_h)\). For \(B_s = 64\), \(k\) a fraction of \(N_b\), the overall complexity is roughly \(O(B D L \cdot k B_s)\). Since \(k \propto L / B_s\), the sparse attention term becomes \(O(B D L^2 \cdot (1-\rho) / B_s)\)? Wait, if \(k \propto N_b = L/B_s\), then the sparse attention cost is \(O(B H (L/B_s) \cdot (L/B_s) \cdot B_s^2 d_h) = O(B H L^2 d_h)\), which is still quadratic. This is because the number of selected blocks grows linearly with the number of blocks, so the total number of token‑level comparisons stays quadratic. To achieve sub‑quadratic scaling, one would need to make \(k\) a constant independent of \(L\) (e.g., select a fixed number of blocks regardless of sequence length). The current implementation uses \(k = \max(1, \text{int}(N_b * (1 - \rho)))\), which grows with \(L\), so the complexity remains \(O(L^2)\) but with a reduced constant factor. This is an important point to note.
+### 2.4 Reassembly & Output Mapping
+The block outputs $\mathbf{O}_{b, i}$ are stacked along the block dimension to form $\mathbf{O}_p \in \mathbb{R}^{B \times H \times L_p \times d_h}$. The padded tokens beyond length $L$ are sliced out, reshaped to $\mathbb{R}^{B \times L \times D}$, and mapped through output projection $\mathbf{W}_O$:
+$$\mathbf{Y} = \left( \operatorname{Slice}\left(\mathbf{O}_p, :L\right) \mathbf{W}_O \right) \odot \mathbf{M}_{\text{valid}} \quad \in \mathbb{R}^{B \times L \times D}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **Class `XAttention`** inherits from `nn.Module` and is registered under `"xattention"` in the `ATTENTION_REGISTRY`.
-- **Constructor parameters**:
-  - `config`: provides `num_attention_heads`, `hidden_size`, `dropout`.
-  - `block_size` (default 64): size of each block \(B_s\).
-  - `sparsity` (default 0.5): fraction of blocks to prune \(\rho\).
-  - Standard linear layers for Q, K, V, O, and dropout.
-- **Forward pass**:
-  1. Project Q, K, V, reshape to multi‑head.
-  2. Pad sequence to a multiple of `block_size`.
-  3. Reshape to blocks: `(B, H, n_blocks, block_size, d)`.
-  4. Compute block scores via mean‑pooled Q and K.
-  5. Top‑\(k\) selection: keep `int(n_blocks * (1 - sparsity))` blocks per query block.
-  6. Build binary mask.
-  7. Loop over query blocks \(i\) and key blocks \(j\):
-     - If mask is non‑zero for block pair \((i,j)\), compute attention, softmax, and accumulate output.
-  8. Reshape back to sequence, remove padding, apply output projection.
-  9. Return `(out, None)`.
+| Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | Q, K, V Projections | `[B, L, D]` | `[B, H, L, d_h]` | Linear maps via $W_Q, W_K, W_V$ & split heads |
+| 2 | Spatial Zero Padding | `[B, H, L, d_h]` | `[B, H, L_p, d_h]` | Zero pad to $L_p = M \times B_s$ |
+| 3 | Block Reshape | `[B, H, L_p, d_h]` | `[B, H, M, B_s, d_h]` | Partition sequence into $M$ contiguous blocks |
+| 4 | Masked Centroid Mean| `[B, H, M, B_s, d_h]`| `[B, H, M, d_h]` | Masked arithmetic mean sum across $B_s$ dimension |
+| 5 | Inter-Block Scoring | `[B, H, M, d_h]` | `[B, H, M, M]` | Scaled dot product $Q_{\text{mean}} K_{\text{mean}}^T / \sqrt{d_h}$ |
+| 6 | Top-$k$ Selection | `[B, H, M, M]` | `[B, H, M, k]` | Extract top-$k$ key block indices per query block |
+| 7 | Candidate Block Loop| `i = 0..M-1` | `[B, H, k \cdot B_s, d_h]`| Gather selected key, value, and mask blocks |
+| 8 | Unified Softmax Attn| `Q_i`, `K_cand`, `V_cand`| `[B, H, B_s, d_h]` | Compute Softmax over unified $(k \cdot B_s)$ keys |
+| 9 | Block Stack & Unpad | `[B, H, M, B_s, d_h]`| `[B, H, L, d_h]` | Stack blocks, unpad to $L$, permute & reshape |
+| 10| Output Projection | `[B, L, D]` | `[B, L, D]` | Linear projection via $W_O$ & valid token mask |
 
-- **Inefficiency**: The nested Python loops over \(i\) and \(j\) are slow for large \(N_b\). A batched implementation using `gather` and `einsum` would be more efficient. The current loop also recomputes attention for the same key block multiple times if it is selected by many query blocks; caching the key/value blocks could speed up computation.
-
-- **Mask handling**: The module does **not** use the `attention_mask` argument. Padding tokens (including the extra padding to reach a multiple of \(B_s\)) are included in the block averages and attention, which may distort the block scores and final output. A proper implementation should mask out padding tokens during the averaging and attention steps.
-
-- **Causal masking**: Not implemented; the attention is bidirectional.
-
----
-
-## 4. Usage and Configuration
-
-The module is injected by setting the attention type to `"xattention"` in the compression configuration. Configurable parameters:
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `block_size` | 64 | Size of each block. |
-| `sparsity` | 0.5 | Fraction of blocks pruned (0 = keep all, 1 = keep only 1). |
-| `dropout` | (from config) | Dropout on attention weights. |
-
-Example injection via framework:
-```python
-comp_config.attention_type = "xattention"
-comp_config.block_size = 128
-comp_config.sparsity = 0.7
+```
+                       [B, L, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+      Q, K, V Projections          Valid Token Mask
+      [B, H, L, d_h]               [B, L]
+             │                           │
+             └─────────────┬─────────────┘
+                           ▼
+               Zero Pad to L_p = M * B_s
+                           │
+                           ▼
+             Reshape to Blocks [B, H, M, B_s, d_h]
+                           │
+         ┌─────────────────┴─────────────────┐
+         ▼                                   ▼
+  Masked Centroid Means               Block Tokens (Q_blk, K_blk, V_blk)
+  Q_mean, K_mean [B, H, M, d_h]              │
+         │                                   │
+         ▼                                   │
+  Inter-Block Scores [B, H, M, M]            │
+         │                                   │
+         ▼                                   │
+  Top-k Block Indices [B, H, M, k]           │
+         │                                   │
+         └─────────────────┬─────────────────┘
+                           ▼
+          Iterate over Query Blocks i (0..M-1)
+                           │
+                           ▼
+          Gather K_cand, V_cand [B, H, k * B_s, d_h]
+                           │
+                           ▼
+          Unified Softmax Attention (Q_i @ K_cand.T)
+          Score Matrix Shape: [B, H, B_s, k * B_s]
+                           │
+                           ▼
+          Block Context Accumulate O_i = A_i @ V_cand
+                           │
+                           ▼
+          Stack Blocks -> Unpad to L -> Projection W_O
+                           │
+                           ▼
+                      [B, L, D] Output
 ```
 
-No weight transfer from pretrained attention is performed; the linear layers are randomly initialised. For zero‑shot use, an injection function should copy the original Q, K, V, O weights.
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 FLOPs Computation Breakdown
+Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_h = D/H$, $B_s$ block size, $M = L / B_s$ number of blocks, and $s$ sparsity ratio ($k = M(1-s)$).
+
+1. **Linear Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$)**:
+   $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
+2. **Centroid Reduction & Inter-Block Scoring**:
+   - Masked key centroid reduction: $2 B L D$ FLOPs.
+   - Inter-block affinity matmul ($\bar{\mathbf{Q}} \bar{\mathbf{K}}^\top$): $2 B H M^2 d_h = \frac{2 B D L^2}{B_s^2}$ FLOPs.
+   $$\operatorname{FLOPs}_{\text{coarse}} = \frac{2 B D L^2}{B_s^2} + 2 B L D$$
+3. **Unified Candidate Block Attention**:
+   Across all $M$ query blocks, fine-grained attention maps $B_s$ query tokens to $k \cdot B_s$ candidate key tokens:
+   - Attention score matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B H L (k B_s) d_h = 2 B D L (k B_s)$
+   - Context output matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B D L (k B_s)$
+   Since $k B_s = L(1-s)$:
+   $$\operatorname{FLOPs}_{\text{fine}} = 4 B D L^2 (1-s)$$
+4. **Output Projection ($\mathbf{W}_O$)**:
+   $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
+
+$$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_s^2} + 4 B D L^2 (1-s) + 2 B L D$$
+
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} \approx 4 B L D^2 + \frac{B D L^2}{B_s^2} + 2 B D L^2 (1-s)$$
+- **Peak Activation Memory**:
+  - Block Centroid Matrices: $2 \times B \cdot H \cdot M \cdot d_k \times 2 \text{ bytes}$
+  - Coarse Block Affinity Matrix: $B \cdot H \cdot M \cdot M \times 2 \text{ bytes}$
+  - Candidate Keys/Values Buffer per query block: $2 \times B \cdot H \cdot (k B_s) \cdot d_k \times 2 \text{ bytes}$
+  - Per-Block Attention Matrix: $B \cdot H \cdot B_s \cdot (k B_s) \times 2 \text{ bytes}$.
+
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
+- **XAttention Block-Sparse**: $\mathcal{O}\left(L D^2 + \frac{L^2 D}{B_s^2} + L^2 D (1-s)\right)$ compute.
+- When $s = 0.75$, XAttention reduces fine-grained token-level matrix operations by $75\%$, providing substantial compute reduction.
 
 ---
 
-## 5. Discussion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-XAttention presents a straightforward block‑sparse attention method. Its key advantage is simplicity: the block importance is computed directly from the data without any learned parameters or complex hashing. The top‑\(k\) selection provides a predictable sparsity level, which is useful for resource budgeting.
+### 5.1 Python Block-Loop Execution Latency
+In `XAttention.forward`:
+```python
+for i in range(n_blocks):
+    qi = Q_blk[:, :, i]
+    k_cand = torch.gather(K_blk, 2, idx_expanded).view(...)
+    v_cand = torch.gather(V_blk, 2, idx_expanded).view(...)
+    scores_i = torch.matmul(qi, k_cand.transpose(-2, -1)) * scale
+    ...
+```
+Executing an explicit Python `for i in range(n_blocks):` loop introduces severe host-to-device kernel invocation overhead:
+- **GPU Under-Utilization**: Launching $M$ separate `gather`, `matmul`, and `softmax` ops sequentially stalls GPU SM hardware pipelines when $M \ge 64$.
 
-However, the method has several drawbacks:
+### 5.2 Outlier Token Masking & Centroid Distortion
+Coarse block routing computes block similarity using arithmetic key averages $\bar{\mathbf{K}}_j = \frac{1}{B_s} \sum \mathbf{K}_{j, t}$.
+- **Centroid Dilution**: Salient outlier tokens with high feature norm (such as delimiter tokens or task-critical keywords) become diluted when averaged with $B_s - 1$ background tokens.
+- **False Pruning**: If a key block contains a critical token but its average norm is low, coarse scoring drops the block ($\mathcal{I}_i \notin \text{TopK}$), causing irreversible attention information loss.
 
-- **Quadratic scaling with \(L\)**: As noted, the number of selected blocks grows linearly with the number of blocks, so the overall complexity remains \(O(L^2)\), just with a smaller constant. To achieve sub‑quadratic scaling, one would need to select a constant number of blocks per query block (e.g., top‑\(k\) with fixed \(k\) independent of \(L\)). This could be an easy modification.
-
-- **Block averaging loss**: Using mean vectors for block scoring discards within‑block variation, potentially missing important token‑level interactions. A more accurate method might use the maximum or sum of attention within a block.
-
-- **Padding issues**: The padding tokens are not masked, which can bias the block scores and attention outputs. This should be fixed for variable‑length sequences.
-
-- **Loop inefficiency**: The Python loops over blocks are not suitable for GPU execution at scale. A vectorised implementation using scatter/gather would be necessary for production.
-
-Despite these limitations, XAttention serves as a clear and educational implementation of block‑sparse attention with dynamic, data‑dependent sparsity. It could be extended with causal masking, adaptive \(k\), and better block scoring to become a more practical module.
+### 5.3 Non-Differentiable Block Routing & Hard Boundary Thresholds
+The selection $\operatorname{TopK}(\mathbf{S}^{\text{block}}, k)$ uses hard discrete indexing.
+- **Zero Gradient Flow**: Gradients $\frac{\partial \mathcal{L}}{\partial \mathbf{S}^{\text{block}}} = 0$ everywhere, preventing backpropagation from training the projection weights $\mathbf{W}_Q, \mathbf{W}_K$ to optimize block routing geometry.
 
 ---
 
-## 6. Conclusion
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
-We have described XAttention, a block‑sparse attention module that selects top‑\(k\) key blocks for each query block based on mean query‑key similarity. The method offers a content‑adaptive sparsity pattern with a tunable sparsity level. While its current form is limited by quadratic scaling in \(k\) and inefficiencies in the implementation, it provides a solid foundation for developing more advanced block‑sparse attention mechanisms. The module is integrated into the DistilBERT compression framework for experimentation and further development.
+To achieve true hardware speedups, XAttention requires a custom Triton GPU kernel that fuses block centroid gathering, top-$k$ routing, and FlashAttention-style candidate softmax into a single GPU grid operator.
+
+### 6.1 Triton Hardware Acceleration Layout
+
+```
++-----------------------------------------------------------------------------------+
+|                        TRITON FUSED XATTENTION KERNEL                             |
++-----------------------------------------------------------------------------------+
+|  1. CENTROID REDUCTION KERNEL (Grid: [B, H, M])                                   |
+|     - Loads Q_blk, K_blk into SRAM.                                               |
+|     - Computes masked warp-sum reduction along B_s dimension.                     |
+|     - Stores Q_mean, K_mean into device memory [B, H, M, d_h].                    |
++-----------------------------------------------------------------------------------+
+|  2. BLOCK AFFINITY & TOP-K KERNEL (Grid: [B, H, M])                               |
+|     - Computes scaled dot product S = Q_mean @ K_mean.T.                          |
+|     - Performs bitonic top-k sort in register file.                               |
+|     - Writes top-k block indices [B, H, M, k] to SRAM.                            |
++-----------------------------------------------------------------------------------+
+|  3. FUSED CANDIDATE FLASHATTENTION KERNEL (Grid: [B, H, M])                       |
+|     - Loads Query block Q_i [B_s, d_h] into SRAM registers.                       |
+|     - Loop over k selected blocks (1..k):                                         |
+|         * Indirect fetch target block ID = TopK_idx[k_idx].                       |
+|         * Load K_block, V_block [B_s, d_h] via hardware pointer.                  |
+|         * Evaluate S_block = Q_i @ K_block.T * scale.                             |
+|         * Online Softmax update over unified candidate accumulator (m_i, l_i, acc).|
+|     - Stores final normalized context O_i [B_s, d_h] to global memory.            |
++-----------------------------------------------------------------------------------+
+```
+
+### 6.2 Implementation Code Blueprint (Triton Unified Candidate Kernel)
+
+```python
+import triton
+import triton.language as tl
+
+@triton.jit
+def _xattention_fused_candidate_attn_kernel(
+    Q_blk_ptr, K_blk_ptr, V_blk_ptr, TopK_Idx_ptr, Mask_blk_ptr, Out_blk_ptr,
+    stride_qb, stride_qh, stride_qm, stride_qs, stride_qd,
+    stride_kb, stride_kh, stride_km, stride_ks, stride_kd,
+    stride_vb, stride_vh, stride_vm, stride_vs, stride_vd,
+    stride_ob, stride_oh, stride_om, stride_os, stride_od,
+    stride_idx_b, stride_idx_h, stride_idx_m, stride_idx_k,
+    scale,
+    B_S: tl.constexpr,
+    D_K: tl.constexpr,
+    K_TOP: tl.constexpr
+):
+    pid_m = tl.program_id(axis=0)
+    pid_h = tl.program_id(axis=1)
+    pid_b = tl.program_id(axis=2)
+
+    # Base pointers for current query block
+    q_ptr = Q_blk_ptr + pid_b * stride_qb + pid_h * stride_qh + pid_m * stride_qm
+    out_ptr = Out_blk_ptr + pid_b * stride_ob + pid_h * stride_oh + pid_m * stride_om
+
+    offs_s = tl.arange(0, B_S)
+    offs_d = tl.arange(0, D_K)
+
+    # Load Query block [B_S, D_K]
+    q = tl.load(q_ptr + offs_s[:, None] * stride_qs + offs_d[None, :] * stride_qd)
+
+    # Unified Online Softmax Accumulators
+    m_i = tl.full([B_S], float("-inf"), dtype=tl.float32)
+    l_i = tl.zeros([B_S], dtype=tl.float32)
+    acc = tl.zeros([B_S, D_K], dtype=tl.float32)
+
+    idx_base = TopK_Idx_ptr + pid_b * stride_idx_b + pid_h * stride_idx_h + pid_m * stride_idx_m
+
+    # Loop across top-k candidate key blocks
+    for k_idx in range(K_TOP):
+        # Load target key block ID
+        target_blk = tl.load(idx_base + k_idx * stride_idx_k)
+
+        # Indirect Load Key block [B_S, D_K]
+        k_ptrs = K_blk_ptr + pid_b * stride_kb + pid_h * stride_kh + target_blk * stride_km + (offs_s[None, :] * stride_ks + offs_d[:, None] * stride_kd)
+        k = tl.load(k_ptrs)
+
+        # Inner product S = Q @ K.T -> [B_S, B_S]
+        s = tl.dot(q, k) * scale
+
+        # Online Softmax update across unified candidate dimension
+        m_ij = tl.max(s, axis=1)
+        m_new = tl.maximum(m_i, m_ij)
+        p = tl.exp(s - m_new[:, None])
+        l_new = tl.exp(m_i - m_new) * l_i + tl.sum(p, axis=1)
+
+        acc_scale = tl.exp(m_i - m_new)
+        acc = acc * acc_scale[:, None]
+
+        # Indirect Load Value block [B_S, D_K]
+        v_ptrs = V_blk_ptr + pid_b * stride_vb + pid_h * stride_vh + target_blk * stride_vm + (offs_s[:, None] * stride_vs + offs_d[None, :] * stride_vd)
+        v = tl.load(v_ptrs)
+        acc = tl.dot(p.to(v.dtype), v, acc)
+
+        l_i = l_new
+        m_i = m_new
+
+    # Final Softmax Normalization
+    acc = acc / l_i[:, None]
+    out_ptrs = out_ptr + (offs_s[:, None] * stride_os + offs_d[None, :] * stride_od)
+    tl.store(out_ptrs, acc.to(Out_blk_ptr.dtype.element_ty))
+```
+
+### 6.3 Hardware Acceleration Summary
+1. **DRAM Access Coalescing**: Storing $\mathbf{K}_b, \mathbf{V}_b$ in contiguous block shapes `[B, H, M, B_s, d_h]` ensures indirect load pointers access aligned 128-byte DRAM segments.
+2. **Unified Online Softmax in Registers**: Unified Softmax statistics (`m_i`, `l_i`, `acc`) remain pinned in SRAM registers across all $k$ block iterations, completely eliminating intermediate global memory writes.

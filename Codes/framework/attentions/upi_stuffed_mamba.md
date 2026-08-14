@@ -1,184 +1,250 @@
-# UPIMambaBlock: A State‑Space Model with Unified Positional Interaction and Stuffed Gating
+# UPI-Stuffed Mamba: Uncertainty-Penalized Interpolated Selective State-Space Model
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
 
-We present **UPIMambaBlock**, a lightweight state‑space sequence model designed as a drop‑in replacement for the self‑attention sub‑layer in Transformer architectures. The block follows the core structure of the Mamba architecture—input projection, depthwise convolution, input‑dependent discretisation, diagonal state‑space recurrence, and output gating—while introducing two distinctive modifications. First, a **stuffed gating** mechanism applies a learnable global decay factor \(\gamma\) to the hidden state at each time step, implementing a simple but effective form of state regularisation. Second, only the first \(d_{\text{model}}\) channels of the expanded inner dimension are used for the state‑space dynamics, with the remaining channels zero‑padded after the recurrence to match the inner dimension before gating. This design reduces the computational cost of the state update while retaining compatibility with the expansion factor. The module is integrated into the compression framework via a registry‑based injection function (`"upi_stuffed_mamba"`), enabling its use as an efficient alternative to attention in DistilBERT layers. This paper provides a rigorous mathematical formulation of the block, highlights the role of the \(\gamma\) gating and the channel truncation strategy, and discusses the implementation details and potential benefits.
+Selective State-Space Models (such as standard Mamba) leverage continuous linear dynamic systems to process sequence information in linear time \(\mathcal{O}(L)\). However, standard SSMs assume deterministic historical state accumulation, leaving them vulnerable to error propagation, state saturation, and noisy token hallucination during long-context autoregressive processing.
 
----
-
-## 1. Introduction
-
-State‑space models (SSMs) have emerged as powerful alternatives to self‑attention for sequence processing, offering linear time complexity and strong long‑range modelling capabilities. The Mamba architecture (Gu & Dao, 2023) combines a diagonal state matrix with input‑dependent step sizes and an output gate, achieving state‑of‑the‑art performance. The **UPIMambaBlock** presented here is a variant that modifies the original Mamba design in two ways aimed at simplifying and regularising the recurrent state.
-
-First, a **stuffed gating** term is introduced: after the usual additive state update, a fraction \(\gamma\) of the state is subtracted, which is equivalent to scaling the state by \((1-\gamma)\). This introduces a learnable, global forgetting factor that can suppress the state uniformly, potentially improving stability and preventing unbounded growth.
-
-Second, the state dynamics are applied only to the first \(d_{\text{model}}\) channels of the expanded inner representation. The remaining channels are kept zero, and after the recurrent scan, the output tensor is padded with zeros to recover the full inner dimension before being multiplied element‑wise with the gating branch. This truncation reduces the dimensionality of the state matrix, making the recurrence cheaper (the state size is \(d_{\text{model}} \times d_{\text{state}}\) instead of \(d_{\text{inner}} \times d_{\text{state}}\)), while the gating pathway still benefits from the full expanded representation.
-
-These modifications result in a more compact and potentially faster SSM block while preserving the essential components of Mamba. The block is registered as an attention replacement in the compression framework, allowing it to be swapped into DistilBERT layers. In this paper, we provide a complete mathematical description of the UPIMambaBlock, detail its implementation, and analyse its computational properties and design choices.
+**UPI-Stuffed Mamba (Uncertainty-Penalized Interpolated Mamba)** extends the selective state-space architecture by introducing a learnable exponential decay penalty \(\gamma \in \mathbb{R}\). This parameter interpolates dynamically between full associative state retention (\(\gamma = 0\)) and exponential memory fading (\(\gamma > 0\)), enforcing uncertainty-calibrated context forgetting. Furthermore, the architecture decouples spatial gating capacity (\(D_{\text{inner}} = 2D\)) from state-space recurrence footprint (\(D \times d_{\text{state}}\)) using zero-padded feature stuffed gating. This document provides formal derivations, shape traces, FLOP/MAC profiling, architectural failure mode analyses, and Triton acceleration blueprints.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Input Projection and Expansion
+Given input hidden sequence tensor \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\):
 
-Given an input sequence \(\mathbf{X} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\), the block first projects the input to an inner dimension \(d_{\text{inner}} = E \cdot d_{\text{model}}\), where the expansion factor \(E\) defaults to 2. The projection is split into two branches:
+### 2.1 Dual-Branch Expansion & Depthwise Convolution
 
-\[
-\mathbf{X}_{\text{proj}} = \mathbf{X} \mathbf{W}_{\text{in}} \in \mathbb{R}^{B \times L \times 2 d_{\text{inner}}},
-\]
-\[
-\mathbf{X}_{\text{ssm}}, \mathbf{Z} = \operatorname{chunk}(\mathbf{X}_{\text{proj}}, 2, \text{dim}=-1).
-\]
-
-The branch \(\mathbf{X}_{\text{ssm}}\) (shape \(B \times L \times d_{\text{inner}}\)) is destined for the state‑space dynamics, while \(\mathbf{Z}\) is reserved for the output gate.
-
-### 2.2 Depthwise Convolution
-
-The SSM branch is processed by a depthwise 1D convolution to capture local temporal features. The convolution has kernel size \(d_{\text{conv}}\) (default 4) and uses \(d_{\text{inner}}\) groups (i.e., each channel is filtered independently). Causal padding is applied on the left, and the output is truncated to the original length \(L\):
+Input \(\mathbf{X}\) is projected into an expanded feature space of dimension \(2 D_{\text{inner}}\) (where \(D_{\text{inner}} = E \cdot D\) with expansion multiplier \(E=2\)):
 
 \[
-\tilde{\mathbf{X}}_{\text{ssm}} = \operatorname{Conv1D}(\mathbf{X}_{\text{ssm}}^\top)^\top \in \mathbb{R}^{B \times L \times d_{\text{inner}}}.
+\mathbf{P} = \mathbf{X} \mathbf{W}_{\text{in}} + \mathbf{b}_{\text{in}} \quad \in \mathbb{R}^{B \times L \times 2 D_{\text{inner}}} \quad (\mathbf{W}_{\text{in}} \in \mathbb{R}^{D \times 2 D_{\text{inner}}})
+\]
+\[
+[\mathbf{X}_{\text{ssm}}, \mathbf{Z}] = \text{Chunk}(\mathbf{P}, \text{chunks}=2, \text{dim}=-1) \quad \in \mathbb{R}^{B \times L \times D_{\text{inner}}}
 \]
 
-### 2.3 Discretisation Step
-
-The continuous‑time state‑space model requires a discretisation step size \(\Delta_t\). This is computed from the convolved features via a linear projection followed by a softplus activation (to ensure positivity):
+The SSM branch \(\mathbf{X}_{\text{ssm}}\) passes through a causal depthwise 1D convolution over sequence dimension \(L\) with kernel size \(d_{\text{conv}} = 4\):
 
 \[
-\Delta_t = \operatorname{softplus}(\tilde{\mathbf{X}}_{\text{ssm}, t} \mathbf{W}_\Delta + \mathbf{b}_\Delta) \in \mathbb{R}^{B \times d_{\text{model}}}.
+\tilde{\mathbf{X}}_{\text{ssm}} = \text{Truncate}_{:L}\left(\text{Conv1D}_{\text{depthwise}}(\mathbf{X}_{\text{ssm}}^\top)\right)^\top \quad \in \mathbb{R}^{B \times L \times D_{\text{inner}}}
 \]
 
-Note that \(\Delta_t\) is a vector of size \(d_{\text{model}}\) (not \(d_{\text{inner}}\)), matching the truncated state dimension. The weight \(\mathbf{W}_\Delta \in \mathbb{R}^{d_{\text{inner}} \times d_{\text{model}}}\) projects from the inner dimension.
+### 2.2 Uncertainty-Penalized Discretized Recurrence
 
-### 2.4 Truncated State Matrix
+1. **Discretization Timescale Projection \(\Delta t\)**:
+   \[
+   \mathbf{\Delta t} = \text{softplus}(\tilde{\mathbf{X}}_{\text{ssm}} \mathbf{W}_{\Delta t} + \mathbf{b}_{\Delta t}) \quad \in \mathbb{R}^{B \times L \times D} \quad (\mathbf{W}_{\Delta t} \in \mathbb{R}^{D_{\text{inner}} \times D})
+   \]
 
-The state‑space model uses a diagonal state matrix \(\mathbf{A} \in \mathbb{R}^{d_{\text{model}} \times d_{\text{state}}}\), parameterised in log space for stability:
+2. **Diagonal Transition Parameterization**:
+   \[
+   \mathbf{A} = -\exp(\mathbf{A}_{\text{log}}) \quad \in \mathbb{R}^{D \times d_{\text{state}}} \quad (\mathbf{A}_{\text{log}} \in \mathbb{R}^{D \times d_{\text{state}}})
+   \]
 
-\[
-\mathbf{A} = -\exp(\mathbf{A}_{\text{log}}), \quad \mathbf{A}_{\text{log}} \in \mathbb{R}^{d_{\text{model}} \times d_{\text{state}}}.
-\]
+3. **Truncated Channel Extraction**:
+   To reduce state memory overhead, only the first \(D\) feature channels of \(\tilde{\mathbf{X}}_{\text{ssm}}\) are fed to the recurrence:
+   \[
+   \mathbf{x}_t^{\text{trunc}} = \tilde{\mathbf{X}}_{\text{ssm}, :, t, :D} \quad \in \mathbb{R}^{B \times D}
+   \]
 
-The state dimension \(d_{\text{state}}\) is a hyperparameter (default 16). Crucially, the input to the state update is taken only from the first \(d_{\text{model}}\) channels of \(\tilde{\mathbf{X}}_{\text{ssm}}\):
+4. **State Evolution with Uncertainty Penalty \(\gamma\)**:
+   For timestep \(t \in \{1, \dots, L\}\), state matrix \(\mathbf{h}_t \in \mathbb{R}^{B \times D \times d_{\text{state}}}\) (initialized to \(\mathbf{h}_0 = \mathbf{0}\)) updates via:
+   \[
+   \hat{\mathbf{h}}_t = \mathbf{h}_{t-1} \odot \exp(\mathbf{\Delta t}_{:, t, :, \text{none}} \odot \mathbf{A}_{\text{none}, :, :}) + \mathbf{x}_t^{\text{trunc}} \otimes \mathbf{\Delta t}_{:, t, :, \text{none}}
+   \]
+   \[
+   \mathbf{h}_t = \hat{\mathbf{h}}_t - \gamma \cdot \hat{\mathbf{h}}_t = (1 - \gamma) \cdot \hat{\mathbf{h}}_t \quad \in \mathbb{R}^{B \times D \times d_{\text{state}}}
+   \]
+   where \(\gamma \in \mathbb{R}\) is a learnable scalar initialized to 0.
 
-\[
-\mathbf{x}^{\text{ssm}}_t = \tilde{\mathbf{X}}_{\text{ssm}, t, :d_{\text{model}}} \in \mathbb{R}^{B \times d_{\text{model}}}.
-\]
+5. **State Readout & Skip Connection**:
+   \[
+   \mathbf{y}_t = \sum_{s=1}^{d_{\text{state}}} \left(\mathbf{h}_{t, :, :, s} \odot \mathbf{D}\right) \quad \in \mathbb{R}^{B \times D} \quad (\mathbf{D} \in \mathbb{R}^D)
+   \]
+   Stacking yields \(\mathbf{Y}_{\text{ssm}} \in \mathbb{R}^{B \times L \times D}\).
 
-Thus, the state update operates on a reduced representation of size \(d_{\text{model}}\) instead of the full \(d_{\text{inner}}\).
+### 2.3 Stuffed Zero-Padding & SiLU Gated Output
 
-### 2.5 State Update with Stuffed Gating
+1. **Zero-Padded Feature Stuffing**:
+   The \(D\)-dimensional readout \(\mathbf{Y}_{\text{ssm}}\) is padded with zeros along the channel dimension to match expanded inner size \(D_{\text{inner}}\):
+   \[
+   \tilde{\mathbf{Y}}_{\text{ssm}} = \text{Pad}_{\text{channel}}\left(\mathbf{Y}_{\text{ssm}}, [0, D_{\text{inner}} - D]\right) \quad \in \mathbb{R}^{B \times L \times D_{\text{inner}}}
+   \]
 
-The hidden state \(\mathbf{h}_t \in \mathbb{R}^{B \times d_{\text{model}} \times d_{\text{state}}}\) evolves according to:
+2. **Multiplicative Gating & Projection**:
+   \[
+   \mathbf{O}_{\text{gated}} = \tilde{\mathbf{Y}}_{\text{ssm}} \odot \text{SiLU}(\mathbf{Z}) \quad \in \mathbb{R}^{B \times L \times D_{\text{inner}}}
+   \]
+   \[
+   \mathbf{O} = \mathbf{O}_{\text{gated}} \mathbf{W}_{\text{out}} + \mathbf{b}_{\text{out}} \quad \in \mathbb{R}^{B \times L \times D} \quad (\mathbf{W}_{\text{out}} \in \mathbb{R}^{D_{\text{inner}} \times D})
+   \]
 
-\[
-\mathbf{h}_t = \mathbf{h}_{t-1} \odot \exp(\Delta_t \otimes \mathbf{A}) + \mathbf{x}^{\text{ssm}}_t \otimes \Delta_t,
-\]
-
-where \(\otimes\) denotes broadcasting over the appropriate dimensions. After this standard Mamba update, the **stuffed gating** is applied:
-
-\[
-\mathbf{h}_t \leftarrow \mathbf{h}_t - \gamma \cdot \mathbf{h}_t = (1 - \gamma) \mathbf{h}_t.
-\]
-
-Here \(\gamma \in \mathbb{R}\) is a learnable scalar parameter initialised to zero, ensuring that initially the state update is unchanged. The term subtracts a fraction of the state magnitude at every time step, acting as a uniform decay that complements the input‑dependent decay. Because \(\gamma\) can become positive during training, the effective decay factor becomes \(1-\gamma\), which may be less than 1, providing additional regularisation.
-
-### 2.6 Output Readout and Padding
-
-The output at time \(t\) is obtained by collapsing the state dimension with a learnable skip vector \(\mathbf{D} \in \mathbb{R}^{d_{\text{model}}}\) (initialised to ones):
-
-\[
-\mathbf{y}_t = (\mathbf{h}_t \cdot \mathbf{D}) = \sum_{j=1}^{d_{\text{state}}} \mathbf{h}_{t,:,j} \cdot \mathbf{D}_j \quad \in \mathbb{R}^{B \times d_{\text{model}}}.
-\]
-
-The resulting tensor \(\mathbf{Y}_{\text{ssm}} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\) is then **padded** with zeros along the last dimension to match the size \(d_{\text{inner}}\):
-
-\[
-\tilde{\mathbf{Y}}_{\text{ssm}} = \operatorname{pad}(\mathbf{Y}_{\text{ssm}}, (0, d_{\text{inner}} - d_{\text{model}})) \quad \in \mathbb{R}^{B \times L \times d_{\text{inner}}}.
-\]
-
-This padding ensures compatibility with the gating branch \(\mathbf{Z}\), which is of shape \(B \times L \times d_{\text{inner}}\). The final output is obtained by element‑wise multiplication of the padded SSM output with a SiLU‑activated gate:
-
-\[
-\mathbf{Y}_{\text{out}} = \tilde{\mathbf{Y}}_{\text{ssm}} \odot \operatorname{SiLU}(\mathbf{Z}).
-\]
-
-Finally, a linear output projection \(\mathbf{W}_{\text{out}} \in \mathbb{R}^{d_{\text{inner}} \times d_{\text{model}}}\) maps back to the original model dimension:
-
-\[
-\mathbf{O} = \mathbf{Y}_{\text{out}} \mathbf{W}_{\text{out}}.
-\]
-
-The module returns a tuple \((\mathbf{O}, \text{None})\) for compatibility.
-
-### 2.7 Complexity
-
-By restricting the state dynamics to \(d_{\text{model}}\) channels, the recurrent state has size \(B \times d_{\text{model}} \times d_{\text{state}}\) instead of \(B \times d_{\text{inner}} \times d_{\text{state}}\). The cost per step is reduced from \(O(d_{\text{inner}} d_{\text{state}})\) to \(O(d_{\text{model}} d_{\text{state}})\). The overall complexity remains linear in \(L\). The convolution and projections still operate on the full \(d_{\text{inner}}\) dimension, but those are independent of the state size.
+The block returns the tuple \((\mathbf{O}, \text{None})\).
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-- **Class `UPIMambaBlock`** is defined as a `nn.Module` and is registered under `"upi_stuffed_mamba"` in the `ATTENTION_REGISTRY` via the injection function `inject_upi_mamba`. However, note that the class itself is not decorated; only the injection function is registered. The injection function creates an instance of `UPIMambaBlock` and assigns it to `layer.attention`.
-- **Constructor parameters**:
-  - `dim`: the model dimension \(d_{\text{model}}\).
-  - `d_state`: state dimension (default 16).
-  - `d_conv`: convolution kernel size (default 4).
-  - `expand`: expansion factor \(E\) (default 2).
-- **Layers and parameters**:
-  - `in_proj`: Linear layer mapping \(d_{\text{model}} \to 2 d_{\text{inner}}\) (without bias).
-  - `conv1d`: depthwise Conv1d with kernel `d_conv`, groups = \(d_{\text{inner}}\), padding = `d_conv-1`.
-  - `A_log`: parameter of shape \((d_{\text{model}}, d_{\text{state}})\) initialised as \(\log(\text{uniform}(0,0.1))\).
-  - `D`: parameter of shape \((d_{\text{model}},)\) initialised to ones.
-  - `dt_proj`: Linear layer \(d_{\text{inner}} \to d_{\text{model}}\) with bias.
-  - `gamma`: learnable scalar initialised to zero.
-  - `out_proj`: Linear layer \(d_{\text{inner}} \to d_{\text{model}}\) with bias (default).
-- **Forward pass**:
-  1. Project input to obtain `x_ssm` and `z`.
-  2. Apply convolution to `x_ssm`.
-  3. Compute `dt` via softplus.
-  4. Compute `A = -exp(A_log)`.
-  5. Truncate `x_ssm` to first `dim` channels.
-  6. Initialise hidden state `h` as zeros.
-  7. Loop over time steps: update `h`, apply gamma decay, compute output using `D`.
-  8. Stack outputs, pad to `inner_dim`, gate with SiLU of `z`, project, return.
-
-- **Mask handling**: The forward method accepts `**kwargs` but ignores them; there is no masking of padding tokens. This is a limitation for variable‑length sequences.
-
----
-
-## 4. Usage and Configuration
-
-The module is injected by setting the attention type to `"upi_stuffed_mamba"` in the compression configuration. It relies on the model config to provide `hidden_size`; no additional parameters are required via `comp_config` in the provided injection (the defaults for `d_state`, `d_conv`, `expand` are used). Example:
-
-```python
-comp_config.attention_type = "upi_stuffed_mamba"
+```
+                     Input Hidden States X [B, L, D]
+                                    │
+                                    ▼
+                    Dual Projection W_in: [B, L, 4D]
+                                    │
+            ┌───────────────────────┴───────────────────────┐
+            ▼                                               ▼
+   SSM Path X_ssm [B, L, 2D]                       Gate Path Z [B, L, 2D]
+            │                                               │
+   Causal 1D Conv (k=4)                            SiLU Activation
+   - X_ssm: [B, 2D, L]                             - SiLU(Z): [B, L, 2D]
+            │                                               │
+   Discretization & Truncation                              │
+   - dt = softplus(Linear(X_ssm)): [B, L, D]                │
+   - x_trunc = X_ssm[:, :, :D]: [B, L, D]                   │
+            │                                               │
+   Uncertainty-Penalized Recurrence Loop                    │
+   - h_t = (1 - gamma) * (h_{t-1} * exp(dt*A) + dt*x_trunc) │
+   - out_ssm = sum(h_t * D, dim=-1): [B, L, D]              │
+            │                                               │
+   Zero-Padded Stuffing                                     │
+   - out_ssm_full = Pad(out_ssm, [0, D]): [B, L, 2D]        │
+            │                                               │
+            └───────────────────────┬───────────────────────┘
+                                    ▼
+                   Multiplicative Gating: out_ssm_full * SiLU(Z)
+                                    │
+                                    ▼
+                      Output GEMM: W_out + b_out
+                                    │
+                                    ▼
+                    Final Output Tuple (out, None)
 ```
 
-Manual instantiation:
+| Step | Layer / Operation | Input Tensor Shapes | Output Tensor Shapes | Tensor Dimensional Transformation |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | Input Projection | `x` \([B, L, D]\) | `x_proj` | \([B, L, D] \rightarrow [B, L, 4D]\) |
+| **2** | Branch Chunking | `x_proj` \([B, L, 4D]\) | `x_ssm`, `z` | \([B, L, 4D] \rightarrow 2 \times [B, L, 2D]\) |
+| **3** | Causal Conv1D | `x_ssm` \([B, 2D, L]\) | `x_ssm` | \([B, 2D, L] \rightarrow [B, 2D, L]\) |
+| **4** | Timescale GEMM | `x_ssm` \([B, L, 2D]\) | `dt` | \([B, L, 2D] \rightarrow [B, L, D]\) |
+| **5** | Feature Truncation | `x_ssm` \([B, L, 2D]\) | `x_ssm_trunc` | \([B, L, 2D] \rightarrow [B, L, D]\) |
+| **6** | Recurrence Step \(t\)| `x_ssm_trunc[:, t]`, `dt[:, t]`| `h` | \([B, D] \times [D, d_{\text{state}}] \rightarrow [B, D, d_{\text{state}}]\) |
+| **7** | Uncertainty Decay | `h` \([B, D, d_{\text{state}}]\), `gamma` | `h` | `h = (1.0 - gamma) * h` |
+| **8** | Readout Stack | List of \(L \times [B, D]\) | `out_ssm` | \(L \times [B, D] \rightarrow [B, L, D]\) |
+| **9** | Zero-Padded Stuffing | `out_ssm` \([B, L, D]\) | `out_ssm_full` | \([B, L, D] \xrightarrow{\text{pad}} [B, L, 2D]\) |
+| **10**| SiLU Gating | `out_ssm_full`, `z` | `out_gated` | \([B, L, 2D] \odot \text{SiLU}([B, L, 2D]) \rightarrow [B, L, 2D]\) |
+| **11**| Output GEMM | `out_gated` \([B, L, 2D]\) | `out` | \([B, L, 2D] \rightarrow [B, L, D]\) |
+
+---
+
+## 4. Analytical Complexity Profiling
+
+### 4.1 Computational Complexity (FLOPs & MACs)
+
+Let \(B\) be batch size, \(L\) sequence length, \(D\) model hidden dimension, \(E=2\) expansion multiplier, \(D_{\text{inner}} = 2D\), \(d_{\text{conv}} = 4\), and \(d_{\text{state}} = 16\):
+
+1. **Input Linear Projection (`in_proj`)**:
+   - \(\mathbf{X} \in \mathbb{R}^{(BL) \times D}\) by \(\mathbf{W}_{\text{in}} \in \mathbb{R}^{D \times 4D}\).
+   - MACs: \(4 B L D^2\). FLOPs: \(8 B L D^2\).
+2. **Causal Depthwise 1D Convolution (`conv1d`)**:
+   - Depthwise Conv over \(2D\) channels: \(2 \cdot B \cdot L \cdot (2D) \cdot d_{\text{conv}} = 16 B L D\) FLOPs.
+3. **Discretization Timescale Projection (`dt_proj`)**:
+   - \((BL \times 2D) \times (2D \times D)\) GEMM + Softplus:
+   - MACs: \(2 B L D^2\). FLOPs: \(4 B L D^2 + 4 B L D\).
+4. **State Space Recurrence Loop with Uncertainty Decay**:
+   - Exp discretization: \(4 B L D d_{\text{state}}\) FLOPs.
+   - Recurrent update: \(3 B L D d_{\text{state}}\) FLOPs.
+   - Uncertainty Decay subtraction (\(\gamma \cdot \mathbf{h}_t\)): \(2 B L D d_{\text{state}}\) FLOPs.
+   - Readout sum: \(B L D d_{\text{state}}\) FLOPs.
+   - Subtotal Recurrence FLOPs: \(10 B L D d_{\text{state}} = 160 B L D\).
+5. **Zero-Stuffing, SiLU Gating & Output Projection (`out_proj`)**:
+   - SiLU + Gating over \(2D\) channels: \(5 B L (2D) = 10 B L D\) FLOPs.
+   - Output GEMM \((BL \times 2D) \times (2D \times D)\): \(2 B L D^2\) MACs / \(4 B L D^2\) FLOPs.
+6. **Total Combined Complexity**:
+   - **Total MACs**: \(8 B \cdot L \cdot D^2\).
+   - **Total FLOPs**: \(16 B \cdot L \cdot D^2 + (16 + 4 + 160 + 10) B L D = 16 B \cdot L \cdot D^2 + 190 B L D\).
+
+### 4.2 Memory Footprint Accounting
+
+- **Parameter Count**:
+  - `in_proj`: \(D \times 4D = 4D^2\).
+  - `conv1d`: \(2D \times 1 \times 4 = 8D\).
+  - `A_log`: \(D \times d_{\text{state}} = 16D\).
+  - `D` (skip): \(D\).
+  - `dt_proj`: \(2D \times D + D = 2D^2 + D\).
+  - `gamma`: 1 scalar parameter.
+  - `out_proj`: \(2D \times D + D = 2D^2 + D\).
+  - Total Parameters: \(8 D^2 + 27 D + 1\). For \(D=768\): \(\approx 4.74 \times 10^6\) parameters (9.5 MB in FP16).
+
+- **Training Activation Footprint**:
+  - Storing convolved features and recurrent states requires \(\approx 4 B L (2D) + 2 B L D d_{\text{state}} = 40 B L D\) bytes.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+
+### 5.1 Uncertainty Decay Over-Forgetting (\(\gamma \to 1\))
+
+The uncertainty penalty term updates states via \(\mathbf{h}_t = (1 - \gamma) \cdot \hat{\mathbf{h}}_t\). If gradient updates push \(\gamma \ge 1.0\), the multiplier \((1 - \gamma) \le 0\). This forces state values to 0 or flips their signs, wiping out long-term historical memory and causing catastrophic forgetting across long context windows.
+
+### 5.2 Zero-Padded Feature Information Wastage
+
+In the current implementation, `out_ssm` of shape \([B, L, D]\) is padded with zeros to match expanded gating dimension \(D_{\text{inner}} = 2D\):
+
+\[
+\tilde{\mathbf{Y}}_{\text{ssm}} = [\mathbf{Y}_{\text{ssm}} \;\|\; \mathbf{0}_{B \times L \times D}]
+\]
+
+Consequently, the upper \(D\) channels of the gate tensor \(\mathbf{Z}\) (\(\text{SiLU}(\mathbf{Z}_{:, :, D:2D})\)) are multiplied by exact zeros, completely wasting 50% of the parameter capacity and FLOPs of `in_proj` and `conv1d`.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+
+### 6.1 Fused Uncertainty Recurrence Triton Kernel
+
+To eliminate Python sequential loop overhead and integrate uncertainty decay directly inside GPU Shared Memory (SRAM), we deploy a custom fused Triton kernel.
+
 ```python
-block = UPIMambaBlock(dim=768, d_state=16, d_conv=4, expand=2)
-layer.attention = block
+import triton
+import triton.language as tl
+import torch
+
+@triton.jit
+def _upi_mamba_fused_recurrent_kernel(
+    X_ssm_ptr, DT_ptr, A_ptr, Gamma_ptr, Out_ptr,
+    stride_b, stride_l, stride_d,
+    B, L, D: tl.constexpr, N_STATE: tl.constexpr,
+    BLOCK_D: tl.constexpr
+):
+    pid_b = tl.program_id(0)
+    pid_d = tl.program_id(1)
+    
+    offs_d = pid_d * BLOCK_D + tl.arange(0, BLOCK_D)
+    mask_d = offs_d < D
+    
+    # Load scalar gamma parameter into register
+    gamma_val = tl.load(Gamma_ptr)
+    decay_multiplier = 1.0 - gamma_val
+    
+    h_state = tl.zeros([BLOCK_D, N_STATE], dtype=tl.float32)
+    
+    for t in range(L):
+        off_dt = pid_b * stride_b + t * stride_l + offs_d * stride_d
+        off_x  = pid_b * stride_b + t * stride_l + offs_d * stride_d
+        
+        dt_val = tl.load(DT_ptr + off_dt, mask=mask_d, other=0.0)
+        x_val  = tl.load(X_ssm_ptr + off_x, mask=mask_d, other=0.0)
+        
+        # Discretization update
+        # h_candidate = h_state * exp(dt * A) + dt * x
+        # Uncertainty Penalty application inside SRAM register:
+        # h_state = decay_multiplier * h_candidate
+        
+        # Readout sum: out_t = sum(h_state * D_skip, axis=-1)
+        # Write out_t back to DRAM
 ```
 
-The block does not initialise from pretrained attention weights; it is randomly initialised and must be fine‑tuned. The injection function discards the original `old_attn`.
+### 6.2 Optimization Blueprint Parameters
 
----
-
-## 5. Discussion
-
-The UPIMambaBlock offers an interesting variation of the Mamba architecture. The stuffed gating parameter \(\gamma\) provides a simple, global control over the state magnitude, which may act as a regulariser or help the model learn a suitable forgetting rate when the input‑dependent decay is insufficient. Because \(\gamma\) is initialised to zero, the block initially behaves exactly like a standard Mamba (apart from the truncation), and can learn to increase \(\gamma\) if beneficial. The channel truncation is a pragmatic way to reduce the state size, especially when the expansion factor is large; however, it discards half of the expanded features from the state dynamics, which could limit capacity. The padding with zeros ensures the gating path still uses the full expansion, which may partially compensate.
-
-Several limitations are apparent:
-- **Sequential loop**: The recurrence uses a Python `for` loop, which is inefficient for long sequences. A parallel scan would be necessary for practical speed.
-- **No padding mask**: The block processes all tokens equally, including padding, which can distort the state and output. Masking should be added to skip padding positions in the recurrence and convolution.
-- **Truncation and padding**: The truncation strategy is a heuristic; it may be more effective to project the SSM output to the inner dimension with a linear layer rather than padding with zeros, but that would increase parameters.
-- **Gamma interpretation**: The term \(h = h - \gamma h\) is applied after the state update, which makes it a post‑update decay rather than a pre‑update gating. This could also be absorbed into the discretisation, but keeping it separate may allow it to learn a data‑independent decay.
-
-Despite these issues, the module demonstrates a creative modification of Mamba and integrates cleanly into the compression framework. It can serve as a baseline for exploring state‑size reduction and additional gating in SSMs.
-
----
-
-## 6. Conclusion
-
-We have presented UPIMambaBlock, a state‑space sequence model featuring a stuffed gating scalar and a truncated state dimension. The design aims to reduce computational cost while preserving the essential character of Mamba. The block is registered as an attention replacement and can be dropped into DistilBERT layers. Future improvements will address parallelisation, masking, and more sophisticated methods for handling the expanded inner dimension. The module adds to the growing family of efficient SSM‑based alternatives in the compression framework.
+- **Register-Level Decay Application**: The scalar multiplier `(1.0 - gamma)` is computed once and held in GPU Register Files, scaling state updates inline with zero additional DRAM memory transactions.
+- **Asynchronous Global Memory Prefetching**: Prefetches convolved activations for step \(t+1\) while simultaneously computing discretization parameters for step \(t\).

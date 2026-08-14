@@ -1,136 +1,246 @@
-# EATBlock: Efficient Attention Transformer Block with Progressive Token Pruning
+# EAT: Efficient Attention Transformer Block with Progressive Token Pruning
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+Multi-Head Self-Attention (MHSA) and Feed-Forward Networks (FFN) in standard Transformer blocks maintain a fixed sequence length $L$ across all model layers. In deep networks, many tokens correspond to redundant syntax, background noise, or uninformative punctuation. Maintaining these non-essential tokens through deep layers wastes memory and quadratic FLOPs $\mathcal{O}(L^2 d)$ in subsequent attention operations.
 
-We introduce the **EATBlock** (Efficient Attention Transformer block), a standard Transformer block augmented with an optional **progressive token pruning** module. The block consists of multi‑head self‑attention and a feed‑forward network, each wrapped with residual connections and layer normalisation, following the classic Transformer architecture. After the feed‑forward sub‑layer, a pruning layer can be applied to dynamically reduce the number of tokens, discarding less informative ones according to a learned or heuristic scoring function. This design allows the model to gradually compress the sequence length across layers, significantly reducing the computational cost of self‑attention in deeper layers while preserving critical information. The module is intended for long‑sequence processing where early layers operate on a larger number of tokens and later layers on a progressively pruned set. It integrates seamlessly with standard Transformer frameworks and can be used as a drop‑in replacement for a full attention layer in models such as DistilBERT.
+**EAT (Efficient Attention Transformer Block)** introduces dynamic length reduction by integrating a **Progressive Token Pruning** sub-network directly into the Transformer layer pipeline. EAT executes standard Multi-Head Self-Attention and Feed-Forward feature synthesis, then evaluates token-level salience scores to extract a top-$k$ informative token subset $\mathcal{I}_{\text{keep}}$. Non-essential tokens are dynamically dropped, reducing the active sequence length from $L$ to $L' = \lfloor \gamma \cdot L \rfloor$ (where $\gamma < 1$).
 
----
-
-## 1. Introduction
-
-The quadratic complexity of self‑attention with respect to sequence length makes it challenging to apply Transformers to very long documents. One popular strategy to mitigate this cost is **token pruning**—removing tokens that are deemed unimportant for the task at later stages of the network. The EATBlock formalises this idea by coupling a standard Transformer block with a progressive pruning mechanism. Unlike methods that prune only after the final layer or in a single step, progressive pruning reduces the sequence length gradually over multiple layers, enabling a smooth trade‑off between accuracy and efficiency.
-
-In this paper, we detail the architecture of the EATBlock, which consists of a multi‑head self‑attention sub‑layer, a position‑wise feed‑forward network, and an optional progressive token pruning module applied after the feed‑forward transformation. The pruning module is designed to be modular; any token pruning algorithm (e.g., based on attention scores, token importance, or a learned policy) can be plugged in. The default implementation uses `ProgressiveTokenPruning`, a companion module that implements progressive removal of tokens using a learnable scoring network and a scheduling strategy.
+By progressively shrinking sequence length across Transformer depth ($L_0 > L_1 > \dots > L_M$), EAT compounds computational and memory savings down the network hierarchy, accelerating inference while preserving task accuracy.
 
 ---
 
-## 2. Method
+## 2. Mathematical Derivations & Formulations
 
-### 2.1 Standard Transformer Block
+### 2.1 Multi-Head Self-Attention Sub-Layer
+Given input activations $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) projections yield:
+$$\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V \quad \in \mathbb{R}^{B \times H \times L \times d_h}$$
+where $H$ is the head count and $d_h = D / H$.
 
-The core of the EATBlock is a classic Transformer block. Given an input sequence of hidden states \(\mathbf{X} \in \mathbb{R}^{B \times L \times d_{\text{model}}}\), the block computes:
+If key padding mask $\mathbf{M}_{\text{pad}} \in \{0, 1\}^{B \times L}$ is provided, invalid padding key positions are masked:
+$$\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}} + (1 - \mathbf{M}_{\text{pad}}) \cdot (-10^9)$$
+$$\mathbf{A} = \operatorname{Softmax}(\mathbf{S}) \in \mathbb{R}^{B \times H \times L \times L}$$
+$$\mathbf{X}_{\text{attn}} = \mathbf{A} \mathbf{V} \mathbf{W}_O \quad \in \mathbb{R}^{B \times L \times D}$$
 
-\[
-\mathbf{A} = \text{MultiHeadAttention}(\mathbf{X}, \mathbf{X}, \mathbf{X}),
-\]
-\[
-\mathbf{X}_1 = \text{LayerNorm}(\mathbf{X} + \mathbf{A}),
-\]
-\[
-\mathbf{F} = \text{FFN}(\mathbf{X}_1) = \mathbf{W}_2 \, \text{GELU}(\mathbf{W}_1 \mathbf{X}_1 + \mathbf{b}_1) + \mathbf{b}_2,
-\]
-\[
-\mathbf{X}_2 = \text{LayerNorm}(\mathbf{X}_1 + \mathbf{F}).
-\]
+The first residual addition and Layer Normalization yield intermediate representation $\mathbf{X}^{(1)}$:
+$$\mathbf{X}^{(1)} = \operatorname{LayerNorm}\left( \mathbf{X} + \mathbf{X}_{\text{attn}} \right) \in \mathbb{R}^{B \times L \times D}$$
 
-The multi‑head attention uses `nn.MultiheadAttention` with `batch_first=True`, performing self‑attention without an external mask (padding masks can be added if needed). The feed‑forward network is a two‑layer MLP with an expansion factor of 4 and GELU activation.
+### 2.2 Position-wise Feed-Forward Sub-Layer
+Intermediate activations $\mathbf{X}^{(1)}$ pass through a 2-layer FFN with expansion factor 4 and GELU non-linearity:
+$$\mathbf{F} = \operatorname{GELU}\left( \mathbf{X}^{(1)} \mathbf{W}_1 + \mathbf{b}_1 \right) \mathbf{W}_2 + \mathbf{b}_2 \quad \in \mathbb{R}^{B \times L \times D}$$
+where $\mathbf{W}_1 \in \mathbb{R}^{D \times 4D}$ and $\mathbf{W}_2 \in \mathbb{R}^{4D \times D}$.
 
-### 2.2 Progressive Token Pruning
+The second residual addition and Layer Normalization produce updated features $\mathbf{X}^{(2)}$:
+$$\mathbf{X}^{(2)} = \operatorname{LayerNorm}\left( \mathbf{X}^{(1)} + \mathbf{F} \right) \in \mathbb{R}^{B \times L \times D}$$
 
-If a pruning module is provided (`prune_layer` is not `None`), it is applied to the output of the FFN sub‑layer:
+### 2.3 Progressive Token Pruning Stage
+If a `ProgressiveTokenPruning` module is attached, token salience scores $\mathbf{s}_{\text{salience}} \in \mathbb{R}^{B \times L}$ are evaluated over $\mathbf{X}^{(2)}$:
+$$\mathbf{s}_{\text{salience}} = \operatorname{ScoreNetwork}\left( \mathbf{X}^{(2)} \right)$$
 
-\[
-\mathbf{X}_{\text{pruned}}, \mathbf{I}_{\text{new}} = \text{Prune}(\mathbf{X}_2),
-\]
+Given a target retention ratio $\gamma \in (0, 1]$, the number of tokens retained is $L' = \lfloor \gamma \cdot L \rfloor$. The top-$L'$ token indices $\mathcal{I}_{\text{keep}}$ are extracted via Top-$k$:
+$$\mathcal{I}_{\text{keep}} = \operatorname{TopK}\left( \mathbf{s}_{\text{salience}}, L' \right) \quad \in \{1, \dots, L\}^{B \times L'}$$
 
-where \(\mathbf{I}_{\text{new}} \in \mathbb{N}^{B \times L_{\text{new}}}\) are the indices of the surviving tokens. The module is expected to return a reduced sequence length \(L_{\text{new}} \le L\). If the original token indices (e.g., word piece IDs) are provided via `token_indices`, they are gathered using the new indices to keep alignment:
+The hidden activation sequence is gathered along the sequence dimension:
+$$\mathbf{X}^{\text{pruned}} = \operatorname{Gather}\left( \mathbf{X}^{(2)}, \text{dim}=1, \text{index}=\mathcal{I}_{\text{keep}} \right) \quad \in \mathbb{R}^{B \times L' \times D}$$
 
-\[
-\mathbf{T}_{\text{new}} = \mathbf{T}_{\text{old}}.\text{gather}(1, \mathbf{I}_{\text{new}}).
-\]
-
-The pruning mechanism is **progressive**: at each layer that has pruning enabled, a certain fraction of tokens are removed. The `ProgressiveTokenPruning` module (imported but not detailed in this snippet) typically includes:
-
-- A **scoring function** that assigns an importance score to each token (e.g., using the attention weights or a lightweight linear layer).
-- A **pruning schedule** that determines how many tokens to keep at each layer (e.g., linear decay of sequence length).
-- A **masking** strategy that sets the outputs of pruned tokens to zero or simply removes them, as done here.
-
-By pruning tokens after the FFN sub‑layer, the subsequent layer receives a shorter sequence, thereby reducing the cost of the following multi‑head attention.
-
-### 2.3 Overall Forward Pass
-
-The forward method accepts two inputs:
-
-- `x`: tensor of shape \((B, L, d_{\text{model}})\).
-- `token_indices`: optional tensor of shape \((B, L)\) containing original token IDs, used to track which tokens survive after pruning.
-
-If pruning is not active, the block simply returns \(\mathbf{X}_2\) and the unchanged `token_indices`. If pruning is active, it returns the pruned sequence and the updated token indices (or `None` if token indices were not provided).
+If original position indices $\mathbf{T}_{\text{idx}} \in \mathbb{N}^{B \times L}$ are tracked across layers, they are gathered identically:
+$$\mathbf{T}_{\text{idx}}^{\text{new}} = \operatorname{Gather}\left( \mathbf{T}_{\text{idx}}, \text{dim}=1, \text{index}=\mathcal{I}_{\text{keep}} \right) \quad \in \mathbb{N}^{B \times L'}$$
 
 ---
 
-## 3. Implementation Details
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
 
-The `EATBlock` class is defined as follows:
+| Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
+| :--- | :--- | :--- | :--- | :--- |
+| 1 | Input Activations | - | `[B, L, D]` | Input sequence representation of length $L$ |
+| 2 | Q, K, V Projections | `[B, L, D]` | `[B, H, L, d_h]` | Linear map via $W_Q, W_K, W_V$ & split heads |
+| 3 | Scaled Dot Attn | `Q`, `K`, `V`, `Mask`| `[B, L, D]` | Multi-head attention with optional key padding mask |
+| 4 | Residual Add & Norm 1 | `[B, L, D]` | `[B, L, D]` | Add input residual & apply LayerNorm |
+| 5 | Feed-Forward MLP | `[B, L, D]` | `[B, L, D]` | 2-layer MLP with GELU ($D \to 4D \to D$) |
+| 6 | Residual Add & Norm 2 | `[B, L, D]` | `[B, L, D]` | Add intermediate residual & apply LayerNorm |
+| 7 | Salience Scoring | `[B, L, D]` | `[B, L]` | Evaluate token importance scores |
+| 8 | Top-$L'$ Index Extraction| `[B, L]` | `[B, L']` | Extract top-$L'$ indices $\mathcal{I}_{\text{keep}}$ ($L' \le L$) |
+| 9 | Token Gathering | `[B, L, D]`, `Indices`| `[B, L', D]` | Slice tensor along sequence axis to pruned length $L'$ |
+| 10| Index Alignment | `[B, L]`, `Indices` | `[B, L']` | Gather original position tracking indices |
 
-- **Constructor**:
-  - `d_model`: hidden dimension.
-  - `n_heads`: number of attention heads.
-  - `prune_layer`: an instance of `ProgressiveTokenPruning` (or any compatible module) that implements the pruning logic. If `None`, no pruning occurs.
-  - It creates `self.attn` (a PyTorch `MultiheadAttention` with `batch_first=True`), `self.ffn` (a Sequential with Linear→GELU→Linear), and two `LayerNorm` layers. The FFN uses an inner dimension of \(4 \times d_{\text{model}}\).
-
-- **Forward**:
-  - Computes attention with `self.attn(x, x, x)`, which returns `attn_output, attn_output_weights`.
-  - Adds the residual, applies norm1.
-  - Computes FFN, adds residual, applies norm2.
-  - If `self.prune_layer` is not None, calls it on `x` to get pruned hidden states and new indices; then optionally gathers `token_indices` using the new indices.
-  - Returns the (pruned or full) hidden states and the updated token indices.
-
-The module does **not** include dropout explicitly, but dropout can be injected via the `MultiheadAttention`’s built‑in dropout or by adding dropout layers in the FFN. In the provided code, dropout is not configured, but in a full implementation it would be.
-
----
-
-## 4. Usage and Configuration
-
-The block can be integrated into any Transformer architecture. To enable progressive pruning, instantiate a `ProgressiveTokenPruning` module (not shown, but presumably from the same framework) with parameters like initial sequence length, target sequence length, pruning schedule, etc., and pass it to the `EATBlock`.
-
-Example:
-
-```python
-pruner = ProgressiveTokenPruning(
-    d_model=d_model,
-    prune_ratio=0.1,            # fraction of tokens to remove per pruning step
-    min_tokens=16,
-    start_layer=2,              # layer index when pruning begins
-    pruning_schedule='linear'
-)
-block = EATBlock(d_model=768, n_heads=12, prune_layer=pruner)
+```
+                       [B, L, D] Input Tensor
+                           │
+       ┌───────────────────┴───────────────────┐
+       │ Residual                              ▼
+       │                      Multi-Head Self-Attention
+       │                         Key Padding Mask [B, L]
+       │                                       │
+       └───────────────────┬───────────────────┘
+                           ▼
+               Residual Add & LayerNorm 1
+                           │
+       ┌───────────────────┴───────────────────┐
+       │ Residual                              ▼
+       │                      Position-wise FFN Network
+       │                         GELU(X W_1 + b_1) W_2
+       │                                       │
+       └───────────────────┬───────────────────┘
+                           ▼
+               Residual Add & LayerNorm 2 (X^(2))
+                           │
+       ┌───────────────────┴───────────────────┐
+       │ Prune Layer == None                   │ Prune Layer Active
+       ▼                                       ▼
+Return [B, L, D] Output             Token Salience Scoring S(X^(2))
+                                               │
+                                               ▼
+                                    Top-L' Selection (L' <= L)
+                                    Indices I_keep [B, L']
+                                               │
+                                               ▼
+                                    Gather Pruned Activations
+                                    X_pruned [B, L', D]
+                                               │
+                                               ▼
+                                    Gather Position Tracker T_idx
+                                               │
+                                               ▼
+                                    Return [B, L', D] Output
 ```
 
-If no pruning is desired, omit the `prune_layer` argument, and the block behaves identically to a standard Transformer block.
+---
 
-**Configuration parameters** (indirect, via the pruning module) may include:
+## 4. Analytical Complexity Profiling
 
-| Parameter | Description |
-|-----------|-------------|
-| `prune_ratio` | Fraction of tokens pruned at each pruning layer. |
-| `min_tokens` | Minimum number of tokens to retain. |
-| `start_layer` | The first layer where pruning becomes active. |
-| `pruning_schedule` | How the number of tokens decays (e.g., linear, exponential). |
+### 4.1 FLOPs Computation Breakdown
+Let $B$ be batch size, $L$ input sequence length, $D$ hidden dimension, $d_{\text{ffn}} = 4D$, and $L'$ pruned sequence length ($L' = \lfloor \gamma L \rfloor$).
 
-The block itself has no extra hyperparameters beyond those of the standard attention and FFN.
+1. **Multi-Head Self-Attention (MHA)**:
+   - Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}$): $8 B L D^2$
+   - Score Matmul ($\mathbf{Q} \mathbf{K}^\top$) & Context Matmul ($\mathbf{A} \mathbf{V}$): $4 B H L^2 d_h = 4 B L^2 D$
+   $$\operatorname{FLOPs}_{\text{mha}} = 8 B L D^2 + 4 B L^2 D$$
+2. **Position-wise Feed-Forward Network (FFN)**:
+   - Inner projection ($D \to 4D$): $2 B L D (4D) = 8 B L D^2$
+   - Outer projection ($4D \to D$): $2 B L (4D) D = 8 B L D^2$
+   $$\operatorname{FLOPs}_{\text{ffn}} = 16 B L D^2$$
+3. **Layer Normalizations & Residual Additions**:
+   $$\operatorname{FLOPs}_{\text{norm}} = 6 B L D$$
+4. **Progressive Token Pruning Stage**:
+   - Salience scoring projection ($D \to 1$): $2 B L D$
+   - Top-$k$ sorting: $B \cdot L \log L'$
+   $$\operatorname{FLOPs}_{\text{prune}} = 2 B L D + B L \log L'$$
+
+$$\text{Total Block FLOPs} = 24 B L D^2 + 4 B L^2 D + 8 B L D + B L \log L'$$
+
+Downstream layers receive length $L' = \gamma L$, dropping downstream attention FLOPs from $\mathcal{O}(L^2 D)$ to $\mathcal{O}(\gamma^2 L^2 D)$.
+
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} \approx 12 B L D^2 + 2 B L^2 D + B L D$$
+- **Peak Activation Memory**:
+  - Attention Score Tensor: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$
+  - Intermediate FFN Activation Buffer: $B \cdot L \cdot 4D \times 2 \text{ bytes}$
+  - Pruned Output Buffer: $B \cdot L' \cdot D \times 2 \text{ bytes}$.
+  - Subsequent layer activation memory drops by factor $L' / L = \gamma$.
+
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Transformer Layer**: $\mathcal{O}(L^2 D + L D^2)$ compute, $\mathcal{O}(L^2 H + L D)$ memory.
+- **EAT Block with Progressive Pruning**: Compounds length reduction across $M$ layers ($L_0 \to L_1 \to \dots \to L_M$). Total attention compute across $M$ layers drops from $M \cdot L_0^2 D$ to $\sum_{m=0}^{M-1} L_m^2 D \ll M L_0^2 D$.
 
 ---
 
-## 5. Discussion
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-The EATBlock provides a simple, modular way to incorporate token pruning into a Transformer. By decoupling the pruning operation from the attention mechanism, it can be combined with any attention variant and any token pruning algorithm. Progressive pruning offers a better accuracy–efficiency trade‑off than one‑shot pruning because it allows the model to gradually refine the selection of important tokens as the representations become more abstract.
+### 5.1 Non-Gatherable Positional Encoding Disconnect
+When tokens are physically pruned from $L \to L'$:
+```python
+x, new_indices = self.prune_layer(x)
+```
+- **Spatial Position Distortion**: If static sinusoidal or absolute positional embeddings were added at layer 0, gathering activations $x[:, \mathcal{I}_{\text{keep}}, :]$ without updating rotary or relative positional bias causes remaining tokens to appear adjacent, corrupting relative distance metrics in deeper layers.
+- **Resolution Loss**: Relative Attention Bias matrices of size $L \times L$ fail to broadcast against pruned shapes $L' \times L'$ without explicit index gathering.
 
-However, the current implementation uses a separate pruning module that is executed sequentially after the FFN. This adds a small overhead per layer. Moreover, the pruning decision is based on the current layer’s output; if the scoring function is not well‑aligned with the task, important tokens might be discarded prematurely. The module also assumes that the pruning layer returns indices and that the subsequent layer can handle a variable sequence length (which is typically possible if the subsequent attention layer uses the new, shorter sequence). When integrating with standard Transformer libraries that expect a fixed sequence length, the pruned tokens may need to be masked rather than physically removed, which could require modifications to the attention code.
+### 5.2 Dynamic Sequence Length Batching Stalls
+In batched multi-GPU execution ($B > 1$):
+- If `ProgressiveTokenPruning` evaluates top-$k$ independently per sample in a batch, sample 1 might retain $L'_1$ tokens while sample 2 retains $L'_2$ tokens ($L'_1 \neq L'_2$).
+- **Batch Asynchrony**: Un-even sequence lengths break standard dense tensor representations `[B, L', D]`, forcing CPU synchronization, dynamic padding, or nested ragged tensors that stall GPU SIMD hardware throughput.
 
-Another consideration is that the `nn.MultiheadAttention` used here does not accept a causal mask for autoregressive tasks; for decoder models, a causal mask must be added. The current design focuses on encoder‑style (bidirectional) processing.
+### 5.3 Irreversible Early Pruning Errors (False-Positive Eviction)
+Token pruning is a hard, non-backpropagable step ($\operatorname{Gather}(x, \mathcal{I}_{\text{keep}})$).
+- **Early-Layer Information Loss**: In early layers (e.g., Layer 1 or 2), token representations are un-refined. If a critical keyword is incorrectly assigned a low salience score, it is permanently dropped.
+- **Zero Gradient Recovery**: Evicted tokens receive zero gradients during backpropagation ($\nabla_{\mathbf{X}_{\text{evicted}}} \mathcal{L} = 0$), preventing early layers from correcting misclassified token salience.
 
 ---
 
-## 6. Conclusion
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
-The EATBlock is a versatile Transformer block that combines standard self‑attention and feed‑forward layers with an optional progressive token pruning stage. This design enables efficient processing of long sequences by gradually removing redundant tokens, thereby reducing the computational burden of later layers. Its modular architecture allows easy integration with existing Transformer codebases and various pruning strategies. Future work will explore learned pruning policies, dynamic scheduling, and integration with other efficient attention mechanisms to further enhance performance and scalability.
+To prevent dynamic sequence lengths from breaking GPU batch execution, EAT requires a fused Triton Token Pruning & Re-Ordering kernel operating on contiguous memory buffers.
+
+### 6.1 Triton Hardware Acceleration Layout
+
+```
++-----------------------------------------------------------------------------------+
+|                           TRITON FUSED EAT PIPELINE                               |
++-----------------------------------------------------------------------------------+
+|  1. FUSED ATTENTION & LN KERNEL                                                   |
+|     - Computes FlashAttention and LN1 + LN2 in SRAM registers.                    |
+|     - Writes intermediate output X_2 [B, L, D].                                   |
++-----------------------------------------------------------------------------------+
+|  2. TOKEN SALIENCE SCORING & BITONIC SORT KERNEL                                  |
+|     - Evaluates score vector S = X_2 @ W_score [B, L].                            |
+|     - Executes warp-level Bitonic Top-k sort in register file.                    |
+|     - Extracts top-L' indices I_keep [B, L'].                                     |
++-----------------------------------------------------------------------------------+
+|  3. CONTIGUOUS MEMORY RE-PACKING KERNEL                                           |
+|     - Indirect load X_2[b, I_keep[b, i]] into SRAM.                               |
+|     - Writes packed, contiguous output X_pruned [B, L', D] to device memory.        |
+|     - Updates ragged offset array for downstream attention layers.                 |
++-----------------------------------------------------------------------------------+
+```
+
+### 6.2 Implementation Code Blueprint (Triton Token Packing Kernel)
+
+```python
+import triton
+import triton.language as tl
+
+@triton.jit
+def _eat_fused_token_prune_pack_kernel(
+    X_ptr,          # Input hidden states [B, L, D]
+    W_score_ptr,    # Scoring projection weights [D]
+    Out_packed_ptr, # Pruned output buffer [B, L_PRUNED, D]
+    Idx_out_ptr,    # Kept indices tracking buffer [B, L_PRUNED]
+    stride_xb, stride_xl, stride_xd,
+    stride_ob, stride_ol, stride_od,
+    stride_ib, stride_il,
+    L_ORIG: tl.constexpr,
+    L_PRUNED: tl.constexpr,
+    D: tl.constexpr
+):
+    batch_id = tl.program_id(axis=0)
+    offs_d = tl.arange(0, D)
+
+    # Base pointers for batch
+    x_base = X_ptr + batch_id * stride_xb
+    out_base = Out_packed_ptr + batch_id * stride_ob
+    idx_base = Idx_out_ptr + batch_id * stride_ib
+
+    # Evaluate Salience Score per token
+    # (Simplified: in-register dot product with W_score)
+    w_score = tl.load(W_score_ptr + offs_d)
+
+    # Store scores in SRAM buffer for sorting
+    # In Triton, we load token representations, dot product with w_score -> s_i
+    # Perform Bitonic Top-k selection to extract L_PRUNED indices
+    # Here we illustrate the indirect pack phase after top-k indices are selected
+
+    for l_out in range(L_PRUNED):
+        # Fetch target source token index from TopK selection
+        source_token_idx = tl.load(idx_base + l_out * stride_il)
+
+        # Indirect Load target token [D] from un-pruned sequence
+        x_ptrs = x_base + source_token_idx * stride_xl + offs_d * stride_xd
+        token_vec = tl.load(x_ptrs)
+
+        # Store contiguous packed token vector into pruned output buffer
+        out_ptrs = out_base + l_out * stride_ol + offs_d * stride_od
+        tl.store(out_ptrs, token_vec)
+```
+
+### 6.3 Hardware Optimization Impact
+1. **Dynamic Memory Compaction**: Re-packing pruned tokens into contiguous global memory arrays `[B, L', D]` restores full GPU SIMD vectorization for subsequent Transformer layers.
+2. **Compound Downstream Speedup**: Dropping sequence length from $L_0 \to L'$ yields an immediate $\left(\frac{L'}{L_0}\right)^2$ reduction in downstream Multi-Head Attention latency.

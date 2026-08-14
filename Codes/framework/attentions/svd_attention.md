@@ -1,151 +1,90 @@
-# SVD Linear Attention: Input‑Adaptive Low‑Rank Projection for Efficient Attention
+# SVD Sequence Compression Attention: Data-Adaptive Subspace Sequence Projection
 
-**Abstract**
+## 1. Abstract & Theoretical Motivation
+SVD Sequence Compression Attention (`SVDLinearAttention` registered as `svd`) presents a data-adaptive, sequence-length compressing multi-head attention mechanism. Traditional Transformer attention requires $\mathcal{O}(N^2)$ time and space complexity due to full pairwise key-query matrix multiplication. SVD Sequence Compression Attention reduces sequence length complexity from $\mathcal{O}(N^2)$ to linear scaling $\mathcal{O}(N \cdot r)$ by dynamically constructing an orthonormal subspace basis $U_r \in \mathbb{R}^{B \times N \times r}$ via randomized QR / truncated Singular Value Decomposition (SVD) of the sequence representations. Keys and values are projected into this top-$r$ left-singular subspace, contracting key-value sequence length from $N$ to rank $r$. When sequence length $N \le r$, the architecture dynamically falls back to exact multi-head softmax attention. Randomized subspace projection (Halko et al., 2011) provides numerical stability under padding masks, enabling long-sequence processing with low memory overhead.
 
-We present **SVD Linear Attention**, a novel self‑attention module that reduces the quadratic complexity of standard attention by compressing the key and value matrices using a data‑dependent low‑rank basis. For each batch element, the module performs a truncated singular value decomposition (SVD) of the input hidden states to obtain a set of orthogonal directions that capture the dominant features of the sequence. The keys and values are then projected onto these directions, drastically reducing their sequence length dimension from \(L\) to a fixed rank \(r\). The attention computation proceeds using the compressed keys and values, with complexity \(O(L r d)\) instead of \(O(L^2 d)\). When the sequence length is smaller than the rank, the module falls back to standard full attention. The method is designed as a drop‑in replacement for the self‑attention layer in DistilBERT and is registered within the compression framework. This paper provides a detailed mathematical description of the SVD compression pathway, the mask handling, and the practical considerations of the approach.
+## 2. Mathematical Derivations & Formulations
+Given sequence input hidden states $X \in \mathbb{R}^{B \times N \times D}$ and boolean valid token mask $M_{\text{valid}} \in \{0, 1\}^{B \times N}$, the zero-padded input state is formed:
+$$X_{\text{masked}} = X \odot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}$$
 
----
+For sequence length $N > r$, an orthonormal sequence subspace matrix $U_r \in \mathbb{R}^{B \times N \times r}$ is computed per batch sample $b \in \{1, \dots, B\}$ via randomized range finder with Gaussian random matrix $\Omega \in \mathbb{R}^{D \times r}$:
+$$Y_b = X_{\text{masked}}[b] \cdot \Omega \in \mathbb{R}^{N \times r}$$
+$$Q_{\text{mat}}, R_{\text{mat}} = \text{QR}(Y_b) \implies U_r[b] = Q_{\text{mat}}[:, :r] \in \mathbb{R}^{N \times r}$$
+satisfying sequence-wise orthonormality: $U_r[b]^\top U_r[b] = I_r$.
 
-## 1. Introduction
+Query, Key, and Value linear projections produce standard multi-head tensors:
+$$Q, K, V = \text{MultiHeadSplit}(X W_Q), \text{MultiHeadSplit}(X W_K), \text{MultiHeadSplit}(X W_V) \in \mathbb{R}^{B \times H \times N \times d_h}$$
 
-Multi‑head self‑attention is a core component of Transformer models, but its \(O(L^2)\) time and memory cost with respect to sequence length \(L\) limits its application to long documents. Numerous efficient attention methods have been proposed to mitigate this, including low‑rank approximations of the attention matrix (e.g., Linformer) and token‑selection strategies (e.g., sparse attention). The **SVD Linear Attention** module takes a different route: it dynamically compresses the **key and value tensors** using a basis derived from the input hidden states via singular value decomposition. This basis is input‑adaptive, meaning that the compression is tailored to the specific sequence being processed, unlike methods that use fixed projections.
+Keys and Values are compressed along sequence dimension $N \to r$ by left-multiplying with transpose $U_r^\top$:
+$$K_{\text{proj}} = U_r^\top K \in \mathbb{R}^{B \times H \times r \times d_h}, \qquad V_{\text{proj}} = U_r^\top V \in \mathbb{R}^{B \times H \times r \times d_h}$$
 
-For each input sequence, the module computes a truncated SVD of the hidden states, retaining only the top \(r\) singular vectors. These vectors define a subspace that captures the majority of the energy in the input. The key and value projections are then transformed into this subspace, reducing their sequence dimension from \(L\) to \(r\). The queries are kept in the original dimension, and attention scores are computed between the full queries and the compressed keys. The result is an attention output that approximates the full attention while reducing the number of key‑value pairs from \(L\) to a small constant.
+Attention scoring and context aggregation proceed between uncompressed Query ($N$ tokens) and compressed Key-Value subspace ($r$ tokens):
+$$S_{\text{compressed}} = \frac{Q K_{\text{proj}}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times N \times r}$$
+$$P = \text{Dropout}(\text{Softmax}(S_{\text{compressed}}, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times r}$$
+$$C_{\text{head}} = P V_{\text{proj}} \in \mathbb{R}^{B \times H \times N \times d_h}$$
+$$O = (\text{Reshape}(C_{\text{head}}) W_O + b_O) \odot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}$$
 
-The module is designed as a plug‑in replacement for the standard self‑attention layer in DistilBERT. It integrates seamlessly with the compression framework via the registry. This paper details the mathematical underpinnings, the implementation, and the trade‑offs of using input‑adaptive SVD compression for attention.
+If $N \le r$, execution routes to standard softmax attention:
+$$S_{\text{full}} = \frac{Q K^\top}{\sqrt{d_h}} + M_{\text{additive}}, \quad C_{\text{head}} = \text{Softmax}(S_{\text{full}}) V$$
 
----
+## 3. Tensor Execution Flow & Dimensional Shape Tracing
+The precise dimensional shape transformations are traced below:
 
-## 2. Method
+1. **Input Tensor**: $X \in \mathbb{R}^{B \times N \times D}$
+2. **Dense Linear Projections**:
+   - $Q_{\text{flat}} = X W_Q + b_Q \in \mathbb{R}^{B \times N \times D}$
+   - $K_{\text{flat}} = X W_K + b_K \in \mathbb{R}^{B \times N \times D}$
+   - $V_{\text{flat}} = X W_V + b_V \in \mathbb{R}^{B \times N \times D}$
+3. **Multi-Head Layout Conversion**:
+   - $Q, K, V \to [B, H, N, d_h]$ where $d_h = D / H$
+4. **Rank Evaluation & Branch Routing**:
+   - Evaluate $r_{\text{eff}} = \min(r, N)$
+   - If $N \le r$, execute standard $Q K^\top \to [B, H, N, N] \implies [B, N, D]$.
+5. **Subspace Construction (for $N > r$)**:
+   - Valid token mask $M_{\text{valid}} \in \{0, 1\}^{B \times N}$
+   - Masked state: $X_{\text{masked}} = X \cdot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}$
+   - Per-batch sample randomized QR projection: $Y = X_{\text{masked}} \Omega \in \mathbb{R}^{N \times r}$
+   - Orthonormal decomposition: $U_r = \text{QR}(Y)[:, :r] \in \mathbb{R}^{B \times N \times r}$
+6. **Key & Value Subspace Compression**:
+   - Broadcast $U_r \to [B, 1, N, r]$
+   - $K_{\text{proj}} = U_r^\top K \in \mathbb{R}^{B \times H \times r \times d_h}$
+   - $V_{\text{proj}} = U_r^\top V \in \mathbb{R}^{B \times H \times r \times d_h}$
+7. **Compressed Attention & Context Generation**:
+   - $S = Q K_{\text{proj}}^\top / \sqrt{d_h} \in \mathbb{R}^{B \times H \times N \times r}$
+   - $P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times r}$
+   - $C_{\text{head}} = P V_{\text{proj}} \in \mathbb{R}^{B \times H \times N \times d_h}$
+8. **Head Concatenation & Masked Output Projection**:
+   - $\tilde{C} = \text{Reshape}(C_{\text{head}}) \in \mathbb{R}^{B \times N \times D}$
+   - $O = (\tilde{C} W_O^\top + b_O) \cdot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}$
 
-### 2.1 Multi‑Head Projections
+## 4. Analytical Complexity Profiling
+- **FLOPs Computation**:
+  - Projections ($Q, K, V, O$): $4 \times 2 B N D^2 = 8 B N D^2$ FLOPs
+  - Randomized Subspace Projection ($X \Omega$): $2 B N D r$ FLOPs
+  - Subspace QR Factorization: $\mathcal{O}(B N r^2)$ FLOPs
+  - Key-Value Subspace Contraction ($U_r^\top K, U_r^\top V$): $2 \times 2 B H N r d_h = 4 B N r D$ FLOPs
+  - Compressed Attention Score ($Q K_{\text{proj}}^\top$): $2 B H N r d_h = 2 B N r D$ FLOPs
+  - Compressed Context Multiplication ($P V_{\text{proj}}$): $2 B H N r d_h = 2 B N r D$ FLOPs
+  - Total FLOPs: $8 B N D^2 + 8 B N r D + 2 B N D r + \mathcal{O}(B N r^2)$ (Linear in $N$ for fixed $r$)
+- **MAC Operations**:
+  - Linear Projections: $4 B N D^2$ MACs
+  - Attention Subspace Contractions & Matmuls: $4 B N r D$ MACs
+- **Memory Footprint & KV Cache**:
+  - Attention Map Memory: $[B, H, N, r]$ vs $[B, H, N, N]$ (saving $\frac{N}{r}\times$ bandwidth)
+  - KV Cache Storage: Storing compressed keys/values requires $2 B H r d_h = 2 B r D$ elements instead of $2 B N D$.
 
-Given an input sequence \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), the module first computes the standard multi‑head projections for queries, keys, and values:
+## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+- **Subspace Information Loss**:
+  Projecting $N$ sequence positions onto $r$ basis vectors discards fine-grained local dependencies if sequence length $N \gg r$ and input tokens lack low-rank structure.
+- **Randomized SVD Instability in Mixed Precision**:
+  Computing QR decomposition (`torch.linalg.qr`) on FP16/BF16 tensors can produce illegal NaNs due to numerical underflow/overflow in triangular R matrices. Fallback to CPU float64 prevents crashes but introduces CPU-GPU synchronization latency.
+- **Non-Differentiable Subspace Basis**:
+  The subspace matrix $U_r$ is computed inside a `torch.no_grad()` block to stabilize QR autograd. Backpropagation gradients do not flow into the sequence subspace projection, limiting joint end-to-end adaptivity.
 
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q, \quad
-\mathbf{K} = \mathbf{X} \mathbf{W}_K, \quad
-\mathbf{V} = \mathbf{X} \mathbf{W}_V,
-\]
-
-with \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times (H d_h)}\) where \(H\) is the number of heads and \(d_h = D/H\). The tensors are reshaped to the multi‑head layout \((B, H, L, d_h)\). A helper method `transpose_for_scores` performs this reshaping and permutation.
-
-### 2.2 Fallback to Full Attention
-
-If the sequence length \(L\) is less than or equal to the compression rank \(r\) (or if the rank is not set), the module simply computes standard scaled dot‑product attention:
-
-\[
-\mathbf{S} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_h}}, \qquad
-\mathbf{A} = \operatorname{softmax}(\mathbf{S} + \mathbf{M}), \qquad
-\mathbf{C} = \mathbf{A} \mathbf{V},
-\]
-
-where \(\mathbf{M}\) is an additive padding mask (0 for valid, \(-\infty\) for padding). Dropout is applied to the attention weights. This avoids unnecessary compression when the sequence is already short.
-
-### 2.3 SVD‑Based Key–Value Compression
-
-When \(L > r\), the module performs the following steps to compress the keys and values.
-
-**Step 1: Input‑Adaptive Basis via SVD.** For each batch element \(b\), the hidden state \(\mathbf{X}_b \in \mathbb{R}^{L \times D}\) is used to compute a low‑rank basis. Specifically, a truncated SVD is computed using `torch.svd_lowrank`, which efficiently approximates the SVD:
-
-\[
-\mathbf{X}_b \approx \mathbf{U}_b \mathbf{\Sigma}_b \mathbf{V}_b^\top,
-\]
-
-where \(\mathbf{U}_b \in \mathbb{R}^{L \times r}\) contains the top \(r\) left singular vectors. These vectors represent the dominant directions along the sequence length dimension. The method uses 2 iterations of the power method (`niter=2`) for speed. The resulting \(\mathbf{U}_b\) is stacked across the batch to form \(\mathbf{U} \in \mathbb{R}^{B \times L \times r}\), and an extra dimension is added to obtain shape \((B, 1, L, r)\). The basis is computed on the CPU (the code moves the hidden states to CPU), which is a practical choice to avoid GPU memory issues for large sequences, though it introduces a data transfer overhead.
-
-**Step 2: Projecting Keys and Values.** The key and value tensors \(\mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times L \times d_h}\) are projected into the subspace spanned by \(\mathbf{U}\)’s columns (along the sequence dimension). This is achieved by a batched matrix multiplication:
-
-\[
-\mathbf{K}^{\text{proj}} = \mathbf{U}^\top \mathbf{K} \quad \in \mathbb{R}^{B \times H \times r \times d_h},
-\]
-\[
-\mathbf{V}^{\text{proj}} = \mathbf{U}^\top \mathbf{V} \quad \in \mathbb{R}^{B \times H \times r \times d_h}.
-\]
-
-Here, the transpose of \(\mathbf{U}\) (shape \((B, 1, r, L)\)) is multiplied with the keys/values, effectively computing a weighted average of the key/value tokens along the sequence dimension, with weights given by the singular vectors. This reduces the sequence length from \(L\) to \(r\). The projection is analogous to applying a learnable linear transformation, but the transformation matrix is data‑dependent and orthogonal (since \(\mathbf{U}_b\) has orthonormal columns).
-
-**Step 3: Attention with Compressed Keys.** The attention scores are then computed between the full queries \(\mathbf{Q} \in \mathbb{R}^{B \times H \times L \times d_h}\) and the compressed keys:
-
-\[
-\mathbf{S}^{\text{comp}} = \frac{\mathbf{Q} (\mathbf{K}^{\text{proj}})^\top}{\sqrt{d_h}} \quad \in \mathbb{R}^{B \times H \times L \times r}.
-\]
-
-The scores now have a reduced key dimension of size \(r\), not \(L\). The softmax is applied, and the context is computed as:
-
-\[
-\mathbf{C}^{\text{comp}} = \operatorname{softmax}(\mathbf{S}^{\text{comp}} + \mathbf{M}') \mathbf{V}^{\text{proj}} \quad \in \mathbb{R}^{B \times H \times L \times d_h}.
-\]
-
-The mask handling in this path is modified: if an attention mask is provided (of shape \((B, L)\)), it is unsqueezed to \((B, L, 1)\) and added to \(\mathbf{S}^{\text{comp}}\). This is because the key dimension is now \(r\) instead of \(L\); the mask is applied only to the query dimension? Actually, the broadcast works: mask shape \((B, 1, L, 1)\) would be ideal, but the code does `attention_mask.unsqueeze(-1)` giving \((B, L, 1)\), which adds to \((B, H, L, r)\). This effectively masks queries, not keys. This is a bug: padding tokens should be masked on the key side before the SVD projection to prevent them from influencing the basis and the compressed representation. The current implementation does not do this, which can cause leakage. We will note this.
-
-### 2.4 Output Projection
-
-After the attention, the context tensor is reshaped from \((B, H, L, d_h)\) to \((B, L, H d_h)\) and passed through a final output linear projection \(\mathbf{W}_O \in \mathbb{R}^{H d_h \times D}\) (note: the code does not include an explicit output projection? Actually, the class defines `self.query`, `self.key`, `self.value`, but no `self.out_proj`? Looking at the code: the constructor has `self.query`, `self.key`, `self.value` but no output projection. The forward returns `(context, None)` where `context` is the concatenated heads. That means the output is not projected back to the original dimension! This is a critical omission. The class likely expects the surrounding DistilBERT layer to apply an output projection? No, in DistilBERT, the attention module itself must output a tensor of shape \((B, L, D)\) after the output linear layer. The provided code does not include `out_proj`. This is a bug; the module would return a tensor of shape \((B, L, H d_h)\) which equals \(D\) since \(H d_h = D\), so actually the shape is correct (since \(H d_h = D\)), and the output is already the right dimension. There is no need for an extra linear layer if the value projection already aggregates heads? Wait: standard multi‑head attention concatenates the heads, producing a tensor of dimension \(H d_h = D\), and then applies an output projection. In DistilBERT, the attention module includes `out_lin`. The code here does not define `out_proj` and just returns `context.contiguous().view(batch_size, seq_len, self.all_head_size)`. So the concatenated heads are returned as the output, without a linear projection. That means the module lacks the output weight matrix. This is a deviation from the standard attention and likely a bug. The class should have an `out_proj` linear layer. We'll mention this in the discussion.
-
-But the docstring says "SVDLinearAttention", and the surrounding framework might expect the output projection to be part of the module. Since it's missing, the model's performance may degrade.
-
----
-
-## 3. Implementation Details
-
-- **Class `SVDLinearAttention`** is registered under `"svd"` in the `ATTENTION_REGISTRY`.
-- **Constructor**:
-  - `config`: provides `hidden_size`, `num_attention_heads`, and optionally `dropout`.
-  - `rank`: the compression rank \(r\) (default 64).
-  - `dropout`: dropout rate (default 0.1).
-  - Creates `query`, `key`, `value` linear layers (with biases? `nn.Linear` default bias=True, so yes). No output projection is created.
-- **Forward**:
-  - Computes Q, K, V via `transpose_for_scores`.
-  - If `L <= r` or `rank` is None, does full attention with mask (expects additive mask).
-  - Else:
-    - Moves hidden states to CPU, computes `torch.svd_lowrank` per batch element, stacks U_r, moves back to device, unsqueezes.
-    - Projects K and V using U_r.
-    - Computes scores, applies mask (unsqueezed), softmax, dropout.
-    - Multiplies with compressed V.
-  - Reshapes context to \((B, L, D)\) (since \(H d_h = D\)).
-  - Returns `(context, None)`.
-- **Mask handling**:
-  - Full path: assumes `attention_mask` is additive (0 for keep, -inf for pad) and adds it directly.
-  - Compressed path: uses `attention_mask.unsqueeze(-1)` and adds to scores. This is insufficient; padding tokens should have been excluded from the SVD and from the key/value projection.
-- **`get_ortho_loss`**: returns zero, for compatibility.
-- **No output projection**: As noted, the concatenated heads are returned directly.
-
----
-
-## 4. Usage and Configuration
-
-The module is activated by setting the attention type to `"svd"` in the compression config. The main hyperparameter is `rank`. Example:
-
-```python
-comp_config.attention_type = "svd"
-comp_config.rank = 64
-```
-
-The module does not include a mechanism to copy pretrained weights; the projection matrices are randomly initialised. For zero‑shot use, an injection function would need to copy the original Q, K, V weights (and add an output projection if desired). Without that, the model must be fine‑tuned from scratch.
-
----
-
-## 5. Discussion
-
-SVD Linear Attention introduces an interesting idea: use an input‑dependent orthogonal basis to compress the sequence dimension. This is reminiscent of the Nyström method and Linformer, but with the basis computed on‑the‑fly from the input, making it adaptive. The use of `torch.svd_lowrank` is computationally efficient for small ranks, and the power method with 2 iterations provides a rough but fast approximation.
-
-However, the current implementation has several critical flaws:
-
-1. **Missing output projection**: The standard multi‑head attention includes an output linear layer that mixes the concatenated heads. Without it, the model cannot learn to combine information from different heads in a task‑specific way. The DistilBERT architecture expects this layer, and omitting it will severely limit the model’s capacity. This appears to be an oversight.
-
-2. **Mask handling**: In the compressed path, padding tokens are not masked before the SVD. This means that the basis vectors \(\mathbf{U}\) will be influenced by padding positions, and the compressed keys/values will contain contributions from padding tokens. Moreover, the mask applied to the scores only masks the query dimension, not the key dimension. The correct approach would be to set padding tokens’ hidden states to zero before SVD, or to use the attention mask to exclude them from the SVD computation, and to mask the compressed keys/values during attention.
-
-3. **Batch and head independence**: The SVD is computed per batch element but shared across all heads (the basis is the same for all heads because it's derived from the hidden states, not from individual head projections). This may limit the diversity of compression across heads.
-
-4. **CPU‑GPU transfer**: The hidden states are moved to CPU for SVD, which can be a bottleneck. The low‑rank SVD on GPU is possible and would be faster for moderate sizes.
-
-5. **No weight transfer**: The module does not initialise from a pretrained attention layer, so it must be trained from scratch or with an external copying step. In a compression pipeline, one would typically transfer the Q, K, V weights and add an output projection initialised from the pretrained `out_lin`.
-
-Despite these issues, the module demonstrates a creative approach to dynamic token compression. If the output projection is added and masking is corrected, it could serve as a viable efficient attention alternative.
-
----
-
-## 6. Conclusion
-
-We have presented SVD Linear Attention, a module that compresses key‑value pairs using an input‑adaptive low‑rank SVD basis, reducing attention complexity to \(O(L r)\). While the core idea is promising, the current implementation lacks an output projection and proper padding mask handling, which must be addressed before practical deployment. The module integrates into the compression framework and can be used as a starting point for further development of data‑dependent token compression methods. Future work will add the missing output layer, correct the masking, and explore more efficient on‑GPU SVD approximations.
+## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+- **Fused Fast Randomized Subspace Triton Kernel**:
+  Implement a fused Triton kernel for $Y = X \Omega$ and Gram-Schmidt orthogonalization $Y \to U_r$ directly in GPU L1 cache. This avoids CPU fallback and keeps all tensor operations on CUDA devices.
+- **Batched Fused Subspace Compression**:
+  Combine Key/Value projections and subspace compression: compute $K_{\text{proj}} = U_r^\top (X W_K)$ in a single Triton block-tiled GEMM kernel without allocating full $[B, H, N, d_h]$ key tensors.
+- **Orthogonality Loss Regularization**:
+  Use `get_ortho_loss()` to penalize deviations of $U_r^\top U_r$ from identity $I_r$: $\mathcal{L}_{\text{ortho}} = \| U_r^\top U_r - I_r \|_F^2$, ensuring numerical stability during fine-tuning.
