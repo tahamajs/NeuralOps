@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/tahamajs/Documents/uni/Project/ log --oneline -20)",
+      "Bash(cat /Users/tahamajs/Documents/uni/Project/.gitignore)",
+      "Bash(ls:*)",
+      "Bash(git -C /Users/tahamajs/Documents/uni/Project status --short)",
+      "Bash(rm:*)",
+      "Bash(git -C /Users/tahamajs/Documents/uni/Project diff:*)",
+      "Bash(python:*)",
+      "Bash(npm --prefix \"/Users/tahamajs/Documents/uni/Project/Codes/frontend\" run build:*)",
+      "Bash(npm --prefix \"/Users/tahamajs/Documents/uni/Project/Codes/frontend\" run dev:*)"
+    ]
+  }
+}
