@@ -21,6 +21,13 @@ const DashboardWidgetsConfigPage = lazy(
 );
 
 // ========================
+// Attention Dashboard (Zones 1-4)
+// ========================
+const AttentionCanvasSuite = lazy(
+  () => import("../features/attentionDashboard/AttentionCanvasSuite"),
+);
+
+// ========================
 // Experiments
 // ========================
 const ExperimentListPage = lazy(
@@ -258,6 +265,13 @@ const AdvancedAnalyticsPage = lazy(
 const ResearchAnalysisPage = lazy(
   () => import("../features/analysis/pages/ResearchAnalysisPage"),
 );
+const AttentionInterpretabilitySuitePage = lazy(
+  () => import("../features/attentionDashboard/InterpretabilitySuite"),
+);
+const RepresentationStudiosPage = lazy(
+  () => import("../features/transformerStudios/RepresentationStudios"),
+);
+
 
 // ========================
 // Templates
@@ -746,9 +760,18 @@ export const router = createBrowserRouter([
       { path: "/search", element: <GlobalSearchPage /> },
       { path: "/activity", element: <ActivityFeedPage /> },
 
-      // Analytics
+      // Analytics & Interpretability
       { path: "/analytics", element: <AdvancedAnalyticsPage /> },
       { path: "/analysis", element: <ResearchAnalysisPage /> },
+      { path: "/attention", element: <AttentionInterpretabilitySuitePage /> },
+      { path: "/interpretability", element: <AttentionInterpretabilitySuitePage /> },
+      { path: "/representation-studios", element: <RepresentationStudiosPage /> },
+      { path: "/studios", element: <RepresentationStudiosPage /> },
+      { path: "/embedding-explorer", element: <RepresentationStudiosPage /> },
+      { path: "/positional-encoding", element: <RepresentationStudiosPage /> },
+      { path: "/residual-stream", element: <RepresentationStudiosPage /> },
+      { path: "/layer-norm", element: <RepresentationStudiosPage /> },
+
 
       // Templates
       { path: "/templates", element: <TemplatesListPage /> },
@@ -901,6 +924,11 @@ export const router = createBrowserRouter([
       { path: "/protocols", element: <ProtocolListPage /> },
       { path: "/protocols/new", element: <ProtocolBuilder /> },
       { path: "/protocols/:protocolId", element: <ProtocolBuilder /> },
+
+      // Attention Visualization Dashboard (Zones 1-4)
+      { path: "/attention-canvas", element: <AttentionCanvasSuite /> },
+      { path: "/attention-lab", element: <AttentionCanvasSuite /> },
+      { path: "/attention-dashboard", element: <AttentionCanvasSuite /> },
 
       // 404 – must be last
       { path: "*", element: <NotFoundPage /> },
