@@ -1,780 +1,887 @@
+// ============================================================
+// SVD Linear Attention Research Hub — App Script v3.1
+// ============================================================
+
 document.addEventListener("DOMContentLoaded", async () => {
-    // -------------------------------------------------------------
-    // 1. Initialize Mermaid Diagrams Engine
-    // -------------------------------------------------------------
+
+// ── Mermaid Init ────────────────────────────────────────────
+if (window.mermaid) {
+    mermaid.initialize({
+        startOnLoad: false, theme: 'dark', securityLevel: 'loose',
+        themeVariables: {
+            darkMode: true, background: '#111524',
+            primaryColor: '#3b82f6', primaryTextColor: '#eef2ff',
+            primaryBorderColor: '#60a5fa', lineColor: '#6b7a99',
+            secondaryColor: '#161b2e', tertiaryColor: '#0c0f1a'
+        }
+    });
+}
+
+// ── State ───────────────────────────────────────────────────
+let catalogData = {};
+let allItems    = [];
+let activeFilter = 'all';
+let activeItem   = null;
+let cmdSelectedIdx = -1;
+let cmdFilteredItems = [];
+
+// ── DOM ─────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const navContent       = $('nav-content');
+const navSkeleton      = $('nav-skeleton');
+const mdContainer      = $('markdown-container');
+const contentViewport  = $('content-viewport');
+const progressBar      = $('reading-progress-bar');
+const backToTopBtn     = $('back-to-top-btn');
+const sidebar          = $('sidebar');
+const sidebarOverlay   = $('sidebar-overlay');
+const mobileMenuBtn    = $('mobile-menu-btn');
+const homeBtn          = $('home-btn');
+const compendiumBtn    = $('compendium-quick-btn');
+const randomBtn        = $('random-btn');
+const copyLinkBtn      = $('copy-link-btn');
+const bcCurrent        = $('bc-section');
+const bcPage           = $('bc-page');
+const bcSep2           = $('bc-sep2');
+const tocNav           = $('toc-nav');
+const tocMeta          = $('toc-meta');
+const cmdOverlay       = $('cmd-overlay');
+const cmdBackdrop      = $('cmd-backdrop');
+const cmdInput         = $('cmd-input');
+const cmdResults       = $('cmd-results');
+const cmdFilterRow     = $('cmd-filter-row');
+const statAttn         = $('stat-attn');
+const statComp         = $('stat-comp');
+const themeToggleBtn   = $('theme-toggle-btn');
+const themeIcon        = $('theme-icon');
+const themeLabel       = $('theme-label');
+const collapseBtn      = $('sidebar-collapse-btn');
+const searchHint       = $('search-shortcut-hint');
+
+// ── Keyboard shortcut hint ───────────────────────────────────
+const isMac = navigator.platform.toUpperCase().includes('MAC');
+if (searchHint) searchHint.textContent = isMac ? '⌘K' : 'Ctrl+K';
+
+// ── Theme ────────────────────────────────────────────────────
+let currentTheme = localStorage.getItem('hub-theme') || 'dark';
+applyTheme(currentTheme);
+
+function applyTheme(theme) {
+    currentTheme = theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('hub-theme', theme);
+    if (themeIcon) {
+        if (theme === 'dark') {
+            themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+        } else {
+            themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+        }
+    }
+    if (themeLabel) themeLabel.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
     if (window.mermaid) {
-        mermaid.initialize({ 
-            startOnLoad: false, 
-            theme: 'dark',
-            securityLevel: 'loose',
-            themeVariables: {
-                darkMode: true,
-                background: '#141721',
-                primaryColor: '#3b82f6',
-                primaryTextColor: '#f8fafc',
-                primaryBorderColor: '#60a5fa',
-                lineColor: '#94a3b8',
-                secondaryColor: '#1a1e2b',
-                tertiaryColor: '#0e1117'
-            }
-        });
+        mermaid.initialize({ startOnLoad: false, theme: theme === 'dark' ? 'dark' : 'default' });
     }
+}
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => applyTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+}
 
-    // -------------------------------------------------------------
-    // 2. DOM Elements
-    // -------------------------------------------------------------
-    const navContent = document.getElementById("nav-content");
-    const searchInput = document.getElementById("search-input");
-    const searchClearBtn = document.getElementById("search-clear-btn");
-    const searchKbdHint = document.getElementById("search-shortcut-hint");
-    const markdownContainer = document.getElementById("markdown-container");
-    const mobileMenuBtn = document.getElementById("mobile-menu-btn");
-    const sidebar = document.getElementById("sidebar");
-    const contentViewport = document.getElementById("content-viewport");
-    const progressBar = document.getElementById("reading-progress-bar");
-    const backToTopBtn = document.getElementById("back-to-top-btn");
-    const breadcrumbs = document.getElementById("breadcrumbs");
-    const tocNav = document.getElementById("toc-nav");
-    const homeBtn = document.getElementById("home-btn");
-    const compendiumQuickBtn = document.getElementById("compendium-quick-btn");
-    const filterChips = document.querySelectorAll(".filter-chip");
-
-    let catalogData = {};
-    let allItems = [];
-    let activeFilter = "all";
-    let activeItem = null;
-
-    // Detect Mac vs Windows for Keyboard Shortcut
-    if (searchKbdHint) {
-        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-        searchKbdHint.textContent = isMac ? '⌘K' : 'Ctrl+K';
-    }
-
-    // Global Keyboard Shortcut: ⌘K or Ctrl+K to search
-    window.addEventListener('keydown', (e) => {
-        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-            e.preventDefault();
-            searchInput.focus();
-            searchInput.select();
-        }
+// ── Sidebar collapse ────────────────────────────────────────
+if (collapseBtn) {
+    collapseBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
     });
+}
 
-    // -------------------------------------------------------------
-    // 3. Mobile Sidebar Toggle & Scroll Interactions
-    // -------------------------------------------------------------
-    if (mobileMenuBtn && sidebar) {
-        mobileMenuBtn.addEventListener("click", () => {
-            sidebar.classList.toggle("open");
-        });
-    }
-
-    // Close mobile sidebar on click outside
-    document.addEventListener("click", (e) => {
-        if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains("open")) {
-            if (!sidebar.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
-                sidebar.classList.remove("open");
-            }
-        }
+// ── Mobile sidebar ───────────────────────────────────────────
+if (mobileMenuBtn) {
+    mobileMenuBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        sidebarOverlay.classList.toggle('active');
     });
+}
+if (sidebarOverlay) {
+    sidebarOverlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+    });
+}
 
-    // Scroll Progress & Back-to-Top Button
-    if (contentViewport) {
-        contentViewport.addEventListener("scroll", () => {
-            const scrollTop = contentViewport.scrollTop;
-            const scrollHeight = contentViewport.scrollHeight - contentViewport.clientHeight;
-            const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-            
-            if (progressBar) progressBar.style.width = `${progress}%`;
+// ── Progress Bar & Back-to-top ───────────────────────────────
+if (contentViewport) {
+    contentViewport.addEventListener('scroll', () => {
+        const { scrollTop, scrollHeight, clientHeight } = contentViewport;
+        const pct = scrollHeight > clientHeight ? (scrollTop / (scrollHeight - clientHeight)) * 100 : 0;
+        if (progressBar) progressBar.style.width = pct + '%';
+        if (backToTopBtn) backToTopBtn.classList.toggle('visible', scrollTop > 300);
+        updateTocSpy();
+    }, { passive: true });
+}
+if (backToTopBtn) {
+    backToTopBtn.addEventListener('click', () => {
+        contentViewport.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
 
-            if (backToTopBtn) {
-                if (scrollTop > 300) {
-                    backToTopBtn.classList.add("visible");
-                } else {
-                    backToTopBtn.classList.remove("visible");
-                }
-            }
 
-            // Scroll-spy for TOC
-            updateTocActiveLink();
-        });
+// ── Toast Notification ────────────────────────────────────────
+function showToast(msg, icon = '✓') {
+    let toast = document.querySelector('.toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'toast';
+        document.body.appendChild(toast);
     }
+    toast.innerHTML = `<span class="toast-icon">${icon}</span>${msg}`;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), 2400);
+}
 
-    if (backToTopBtn) {
-        backToTopBtn.addEventListener("click", () => {
-            if (contentViewport) {
-                contentViewport.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        });
-    }
+// ── Copy Link Button ─────────────────────────────────────────
+if (copyLinkBtn) {
+    copyLinkBtn.addEventListener('click', () => {
+        const url = activeItem ? `${location.href.split('#')[0]}#${activeItem.id}` : location.href;
+        navigator.clipboard.writeText(url).then(() => showToast('Link copied to clipboard'));
+    });
+}
 
-    if (homeBtn) {
-        homeBtn.addEventListener("click", () => {
-            renderHubWelcomeScreen();
-        });
-    }
-
-    if (compendiumQuickBtn) {
-        compendiumQuickBtn.addEventListener("click", () => {
-            loadCompendiumDirectly();
-        });
-    }
-
-    // -------------------------------------------------------------
-    // 4. Marked.js Markdown Configuration
-    // -------------------------------------------------------------
-    if (window.marked) {
-        const renderer = new marked.Renderer();
-        const originalCodeRenderer = renderer.code.bind(renderer);
-        
-        renderer.code = function(code, language, isEscaped) {
-            if (language === 'mermaid') {
-                return `<div class="mermaid">${code}</div>`;
-            }
-            return originalCodeRenderer(code, language, isEscaped);
-        };
-        
-        marked.setOptions({ 
-            renderer: renderer,
-            gfm: true,
-            breaks: false
-        });
-    }
-
-    // KaTeX Math Macros & Utilities
-    const KATEX_MACROS = {
-        "\\bm": "\\boldsymbol",
-        "\\mathbf": "\\boldsymbol",
-        "\\llbracket": "[\\![",
-        "\\rrbracket": "]\\!]",
-        "\\diag": "\\operatorname{diag}",
-        "\\rank": "\\operatorname{rank}",
-        "\\Tr": "\\operatorname{Tr}",
-        "\\softmax": "\\operatorname{Softmax}",
-        "\\argmin": "\\operatorname*{arg\\,min}",
-        "\\argmax": "\\operatorname*{arg\\,max}",
-        "\\E": "\\mathbb{E}",
-        "\\Var": "\\operatorname{Var}"
-    };
-
-    function escapeHtml(str) {
-        return str
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
-
-    function safeRenderKaTeX(tex, isDisplay) {
-        if (typeof katex === "undefined") {
-            return isDisplay ? `<pre class="katex-fallback">${escapeHtml(tex)}</pre>` : `<code>${escapeHtml(tex)}</code>`;
-        }
-        try {
-            return katex.renderToString(tex, {
-                displayMode: isDisplay,
-                throwOnError: false,
-                trust: true,
-                strict: false,
-                macros: KATEX_MACROS
-            });
-        } catch (err) {
-            console.warn("KaTeX render error:", tex, err);
-            return `<span class="katex-error" title="${escapeHtml(err.message)}">${escapeHtml(tex)}</span>`;
-        }
-    }
-
-    // Robust LaTeX Math & Markdown Parsing Engine
-    function renderMarkdownWithKaTeX(markdownText) {
-        if (!markdownText) return "";
-
-        // Sanitize internal markdown links
-        let processed = markdownText.replace(/\]\(([^)]+)\.md\)/g, "](javascript:void(0))");
-
-        // 1. Protect Fenced Code Blocks & Inline Code
-        const codeBlocks = [];
-        processed = processed.replace(/(```[\s\S]*?```)/g, (match) => {
-            const id = codeBlocks.length;
-            codeBlocks.push(match);
-            return `%%%CODEBLOCK_${id}%%%`;
-        });
-
-        const inlineCodes = [];
-        processed = processed.replace(/(`[^`\n]+?`)/g, (match) => {
-            const id = inlineCodes.length;
-            inlineCodes.push(match);
-            return `%%%INLINECODE_${id}%%%`;
-        });
-
-        // 2. Extract Display Math Blocks
-        const mathBlocks = [];
-        const displayMathRegex = /\$\$([\s\S]*?)\$\$|\\\[([\s\S]*?)\\\]|(\\begin\{(?:equation\*?|align\*?|aligned|gather\*?|pmatrix|bmatrix|matrix|cases)\}[\s\S]*?\\end\{(?:equation\*?|align\*?|aligned|gather\*?|pmatrix|bmatrix|matrix|cases)\})/g;
-
-        processed = processed.replace(displayMathRegex, (match, p1, p2, p3) => {
-            let tex = (p1 !== undefined ? p1 : (p2 !== undefined ? p2 : p3)).trim();
-            const id = mathBlocks.length;
-            mathBlocks.push(tex);
-            return `\n\n%%%MATHBLOCK_${id}%%%\n\n`;
-        });
-
-        // 3. Extract Inline Math
-        const mathInlines = [];
-        const inlineMathRegex = /\\\(([\s\S]*?)\\\)|\$(?!\s)([^\$\n\r]+?)(?<!\s)\$/g;
-
-        processed = processed.replace(inlineMathRegex, (match, p1, p2) => {
-            let tex = (p1 !== undefined ? p1 : p2).trim();
-            const id = mathInlines.length;
-            mathInlines.push(tex);
-            return `%%%MATHINLINE_${id}%%%`;
-        });
-
-        // 4. Restore Code Blocks before passing to Marked
-        for (let i = 0; i < codeBlocks.length; i++) {
-            processed = processed.replace(`%%%CODEBLOCK_${i}%%%`, codeBlocks[i]);
-        }
-        for (let i = 0; i < inlineCodes.length; i++) {
-            processed = processed.replace(`%%%INLINECODE_${i}%%%`, inlineCodes[i]);
-        }
-
-        // 5. Parse Markdown with marked.js
-        let html = marked.parse(processed);
-
-        // 6. Replace Display Math Placeholders
-        for (let i = 0; i < mathBlocks.length; i++) {
-            const tex = mathBlocks[i];
-            const rendered = `<div class="katex-display-container">${safeRenderKaTeX(tex, true)}</div>`;
-            const pWrapped = new RegExp(`<p>\\s*%%%MATHBLOCK_${i}%%%\\s*<\\/p>`, "g");
-            if (pWrapped.test(html)) {
-                html = html.replace(pWrapped, rendered);
-            } else {
-                html = html.replace(new RegExp(`%%%MATHBLOCK_${i}%%%`, "g"), rendered);
-            }
-        }
-
-        // 7. Replace Inline Math Placeholders
-        for (let i = 0; i < mathInlines.length; i++) {
-            const tex = mathInlines[i];
-            const rendered = safeRenderKaTeX(tex, false);
-            html = html.replace(new RegExp(`%%%MATHINLINE_${i}%%%`, "g"), rendered);
-        }
-
-        return html;
-    }
-
-    // -------------------------------------------------------------
-    // 5. Fetch Catalog & Build Navigation
-    // -------------------------------------------------------------
+// ── Catalog Load ─────────────────────────────────────────────
+async function loadCatalog() {
     try {
-        let response = await fetch("catalog.json");
-        if (!response.ok) response = await fetch("Docs/catalog.json");
-        if (!response.ok) response = await fetch("./catalog.json");
-        
-        catalogData = await response.json();
-        buildSidebar(catalogData);
-        renderHubWelcomeScreen();
-    } catch (error) {
-        console.error("Failed to load catalog:", error);
-        markdownContainer.innerHTML = `<div style="color:#f43f5e; text-align:center; padding: 50px;">
-            <h3>Failed to load architecture catalog</h3>
-            <p>Please make sure <code>catalog.json</code> exists.</p>
+        const res = await fetch('catalog.json');
+        if (!res.ok) throw new Error('Network response not ok');
+        catalogData = await res.json();
+    } catch (e) {
+        catalogData = { attentions: [], compressions: [], framework: [] };
+        console.warn('catalog.json not found, using empty catalog:', e);
+    }
+
+    // Flatten all items
+    allItems = [
+        ...(catalogData.attentions   || []).map(i => ({ ...i, category: 'attentions' })),
+        ...(catalogData.compressions || []).map(i => ({ ...i, category: 'compressions' })),
+        ...(catalogData.framework    || []).map(i => ({ ...i, category: 'framework' })),
+    ];
+
+    // Stats
+    if (statAttn) statAttn.textContent = (catalogData.attentions || []).length;
+    if (statComp) statComp.textContent = (catalogData.compressions || []).length;
+
+    // Update filter chip counts
+    document.querySelectorAll('.fchip[data-filter="all"]').forEach(c => {
+        c.textContent = `All (${allItems.length})`;
+    });
+
+    renderNav();
+    renderHome();
+}
+
+// ── Tag detection ────────────────────────────────────────────
+function getTags(item) {
+    const t = (item.title || '').toLowerCase() + ' ' + (item.id || '');
+    const tags = [];
+    if (/svd|singular|decomp/.test(t)) tags.push('svd');
+    if (/mamba|ssm|state.space|recur/.test(t)) tags.push('ssm');
+    if (/moe|mixture/.test(t)) tags.push('moe');
+    if (/flash/.test(t)) tags.push('flash');
+    if (/linear/.test(t)) tags.push('linear');
+    if (/sparse/.test(t)) tags.push('sparse');
+    if (/lora|low.rank/.test(t)) tags.push('lora');
+    return tags;
+}
+
+function matchesFilter(item, filter) {
+    if (filter === 'all') return true;
+    if (filter === 'attentions') return item.category === 'attentions';
+    if (filter === 'compressions') return item.category === 'compressions';
+    return getTags(item).includes(filter);
+}
+
+// ── Sidebar Nav Render ───────────────────────────────────────
+function renderNav(query = '', filter = activeFilter) {
+    if (navSkeleton) navSkeleton.remove();
+
+    const sections = [
+        { key: 'attentions',   label: 'Attention Mechanisms', icon: '⚡' },
+        { key: 'compressions', label: 'Compression Engines',  icon: '🗜' },
+        { key: 'framework',    label: 'Framework Docs',        icon: '📖' },
+    ];
+
+    const q = query.toLowerCase().trim();
+    let html = '';
+
+    sections.forEach(sec => {
+        const items = (catalogData[sec.key] || [])
+            .map(i => ({ ...i, category: sec.key }))
+            .filter(i => {
+                const inFilter = filter === 'all' || filter === sec.key || matchesFilter(i, filter);
+                const inSearch = !q || i.title.toLowerCase().includes(q) || i.id.toLowerCase().includes(q);
+                return inFilter && inSearch;
+            });
+
+        if (!items.length) return;
+
+        const tags = items.map(i => {
+            const itags = getTags(i);
+            const tagHtml = itags.slice(0,2).map(t =>
+                `<span class="nav-item-tag tag-${t}">${t.toUpperCase()}</span>`
+            ).join('');
+            const highlight = q ? i.title.replace(new RegExp(`(${q})`, 'gi'), '<mark>$1</mark>') : i.title;
+            return `<div class="nav-item" data-id="${i.id}" data-cat="${sec.key}" role="button" tabindex="0">
+                <span class="nav-item-icon">${sec.icon}</span>
+                <span class="nav-item-text">${highlight}</span>
+                ${tagHtml}
+            </div>`;
+        }).join('');
+
+        html += `<div class="nav-section" id="ns-${sec.key}">
+            <div class="nav-section-header" data-sec="${sec.key}">
+                <span class="nav-section-title">
+                    ${sec.label}
+                    <span class="nav-section-badge">${items.length}</span>
+                </span>
+                <svg class="nav-section-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="nav-section-items">${tags}</div>
+        </div>`;
+    });
+
+    if (!html) {
+        html = `<div style="text-align:center;padding:32px 16px;color:var(--tx-muted);font-size:.82rem;">
+            No results for "<strong>${query}</strong>"
         </div>`;
     }
 
-    function getParadigmTag(item) {
-        const name = (item.id + " " + item.title).toLowerCase();
-        if (name.includes("svd") || name.includes("spectral") || name.includes("asvd") || name.includes("dobi") || name.includes("cur")) return { text: "SVD", cls: "tag-svd", cat: "svd" };
-        if (name.includes("mamba") || name.includes("ssm") || name.includes("delta") || name.includes("hgrn") || name.includes("griffin")) return { text: "SSM", cls: "tag-ssm", cat: "ssm" };
-        if (name.includes("moe") || name.includes("moba") || name.includes("samba") || name.includes("route") || name.includes("cluster")) return { text: "MoE", cls: "tag-moe", cat: "moe" };
-        if (name.includes("quant") || name.includes("prun") || name.includes("sparse") || name.includes("slice") || name.includes("astro")) return { text: "Quant", cls: "tag-quant", cat: "quant" };
-        if (name.includes("hybrid") || name.includes("aegis") || name.includes("spectron") || name.includes("flash")) return { text: "Hybrid", cls: "tag-hybrid", cat: "hybrid" };
-        return { text: "Core", cls: "tag-default", cat: "core" };
-    }
+    navContent.innerHTML = html;
+    attachNavEvents();
+    markActive();
+}
 
-    function buildSidebar(data) {
-        navContent.innerHTML = "";
-        allItems = [];
-
-        const sections = [
-            { key: "framework", title: "Framework Overview" },
-            { key: "attentions", title: "Attention Architectures" },
-            { key: "compressions", title: "Compression Engines" }
-        ];
-
-        sections.forEach(sec => {
-            if (data[sec.key] && data[sec.key].length > 0) {
-                const sectionDiv = document.createElement("div");
-                sectionDiv.className = "nav-section";
-
-                const titleDiv = document.createElement("div");
-                titleDiv.className = "nav-section-title";
-                titleDiv.innerHTML = `<span>${sec.title}</span><span class="nav-section-count">${data[sec.key].length}</span>`;
-                sectionDiv.appendChild(titleDiv);
-
-                const ul = document.createElement("ul");
-                ul.className = "nav-list";
-
-                data[sec.key].forEach(item => {
-                    item.section = sec.title;
-                    item.sectionKey = sec.key;
-                    item.tag = getParadigmTag(item);
-                    allItems.push(item);
-
-                    const li = document.createElement("li");
-                    li.className = "nav-item";
-                    li.dataset.id = item.id;
-                    li.dataset.section = sec.key;
-                    li.dataset.cat = item.tag.cat;
-
-                    li.innerHTML = `
-                        <span class="nav-item-title">${item.title}</span>
-                        <span class="nav-badge-tag ${item.tag.cls}">${item.tag.text}</span>
-                    `;
-
-                    li.addEventListener("click", () => {
-                        selectNavItem(li, item);
-                    });
-
-                    ul.appendChild(li);
-                });
-
-                sectionDiv.appendChild(ul);
-                navContent.appendChild(sectionDiv);
-            }
-        });
-    }
-
-    function selectNavItem(element, item) {
-        document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-        if (element) element.classList.add("active");
-        
-        if (window.innerWidth <= 768 && sidebar) {
-            sidebar.classList.remove("open");
-        }
-        
-        loadMarkdown(item);
-    }
-
-    // -------------------------------------------------------------
-    // 6. Search & Filter System
-    // -------------------------------------------------------------
-    if (searchInput) {
-        searchInput.addEventListener("input", (e) => {
-            const query = e.target.value.toLowerCase().trim();
-            if (searchClearBtn) {
-                searchClearBtn.classList.toggle("hidden", query.length === 0);
-            }
-            filterNavItems();
-        });
-    }
-
-    if (searchClearBtn) {
-        searchClearBtn.addEventListener("click", () => {
-            searchInput.value = "";
-            searchClearBtn.classList.add("hidden");
-            filterNavItems();
-            searchInput.focus();
-        });
-    }
-
-    // Paradigm Filter Chips
-    filterChips.forEach(chip => {
-        chip.addEventListener("click", () => {
-            filterChips.forEach(c => c.classList.remove("active"));
-            chip.classList.add("active");
-            activeFilter = chip.dataset.filter;
-            filterNavItems();
+function attachNavEvents() {
+    // Section headers toggle
+    navContent.querySelectorAll('.nav-section-header').forEach(h => {
+        h.addEventListener('click', () => {
+            const sec = h.closest('.nav-section');
+            sec.classList.toggle('collapsed');
         });
     });
 
-    function filterNavItems() {
-        const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
-        const navItems = document.querySelectorAll(".nav-item");
-        const navSections = document.querySelectorAll(".nav-section");
-
-        navItems.forEach(item => {
-            const title = item.querySelector(".nav-item-title").textContent.toLowerCase();
-            const secKey = item.dataset.section;
-            const cat = item.dataset.cat;
-
-            // Search query match
-            const matchesQuery = !query || title.includes(query);
-
-            // Category filter match
-            let matchesFilter = true;
-            if (activeFilter === "attentions") matchesFilter = (secKey === "attentions");
-            else if (activeFilter === "compressions") matchesFilter = (secKey === "compressions");
-            else if (activeFilter === "svd") matchesFilter = (cat === "svd");
-            else if (activeFilter === "ssm") matchesFilter = (cat === "ssm");
-            else if (activeFilter === "moe") matchesFilter = (cat === "moe");
-
-            if (matchesQuery && matchesFilter) {
-                item.style.display = "flex";
-            } else {
-                item.style.display = "none";
-            }
+    // Nav items
+    navContent.querySelectorAll('.nav-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const item = allItems.find(i => i.id === el.dataset.id && i.category === el.dataset.cat);
+            if (item) loadArticle(item);
         });
-
-        // Hide empty sections
-        navSections.forEach(sec => {
-            const visibleChildren = sec.querySelectorAll(".nav-item:not([style*='display: none'])");
-            sec.style.display = visibleChildren.length > 0 ? "block" : "none";
-        });
-    }
-
-    // -------------------------------------------------------------
-    // 7. Welcome Hub Screen
-    // -------------------------------------------------------------
-    function renderHubWelcomeScreen() {
-        activeItem = null;
-        document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
-        
-        if (breadcrumbs) {
-            breadcrumbs.innerHTML = `
-                <span class="breadcrumb-item home-crumb">Hub</span>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item current-section">Overview</span>
-            `;
-        }
-
-        if (tocNav) tocNav.innerHTML = `<span style="font-size:0.75rem; color:var(--text-faint);">Select a module to view contents</span>`;
-
-        const totalAttn = catalogData.attentions ? catalogData.attentions.length : 108;
-        const totalComp = catalogData.compressions ? catalogData.compressions.length : 58;
-
-        markdownContainer.innerHTML = `
-            <div class="hub-hero">
-                <div class="hub-badge">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                    <span>Publication-Grade Research Repository</span>
-                </div>
-                <h1>Attention & Neural Compression Hub</h1>
-                <p>Explore 180+ publication-grade mathematical derivations, analytical FLOPs complexity proofs, tensor shape execution traces, and production Triton kernel blueprints.</p>
-                
-                <div class="metrics-grid">
-                    <div class="metric-card">
-                        <div class="metric-value accent-blue">${totalAttn}+</div>
-                        <div class="metric-label">Attention Architectures</div>
-                        <div class="metric-sub">Dense, SVD, SSM, MoE & Fused</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value accent-emerald">${totalComp}+</div>
-                        <div class="metric-label">Compression Engines</div>
-                        <div class="metric-sub">SVD, SliceGPT, SparseGPT, KV</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value accent-amber">5</div>
-                        <div class="metric-label">Next-Gen Hybrids</div>
-                        <div class="metric-sub">Cross-paradigm innovations</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value accent-indigo">1,600+</div>
-                        <div class="metric-label">KaTeX TeX Proofs</div>
-                        <div class="metric-sub">Triton acceleration blueprints</div>
-                    </div>
-                </div>
-
-                <div class="hub-section-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                    <span>Featured Architectures & Breakthrough Hybrids</span>
-                </div>
-
-                <div class="hub-cards-grid">
-                    <div class="hub-card" data-id="mamba_svd_flash">
-                        <div class="hub-card-header">
-                            <span class="hub-card-tag tag-hybrid">Next-Gen Hybrid</span>
-                            <span style="color:var(--accent-sky); font-size:0.8rem;">O(N) Scan</span>
-                        </div>
-                        <h3>MambaSVD-Flash</h3>
-                        <p>Tri-hybrid unifying chunked Selective State-Space associative scans, low-rank SVD projections, and Hopper FP8 WGMMA tensor cores.</p>
-                        <div class="hub-card-meta">
-                            <span>FP8 / Hopper</span>
-                            <span>Triton Ready</span>
-                        </div>
-                    </div>
-
-                    <div class="hub-card" data-id="svd_linear_attention">
-                        <div class="hub-card-header">
-                            <span class="hub-card-tag tag-svd">Spectral SVD</span>
-                            <span style="color:var(--accent-sky); font-size:0.8rem;">Rank Factorized</span>
-                        </div>
-                        <h3>SVD Linear Attention</h3>
-                        <p>Zero-shot parameter compression for Multi-Head Attention via truncated Singular Value Decomposition and semi-orthogonal weights.</p>
-                        <div class="hub-card-meta">
-                            <span>Memory -40%</span>
-                            <span>Exact Truncation</span>
-                        </div>
-                    </div>
-
-                    <div class="hub-card" data-id="rotational_slicegpt_int4">
-                        <div class="hub-card-header">
-                            <span class="hub-card-tag tag-quant">Compression</span>
-                            <span style="color:var(--accent-emerald); font-size:0.8rem;">4-Bit Quant</span>
-                        </div>
-                        <h3>Rotational-SliceGPT-INT4</h3>
-                        <p>Orthogonal rotational invariance coupled with second-order Hessian slicing and Astro INT4 symmetric codebook quantization.</p>
-                        <div class="hub-card-meta">
-                            <span>4x VRAM Savings</span>
-                            <span>Hessian Calibration</span>
-                        </div>
-                    </div>
-
-                    <div class="hub-card" data-id="moe_deltakv_paged">
-                        <div class="hub-card-header">
-                            <span class="hub-card-tag tag-moe">Sparse MoE</span>
-                            <span style="color:var(--accent-amber); font-size:0.8rem;">Paged Cache</span>
-                        </div>
-                        <h3>MoE-DeltaKV-Paged</h3>
-                        <p>Mixture of Block Attention (MoBA) sparse routing with paged temporal difference delta KV-cache compression.</p>
-                        <div class="hub-card-meta">
-                            <span>128k Context</span>
-                            <span>Paged Memory</span>
-                        </div>
-                    </div>
-
-                    <div class="hub-card" data-id="flash_attention3_fp8">
-                        <div class="hub-card-header">
-                            <span class="hub-card-tag tag-hybrid">Hardware Fused</span>
-                            <span style="color:var(--accent-sky); font-size:0.8rem;">Hopper TMA</span>
-                        </div>
-                        <h3>FlashAttention-3 FP8</h3>
-                        <p>Asynchronous Tensor Memory Accelerator (TMA) and WGMMA warped GEMM execution pipeline for maximum throughput.</p>
-                        <div class="hub-card-meta">
-                            <span>800+ TFLOPs</span>
-                            <span>Hardware Fused</span>
-                        </div>
-                    </div>
-
-                    <div class="hub-card" data-id="NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM">
-                        <div class="hub-card-header">
-                            <span class="hub-card-tag tag-hybrid">Master Synthesis</span>
-                            <span style="color:var(--accent-sky); font-size:0.8rem;">Compendium</span>
-                        </div>
-                        <h3>Innovations Compendium</h3>
-                        <p>Comprehensive architectural cross-synthesis and unified Triton roadmap across all 108 attention modules and 58 compression engines.</p>
-                        <div class="hub-card-meta">
-                            <span>Master Blueprint</span>
-                            <span>Layerwise Matrix</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // Add 1-click listeners to featured cards
-        document.querySelectorAll(".hub-card").forEach(card => {
-            card.addEventListener("click", () => {
-                const targetId = card.dataset.id;
-                if (targetId === "NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM") {
-                    loadCompendiumDirectly();
-                } else {
-                    const found = allItems.find(it => it.id === `${targetId}.md` || it.id === targetId || it.id.includes(targetId));
-                    if (found) {
-                        const targetLi = document.querySelector(`.nav-item[data-id="${found.id}"]`);
-                        selectNavItem(targetLi, found);
-                    }
-                }
-            });
-        });
-
-        if (contentViewport) contentViewport.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    async function loadCompendiumDirectly() {
-        const item = {
-            id: "NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md",
-            title: "Next-Gen Innovations & Synthesis Compendium",
-            section: "Framework Overview",
-            path: "Codes/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md"
-        };
-        await loadMarkdown(item);
-    }
-
-    // -------------------------------------------------------------
-    // 8. Markdown Document Loader & Renderer
-    // -------------------------------------------------------------
-    async function loadMarkdown(item) {
-        activeItem = item;
-
-        // Update Breadcrumbs
-        if (breadcrumbs) {
-            breadcrumbs.innerHTML = `
-                <span class="breadcrumb-item home-crumb" id="crumb-home">Hub</span>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item">${item.section || 'Documentation'}</span>
-                <span class="breadcrumb-separator">/</span>
-                <span class="breadcrumb-item current-section">${item.title}</span>
-            `;
-            const crumbHome = document.getElementById("crumb-home");
-            if (crumbHome) crumbHome.addEventListener("click", renderHubWelcomeScreen);
-        }
-
-        markdownContainer.innerHTML = `
-            <div style="text-align:center; padding: 80px 20px; color: var(--text-muted);">
-                <div class="skeleton-line" style="width: 50%; margin: 0 auto 16px auto; height: 28px;"></div>
-                <div class="skeleton-line" style="width: 80%; margin: 0 auto 10px auto;"></div>
-                <div class="skeleton-line" style="width: 65%; margin: 0 auto 30px auto;"></div>
-                <div style="font-size: 0.9rem; font-family: var(--font-mono);">Loading ${item.title}...</div>
-            </div>
-        `;
-
-        const candidatePaths = [
-            item.path,
-            item.path.replace(/^\.\.\//, ""),
-            item.path.replace(/^\.\.\//, "./"),
-            `./${item.path}`,
-            `Codes/framework/${item.id}`,
-            `Codes/framework/attentions/${item.id}`,
-            `Codes/framework/compression_engine/${item.id}`,
-            `../Codes/framework/attentions/${item.id}`,
-            `../Codes/framework/compression_engine/${item.id}`
-        ];
-
-        let markdownText = null;
-        for (const candidate of candidatePaths) {
-            try {
-                const response = await fetch(candidate);
-                if (response.ok) {
-                    markdownText = await response.text();
-                    break;
-                }
-            } catch (err) {
-                // Continue to next candidate path
-            }
-        }
-
-        if (markdownText !== null) {
-            try {
-                // Render Markdown with KaTeX math protection
-                const htmlContent = renderMarkdownWithKaTeX(markdownText);
-                markdownContainer.innerHTML = htmlContent;
-
-                // Build On-This-Page Table of Contents (TOC)
-                buildTableOfContents();
-
-                // Render Mermaid Diagrams
-                if (window.mermaid) {
-                    try {
-                        const mermaidElements = document.querySelectorAll('.mermaid');
-                        if (mermaidElements.length > 0) {
-                            mermaid.init(undefined, mermaidElements);
-                        }
-                    } catch (mErr) {
-                        console.warn("Mermaid rendering warning:", mErr);
-                    }
-                }
-
-                // Render Prism Syntax Highlighting
-                if (window.Prism) {
-                    Prism.highlightAllUnder(markdownContainer);
-                }
-
-                // Add Copy Buttons to Code Blocks
-                document.querySelectorAll('.markdown-body pre').forEach(pre => {
-                    if (!pre.querySelector('.copy-code-btn')) {
-                        const btn = document.createElement('button');
-                        btn.className = 'copy-code-btn';
-                        btn.textContent = 'Copy';
-                        btn.addEventListener('click', async () => {
-                            const code = pre.querySelector('code')?.innerText || pre.innerText;
-                            try {
-                                await navigator.clipboard.writeText(code);
-                                btn.textContent = 'Copied!';
-                                btn.style.background = 'var(--accent-emerald)';
-                                btn.style.borderColor = 'var(--accent-emerald)';
-                                setTimeout(() => { 
-                                    btn.textContent = 'Copy';
-                                    btn.style.background = '';
-                                    btn.style.borderColor = '';
-                                }, 2000);
-                            } catch (e) {
-                                btn.textContent = 'Failed';
-                            }
-                        });
-                        pre.appendChild(btn);
-                    }
-                });
-
-                // Scroll viewport to top
-                if (contentViewport) contentViewport.scrollTo({ top: 0, behavior: 'smooth' });
-
-            } catch (renderError) {
-                console.error("Rendering error:", renderError);
-                markdownContainer.innerHTML = `
-                    <div style="text-align:center; padding: 60px 20px; color: var(--accent-rose);">
-                        <h3>Rendering Compilation Error</h3>
-                        <p>${renderError.message}</p>
-                    </div>
-                `;
-            }
-        } else {
-            markdownContainer.innerHTML = `
-                <div style="text-align:center; padding: 60px 20px; color: var(--accent-rose);">
-                    <h3>Document Not Found</h3>
-                    <p>Could not load the documentation file for <strong>${item.title}</strong>.</p>
-                </div>
-            `;
-        }
-    }
-
-    // -------------------------------------------------------------
-    // 9. Table of Contents & Scroll-Spy
-    // -------------------------------------------------------------
-    function buildTableOfContents() {
-        if (!tocNav) return;
-        tocNav.innerHTML = "";
-
-        const headings = markdownContainer.querySelectorAll("h2, h3");
-        if (headings.length === 0) {
-            tocNav.innerHTML = `<span style="font-size:0.75rem; color:var(--text-faint);">No section headers</span>`;
-            return;
-        }
-
-        headings.forEach((heading, idx) => {
-            const id = heading.id || `section-${idx}`;
-            heading.id = id;
-
-            const link = document.createElement("a");
-            link.className = "toc-link";
-            link.href = `#${id}`;
-            link.textContent = heading.textContent.replace(/^#+\s*/, "");
-            link.title = link.textContent;
-            
-            if (heading.tagName.toLowerCase() === "h3") {
-                link.style.paddingLeft = "12px";
-                link.style.fontSize = "0.75rem";
-            }
-
-            link.addEventListener("click", (e) => {
+        el.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                heading.scrollIntoView({ behavior: "smooth", block: "start" });
-            });
-
-            tocNav.appendChild(link);
+                el.click();
+            }
         });
+    });
+}
 
-        updateTocActiveLink();
+function markActive() {
+    navContent.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.toggle('active',
+            activeItem && el.dataset.id === activeItem.id && el.dataset.cat === activeItem.category);
+    });
+}
+
+
+// ── Filter Chips ─────────────────────────────────────────────
+document.querySelectorAll('.fchip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        activeFilter = chip.dataset.filter;
+        renderNav('', activeFilter);
+    });
+});
+
+// ── Stat chips ───────────────────────────────────────────────
+document.querySelectorAll('.stat-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const f = chip.dataset.filter;
+        activeFilter = f;
+        document.querySelectorAll('.fchip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
+        renderNav('', f);
+    });
+});
+
+// ── Home Button ───────────────────────────────────────────────
+if (homeBtn) homeBtn.addEventListener('click', renderHome);
+const bcHome = document.getElementById('bc-home');
+if (bcHome) bcHome.addEventListener('click', renderHome);
+
+// ── Compendium Button ─────────────────────────────────────────
+if (compendiumBtn) {
+    compendiumBtn.addEventListener('click', () => {
+        const item = allItems.find(i => i.id === 'NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md');
+        if (item) loadArticle(item);
+    });
+}
+
+// ── Random Button ─────────────────────────────────────────────
+if (randomBtn) {
+    randomBtn.addEventListener('click', () => {
+        const pool = allItems.filter(i => i.category !== 'framework');
+        if (pool.length) loadArticle(pool[Math.floor(Math.random() * pool.length)]);
+    });
+}
+
+// ── Breadcrumb update ─────────────────────────────────────────
+function updateBreadcrumb(item) {
+    if (!item) {
+        if (bcCurrent) bcCurrent.textContent = 'Overview';
+        if (bcPage) { bcPage.textContent = ''; bcPage.classList.add('hidden'); }
+        if (bcSep2) bcSep2.classList.add('hidden');
+        return;
+    }
+    const sectionMap = { attentions: 'Attentions', compressions: 'Compressions', framework: 'Framework' };
+    if (bcCurrent) bcCurrent.textContent = sectionMap[item.category] || item.category;
+    if (bcPage) {
+        bcPage.textContent = item.title;
+        bcPage.classList.remove('hidden');
+    }
+    if (bcSep2) bcSep2.classList.remove('hidden');
+}
+
+// ── Load Article ──────────────────────────────────────────────
+async function loadArticle(item) {
+    activeItem = item;
+    markActive();
+    updateBreadcrumb(item);
+
+    // Close mobile sidebar
+    sidebar.classList.remove('open');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+
+    // Show loading state
+    mdContainer.innerHTML = `<div class="article-loading">
+        <div class="sk-group-label" style="width:30%;height:14px;margin-bottom:20px"></div>
+        <div class="sk-item" style="height:20px;margin-bottom:10px"></div>
+        <div class="sk-item" style="height:16px;width:80%;margin-bottom:10px"></div>
+        <div class="sk-item" style="height:16px;width:90%;margin-bottom:10px"></div>
+        <div class="sk-item" style="height:16px;width:70%;margin-bottom:24px"></div>
+        <div class="sk-item" style="height:180px;margin-bottom:16px"></div>
+    </div>`;
+
+    contentViewport.scrollTo({ top: 0, behavior: 'instant' });
+
+    try {
+        const res = await fetch(item.path);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const md = await res.text();
+        renderMarkdown(md, item);
+    } catch (e) {
+        mdContainer.innerHTML = `<div style="padding:40px 0; text-align:center; color:var(--tx-muted)">
+            <div style="font-size:2rem;margin-bottom:16px">📄</div>
+            <div style="font-size:1rem;color:var(--tx-primary);font-weight:600;margin-bottom:8px">${item.title}</div>
+            <div style="font-size:.82rem;">Documentation file not found at path:<br><code style="font-family:var(--font-mono);color:var(--accent-hover)">${item.path}</code></div>
+        </div>`;
+        buildToc();
+    }
+}
+
+// ── Render Markdown ───────────────────────────────────────────
+function renderMarkdown(md, item) {
+    // Configure marked
+    marked.setOptions({
+        breaks: true,
+        gfm: true,
+        headerIds: true,
+        mangle: false,
+    });
+
+    // Custom renderer for code blocks
+    const renderer = new marked.Renderer();
+    renderer.code = (code, lang) => {
+        const language = lang ? lang.split(' ')[0] : 'text';
+        const langLabel = language === 'text' ? '' : language;
+        const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return `<div class="code-block-wrap">
+            <div class="code-block-lang">
+                <span class="code-lang-badge">${langLabel}</span>
+                <button class="copy-code-btn" onclick="copyCode(this)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy
+                </button>
+            </div>
+            <pre class="language-${language}"><code class="language-${language}">${escaped}</code></pre>
+        </div>`;
+    };
+
+    // Mermaid diagrams
+    renderer.code = (() => {
+        const _orig = renderer.code.bind(renderer);
+        return (code, lang) => {
+            if (lang === 'mermaid') {
+                const id = 'mermaid-' + Math.random().toString(36).slice(2);
+                return `<div class="mermaid-wrap"><div class="mermaid" id="${id}">${code}</div></div>`;
+            }
+            return _orig(code, lang);
+        };
+    })();
+
+    // Heading with anchor links
+    renderer.heading = (text, level) => {
+        const slug = text.toLowerCase().replace(/<[^>]+>/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-');
+        return `<h${level} id="${slug}">${text}<a class="heading-anchor" href="#${slug}" aria-hidden="true">#</a></h${level}>`;
+    };
+
+    const html = marked.parse(md, { renderer });
+    mdContainer.innerHTML = html;
+    mdContainer.classList.add('fade-in');
+
+    // KaTeX math rendering
+    if (window.renderMathInElement) {
+        try {
+            renderMathInElement(mdContainer, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\[', right: '\\]', display: true },
+                    { left: '\\(', right: '\\)', display: false },
+                ],
+                throwOnError: false,
+                errorColor: '#f43f5e',
+            });
+        } catch(e) { console.warn('KaTeX error:', e); }
     }
 
-    function updateTocActiveLink() {
-        if (!tocNav || !contentViewport) return;
-        const headings = markdownContainer.querySelectorAll("h2, h3");
-        const tocLinks = tocNav.querySelectorAll(".toc-link");
+    // Prism syntax highlighting
+    if (window.Prism) {
+        setTimeout(() => Prism.highlightAllUnder(mdContainer), 50);
+    }
 
-        let currentActive = null;
-        const viewportTop = contentViewport.scrollTop;
+    // Mermaid diagrams
+    if (window.mermaid) {
+        setTimeout(() => {
+            try { mermaid.run({ nodes: mdContainer.querySelectorAll('.mermaid') }); }
+            catch(e) { console.warn('Mermaid error:', e); }
+        }, 100);
+    }
 
-        headings.forEach(heading => {
-            const top = heading.offsetTop - 100;
-            if (viewportTop >= top) {
-                currentActive = heading.id;
+    buildToc(item);
+    buildMetaPanel(item);
+}
+
+
+// ── Build TOC ─────────────────────────────────────────────────
+function buildToc(item) {
+    if (!tocNav) return;
+    const headings = mdContainer.querySelectorAll('h2, h3');
+    if (!headings.length) { tocNav.innerHTML = ''; return; }
+    let html = '';
+    headings.forEach(h => {
+        const isH3 = h.tagName === 'H3';
+        const id = h.id || h.textContent.toLowerCase().replace(/\s+/g,'-');
+        if (!h.id) h.id = id;
+        const text = h.textContent.replace(/#$/, '').trim();
+        html += `<a class="toc-link${isH3?' h3':''}" href="#${id}" data-id="${id}">${text}</a>`;
+    });
+    tocNav.innerHTML = html;
+
+    tocNav.querySelectorAll('.toc-link').forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            const target = mdContainer.querySelector('#' + link.dataset.id);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                contentViewport.scrollBy(0, -80);
             }
         });
+    });
+}
 
-        tocLinks.forEach(link => {
-            if (currentActive && link.getAttribute("href") === `#${currentActive}`) {
-                link.classList.add("active");
+function updateTocSpy() {
+    if (!tocNav || !contentViewport) return;
+    const headings = Array.from(mdContainer.querySelectorAll('h2, h3'));
+    const scrollTop = contentViewport.scrollTop + 100;
+    let active = headings[0];
+    headings.forEach(h => { if (h.offsetTop <= scrollTop) active = h; });
+    if (!active) return;
+    tocNav.querySelectorAll('.toc-link').forEach(l => l.classList.remove('active'));
+    const activeLink = tocNav.querySelector(`[data-id="${active.id}"]`);
+    if (activeLink) activeLink.classList.add('active');
+}
+
+// ── Meta Panel ────────────────────────────────────────────────
+function buildMetaPanel(item) {
+    if (!tocMeta || !item) return;
+    const catMap = { attentions: 'Attention', compressions: 'Compression', framework: 'Framework' };
+    const catClass = { attentions: 'attn', compressions: 'comp', framework: 'fw' };
+    const tags = getTags(item);
+    const tagsHtml = tags.map(t => `<span class="meta-badge" style="background:rgba(59,130,246,.1);color:var(--accent)">${t.toUpperCase()}</span>`).join(' ');
+    tocMeta.innerHTML = `
+        <div class="meta-row"><span class="meta-label">Type</span><span class="meta-badge ${catClass[item.category]||'fw'}">${catMap[item.category]||'Docs'}</span></div>
+        ${tags.length ? `<div class="meta-row"><span class="meta-label">Tags</span><span>${tagsHtml}</span></div>` : ''}
+        <div class="meta-row" style="margin-top:12px;">
+            <a href="${item.path}" target="_blank" style="font-size:.72rem;color:var(--tx-accent);display:flex;align-items:center;gap:4px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                View source
+            </a>
+        </div>`;
+}
+
+// ── Copy code ─────────────────────────────────────────────────
+window.copyCode = (btn) => {
+    const pre = btn.closest('.code-block-wrap').querySelector('pre');
+    const text = pre ? pre.innerText : '';
+    navigator.clipboard.writeText(text).then(() => {
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!`;
+        setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+        }, 2000);
+    });
+};
+
+
+// ── Render Home / Dashboard ──────────────────────────────────
+function renderHome() {
+    activeItem = null;
+    markActive();
+    updateBreadcrumb(null);
+    if (tocNav) tocNav.innerHTML = '';
+    if (tocMeta) tocMeta.innerHTML = '';
+
+    const attnCount = (catalogData.attentions || []).length;
+    const compCount = (catalogData.compressions || []).length;
+    const totalCount = allItems.length;
+
+    // Featured Architectures
+    const featured = [
+        { id: 'svd_linear_attention.md', title: 'SVD Linear Attention', cat: 'attentions', tags: ['SVD', 'O(N)', 'LINEAR'], desc: 'Optimal low-rank singular state projection with exact causal recurrence.' },
+        { id: 'aegis_hybrid.md', title: 'Aegis-Hybrid Attention', cat: 'attentions', tags: ['HYBRID', 'WINDOW', 'SVD'], desc: 'Multi-branch sliding window + global low-rank state attention.' },
+        { id: 'flash_attention3_fp8.md', title: 'FlashAttention-3 FP8', cat: 'attentions', tags: ['FP8', 'TRITON', 'HARDWARE'], desc: 'Asynchronous FP8 tensor core matrix GEMMs with ping-pong buffering.' },
+        { id: 'mamba_svd_flash.md', title: 'MambaSVD-Flash', cat: 'attentions', tags: ['SSM', 'MAMBA', 'SVD'], desc: 'Fused state-space model with low-rank singular value decomposition.' },
+        { id: 'rotational_slicegpt_int4.md', title: 'Rotational-SliceGPT-INT4', cat: 'compressions', tags: ['INT4', 'SLICEGPT', 'ROTATION'], desc: 'Orthogonal transformation followed by 4-bit Hadamard astro quantization.' },
+        { id: 'kronecker_tt_lora.md', title: 'Kronecker-TT-LoRA', cat: 'compressions', tags: ['TENSOR-TRAIN', 'KRONECKER', 'LORA'], desc: 'Tensor-Train factorization structured Kronecker parameter adaptation.' },
+        { id: 'mla_attention.md', title: 'Multi-Head Latent Attention (MLA)', cat: 'attentions', tags: ['DEEPSEEK', 'LATENT', 'KV-COMPRESS'], desc: 'Low-rank key-value joint compression for massive throughput scaling.' },
+        { id: 'adaptive_svd_attention.md', title: 'Adaptive SVD Attention', cat: 'attentions', tags: ['ADAPTIVE', 'DYNAMIC-RANK', 'SVD'], desc: 'Dynamic singular value thresholding based on layer-wise spectral energy.' }
+    ];
+
+    const featuredCards = featured.map(f => {
+        const item = allItems.find(i => i.id === f.id) || { id: f.id, title: f.title, category: f.cat, path: `../Codes/framework/${f.cat}/${f.id}` };
+        const tagsHtml = f.tags.map(t => `<span class="arch-tag tag-${t.toLowerCase().replace(/[^a-z]/g,'')}">${t}</span>`).join('');
+        return `<div class="arch-card" data-id="${f.id}" data-cat="${f.cat}">
+            <div class="arch-card-type ${f.cat === 'attentions' ? 'attn' : 'comp'}">${f.cat === 'attentions' ? 'Attention Mechanism' : 'Compression Engine'}</div>
+            <div class="arch-card-name">${f.title}</div>
+            <p style="font-size:.73rem;color:var(--tx-muted);line-height:1.4;margin:2px 0 6px;">${f.desc}</p>
+            <div class="arch-card-tags">${tagsHtml}</div>
+        </div>`;
+    }).join('');
+
+    mdContainer.innerHTML = `
+        <div class="home-hero">
+            <div class="home-hero-bg"></div>
+            <div class="home-eyebrow">
+                <span class="home-eyebrow-dot"></span>
+                <span>Publication-Grade Research & Benchmark Suite</span>
+            </div>
+            <h1 class="home-title">SVD Linear <span>Attention</span> & Compression Hub</h1>
+            <p class="home-subtitle">
+                An advanced research compendium exploring <strong>${attnCount || 108}+ Attention Architectures</strong>, 
+                <strong>${compCount || 85}+ Neural Compression Engines</strong>, Triton GPU kernels, and mathematical proofs for sub-quadratic sequence modeling.
+            </p>
+            <div class="home-actions">
+                <button class="hero-btn hero-btn-primary" id="hero-explore-btn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Explore Architectures
+                </button>
+                <button class="hero-btn hero-btn-secondary" id="hero-compendium-btn">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    Synthesis Compendium
+                </button>
+                <a href="https://github.com/tahamajs/SVD_linear_Attention" target="_blank" class="hero-btn hero-btn-secondary">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    Source Code
+                </a>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card" style="--card-accent: var(--accent);" onclick="document.querySelector('.fchip[data-filter=attentions]').click()">
+                <div class="stat-card-num">${attnCount || 108}</div>
+                <div class="stat-card-label">Attention Mechanisms</div>
+                <div class="stat-card-icon" style="background:rgba(59,130,246,.12);color:var(--accent);">⚡</div>
+            </div>
+            <div class="stat-card" style="--card-accent: var(--accent-2);" onclick="document.querySelector('.fchip[data-filter=compressions]').click()">
+                <div class="stat-card-num">${compCount || 85}</div>
+                <div class="stat-card-label">Compression Engines</div>
+                <div class="stat-card-icon" style="background:rgba(6,182,212,.12);color:var(--accent-2);">🗜</div>
+            </div>
+            <div class="stat-card" style="--card-accent: var(--accent-3);" onclick="document.querySelector('.fchip[data-filter=svd]').click()">
+                <div class="stat-card-num">32+</div>
+                <div class="stat-card-label">SVD Low-Rank Variants</div>
+                <div class="stat-card-icon" style="background:rgba(16,185,129,.12);color:var(--accent-3);">📐</div>
+            </div>
+            <div class="stat-card" style="--card-accent: var(--accent-4);" onclick="document.querySelector('.fchip[data-filter=ssm]').click()">
+                <div class="stat-card-num">18+</div>
+                <div class="stat-card-label">SSM & Recurrent Hybrids</div>
+                <div class="stat-card-icon" style="background:rgba(245,158,11,.12);color:var(--accent-4);">🔄</div>
+            </div>
+        </div>
+
+        <div class="arch-grid-section">
+            <div class="section-row">
+                <span class="section-title-small">Featured Research Architectures</span>
+                <span style="font-size:.75rem;color:var(--tx-muted);">Click any card to read paper & docs</span>
+            </div>
+            <div class="arch-grid">${featuredCards}</div>
+        </div>
+
+        <div class="arch-grid-section" style="margin-top:40px;">
+            <div class="section-row">
+                <span class="section-title-small">Core Mathematical Framework</span>
+            </div>
+            <div style="background:var(--bg-surface);border:1px solid var(--bd-subtle);border-radius:12px;padding:24px;margin-bottom:24px;">
+                <h3 style="margin-top:0;margin-bottom:12px;font-size:1.1rem;color:var(--tx-primary);">Exact Low-Rank State SVD Attention Formulation</h3>
+                <p style="font-size:.85rem;color:var(--tx-secondary);line-height:1.7;margin-bottom:14px;">
+                    Standard Softmax attention scales quadratically $\\mathcal{O}(N^2)$ with context length. Our Singular Value Decomposition Linear Attention framework factorizes key-value interactions into an exact associative state matrix $S_t \\in \\mathbb{R}^{d_k \\times d_v}$:
+                </p>
+                <div style="text-align:center;padding:12px 0;">
+                    $$\\mathbf{O}_t = \\frac{\\phi(\\mathbf{Q}_t) \\mathbf{S}_t}{\\phi(\\mathbf{Q}_t) \\mathbf{z}_t}, \\quad \\mathbf{S}_t = \\lambda \\mathbf{S}_{t-1} + \\mathbf{U}_\\Sigma \\mathbf{V}^T \\phi(\\mathbf{K}_t)^T \\mathbf{V}_t$$
+                </div>
+                <p style="font-size:.82rem;color:var(--tx-muted);line-height:1.6;margin-top:12px;">
+                    With truncation rank $r \\ll d$, inference memory reduces to constant $\\mathcal{O}(1)$ per token and training throughput scales linearly with sequence length $N$.
+                </p>
+            </div>
+        </div>
+
+        <div class="arch-grid-section">
+            <div class="section-row">
+                <span class="section-title-small">Quick Start Execution</span>
+            </div>
+            <div class="code-block-wrap">
+                <div class="code-block-lang">
+                    <span class="code-lang-badge">BASH / PYTHON</span>
+                    <button class="copy-code-btn" onclick="copyCode(this)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copy
+                    </button>
+                </div>
+                <pre class="language-bash"><code class="language-bash"># Run complete multi-mode framework test suite across all 117+ attention modules
+python3 Codes/framework/test_all_framework.py
+
+# Launch automated unit & integration test discovery
+PYTHONPATH=Codes python3 -m unittest discover -s Codes/framework/tests -v</code></pre>
+            </div>
+        </div>
+    `;
+
+    // Render KaTeX on home page formulas
+    if (window.renderMathInElement) {
+        try {
+            renderMathInElement(mdContainer, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                ],
+                throwOnError: false
+            });
+        } catch(e) { console.warn(e); }
+    }
+
+    // Attach card click handlers
+    mdContainer.querySelectorAll('.arch-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const item = allItems.find(i => i.id === card.dataset.id && i.category === card.dataset.cat);
+            if (item) loadArticle(item);
+        });
+    });
+
+    const expBtn = document.getElementById('hero-explore-btn');
+    if (expBtn) {
+        expBtn.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                sidebar.classList.add('open');
+                if (sidebarOverlay) sidebarOverlay.classList.add('active');
             } else {
-                link.classList.remove("active");
+                openCmdPalette();
             }
         });
+    }
+
+    const compBtn = document.getElementById('hero-compendium-btn');
+    if (compBtn && compendiumBtn) {
+        compBtn.addEventListener('click', () => compendiumBtn.click());
+    }
+}
+
+// ── Command Palette Logic ────────────────────────────────────
+function openCmdPalette() {
+    if (!cmdOverlay) return;
+    cmdOverlay.classList.remove('hidden');
+    if (cmdInput) {
+        cmdInput.value = '';
+        cmdInput.focus();
+    }
+    renderCmdResults('');
+}
+
+function closeCmdPalette() {
+    if (!cmdOverlay) return;
+    cmdOverlay.classList.add('hidden');
+}
+
+function renderCmdResults(query, cat = 'all') {
+    if (!cmdResults) return;
+    const q = query.toLowerCase().trim();
+    let pool = allItems;
+    if (cat !== 'all') {
+        pool = pool.filter(i => i.category === cat);
+    }
+    if (q) {
+        pool = pool.filter(i => i.title.toLowerCase().includes(q) || i.id.toLowerCase().includes(q));
+    }
+
+    cmdFilteredItems = pool.slice(0, 30);
+    cmdSelectedIdx = 0;
+
+    if (!cmdFilteredItems.length) {
+        cmdResults.innerHTML = `<div class="cmd-no-results">No architectures found matching "<strong>${query}</strong>"</div>`;
+        return;
+    }
+
+    const catIcon = { attentions: '⚡', compressions: '🗜', framework: '📖' };
+    const catClass = { attentions: 'attn', compressions: 'comp', framework: 'fw' };
+
+    let html = '';
+    cmdFilteredItems.forEach((item, idx) => {
+        const cClass = catClass[item.category] || 'fw';
+        const icon = catIcon[item.category] || '📄';
+        const title = q ? item.title.replace(new RegExp(`(${q})`, 'gi'), '<strong style="color:var(--accent-hover)">$1</strong>') : item.title;
+        html += `<div class="cmd-item ${idx === 0 ? 'selected' : ''}" data-idx="${idx}">
+            <div class="cmd-item-icon ${cClass}">${icon}</div>
+            <div class="cmd-item-info">
+                <div class="cmd-item-title">${title}</div>
+                <div class="cmd-item-sub">${item.id}</div>
+            </div>
+            <div class="cmd-item-badge ${cClass}">${item.category}</div>
+        </div>`;
+    });
+
+    cmdResults.innerHTML = html;
+
+    cmdResults.querySelectorAll('.cmd-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const idx = parseInt(el.dataset.idx, 10);
+            const item = cmdFilteredItems[idx];
+            if (item) {
+                closeCmdPalette();
+                loadArticle(item);
+            }
+        });
+        el.addEventListener('mouseenter', () => {
+            cmdSelectedIdx = parseInt(el.dataset.idx, 10);
+            updateCmdSelection();
+        });
+    });
+}
+
+function updateCmdSelection() {
+    if (!cmdResults) return;
+    const items = cmdResults.querySelectorAll('.cmd-item');
+    items.forEach((el, idx) => {
+        el.classList.toggle('selected', idx === cmdSelectedIdx);
+    });
+    if (items[cmdSelectedIdx]) {
+        items[cmdSelectedIdx].scrollIntoView({ block: 'nearest' });
+    }
+}
+
+// Command palette triggers
+const searchTriggers = [$('sidebar-search-trigger'), $('topbar-search-btn')];
+searchTriggers.forEach(btn => {
+    if (btn) btn.addEventListener('click', openCmdPalette);
+});
+
+if (cmdBackdrop) cmdBackdrop.addEventListener('click', closeCmdPalette);
+
+// Cmd Input listener
+if (cmdInput) {
+    cmdInput.addEventListener('input', e => {
+        const activeCat = cmdFilterRow ? (cmdFilterRow.querySelector('.cmd-cat.active')?.dataset.cat || 'all') : 'all';
+        renderCmdResults(e.target.value, activeCat);
+    });
+
+    cmdInput.addEventListener('keydown', e => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (cmdFilteredItems.length) {
+                cmdSelectedIdx = (cmdSelectedIdx + 1) % cmdFilteredItems.length;
+                updateCmdSelection();
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (cmdFilteredItems.length) {
+                cmdSelectedIdx = (cmdSelectedIdx - 1 + cmdFilteredItems.length) % cmdFilteredItems.length;
+                updateCmdSelection();
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (cmdFilteredItems[cmdSelectedIdx]) {
+                const item = cmdFilteredItems[cmdSelectedIdx];
+                closeCmdPalette();
+                loadArticle(item);
+            }
+        } else if (e.key === 'Escape') {
+            closeCmdPalette();
+        }
+    });
+}
+
+// Cmd Filter Categories
+if (cmdFilterRow) {
+    cmdFilterRow.querySelectorAll('.cmd-cat').forEach(btn => {
+        btn.addEventListener('click', () => {
+            cmdFilterRow.querySelectorAll('.cmd-cat').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderCmdResults(cmdInput ? cmdInput.value : '', btn.dataset.cat);
+        });
+    });
+}
+
+// Global Keyboard Shortcuts
+window.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        if (cmdOverlay && !cmdOverlay.classList.contains('hidden')) {
+            closeCmdPalette();
+        } else {
+            openCmdPalette();
+        }
+    }
+    if (e.key === 'Escape' && cmdOverlay && !cmdOverlay.classList.contains('hidden')) {
+        closeCmdPalette();
     }
 });
+
+// ── Hash Routing ─────────────────────────────────────────────
+function handleHash() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) {
+        renderHome();
+        return;
+    }
+    const item = allItems.find(i => i.id === hash || i.id.replace('.md','') === hash);
+    if (item) {
+        loadArticle(item);
+    } else {
+        renderHome();
+    }
+}
+
+window.addEventListener('hashchange', handleHash);
+
+// ── Startup ──────────────────────────────────────────────────
+await loadCatalog();
+handleHash();
+
+});
+
