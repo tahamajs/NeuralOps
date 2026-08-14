@@ -320,6 +320,11 @@ class BenchmarkDatasetRegistry:
             canonical.add(info.name)
         return sorted(list(canonical))
 
+    @classmethod
+    def list_datasets(cls) -> List[str]:
+        """Alias for list_benchmarks."""
+        return cls.list_benchmarks()
+
 
 # -----------------------------------------------------------------------------
 # Default Benchmarks Registration
@@ -790,7 +795,24 @@ def load_benchmark_dataset(
         batch_size=batch_size,
         shuffle=shuffle,
         num_workers=num_workers,
-        collate_fn=_collate_benchmark_batch if tokenizer is not None else None,
     )
-
     return loader
+
+
+def get_synthetic_benchmark_sample(dataset_name: str, num_samples: int = 4, seed: int = 42) -> List[str]:
+    """Retrieve raw text strings of synthetic benchmark samples."""
+    raw = load_benchmark_dataset(
+        dataset_name,
+        max_samples=num_samples,
+        use_synthetic=True,
+        seed=seed,
+        return_dataloader=False,
+    )
+    results = []
+    for item in raw:
+        if isinstance(item, dict):
+            text = item.get("text") or item.get("prompt") or item.get("sentence") or str(item)
+            results.append(text)
+        else:
+            results.append(str(item))
+    return results

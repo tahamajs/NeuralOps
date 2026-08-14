@@ -63,6 +63,39 @@ class ResultsSaver:
         return metric >= threshold
 
     # ------------------------------------------------------------------
+    # Public convenience methods
+    # ------------------------------------------------------------------
+    def save_metrics(self, metrics: Dict[str, Any]) -> str:
+        """Save a dictionary of evaluation/training metrics."""
+        self._save_final_metrics(metrics)
+        path = str(self.run_dir / "artifacts" / "final_metrics.json")
+        self.saved_paths["metrics"] = path
+        return path
+
+    def save_config(self, config: Any) -> str:
+        """Save experiment configuration dictionary or object."""
+        self._save_config(config)
+        path = str(self.run_dir / "artifacts" / "config.json")
+        self.saved_paths["config"] = path
+        return path
+
+    def save_model_weights(self, model: Any, filename: str = "model.pt") -> str:
+        """Save PyTorch model state dict or checkpoint."""
+        import torch
+        art_dir = self.run_dir / "artifacts"
+        art_dir.mkdir(parents=True, exist_ok=True)
+        dest = art_dir / filename
+        if hasattr(model, "state_dict"):
+            torch.save(model.state_dict(), dest)
+        elif hasattr(model, "save_pretrained"):
+            model.save_pretrained(str(art_dir / "model"))
+            return str(art_dir / "model")
+        else:
+            torch.save(model, dest)
+        self.saved_paths["model_weights"] = str(dest)
+        return str(dest)
+
+    # ------------------------------------------------------------------
     # Main save entry point
     # ------------------------------------------------------------------
     def save_all(

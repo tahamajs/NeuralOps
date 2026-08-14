@@ -160,3 +160,38 @@ class KroneckerTTLoRALayer(nn.Module):
         self.G3 = nn.Parameter(new_G3)
         self.tt_ranks[1] = new_r1
         self.tt_ranks[2] = new_r2
+
+
+class KroneckerTTLoRACompressor:
+    """
+    Compressor wrapper to apply Kronecker-TT-LoRA to linear layers.
+    """
+    def __init__(self, rank: int = 8, gamma: float = 1.0, **kwargs):
+        self.rank = rank
+        self.gamma = gamma
+        self.kwargs = kwargs
+
+    def compress_linear(self, linear_layer: nn.Linear) -> nn.Module:
+        in_f = linear_layer.in_features
+        out_f = linear_layer.out_features
+        
+        def factor_pair(n):
+            for i in range(int(math.isqrt(n)), 0, -1):
+                if n % i == 0:
+                    return i, n // i
+            return 1, n
+            
+        m1, m2 = factor_pair(out_f)
+        n1, n2 = factor_pair(in_f)
+        
+        d1 = out_f
+        d2 = 1
+        d3 = in_f
+        
+        return KroneckerTTLoRALayer(
+            base_layer=linear_layer,
+            m1=m1, n1=n1, m2=m2, n2=n2,
+            tt_shapes=(d1, d2, d3),
+            tt_ranks=(1, min(self.rank, 4), min(self.rank, 4), 1),
+            gamma=self.gamma,
+        )
