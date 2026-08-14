@@ -4,10 +4,11 @@ Auto-import all attention modules, silently skipping those with missing dependen
 
 import logging
 import os
+from framework.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-__all__ = []
+__all__ = ["ATTENTION_REGISTRY"]
 
 for file in os.listdir(os.path.dirname(__file__)):
     if file.endswith(".py") and file != "__init__.py":

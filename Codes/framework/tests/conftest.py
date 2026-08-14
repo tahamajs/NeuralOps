@@ -10,18 +10,21 @@ import pytest
 import torch
 from transformers import AutoModel, DistilBertConfig
 
+import os
+import sys
+
+_FRAMEWORK_PARENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _FRAMEWORK_PARENT not in sys.path:
+    sys.path.insert(0, _FRAMEWORK_PARENT)
+
 # ----------------------------------------------------------------------
 # Ensure the framework registries are populated before tests run.
 # Import the top‑level framework so that all @ATTENTION_REGISTRY.register
 # decorators are executed.
 # ----------------------------------------------------------------------
-try:
-    import framework
-    import framework.attentions
-    from framework.core.registry import ATTENTION_REGISTRY
-except ImportError:
-    # Fallback for when the framework isn't installed
-    ATTENTION_REGISTRY = None
+import framework
+import framework.attentions
+from framework.core.registry import ATTENTION_REGISTRY
 
 
 # ----------------------------------------------------------------------

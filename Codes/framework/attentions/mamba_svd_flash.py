@@ -49,35 +49,38 @@ class MambaSVDFlash(BaseAttention):
 
     def __init__(
         self,
-        d_model: int,
+        d_model: Optional[int] = None,
         config: Optional[Any] = None,
         rank: Optional[int] = 16,
+        hidden_size: Optional[int] = None,
+        num_heads: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
+        dim = d_model or hidden_size or getattr(config, "hidden_size", 64)
         super().__init__(config, rank)
-        self.d_model: int = d_model
+        self.d_model: int = dim
         self.rank: int = rank or 16
 
         # SVD-SSM path projections
-        self.proj_u = nn.Linear(d_model, d_model * self.rank)
-        self.proj_sigma = nn.Linear(d_model, self.rank)
-        self.proj_v = nn.Linear(d_model, self.rank * d_model)
-        self.proj_b = nn.Linear(d_model, d_model)
-        self.proj_c = nn.Linear(d_model, d_model)
+        self.proj_u = nn.Linear(self.d_model, self.d_model * self.rank)
+        self.proj_sigma = nn.Linear(self.d_model, self.rank)
+        self.proj_v = nn.Linear(self.d_model, self.rank * self.d_model)
+        self.proj_b = nn.Linear(self.d_model, self.d_model)
+        self.proj_c = nn.Linear(self.d_model, self.d_model)
 
         # Attention path projections
-        self.num_heads = getattr(config, "num_attention_heads", 8)
+        self.num_heads = num_heads or getattr(config, "num_attention_heads", 4) or 4
         # Fallback if d_model is not perfectly divisible
         if self.d_model % self.num_heads != 0:
             self.num_heads = 1
         self.head_dim = self.d_model // self.num_heads
         
-        self.q_proj = nn.Linear(d_model, d_model)
-        self.k_proj = nn.Linear(d_model, d_model)
-        self.v_proj = nn.Linear(d_model, d_model)
+        self.q_proj = nn.Linear(self.d_model, self.d_model)
+        self.k_proj = nn.Linear(self.d_model, self.d_model)
+        self.v_proj = nn.Linear(self.d_model, self.d_model)
 
         # Gating for aggregation
-        self.gating = nn.Linear(d_model, d_model)
+        self.gating = nn.Linear(self.d_model, self.d_model)
 
     def forward(
         self,

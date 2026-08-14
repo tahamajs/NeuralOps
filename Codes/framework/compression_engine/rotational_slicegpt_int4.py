@@ -44,8 +44,15 @@ class RotationalSliceGPTINT4Compressor:
     It combines Rotational Invariance (to suppress outliers), Dimensionality Slicing,
     and SparseGPT-based second-order INT4 Non-Uniform Quantization.
     """
-    def __init__(self, r_ratio=0.75, lambda_reg=1e-2):
-        self.r_ratio = r_ratio
+    def __init__(
+        self,
+        r_ratio: float = 0.75,
+        lambda_reg: float = 1e-2,
+        slice_ratio: Optional[float] = None,
+        quant_bits: int = 4,
+        **kwargs: Any,
+    ):
+        self.r_ratio = slice_ratio if slice_ratio is not None else r_ratio
         self.lambda_reg = lambda_reg
         self.quantizer = AstroQuant4Bit()
         
@@ -116,6 +123,19 @@ class RotationalSliceGPTINT4Compressor:
                 
         return W_quant, Q, P_r
 
+    def compress_linear(self, linear_layer: nn.Linear, X: Optional[torch.Tensor] = None) -> 'RotationalSliceGPTINT4Linear':
+        """Convenience method to compress a PyTorch nn.Linear layer."""
+        W = linear_layer.weight.data
+        device = W.device
+        if X is None:
+            X = torch.randn(W.shape[1], 128, device=device)
+        elif X.dim() == 3:
+            X = X.reshape(-1, W.shape[1]).T
+        elif X.dim() == 2 and X.shape[0] != W.shape[1]:
+            X = X.T
+        W_quant, Q, P_r = self.compress(W, X)
+        return RotationalSliceGPTINT4Linear(W_quant, Q, P_r)
+
 
 class RotationalSliceGPTINT4Linear(nn.Module):
     """
@@ -142,3 +162,7 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         # y = x_proj @ W_quant^T -> [..., D_out]
         y = torch.matmul(x_proj, self.W_quant.T)
         return y
+
+
+# Aliases for framework compatibility
+RotationalSliceGPTCompressor = RotationalSliceGPTINT4Compressor

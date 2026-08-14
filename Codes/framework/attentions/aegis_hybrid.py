@@ -28,45 +28,33 @@ class AegisHybridConfig:
     use_adaptive_pruning: bool = True
 
 
+@ATTENTION_REGISTRY.register("aegis_hybrid")
+@ATTENTION_REGISTRY.register("aegis_hybrid_attn")
 class AegisHybridAttention(nn.Module):
     r"""
     Aegis-Hybrid Attention combining Local Windowed Attention and Global Linear Attention.
-
-    Mathematical Breakdown:
-        1. Low-Rank Projection:
-           For each input representation $X \in \mathbb{R}^{B \times N \times D}$:
-           $$Q = X W_{Q1} W_{Q2}, \quad K = X W_{K1} W_{K2}, \quad V = X W_{V1} W_{V2}$$
-           where $W_1 \in \mathbb{R}^{D \times r}$ and $W_2 \in \mathbb{R}^{r \times D}$ initialized via truncated SVD.
-
-        2. Local Sliding Window Attention:
-           Computes local band attention within context radius $W_{\text{local}}$:
-           $$S_{ij}^{\text{local}} = \frac{Q_i K_j^T}{\sqrt{d_h}} + M_{ij}^{\text{band}}, \quad M_{ij}^{\text{band}} = \begin{cases} 0 & |i - j| \le W_{\text{local}} \\ -\infty & \text{otherwise} \end{cases}$$
-           $$O_i^{\text{local}} = \sum_j \text{Softmax}(S^{\text{local}})_{ij} V_j$$
-
-        3. Global Kernel Linear Attention with Pruning:
-           Uses positive feature map $\phi(x) = \text{ELU}(x) + 1$ and token importance gate $g = \sigma(\text{PruneGate}(X))$:
-           $$K_g = g \odot K, \quad V_g = g \odot V$$
-           $$O_i^{\text{global}} = \frac{\phi(Q_i) \left( \sum_{j=1}^N \phi(K_{g, j})^T V_{g, j} \right)}{\phi(Q_i) \left( \sum_{j=1}^N \phi(K_{g, j})^T \mathbf{1} \right) + \epsilon}$$
-
-        4. Dynamic Multi-Head Gated Fusion:
-           $$\alpha = \sigma(\text{FusionGate}(X)) \in [0, 1]^{B \times N \times H \times 1}$$
-           $$O = \alpha \odot O^{\text{local}} + (1 - \alpha) \odot O^{\text{global}}$$
-           $$Y = O W_{O1} W_{O2}$$
-
-    Complexity:
-        - Time Complexity: $\mathcal{O}(B \cdot N \cdot D \cdot r + B \cdot H \cdot N^2 \cdot d_h + B \cdot H \cdot N \cdot d_h^2)$
-        - Space/Memory Complexity: $\mathcal{O}(B \cdot H \cdot N^2)$ for local band logit representations.
-
-    Tensor Dimensions:
-        - Input `hidden_states`: $[B, N, D]$
-        - Query / Key / Value ($Q, K, V$): $[B, N, H, d_h]$
-        - Local Attention Scores: $[B, H, N, N]$
-        - Global Memory State $KV$: $[B, H, d_h, d_h]$
-        - Fused Output: $[B, N, D]$
     """
 
-    def __init__(self, config: AegisHybridConfig) -> None:
+    def __init__(
+        self,
+        config: Optional[Any] = None,
+        hidden_size: Optional[int] = None,
+        num_heads: Optional[int] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__()
+        if not isinstance(config, AegisHybridConfig):
+            h_size = hidden_size or getattr(config, "hidden_size", 64)
+            n_heads = num_heads or getattr(config, "num_attention_heads", 4)
+            config = AegisHybridConfig(
+                hidden_size=h_size,
+                num_attention_heads=n_heads,
+                head_dim=h_size // max(1, n_heads),
+                local_window=getattr(config, "local_window", 64) if config else 64,
+                rank=getattr(config, "rank", min(32, h_size)) if config else min(32, h_size),
+                kernel_feature_dim=getattr(config, "kernel_feature_dim", 64) if config else 64,
+                dropout=getattr(config, "dropout", 0.0) if config else 0.0,
+            )
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.head_dim
@@ -249,14 +237,15 @@ class AegisHybridAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj2.weight.device)
 
 
-@ATTENTION_REGISTRY.register("aegis_hybrid")
+@ATTENTION_REGISTRY.register("inject_aegis_hybrid")
 def inject_aegis_hybrid(
     layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Optional[nn.Module],
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
 ) -> AegisHybridAttention:
     r"""
     Injects AegisHybridAttention into a transformer layer.
