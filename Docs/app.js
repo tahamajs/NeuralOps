@@ -349,6 +349,7 @@ function updateBreadcrumb(item) {
 }
 
 // ── Load Article ──────────────────────────────────────────────
+// ── Load Article ──────────────────────────────────────────────
 async function loadArticle(item) {
     activeItem = item;
     markActive();
@@ -370,12 +371,38 @@ async function loadArticle(item) {
 
     contentViewport.scrollTo({ top: 0, behavior: 'instant' });
 
-    try {
-        const res = await fetch(item.path);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const md = await res.text();
-        renderMarkdown(md, item);
-    } catch (e) {
+    // Multi-candidate path resolution
+    const cat = item.category === 'compressions' ? 'compressions' : (item.category === 'framework' ? 'framework' : 'attentions');
+    const candidates = [
+        item.path,
+        `./${item.path}`,
+        `content/${cat}/${item.id}`,
+        `./content/${cat}/${item.id}`,
+        `../Codes/framework/${item.category === 'compressions' ? 'compression_engine' : cat}/${item.id}`,
+        `https://raw.githubusercontent.com/tahamajs/SVD_linear_Attention/main/Docs/content/${cat}/${item.id}`,
+        `https://raw.githubusercontent.com/tahamajs/SVD_linear_Attention/main/Codes/framework/${item.category === 'compressions' ? 'compression_engine' : cat}/${item.id}`
+    ];
+
+    let loadedMd = null;
+    let successfulPath = '';
+
+    for (const p of candidates) {
+        if (!p) continue;
+        try {
+            const res = await fetch(p);
+            if (res.ok) {
+                loadedMd = await res.text();
+                successfulPath = p;
+                break;
+            }
+        } catch (err) {
+            // try next candidate
+        }
+    }
+
+    if (loadedMd !== null) {
+        renderMarkdown(loadedMd, item);
+    } else {
         mdContainer.innerHTML = `<div style="padding:40px 0; text-align:center; color:var(--tx-muted)">
             <div style="font-size:2rem;margin-bottom:16px">📄</div>
             <div style="font-size:1rem;color:var(--tx-primary);font-weight:600;margin-bottom:8px">${item.title}</div>
