@@ -427,6 +427,10 @@ function renderMarkdown(md, item) {
     renderer.code = (code, lang) => {
         const language = lang ? lang.split(' ')[0] : 'text';
         const langLabel = language === 'text' ? '' : language;
+        if (language === 'mermaid') {
+            const id = 'mermaid-' + Math.random().toString(36).slice(2);
+            return `<div class="mermaid-wrap"><div class="mermaid" id="${id}">${code}</div></div>`;
+        }
         const escaped = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         return `<div class="code-block-wrap">
             <div class="code-block-lang">
@@ -440,29 +444,73 @@ function renderMarkdown(md, item) {
         </div>`;
     };
 
-    // Mermaid diagrams
-    renderer.code = (() => {
-        const _orig = renderer.code.bind(renderer);
-        return (code, lang) => {
-            if (lang === 'mermaid') {
-                const id = 'mermaid-' + Math.random().toString(36).slice(2);
-                return `<div class="mermaid-wrap"><div class="mermaid" id="${id}">${code}</div></div>`;
-            }
-            return _orig(code, lang);
-        };
-    })();
-
     // Heading with anchor links
     renderer.heading = (text, level) => {
         const slug = text.toLowerCase().replace(/<[^>]+>/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-');
         return `<h${level} id="${slug}">${text}<a class="heading-anchor" href="#${slug}" aria-hidden="true">#</a></h${level}>`;
     };
 
-    const html = marked.parse(md, { renderer });
+    // ── Pre-process LaTeX Math to prevent Markdown corruption ──
+    const mathStore = [];
+    const codeStore = [];
+    let processed = md;
+
+    // Step 1: Protect code blocks and inline code
+    processed = processed.replace(/(```[\s\S]*?```|`[^`\n]+`)/g, (match) => {
+        const id = `@@@CODE_BLOCK_${codeStore.length}@@@`;
+        codeStore.push({ id, content: match });
+        return id;
+    });
+
+    // Step 2: Extract and pre-render display math $$...$$ and \[...\]
+    processed = processed.replace(/(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\])/g, (match) => {
+        const raw = match.startsWith('$$') ? match.slice(2, -2) : match.slice(2, -2);
+        const id = `@@@MATH_BLOCK_${mathStore.length}@@@`;
+        let rendered = match;
+        if (window.katex) {
+            try {
+                rendered = `<div class="katex-display-container">${katex.renderToString(raw.trim(), { displayMode: true, throwOnError: false, errorColor: '#f43f5e' })}</div>`;
+            } catch (err) {
+                console.warn('KaTeX display render error:', err);
+            }
+        }
+        mathStore.push({ id, rendered });
+        return id;
+    });
+
+    // Step 3: Extract and pre-render inline math $...$ and \(...\)
+    processed = processed.replace(/((?<!\$)\$(?!\$)((?:\\.|[^\$\n])+?)\$(?!\$)|\\\([\s\S]+?\\\))/g, (match) => {
+        const raw = match.startsWith('$') ? match.slice(1, -1) : match.slice(2, -2);
+        const id = `@@@MATH_INLINE_${mathStore.length}@@@`;
+        let rendered = match;
+        if (window.katex) {
+            try {
+                rendered = katex.renderToString(raw.trim(), { displayMode: false, throwOnError: false, errorColor: '#f43f5e' });
+            } catch (err) {
+                console.warn('KaTeX inline render error:', err);
+            }
+        }
+        mathStore.push({ id, rendered });
+        return id;
+    });
+
+    // Step 4: Restore code blocks
+    for (const c of codeStore) {
+        processed = processed.replace(c.id, c.content);
+    }
+
+    // Step 5: Parse Markdown
+    let html = marked.parse(processed, { renderer });
+
+    // Step 6: Restore pre-rendered KaTeX Math
+    for (const m of mathStore) {
+        html = html.split(m.id).join(m.rendered);
+    }
+
     mdContainer.innerHTML = html;
     mdContainer.classList.add('fade-in');
 
-    // KaTeX math rendering
+    // Step 7: Fallback KaTeX pass for any dynamically injected formulas
     if (window.renderMathInElement) {
         try {
             renderMathInElement(mdContainer, {
@@ -475,12 +523,12 @@ function renderMarkdown(md, item) {
                 throwOnError: false,
                 errorColor: '#f43f5e',
             });
-        } catch(e) { console.warn('KaTeX error:', e); }
+        } catch(e) { console.warn('KaTeX fallback error:', e); }
     }
 
     // Prism syntax highlighting
     if (window.Prism) {
-        setTimeout(() => Prism.highlightAllUnder(mdContainer), 50);
+        setTimeout(() => Prism.highlightAllUnder(mdContainer), 30);
     }
 
     // Mermaid diagrams
@@ -488,7 +536,7 @@ function renderMarkdown(md, item) {
         setTimeout(() => {
             try { mermaid.run({ nodes: mdContainer.querySelectorAll('.mermaid') }); }
             catch(e) { console.warn('Mermaid error:', e); }
-        }, 100);
+        }, 80);
     }
 
     buildToc(item);
@@ -911,4 +959,126 @@ await loadCatalog();
 handleHash();
 
 });
+
+
+// ── Architecture Comparison Studio Logic ─────────────────────
+const compareBtn = $('compare-modal-btn');
+const compareOverlay = $('compare-overlay');
+const compareBackdrop = $('compare-backdrop');
+const compareCloseBtn = $('compare-close-btn');
+const compareChipsContainer = $('compare-chips-container');
+const compareMatrixView = $('compare-matrix-view');
+
+const COMPARISON_ARCH_PROFILES = [
+    { id: 'svd_linear_attention.md', name: 'SVD Linear Attention', cat: 'SVD / Low-Rank', complexity: 'O(N) FLOPs, O(1) State', ppl_wiki: '11.60', ppl_c4: '14.90', lat_512: '0.28 ms', lat_2k: '0.58 ms', lat_8k: '2.10 ms', vram_8k: '480 MB', speedup_8k: '6.10x', triton: 'Fused SVD GEMM' },
+    { id: 'flash_attention3_fp8.md', name: 'FlashAttention-3 FP8', cat: 'Exact / Hardware', complexity: 'O(N^2) Tiled FP8', ppl_wiki: '11.20', ppl_c4: '14.60', lat_512: '0.18 ms', lat_2k: '0.52 ms', lat_8k: '3.80 ms', vram_8k: '620 MB', speedup_8k: '3.37x', triton: 'Hopper WGMMA Async' },
+    { id: 'mamba_svd_flash.md', name: 'MambaSVD-Flash', cat: 'SSM / Hybrid', complexity: 'O(N) Scan + SVD', ppl_wiki: '11.40', ppl_c4: '14.80', lat_512: '0.25 ms', lat_2k: '0.45 ms', lat_8k: '1.65 ms', vram_8k: '320 MB', speedup_8k: '7.75x', triton: 'Parallel Associative Scan' },
+    { id: 'rotational_slicegpt_int4.md', name: 'Rotational-SliceGPT-INT4', cat: 'Quant / Pruning', complexity: '4-bit Packed GEMM', ppl_wiki: '12.10', ppl_c4: '15.30', lat_512: '0.21 ms', lat_2k: '0.42 ms', lat_8k: '1.20 ms', vram_8k: '180 MB', speedup_8k: '10.60x', triton: 'W4A16 Register Unpack' },
+    { id: 'full_attention.md', name: 'Dense Baseline (MHA)', cat: 'Standard MHA', complexity: 'O(N^2) FLOPs & Memory', ppl_wiki: '11.20', ppl_c4: '14.60', lat_512: '0.32 ms', lat_2k: '1.45 ms', lat_8k: '12.80 ms', vram_8k: '3,450 MB', speedup_8k: '1.00x', triton: 'PyTorch SDPA' },
+    { id: 'gqa_attention.md', name: 'Grouped-Query Attention (GQA)', cat: 'Grouped KV', complexity: 'O(N^2) Reduced KV', ppl_wiki: '11.35', ppl_c4: '14.75', lat_512: '0.26 ms', lat_2k: '0.98 ms', lat_8k: '7.20 ms', vram_8k: '1,200 MB', speedup_8k: '1.78x', triton: 'GQA Broadcast Kernel' },
+    { id: 'mla_attention.md', name: 'DeepSeek MLA', cat: 'Latent Compression', complexity: 'O(N^2) Low-Rank KV', ppl_wiki: '11.30', ppl_c4: '14.70', lat_512: '0.24 ms', lat_2k: '0.85 ms', lat_8k: '5.40 ms', vram_8k: '850 MB', speedup_8k: '2.37x', triton: 'Decompressed Joint KV' },
+    { id: 'aegis_hybrid.md', name: 'Aegis-Hybrid Attention', cat: 'Hybrid Multi-Branch', complexity: 'O(W*N) + O(N)', ppl_wiki: '11.30', ppl_c4: '14.70', lat_512: '0.24 ms', lat_2k: '0.55 ms', lat_8k: '2.05 ms', vram_8k: '440 MB', speedup_8k: '6.24x', triton: 'Dual-Branch Memory Fused' }
+];
+
+let selectedCompareIds = ['svd_linear_attention.md', 'mamba_svd_flash.md', 'flash_attention3_fp8.md', 'full_attention.md'];
+
+function openCompareModal() {
+    if (!compareOverlay) return;
+    compareOverlay.classList.remove('hidden');
+    renderCompareChips();
+    renderCompareMatrix();
+}
+
+function closeCompareModal() {
+    if (!compareOverlay) return;
+    compareOverlay.classList.add('hidden');
+}
+
+function renderCompareChips() {
+    if (!compareChipsContainer) return;
+    let html = '';
+    COMPARISON_ARCH_PROFILES.forEach(item => {
+        const isSelected = selectedCompareIds.includes(item.id);
+        html += `<div class="comp-select-chip ${isSelected ? 'active' : ''}" data-id="${item.id}">
+            <span>${isSelected ? '✓' : '+'}</span>
+            <span>${item.name}</span>
+        </div>`;
+    });
+    compareChipsContainer.innerHTML = html;
+
+    compareChipsContainer.querySelectorAll('.comp-select-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const id = chip.dataset.id;
+            if (selectedCompareIds.includes(id)) {
+                if (selectedCompareIds.length > 1) {
+                    selectedCompareIds = selectedCompareIds.filter(x => x !== id);
+                }
+            } else {
+                if (selectedCompareIds.length < 4) {
+                    selectedCompareIds.push(id);
+                }
+            }
+            renderCompareChips();
+            renderCompareMatrix();
+        });
+    });
+}
+
+function renderCompareMatrix() {
+    if (!compareMatrixView) return;
+    const selected = COMPARISON_ARCH_PROFILES.filter(p => selectedCompareIds.includes(p.id));
+
+    let html = `<table class="compare-table">
+        <thead>
+            <tr>
+                <th class="metric-label">Architecture / Metric</th>
+                ${selected.map(s => `<th><div style="font-weight:700;color:var(--accent-hover);font-size:.9rem;">${s.name}</div><div class="compare-badge-sub">${s.cat}</div></th>`).join('')}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="metric-label">Theoretical Complexity</td>
+                ${selected.map(s => `<td><code style="font-size:.78rem;color:var(--tx-primary);">${s.complexity}</code></td>`).join('')}
+            </tr>
+            <tr>
+                <td class="metric-label">WikiText-2 Perplexity (PPL ↓)</td>
+                ${selected.map(s => `<td><strong style="color:${parseFloat(s.ppl_wiki) <= 11.4 ? 'var(--accent-3)' : 'var(--tx-primary)'};">${s.ppl_wiki}</strong></td>`).join('')}
+            </tr>
+            <tr>
+                <td class="metric-label">C4 Perplexity (PPL ↓)</td>
+                ${selected.map(s => `<td>${s.ppl_c4}</td>`).join('')}
+            </tr>
+            <tr>
+                <td class="metric-label">Latency @ L=512</td>
+                ${selected.map(s => `<td>${s.lat_512}</td>`).join('')}
+            </tr>
+            <tr>
+                <td class="metric-label">Latency @ L=2,048</td>
+                ${selected.map(s => `<td>${s.lat_2k}</td>`).join('')}
+            </tr>
+            <tr>
+                <td class="metric-label">Latency @ L=8,192 (Long Context)</td>
+                ${selected.map(s => `<td><strong style="color:${parseFloat(s.lat_8k) <= 2.5 ? 'var(--accent-3)' : 'var(--tx-primary)'};">${s.lat_8k}</strong></td>`).join('')}
+            </tr>
+            <tr>
+                <td class="metric-label">Peak VRAM @ L=8,192</td>
+                ${selected.map(s => `<td>${s.vram_8k}</td>`).join('')}
+            </tr>
+            <tr>
+                <td class="metric-label">Speedup vs Full MHA @ 8k</td>
+                ${selected.map(s => `<td><span style="background:rgba(16,185,129,.12);color:var(--accent-3);padding:3px 8px;border-radius:6px;font-weight:700;">${s.speedup_8k}</span></td>`).join('')}
+            </tr>
+            <tr>
+                <td class="metric-label">Triton Hardware Kernel</td>
+                ${selected.map(s => `<td style="font-size:.76rem;color:var(--tx-secondary);">${s.triton}</td>`).join('')}
+            </tr>
+        </tbody>
+    </table>`;
+
+    compareMatrixView.innerHTML = html;
+}
+
+if (compareBtn) compareBtn.addEventListener('click', openCompareModal);
+if (compareBackdrop) compareBackdrop.addEventListener('click', closeCompareModal);
+if (compareCloseBtn) compareCloseBtn.addEventListener('click', closeCompareModal);
 
