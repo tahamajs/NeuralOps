@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use("Agg")
+
 from .base import VISUALIZER_REGISTRY, BaseVisualizer, Registry
 from .benchmark_visualizer import (
     plot_attention_heatmap,
@@ -8,6 +11,58 @@ from .benchmark_visualizer import (
     plot_singular_value_decay,
 )
 from .dashboard_generator import generate_dashboard_html, generate_summary_json
+from .attention_canvas_suite import (
+    AttentionCanvasSuite,
+    HeadViewData,
+    ModelViewData,
+    SankeyData,
+    QKEmbeddingData,
+    LiveMathBreakdown,
+    extract_head_view,
+    compute_model_view_metrics,
+    generate_sankey_flow_data,
+    compute_qk_joint_embedding,
+    generate_live_math_breakdown,
+    generate_head_heatmap_svg,
+    generate_paper_latex_section,
+)
+from .interpretability_suite import (
+    AblationResult,
+    AttributionGraph,
+    CircuitSVDResult,
+    Head3DMetricsResult,
+    HeadAblationCalculator,
+    HeadMetricPoint,
+    InfluenceArc,
+    InterpretabilitySuite,
+    LayerPrediction,
+    LogitLensResult,
+    PruningRecipe,
+    SemanticPathwayResult,
+    TokenTrajectory,
+    calculate_head_importance,
+    calculate_head_similarity,
+    calculate_head_stability,
+    classify_head_type,
+    decompose_circuit_matrix,
+    generate_attribution_graph,
+    generate_head_3d_metrics,
+    generate_logit_lens_timeline,
+    generate_semantic_pathways,
+)
+from .computation_studios import (
+    FFNNeuronExplorer,
+    KVCacheMonitor,
+    LoRAAdapterStudio,
+    WeightMatrixDecomposer,
+)
+from .optimization_studios import (
+    CircuitTracer,
+    OutputLogitsPredictor,
+    LossLandscapeExplorer,
+    CompressionStudio,
+    FullPipelineStudio,
+)
 from .plot_registry import PLOT_REGISTRY, register_default_plots
 from .plots import *  # convenience so all plots are importable
 from .report_generator import (
@@ -17,6 +72,18 @@ from .report_generator import (
     plot_accuracy_vs_rank,
     plot_radar_chart,
 )
+from .representation_studios import (
+    EmbeddingProjectionResult,
+    EmbeddingSpaceExplorer,
+    LayerNormDynamics,
+    LayerNormStatistics,
+    PositionalEncodingStudio,
+    ResidualLayerTrace,
+    ResidualStreamTracer,
+    RoPERotationState,
+    SemanticAxisResult,
+    Vector2DDynamicsTrace,
+)
 from .utils import (
     create_custom_colormap,
     get_color_palette,
@@ -24,8 +91,8 @@ from .utils import (
     set_plot_style,
 )
 
-# Auto-register all built‑in plots
-register_default_plots()
+# Built-in plot auto-registration can be called on demand via register_default_plots()
+# register_default_plots()
 
 __all__ = [
     "BaseVisualizer",
@@ -49,5 +116,59 @@ __all__ = [
     "plot_layerwise_sparsity_rank",
     "generate_dashboard_html",
     "generate_summary_json",
+    "InterpretabilitySuite",
+    "Head3DMetricsResult",
+    "HeadMetricPoint",
+    "HeadAblationCalculator",
+    "AblationResult",
+    "PruningRecipe",
+    "CircuitSVDResult",
+    "AttributionGraph",
+    "TokenTrajectory",
+    "InfluenceArc",
+    "SemanticPathwayResult",
+    "LayerPrediction",
+    "LogitLensResult",
+    "classify_head_type",
+    "calculate_head_importance",
+    "calculate_head_stability",
+    "calculate_head_similarity",
+    "generate_head_3d_metrics",
+    "decompose_circuit_matrix",
+    "generate_attribution_graph",
+    "generate_semantic_pathways",
+    "generate_logit_lens_timeline",
+    "EmbeddingSpaceExplorer",
+    "PositionalEncodingStudio",
+    "ResidualStreamTracer",
+    "LayerNormDynamics",
+    "EmbeddingProjectionResult",
+    "SemanticAxisResult",
+    "RoPERotationState",
+    "ResidualLayerTrace",
+    "AttentionCanvasSuite",
+    "HeadViewData",
+    "ModelViewData",
+    "SankeyData",
+    "QKEmbeddingData",
+    "LiveMathBreakdown",
+    "extract_head_view",
+    "compute_model_view_metrics",
+    "generate_sankey_flow_data",
+    "compute_qk_joint_embedding",
+    "generate_live_math_breakdown",
+    "generate_head_heatmap_svg",
+    "generate_paper_latex_section",
+    "FFNNeuronExplorer",
+    "KVCacheMonitor",
+    "WeightMatrixDecomposer",
+    "LoRAAdapterStudio",
+    "CircuitTracer",
+    "OutputLogitsPredictor",
+    "LossLandscapeExplorer",
+    "CompressionStudio",
+    "FullPipelineStudio",
 ]
+
+
 

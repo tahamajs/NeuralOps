@@ -1,6 +1,8 @@
 from typing import Any
 from typing import List
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
