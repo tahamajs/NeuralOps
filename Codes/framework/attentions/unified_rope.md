@@ -1,167 +1,173 @@
-# Unified Rotary Position Embedding (UnifiedRoPE): Universal Cross-Branch Positional Encoding
+# Universal Rotary Position Embedding (UnifiedRoPE): Positional Invariance across Attention & SSM Branches
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-Rotary Position Embedding (RoPE), proposed by Su et al. (2024), embeds relative position geometry by applying complex rotational transformations directly to feature representations. In hybrid Transformer architectures (e.g., combining Scaled Dot-Product Attention with State-Space Models or Recurrent Linear Units), maintaining consistent relative position semantics across distinct structural branches is essential. 
+Universal Rotary Position Embedding (`UnifiedRoPE`) provides a unified, hardware-efficient rotational positional encoding framework designed for modern hybrid Transformer architectures (such as Transformer-SSM, Mamba-Attention, and DeltaNet hybrids). In standard Transformers, Rotary Position Embeddings (RoPE, Su et al., 2021) encode sequence positions by rotating Query and Key vectors in complex 2D planes, capturing relative token distances naturally without requiring additive positional bias matrices.
 
-UnifiedRoPE (`UnifiedRoPE`) implements a universal, non-parametric rotational position embedding module. By precomputing inverse frequency rotation buffers and applying a unified complex plane rotation across both attention and state-space branches, UnifiedRoPE guarantees cross-branch positional alignment. This eliminates phase mismatches between contextual routing mechanisms while supporting dynamic length extension without fine-tuning.
-
----
-
-## 2. Mathematical Derivations & Formulations
-
-Let $x \in \mathbb{R}^{B \times L \times D}$ denote the input activation tensor, where $B$ is batch size, $L$ is sequence length, and $D$ is feature dimension (where $D$ is an even integer). Let $\theta_0 = 10000$ be the base frequency scalar.
-
-### Inverse Frequency Precomputation:
-The inverse frequency spectrum $\boldsymbol{\theta} \in \mathbb{R}^{D/2}$ is computed over half the feature channels:
-
-\[
-\theta_i = \theta_0^{-\frac{2i}{D}} = \frac{1}{\theta_0^{\frac{2i}{D}}}, \quad i \in \left\{0, 1, \dots, \frac{D}{2} - 1\right\}
-\]
-
-For sequence positions $m \in \{0, 1, \dots, L_{\max}-1\}$, the outer product produces the phase matrix $\mathbf{\Theta} \in \mathbb{R}^{L_{\max} \times (D/2)}$:
-
-\[
-\mathbf{\Theta}_{m, i} = m \cdot \theta_i
-\]
-
-The phase matrix is concatenated along the feature dimension to form the full embedding tensor $\mathbf{E} \in \mathbb{R}^{L_{\max} \times D}$:
-
-\[
-\mathbf{E}_{m, :} = [\mathbf{\Theta}_{m, :}, \, \mathbf{\Theta}_{m, :}] \in \mathbb{R}^D
-\]
-
-Precomputed cosine and sine rotation buffers are registered:
-
-\[
-\mathbf{C} = \cos(\mathbf{E}) \in \mathbb{R}^{L_{\max} \times D}, \quad \mathbf{S} = \sin(\mathbf{E}) \in \mathbb{R}^{L_{\max} \times D}
-\]
-
-### Complex Orthogonal Rotation Formulation:
-To apply 2D planar rotations across vector pairs $[x_k, x_{k + D/2}]$, the vector half-rotation operator $\mathcal{R}(x)$ is defined as:
-
-\[
-\mathcal{R}(x) = [-x_{:, :, D/2:}, \, x_{:, :, :D/2}] \in \mathbb{R}^{B \times L \times D}
-\]
-
-The rotated activation tensor $x_{\text{rot}} \in \mathbb{R}^{B \times L \times D}$ is computed as an elementwise linear combination:
-
-\[
-x_{\text{rot}} = x \odot \mathbf{C}_{:L} + \mathcal{R}(x) \odot \mathbf{S}_{:L}
-\]
-
-Explicitly, for feature pair $(x_k, x_{k + D/2})$ at sequence position $m$:
-
-\[
-\begin{bmatrix} (x_{\text{rot}})_k \\ (x_{\text{rot}})_{k + D/2} \end{bmatrix} = \begin{bmatrix} \cos(m \theta_k) & -\sin(m \theta_k) \\ \sin(m \theta_k) & \cos(m \theta_k) \end{bmatrix} \begin{bmatrix} x_k \\ x_{k + D/2} \end{bmatrix}
-\]
-
-### Relative Inner-Product Preservation:
-For query vector $q_i$ at position $i$ and key vector $k_j$ at position $j$, the inner product satisfies:
-
-\[
-\langle \text{RoPE}(q_i, i), \text{RoPE}(k_j, j) \rangle = \text{Re} \left( \sum_{m=0}^{D/2 - 1} (q_i)_m (k_j)_m^* e^{i (i - j) \theta_m} \right) = f(q_i, k_j, i - j)
-\]
-
-This proves that inner-product similarity depends exclusively on the relative distance $\Delta = i - j$, satisfying translational invariance across sequence positions.
+However, in hybrid models that combine Multi-Head Attention branches with State-Space Model (SSM) or recurrent linear attention branches, applying inconsistent positional transformations introduces spatial misalignment between sequence representations. `UnifiedRoPE` precomputes unified inverse frequency matrices and rotational cache buffers (`cos_cached`, `sin_cached`), enforcing strict rotational positional invariance across both attention query-key inner products and state-space hidden activations.
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 2. Mathematical Formulations & Derivations
+
+Let $X \in \mathbb{R}^{B \times N \times D}$ denote the input activation tensor (where $D$ is an even feature dimension). Let $N_{\max}$ be the maximum sequence length for pre-computed caches, and $\theta_0 = 10,000$ the base frequency scale.
+
+### Inverse Frequency Vector Precomputation:
+The dimension $D$ is partitioned into $D/2$ orthogonal 2D rotation planes. Inverse frequency parameters $\theta_i$ are computed for $i \in \{0, 1, \dots, D/2 - 1\}$:
+
+\[
+\theta_i = \text{base}^{-\frac{2i}{D}} = 10000^{-\frac{2i}{D}} \in \mathbb{R}^{D/2}
+\]
+
+### Positional Angle Frequency Matrix Construction:
+For position index $m \in \{0, 1, \dots, N_{\max}-1\}$ and frequency channel index $i$:
+
+\[
+\text{freqs}_{m, i} = m \cdot \theta_i \in \mathbb{R}^{N_{\max} \times (D/2)}
+\]
+
+Duplicating frequency components across the two half-dimensions yields embedding matrix $\Theta \in \mathbb{R}^{N_{\max} \times D}$:
+
+\[
+\Theta = [\text{freqs} \,\|\, \text{freqs}] \in \mathbb{R}^{N_{\max} \times D}
+\]
+
+Precomputing cached Cosine and Sine rotation matrices:
+
+\[
+C_{\text{cache}} = \cos(\Theta) \in \mathbb{R}^{N_{\max} \times D}, \quad S_{\text{cache}} = \sin(\Theta) \in \mathbb{R}^{N_{\max} \times D}
+\]
+
+### Complex Vector Rotation & `rotate_half` Operator:
+For input vector $X = [x_1, x_2, \dots, x_{D/2}, x_{D/2+1}, \dots, x_D] \in \mathbb{R}^{B \times N \times D}$, the half-vector rotation operator $\mathcal{R}_{\text{half}}(X)$ swaps and negates feature halves:
+
+\[
+\mathcal{R}_{\text{half}}(X) = [-x_{D/2+1:D} \,\|\, x_{1:D/2}] \in \mathbb{R}^{B \times N \times D}
+\]
+
+Applying Hadamard rotational transformation:
+
+\[
+X_{\text{rotated}} = X \odot C_{\text{cache}}[:N] + \mathcal{R}_{\text{half}}(X) \odot S_{\text{cache}}[:N]
+\]
+
+### Relative Distance Preservation in Inner Products:
+When applied to Query and Key states $Q_m, K_n \in \mathbb{R}^D$ at sequence positions $m$ and $n$:
+
+\[
+\langle \text{RoPE}(Q_m), \text{RoPE}(K_n) \rangle = Q_m^\top R_{m-n} K_n
+\]
+
+where $R_{m-n}$ is an orthogonal block-diagonal rotation matrix dependent strictly on relative offset $m - n$.
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Tensor Shape | Transformation / Operation | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Received hidden activations | `[B, N, D]` |
+| **Check Cache Bounds** | `N`, `self.max_seq_len` | If `N > max_seq_len`, invoke `_build_cache` | `[N_max, D]` caches updated |
+| **Slice Cache** | `cos_cached`, `sin_cached` | Slice `[:N]` & `.unsqueeze(0).unsqueeze(2)` | `[1, N, 1, D]` each |
+| **Vector Half Rotation** | `X: [B, N, D]` | `_rotate_half(X)`: `cat((-x2, x1), dim=-1)` | `[B, N, D]` |
+| **Hadamard Product 1** | `X`, `cos` | `X * cos.squeeze(2)` | `[B, N, D]` |
+| **Hadamard Product 2** | `_rotate_half(X)`, `sin`| `_rotate_half(X) * sin.squeeze(2)` | `[B, N, D]` |
+| **Elementwise Addition** | Prod 1, Prod 2 | `X_rot = Prod 1 + Prod 2` | `[B, N, D]` |
+
+### Architectural Flowchart Diagram
 
 ```
-Input: x [B, L, D]
-  │
-  ├──> Check if L > max_seq_len ──> IF True: Rebuild Cache _build_cache(L)
-  │
-  ├──> Slice cos_cached[:L] ──> cos: [L, D] ──> view [1, L, D]
-  ├──> Slice sin_cached[:L] ──> sin: [L, D] ──> view [1, L, D]
-  │
-  ├──> _rotate_half(x):
-  │      x1 = x[..., : D//2], x2 = x[..., D//2 :]
-  │      concat(-x2, x1, dim=-1) ──> x_half: [B, L, D]
-  │
-  └──> Elementwise Multiplication & Addition:
-         x_rot = (x * cos) + (x_half * sin) ──> Output: [B, L, D]
+                        Input: hidden_states [B, N, D]
+                                        │
+           ┌────────────────────────────┴────────────────────────────┐
+           ▼                                                         ▼
+   Slice cos_cached[:N]                                    Slice sin_cached[:N]
+   Shape: [1, N, D]                                        Shape: [1, N, D]
+           │                                                         │
+           │                                      Apply _rotate_half(X)
+           │                                      [-X[..., D/2:], X[..., :D/2]]
+           │                                                         │
+           ▼                                                         ▼
+   Elementwise MatMul: X * cos                             Elementwise MatMul: rotate_half * sin
+           │                                                         │
+           └────────────────────────────┬────────────────────────────┘
+                                        ▼
+                            Elementwise Addition (+)
+                                        │
+                         Rotated Output: [B, N, D]
 ```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### Operational & Computational Workload (FLOPs & MACs)
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, and $D$ feature dimension.
 
-Let $B$ be batch size, $L$ sequence length, $D$ feature dimension, and $L_{\max}$ maximum cached sequence length.
+1. **Precomputed Cache Construction (Once per initialization/resizing)**:
+   - Outer product $t \cdot \theta_i$: $N_{\max} \cdot (D/2)$ FLOPs.
+   - Trigonometric evaluation ($\cos, \sin$): $2 N_{\max} D$ FLOPs.
 
-1. **Precomputation Cache Construction (One-time or Dynamic Cache Extension)**:
-   - Outer Product ($t \otimes \theta_i$): $L_{\max} \cdot \frac{D}{2}$ FLOPs.
-   - Trigonometric Evaluations ($\cos, \sin$): $2 \times L_{\max} \cdot D$ FLOPs.
-   - Space: $2 \times L_{\max} \times D \times \text{bytes}$ (Persistent GPU buffers).
+2. **Forward Rotation Pass**:
+   - `_rotate_half` slicing: $0$ FLOPs (pointer view).
+   - Hadamard multiplications ($X \odot \cos$ and $\mathcal{R}_{\text{half}}(X) \odot \sin$): $2 B N D$ FLOPs.
+   - Elementwise addition: $B N D$ FLOPs.
+   - *Total Forward Workload*: $3 B N D$ FLOPs ($B N D$ MACs equivalent).
 
-2. **Forward Rotation Computations**:
-   - Half-rotation vector negation and concatenation: Zero-copy slicing / reshape.
-   - Broadcast Cosine Multiplication ($x \odot \mathbf{C}$): $B \cdot L \cdot D$ FLOPs.
-   - Broadcast Sine Multiplication ($\mathcal{R}(x) \odot \mathbf{S}$): $B \cdot L \cdot D$ FLOPs.
-   - Vector Sum Addition: $B \cdot L \cdot D$ FLOPs.
-
-### Complexity Totals:
-- **Total FLOPs per Forward Pass**: $3 B L D$ FLOPs.
-- **Total MACs**: $0$ (No matrix multiplication operations).
-- **Parametric Footprint**: $0$ trainable parameters (Non-parametric buffer module).
-
----
-
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-
-### Memory Bandwidth Bound Elementwise Execution
-Because RoPE consists purely of elementwise additions and multiplications ($3 B L D$ FLOPs on $2 B L D$ read/write bytes), its arithmetic intensity is extremely low ($\approx 1.5 \text{ FLOP/byte}$). Execution is strictly **memory bandwidth-bound**, incurring memory allocation overhead in naive PyTorch implementations.
-
-### High-Frequency Phase Saturation at Long Sequences
-When sequence length $L$ substantially exceeds precomputed frequencies ($L \gg \frac{1}{\theta_{D/2}}$), high-frequency bands rotate rapidly over $2\pi$ boundaries. This introduces high-frequency phase noise, degrading long-context attention accuracy unless frequency scaling (e.g., YaRN or Linear Scaling) is integrated.
-
-```
-High-Frequency Saturation Phase Degradation:
-Phase Angle = m * θ_i  (Mod 2π)  ──>  Rapid Rotation Instability for L >> 1/θ_min
-```
-
-### Channel Splitting Memory Copy Overhead
-Computing `_rotate_half(x)` using `torch.cat((-x2, x1), dim=-1)` triggers memory reallocation and tensor copying in GPU DRAM, increasing runtime latency compared to strided pointer access.
+### Memory Footprint & Parameter Requirements
+- **Parameter Count**: $0$ trainable parameters (`persistent=False` registered buffers).
+- **Transient Memory Footprint**:
+  \[
+  \text{Cache Storage} = 2 \cdot N_{\max} \cdot D \cdot b \text{ bytes}
+  \]
+  For $N_{\max} = 4096, D = 4096, b = 2$ (FP16):
+  - Cosine + Sine Caches: $2 \times 4096 \times 4096 \times 2 = 67,108,864 \text{ bytes} \approx \mathbf{67.1 \text{ MB}}$.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Fused Elementwise RoPE Triton Kernel Architecture
-To maximize hardware memory bus bandwidth, Triton fuses RoPE rotation, channel splitting, cosine/sine slicing, and elementwise addition into a single CUDA kernel block.
+### Odd Feature Dimension Out-of-Bounds Error
+The `_rotate_half` operation relies on integer division $D/2$. If feature dimension $D$ is an odd number, splitting $D$ causes dimension mismatch errors during concatenation.
+
+### Sequence Length Extension Out-of-Memory Spike
+If sequence length $N$ exceeds precomputed `max_seq_len` during dynamic inference, `_build_cache` triggers online dynamic memory allocation, causing latency spikes in real-time execution.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel for RoPE fuses the half-rotation index mapping and Hadamard cosine/sine multiplication into a single SIMD register load step.
 
 ```
-       Global Memory (HBM)
-      ┌────────────────────────────────────────────────────────┐
-      │ Input x [B, L, D]                                      │
-      │ Cosine Buffer cos_cached [L_max, D]                    │
-      │ Sine Buffer sin_cached [L_max, D]                      │
-      └───────────────────────────┬────────────────────────────┘
-                                  │ Coalesced 128-bit Vector Load
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Input: X [B, N, D]                                          │
+   │ Precomputed Caches: cos_cache [N, D], sin_cache [N, D]      │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Vectorized Block Tile Loading
                                   ▼
- ┌──────────────────────────────────────────────────────────────────┐
- │                   Triton SRAM Scratchpad                         │
- │ 1. Load Vector Pairs: x_left = x[i], x_right = x[i + D/2]        │
- │ 2. Load Frequencies: c_i = cos[l, i], s_i = sin[l, i]            │
- │ 3. Execute Vector In-Register Rotation:                          │
- │    rot_left  = x_left  * c_i - x_right * s_i                     │
- │    rot_right = x_right * c_i + x_left  * s_i                     │
- └────────────────────────────────┬─────────────────────────────────┘
-                                  │ Direct Coalesced Write
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Load Tile X_first [BLOCK_M, D/2] & X_second [BLOCK_M, D/2]  │
+ │ 2. Load Positional Caches cos_tile, sin_tile [BLOCK_M, D]      │
+ │ 3. Compute Rotated Halves in SRAM Registers:                   │
+ │      Y_first  = X_first * cos_first - X_second * sin_first     │
+ │      Y_second = X_second * cos_second + X_first * sin_second   │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Stream Rotated Output
                                   ▼
-      ┌────────────────────────────────────────────────────────┐
-      │ Rotated Output x_rot [B, L, D]                         │
-      └────────────────────────────────────────────────────────┘
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Rotated Output: X_rot [B, N, D]                             │
+   └─────────────────────────────────────────────────────────────┘
 ```
 
-### Key Triton Implementation Guidelines:
-1. **In-Register Interleaved Rotation**:
-   Instead of concatenating split half-tensors in DRAM, process pairs $(x_i, x_{i + D/2})$ directly in SIMD vector registers, eliminating memory allocations.
-2. **Strided Pointer Arithmetic**:
-   Use strided pointer offsets to read `cos` and `sin` directly from precomputed HBM buffers without slicing or copying tensor slices.
-3. **Fused Attention Pre-Rotation**:
-   Fuse `UnifiedRoPE` directly into the input block loader of FlashAttention kernels, reading $x$, applying rotational shifts in registers, and passing rotated queries and keys directly to SIMD matrix multiplier units.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Dynamic YaRN / Su-RoPE Context Extension**: Dynamically scale frequency base $\theta_i$ with scale factor $\gamma$ to extrapolate context windows up to $128\text{k}+$ tokens without fine-tuning.
+2. **SSM-Attention Cross-RoPE Alignment**: Apply UnifiedRoPE directly to Mamba hidden state transition matrices $A, B$ to enforce spatio-temporal alignment between recurrent SSM states and transformer attention heads.
+3. **Quantized Positional Caching**: Store cosine and sine frequency caches in FP8 format to halve SRAM cache footprint during ultra-long sequence generation.

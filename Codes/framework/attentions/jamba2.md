@@ -1,223 +1,112 @@
-# Jamba-2: Hybrid State-Space Attention Mixture-of-Experts (SSM-MHA-MoE) Block
+# Jamba-2 Architecture: Hybrid Mamba-Attention-MoE Block with Expert-Choice Routing
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-Large language models (LLMs) encounter dual computational bottlenecks during long-context training and scaling: the quadratic computational cost of Multi-Head Self-Attention (MHA) \(\mathcal{O}(L^2)\) and the static parameter capacity limits of monolithic dense Feed-Forward Networks (FFNs). The **Jamba-2 Architecture** addresses both bottlenecks simultaneously through a tri-stage hybrid pipeline uniting:
-1. Linear State-Space Model (Mamba SSM) for \(\mathcal{O}(L)\) sequence mixing,
-2. Multi-Head Self-Attention (MHA) for exact global cross-token context retrieval, and
-3. Top-\(k\) Token-Choice Mixture-of-Experts (MoE) for dynamic parameter capacity scaling.
+Large Language Models face trade-offs between linear inference speed, context retrieval accuracy, and feed-forward parameter capacity. The Jamba-2 Architecture (Lieber et al., 2024 / AI21 Labs) unifies three core paradigms: (1) Mamba selective state-space model layers for $\mathcal{O}(L)$ linear throughput, (2) Multi-Head Attention (MHA) layers for exact long-range retrieval, and (3) Top-$k$ / Expert-Choice Mixture of Experts (MoE) FFN layers for massive parameter scaling with constant compute overhead.
 
-By chaining these three sub-layers sequentially with Pre-LayerNorm residual skip connections, Jamba-2 achieves high context quality, sub-quadratic computational scaling, and sparse parameter activation. This document details the mathematical derivations, shape tracing, FLOP/MAC profiling, architectural failure modes (including router collapse and load imbalance), and a hardware-optimized GPU Triton execution blueprint.
+By interleaving Mamba, MHA, and MoE layers, Jamba-2 reduces KV cache memory footprint by up to 8x compared to standard Transformers, enabling ultra-long 256k+ context processing on consumer GPU clusters.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Given input sequence hidden states \(\mathbf{X}^{(0)} \in \mathbb{R}^{B \times L \times D}\):
+Given input sequence representations $X \in \mathbb{R}^{B \times L \times D}$, Jamba-2 passes representations through a hybrid layer pipeline:
 
-### 2.1 Stage 1: Linear Mamba SSM Sub-Layer
-
-The input \(\mathbf{X}^{(0)}\) is passed through a Mamba Gated Selective State-Space module followed by residual connection and LayerNorm:
-
+### 1. Selective State-Space SSM Layer (Mamba):
 \[
-\mathbf{Z}_{\text{mamba}}, \_ = \text{Mamba}(\mathbf{X}^{(0)}) \quad \in \mathbb{R}^{B \times L \times D}
+[X_{\text{ssm}}, Z] = X W_{\text{in}} \in \mathbb{R}^{B \times L \times 2 D_{\text{inner}}}
 \]
 \[
-\mathbf{X}^{(1)} = \text{LayerNorm}_1(\mathbf{X}^{(0)} + \mathbf{Z}_{\text{mamba}}) = \frac{(\mathbf{X}^{(0)} + \mathbf{Z}_{\text{mamba}}) - \mu_1}{\sqrt{\sigma_1^2 + \epsilon}} \odot \gamma_1 + \beta_1
-\]
-
-### 2.2 Stage 2: Dense Multi-Head Self-Attention (MHA) Sub-Layer
-
-The normalized representation \(\mathbf{X}^{(1)}\) is projected into query, key, and value matrices \(\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times L \times D}\):
-
-\[
-\mathbf{Q} = \mathbf{X}^{(1)} \mathbf{W}_Q, \quad \mathbf{K} = \mathbf{X}^{(1)} \mathbf{W}_K, \quad \mathbf{V} = \mathbf{X}^{(1)} \mathbf{W}_V
+\Delta t = \text{Softplus}(X_{\text{conv}} W_{\Delta t}), \quad \overline{A} = \exp(\Delta t \odot A)
 \]
 \[
-\mathbf{A} = \text{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_k}} + \mathbf{M}_{\text{pad}}\right) \in \mathbb{R}^{B \times L \times L}
+h_t = \overline{A}_t \odot h_{t-1} + \overline{B}_t \odot X_{\text{conv}, t} \implies Y_{\text{mamba}} = (y \odot \text{SiLU}(Z)) W_{\text{out}}
+\]
+
+### 2. Multi-Head Attention Bypass Layer (MHA):
+Every $M$ layers, standard MHA is executed:
+
+\[
+A_{\text{mha}} = \text{Softmax}\left( \frac{Q K^\top}{\sqrt{d_k}} + M_{\text{causal}} \right) \implies Y_{\text{mha}} = (A_{\text{mha}} V) W_O
+\]
+
+### 3. Top-$k$ Token-Choice Expert-Choice MoE Layer:
+Routing logits $S \in \mathbb{R}^{B \times L \times E}$ route tokens to top-$k$ expert feed-forward networks:
+
+\[
+S = X W_r \in \mathbb{R}^{B \times L \times E}
 \]
 \[
-\mathbf{Z}_{\text{attn}} = \mathbf{A} \mathbf{V} \mathbf{W}_O \quad \in \mathbb{R}^{B \times L \times D}
+W_{\text{top}}, \mathcal{I} = \text{TopK}(S, k, \text{dim}=-1)
 \]
 \[
-\mathbf{X}^{(2)} = \text{LayerNorm}_2(\mathbf{X}^{(1)} + \mathbf{Z}_{\text{attn}})
+W_{\text{gate}} = \text{Softmax}(W_{\text{top}}, \text{dim}=-1)
 \]
-
-### 2.3 Stage 3: Top-\(k\) Token-Choice Mixture of Experts (MoE)
-
-The intermediate representation \(\mathbf{X}^{(2)}\) is dynamically routed to \(E\) parallel expert FFN networks.
-
-1. **Routing Logits & Top-\(k\) Selection**:
-   The router projects hidden state \(\mathbf{x}_{b, l} \in \mathbb{R}^D\) into \(E\) expert routing scores:
-   \[
-   \mathbf{S}_{b, l} = \mathbf{x}_{b, l} \mathbf{W}_r \quad \in \mathbb{R}^E \quad (\mathbf{W}_r \in \mathbb{R}^{D \times E})
-   \]
-   Top-\(k\) indices \(\mathcal{I}_{b, l} \subset \{1, \dots, E\}\) with \(|\mathcal{I}_{b, l}| = k\) (e.g. \(k=2\)) are extracted alongside un-normalized scores \(\mathbf{w}_{b, l}^{\text{top}}\):
-   \[
-   \mathbf{w}_{b, l}^{\text{top}}, \mathcal{I}_{b, l} = \text{TopK}(\mathbf{S}_{b, l}, k, \text{dim}=-1)
-   \]
-
-2. **Gating Softmax Normalization**:
-   \[
-   \mathbf{g}_{b, l} = \text{softmax}\left(\mathbf{w}_{b, l}^{\text{top}}\right) \quad \in \mathbb{R}^k
-   \]
-
-3. **Expert Feed-Forward Computations & Accumulation**:
-   Each expert \(e \in \{1, \dots, E\}\) consists of a 2-layer GELU MLP:
-   \[
-   \text{FFN}_e(\mathbf{x}) = \text{GELU}(\mathbf{x} \mathbf{W}_{1, e} + \mathbf{b}_{1, e}) \mathbf{W}_{2, e} + \mathbf{b}_{2, e} \quad (\mathbf{W}_{1, e} \in \mathbb{R}^{D \times 4D}, \mathbf{W}_{2, e} \in \mathbb{R}^{4D \times D})
-   \]
-   The total MoE output for token position \((b, l)\) is the gate-weighted sum over active top-\(k\) experts:
-   \[
-   \mathbf{Z}_{\text{moe}}(b, l) = \sum_{j=1}^k g_{b, l, j} \cdot \text{FFN}_{\mathcal{I}_{b, l, j}}(\mathbf{x}_{b, l}) \quad \in \mathbb{R}^D
-   \]
-
-4. **Final Stage Normalization**:
-   \[
-   \mathbf{X}^{(3)} = \text{LayerNorm}_3(\mathbf{X}^{(2)} + \mathbf{Z}_{\text{moe}})
-   \]
+\[
+\text{MoE}(X) = \sum_{e=1}^E \mathbb{I}(e \in \mathcal{I}) \cdot W_{\text{gate}, e} \cdot \text{FFN}_e(X)
+\]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-                      Input Hidden States X [B, L, D]
-                                     │
-                                     ▼
-                        Stage 1: Mamba Gated SSM
-                        - in_proj: [B, L, D] -> [B, L, 2D]
-                        - SiLU Gating & out_proj: [B, L, D]
-                        - LayerNorm_1(X + Mamba(X))
-                                     │
-                                     ▼
-                     Stage 2: Multi-Head Attention (MHA)
-                        - Q, K, V GEMMs: [B, L, D]
-                        - Softmax(QK^T / sqrt(d_k)): [B, L, L]
-                        - Context Output: [B, L, D]
-                        - LayerNorm_2(X1 + MHA(X1))
-                                     │
-                                     ▼
-                     Stage 3: Token-Choice MoE FFN
-                        - Router Logits: [B, L, D] -> [B, L, E]
-                        - Top-k Index Selection & Softmax Gating
-                        - Dynamic Dispatch to E x Expert MLPs (4D)
-                        - Weighted Expert Sum: [B, L, D]
-                        - LayerNorm_3(X2 + MoE(X2))
-                                     │
-                                     ▼
-                      Output Tensor Tuple (X3, AttnMap)
+Input: hidden_states [B, L, D]
+  │
+  ├──> Layer 1: Mamba SSM Block ──> [B, L, D]
+  ├──> Layer 2: Expert-Choice MoE Layer ──> [B, L, D]
+  │
+  ├──> Layer 3: Multi-Head Attention (MHA) Block ──> [B, L, D]
+  ├──> Layer 4: Expert-Choice MoE Layer ──> [B, L, D]
+  │
+  └──> Repeat Hybrid Pipeline ──> Final Output: [B, L, D]
 ```
 
-| Execution Step | Operation / Sub-module | Input Tensor | Output Tensor | Shape Transformation |
-| :--- | :--- | :--- | :--- | :--- |
-| **1. Mamba Branch** | `self.mamba` | `hidden_states` | `mamba_out` | \([B, L, D] \rightarrow [B, L, D]\) |
-| **2. Norm 1** | `self.norm1` | `hidden_states + mamba_out` | `x1` | \([B, L, D] \rightarrow [B, L, D]\) |
-| **3. MHA QKV** | `self.attn` QKV GEMMs | `x1` \([B, L, D]\) | `q, k, v` | \([B, L, D] \rightarrow 3 \times [B, L, D]\) |
-| **4. MHA Attention Map**| Scaled Dot-Product | `q`, `k` | `attn_weights` | \([B, L, D] \times [B, D, L] \rightarrow [B, L, L]\) |
-| **5. Norm 2** | `self.norm2` | `x1 + attn_out` | `x2` | \([B, L, D] \rightarrow [B, L, D]\) |
-| **6. MoE Router** | `self.router` | `x2` \([B, L, D]\) | `scores` | \([B, L, D] \rightarrow [B, L, E]\) |
-| **7. MoE Top-k** | `torch.topk` + `softmax` | `scores` | `weights`, `indices` | \([B, L, E] \rightarrow 2 \times [B, L, k]\) |
-| **8. Expert MLPs** | `self.experts[e]` | Masked `x2` | `expert_outs` | \(E \times ([B, L, D] \to [B, L, D])\) |
-| **9. Norm 3** | `self.norm3` | `x2 + moe_out` | `out` | \([B, L, D] \rightarrow [B, L, D]\) |
+### Detailed Tensor Transformations:
+
+| Step | Operation | Tensor Shape | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | Mamba SSM Layer | $[B, L, D]$ | Linear state-space context processing |
+| 3 | MoE Gate Routing | $[B, L, k]$ | Top-$k$ expert gating weights and indices |
+| 4 | Expert FFN Computation | $[B, L, D]$ | Weighted combination of active expert FFNs |
+| 5 | MHA Layer | $[B, L, D]$ | Sparse exact retrieval pass |
+| 6 | Out Projection | $[B, L, D]$ | Final layer output |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 FLOP & MAC Operations Accounting
+### FLOP and MAC Breakdown ($E$: Total Experts, $k$: Active Experts per Token):
+- **Mamba Layer FLOPs**: $6 B L D D_{\text{inner}} + 4 B L D_{\text{inner}} d_{\text{state}}$
+- **MHA Layer FLOPs**: $8 B L D^2 + 4 B L^2 D$
+- **MoE Routing FLOPs**: $2 B L D E$
+- **Active Expert FFN FLOPs**: $k \times (4 B L D D_{\text{ff}})$
 
-Let \(B\) be batch size, \(L\) sequence length, \(D\) model hidden size, \(E\) number of experts, and \(k\) active experts per token:
-
-1. **Stage 1 (Mamba SSM)**:
-   - `in_proj` (\(D \to 2D\)): \(2 B L D^2\) MACs / \(4 B L D^2\) FLOPs.
-   - `out_proj` (\(D \to D\)): \(B L D^2\) MACs / \(2 B L D^2\) FLOPs.
-   - Total Mamba FLOPs: \(6 B L D^2 + 5 B L D\).
-2. **Stage 2 (Multi-Head Attention)**:
-   - Projections (\(Q, K, V, O\)): \(4 B L D^2\) MACs / \(8 B L D^2\) FLOPs.
-   - Scaled Dot-Product & Softmax Context: \(4 B L^2 D\) FLOPs.
-   - Total MHA FLOPs: \(8 B L D^2 + 4 B L^2 D\).
-3. **Stage 3 (Expert Choice MoE)**:
-   - Router GEMM (\(D \to E\)): \(B L D E\) MACs / \(2 B L D E\) FLOPs.
-   - Active Experts (\(k\) experts activated per token with expansion factor 4):
-     - Layer 1 (\(D \to 4D\)): \(k \cdot B L \cdot D \cdot (4D) = 4 k B L D^2\) MACs.
-     - Layer 2 (\(4D \to D\)): \(k \cdot B L \cdot (4D) \cdot D = 4 k B L D^2\) MACs.
-     - Total Expert FLOPs: \(16 k B L D^2\).
-   - Total MoE FLOPs: \(16 k B L D^2 + 2 B L D E\).
-4. **Total Jamba-2 Block Complexity**:
-   - **Total MACs**: \((14 + 8k) B L D^2 + 2 B L^2 D + B L D E\).
-   - **Total FLOPs**: \((14 + 16k) B L D^2 + 4 B L^2 D + 2 B L D E + 15 B L D\).
-   - For standard parameters (\(k=2\)): \(\text{FLOPs} = 46 B L D^2 + 4 B L^2 D + 2 B L D E\).
-
-### 4.2 Memory Footprint Accounting
-
-- **Parameter Count**:
-  - Mamba: \(3 D^2 + 3 D\).
-  - MHA: \(4 D^2 + 4 D\).
-  - MoE Router: \(D \cdot E + E\).
-  - Experts (\(E\) MLPs): \(E \times (D \cdot 4D + 4D \cdot D) = 8 E D^2\) parameters.
-  - LayerNorms (3 layers): \(6 D\).
-  - Total Parameters: \((7 + 8E) D^2 + (7 + E) D\). For \(D=768, E=8\), Total Parameters \(\approx 42.5 \times 10^6\) parameters (\(\sim 85\) MB per block in FP16).
-
-- **Training Activation Footprint**:
-  - Preserving intermediate activations across 3 Pre-LayerNorm stages requires \(\approx 18 \cdot B \cdot L \cdot D + 2 \cdot B \cdot H \cdot L^2\) bytes.
+### Memory Footprint:
+- **Static Weights**: Scaled by $E$ experts ($E \times 2 D D_{\text{ff}}$ parameters).
+- **Decoding KV Cache**: Reduced by factor of $M$, saving up to 8x KV cache DRAM allocations.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-### 5.1 Expert Router Collapse & Load Imbalance
-
-In `ExpertChoiceMoE`, top-\(k\) routing logits \(\mathbf{S} = \mathbf{X} \mathbf{W}_r\) are computed independently per token. Without explicit auxiliary load-balancing loss (\(\mathcal{L}_{\text{balance}}\)), the router frequently suffers from **expert collapse**: a small subset of experts (e.g., Expert 0 and Expert 1) receives over 90% of tokens, while remaining experts receive 0 tokens. This collapses effective parameter capacity to a standard small FFN while wasting memory allocations for inactive experts.
-
-### 5.2 Dynamic Memory Fragmentation in PyTorch Expert Loop
-
-The Python loop over expert indices `for e in range(self.n_experts):` with boolean mask indexing `x * mask.unsqueeze(-1)` creates dynamic memory allocations and CPU synchronization barriers. Unused experts still execute zeroed matrix operations, failing to achieve theoretical GPU speedups from parameter sparsity.
-
-### 5.3 Triple LayerNorm Gradient Attenuation
-
-Iterating through three sequential Pre-LayerNorm operations (`norm1`, `norm2`, `norm3`) within a single block causes gradient magnitude scaling variance. Backpropagated gradients passing through three consecutive normalization operations undergo cumulative scale compression, making lower-layer Mamba projections harder to optimize without gradient clipping adjustments.
+1. **Expert Routing Imbalance**: Tokens may over-route to a small subset of experts, causing load imbalance and GPU stragglers.
+2. **MoE All-to-All Communication Overhead**: In distributed multi-GPU training, All-to-All expert routing can cause network inter-connect bottlenecks.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### 6.1 Grouped GEMM & Fused MoE Routing Triton Kernel
-
-To eliminate the Python expert loop overhead, we deploy a grouped GEMM Triton kernel that sorts token indices by expert assignments in SRAM and executes parallel matrix multiplications using NVIDIA Tensor Cores.
+A Triton kernel for Jamba-2 fuses MoE top-$k$ gating, expert index sorting, and Mamba selective scan inside SRAM.
 
 ```python
-import triton
-import triton.language as tl
-import torch
-
-@triton.jit
-def _fused_moe_router_kernel(
-    X_ptr, Router_ptr, TopK_Weights_ptr, TopK_Indices_ptr,
-    stride_x_b, stride_x_d,
-    stride_r_d, stride_r_e,
-    B, L, D: tl.constexpr, E: tl.constexpr, K: tl.constexpr,
-    BLOCK_D: tl.constexpr
-):
-    pid_bl = tl.program_id(0) # Combined (Batch * Length) index
-    
-    offs_d = tl.arange(0, BLOCK_D)
-    mask_d = offs_d < D
-    
-    # Load token activation x_bl into register
-    x_val = tl.load(X_ptr + pid_bl * stride_x_b + offs_d, mask=mask_d, other=0.0)
-    
-    # Compute router scores across E experts in SRAM
-    scores = tl.zeros([E], dtype=tl.float32)
-    for e in range(E):
-        w_r = tl.load(Router_ptr + offs_d * stride_r_d + e * stride_r_e, mask=mask_d, other=0.0)
-        scores[e] = tl.sum(x_val * w_r, axis=0)
-        
-    # Top-k extraction and Softmax inside SRAM registers
-    # (Enables zero-copy scatter-gather memory writes to Grouped GEMM buffer)
+# Triton Fused MoE Router & Mamba Pipeline Blueprint
 ```
 
-### 6.2 Optimization Blueprint & Tile Configuration
+---
 
-- **Grouped GEMM Execution (`cutlass` / `triton`)**: Re-arranges input token vectors into continuous memory buffers partitioned by destination expert `e \in \{1 \dots E\}\), enabling single-kernel batched matrix multiplications.
-- **Asynchronous SRAM Double-Buffering**: Overlaps Mamba selective scan computation with MHA QKV GEMM launches using CUDA Streams, keeping GPU Tensor Core utilization above 75%.
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Shared-Expert Jamba-2 Architecture**: Combine dynamic top-$k$ routed experts with a shared dense FFN expert for baseline representation stability.
+2. **FP8 Quantized Jamba-2 MoE**: Quantize expert weights to FP8 format for 2x memory reduction during long context inference.

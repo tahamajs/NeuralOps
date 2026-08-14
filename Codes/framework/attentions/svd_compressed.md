@@ -1,93 +1,195 @@
-# SVD-Compressed Attention: Importance-Aware Lagrangian Spectral Rank Allocation
+# SVD-Compressed Attention: Importance-Aware Lagrangian Rank Allocation Architecture
 
-## 1. Abstract & Theoretical Motivation
-SVD-Compressed Attention (`SVDCompressedAttention`) establishes a principled framework for compressing Transformer Multi-Head Attention projections ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) using truncated Singular Value Decomposition (SVD) coupled with Lagrangian spectral rank budgeting and optional low-rank plus sparse residual decomposition. Uniform rank allocation across transformer layers is mathematically suboptimal, as individual projection matrices exhibit non-uniform singular value energy decay rates. SVD-Compressed Attention addresses this through a global, budget-constrained Lagrangian dual optimization problem over per-layer and per-projection ranks $\{r_{i, m}\}$. By minimizing cumulative discarded spectral energy under a target parameter budget $B_{\text{target}}$, the model dynamically concentrates rank capacity into high-entropy projections. Furthermore, an optional sparse residual matrix $S_{\text{sparse}}$ recovers high-frequency singular modes, mitigating rank collapse during fine-tuning.
+## 1. Executive Abstract & Architectural Motivation
 
-## 2. Mathematical Derivations & Formulations
-Let $\mathcal{W} = \{W_1, W_2, \dots, W_M\}$ denote the set of $M = 4 \times L$ projection weight matrices in an $L$-layer Transformer. For weight matrix $W_i \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ with singular values $\sigma_{i, 1} \ge \sigma_{i, 2} \ge \dots \ge \sigma_{i, k} \ge 0$, the cumulative retained spectral energy at rank $r$ is:
-$$E_i(r) = \frac{\sum_{j=1}^r \sigma_{i, j}^2}{\sum_{j=1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_{i, j}^2}$$
+SVD-Compressed Attention (`SVDCompressedAttention` in `svd_compressed.py`) introduces a global parameter optimization framework that compresses Transformer attention layers using Truncated Singular Value Decomposition (SVD) guided by Lagrangian spectral-entropy budget allocation. Standard model compression approaches apply static, uniform truncation ranks across all layers, ignoring the reality that different layers and projection matrices ($W_Q, W_K, W_V, W_O$) display vastly different singular value decay profiles and information capacities.
 
-The spectral information loss cost function $c_i(r)$ and parameter allocation function $P_i(r)$ are defined as:
-$$c_i(r) = 1 - E_i(r), \qquad P_i(r) = r \cdot (d_{\text{in}} + d_{\text{out}})$$
+`SVDCompressedAttention` solves this mismatch by formulating rank selection as a constrained global optimization problem. Given a target global parameter budget $B_{\text{target}}$ (e.g. 20% of original parameters), a Lagrangian multiplier optimization process evaluates cumulative spectral energy loss $E_i(r) = \sum_{j=1}^r \sigma_{i, j}^2 / \sum \sigma_{i, j}^2$ across all $M$ attention projection matrices in the network. The framework allocates optimal individual ranks $\{r_i\}_{i=1}^M$ to each matrix. Additionally, an optional low-rank plus sparse residual decomposition ($W \approx A B + S$) captures high-magnitude outlier weights for maximum zero-shot fidelity.
 
-### Global Constrained Optimization & Lagrangian Dual
-Given parameter budget constraint $B_{\text{target}} = \alpha \sum_{i=1}^M (d_{\text{in}} d_{\text{out}})$, the rank allocation vector $\mathbf{r}^* = [r_1^*, \dots, r_M^*]$ is determined by:
-$$\min_{\{r_i\}} \sum_{i=1}^M c_i(r_i) \quad \text{subject to} \quad \sum_{i=1}^M P_i(r_i) \le B_{\text{target}}, \quad 1 \le r_i \le r_{\text{max}}^{(i)}$$
+---
 
-Formulating the Lagrangian relaxation with dual multiplier $\lambda \ge 0$:
-$$\mathcal{L}(\mathbf{r}, \lambda) = \sum_{i=1}^M c_i(r_i) + \lambda \left( \sum_{i=1}^M P_i(r_i) - B_{\text{target}} \right)$$
+## 2. Mathematical Formulations & Derivations
 
-Because the objective decouples across projection matrices, optimal per-matrix rank for a fixed multiplier $\lambda$ is obtained independently via discrete search:
-$$r_i^*(\lambda) = \arg\min_{r \in [1, r_{\text{max}}^{(i)}]} \left\{ c_i(r) + \lambda \cdot r \cdot (d_{\text{in}} + d_{\text{out}}) \right\}$$
+Let $\{W_i\}_{i=1}^M$ denote the set of all linear projection matrices across $L$ transformer attention layers, where $W_i \in \mathbb{R}^{d_{i, \text{out}} \times d_{i, \text{in}}}$.
 
-Binary search over $\lambda \in [\lambda_{\text{min}}, \lambda_{\text{max}}]$ determines the optimal multiplier $\lambda^*$ satisfying total budget constraint $\sum_{i=1}^M P_i(r_i^*(\lambda^*)) \approx B_{\text{target}}$.
+### Spectral Information Loss & Parameter Cost Modeling:
+For matrix $W_i$, Singular Value Decomposition yields singular values $\sigma_{i, 1} \ge \sigma_{i, 2} \ge \dots \ge \sigma_{i, \min(d_{\text{in}}, d_{\text{out}})} \ge 0$. The retained spectral energy fraction $E_i(r)$ for rank $r$ is:
 
-### Low-Rank Factorization with Pruned Sparse Residuals
-For assigned rank $r_i^*$, truncated SVD yields factorized matrices $W_i^{\text{down}} \in \mathbb{R}^{r_i^* \times d_{\text{in}}}$ and $W_i^{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r_i^*}$:
-$$W_i^{\text{down}} = V_{:r_i^*, :}^\top, \qquad W_i^{\text{up}} = U_{:, :r_i^*} \text{diag}(\sigma_{1:r_i^*})$$
+\[
+E_i(r) = \frac{\sum_{j=1}^r \sigma_{i, j}^2}{\sum_{j=1}^{\min(d_{i, \text{in}}, d_{i, \text{out}})} \sigma_{i, j}^2} \in (0, 1]
+\]
 
-An optional sparse residual matrix $R_{\text{sparse}} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ captures truncation residual $E_{\text{res}} = W_i - W_i^{\text{up}} W_i^{\text{down}}$ using percentile-based magnitude pruning at target sparsity $\rho \in (0, 1)$:
-$$\tau = \text{Percentile}(|E_{\text{res}}|, \rho \cdot 100)$$
-$$R_{\text{sparse}}[j, k] = \begin{cases} E_{\text{res}}[j, k] & \text{if } |E_{\text{res}}[j, k]| \ge \tau \\ 0 & \text{otherwise} \end{cases}$$
+The spectral information loss cost function $\text{Cost}_i(r)$ and parameter count function $\text{Params}_i(r)$ are defined as:
 
-The factorized transformation applied to token activations $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$ is:
-$$\text{Proj}(X) = X (W_i^{\text{down}})^\top (W_i^{\text{up}})^\top + X R_{\text{sparse}}^\top + b_i$$
+\[
+\text{Cost}_i(r) = 1.0 - E_i(r)
+\]
+\[
+\text{Params}_i(r) = r \cdot (d_{i, \text{in}} + d_{i, \text{out}})
+\]
 
-Subsequent multi-head softmax self-attention proceeds as:
-$$Q, K, V = \text{Reshape}(\text{Proj}_Q(X)), \text{Reshape}(\text{Proj}_K(X)), \text{Reshape}(\text{Proj}_V(X)) \in \mathbb{R}^{B \times H \times N \times d_h}$$
-$$A = \text{Softmax}\left(\frac{Q K^\top}{\sqrt{d_h}} + M_{\text{attn}}\right) V \implies O = \text{Proj}_O(\text{Reshape}(A)) \in \mathbb{R}^{B \times N \times D}$$
+### Global Lagrangian Rank Allocation Optimization:
+Given global parameter budget target $B_{\text{target}}$, the optimal rank allocation $\{r_i^*\}_{i=1}^M$ solves the constrained minimization problem:
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
-The step-by-step tensor operations across SVD-Compressed Attention layers proceed as follows:
+\[
+\min_{\{r_i\}} \sum_{i=1}^M \text{Cost}_i(r_i) \quad \text{subject to} \quad \sum_{i=1}^M \text{Params}_i(r_i) \le B_{\text{target}}
+\]
 
-1. **Input Representation**: $X \in \mathbb{R}^{B \times N \times D}$
-2. **Layer-Specific Factorized Projections ($Q, K, V$)**:
-   - Query down-projection: $Q_{\text{low}} = X (W_Q^{\text{down}})^\top \in \mathbb{R}^{B \times N \times r_Q}$
-   - Query up-projection: $Q_{\text{up}} = Q_{\text{low}} (W_Q^{\text{up}})^\top + b_Q \in \mathbb{R}^{B \times N \times D}$
-   - Optional sparse addition: $Q_{\text{full}} = Q_{\text{up}} + X R_Q^\top \in \mathbb{R}^{B \times N \times D}$
-   - Key projections: $K_{\text{low}} = X (W_K^{\text{down}})^\top \in \mathbb{R}^{B \times N \times r_K} \implies K_{\text{full}} = K_{\text{low}} (W_K^{\text{up}})^\top + b_K (+ X R_K^\top)$
-   - Value projections: $V_{\text{low}} = X (W_V^{\text{down}})^\top \in \mathbb{R}^{B \times N \times r_V} \implies V_{\text{full}} = V_{\text{low}} (W_V^{\text{up}})^\top + b_V (+ X R_V^\top)$
-3. **Multi-Head Layout Conversion**:
-   - $Q, K, V \to [B, N, H, d_h] \xrightarrow{\text{transpose}(1, 2)} [B, H, N, d_h]$
-4. **Attention Score & Masking**:
-   - $S = Q K^\top / \sqrt{d_h} \in \mathbb{R}^{B \times H \times N \times N}$
-   - Add additive mask $M \in \mathbb{R}^{B \times 1 \times 1 \times N}$: $S = S + (1 - M) \cdot (-10^9)$
-5. **Softmax & Value Weighted Aggregation**:
-   - $P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times N}$
-   - $C_{\text{head}} = P V \in \mathbb{R}^{B \times H \times N \times d_h}$
-6. **Head Concatenation & Output Factorized Projection**:
-   - $\tilde{C} = \text{Reshape}(C_{\text{head}}) \in \mathbb{R}^{B \times N \times D}$
-   - Output down-projection: $O_{\text{low}} = \tilde{C} (W_O^{\text{down}})^\top \in \mathbb{R}^{B \times N \times r_O}$
-   - Output up-projection: $O = O_{\text{low}} (W_O^{\text{up}})^\top + b_O (+ \tilde{C} R_O^\top) \in \mathbb{R}^{B \times N \times D}$
+Formulating unconstrained Lagrangian objective with multiplier $\lambda > 0$:
 
-## 4. Analytical Complexity Profiling
-- **FLOPs Computation**:
-  - Down/Up Linear Projections: $2 B N D (r_Q + r_K + r_V + r_O)$ FLOPs
-  - Sparse Residual GEMM (if active): $4 \times 2 B N D^2 (1 - \rho)$ FLOPs
-  - Score Matmul ($Q K^\top$): $2 B N^2 D$ FLOPs
-  - Context Matmul ($P V$): $2 B N^2 D$ FLOPs
-  - Total FLOPs: $2 B N D \sum_{m} r_m + 8 B N D^2 (1 - \rho) + 4 B N^2 D$
-- **MAC Operations**:
-  - Low-Rank Projections: $B N D \sum_m r_m$ MACs
-  - Sparse Matmuls: $4 B N D^2 (1 - \rho)$ MACs
-  - Multi-Head Attention: $2 B N^2 D$ MACs
-- **Memory Footprint & Parameter Reduction**:
-  - Original Parameters: $4 L D^2$
-  - Lagrangian Compressed Parameters: $\sum_{i=1}^{M} r_i^* (d_{\text{in}} + d_{\text{out}})$
-  - Under target budget $\alpha = 0.20$, parameter reduction is exactly $5.0\times$ across all attention sub-layers.
+\[
+\mathcal{L}(\{r_i\}, \lambda) = \sum_{i=1}^M \left[ \text{Cost}_i(r_i) + \lambda \cdot \text{Params}_i(r_i) \right]
+\]
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-- **Spectral Energy Mismatch in Downstream Tasks**:
-  Lagrangian allocation uses zero-shot pre-trained SVD energy spectra. Fine-tuning on domain-specific GLUE tasks alters weight gradient directions, causing pre-allocated ranks $\{r_i^*\}$ to become suboptimal during late training epochs.
-- **Sparse Residual Memory Latency**:
-  Storing sparse residual $R_{\text{sparse}}$ as a dense zero-padded matrix incurs full $\mathcal{O}(D^2)$ memory storage per projection without custom sparse hardware kernels, neutralizing memory footprint gains.
-- **Additive Mask Broadcasting Shift**:
-  Directly adding 2D sequence masks without shape un-broadcasting leads to broadcasting errors when handling 3D/4D extended causal attention masks.
+Binary search over $\lambda \in [\lambda_{\text{min}}, \lambda_{\text{max}}]$ determines the optimal per-projection ranks:
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-- **Lagrangian Dual Multiplier Binary Search Kernel**:
-  Precompute singular values $\Sigma_i$ using CPU/GPU batched SVD in parallel. Execute binary search for $\lambda^*$ inside a PyTorch C++ extension to construct all $4 L$ rank allocations in $< 10$ milliseconds.
-- **Fused Low-Rank GEMM + Sparse Addition**:
-  Implement a Triton kernel that computes $Y = (X W^{\text{down}}) W^{\text{up}} + \text{SparseGEMM}(X, R_{\text{sparse}})$ in a single pass. Load tile $B_N \times r$ into SRAM to eliminate intermediate GPU DRAM allocation.
-- **Dynamic Sparse Pruning Callback**:
-  Incorporate periodic magnitude re-pruning during PyTorch Trainer backward steps to maintain target residual sparsity $\rho$ and prevent dense fill-in.
+\[
+r_i^*(\lambda) = \arg\min_{r \in [1, r_{\max}]} \left[ (1 - E_i(r)) + \lambda \cdot r (d_{i, \text{in}} + d_{i, \text{out}}) \right]
+\]
+
+### Low-Rank Plus Sparse Residual Factorization (`_create_pruned_residual`):
+Each projection matrix $W_i$ is decomposed into low-rank factor matrices $W_i^{\text{down}} \in \mathbb{R}^{r_i \times d_{\text{in}}}$ and $W_i^{\text{up}} \in \mathbb{R}^{d_{\text{out}} \times r_i}$, plus an optional sparse residual matrix $S_i \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$:
+
+\[
+W_i \approx W_i^{\text{up}} W_i^{\text{down}} + S_i
+\]
+
+Where sparse residual entries are thresholded at percentile $\rho$ (sparsity level):
+
+\[
+S_{i, j, k} = \begin{cases}
+(W_i - W_i^{\text{up}} W_i^{\text{down}})_{j, k} & \text{if } |(W_i - W_i^{\text{up}} W_i^{\text{down}})_{j, k}| \ge \tau_{\rho} \\
+0 & \text{otherwise}
+\end{cases}
+\]
+
+Forward pass transformation for input activation $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$:
+
+\[
+Y = X (W_i^{\text{down}})^\top (W_i^{\text{up}})^\top + b_i + X S_i^\top \in \mathbb{R}^{B \times N \times d_{\text{out}}}
+\]
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Tensor Shape | Transformation / Operation | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Input activation batch | `[B, N, D]` |
+| **Q Down Projection** | `[B, N, D]` | `self.q_down(X)` | `[B, N, r_q]` |
+| **Q Up Projection** | `[B, N, r_q]` | `self.q_up(Z) + (X @ S_q.T if sparse)` | `[B, N, H*d_k]` |
+| **K Down Projection** | `[B, N, D]` | `self.k_down(X)` | `[B, N, r_k]` |
+| **K Up Projection** | `[B, N, r_k]` | `self.k_up(Z) + (X @ S_k.T if sparse)` | `[B, N, H*d_k]` |
+| **V Down Projection** | `[B, N, D]` | `self.v_down(X)` | `[B, N, r_v]` |
+| **V Up Projection** | `[B, N, r_v]` | `self.v_up(Z) + (X @ S_v.T if sparse)` | `[B, N, H*d_k]` |
+| **Multi-Head Transpose** | `[B, N, H*d_k]` | `.view(B, N, H, d_k).transpose(1, 2)` | `[B, H, N, d_k]` each |
+| **Score Matrix MatMul** | `Q`, `K` | `torch.matmul(Q, K.transpose(-2, -1)) / sqrt(d_k)` | `[B, H, N, N]` |
+| **Softmax & Value Agg** | `scores`, `V` | `apply_mask` + `softmax` + `matmul(attn, V)` | `[B, H, N, d_k]` |
+| **Out Projection** | `context: [B, N, D]`| `self.o_up(self.o_down(context)) + sparse` | `Output: [B, N, D]` |
+
+### Architectural Flowchart Diagram
+
+```
+                        Input: hidden_states [B, N, D]
+                                        │
+          ┌─────────────────────────────┼─────────────────────────────┐
+          ▼                             ▼                             ▼
+    proj_q(X)                       proj_k(X)                     proj_v(X)
+  down(r_q) -> up(D) + S_q       down(r_k) -> up(D) + S_k       down(r_v) -> up(D) + S_v
+          │                             │                             │
+    Q: [B, H, N, d_k]             K: [B, H, N, d_k]             V: [B, H, N, d_k]
+          │                             │                             │
+          └──────────────┬──────────────┘                             │
+                         ▼                                            │
+           MatMul: Q @ K.T / sqrt(d_k)                                │
+                         │                                            │
+                 scores: [B, H, N, N]                                 │
+                         │                                            │
+             Apply Attention Mask & Softmax                           │
+                         │                                            │
+                attn: [B, H, N, N]                                    │
+                         │                                            │
+                         └──────────────────────┬─────────────────────┘
+                                                ▼
+                                      MatMul: attn @ V
+                                                │
+                                     context: [B, N, D]
+                                                │
+                                            proj_o(context)
+                                      down(r_o) -> up(D) + S_o
+                                                │
+                                        Output: [B, N, D]
+```
+
+---
+
+## 4. Analytical Complexity & Hardware Profiling
+
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, $\{r_q, r_k, r_v, r_o\}$ Lagrangian-assigned ranks, and $\rho$ sparse residual density.
+
+1. **Low-Rank + Sparse Linear Projections**:
+   - Low-rank down/up projections: $4 B N D (r_q + r_k + r_v + r_o)$ FLOPs.
+   - Sparse matrix projections (if enabled): $4 B N D^2 (1 - \rho)$ FLOPs.
+2. **Core Scaled Dot-Product Attention**:
+   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
+   - Softmax & Masking: $7 B H N^2$ FLOPs.
+
+3. **Total Workload Summary**:
+   - **Total MACs**: $2 B N D (r_q + r_k + r_v + r_o) + 2 B N D^2 (1 - \rho) + 2 B N^2 D$
+   - **Total FLOPs**: $4 B N D (r_q + r_k + r_v + r_o) + 4 B N D^2 (1 - \rho) + 4 B N^2 D + 7 B H N^2$
+
+### Parameter Budget Compression Verification
+For DistilBERT ($L = 6$ layers, $D = 768$, 24 attention projection matrices, original total parameters $24 \times 768^2 = 14.15 \text{ million}$):
+- Target budget ratio $\text{budget\_ratio} = 0.20$ ($B_{\text{target}} \approx 2.83 \text{ million parameters}$).
+- Lagrangian optimization allocates high rank ($r \approx 48$) to critical query/key matrices in layers 0 and 1, and low rank ($r \approx 16$) to value/output matrices in layers 4 and 5.
+- **Exact Budget Enforced**: Total parameters $\le 2,831,155$ (**$80\%$ parameter reduction overall**).
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
+
+### Binary Search Lambda Convergence Failure
+If `target_budget` is set below $M \times (d_{\text{in}} + d_{\text{out}})$ (i.e. below rank 1 per matrix), binary search fails to converge within bracket limits. The framework catches this case and safely falls back to $r_i = 1$ across all projections.
+
+### Sparse Residual Memory Overhead
+While low-rank projections $A, B$ reduce parameter counts, adding un-structured sparse residual matrices $S$ of size $[D, D]$ retains full parameter memory allocation unless stored in CUDA CSR sparse formats.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel for Lagrangian SVD-Compressed Attention streams layer-specific rank buffers $r_i$ into shared memory SRAM scratchpads.
+
+```
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Input: X [B, N, D]                                          │
+   │ Low-Rank Weights: W_down [r_i, D], W_up [D, r_i]            │
+   │ Optional Sparse Weights: S_i [D, D] (CSR Compressed)        │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Stream Tiles into SRAM
+                                  ▼
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Load Activation Tile X_i [BLOCK_M, D]                       │
+ │ 2. Compute Low-Rank Tile: Z_i = (X_i @ W_down.T) @ W_up.T     │
+ │ 3. Accumulate Sparse Residual Tile: Z_i += X_i @ S_i.T         │
+ │ 4. Execute Online Scaled Attention                             │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Write Context Output
+                                  ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Context Output: Y [B, N, D]                                 │
+   └─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Second-Order Hessian-Weighted Lagrangian Optimization**: Weight spectral entropy loss $E_i(r)$ by Fisher Information or Hessian curvature $\mathbf{H}_i$ to prioritize ranks for high-gradient projections.
+2. **End-to-End Joint Rank Fine-Tuning**: Make ranks $r_i$ continuous learnable parameters using Gumbel-Softmax rank gating masks.
+3. **Quantized SVD + Block-Sparse Execution (Q-SVD-Sparse)**: Quantize low-rank matrices to INT4 and store sparse residuals in block-compressed FP8 formats for deployment on edge accelerators.

@@ -1,7 +1,6 @@
 # FlashAttention-3 FP8: Low-Precision 8-Bit Float Transformer Attention for Hopper Architectures
 
-## 1. Abstract & Theoretical Motivation
-
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) in Transformer models operating under FP16 or BF16 precision consumes significant High Bandwidth Memory (HBM) activation storage and memory bandwidth. Intermediate attention score materialization requires $\mathcal{O}(L^2)$ space, creating memory bandwidth bottlenecks on modern GPU accelerators.
 
 **FlashAttention-3 FP8** combines exact tiled attention algorithms with hardware-accelerated 8-bit floating point precision (E4M3 format) for NVIDIA Hopper GPUs:
@@ -11,7 +10,7 @@ Standard Multi-Head Self-Attention (MHSA) in Transformer models operating under 
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 FP8 E4M3 Precision Quantization
 Input hidden activations $X \in \mathbb{R}^{B \times L \times D}$ are projected to query, key, and value tensors $Q, K, V \in \mathbb{R}^{B \times L \times H \times d_h}$ in base precision (FP16/BF16).
@@ -52,26 +51,55 @@ $$Y = O W_{\text{out}} + b_{\text{out}} \in \mathbb{R}^{B \times L \times D}$$
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
 | :--- | :--- | :--- | :--- |
-| **Input Activation** | $X$ | $[B, L, D]$ | Base activation state |
-| **Linear Q/K/V GEMM** | $Q, K, V$ | $[B, L, D] \to [B, L, H, d_h]$ | Linear projection into multi-head view |
-| **FP8 Quantization** | $Q_{\text{fp8}}, K_{\text{fp8}}, V_{\text{fp8}}$| $[B, L, H, d_h]$ in FP16/BF16 $\to [B, L, H, d_h]$ in FP8 E4M3 | Cast to `torch.float8_e4m3fn` |
+| **Input Activation** | $X$ | `[B, L, D]` | Base activation state |
+| **Linear Q/K/V GEMM** | $Q, K, V$ | `[B, L, D] -> [B, L, H, d_h]` | Linear projection into multi-head view |
+| **FP8 Quantization** | $Q_{\text{fp8}}, K_{\text{fp8}}, V_{\text{fp8}}$| `[B, L, H, d_h]` in FP16/BF16 $\to$ `[B, L, H, d_h]` in FP8 E4M3 | Cast to `torch.float8_e4m3fn` |
 | **TMA Asynchronous Load** | $K_{\text{fp8}, j}, V_{\text{fp8}, j}$| HBM $\to$ SRAM Shared Memory | Hardware TMA load into SRAM tiles |
-| **FP8 Tile GEMM $Q K^T$** | $S_{i, j}$ | SRAM: $[B_r, d_h] \times [B_c, d_h]^T \to [B_r, B_c]$ | WGMMA FP8 Tensor Core matmul |
-| **Online Softmax Update** | $m_i^{(j)}, l_i^{(j)}$ | SRAM Registers: $[B_r]$ | Online max and sum tracking |
-| **FP8 Tile GEMM $\tilde{P} V$** | $O_i^{(j)}$ | SRAM: $[B_r, B_c] \times [B_c, d_h] \to [B_r, d_h]$ | Value contraction into SRAM accumulators |
-| **Normalizer Rescaling** | $O_i$ | SRAM Registers: $[B_r, d_h]$ | Division by $l_i^{(\text{final})}$ & cast to base dtype |
-| **HBM Output Writeback** | $O$ | SRAM $\to$ HBM: $[B, L, H, d_h]$ | Write context output to global DRAM |
-| **Output Projection** | $Y$ | $[B, L, H \cdot d_h] \to [B, L, D]$ | Layer output linear projection |
+| **FP8 Tile GEMM $Q K^T$** | $S_{i, j}$ | SRAM: `[B_r, d_h] * [B_c, d_h]^T -> [B_r, B_c]` | WGMMA FP8 Tensor Core matmul |
+| **Online Softmax Update** | $m_i^{(j)}, l_i^{(j)}$ | SRAM Registers: `[B_r]` | Online max and sum tracking |
+| **FP8 Tile GEMM $\tilde{P} V$** | $O_i^{(j)}$ | SRAM: `[B_r, B_c] * [B_c, d_h] -> [B_r, d_h]` | Value contraction into SRAM accumulators |
+| **Normalizer Rescaling** | $O_i$ | SRAM Registers: `[B_r, d_h]` | Division by $l_i^{(\text{final})}$ & cast to base dtype |
+| **HBM Output Writeback** | $O$ | SRAM $\to$ HBM: `[B, L, H, d_h]` | Write context output to global DRAM |
+| **Output Projection** | $Y$ | `[B, L, H * d_h] -> [B, L, D]` | Layer output linear projection |
+
+```
+                       [B, L, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     Linear Q, K, V Projections   Hardware Capability Check
+      Layout: [B, L, H, d_h]      (Is CUDA sm_90a Hopper + FP8 available?)
+             │                           │
+     ┌───────┴───────┐                   │
+     ▼ (If Hopper)   ▼ (Fallback)        │
+Cast to FP8 E4M3    PyTorch SDPA         │
+q_fp8, k_fp8, v_fp8 F.scaled_dot_product_attention
+     │               │                   │
+     ▼               │                   │
+Producer Warps: TMA Load K_fp8, V_fp8   │
+Consumer Warps: FP8 WGMMA Q K^T GEMM     │
+SRAM Online Softmax Accumulation (m_i, l_i)
+     │               │                   │
+     └───────┬───────┘                   │
+             ▼                           ▼
+      Rescale & Cast to Base Dtype
+             │
+             ▼
+      Output Linear GEMM W_out
+             │
+             ▼
+                       [B, L, D] Output
+```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Floating Point Operations (FLOPs)
+### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ head count, and $d_h = D/H$ head dimension.
 
 1. **Linear Projections ($Q, K, V, O$)**:
@@ -85,14 +113,20 @@ Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ head count,
 
 $$\text{FLOPs}_{\text{total}} = 8 B L D^2 + 4 B L^2 D$$
 
-### 4.2 Memory Footprint & Bandwidth
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} = 4 B L D^2 + 2 B L^2 D$$
 - **SRAM-HBM Memory Traffic**: 8-bit precision halves $Q, K, V$ data movement volume from $2 \text{ bytes/element}$ (FP16/BF16) to $1 \text{ byte/element}$ (FP8).
 - **HBM Activation IO Complexity**: $\mathcal{O}\left(B L D + \frac{B H L^2 d_h^2}{M_{\text{SRAM}}}\right)$.
 - **Parameter Footprint**: $\Theta = 4 D^2$.
 
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense FP16 Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ DRAM IO scaling.
+- **FlashAttention-3 FP8 Engine**: $\mathcal{O}(L^2 D)$ compute (at $2\times$ Tensor Core speed), $\mathcal{O}(L D)$ IO scaling (at $50\%$ reduced byte volume), achieving $4\times$ overall throughput gain over FP16 FlashAttention-2.
+
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### 5.1 Dynamic Range Clipping in E4M3 FP8 Format
 - **Mechanism**: The E4M3 format supports a maximum finite value of 448. Unscaled attention logits $Q K^T / \sqrt{d_h}$ exceeding 448 overflow to `NaN` during kernel execution.
@@ -138,3 +172,12 @@ $$\text{FLOPs}_{\text{total}} = 8 B L D^2 + 4 B L^2 D$$
 ### 6.2 Triton Strategy 2: Hopper WGMMA FP8 Tensor Core Pipeline
 - Issue native FP8 WGMMA matrix instructions on Consumer warps, achieving up to $2\times$ higher TFLOP execution speeds over FP16 Tensor Cores.
 - Use TMA asynchronous load engines to prefetch FP8 key-value tiles into shared memory pipelines without warp blocking.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **FP4 Quantized KV-Cache Integration**: Quantize key-value matrices down to FP4 (E2M1) format while retaining FP8 for query vectors, achieving $4\times$ memory bandwidth savings.
+2. **Block-Sparse TMA Mask Pruning**: Fuse block-sparse indexing tables into TMA hardware descriptor loads, fetching only non-zero attention blocks directly from HBM in FP8 format.
+3. **Structured SVD Projection FP8 Fusion**: Fuse input SVD low-rank down/up projections into the FP8 TMA prefetch kernel, executing low-rank projection and FP8 casting in a single SRAM sweep.
+4. **Per-Head Dynamic FP8 Scale Calibration**: Continuously update per-head scale factors $S_{Q, h}, S_{K, h}$ online during training to prevent E4M3 saturation on outlier activations.

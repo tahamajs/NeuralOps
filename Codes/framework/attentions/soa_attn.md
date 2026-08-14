@@ -1,7 +1,6 @@
 # Shared Orthogonal Attention (SOA): SVD-Factorized Latent Bottlenecks for Parameter-Efficient Multi-Head Attention
 
-## 1. Abstract & Theoretical Motivation
-
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires dense projection matrices ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) that introduce heavy memory footprints and linear transformation FLOP overhead $\mathcal{O}(D^2)$ per token. Standard Low-Rank Adaptation (LoRA) adds auxiliary low-rank paths, but maintains full-rank base weight matrices in memory.
 
 **Shared Orthogonal Attention (SOA)** establishes a parameter-efficient attention architecture that compresses dense $Q, K, V$ projections into rank-$r$ bottleneck pairs ($r = \text{k\_rank} \ll D$):
@@ -11,7 +10,7 @@ Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires 
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 SVD Factorization of Projection Weights (`_init_from_pretrained`)
 For pretrained weight matrix $W_0 \in \mathbb{R}^{D \times D}$, full SVD is evaluated:
@@ -50,24 +49,54 @@ $$Y = \text{Reshape}(O) W_O + b_O \in \mathbb{R}^{B \times N \times D}$$
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
 | :--- | :--- | :--- | :--- |
-| **Input Activation** | $X$ | $[B, N, D]$ | Base activation state |
-| **Down-Projection** | $Z_Q, Z_K, Z_V$ | $[B, N, D] \to [B, N, r]$ | Down-projection into $r$-dim latent space |
-| **Up-Projection** | $Q, K, V$ | $[B, N, r] \to [B, N, D]$ | Up-projection back to hidden dimension |
-| **Head Partitioning** | $Q, K, V$ | $[B, N, D] \to [B, H, N, d_h]$ | Multi-head view transposition |
-| **Scaled Dot-Product** | $S$ | $[B, H, N, d_h] \times [B, H, N, d_h]^T \to [B, H, N, N]$ | Score matrix evaluation $\frac{Q K^T}{\sqrt{d_h}}$ |
-| **Softmax & Dropout** | $A$ | $[B, H, N, N]$ | Row-wise Softmax probability matrix |
-| **Value Contraction** | $O$ | $[B, H, N, N] \times [B, H, N, d_h] \to [B, H, N, d_h]$ | Context accumulation |
-| **Output Linear GEMM** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, D]$ | Output projection $W_O$ |
+| **Input Activation** | $X$ | `[B, N, D]` | Base activation state |
+| **Down-Projection** | $Z_Q, Z_K, Z_V$ | `[B, N, D] -> [B, N, r]` | Down-projection into $r$-dim latent space |
+| **Up-Projection** | $Q, K, V$ | `[B, N, r] -> [B, N, D]` | Up-projection back to hidden dimension |
+| **Head Partitioning** | $Q, K, V$ | `[B, N, D] -> [B, H, N, d_h]` | Multi-head view transposition |
+| **Scaled Dot-Product** | $S$ | `[B, H, N, d_h] * [B, H, N, d_h]^T -> [B, H, N, N]` | Score matrix evaluation $\frac{Q K^T}{\sqrt{d_h}}$ |
+| **Softmax & Dropout** | $A$ | `[B, H, N, N]` | Row-wise Softmax probability matrix |
+| **Value Contraction** | $O$ | `[B, H, N, N] * [B, H, N, d_h] -> [B, H, N, d_h]` | Context accumulation |
+| **Output Linear GEMM** | $Y$ | `[B, N, H * d_h] -> [B, N, D]` | Output projection $W_O$ |
+
+```
+                       [B, N, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     SVD Down-Projections        Check Mask Format
+     Z_Q, Z_K, Z_V [B, N, r]     (Prepare Padding Mask M_pad)
+             │                           │
+             ▼                           │
+     SVD Up-Projections                  │
+     Q, K, V [B, H, N, d_h]              │
+             │                           │
+             └─────────────┬─────────────┘
+                           ▼
+            Scaled Dot-Product Attention
+            S = Q K^T / sqrt(d_h) + M_pad
+                           │
+                           ▼
+            Softmax & Dropout: A = Softmax(S)
+                           │
+                           ▼
+            Value Contraction Context O = A V
+                           │
+                           ▼
+            Output Projection W_O
+                           │
+                           ▼
+                     [B, N, D] Output
+```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Floating Point Operations (FLOPs)
+### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, and $r$ bottleneck rank ($r = \text{k\_rank}$).
 
 1. **SOA Bottleneck Projections ($Q, K, V$)**:
@@ -80,11 +109,11 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
    - Output projection $W_O$: $2 B N D^2$
    $$\text{FLOPs}_{\text{attn}} = 4 B N^2 D + 2 B N D^2$$
 
-**Total FLOP Count**:
-
 $$\text{FLOPs}_{\text{total}} = 2 B N D^2 + 12 B N D r + 4 B N^2 D$$
 
-### 4.2 Memory Footprint & Bandwidth
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} = B N D^2 + 6 B N D r + 2 B N^2 D$$
 - **Parameter Footprint**:
   $$\Theta = 3 \times (D \cdot r + r \cdot D) + D^2 = 6 D r + D^2 \ll 4 D^2$$
 - **Activation Footprint**:
@@ -92,14 +121,22 @@ $$\text{FLOPs}_{\text{total}} = 2 B N D^2 + 12 B N D r + 4 B N^2 D$$
   - Full attention logit matrix: $\mathcal{O}(B H N^2)$
   - Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
 
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Projection MHSA**: $\mathcal{O}(D^2)$ projection compute per token.
+- **SOA Bottleneck Architecture**: $\mathcal{O}(D r)$ projection compute per token, achieving a parameter compression ratio of $\approx 4\times$ when $r = D/4$.
+
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### 5.1 Latent Rank Under-Estimation
 - **Mechanism**: Setting bottleneck rank $r < 16$ on deep layers causes truncation of significant pre-trained singular values $\sigma_{r+1 \dots D}$.
 - **Consequence**: Information loss in projection representations, degrading zero-shot transfer accuracy.
 - **Mitigation**: Select rank $r$ such that $\frac{\sum_{i=1}^r \sigma_i^2}{\sum \sigma_j^2} \ge 0.90$.
+
+### 5.2 Down/Up Matrix Gradient Orthogonality Drift
+- **Mechanism**: Unconstrained fine-tuning of $W^{\text{down}}$ and $W^{\text{up}}$ can destroy the initial singular value orthogonality derived from SVD.
+- **Mitigation**: Apply an auxiliary orthogonal loss regularizer $\mathcal{L}_{\text{ortho}} = \|W^{\text{down}} (W^{\text{down}})^T - I_r\|_F^2$.
 
 ---
 
@@ -133,3 +170,12 @@ Standard PyTorch executes two sequential matrix multiplications (`x @ down.weigh
 ### 6.2 Triton Strategy 2: FlashAttention-2 Core Integration
 - Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
 - Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, N, N]$ attention matrices.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Shared Key-Query Subspace Fusion**: Share a single universal down-projection matrix $W_{\text{shared}}^{\text{down}} \in \mathbb{R}^{r \times D}$ across Query and Key projections, leaving only up-projection matrices distinct ($Q = X W_{\text{shared}}^{\text{down} T} W_Q^{\text{up} T}$), halving projection parameter storage.
+2. **Dynamic Energy-Based Rank Truncation per Layer**: Automatically set $r_l$ per layer $l$ based on a cumulative energy target $\eta = 0.95$, allocating higher rank to early attention layers and lower rank to deep layers.
+3. **Structured LoRA Adapter Augmentation**: Attach trainable rank-4 LoRA paths $(A B^T)$ to $W^{\text{up}}$, enabling low-rank fine-tuning while leaving frozen SVD singular basis vectors unchanged.
+4. **FP8 Quantized Latent Bottleneck GEMM Execution**: Execute down- and up-projections using FP8 (E4M3) precision on NVIDIA Hopper GPUs, quadrupling bottleneck projection FLOP throughput.

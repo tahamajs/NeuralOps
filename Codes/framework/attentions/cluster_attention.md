@@ -1,6 +1,6 @@
 # ClusterFormer: Dynamic Token-Clustering Attention via Batch Iterative K-Means
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Dense Multi-Head Self-Attention (MHSA) computes $L \times L$ pairwise interaction matrices across all tokens in a sequence, leading to quadratic time complexity $\mathcal{O}(L^2 d)$ and severe memory constraints for long context models. Standard sparse attention paradigms rely either on fixed positional windows or static random graphs, which fail to adapt to content-dependent semantic clustering in hidden representations.
 
 **ClusterFormer (`ClusterAttention`)** reformulates sequence-wide self-attention as a dynamic, content-driven semantic partitioning problem. Prior to computing attention matrices, token embeddings are dynamically grouped into $K$ spatial clusters using a batch-wise iterative $K$-means clustering algorithm (Lloyd's algorithm) operating in feature space. Pairwise attention is subsequently restricted strictly to tokens within the same cluster assignment $C_k$. 
@@ -9,7 +9,7 @@ By constraining attention calculations to intra-cluster token sets of average si
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Batch-Wise Iterative $K$-Means Clustering
 Given input hidden states $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, $K = \min(\text{num\_clusters}, L)$ initial centroids $\boldsymbol{\mu}^{(0)} \in \mathbb{R}^{B \times K \times D}$ are initialized via uniform random permutation without replacement from token vectors $\mathbf{X}$.
@@ -53,7 +53,7 @@ $$\mathbf{Y} = \operatorname{Reshape}\left( \mathbf{O}_{\text{final}} \right) \m
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -106,7 +106,7 @@ $$\mathbf{Y} = \operatorname{Reshape}\left( \mathbf{O}_{\text{final}} \right) \m
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ attention heads, $d_h = D/H$, $K$ total clusters, and $I$ clustering iterations.
@@ -147,7 +147,7 @@ $$\text{Total Naive FLOPs} = 8 B L D^2 + 3 I B L K D + 4 K B L^2 D$$
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 The Sequential $K \times L^2$ Execution Trap
 In the naive PyTorch implementation:
@@ -171,7 +171,7 @@ In natural language, semantic token distributions are highly skewed (e.g., commo
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To realize true sub-quadratic speedups, tokens must be physically re-ordered (permuted) into contiguous cluster blocks in SRAM before executing dense attention.
 
@@ -282,3 +282,12 @@ def _cluster_block_flash_attn_kernel(
 ### 6.3 Hardware Acceleration Gains
 1. **True $K \times$ Compute Reduction**: By grouping tokens contiguously into `cluster_len` sub-matrices, total matmul calculations drop from $L^2$ to $\sum N_k^2 \approx L^2 / K$.
 2. **Zero Waste on Masking**: Eliminates $K$ separate $L \times L$ full-matrix allocations and $-10^9$ mask additions, maximizing memory bandwidth and Tensor Core throughput.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Differentiable Soft $K$-Means Gating**: Replace hard `argmin` distance assignments with temperature-annealed Softmax clustering probabilities to allow end-to-end backpropagation through cluster centroid projections.
+2. **Hierarchical Balanced Balanced-Tree K-Means**: Enforce equal-sized cluster constraints ($|C_k| = L / K$) using spatial median splits to eliminate cluster size imbalance.
+3. **Cross-Cluster Top-$m$ Routing**: Allow queries in cluster $k$ to attend to the top-$m$ nearest cluster centroids, preventing information loss at cluster boundaries.
+4. **FP8 Cluster Centroid Distance Kernels**: Execute distance calculations $\mathbf{D} = \|\mathbf{X} - \boldsymbol{\mu}\|_2$ in FP8 precision (E4M3), delivering $4\times$ throughput speedup on NVIDIA H100 Tensor Cores.

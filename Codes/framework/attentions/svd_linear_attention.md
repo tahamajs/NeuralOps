@@ -1,83 +1,183 @@
-# SVD Linear Attention: Semi-Orthogonal Low-Rank Factorized Multi-Head Projections
+# SVD Linear Attention: Semi-Orthogonal Low-Rank Projection Factorization
 
-## 1. Abstract & Theoretical Motivation
-SVD Linear Attention (`SVDLinearAttention`) provides a parameter-efficient, low-rank factorized attention sub-layer designed for zero-shot weight initialization and rank-constrained Multi-Head Attention (MHA). Traditional self-attention parameter requirements are driven by four dense linear transformations ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$). SVD Linear Attention substitutes each dense transformation with a pair of factorized low-rank matrix parameters $U \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\text{in}}}$, where $r \ll \min(d_{\text{in}}, d_{\text{out}})$. The initial weights of $U$ and $V$ are computed directly from the singular value spectrum of pretrained checkpoints via truncated Singular Value Decomposition (SVD), satisfying the Eckart–Young–Mirsky theorem for optimal rank-$r$ Frobenius norm approximation. This enables zero-shot deployment without task retraining while reducing linear projection parameters by up to $12\times$ (e.g., $r=32$ vs $D=768$).
+## 1. Executive Abstract & Architectural Motivation
 
-## 2. Mathematical Derivations & Formulations
-Let $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ represent an uncompressed linear projection matrix with optional bias $b \in \mathbb{R}^{d_{\text{out}}}$. Its full-rank Singular Value Decomposition is defined as:
-$$W = \bar{U} \Sigma \bar{V}^\top = \sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i \bar{u}_i \bar{v}_i^\top$$
-where $\bar{U} \in \mathbb{R}^{d_{\text{out}} \times k}$, $\Sigma = \text{diag}(\sigma_1, \dots, \sigma_k)$ with $\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k \ge 0$, and $\bar{V} \in \mathbb{R}^{d_{\text{in}} \times k}$.
+SVD Linear Attention (`SVDLinearAttention`) introduces a zero-shot model compression framework for Multi-Head Attention by replacing standard dense linear projection layers ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) with low-rank factorized modules (`SVDLinear`). Standard dense projections consume $4 D^2$ parameter storage per layer, creating significant memory bandwidth constraints during inference.
 
-Under rank restriction $r \le k$, the low-rank factors $U \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\text{in}}}$ are initialized as:
-$$U = \bar{U}_{:, :r} \text{diag}(\sigma_1, \dots, \sigma_r), \qquad V = \bar{V}_{:r, :}^\top$$
-yielding the low-rank approximation:
-$$W \approx U V$$
+`SVDLinearAttention` factorizes each projection matrix into two lower-rank matrices $U \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V \in \mathbb{R}^{r \times d_{\text{in}}}$, where $r \ll D$ is a configurable bottleneck rank. The parameters are initialized zero-shot from pre-trained model checkpoints via truncated Singular Value Decomposition ($W \approx U \Sigma V^\top$). Semi-orthogonal initialization (`reset_parameters`) maintains gradient stability and representation capacity during fine-tuning while reducing projection parameter counts and FLOPs.
 
-For input feature sequence $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$, the factorized forward operation evaluates as:
-$$\text{SVDLinear}(X) = (X V^\top) U^\top + b$$
+---
 
-The multi-head query, key, and value representations are derived via factorized projections:
-$$Q = \text{SVDLinear}_Q(X) \in \mathbb{R}^{B \times N \times D}, \quad K = \text{SVDLinear}_K(X) \in \mathbb{R}^{B \times N \times D}, \quad V = \text{SVDLinear}_V(X) \in \mathbb{R}^{B \times N \times D}$$
+## 2. Mathematical Formulations & Derivations
 
-Reshaping into multi-head layout $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$ ($d_h = D / H$), scaled dot-product attention scores and output context matrices are given by:
-$$S = \frac{Q K^\top}{\sqrt{d_h}} + M_{\text{attn}}$$
-$$P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1))$$
-$$C_{\text{head}} = P V \in \mathbb{R}^{B \times H \times N \times d_h}$$
-$$O = \text{SVDLinear}_O(\text{Reshape}(C_{\text{head}})) \in \mathbb{R}^{B \times N \times D}$$
+Let $X \in \mathbb{R}^{B \times N \times D}$ denote input activations. Let $H$ be the number of query heads, $d_k = D / H$ head dimension, and $r$ the factor rank per projection layer.
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
-The step-by-step tensor shapes and execution path are traced as follows:
+### Low-Rank Matrix Factorization & Semi-Orthogonal Initialization (`SVDLinear`):
+A dense parameter matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ with bias $b \in \mathbb{R}^{d_{\text{out}}}$ is factorized via truncated SVD:
 
-1. **Input Tensor**: $X \in \mathbb{R}^{B \times N \times D}$
-2. **Factorized Query Projection**:
-   - Intermediate low-rank embedding: $Q_{\text{low}} = X V_Q^\top \in \mathbb{R}^{B \times N \times r}$
-   - Up-projection with bias: $Q_{\text{full}} = Q_{\text{low}} U_Q^\top + b_Q \in \mathbb{R}^{B \times N \times D}$
-3. **Factorized Key & Value Projections**:
-   - $K_{\text{low}} = X V_K^\top \in \mathbb{R}^{B \times N \times r} \implies K_{\text{full}} = K_{\text{low}} U_K^\top + b_K \in \mathbb{R}^{B \times N \times D}$
-   - $V_{\text{low}} = X V_V^\top \in \mathbb{R}^{B \times N \times r} \implies V_{\text{full}} = V_{\text{low}} U_V^\top + b_V \in \mathbb{R}^{B \times N \times D}$
-4. **Multi-Head Reshape & Transpose**:
-   - $Q, K, V \to [B, N, H, d_h] \xrightarrow{\text{transpose}(1, 2)} [B, H, N, d_h]$
-5. **Attention Matrix Score Computation**:
-   - $S = Q K^\top / \sqrt{d_h} \in \mathbb{R}^{B \times H \times N \times N}$
-6. **Masking & Softmax Activation**:
-   - $S \leftarrow \text{apply\_attention\_mask}(S, \text{mask})$
-   - $P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times N}$
-7. **Value Weighting & Head Re-assembly**:
-   - $C_{\text{head}} = P V \in \mathbb{R}^{B \times H \times N \times d_h}$
-   - $\tilde{C} = \text{Reshape}(C_{\text{head}}) \in \mathbb{R}^{B \times N \times D}$
-8. **Factorized Output Projection**:
-   - $O_{\text{low}} = \tilde{C} V_O^\top \in \mathbb{R}^{B \times N \times r}$
-   - $O = O_{\text{low}} U_O^\top + b_O \in \mathbb{R}^{B \times N \times D}$
+\[
+W = U_{\text{full}} \Sigma_{\text{full}} V_{\text{full}}^\top \implies U = U_{\text{full}}[:, :r] \cdot \text{diag}(\Sigma_{\text{full}}[:r]) \in \mathbb{R}^{d_{\text{out}} \times r}, \quad V = V_{\text{full}}[:r, :]^\top \in \mathbb{R}^{r \times d_{\text{in}}}
+\]
 
-## 4. Analytical Complexity Profiling
-- **FLOPs Computation**:
-  - Down-Projections ($Q, K, V, O$): $4 \times 2 B N D r$ FLOPs
-  - Up-Projections ($Q, K, V, O$): $4 \times 2 B N r D$ FLOPs
-  - Total Projection FLOPs: $16 B N D r$ FLOPs (compared to uncompressed $8 B N D^2$)
-  - Dot-product attention ($Q K^\top$): $2 B N^2 D$ FLOPs
-  - Weighted sum ($P V$): $2 B N^2 D$ FLOPs
-  - Total Layer FLOPs: $16 B N D r + 4 B N^2 D$
-- **MAC Operations**:
-  - Projections: $8 B N D r$ MACs
-  - Attention Matmuls: $2 B N^2 D$ MACs
-- **Memory Footprint & Parameter Count**:
-  - Uncompressed Projection Parameters: $4 D^2$
-  - Factorized Parameters: $4 \times 2 r D = 8 r D$
-  - Compression Ratio: $\frac{4 D^2}{8 r D} = \frac{D}{2r}$. For $D=768, r=32$, parameter reduction is $\frac{768}{64} = 12.0\times$.
-  - Activation Memory: Intermediate low-rank activations require storing $[B, N, r]$ tensors per layer.
+The forward pass computes down-projection followed by up-projection:
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-- **Uniform Rank Bottleneck**:
-  Assigning identical static rank $r$ across Query, Key, Value, and Output projections ignores non-uniform singular value spectra across heads. Query and Key projections often possess higher effective rank than Value projections, leading to key-query spatial collapse if $r$ is set too small.
-- **Attention Map Complexity Persistence**:
-  While projection parameter footprint shrinks by $12\times$, self-attention matrix calculation scales quadratically as $\mathcal{O}(N^2 D)$. At long context lengths ($N \gg D$), the attention score tensor $S \in \mathbb{R}^{B \times H \times N \times N}$ dominates memory bandwidth.
-- **Unbalanced Factor Conditioning**:
-  Initializing $U = \bar{U}_{:,:r} \Sigma_{:r}$ and $V = \bar{V}_{:r,:}^\top$ leaves $V$ orthogonal ($V V^\top = I_r$) while $U$ absorbs all singular magnitudes. This asymmetry creates high condition number disparities during gradient updates.
+\[
+Z = X V^\top \in \mathbb{R}^{B \times N \times r}, \quad Y = Z U^\top + b = X (U V)^\top + b \in \mathbb{R}^{B \times N \times d_{\text{out}}}
+\]
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-- **Fused Low-Rank Down/Up Matmul Kernel**:
-  Construct a custom Triton kernel performing fused GEMM: $Y = (X V^\top) U^\top + b$. Tiling sequence length by $B_N = 64$ and hidden dimension by $B_D = 64$ allows keeping intermediate low-rank tiles $B_N \times r$ ($64 \times 32$) in GPU L1 cache/SRAM, avoiding HBM writes.
-- **Symmetric Factor Initialization**:
-  Re-balance singular values symmetrically during weight assignment: $U \leftarrow \bar{U}_{:,:r} \Sigma_{:r}^{1/2}$ and $V \leftarrow \Sigma_{:r}^{1/2} \bar{V}_{:r,:}^\top$. This ensures $\kappa(U) = \kappa(V) = \sqrt{\kappa(W)}$, stabilizing FP16/BF16 tensor core GEMMs.
-- **FlashAttention Integration**:
-  Pass output of factorized $Q, K, V$ directly into fused FlashAttention-2 kernels to execute softmax attention and value reduction without writing intermediate $N \times N$ matrices to global HBM.
+### SVD-Factorized Multi-Head Projections:
+Query, Key, Value, and Output linear transformations execute via factorized modules:
+
+\[
+Q = \text{SVDLinear}_Q(X) \in \mathbb{R}^{B \times N \times (H \cdot d_k)} \implies Q \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+\[
+K = \text{SVDLinear}_K(X) \in \mathbb{R}^{B \times N \times (H \cdot d_k)} \implies K \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+\[
+V = \text{SVDLinear}_V(X) \in \mathbb{R}^{B \times N \times (H \cdot d_k)} \implies V \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+
+### Scaled Dot-Product Attention & Output Projection:
+Affinity score calculation and value aggregation proceed as:
+
+\[
+S_{b, h, i, j} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot K_{b, h, j, m}
+\]
+\[
+A_{b, h, i, j} = \text{Softmax}_j (\text{apply\_attention\_mask}(S, M)_{b, h, i, j})
+\]
+\[
+C_{b, h, i, m} = \sum_{j=1}^N \text{Dropout}(A)_{b, h, i, j} \cdot V_{b, h, j, m} \implies C \in \mathbb{R}^{B \times N \times D}
+\]
+\[
+Y = \text{SVDLinear}_O(C) \in \mathbb{R}^{B \times N \times D}
+\]
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Shape | Transformation / Operation | Output Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Input activation batch | `[B, N, D]` |
+| **Q Down Projection** | `[B, N, D]` | `F.linear(X, query.V)` | `[B, N, r]` |
+| **Q Up Projection** | `[B, N, r]` | `F.linear(Vx, query.U) + bias` | `[B, N, H*d_k]` |
+| **Multi-Head Reshape** | `[B, N, H*d_k]` | `.reshape(B, N, H, d_k).transpose(1, 2)` | `[B, H, N, d_k]` each |
+| **Score Matrix MatMul** | `Q`, `K` | `torch.matmul(Q, K.transpose(-2, -1)) / sqrt(d_k)` | `[B, H, N, N]` |
+| **Mask & Softmax** | `scores` | `apply_attention_mask` + `F.softmax` | `[B, H, N, N]` |
+| **Value Aggregation** | `attn`, `V` | `torch.matmul(attn, V)` | `[B, H, N, d_k]` |
+| **Out Down Projection**| `context: [B, N, D]`| `F.linear(context, out_proj.V)` | `[B, N, r]` |
+| **Out Up Projection** | `[B, N, r]` | `F.linear(Vx, out_proj.U) + bias` | `Output: [B, N, D]` |
+
+### Architectural Flowchart Diagram
+
+```
+                        Input: hidden_states [B, N, D]
+                                        │
+          ┌─────────────────────────────┼─────────────────────────────┐
+          ▼                             ▼                             ▼
+     SVDLinear_Q                   SVDLinear_K                   SVDLinear_V
+  X -> V_q(r) -> U_q(D)         X -> V_k(r) -> U_k(D)         X -> V_v(r) -> U_v(D)
+          │                             │                             │
+    Q: [B, H, N, d_k]             K: [B, H, N, d_k]             V: [B, H, N, d_k]
+          │                             │                             │
+          └──────────────┬──────────────┘                             │
+                         ▼                                            │
+           MatMul: Q @ K.T / sqrt(d_k)                                │
+                         │                                            │
+                 scores: [B, H, N, N]                                 │
+                         │                                            │
+             Apply Attention Mask & Softmax                           │
+                         │                                            │
+                attn: [B, H, N, N]                                    │
+                         │                                            │
+                         └──────────────────────┬─────────────────────┘
+                                                ▼
+                                      MatMul: attn @ V
+                                                │
+                                     context: [B, N, D]
+                                                │
+                                            SVDLinear_O
+                                       C -> V_o(r) -> U_o(D)
+                                                │
+                                        Output: [B, N, D]
+```
+
+---
+
+## 4. Analytical Complexity & Hardware Profiling
+
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ factor rank.
+
+1. **SVD Linear Projections**:
+   - Down-projections ($X V^\top$): $4 \times (2 B N D r) = 8 B N D r$ FLOPs.
+   - Up-projections ($Z U^\top$): $4 \times (2 B N r D) = 8 B N D r$ FLOPs.
+   - *Total Projection Workload*: $16 B N D r$ FLOPs ($8 B N D r$ MACs).
+
+2. **Core Scaled Attention**:
+   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
+   - Softmax & Masking: $7 B H N^2$ FLOPs.
+
+3. **Total Workload Summary**:
+   - **Total MACs**: $8 B N D r + 2 B N^2 D$
+   - **Total FLOPs**: $16 B N D r + 4 B N^2 D + 7 B H N^2$
+
+### Parameter Footprint Comparison
+- **Dense MHA Projection Parameters**: $4 D^2 + 4 D$ floats.
+- **SVD Linear MHA Parameter Count**:
+  \[
+  \text{Params}_{\text{SVDLinear}} = 4 \cdot r(D + D) + 4 D = 8 D r + 4 D \text{ floats}
+  \]
+  For $D = 4096, r = 64$:
+  - Dense MHA: $4 \times 4096^2 \approx 67.1 \text{ million parameters}$.
+  - SVD Linear MHA: $8 \times 4096 \times 64 \approx 2.09 \text{ million parameters}$ (**$96.8\%$ parameter compression**).
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
+
+### Rank Deficiency in Deep Transformer Layers
+In deep layers where singular value spectra decay slowly, low rank $r \le 16$ can truncate critical feature directions, leading to perplexity degradation unless fine-tuned with small learning rates.
+
+### Semi-Orthogonal Gradient Drift
+During long fine-tuning runs, unconstrained backpropagation can cause matrices $U$ and $V$ to lose their initial semi-orthogonality. Periodic orthogonal re-projection or Gram-Schmidt regularization preserves gradient flow.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel for SVD Linear Attention computes the low-rank product $V^\top U^\top$ directly inside register tiles, bypassing intermediate memory writes.
+
+```
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Input: X [B, N, D]                                          │
+   │ Low-Rank Buffers: V [r, D], U [D, r], bias [D]               │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Vectorized Memory Streaming
+                                  ▼
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Load Activation Tile X_i [BLOCK_M, D]                       │
+ │ 2. Compute Intermediate Tile: Vx_i = X_i @ V.T [BLOCK_M, r]   │
+ │ 3. Reconstruct Head Projection: Out_i = Vx_i @ U.T + bias      │
+ │ 4. Execute Online Scaled Attention                             │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Write Output
+                                  ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Output Tensor: Y [B, N, D]                                  │
+   └─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Orthogonal Singular Regularization**: Add an explicit orthogonality penalty $\mathcal{L}_{\text{ortho}} = \|U^\top U - I\|_F^2 + \|V V^\top - I\|_F^2$ during fine-tuning to preserve subspace stability.
+2. **Dynamic Rank Adapters (AdaSVDLinear)**: Dynamically scale rank $r$ across transformer layers based on gradient magnitude or feature entropy.
+3. **Quantized SVD Linear (Q-SVDLinear)**: Store $V$ and $U$ in FP8 format while maintaining accumulator registers in FP32 to optimize memory throughput on NVIDIA H100 hardware.

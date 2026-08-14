@@ -1,15 +1,15 @@
 # MoBA Attention: Mixture-of-Block Attention via Centroid Cosine Routing
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) computes dense pairwise token interactions across sequence length $L$, incurring quadratic computational time complexity $\mathcal{O}(L^2 d)$ and memory footprint $\mathcal{O}(L^2 + L d)$. For long-context language modeling, this quadratic bottleneck severely restricts context length. **MoBA (Mixture-of-Block Attention)** addresses this limitation by reformulating fine-grained token-to-token attention as a two-stage hierarchical sparse routing process. 
 
 The sequence of length $L$ is partitioned into uniform contiguous blocks of size $B_{\text{sz}}$. Rather than calculating dense interactions between all tokens, MoBA abstracts each block into a single spatial centroid vector via uniform arithmetic mean pooling. Inter-block affinity scores are derived by computing scaled dot-product similarities between query block centroids and key block centroids. For each query block, MoBA dynamically selects the top-$k$ most relevant key-value blocks based on these centroid affinities. Fine-grained dense attention is subsequently executed strictly between the query tokens within the block and the tokens belonging to the $k$ routed key-value blocks. 
 
-This hierarchical routing scheme reduces the memory footprint and computational complexity of attention matrix generation from $\mathcal{O}(L^2)$ to $\mathcal{O}\left(\frac{L^2}{B_{\text{sz}}^2} d + L k B_{\text{sz}} d\right)$. When the condition $k B_{\text{sz}} \ll L$ holds, MoBA achieves linear scale behavior relative to sequence length for token-level attention while incurring only a minimal quadratic overhead at the coarse block-centroid level.
+This hierarchical routing scheme reduces the memory footprint and computational complexity of attention matrix generation from $\mathcal{O}(L^2)$ to $\mathcal{O}\left(\frac{L^2}{B_{\text{sz}}^2} d + L k B_{\text{sz}} d\right)$. When the condition $k B_{\text{sz}} \ll L$ holds, MoBA achieves linear scaling behavior relative to sequence length for token-level attention while incurring only a minimal quadratic overhead at the coarse block-centroid level.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Multi-Head Projection and Block Partitioning
 Let $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$ denote the input hidden states sequence. The linear projections for Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) are defined as:
@@ -44,7 +44,7 @@ $$\mathbf{Y} = \operatorname{Slice}\left(\mathbf{O}_p, :L\right) \mathbf{W}_O \i
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -105,7 +105,7 @@ $$\mathbf{Y} = \operatorname{Slice}\left(\mathbf{O}_p, :L\right) \mathbf{W}_O \i
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $H$ number of heads, $d_k$ head dimension ($D = H d_k$), $L$ sequence length, $n_b = L / B_{\text{sz}}$ number of blocks, $B_{\text{sz}}$ block size, and $k$ number of routed blocks.
@@ -144,7 +144,7 @@ $$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_{\text{sz}}^2} + 4 B D L k
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Centroid Arithmetic Mean Information Loss
 The coarse routing phase compresses an entire block of $B_{\text{sz}}$ tokens into a single mean vector $\bar{\mathbf{Q}}_i = \frac{1}{B_{\text{sz}}} \sum \mathbf{Q}_{i, t}$. This spatial mean pooling acts as an isotropic low-pass filter:
@@ -165,7 +165,7 @@ When sequence length $L$ grows extremely large, key block centroids $\bar{\mathb
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To overcome the performance bottlenecks of sequential Python loops and unfused gather/scatter operations, MoBA requires a specialized GPU custom kernel written in Triton.
 
@@ -177,11 +177,11 @@ The hardware pipeline unifies block centroid computation, top-$k$ routing, dynam
 |                            TRITON FUSED MOBA KERNEL                               |
 +-----------------------------------------------------------------------------------+
 |  1. BLOCK CENTROID KERNEL (Grid: [B, H, n_b])                                     |
-|     - Loads Q, K block [B_sz, d_k] into SRAM SRAM_Q, SRAM_K.                      |
+|     - Loads Q, K block [B_sz, d_k] into SRAM.                                     |
 |     - Executes warp reduction sum along B_sz dimension.                           |
 |     - Stores Q_mean, K_mean into global device memory [B, H, n_b, d_k].           |
 +-----------------------------------------------------------------------------------+
-|  2. BLOCKAffinity & TOP-K KERNEL (Grid: [B, H, n_b])                              |
+|  2. BLOCK AFFINITY & TOP-K KERNEL (Grid: [B, H, n_b])                             |
 |     - Loads Q_mean_i and all K_mean [n_b, d_k].                                   |
 |     - Computes dot product S[n_b] in register file.                               |
 |     - Performs bitonic top-k sort across n_b elements in register/shared memory.  |
@@ -286,3 +286,12 @@ def _moba_fused_block_attn_kernel(
 1. **Coalesced Memory Access**: By storing $\mathbf{K}$ and $\mathbf{V}$ tensors in block-contiguous memory layouts `[B, H, n_b, B_sz, d_k]`, indirect pointer calculations load continuous 128-byte DRAM segments, maximizing memory bus bandwidth.
 2. **SRAM Accumulation**: Queries $\mathbf{Q}_i$ remain pinned in high-speed SRAM registers across all $k$ iterations, eliminating repetitive DRAM re-reads.
 3. **Register-Level Bitonic Top-k**: For typical routing configurations ($n_b \le 512, k \le 16$), top-$k$ block indexing is computed strictly within warp registers, avoiding costly global memory round trips.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Hierarchical Multi-Level Centroid Trees**: Extend single-level block routing to 2-level or octree centroid hierarchies ($B_{\text{macro}} = 256, B_{\text{micro}} = 32$) to achieve logarithmic $\mathcal{O}(\log(L/B_{\text{sz}}))$ routing complexity for million-token contexts.
+2. **Soft Continuous Gating & Gumbel-Softmax Top-k**: Replace non-differentiable hard top-$k$ selection with straight-through Gumbel-Softmax routing or temperature-annealed soft block weighting to enable end-to-end gradient flow into key/query block projections.
+3. **Hybrid MoBA-State Space Model (MoBA-Mamba)**: Combine coarse MoBA block selection for long-range associative memory retrieval with linear time-invariant state space models (SSMs) like Mamba-2 for localized high-frequency sequence processing.
+4. **FP8 Block-Quantized Centroid Routing**: Perform coarse centroid dot products using FP8 (E4M3/E5M2) tensor cores to quadruple matrix multiplication throughput during block affinity scoring.

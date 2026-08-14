@@ -1,83 +1,199 @@
-# RALA Compressor: Rank-Augmented Linear Attention Compressor Architecture
+# RALA Compressor: Rank-Augmented Linear Attention Layer Architecture & Masking Specifications
 
-## 1. Abstract & Theoretical Motivation
-RALA Compressor (`RALALinearAttention`, registered as `rala`) provides an expressive, linear-time self-attention architecture designed to overcome representational capacity bottlenecks in positive kernel linear attention. Traditional kernelized linear attention reduces sequence length complexity from $\mathcal{O}(N^2)$ to $\mathcal{O}(N \cdot d_h^2)$ using feature maps $\phi(x) = \text{ELU}(x) + 1.0$. However, kernelized feature maps exhibit limited rank expressivity compared to full softmax attention. RALA addresses this by augmenting the linear attention kernel matrix with a parametric, learnable low-rank matrix correction term $R_h = U_h V_h^\top \in \mathbb{R}^{d_h \times d_h}$ (where $U_h, V_h \in \mathbb{R}^{d_h \times r}$ with rank $r \ll d_h$). Controlled by a learnable scaling parameter $\alpha$, RALA injects global parametric cross-feature interactions into associative memory while maintaining strict $\mathcal{O}(N \cdot d_h^2)$ linear sequence scaling.
+## 1. Executive Abstract & Architectural Motivation
 
-## 2. Mathematical Derivations & Formulations
-Given multi-head query, key, and value representations $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$ derived via linear transformations $W_Q, W_K, W_V \in \mathbb{R}^{D \times D}$, RALA evaluates positive feature maps $\phi(x) = \text{ELU}(x) + 1.0 \ge 0$:
-$$\phi_Q = \text{ELU}(Q) + 1.0, \qquad \phi_K = \text{ELU}(K) + 1.0 \in \mathbb{R}^{B \times H \times N \times d_h}$$
+Rank-Augmented Linear Attention Compressor (`RALALinearAttention` in `rala_compressor.py`) provides an expressive linear-complexity attention mechanism ($\mathcal{O}(N)$). Standard linear attention models approximate Softmax attention using kernel feature maps ($\phi(x) = \text{ELU}(x) + 1.0$), reducing quadratic sequence scaling ($\mathcal{O}(N^2)$) to linear scaling. However, fixed feature maps introduce capacity bottlenecks that degrade long-range retrieval performance.
 
-### 1. Standard Linear Kernel Pathway
-The key-value associative memory state matrix $S_{\text{KV}} \in \mathbb{R}^{B \times H \times d_h \times d_h}$ and normalization vector $z \in \mathbb{R}^{B \times H \times d_h}$ are accumulated over sequence length $N$:
-$$S_{\text{KV}} = \sum_{j=1}^N \phi_K[:, :, j, :]^\top V[:, :, j, :] \in \mathbb{R}^{B \times H \times d_h \times d_h}$$
-$$z = \sum_{j=1}^N \phi_K[:, :, j, :] \in \mathbb{R}^{B \times H \times d_h}$$
+RALA resolves this capacity limit by augmenting the linear associative memory path ($O_{\text{lin}}$) with a low-rank parametric memory matrix ($M_{\text{rank}} = U V^\top \in \mathbb{R}^{H \times d_k \times d_k}$, rank $r \ll d_k$). The augmented memory branch ($O_{\text{aug}}$) provides trainable head interaction capacity without breaking linear sequence complexity. The compressor incorporates multi-dimensional mask handling for 2D, 3D, and 4D mask tensors.
 
-The unaugmented linear context $O_{\text{lin}}$ is:
-$$O_{\text{lin}} = \frac{\phi_Q S_{\text{KV}}}{\phi_Q z^\top + \epsilon} \in \mathbb{R}^{B \times H \times N \times d_h}$$
+---
 
-### 2. Parametric Low-Rank Augmentation Pathway
-For each attention head $h \in \{1, \dots, H\}$, low-rank correction matrices $U_h, V_h \in \mathbb{R}^{d_h \times r}$ (rank $r = 8$) construct head-wise rank augmentation matrices $M_{\text{rank}}$:
-$$M_{\text{rank}} = U_h V_h^\top \in \mathbb{R}^{d_h \times d_h}$$
+## 2. Mathematical Formulations & Derivations
 
-The low-rank augmented context $O_{\text{aug}}$ is computed by right-multiplying query feature maps $\phi_Q$ with $M_{\text{rank}}$:
-$$O_{\text{aug}} = \frac{\phi_Q M_{\text{rank}}}{\phi_Q z^\top + \epsilon} \in \mathbb{R}^{B \times H \times N \times d_h}$$
+Let $X \in \mathbb{R}^{B \times N \times D}$ denote input activations. Let $H$ be query heads, $d_k = D / H$ head dimension, $r$ augmentation rank, and $\alpha$ mixing weight.
 
-### 3. Fused Output Representation
-Combining unaugmented linear context and low-rank augmented context yields the complete RALA context representation:
-$$O_{\text{head}} = O_{\text{lin}} + \alpha \cdot O_{\text{aug}} \in \mathbb{R}^{B \times H \times N \times d_h}$$
-$$O = \text{Reshape}(O_{\text{head}}) W_O + b_O \in \mathbb{R}^{B \times N \times D}$$
-where $\alpha \in \mathbb{R}$ is a learnable scalar initialized to $\alpha = 0.1$.
+### Positive ELU Feature Mapping & Mask Normalization:
+Input activations are mapped into multi-head projections $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_k}$. Positive feature maps transform Query and Key states:
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
-The step-by-step tensor operations across RALA Compressor layers proceed as follows:
+\[
+\Phi_Q = \text{ELU}(Q) + 1.0 \in \mathbb{R}^{B \times H \times N \times d_k}, \quad \Phi_K = (\text{ELU}(K) + 1.0) \odot M_{\text{valid}} \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
 
-1. **Input State**: $X \in \mathbb{R}^{B \times N \times D}$
-2. **Dense Linear Projections**:
-   - $Q_{\text{flat}} = X W_Q + b_Q \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{view}} [B, N, H, d_h] \xrightarrow{\text{transpose}} [B, H, N, d_h]$
-   - $K_{\text{flat}} = X W_K + b_K \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{transpose}} [B, H, N, d_h]$
-   - $V_{\text{flat}} = X W_V + b_V \in \mathbb{R}^{B \times N \times D} \xrightarrow{\text{transpose}} [B, H, N, d_h]$
-3. **Feature Map Transformation & Masking**:
-   - $\phi_Q = \text{ELU}(Q) + 1.0 \in \mathbb{R}^{B \times H \times N \times d_h}$
-   - Mask multiplication: $\phi_K = (\text{ELU}(K) + 1.0) \odot M_{\text{valid}} \in \mathbb{R}^{B \times H \times N \times d_h}$
-4. **Associative Memory Reduction**:
-   - $S_{\text{KV}} = \text{einsum}("b h n d, b h n e \to b h d e", \phi_K, V) \in \mathbb{R}^{B \times H \times d_h \times d_h}$
-   - Normalization vector: $z = \phi_K.\text{sum}(\text{dim}=2) \in \mathbb{R}^{B \times H \times d_h}$
-   - Denominator: $\mathcal{D} = \text{einsum}("b h n d, b h d \to b h n", \phi_Q, z).\text{unsqueeze}(-1) + 1e-8 \in \mathbb{R}^{B \times H \times N \times 1}$
-5. **Linear Context & Low-Rank Augmentation**:
-   - $O_{\text{lin}} = \text{einsum}("b h n d, b h d e \to b h n e", \phi_Q, S_{\text{KV}}) / \mathcal{D}$
-   - Low-rank matrix construction: $M_{\text{rank}} = \text{einsum}("h d r, h e r \to h d e", U, V) \in \mathbb{R}^{H \times d_h \times d_h}$
-   - $O_{\text{aug}} = \text{einsum}("b h n d, h d e \to b h n e", \phi_Q, M_{\text{rank}}) / \mathcal{D}$
-6. **Augmentation Fusion & Output Projection**:
-   - $O_{\text{head}} = O_{\text{lin}} + \alpha \cdot O_{\text{aug}} \in \mathbb{R}^{B \times H \times N \times d_h}$
-   - $O = \text{Reshape}(O_{\text{head}}) W_O + b_O \in \mathbb{R}^{B \times N \times D}$
+Where valid token mask $M_{\text{valid}}$ parses 2D, 3D, or 4D attention masks:
 
-## 4. Analytical Complexity Profiling
-- **FLOPs Computation**:
-  - Linear Projections ($Q, K, V, O$): $4 \times 2 B N D^2 = 8 B N D^2$ FLOPs
-  - Associative Memory Reduction ($\phi_K^\top V$): $2 B H N d_h^2 = 2 B N D d_h$ FLOPs
-  - Linear Context Aggregation ($\phi_Q S_{\text{KV}}$): $2 B N D d_h$ FLOPs
-  - Low-Rank Matrix Reconstruction ($U V^\top$): $2 H d_h^2 r$ FLOPs
-  - Low-Rank Augmentation Aggregation ($\phi_Q M_{\text{rank}}$): $2 B N D d_h$ FLOPs
-  - Total Module FLOPs: $8 B N D^2 + 6 B N D d_h + 2 H d_h^2 r$ (Strictly $\mathcal{O}(N)$ in sequence length)
-- **MAC Operations**:
-  - Dense Projections: $4 B N D^2$ MACs
-  - Associative Memory Contractions: $3 B N D d_h$ MACs
-- **Memory Footprint & Parameter Count**:
-  - Projection Parameters: $4 D^2$
-  - Parametric Correction Parameters ($U, V$): $2 \times H \times d_h \times r = 2 r D$. For $D=768, H=12, r=8$, correction parameters $= 2 \times 8 \times 768 = 12,288$ ($< 0.5\%$ extra parameters).
+\[
+M_{\text{valid}} = \begin{cases}
+M \in \mathbb{R}^{B \times 1 \times N \times 1} & \text{if } \text{dim} = 2 \\
+M \in \mathbb{R}^{B \times 1 \times N \times 1} & \text{if } \text{dim} = 3 \\
+(M > -10^4) \in \mathbb{R}^{B \times 1 \times N \times 1} & \text{if } \text{dim} = 4
+\end{cases}
+\]
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-- **Multi-Dimensional Mask Broadcasting Errors**:
-  Using shape masking directly on $\phi_K$ requires boolean binary conversion. If non-standard 4D masks with continuous values are passed, thresholding ($M > -1e4$) fails to correctly resolve zero positions.
-- **Static Parametric Bias Limitations**:
-  Low-rank correction matrix $M_{\text{rank}} = U_h V_h^\top$ is static with respect to input sequences $X$. While it learns head-specific global feature interactions, it cannot adapt dynamically to input-dependent token relationships.
-- **Unbounded Augmentation Scaling**:
-  Allowing scalar $\alpha$ to drift unconstrained during optimization can cause $\alpha \cdot O_{\text{aug}}$ to dominate $O_{\text{lin}}$, degrading associative memory retrieval.
+### Linear Associative Memory & Normalization:
+Key-Value associative state memory $S_{\text{KV}} \in \mathbb{R}^{B \times H \times d_k \times d_k}$ and normalizer vector $z \in \mathbb{R}^{B \times H \times d_k}$ are constructed via sequence summation:
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-- **Fused Chunk-Wise RALA Kernel**:
-  Implement a custom Triton kernel fusing associative memory contraction ($\phi_K^\top V$), low-rank augmentation ($\phi_Q M_{\text{rank}}$), and denominator normalization into a single CUDA pass, processing sequence tiles $B_N = 64$ in local SRAM.
-- **Zero-Padded Kernel Masking**:
-  Replace additive negative masking with zero-multiplication: $\tilde{\phi}_K = (\text{ELU}(K) + 1.0) \odot M_{\text{valid}}$. This strictly preserves positive feature map bounds $\phi_K \ge 0$ and avoids numerical NaN instabilities.
-- **Bounded Sigmoidal Augmentation Scale**:
-  Reparameterize scaling parameter $\alpha$ as $\alpha = 2 \cdot \sigma(\gamma)$ where $\gamma$ is a trainable logit, bounding the augmentation scaling factor to $(0, 2.0)$ for numerical stability.
+\[
+S_{\text{KV}} = \sum_{j=1}^N \Phi_{K, j} V_j^\top = \text{einsum}("b h n d, b h n e \to b h d e", \Phi_K, V)
+\]
+\[
+z = \sum_{j=1}^N \Phi_{K, j} = \text{sum}(\Phi_K, \text{dim}=2) \in \mathbb{R}^{B \times H \times d_k}
+\]
+
+Linear attention output $O_{\text{lin}}$ and scalar denominator vector are computed:
+
+\[
+\text{Denom} = \Phi_Q \cdot z^\top + \epsilon = \text{einsum}("b h n d, b h d \to b h n", \Phi_Q, z) \in \mathbb{R}^{B \times H \times N \times 1}
+\]
+\[
+O_{\text{lin}} = \frac{\Phi_Q S_{\text{KV}}}{\text{Denom}} = \frac{\text{einsum}("b h n d, b h d e \to b h n e", \Phi_Q, S_{\text{KV}})}{\text{Denom}} \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+
+### Low-Rank Parametric Memory Augmentation:
+Learnable factor matrices $U, V \in \mathbb{R}^{H \times d_k \times r}$ compute dynamic head memory matrix $M_{\text{rank}} \in \mathbb{R}^{H \times d_k \times d_k}$:
+
+\[
+M_{\text{rank}} = U V^\top = \text{einsum}("h d r, h e r \to h d e", U, V)
+\]
+\[
+O_{\text{aug}} = \frac{\Phi_Q M_{\text{rank}}}{\text{Denom}} = \frac{\text{einsum}("b h n d, h d e \to b h n e", \Phi_Q, M_{\text{rank}})}{\text{Denom}} \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+
+### Fused Residual Output & Projection:
+Linear and augmented paths are combined via learnable scalar $\alpha$:
+
+\[
+O_{\text{fused}} = O_{\text{lin}} + \alpha \cdot O_{\text{aug}} \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+\[
+Y = \text{Concat}(O_{\text{fused}, 1}, \dots, O_{\text{fused}, H}) W_O + b_O \in \mathbb{R}^{B \times N \times D}
+\]
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Shape | Transformation / Operation | Output Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Input activation batch | `[B, N, D]` |
+| **Projections** | `[B, N, D]` | `self.q_proj`, `self.k_proj`, `self.v_proj` | `[B, N, D]` each |
+| **Multi-Head View** | `[B, N, D]` | `.view(B, N, H, d_k).transpose(1, 2)` | `[B, H, N, d_k]` each |
+| **Feature Mapping & Mask** | `Q, K`, `attention_mask`| `F.elu(q) + 1.0`, `k_prime * mask` | `q_prime, k_prime: [B, H, N, d_k]` |
+| **Associative Memory Einsum**| `k_prime`, `V` | `torch.einsum("bhnd,bhne->bhde", k_prime, V)` | `kv: [B, H, d_k, d_k]` |
+| **Normalizer Sum** | `k_prime` | `k_prime.sum(dim=2)` | `z: [B, H, d_k]` |
+| **Denominator Vector** | `q_prime`, `z` | `torch.einsum("bhnd,bhd->bhn", q_prime, z)` | `denom: [B, H, N, 1]` |
+| **Linear Path Output** | `q_prime`, `kv`, `denom` | `torch.einsum("bhnd,bhde->bhne", q_prime, kv) / denom` | `lin_out: [B, H, N, d_k]` |
+| **Low-Rank Matrix Einsum** | `U: [H, d_k, r]`, `V: [H, d_k, r]`| `torch.einsum("hdr,her->hde", U, V)` | `rank_mat: [H, d_k, d_k]` |
+| **Augmented Path Output** | `q_prime`, `rank_mat` | `torch.einsum("bhnd,hde->bhne", q_prime, rank_mat) / denom` | `aug_out: [B, H, N, d_k]` |
+| **Fused Output** | `lin_out`, `aug_out` | `lin_out + alpha * aug_out` | `[B, H, N, d_k]` |
+| **Out Projection** | `output` | `.transpose(1, 2).view(B, N, D)` + `out_proj` | `Output: [B, N, D]` |
+
+### Architectural Flowchart Diagram
+
+```
+                        Input: hidden_states [B, N, D]
+                                        │
+          ┌─────────────────────────────┼─────────────────────────────┐
+          ▼                             ▼                             ▼
+    Linear(D, D) [Q]              Linear(D, D) [K]              Linear(D, D) [V]
+          │                             │                             │
+    q_prime = ELU(Q) + 1          k_prime = ELU(K) + 1 * mask   V: [B, H, N, d_k]
+          │                             │                             │
+          │                             ├─── Einsum: k_prime @ V ─────┤
+          │                             │    => kv [B, H, d_k, d_k]   │
+          │                             │                             │
+          │                             └─── Sum -> z [B, H, d_k]     │
+          │                                                           │
+          ├─── Einsum: q_prime @ kv / denom ──> lin_out [B, H, N, d_k]│
+          │                                                           │
+          └─── Einsum: q_prime @ (U @ V.T) / denom                    │
+               => aug_out [B, H, N, d_k]                              │
+                     │                                                │
+                     ├─── Add: lin_out + alpha * aug_out ─────────────┘
+                     │
+          view(B, N, D) & out_proj
+                     │
+             Output: [B, N, D]
+```
+
+---
+
+## 4. Analytical Complexity & Hardware Profiling
+
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ augmentation rank.
+
+1. **Linear Projections**:
+   - $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+2. **Associative Memory Construction**:
+   - $S_{\text{KV}}$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
+   - Denominator calculation: $2 B N D$ FLOPs.
+3. **Linear Path Projection**:
+   - $O_{\text{lin}}$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
+4. **Rank-Augmented Path Projection**:
+   - $M_{\text{rank}} = U V^\top$: $2 H d_k^2 r$ FLOPs.
+   - $O_{\text{aug}}$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
+
+5. **Total Workload Summary**:
+   - **Total MACs**: $4 B N D^2 + 3 B N D d_k + H d_k^2 r$
+   - **Total FLOPs**: $8 B N D^2 + 6 B N D d_k + 2 H d_k^2 r + 2 B N D$
+   - **Strict Linear Sequence Scaling**: Execution complexity scales linearly ($\mathcal{O}(N)$) without materializing $N \times N$ score matrices.
+
+### Parameter Overhead Profile
+- **Standard Linear Attention Parameters**: $4 D^2 + 4 D$ floats.
+- **RALA Compressor Parameter Count**:
+  \[
+  \text{Params}_{\text{RALA}} = 4 D^2 + 4 D + 2 H d_k r + 1 = 4 D^2 + 4 D + 2 D r + 1 \text{ floats}
+  \]
+  For $D = 768, H = 12, d_k = 64, r = 8$:
+  - Standard Linear Attention: $4 \times 768^2 + 4(768) = 2,362,368$ parameters.
+  - RALA Compressor: $2,362,368 + 2(768)(8) + 1 = 2,374,657$ parameters (**$0.5\%$ parameter overhead**).
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
+
+### Mask Formatting Mismatch
+Passing unnormalized boolean masks without proper dimension expanding can cause shape mismatch during Hadamard multiplication `k_prime * mask`. The internal normalizer checks `mask.dim()` (2D, 3D, 4D) to prevent broadcasting errors.
+
+### Denominator Underflow in Padded Batches
+If a batch item consists entirely of padding tokens, $\Phi_K$ sums to 0, causing $\text{Denom} \to 0$. Offset $\epsilon = 1e-8$ prevents divide-by-zero crashes.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel for RALA Compressor streams activation tiles into SRAM, evaluating associative memory reductions and low-rank parametric projections in parallel SIMD thread blocks.
+
+```
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Q, K, V: [B, H, N, d_k]                                     │
+   │ Parametric Memory: U [H, d_k, r], V [H, d_k, r]             │
+   │ Mixing Coefficient: alpha                                   │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Vectorized Memory Streaming
+                                  ▼
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Load Activation Tile Q_i, K_j, V_j [BLOCK_M, d_k]           │
+ │ 2. Compute ELU Maps: phi(Q_i), phi(K_j)                        │
+ │ 3. Accumulate KV State: S_KV += phi(K_j).T @ V_j              │
+ │ 4. Compute On-Chip Rank Matrix: M_rank = U @ V.T              │
+ │ 5. Evaluate Fused Output: O_i = (phi(Q_i) @ (S_KV + alpha*M)) / z│
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Write Output
+                                  ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Context Output: O [B, N, D]                                 │
+   └─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Model-Wide Auto-Injection**: Integrate `RALALinearAttention` into `replace_attention(model, "rala")` for automated zero-shot linear attention replacement across arbitrary LLMs.
+2. **Quantized Low-Rank Memory ($M_{\text{rank}}$)**: Store parametric memory tensors $U, V$ in FP8 format to halve SRAM register allocation during long-sequence decoding.
+3. **Hybrid RALA-Mamba SSM**: Interleave RALA rank-augmented linear layers with selective State-Space Model (SSM) blocks for unified linear-time sequence processing.

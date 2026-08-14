@@ -1,63 +1,134 @@
-# NHA Compressor: Automated Model-Level Native Hybrid Attention Dispatch Orchestration
+# NHA Compressor: Model-Wide Native Hybrid Attention Dispatch Transformation
 
-## 1. Abstract & Theoretical Motivation
-NHA Compressor (`NHACompressor`, registered as `nha_compressor`) is an architecture-level transformation orchestrator that automates model-wide replacement of standard multi-head self-attention (MHA) layers with Native Hybrid Attention (NHA) operators. In deep transformer pipelines parameterized by weight set $\Theta = \{\theta_{\text{attn}}^{(l)}, \theta_{\text{other}}^{(l)}\}_{l=1}^L$, manual layer-by-layer replacement is error-prone and degrades modularity. NHA Compressor executes automated graph-traversal and dynamic dispatch mapping $\mathcal{M} \mapsto \widetilde{\mathcal{M}}$, substituting dense $\mathcal{O}(N^2)$ quadratic self-attention operators with token-selective NHA operators while preserving frozen feedforward, layer normalization, and token embedding weights. The compressor provides zero-shot weight propagation, optional weight persistence, and configurable full-attention retention ratio $\rho \in [0, 1]$.
+## 1. Executive Abstract & Architectural Motivation
 
-## 2. Mathematical Derivations & Formulations
-Let $\mathcal{M}$ represent an $L$-layer Transformer network with attention dispatch functions $\phi_{\text{attn}}^{(l)}(X)$. The NHA Compressor executes structural graph mapping over every layer $l \in \{1, \dots, L\}$:
-$$\mathcal{M} = \left( \bigoplus_{l=1}^L \phi_{\text{attn}}^{(l)} \right) \circ \mathcal{M}_{\text{FFN}} \implies \widetilde{\mathcal{M}} = \left( \bigoplus_{l=1}^L \phi_{\text{NHA}}^{(l)}\Big|_{\rho} \right) \circ \mathcal{M}_{\text{FFN}}$$
+Native Hybrid Attention Compressor (`NHACompressor` in `nha_compressor.py`) provides an automated, model-wide architectural transformation framework. It replaces conventional Multi-Head Self-Attention (MHA) layers across pretrained Transformer architectures with Native Hybrid Attention (NHA) operators. Standard MHA incurs quadratic sequence complexity ($\mathcal{O}(N^2)$), limiting context scaling in long-document tasks.
 
-For a target full-attention ratio $\rho \in (0, 1]$, the replacement dispatch replaces attention operators $\phi_{\text{attn}}^{(l)}$ with:
-$$\phi_{\text{NHA}}^{(l)}(X) = \mathbf{M}_{\text{full}} \odot \text{Softmax}\left(\frac{Q_{\text{full}} K_{\text{full}}^\top}{\sqrt{d_h}}\right) V + (1 - \mathbf{M}_{\text{full}}) \odot \frac{\phi(Q) (\phi(K)^\top V)}{\phi(Q) (\phi(K)^\top \mathbf{1})}$$
-where $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$, $\phi(x) = \text{ELU}(x) + 1.0$, and $\mathbf{M}_{\text{full}}$ gates the top-$k$ ($k = \lfloor N \cdot \rho \rfloor$) query norm tokens.
+`NHACompressor` traverses the target Transformer model $\mathcal{M}$, preserving feedforward networks, layer normalizations, and positional embedding parameters while dynamically replacing attention dispatch modules via the framework utility `replace_attention(model, "nha")`. The compressor enables configurable retention ratios (`full_ratio`) for heavy-hitter tokens and offers automated serialization hooks (`save_pretrained`) for persisting compressed weights and tokenizer artifacts.
 
-Pretrained weight matrices $W_Q^{(l)}, W_K^{(l)}, W_V^{(l)}, W_O^{(l)} \in \mathbb{R}^{D \times D}$ and biases $b^{(l)}$ are copied directly from source attention layers:
-$$W_{Q, \text{NHA}}^{(l)} \leftarrow W_Q^{(l)}, \quad W_{K, \text{NHA}}^{(l)} \leftarrow W_K^{(l)}, \quad W_{V, \text{NHA}}^{(l)} \leftarrow W_V^{(l)}, \quad W_{O, \text{NHA}}^{(l)} \leftarrow W_O^{(l)}$$
-enabling lossless zero-shot feature initialization without retraining.
+---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
-The step-by-step model replacement and tensor execution sequence are traced below:
+## 2. Mathematical Formulations & Derivations
 
-1. **Input Architecture**: $\mathcal{M}$ containing $L$ Transformer layers with hidden dimension $D$ and $H$ attention heads.
-2. **Model Graph Traversal**:
-   - Iterate over sub-modules $l = 1, \dots, L$.
-   - Locate self-attention child module `layer[l].attention`.
-3. **Registry Dispatch & Replacement**:
-   - Query `ATTENTION_REGISTRY` for target operator `"nha"`.
-   - Instantiate `NHAAttention(config, full_ratio=\rho)`.
-   - Copy weight tensors $W_Q, W_K, W_V, W_O$ from old attention module to new NHA module.
-   - Replace sub-module: `layer[l].attention = new_nha_instance`.
-4. **Execution Verification (Forward Pass)**:
-   - Input Tensor: $X \in \mathbb{R}^{B \times N \times D}$
-   - Per-layer NHA execution: $[B, N, D] \to [B, N, D]$
-5. **Persistence & Serialization**:
-   - Invoke `model.save_pretrained(output_dir)` and `tokenizer.save_pretrained(output_dir)` if `output_dir` is provided.
+Let $\mathcal{M}$ denote a Transformer model parameterized by weights $\Theta = \{ \theta_{\text{attn}}^{(l)}, \theta_{\text{other}}^{(l)} \}_{l=1}^L$ across $L$ transformer layers.
 
-## 4. Analytical Complexity Profiling
-- **FLOPs Computation**:
-  - Replacement Graph Mapping Overhead: $\mathcal{O}(L)$ string matching operations
-  - Zero-Shot Weight Copying: $\mathcal{O}(4 L D^2)$ memory writes
-  - Model Inference FLOPs (Post-Compression):
-    $$\text{FLOPs}_{\text{Inference}} = L \cdot \left[ 8 B N D^2 + 4 \rho B N^2 D + 4 B N D d_h \right]$$
-- **MAC Operations**:
-  - Pre-Compression Model: $L \cdot (4 B N D^2 + 2 B N^2 D)$ MACs
-  - Post-Compression Model: $L \cdot (4 B N D^2 + 2 \rho B N^2 D + 2 B N D d_h)$ MACs
-- **Memory Footprint & Speedup**:
-  - Model Parameter Count: Remains constant ($4 L D^2$ attention parameters + FFN parameters).
-  - Attention Map DRAM Memory Reduction: $\frac{N}{\rho N + d_h}\times$ speedup in attention memory allocations for long contexts ($N \gg d_h$).
+### Functional Mapping & Operator Substitution:
+The compressor defines a functional mapping $\mathcal{T}_{\text{NHA}}$ over the model parameter space:
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-- **Uniform Ratio Allocation**:
-  Assigning a static ratio $\rho$ across all $L$ layers forces early feature-extraction layers to use the same sparse top-k ratio as deep semantic layers. Early layers often exhibit diffused attention requiring higher $\rho$, whereas deeper layers can tolerate lower $\rho$.
-- **Graph Mutation Breakage in Custom Architectures**:
-  Relying on `framework.utils.replace_attention` assumes standard HuggingFace module named attributes (e.g., `layer[i].attention`). Custom non-standard transformer implementations with non-standard attribute names fail during dynamic attribute assignment.
-- **Incompatible KV Cache Generators**:
-  NHA blends quadratic softmax attention with linear associative memory $K V_{\text{lin}} \in \mathbb{R}^{B \times H \times d_h \times d_h}$. Standard KV caching mechanisms designed for autoregressive decoding cannot ingest the hybrid state without custom decoding logic.
+\[
+\mathcal{T}_{\text{NHA}} : \mathcal{M}(\Theta) \mapsto \widetilde{\mathcal{M}}(\widetilde{\Theta}), \quad \text{where } \widetilde{\Theta} = \{ \theta_{\text{NHA}}^{(l)}, \theta_{\text{other}}^{(l)} \}_{l=1}^L
+\]
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-- **Parallel Multi-GPU Graph Rewriting**:
-  Execute dynamic graph mutation across distributed GPU ranks in parallel using PyTorch FSDP / DeepSpeed hooks to avoid CPU synchronization barriers during model initialization.
-- **Configurable Per-Layer Full-Ratio Schedule**:
-  Extend `full_ratio` from a scalar $\rho$ to a layer-dependent scheduling function $\rho(l) = \rho_{\text{base}} \cdot \left(1 - \frac{l}{L}\right)$, allocating higher full-attention capacity to initial layers and linear attention to deep layers.
-- **Serialized Quantized Kernel Dispatch**:
-  Fuse weight quantization (e.g., INT8 / FP8 matrix storage) directly into `replace_attention`, casting copied projection weights $W_Q, W_K, W_V, W_O$ to FP8 before assigning to NHA modules.
+Where $\theta_{\text{NHA}}^{(l)}$ initializes Query, Key, Value, and Output projection parameters from the original layer parameters $\theta_{\text{attn}}^{(l)}$:
+
+\[
+W_{Q, \text{NHA}}^{(l)} \leftarrow W_{Q, \text{orig}}^{(l)}, \quad W_{K, \text{NHA}}^{(l)} \leftarrow W_{K, \text{orig}}^{(l)}, \quad W_{V, \text{NHA}}^{(l)} \leftarrow W_{V, \text{orig}}^{(l)}, \quad W_{O, \text{NHA}}^{(l)} \leftarrow W_{O, \text{orig}}^{(l)}
+\]
+
+### Layer Dispatch Mechanism:
+For layer index $l \in \{1, \dots, L\}$ with input activation $X^{(l)} \in \mathbb{R}^{B \times N \times D}$:
+
+\[
+X^{(l+1)} = \text{LayerNorm}\left(X^{(l)} + \text{NHAAttention}^{(l)}(X^{(l)}, M, \text{full\_ratio}=\alpha)\right)
+\]
+
+Where $\alpha \in [0, 1]$ specifies the heavy-hitter full softmax retention ratio across all replaced layers.
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Shape | Transformation / Operation | Output Shape |
+| :--- | :--- | :--- | :--- |
+| **Model Inspection** | `model: nn.Module` | Traverse layer hierarchy $l = 1 \dots L$ | Layer list extracted |
+| **Attention Replacement** | `layer[l].attention` | `replace_attention(self.model, "nha")` | `NHAAttention` instantiated |
+| **Weight Migration** | `old_attn.weights` | Copy $W_Q, W_K, W_V, W_O$ to NHA module | Weights initialized |
+| **Forward Pass Dispatch**| `[B, N, D]` | NHA Hybrid Execution (Full + Linear) | `[B, N, D]` |
+| **Serialization Hook** | `output_dir` | `model.save_pretrained(output_dir)` | Preserved `.bin`/`.safetensors` |
+
+### Architectural Flowchart Diagram
+
+```
+                       Original Transformer Model M
+                                     │
+                        NHACompressor(model, full_ratio=alpha)
+                                     │
+                   replace_attention(model, "nha")
+                                     │
+           ┌─────────────────────────┴─────────────────────────┐
+           ▼                                                   ▼
+     Layer 1..L Attention                              Layer 1..L MLP & Norm
+   Substituted with NHA                             Preserved Unchanged
+           │                                                   │
+           └─────────────────────────┬─────────────────────────┘
+                                     ▼
+                      Compressed Model M_tilde
+                                     │
+                         Optional save_pretrained()
+                                     │
+                       Serialized Compressed Artifacts
+```
+
+---
+
+## 4. Analytical Complexity & Hardware Profiling
+
+### Computational Workload (FLOPs & MACs)
+Let $L$ be total transformer layers, $B$ batch size, $N$ sequence length, $D$ model dimension, and $\alpha$ heavy-hitter ratio.
+
+1. **Compression Dispatch Cost (One-Time Initialization)**:
+   - Replacement dispatch loop: $\mathcal{O}(L)$ layer attribute updates.
+   - Weight copying: $\mathcal{O}(L \cdot D^2)$ tensor memory operations.
+
+2. **Per-Layer Runtime Complexity Post-Compression**:
+   - Original MHA Runtime: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k + B \cdot N \cdot D^2)$.
+   - Compressed NHA Runtime: $\mathcal{O}(B \cdot H \cdot (\alpha N^2 + N d_k) d_k + B \cdot N \cdot D^2)$.
+   - For $\alpha = 0.1$, attention matrix compute FLOPs decrease by **$90\%$**.
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
+
+### Non-Standard Layer Attribute Mismatch
+If a target model architecture uses non-standard module naming (e.g. `self_attn` vs `attention` vs `attn`), dynamic attribute replacement in `replace_attention` can fail unless appropriate model adapter aliases are mapped.
+
+### Memory Overhead During Conversion
+Performing zero-shot weight migration in-place requires instantiating new `NHAAttention` modules before garbage collecting old MHA parameters, temporarily doubling attention activation memory footprint.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+The compressor orchestrates model-wide kernel dispatch, binding NHA Triton fused kernels to all transformer blocks in CUDA memory.
+
+```
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Pretrained Transformer Model M                              │
+   │ Target Output Directory Path                                │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Execute Model-Wide Replacement
+                                  ▼
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Traverse Model Named Modules                                │
+ │ 2. Instantiate NHAAttention Modules with full_ratio            │
+ │ 3. Copy Projection Parameters W_Q, W_K, W_V, W_O              │
+ │ 4. Bind Custom NHA Fused Triton GPU Kernel Launch Pointers    │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Persist Weights
+                                  ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Compressed Model Output M_tilde                             │
+   └─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Selective Layer Replacement (AdaCompressor)**: Replace attention layers with NHA only in deep layers while maintaining standard MHA in early representation layers.
+2. **Automated Distillation Compression Pipeline**: Combine `NHACompressor` model substitution with a continuous teacher-student distillation trainer.
+3. **Quantized NHA Serialization**: Integrate INT8/FP8 weight quantization into `save_pretrained` output loops for edge deployment.

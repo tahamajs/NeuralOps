@@ -1,6 +1,6 @@
 # Locality-Sensitive Hashing Attention: Angular Random Hyperplane Bucket Partitioning
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) incurs quadratic time and memory complexity $\mathcal{O}(N^2 d)$ across sequence length $N$. However, the softmax probability distribution in attention matrices is heavily dominated by a small subset of high-score query-key dot products $\mathbf{q}_i \mathbf{k}_j^\top$. The vast majority of pairwise interactions yield near-zero softmax probabilities after exponentiation, creating massive redundant computation.
 
 **Locality-Sensitive Hashing (LSH) Attention** (Kitaev et al., Reformer, 2020) replaces dense pairwise attention matrix evaluation with an efficient probabilistic nearest-neighbor search. LSH maps high-dimensional query and key vectors into discrete hash buckets using random angular hyperplanes such that geometrically proximal vectors share the same hash bucket with high probability. Attention calculations are subsequently restricted to intra-bucket token neighborhoods across $n_r$ independent random hash rounds.
@@ -9,7 +9,7 @@ By partitioning sequence queries and keys into $b$ hash buckets of average size 
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Multi-Head Projection & Normalization
 Given hidden states $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, linear projections yield Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) matrices:
@@ -57,7 +57,7 @@ For each round $r \in \{1, \dots, n_r\}$, batch $b \in \{1, \dots, B\}$, head $h
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -114,7 +114,7 @@ For each round $r \in \{1, \dots, n_r\}$, batch $b \in \{1, \dots, B\}$, head $h
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ hidden dimension, $H$ heads, $d_k = D/H$, $n_r$ hash rounds, and $b$ hash buckets.
@@ -149,7 +149,7 @@ $$\text{Total FLOPs} = 8 B N D^2 + 2 n_r B N D b + \frac{4 n_r B N^2 D}{b}$$
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Python Multi-Level Loop Latency Trap
 In `LSHAttention.forward`:
@@ -166,7 +166,7 @@ for r in range(self.rounds):
 - **Host-Device Launch Bottleneck**: Executing 4 nested Python loops over `rounds`, `batch`, `heads`, and `buckets` launches thousands of tiny PyTorch CUDA kernels sequentially.
 - **GPU Under-Utilization**: GPU Tensor Cores sit idle while CPU host threads execute loop conditionals, causing $100\times$ slower runtime execution than standard dense attention for short/medium sequence lengths.
 
-### 5.2 Hash Collision Failure & false-Negative Erasure
+### 5.2 Hash Collision Failure & False-Negative Erasure
 LSH is probabilistic: two semantically related tokens $i$ and $j$ with high dot product $\mathbf{q}_i \mathbf{k}_j^\top$ may fall into different buckets if their hyperplanes happen to split them.
 - **Recall Degradation**: If $n_r$ is too small (e.g., $n_r=1$), critical key tokens are dropped completely ($\mathbf{A}_{i, j} = 0$), causing false-negative memory erasure.
 - **Variance Instability**: Because projection matrix $R^{(r)} \sim \mathcal{N}(0, 1)$ is sampled stochastically on every forward pass (`torch.randn`), model outputs for identical input sequences exhibit high Monte Carlo variance.
@@ -178,7 +178,7 @@ If query embeddings inhabit a narrow directional cone in feature space (anisotro
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To achieve full hardware acceleration, LSH Attention must replace nested Python loops with a fused CUDA/Triton Sort-and-Chunk pipeline (Kitaev et al., Reformer).
 
@@ -277,3 +277,12 @@ def _lsh_chunked_flash_attn_kernel(
 ### 6.3 Hardware Optimization Impact
 1. **Complete Elimination of Python Loops**: Bitonic GPU sorting and chunked grid execution eliminate all Python runtime overhead, accelerating execution by up to $50\times$.
 2. **Fixed Tensor Memory Layout**: Chunking into fixed `CHUNK_SIZE` blocks allows GPU Tensor Cores to execute matrix multiplies (`tl.dot`) at peak memory bandwidth without dynamic memory allocation.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Learnable Spherical Hash Projections**: Replace Gaussian random matrices $R^{(r)} \sim \mathcal{N}(0, 1)$ with learnable orthogonal projection matrices trained via contrastive hashing loss to maximize intra-bucket semantic relevance.
+2. **Cross-Attention Multi-Hash Ensembles**: Combine angular LSH hashing with spatial Hamming distance projections to capture both semantic direction and vector magnitude.
+3. **Shared Q-K Shared Space Hashing**: Mandate $Q = K$ (shared projection space) as in Reformer to guarantee self-collision $h(q_i) = h(k_i)$, ensuring all tokens attend to themselves.
+4. **FP8 Quantized Bitonic Hashing**: Perform hash projections $\mathbf{z} = \mathbf{x} \mathbf{R}$ in FP8 (E4M3), enabling 4x throughput during LSH bucket code assignment on NVIDIA Blackwell GPUs.

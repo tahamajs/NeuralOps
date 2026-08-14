@@ -1,7 +1,6 @@
 # Aegis-Attention V2: Low-Rank Factorized Hybrid Attention with Adaptive Soft-Pruning Gating & Multi-Head Dynamic Fusion
 
-## 1. Abstract & Theoretical Motivation
-
+## 1. Executive Abstract & Architectural Motivation
 Transformer models equipped with Standard Multi-Head Self-Attention (MHSA) encounter severe quadratic scaling bottlenecks $\mathcal{O}(N^2)$ when operating on long-sequence modalities. Existing mitigation strategies either enforce local receptive fields—sacrificing long-range semantic contextualization—or deploy linearized kernel approximations—which frequently degrade local syntactic precision due to kernel smoothing over localized token interactions.
 
 **Aegis-Attention V2** addresses this trade-off through a high-performance hybrid architecture that combines:
@@ -12,7 +11,7 @@ Transformer models equipped with Standard Multi-Head Self-Attention (MHSA) encou
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Low-Rank Factorized Linear Transformations
 For input hidden tensor $X \in \mathbb{R}^{B \times N \times D}$, query, key, value, and output linear projections are factorized via rank-$r$ bottleneck matrices:
@@ -72,28 +71,59 @@ $$Y = \left( \text{Reshape}(O^{\text{fused}}) W_{O1} \right) W_{O2} + b_{O2} \in
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Stage | Tensor Variable | Shape Transition | Mathematical Expression |
 | :--- | :--- | :--- | :--- |
-| **Input Activation** | $X$ | $[B, N, D]$ | Base activation state |
-| **Q/K/V Down-Projection**| $X W_{1}$ | $[B, N, D] \to [B, N, r]$ | Bottleneck down-projection |
-| **Q/K/V Up-Projection**  | $(X W_{1}) W_{2}$ | $[B, N, r] \to [B, N, D]$ | Up-projection & bias addition |
-| **Head Partitioning** | $Q, K, V$ | $[B, N, D] \to [B, N, H, d_h]$ | Multi-head view split |
-| **Local Scores Computation**| $S^{\text{local}}$ | $[B, N, H, d_h] \to [B, H, N, N]$ | $\frac{Q K^T}{\sqrt{d_h}} + M^{\text{band}}$ |
-| **Local Context Contraction**| $O^{\text{local}}$ | $[B, H, N, N] \times [B, N, H, d_h] \to [B, N, H, d_h]$ | $\text{Softmax}(S^{\text{local}}) V$ |
-| **Soft-Pruning Gating** | $g$ | $[B, N, D] \to [B, N, H]$ | $\sigma(\text{MLP}(X))$ |
-| **Gated Kernel Aggregation**| $M^{\text{global}}, Z^{\text{global}}$| $[B, N, H, d_h] \to [B, H, d_h, d_h]$ | $\sum \phi(K_g)^T \otimes V_g$ |
-| **Global Querying** | $O^{\text{global}}$ | $[B, N, H, d_h] \times [B, H, d_h, d_h] \to [B, N, H, d_h]$ | $\frac{\phi(Q) M}{\phi(Q) Z + \epsilon}$ |
-| **Fusion Gating** | $\alpha$ | $[B, N, D] \to [B, N, H, 1]$ | $\sigma(X W_{\text{fusion}})$ |
-| **Convex Branch Fusion** | $O^{\text{fused}}$ | $[B, N, H, d_h]$ | $\alpha O^{\text{local}} + (1 - \alpha) O^{\text{global}}$ |
-| **Output Low-Rank GEMM** | $Y$ | $[B, N, D] \to [B, N, r] \to [B, N, D]$ | $(O^{\text{fused}} W_{O1}) W_{O2}$ |
+| **Input Activation** | $X$ | `[B, N, D]` | Base activation state |
+| **Q/K/V Down-Projection**| $X W_{1}$ | `[B, N, D] -> [B, N, r]` | Bottleneck down-projection |
+| **Q/K/V Up-Projection**  | $(X W_{1}) W_{2}$ | `[B, N, r] -> [B, N, D]` | Up-projection & bias addition |
+| **Head Partitioning** | $Q, K, V$ | `[B, N, D] -> [B, N, H, d_h]` | Multi-head view split |
+| **Local Scores Computation**| $S^{\text{local}}$ | `[B, N, H, d_h] -> [B, H, N, N]` | $\frac{Q K^T}{\sqrt{d_h}} + M^{\text{band}}$ |
+| **Local Context Contraction**| $O^{\text{local}}$ | `[B, H, N, N] * [B, N, H, d_h] -> [B, N, H, d_h]` | $\text{Softmax}(S^{\text{local}}) V$ |
+| **Soft-Pruning Gating** | $g$ | `[B, N, D] -> [B, N, H]` | $\sigma(\text{MLP}(X))$ |
+| **Gated Kernel Aggregation**| $M^{\text{global}}, Z^{\text{global}}$| `[B, N, H, d_h] -> [B, H, d_h, d_h]` | $\sum \phi(K_g)^T \otimes V_g$ |
+| **Global Querying** | $O^{\text{global}}$ | `[B, N, H, d_h] * [B, H, d_h, d_h] -> [B, N, H, d_h]` | $\frac{\phi(Q) M}{\phi(Q) Z + \epsilon}$ |
+| **Fusion Gating** | $\alpha$ | `[B, N, D] -> [B, N, H, 1]` | $\sigma(X W_{\text{fusion}})$ |
+| **Convex Branch Fusion** | $O^{\text{fused}}$ | `[B, N, H, d_h]` | $\alpha O^{\text{local}} + (1 - \alpha) O^{\text{global}}$ |
+| **Output Low-Rank GEMM** | $Y$ | `[B, N, D] -> [B, N, r] -> [B, N, D]` | $(O^{\text{fused}} W_{O1}) W_{O2}$ |
+
+```
+                       [B, N, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     Low-Rank Q, K, V Projections    Pruning Gate MLP
+      [B, N, H, d_h]                 keep_mask [B, N, H]
+             │                           │
+     ┌───────┴───────┐                   │
+     ▼               ▼                   ▼
+Local Band Attn    Kernel Map     Modulate Keys & Values
+Softmax(Q K^T) V   phi(x)=ELU+1   Kg = K * keep, Vg = V * keep
+Shape: [B, N, H, d_h]│                   │
+     │               ▼                   ▼
+     │         Outer Product KV Memory: phi(Kg)^T @ Vg [B, H, d_h, d_h]
+     │               │
+     │               ▼
+     │         Global Output: phi(Q) @ KV / (phi(Q) @ Z) [B, N, H, d_h]
+     │               │
+     └───────┬───────┘
+             ▼
+      Adaptive Fusion Gate: alpha = sigmoid(X W_fusion)
+      Fused = alpha * Local + (1 - alpha) * Global
+             │
+             ▼
+      Low-Rank Output Projection (W_O1 W_O2)
+             │
+             ▼
+                       [B, N, D] Output
+```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Floating Point Operations (FLOPs)
+### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $r$ bottleneck rank, and $W = W_{\text{local}}$ local window width.
 
 1. **Low-Rank Projections ($Q, K, V, O$)**:
@@ -111,21 +141,25 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 4. **Fusion Gating & Output Assembly**:
    $$\text{FLOPs}_{\text{fusion}} = 2 B N D H + 3 B N D$$
 
-**Total FLOP Count**:
-
 $$\text{FLOPs}_{\text{total}} \approx 16 B N D r + 4 B N D W + \frac{1}{2} B N D^2 + 4 B N D d_h$$
 
-### 4.2 Memory Footprint & Bandwidth
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} \approx 8 B N D r + 2 B N D W + \frac{1}{4} B N D^2 + 2 B N D d_h$$
 - **Parameter Memory**:
-  $$\Theta = 4 \times (2 D r) + \left(D \cdot \frac{D}{4} + \frac{D}{4} \cdot H\right) + D H = 8 D r + \frac{D^2}{4} + \frac{5 D H}{4}$$
+  $$\Theta = 8 D r + \frac{D^2}{4} + \frac{5 D H}{4}$$
 - **Activation Footprint**:
-  - Un-fused local logits: $\mathcal{O}(B H N^2)$ (or $\mathcal{O}(B H N W)$ under sparse band layouts).
-  - Global memory state: $\mathcal{O}(B H d_h^2)$.
-  - Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$.
+  - Un-fused local logits: $\mathcal{O}(B H N W)$
+  - Global memory state: $\mathcal{O}(B H d_h^2)$
+  - Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$
+
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
+- **Aegis-Attention V2**: $\mathcal{O}\left(N D (r + W + d_h + D/N)\right)$ compute, $\mathcal{O}(N D + H d_h^2)$ memory footprint.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Low-Rank Approximation Error & Rank Collapse
 - **Mechanism**: Approximating $W_0 \in \mathbb{R}^{D \times D}$ via rank $r \ll D$ truncates the singular value tail. If pre-trained Transformer layers possess isotropic weight spectra (singular values decay slowly), rank truncation causes severe reconstruction loss $\|W_0 - W_1 W_2\|_F^2 \gg 0$.
@@ -141,7 +175,7 @@ $$\text{FLOPs}_{\text{total}} \approx 16 B N D r + 4 B N D W + \frac{1}{2} B N D
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -180,3 +214,12 @@ Executing two separate matrix multiplications (`Linear(D, r)` followed by `Linea
 ### 6.3 Triton Strategy 3: Fused Global Kernel Aggregation Grid
 - Fuse the token soft-pruning MLP, feature activation $\phi(x) = \text{ELU}(x) + 1.0$, key scaling, and outer product calculation into a single block reduction kernel.
 - Each threadblock computes local tile outer products $\sum_{j \in \text{Tile}} \phi(K_{g, j})^T V_{g, j}$ directly inside shared memory and performs atomic addition into the global memory matrix $M^{\text{global}} \in \mathbb{R}^{B \times H \times d_h \times d_h}$.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Random Fourier Feature (RFF) Linear Kernel Upgrade**: Replace deterministic $\text{ELU}(x)+1$ maps with randomized RFF projections $\phi(x) = \frac{1}{\sqrt{D_r}} [\cos(\Omega x); \sin(\Omega x)]$ to approximate exact Gaussian RBF attention.
+2. **FlashAttention-3 FP8 Integration for Local Window Branch**: Implement local window attention using 8-bit floating point (E4M3) tensor core matmuls, quadrupling local branch throughput on NVIDIA Hopper architectures.
+3. **Continuous Time-Decay Memory Recurrence**: Infuse exponential temporal decay factors $\exp(-\lambda |i - j|)$ into the global memory accumulator $M^{\text{global}}$ to enforce causal recency bias.
+4. **Adaptive Head-Wise Rank Allocation**: Dynamically allocate bottleneck ranks $r_h \in \{16, 32, 64, 128\}$ per head $h$ based on singular value entropy during training.

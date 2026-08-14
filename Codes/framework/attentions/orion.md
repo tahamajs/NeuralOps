@@ -1,7 +1,6 @@
 # ORION: Optimized Rectified Input-Aware Orthogonal Network with Energy-Preserving SVD Projections and Bifurcated Multi-Head Attention
 
-## 1. Abstract & Theoretical Motivation
-
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires quadratic computational time and memory scaling $\mathcal{O}(N^2)$ with sequence length $N$. While linearized kernel attention models reduce sequence complexity to $\mathcal{O}(N \cdot F \cdot d_h)$, they frequently degrade local representation quality due to over-smoothed attention distributions. Conversely, full softmax attention retains high-resolution local dependencies but suffers from memory bottlenecks on long inputs.
 
 **ORION** (Optimized Rectified Input-aware Orthogonal Network) introduces a bifurcated attention architecture that addresses this trade-off through three key innovations:
@@ -11,7 +10,7 @@ Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires 
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Energy-Preserving SVD Linear Projection (`FactorisedLinear`)
 For a target linear layer weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, singular value decomposition is evaluated:
@@ -74,27 +73,61 @@ $$Y = \text{FactorisedLinear}_{\text{out}}\left( \text{Reshape}(O^{\text{fused}}
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
 | :--- | :--- | :--- | :--- |
-| **Input Hidden State** | $X$ | $[B, N, D]$ | Base activation state |
-| **SVD Projection Q/K/V** | $X W_{\text{down}}^T W_{\text{up}}^T$ | $[B, N, D] \to [B, N, r] \to [B, N, H \cdot d_h]$ | Dual-linear SVD factorized transform |
-| **Head Partitioning** | $Q, K, V$ | $[B, N, H \cdot d_h] \to [B, H, N, d_h]$ | Transpose to multi-head view |
-| **Head Bifurcation** | $Q_k, Q_f$ | $[B, H_k, N, d_h], [B, H_f, N, d_h]$ | Split into kernel ($H_k$) & full ($H_f$) heads |
-| **RFF Kernel Mapping** | $\phi_Q, \phi_K$ | $[B, H_k, N, d_h] \times [H_k, d_h, F] \to [B, H_k, N, F]$ | Exponential RFF feature mapping |
-| **Kernel Memory Outer Prod.**| $KV$ | $[B, H_k, N, F]^T \times [B, H_k, N, d_h] \to [B, H_k, F, d_h]$| Linear key-value matrix accumulation |
-| **Kernel Context Retrieval** | $O^{\text{kernel}}$ | $[B, H_k, N, F] \times [B, H_k, F, d_h] \to [B, H_k, N, d_h]$ | Linear query context contraction |
-| **Full Softpick Scores** | $S^{\text{full}}$ | $[B, H_f, N, d_h] \times [B, H_f, N, d_h] \to [B, H_f, N, N]$ | Dense scaled dot-product attention |
-| **Full Softpick Contraction**| $O^{\text{full}}$ | $[B, H_f, N, N] \times [B, H_f, N, d_h] \to [B, H_f, N, d_h]$ | Rectified Softpick value product |
-| **Head Concatenation** | $O^{\text{fused}}$ | $[B, H, N, d_h]$ | Channel concatenation across heads |
-| **Output Low-Rank GEMM** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, r] \to [B, N, D]$ | Factorized SVD output projection |
+| **Input Hidden State** | $X$ | `[B, N, D]` | Base activation state |
+| **SVD Projection Q/K/V** | $X W_{\text{down}}^T W_{\text{up}}^T$ | `[B, N, D] -> [B, N, r] -> [B, N, H * d_h]` | Dual-linear SVD factorized transform |
+| **Head Partitioning** | $Q, K, V$ | `[B, N, H * d_h] -> [B, H, N, d_h]` | Transpose to multi-head view |
+| **Head Bifurcation** | $Q_k, Q_f$ | `[B, H_k, N, d_h]`, `[B, H_f, N, d_h]` | Split into kernel ($H_k$) & full ($H_f$) heads |
+| **RFF Kernel Mapping** | $\phi_Q, \phi_K$ | `[B, H_k, N, d_h] * [H_k, d_h, F] -> [B, H_k, N, F]` | Exponential RFF feature mapping |
+| **Kernel Memory Outer Prod.**| $KV$ | `[B, H_k, N, F]^T * [B, H_k, N, d_h] -> [B, H_k, F, d_h]`| Linear key-value matrix accumulation |
+| **Kernel Context Retrieval** | $O^{\text{kernel}}$ | `[B, H_k, N, F] * [B, H_k, F, d_h] -> [B, H_k, N, d_h]` | Linear query context contraction |
+| **Full Softpick Scores** | $S^{\text{full}}$ | `[B, H_f, N, d_h] * [B, H_f, N, d_h] -> [B, H_f, N, N]` | Dense scaled dot-product attention |
+| **Full Softpick Contraction**| $O^{\text{full}}$ | `[B, H_f, N, N] * [B, H_f, N, d_h] -> [B, H_f, N, d_h]` | Rectified Softpick value product |
+| **Head Concatenation** | $O^{\text{fused}}$ | `[B, H, N, d_h]` | Channel concatenation across heads |
+| **Output Low-Rank GEMM** | $Y$ | `[B, N, H * d_h] -> [B, N, r] -> [B, N, D]` | Factorized SVD output projection |
+
+```
+                       [B, N, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     SVD Q, K, V Projections     Check Mask Format
+      [B, H, N, d_h]             (Prepare 2D Boolean Token Validity)
+             │
+     ┌───────┴───────┐
+     ▼ (H_k heads)   ▼ (H_f heads)
+RFF Kernel Mapping  Full Softpick Rectified Attn
+exp(Q W_rff) / sqrt(F) Softpick(Q_f K_f^T / sqrt(d_h)) V_f
+Shape: [B, H_k, N, F] Shape: [B, H_f, N, d_h]
+     │               │
+     ▼               │
+Outer Prod KV Memory │
+phi(K)^T @ V         │
+     │               │
+     ▼               │
+Global Context       │
+phi(Q) @ KV / K_sum  │
+Shape: [B, H_k, N, d_h]
+     │               │
+     └───────┬───────┘
+             ▼
+      Head Concatenation O_fused = cat([O_kernel, O_full])
+             │
+             ▼
+      Output Low-Rank SVD Projection
+             │
+             ▼
+                       [B, N, D] Output
+```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Floating Point Operations (FLOPs)
+### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads, $d_h = D/H$ head dimension, $r$ average SVD rank, $H_k$ kernel heads, $H_f$ full heads, and $F$ RFF feature dimension ($F = \text{rff\_features}$).
 
 1. **SVD Linear Projections ($Q, K, V, O$)**:
@@ -109,11 +142,11 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads
    - Softpick activation & Value contraction ($P V_f$): $2 B H_f N^2 d_h + \mathcal{O}(B H_f N^2)$
    $$\text{FLOPs}_{\text{full}} = 4 B H_f N^2 d_h$$
 
-**Total FLOP Count**:
-
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 8 B H_k N d_h F + 4 B H_f N^2 d_h$$
 
-### 4.2 Memory Footprint & Bandwidth
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} = 8 B N D r + 4 B H_k N d_h F + 2 B H_f N^2 d_h$$
 - **Parameter Footprint**:
   $$\Theta = 4 \times (D \cdot r + r \cdot D) + (H_k \cdot d_h \cdot F) = 8 D r + H_k d_h F$$
 - **Activation Footprint**:
@@ -122,9 +155,13 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 8 B H_k N d_h F + 4 B H_f N^2 d_h$$
   - Kernel memory matrix state: $\mathcal{O}(B H_k F d_h)$
   - Total Memory: $\mathcal{O}(B N D + B H_f N^2 + B H_k N F + B H_k F d_h)$
 
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
+- **ORION Bifurcated Attention**: $\mathcal{O}\left(N (D r + H_k d_h F + H_f N d_h)\right)$ compute. When $H_k = 3 H_f$, total quadratic attention overhead drops by $75\%$.
+
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Bifurcated Head Load Imbalance
 - **Mechanism**: The ratio of kernel heads $H_k$ to full heads $H_f$ is static. As sequence length $N$ scales to long contexts ($N > 8192$), memory allocation for $H_f$ full heads scales quadratically $\mathcal{O}(H_f N^2)$, causing GPU Out-Of-Memory (OOM) errors while kernel heads remain under-utilized.
@@ -139,7 +176,7 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 8 B H_k N d_h F + 4 B H_f N^2 d_h$$
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -174,3 +211,12 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 8 B H_k N d_h F + 4 B H_f N^2 d_h$$
 - Parallelize over batch $B$ and kernel heads $H_k$.
 - Load sequence tiles of size `BLOCK_N = 128`. Compute RFF projection $\hat{Q} W_{\text{rff}}$ and accumulate outer product matrix $KV \in \mathbb{R}^{F \times d_h}$ in shared memory.
 - Avoids writing intermediate $[B, H_k, N, F]$ feature maps to DRAM.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Dynamic Length-Adaptive Head Bifurcation**: Automatically adjust head ratio $H_k:H_f$ based on sequence length $N$: use $100\%$ full heads $H_f$ for short contexts ($N < 512$) and transition to $100\%$ kernel heads $H_k$ for ultra-long contexts ($N > 16384$).
+2. **FAVOR+ Positive Orthogonal Random Feature Map Upgrade**: Replace random Gaussian projections $W_{\text{rff}}$ with FAVOR+ orthogonal QR matrices $\Pi \in \mathbb{R}^{d_h \times F}$, improving kernel approximation variance by $3\times$.
+3. **Structured LoRA Adapter Integration**: Attach trainable LoRA adapters $(A B^T)$ to low-rank SVD projections, enabling zero-shot initialization alongside fast fine-tuning.
+4. **FP8 Tensor Core Acceleration for Full Softpick Heads**: Implement full Softpick attention heads using FP8 (E4M3) matrix multiplication units on NVIDIA Hopper GPUs, quadrupling full head throughput.
