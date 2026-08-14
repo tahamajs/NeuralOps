@@ -22,8 +22,11 @@ class HGRN2Layer(nn.Module):
            $$f_t = \sigma(W_f x_t + b_f) \in [0, 1]^D \quad \text{(Forget Gate)}$$
            $$i_t = \sigma(W_i x_t + b_i) \in [0, 1]^D \quad \text{(Input Gate)}$$
 
-        2. Recurrent Hidden State with Clamping:
-           $$h_t = \text{clamp}\left( f_t \odot h_{t-1} + i_t \odot x_t, -\tau_{\text{clip}}, \tau_{\text{clip}} \right), \quad h_0 = \mathbf{0}$$
+        2. Recurrent Hidden State with Mask-Aware Updates & Bounded Clamping:
+           $$h_t = \begin{cases}
+               \text{clamp}\left( f_t \odot h_{t-1} + i_t \odot x_t, -\tau_{\text{clip}}, \tau_{\text{clip}} \right), & \text{if } m_t = 1 \\
+               h_{t-1}, & \text{if } m_t = 0
+           \end{cases}$$
 
         3. Output Transformation:
            $$y_t = W_o h_t + b_o$$
@@ -53,11 +56,12 @@ class HGRN2Layer(nn.Module):
         **kwargs: Any,
     ) -> torch.Tensor:
         r"""
-        Forward recurrence pass for HGRN2.
+        Forward recurrence pass for HGRN2 with mask-aware state tracking.
 
         Args:
             x (torch.Tensor): Input sequence activations $[B, L, D]$.
-            attention_mask (Optional[torch.Tensor]): Mask tensor $[B, L]$.
+            attention_mask (Optional[torch.Tensor]): Mask tensor $[B, L]$ or $[B, 1, 1, L]$.
+                1 for valid tokens, 0 for padded tokens.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
@@ -66,13 +70,30 @@ class HGRN2Layer(nn.Module):
         B, L, D = x.shape
         h = torch.zeros(B, D, device=x.device, dtype=x.dtype)
         outs = []
+
+        # Process 2D or 4D attention mask into boolean mask [B, L]
+        mask_2d: Optional[torch.Tensor] = None
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask_2d = attention_mask.bool()
+            elif attention_mask.dim() == 4:
+                mask_2d = (attention_mask[:, 0, 0, :] > -1e4).bool()
+
         for t in range(L):
-            xt = x[:, t]
+            xt = x[:, t]  # [B, D]
             f = torch.sigmoid(self.forget_gate(xt))
             i = torch.sigmoid(self.input_gate(xt))
-            h = f * h + i * xt
-            h = torch.clamp(h, -self.res_clip, self.res_clip)
+            h_next = f * h + i * xt
+            h_next = torch.clamp(h_next, -self.res_clip, self.res_clip)
+
+            if mask_2d is not None:
+                mask_t = mask_2d[:, t : t + 1]  # [B, 1]
+                h = torch.where(mask_t, h_next, h)
+            else:
+                h = h_next
+
             outs.append(self.output(h))
+
         return torch.stack(outs, dim=1)
 
 
@@ -106,7 +127,7 @@ class GatedDeltaNetBlock(nn.Module):
         if hasattr(d_model, "hidden_size"):
             config = d_model
             d_model = config.hidden_size
-            n_heads = config.num_attention_heads
+            n_heads = getattr(config, "num_attention_heads", n_heads)
 
         self.d_model: int = d_model
         self.n_heads: int = n_heads
@@ -134,28 +155,34 @@ class GatedDeltaNetBlock(nn.Module):
 
         Args:
             hidden_states (torch.Tensor): Input representation $[B, L, D]$.
-            attention_mask (Optional[torch.Tensor]): Mask tensor $[B, L]$.
+            attention_mask (Optional[torch.Tensor]): Mask tensor $[B, L]$ or $[B, 1, 1, L]$.
             output_attentions (bool): Whether to return attention maps.
             **kwargs (Any): Additional keyword arguments.
 
         Returns:
             Tuple[torch.Tensor, Optional[torch.Tensor]]:
                 - Transformed activations $[B, L, D]$.
-                - None.
+                - Attention weights if full attention is active, else None.
         """
         x = hidden_states
+        attn_weights = None
         if self.use_full_attention and self.attn is not None:
-            key_padding_mask = (
-                (attention_mask == 0)
-                if attention_mask is not None and attention_mask.dim() == 2
-                else None
+            key_padding_mask = None
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    key_padding_mask = (attention_mask == 0)
+                elif attention_mask.dim() == 4:
+                    key_padding_mask = (attention_mask[:, 0, 0, :] <= -1e4)
+
+            attn_out, attn_weights = self.attn(
+                x, x, x, key_padding_mask=key_padding_mask, need_weights=output_attentions
             )
-            attn_out, _ = self.attn(x, x, x, key_padding_mask=key_padding_mask)
             out = self.norm(x + attn_out)
         else:
             hgrn_out = self.hgrn(x, attention_mask=attention_mask)
             out = self.norm(x + hgrn_out)
-        return out, None
+
+        return out, (attn_weights if output_attentions else None)
 
 
 @ATTENTION_REGISTRY.register("gated_delta_net")
@@ -165,7 +192,7 @@ def inject_gated_delta_net(
     comp_config: Any,
     layer_idx: int,
     total_layers: int,
-    old_attn: Optional[nn.Module],
+    old_attn: Optional[nn.Module] = None,
 ) -> GatedDeltaNetBlock:
     r"""
     Injects GatedDeltaNet module into a transformer layer.
@@ -182,7 +209,7 @@ def inject_gated_delta_net(
         GatedDeltaNetBlock: Initialized GatedDeltaNet layer.
     """
     d_model = model_config.hidden_size
-    n_heads = model_config.num_attention_heads
+    n_heads = getattr(model_config, "num_attention_heads", 12)
     use_full = getattr(comp_config, "use_full_attention", False)
     new_block = GatedDeltaNetBlock(d_model, n_heads, use_full)
     layer.attention = new_block
