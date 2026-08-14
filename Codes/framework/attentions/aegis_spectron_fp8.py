@@ -91,6 +91,8 @@ def fp8_cast_simulate(x: torch.Tensor) -> torch.Tensor:
     return x
 
 
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8")
+@ATTENTION_REGISTRY.register("aegis_spectron_fp8_attn")
 class AegisSpectronFP8Attention(BaseAttention):
     r"""
     Aegis-Spectron-FP8 Hybrid Architecture.
@@ -101,7 +103,23 @@ class AegisSpectronFP8Attention(BaseAttention):
     3. Linear State Recurrence
     and aggregates outputs weighted by Spectron routing.
     """
-    def __init__(self, config: AegisSpectronFP8Config, **kwargs):
+    def __init__(
+        self,
+        config: Optional[Any] = None,
+        hidden_size: Optional[int] = None,
+        num_heads: Optional[int] = None,
+        **kwargs: Any,
+    ):
+        if not isinstance(config, AegisSpectronFP8Config):
+            h_size = hidden_size or getattr(config, "hidden_size", 64)
+            n_heads = num_heads or getattr(config, "num_attention_heads", 4)
+            config = AegisSpectronFP8Config(
+                hidden_size=h_size,
+                num_heads=n_heads,
+                head_dim=h_size // max(1, n_heads),
+                window_size=getattr(config, "window_size", 64) if config else 64,
+                svd_rank=getattr(config, "svd_rank", min(32, h_size)) if config else min(32, h_size),
+            )
         super().__init__(config)
         self.config = config
         self.router = SpectronSpectralEntropyRouter(config)
@@ -195,14 +213,15 @@ class AegisSpectronFP8Attention(BaseAttention):
         return final_out, None
 
 
-@ATTENTION_REGISTRY.register("aegis_spectron_fp8")
+@ATTENTION_REGISTRY.register("inject_aegis_spectron_fp8")
 def inject_aegis_spectron_fp8(
     layer: nn.Module,
-    model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
+    model_config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
     old_attn: Optional[nn.Module] = None,
+    **kwargs: Any,
 ) -> AegisSpectronFP8Attention:
     r"""
     Injects Aegis-Spectron-FP8 attention into a transformer layer.

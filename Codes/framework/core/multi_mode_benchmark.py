@@ -922,6 +922,93 @@ class MultiModeBenchmarkRunner:
             print("|" + "|".join(f" {v:<{col_widths[i]}} " for i, v in enumerate(row)) + "|")
         print(sep + "\n")
 
+    @classmethod
+    def list_supported_modes(cls) -> List[str]:
+        """Return all supported benchmark execution modes."""
+        return [
+            "dense_fp16",
+            "flash_attention_3_fp8",
+            "svd_linear_lowrank",
+            "rotational_slicegpt",
+            "sparsegpt_int4",
+            "paged_deltakv",
+            "mamba_ssm_scan",
+            "moe_routing",
+            "aegis_spectron_hybrid",
+            "kronecker_tt_adapter",
+            "kmeans_quantized",
+            "nystrom_kernel",
+        ]
+
+    def benchmark_attention_module(
+        self,
+        attention_type: str,
+        hidden_size: int = 64,
+        num_heads: int = 4,
+        seq_len: int = 64,
+        batch_size: int = 2,
+        num_iters: int = 10,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Directly benchmark a registered attention module forward pass."""
+        import time
+        from framework.attentions import ATTENTION_REGISTRY
+        
+        cls = (
+            ATTENTION_REGISTRY.get(attention_type)
+            or ATTENTION_REGISTRY.get(attention_type.replace("_attention", ""))
+            or ATTENTION_REGISTRY.get(attention_type.replace("_attn", ""))
+            or ATTENTION_REGISTRY.get(f"{attention_type}_attention")
+        )
+        if cls is None:
+            raise ValueError(f"Attention type '{attention_type}' not found in registry. Available: {ATTENTION_REGISTRY.keys()[:10]}...")
+        
+        class DummyConfig:
+            def __init__(self, hidden_size=64, num_heads=4, rank=16, **extra):
+                self.hidden_size = hidden_size
+                self.num_attention_heads = num_heads
+                self.num_heads = num_heads
+                self.head_dim = hidden_size // max(1, num_heads)
+                self.rank = rank
+                self.dropout = 0.0
+                self.attention_dropout = 0.0
+                for k, v in extra.items():
+                    setattr(self, k, v)
+
+        cfg = DummyConfig(hidden_size=hidden_size, num_heads=num_heads, **kwargs)
+        try:
+            module = cls(config=cfg, **kwargs).to(self.device)
+        except TypeError:
+            try:
+                module = cls(cfg, **kwargs).to(self.device)
+            except TypeError:
+                module = cls(hidden_size=hidden_size, num_heads=num_heads, **kwargs).to(self.device)
+
+        dummy_x = torch.randn(batch_size, seq_len, hidden_size, device=self.device)
+        
+        # Warmup
+        for _ in range(3):
+            _ = module(dummy_x)
+        self._sync()
+        
+        start = time.perf_counter()
+        for _ in range(num_iters):
+            _ = module(dummy_x)
+        self._sync()
+        duration = time.perf_counter() - start
+        
+        latency_ms = (duration / num_iters) * 1000.0
+        peak_vram, _ = self._measure_memory()
+        
+        return {
+            "attention_type": attention_type,
+            "latency_ms": latency_ms,
+            "peak_vram_mb": peak_vram,
+            "batch_size": batch_size,
+            "seq_len": seq_len,
+            "hidden_size": hidden_size
+        }
+
 
 # -----------------------------------------------------------------------------
 # CLI Entrypoint
