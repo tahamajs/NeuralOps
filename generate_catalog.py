@@ -4,7 +4,7 @@ import json
 def get_md_files(directory):
     md_files = []
     if os.path.exists(directory):
-        for f in os.listdir(directory):
+        for f in sorted(os.listdir(directory)):
             if f.endswith('.md'):
                 # Extract title from the first line if possible
                 title = f.replace('.md', '').replace('_', ' ').title()
@@ -22,7 +22,8 @@ def get_md_files(directory):
                     "title": title,
                     "path": f"../{directory}/{f}"
                 })
-    return sorted(md_files, key=lambda x: x['title'].lower())
+    # Sort deterministically by lowercase title, then by file ID
+    return sorted(md_files, key=lambda x: (x['title'].lower(), x['id'].lower()))
 
 def main():
     attentions_dir = "Codes/framework/attentions"
