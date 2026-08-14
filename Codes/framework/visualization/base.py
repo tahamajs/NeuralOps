@@ -2,6 +2,8 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 

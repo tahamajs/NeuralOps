@@ -1,4 +1,4 @@
-from api import views
+from api import views, views_attention_dashboard
 from django.urls import path
 
 urlpatterns = [
@@ -126,4 +126,10 @@ urlpatterns = [
     # Dashboard stats
     path("stats/", views.dashboard_stats, name="dashboard_stats"),
     path("health/", views.health_check, name="health_check"),
+    # ── Attention Visualization Dashboard & Transformer Studios ──
+    path("attention-visualization/canvas/", views_attention_dashboard.attention_canvas_endpoint, name="attn_canvas_api"),
+    path("attention-visualization/interpretability/", views_attention_dashboard.interpretability_suite_endpoint, name="attn_interpretability_api"),
+    path("attention-visualization/studios/representation/", views_attention_dashboard.representation_studios_endpoint, name="studio_representation_api"),
+    path("attention-visualization/studios/computation/", views_attention_dashboard.computation_studios_endpoint, name="studio_computation_api"),
+    path("attention-visualization/compare/", views_attention_dashboard.compare_architectures_endpoint, name="attn_compare_api"),
 ]
