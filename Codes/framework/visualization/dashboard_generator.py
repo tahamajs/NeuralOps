@@ -80,6 +80,11 @@ def generate_dashboard_html(
     timestamp = summary_data["metadata"]["timestamp"]
     device = summary_data["metadata"]["device"]
 
+    raw_tab_button = "<button class='nav-btn' onclick=\"switchTab('raw')\">Raw Data</button>" if include_raw_data_tab else ""
+    raw_tab_content = f'''<div id="tab-raw" class="tab-pane">
+      <pre class="code-block" id="rawJson">{json_data_str}</pre>
+    </div>''' if include_raw_data_tab else ""
+
     html_template = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -404,7 +409,7 @@ def generate_dashboard_html(
       <button class="nav-btn" onclick="switchTab('scaling')">KV & Memory Scaling</button>
       <button class="nav-btn" onclick="switchTab('spectral')">SVD Spectral Decay</button>
       <button class="nav-btn" onclick="switchTab('leaderboard')">Model Leaderboard</button>
-      {"<button class='nav-btn' onclick='switchTab(\"raw\")'>Raw Data</button>" if include_raw_data_tab else ""}
+      {raw_tab_button}
     </nav>
 
     <!-- TAB 1: OVERVIEW -->
@@ -533,10 +538,7 @@ def generate_dashboard_html(
       </div>
     </div>
 
-    {"<!-- TAB 6: RAW DATA -->" if include_raw_data_tab else ""}
-    {f'''<div id="tab-raw" class="tab-pane">
-      <pre class="code-block" id="rawJson">{json_data_str}</pre>
-    </div>''' if include_raw_data_tab else ""}
+    {raw_tab_content}
 
     <footer class="footer">
       SVD Linear Attention Framework &bull; Autonomous Experiment & Visualization Engine &bull; Publication-Ready Interactive Analytics
