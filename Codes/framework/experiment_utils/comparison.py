@@ -6,7 +6,21 @@ metric delta tables, and run diff for training runs.
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from deepdiff import DeepDiff
+try:
+    from deepdiff import DeepDiff
+except ImportError:
+    def DeepDiff(t1, t2, **kwargs):
+        """Lightweight dict diff fallback when deepdiff is not installed."""
+        diff = {}
+        if isinstance(t1, dict) and isinstance(t2, dict):
+            for k in set(t1.keys()).union(t2.keys()):
+                if k not in t1:
+                    diff[f"added_{k}"] = t2[k]
+                elif k not in t2:
+                    diff[f"removed_{k}"] = t1[k]
+                elif t1[k] != t2[k]:
+                    diff[f"changed_{k}"] = {"old": t1[k], "new": t2[k]}
+        return diff
 
 from .model import TrainingRun
 

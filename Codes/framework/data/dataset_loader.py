@@ -6,7 +6,10 @@ Supports GLUE, custom CSV/JSON/Parquet, multi‑choice, synthetic, and HuggingFa
 from pathlib import Path
 from typing import List, Optional
 
-from datasets import DatasetDict
+try:
+    from datasets import DatasetDict
+except (ImportError, AttributeError):
+    DatasetDict = dict
 
 
 class ExperimentConfig:
