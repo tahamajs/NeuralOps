@@ -1099,11 +1099,12 @@ class LossLandscapeExplorer(BaseVisualizer):
         hessian_data: Dict[str, Any],
         save: bool = True,
     ) -> Optional[str]:
-        """Plot top Hessian eigenvalues and spectral density distribution."""
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
         evals = hessian_data["eigenvalues"]
         ranks = np.arange(1, len(evals) + 1)
 
         markerline, stemlines, baseline = ax1.stem(ranks, evals)
+
         plt.setp(stemlines, color="#3b82f6", linewidth=1.8)
         plt.setp(markerline, color="#1d4ed8", markersize=6)
         plt.setp(baseline, color="black", linewidth=1.0)
