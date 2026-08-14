@@ -1,0 +1,21 @@
+name: Cleanup Old GitHub Artifacts
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Run weekly at midnight Sunday
+  workflow_dispatch: # Can be triggered manually
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  delete-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete Old Run Artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            *
+          failOnError: false
