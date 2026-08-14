@@ -43,7 +43,28 @@
             <div class="cmd-footer-bar">
                 <span><kbd>↑↓</kbd> navigate</span>
                 <span><kbd>↵</kbd> open</span>
-                <span><kbd>ESC</kbd> dismiss</span>
+                <span><kbd>ESC</kbd> close</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Comparison Modal -->
+    <div id="compare-overlay" class="compare-overlay hidden" role="dialog" aria-modal="true">
+        <div class="compare-backdrop" id="compare-backdrop"></div>
+        <div class="compare-modal">
+            <div class="compare-modal-header">
+                <div class="compare-modal-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                    <span>Architecture Comparison Studio</span>
+                </div>
+                <button class="compare-close-btn" id="compare-close-btn" aria-label="Close comparison">✕</button>
+            </div>
+            <div class="compare-modal-body">
+                <div class="compare-selector-bar">
+                    <span class="compare-sel-label">Select Architectures to Compare (Max 4):</span>
+                    <div class="compare-chips-container" id="compare-chips-container"></div>
+                </div>
+                <div class="compare-matrix-view" id="compare-matrix-view"></div>
             </div>
         </div>
     </div>
@@ -148,6 +169,10 @@
                     <button id="compendium-quick-btn" class="tb-action-btn accent-btn" title="Next-Gen Synthesis Compendium">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         Compendium
+                    </button>
+                    <button id="compare-modal-btn" class="tb-action-btn" title="Compare Architectures">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+                        Compare
                     </button>
                     <button id="random-btn" class="tb-icon-btn" title="Random architecture">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
