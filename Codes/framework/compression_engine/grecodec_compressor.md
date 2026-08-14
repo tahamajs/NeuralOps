@@ -1,6 +1,6 @@
-# FRanDI: Feature‑Regression Aligned Low‑Rank Compression
+# GRECODeC: Greedy Coordinate Descent Low-Rank Compression
 
-**Registered as `frandi`**  
+**Registered as `grecodec`**  
 *Low‑rank compression of linear layers via truncated SVD, with optional energy‑based rank selection and a placeholder for activation‑guided alignment.*
 
 ---
