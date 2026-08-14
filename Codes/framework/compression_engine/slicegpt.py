@@ -1,5 +1,5 @@
 """SliceGPT: post‑training slicing (external wrapper). Registered as 'slicegpt'."""
-from typing import Any, Optional
+from typing import Any, Optional, Tuple, Dict
 
 import shutil
 import subprocess
@@ -12,18 +12,33 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 class SliceGPTCompressor(BaseCompressor):
     """
-    Wraps the official SliceGPT tool.
-    Requires `slicegpt` package installed (`pip install slicegpt`).
+    Wraps the official SliceGPT tool for post-training slicing.
+    
+    This class handles the execution of the external `slicegpt` module to perform
+    network slicing (pruning) and optional fine-tuning.
 
-    Config parameters:
-        slicegpt_sparsity       : float, default 0.25
-        slicegpt_run_finetuning : bool, default False
-        slicegpt_finetune_nsamples : int, default 8000
+    Attributes:
+        model: The model to be compressed.
+        tokenizer: The tokenizer associated with the model.
+        sparsity (float): The target sparsity for compression (e.g., 0.25).
+        device (str): The device to use for computation ("cuda" or "cpu").
+        use_wandb (bool): Whether to log metrics to Weights & Biases.
     """
 
     def __init__(
-        self, model, tokenizer, sparsity=0.25, device="cuda", use_wandb=False, **kwargs
-    ):
+        self, model: Any, tokenizer: Any, sparsity: float = 0.25, device: str = "cuda", use_wandb: bool = False, **kwargs: Any
+    ) -> None:
+        """
+        Initializes the SliceGPTCompressor.
+
+        Args:
+            model (Any): The PyTorch model to compress.
+            tokenizer (Any): The tokenizer for the model.
+            sparsity (float, optional): Target sparsity ratio (compression ratio). Defaults to 0.25.
+            device (str, optional): Target device for operations. Defaults to "cuda".
+            use_wandb (bool, optional): If True, uses W&B for logging. Defaults to False.
+            **kwargs: Additional keyword arguments passed to BaseCompressor.
+        """
         super().__init__(model, name="slicegpt", **kwargs)
         self.tokenizer = tokenizer
         self.sparsity = sparsity
@@ -31,10 +46,23 @@ class SliceGPTCompressor(BaseCompressor):
         self.use_wandb = use_wandb
 
     def compress(
-        self, save_dir="sliced_model", run_finetuning=False, finetune_nsamples=8000
-    ):
+        self, save_dir: str = "sliced_model", run_finetuning: bool = False, finetune_nsamples: int = 8000
+    ) -> Tuple[Any, Dict[str, Any]]:
+        """
+        Executes the SliceGPT compression and optional fine-tuning.
+
+        This method saves the model temporarily, invokes the `slicegpt` module via
+        a subprocess, and then loads the sliced model back.
+
+        Args:
+            save_dir (str, optional): Directory to save the compressed model. Defaults to "sliced_model".
+            run_finetuning (bool, optional): Whether to run fine-tuning after slicing. Defaults to False.
+            finetune_nsamples (int, optional): Number of calibration samples for fine-tuning. Defaults to 8000.
+
+        Returns:
+            Tuple[Any, Dict[str, Any]]: A tuple containing the compressed model and its compression statistics.
+        """
         # 1. Save temporary model
-        """Compress the target module using this strategy."""
         temp_path = Path("temp_original_model")
         temp_path.mkdir(exist_ok=True)
         self.model.save_pretrained(temp_path)
@@ -63,7 +91,7 @@ class SliceGPTCompressor(BaseCompressor):
             raise RuntimeError(f"SliceGPT failed: {e}")
 
         # 3. Load compressed model
-        sliced_model = AutoModelForSequenceClassification.from_pretrained(save_dir)
+        sliced_model = AutoModelForSequenceClassification.from_pretrained(save_dir).to(self.device)
         sliced_tokenizer = AutoTokenizer.from_pretrained(save_dir)
 
         # 4. Optional fine‑tuning
@@ -84,7 +112,7 @@ class SliceGPTCompressor(BaseCompressor):
                 str(finetune_nsamples),
             ]
             subprocess.run(finetune_cmd, check=True)
-            sliced_model = AutoModelForSequenceClassification.from_pretrained(save_dir)
+            sliced_model = AutoModelForSequenceClassification.from_pretrained(save_dir).to(self.device)
 
         # 5. Clean up
         shutil.rmtree(temp_path, ignore_errors=True)
@@ -98,8 +126,21 @@ class SliceGPTCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("slicegpt")
-def slicegpt_factory(model, comp_config) -> Any:
-    """Slicegpt factory."""
+def slicegpt_factory(model: Any, comp_config: Any) -> Any:
+    """
+    Factory function to instantiate and run the SliceGPT compressor.
+
+    Args:
+        model (Any): The PyTorch model to be compressed.
+        comp_config (Any): Configuration object containing compression parameters.
+            Must have `slicegpt_sparsity`, `slicegpt_run_finetuning`, and `slicegpt_finetune_nsamples` attributes.
+
+    Returns:
+        Any: The compressed model.
+        
+    Raises:
+        ValueError: If the model does not have a `tokenizer` attached.
+    """
     sparsity = getattr(comp_config, "slicegpt_sparsity", 0.25)
     run_finetuning = getattr(comp_config, "slicegpt_run_finetuning", False)
     finetune_nsamples = getattr(comp_config, "slicegpt_finetune_nsamples", 8000)

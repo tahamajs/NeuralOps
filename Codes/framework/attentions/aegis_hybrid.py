@@ -110,16 +110,19 @@ class AegisHybridAttention(nn.Module):
             lin2 (nn.Linear): Second low-rank projection layer ($r \to D$).
             rank (int): Truncated rank $r$.
         """
-        W = orig_lin.weight.data
-        bias = orig_lin.bias.data if orig_lin.bias is not None else None
-        U, S, Vh = torch.linalg.svd(W, full_matrices=False)
-        U_r = U[:, :rank]
-        S_r = S[:rank]
-        Vh_r = Vh[:rank, :]
-        lin1.weight.data.copy_(Vh_r)
-        lin2.weight.data.copy_(U_r @ torch.diag(S_r))
-        if bias is not None and lin2.bias is not None:
-            lin2.bias.data.copy_(bias)
+        with torch.no_grad():
+            W = orig_lin.weight.data.float()
+            bias = orig_lin.bias.data if orig_lin.bias is not None else None
+            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            r = min(rank, U.size(1), Vh.size(0))
+
+            lin1.weight.data.zero_()
+            lin2.weight.data.zero_()
+
+            lin1.weight.data[:r, :].copy_(Vh[:r, :].to(lin1.weight.dtype))
+            lin2.weight.data[:, :r].copy_((U[:, :r] @ torch.diag(S[:r])).to(lin2.weight.dtype))
+            if bias is not None and lin2.bias is not None:
+                lin2.bias.data.copy_(bias)
 
     def forward(
         self,
@@ -147,7 +150,6 @@ class AegisHybridAttention(nn.Module):
         B, N, H_dim = hidden_states.shape
 
         def lr(p1: nn.Linear, p2: nn.Linear, x: torch.Tensor) -> torch.Tensor:
-            """Lr."""
             return p2(p1(x))
 
         Q = lr(self.q_proj1, self.q_proj2, hidden_states)  # (B, N, H_dim)
@@ -164,7 +166,7 @@ class AegisHybridAttention(nn.Module):
             if attention_mask.dim() == 2:
                 mask_2d = attention_mask.bool()  # (B, N)
             elif attention_mask.dim() == 4:
-                mask_2d = attention_mask[:, 0, 0, :] > -1e9  # (B, N)
+                mask_2d = (attention_mask[:, 0, 0, :] > -1e4).bool()  # (B, N)
 
         # zero out padded tokens in Q, K, V  (B, N, 1, 1)
         if mask_2d is not None:
@@ -188,13 +190,14 @@ class AegisHybridAttention(nn.Module):
             key_mask = mask_2d.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N)
             scores = scores.masked_fill(~key_mask, float("-inf"))
 
+        # Safe softmax to avoid NaNs if all scores in a row are -inf
         attn_local = F.softmax(scores, dim=-1)
+        attn_local = torch.nan_to_num(attn_local, nan=0.0)
         attn_local = self.dropout(attn_local)
         local_out = torch.einsum("bhnm,bmhd->bnhd", attn_local, V)  # (B, N, h, d)
 
         # ============== 2. Global linear attention ==============
         def phi(x: torch.Tensor) -> torch.Tensor:
-            """Phi."""
             return F.elu(x) + 1.0
 
         if self.prune_gate is not None:
@@ -246,9 +249,6 @@ class AegisHybridAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj2.weight.device)
 
 
-# ------------------------------------------------------------
-# Injection function – registers 'aegis_hybrid' in the registry
-# ------------------------------------------------------------
 @ATTENTION_REGISTRY.register("aegis_hybrid")
 def inject_aegis_hybrid(
     layer: nn.Module,

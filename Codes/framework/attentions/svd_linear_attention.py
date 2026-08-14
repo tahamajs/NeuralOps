@@ -4,6 +4,7 @@ a low‑rank factorisation: W = U @ V, computed as U(Vx) + bias.
 Zero‑shot initialisation from any pretrained Transformer attention layer.
 """
 
+import logging
 from typing import Any, Optional, Tuple, Union
 
 import torch
@@ -12,6 +13,8 @@ import torch.nn.functional as F
 
 from framework.core.attention_mask import apply_attention_mask
 from framework.core.registry import ATTENTION_REGISTRY
+
+logger = logging.getLogger(__name__)
 
 
 class SVDLinear(nn.Module):
@@ -66,8 +69,12 @@ class SVDLinear(nn.Module):
     def set_low_rank_factors(self, U: torch.Tensor, V: torch.Tensor) -> None:
         """Explicitly set singular vectors into weight parameters."""
         with torch.no_grad():
-            self.U.copy_(U)
-            self.V.copy_(V)
+            self.U.zero_()
+            self.V.zero_()
+            r_u = min(self.U.size(1), U.size(1))
+            r_v = min(self.V.size(0), V.size(0))
+            self.U[:, :r_u].copy_(U[:, :r_u])
+            self.V[:r_v, :].copy_(V[:r_v, :])
 
 
 @ATTENTION_REGISTRY.register("svd_linear_attn")
@@ -147,9 +154,12 @@ class SVDLinearAttention(nn.Module):
     def _init_from_weight(
         self, svd_linear: SVDLinear, W_data: torch.Tensor, bias_data: Optional[torch.Tensor]
     ) -> None:
-        """Initialize SVD factors from weight and bias."""
+        """Initialize SVD factors safely from weight and bias."""
         with torch.no_grad():
             W = W_data.float()
+            # Ensure zeroed initial state for truncated SVD columns
+            svd_linear.U.data.zero_()
+            svd_linear.V.data.zero_()
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
             r = min(self.rank, U.size(1), Vt.size(0))
             svd_linear.U.data[:, :r] = (U[:, :r] * S[:r]).to(svd_linear.U.dtype)
@@ -165,8 +175,8 @@ class SVDLinearAttention(nn.Module):
             try:
                 w, b = UniversalAdapter.get_weight_bias(src, proj)
                 self._init_from_weight(target, w, b)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("SVDLinearAttention copy_weights skipped %s: %s", proj, e)
 
     def forward(
         self,
@@ -181,13 +191,13 @@ class SVDLinearAttention(nn.Module):
         H, D = self.num_heads, self.head_dim
 
         Q: torch.Tensor = (
-            self.query(hidden_states).view(B, N, H, D).transpose(1, 2)
+            self.query(hidden_states).reshape(B, N, H, D).transpose(1, 2)
         )
         K: torch.Tensor = (
-            self.key(hidden_states).view(B, N, H, D).transpose(1, 2)
+            self.key(hidden_states).reshape(B, N, H, D).transpose(1, 2)
         )
         V: torch.Tensor = (
-            self.value(hidden_states).view(B, N, H, D).transpose(1, 2)
+            self.value(hidden_states).reshape(B, N, H, D).transpose(1, 2)
         )
 
         scale = D**-0.5
@@ -201,7 +211,7 @@ class SVDLinearAttention(nn.Module):
             attn_weights = attn_weights * head_mask
 
         context: torch.Tensor = torch.matmul(attn_weights, V)
-        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        context = context.transpose(1, 2).contiguous().reshape(B, N, self.all_head_size)
         output: torch.Tensor = self.out_proj(context)
 
-        return output, attn_weights if output_attentions else None
+        return output, (attn_weights if output_attentions else None)
