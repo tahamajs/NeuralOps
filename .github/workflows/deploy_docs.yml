@@ -12,19 +12,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: 'pages'
+  group: 'gh-pages-deploy'
   cancel-in-progress: true
 
 jobs:
   build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -35,25 +30,30 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Generate Catalog
+      - name: Generate Documentation Catalog
         run: |
           python generate_catalog.py
 
-      - name: Prepare Site Artifacts
+      - name: Prepare Static Site (Lightweight Bundle)
         run: |
           mkdir -p _site
+          # Copy Web UI core files
           cp -r Docs/* _site/
-          mkdir -p _site/Codes/framework
-          cp -r Codes/framework/* _site/Codes/framework/
+          
+          # Copy only markdown documentation files to keep the site lightweight and fast
+          mkdir -p _site/Codes/framework/attentions
+          mkdir -p _site/Codes/framework/compression_engine
+          
+          cp Codes/framework/*.md _site/Codes/framework/ 2>/dev/null || true
+          cp Codes/framework/attentions/*.md _site/Codes/framework/attentions/ 2>/dev/null || true
+          cp Codes/framework/compression_engine/*.md _site/Codes/framework/compression_engine/ 2>/dev/null || true
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to GitHub Pages (gh-pages branch - Bypasses Artifact Quotas)
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: '_site'
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
