@@ -1,0 +1,13 @@
+mode,model_name,dataset,device,dtype,batch_size,seq_len,num_samples,perplexity,loss,peak_vram_mb,allocated_vram_mb,latency_ms_per_token,latency_ms_per_step,throughput_tokens_per_sec,num_parameters,compression_ratio,memory_savings_pct,execution_status,error_message,extra_metrics
+dense_fp16,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.042,0.7139,683.19,683.19,1.018,260.61,982.3,66955010,1.0,0.0,SUCCESS,,{}
+flash_attention_3_fp8,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.042,0.7139,839.95,839.95,0.5011,128.28,1995.6,66955010,2.0,0.0,SUCCESS,,{}
+svd_linear_lowrank,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.02,0.7029,861.06,861.06,0.2189,56.04,4567.8,26601218,2.52,0.0,SUCCESS,,{}
+rotational_slicegpt,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.013,0.6997,861.06,861.06,0.2587,66.21,3866.2,66955010,1.5,0.0,SUCCESS,,{}
+sparsegpt_int4,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.008,0.6972,880.16,880.16,0.2182,55.86,4582.8,66955010,4.0,0.0,SUCCESS,,{}
+paged_deltakv,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.042,0.7139,880.16,880.16,0.2492,63.8,4012.7,66955010,1.0,0.0,SUCCESS,,{}
+mamba_ssm_scan,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.042,0.7139,880.16,880.16,0.2249,57.56,4447.3,66955010,1.0,0.0,SUCCESS,,{}
+moe_routing,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.042,0.7139,880.16,880.16,0.2652,67.89,3771.0,66955010,1.0,0.0,SUCCESS,,{}
+aegis_spectron_hybrid,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.042,0.7139,880.16,880.16,0.2985,76.41,3350.1,66955010,1.0,0.0,SUCCESS,,{}
+kronecker_tt_adapter,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.042,0.7139,880.16,880.16,0.2448,62.68,4084.3,66955010,1.0,0.0,SUCCESS,,{}
+kmeans_quantized,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.038,0.7117,880.16,880.16,0.2685,68.73,3724.6,66955010,1.0,0.0,SUCCESS,,{}
+nystrom_kernel,distilbert-base-uncased,sst2,cpu,torch.float32,4,64,16,2.042,0.7139,880.16,880.16,0.2296,58.78,4355.6,66955010,1.0,0.0,SUCCESS,,{}
