@@ -22,7 +22,7 @@ def get_md_files(directory):
                     "title": title,
                     "path": f"../{directory}/{f}"
                 })
-    return sorted(md_files, key=lambda x: x['title'])
+    return sorted(md_files, key=lambda x: x['title'].lower())
 
 def main():
     attentions_dir = "Codes/framework/attentions"
@@ -45,11 +45,12 @@ def main():
         ]
     }
     
-    os.makedirs("docs", exist_ok=True)
-    with open("docs/catalog.json", "w", encoding="utf-8") as f:
+    # Save to Docs directory
+    os.makedirs("Docs", exist_ok=True)
+    with open("Docs/catalog.json", "w", encoding="utf-8") as f:
         json.dump(catalog, f, indent=4)
         
-    print("Generated docs/catalog.json")
+    print(f"Generated Docs/catalog.json: {len(catalog['attentions'])} attentions, {len(catalog['compressions'])} compression engines, {len(catalog['framework'])} framework docs.")
 
 if __name__ == "__main__":
     main()

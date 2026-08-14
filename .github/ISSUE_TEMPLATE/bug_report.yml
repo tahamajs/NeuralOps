@@ -1,0 +1,45 @@
+name: 🐛 Bug Report
+description: Report a bug or numerical instability in an attention mechanism or compression engine
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue in the SVD & Linear Attention Framework!
+  - type: dropdown
+    id: module_type
+    attributes:
+      label: Module Category
+      description: Which part of the framework is affected?
+      options:
+        - Attention Mechanism (`Codes/framework/attentions/`)
+        - Compression Engine (`Codes/framework/compression_engine/`)
+        - Documentation / Web UI (`Docs/`)
+        - Benchmark & Evaluation Suite
+    validations:
+      required: true
+  - type: input
+    id: module_name
+    attributes:
+      label: Module Name
+      description: e.g. `mamba_svd_flash`, `rotational_slicegpt_int4`, `aegis_spectron_fp8`
+      placeholder: e.g. aegis_v6
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description & Reproduction Steps
+      description: Provide clear steps or a minimal script to reproduce the bug.
+      placeholder: |
+        1. Instantiate module with config: ...
+        2. Execute forward pass with shape [B, L, D] = ...
+        3. Observed error or NaN/Inf output ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: PyTorch version, CUDA/ROCm, OS, GPU model
+      placeholder: PyTorch 2.4, CUDA 12.4, NVIDIA H100 / A100, Ubuntu 22.04
