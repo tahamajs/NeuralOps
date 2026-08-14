@@ -1,191 +1,164 @@
-# MLoRQ: Multi‑Layer Optimal Rank & Quantization under a Total Memory Budget
+# MLoRQ Compressor: Multi-Layer Optimal Rank SVD and Joint Low-Bit Quantization Engine
 
-**Registered as `mlorq`**  
-*Jointly selects low‑rank SVD truncation and quantization bit‑width per linear layer to minimize total model size subject to a user‑specified memory budget, then reconstructs dense weight matrices.*
+## 1. Executive Abstract & Theoretical Motivation
+
+Combining low-rank matrix decomposition and low-bit quantization requires balancing parameter allocations under global memory limits. **MLoRQ Compressor** (Multi-Layer Optimal Rank & Quantization) solves this joint optimization problem under a total memory budget $B_{\text{total}}$.
+
+MLoRQ decomposes linear weight matrices $W \in \mathbb{R}^{M \times N}$ into rank-$r$ SVD components $U_r, \Sigma_r, V_r^T$ and searches across bit width candidates $b \in \{2, 4, 8\}$ and ranks $r \in [1, \min(M, N)]$ to find parameter configurations that maximize reconstruction accuracy within the memory constraint. After finding optimal rank and bit width tuples $(r_l, b_l)$ per layer, MLoRQ quantizes the low-rank factor matrices to achieve high compression ratios.
+
+```
+ Target Weight Matrix W [M, N]
+               │
+               ▼
+   Full SVD Factorization W = U Σ V^T
+               │
+               ▼
+ ┌───────────────────────────────────────────┐
+ │ Knapsack Memory Budget Optimization       │
+ │ Find (r_l, b_l) such that                 │
+ │ sum( (M*r + r*N) * b ) <= Budget          │
+ └─────────────────────┬─────────────────────┘
+                       │
+                       ▼
+   Low-Rank Truncation: U_r, Σ_r, V_r^T
+                       │
+                       ▼
+   Quantize Factors: U_q = Q(U_r, b), Σ_q = Q(Σ_r, b), V_q = Q(V_r, b)
+                       │
+                       ▼
+   Reconstructed Weight W_new = U_q @ diag(Σ_q) @ V_q^T
+```
 
 ---
 
-## Overview
+## 2. Mathematical Formulations & Matrix Decompositions
 
-MLoRQ (Multi‑Layer Optimal Rank & Quantization) compresses all `nn.Linear` layers in a model by replacing each weight matrix with a low‑rank approximation derived from truncated SVD, where the **rank and the bit‑width of the factors** are chosen automatically per layer. The goal is to fit the factorised representation (left singular vectors, singular values, right singular vectors) into a **total memory budget** (specified in megabytes). The algorithm greedily allocates ranks and bit‑widths layer by layer, preferring higher bit‑widths and larger ranks where possible, and then reconstructs the full weight matrix from the compressed factors. This two‑stage process — factorisation followed by reconstruction — yields a dense weight matrix that retains the low‑rank structure and can later be re‑factorised for actual memory savings.
+### 2.1 Low-Rank SVD Factorization
 
-The compressor is registered under `"mlorq"` and requires no calibration data. It introduces a unified framework for trading off rank and precision under a strict memory ceiling, making it well suited for deployment on memory‑constrained devices where both parameter count and weight precision are limited.
+Let $W \in \mathbb{R}^{M \times N}$ be a linear layer weight matrix.
 
----
+1. **Full Singular Value Decomposition**:
+   $$W = U \Sigma V^T$$
+   where $U \in \mathbb{R}^{M \times M}$, $\Sigma = \text{diag}(\sigma_1, \dots, \sigma_{\min(M, N)})$, and $V \in \mathbb{R}^{N \times N}$.
 
-## Methodology
+2. **Rank-$r$ Truncation**:
+   Selecting rank $r \le \min(M, N)$:
+   $$U_r = U_{:, 1:r} \in \mathbb{R}^{M \times r}, \quad S_r = \sigma_{1:r} \in \mathbb{R}^r, \quad V_r^T = V_{1:r, :} \in \mathbb{R}^{r \times N}$$
 
-### 1. Factorised Memory Cost Model
+### 2.2 Memory Budget Knapsack & Quantization
 
-For a linear layer with weight **W** ∈ ℝ<sup>M×N</sup>, a rank‑`r` truncated SVD factorises it as:
+1. **Layer Bit Footprint Formula**:
+   For rank $r$ and bit width $b \in \{2, 4, 8\}$, the total memory footprint $\text{Mem}(r, b)$ in bits is:
+   $$\text{Mem}(r, b) = (M \cdot r + r + r \cdot N) \cdot b = r \cdot (M + N + 1) \cdot b$$
 
-```
-W ≈ U_r · diag(S_r) · V_r
-```
+2. **Greedy Budget Search**:
+   Given global budget $B_{\text{total}}$ (in bits), MLoRQ iterates over layers $l \in \{1, \dots, L\}$, selecting the largest rank $r_l$ and bit width $b_l$ satisfying:
+   $$\sum_{k=1}^{l-1} \text{Mem}(r_k, b_k) + \text{Mem}(r_l, b_l) \le B_{\text{total}}$$
 
-where **U_r** ∈ ℝ<sup>M×r</sup>, **S_r** ∈ ℝ<sup>r</sup>, **V_r** ∈ ℝ<sup>r×N</sup>. If each factor is stored with a uniform bit‑width `b` (e.g., 4 bits), the total memory required (in bits) is approximately:
-
-```
-memory(r, b) = (M·r + r·N) · b   +   r·b (diagonal, often negligible)
-```
-
-For simplicity, the compressor estimates `memory = (M + N) · r · b` bits, ignoring the small overhead of the singular values. This is computed by `_param_size(shape, bits)` which returns `shape[0] * shape[1] * bits` for each matrix.
-
-### 2. Greedy Budget Allocation
-
-Given a total memory budget `B` (in bits), the algorithm processes the linear layers in the order they are encountered by `named_modules()`. For each layer with shape `(M, N)`:
-
-1. The maximum possible rank `R_max = min(M, N)` is determined.
-2. The list of possible bit‑widths (default `[2, 4, 8]`) is sorted in descending order (higher bits first, aiming for higher precision).
-3. For each bit‑width `b` (from highest to lowest):
-   - For each rank `r` from `R_max` down to 1:
-     - Compute `mem = (M + N) * r * b`.
-     - If `total_cost + mem ≤ B`, select `(r, b)` as the configuration for this layer, add `mem` to `total_cost`, and break out of the rank loop.
-4. If no configuration fits (should not happen as `r=1` with the smallest bit‑width eventually fits unless budget is absurdly small), fall back to `rank=1` and the smallest bit‑width.
-
-This greedy approach prioritizes:
-- **Higher bit‑width** for more accurate representation.
-- **Larger rank** among the same bit‑width, because the rank loop scans downward, so the first fit is the largest possible rank.
-
-Because the layers are processed sequentially, **earlier layers get preference** in budget allocation; later layers may be forced to use lower ranks/bits. This ordering dependence is a limitation, as it does not consider layer importance.
-
-### 3. Weight Compression
-
-Once the rank `r` and bit‑width `b` are chosen, the weight matrix is compressed:
-
-1. Compute full SVD of **W** (on CPU, float32).
-2. Truncate to rank `r`: `U_r = U[:, :r]`, `S_r = S[:r]`, `Vt_r = Vt[:r, :]`.
-3. Quantize each factor to `b` bits using uniform min‑max quantization:
-   ```
-   quantize(tensor, b) = round((tensor - min) / scale) * scale + min
-   scale = (max - min) / (2^b - 1)
-   ```
-4. Reconstruct the full weight matrix:
-   ```
-   W_new = U_q @ diag(S_q) @ Vt_q
-   ```
-   This produces a dense matrix of the same shape as the original, but with effective rank ≤ `r` and values restricted to a limited set (due to the quantization of the factors).
-
-5. Replace `module.weight.data` with `W_new`, preserving the original dtype. The bias is also quantized to `b` bits if present.
-
-Note: The final weight is still a dense `M×N` matrix; the memory model assumes a factorised storage, which is not actually used. To realize the memory savings, one would need to store `U_q`, `S_q`, `Vt_q` explicitly instead of the dense weight. The current reconstruction step allows the model to be used with standard dense inference, but the parameter count (as reported by PyTorch) does not change. The user should treat the budget as a **planned** compression limit for subsequent factorised deployment.
+3. **Uniform Quantization Operator**:
+   Let $\mathcal{Q}_b(T)$ be the uniform min-max $b$-bit quantizer:
+   $$\mathcal{Q}_b(T) = \left\lfloor \frac{T - \min(T)}{s} \right\rceil \cdot s + \min(T) \quad \text{where } s = \frac{\max(T) - \min(T)}{2^b - 1}$$
+   Factor matrices are quantized independently:
+   $$\widehat{U} = \mathcal{Q}_b(U_r), \quad \widehat{S} = \mathcal{Q}_b(S_r), \quad \widehat{V}^T = \mathcal{Q}_b(V_r^T)$$
+   The reconstructed matrix is:
+   $$W_{\text{MLoRQ}} = \widehat{U} \cdot \text{diag}(\widehat{S}) \cdot \widehat{V}^T$$
 
 ---
 
-## Complexity Analysis
+## 3. Step-by-Step Calibration & Execution Trace
 
-### A. Compression Time Complexity
+### 3.1 Dataflow & Pipeline Execution
 
-- **SVD per layer**: O(M·N·min(M,N)) for each linear layer. This is the dominant cost. For a transformer with L layers and typical hidden size D, total time ~ L·D³. For DistilBERT (D=768, ~72 linear layers), this is a few seconds on CPU.
-- **Greedy allocation**: O(L · R_max · B_candidates) where B_candidates is the number of bit‑width options (≤3). Negligible.
-- **Quantization and reconstruction**: O(M·N·r) per layer, minor.
+1. **Layer Discovery & Shape Profiling**:
+   - Extract linear layer shape information $(M, N)$ for all layers.
+2. **Budget Search Loop**:
+   - Initialize cumulative memory cost $\text{total\_cost} = 0$.
+   - For each layer, evaluate candidate bit widths $b \in [8, 4, 2]$ and ranks $r \in [\min(M, N) \dots 1]$.
+   - Pick the maximum rank-bit tuple $(r, b)$ fitting remaining memory budget.
+3. **SVD & Quantization**:
+   - Compute SVD of layer weight $W$.
+   - Extract top $r$ singular vectors and values.
+   - Quantize $U_r, S_r, V_r^T$ using $b$-bit min-max quantization.
+4. **Weight Reconstitution**:
+   - Reconstruct $W_{\text{new}} = U_q \cdot \text{diag}(S_q) \cdot V_q^T$.
+   - Update `module.weight.data` and quantize bias if present.
 
-### B. Inference Complexity
-
-After compression, the model still uses dense matrix multiplications of the original sizes (M×N). There is **no inference speed‑up** from this method alone. However, if the model were stored in factorised form (U, S, V), the forward pass could be implemented as two small matrix multiplies, reducing FLOPs from O(M·N) to O(r·(M+N)). The greedy allocation ensures that `r` is chosen to keep total factor memory within budget, indirectly also controlling the inference complexity.
-
-### C. Memory Usage
-
-- **During compression**: Storing the weight matrix (M·N floats) and its SVD factors (U, S, Vt) requires a few times the weight size. All operations are on CPU (NumPy/PyTorch), so peak memory is moderate.
-- **After compression**: The weight matrix is still a full dense tensor; the model’s parameter count remains unchanged. The budget is only a **target** for a potential factorised storage format. To achieve actual memory reduction, one must export the quantised factors and use a custom layer that performs the low‑rank multiply.
+```
+Extract Linear Layers ──► Greedy Budget Allocation ──► SVD Factorization W = U Σ V^T
+                                                                │
+                                                                ▼
+Reconstructed W ◄── W_new = U_q @ diag(S_q) @ V_q^T ◄── Quantize Factors (U_r, S_r, V_r)
+```
 
 ---
 
-## Implementation Details
+## 4. Parameter Savings & Memory Footprint Profiling
 
-### MLoRQCompressor Class
+### 4.1 Profiling Table
+
+| Metric | Formula | Example (LLaMA-7B Linear: $M=4096, N=4096$) |
+| :--- | :--- | :--- |
+| **Dense Weights** | $M \times N \times 2 \text{ bytes}$ | $33.55 \text{ MB}$ |
+| **MLoRQ Factors ($r=256, b=4$)** | $(M \cdot r + r \cdot N) \times 0.5 \text{ bytes}$ | $1.05 \text{ MB}$ |
+| **Compression Ratio** | $\frac{M \cdot N \times 16}{(M \cdot r + r \cdot N) \times b}$ | $\mathbf{32.0\times}$ Reduction |
+| **Budget Constraint** | $\sum \text{Mem}_l \le B_{\text{total}}$ | Target $500 \text{ MB}$ global model memory |
+
+---
+
+## 5. Precision Loss, Perplexity & Sensitivity Bounds
+
+### 5.1 Reconstructed Error Metric
+
+The total reconstruction error is bounded by truncated singular values plus factor quantization error:
+
+$$\| W - W_{\text{MLoRQ}} \|_F^2 \le \sum_{j=r+1}^{\min(M, N)} \sigma_j^2 + \| U_r \Sigma_r V_r^T - \widehat{U} \text{diag}(\widehat{S}) \widehat{V}^T \|_F^2$$
+
+### 5.2 Failure Cases
+
+- **Overly Restrictive Budget**: If $B_{\text{total}}$ forces rank $r_l < 4$ and $b_l = 2$, low-rank truncation removes structural feature channels, degrading model performance.
+
+---
+
+## 6. Production CUDA / Triton Execution Blueprint
 
 ```python
-class MLoRQCompressor(BaseCompressor):
-    def __init__(self, model, total_memory_budget_mb=500, bits_candidates=[2,4,8], **kwargs):
-        ...
+import torch
+import triton
+import triton.language as tl
+
+@triton.jit
+def mlorq_reconstruct_kernel(
+    U_ptr, S_ptr, Vt_ptr, Out_W_ptr,
+    M, N, R,
+    BLOCK_SIZE_M: tl.constexpr,
+    BLOCK_SIZE_N: tl.constexpr,
+    BLOCK_SIZE_R: tl.constexpr
+):
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    rm = pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)
+    rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
+
+    acc = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.float32)
+
+    # Compute U_r @ diag(S_r) @ V_r^T
+    for r in range(0, R, BLOCK_SIZE_R):
+        rr = r + tl.arange(0, BLOCK_SIZE_R)
+        u_vals = tl.load(U_ptr + rm[:, None] * R + rr[None, :], mask=(rm[:, None] < M) & (rr[None, :] < R), other=0.0)
+        s_vals = tl.load(S_ptr + rr, mask=rr < R, other=0.0)
+        vt_vals = tl.load(Vt_ptr + rr[:, None] * N + rn[None, :], mask=(rr[:, None] < R) & (rn[None, :] < N), other=0.0)
+
+        u_scaled = u_vals * s_vals[None, :]
+        acc += tl.dot(u_scaled, vt_vals)
+
+    tl.store(Out_W_ptr + rm[:, None] * N + rn[None, :], acc, mask=(rm[:, None] < M) & (rn[None, :] < N))
 ```
-
-- **`total_memory_budget_mb`**: Memory budget in megabytes (default 500). Internally converted to bits (`* 8 * 1024 * 1024`).  
-- **`bits_candidates`**: List of quantization bit‑widths to try (default `[2,4,8]`). Sorted descending in the greedy loop.
-
-**`compress()` method**:
-
-1. Collects all linear layers with their shapes and weights.
-2. Initializes `total_cost = 0`.
-3. For each layer, performs the greedy rank/bit selection using `_param_size` to estimate memory.
-4. Once a configuration is found, SVD is computed (`torch.linalg.svd` on CPU float32 copy). Factors are quantized with `_quantize` (static method), and `W_new = U_q @ diag(S_q) @ Vt_q` is assigned back.
-5. Bias is quantized separately if present.
-6. Updates `_compressed_params` (which may still count the full dense weight as parameters) and returns the model.
-
-**`_param_size(shape, bits)`**: returns `shape[0] * shape[1] * bits`.  
-**`_quantize(tensor, bits)`**: per‑tensor uniform affine quantization; returns quantized float tensor.
-
-### Factory Function
-
-```python
-@COMPRESSOR_REGISTRY.register("mlorq")
-def mlorq_factory(model, comp_config):
-    total_budget_mb = getattr(comp_config, 'mlorq_budget_mb', 500)
-    bits_candidates = getattr(comp_config, 'mlorq_bits_candidates', [2,4,8])
-    compressor = MLoRQCompressor(model, total_memory_budget_mb=total_budget_mb,
-                                 bits_candidates=bits_candidates)
-    compressed_model, _ = compressor.compress()
-    return compressed_model
-```
-
-The factory reads `mlorq_budget_mb` and `mlorq_bits_candidates` from `comp_config`. Sensible defaults are provided.
 
 ---
 
-## Usage and Configuration
+## 7. Hybrid Synthesis & Next-Generation Enhancements
 
-To apply MLoRQ compression, set the compression method to `"mlorq"` and optionally adjust the budget and bit‑width options.
-
-### Example
-
-```python
-comp_config.comp_method = "mlorq"
-comp_config.mlorq_budget_mb = 200          # 200 MB total factor memory target
-comp_config.mlorq_bits_candidates = [4, 8] # try only 4-bit and 8-bit
-```
-
-Then invoke the compression pipeline. The model’s linear weights will be replaced by reconstructed low‑rank + quantized approximations.
-
-### Parameters
-
-| Parameter                | Default    | Description                                                                                            |
-|--------------------------|------------|--------------------------------------------------------------------------------------------------------|
-| `mlorq_budget_mb`        | `500`      | Total memory budget in megabytes for the factorised representation of all linear layers.               |
-| `mlorq_bits_candidates`  | `[2,4,8]`  | List of bit‑widths to consider. Must be integers in ascending order (will be reversed internally).     |
-
----
-
-## Discussion
-
-### Advantages
-
-- **Joint optimization of rank and precision**: MLoRQ simultaneously decides how many singular components and what bit‑width to use, capturing the trade‑off between approximation error and quantisation error.
-- **Strict memory budget**: A single, intuitive parameter controls the overall compression. No need to guess per‑layer ranks or bits.
-- **Automatic and calibration‑free**: Works purely on weight statistics without any data.
-- **Extensible**: The greedy allocation can be replaced by dynamic programming or layer‑importance weighting.
-
-### Limitations
-
-- **Greedy allocation is not globally optimal**: The order in which `named_modules()` returns layers affects which layers receive higher ranks/bits. A globally optimal solution would require solving a knapsack‑like problem across all layers, which is not done here.
-- **Dense weight output**: After compression, the weight is still a full matrix; the model’s parameter count does not decrease. The budget only makes sense if the factors are stored separately. To realise memory savings, one must replace the linear layers with two smaller linear layers (using the quantised factors) after compression.
-- **Factor quantisation error propagates**: The reconstructed weight is the product of quantised factors, which may amplify the quantisation error compared to quantising the final weight directly.
-- **No per‑layer importance**: All layers are treated equally in terms of budget allocation; a layer‑wise sensitivity could improve the accuracy/size trade‑off.
-- **Double SVD**: The code computes a full SVD for each layer during compression; if the greedy loop also required SVD for rank estimation (it doesn’t, it uses shape only), there would be extra cost. Here SVD is only done once per layer after the decision, which is acceptable.
-
-### Comparison with Related Compressors
-
-| Method           | What It Chooses            | Budget Type        | Output Format          | Inference Speed‑up     |
-|------------------|----------------------------|--------------------|------------------------|------------------------|
-| MLoRQ (this)     | Rank + bit‑width per layer | Total factor memory| Dense weight (reconstructed) | No (unless factors stored) |
-| MGIE‑SVD Budget  | Rank only (proportional to entropy) | Sum of ranks    | Dense weight           | No                     |
-| AdaSVD           | Rank only (nuclear norm)   | Target parameter ratio | Overwrites weight    | No                     |
-| AstroQuantizer   | Bit‑width (uniform)        | Global bits        | Dense quantised weight | No                     |
-
-MLoRQ is unique in its joint consideration of rank and bit‑width under a explicit memory budget, bridging the gap between low‑rank and quantisation‑based compression.
-
----
-
-## Conclusion
-
-MLoRQ (registered as `"mlorq"`) provides a flexible, budget‑conscious compression framework that jointly optimises the rank and bit‑width of SVD factors across all linear layers. By greedily fitting the highest precision and largest rank combinations into a user‑defined memory limit, it automates the trade‑off between accuracy and size. Although the current implementation reconstructs the full weight matrix and does not directly reduce the model’s parameter count, it serves as an excellent **planning tool**: after obtaining the per‑layer configuration, one can extract the quantised factors and build a truly memory‑efficient model with low‑rank, low‑precision linear layers. Future enhancements could include global optimisation of the budget allocation, per‑layer importance weights, and direct construction of factorised layers to immediately achieve the memory savings.
+1. **Native Dual-Factor Low-Rank Forward Execution**: Keep factors $U_q, V_q^T$ separate in memory during inference to compute sequential matrix multiplications $Y = (X V_q) \text{diag}(S_q) U_q^T$.
+2. **Dynamic Programming Budget Allocator**: Replace greedy knapsack search with dynamic programming to optimize layer-wise rank and bit width choices.
+3. **MLoRQ + Structural Pruning**: Prune small singular values in $S_r$ before performing low-bit quantization.

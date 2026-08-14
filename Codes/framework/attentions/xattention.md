@@ -1,6 +1,6 @@
 # XAttention: Block-Sparse Coarse-to-Fine Routing with Unified Softmax Normalization
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) requires computing dense token-to-token similarity matrices of size $L \times L$, scaling quadratically $\mathcal{O}(L^2 d)$ in compute and memory. Conventional block-sparse attention models often fail to maintain mathematical equivalence with full attention because they compute separate, un-unified local softmax normalizations per block before summing output vectors.
 
 **XAttention (`XAttention`)** overcomes this limitation via a two-stage hierarchical coarse-to-fine block routing mechanism paired with **Unified Probability Normalization**. The sequence is partitioned into $M = \lceil L / B_s \rceil$ contiguous blocks of size $B_s$. 
@@ -11,7 +11,7 @@ Rather than normalizing attention weights per block, XAttention evaluates a sing
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Spatial Padding & Multi-Block Partitioning
 Given input sequence $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, Query ($\mathbf{Q}$), Key ($\mathbf{K}$), and Value ($\mathbf{V}$) projections yield tensors of shape $[B, H, L, d_h]$, where $H$ is the number of heads and $d_h = D / H$.
@@ -59,7 +59,7 @@ $$\mathbf{Y} = \left( \operatorname{Slice}\left(\mathbf{O}_p, :L\right) \mathbf{
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -123,7 +123,7 @@ $$\mathbf{Y} = \left( \operatorname{Slice}\left(\mathbf{O}_p, :L\right) \mathbf{
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_h = D/H$, $B_s$ block size, $M = L / B_s$ number of blocks, and $s$ sparsity ratio ($k = M(1-s)$).
@@ -161,7 +161,7 @@ $$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_s^2} + 4 B D L^2 (1-s) + 2
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Python Block-Loop Execution Latency
 In `XAttention.forward`:
@@ -187,7 +187,7 @@ The selection $\operatorname{TopK}(\mathbf{S}^{\text{block}}, k)$ uses hard disc
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To achieve true hardware speedups, XAttention requires a custom Triton GPU kernel that fuses block centroid gathering, top-$k$ routing, and FlashAttention-style candidate softmax into a single GPU grid operator.
 
@@ -296,3 +296,12 @@ def _xattention_fused_candidate_attn_kernel(
 ### 6.3 Hardware Acceleration Summary
 1. **DRAM Access Coalescing**: Storing $\mathbf{K}_b, \mathbf{V}_b$ in contiguous block shapes `[B, H, M, B_s, d_h]` ensures indirect load pointers access aligned 128-byte DRAM segments.
 2. **Unified Online Softmax in Registers**: Unified Softmax statistics (`m_i`, `l_i`, `acc`) remain pinned in SRAM registers across all $k$ block iterations, completely eliminating intermediate global memory writes.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Dynamic Temperature-Annealed Top-$k$ Softmax**: Replace fixed sparsity $s$ with dynamic per-head entropy thresholds, allowing variable $k_i$ key blocks per query block depending on attention distribution sharpness.
+2. **Hierarchical Block Centroid Trees**: Implement 2-level macro/micro block hierarchies ($B_{\text{macro}} = 256, B_{\text{micro}} = 32$) to scale XAttention to million-token context lengths with logarithmic routing.
+3. **Continuous Soft Gumbel Block Routing**: Incorporate straight-through Gumbel-Softmax block selection to enable end-to-end gradient flow into key/query projection layers.
+4. **FP8 Quantized Block-Sparse Attention**: Perform fine-grained candidate matrix multiplications $Q_i K_{\text{cand}}^\top$ using FP8 Tensor Cores (E4M3), delivering $4\times$ FLOPs acceleration on Hopper architecture GPUs.

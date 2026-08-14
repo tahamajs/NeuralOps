@@ -1,172 +1,160 @@
-# LoLA Attention: Factorized Low-Rank Projection with Triple-Memory Cache
+# Lola Attention: Low-Rank Localized Attention via Three-Memory System Caching
 
-## 1. Abstract & Theoretical Motivation
-Standard Transformer self-attention computes query-key affinity over full history sequences, scaling quadratically $\mathcal{O}(N^2)$ in time and memory. Low-Rank Linear Attention with Sparse Caching (LoLA Attention) combines low-rank linear projection factorizations with a hybrid triple-memory state caching system.
+## 1. Executive Abstract & Architectural Motivation
 
-LoLA factorizes high-dimensional projection weight matrices $\mathbf{W} \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ into rank-constrained pairs $\mathbf{W} \approx \mathbf{U} \mathbf{V}$ where $\mathbf{U} \in \mathbb{R}^{D_{\text{out}} \times r}, \mathbf{V} \in \mathbb{R}^{r \times D_{\text{in}}}$. To maintain long-context memory without quadratic explosion, LoLA maintains three persistent key-value memory partitions: (1) Recent Sliding Window Cache, (2) Subsampled Sparse Historical Cache, and (3) SVD Truncated Low-Rank Buffer. This hybrid mechanism maintains bounded memory consumption while capturing long-range multi-scale dependencies.
+Autoregressive Transformer inference over long context sequences is heavily memory-bandwidth bound due to key-value (KV) cache accumulation. Low-Rank Localized Attention (LoLA Attention) mitigates KV cache memory footprint using a multi-tier memory system cache partition.
 
----
-
-## 2. Mathematical Derivations & Formulations
-
-Given input hidden state $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, low-rank linear transformations compute query, key, value, and output projections with rank $r \ll D$:
-
-\[
-\mathbf{Q} = (\mathbf{X} \mathbf{V}_Q^\top) \mathbf{U}_Q^\top + \mathbf{b}_Q \in \mathbb{R}^{B \times H \times N \times d}
-\]
-\[
-\mathbf{K} = (\mathbf{X} \mathbf{V}_K^\top) \mathbf{U}_K^\top + \mathbf{b}_K \in \mathbb{R}^{B \times H \times N \times d}
-\]
-\[
-\mathbf{V} = (\mathbf{X} \mathbf{V}_V^\top) \mathbf{U}_V^\top + \mathbf{b}_V \in \mathbb{R}^{B \times H \times N \times d}
-\]
-
-where $\mathbf{V}_{(\cdot)} \in \mathbb{R}^{r \times D}$ and $\mathbf{U}_{(\cdot)} \in \mathbb{R}^{D \times r}$.
-
-### Triple-Memory System Caching ($\mathcal{C}$)
-LoLA aggregates historical key-value states into a unified memory context $\mathbf{K}_{\text{comb}} = [\mathbf{K} \;\|\; \mathbf{K}_{\text{cache}}]$ and $\mathbf{V}_{\text{comb}} = [\mathbf{V} \;\|\; \mathbf{V}_{\text{cache}}]$ across three memory layers:
-1. **Recent Cache ($\mathcal{C}_{\text{recent}}$)**: Sliding window of size $W_{\text{max}}$ storing raw recent keys/values:
-   \[
-   \mathcal{C}_{\text{recent}} = \{ \mathbf{k}_t, \mathbf{v}_t \}_{t=N - W_{\text{max}} + 1}^N
-   \]
-2. **Subsampled Sparse Cache ($\mathcal{C}_{\text{sparse}}$)**: Uniformly subsampled stride-4 tokens from older history:
-   \[
-   \mathcal{C}_{\text{sparse}} = \{ \mathbf{k}_{4i}, \mathbf{v}_{4i} \}_{i=1}^{N/4}
-   \]
-3. **SVD Low-Rank Compressed Buffer ($\mathcal{C}_{\text{lr}}$)**: Truncated SVD top-$k_{\text{rank}}$ reconstruction of past states:
-   \[
-   \mathbf{K}_{\text{lr}} = \mathbf{U}_{:k_{\text{rank}}} \boldsymbol{\Sigma}_{:k_{\text{rank}}} \mathbf{V}_{:k_{\text{rank}}}^\top \in \mathbb{R}^{k_{\text{rank}} \times d}
-   \]
-
-### Scaled Multi-Memory Attention Scores
-Scores are computed separately over current inputs and retrieved memory partitions, weighted by dynamic scaling parameters $\gamma_{\text{lr}}$ and $\gamma_{\text{cache}}$:
-
-\[
-\mathbf{S}_{\text{current}} = \gamma_{\text{lr}} \cdot \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}, \quad \mathbf{S}_{\text{cache}} = \gamma_{\text{cache}} \cdot \frac{\mathbf{Q} \mathbf{K}_{\text{cache}}^\top}{\sqrt{d}}
-\]
-\[
-\mathbf{S}_{\text{concat}} = [\mathbf{S}_{\text{current}} \;\|\; \mathbf{S}_{\text{cache}}] \in \mathbb{R}^{B \times H \times N \times (N + C)}
-\]
-
-After applying softmax over concatenated sequence dimension $(N + C)$:
-
-\[
-\mathbf{A} = \operatorname{softmax}(\mathbf{S}_{\text{concat}} + \mathbf{M}_{\text{mask}}, \text{dim}=-1) \in \mathbb{R}^{B \times H \times N \times (N + C)}
-\]
-\[
-\mathbf{O} = (\mathbf{A} \mathbf{V}_{\text{comb}}) \mathbf{W}_{\text{out}} \in \mathbb{R}^{B \times N \times D}
-\]
+LoLA Attention partitions historical token context into three distinct memory systems: (1) a **Recent Cache** sliding window $\mathcal{C}_{\text{recent}}$ for local high-resolution tokens, (2) a **Sparse Cache** $\mathcal{C}_{\text{sparse}}$ containing subsampled historical tokens, and (3) a **Low-Rank Cache** $\mathcal{C}_{\text{lr}}$ derived from SVD top-$k$ singular value decomposition over long-past context. By combining high-resolution local context with low-rank global singular state representations, LoLA achieves bounded KV cache storage while preserving long-range semantic retention.
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 2. Mathematical Formulations & Derivations
+
+Given input hidden states $X \in \mathbb{R}^{B \times L \times D}$, query, key, and value states are projected as:
+
+\[
+Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
+\]
+
+Multi-head formatting yields $Q, K, V \in \mathbb{R}^{B \times H \times L \times d}$.
+
+### Three-Memory Cache System Partition:
+For a sequence history length $L$, tokens are partitioned into:
+
+1. **Recent Local Window Cache ($\mathcal{C}_{\text{recent}}$)**:
+\[
+K_{\text{recent}} = K[:, :, L-W:, :], \quad V_{\text{recent}} = V[:, :, L-W:, :] \in \mathbb{R}^{B \times H \times W \times d}
+\]
+
+2. **Sparse Subsampled Cache ($\mathcal{C}_{\text{sparse}}$)**:
+\[
+K_{\text{sparse}} = K[:, :, 0:L-W:s, :], \quad V_{\text{sparse}} = V[:, :, 0:L-W:s, :] \in \mathbb{R}^{B \times H \times L_{\text{sparse}} \times d}
+\]
+
+3. **SVD Low-Rank Compressed Cache ($\mathcal{C}_{\text{lr}}$)**:
+Applying compact Truncated SVD to historical keys $K_{\text{hist}} = K[:, :, :L-W, :]$:
+
+\[
+K_{\text{hist}} \approx U_k \Sigma_k V_k^\top \implies K_{\text{lr}} = U_k[:, :, :, :k_{\text{rank}}] \Sigma_k[:, :, :k_{\text{rank}}] \in \mathbb{R}^{B \times H \times k_{\text{rank}} \times d}
+\]
+
+### Fused Multi-Tier Context Aggregation:
+Attention scores are computed across concatenated multi-tier key states $\widetilde{K} = [K_{\text{recent}}; K_{\text{sparse}}; K_{\text{lr}}]$ and value states $\widetilde{V} = [V_{\text{recent}}; V_{\text{sparse}}; V_{\text{lr}}]$:
+
+\[
+S = \frac{Q \widetilde{K}^\top}{\sqrt{d}} + M_{\text{mask}} \in \mathbb{R}^{B \times H \times L \times L_{\text{total}}}
+\]
+\[
+A = \text{Softmax}\left( S \right) \in \mathbb{R}^{B \times H \times L \times L_{\text{total}}}
+\]
+\[
+O = A \widetilde{V} \in \mathbb{R}^{B \times H \times L \times d}
+\]
+
+Final output is obtained via $Y = \text{Concat}(O_1, \dots, O_H) W_O \in \mathbb{R}^{B \times L \times D}$.
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-Input Hidden States X [B, N, D]
+Input: hidden_states [B, L, D]
   │
-  ├──> Factorized Low-Rank Projections (U, V):
-  │    ├──> Q = (X @ V_q^T) @ U_q^T + b_q ─────────────> [B, H, N, d]
-  │    ├──> K = (X @ V_k^T) @ U_k^T + b_k ─────────────> [B, H, N, d]
-  │    └──> V = (X @ V_v^T) @ U_v^T + b_v ─────────────> [B, H, N, d]
+  ├──> Q, K, V Projections ──> [B, H, L, d]
   │
-  ├──> Retrieve Memory Buffers from Cache:
-  │    K_cache, V_cache = Cache.get_cached() ──────────> [C, d]
-  │    Expand to Batch & Heads ────────────────────────> [B, H, C, d]
+  ├──> Cache Partitioning:
+  │      ├──> Recent Window Cache: [B, H, W, d]
+  │      ├──> Sparse Subsampled Cache: [B, H, L/s, d]
+  │      └──> SVD Truncated Low-Rank Cache: [B, H, k_rank, d]
   │
-  ├──> Dual Score Multiplication:
-  │    ├──> S_current = gamma_lr * (Q @ K^T) / sqrt(d) ─> [B, H, N, N]
-  │    ├──> S_cache = gamma_cache * (Q @ K_c^T)/sqrt(d)-> [B, H, N, C]
-  │    └──> S_concat = Cat([S_current, S_cache]) ──────> [B, H, N, N + C]
+  ├──> Concatenate Multi-Tier Keys: K_tilde = [K_recent; K_sparse; K_lr] ──> [B, H, L_total, d]
+  ├──> Concatenate Multi-Tier Values: V_tilde = [V_recent; V_sparse; V_lr] ──> [B, H, L_total, d]
   │
-  ├──> Softmax & Value Aggregation:
-  │    A = Softmax(S_concat) ──────────────────────────> [B, H, N, N + C]
-  │    V_comb = Cat([V, V_cache]) ─────────────────────> [B, H, N + C, d]
-  │    Context = A @ V_comb ───────────────────────────> [B, H, N, d]
+  ├──> MatMul: Q @ K_tilde.T / sqrt(d) ──> Scores S: [B, H, L, L_total]
+  ├──> Softmax(dim=-1) ──> Attention Map A: [B, H, L, L_total]
+  ├──> MatMul: A @ V_tilde ──> Context: [B, H, L, d]
   │
-  └──> Update Cache with SVD & Low-Rank Out Projection:
-       Cache.update(K, V)
-       Y = (Context @ V_out^T) @ U_out^T ──────────────> [B, N, D]
+  └──> transpose(1, 2) ──> contiguous() ──> [B, L, D]
+  └──> Linear(D, D)(Context) ──> Output: [B, L, D]
 ```
 
-### Detailed Shape Progression Table
+### Detailed Tensor Transformations:
 
-| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| Step | Operation | Tensor Shape | Description |
 | :--- | :--- | :--- | :--- |
-| 1 | Low-Rank Inner Product ($x V_Q^\top$) | `X: [B, N, D]`, `V_q: [r, D]` | `Vx: [B, N, r]` |
-| 2 | Low-Rank Outer Product ($Vx U_Q^\top$) | `Vx: [B, N, r]`, `U_q: [D, r]` | `Q: [B, N, D]` -> `[B, H, N, d]` |
-| 3 | Memory Cache Retrieval | Memory buffers | `K_cache, V_cache: [B, H, C, d]` |
-| 4 | Current Sequence Scores | `Q: [B, H, N, d]`, `K^T: [B, H, d, N]` | `S_lr: [B, H, N, N]` |
-| 5 | Cache Sequence Scores | `Q: [B, H, N, d]`, `K_cache^T: [B, H, d, C]` | `S_cache: [B, H, N, C]` |
-| 6 | Concatenate Attention Scores | `S_lr: [B, H, N, N]`, `S_cache: [B, H, N, C]` | `S_concat: [B, H, N, N + C]` |
-| 7 | Softmax Normalization | `S_concat: [B, H, N, N + C]` | `A: [B, H, N, N + C]` |
-| 8 | Value Memory Product | `A: [B, H, N, N + C]`, `V_comb: [B, H, N + C, d]` | `Context: [B, H, N, d]` |
-| 9 | Output Low-Rank Linear | `Context: [B, N, D]` | `Y: [B, N, D]` |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | Linear Projections | $[B, H, L, d]$ | $Q, K, V$ activations |
+| 3 | Recent Cache | $[B, H, W, d]$ | Sliding window of recent $W$ tokens |
+| 4 | Sparse Cache | $[B, H, L/s, d]$ | Subsampled key-value tokens (stride $s$) |
+| 5 | SVD Low-Rank Cache | $[B, H, k_{\text{rank}}, d]$ | Top-$k$ singular components of historical context |
+| 6 | Key/Value Concatenation | $[B, H, L_{\text{total}}, d]$ | Fused multi-tier key and value tensors |
+| 7 | Multi-Tier Softmax Scoring | $[B, H, L, L_{\text{total}}]$ | Scores evaluated against multi-tier keys |
+| 8 | Multi-Tier Value Product | $[B, H, L, d]$ | Context aggregation across multi-tier values |
+| 9 | Out Projection | $[B, L, D]$ | Projection $W_O$ to model dimension $D$ |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP & MAC Counting
-1. **Low-Rank Linear Projections ($W_Q, W_K, W_V, W_O$)**:
-   - Standard linear requires $2 B N D^2$ per projection.
-   - Low-Rank factorized requires $2 \times (2 B N D r) = 4 B N D r$ FLOPs.
-   - Total for 4 projections: $16 B N D r$ FLOPs.
-2. **Current Sequence Score Product ($\mathbf{Q} \mathbf{K}^\top$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
-3. **Cache Sequence Score Product ($\mathbf{Q} \mathbf{K}_{\text{cache}}^\top$)**: $2 B H N C d = 2 B N C D$ FLOPs.
-4. **Value Memory Product ($\mathbf{A} \mathbf{V}_{\text{comb}}$)**: $2 B H N (N + C) d = 2 B N (N + C) D$ FLOPs.
+### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $W$: Window, $s$: Stride, $k_{\text{rank}}$: SVD Rank):
+- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
+- **SVD Low-Rank Compression**: $\mathcal{O}(B H L d k_{\text{rank}})$ FLOPs
+- **Multi-Tier Score Matrix ($Q \widetilde{K}^\top$)**: $2 B H L (W + L/s + k_{\text{rank}}) d$ FLOPs
+- **Softmax & Value Aggregation**: $2 B H L (W + L/s + k_{\text{rank}}) d$ FLOPs
+- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
 
-**Total Computational Cost**:
-\[
-\text{Total FLOPs} = 16 B N D r + 4 B N^2 D + 4 B N C D
-\]
+**Total Complexity**:
+- **Total MACs**: $4 B L D^2 + 2 B H L (W + L/s + k_{\text{rank}}) d$
+- **Total FLOPs**: $8 B L D^2 + 4 B H L (W + L/s + k_{\text{rank}}) d$
 
-When $r \ll D$ (e.g., $r=32, D=768$), projection compute drops significantly compared to standard attention's $8 B N D^2$.
-
-### Memory Footprint & Tensor Store
-- **Parameters**: Factorized tensors $\mathbf{U}, \mathbf{V}$ require $4 \times (D r + D r) = 8 D r$ parameters (vs $4 D^2$).
-- **Activation Memory**:
-  - Combined Keys/Values: $2 B H (N + C) d = 2 B (N + C) D$ floats.
-  - Concatenated Scores: $B H N (N + C)$ floats.
-  - Cache Buffers ($\mathcal{C}_{\text{recent}}, \mathcal{C}_{\text{sparse}}, \mathcal{C}_{\text{lr}}$): $(W_{\text{max}} + \frac{W_{\text{max}}}{2} + k_{\text{rank}}) D$ floats.
-  - Peak Memory: $\mathcal{O}(B N D + B H N (N + C))$.
+### Memory Footprint:
+- **Static Weights**: $4 D^2$ parameters.
+- **Cache Memory Footprint**: Bounded by $\mathcal{O}(B \cdot H \cdot (W + L/s + k_{\text{rank}}) \cdot d)$, dramatically reducing memory storage compared to $\mathcal{O}(B \cdot H \cdot L \cdot d)$.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **CPU/GPU SVD Inversion Latency**: Truncated SVD calls `torch.linalg.svd` inside `LowRankCache.update` run on CPU/GPU tensors synchronously during training/inference steps. SVD operations disrupt CUDA stream parallelism and introduce significant latency.
-2. **Cache Memory Leak in Single-Batch Ingestion**: The current cache implementation indexes hardcoded batch slice `K[0, 0]`, limiting multi-batch inference and leading to cross-batch memory bleed when $B > 1$.
-3. **Low-Rank Expressivity Ceiling**: Highly factorized projection rank $r \ll D$ risks under-fitting fine-grained spatial token representations in early model layers.
+1. **SVD Computation Latency during Generation**: Performing online SVD decomposition over long historical keys adds CPU/GPU synchronization barriers unless updated asynchronously.
+2. **Subsampling Information Loss in Sparse Cache**: Fixed stride sampling ($s = 4$) can skip isolated high-information key tokens, leading to context retrieval errors.
+3. **Softmax Scale Mismatch Across Tiers**: Combining uncompressed recent keys with compressed low-rank keys can create magnitude discrepancies in dot-product score logits.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### Memory Access & Vectorization Barriers
-Naive PyTorch executes `torch.cat` to concatenate current sequence tensors with historical cache buffers $K_{\text{cache}}$, causing dynamic DRAM allocations and memory fragmentation.
-
-### High-Performance Triton Kernel Fusion Strategy
-1. **Fused Dual-Stream Memory Flash Kernel**: Implement a Triton kernel that loads current query blocks $[BLOCK\_N, d]$ into SRAM, while concurrently streaming current keys and persistent cache buffers from separate GPU DRAM pointers without materializing concatenated tensors.
+A Triton kernel for LoLA Attention executes multi-tier memory scoring without instantiating separate concatenated key matrices, tiling over recent, sparse, and low-rank blocks in SRAM.
 
 ```python
-# Triton Pseudocode for Dual-Stream Cache LoLA Kernel
+# Triton Fused Multi-Tier Memory Kernel Blueprint
+import triton
+import triton.language as tl
+
 @triton.jit
-def _lola_dual_stream_kernel(
-    Q_ptr, K_ptr, V_ptr, K_cache_ptr, V_cache_ptr, Out_ptr,
-    N, C, D, BLOCK_N: tl.constexpr, BLOCK_C: tl.constexpr
+def _lola_fused_multitier_kernel(
+    Q_ptr, K_recent_ptr, K_sparse_ptr, K_lr_ptr, Out_ptr,
+    stride_qb, stride_qh, stride_ql, stride_qd,
+    W, L_sparse, k_rank, d,
+    BLOCK_M: tl.constexpr
 ):
-    # Load Query tile [BLOCK_N, d]
-    q = tl.load(Q_ptr + offsets_q)
+    pid_m = tl.program_id(0)
+    pid_bh = tl.program_id(1)
     
-    # Stream current keys K [BLOCK_N, d] -> compute S_lr in SRAM
-    k = tl.load(K_ptr + offsets_k)
-    s_lr = tl.dot(q, tl.trans(k)) * scale * gamma_lr
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_d = tl.arange(0, d)
     
-    # Stream cache keys K_cache [BLOCK_C, d] -> compute S_cache in SRAM
-    k_c = tl.load(K_cache_ptr + offsets_kc)
-    s_cache = tl.dot(q, tl.trans(k_c)) * scale * gamma_cache
+    q = tl.load(Q_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :])
     
-    # Online Softmax over concatenated logits [S_lr, S_cache] inside registers
+    # 1. Score against Recent Cache
+    # 2. Score against Sparse Cache
+    # 3. Score against Low-Rank Cache
+    # Online Softmax aggregation across all three memory blocks
 ```
 
-2. **Asynchronous GPU SVD Power Iteration**: Replace exact `torch.linalg.svd` calls with 2 iterations of Power Method matrix decomposition running inside GPU registers during backward execution to update the low-rank cache asynchronously.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Randomized SVD Streaming Updates**: Use online randomized SVD algorithms (Halko et al., 2011) to continuously update low-rank key matrices $K_{\text{lr}}$ without full SVD recomputation.
+2. **LoLA-Mamba Dual Memory Architecture**: Replace the SVD low-rank cache with a Mamba selective scan state buffer while keeping the recent sliding window for exact local tokens.
+3. **Quantized FP4 Multi-Tier Caching**: Compress historical sparse and low-rank KV caches to FP4 format while retaining FP16 precision for recent sliding-window tokens.

@@ -1,202 +1,206 @@
-# Quality and Capacity-Aware Grouped Query Attention (QCQA): Dynamic Soft-Routing over Compressed Key-Value Subspaces
+# Quality and Capacity-Aware Grouped Query Attention (QCQA): Dynamic Soft-Routing Mixture over Compressed KV Subspaces
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-Standard Grouped-Query Attention (GQA) assigns a fixed, static mapping between query heads and shared key-value (KV) heads. This rigid structural prior assumes that the spatial and semantic relevance of KV heads remains constant across all tokens and sequence positions. Quality and Capacity-Aware Grouped Query Attention (QCQA) overcomes this limitation by implementing dynamic continuous soft-routing over a compressed set of $H_{KV}$ Key-Value heads.
+Quality and Capacity-Aware Grouped Query Attention (QCQA) resolves a fundamental limitation of static Grouped-Query Attention (GQA): rigid, deterministic assignment of query heads to key-value heads. In GQA, a fixed group of query heads shares a static key-value head pair, regardless of input token content or contextual semantics. This rigid partition can restrict expressive capacity when queries require information outside their pre-assigned KV head group.
 
-In QCQA, a query-conditioned linear router network evaluates the feature state of each query vector $q_{b, l, h} \in \mathbb{R}^{d_k}$ at every token position, synthesizing a continuous Softmax routing distribution $\pi_{b, l, h} \in \Delta^{H_{KV}-1}$. Key and Value representations for each query head are dynamically constructed as convex combinations of the compressed KV heads. This approach preserves the KV cache compression benefits of GQA during decoding while dynamically allocating KV subspace capacity based on input token content.
+QCQA replaces static assignment with continuous, token-level soft routing. For every token position and query head $h \in \{1, \dots, H_q\}$, a routing layer computes a dynamic Softmax probability distribution over all compressed key-value heads $j \in \{1, \dots, H_{kv}\}$. Key and Value representations are synthesized dynamically per query head via differentiable linear combinations (`torch.bmm`). This gives each query head dynamic access to the entire compressed KV memory pool while retaining the KV cache compression benefits of GQA during inference.
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
-Let $X \in \mathbb{R}^{B \times L \times D}$ be the input sequence, where $B$ is batch size, $L$ is sequence length, and $D$ is model dimension. Let $H_Q$ be the number of query heads and $H_{KV}$ be the number of compressed KV heads ($H_{KV} \le H_Q$), with head dimension $d_k = D / H_Q$.
+Let $X \in \mathbb{R}^{B \times N \times D}$ denote input activations. Let $H_q$ be the number of query heads, $H_{kv}$ the compressed key-value heads ($H_{kv} \le H_q$), $d_k = D / H_q$, and $\tau > 0$ the router temperature scaling factor.
 
-### Linear Subspace Projections:
-\[
-Q = X W_Q \in \mathbb{R}^{B \times L \times (H_Q \cdot d_k)}, \quad W_Q \in \mathbb{R}^{D \times (H_Q \cdot d_k)}
-\]
-\[
-K = X W_K \in \mathbb{R}^{B \times L \times (H_{KV} \cdot d_k)}, \quad W_K \in \mathbb{R}^{D \times (H_{KV} \cdot d_k)}
-\]
-\[
-V = X W_V \in \mathbb{R}^{B \times L \times (H_{KV} \cdot d_k)}, \quad W_V \in \mathbb{R}^{D \times (H_{KV} \cdot d_k)}
-\]
-
-Reshaping into head dimensions: $Q \in \mathbb{R}^{B \times L \times H_Q \times d_k}$, $K, V \in \mathbb{R}^{B \times L \times H_{KV} \times d_k}$.
-
-### Query-Conditioned Soft-Routing Distribution:
-The linear router $W_R \in \mathbb{R}^{d_k \times H_{KV}}$ projects query vectors into routing logits. For query head $h \in \{1, \dots, H_Q\}$ at sequence position $l$:
+### Subspace Projections:
+Query, key, and value linear transformations map hidden activations into head subspaces:
 
 \[
-R_{b, l, h, j} = \frac{1}{\tau} \sum_{m=1}^{d_k} Q_{b, l, h, m} \cdot (W_R)_{m, j}, \quad j \in \{1, \dots, H_{KV}\}
-\]
-
-where $\tau > 0$ is the router temperature hyperparameter. The routing weight vector $\pi_{b, l, h} \in \mathbb{R}^{H_{KV}}$ is obtained via row-wise Softmax over KV heads:
-
-\[
-\pi_{b, l, h, j} = \text{Softmax}_j (R_{b, l, h, j}) = \frac{\exp(R_{b, l, h, j})}{\sum_{j'=1}^{H_{KV}} \exp(R_{b, l, h, j'})}
-\]
-
-### Dynamic Key-Value Subspace Synthesis:
-Using the routing distribution $\pi$, synthesized key vectors $\widetilde{K} \in \mathbb{R}^{B \times L \times H_Q \times d_k}$ and value vectors $\widetilde{V} \in \mathbb{R}^{B \times L \times H_Q \times d_k}$ are generated via convex combinations:
-
-\[
-\widetilde{K}_{b, l, h, m} = \sum_{j=1}^{H_{KV}} \pi_{b, l, h, j} \cdot K_{b, l, j, m}
+Q = X W_Q \in \mathbb{R}^{B \times N \times (H_q \cdot d_k)}, \quad W_Q \in \mathbb{R}^{D \times (H_q \cdot d_k)}
 \]
 \[
-\widetilde{V}_{b, l, h, m} = \sum_{j=1}^{H_{KV}} \pi_{b, l, h, j} \cdot V_{b, l, j, m}
-\]
-
-In batched tensor operations, this corresponds to batched matrix multiplication over flattened sequence dimensions:
-
-\[
-\widetilde{K}_{\text{flat}} = \text{BMM}\left(\pi_{\text{flat}}, K_{\text{flat}}\right) \in \mathbb{R}^{(B \cdot L) \times H_Q \times d_k}
+K = X W_K \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d_k)}, \quad W_K \in \mathbb{R}^{D \times (H_{kv} \cdot d_k)}
 \]
 \[
-\widetilde{V}_{\text{flat}} = \text{BMM}\left(\pi_{\text{flat}}, V_{\text{flat}}\right) \in \mathbb{R}^{(B \cdot L) \times H_Q \times d_k}
+V = X W_V \in \mathbb{R}^{B \times N \times (H_{kv} \cdot d_k)}, \quad W_V \in \mathbb{R}^{D \times (H_{kv} \cdot d_k)}
 \]
 
-where $\pi_{\text{flat}} \in \mathbb{R}^{(B \cdot L) \times H_Q \times H_{KV}}$ and $K_{\text{flat}}, V_{\text{flat}} \in \mathbb{R}^{(B \cdot L) \times H_{KV} \times d_k}$.
+Reshaping yields $Q \in \mathbb{R}^{B \times N \times H_q \times d_k}$ and $K, V \in \mathbb{R}^{B \times N \times H_{kv} \times d_k}$.
 
-### Scaled Dot-Product Attention:
-Transposing queries and synthesized key-values to $\mathbb{R}^{B \times H_Q \times L \times d_k}$:
+### Dynamic Soft Routing Distribution:
+A routing linear projection $W_{\text{router}} \in \mathbb{R}^{d_k \times H_{kv}}$ processes query states $Q$ to compute router logits, scaled by temperature $\tau$:
+
+\[
+R_{b, n, h, j} = \frac{1}{\tau} \sum_{m=1}^{d_k} Q_{b, n, h, m} \cdot (W_{\text{router}})_{m, j}, \quad \forall j \in \{1, \dots, H_{kv}\}
+\]
+
+Routing probabilities $\pi \in \mathbb{R}^{B \times N \times H_q \times H_{kv}}$ are derived via Softmax normalization across $H_{kv}$:
+
+\[
+\pi_{b, n, h, j} = \frac{\exp(R_{b, n, h, j})}{\sum_{j'=1}^{H_{kv}} \exp(R_{b, n, h, j'})}
+\]
+
+### Head Mixture Synthesis via Batched Matrix Multiplication:
+For each batch token index $(b, n)$, dynamic head representations $\widetilde{K}_h, \widetilde{V}_h \in \mathbb{R}^{d_k}$ are synthesized as convex combinations of the $H_{kv}$ compressed heads using `torch.bmm`:
+
+\[
+\widetilde{K}_{b, n, h, m} = \sum_{j=1}^{H_{kv}} \pi_{b, n, h, j} \cdot K_{b, n, j, m}
+\]
+\[
+\widetilde{V}_{b, n, h, m} = \sum_{j=1}^{H_{kv}} \pi_{b, n, h, j} \cdot V_{b, n, j, m}
+\]
+
+Yielding synthesized multi-head tensors $\widetilde{K}, \widetilde{V} \in \mathbb{R}^{B \times H_q \times N \times d_k}$ after transposing sequence and head dimensions.
+
+### Scaled Attention & Output Projection:
+Query heads execute scaled dot-product attention against their synthesized Key-Value representations:
 
 \[
 S_{b, h, i, j} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot \widetilde{K}_{b, h, j, m}
 \]
 \[
-\widetilde{S}_{b, h, i, j} = S_{b, h, i, j} + M_{b, 1, i, j}
+A_{b, h, i, j} = \text{Softmax}_j (S_{b, h, i, j} + M_{b, 1, i, j})
 \]
 \[
-A_{b, h, i, j} = \text{Softmax}_j (\widetilde{S}_{b, h, i, j})
+O_{b, h, i, m} = \sum_{j=1}^N \text{Dropout}(A)_{b, h, i, j} \cdot \widetilde{V}_{b, h, j, m}
 \]
 \[
-O_{b, h, i, m} = \sum_{j=1}^L \text{Dropout}(A, p_{\text{drop}})_{b, h, i, j} \cdot \widetilde{V}_{b, h, j, m}
-\]
-\[
-Y = \text{Concat}(O_1, \dots, O_{H_Q}) \cdot W_O \in \mathbb{R}^{B \times L \times D}
+Y = \text{Concat}(O_1, \dots, O_{H_q}) W_O \in \mathbb{R}^{B \times N \times D}
 \]
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Tensor Shape | Transformation / Operation | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Input activation batch | `[B, N, D]` |
+| **Projections** | `[B, N, D]` | `self.q_proj`, `self.k_proj`, `self.v_proj` | `Q: [B, N, H_q, d_k]`, `K, V: [B, N, H_kv, d_k]` |
+| **Router Logits** | `Q: [B, N, H_q, d_k]` | `self.router(Q) / router_temp` | `[B, N, H_q, H_kv]` |
+| **Softmax Routing** | `route_logits` | `F.softmax(dim=-1)` | `route_weights: [B, N, H_q, H_kv]` |
+| **Flattens for BMM** | `route_weights`, `K`, `V` | `.reshape(B*N, H_q, H_kv)` & `.reshape(B*N, H_kv, d_k)` | `W_flat: [B*N, H_q, H_kv]`, `K_flat, V_flat: [B*N, H_kv, d_k]` |
+| **Synthesize KV Mixture**| `W_flat`, `K_flat`, `V_flat`| `torch.bmm(W_flat, K_flat)`, `torch.bmm(W_flat, V_flat)` | `K_mixed, V_mixed: [B, N, H_q, d_k]` |
+| **Multi-Head Transpose** | `Q`, `K_mixed`, `V_mixed` | `.transpose(1, 2)` | `[B, H_q, N, d_k]` each |
+| **Score Matrix MatMul** | `Q`, `K_mixed` | `torch.matmul(q, k_mixed.transpose(-2, -1)) / sqrt(d_k)` | `[B, H_q, N, N]` |
+| **Softmax & Value Agg** | `scores`, `V_mixed` | `apply_mask` + `softmax` + `matmul(attn, v_mixed)` | `[B, H_q, N, d_k]` |
+| **Out Projection** | `context` | `.transpose(1, 2).view(B, N, D)` + `self.out_proj` | `[B, N, D]` |
+
+### Architectural Flowchart Diagram
 
 ```
-Input: hidden_states [B, L, D]
-  │
-  ├──> Linear(D, H_Q * d_k) [W_q] ──> Q: [B, L, H_Q, d_k]
-  ├──> Linear(D, H_KV * d_k) [W_k] ──> K: [B, L, H_KV, d_k]
-  └──> Linear(D, H_KV * d_k) [W_v] ──> V: [B, L, H_KV, d_k]
-                                │
-                                ├──> Linear(d_k, H_KV) [router] ──> route_logits: [B, L, H_Q, H_KV]
-                                ├──> Softmax(dim=-1) / tau ──> route_weights (π): [B, L, H_Q, H_KV]
-                                │
-                                ├──> Reshape: π_flat [B*L, H_Q, H_KV], K_flat [B*L, H_KV, d_k]
-                                ├──> BMM(π_flat, K_flat) ──> K_mixed: [B, L, H_Q, d_k]
-                                ├──> BMM(π_flat, V_flat) ──> V_mixed: [B, L, H_Q, d_k]
-                                │
-                                ├──> transpose(1, 2) ──> Q, K_mixed, V_mixed: [B, H_Q, L, d_k]
-                                │
-                                ├──> MatMul: Q @ K_mixed.transpose(-2, -1) / sqrt(d_k) ──> [B, H_Q, L, L]
-                                ├──> Add attention_mask ──> [B, H_Q, L, L]
-                                ├──> Softmax(dim=-1) & Dropout ──> attn: [B, H_Q, L, L]
-                                │
-                                └──> MatMul: attn @ V_mixed ──> context: [B, H_Q, L, d_k]
-                                        │
-                                        └──> transpose(1, 2).view([B, L, H_Q * d_k])
-                                        └──> Linear(H_Q * d_k, D) [W_o] ──> Output: [B, L, D]
+                         Input: hidden_states [B, N, D]
+                                       │
+         ┌─────────────────────────────┼─────────────────────────────┐
+         ▼                             ▼                             ▼
+   Linear(D, H_q*d_k) [Q]       Linear(D, H_kv*d_k) [K]       Linear(D, H_kv*d_k) [V]
+         │                             │                             │
+   Q: [B, N, H_q, d_k]           K: [B, N, H_kv, d_k]          V: [B, N, H_kv, d_k]
+         │                             │                             │
+         ├───> Linear(d_k, H_kv)       │                             │
+         │     / router_temp           │                             │
+         │           │                 │                             │
+         │     Softmax(dim=-1)         │                             │
+         │           │                 │                             │
+         │     w_flat [B*N, H_q, H_kv] │                             │
+         │           │                 │                             │
+         │           ├─── bmm ─────────┴─── K_flat [B*N, H_kv, d_k]  │
+         │           │                      => K_mixed [B, H_q, N, d_k]
+         │           │                                               │
+         │           └─── bmm ───────────────────────────────────────┴─── V_flat [B*N, H_kv, d_k]
+         │                                                                => V_mixed [B, H_q, N, d_k]
+         │                                                                             │
+         └───────────── MatMul: Q @ K_mixed.transpose(-2, -1) / sqrt(d_k) ─────────────┤
+                                                        │                              │
+                                             Softmax(scores + Mask)                    │
+                                                        │                              │
+                                               attn: [B, H_q, N, N]                    │
+                                                        │                              │
+                                                        └─── MatMul: attn @ V_mixed ───┘
+                                                                       │
+                                                            view(B, N, D) & out_proj
+                                                                       │
+                                                               Output: [B, N, D]
 ```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### FLOPs & MAC Operations Breakdown
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H_q$ query heads, $H_{kv}$ compressed KV heads, and ratio $R = H_q / H_{kv}$.
 
-Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H_Q$ query heads, $H_{KV}$ key-value heads, $\gamma = H_Q / H_{KV}$, and $d_k = D / H_Q$.
+1. **Linear Projections**:
+   - $W_Q, W_O$: $4 B N D^2$ FLOPs.
+   - $W_K, W_V$: $\frac{4}{R} B N D^2$ FLOPs.
+   - Router Projection $W_{\text{router}}$: $2 B N H_q d_k H_{kv} = 2 B N D H_{kv}$ FLOPs.
 
-1. **Linear Projections ($W_Q, W_K, W_V$)**:
-   - $W_Q$: $2 B L D^2$ FLOPs ($B L D^2$ MACs).
-   - $W_K, W_V$: $\frac{4 B L D^2}{\gamma}$ FLOPs ($\frac{2 B L D^2}{\gamma}$ MACs).
+2. **Head Mixture Synthesis (`torch.bmm`)**:
+   - $W_{\text{flat}} K_{\text{flat}}$: $2 (B N) H_q H_{kv} d_k = 2 B N D H_{kv}$ FLOPs.
+   - $W_{\text{flat}} V_{\text{flat}}$: $2 B N D H_{kv}$ FLOPs.
+   - *Total Routing & Mixture Cost*: $6 B N D H_{kv}$ FLOPs ($3 B N D H_{kv}$ MACs).
 
-2. **Query Routing Projection ($W_R$)**:
-   - Operation: $[B \cdot L \cdot H_Q, d_k] \times [d_k, H_{KV}]$.
-   - MACs: $B \cdot L \cdot H_Q \cdot d_k \cdot H_{KV} = B L D H_{KV}$
-   - FLOPs: $2 B L D H_{KV} + \text{Softmax overhead } (\approx 5 B L H_Q H_{KV})$
+3. **Core Scaled Dot-Product Attention**:
+   - $Q \widetilde{K}^\top$ & $A \widetilde{V}$: $4 B N^2 D$ FLOPs.
+   - Softmax & Masking: $7 B H_q N^2$ FLOPs.
 
-3. **Dynamic KV Subspace Mixture ($\text{BMM}(\pi, K)$ & $\text{BMM}(\pi, V)$)**:
-   - Operation: $2 \times [B \cdot L, H_Q, H_{KV}] \times [B \cdot L, H_{KV}, d_k]$.
-   - MACs: $2 \times B \cdot L \cdot H_Q \cdot H_{KV} \cdot d_k = 2 B L D H_{KV}$
-   - FLOPs: $4 B L D H_{KV}$
+4. **Total Complexity Summary**:
+   - **Total MACs**: $2 \left(1 + \frac{1}{R}\right) B N D^2 + 3 B N D H_{kv} + 2 B N^2 D$
+   - **Total FLOPs**: $4 \left(1 + \frac{1}{R}\right) B N D^2 + 6 B N D H_{kv} + 4 B N^2 D + 7 B H_q N^2$
 
-4. **Attention Matrix Computations ($Q K^\top$ & $A V$)**:
-   - MACs: $2 B L^2 D$
-   - FLOPs: $4 B L^2 D$
-
-5. **Output Projection ($W_O$)**:
-   - MACs: $B L D^2$, FLOPs: $2 B L D^2$
-
-### Total Complexity:
-- **Total MACs**: $2 B L D^2 \left(1 + \frac{1}{\gamma}\right) + 3 B L D H_{KV} + 2 B L^2 D$
-- **Total FLOPs**: $4 B L D^2 \left(1 + \frac{1}{\gamma}\right) + 6 B L D H_{KV} + 5 B L H_Q H_{KV} + 4 B L^2 D$
-- **Autoregressive KV Cache Capacity**: $2 B L_{\text{past}} H_{KV} d_k \times \text{bytes} = \frac{2 B L_{\text{past}} D}{\gamma} \times \text{bytes}$.
+### Memory Footprint & KV Cache Analysis
+- **Parameter Count**: $D^2 \left(2 + \frac{2}{R}\right) + d_k H_{kv} + D + H_q d_k$ floats.
+- **Autoregressive Decoding KV Cache Size**: Only compressed $H_{kv}$ heads are cached:
+  \[
+  \text{KV Cache Size}_{\text{QCQA}} = 2 \cdot B \cdot H_{kv} \cdot N \cdot d_k \cdot b = \frac{2 B N D \cdot b}{R} \text{ bytes}
+  \]
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Dynamic KV Synthesis Memory Overhead
-During forward passes in standard PyTorch, synthesizing $\widetilde{K}$ and $\widetilde{V}$ requires allocating intermediate tensors of size $[B, L, H_Q, d_k]$. This quadruples token memory writes back to HBM before computing the attention matrix, negating throughput gains for short sequence lengths.
+### Softmax Routing Entropy Collapse
+When router temperature $\tau \to 0$, the routing Softmax converges to a single-hot argmax selection ($\pi_{b,n,h,j} \to \delta_{j, j^*}$). This degenerates QCQA back into hard static GQA assignment, losing dynamic mixture capacity. Conversely, if $\tau \to \infty$, routing probabilities become uniform ($\pi \to 1/H_{kv}$), averaging all KV heads into a single uninformative mean state.
 
-### Router Entropy Collapse
-If the router temperature $\tau$ is too small ($\tau \to 0$), the routing distribution degenerates into a hard ArgMax function, destabilizing gradient propagation to non-selected KV heads. Conversely, high temperatures ($\tau \to \infty$) produce uniform distributions $\pi_{h, j} = \frac{1}{H_{KV}}$, collapsing QCQA to Multi-Query Attention (MQA) with averaged representations.
-
-### KV Subspace Manifold Degeneracy
-If key heads $K_j$ align into parallel subspaces during training, $\text{rank}(\widetilde{K}_h) < d_k$, causing effective rank collapse in score computation.
+### Materialization of Intermediate Mixture Tensors
+In PyTorch, materializing $\widetilde{K}$ and $\widetilde{V}$ of shape $[B, N, H_q, d_k]$ prior to attention matrix multiplication expands memory allocation from $H_{kv}$ to $H_q$, temporarily negating activation memory footprint savings during forward propagation unless fused into custom CUDA/Triton kernels.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### Fused Soft-Routing Triton Kernel Architecture
-To achieve optimal execution throughput, routing logic and KV mixture synthesis must be fused directly inside the SRAM inner-loop of Triton FlashAttention.
+A Triton kernel for QCQA fuses the routing linear transformation, routing Softmax, KV mixture matrix multiplication, and online attention Softmax in SRAM.
 
 ```
-       Global Memory (HBM)
-      ┌────────────────────────────────────────────────────────┐
-      │ Q [B, H_Q, L, d_k]                                      │
-      │ K [B, H_KV, L, d_k]  <-- Stored Unmixed KV Cache       │
-      │ V [B, H_KV, L, d_k]  <-- Stored Unmixed KV Cache       │
-      │ W_R [d_k, H_KV]                                        │
-      └───────────────────────────┬────────────────────────────┘
-                                  │ Load Q & Router Weights
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Q: [B, N, H_q, d_k], K, V: [B, N, H_kv, d_k]                │
+   │ W_router: [d_k, H_kv]                                       │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Load Tiles into SRAM Scratchpad
                                   ▼
- ┌──────────────────────────────────────────────────────────────────┐
- │                   Triton SRAM Scratchpad                         │
- │ 1. Compute Routing Logits: R_h = Q_tile @ W_R / tau              │
- │ 2. Compute Softmax Routing Weights: π_h = Softmax(R_h)           │
- │ 3. Synthesize Mixed KV Tiles On-The-Fly:                         │
- │    K_mixed = sum_j (π_{h, j} * K_tile[j])                         │
- │    V_mixed = sum_j (π_{h, j} * V_tile[j])                         │
- │ 4. Compute Attention Scores: S_tile = Q_tile @ K_mixed.T / sqrt  │
- │ 5. Online Softmax Accumulation into Output Tile                  │
- └────────────────────────────────┬─────────────────────────────────┘
-                                  │ Stream Output
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Load Q_tile [BLOCK_M, d_k] for query head q_h               │
+ │ 2. Compute Router Logits: r_j = Q_tile @ W_router / tau        │
+ │ 3. Compute Softmax Routing Probabilities pi_j over H_kv        │
+ │ 4. Load K_j, V_j [BLOCK_N, d_k] for all j in 1..H_kv           │
+ │ 5. Compute Fused Mixed K_tile = sum_j (pi_j * K_j)             │
+ │ 6. Compute Fused Mixed V_tile = sum_j (pi_j * V_j)             │
+ │ 7. Compute Online Scaled Attention: S_ij = Q_tile @ K_tile.T   │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Stream Context Output
                                   ▼
-      ┌────────────────────────────────────────────────────────┐
-      │ Output O [B, H_Q, L, d_k]                               │
-      └────────────────────────────────────────────────────────┘
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Context Output: O [B, N, H_q, d_k]                          │
+   └─────────────────────────────────────────────────────────────┘
 ```
 
-### Triton Implementation Guidelines:
-1. **On-Chip Softmax Mixture Fusion**:
-   Avoid materializing $[B, L, H_Q, d_k]$ tensors in DRAM. Keep routing logits $R_{b, l, h, j}$ in SRAM vector registers and perform instantaneous linear combinations over loaded KV tiles.
-2. **Temperature Scheduling**:
-   Implement a dynamic temperature annealing schedule:
-   \[
-   \tau(t) = \tau_{\text{min}} + (\tau_{\text{max}} - \tau_{\text{min}}) \cdot e^{-\lambda t}
-   \]
-   allowing broad subspace exploration early in training followed by sharp, deterministic routing in later epochs.
-3. **Optimized Autoregressive KV Decoding**:
-   During inference decoding ($L_{\text{query}}=1$), read raw unmixed tokens from KV cache $[B, H_{KV}, L_{\text{past}}, d_k]$ and perform single-step fused routing matrix multiplication directly in GPU register files.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Top-$k$ Sparse Routing**: Instead of dense Softmax over all $H_{kv}$ heads, route each query head to only the top-$k$ ($k \ll H_{kv}$) relevant KV heads to reduce mixture compute.
+2. **Spectral Subspace Router Regularization**: Enforce orthogonality constraints on $W_{\text{router}}$ to guarantee maximum diversity among synthesized KV mixtures.
+3. **MoE-QCQA Hybrids**: Integrate Mixture-of-Experts routing for attention key-values alongside MoE feed-forward layers for unified sparse expert scaling.

@@ -1,89 +1,190 @@
-# Minimal SVD Attention v2: Multi-Dimensional Mask-Aware Low-Rank Spectral Self-Attention
+# MinimalSVD v2: Refined SVD Low-Rank Attention with Flexible Attention Mask Handling
 
-## 1. Abstract & Theoretical Motivation
-Minimal SVD Attention v2 (`MinimalSVDAttentionV2`) presents a refined, low-rank factorized multi-head self-attention mechanism specifically optimized for zero-shot weight compression and versatile multi-dimensional mask processing in language models. Heavy parameterization in standard self-attention stems from dense weight matrices $W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$. Minimal SVD Attention v2 addresses this by factorizing each projection matrix into a pair of rank-constrained linear operators $W \approx A B$ using energy-thresholded truncated Singular Value Decomposition (SVD). Version 2 introduces an advanced multi-dimensional mask ingestion pipeline capable of parsing 2D, 3D, and 4D attention masks directly while eliminating non-essential experimental overheads (such as dynamic sparsity, non-standard softmax variants, and dynamic rank re-selection). Retaining full quadratic softmax attention over sequence length $N$, Minimal SVD Attention v2 ensures zero-shot fidelity to the uncompressed model, reducing parameter count per layer by over $20\times$ without requiring retraining.
+## 1. Executive Abstract & Architectural Motivation
 
-## 2. Mathematical Derivations & Formulations
-For a target pretrained weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ and bias $b \in \mathbb{R}^{d_{\text{out}}}$, the compact SVD factorization is given by:
-$$W = U \Sigma V^\top = \sum_{i=1}^{\min(d_{\text{out}}, d_{\text{in}})} \sigma_i u_i v_i^\top$$
-where $U \in \mathbb{R}^{d_{\text{out}} \times k}$, $\Sigma = \text{diag}(\sigma_1, \dots, \sigma_k)$ ($\sigma_1 \ge \sigma_2 \ge \dots \ge \sigma_k \ge 0$), and $V \in \mathbb{R}^{d_{\text{in}} \times k}$.
+MinimalSVD v2 (`MinimalSVDAttentionV2`) provides a refined, zero-shot SVD-factorized attention module for Transformer architectures. While standard Multi-Head Attention employs dense linear projections ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) that demand significant memory bandwidth, MinimalSVD v2 decomposes each linear parameter matrix into low-rank factor pairs ($A \in \mathbb{R}^{D \times r}, B \in \mathbb{R}^{r \times D}$) using truncated Singular Value Decomposition (SVD).
 
-The energy retention criterion determines the minimum rank $r$ satisfying:
-$$r = \arg\min_{r'} \left\{ \frac{\sum_{i=1}^{r'} \sigma_i^2}{\sum_{j=1}^k \sigma_j^2} \ge \eta \right\}, \qquad r \leftarrow \max(1, \min(r, d_{\text{out}}, d_{\text{in}}, 64))$$
-where $\eta \in (0, 1]$ (default $\eta = 0.95$).
+Version 2 introduces enhanced attention mask normalization and robust shape-checking for 2D (`[B, N]`), 3D (`[B, 1, N]`), and 4D (`[B, 1, N, N]`) mask tensors. It dynamically validates valid token positions to eliminate padding artifacts in low-rank projection spaces while retaining full scaled dot-product attention precision.
 
-The truncated factors $A \in \mathbb{R}^{d_{\text{out}} \times r}$ and $B \in \mathbb{R}^{r \times d_{\text{in}}}$ are set as:
-$$A = U_{:, :r} \text{diag}(\sigma_1, \dots, \sigma_r), \qquad B = V_{:r, :}^\top$$
+---
 
-Input representations $X \in \mathbb{R}^{B \times N \times D}$ undergo factorized projection:
-$$Q = (X B_Q^\top) A_Q^\top + b_Q, \quad K = (X B_K^\top) A_K^\top + b_K, \quad V = (X B_V^\top) A_V^\top + b_V$$
+## 2. Mathematical Formulations & Derivations
 
-Tensors are reshaped to multi-head format $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$ where $d_h = D / H$. Attention score computation incorporates adaptive mask processing:
-$$S = \frac{Q K^\top}{\sqrt{d_h}}$$
+Let $X \in \mathbb{R}^{B \times N \times D}$ denote input activations. Let $H$ be the number of attention heads, $d_k = D / H$ head dimension, $E \in (0, 1]$ energy retention threshold, and $r \in [1, 64]$ the rank for each projection.
 
-Given arbitrary mask inputs $M \in \mathbb{R}^{\dots}$, a 2D boolean token validity tensor $T_{\text{valid}} \in \{0, 1\}^{B \times N}$ is resolved via shape reduction:
-$$T_{\text{valid}} = \begin{cases} 
-M_{:, 0, 0, :} > -10^9 & \text{if } \text{dim}(M) = 4, M_{-, -2} = M_{-, -1} \\
-\text{Squeeze}(M) > -10^9 & \text{if } \text{dim}(M) = 4, M_{\text{shape}} = [B, 1, 1, N] \\
-\text{Squeeze}(M) & \text{if } \text{dim}(M) = 3 \\
-\text{Bool}(M) & \text{if } \text{dim}(M) = 2
-\end{cases}$$
+### Low-Rank SVD Weight Decomposition:
+Pre-trained projection weights $W \in \mathbb{R}^{D \times D}$ undergo singular value decomposition:
 
-The masked scores and context vector are evaluated as:
-$$S_{b, h, i, j} \leftarrow \begin{cases} S_{b, h, i, j} & \text{if } T_{\text{valid}}[b, j] = 1 \\ -10^5 & \text{if } T_{\text{valid}}[b, j] = 0 \end{cases}$$
-$$A = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1))$$
-$$C = A V \in \mathbb{R}^{B \times H \times N \times d_h}$$
-$$O = (\text{Reshape}(C) B_O^\top) A_O^\top + b_O \in \mathbb{R}^{B \times N \times D}$$
+\[
+W = U \Sigma V^\top, \quad U \in \mathbb{R}^{D \times D}, \, \Sigma \in \mathbb{R}^{D \times D}, \, V \in \mathbb{R}^{D \times D}
+\]
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
-The precise dimensional tracing across Minimal SVD Attention v2 execution is structured as follows:
+Truncated to rank $r$ derived from cumulative spectral energy threshold $E$:
 
-1. **Input Tensor**: $X \in \mathbb{R}^{B \times N \times D}$
-2. **Low-Rank Projection ($Q, K, V$)**:
-   - $Q_{\text{down}} = X B_Q^\top \in \mathbb{R}^{B \times N \times r_Q}$, $Q_{\text{up}} = Q_{\text{down}} A_Q^\top + b_Q \in \mathbb{R}^{B \times N \times D}$
-   - $K_{\text{down}} = X B_K^\top \in \mathbb{R}^{B \times N \times r_K}$, $K_{\text{up}} = K_{\text{down}} A_K^\top + b_K \in \mathbb{R}^{B \times N \times D}$
-   - $V_{\text{down}} = X B_V^\top \in \mathbb{R}^{B \times N \times r_V}$, $V_{\text{up}} = V_{\text{down}} A_V^\top + b_V \in \mathbb{R}^{B \times N \times D}$
-3. **Head Separation & Transposition**:
-   - $Q, K, V \to [B, N, H, d_h] \xrightarrow{\text{transpose}(1, 2)} [B, H, N, d_h]$
-4. **Bmm Attention Scores**:
-   - $S = Q K^\top / \sqrt{d_h} \in \mathbb{R}^{B \times H \times N \times N}$
-5. **Multi-Dimensional Mask Reduction & Ingestion**:
-   - Parse mask of shape $[B, N]$, $[B, 1, N]$, or $[B, 1, 1, N]$ into $T_{\text{valid}} \in \{0, 1\}^{B \times N}$
-   - Un-broadcast $T_{\text{valid}}$ to $[B, 1, 1, N]$ and apply `masked_fill` with $-10^5$
-6. **Softmax & Value Weighted Aggregation**:
-   - $P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times N}$
-   - $C_{\text{head}} = P V \in \mathbb{R}^{B \times H \times N \times d_h}$
-7. **Head Concatenation & Output Projections**:
-   - $C = \text{Reshape}(C_{\text{head}}) \in \mathbb{R}^{B \times N \times D}$
-   - $O_{\text{down}} = C B_O^\top \in \mathbb{R}^{B \times N \times r_O}$, $O = O_{\text{down}} A_O^\top + b_O \in \mathbb{R}^{B \times N \times D}$
+\[
+A = U[:, :r] \cdot \text{diag}(\Sigma[:r]) \in \mathbb{R}^{D \times r}, \quad B = V[:r, :]^\top \in \mathbb{R}^{r \times D}
+\]
 
-## 4. Analytical Complexity Profiling
-- **FLOPs Count**:
-  - Projections: $2 B N D (r_Q + r_K + r_V + r_O)$ FLOPs
-  - Score Calculation ($Q K^\top$): $2 B N^2 D$ FLOPs
-  - Value Aggregation ($P V$): $2 B N^2 D$ FLOPs
-  - Total Module FLOPs: $2 B N D \sum_{m \in \{Q, K, V, O\}} r_m + 4 B N^2 D$
-- **MAC Operations**:
-  - Linear Projections: $B N D \sum_{m} r_m$ MACs
-  - Attention Tensor Contractions: $2 B N^2 D$ MACs
-- **Memory Footprint & Parameter Scaling**:
-  - Original Projections: $4 D^2$ parameters
-  - Minimal SVD Projections: $2 D (r_Q + r_K + r_V + r_O)$ parameters
-  - For $D = 768, r = 32$: Uncompressed parameter count $= 4 \times 768^2 = 2,359,296$; compressed count $= 8 \times 32 \times 768 = 196,608$ (Compression Ratio $= 12.0\times$).
-  - KV Cache Storage: $2 B N D$ elements.
+### Factorised Forward Projection (`FactorisedLinear`):
+For input $X \in \mathbb{R}^{B \times N \times D}$:
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-- **Spectral Truncation Error & Rank Degeneracy**:
-  When singular value spectrum $\Sigma$ decays slowly, retaining $95\%$ energy forces truncation of high-frequency singular modes. This introduces residual error $\|W - A B\|_F = \sqrt{\sum_{i=r+1}^k \sigma_i^2}$, leading to degradation in sensitive attention heads.
-- **Mask Extraction Precision Losses**:
-  Mask parsing collapses multi-dimensional attention masks to token validity vectors $T_{\text{valid}} \in \{0, 1\}^{B \times N}$. If downstream tasks use complex causal or 2D spatial attention masks where $M_{i, j}$ depends on both token $i$ and $j$, this reduction fails, corrupting attention probability distributions.
-- **Fixed Rank Ceiling ($r_{\text{max}} = 64$)**:
-  In larger architectures (e.g., $D \ge 2048$), clamping rank to $r \le 64$ limits max retained energy to $\ll 95\%$, triggering severe representation loss.
+\[
+\text{FactorisedLinear}(X) = (X B^\top) A^\top + b = X (A B)^\top + b \in \mathbb{R}^{B \times N \times D}
+\]
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-- **Fused Low-Rank GEMM Kernels**:
-  Implement a unified Triton kernel fusing down-projection GEMM ($X B^\top$) and up-projection GEMM ($X B^\top A^\top$). Staging the intermediate tile $B_N \times B_r$ ($64 \times 32$) in SRAM prevents global HBM memory writes.
-- **Masking Fusion inside FlashAttention**:
-  Integrate the dynamic mask check directly into the FlashAttention-2 online softmax loop. When tiling tiles $Q_i$ and $K_j$, evaluate token validity in SRAM registers to bypass global mask loading.
-- **Balanced Singular Value Scaling**:
-  Initialize factor matrices symmetrically: $A = U_{:, :r} \Sigma_{:r}^{1/2}$ and $B = \Sigma_{:r}^{1/2} V_{:r, :}^\top$. This avoids asymmetric gradient scaling and stabilizes backpropagation during parameter-efficient fine-tuning.
+Applying factorized linear transformations to compute Query, Key, and Value representations:
+
+\[
+Q = \text{FactorisedLinear}_Q(X) \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+\[
+K = \text{FactorisedLinear}_K(X) \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+\[
+V = \text{FactorisedLinear}_V(X) \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+
+### Robust Mask Validation & Scaled Attention:
+Raw score matrices $S = \frac{Q K^\top}{\sqrt{d_k}} \in \mathbb{R}^{B \times H \times N \times N}$ are evaluated. Token valid boolean masks $M_{\text{valid}} \in \mathbb{R}^{B \times N}$ are parsed from inputs:
+
+\[
+\widehat{S}_{b, h, i, j} = \begin{cases}
+S_{b, h, i, j} & \text{if } M_{\text{valid}, b, j} = \text{True} \\
+-10^5 & \text{if } M_{\text{valid}, b, j} = \text{False}
+\end{cases}
+\]
+
+Softmax attention and output projections proceed as:
+
+\[
+A_{b, h, i, j} = \text{Softmax}_j (\widehat{S}_{b, h, i, j})
+\]
+\[
+C_{b, h, i, m} = \sum_{j=1}^N \text{Dropout}(A)_{b, h, i, j} \cdot V_{b, h, j, m} \implies C \in \mathbb{R}^{B \times N \times D}
+\]
+\[
+Y = \text{FactorisedLinear}_O(C) \in \mathbb{R}^{B \times N \times D}
+\]
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Tensor Shape | Transformation / Operation | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Input activation batch | `[B, N, D]` |
+| **Q Down Projection** | `[B, N, D]` | `self.q_proj.down(X)` | `[B, N, r_q]` |
+| **Q Up Projection** | `[B, N, r_q]` | `self.q_proj.up(Z)` | `[B, N, D]` |
+| **Multi-Head Transpose** | `[B, N, D]` | `.view(B, N, H, d_k).transpose(1, 2)` | `[B, H, N, d_k]` each |
+| **Score Matrix MatMul** | `Q`, `K` | `torch.matmul(Q, K.transpose(-2, -1)) / sqrt(d_k)` | `[B, H, N, N]` |
+| **Mask Parsing & Fill** | `scores`, `attention_mask` | Extract `token_valid` & `masked_fill(~valid, -1e5)` | `[B, H, N, N]` |
+| **Softmax & Value Agg** | `scores`, `V` | `F.softmax(dim=-1)` + `torch.matmul(attn, V)` | `[B, H, N, d_k]` |
+| **Out Down Projection**| `context: [B, N, D]`| `out_proj.down(context)` | `[B, N, r_o]` |
+| **Out Up Projection** | `[B, N, r_o]` | `out_proj.up(Z) + bias` | `Output: [B, N, D]` |
+
+### Architectural Flowchart Diagram
+
+```
+                        Input: hidden_states [B, N, D]
+                                        │
+          ┌─────────────────────────────┼─────────────────────────────┐
+          ▼                             ▼                             ▼
+    FactorisedLinear_Q            FactorisedLinear_K            FactorisedLinear_V
+  X -> down(r_q) -> up(D)       X -> down(r_k) -> up(D)       X -> down(r_v) -> up(D)
+          │                             │                             │
+    Q: [B, H, N, d_k]             K: [B, H, N, d_k]             V: [B, H, N, d_k]
+          │                             │                             │
+          └──────────────┬──────────────┘                             │
+                         ▼                                            │
+           MatMul: Q @ K.T / sqrt(d_k)                                │
+                         │                                            │
+                 scores: [B, H, N, N]                                 │
+                         │                                            │
+           Parse Mask (2D/3D/4D) -> token_valid                       │
+                         │                                            │
+           masked_fill(~token_valid, -1e5) & Softmax                  │
+                         │                                            │
+                attn: [B, H, N, N]                                    │
+                         │                                            │
+                         └──────────────────────┬─────────────────────┘
+                                                ▼
+                                      MatMul: attn @ V
+                                                │
+                                     context: [B, N, D]
+                                                │
+                                       FactorisedLinear_O
+                                    C -> down(r_o) -> up(D)
+                                                │
+                                        Output: [B, N, D]
+```
+
+---
+
+## 4. Analytical Complexity & Hardware Profiling
+
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r_q, r_k, r_v, r_o$ SVD ranks.
+
+1. **Factorised Linear Projections**:
+   - Total projection workload: $4 B N D (r_q + r_k + r_v + r_o)$ FLOPs.
+2. **Core Attention Computation**:
+   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
+   - Softmax & Masking: $7 B H N^2$ FLOPs.
+
+3. **Total Workload Summary**:
+   - **Total MACs**: $2 B N D (r_q + r_k + r_v + r_o) + 2 B N^2 D$
+   - **Total FLOPs**: $4 B N D (r_q + r_k + r_v + r_o) + 4 B N^2 D + 7 B H N^2$
+
+### Parameter & Memory Footprint Comparison
+- **Uncompressed Projection Parameters**: $4 D^2 + 4 D$ floats.
+- **MinimalSVD v2 Parameter Count**: $2 D (r_q + r_k + r_v + r_o) + 4 D$ floats.
+  For $D = 768$ and average rank $r = 32$, parameter requirements drop by **$91.6\%$** ($2.36\text{M} \to 199\text{k}$).
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
+
+### Rank Saturation at High Spectral Thresholds
+If energy parameter $E \ge 0.99$, rank $r$ approaches $\min(d_{\text{in}}, d_{\text{out}})$, which adds linear factor overhead ($2 D r \approx 2 D^2 > D^2$), increasing parameter storage beyond uncompressed linear layers.
+
+### Dynamic Range Underflow in Reduced Precision
+Using large negative values ($-10^5$) in FP16 precision avoids NaN gradients while preventing underflow errors during Softmax exponentiation.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel fuses low-rank projections ($B, A$) and token mask validation directly inside SRAM memory.
+
+```
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Input: X [B, N, D]                                          │
+   │ Projection Matrices: B [r, D], A [D, r]                     │
+   │ Token Valid Mask: token_valid [B, N]                        │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Direct SIMD Register Load
+                                  ▼
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Load Activation Tile X_i [BLOCK_M, D]                       │
+ │ 2. Compute Fused Down-Up Output: Y_i = (X_i @ B.T) @ A.T       │
+ │ 3. Mask Invalid Tokens: S_ij = S_ij if valid else -1e5         │
+ │ 4. Execute Online Scaled Softmax Attention                     │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Write Output
+                                  ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Output Tensor: Y [B, N, D]                                  │
+   └─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Per-Head Independent Rank Selection**: Decompose $W_Q, W_K$ per attention head into distinct head ranks $r_h$ rather than shared layer-level ranks.
+2. **Spectral Rank Distillation**: Train student models using MinimalSVD v2 factorized layers distilled from full uncompressed teacher models.
+3. **Low-Rank + Sparse Residual Injection**: Combine MinimalSVD v2 factorized buffers with sparse residual adapters to recover full uncompressed model accuracy.

@@ -1,7 +1,6 @@
 # PHANTOM: Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping via Deterministic CUR Decomposition and Angular LSH
 
-## 1. Abstract & Theoretical Motivation
-
+## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) in Transformer models requires quadratic computational time and memory scaling $\mathcal{O}(N^2)$ with sequence length $N$, presenting significant bottlenecks for long-context deployment. While dense low-rank projections reduce parameter counts, standard SVD linear layers discard structural column/row interpretable sparsity. Furthermore, sparse attention heuristics often fail to dynamically route non-local dependencies.
 
 **PHANTOM** (Parameter-Hashed AttentioN with Token-wise Orthogonal Mapping) presents an integrated sparse attention architecture combining two structural advances:
@@ -11,7 +10,7 @@ Standard Multi-Head Self-Attention (MHSA) in Transformer models requires quadrat
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Statistical Leverage-Score CUR Matrix Decomposition (`FactorisedLinear_CUR`)
 For a pre-trained projection weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, the full singular value decomposition $W = U \Sigma V^T$ is evaluated. Empirical row and column leverage scores are defined as:
@@ -69,26 +68,57 @@ $$Y = \text{FactorisedLinear\_CUR}_{\text{out}}\left( \text{Reshape}(O^{\text{fu
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
 | :--- | :--- | :--- | :--- |
-| **Input Hidden State** | $X$ | $[B, N, D]$ | Base activation state |
-| **CUR Projection Q/K/V** | $X R^T (C W_{\cap}^{\dagger})^T$| $[B, N, D] \to [B, N, r] \to [B, N, H \cdot d_h]$ | Leverage-score CUR down/up projection |
-| **Head Partitioning** | $Q, K, V$ | $[B, N, H \cdot d_h] \to [B, H, N, d_h]$ | Transpose to multi-head view |
-| **L2 Normalization** | $\hat{Q}, \hat{K}$ | $[B, H, N, d_h]$ | L2 normalization along head dimension |
-| **Hyperplane Projection** | $\hat{Q} P, \hat{K} P$ | $[B, H, N, d_h] \times [d_h, B_s] \to [B, H, N, B_s]$ | Sign inner-product hyperplane projection |
-| **Bit-Shift Hashing** | $h(q), h(k)$ | $[B, H, N, B_s] \to [B, H, N]$ | Integer bucket code evaluation |
-| **Bucket Partitioning** | $\mathcal{B}_c$ | $[B, H, N]$ | Group key/query indices by hash code |
-| **Intra-Bucket Softpick** | $O^{(m)}$ | $[B, H, N, d_h]$ | Sparse Softpick attention within buckets |
+| **Input Hidden State** | $X$ | `[B, N, D]` | Base activation state |
+| **CUR Projection Q/K/V** | $X R^T (C W_{\cap}^{\dagger})^T$| `[B, N, D] -> [B, N, r] -> [B, N, H * d_h]` | Leverage-score CUR down/up projection |
+| **Head Partitioning** | $Q, K, V$ | `[B, N, H * d_h] -> [B, H, N, d_h]` | Transpose to multi-head view |
+| **L2 Normalization** | $\hat{Q}, \hat{K}$ | `[B, H, N, d_h]` | L2 normalization along head dimension |
+| **Hyperplane Projection** | $\hat{Q} P, \hat{K} P$ | `[B, H, N, d_h] * [d_h, B_s] -> [B, H, N, B_s]` | Sign inner-product hyperplane projection |
+| **Bit-Shift Hashing** | $h(q), h(k)$ | `[B, H, N, B_s] -> [B, H, N]` | Integer bucket code evaluation |
+| **Bucket Partitioning** | $\mathcal{B}_c$ | `[B, H, N]` | Group key/query indices by hash code |
+| **Intra-Bucket Softpick** | $O^{(m)}$ | `[B, H, N, d_h]` | Sparse Softpick attention within buckets |
 | **Multi-Round Averaging** | $O^{\text{fused}}$ | $\frac{1}{M} \sum O^{(m)} \in [B, H, N, d_h]$ | Accumulation across $M$ LSH rounds |
-| **CUR Output Projection** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, r] \to [B, N, D]$ | Leverage-score CUR output projection |
+| **CUR Output Projection** | $Y$ | `[B, N, H * d_h] -> [B, N, r] -> [B, N, D]` | Leverage-score CUR output projection |
+
+```
+                       [B, N, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     CUR Q, K, V Projections     Check Mask Format
+      [B, H, N, d_h]             (Prepare 2D Boolean Token Validity)
+             │
+             ▼
+      Iterate across M LSH Rounds
+      - L2 Normalization Q_norm, K_norm
+      - Sample Random Hyperplanes P [d_h, B_s]
+      - Hash Codes h(q), h(k) via Bit-Shift Sum
+             │
+             ▼
+      Group Keys & Queries into Buckets B_c
+             │
+             ▼
+      Intra-Bucket Softpick Rectified Attention
+      O^(m) = Softpick(Q_b K_b^T / sqrt(d_h)) V_b
+             │
+             ▼
+      Average Multi-Round Outputs O_fused = (1/M) Sum(O^(m))
+             │
+             ▼
+      Output Low-Rank CUR Projection (FactorisedLinear_CUR)
+             │
+             ▼
+                       [B, N, D] Output
+```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Floating Point Operations (FLOPs)
+### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $r$ CUR compression rank, $M$ LSH rounds, and $B_s$ bucket bit-width (producing $2^{B_s}$ buckets).
 
 1. **CUR Linear Projections ($Q, K, V, O$)**:
@@ -103,11 +133,11 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
    - Softpick non-linearity & Value contraction: $2 M B N D \cdot \frac{N}{2^{B_s}}$
    $$\text{FLOPs}_{\text{lsh\_attn}} = 4 M B N D \cdot \frac{N}{2^{B_s}}$$
 
-**Total FLOP Count**:
-
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 M B N D B_s + 4 M B N D \cdot \frac{N}{2^{B_s}}$$
 
-### 4.2 Memory Footprint & Bandwidth
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} = 8 B N D r + 2 M B N D B_s + 2 M B N D \cdot \frac{N}{2^{B_s}}$$
 - **Parameter Footprint**:
   $$\Theta = 4 \times \left( d_{\text{in}} r + r d_{\text{out}} \right) = 8 D r$$
 - **Activation Footprint**:
@@ -116,9 +146,13 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 M B N D B_s + 4 M B N D \cdot \fr
   - Intra-bucket score tensors: $\mathcal{O}\left(M B H N \cdot \frac{N}{2^{B_s}}\right)$
   - Total Memory: $\mathcal{O}\left(B N D + M B H N + M B H \frac{N^2}{2^{B_s}}\right)$
 
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
+- **PHANTOM LSH Attention**: $\mathcal{O}\left(N \cdot \left(D r + M D B_s + M D \frac{N}{2^{B_s}}\right)\right)$ compute. When $2^{B_s} \gg N$, total sequence attention scales linearly $\mathcal{O}(N)$.
+
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### 5.1 CUR Intersection Matrix Ill-Conditioning
 - **Mechanism**: The CUR up-projection matrix relies on $W_{\cap}^{\dagger} = \text{pinv}(W_{\mathcal{I}_{\text{row}}, \mathcal{I}_{\text{col}}})$. If selected top-leverage rows and columns contain linearly dependent vectors, the intersection submatrix $W_{\cap} \in \mathbb{R}^{r \times r}$ becomes singular or severely ill-conditioned (condition number $\kappa(W_{\cap}) > 10^7$).
@@ -135,7 +169,7 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 M B N D B_s + 4 M B N D \cdot \fr
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -182,3 +216,12 @@ Executing intra-bucket attention via Python loops incurs severe CPU-GPU launch o
 - Sort tokens by hash code using a parallel shared-memory radix sort kernel.
 - Launch a block-sparse Triton kernel where each threadblock processes tokens belonging to a single hash bucket $\mathcal{B}_c$.
 - Load bucket keys $K_{\mathcal{B}_c}$ and values $V_{\mathcal{B}_c}$ into SRAM, evaluating online Softpick score tail subtraction and value contraction entirely within register space.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Adaptive Cross-Bucket Attention Range Expansion**: Allow query tokens to attend not only to their primary hash bucket $\mathcal{B}_{h(q)}$ but also to Hamming-distance-1 neighbor buckets ($\mathcal{H}(h(q), h(k)) \le 1$), recovering lost boundary key context.
+2. **Structured CUR+LoRA Hybrid Parameterization**: Augment statistical leverage CUR down/up linear projections with trainable rank-4 LoRA adapter pairs $(\Delta W = A B)$, enabling task adaptation while retaining physical column/row interpretability.
+3. **FlashAttention-3 FP8 Intra-Bucket Execution**: Execute intra-bucket matrix multiplications $Q_{\mathcal{B}} K_{\mathcal{B}}^T$ using 8-bit floating point precision (E4M3) on NVIDIA Hopper GPUs, quadrupling intra-bucket throughput.
+4. **Hierarchical 2-Level Multi-Resolution LSH**: Implement macro-hashing ($B_{s, \text{macro}} = 16$) followed by micro-hashing ($B_{s, \text{micro}} = 64$) for logarithmic candidate bucket pruning on million-token contexts.

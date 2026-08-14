@@ -1,7 +1,7 @@
 # SAMBA-M3: Hybrid Sliding-Window Attention and Spectral Mamba State-Space Model
 
-## 1. Abstract & Theoretical Motivation
-Transformer architectures parameterized purely by dense Multi-Head Self-Attention (MHSA) suffer from an $O(L^2)$ computational memory wall when scaling to long sequence lengths. While local sliding-window attention restricts interactions to a finite context window $W$ to achieve linear complexity $O(L \cdot W)$, it loses the capacity to maintain global long-range context across distant sequence tokens. Conversely, continuous-time selective State-Space Models (SSMs) like Mamba process sequence histories in $O(L)$ time via selective state recurrence, but struggle with precise associative retrieval within small, dense token spans.
+## 1. Executive Abstract & Architectural Motivation
+Transformer architectures parameterized purely by dense Multi-Head Self-Attention (MHSA) suffer from an $\mathcal{O}(L^2)$ computational memory wall when scaling to long sequence lengths. While local sliding-window attention restricts interactions to a finite context window $W$ to achieve linear complexity $\mathcal{O}(L \cdot W)$, it loses the capacity to maintain global long-range context across distant sequence tokens. Conversely, continuous-time selective State-Space Models (SSMs) like Mamba process sequence histories in $\mathcal{O}(L)$ time via selective state recurrence, but struggle with precise associative retrieval within small, dense token spans.
 
 **SAMBA-M3 (Sliding-window Attention and Spectral Mamba Hybrid)** resolves this trade-off by interleaving localized windowed attention with a continuous-time selective state-space model enhanced by **Spectral Time-Scale Modulation**. The architecture is structured as a dual-residual pre-layer-normalized block:
 1. **Local Sliding-Window Attention Sub-Layer**: Computes exact causal self-attention within a bounded temporal window $W$, modeling fine-grained local syntax and token-pair alignment.
@@ -11,7 +11,7 @@ This hybrid synthesis achieves strict $\mathcal{O}(L \cdot D \cdot (W + d_{\text
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Causal Sliding-Window Multi-Head Self-Attention
 Given input hidden states $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$, query, key, and value linear projections yield $\mathbf{Q}, \mathbf{K}, \mathbf{V} \in \mathbb{R}^{B \times H \times L \times d_k}$ where $d_k = D / H$.
@@ -44,7 +44,7 @@ $$\mathbf{X}^{(2)} = \operatorname{LayerNorm}\left( \mathbf{X}^{(1)} + \mathbf{X
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -93,7 +93,7 @@ $$\mathbf{X}^{(2)} = \operatorname{LayerNorm}\left( \mathbf{X}^{(1)} + \mathbf{X
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $W$ window size, and $d_{\text{state}}$ state dimension.
@@ -128,7 +128,7 @@ $$\text{Total FLOPs} = 16 B L D^2 + 4 B L D W + 2 B L D d_{\text{state}} + 7 B L
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 The 2D Explicit Mask Memory Trap
 In `sliding_window_mask`:
@@ -153,7 +153,7 @@ Because sliding window attention limits key-query interactions to distance $W$:
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To achieve true $\mathcal{O}(L)$ memory scaling, the 2D explicit mask tensor must be eliminated completely in favor of tile-level indexing in a custom Triton FlashAttention-Style kernel.
 
@@ -257,3 +257,12 @@ def _samba_m3_fused_window_attn_kernel(
 ### 6.3 Hardware Performance Gains
 1. **Zero Memory Allocation for Masks**: Eliminates the 16+ GB `[L, L]` floating-point mask tensor completely, restoring true $\mathcal{O}(L)$ memory consumption.
 2. **5.4x DRAM Bandwidth Reduction**: Bounded tile iterations (`min_tile_n` to `max_tile_n`) skip non-windowed key-value memory loads entirely, dramatically increasing GPU SM execution speed.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Complex Spectral Frequency Decomposition**: Replace scalar time-scale modulation $\Delta_{\text{scale}}$ with 1D Fast Fourier Transform (FFT) complex bandpass filters to isolate high/low frequency sequence components dynamically.
+2. **Chunk-Level Hybrid State Passing**: Pass final Mamba hidden states $\mathbf{h}_{L}$ across chunk boundaries as continuous KV-cache representations to endow sliding-window attention with infinite contextual memory.
+3. **Decoupled Head Receptive Windows**: Assign heterogeneous window sizes $W_h \in \{32, 128, 512, 2048\}$ across different attention heads $h$ to multi-scale temporal resolution.
+4. **FP8 Quantized Selective Scan State Space**: Quantize state transition matrices $\mathbf{A}, \mathbf{B}, \mathbf{C}$ to FP8 (E5M2/E4M3), accelerating linear scan rates by up to $3.5\times$ on NVIDIA H100 Hopper GPUs.

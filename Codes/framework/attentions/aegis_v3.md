@@ -1,7 +1,6 @@
 # AEGIS-Attention V3: Energy-Preserving SVD Projections with Softpick Local Windowing and Random Fourier Feature Global Kernel Attention
 
-## 1. Abstract & Theoretical Motivation
-
+## 1. Executive Abstract & Architectural Motivation
 Standard multi-head self-attention (MHSA) architectures suffer from quadratic time and memory complexity $\mathcal{O}(N^2)$ with sequence length $N$. Existing linear attention variants replace quadratic attention with non-negative kernel feature maps; however, they frequently exhibit degraded local representation accuracy due to spatial feature blurring and over-smoothed attention distributions.
 
 **AEGIS-Attention V3** addresses these limitations through a multi-branch split-head attention architecture featuring four key innovations:
@@ -12,7 +11,7 @@ Standard multi-head self-attention (MHSA) architectures suffer from quadratic ti
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Energy-Preserving Dynamic SVD Linear Layer (`FactorisedLinear`)
 For a target linear layer weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, the singular value decomposition is computed:
@@ -83,27 +82,56 @@ $$Y = \text{FactorisedLinear}_{\text{out}}\left( \text{Reshape}(O^{\text{fused}}
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Execution Step | Tensor Symbol | Shape Transformation | Operational Description |
 | :--- | :--- | :--- | :--- |
-| **Input State** | $X$ | $[B, N, D]$ | Hidden input tensor |
-| **SVD Projection Q/K/V** | $X W_{\text{down}}^T W_{\text{up}}^T$ | $[B, N, D] \to [B, N, r] \to [B, N, H \cdot d_h]$ | Down/Up SVD Linear transform |
-| **Head Partitioning** | $Q, K, V$ | $[B, N, H \cdot d_h] \to [B, H, N, d_h]$ | Transpose to multi-head view |
-| **Branch Splitting** | $Q_l, Q_g$ | $[B, H_l, N, d_h], [B, H_g, N, d_h]$ | Split into local ($H_l$) & global ($H_g$) |
-| **Local Softpick Attention**| $O^{\text{local}}$ | $[B, H_l, N, d_h] \times [B, H_l, N, d_h] \to [B, H_l, N, d_h]$ | Sliding-window Softpick contraction |
-| **RFF Kernel Projection** | $\phi_Q, \phi_K$ | $[B, H_g, N, d_h] \times [H_g, d_h, F] \to [B, H_g, N, F]$ | Exponential RFF feature mapping |
-| **Global Memory State** | $KV$ | $[B, H_g, N, F]^T \times [B, H_g, N, d_h] \to [B, H_g, F, d_h]$| Outer-product memory state |
-| **Global Context Querying** | $O^{\text{global}}$ | $[B, H_g, N, F] \times [B, H_g, F, d_h] \to [B, H_g, N, d_h]$ | Linear query context contraction |
-| **Head Blending Gate** | $g$ | $[H] \to [1, H, 1, 1]$ | Sigmoidal head blending gate |
-| **Fused Head Assembly** | $O^{\text{fused}}$ | $[B, H, N, d_h]$ | Gated combination of local/global |
-| **Output Projection** | $Y$ | $[B, N, H \cdot d_h] \to [B, N, r] \to [B, N, D]$ | Output SVD factorized transformation |
+| **Input State** | $X$ | `[B, N, D]` | Hidden input tensor |
+| **SVD Projection Q/K/V** | $X W_{\text{down}}^T W_{\text{up}}^T$ | `[B, N, D] -> [B, N, r] -> [B, N, H * d_h]` | Down/Up SVD Linear transform |
+| **Head Partitioning** | $Q, K, V$ | `[B, N, H * d_h] -> [B, H, N, d_h]` | Transpose to multi-head view |
+| **Branch Splitting** | $Q_l, Q_g$ | `[B, H_l, N, d_h]`, `[B, H_g, N, d_h]` | Split into local ($H_l$) & global ($H_g$) |
+| **Local Softpick Attention**| $O^{\text{local}}$ | `[B, H_l, N, d_h] * [B, H_l, N, d_h] -> [B, H_l, N, d_h]` | Sliding-window Softpick contraction |
+| **RFF Kernel Projection** | $\phi_Q, \phi_K$ | `[B, H_g, N, d_h] * [H_g, d_h, F] -> [B, H_g, N, F]` | Exponential RFF feature mapping |
+| **Global Memory State** | $KV$ | `[B, H_g, N, F]^T * [B, H_g, N, d_h] -> [B, H_g, F, d_h]`| Outer-product memory state |
+| **Global Context Querying** | $O^{\text{global}}$ | `[B, H_g, N, F] * [B, H_g, F, d_h] -> [B, H_g, N, d_h]` | Linear query context contraction |
+| **Head Blending Gate** | $g$ | `[H] -> [1, H, 1, 1]` | Sigmoidal head blending gate |
+| **Fused Head Assembly** | $O^{\text{fused}}$ | `[B, H, N, d_h]` | Gated combination of local/global |
+| **Output Projection** | $Y$ | `[B, N, H * d_h] -> [B, N, r] -> [B, N, D]` | Output SVD factorized transformation |
+
+```
+                       [B, N, D] Input Tensor
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+     SVD Q, K, V Projections     Check N < W_local
+      [B, H, N, d_h]             (Fallback to Dense Matmul if True)
+             │
+     ┌───────┴───────┐
+     ▼ (H_l heads)   ▼ (H_g heads)
+Local Softpick    RFF Projection: phi(Q), phi(K) [B, H_g, N, F]
+Window Attn              │
+Shape: [B, H_l, N, d_h]  ▼
+     │            Outer Product KV Memory: phi(K)^T @ V [B, H_g, F, d_h]
+     │                   │
+     │                   ▼
+     │            Global Output: phi(Q) @ KV / (phi(Q) @ K_sum) [B, H_g, N, d_h]
+     │                   │
+     └───────┬───────────┘
+             ▼
+      Adaptive Head Blending Gate (sig(beta + bias))
+             │
+             ▼
+      Output SVD Projection (FactorisedLinear)
+             │
+             ▼
+                       [B, N, D] Output
+```
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 Floating Point Operations (FLOPs)
+### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads, $d_h = D/H$ head dimension, $r$ average SVD rank, $W$ local window radius, and $F$ RFF feature dimension ($F = \text{rff\_features}$).
 
 1. **SVD Linear Projections ($Q, K, V, O$)**:
@@ -118,22 +146,26 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads
    - Global Context retrieval: $2 B H_g N F d_h$
    $$\text{FLOPs}_{\text{global}} = 8 B H_g N d_h F$$
 
-**Total FLOP Count**:
-
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 
-### 4.2 Memory Footprint & Bandwidth
+### 4.2 MACs & Memory Footprint Analysis
+- **Multiply-Accumulate Operations (MACs)**:
+  $$\text{Total MACs} = 8 B N D r + 2 B H_l N W d_h + 4 B H_g N d_h F$$
 - **Parameter Count**:
-  $$\Theta = 4 \times (D \cdot r + r \cdot D) + (H_g \cdot d_h \cdot F) + H = 8 D r + H_g d_h F + H$$
+  $$\Theta = 8 D r + H_g d_h F + H$$
 - **Activation Footprint**:
   - Local Softpick attention tensor: $\mathcal{O}(B H_l N W)$
   - RFF feature activations: $\mathcal{O}(B H_g N F)$
   - Global memory matrix state: $\mathcal{O}(B H_g F d_h)$
   - Total Memory: $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$
 
+### 4.3 Asymptotic Scalability Comparison
+- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
+- **AEGIS-Attention V3**: $\mathcal{O}\left(N (D r + H_l W d_h + H_g d_h F)\right)$ compute, $\mathcal{O}(N D + H_g F d_h)$ memory footprint.
+
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Dynamic Rank Under-Estimation & Energy Truncation Loss
 - **Mechanism**: The energy threshold $\tau$ (e.g., $0.95$) determines rank $r$. For weight matrices with long singular tails, preserving $95\%$ energy may result in rank $r > r_{\max}$, triggering hard truncation to $r_{\max}$.
@@ -144,11 +176,11 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 - **Mitigation**: Strictly enforce L2 normalization $\hat{Q} = Q / \|Q\|_2$ and initialize $W_{\text{rff}}$ with standard deviation $\sigma \le 0.02$.
 
 ### 5.3 Softpick Gradient Sparsification & Zero-Gradient Lock
-- **Mechanism**: The Softpick operator subtracts the tail threshold $\exp(-m/T)$ and applies ReLU. If temperature $T$ is set too low ($T < 0.1$), all off-diagonal scores are zeroed ($p_{i, j} = 0$), trapping local attention in a identity-map state with zero backpropagation gradients.
+- **Mechanism**: The Softpick operator subtracts the tail threshold $\exp(-m/T)$ and applies ReLU. If temperature $T$ is set too low ($T < 0.1$), all off-diagonal scores are zeroed ($p_{i, j} = 0$), trapping local attention in an identity-map state with zero backpropagation gradients.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -187,3 +219,12 @@ Standard PyTorch creates an explicit $[B, H_l, N, W]$ logit tensor before evalua
 - Parallelize over global heads $H_g$ and batch $B$.
 - Load tokens in sequence tiles of `BLOCK_N = 128`. Compute normalized projection $\exp(\hat{K} W_{\text{rff}}) / \sqrt{F}$ and accumulate outer products into shared memory buffer $KV \in \mathbb{R}^{F \times d_h}$.
 - Stream across sequence blocks in a single pass without storing full $[B, H_g, N, F]$ RFF feature tensors in DRAM.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Cosine-Sine Dual Random Fourier Feature Mapping**: Replace pure exponential maps $\exp(\hat{X} W_{\text{rff}})$ with true shift-invariant Gaussian kernel approximators $\phi(X) = \frac{1}{\sqrt{F}} [\cos(X W_{\text{rff}}); \sin(X W_{\text{rff}})]$, resolving numerical exponentiation overflow.
+2. **Adaptive Softpick Temperature Annealing**: Dynamically anneal softpick temperature $T_\ell$ across layer depth $\ell$, maintaining high entropy ($T = 2.0$) in initial layers for global search and low entropy ($T = 0.5$) in deep layers for precise local extraction.
+3. **Structured Low-Rank Tensor Train (TT) Factorization**: Upgrade SVD matrix factorization to Tensor Train decomposition for 4D weight tensors, compressing projections down to rank $r = 8$.
+4. **FP8 Quantized RFF State Accumulator**: Compute outer products $KV = \sum \phi_K(K)^T \otimes V$ using 8-bit FP8 (E4M3) operations on NVIDIA Hopper GPUs, doubling linear attention throughput.

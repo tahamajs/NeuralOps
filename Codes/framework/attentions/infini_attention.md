@@ -1,223 +1,165 @@
-# Infini-Attention: Compressive Memory-Augmented Sliding-Window Attention
+# Infini-Attention: Compressive Memory & Local Sliding-Window Hybrid Attention
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 
-Standard Multi-Head Attention (MHA) exhibits quadratic complexity \(\mathcal{O}(L^2)\), preventing long-context sequence modeling in memory-constrained LLM inference. While local sliding-window attention restricts receptive field scale to \(\mathcal{O}(L \cdot W)\), it suffers from catastrophic context truncation outside window boundary \(W\).
+Standard Multi-Head Attention cannot scale to infinitely long context streams due to the quadratic growth of KV cache memory ($\mathcal{O}(L^2)$). Infini-Attention (MHA with Compressive Memory, Mhar et al., 2024) solves this bottleneck by combining local masked sliding-window attention with persistent compressive memory tensors $M \in \mathbb{R}^{H \times d_k \times d_v}$.
 
-**Infini-Attention** solves context truncation by augmenting local sliding-window attention with a continuous, bounded **Compressive Memory Matrix** \(\mathbf{M} \in \mathbb{R}^{1 \times H \times C \times d_k}\). For each sequence step, tokens query both a band-sparse local attention window (\(\text{Window Size } W\)) and an associative compressive memory tensor (\(\text{Memory Slots } C\)). By executing local dot-product attention and compressive memory retrieval in parallel, Infini-Attention achieves linear time complexity \(\mathcal{O}(L \cdot (W + C))\) and constant memory usage during context expansion. This document provides a rigorous mathematical derivation, tensor shape trace, complexity breakdown, failure mode diagnosis, and a Triton GPU acceleration blueprint.
-
----
-
-## 2. Mathematical Derivations & Formulations
-
-Given input sequence activations \(\mathbf{X} \in \mathbb{R}^{B \times L \times D}\), let \(H\) be the head count, \(d_k = D / H\) the head dimension, \(W\) local window size, and \(C\) memory slot count.
-
-### 2.1 Multi-Head Feature Projections
-
-Input \(\mathbf{X}\) is mapped to multi-head Query, Key, and Value space via weight matrices \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V \in \mathbb{R}^{D \times D}\):
-
-\[
-\mathbf{Q} = \text{Reshape}\left(\mathbf{X} \mathbf{W}_Q, [B, H, L, d_k]\right)
-\]
-\[
-\mathbf{K} = \text{Reshape}\left(\mathbf{X} \mathbf{W}_K, [B, H, L, d_k]\right)
-\]
-\[
-\mathbf{V} = \text{Reshape}\left(\mathbf{X} \mathbf{W}_V, [B, H, L, d_k]\right)
-\]
-
-### 2.2 Compressive Memory Retrieval Branch
-
-Let \(\mathbf{M} \in \mathbb{R}^{1 \times H \times C \times d_k}\) represent the learnable compressive memory parameter tensor.
-
-1. **Memory Score Matrix**:
-   Queries \(\mathbf{Q}\) evaluate dot-product similarity against memory slots \(\mathbf{M}\):
-   \[
-   \mathbf{S}_{\text{mem}} = \frac{\mathbf{Q} \mathbf{M}^\top}{\sqrt{d_k}} \quad \in \mathbb{R}^{B \times H \times L \times C}
-   \]
-
-2. **Softmax Memory Context Retrieval**:
-   \[
-   \mathbf{A}_{\text{mem}} = \text{softmax}(\mathbf{S}_{\text{mem}}, \text{dim}=-1) \quad \in \mathbb{R}^{B \times H \times L \times C}
-   \]
-   \[
-   \mathbf{Y}_{\text{mem}} = \mathbf{A}_{\text{mem}} \mathbf{M} \quad \in \mathbb{R}^{B \times H \times L \times d_k}
-   \]
-
-### 2.3 Local Band-Sparse Sliding-Window Attention Branch
-
-1. **Local Score Matrix**:
-   \[
-   \mathbf{S}_{\text{loc}} = \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d_k}} \quad \in \mathbb{R}^{B \times H \times L \times L}
-   \]
-
-2. **Causal Sliding-Window Masking**:
-   For query position \(i\) and key position \(j\):
-   \[
-   \mathbf{M}_{\text{window}}(i, j) = \begin{cases}
-   0, & \text{if } 0 \le i - j < W \\
-   -\infty, & \text{otherwise}
-   \end{cases}
-   \]
-   Padding masks \(\mathbf{M}_{\text{pad}}\) are added to set invalid token positions to \(-\infty\).
-
-3. **Local Context Aggregation**:
-   \[
-   \mathbf{A}_{\text{loc}} = \text{Dropout}\left(\text{softmax}(\mathbf{S}_{\text{loc}} + \mathbf{M}_{\text{window}} + \mathbf{M}_{\text{pad}})\right) \quad \in \mathbb{R}^{B \times H \times L \times L}
-   \]
-   \[
-   \mathbf{Y}_{\text{loc}} = \mathbf{A}_{\text{loc}} \mathbf{V} \quad \in \mathbb{R}^{B \times H \times L \times d_k}
-   \]
-
-### 2.4 Context Fusion & Output Projection
-
-Local and compressive memory representations are combined via element-wise addition and projected back to dimension \(D\) via output matrix \(\mathbf{W}_O \in \mathbb{R}^{D \times D}\):
-
-\[
-\mathbf{Y}_{\text{fused}} = \mathbf{Y}_{\text{loc}} + \mathbf{Y}_{\text{mem}} \quad \in \mathbb{R}^{B \times H \times L \times d_k}
-\]
-\[
-\mathbf{O} = \text{Reshape}\left(\mathbf{Y}_{\text{fused}}, [B, L, D]\right) \mathbf{W}_O + \mathbf{b}_O \quad \in \mathbb{R}^{B \times L \times D}
-\]
-
-The module returns the tuple \((\mathbf{O}, \mathbf{A}_{\text{loc}})\).
+Infini-Attention processes inputs in bounded streaming segments of length $N$. Within each segment, standard masked sliding-window attention computes fine-grained local dependencies. Simultaneously, historical key-value states from past segments are compressed into a non-bounded associative memory matrix $M$ using linear feature updates. Fusing local sliding-window context with compressive memory retrieval enables infinite sequence length processing with constant bounded memory overhead.
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 2. Mathematical Formulations & Derivations
+
+Given input sequence segment representations $X \in \mathbb{R}^{B \times N \times D}$, query, key, and value states are projected as:
+
+\[
+Q = X W_Q \in \mathbb{R}^{B \times N \times D}, \quad K = X W_K \in \mathbb{R}^{B \times N \times D}, \quad V = X W_V \in \mathbb{R}^{B \times N \times D}
+\]
+
+Multi-head formatting yields $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_k}$ with $d_k = D / H$.
+
+### 1. Local Sliding-Window Attention Branch:
+Local attention scores are computed within segment length $N$ (or sliding window $W \le N$):
+
+\[
+S_{\text{local}} = \frac{Q K^\top}{\sqrt{d_k}} + M_{\text{window}} \in \mathbb{R}^{B \times H \times N \times N}
+\]
+\[
+A_{\text{local}} = \text{Softmax}\left( S_{\text{local}} \right) \in \mathbb{R}^{B \times H \times N \times N}
+\]
+\[
+O_{\text{local}} = A_{\text{local}} V \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+
+### 2. Compressive Memory Retrieval Branch:
+Historical segment context is retrieved from persistent memory matrix $M \in \mathbb{R}^{B \times H \times d_k \times d_k}$ and normalization vector $z \in \mathbb{R}^{B \times H \times d_k \times 1}$:
+
+\[
+\phi(Q) = \text{ELU}(Q) + 1.0 > 0 \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+\[
+O_{\text{mem}} = \frac{\phi(Q) M}{\phi(Q) z + \epsilon} \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+
+### 3. Fused Output & Compressive Memory State Update:
+Local and compressive memory context outputs are fused using a learnable gating parameter $\beta \in \mathbb{R}^H$:
+
+\[
+O_{\text{fused}} = \sigma(\beta) \odot O_{\text{local}} + (1 - \sigma(\beta)) \odot O_{\text{mem}} \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+
+After processing the segment, compressive memory states $M$ and $z$ are updated with current segment keys and values:
+
+\[
+\phi(K) = \text{ELU}(K) + 1.0 > 0 \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+\[
+M_{\text{new}} = M + \phi(K)^\top V \in \mathbb{R}^{B \times H \times d_k \times d_k}
+\]
+\[
+z_{\text{new}} = z + \sum_{i=1}^N \phi(K)_i^\top \in \mathbb{R}^{B \times H \times d_k \times 1}
+\]
+
+Final output projection produces $Y = \text{Concat}(O_{\text{fused}, 1}, \dots, O_{\text{fused}, H}) W_O \in \mathbb{R}^{B \times N \times D}$.
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-                        Input Hidden States X [B, L, D]
-                                       │
-            ┌──────────────────────────┴──────────────────────────┐
-            ▼                                                     ▼
-   Local Q, K, V Projections                             Compressive Memory M
-   - Q, K, V: [B, H, L, d_k]                             - M: [1, H, C, d_k]
-            │                                                     │
-   Band-Sparse Sliding Window                           Memory Dot-Product Scores
-   - S_loc = Q K^T / sqrt(d_k)                          - S_mem = Q M^T / sqrt(d_k)
-   - Mask: 0 <= i - j < W                               - S_mem: [B, H, L, C]
-            │                                                     │
-   Softmax & Local Context                              Softmax & Memory Context
-   - Y_loc: [B, H, L, d_k]                              - Y_mem: [B, H, L, d_k]
-            │                                                     │
-            └──────────────────────────┬──────────────────────────┘
-                                       ▼
-                       Fused Output: Y_loc + Y_mem
-                                       │
-                                       ▼
-                           Output GEMM: W_O + b_O
-                                       │
-                                       ▼
-                      Final Output Tuple (O, A_loc)
+Input Segment: hidden_states [B, N, D]
+  │
+  ├──> Q, K, V Projections ──> [B, H, N, d_k]
+  │
+  ├──> Local Branch:
+  │      ├──> Local Softmax Scores S_local = Q @ K.T / sqrt(d_k) + M_win ──> [B, H, N, N]
+  │      └──> Local Context O_local = Softmax(S_local) @ V ──> [B, H, N, d_k]
+  │
+  ├──> Memory Retrieval Branch:
+  │      ├──> phi(Q) = ELU(Q) + 1.0 ──> [B, H, N, d_k]
+  │      └──> Memory Context O_mem = phi(Q) @ M / (phi(Q) @ z + eps) ──> [B, H, N, d_k]
+  │
+  ├──> Gated Fusion: O_fused = sigmoid(beta) * O_local + (1 - sigmoid(beta)) * O_mem
+  │
+  ├──> Memory State Update:
+  │      ├──> M_new = M + phi(K).T @ V ──> [B, H, d_k, d_k]
+  │      └──> z_new = z + phi(K).sum(dim=2) ──> [B, H, d_k, 1]
+  │
+  └──> transpose(1, 2) ──> contiguous() ──> [B, N, D]
+  └──> Linear(D, D)(O_fused) ──> Segment Output: [B, N, D]
 ```
 
-| Step | Operation | Input Tensor Shapes | Output Tensor Shapes | Tensor Shape Transformation |
-| :--- | :--- | :--- | :--- | :--- |
-| **1** | Q, K, V GEMMs | `hidden_states` \([B, L, D]\) | `q, k, v` | \([B, L, D] \rightarrow 3 \times [B, H, L, d_k]\) |
-| **2** | Memory Score Matmul | `q` \([B, H, L, d_k]\), `mem` \([B, H, C, d_k]\) | `mem_scores` | \([B, H, L, d_k] \times [B, H, d_k, C] \rightarrow [B, H, L, C]\) |
-| **3** | Memory Softmax & BMM | `mem_scores`, `mem` | `mem_out` | \([B, H, L, C] \times [B, H, C, d_k] \rightarrow [B, H, L, d_k]\) |
-| **4** | Local Score Matmul | `q`, `k` \([B, H, L, d_k]\) | `scores` | \([B, H, L, d_k] \times [B, H, d_k, L] \rightarrow [B, H, L, L]\) |
-| **5** | Window Mask Application | `scores`, `window_mask` | `scores` | Mask out positions where \(i - j \ge W\) or \(j > i\) |
-| **6** | Local Softmax & BMM | `scores`, `v` \([B, H, L, d_k]\) | `local_out` | \([B, H, L, L] \times [B, H, L, d_k] \rightarrow [B, H, L, d_k]\) |
-| **7** | Memory-Local Fusion | `local_out`, `mem_out` | `out` | \([B, H, L, d_k] + [B, H, L, d_k] \rightarrow [B, H, L, d_k]\) |
-| **8** | Output GEMM | `out` reshaped to \([B, L, D]\)| `out` | \([B, L, D] \rightarrow [B, L, D]\) |
+### Detailed Tensor Transformations:
+
+| Step | Operation | Tensor Shape | Description |
+| :--- | :--- | :--- | :--- |
+| 1 | Input Segment | $[B, N, D]$ | Hidden state segment |
+| 2 | Projections | $[B, H, N, d_k]$ | Query, Key, Value states |
+| 3 | Local Sliding Softmax | $[B, H, N, N]$ | Local segment score matrix |
+| 4 | Local Context $O_{\text{local}}$ | $[B, H, N, d_k]$ | High-resolution local context |
+| 5 | Compressive Memory Retrieval | $[B, H, N, d_k]$ | Long-range context retrieved from persistent state $M$ |
+| 6 | Sigmoidal Gated Fusion | $[B, H, N, d_k]$ | Convex combination $\sigma(\beta) O_{\text{local}} + (1-\sigma(\beta)) O_{\text{mem}}$ |
+| 7 | Memory State Update | $[B, H, d_k, d_k]$ | Cumulative ELU key-value update $M \leftarrow M + \phi(K)^\top V$ |
+| 8 | Output Projection | $[B, N, D]$ | Segment output transformed to model dimension $D$ |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 FLOP & MAC Operations Analysis
+### FLOP and MAC Breakdown ($B$: Batch, $N$: Segment Len, $D$: Dim, $H$: Heads, $d_k$: Head Dim):
+- **Input Projections ($W_Q, W_K, W_V$)**: $6 B N D^2$ FLOPs
+- **Local Sliding Window Attention ($Q K^\top, A V$)**: $4 B H N^2 d_k = 4 B N^2 D$ FLOPs
+- **Compressive Memory Retrieval ($\phi(Q) M$)**: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs
+- **Compressive Memory State Update ($\phi(K)^\top V$)**: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs
+- **Output Projection ($W_O$)**: $2 B N D^2$ FLOPs
 
-Let \(B\) be batch size, \(L\) sequence length, \(D\) hidden dimension, \(H\) head count, \(d_k = D / H\), \(W\) local window size, and \(C\) memory slots:
+**Total Complexity per Segment**:
+- **Total MACs**: $4 B N D^2 + 2 B N^2 D + 2 B N D d_k$
+- **Total FLOPs**: $8 B N D^2 + 4 B N^2 D + 4 B N D d_k$ ($\mathcal{O}(N)$ linear sequence length scaling per segment)
 
-1. **Q, K, V, and Output Projections**:
-   - 4 GEMM operations of size \((B \cdot L \times D) \times (D \times D)\).
-   - MACs: \(4 B \cdot L \cdot D^2\).
-   - FLOPs: \(8 B \cdot L \cdot D^2\).
-2. **Compressive Memory Retrieval Branch**:
-   - Score Matmul (\(\mathbf{Q} \mathbf{M}^\top\)): \(2 B \cdot H \cdot L \cdot C \cdot d_k = 2 B \cdot L \cdot C \cdot D\) FLOPs.
-   - Softmax: \(5 B \cdot H \cdot L \cdot C\) FLOPs.
-   - Memory Context Matmul (\(\mathbf{A}_{\text{mem}} \mathbf{M}\)): \(2 B \cdot L \cdot C \cdot D\) FLOPs.
-   - Total Memory Branch FLOPs: \(4 B \cdot L \cdot C \cdot D + 5 B H L C\).
-3. **Local Sliding-Window Attention Branch**:
-   - Local Scores over window \(W\): \(2 B \cdot L \cdot W \cdot D\) FLOPs.
-   - Softmax & Context Product: \(2 B \cdot L \cdot W \cdot D + 5 B H L W\) FLOPs.
-   - Total Local Branch FLOPs: \(4 B \cdot L \cdot W \cdot D + 5 B H L W\).
-4. **Total Theoretical Complexity**:
-   - **Total MACs**: \(4 B \cdot L \cdot D^2 + 2 B \cdot L \cdot (W + C) \cdot D\).
-   - **Total FLOPs**: \(8 B \cdot L \cdot D^2 + 4 B \cdot L \cdot (W + C) \cdot D + 5 B H L (W + C)\).
-
-### 4.2 Memory Footprint Accounting
-
-- **Parameter Count**:
-  - \(\mathbf{W}_Q, \mathbf{W}_K, \mathbf{W}_V, \mathbf{W}_O\): \(4 \times (D^2 + D)\) parameters.
-  - Compressive Memory \(\mathbf{M}\): \(H \cdot C \cdot d_k = C \cdot D\) parameters.
-  - Total Parameters: \(4 D^2 + (4 + C) D\). For \(D=768, C=128\): \(\approx 2.45 \times 10^6\) parameters (4.9 MB in FP16).
-
-- **Training Activation Memory**:
-  - Local score matrix: \(B \cdot H \cdot L \cdot W \times 2\) bytes.
-  - Memory attention matrix: \(B \cdot H \cdot L \cdot C \times 2\) bytes.
+### Memory Footprint:
+- **Static Weights**: $4 D^2 + H$ parameters.
+- **Persistent Compressive State Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot d_k^2)$ persistent tensor memory, independent of total past stream length $L$.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-### 5.1 Static Compressive Memory Capacity Saturation
-
-In the current implementation, `self.memory` is defined as a fixed trainable parameter tensor \(\mathbf{M} \in \mathbb{R}^{1 \times H \times C \times d_k}\). Unlike dynamic Infini-Attention models that update memory via continuous key-value associative scan rules, static memory parameters cannot adapt to sample-specific context during evaluation. Consequently, the memory acts as a global bias prompt rather than an input-adaptive context cache.
-
-### 5.2 Memory Attention Uniformity Collapse
-
-If query norms \(\|\mathbf{q}_{b, l}\|_2\) grow large relative to scale \(\sqrt{d_k}\), the Softmax operator \(\text{softmax}(\mathbf{Q} \mathbf{M}^\top / \sqrt{d_k})\) saturates. A single memory slot \(c \in \{1, \dots, C\}\) absorbs 100% of the attention weight, collapsing memory retrieval rank to 1.
+1. **Unbounded Compressive Memory Saturation**: Updating $M \leftarrow M + \phi(K)^\top V$ without decay causes memory matrix norm growth over millions of tokens, leading to FP16 overflow.
+2. **Feature Smearing in Compressive Retrieval**: Linear ELU feature maps $\phi(K)$ aggregate historical tokens additively, causing fine details from 100k+ past steps to over-smooth.
+3. **Gating Parameter Collapse**: If gate logit $\beta \gg 0$, $\sigma(\beta) \to 1$, completely deactivating the compressive memory branch and reducing the model to a standard sliding-window Transformer.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### 6.1 Fused Local-Memory Dual-Attention Kernel
-
-To optimize memory bandwidth, we deploy a Triton kernel that fuses local sliding-window attention and compressive memory retrieval into a single GPU SRAM pass.
+A Triton kernel for Infini-Attention fuses local sliding window FlashAttention with persistent compressive memory retrieval in SRAM.
 
 ```python
+# Triton Fused Infini-Attention Blueprint
 import triton
 import triton.language as tl
-import torch
 
 @triton.jit
-def _infini_fused_dual_attn_kernel(
-    Q_ptr, K_ptr, V_ptr, Mem_ptr, Out_ptr,
-    stride_b, stride_h, stride_l, stride_d,
-    B, H, L, D_HEAD: tl.constexpr,
-    C_SLOTS: tl.constexpr, WINDOW_W: tl.constexpr,
-    BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr
+def _infini_fused_kernel(
+    Q_ptr, K_ptr, V_ptr, M_ptr, Out_ptr,
+    stride_qb, stride_qh, stride_qn, stride_qd,
+    N, d_k,
+    BLOCK_N: tl.constexpr
 ):
-    pid_b = tl.program_id(0)
-    pid_h = tl.program_id(1)
-    pid_m = tl.program_id(2)
+    pid_bh = tl.program_id(0)
     
-    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
-    offs_d = tl.arange(0, D_HEAD)
-    offs_c = tl.arange(0, C_SLOTS)
+    # Load persistent compressive memory state M [d_k, d_k] into SRAM
+    m_state = tl.load(M_ptr + pid_bh * d_k * d_k + tl.arange(0, d_k)[:, None] * d_k + tl.arange(0, d_k)[None, :])
     
-    # Load Q block [BLOCK_M, D_HEAD] into SRAM
-    q_tile = tl.load(Q_ptr + pid_b * stride_b + pid_h * stride_h + offs_m[:, None] * stride_l + offs_d[None, :] * stride_d)
-    
-    # 1. Compute Compressive Memory Attention in SRAM
-    mem_tile = tl.load(Mem_ptr + pid_h * (C_SLOTS * D_HEAD) + offs_c[:, None] * D_HEAD + offs_d[None, :])
-    mem_scores = tl.dot(q_tile, tl.trans(mem_tile)) / tl.sqrt(D_HEAD.to(tl.float32))
-    mem_attn = tl.softmax(mem_scores, axis=-1)
-    y_mem = tl.dot(mem_attn, mem_tile)
-    
-    # 2. Compute Band-Sparse Local Window Attention in SRAM
-    # (Only loops over N tiles where idx_k is inside window range)
-    
-    # 3. Fuse local and memory outputs
-    y_fused = y_mem # + y_local
-    tl.store(Out_ptr + pid_b * stride_b + pid_h * stride_h + offs_m[:, None] * stride_l + offs_d[None, :] * stride_d, y_fused)
+    # Compute local FlashAttention tile + compressive memory retrieval tile
+    # Fuse gated combination directly in SRAM
 ```
 
-### 6.2 Optimization Blueprint Parameters
+---
 
-- **SRAM Double Buffering**: Loads `Mem_ptr` tile once into GPU Shared Memory per threadblock, sharing memory slots across all \(L / \text{BLOCK\_M}\) query tiles.
-- **Band-Sparse Tile Loop**: Local attention loops only over key tiles satisfying \(\lfloor j \cdot \text{BLOCK\_N} \rfloor \ge \lfloor i \cdot \text{BLOCK\_M} \rfloor - W\), reducing global memory reads by \(\frac{L - W}{L} \times 100\%\).
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Decay-Regularized Infini Memory**: Incorporate learnable exponential decay factors $\gamma \in (0, 1)$ into state updates: $M_{\text{new}} = \gamma M + \phi(K)^\top V$ to prevent long-term memory saturation.
+2. **Infini-Mamba Hybrid**: Interleave Infini-Attention compressive memory layers with Mamba selective scan modules to unify continuous state space recurrences with long-context memory retrieval.
+3. **Quantized FP8 Compressive Memory**: Quantize persistent memory matrix $M$ to FP8 (E4M3 format) for 2x memory reduction during long streaming inference sessions.

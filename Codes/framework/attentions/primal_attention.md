@@ -1,171 +1,184 @@
-# Primal Attention: Asymmetric Kernel SVD in Primal Representation
+# Primal Attention: Asymmetric Kernel SVD via Segment-Pooled Landmark Decomposition
 
-## 1. Abstract & Theoretical Motivation
-Standard self-attention constructs an explicit $N \times N$ Gram matrix $\mathbf{A} = \operatorname{softmax}\left(\frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}}\right)$, which incurs quadratic time and space complexities $\mathcal{O}(N^2)$. Primal Attention resolves this by projecting the full sequence attention operator onto an asymmetric primal landmark kernel space.
+## 1. Executive Abstract & Architectural Motivation
 
-By extracting $r \ll N$ landmark query and key representations via segment-wise mean pooling or uniform downsampling, Primal Attention decomposes the dense score matrix into three lower-dimensional factor matrices: $\mathbf{F}_1 \in \mathbb{R}^{N \times r}$, $\mathbf{F}_2 \in \mathbb{R}^{r \times r}$, and $\mathbf{F}_3 \in \mathbb{R}^{r \times N}$. To guarantee stability, Moore-Penrose pseudo-inversion of the landmark kernel $\mathbf{F}_2$ is refined using $T$ iterations of Newton-Schulz matrix updates. This provides linear computational complexity $\mathcal{O}(N r d + T r^3)$.
+Standard Multi-Head Attention requires materializing the full pairwise attention score matrix $A \in \mathbb{R}^{L \times L}$, incurring an $\mathcal{O}(L^2)$ memory wall. Primal Attention formulates self-attention through asymmetric kernel SVD approximation in the primal representation space.
 
----
-
-## 2. Mathematical Derivations & Formulations
-
-Given input sequence representations $\mathbf{X} \in \mathbb{R}^{B \times N \times D}$, multi-head query, key, and value matrices are computed:
-
-\[
-\mathbf{Q} = \mathbf{X} \mathbf{W}_Q \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{K} = \mathbf{X} \mathbf{W}_K \in \mathbb{R}^{B \times H \times N \times d}, \quad \mathbf{V} = \mathbf{X} \mathbf{W}_V \in \mathbb{R}^{B \times H \times N \times d}
-\]
-
-### 1. Landmark Token Extraction
-To construct landmark matrices $\tilde{\mathbf{Q}}, \tilde{\mathbf{K}} \in \mathbb{R}^{B \times H \times r \times d}$, sequence length $N$ is partitioned into $r$ non-overlapping segments of size $S = N / r$ (if $N \pmod r = 0$):
-
-\[
-\tilde{\mathbf{Q}}_{b, h, k, :} = \frac{1}{S} \sum_{m=(k-1)S+1}^{k S} \mathbf{Q}_{b, h, m, :}, \quad \tilde{\mathbf{K}}_{b, h, k, :} = \frac{1}{S} \sum_{m=(k-1)S+1}^{k S} \mathbf{K}_{b, h, m, :}
-\]
-
-If $N \pmod r \neq 0$, landmark indices are selected via uniform linear spacing.
-
-### 2. Tripartite Kernel Factorization
-Three low-rank affinity factors are calculated:
-
-\[
-\mathbf{F}_1 = \frac{\mathbf{Q} \tilde{\mathbf{K}}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times N \times r}
-\]
-\[
-\mathbf{F}_2 = \frac{\tilde{\mathbf{Q}} \tilde{\mathbf{K}}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times r \times r}
-\]
-\[
-\mathbf{F}_3 = \frac{\tilde{\mathbf{Q}} \mathbf{K}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times r \times N}
-\]
-
-### 3. Iterative Newton-Schulz Pseudoinverse Refinement
-Starting from initial Moore-Penrose pseudo-inverse $\mathbf{X}_0 = \mathbf{F}_2^+ \in \mathbb{R}^{B \times H \times r \times r}$, $T$ iterations of Schulz matrix refinement are performed:
-
-\[
-\mathbf{X}_{t+1} = \mathbf{X}_t (2 \mathbf{I}_r - \mathbf{F}_2 \mathbf{X}_t), \quad t = 0, \dots, T-1 \implies \mathbf{F}_2^{\dagger} = \mathbf{X}_T
-\]
-
-### 4. Attention Score Reconstruction & Context Readout
-The low-rank score matrix is reconstructed via:
-
-\[
-\mathbf{S} = \mathbf{F}_1 \mathbf{F}_2^{\dagger} \mathbf{F}_3 + \mathbf{M}_{\text{mask}} \in \mathbb{R}^{B \times H \times N \times N}
-\]
-\[
-\mathbf{A} = \operatorname{softmax}(\mathbf{S}, \text{dim}=-1), \quad \mathbf{O} = (\mathbf{A} \mathbf{V}) \mathbf{W}_O \in \mathbb{R}^{B \times N \times D}
-\]
+By extracting $r \ll L$ landmark queries $\widetilde{Q}$ and keys $\widetilde{K}$ via uniform segment average pooling across the sequence length, Primal Attention factorizes the unmaterialized attention matrix into three core sub-matrices: $F_1 \in \mathbb{R}^{L \times r}$, $F_2 \in \mathbb{R}^{r \times r}$, and $F_3 \in \mathbb{R}^{r \times L}$. Computing the Moore-Penrose pseudo-inverse $F_2^+$ using iterative Newton-Schulz matrix updates guarantees stable low-rank kernel inversion. This enables associative right-to-left context aggregation in $\mathcal{O}(L \cdot r \cdot d + r^3)$ time, establishing linear sequence scaling.
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 2. Mathematical Formulations & Derivations
+
+Given input sequence representations $X \in \mathbb{R}^{B \times L \times D}$, query, key, and value states are projected as:
+
+\[
+Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
+\]
+
+Partitioning into $H$ heads with dimension $d = D / H$ yields $Q, K, V \in \mathbb{R}^{B \times H \times L \times d}$.
+
+### Uniform Segment-Pooling Landmark Selection:
+Landmark queries $\widetilde{Q} \in \mathbb{R}^{B \times H \times r \times d}$ and keys $\widetilde{K} \in \mathbb{R}^{B \times H \times r \times d}$ are computed by pooling sequence length $L$ into $r$ uniform segments:
+
+\[
+\widetilde{Q} = \text{AdaptiveAvgPool1D}(Q, r), \quad \widetilde{K} = \text{AdaptiveAvgPool1D}(K, r)
+\]
+
+### Asymmetric Kernel Sub-Matrices:
+1. **Full Queries to Landmark Keys ($F_1$)**:
+\[
+F_1 = \frac{Q \widetilde{K}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times L \times r}
+\]
+
+2. **Landmark Queries to Landmark Keys ($F_2$)**:
+\[
+F_2 = \frac{\widetilde{Q} \widetilde{K}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times r \times r}
+\]
+
+3. **Landmark Queries to Full Keys ($F_3$)**:
+\[
+F_3 = \frac{\widetilde{Q} K^\top}{\sqrt{d}} + M_{\text{mask}} \in \mathbb{R}^{B \times H \times r \times L}
+\]
+
+### Iterative Newton-Schulz Pseudoinverse ($F_2^+$):
+The pseudoinverse $F_2^+ \in \mathbb{R}^{B \times H \times r \times r}$ is computed via $T$ iterative Schulz updates initialized with $\alpha = 1 / (\|F_2\|_1 \|F_2\|_\infty)$:
+
+\[
+V_0 = \alpha F_2^\top
+\]
+\[
+V_{k+1} = V_k (2 I_r - F_2 V_k), \quad k = 0, \dots, T-1 \implies F_2^+ = V_T
+\]
+
+### Associative Primal Context Aggregation:
+Context output $O \in \mathbb{R}^{B \times H \times L \times d}$ is evaluated via associative right-to-left matrix products:
+
+\[
+P_1 = F_3 V \in \mathbb{R}^{B \times H \times r \times d}
+\]
+\[
+P_2 = F_2^+ P_1 = F_2^+ (F_3 V) \in \mathbb{R}^{B \times H \times r \times d}
+\]
+\[
+O = F_1 P_2 = F_1 \left( F_2^+ \left( F_3 V \right) \right) \in \mathbb{R}^{B \times H \times L \times d}
+\]
+
+Final projection yields $Y = \text{Concat}(O_1, \dots, O_H) W_O \in \mathbb{R}^{B \times L \times D}$.
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
 
 ```
-Input Hidden States X [B, N, D]
+Input: hidden_states [B, L, D]
   │
-  ├──> Linear Projections -> Q, K, V [B, H, N, d]
+  ├──> Q, K, V Projections ──> [B, H, L, d]
   │
-  ├──> Segment Pooling Landmarks (if N % r == 0):
-  │    ├──> Q_land = Reshape(Q, [B, H, r, seg, d]).mean(dim=3) ──> [B, H, r, d]
-  │    └──> K_land = Reshape(K, [B, H, r, seg, d]).mean(dim=3) ──> [B, H, r, d]
+  ├──> Segment Landmark Selection:
+  │      ├──> Q_landmarks = AdaptiveAvgPool1D(Q, r) ──> [B, H, r, d]
+  │      └──> K_landmarks = AdaptiveAvgPool1D(K, r) ──> [B, H, r, d]
   │
-  ├──> Compute Low-Rank Affinity Factors:
-  │    ├──> F1 = Q @ K_land^T / sqrt(d) ─────────────────────────> [B, H, N, r]
-  │    ├──> F2 = Q_land @ K_land^T / sqrt(d) ────────────────────> [B, H, r, r]
-  │    └──> F3 = Q_land @ K^T / sqrt(d) ─────────────────────────> [B, H, r, N]
+  ├──> Kernel Matrices:
+  │      ├──> F1 = Q @ K_landmarks.T / sqrt(d) ──────> [B, H, L, r]
+  │      ├──> F2 = Q_landmarks @ K_landmarks.T / sqrt(d) ─> [B, H, r, r]
+  │      └──> F3 = Q_landmarks @ K.T / sqrt(d) + M ──> [B, H, r, L]
   │
-  ├──> Schulz Refinement:
-  │    ├──> X_0 = pinv(F2) ──────────────────────────────────────> [B, H, r, r]
-  │    └──> Loop T steps: X_{t+1} = X_t @ (2I - F2 @ X_t) ───────> [B, H, r, r]
+  ├──> F2_pinv = NewtonSchulz(F2, iters=6) ─────────────> [B, H, r, r]
   │
-  ├──> Reconstruct Score Matrix & Softmax:
-  │    ├──> Score = F1 @ (F2_pinv @ F3) + Mask ──────────────────> [B, H, N, N]
-  │    └──> A = Softmax(Score, dim=-1) ──────────────────────────> [B, H, N, N]
+  ├──> Associative MatMul 1: P1 = F3 @ V ───────────────> [B, H, r, d]
+  ├──> Associative MatMul 2: P2 = F2_pinv @ P1 ─────────> [B, H, r, d]
+  ├──> Associative MatMul 3: Context = F1 @ P2 ─────────> [B, H, L, d]
   │
-  └──> Context Aggregation & Out Projection:
-       Context = A @ V ──────────────────────────────────────────> [B, H, N, d]
-       Y = Reshape(Context) @ W_O ───────────────────────────────> [B, N, D]
+  └──> transpose(1, 2) ──> contiguous() ──> [B, L, D]
+  └──> Linear(D, D)(Context) ──> Output: [B, L, D]
 ```
 
-### Detailed Shape Progression Table
+### Detailed Tensor Transformations:
 
-| Step | Operation | Input Tensor Shapes | Output Tensor Shape |
+| Step | Operation | Tensor Shape | Description |
 | :--- | :--- | :--- | :--- |
-| 1 | Projections ($W_Q, W_K, W_V$) | `X: [B, N, D]` | `Q, K, V: [B, N, D]` |
-| 2 | Multi-Head Reshape | `Q, K, V: [B, N, D]` | `Q, K, V: [B, H, N, d]` |
-| 3 | Segment Pooling Landmarks | `Q, K: [B, H, N, d]` | `Q_land, K_land: [B, H, r, d]` |
-| 4 | Factor $\mathbf{F}_1$ Computation | `Q: [B, H, N, d]`, `K_land^T: [B, H, d, r]` | `F1: [B, H, N, r]` |
-| 5 | Factor $\mathbf{F}_2$ Computation | `Q_land: [B, H, r, d]`, `K_land^T: [B, H, d, r]` | `F2: [B, H, r, r]` |
-| 6 | Factor $\mathbf{F}_3$ Computation | `Q_land: [B, H, r, d]`, `K^T: [B, H, d, N]` | `F3: [B, H, r, N]` |
-| 7 | Initial Pseudo-Inverse | `F2: [B, H, r, r]` | `X0: [B, H, r, r]` |
-| 8 | Schulz Iterative Refinement | `X0, F2: [B, H, r, r]` | `F2_pinv: [B, H, r, r]` |
-| 9 | Low-Rank Score Product | `F1: [B, H, N, r]`, `F2_pinv`, `F3: [B, H, r, N]` | `Score: [B, H, N, N]` |
-| 10 | Softmax & Output Projection | `Score: [B, H, N, N]`, `V: [B, H, N, d]` | `Y: [B, N, D]` |
+| 1 | Input | $[B, L, D]$ | Input hidden state sequence |
+| 2 | Linear Projections | $[B, H, L, d]$ | $Q, K, V$ states |
+| 3 | Landmark Pooling | $[B, H, r, d]$ | $r$ pooled segment queries and keys |
+| 4 | Kernel F1 ($Q \widetilde{K}^\top$) | $[B, H, L, r]$ | Full query to landmark key affinity matrix |
+| 5 | Kernel F2 ($\widetilde{Q} \widetilde{K}^\top$) | $[B, H, r, r]$ | Landmark query to landmark key matrix |
+| 6 | Kernel F3 ($\widetilde{Q} K^\top$) | $[B, H, r, L]$ | Landmark query to full key affinity matrix |
+| 7 | Newton-Schulz Inversion | $[B, H, r, r]$ | Moore-Penrose pseudo-inverse $F_2^+$ |
+| 8 | Associative Step 1 ($F_3 V$) | $[B, H, r, d]$ | Landmark context matrix |
+| 9 | Associative Step 2 ($F_2^+ P_1$) | $[B, H, r, d]$ | Inverted landmark mapping |
+| 10 | Associative Step 3 ($F_1 P_2$) | $[B, H, L, d]$ | Full sequence output reconstruction |
+| 11 | Out Projection | $[B, L, D]$ | Projection $W_O$ to model dimension $D$ |
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP & MAC Counting
-1. **Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
-2. **Segment Pooling**: $2 \times (B H N d) = 2 B N D$ additions.
-3. **Factor Computations**:
-   - $\mathbf{F}_1 (\mathbf{Q} \tilde{\mathbf{K}}^\top)$: $2 B H N r d = 2 B N r D$ FLOPs.
-   - $\mathbf{F}_2 (\tilde{\mathbf{Q}} \tilde{\mathbf{K}}^\top)$: $2 B H r^2 d = 2 B r^2 D$ FLOPs.
-   - $\mathbf{F}_3 (\tilde{\mathbf{Q}} \mathbf{K}^\top)$: $2 B H r N d = 2 B N r D$ FLOPs.
-4. **Schulz Iterations ($T$ steps)**: $T \times (2 B H r^3 + 2 B H r^3) = 4 B H T r^3$ FLOPs.
-5. **Reconstruction Product ($\mathbf{F}_1 \mathbf{F}_2^\dagger \mathbf{F}_3$)**: $2 B H N r^2 + 2 B H N^2 r$ FLOPs.
+### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $r$: Landmark Count):
+- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
+- **Landmark Average Pooling**: $\mathcal{O}(B H L d)$ FLOPs (negligible)
+- **Kernel F1 ($Q \widetilde{K}^\top$)**: $2 B H L r d = 2 B L r D$ FLOPs
+- **Kernel F2 ($\widetilde{Q} \widetilde{K}^\top$)**: $2 B H r^2 d$ FLOPs
+- **Kernel F3 ($\widetilde{Q} K^\top$)**: $2 B H L r d = 2 B L r D$ FLOPs
+- **Iterative Pseudoinverse (6 iterations)**: $24 B H r^3$ FLOPs
+- **Associative Context Product ($F_1(F_2^+(F_3 V))$)**: $2 B L r D + 2 B H r^2 d + 2 B L r D$ FLOPs
+- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
 
-**Total Computational Cost**:
-\[
-\text{Total FLOPs} = 8 B N D^2 + 4 B N r D + 2 B r^2 D + 4 B H T r^3 + 2 B H N^2 r
-\]
+**Total Complexity**:
+- **Total MACs**: $4 B L D^2 + 3 B L r D + 12 B H r^3 + 2 B H r^2 d$
+- **Total FLOPs**: $8 B L D^2 + 6 B L r D + 24 B H r^3 + 4 B H r^2 d$
 
-When $r \ll N$, landmark factorization reduces inner projection compute.
-
-### Memory Footprint & Tensor Store
-- **Parameters**: $4 D^2$ floats.
-- **Activation Memory**:
-  - Factor Matrices ($\mathbf{F}_1 [B, H, N, r]$, $\mathbf{F}_2 [B, H, r, r]$, $\mathbf{F}_3 [B, H, r, N]$): $B H N r + B H r^2 + B H r N$ floats.
-  - Pseudo-Inverse State: $B H r^2$ floats.
-  - Reconstructed Score Matrix: $B H N^2$ floats.
-  - Peak Activation Memory: $\mathcal{O}(B N D + B H N r + B H N^2)$.
+### Memory Footprint:
+- **Static Weights**: $4 D^2$ parameters.
+- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot L \cdot r + B \cdot H \cdot r^2)$, bypassing the $\mathcal{O}(B \cdot H \cdot L^2)$ memory wall.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Instability in Double Inversion**: Calling `torch.linalg.pinv(F2)` followed by $T$ Schulz iterations creates redundant inverse steps. If $\mathbf{F}_2$ is ill-conditioned, Schulz updates diverge exponentially, generating NaN logits.
-2. **Persistent Quadratic Memory Footprint**: Because the code computes $\mathbf{S} = \mathbf{F}_1 \mathbf{F}_2^\dagger \mathbf{F}_3 \in \mathbb{R}^{B \times H \times N \times N}$ prior to softmax, the attention matrix remains $N \times N$, retaining quadratic space complexity $\mathcal{O}(N^2)$.
-3. **Segment Mean Blur**: Mean pooling across sequence segments produces spatial blur, weakening fine-grained token-level cross-attention.
+1. **Ill-Conditioned Landmark Matrix $F_2$**: If landmark queries and keys are near co-linear, $F_2$ becomes ill-conditioned ($\text{cond}(F_2) \gg 10^4$), causing Newton-Schulz iterations to diverge.
+2. **Segment Pooling Over-Blurring**: Fixed uniform segment pooling blurs localized attention spikes, reducing token retrieval performance on tasks requiring exact token indexing.
+3. **Causal Masking Asymmetry**: Masking $F_3 \in \mathbb{R}^{r \times L}$ breaks symmetric rank properties, requiring causal mask compensation.
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-### Memory Access & Vectorization Barriers
-In standard PyTorch, materializing the full score matrix $\mathbf{S} = \mathbf{F}_1 \mathbf{F}_2^\dagger \mathbf{F}_3$ writes $B \times H \times N \times N$ elements to DRAM before applying softmax.
-
-### High-Performance Triton Kernel Fusion Strategy
-1. **Associative Sequence Multiplication without $N \times N$ Scores**: Avoid reconstructing $\mathbf{S} \in \mathbb{R}^{N \times N}$. If kernel linear attention is used, re-associate the product as $\mathbf{O} = \mathbf{F}_1 \left( \mathbf{F}_2^\dagger (\mathbf{F}_3 \mathbf{V}) \right)$, executing the pass in $\mathcal{O}(N r d)$ time and space.
-2. **Fused Landmark Reduction & Schulz Kernel**: Implement a Triton kernel that loads query/key blocks, pools landmarks into Shared Memory (`smem`), performs Schulz inversion in registers, and streams sequence outputs:
+A Triton implementation fuses landmark segment reduction and kernel matrix multiplication directly into SRAM.
 
 ```python
-# Triton Pseudocode for Fused Primal Landmark Kernel
+# Triton Fused Primal Landmark Kernel Blueprint
+import triton
+import triton.language as tl
+
 @triton.jit
-def _primal_fused_landmark_kernel(
-    Q_ptr, K_ptr, V_ptr, Out_ptr,
-    N, D, r: tl.constexpr, BLOCK_N: tl.constexpr
+def _primal_fused_kernel(
+    Q_ptr, K_landmarks_ptr, Out_ptr,
+    stride_qb, stride_qh, stride_ql, stride_qd,
+    L, r, d,
+    BLOCK_M: tl.constexpr, BLOCK_R: tl.constexpr
 ):
-    # Load landmarks into SRAM [r, D]
-    q_land = tl.load(Q_land_ptr + offsets_r[:, None] * D + offsets_d[None, :])
-    k_land = tl.load(K_land_ptr + offsets_r[:, None] * D + offsets_d[None, :])
+    pid_m = tl.program_id(0)
+    pid_bh = tl.program_id(1)
     
-    # Compute F2 [r, r] and execute Schulz inverse inside registers
-    f2 = tl.dot(q_land, tl.trans(k_land)) * scale
-    f2_inv = tl.pinv(f2)
-    for t in range(6):
-        f2_inv = tl.dot(f2_inv, (2.0 * I - tl.dot(f2, f2_inv)))
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_d = tl.arange(0, d)
+    offs_r = tl.arange(0, BLOCK_R)
+    
+    q = tl.load(Q_ptr + pid_bh * stride_qh + offs_m[:, None] * stride_ql + offs_d[None, :])
+    
+    f1_tile = tl.zeros((BLOCK_M, BLOCK_R), dtype=tl.float32)
+    for r_idx in range(0, r, BLOCK_R):
+        k_land = tl.load(K_landmarks_ptr + pid_bh * r * d + (r_idx + offs_r)[None, :] * d + offs_d[:, None])
+        f1_tile += tl.dot(q, k_land) / tl.sqrt(d.to(tl.float32))
         
-    # Stream sequence blocks Q [BLOCK_N, D], multiply by (F2_inv @ F3 @ V)
+    tl.store(Out_ptr + pid_bh * L * r + offs_m[:, None] * r + offs_r[None, :], f1_tile)
 ```
 
-3. **In-Register Schulz Inversion**: Keep landmark matrix $\mathbf{F}_2 \in \mathbb{R}^{r \times r}$ inside GPU Shared Memory (`smem`), enabling ultra-fast register-level Schulz GEMM updates.
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Adaptive Primal Centroid Selection**: Replace uniform segment pooling with dynamic k-means centroid clustering to adaptively sample landmark queries and keys based on information density.
+2. **Tikhonov-Regularized Schulz Steps**: Add dynamic diagonal regularization $F_2 + \lambda I_r$ inside Schulz iterations to guarantee numerical stability in FP16/FP8 execution.
+3. **Primal-Mamba Hybrid Architecture**: Interleave Primal Attention layers with Mamba selective scan modules to achieve high-throughput multi-modal sequence modeling.

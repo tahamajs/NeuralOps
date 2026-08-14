@@ -1,180 +1,151 @@
-# HashedNets: Weight Sharing via Hash Functions
+# Hashed Linear: Vectorized Hash-Based Weight Sharing Engine (HashedNets)
 
-**Registered as standalone module**  
-*Dramatically reduces parameter count by sharing weights across positions using a hash table, enabling compact linear layers with minimal accuracy loss when fine‑tuned.*
+## 1. Executive Abstract & Theoretical Motivation
+
+Storing full weight matrices $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ requires $D_{\text{out}} \cdot D_{\text{in}}$ parameters. **Hashed Linear** (based on the HashedNets architecture) reduces memory usage by hashing parameters into a small shared array.
+
+Hashed Linear maps full weight matrix coordinates $(i, j)$ into a compact parameter table $\mathbf{w}_{\text{table}} \in \mathbb{R}^B$ ($B \ll D_{\text{out}} \cdot D_{\text{in}}$) using a deterministic hash function $h(i, j) \pmod B$. During forward execution, the weight matrix is dynamically reconstructed from the shared table via tensor buffer indexing $W_{i, j} = \mathbf{w}_{\text{table}}[h(i, j)]$, dramatically reducing stored model parameters.
+
+```
+ Weight Coordinate Matrix Indices (i, j)
+                   │
+                   ▼
+     Vectorized Large-Prime Hash Mixing
+     h(i, j) = (i * P1 + j * P2) mod B
+                   │
+                   ▼
+     Precomputed Hash Index Tensor Buffer
+                   │
+                   ▼
+┌──────────────────────────────────────────────┐
+│ On-the-Fly Forward Reconstitution            │
+│ W_{i, j} = weight_table[ hash_idx[i, j] ]    │
+│ Output Y = F.linear( X , W , bias )          │
+└──────────────────────────────────────────────┘
+```
 
 ---
 
-## Overview
+## 2. Mathematical Formulations & Matrix Decompositions
 
-HashedNets is a compression technique that replaces the weight matrix of a linear layer with a **hash table** of learnable parameters. Instead of storing a full `out_features × in_features` matrix, only a small parameter vector of size `n_buckets` is kept. Each entry of the conceptual weight matrix is mapped to one of these buckets via a **fixed hash function**, so the actual weight used at position `(i, j)` is the value stored in that bucket. This approach can achieve massive parameter reduction (e.g., from millions to thousands) while retaining representational power through weight sharing. The module also provides a method to initialize the shared table from a pretrained dense weight, making it suitable for post‑training compression followed by fine‑tuning.
+### 2.1 Vectorized Hash Operator & Weight Reconstruction
 
-This implementation provides a `HashedLinear` class that directly replaces a standard `nn.Linear` layer. The hash mapping is precomputed and stored as a buffer for fast forward computation. The class is not registered via a compressor registry but can be used standalone or integrated into a compression pipeline.
+Let $D_{\text{out}}$ be the output dimension, $D_{\text{in}}$ be the input dimension, and $B \in \mathbb{N}$ be the number of shared hash buckets ($B \ll D_{\text{out}} \cdot D_{\text{in}}$).
+
+1. **Large-Prime Hash Function**:
+   Using large prime constants $P_1 = 2654435761$ and $P_2 = 2246822519$:
+   $$h(i, j) = \left( i \cdot P_1 + j \cdot P_2 \right) \pmod B$$
+   for row $i \in \{0, \dots, D_{\text{out}}-1\}$ and column $j \in \{0, \dots, D_{\text{in}}-1\}$.
+
+2. **Weight Matrix Reconstitution**:
+   Let $\mathbf{w}_{\text{table}} \in \mathbb{R}^B$ be the trainable shared parameter table. The weight matrix $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ is:
+   $$W_{i, j} = \mathbf{w}_{\text{table}}\left[ h(i, j) \right]$$
+
+3. **Weight Initialization from Pre-Trained Dense Linear Layer**:
+   When converting from dense weight matrix $W_{\text{dense}}$, bucket $b \in \{0, \dots, B-1\}$ is initialized to the average of assigned parameters:
+   $$\mathbf{w}_{\text{table}}[b] = \frac{1}{|\Omega_b|} \sum_{(i, j) \in \Omega_b} \left[ W_{\text{dense}} \right]_{i, j}$$
+   where $\Omega_b = \{ (i, j) \mid h(i, j) = b \}$.
 
 ---
 
-## Methodology
+## 3. Step-by-Step Calibration & Execution Trace
 
-### 1. Weight Sharing via Hash Mapping
+### 3.1 Dataflow & Pipeline Execution
 
-Consider a linear layer with weight matrix **W** ∈ ℝ<sup>d_out × d_in</sup>. Instead of allocating `d_out * d_in` independent parameters, HashedNets allocates a small parameter vector **θ** ∈ ℝ<sup>B</sup>, where `B = n_buckets` is a user‑chosen number of buckets (e.g., 1024). The weight at position `(i, j)` is given by:
+1. **Hash Table Allocation**:
+   - Initialize `weight_table = nn.Parameter(torch.randn(n_buckets))`.
+   - Initialize bias parameter if required.
+2. **Hash Index Precomputation**:
+   - Construct index grid `i_idx` and `j_idx` for shape $[D_{\text{out}}, D_{\text{in}}]$.
+   - Compute hash indices `hash_idx = fast_hash(i_idx, j_idx, n_buckets)`.
+   - Register `hash_idx` as a non-trainable persistent module buffer.
+3. **Weight Average Initialization (`from_linear`)**:
+   - Copy bias from pre-trained layer.
+   - For each bucket $b \in [0, B-1]$:
+     - Find mask `mask = (hash_idx == b)`.
+     - Assign `weight_table[b] = W_dense[mask].mean()`.
+4. **Forward Pass Execution**:
+   - Reconstruct $W = \text{weight\_table}[\text{hash\_idx}]$.
+   - Compute `F.linear(x, W, self.bias)`.
 
 ```
-W_ij = θ[ h(i, j) ]
+Initialize HashedLinear ──► Compute Grid Hash Index Buffer ──► Average Initial Dense Weights
+                                                                          │
+                                                                          ▼
+Forward Output Y ◄── F.linear(x, W, bias) ◄── Reconstruct W = weight_table[hash_idx]
 ```
 
-where `h : [0..d_out-1] × [0..d_in-1] → [0..B-1]` is a hash function. The function is deterministic, fast, and fixed. In this implementation, the hash uses two large primes and modulo:
+---
 
-```
-h(i, j) = (i * P1 + j * P2) mod B
-```
+## 4. Parameter Savings & Memory Footprint Profiling
 
-with `P1 = 2654435761`, `P2 = 2246822519`. This provides a good pseudo‑random distribution across buckets, minimizing collisions and ensuring that different weight entries are mapped uniformly.
+### 4.1 Profiling Table
 
-### 2. Parameter Reduction
+| Component | Formula | Example (LLaMA-7B Linear: $D_{\text{in}}=4096, D_{\text{out}}=4096, B=1024$) |
+| :--- | :--- | :--- |
+| **Dense Weight Parameters** | $D_{\text{out}} \times D_{\text{in}} \times 2 \text{ bytes}$ | $33.55 \text{ MB}$ |
+| **Trainable Table Parameters** | $B \times 4 \text{ bytes}$ | $4.096 \text{ KB}$ ($B=1024$) |
+| **Precomputed Hash Buffer** | $D_{\text{out}} \times D_{\text{in}} \times 4 \text{ bytes}$ | $67.11 \text{ MB}$ (INT64/32 buffer) |
+| **Active Compression Ratio** | $\frac{D_{\text{out}} \cdot D_{\text{in}}}{B}$ | $\mathbf{16384\times}$ Parameter Reduction |
 
-The original layer has `d_out * d_in` parameters (ignoring bias). The compressed layer has `B + d_out` parameters (table + bias), where `B ≪ d_out * d_in`. The compression ratio is approximately `(d_out * d_in) / B`. For a typical 768×768 layer (589k params), using B=1024 yields a reduction of ∼575×. The hash indices themselves are stored as a buffer (or can be recomputed on‑the‑fly), but they are not parameters.
+---
 
-### 3. Forward Computation
+## 5. Precision Loss, Perplexity & Sensitivity Bounds
 
-During the forward pass, the full weight matrix is reconstructed from the table:
+### 5.1 Collision Error Analysis
+
+Let $C_{i, j} = | \Omega_{h(i, j)} |$ be the number of parameters colliding in bucket $h(i, j)$. Assuming uniform hash distribution, $\mathbb{E}[C_{i, j}] = \frac{D_{\text{out}} \cdot D_{\text{in}}}{B}$. The variance error introduced by hashing parameters is:
+
+$$\mathbb{E}\left[ \| W_{\text{dense}} - W_{\text{hashed}} \|_F^2 \right] = \sum_{b=0}^{B-1} \text{Var}_{(i, j) \in \Omega_b}\left( \left[ W_{\text{dense}} \right]_{i, j} \right)$$
+
+### 5.2 Failure Cases
+
+- **Hash Collision Saturation**: If bucket count $B$ is too small ($B < 512$), unrelated channels map into identical hash buckets, degrading model representations.
+
+---
+
+## 6. Production CUDA / Triton Execution Blueprint
 
 ```python
-W = self.weight_table[self.hash_idx]   # shape (out_features, in_features)
-y = x @ W.T + bias
+import torch
+import triton
+import triton.language as tl
+
+@triton.jit
+def hashed_linear_forward_kernel(
+    X_ptr, Table_ptr, Hash_Idx_ptr, Out_ptr,
+    M, N, K_dim,
+    stride_xm, stride_xk,
+    stride_om, stride_on,
+    BLOCK_SIZE_M: tl.constexpr,
+    BLOCK_SIZE_N: tl.constexpr,
+    BLOCK_SIZE_K: tl.constexpr
+):
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+
+    rm = pid_m * BLOCK_SIZE_M + tl.arange(0, BLOCK_SIZE_M)
+    rn = pid_n * BLOCK_SIZE_N + tl.arange(0, BLOCK_SIZE_N)
+
+    acc = tl.zeros((BLOCK_SIZE_M, BLOCK_SIZE_N), dtype=tl.float32)
+
+    for k in range(0, K_dim, BLOCK_SIZE_K):
+        rk = k + tl.arange(0, BLOCK_SIZE_K)
+        # Load precomputed hash bucket index
+        h_idx = tl.load(Hash_Idx_ptr + rn[:, None] * K_dim + rk[None, :], mask=(rn[:, None] < N) & (rk[None, :] < K_dim), other=0)
+        # Gather weight value from shared parameter table
+        w_val = tl.load(Table_ptr + h_idx)
+
+        x_val = tl.load(X_ptr + rm[:, None] * stride_xm + rk[None, :] * stride_xk, mask=(rm[:, None] < M) & (rk[None, :] < K_dim), other=0.0)
+        acc += tl.dot(x_val, tl.trans(w_val))
+
+    tl.store(Out_ptr + rm[:, None] * stride_om + rn[None, :] * stride_on, acc, mask=(rm[:, None] < M) & (rn[None, :] < N))
 ```
-
-The reconstruction is a simple indexing operation, which is very fast on GPUs. The gradient can flow back through the indexing to update the shared table values. Thus, the layer can be trained or fine‑tuned normally.
-
-### 4. Initialization from a Pretrained Dense Layer
-
-The class method `from_linear(cls, linear, n_buckets)` creates a `HashedLinear` that approximates an existing `nn.Linear`. It initializes the weight table by averaging the pretrained weights that fall into each bucket:
-
-```
-for each bucket b:
-    θ[b] = mean( W_ij for all (i,j) where h(i,j) == b )
-```
-
-This provides a rough copy of the original layer’s weights into the compressed form, minimizing the initial accuracy drop before fine‑tuning. The bias is copied directly.
-
-### 5. Fixed Hash Mapping
-
-The hash indices are precomputed at construction and stored as a buffer `self.hash_idx` of shape `(out_features, in_features)`. They are not updated during training. This avoids recomputing the hash at each forward pass and ensures the mapping remains consistent.
 
 ---
 
-## Implementation Details
+## 7. Hybrid Synthesis & Next-Generation Enhancements
 
-### `fast_hash` function
-
-```python
-def fast_hash(indices_i, indices_j, n_buckets):
-    return ((indices_i * _PRIME1 + indices_j * _PRIME2) % n_buckets).long()
-```
-
-Used to generate the mapping tensor. Large primes reduce regularities and collisions.
-
-### `HashedLinear` class
-
-```python
-class HashedLinear(nn.Module):
-    def __init__(self, in_features, out_features, n_buckets=1024, bias=True):
-        ...
-```
-
-- **`n_buckets`**: Number of buckets in the hash table (size of shared parameter vector). Must be positive.
-- **`weight_table`**: `nn.Parameter` of size `(n_buckets,)`.
-- **`hash_idx`**: `torch.long` buffer of shape `(out_features, in_features)`, precomputed hash indices.
-- **`bias`**: Optional parameter of size `(out_features,)`.
-
-`forward(x)`:
-- Computes `W = self.weight_table[self.hash_idx]` → shape `(out_features, in_features)`.
-- Applies `F.linear(x, W, self.bias)`.
-
-**`from_linear(cls, linear, n_buckets)`**:
-1. Creates a `HashedLinear` instance with the same dimensions.
-2. Copies bias if present.
-3. For each bucket `b`, computes the mean of `linear.weight.data` over positions where `hash_idx == b` and sets `weight_table[b]` to that mean.
-
-### Integration
-
-The module is not registered as a compressor; it is meant to be used directly. However, one can easily write a simple compressor that replaces all `nn.Linear` with `HashedLinear` using `from_linear`.
-
----
-
-## Usage and Configuration
-
-### Replacing a Single Layer
-
-```python
-import torch.nn as nn
-from hashednets import HashedLinear
-
-# Original layer
-original = nn.Linear(768, 768)
-
-# Compressed version with 1024 buckets
-compressed = HashedLinear.from_linear(original, n_buckets=1024)
-
-# Use normally
-x = torch.randn(32, 768)
-y = compressed(x)
-```
-
-### Replacing All Linear Layers in a Model
-
-```python
-def compress_model(model, n_buckets=1024):
-    for name, module in list(model.named_modules()):
-        if isinstance(module, nn.Linear):
-            setattr(model, name, HashedLinear.from_linear(module, n_buckets))
-    return model
-
-compressed_model = compress_model(pretrained_model, n_buckets=1024)
-```
-
-After compression, fine‑tuning is strongly recommended to recover accuracy.
-
-### Parameters
-
-| Parameter    | Default | Description                                                                        |
-|--------------|---------|------------------------------------------------------------------------------------|
-| `n_buckets`  | 1024    | Number of hash buckets. Smaller → more compression, larger → better approximation. |
-
-**Note**: The hash indices are fixed; changing `n_buckets` requires rebuilding the layer.
-
----
-
-## Discussion
-
-### Advantages
-
-- **Extreme compression**: Reduces parameters by orders of magnitude (e.g., from 589k to ~1k).
-- **Fast reconstruction**: The weight matrix is materialized by a simple indexing operation; no multiplication overhead.
-- **Gradient friendly**: Standard backpropagation works; the table is learnable.
-- **Pretrained weight initialization**: The `from_linear` method provides a good starting point for fine‑tuning.
-- **Simplicity**: Very few lines of code; easy to integrate.
-
-### Limitations
-
-- **Accuracy drop**: Weight sharing inevitably discards information. Fine‑tuning is necessary to regain performance; zero‑shot use after `from_linear` will likely show significant degradation.
-- **No per‑layer granularity**: All layers get the same number of buckets; important layers may need more capacity.
-- **Collisions**: Some weight positions share the exact same value. If a bucket contains both important positive and negative weights, the averaged initial value may be near zero, hurting learning.
-- **Hash index storage**: The hash indices buffer consumes `d_out * d_in * 4` bytes (if int32) which, for large layers, can exceed the size of the weight table itself, partially offsetting the parameter savings. However, this buffer could be regenerated on‑the‑fly to trade compute for memory.
-- **No theoretical guarantee**: The hash function’s pseudo‑randomness is heuristic; performance depends on the data and architecture.
-
-### Comparison with Other Low‑Parameter Techniques
-
-| Method             | Approach                           | Parameter Count           | Trainability          |
-|--------------------|------------------------------------|---------------------------|-----------------------|
-| HashedNets (this)  | Hash table weight sharing          | `n_buckets + out`         | Yes (fine‑tuning)     |
-| Low‑rank (SVD)     | Two smaller matrices               | `r * (out + in)`          | Yes (fine‑tuning)     |
-| Random projection   | Fixed random matrix                | `out * in` (dense)        | No (fixed)            |
-
-HashedNets is unique in its ability to arbitrarily compress a layer to a fixed‑size table independent of the original dimensions, whereas low‑rank methods need a rank proportional to dimensions for large matrices.
-
----
-
-## Conclusion
-
-HashedNets offers a radical compression strategy by replacing dense weight matrices with a small shared parameter table addressed via a hash function. The provided `HashedLinear` class makes it easy to integrate into existing models, and the `from_linear` initialization provides a sensible starting point for fine‑tuning. While it requires retraining to achieve good performance, the massive reduction in parameters makes it attractive for deployment on extremely memory‑constrained devices. This implementation’s vectorized design and precomputed hash indices ensure efficient execution, making it a practical tool for neural network compression. Future improvements could include learning the hash function or using multiple tables per layer to increase capacity.
+1. **HashedNets + Sign Hashing (ROAST)**: Combine bucket indexing $h(i, j)$ with a secondary random sign hash $\xi(i, j) \in \{-1, +1\}$ to remove bias in shared bucket means: $W_{i, j} = \xi(i, j) \cdot \mathbf{w}_{\text{table}}[h(i, j)]$.
+2. **HashedNets + Low-Rank Delta Refinement**: Add a trainable low-rank delta matrix $A B^T$ to the hashed weight matrix to compensate for hash collision noise.
+3. **Hardware On-The-Fly Hash Computation**: Compute prime hash $h(i, j)$ inside Triton register files during matrix multiplication to eliminate stored index buffers.

@@ -1,90 +1,207 @@
-# SVD Sequence Compression Attention: Data-Adaptive Subspace Sequence Projection
+# SVD Attention: Sequence-Dimension Singular Subspace Projection Architecture
 
-## 1. Abstract & Theoretical Motivation
-SVD Sequence Compression Attention (`SVDLinearAttention` registered as `svd`) presents a data-adaptive, sequence-length compressing multi-head attention mechanism. Traditional Transformer attention requires $\mathcal{O}(N^2)$ time and space complexity due to full pairwise key-query matrix multiplication. SVD Sequence Compression Attention reduces sequence length complexity from $\mathcal{O}(N^2)$ to linear scaling $\mathcal{O}(N \cdot r)$ by dynamically constructing an orthonormal subspace basis $U_r \in \mathbb{R}^{B \times N \times r}$ via randomized QR / truncated Singular Value Decomposition (SVD) of the sequence representations. Keys and values are projected into this top-$r$ left-singular subspace, contracting key-value sequence length from $N$ to rank $r$. When sequence length $N \le r$, the architecture dynamically falls back to exact multi-head softmax attention. Randomized subspace projection (Halko et al., 2011) provides numerical stability under padding masks, enabling long-sequence processing with low memory overhead.
+## 1. Executive Abstract & Architectural Motivation
 
-## 2. Mathematical Derivations & Formulations
-Given sequence input hidden states $X \in \mathbb{R}^{B \times N \times D}$ and boolean valid token mask $M_{\text{valid}} \in \{0, 1\}^{B \times N}$, the zero-padded input state is formed:
-$$X_{\text{masked}} = X \odot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}$$
+SVD Attention (`SVDLinearAttention` in `svd_attention.py`) introduces a sequence-dimension compression paradigm that reduces the quadratic sequence time and memory complexity of Multi-Head Attention ($\mathcal{O}(N^2)$) to linear complexity ($\mathcal{O}(N \cdot r)$). While standard MHA evaluates pairwise interactions across all $N \times N$ token pairs, SVD Attention projects Key and Value sequence dimensions into the top-$r$ left-singular subspace of the sequence representation matrix ($r \ll N$).
 
-For sequence length $N > r$, an orthonormal sequence subspace matrix $U_r \in \mathbb{R}^{B \times N \times r}$ is computed per batch sample $b \in \{1, \dots, B\}$ via randomized range finder with Gaussian random matrix $\Omega \in \mathbb{R}^{D \times r}$:
-$$Y_b = X_{\text{masked}}[b] \cdot \Omega \in \mathbb{R}^{N \times r}$$
-$$Q_{\text{mat}}, R_{\text{mat}} = \text{QR}(Y_b) \implies U_r[b] = Q_{\text{mat}}[:, :r] \in \mathbb{R}^{N \times r}$$
-satisfying sequence-wise orthonormality: $U_r[b]^\top U_r[b] = I_r$.
+By extracting an orthonormal basis matrix $U_r \in \mathbb{R}^{B \times N \times r}$ via randomized QR decomposition (Halko et al., 2011), Key ($K$) and Value ($V$) representations are projected down to rank-$r$ sequence bottlenecks ($K_{\text{proj}}, V_{\text{proj}} \in \mathbb{R}^{B \times H \times r \times d_k}$). Attention affinity matrices are evaluated over compressed shape $[B, H, N, r]$, decoupling context aggregation cost from raw sequence length $N$ while preserving token-specific query routing.
 
-Query, Key, and Value linear projections produce standard multi-head tensors:
-$$Q, K, V = \text{MultiHeadSplit}(X W_Q), \text{MultiHeadSplit}(X W_K), \text{MultiHeadSplit}(X W_V) \in \mathbb{R}^{B \times H \times N \times d_h}$$
+---
 
-Keys and Values are compressed along sequence dimension $N \to r$ by left-multiplying with transpose $U_r^\top$:
-$$K_{\text{proj}} = U_r^\top K \in \mathbb{R}^{B \times H \times r \times d_h}, \qquad V_{\text{proj}} = U_r^\top V \in \mathbb{R}^{B \times H \times r \times d_h}$$
+## 2. Mathematical Formulations & Derivations
 
-Attention scoring and context aggregation proceed between uncompressed Query ($N$ tokens) and compressed Key-Value subspace ($r$ tokens):
-$$S_{\text{compressed}} = \frac{Q K_{\text{proj}}^\top}{\sqrt{d_h}} \in \mathbb{R}^{B \times H \times N \times r}$$
-$$P = \text{Dropout}(\text{Softmax}(S_{\text{compressed}}, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times r}$$
-$$C_{\text{head}} = P V_{\text{proj}} \in \mathbb{R}^{B \times H \times N \times d_h}$$
-$$O = (\text{Reshape}(C_{\text{head}}) W_O + b_O) \odot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}$$
+Let $X \in \mathbb{R}^{B \times N \times D}$ denote input activations. Let $H$ be the number of attention heads, $d_k = D / H$ head dimension, $M_{\text{valid}} \in \mathbb{R}^{B \times N}$ boolean token valid mask, and $r$ the target rank ($r \ll N$).
 
-If $N \le r$, execution routes to standard softmax attention:
-$$S_{\text{full}} = \frac{Q K^\top}{\sqrt{d_h}} + M_{\text{additive}}, \quad C_{\text{head}} = \text{Softmax}(S_{\text{full}}) V$$
+### Subspace Masking & Randomized Subspace Extraction:
+To prevent padding tokens from skewing the singular subspace, inputs are masked:
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
-The precise dimensional shape transformations are traced below:
+\[
+X_{\text{masked}} = X \odot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}
+\]
 
-1. **Input Tensor**: $X \in \mathbb{R}^{B \times N \times D}$
-2. **Dense Linear Projections**:
-   - $Q_{\text{flat}} = X W_Q + b_Q \in \mathbb{R}^{B \times N \times D}$
-   - $K_{\text{flat}} = X W_K + b_K \in \mathbb{R}^{B \times N \times D}$
-   - $V_{\text{flat}} = X W_V + b_V \in \mathbb{R}^{B \times N \times D}$
-3. **Multi-Head Layout Conversion**:
-   - $Q, K, V \to [B, H, N, d_h]$ where $d_h = D / H$
-4. **Rank Evaluation & Branch Routing**:
-   - Evaluate $r_{\text{eff}} = \min(r, N)$
-   - If $N \le r$, execute standard $Q K^\top \to [B, H, N, N] \implies [B, N, D]$.
-5. **Subspace Construction (for $N > r$)**:
-   - Valid token mask $M_{\text{valid}} \in \{0, 1\}^{B \times N}$
-   - Masked state: $X_{\text{masked}} = X \cdot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}$
-   - Per-batch sample randomized QR projection: $Y = X_{\text{masked}} \Omega \in \mathbb{R}^{N \times r}$
-   - Orthonormal decomposition: $U_r = \text{QR}(Y)[:, :r] \in \mathbb{R}^{B \times N \times r}$
-6. **Key & Value Subspace Compression**:
-   - Broadcast $U_r \to [B, 1, N, r]$
-   - $K_{\text{proj}} = U_r^\top K \in \mathbb{R}^{B \times H \times r \times d_h}$
-   - $V_{\text{proj}} = U_r^\top V \in \mathbb{R}^{B \times H \times r \times d_h}$
-7. **Compressed Attention & Context Generation**:
-   - $S = Q K_{\text{proj}}^\top / \sqrt{d_h} \in \mathbb{R}^{B \times H \times N \times r}$
-   - $P = \text{Dropout}(\text{Softmax}(S, \text{dim}=-1)) \in \mathbb{R}^{B \times H \times N \times r}$
-   - $C_{\text{head}} = P V_{\text{proj}} \in \mathbb{R}^{B \times H \times N \times d_h}$
-8. **Head Concatenation & Masked Output Projection**:
-   - $\tilde{C} = \text{Reshape}(C_{\text{head}}) \in \mathbb{R}^{B \times N \times D}$
-   - $O = (\tilde{C} W_O^\top + b_O) \cdot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}$
+An orthonormal left-singular matrix $U_r \in \mathbb{R}^{B \times N \times r}$ is extracted per batch item $b \in \{1, \dots, B\}$ using randomized Range Finder / QR decomposition:
 
-## 4. Analytical Complexity Profiling
-- **FLOPs Computation**:
-  - Projections ($Q, K, V, O$): $4 \times 2 B N D^2 = 8 B N D^2$ FLOPs
-  - Randomized Subspace Projection ($X \Omega$): $2 B N D r$ FLOPs
-  - Subspace QR Factorization: $\mathcal{O}(B N r^2)$ FLOPs
-  - Key-Value Subspace Contraction ($U_r^\top K, U_r^\top V$): $2 \times 2 B H N r d_h = 4 B N r D$ FLOPs
-  - Compressed Attention Score ($Q K_{\text{proj}}^\top$): $2 B H N r d_h = 2 B N r D$ FLOPs
-  - Compressed Context Multiplication ($P V_{\text{proj}}$): $2 B H N r d_h = 2 B N r D$ FLOPs
-  - Total FLOPs: $8 B N D^2 + 8 B N r D + 2 B N D r + \mathcal{O}(B N r^2)$ (Linear in $N$ for fixed $r$)
-- **MAC Operations**:
-  - Linear Projections: $4 B N D^2$ MACs
-  - Attention Subspace Contractions & Matmuls: $4 B N r D$ MACs
-- **Memory Footprint & KV Cache**:
-  - Attention Map Memory: $[B, H, N, r]$ vs $[B, H, N, N]$ (saving $\frac{N}{r}\times$ bandwidth)
-  - KV Cache Storage: Storing compressed keys/values requires $2 B H r d_h = 2 B r D$ elements instead of $2 B N D$.
+\[
+\Omega \sim \mathcal{N}(0, 1) \in \mathbb{R}^{D \times r}, \quad Y_b = X_{\text{masked}, b} \Omega \in \mathbb{R}^{N \times r}
+\]
+\[
+Q_{\text{qr}}, R_{\text{qr}} = \text{QR}(Y_b) \implies U_{r, b} = Q_{\text{qr}}[:, :r] \in \mathbb{R}^{N \times r}
+\]
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
-- **Subspace Information Loss**:
-  Projecting $N$ sequence positions onto $r$ basis vectors discards fine-grained local dependencies if sequence length $N \gg r$ and input tokens lack low-rank structure.
-- **Randomized SVD Instability in Mixed Precision**:
-  Computing QR decomposition (`torch.linalg.qr`) on FP16/BF16 tensors can produce illegal NaNs due to numerical underflow/overflow in triangular R matrices. Fallback to CPU float64 prevents crashes but introduces CPU-GPU synchronization latency.
-- **Non-Differentiable Subspace Basis**:
-  The subspace matrix $U_r$ is computed inside a `torch.no_grad()` block to stabilize QR autograd. Backpropagation gradients do not flow into the sequence subspace projection, limiting joint end-to-end adaptivity.
+Satisfying orthogonality: $U_{r, b}^\top U_{r, b} = I_r \in \mathbb{R}^{r \times r}$.
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
-- **Fused Fast Randomized Subspace Triton Kernel**:
-  Implement a fused Triton kernel for $Y = X \Omega$ and Gram-Schmidt orthogonalization $Y \to U_r$ directly in GPU L1 cache. This avoids CPU fallback and keeps all tensor operations on CUDA devices.
-- **Batched Fused Subspace Compression**:
-  Combine Key/Value projections and subspace compression: compute $K_{\text{proj}} = U_r^\top (X W_K)$ in a single Triton block-tiled GEMM kernel without allocating full $[B, H, N, d_h]$ key tensors.
-- **Orthogonality Loss Regularization**:
-  Use `get_ortho_loss()` to penalize deviations of $U_r^\top U_r$ from identity $I_r$: $\mathcal{L}_{\text{ortho}} = \| U_r^\top U_r - I_r \|_F^2$, ensuring numerical stability during fine-tuning.
+### Subspace Projection of Key and Value Multi-Head States:
+Input projections yield $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_k}$. Keys and Values are down-projected along sequence dimension $N$ using $U_r \in \mathbb{R}^{B \times 1 \times N \times r}$:
+
+\[
+K_{\text{proj}} = U_r^\top K \in \mathbb{R}^{B \times H \times r \times d_k}, \quad (K_{\text{proj}})_{b, h, k, m} = \sum_{n=1}^N (U_r)_{b, 1, n, k} \cdot K_{b, h, n, m}
+\]
+\[
+V_{\text{proj}} = U_r^\top V \in \mathbb{R}^{B \times H \times r \times d_k}, \quad (V_{\text{proj}})_{b, h, k, m} = \sum_{n=1}^N (U_r)_{b, 1, n, k} \cdot V_{b, h, n, m}
+\]
+
+### Linear-in-Sequence Scaled Attention & Context Reconstruction:
+Query states $Q \in \mathbb{R}^{B \times H \times N \times d_k}$ are multiplied against sequence-compressed keys $K_{\text{proj}}$:
+
+\[
+S_{b, h, i, k} = \frac{1}{\sqrt{d_k}} \sum_{m=1}^{d_k} Q_{b, h, i, m} \cdot (K_{\text{proj}})_{b, h, k, m} \implies S \in \mathbb{R}^{B \times H \times N \times r}
+\]
+\[
+A_{b, h, i, k} = \text{Softmax}_k (S_{b, h, i, k}) \in \mathbb{R}^{B \times H \times N \times r}
+\]
+
+Context vectors are aggregated over rank dimension $r$ and masked:
+
+\[
+C_{b, h, i, m} = \sum_{k=1}^r \text{Dropout}(A)_{b, h, i, k} \cdot (V_{\text{proj}})_{b, h, k, m} \implies C \in \mathbb{R}^{B \times H \times N \times d_k}
+\]
+\[
+C_{\text{final}} = C \odot M_{\text{valid}} \in \mathbb{R}^{B \times N \times D}, \quad Y = C_{\text{final}} W_O + b_O \in \mathbb{R}^{B \times N \times D}
+\]
+
+### Gram Matrix Orthogonality Loss:
+Orthogonality regularization loss is evaluated on the extracted basis $U_r \in \mathbb{R}^{B \times N \times r}$:
+
+\[
+\mathcal{L}_{\text{ortho}} = \frac{1}{B} \sum_{b=1}^B \| U_{r, b}^\top U_{r, b} - I_r \|_F^2
+\]
+
+---
+
+## 3. Step-by-Step Tensor Execution Trace
+
+### Tensor Shape Transformation Table
+
+| Execution Stage | Input Tensor Shape | Transformation / Operation | Output Tensor Shape |
+| :--- | :--- | :--- | :--- |
+| **Input** | `[B, N, D]` | Input activation batch | `[B, N, D]` |
+| **Q, K, V Projections** | `[B, N, D]` | `self.query`, `self.key`, `self.value` | `[B, N, H*d_k]` each |
+| **Multi-Head Transpose** | `[B, N, H*d_k]` | `transpose_for_scores` | `[B, H, N, d_k]` each |
+| **Randomized Basis Extraction**| `hidden_states`, `mask` | Randomized QR decomposition | `U_r: [B, N, r]` |
+| **Key Sequence Compression**| `U_r: [B, 1, N, r]`, `K` | `torch.matmul(U_r.transpose(-2,-1), K)` | `K_proj: [B, H, r, d_k]` |
+| **Value Sequence Compression**| `U_r: [B, 1, N, r]`, `V` | `torch.matmul(U_r.transpose(-2,-1), V)` | `V_proj: [B, H, r, d_k]` |
+| **Compressed Score MatMul**| `Q: [B, H, N, d_k]`, `K_proj` | `torch.matmul(Q, K_proj.transpose(-2,-1)) / sqrt(d_k)` | `[B, H, N, r]` |
+| **Softmax & Dropout** | `scores` | `F.softmax(dim=-1)` + `Dropout` | `attn_probs: [B, H, N, r]` |
+| **Value Aggregation** | `attn_probs`, `V_proj` | `torch.matmul(attn_probs, V_proj)` | `[B, H, N, d_k]` |
+| **Mask & Out Projection** | `context` | `* valid_mask` + `view(B, N, D)` + `out_proj` | `Output: [B, N, D]` |
+
+### Architectural Flowchart Diagram
+
+```
+                        Input: hidden_states [B, N, D]
+                                        │
+          ┌─────────────────────────────┼─────────────────────────────┐
+          ▼                             ▼                             ▼
+    Linear(D, D) [Q]              Linear(D, D) [K]              Linear(D, D) [V]
+          │                             │                             │
+    Q: [B, H, N, d_k]             K: [B, H, N, d_k]             V: [B, H, N, d_k]
+          │                             │                             │
+          │                   Extract Orthonormal Basis U_r          │
+          │                   via Randomized Range Finder QR          │
+          │                             │                             │
+          │                     U_r: [B, N, r]                        │
+          │                             │                             │
+          │                     K_proj = U_r.T @ K            V_proj = U_r.T @ V
+          │                     [B, H, r, d_k]                [B, H, r, d_k]
+          │                             │                             │
+          └──────────────┬──────────────┘                             │
+                         ▼                                            │
+           MatMul: Q @ K_proj.transpose(-2, -1)                       │
+                         │                                            │
+               Scale by 1/sqrt(d_k)                                   │
+                         │                                            │
+               scores: [B, H, N, r]  (Linear in N!)                   │
+                         │                                            │
+                  Softmax over dim=-1                                 │
+                         │                                            │
+               attn: [B, H, N, r]                                     │
+                         │                                            │
+                         └──────────────────────┬─────────────────────┘
+                                                ▼
+                                      MatMul: attn @ V_proj
+                                                │
+                                     context: [B, H, N, d_k]
+                                                │
+                                    Mask Padding & out_proj
+                                                │
+                                        Output: [B, N, D]
+```
+
+---
+
+## 4. Analytical Complexity & Hardware Profiling
+
+### Computational Workload (FLOPs & MACs)
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ sequence SVD rank.
+
+1. **Linear Projections**:
+   - $Q, K, V, O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+2. **Randomized QR Basis Extraction**:
+   - Random projection $Y = X \Omega$: $2 B N D r$ FLOPs.
+   - Householder QR decomposition: $2 B N r^2$ FLOPs.
+3. **Sequence Subspace Compression**:
+   - $K_{\text{proj}} = U_r^\top K$: $2 B H (r N d_k) = 2 B N r D$ FLOPs.
+   - $V_{\text{proj}} = U_r^\top V$: $2 B N r D$ FLOPs.
+4. **Compressed Attention Core**:
+   - $Q K_{\text{proj}}^\top$ MatMul: $2 B H N r d_k = 2 B N r D$ FLOPs.
+   - Softmax & Dropout: $7 B H N r$ FLOPs.
+   - $A V_{\text{proj}}$ MatMul: $2 B H N r d_k = 2 B N r D$ FLOPs.
+
+5. **Total Workload Summary**:
+   - **Total MACs**: $4 B N D^2 + 4 B N r D + B N D r + B N r^2$
+   - **Total FLOPs**: $8 B N D^2 + 8 B N r D + 2 B N D r + 2 B N r^2 + 7 B H N r$
+   - **Linear Scaling in Sequence Length**: As $N \to \infty$, core attention scaling is $\mathcal{O}(N \cdot r)$ rather than $\mathcal{O}(N^2)$.
+
+### Memory Footprint & Activation Reduction
+- **Standard MHA Attention Matrix Memory**: $B \cdot H \cdot N^2 \cdot b$ bytes.
+- **SVD Attention Matrix Memory**: $B \cdot H \cdot N \cdot r \cdot b$ bytes.
+  For $N = 16,384, r = 64$:
+  - Standard MHA: $16384^2 = 268,435,456$ elements per head.
+  - SVD Attention: $16384 \times 64 = 1,048,576$ elements per head (**256$\times$ reduction in intermediate score memory**).
+
+---
+
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
+
+### Subspace Truncation Loss in High-Variance Sequences
+If sequence length $N$ is long and contains high-entropy diverse topics, restricting $U_r$ to rank $r = 64$ can discard fine-grained local dependencies, degrading retrieval performance on needle-in-a-haystack tasks.
+
+### CPU Fallback Overhead in Randomized QR
+When single-precision GPU QR decomposition fails due to numerical underflow on padded rows, fallback to double-precision CPU execution (`h_b_cpu.double()`) causes GPU-CPU synchronization latency spikes.
+
+---
+
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
+
+A Triton kernel for SVD Sequence Attention computes randomized projection $Y = X \Omega$, Gram-Schmidt orthonormalization, and sequence key-value compression in SRAM registers.
+
+```
+                    Global Memory (HBM)
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Q, K, V: [B, H, N, d_k], X: [B, N, D]                       │
+   │ Random Projection Matrix: Omega [D, r]                      │
+   └──────────────────────────────┬──────────────────────────────┘
+                                  │ Direct Stream Load
+                                  ▼
+ ┌────────────────────────────────────────────────────────────────┐
+ │                     Triton SRAM Scratchpad                     │
+ │ 1. Compute Range Projection: Y_tile = X_tile @ Omega           │
+ │ 2. In-Register Gram-Schmidt: U_r_tile = Orthonormalize(Y_tile) │
+ │ 3. Down-Project Key/Value: K_proj = U_r_tile.T @ K_tile        │
+ │ 4. Compute Compressed Score: S_ij = Q_tile @ K_proj.T          │
+ │ 5. Online Softmax & Accumulate V_proj Tile                     │
+ └────────────────────────────────┬───────────────────────────────┘
+                                  │ Write Context Output
+                                  ▼
+   ┌─────────────────────────────────────────────────────────────┐
+   │ Context Output: O [B, N, D]                                 │
+   └─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Adaptive Subspace Rank Allocation**: Dynamically adjust sequence rank $r$ per layer ($r = 128$ for early retrieval layers, $r = 32$ for deep layers).
+2. **Chunked Local-Global SVD Attention**: Combine local sliding window attention ($W = 256$) with global SVD sequence compression to capture both local syntax and long-range semantics.
+3. **FP8 Quantized Randomized SVD**: Execute randomized Range Finder QR projections using FP8 tensor cores to accelerate basis extraction by up to $4\times$.

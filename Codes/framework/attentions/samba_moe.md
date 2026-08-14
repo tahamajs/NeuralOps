@@ -1,6 +1,6 @@
 # SambaMoE: Tri-Hybrid Sliding-Window Attention, Spectral Mamba SSM, and Token-Choice MoE
 
-## 1. Abstract & Theoretical Motivation
+## 1. Executive Abstract & Architectural Motivation
 Modern long-context architectures face a fundamental tension: dense Multi-Head Self-Attention (MHSA) models capture high-precision local syntactic patterns but scale quadratically $\mathcal{O}(L^2)$, whereas continuous-time State-Space Models (SSMs) like Mamba process global sequence contexts with linear complexity $\mathcal{O}(L)$ but struggle with precise associative recall. Furthermore, standard Feed-Forward Networks (FFNs) apply static parameter computations equally to all tokens, wasting parameter capacity.
 
 **SambaMoE (Sliding-window Attention, Mamba SSM, and Mixture-of-Experts)** unifies these three paradigms into a single, cohesive sub-quadratic layer block. SambaMoE synthesizes sequence representations in two sequential stages:
@@ -11,7 +11,7 @@ By combining $W$-constrained local attention, linear global SSM recurrence, and 
 
 ---
 
-## 2. Mathematical Derivations & Formulations
+## 2. Mathematical Formulations & Derivations
 
 ### 2.1 Stage 1: SAMBA-M3 Local-Global Hybrid Fusion
 Given input hidden states $\mathbf{X} \in \mathbb{R}^{B \times L \times D}$:
@@ -53,7 +53,7 @@ The intermediate output $\mathbf{X}^{(2)} \in \mathbb{R}^{B \times L \times D}$ 
 
 ---
 
-## 3. Tensor Execution Flow & Dimensional Shape Tracing
+## 3. Step-by-Step Tensor Execution Trace
 
 | Step | Operation | Input Shape | Output Shape | Tensor Transformation Description |
 | :--- | :--- | :--- | :--- | :--- |
@@ -112,7 +112,7 @@ The intermediate output $\mathbf{X}^{(2)} \in \mathbb{R}^{B \times L \times D}$ 
 
 ---
 
-## 4. Analytical Complexity Profiling
+## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $W$ sliding window size, $d_{\text{state}}$ SSM state dimension, $E$ total experts, and $k$ active experts per token.
@@ -151,7 +151,7 @@ $$\text{Total FLOPs} = 10 B L D^2 + 4 B L D W + 2 B L D d_{\text{state}} + 2 B L
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Sequential Iterative Expert Masking Overhead
 In `REAPMoE.forward`:
@@ -176,7 +176,7 @@ Without dynamic capacity factors or auxiliary load-balancing loss $\mathcal{L}_{
 
 ---
 
-## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
+## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
 To achieve true hardware speedups, SambaMoE requires fused Triton execution for both the Sliding-Window Attention and the Token-Choice MoE.
 
@@ -285,3 +285,12 @@ def _sliding_window_flash_attn_kernel(
 ### 6.3 Hardware Acceleration Impact
 1. **DRAM Memory Traffic Elimination**: Sliding-Window FlashAttention computes masked attention entirely in SRAM registers, dropping activation memory writes from $\mathcal{O}(B H L W)$ to $\mathcal{O}(B L D)$.
 2. **Compact Contiguous Tokens**: Replacing `x * mask` with Triton token packing compresses active tokens into contiguous memory chunks before GEMM execution, raising Tensor Core MAC utilization to >90%.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+1. **Chunked Speculative Sliding-Window Routing**: Combine sliding window attention with dynamic long-range block sparse jumps so tokens can conditionally attend to distant blocks when SSM confidence scores fall below threshold.
+2. **DeepSeek-Style Fine-Grained MoE Splitting**: Divide expert capacity into $4E$ smaller experts with $k'=4k$ selection to increase expert specialization and functional redundancy.
+3. **SSM State Distillation into MoE Experts**: Distill recurrent state dynamics $\mathbf{h}_t$ into specialized MoE experts dedicated to long-range context retrieval.
+4. **FP8 Fused SWA-Mamba-MoE Block Kernel**: Unify SWA FlashAttention, Mamba SSM scan, and MoE token permutation into a single monolithic Triton block kernel executed entirely inside SRAM.
