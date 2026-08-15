@@ -1,3 +1,5 @@
+# MGIE-SVD: Information Entropy SVD Rank Preservation
+
 MGIE‑SVD represents a shift in thinking about SVD‑based compression. Rather than treating all layers uniformly or using a simple energy threshold, it uses **Shannon entropy** to quantify the “complexity” of the singular value distribution in each weight matrix. The intuition is that a layer whose singular values are flat (high entropy) contains more diverse information and should be compressed more aggressively, whereas a layer with sharply decaying singular values (low entropy) is already sparse in information content and should retain more singular components. The core principle — **higher entropy → more aggressive truncation; lower entropy → greater rank preservation** — enables the compressor to adapt its strategy layer‑by‑layer without any calibration data or per‑layer hyperparameters.
 
 ---

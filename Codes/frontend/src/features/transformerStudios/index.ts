@@ -1,3 +1,5 @@
 export { RepresentationStudios } from './RepresentationStudios';
-export { ComputationStudios, default } from './ComputationStudios';
+export { ComputationStudios } from './ComputationStudios';
+export { OptimizationStudios } from './OptimizationStudios';
 export * from './types';
+export default ComputationStudios;
