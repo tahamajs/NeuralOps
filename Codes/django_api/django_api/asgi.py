@@ -15,36 +15,34 @@ from django.core.asgi import get_asgi_application
 # Set Django settings module before any other import
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "django_api.settings")
 
-from api.routing import websocket_urlpatterns as api_ws
-from gpu_marketplace.routing import websocket_urlpatterns as gpu_ws
-from health_monitor.routing import websocket_urlpatterns as health_ws
-
 # Import WebSocket URL patterns from each app
-from messaging.routing import websocket_urlpatterns as messaging_ws
-from notes.routing import websocket_urlpatterns as notes_ws
-from research_agent.routing import websocket_urlpatterns as agent_ws
+def _safe_import_ws(module_path):
+    try:
+        mod = __import__(module_path, fromlist=["websocket_urlpatterns"])
+        return getattr(mod, "websocket_urlpatterns", [])
+    except (ImportError, AttributeError):
+        return []
 
-try:
-    from community.routing import websocket_urlpatterns as community_ws
-except ImportError:
-    community_ws = []
-
-try:
-    from support.routing import websocket_urlpatterns as support_ws
-except ImportError:
-    support_ws = []
-
-# Combine all WebSocket patterns
-websocket_urlpatterns = (
-    messaging_ws
-    + notes_ws
-    + api_ws
-    + agent_ws
-    + support_ws
-    + community_ws
-    + gpu_ws
-    + health_ws
-)
+websocket_urlpatterns = []
+for _app_route in [
+    "messaging.routing",
+    "notes.routing",
+    "api.routing",
+    "research_agent.routing",
+    "agents.routing",
+    "support.routing",
+    "community.routing",
+    "gpu_marketplace.routing",
+    "health_monitor.routing",
+    "paper.routing",
+    "coding_assistant.routing",
+    "llm_hub.routing",
+    "research_coach.routing",
+    "terminal.routing",
+    "web_dashboard.routing",
+    "experiment.routing",
+]:
+    websocket_urlpatterns.extend(_safe_import_ws(_app_route))
 
 application = ProtocolTypeRouter(
     {
@@ -54,3 +52,4 @@ application = ProtocolTypeRouter(
         ),
     }
 )
+

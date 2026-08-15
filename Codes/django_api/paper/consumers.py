@@ -1,4 +1,5 @@
 # paper/consumers.py
+import urllib.parse
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
@@ -13,16 +14,28 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.project_id = self.scope["url_route"]["kwargs"]["project_id"]
         self.group_name = f"paper_collab_{self.project_id}"
-        token_key = self.scope.get("query_string", b"").decode().replace("token=", "")
+
+        # Parse token from query string
+        raw_query = self.scope.get("query_string", b"").decode("utf-8")
+        query_params = urllib.parse.parse_qs(raw_query)
+        token_key = query_params.get("token", [None])[0]
+
         user = await self._get_user(token_key)
         if user is None or isinstance(user, AnonymousUser):
-            await self.close(code=4001)
-            return
+            # Check if user is in scope (e.g. from session auth or TokenAuthMiddleware)
+            scope_user = self.scope.get("user")
+            if scope_user and scope_user.is_authenticated:
+                user = scope_user
+            else:
+                await self.close(code=4001)
+                return
+
         self.user = user
         has_access = await self._check_access()
         if not has_access:
             await self.close(code=4003)
             return
+
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
@@ -35,16 +48,17 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
         if msg_type == "file_edit":
             filename = content.get("filename")
             new_content = content.get("content", "")
-            await self._save_file(filename, new_content)
-            await self.channel_layer.group_send(
-                self.group_name,
-                {
-                    "type": "broadcast_edit",
-                    "filename": filename,
-                    "content": new_content,
-                    "username": self.user.username,
-                },
-            )
+            if filename:
+                await self._save_file(filename, new_content)
+                await self.channel_layer.group_send(
+                    self.group_name,
+                    {
+                        "type": "broadcast_edit",
+                        "filename": filename,
+                        "content": new_content,
+                        "username": getattr(self.user, "username", "collaborator"),
+                    },
+                )
         elif msg_type == "cursor":
             await self.channel_layer.group_send(
                 self.group_name,
@@ -52,7 +66,7 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
                     "type": "broadcast_cursor",
                     "filename": content.get("filename"),
                     "cursor": content.get("cursor", {}),
-                    "username": self.user.username,
+                    "username": getattr(self.user, "username", "collaborator"),
                 },
             )
 
@@ -60,9 +74,9 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json(
             {
                 "type": "edit",
-                "filename": event["filename"],
-                "content": event["content"],
-                "username": event["username"],
+                "filename": event.get("filename"),
+                "content": event.get("content"),
+                "username": event.get("username"),
             }
         )
 
@@ -70,14 +84,16 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json(
             {
                 "type": "cursor",
-                "filename": event["filename"],
-                "cursor": event["cursor"],
-                "username": event["username"],
+                "filename": event.get("filename"),
+                "cursor": event.get("cursor"),
+                "username": event.get("username"),
             }
         )
 
     @database_sync_to_async
     def _get_user(self, token_key):
+        if not token_key:
+            return AnonymousUser()
         try:
             return Token.objects.select_related("user").get(key=token_key).user
         except Token.DoesNotExist:
@@ -91,7 +107,7 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
                 project.owner == self.user
                 or project.collaborators.filter(id=self.user.id).exists()
             )
-        except PaperProject.DoesNotExist:
+        except (PaperProject.DoesNotExist, Exception):
             return False
 
     @database_sync_to_async
@@ -101,27 +117,40 @@ class PaperCollabConsumer(AsyncJsonWebsocketConsumer):
             f.content = content
             f.version += 1
             f.save(update_fields=["content", "version", "updated_at"])
-        except PaperFile.DoesNotExist:
+        except (PaperFile.DoesNotExist, Exception):
             pass
 
 
 class CollaborationConsumer(AsyncJsonWebsocketConsumer):
+    """Generic collaboration consumer for paper editing & team chat."""
+
     async def connect(self):
         self.project_id = self.scope["url_route"]["kwargs"]["project_id"]
         self.room_group_name = f"collab_{self.project_id}"
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
+    async def disconnect(self, close_code):
+        if hasattr(self, "room_group_name"):
+            await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
     async def receive_json(self, content):
         msg_type = content.get("type")
+        user = self.scope.get("user")
+        username = (
+            user.username
+            if user and user.is_authenticated
+            else content.get("user", "Anonymous")
+        )
+
         if msg_type == "file_edit":
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
                     "type": "broadcast_edit",
-                    "file": content["file"],
-                    "content": content["content"],
-                    "user": self.scope["user"].username,
+                    "file": content.get("file"),
+                    "content": content.get("content"),
+                    "user": username,
                 },
             )
         elif msg_type == "cursor_move":
@@ -129,10 +158,10 @@ class CollaborationConsumer(AsyncJsonWebsocketConsumer):
                 self.room_group_name,
                 {
                     "type": "broadcast_cursor",
-                    "file": content["file"],
-                    "line": content["line"],
-                    "col": content["col"],
-                    "user": self.scope["user"].username,
+                    "file": content.get("file"),
+                    "line": content.get("line"),
+                    "col": content.get("col"),
+                    "user": username,
                 },
             )
         elif msg_type == "chat":
@@ -140,8 +169,8 @@ class CollaborationConsumer(AsyncJsonWebsocketConsumer):
                 self.room_group_name,
                 {
                     "type": "broadcast_chat",
-                    "message": content["message"],
-                    "user": self.scope["user"].username,
+                    "message": content.get("message"),
+                    "user": username,
                 },
             )
 
@@ -149,9 +178,9 @@ class CollaborationConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json(
             {
                 "type": "edit",
-                "file": event["file"],
-                "content": event["content"],
-                "user": event["user"],
+                "file": event.get("file"),
+                "content": event.get("content"),
+                "user": event.get("user"),
             }
         )
 
@@ -159,14 +188,19 @@ class CollaborationConsumer(AsyncJsonWebsocketConsumer):
         await self.send_json(
             {
                 "type": "cursor",
-                "file": event["file"],
-                "line": event["line"],
-                "col": event["col"],
-                "user": event["user"],
+                "file": event.get("file"),
+                "line": event.get("line"),
+                "col": event.get("col"),
+                "user": event.get("user"),
             }
         )
 
     async def broadcast_chat(self, event):
         await self.send_json(
-            {"type": "chat", "message": event["message"], "user": event["user"]}
+            {
+                "type": "chat",
+                "message": event.get("message"),
+                "user": event.get("user"),
+            }
         )
+
