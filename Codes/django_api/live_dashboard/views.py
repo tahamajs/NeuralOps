@@ -184,7 +184,7 @@ def live_experiment_data(request):
     """
     from experiment.models import TrainingRun
 
-    runs = TrainingRun.objects.filter(user=request.user, status="running").order_by(
+    runs = TrainingRun.objects.filter(status="running").order_by(
         "-created_at"
     )[:10]
 
