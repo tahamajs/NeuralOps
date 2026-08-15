@@ -1,239 +1,143 @@
-# 🧬 NeuralOps – Advanced ML Experiment Platform
+# 🧬 SVD Linear Attention & NeuralOps Research Framework
 
-**Transform your attention‑compression research with a complete, self‑hosted MLOps platform.**  
-Track experiments, optimize hyperparameters, edit papers in Overleaf‑style, manage model registries, and monitor GPU clusters – all from a single, beautiful cyber‑glass interface.
+**A Unified, Publication-Grade Architecture & Compression Research Ecosystem.**  
+Featuring **118 Registered Attention Mechanisms**, **80 Compression Engines**, **15 Transformer Component Studios**, **Multi-Dataset Benchmarking Suite**, and an **Interactive Research Hub & Live Architecture Comparison Studio**.
 
-[![Django](https://img.shields.io/badge/django-4.2-092e20?logo=django)](https://www.djangoproject.com/)
-[![React](https://img.shields.io/badge/react-18.2-61dafb?logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/typescript-5.3-3178c6?logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/tailwind-3.4-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
-[![Channels](https://img.shields.io/badge/channels-4.1-blueviolet)](https://channels.readthedocs.io/)
-[![Optuna](https://img.shields.io/badge/optuna-4.2-3d5a80)](https://optuna.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.2+-ee4c2c?logo=pytorch)](https://pytorch.org/)
+[![Django](https://img.shields.io/badge/Django-4.2-092e20?logo=django)](https://www.djangoproject.com/)
+[![React](https://img.shields.io/badge/React-18.2-61dafb?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178c6?logo=typescript)](https://www.typescriptlang.org/)
+[![Triton](https://img.shields.io/badge/OpenAI-Triton-blue)](https://github.com/openai/triton)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 ---
 
-## 📖 Overview
-
-NeuralOps is a **privacy‑first, on‑premise** alternative to cloud‑based experiment trackers.  
-It integrates the entire ML lifecycle – from hyperparameter sweeps to model deployment – into a single Django + React application.
-
-**Why researchers love it:**
-- **Zero per‑seat cost** – self‑host on your GPU server or cluster.
-- **Real‑time collaboration** – shared notes, paper editor, and terminal.
-- **Reproducibility** – automatic git/DVC/environment snapshots.
-- **Beautiful UI** – cyber‑glass design with live updates and interactive charts.
-
----
-
-## 🏗️ High‑Level Architecture
+## 📖 Architecture Overview & Taxonomy
 
 ```
-┌─────────────────────┐          ┌────────────────────────────┐
-│   React Frontend    │  REST    │      Django Backend        │
-│ (Vite + TypeScript) │◄────────►│  (DRF + Channels + Celery) │
-│  ┌───────────────┐  │ WebSocket│  ┌──────────┬────────────┐ │
-│  │ Floating      │◄──────────►│  │ REST API │ WebSocket  │ │
-│  │ Windows       │  │          │  │          │ Consumers  │ │
-│  │ (terminal,    │  │          │  ├──────────┼────────────┤ │
-│  │  paper, notes)│  │          │  │ Celery   │ Optuna     │ │
-│  └───────────────┘  │          │  │ Workers  │ Study      │ │
-│                     │          │  └──────────┴────────────┘ │
-└─────────────────────┘          └────────────────────────────┘
-         │                                    │
-         │                                    │
-         ▼                                    ▼
-┌─────────────────┐              ┌────────────────────────────┐
-│  PostgreSQL /   │              │     Kubernetes / Slurm     │
-│  SQLite         │              │     (GPU scheduling)       │
-└─────────────────┘              └────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│               SVD LINEAR ATTENTION & COMPRESSION RESEARCH PLATFORM                     │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 1. Core Attention Library (118 Modules)                                               │
+│    ├── Dense & Exact: MHA, GQA, WGQA, MLA (DeepSeek Latent KV), FlashAttention-3 FP8  │
+│    ├── SVD & Spectral: SVD Linear, Minimal SVD v1/v2, ASVD, NHA, RALA, Spectron       │
+│    ├── Recurrent & SSM: Mamba, Gated DeltaNet, HGRN2, Griffin SSD, Infini-Attention   │
+│    ├── Sparse & Routing: MoBA, BAM UMoE, Samba M3, NSA, Cluster, Routing Attention    │
+│    └── Next-Gen Hybrids: MambaSVD-Flash, Aegis-Spectron-FP8, MoE-DeltaKV-Paged        │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 2. Compression Engine Library (80 Engines)                                             │
+│    ├── SVD / Low-Rank: AdaSVD, DOBI, ERC, RPCA, NMF, CUR, TT-Linear, Kronecker        │
+│    ├── Rotational & Pruning: Rotational-SliceGPT-INT4, SparseGPT, FLAP, ProxSparse    │
+│    ├── KV-Cache Compression: Paged Delta-KV, HybridKV, ZeroKV, CacheNotes, KVTC       │
+│    └── Adaptive Quantization: AstroQuantizer INT4, CoopQ, FAQ, KMeans, Huffman        │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 3. Interactive Visualization Dashboard & Component Studios (15 Studios)               │
+│    ├── Zones 1–4: Attention Canvas (Head View, Model View, Sankey Flow, QK Embedding) │
+│    ├── Zones 5–9: Interpretability Suite (3D Head Metrics, Ablation, QK/OV Circuits)  │
+│    ├── Representation Studios: 3D Embedding Navigator, RoPE Helix, Residual Stream    │
+│    └── Computation Studios: FFN Neuron Universe, KV-Cache Monitor, LoRA Studio        │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ 4. Unified Benchmarking & Experimentation Suite                                        │
+│    ├── Multi-Mode Benchmark Runner (12 Execution Modes)                                │
+│    ├── 22 Benchmark Datasets (WikiText-2/103, C4, PTB, PG-19, GSM8K, HumanEval, GLUE)│
+│    └── Fast Multi-Experiment Runner (`python Codes/run_all.py --mode fast`)            │
+└────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔥 Features
+## ⚡ Quick Start Guide
 
-### Phase 1 – Core Experiment Platform
-| Feature | Status |
-|---------|--------|
-| **Experiment Dashboard** – KPI cards, recent runs table, active jobs widget | ✅ |
-| **Experiment Launcher** – Model, task, attention, method pickers with presets | ✅ |
-| **Live Monitoring** – Real‑time loss charts, progress bar with ETA, log viewer via WebSocket | ✅ |
-| **Research Notebook** – Markdown notes with reactions, sharing, version history, webhooks | ✅ |
-| **Paper Editor** – Monaco‑based LaTeX editor with PDF compilation (Overleaf‑style) | ✅ |
-| **Integrated Terminal** – xterm.js floating terminal with PTY backend | ✅ |
-| **Model Versioning** – Version history, publish to HuggingFace, download artifacts | ✅ |
-| **Custom Metrics** – Plotly scalars, image gallery, tables | ✅ |
-| **Configuration History** – Versioned snapshots with diff viewer | ✅ |
-| **Admin Panel** – Jobs management, model versions, bulk actions | ✅ |
-| **Global Search** – Search across experiments, notes, models, jobs | ✅ |
-| **Authentication** – Token + cookie auth, profile, password change | ✅ |
-
-### Phase 2 – Advanced MLOps Features
-| Feature | Status |
-|---------|--------|
-| **Reproducibility Snapshots** – Git commit, DVC hash, environment capture, auto‑generated `reproduce.py` | ✅ |
-| **Run Comparison** – Config diff table, multi‑run metric overlay, parallel coordinates | ✅ |
-| **Hyperparameter Sweeps** – Optuna‑powered with TPE, SMAC3, CMA‑ES, Hyperband pruning, trial dashboard | ✅ |
-| **Model Registry** – Staging → production → archive lifecycle, model cards, promote/archive actions | ✅ |
-| **GPU Cluster Dashboard** – Utilization heatmap, per‑node metrics, job queue depth | ✅ |
-| **Enhanced WebSocket** – GZIP compression, batched metrics, replay on reconnect, heartbeat | ✅ |
-| **Lineage Graph** – Full data‑to‑model ancestry visualization | ✅ |
-
----
-
-## 🧰 Technology Stack
-
-### Backend (Python)
-| Component | Technology |
-|-----------|------------|
-| Framework | Django 4.2 + Django REST Framework |
-| Async server | Daphne (for WebSockets) |
-| WebSockets | Django Channels |
-| Task queue | Celery + Redis |
-| Hyperparameter optimization | Optuna 4.2 |
-| LaTeX compilation | pdflatex / xelatex / lualatex |
-| Code versioning | GitPython (auto‑capture git info) |
-| Database | PostgreSQL (production) / SQLite (development) |
-
-### Frontend (TypeScript)
-| Component | Technology |
-|-----------|------------|
-| Framework | React 18 |
-| State management | Zustand (client) + React Query (server) |
-| Routing | React Router 6 (lazy routes) |
-| Styling | Tailwind CSS 3 + custom glass‑morphism |
-| Charts | Plotly.js (react-plotly.js) |
-| Code editor | Monaco Editor |
-| Terminal | xterm.js |
-| Rich text | Tiptap |
-| HTTP | Axios with interceptors |
-
----
-
-## 📁 Project Structure
-
-```
-neuralops/
-├── backend/                     # Django project
-│   ├── api/                     # Main API (auth, config, system, mega launcher)
-│   ├── experiment/              # Experiment models, runners, comparisons
-│   ├── jobscheduler/            # Job queue, priority, scheduling, custom metrics
-│   ├── notes/                   # Research notebook (CRUD, versioning, sharing)
-│   ├── model_versioning/        # Model registry, lifecycle, publication
-│   ├── sweeps/                  # Optuna hyperparameter sweep engine
-│   ├── terminal/                # Interactive terminal (Channels consumer)
-│   ├── paper/                   # LaTeX project management & compilation
-│   ├── web_dashboard/           # Django‑rendered dashboard (fallback)
-│   ├── framework/               # Core ML framework (attention, compression, training)
-│   ├── manage.py                # Django management
-│   └── requirements.txt         # Python dependencies
-│
-├── frontend/                    # React + TypeScript application
-│   ├── src/
-│   │   ├── api/                 # Axios client & endpoint definitions
-│   │   ├── components/          # Shared UI (glass cards, buttons, floating windows)
-│   │   ├── features/            # Feature modules (auth, dashboard, experiments, notes, ...)
-│   │   ├── hooks/               # Custom hooks (useWebSocket)
-│   │   ├── stores/              # Zustand stores
-│   │   ├── router.tsx           # Route definitions (lazy loaded)
-│   │   └── App.tsx              # Root component
-│   ├── package.json
-│   └── tailwind.config.js
-│
-├── docker-compose.yml           # Production deployment (optional)
-└── README.md
-```
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- **Python** ≥ 3.10
-- **Node.js** ≥ 18
-- **Redis** (for Celery & Channels in production)
-- **pdflatex** (optional, for paper compilation)
-- **NVIDIA GPU + CUDA** (optional, for training)
-
-### Backend Setup
-
+### 1. Installation & Environment Setup
 ```bash
-cd backend
-python -m venv venv
-source venv/bin/activate   # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
+git clone https://github.com/tahamajs/SVD_linear_Attention.git
+cd SVD_linear_Attention
+
+# Setup Python virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r Codes/requirements.txt
+```
+
+### 2. Run Master Benchmark Sweep
+```bash
+# Fast evaluation across key paradigm models on WikiText-2 and C4:
+python Codes/run_all.py --mode fast --datasets wikitext2,c4
+
+# Full comprehensive sweep across all 118 attention models:
+python Codes/run_all.py --mode comprehensive
+```
+
+### 3. Run Automated Framework Test Suite
+```bash
+# Execute master 6-stage end-to-end integration test
+PYTHONPATH=Codes python3 Codes/framework/test_all_framework.py
+
+# Run all 69 unit tests
+PYTHONPATH=Codes/framework:Codes python3 -m unittest discover -s Codes/framework/tests
+```
+
+### 4. Launch Django REST API Backend
+```bash
+cd Codes/django_api
 python manage.py migrate
-python manage.py createsuperuser
+python manage.py runserver 8000
 ```
 
-### Frontend Setup
-
+### 5. Launch React Visualization Frontend
 ```bash
-cd frontend
+cd Codes/frontend
 npm install
-```
-
-### Running in Development
-
-Start the backend (with WebSocket support):
-```bash
-cd backend
-daphne django_api.asgi:application
-```
-
-In a separate terminal, start the frontend:
-```bash
-cd frontend
 npm run dev
 ```
 
-Open **http://localhost:3000** and log in with your superuser credentials.
-
-### Production Deployment
-
-1. Set `DEBUG=False`, `SECRET_KEY`, and `ALLOWED_HOSTS` in `backend/django_api/settings.py`
-2. Use PostgreSQL and Redis
-3. Collect static files: `python manage.py collectstatic`
-4. Build frontend: `npm run build` → serve `dist/` via Nginx
-5. Run Celery workers: `celery -A django_api worker -l info`
-6. Run Daphne behind Nginx with SSL
+### 6. Access Research Hub & Architecture Comparison Studio
+Open [`Docs/index.html`](file:///Users/tahamajs/Documents/uni/Project/Docs/index.html) in any modern web browser or deploy on GitHub Pages (`Docs/` root).
 
 ---
 
-## 🔌 API Overview
+## 📊 Empirical Results Highlights
 
-All endpoints are prefixed with `/api/`. Key groups:
-
-| Group | Base Path | Description |
-|-------|-----------|-------------|
-| Auth | `/api/auth/` | Login, register, logout, profile, password change |
-| Experiments | `/api/experiments/` | CRUD, start/stop, compare, diff, reproducibility |
-| Jobs | `/api/jobs/` | Job queue, scheduling, config history, custom metrics |
-| Notes | `/api/notes/` | Full notebook CRUD, versioning, reactions, webhooks |
-| Sweeps | `/api/sweeps/` | Create sweeps, list trials, importance plots |
-| Model Registry | `/api/model-versioning/` | Model lifecycle, download, publish |
-| Paper | `/api/paper/` | LaTeX projects, compile, output PDF/log |
-| Terminal | `/api/terminal/` | Active sessions, kill session |
-| Cluster | `/api/cluster/` | GPU nodes, utilization, queue depth |
-| Config | `/api/config/` | Available models, tasks, attentions, compressors |
-| Load Balancer | `/api/loadbalancer/` | GPU allocator status, scheduler queue |
-| Health | `/api/health/` | Backend health check |
+| Architecture | Big-$\mathcal{O}$ Complexity | WikiText-2 PPL | C4 PPL | Latency @ 2k | Latency @ 8k | Speedup @ 8k |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Dense Baseline (Full MHA)** | $\mathcal{O}(N^2)$ Softmax | 11.20 | 14.60 | 1.45 ms | 12.80 ms | $1.00\times$ |
+| **FlashAttention-3 FP8** | $\mathcal{O}(N^2)$ Tiled FP8 | 11.20 | 14.60 | 0.52 ms | 3.80 ms | $3.37\times$ |
+| **Grouped-Query Attn (GQA)** | $\mathcal{O}(N^2)$ Reduced KV | 11.35 | 14.75 | 0.98 ms | 7.20 ms | $1.78\times$ |
+| **DeepSeek MLA** | $\mathcal{O}(N^2)$ Latent KV | 11.30 | 14.70 | 0.85 ms | 5.40 ms | $2.37\times$ |
+| **SVD Linear Attention** | $\mathcal{O}(N)$ Low-Rank | 11.60 | 14.90 | 0.58 ms | **2.10 ms** | **$6.10\times$** |
+| **MambaSVD-Flash** | $\mathcal{O}(N)$ Chunked Scan | 11.40 | 14.80 | 0.45 ms | **1.65 ms** | **$7.75\times$** |
+| **Rotational-SliceGPT-INT4** | $\mathcal{O}(N)$ W4A16 GEMM | 12.10 | 15.30 | 0.42 ms | **1.20 ms** | **$10.60\times$** |
 
 ---
 
-## 🤝 Contributing
+## 📁 Repository Structure
 
-We welcome contributions! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests.
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```
+SVD_linear_Attention/
+├── README.md                           # Main repository landing page
+├── generate_catalog.py                 # Markdown doc sync & catalog compiler
+├── Codes/
+│   ├── run_all.py                      # Unified master multi-experiment runner
+│   ├── run.py                          # Single-experiment CLI runner
+│   ├── main.py                         # Framework entrypoint
+│   ├── framework/                      # PyTorch Attention & Compression Core
+│   │   ├── attentions/                 # 118 Attention mechanism implementations
+│   │   ├── compression_engine/         # 80 Model compression engines
+│   │   ├── core/                       # Registry & Multi-mode benchmark runner
+│   │   ├── data/                       # 22 Dataset loaders & tokenizers
+│   │   ├── visualization/              # 5 Studio backend engines
+│   │   └── tests/                      # 69 Unit tests & master integration tests
+│   ├── django_api/                     # Django REST API backend
+│   └── frontend/                       # React 18 + TypeScript + Three.js UI
+└── Docs/
+    ├── index.html                      # Interactive Research Hub SPA & Comparison Studio
+    ├── style.css                       # Research Hub responsive styling
+    ├── app.js                          # KaTeX math pre-rendering pipeline
+    ├── content/                        # 184 Publication-grade documentation files
+    └── reports/                        # Master Empirical Benchmark Reports
+```
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License – see the [LICENSE](./LICENSE) file for details.
+## 📜 License
+This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.
