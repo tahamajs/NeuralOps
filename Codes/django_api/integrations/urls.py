@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.list_connections, name="integrations_root"),
     # Git & Cloud
     path("cloud/connect/", views.connect_cloud, name="cloud_connect"),
     path("cloud/connections/", views.list_connections, name="cloud_list"),

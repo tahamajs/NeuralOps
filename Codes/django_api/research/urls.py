@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.publication_list, name="research_root"),
     path("publications/", views.publication_list, name="publication_list"),
     path(
         "publications/<uuid:pub_id>/",

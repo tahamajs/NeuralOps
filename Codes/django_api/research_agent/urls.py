@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.session_list, name="research_agent_root"),
     path("sessions/", views.session_list, name="agent_session_list"),
     path(
         "sessions/<uuid:session_id>/", views.session_detail, name="agent_session_detail"

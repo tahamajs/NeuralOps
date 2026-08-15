@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.template_list, name="experiment_recommender_root"),
     # Templates
     path("templates/", views.template_list, name="recommender_templates"),
     path("templates/<uuid:template_id>/use/", views.use_template, name="use_template"),

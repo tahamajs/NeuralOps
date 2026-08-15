@@ -4,6 +4,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.project_list, name="literature_review_root"),
     path("projects/", views.project_list, name="lit_project_list"),
     path(
         "projects/<uuid:project_id>/", views.project_detail, name="lit_project_detail"
