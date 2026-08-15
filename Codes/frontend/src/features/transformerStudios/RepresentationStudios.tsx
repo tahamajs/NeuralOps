@@ -1337,6 +1337,68 @@ export const RepresentationStudios: React.FC = () => {
               </div>
             </div>
 
+            {/* Gain/Bias Parameter Drift & Mode Controls */}
+            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sliders className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-sm font-semibold text-white">Gain & Bias Stabilizer Tuning</h3>
+                </div>
+                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[10px] font-mono">
+                  {(['both', 'layernorm', 'rmsnorm'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => setNormViewMode(mode)}
+                      className={`px-2 py-0.5 rounded uppercase ${
+                        normViewMode === mode ? 'bg-teal-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                <div>
+                  <div className="flex justify-between text-slate-400 mb-1">
+                    <span>Gain Scale (γ):</span>
+                    <span className="text-teal-300 font-bold">{customGamma.toFixed(2)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.5"
+                    step="0.05"
+                    value={customGamma}
+                    onChange={(e) => setCustomGamma(parseFloat(e.target.value))}
+                    className="w-full accent-teal-500"
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between text-slate-400 mb-1">
+                    <span>Bias Shift (β):</span>
+                    <span className="text-teal-300 font-bold">{customBeta.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="-1.0"
+                    max="1.0"
+                    step="0.05"
+                    value={customBeta}
+                    onChange={(e) => setCustomBeta(parseFloat(e.target.value))}
+                    className="w-full accent-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-300 flex justify-between">
+                <span>Output Norm: <strong className="text-emerald-400 font-bold">{(customGamma * 1.0).toFixed(2)} · √d</strong></span>
+                <span>Variance: <strong className="text-teal-300 font-bold">{(customGamma ** 2).toFixed(2)}</strong></span>
+                <span>Mean Shift: <strong className="text-amber-300 font-bold">{customBeta.toFixed(2)}</strong></span>
+              </div>
+            </div>
+
             {/* RMSNorm vs LayerNorm Architectural Comparison */}
             <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
               <div className="flex items-center justify-between">
@@ -1352,11 +1414,11 @@ export const RepresentationStudios: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-teal-400 font-bold block">LayerNorm (Standard)</span>
-                  <p className="text-[11px] text-slate-400">Centers mean to zero & scales variance to 1. Formula: (x - μ) / σ</p>
+                  <p className="text-[11px] text-slate-400">Centers mean to zero & scales variance to 1. Formula: y = ((x - μ) / σ) · γ + β</p>
                 </div>
                 <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
                   <span className="text-emerald-400 font-bold block">RMSNorm (LLaMA/Mistral)</span>
-                  <p className="text-[11px] text-slate-400">Skips mean subtraction: x / RMS(x). ~15% faster with identical representation quality.</p>
+                  <p className="text-[11px] text-slate-400">Skips mean subtraction: y = (x / RMS(x)) · γ. ~15% faster with identical representation quality.</p>
                 </div>
               </div>
             </div>
