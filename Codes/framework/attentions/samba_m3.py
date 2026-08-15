@@ -38,8 +38,12 @@ class SpectralMamba(nn.Module):
         d_model: Hidden state dimension $D$.
     """
 
-    def __init__(self, d_model: int) -> None:
+    def __init__(self, d_model: Any = 768, config: Optional[Any] = None, **kwargs: Any) -> None:
         super().__init__()
+        if config is not None:
+            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
+        elif hasattr(d_model, "hidden_size"):
+            d_model = d_model.hidden_size
         self.mamba = Mamba(d_model)
         self.dt_scale = nn.Parameter(torch.zeros(d_model))
 
@@ -53,6 +57,8 @@ class SpectralMamba(nn.Module):
             Modulated SSM output tensor `[Batch, SeqLen, HiddenDim]`.
         """
         out = self.mamba(x)
+        if isinstance(out, tuple):
+            out = out[0]
         out = out * torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
         return out
 
@@ -67,8 +73,25 @@ class SAMBAM3Block(nn.Module):
         window: Local causal window span ($W$).
     """
 
-    def __init__(self, d_model: int, n_heads: int, window: int = 128) -> None:
+    def __init__(
+        self,
+        d_model: Any = 768,
+        n_heads: int = 12,
+        window: int = 128,
+        config: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__()
+        if config is not None:
+            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", n_heads))
+            window = getattr(config, "window_size", window)
+        elif hasattr(d_model, "hidden_size"):
+            config = d_model
+            d_model = config.hidden_size
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+            window = getattr(config, "window_size", window)
+
         self.window_size: int = window
         self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
         self.mamba = SpectralMamba(d_model)
