@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.my_interest_profile, name="collaborator_matching_root"),
     # Interest Profile
     path("profile/", views.my_interest_profile, name="interest_profile"),
     path(

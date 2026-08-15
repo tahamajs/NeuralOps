@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.pipeline_list, name="autonomous_research_root"),
     # Pipelines
     path("pipelines/", views.pipeline_list, name="pipeline_list"),
     path(
