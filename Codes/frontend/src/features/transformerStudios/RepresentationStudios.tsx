@@ -344,7 +344,11 @@ export const RepresentationStudios: React.FC = () => {
     });
 
     // Semantic Axis 3D Arrow
-    const axisDir = new THREE.Vector3(1, 0.6, -0.4).normalize();
+    const axisDir = selectedAxis === 'sentiment'
+      ? new THREE.Vector3(1, 0.6, -0.4).normalize()
+      : selectedAxis === 'royalty'
+      ? new THREE.Vector3(-0.4, 1.2, 0.6).normalize()
+      : new THREE.Vector3(0.5, -0.8, 1.0).normalize();
     const arrow = new THREE.ArrowHelper(axisDir, new THREE.Vector3(0, 0, 0), 4.5, 0xf43f5e, 0.4, 0.25);
     scene.add(arrow);
     const arrowNeg = new THREE.ArrowHelper(axisDir.clone().negate(), new THREE.Vector3(0, 0, 0), 4.5, 0x0ea5e9, 0.4, 0.25);
@@ -390,7 +394,7 @@ export const RepresentationStudios: React.FC = () => {
       renderer.dispose();
       container.innerHTML = '';
     };
-  }, [activeTab, tokenNodes, selectedToken, searchToken]);
+  }, [activeTab, tokenNodes, selectedToken, searchToken, selectedAxis]);
 
   // -------------------------------------------------------------------
   // 2. Three.js Scene: RoPE 3D Angle Visualizer
@@ -896,9 +900,16 @@ export const RepresentationStudios: React.FC = () => {
               </div>
 
               <div className="space-y-2 text-xs">
-                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-2">
+                <div
+                  onClick={() => setSelectedAxis('sentiment')}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                    selectedAxis === 'sentiment'
+                      ? 'bg-slate-900 border-pink-500/50 shadow-lg shadow-pink-500/10 ring-1 ring-pink-500/30'
+                      : 'bg-slate-950/80 border-slate-800/80 hover:border-slate-700'
+                  }`}
+                >
                   <div className="flex justify-between text-slate-400 font-mono text-[11px]">
-                    <span>Axis 1: Sentiment</span>
+                    <span className="text-white font-semibold">Axis 1: Sentiment Pole</span>
                     <span className="text-emerald-400">Var: 34.2%</span>
                   </div>
                   <div className="flex items-center justify-between text-[11px] font-mono">
@@ -908,9 +919,16 @@ export const RepresentationStudios: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-2">
+                <div
+                  onClick={() => setSelectedAxis('royalty')}
+                  className={`p-3 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                    selectedAxis === 'royalty'
+                      ? 'bg-slate-900 border-indigo-500/50 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/30'
+                      : 'bg-slate-950/80 border-slate-800/80 hover:border-slate-700'
+                  }`}
+                >
                   <div className="flex justify-between text-slate-400 font-mono text-[11px]">
-                    <span>Axis 2: Royalty & Gender</span>
+                    <span className="text-white font-semibold">Axis 2: Royalty & Gender</span>
                     <span className="text-indigo-400">Var: 28.7%</span>
                   </div>
                   <p className="text-[10px] text-slate-500 font-mono">
@@ -918,6 +936,27 @@ export const RepresentationStudios: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+              {selectedToken && (
+                <div className="p-3 rounded-xl bg-slate-950 border border-blue-500/40 space-y-1.5 font-mono text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-white font-bold">Vector: "{selectedToken.token}"</span>
+                    <Badge variant="cyan">Cluster #{selectedToken.cluster}</Badge>
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Pos: [{selectedToken.x.toFixed(2)}, {selectedToken.y.toFixed(2)}, {selectedToken.z.toFixed(2)}]
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span className="text-emerald-400">L2 Norm: {selectedToken.norm.toFixed(3)}</span>
+                    <button
+                      onClick={() => setSelectedToken(null)}
+                      className="text-slate-500 hover:text-slate-300 underline text-[10px]"
+                    >
+                      Clear Selection
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Anisotropy & Norm Metrics */}

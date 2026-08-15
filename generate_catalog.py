@@ -16,13 +16,18 @@ def sync_and_get_md_files(src_dir, dest_subpath):
                 # Copy file into Docs/content so it is hosted directly inside Docs
                 shutil.copy2(src_path, dest_path)
                 
-                # Extract title from the first line if possible
+                # Extract title from the first heading line if possible
                 title = f.replace('.md', '').replace('_', ' ').title()
                 try:
                     with open(src_path, 'r', encoding='utf-8') as file:
-                        first_line = file.readline().strip()
-                        if first_line.startswith('# '):
-                            title = first_line[2:].split(':')[0].strip()
+                        for _ in range(15):
+                            line = file.readline()
+                            if not line:
+                                break
+                            line_str = line.strip()
+                            if line_str.startswith('# '):
+                                title = line_str[2:].split(':')[0].strip()
+                                break
                 except Exception:
                     pass
                 
