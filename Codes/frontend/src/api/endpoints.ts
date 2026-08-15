@@ -675,4 +675,13 @@ export const ENDPOINTS = {
   MLOPS: {
     ROOT: "/mlops/",
   },
+  ATTENTION_DASHBOARD: {
+    CANVAS: "/attention-visualization/canvas/",
+    INTERPRETABILITY: "/attention-visualization/interpretability/",
+    COMPARE: "/attention-visualization/compare/",
+  },
+  STUDIOS: {
+    REPRESENTATION: "/attention-visualization/studios/representation/",
+    COMPUTATION: "/attention-visualization/studios/computation/",
+  },
 };
