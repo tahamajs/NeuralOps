@@ -941,7 +941,7 @@ export const ComputationStudios: React.FC = () => {
                   </div>
                 </div>
 
-                <Button variant="default" className="w-full mt-4 flex items-center justify-center space-x-2">
+                <Button variant="primary" className="w-full mt-4 flex items-center justify-center space-x-2">
                   <Zap className="w-4 h-4" />
                   <span>Apply KV Cache Strategy to Model</span>
                 </Button>
@@ -1282,7 +1282,7 @@ export const ComputationStudios: React.FC = () => {
                   </div>
                 </div>
 
-                <Button variant="default" className="w-full mt-4 flex items-center justify-center space-x-2">
+                <Button variant="primary" className="w-full mt-4 flex items-center justify-center space-x-2">
                   <Play className="w-4 h-4" />
                   <span>Launch LoRA Fine-Tuning Run</span>
                 </Button>

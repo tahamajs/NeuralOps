@@ -504,6 +504,11 @@ function renderMarkdown(md, item) {
 
     // Step 6: Restore pre-rendered KaTeX Math
     for (const m of mathStore) {
+        // Strip redundant <p> wrappers for display math blocks to prevent invalid nesting
+        const pWrapped = new RegExp('<p>\\s*' + m.id + '\\s*<\\/p>', 'g');
+        if (pWrapped.test(html)) {
+            html = html.replace(pWrapped, m.rendered);
+        }
         html = html.split(m.id).join(m.rendered);
     }
 
@@ -954,131 +959,352 @@ function handleHash() {
 
 window.addEventListener('hashchange', handleHash);
 
-// ── Startup ──────────────────────────────────────────────────
-await loadCatalog();
-handleHash();
+    // ── Architecture Comparison Studio Logic ─────────────────────
+    const compareBtn = $('compare-modal-btn');
+    const compareOverlay = $('compare-overlay');
+    const compareBackdrop = $('compare-backdrop');
+    const compareCloseBtn = $('compare-close-btn');
+    const compareChipsContainer = $('compare-chips-container');
+    const compareMatrixView = $('compare-matrix-view');
+
+    const COMPARISON_ARCH_PROFILES = [
+        { 
+            id: 'svd_linear_attention.md', 
+            name: 'SVD Linear Attention', 
+            cat: 'SVD / Low-Rank', 
+            complexity: 'O(N) FLOPs, O(1) State', 
+            state_mem: 'O(r · d_v) Constant KV State',
+            ppl_wiki: '11.60', 
+            ppl_c4: '14.90', 
+            lat_512: '0.28 ms', 
+            lat_2k: '0.58 ms', 
+            lat_8k: '2.10 ms', 
+            vram_8k: '480 MB', 
+            speedup_8k: '6.10x', 
+            triton: 'Fused SVD Associative Scan GEMM',
+            hw_target: 'Universal Tensor Cores (FP16/BF16)'
+        },
+        { 
+            id: 'flash_attention3_fp8.md', 
+            name: 'FlashAttention-3 FP8', 
+            cat: 'Exact / Hardware', 
+            complexity: 'O(N²) Tiled FP8', 
+            state_mem: 'O(N · d) Full KV Buffer',
+            ppl_wiki: '11.20', 
+            ppl_c4: '14.60', 
+            lat_512: '0.18 ms', 
+            lat_2k: '0.52 ms', 
+            lat_8k: '3.80 ms', 
+            vram_8k: '620 MB', 
+            speedup_8k: '3.37x', 
+            triton: 'Hopper WGMMA Async Ping-Pong Buffer',
+            hw_target: 'NVIDIA H100/H200 (SM90a FP8)'
+        },
+        { 
+            id: 'mamba_svd_flash.md', 
+            name: 'MambaSVD-Flash', 
+            cat: 'SSM / Hybrid', 
+            complexity: 'O(N) Scan + SVD', 
+            state_mem: 'O(d · N_state) Recurrent State',
+            ppl_wiki: '11.40', 
+            ppl_c4: '14.80', 
+            lat_512: '0.25 ms', 
+            lat_2k: '0.45 ms', 
+            lat_8k: '1.65 ms', 
+            vram_8k: '320 MB', 
+            speedup_8k: '7.75x', 
+            triton: 'Parallel Associative Scan + SVD GEMM',
+            hw_target: 'Universal CUDA / Triton'
+        },
+        { 
+            id: 'rotational_slicegpt_int4.md', 
+            name: 'Rotational-SliceGPT-INT4', 
+            cat: 'Quant / Pruning', 
+            complexity: '4-bit Packed GEMM', 
+            state_mem: 'O(N · d / 4) 4-bit Quantized KV',
+            ppl_wiki: '12.10', 
+            ppl_c4: '15.30', 
+            lat_512: '0.21 ms', 
+            lat_2k: '0.42 ms', 
+            lat_8k: '1.20 ms', 
+            vram_8k: '180 MB', 
+            speedup_8k: '10.60x', 
+            triton: 'W4A16 Fast Register Unpack GEMV',
+            hw_target: 'Ada / Hopper Sub-byte Cores'
+        },
+        { 
+            id: 'full_attention.md', 
+            name: 'Dense Baseline (MHA)', 
+            cat: 'Standard MHA', 
+            complexity: 'O(N²) FLOPs & Memory', 
+            state_mem: 'O(N · d) Uncompressed KV',
+            ppl_wiki: '11.20', 
+            ppl_c4: '14.60', 
+            lat_512: '0.32 ms', 
+            lat_2k: '1.45 ms', 
+            lat_8k: '12.80 ms', 
+            vram_8k: '3,450 MB', 
+            speedup_8k: '1.00x', 
+            triton: 'Standard PyTorch SDPA GEMM',
+            hw_target: 'Universal Standard GPU'
+        },
+        { 
+            id: 'gqa_attention.md', 
+            name: 'Grouped-Query Attention (GQA)', 
+            cat: 'Grouped KV', 
+            complexity: 'O(N²) Reduced KV', 
+            state_mem: 'O(N · d / G) Sub-grouped KV',
+            ppl_wiki: '11.35', 
+            ppl_c4: '14.75', 
+            lat_512: '0.26 ms', 
+            lat_2k: '0.98 ms', 
+            lat_8k: '7.20 ms', 
+            vram_8k: '1,200 MB', 
+            speedup_8k: '1.78x', 
+            triton: 'GQA Broadcast Memory Fused Kernel',
+            hw_target: 'Ampere / Ada / Hopper'
+        },
+        { 
+            id: 'mla_attention.md', 
+            name: 'DeepSeek MLA', 
+            cat: 'Latent Compression', 
+            complexity: 'O(N²) Low-Rank KV', 
+            state_mem: 'O(N · d_c) Compressed Latent',
+            ppl_wiki: '11.30', 
+            ppl_c4: '14.70', 
+            lat_512: '0.24 ms', 
+            lat_2k: '0.85 ms', 
+            lat_8k: '5.40 ms', 
+            vram_8k: '850 MB', 
+            speedup_8k: '2.37x', 
+            triton: 'Decompressed Joint KV Cache GEMM',
+            hw_target: 'Hopper / Blackwell SM90+'
+        },
+        { 
+            id: 'aegis_hybrid.md', 
+            name: 'Aegis-Hybrid Attention', 
+            cat: 'Hybrid Multi-Branch', 
+            complexity: 'O(W·N) + O(N)', 
+            state_mem: 'O(W·d) + O(r·d) Hybrid State',
+            ppl_wiki: '11.30', 
+            ppl_c4: '14.70', 
+            lat_512: '0.24 ms', 
+            lat_2k: '0.55 ms', 
+            lat_8k: '2.05 ms', 
+            vram_8k: '440 MB', 
+            speedup_8k: '6.24x', 
+            triton: 'Dual-Branch Memory Fused Sliding Window',
+            hw_target: 'Universal CUDA / Triton'
+        },
+        { 
+            id: 'nsa_attention.md', 
+            name: 'Native Sparse Attention (NSA)', 
+            cat: 'Dynamic Sparse', 
+            complexity: 'O(N log N) Sparse FLOPs', 
+            state_mem: 'O(K_keep · d) Dynamic Sparse KV',
+            ppl_wiki: '11.38', 
+            ppl_c4: '14.78', 
+            lat_512: '0.27 ms', 
+            lat_2k: '0.68 ms', 
+            lat_8k: '2.40 ms', 
+            vram_8k: '520 MB', 
+            speedup_8k: '5.33x', 
+            triton: 'Block Sparse Tiled Top-K Attention',
+            hw_target: 'Ampere / Hopper Sparse Tensor Cores'
+        },
+        { 
+            id: 'griffin_ssd.md', 
+            name: 'Griffin SSD', 
+            cat: 'Recurrent SSM', 
+            complexity: 'O(N) State Space', 
+            state_mem: 'O(d) Constant Recurrent State',
+            ppl_wiki: '11.55', 
+            ppl_c4: '14.95', 
+            lat_512: '0.26 ms', 
+            lat_2k: '0.50 ms', 
+            lat_8k: '1.85 ms', 
+            vram_8k: '360 MB', 
+            speedup_8k: '6.92x', 
+            triton: 'Gated Linear Recurrence Chunkwise Scan',
+            hw_target: 'Universal CUDA / Triton'
+        },
+        { 
+            id: 'kronecker_tt_lora.md', 
+            name: 'Kronecker-TT-LoRA', 
+            cat: 'Tensor Train', 
+            complexity: 'Kronecker Fast Transform', 
+            state_mem: 'O(∑ r_k d_k) Compressed Weight State',
+            ppl_wiki: '11.65', 
+            ppl_c4: '15.05', 
+            lat_512: '0.23 ms', 
+            lat_2k: '0.49 ms', 
+            lat_8k: '1.70 ms', 
+            vram_8k: '290 MB', 
+            speedup_8k: '7.53x', 
+            triton: 'Fused Kronecker Product Forward GEMM',
+            hw_target: 'Universal Tensor Cores'
+        },
+        { 
+            id: 'adasvd_compressor.md', 
+            name: 'AdaSVD Compressor', 
+            cat: 'Dynamic SVD', 
+            complexity: 'Dynamic Rank Truncation', 
+            state_mem: 'O(r_eff · d) Adaptive Rank State',
+            ppl_wiki: '11.50', 
+            ppl_c4: '14.85', 
+            lat_512: '0.25 ms', 
+            lat_2k: '0.53 ms', 
+            lat_8k: '1.90 ms', 
+            vram_8k: '390 MB', 
+            speedup_8k: '6.74x', 
+            triton: 'Adaptive Rank GEMM with Singular Energy Gating',
+            hw_target: 'Universal CUDA / Triton'
+        }
+    ];
+
+    let selectedCompareIds = ['svd_linear_attention.md', 'mamba_svd_flash.md', 'flash_attention3_fp8.md', 'full_attention.md'];
+
+    function openCompareModal() {
+        if (!compareOverlay) return;
+        compareOverlay.classList.remove('hidden');
+        renderCompareChips();
+        renderCompareMatrix();
+    }
+
+    function closeCompareModal() {
+        if (!compareOverlay) return;
+        compareOverlay.classList.add('hidden');
+    }
+
+    function renderCompareChips() {
+        if (!compareChipsContainer) return;
+        let html = '';
+        COMPARISON_ARCH_PROFILES.forEach(item => {
+            const isSelected = selectedCompareIds.includes(item.id);
+            html += `<div class="comp-select-chip ${isSelected ? 'active' : ''}" data-id="${item.id}">
+                <span>${isSelected ? '✓' : '+'}</span>
+                <span>${item.name}</span>
+            </div>`;
+        });
+        compareChipsContainer.innerHTML = html;
+
+        compareChipsContainer.querySelectorAll('.comp-select-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const id = chip.dataset.id;
+                if (selectedCompareIds.includes(id)) {
+                    if (selectedCompareIds.length > 1) {
+                        selectedCompareIds = selectedCompareIds.filter(x => x !== id);
+                    } else {
+                        showToast('Select at least 1 architecture to compare', 'ℹ');
+                    }
+                } else {
+                    if (selectedCompareIds.length < 4) {
+                        selectedCompareIds.push(id);
+                    } else {
+                        showToast('Maximum 4 models can be compared at once', 'ℹ');
+                    }
+                }
+                renderCompareChips();
+                renderCompareMatrix();
+            });
+        });
+    }
+
+    function renderCompareMatrix() {
+        if (!compareMatrixView) return;
+        const selected = COMPARISON_ARCH_PROFILES.filter(p => selectedCompareIds.includes(p.id));
+
+        let html = `<table class="compare-table">
+            <thead>
+                <tr>
+                    <th class="metric-label">Architecture / Metric</th>
+                    ${selected.map(s => `<th>
+                        <div style="font-weight:700;color:var(--accent-hover);font-size:.9rem;">${s.name}</div>
+                        <div class="compare-badge-sub" style="margin:4px 0;">${s.cat}</div>
+                        <button class="compare-view-doc-btn" data-docid="${s.id}">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            Read Specs →
+                        </button>
+                    </th>`).join('')}
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="metric-label">Theoretical FLOP Complexity</td>
+                    ${selected.map(s => `<td><code style="font-size:.78rem;color:var(--tx-primary);font-weight:600;">${s.complexity}</code></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">KV / Memory State Scaling</td>
+                    ${selected.map(s => `<td><span style="font-size:.76rem;color:var(--tx-secondary);">${s.state_mem}</span></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">WikiText-2 Perplexity (PPL ↓)</td>
+                    ${selected.map(s => `<td><strong style="color:${parseFloat(s.ppl_wiki) <= 11.4 ? 'var(--accent-3)' : 'var(--tx-primary)'};font-size:.88rem;">${s.ppl_wiki}</strong></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">C4 Perplexity (PPL ↓)</td>
+                    ${selected.map(s => `<td><span style="font-size:.85rem;color:var(--tx-secondary);">${s.ppl_c4}</span></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">Latency @ L=512</td>
+                    ${selected.map(s => `<td><span style="font-size:.82rem;">${s.lat_512}</span></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">Latency @ L=2,048</td>
+                    ${selected.map(s => `<td><span style="font-size:.82rem;">${s.lat_2k}</span></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">Latency @ L=8,192 (Long Context)</td>
+                    ${selected.map(s => `<td><strong style="color:${parseFloat(s.lat_8k) <= 2.5 ? 'var(--accent-3)' : 'var(--tx-primary)'};font-size:.88rem;">${s.lat_8k}</strong></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">Peak VRAM @ L=8,192</td>
+                    ${selected.map(s => `<td><span style="font-size:.82rem;font-weight:600;color:var(--tx-secondary);">${s.vram_8k}</span></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">Speedup vs Dense MHA @ 8k</td>
+                    ${selected.map(s => `<td><span style="background:rgba(16,185,129,.14);color:var(--accent-3);padding:3px 8px;border-radius:6px;font-weight:700;font-size:.82rem;">${s.speedup_8k}</span></td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">Triton Hardware Kernel</td>
+                    ${selected.map(s => `<td style="font-size:.76rem;color:var(--tx-secondary);line-height:1.4;">${s.triton}</td>`).join('')}
+                </tr>
+                <tr>
+                    <td class="metric-label">Hardware Acceleration Target</td>
+                    ${selected.map(s => `<td style="font-size:.74rem;color:var(--tx-muted);">${s.hw_target}</td>`).join('')}
+                </tr>
+            </tbody>
+        </table>`;
+
+        compareMatrixView.innerHTML = html;
+
+        // Attach Read Specs click handlers
+        compareMatrixView.querySelectorAll('.compare-view-doc-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const docId = btn.dataset.docid;
+                const item = allItems.find(i => i.id === docId);
+                if (item) {
+                    closeCompareModal();
+                    loadArticle(item);
+                }
+            });
+        });
+    }
+
+    if (compareBtn) compareBtn.addEventListener('click', openCompareModal);
+    if (compareBackdrop) compareBackdrop.addEventListener('click', closeCompareModal);
+    if (compareCloseBtn) compareCloseBtn.addEventListener('click', closeCompareModal);
+
+    // Close on Escape
+    window.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && compareOverlay && !compareOverlay.classList.contains('hidden')) {
+            closeCompareModal();
+        }
+    });
+
+    // ── Startup ──────────────────────────────────────────────────
+    await loadCatalog();
+    handleHash();
 
 });
-
-
-// ── Architecture Comparison Studio Logic ─────────────────────
-const compareBtn = $('compare-modal-btn');
-const compareOverlay = $('compare-overlay');
-const compareBackdrop = $('compare-backdrop');
-const compareCloseBtn = $('compare-close-btn');
-const compareChipsContainer = $('compare-chips-container');
-const compareMatrixView = $('compare-matrix-view');
-
-const COMPARISON_ARCH_PROFILES = [
-    { id: 'svd_linear_attention.md', name: 'SVD Linear Attention', cat: 'SVD / Low-Rank', complexity: 'O(N) FLOPs, O(1) State', ppl_wiki: '11.60', ppl_c4: '14.90', lat_512: '0.28 ms', lat_2k: '0.58 ms', lat_8k: '2.10 ms', vram_8k: '480 MB', speedup_8k: '6.10x', triton: 'Fused SVD GEMM' },
-    { id: 'flash_attention3_fp8.md', name: 'FlashAttention-3 FP8', cat: 'Exact / Hardware', complexity: 'O(N^2) Tiled FP8', ppl_wiki: '11.20', ppl_c4: '14.60', lat_512: '0.18 ms', lat_2k: '0.52 ms', lat_8k: '3.80 ms', vram_8k: '620 MB', speedup_8k: '3.37x', triton: 'Hopper WGMMA Async' },
-    { id: 'mamba_svd_flash.md', name: 'MambaSVD-Flash', cat: 'SSM / Hybrid', complexity: 'O(N) Scan + SVD', ppl_wiki: '11.40', ppl_c4: '14.80', lat_512: '0.25 ms', lat_2k: '0.45 ms', lat_8k: '1.65 ms', vram_8k: '320 MB', speedup_8k: '7.75x', triton: 'Parallel Associative Scan' },
-    { id: 'rotational_slicegpt_int4.md', name: 'Rotational-SliceGPT-INT4', cat: 'Quant / Pruning', complexity: '4-bit Packed GEMM', ppl_wiki: '12.10', ppl_c4: '15.30', lat_512: '0.21 ms', lat_2k: '0.42 ms', lat_8k: '1.20 ms', vram_8k: '180 MB', speedup_8k: '10.60x', triton: 'W4A16 Register Unpack' },
-    { id: 'full_attention.md', name: 'Dense Baseline (MHA)', cat: 'Standard MHA', complexity: 'O(N^2) FLOPs & Memory', ppl_wiki: '11.20', ppl_c4: '14.60', lat_512: '0.32 ms', lat_2k: '1.45 ms', lat_8k: '12.80 ms', vram_8k: '3,450 MB', speedup_8k: '1.00x', triton: 'PyTorch SDPA' },
-    { id: 'gqa_attention.md', name: 'Grouped-Query Attention (GQA)', cat: 'Grouped KV', complexity: 'O(N^2) Reduced KV', ppl_wiki: '11.35', ppl_c4: '14.75', lat_512: '0.26 ms', lat_2k: '0.98 ms', lat_8k: '7.20 ms', vram_8k: '1,200 MB', speedup_8k: '1.78x', triton: 'GQA Broadcast Kernel' },
-    { id: 'mla_attention.md', name: 'DeepSeek MLA', cat: 'Latent Compression', complexity: 'O(N^2) Low-Rank KV', ppl_wiki: '11.30', ppl_c4: '14.70', lat_512: '0.24 ms', lat_2k: '0.85 ms', lat_8k: '5.40 ms', vram_8k: '850 MB', speedup_8k: '2.37x', triton: 'Decompressed Joint KV' },
-    { id: 'aegis_hybrid.md', name: 'Aegis-Hybrid Attention', cat: 'Hybrid Multi-Branch', complexity: 'O(W*N) + O(N)', ppl_wiki: '11.30', ppl_c4: '14.70', lat_512: '0.24 ms', lat_2k: '0.55 ms', lat_8k: '2.05 ms', vram_8k: '440 MB', speedup_8k: '6.24x', triton: 'Dual-Branch Memory Fused' }
-];
-
-let selectedCompareIds = ['svd_linear_attention.md', 'mamba_svd_flash.md', 'flash_attention3_fp8.md', 'full_attention.md'];
-
-function openCompareModal() {
-    if (!compareOverlay) return;
-    compareOverlay.classList.remove('hidden');
-    renderCompareChips();
-    renderCompareMatrix();
-}
-
-function closeCompareModal() {
-    if (!compareOverlay) return;
-    compareOverlay.classList.add('hidden');
-}
-
-function renderCompareChips() {
-    if (!compareChipsContainer) return;
-    let html = '';
-    COMPARISON_ARCH_PROFILES.forEach(item => {
-        const isSelected = selectedCompareIds.includes(item.id);
-        html += `<div class="comp-select-chip ${isSelected ? 'active' : ''}" data-id="${item.id}">
-            <span>${isSelected ? '✓' : '+'}</span>
-            <span>${item.name}</span>
-        </div>`;
-    });
-    compareChipsContainer.innerHTML = html;
-
-    compareChipsContainer.querySelectorAll('.comp-select-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const id = chip.dataset.id;
-            if (selectedCompareIds.includes(id)) {
-                if (selectedCompareIds.length > 1) {
-                    selectedCompareIds = selectedCompareIds.filter(x => x !== id);
-                }
-            } else {
-                if (selectedCompareIds.length < 4) {
-                    selectedCompareIds.push(id);
-                }
-            }
-            renderCompareChips();
-            renderCompareMatrix();
-        });
-    });
-}
-
-function renderCompareMatrix() {
-    if (!compareMatrixView) return;
-    const selected = COMPARISON_ARCH_PROFILES.filter(p => selectedCompareIds.includes(p.id));
-
-    let html = `<table class="compare-table">
-        <thead>
-            <tr>
-                <th class="metric-label">Architecture / Metric</th>
-                ${selected.map(s => `<th><div style="font-weight:700;color:var(--accent-hover);font-size:.9rem;">${s.name}</div><div class="compare-badge-sub">${s.cat}</div></th>`).join('')}
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="metric-label">Theoretical Complexity</td>
-                ${selected.map(s => `<td><code style="font-size:.78rem;color:var(--tx-primary);">${s.complexity}</code></td>`).join('')}
-            </tr>
-            <tr>
-                <td class="metric-label">WikiText-2 Perplexity (PPL ↓)</td>
-                ${selected.map(s => `<td><strong style="color:${parseFloat(s.ppl_wiki) <= 11.4 ? 'var(--accent-3)' : 'var(--tx-primary)'};">${s.ppl_wiki}</strong></td>`).join('')}
-            </tr>
-            <tr>
-                <td class="metric-label">C4 Perplexity (PPL ↓)</td>
-                ${selected.map(s => `<td>${s.ppl_c4}</td>`).join('')}
-            </tr>
-            <tr>
-                <td class="metric-label">Latency @ L=512</td>
-                ${selected.map(s => `<td>${s.lat_512}</td>`).join('')}
-            </tr>
-            <tr>
-                <td class="metric-label">Latency @ L=2,048</td>
-                ${selected.map(s => `<td>${s.lat_2k}</td>`).join('')}
-            </tr>
-            <tr>
-                <td class="metric-label">Latency @ L=8,192 (Long Context)</td>
-                ${selected.map(s => `<td><strong style="color:${parseFloat(s.lat_8k) <= 2.5 ? 'var(--accent-3)' : 'var(--tx-primary)'};">${s.lat_8k}</strong></td>`).join('')}
-            </tr>
-            <tr>
-                <td class="metric-label">Peak VRAM @ L=8,192</td>
-                ${selected.map(s => `<td>${s.vram_8k}</td>`).join('')}
-            </tr>
-            <tr>
-                <td class="metric-label">Speedup vs Full MHA @ 8k</td>
-                ${selected.map(s => `<td><span style="background:rgba(16,185,129,.12);color:var(--accent-3);padding:3px 8px;border-radius:6px;font-weight:700;">${s.speedup_8k}</span></td>`).join('')}
-            </tr>
-            <tr>
-                <td class="metric-label">Triton Hardware Kernel</td>
-                ${selected.map(s => `<td style="font-size:.76rem;color:var(--tx-secondary);">${s.triton}</td>`).join('')}
-            </tr>
-        </tbody>
-    </table>`;
-
-    compareMatrixView.innerHTML = html;
-}
-
-if (compareBtn) compareBtn.addEventListener('click', openCompareModal);
-if (compareBackdrop) compareBackdrop.addEventListener('click', closeCompareModal);
-if (compareCloseBtn) compareCloseBtn.addEventListener('click', closeCompareModal);
 
