@@ -42,8 +42,25 @@ class REAPMoE(nn.Module):
         top_k: Number of active experts activated per token ($k$).
     """
 
-    def __init__(self, d_model: int, n_experts: int = 8, top_k: int = 2) -> None:
+    def __init__(
+        self,
+        d_model: Any = 768,
+        n_experts: int = 8,
+        top_k: int = 2,
+        config: Optional[Any] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__()
+        if config is not None:
+            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
+            n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
+            top_k = getattr(config, "top_k", top_k)
+        elif hasattr(d_model, "hidden_size"):
+            config = d_model
+            d_model = config.hidden_size
+            n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
+            top_k = getattr(config, "top_k", top_k)
+
         self.n_experts: int = n_experts
         self.top_k: int = top_k
         self.experts = nn.ModuleList(
@@ -95,9 +112,27 @@ class SambaMoEBlock(nn.Module):
     """
 
     def __init__(
-        self, d_model: int, n_heads: int, n_experts: int = 8, window: int = 128
+        self,
+        d_model: Any = 768,
+        n_heads: int = 12,
+        n_experts: int = 8,
+        window: int = 128,
+        config: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
+        if config is not None:
+            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", n_heads))
+            n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
+            window = getattr(config, "window_size", window)
+        elif hasattr(d_model, "hidden_size"):
+            config = d_model
+            d_model = config.hidden_size
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+            n_experts = getattr(config, "num_experts", getattr(config, "n_experts", n_experts))
+            window = getattr(config, "window_size", window)
+
         self.swa_mamba = SAMBAM3Block(d_model, n_heads, window=window)
         self.moe = REAPMoE(d_model, n_experts)
         self.norm = nn.LayerNorm(d_model)

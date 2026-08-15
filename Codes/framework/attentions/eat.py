@@ -47,13 +47,17 @@ class EATBlock(nn.Module):
         d_model: Union[int, Any] = 768,
         n_heads: int = 12,
         prune_layer: Optional[ProgressiveTokenPruning] = None,
+        config: Optional[Any] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__()
-        if hasattr(d_model, "hidden_size"):
+        if config is not None:
+            d_model = getattr(config, "hidden_size", getattr(config, "d_model", d_model))
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", n_heads))
+        elif hasattr(d_model, "hidden_size"):
             config = d_model
             d_model = config.hidden_size
-            n_heads = config.num_attention_heads
+            n_heads = getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
 
         self.d_model: int = d_model
         self.n_heads: int = n_heads
