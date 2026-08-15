@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.recommendations, name="literature_discovery_root"),
     # Citation Graph
     path("graph/<uuid:paper_id>/", views.paper_graph, name="paper_graph"),
     path(

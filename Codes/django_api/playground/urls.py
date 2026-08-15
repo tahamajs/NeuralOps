@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.prompt_list, name="playground_root"),
     # Prompts
     path("prompts/", views.prompt_list, name="prompt_list"),
     path("prompts/<uuid:template_id>/", views.prompt_detail, name="prompt_detail"),

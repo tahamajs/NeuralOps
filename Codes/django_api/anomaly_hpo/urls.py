@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.anomaly_list, name="anomaly_hpo_root"),
     # Anomaly Detection
     path("anomalies/", views.anomaly_list, name="anomaly_list"),
     path(

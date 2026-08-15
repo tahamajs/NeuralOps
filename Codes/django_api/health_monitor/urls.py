@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.system_health, name="health_monitor_root"),
     # Feature Stores
     path("stores/", views.feature_store_list, name="feature_store_list"),
     # Feature Groups

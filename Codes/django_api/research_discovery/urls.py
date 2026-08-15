@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.generate_hypotheses, name="research_discovery_root"),
     path(
         "literature/synthesize/",
         views.synthesize_literature,

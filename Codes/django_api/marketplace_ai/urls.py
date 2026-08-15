@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.agent_query, name="marketplace_ai_root"),
     # Agent Mode
     path("query/", views.agent_query, name="agent_query"),
     # Comparisons

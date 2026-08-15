@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.endpoint_list, name="mlops_root"),
     # Inference Endpoints
     path("endpoints/", views.endpoint_list, name="endpoint_list"),
     path(

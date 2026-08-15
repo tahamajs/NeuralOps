@@ -68,10 +68,9 @@ urlpatterns = [
     path("api/orgs/", include("organizations.urls")),
     path("api/community/", include("community.urls")),
     path("api/social/", include("social.urls")),
-    path(
-        "api/social-network/", include("social_network.urls")
-    ),  # separate from 'social'
+    path("api/social-network/", include("social_network.urls")),
     path("api/support/", include("support.urls")),
+    path("api/reviews/", include("reviews.urls")),
     # ------------------------------------------------------------------
     # GPU marketplace & finance
     # ------------------------------------------------------------------
@@ -81,14 +80,13 @@ urlpatterns = [
     path("api/gpu/federation/", include("gpu_federation.urls")),
     path("api/gpu/reputation/", include("gpu_reputation.urls")),
     path("api/gpu/validator/", include("gpu_validator.urls")),
-    # GPU finance (separate prefix to avoid clash)
     path("api/gpu-finance/", include("gpu_finance.urls")),
     # ------------------------------------------------------------------
     # Gamification, streaks & reputation
     # ------------------------------------------------------------------
     path("api/gamification/", include("gamification.urls")),
     path("api/streaks/", include("streaks.urls")),
-    path("api/reputation/", include("reputation.urls")),  # general reputation
+    path("api/reputation/", include("reputation.urls")),
     path("api/experts/", include("expert_wall.urls")),
     # ------------------------------------------------------------------
     # AI research agents & assistants
@@ -113,11 +111,33 @@ urlpatterns = [
     # ------------------------------------------------------------------
     # Additional research & integration services
     # ------------------------------------------------------------------
-    path("api/research/", include("research.urls")),  # core research app
+    path("api/research/", include("research.urls")),
     path("api/research-discovery/", include("research_discovery.urls")),
     path("api/governance/", include("governance.urls")),
     path("api/integrations/", include("integrations.urls")),
-    path("api/mlops/", include("mlops.urls")),  # data quality, monitoring
+    path("api/mlops/", include("mlops.urls")),
+    # ------------------------------------------------------------------
+    # Direct API root inclusions to support unified frontend ENDPOINTS mapping
+    # ------------------------------------------------------------------
+    path("api/", include("agents.urls")),
+    path("api/", include("jobscheduler.urls")),
+    path("api/", include("sweeps.urls")),
+    path("api/", include("model_versioning.urls")),
+    path("api/", include("paper.urls")),
+    path("api/", include("organizations.urls")),
+    path("api/", include("portfolios.urls")),
+    path("api/", include("community.urls")),
+    path("api/", include("leaderboards.urls")),
+    path("api/", include("messaging.urls")),
+    path("api/", include("profiles.urls")),
+    path("api/", include("reviews.urls")),
+    path("api/", include("terminal.urls")),
+    path("api/", include("gpu_marketplace.urls")),
+    path("api/", include("gpu_escrow.urls")),
+    path("api/", include("gpu_benchmark.urls")),
+    path("api/", include("gpu_federation.urls")),
+    path("api/", include("gpu_reputation.urls")),
+    path("api/", include("gpu_validator.urls")),
     # ------------------------------------------------------------------
     # Stand‑alone views (parameter interactions, PDF export)
     # ------------------------------------------------------------------

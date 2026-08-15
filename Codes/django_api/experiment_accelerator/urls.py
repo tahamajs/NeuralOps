@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.my_insights, name="experiment_accelerator_root"),
     # Insights
     path("insights/", views.my_insights, name="my_insights"),
     path("insights/generate/", views.generate_insights, name="generate_insights"),

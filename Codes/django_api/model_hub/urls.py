@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.model_list, name="model_hub_root"),
     # Models
     path("models/", views.model_list, name="model_list"),
     path("models/<uuid:model_id>/", views.model_detail, name="model_detail"),
