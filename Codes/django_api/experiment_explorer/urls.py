@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.dataset_list, name="experiment_explorer_root"),
     path("datasets/", views.dataset_list, name="dataset_list"),
     path("datasets/<uuid:dataset_id>/", views.dataset_detail, name="dataset_detail"),
     path("datasets/upload-csv/", views.upload_csv, name="upload_csv"),

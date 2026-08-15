@@ -3,6 +3,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    path("", views.audit_log_dashboard, name="governance_root"),
     # Audit
     path("audit/dashboard/", views.audit_log_dashboard, name="audit_dashboard"),
     # Compliance
