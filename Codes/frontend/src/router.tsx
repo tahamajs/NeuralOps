@@ -21,10 +21,22 @@ const DashboardWidgetsConfigPage = lazy(
 );
 
 // ========================
-// Attention Dashboard (Zones 1-4)
+// Attention Dashboard (Zones 1-9) & Transformer Studios
 // ========================
 const AttentionCanvasSuite = lazy(
   () => import("../features/attentionDashboard/AttentionCanvasSuite"),
+);
+const InterpretabilitySuite = lazy(
+  () => import("../features/attentionDashboard/InterpretabilitySuite"),
+);
+const RepresentationStudios = lazy(
+  () => import("../features/transformerStudios/RepresentationStudios"),
+);
+const ComputationStudios = lazy(
+  () => import("../features/transformerStudios/ComputationStudios"),
+);
+const OptimizationStudios = lazy(
+  () => import("../features/transformerStudios/OptimizationStudios"),
 );
 
 // ========================
@@ -925,10 +937,19 @@ export const router = createBrowserRouter([
       { path: "/protocols/new", element: <ProtocolBuilder /> },
       { path: "/protocols/:protocolId", element: <ProtocolBuilder /> },
 
-      // Attention Visualization Dashboard (Zones 1-4)
+      // Attention Visualization Dashboard (Zones 1-9) & Transformer Studios
       { path: "/attention-canvas", element: <AttentionCanvasSuite /> },
       { path: "/attention-lab", element: <AttentionCanvasSuite /> },
       { path: "/attention-dashboard", element: <AttentionCanvasSuite /> },
+      { path: "/attention-interpretability", element: <InterpretabilitySuite /> },
+      { path: "/interpretability-suite", element: <InterpretabilitySuite /> },
+      { path: "/studios", element: <ComputationStudios /> },
+      { path: "/studios/representation", element: <RepresentationStudios /> },
+      { path: "/representation-studios", element: <RepresentationStudios /> },
+      { path: "/studios/computation", element: <ComputationStudios /> },
+      { path: "/computation-studios", element: <ComputationStudios /> },
+      { path: "/studios/optimization", element: <OptimizationStudios /> },
+      { path: "/optimization-studios", element: <OptimizationStudios /> },
 
       // 404 – must be last
       { path: "*", element: <NotFoundPage /> },

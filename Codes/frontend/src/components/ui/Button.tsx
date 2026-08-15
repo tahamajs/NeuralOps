@@ -8,6 +8,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        default:
+          "bg-neon-blue/90 text-white hover:bg-neon-blue shadow-lg shadow-neon-blue/20 hover:shadow-neon-blue/40",
         primary:
           "bg-neon-blue/90 text-white hover:bg-neon-blue shadow-lg shadow-neon-blue/20 hover:shadow-neon-blue/40",
         secondary:
