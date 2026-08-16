@@ -1315,6 +1315,11 @@
             "path": "content/attentions_blog/rpc_attention_blog.md"
         },
         {
+            "id": "rwkv_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/attentions_blog/rwkv_blog.md"
+        },
+        {
             "id": "salt_blog.md",
             "title": "\ud83c\udf1f Deep Dive",
             "path": "content/attentions_blog/salt_blog.md"
@@ -1515,6 +1520,11 @@
             "id": "asvd_compressor_blog.md",
             "title": "\ud83c\udf1f Deep Dive",
             "path": "content/compressions_blog/asvd_compressor_blog.md"
+        },
+        {
+            "id": "awq_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/awq_blog.md"
         },
         {
             "id": "bonsai_pruner_blog.md",
@@ -1795,6 +1805,11 @@
             "id": "slim_compressor_blog.md",
             "title": "\ud83c\udf1f Deep Dive",
             "path": "content/compressions_blog/slim_compressor_blog.md"
+        },
+        {
+            "id": "smoothquant_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/smoothquant_blog.md"
         },
         {
             "id": "soka_compressor_blog.md",
