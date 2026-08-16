@@ -2,7 +2,11 @@ import logging
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from langchain_core.messages import HumanMessage
+
+try:
+    from langchain_core.messages import HumanMessage
+except ImportError:
+    HumanMessage = None
 
 from .graph import build_graph
 from .models import AgentMessage, AgentSession
