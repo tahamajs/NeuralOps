@@ -296,6 +296,11 @@
             "path": "content/attentions/mla_attention.md"
         },
         {
+            "id": "nasc_attention.md",
+            "title": "NASC",
+            "path": "content/attentions/nasc_attention.md"
+        },
+        {
             "id": "nha_attention.md",
             "title": "Native Hybrid Attention (NHA)",
             "path": "content/attentions/nha_attention.md"
