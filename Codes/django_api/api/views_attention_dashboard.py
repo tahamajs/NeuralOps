@@ -175,6 +175,35 @@ def computation_studios_endpoint(request):
     return Response(data, status=status.HTTP_200_OK)
 
 
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def optimization_studios_endpoint(request):
+    """
+    Returns Circuit Attribution, Loss Landscape, and Model Compression Studio data.
+    """
+    data = {
+        "circuit_attribution": {
+            "target_token": "fox",
+            "top_attributing_heads": [
+                {"head": "L3.H4", "attribution": 0.38, "type": "Induction"},
+                {"head": "L5.H1", "attribution": 0.24, "type": "Semantic"},
+                {"head": "L2.H8", "attribution": 0.18, "type": "Positional"}
+            ]
+        },
+        "loss_landscape": {
+            "surface_mesh": [[float(0.8 + 0.1 * (x**2 + y**2)) for x in np.linspace(-1, 1, 10)] for y in np.linspace(-1, 1, 10)],
+            "optimum": {"x": 0.0, "y": 0.0, "loss": 0.81}
+        },
+        "compression_pareto": [
+            {"method": "Baseline", "param_ratio": 1.0, "val_ppl": 11.20},
+            {"method": "SVD Rank-32", "param_ratio": 0.65, "val_ppl": 11.50},
+            {"method": "Rotational SliceGPT INT4", "param_ratio": 0.18, "val_ppl": 12.10}
+        ],
+        "status": "success"
+    }
+    return Response(data, status=status.HTTP_200_OK)
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def compare_architectures_endpoint(request):
@@ -192,10 +221,15 @@ def compare_architectures_endpoint(request):
         "full_attention.md": {"name": "Dense Baseline (MHA)", "category": "Standard MHA", "ppl_wiki": 11.20, "ppl_c4": 14.60, "lat_512": "0.32 ms", "lat_2k": "1.45 ms", "lat_8k": "12.80 ms", "vram_8k": "3,450 MB", "speedup_8k": "1.00x", "triton": "PyTorch SDPA"}
     }
 
-    results = [db.get(mid, {"name": mid.replace('.md', ''), "category": "Custom", "ppl_wiki": 11.50, "ppl_c4": 14.80, "lat_512": "0.25 ms", "lat_2k": "0.60 ms", "lat_8k": "2.50 ms", "vram_8k": "400 MB", "speedup_8k": "5.12x", "triton": "Standard GEMM"}) for mid in model_ids]
+    results = [db.get(mid, {"name": str(mid).replace('.md', ''), "category": "Custom", "ppl_wiki": 11.50, "ppl_c4": 14.80, "lat_512": "0.25 ms", "lat_2k": "0.60 ms", "lat_8k": "2.50 ms", "vram_8k": "400 MB", "speedup_8k": "5.12x", "triton": "Standard GEMM"}) for mid in model_ids]
 
     return Response({
         "models": results,
         "count": len(results),
+        "comparison_matrix": results,
+        "recommendations": [
+            "Use SVD Linear Attention for long-context sequences (L >= 2048).",
+            "Use Rotational-SliceGPT-INT4 for high-compression edge deployment."
+        ],
         "status": "success"
     }, status=status.HTTP_200_OK)

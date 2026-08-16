@@ -131,5 +131,6 @@ urlpatterns = [
     path("attention-visualization/interpretability/", views_attention_dashboard.interpretability_suite_endpoint, name="attn_interpretability_api"),
     path("attention-visualization/studios/representation/", views_attention_dashboard.representation_studios_endpoint, name="studio_representation_api"),
     path("attention-visualization/studios/computation/", views_attention_dashboard.computation_studios_endpoint, name="studio_computation_api"),
+    path("attention-visualization/studios/optimization/", views_attention_dashboard.optimization_studios_endpoint, name="studio_optimization_api"),
     path("attention-visualization/compare/", views_attention_dashboard.compare_architectures_endpoint, name="attn_compare_api"),
 ]

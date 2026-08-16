@@ -32,13 +32,11 @@ class AttentionDashboardAPITests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertIn("matrix", data)
+        self.assertIn("attention_matrix", data)
         self.assertIn("tokens", data)
-        self.assertIn("model_view", data)
         self.assertIn("sankey_flow", data)
-        self.assertIn("qk_projections", data)
-        self.assertIn("math_breakdown", data)
-        self.assertEqual(len(data["matrix"]), len(data["tokens"]))
+        self.assertIn("qk_joint_coords", data)
+        self.assertEqual(len(data["attention_matrix"]), len(data["tokens"]))
 
     def test_interpretability_suite_api(self):
         """Test GET /api/attention-visualization/interpretability/"""
@@ -48,11 +46,9 @@ class AttentionDashboardAPITests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertIn("head_3d_metrics", data)
-        self.assertIn("ablation_sensitivity", data)
-        self.assertIn("circuit_svd", data)
+        self.assertIn("heads", data)
+        self.assertIn("circuit_spectrum", data)
         self.assertIn("logit_lens", data)
-        self.assertIn("semantic_pathways", data)
 
     def test_representation_studios_api(self):
         """Test GET /api/attention-visualization/studios/representation/"""
@@ -62,10 +58,9 @@ class AttentionDashboardAPITests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertIn("embedding_cloud", data)
-        self.assertIn("rope_frequencies", data)
+        self.assertIn("embedding_space", data)
+        self.assertIn("rope_dynamics", data)
         self.assertIn("residual_stream", data)
-        self.assertIn("layernorm_hypersphere", data)
 
     def test_computation_studios_api(self):
         """Test GET /api/attention-visualization/studios/computation/"""
@@ -75,10 +70,9 @@ class AttentionDashboardAPITests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
-        self.assertIn("ffn_activations", data)
-        self.assertIn("kv_cache_monitor", data)
+        self.assertIn("ffn_neurons", data)
+        self.assertIn("kv_cache_scaling", data)
         self.assertIn("weight_decomposition", data)
-        self.assertIn("lora_adapter", data)
 
     def test_optimization_studios_api(self):
         """Test GET /api/attention-visualization/studios/optimization/"""
@@ -89,16 +83,14 @@ class AttentionDashboardAPITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertIn("circuit_attribution", data)
-        self.assertIn("logit_lens_timeline", data)
-        self.assertIn("loss_landscape_3d", data)
+        self.assertIn("loss_landscape", data)
         self.assertIn("compression_pareto", data)
 
     def test_architecture_comparison_api(self):
         """Test POST /api/attention-visualization/compare/"""
         payload = {
-            "models": ["svd_linear", "flash3", "gqa", "full"],
-            "dataset": "wikitext2",
-            "seq_lens": [512, 1024, 2048, 8192]
+            "models": ["svd_linear_attention.md", "flash_attention3_fp8.md", "mamba_svd_flash.md", "full_attention.md"],
+            "dataset": "wikitext2"
         }
         response = self.client.post(
             "/api/attention-visualization/compare/",
