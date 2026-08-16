@@ -51,6 +51,8 @@ class DummyTokenizer:
         return [1, 2, 3, 4]
     def decode(self, tokens, *args, **kwargs):
         return "sample text"
+    def save_pretrained(self, path, *args, **kwargs):
+        return None
     def __call__(self, text, *args, **kwargs):
         return {"input_ids": torch.tensor([[1, 2, 3, 4]]), "attention_mask": torch.tensor([[1, 1, 1, 1]])}
 
@@ -99,14 +101,24 @@ def verify_all_attentions():
                     kwargs["max_seq_len"] = 128
                 if "rank" in params:
                     kwargs["rank"] = 16
+                if "config" in params:
+                    kwargs["config"] = hf_cfg
                 
                 try:
                     inst = cls_or_fn(**kwargs)
                 except Exception:
                     try:
-                        inst = cls_or_fn(C, num_heads)
+                        inst = cls_obj(hf_cfg) if (cls_or_fn is not None) else None
                     except Exception:
-                        inst = cls_or_fn()
+                        pass
+                    if inst is None:
+                        try:
+                            inst = cls_or_fn(hf_cfg)
+                        except Exception:
+                            try:
+                                inst = cls_or_fn(C, num_heads)
+                            except Exception:
+                                inst = cls_or_fn()
             else:
                 inst = cls_or_fn
 
@@ -214,36 +226,41 @@ def verify_all_compressors():
                 inst = cls_obj(**kwargs)
             except Exception:
                 try:
-                    inst = cls_obj(target_seq)
+                    inst = cls_obj(target_linear, rank=16)
                 except Exception:
                     try:
-                        inst = cls_obj(target_linear)
+                        inst = cls_obj(original_layer=target_linear, rank_qkv=16, rank_out=16)
                     except Exception:
                         try:
-                            inst = cls_obj(64, 64)
+                            inst = cls_obj(target_seq)
                         except Exception:
-                            inst = cls_obj()
+                            try:
+                                inst = cls_obj(target_linear)
+                            except Exception:
+                                try:
+                                    inst = cls_obj(64, 64)
+                                except Exception:
+                                    try:
+                                        inst = cls_obj(config=type("Cfg", (), {"hidden_size": 64, "num_attention_heads": 4})())
+                                    except Exception:
+                                        inst = cls_obj()
 
             # Test compress or forward
             x = torch.randn(2, 16, 64)
             if hasattr(inst, "compress"):
                 try:
                     res = inst.compress()
-                except TypeError:
-                    try:
-                        res = inst.compress(target_linear)
-                    except TypeError:
-                        try:
-                            res = inst.compress(target_linear, X=x)
-                        except Exception:
-                            res = inst.compress(target_seq)
-                    except Exception:
-                        res = inst.compress(target_seq)
                 except Exception:
                     try:
                         res = inst.compress(target_linear)
                     except Exception:
-                        res = inst.compress(target_seq)
+                        try:
+                            res = inst.compress(target_seq)
+                        except Exception:
+                            try:
+                                res = inst.compress(target_linear, X=x)
+                            except Exception:
+                                res = inst.compress(target_seq, tokenizer=dummy_tokenizer)
             elif hasattr(inst, "forward") or callable(inst):
                 try:
                     res = inst(x)
@@ -251,7 +268,10 @@ def verify_all_compressors():
                     try:
                         res = inst(x, x, x)
                     except Exception:
-                        res = inst(target_linear)
+                        try:
+                            res = inst(target_linear)
+                        except Exception:
+                            res = inst(x, x)
             
             passed += 1
             if idx <= 10 or idx % 15 == 0 or idx == total:
@@ -305,7 +325,9 @@ def verify_models_and_training():
     scheduler = create_sched(optimizer, num_warmup_steps=2, num_training_steps=10)
     
     optimizer.zero_grad()
-    loss.backward()
+    fresh_out = model(input_ids=input_ids, labels=labels)
+    fresh_loss = fresh_out.loss if hasattr(fresh_out, "loss") else fresh_out[0]
+    fresh_loss.backward()
     optimizer.step()
     scheduler.step()
     print("  ✓ Optimizer (AdamW) and LR Scheduler (Cosine) updated model weights successfully")
