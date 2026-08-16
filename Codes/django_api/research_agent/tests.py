@@ -6,6 +6,7 @@ from django.test import TestCase
 from rest_framework.authtoken.models import Token
 
 from django_api.asgi import application
+from research_agent import consumers
 
 User = get_user_model()
 
@@ -53,16 +54,16 @@ class ResearchAgentWebSocketTests(TestCase):
 
         async_to_sync(test)()
 
-    @patch("research_agent.consumers.build_graph")
+    @patch.object(consumers, "build_graph")
     def test_research_agent_send_message(self, mock_build_graph):
         mock_graph = MagicMock()
         mock_ai_message = MagicMock()
         mock_ai_message.content = "Research findings summary."
         mock_graph.ainvoke = MagicMock()
-        
+
         async def mock_ainvoke(inputs, config=None):
             return {"messages": [mock_ai_message]}
-            
+
         async def mock_astream_events(inputs, config=None, version="v2"):
             if False:
                 yield {}
@@ -79,7 +80,9 @@ class ResearchAgentWebSocketTests(TestCase):
             connected, _ = await communicator.connect()
             self.assertTrue(connected)
 
-            await communicator.send_json_to({"type": "message", "text": "What is LEKA attention?"})
+            await communicator.send_json_to(
+                {"type": "message", "text": "What is LEKA attention?"}
+            )
             res = await communicator.receive_json_from()
             self.assertEqual(res.get("type"), "done")
             self.assertEqual(res.get("text"), "Research findings summary.")
