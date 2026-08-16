@@ -70,8 +70,11 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
         Sparse normalized probability distribution `[..., N]`.
     """
     m = x.max(dim=dim, keepdim=True).values
-    e = torch.exp((x - m) / temperature)
-    denom = e - torch.exp(-m / temperature)
+    scaled = (x - m) / max(temperature, 1e-6)
+    scaled_clamped = torch.clamp(scaled, min=-50.0, max=50.0)
+    e = torch.exp(scaled_clamped)
+    m_clamped = torch.clamp(-m / max(temperature, 1e-6), min=-50.0, max=50.0)
+    denom = e - torch.exp(m_clamped)
     p = F.relu(denom)
     return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
 

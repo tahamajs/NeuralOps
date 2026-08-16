@@ -78,3 +78,14 @@ def human_readable_time(seconds: float) -> str:
     if minutes > 0:
         return f"{minutes}m {secs}s"
     return f"{secs}s"
+
+
+def ste_round(x: torch.Tensor) -> torch.Tensor:
+    r"""Straight-Through Estimator (STE) for rounding in quantization-aware training."""
+    return x + (torch.round(x) - x).detach()
+
+
+def ste_clamp(x: torch.Tensor, min_val: float, max_val: float) -> torch.Tensor:
+    r"""Straight-Through Estimator (STE) for clamping."""
+    return x + (torch.clamp(x, min_val, max_val) - x).detach()
+
