@@ -189,13 +189,40 @@ WSGI_APPLICATION = "django_api.wsgi.application"
 ASGI_APPLICATION = "django_api.asgi.application"
 
 # ----------------------------------------------------------------------
-# Channels (WebSocket)
+# Channels (WebSocket) & Channel Layer Fallback
 # ----------------------------------------------------------------------
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",  # Use Redis for production
-    },
-}
+REDIS_URL = os.environ.get("REDIS_URL", os.environ.get("REDIS_HOST", "redis://127.0.0.1:6379/0"))
+USE_REDIS = os.environ.get("USE_REDIS", "false").lower() in ("true", "1", "yes")
+
+
+def _configure_channel_layers():
+    """Configure Channel Layer with InMemory fallback if Redis is offline or unavailable."""
+    if USE_REDIS or "REDIS_URL" in os.environ:
+        try:
+            import redis
+
+            client = redis.from_url(
+                REDIS_URL, socket_timeout=0.2, socket_connect_timeout=0.2
+            )
+            client.ping()
+            return {
+                "default": {
+                    "BACKEND": "channels_redis.core.RedisChannelLayer",
+                    "CONFIG": {
+                        "hosts": [REDIS_URL],
+                    },
+                }
+            }
+        except Exception:
+            pass
+    return {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
+
+
+CHANNEL_LAYERS = _configure_channel_layers()
 
 # ----------------------------------------------------------------------
 # Database

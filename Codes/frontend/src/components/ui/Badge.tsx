@@ -40,6 +40,7 @@ interface BadgeProps extends VariantProps<typeof badgeVariants> {
   dot?: boolean;
   size?: "sm" | "md" | "lg";
   status?: VariantProps<typeof badgeVariants>["variant"] | string;
+  style?: React.CSSProperties;
 }
 
 export const Badge = ({
@@ -49,6 +50,7 @@ export const Badge = ({
   children,
   className,
   dot,
+  style,
 }: BadgeProps) => {
   const resolvedVariant = (variant || status || "neutral") as any;
   const activeVariant = [
@@ -74,7 +76,10 @@ export const Badge = ({
     : "neutral";
 
   return (
-    <span className={cn(badgeVariants({ variant: activeVariant, size }), className)}>
+    <span
+      style={style}
+      className={cn(badgeVariants({ variant: activeVariant, size }), className)}
+    >
       {dot && (
         <span
           className={cn(
