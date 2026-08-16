@@ -26,10 +26,9 @@ def _call_llm(messages, tools=None):
 
 def _search_web(query, max_results=5):
     """Search the web using DuckDuckGo (free, no API key)."""
-    from duckduckgo_search import DDGS
-
     results = []
     try:
+        from duckduckgo_search import DDGS
         with DDGS() as ddgs:
             for r in ddgs.text(query, max_results=max_results):
                 results.append(
