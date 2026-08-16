@@ -2,7 +2,21 @@ import os
 
 import psutil
 import torch
-from deepdiff import DeepDiff
+try:
+    from deepdiff import DeepDiff
+except ImportError:
+    def DeepDiff(dict1, dict2, ignore_order=True):
+        d1 = dict1 if isinstance(dict1, dict) else {}
+        d2 = dict2 if isinstance(dict2, dict) else {}
+        added = [k for k in d2 if k not in d1]
+        removed = [k for k in d1 if k not in d2]
+        changed = {k: {"old_value": d1[k], "new_value": d2[k]} for k in d1 if k in d2 and d1[k] != d2[k]}
+        return {
+            "dictionary_item_added": added,
+            "dictionary_item_removed": removed,
+            "values_changed": changed,
+            "type_changes": {},
+        }
 from django.db import models as db_models
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
