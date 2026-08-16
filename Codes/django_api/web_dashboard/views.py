@@ -760,7 +760,7 @@ def generate_model_card(request, run_id):
     from .model_card import generate_model_card as card_gen
 
     card = card_gen(run)
-    return Response({"model_card": card})
+    return Response({"model_card": card, "model_card_md": card})
 
 
 # ======================== CONSUMER MARKETPLACE VIEWS ========================

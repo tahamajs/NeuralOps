@@ -41,7 +41,7 @@ def load_hf_model(
     )
     model_kwargs = {
         k: v for k, v in kwargs.items()
-        if k not in {"task", "attention_type", "attention_rank", "copy_weights", "rank"}
+        if k not in {"task", "attention_type", "attention_rank", "copy_weights", "rank", "loader_type"}
     }
     model = _safe_load(
         AutoModelForSequenceClassification.from_pretrained,
@@ -152,6 +152,9 @@ def load_model(
         (model, tokenizer) where model is a PyTorch module.
     """
     # 1. Load base model
+    loader_type = kwargs.pop("loader_type", None)
+    if variant == "standard" and loader_type and loader_type in _VARIANT_LOADERS:
+        variant = loader_type
     loader = _VARIANT_LOADERS.get(variant, load_hf_model)
     model, tokenizer = loader(
         model_name,
