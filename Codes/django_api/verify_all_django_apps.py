@@ -33,7 +33,7 @@ installed_apps = [app.label for app in apps.get_app_configs()]
 print(f"\n[1/5] Installed Django Apps ({len(installed_apps)} apps):")
 for idx, app_label in enumerate(installed_apps, 1):
     app_config = apps.get_app_config(app_label)
-    models_count = len(app_config.get_models())
+    models_count = len(list(app_config.get_models()))
     print(f"  {idx:2d}. {app_label:<30} | Models: {models_count:2d} | Path: {app_config.path}")
 
 # 2. Inspect all registered database tables
