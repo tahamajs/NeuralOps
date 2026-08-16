@@ -9,6 +9,7 @@ import {
 
 interface AuthState {
   user: { username: string; email?: string } | null;
+  token: string | null;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
@@ -17,28 +18,33 @@ interface AuthState {
     email: string,
     password: string,
   ) => Promise<void>;
-  setAuth: (user: any, token: string) => void;
+  setAuth: (user: any, token?: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  token: getAuthToken() || null,
   isAuthenticated: !!getAuthToken(),
   login: async (username, password) => {
     const res = await api.post(ENDPOINTS.AUTH.LOGIN, { username, password });
     if (res.data.token) {
       setAuthToken(res.data.token);
-      set({ user: { username }, isAuthenticated: true });
+      set({ user: { username }, token: res.data.token, isAuthenticated: true });
     }
   },
   logout: () => {
     removeAuthToken();
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, token: null, isAuthenticated: false });
     window.location.href = "/login";
   },
   register: async (username, email, password) => {
     await api.post(ENDPOINTS.AUTH.REGISTER, { username, email, password });
   },
   setAuth: (user, token) => {
-    set({ user, isAuthenticated: true });
+    if (token) {
+      setAuthToken(token);
+    }
+    const currentToken = token || getAuthToken() || null;
+    set({ user, token: currentToken, isAuthenticated: !!currentToken });
   },
 }));

@@ -25,3 +25,4 @@ export * from "./Tooltip";
 export * from "./Slider";
 export * from "./PaginationControls";
 export * from "./DateRangePicker";
+export * from "./Popover";
