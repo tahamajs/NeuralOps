@@ -114,6 +114,12 @@ class DynamicCompConfig:
     def __getattr__(self, name):
         if any(w in name for w in ("drop", "rate", "prob", "temp", "beta")):
             return 0.0
+        if 'percentile' in name:
+            return 90.0
+        if any(w in name for w in ("bias", "threshold", "ratio", "sparsity")):
+            return 0.5
+        if 'method' in name:
+            return 'orthogonal'
         return 16
 
 class DummyHFLikeModel(nn.Module):
@@ -229,6 +235,9 @@ def verify_all_attentions():
             hf_cfg.embed_dim = C
             hf_cfg.in_proj_weight = nn.Parameter(torch.randn(3 * C, C))
             hf_cfg.out_proj = DummyAttentionLayer(C, num_heads).out_proj
+            hf_cfg.method = 'orthogonal'
+            hf_cfg.percentiles = 90.0
+            hf_cfg.sparsity = 0.5
 
             old_attn = DummyAttentionLayer(C, num_heads)
             mha = nn.MultiheadAttention(C, num_heads, batch_first=True)
@@ -243,21 +252,28 @@ def verify_all_attentions():
                     for p in params:
                         if p in ('self', 'args', 'kwargs'): continue
                         val = 16
-                        if 'original_layer' in p: val = mha
-                        elif any(w in p for w in ('old', 'attn', 'pretrained')): val = old_attn
-                        elif 'layer' in p and not any(w in p for w in ('total', 'num', 'idx')): val = old_attn
-                        elif any(w in p for w in ('comp', 'cfg', 'orion', 'phantom')): val = comp_cfg
-                        elif any(w in p for w in ('config', 'model')): val = hf_cfg
-                        elif 'ranks' in p: val = {'q': 16, 'k': 16, 'v': 16, 'out': 16, 'o': 16}
-                        elif 'idx' in p: val = 0
-                        elif any(w in p for w in ('total', 'num_layers')): val = 2
-                        elif 'drop' in p: val = 0.0
-                        elif any(w in p for w in ('rank', 'k_rank', 'qkv', 'out', 'min_rank')): val = 16
-                        elif any(w in p for w in ('dim', 'embed', 'hidden', 'size')): val = C
-                        elif 'head' in p: val = num_heads
-                        elif any(w in p for w in ('seq', 'len')): val = 128
-                        elif 'method' in p: val = 'svd'
-                        else: val = 0.5 if any(w in p for w in ('rate', 'prob', 'temp', 'energy')) else 16
+                        if p == 'original_layer': val = mha
+                        elif p in ('old_attn', 'pretrained_attn', 'layer', 'attention_layer'): val = old_attn
+                        elif p in ('comp_config', 'orion_cfg', 'phantom_cfg', 'cfg'): val = comp_cfg
+                        elif p in ('model_config', 'config', 'hf_cfg'): val = hf_cfg
+                        elif p == 'ranks' or 'ranks' in p: val = {'q': 16, 'k': 16, 'v': 16, 'out': 16, 'o': 16}
+                        elif p in ('layer_idx', 'idx'): val = 0
+                        elif p in ('total_layers', 'num_layers'): val = 2
+                        elif p in ('dropout', 'drop', 'attn_drop', 'proj_drop'): val = 0.0
+                        elif p in ('rank', 'k_rank', 'v_rank', 'q_rank', 'out_rank', 'min_rank'): val = 16
+                        elif p in ('dim', 'embed_dim', 'hidden_size', 'hidden_dim', 'd_model'): val = C
+                        elif p in ('num_heads', 'heads', 'n_heads'): val = num_heads
+                        elif p in ('seq_len', 'max_position_embeddings', 'max_seq_len'): val = 128
+                        elif 'method' in p: val = 'orthogonal'
+                        elif 'percentile' in p: val = 90
+                        elif p in ('tau', 'temperature', 'energy_threshold', 'threshold', 'sparsity_level', 'sparsity'): val = 0.5
+                        elif any(w in p for w in ('rate', 'prob')): val = 0.5
+                        else:
+                            # fallback for float vs int based on type hint if possible, but we don't have it here.
+                            val = 0.5 if 'energy' in p or 'temp' in p or 'sparse' in p else 16
+                            # To fix leka_v2 expecting float tensors for some reason:
+                            if p == 'tau': val = 0.1
+                            
                         kwargs[p] = val
                         args.append(val)
                     kwargs_err = None
