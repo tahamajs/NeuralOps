@@ -1,4 +1,4 @@
-name: Framework CI & Validation
+name: CI & Full Stack Verification
 
 on:
   push:
@@ -7,25 +7,31 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  validate-docs-and-modules:
+  framework-ci:
+    name: PyTorch Framework Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.10', '3.11']
+      fail-fast: false
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
           cache-dependency-path: '**/requirements.txt'
 
-      - name: Install Base Dependencies
+      - name: Install Base PyTorch & Test Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
@@ -39,3 +45,91 @@ jobs:
       - name: Verify Python Module Syntax
         run: |
           python -m compileall Codes/framework/
+
+      - name: Run PyTorch Framework Unit Tests
+        run: |
+          PYTHONPATH=Codes/framework:Codes python -m unittest discover -s Codes/framework/tests
+
+      - name: Run Master Framework Integration Suite
+        run: |
+          PYTHONPATH=Codes python Codes/framework/test_all_framework.py
+
+  django-backend-ci:
+    name: Django Backend & REST API Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: '**/requirements.txt'
+
+      - name: Install Django Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          if [ -f Codes/django_api/requirements.txt ]; then pip install -r Codes/django_api/requirements.txt; fi
+          pip install django djangorestframework django-cors-headers channels django-filter django-allauth pytest pytest-django
+
+      - name: Run Django System Check
+        working-directory: Codes/django_api
+        run: |
+          python manage.py check
+
+      - name: Run Django Test Suite
+        working-directory: Codes/django_api
+        run: |
+          python manage.py test api.test_attention_dashboard experiment.test_experiments_api web_dashboard --keepdb
+
+      - name: Verify All Django Apps Ecosystem
+        working-directory: Codes/django_api
+        run: |
+          python verify_all_django_apps.py
+
+  frontend-ci:
+    name: Frontend TypeScript & Production Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'Codes/frontend/package-lock.json'
+
+      - name: Install Dependencies
+        working-directory: Codes/frontend
+        run: |
+          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+      - name: Run Production Build
+        working-directory: Codes/frontend
+        run: |
+          npm run build
+
+  docs-hub-ci:
+    name: Research Hub Documentation SPA Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Catalog Consistency
+        run: |
+          python generate_catalog.py
+          git diff --exit-code Docs/catalog.json

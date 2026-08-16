@@ -59,6 +59,11 @@ def main():
                 "path": "content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md"
             },
             {
+                "id": "MASTER_EMPIRICAL_BENCHMARK_REPORT.md",
+                "title": "Master Empirical Benchmark Report",
+                "path": "content/framework/MASTER_EMPIRICAL_BENCHMARK_REPORT.md"
+            },
+            {
                 "id": "README.md",
                 "title": "Framework Documentation",
                 "path": "content/framework/README.md"
