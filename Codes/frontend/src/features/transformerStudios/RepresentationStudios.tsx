@@ -824,18 +824,18 @@ export const RepresentationStudios: React.FC = () => {
       {/* TAB 1: EMBEDDING SPACE EXPLORER */}
       {/* =============================================================== */}
       {activeTab === 'embeddings' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Main 3D Canvas Panel */}
-          <div className="lg:col-span-8 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl flex flex-col space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Compass className="w-5 h-5 text-blue-400" />
-                <h2 className="font-semibold text-white">3D Token Embedding Cloud</h2>
-                <Badge variant="outline" className="text-[10px] text-blue-400 border-blue-400/30">
-                  Interactive WebGL
-                </Badge>
-              </div>
-
+        <ErrorBoundary title="Failed to render 3D Embedding Explorer">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Main 3D Canvas Panel */}
+            <div className="lg:col-span-8 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl flex flex-col space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Compass className="w-5 h-5 text-blue-400" />
+                  <h2 className="font-semibold text-white">3D Token Embedding Cloud</h2>
+                  <Badge variant="outline" className="text-[10px] text-blue-400 border-blue-400/30">
+                    Interactive WebGL
+                  </Badge>
+                </div>
               {/* Dimensionality Reduction Switcher */}
               <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-lg p-1 text-xs">
                 {(['pca', 'tsne', 'umap'] as const).map((m) => (

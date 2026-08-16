@@ -56,6 +56,7 @@ CALLBACK_REGISTRY = _registry_fallbacks()
 AUGMENTATION_REGISTRY = _registry_fallbacks()
 
 try:
+    import framework.attentions
     from framework.core.registry import ATTENTION_REGISTRY as attn_reg
 
     if not attn_reg or len(attn_reg) == 0:
@@ -68,6 +69,9 @@ except (ImportError, TypeError):
         "fast_linear": None,
         "flash": None,
         "performer": None,
+        "nasc": None,
+        "aegis_v6": None,
+        "svd": None,
     }
     logger.warning(
         "framework module not available or empty, using fallback ATTENTION_REGISTRY"
@@ -794,6 +798,27 @@ def start_compress(request):
     start_job(run, run_compression)
     log_activity(request.user, "start", f"Compression run {run.id} started")
     return Response(TrainingRunSerializer(run).data, status=201)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def run_list(request):
+    runs = TrainingRun.objects.all().order_by("-created_at")
+    status_filter = request.query_params.get("status")
+    if status_filter:
+        runs = runs.filter(status=status_filter)
+    exp_id = request.query_params.get("experiment_id")
+    if exp_id:
+        runs = runs.filter(experiment_id=exp_id)
+    serializer = TrainingRunSerializer(runs, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def launch_config_all(request):
+    from web_dashboard.views import launch_config_options
+    return launch_config_options(request)
 
 
 @api_view(["GET"])
