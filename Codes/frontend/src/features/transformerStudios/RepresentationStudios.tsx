@@ -1279,123 +1279,155 @@ export const RepresentationStudios: React.FC = () => {
       {/* TAB 4: LAYER NORMALIZATION DYNAMICS */}
       {/* =============================================================== */}
       {activeTab === 'layernorm' && (
-          </div>
-
-          {/* Variance Stabilization & Gain/Bias Parameter Drift */}
-          <div className="lg:col-span-6 space-y-6">
-            {/* Pre/Post Variance Line Chart */}
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+        <ErrorBoundary title="Failed to render Normalization Studio">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* 3D Hypersphere Projection Scene */}
+            <div className="lg:col-span-6 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-semibold text-white">Activation Variance Stabilization</h3>
+                  <Activity className="w-5 h-5 text-teal-400" />
+                  <h2 className="font-semibold text-white">Unit Hypersphere Projection</h2>
                 </div>
-                <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-400/30">
-                  Pre vs Post Norm
+                <Badge variant="outline" className="text-[10px] text-teal-400 border-teal-400/30 font-mono">
+                  ||x̂|| = √d
                 </Badge>
               </div>
 
-              <div className="h-44 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={layerNormStats}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="layer" stroke="#64748b" fontSize={10} />
-                    <YAxis stroke="#64748b" fontSize={10} />
-                    <RechartsTooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155', fontSize: '11px' }} />
-                    <Line type="monotone" dataKey="preVar" stroke="#ef4444" strokeWidth={2} name="Pre-LN Var" dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="postVar" stroke="#22c55e" strokeWidth={2} name="Post-LN Var (≈1.0)" dot={{ r: 3 }} />
-                  </LineChart>
-                </ResponsiveContainer>
+              {/* Canvas */}
+              <div
+                ref={hypersphereCanvasRef}
+                className="w-full h-[380px] rounded-xl overflow-hidden border border-slate-800/80 relative"
+              />
+
+              {/* Legend */}
+              <div className="flex items-center justify-between text-xs font-mono pt-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <span className="text-slate-300">Pre-norm Unbounded Vector</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-slate-300">Post-norm On Hypersphere</span>
+                </div>
               </div>
             </div>
 
-            {/* Gain/Bias Parameter Drift & Mode Controls */}
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-semibold text-white">Gain & Bias Stabilizer Tuning</h3>
-                </div>
-                <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[10px] font-mono">
-                  {(['both', 'layernorm', 'rmsnorm'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      onClick={() => setNormViewMode(mode)}
-                      className={`px-2 py-0.5 rounded uppercase ${
-                        normViewMode === mode ? 'bg-teal-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {mode}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                <div>
-                  <div className="flex justify-between text-slate-400 mb-1">
-                    <span>Gain Scale (γ):</span>
-                    <span className="text-teal-300 font-bold">{customGamma.toFixed(2)}x</span>
+            {/* Variance Stabilization & Gain/Bias Parameter Drift */}
+            <div className="lg:col-span-6 space-y-6">
+              {/* Pre/Post Variance Line Chart */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-semibold text-white">Activation Variance Stabilization</h3>
                   </div>
-                  <input
-                    type="range"
-                    min="0.5"
-                    max="2.5"
-                    step="0.05"
-                    value={customGamma}
-                    onChange={(e) => setCustomGamma(parseFloat(e.target.value))}
-                    className="w-full accent-teal-500"
-                  />
+                  <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-400/30">
+                    Pre vs Post Norm
+                  </Badge>
                 </div>
-                <div>
-                  <div className="flex justify-between text-slate-400 mb-1">
-                    <span>Bias Shift (β):</span>
-                    <span className="text-teal-300 font-bold">{customBeta.toFixed(2)}</span>
+
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={layerNormStats}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="layer" stroke="#64748b" fontSize={10} />
+                      <YAxis stroke="#64748b" fontSize={10} />
+                      <RechartsTooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155', fontSize: '11px' }} />
+                      <Line type="monotone" dataKey="preVar" stroke="#ef4444" strokeWidth={2} name="Pre-LN Var" dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="postVar" stroke="#22c55e" strokeWidth={2} name="Post-LN Var (≈1.0)" dot={{ r: 3 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Gain/Bias Parameter Drift & Mode Controls */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-semibold text-white">Gain & Bias Stabilizer Tuning</h3>
                   </div>
-                  <input
-                    type="range"
-                    min="-1.0"
-                    max="1.0"
-                    step="0.05"
-                    value={customBeta}
-                    onChange={(e) => setCustomBeta(parseFloat(e.target.value))}
-                    className="w-full accent-teal-500"
-                  />
+                  <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[10px] font-mono">
+                    {(['both', 'layernorm', 'rmsnorm'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        onClick={() => setNormViewMode(mode)}
+                        className={`px-2 py-0.5 rounded uppercase ${
+                          normViewMode === mode ? 'bg-teal-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                  <div>
+                    <div className="flex justify-between text-slate-400 mb-1">
+                      <span>Gain Scale (γ):</span>
+                      <span className="text-teal-300 font-bold">{customGamma.toFixed(2)}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2.5"
+                      step="0.05"
+                      value={customGamma}
+                      onChange={(e) => setCustomGamma(parseFloat(e.target.value))}
+                      className="w-full accent-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-slate-400 mb-1">
+                      <span>Bias Shift (β):</span>
+                      <span className="text-teal-300 font-bold">{customBeta.toFixed(2)}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="-1.0"
+                      max="1.0"
+                      step="0.05"
+                      value={customBeta}
+                      onChange={(e) => setCustomBeta(parseFloat(e.target.value))}
+                      className="w-full accent-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-300 flex justify-between">
+                  <span>Output Norm: <strong className="text-emerald-400 font-bold">{(customGamma * 1.0).toFixed(2)} · √d</strong></span>
+                  <span>Variance: <strong className="text-teal-300 font-bold">{(customGamma ** 2).toFixed(2)}</strong></span>
+                  <span>Mean Shift: <strong className="text-amber-300 font-bold">{customBeta.toFixed(2)}</strong></span>
                 </div>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-300 flex justify-between">
-                <span>Output Norm: <strong className="text-emerald-400 font-bold">{(customGamma * 1.0).toFixed(2)} · √d</strong></span>
-                <span>Variance: <strong className="text-teal-300 font-bold">{(customGamma ** 2).toFixed(2)}</strong></span>
-                <span>Mean Shift: <strong className="text-amber-300 font-bold">{customBeta.toFixed(2)}</strong></span>
-              </div>
-            </div>
-
-            {/* RMSNorm vs LayerNorm Architectural Comparison */}
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Scale className="w-4 h-4 text-teal-400" />
-                  <h3 className="text-sm font-semibold text-white">LayerNorm vs RMSNorm Comparison</h3>
+              {/* RMSNorm vs LayerNorm Architectural Comparison */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-teal-400" />
+                    <h3 className="text-sm font-semibold text-white">LayerNorm vs RMSNorm Comparison</h3>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] text-teal-400 border-teal-400/30">
+                    Speed & Stability
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="text-[10px] text-teal-400 border-teal-400/30">
-                  Speed & Stability
-                </Badge>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-teal-400 font-bold block">LayerNorm (Standard)</span>
-                  <p className="text-[11px] text-slate-400">Centers mean to zero & scales variance to 1. Formula: y = ((x - μ) / σ) · γ + β</p>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                  <span className="text-emerald-400 font-bold block">RMSNorm (LLaMA/Mistral)</span>
-                  <p className="text-[11px] text-slate-400">Skips mean subtraction: y = (x / RMS(x)) · γ. ~15% faster with identical representation quality.</p>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <span className="text-teal-400 font-bold block">LayerNorm (Standard)</span>
+                    <p className="text-[11px] text-slate-400">Centers mean to zero & scales variance to 1. Formula: y = ((x - μ) / σ) · γ + β</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <span className="text-emerald-400 font-bold block">RMSNorm (LLaMA/Mistral)</span>
+                    <p className="text-[11px] text-slate-400">Skips mean subtraction: y = (x / RMS(x)) · γ. ~15% faster with identical representation quality.</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </ErrorBoundary>
       )}
     </div>
   );
