@@ -1,4 +1,4 @@
-name: Deploy Documentation to GitHub Pages
+name: Deploy Documentation & Frontend App to GitHub Pages
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'Docs/**'
-      - 'Codes/framework/**'
+      - 'Codes/**'
       - 'generate_catalog.py'
       - '.github/workflows/deploy_docs.yml'
   workflow_dispatch:
@@ -20,33 +20,77 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    name: Build Hub, Frontend Studios & Deploy to GitHub Pages
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      - name: Set up Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Generate Documentation Catalog
         run: |
           python generate_catalog.py
+          git diff --exit-code Docs/catalog.json
 
-      - name: Prepare Static Site (Lightweight Bundle)
+      - name: Build React 18 Frontend Studios
+        working-directory: Codes/frontend
+        run: |
+          npm install --legacy-peer-deps
+          npx tsc --noEmit
+          NODE_OPTIONS=--max-old-space-size=4096 npm run build
+
+      - name: Prepare Unified GitHub Pages Static Site
         run: |
           mkdir -p _site
-          # Copy Web UI core files
+          # 1. Copy Research Hub Docs and Interactive Comparison Studio to root
           cp -r Docs/* _site/
           
-          # Copy markdown documentation files
+          # 2. Copy React 18 Full-Stack Component Studios to /app/
+          mkdir -p _site/app
+          cp -r Codes/frontend/dist/* _site/app/
+          
+          # 3. Add SPA fallback for client-side routing
+          cp _site/app/index.html _site/app/404.html || true
+          cp _site/index.html _site/404.html || true
+
+          # 4. Copy raw markdown documentation for direct reference
           mkdir -p _site/Codes/framework/attentions
           mkdir -p _site/Codes/framework/compression_engine
-          
           cp Codes/framework/*.md _site/Codes/framework/ 2>/dev/null || true
           cp Codes/framework/attentions/*.md _site/Codes/framework/attentions/ 2>/dev/null || true
           cp Codes/framework/compression_engine/*.md _site/Codes/framework/compression_engine/ 2>/dev/null || true
+
+      - name: Test & Verify Deployed Static Bundle
+        run: |
+          # Start background test web server
+          python3 -m http.server 8080 --directory _site &
+          SERVER_PID=$!
+          sleep 3
+
+          echo "Testing Research Hub Root (HTTP 200)..."
+          curl -sSf -I http://localhost:8080/ > /dev/null
+
+          echo "Testing Catalog JSON Index (HTTP 200)..."
+          curl -sSf -I http://localhost:8080/catalog.json > /dev/null
+
+          echo "Testing React Component Studios App (HTTP 200)..."
+          curl -sSf -I http://localhost:8080/app/ > /dev/null
+
+          echo "Testing Markdown Docs Retrieval (HTTP 200)..."
+          curl -sSf -I http://localhost:8080/content/attentions/nasc_attention.md > /dev/null
+
+          # Stop test server
+          kill $SERVER_PID
 
       - name: Deploy to GitHub Pages (gh-pages branch)
         uses: peaceiris/actions-gh-pages@v4
