@@ -90,6 +90,19 @@ export const Zone2_AttentionCanvas: React.FC = () => {
   const N = tokens.length;
   const matrix = headViewData.matrix;
 
+  // Autoregressive token generation stream timer
+  useEffect(() => {
+    let timer: any = null;
+    if (isGenerating) {
+      timer = setInterval(() => {
+        setGenerationStep((prev) => (prev >= tokens.length ? 1 : prev + 1));
+      }, 750);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isGenerating, tokens.length]);
+
   // Multi-view tabs
   const VIEW_TABS: Array<{ id: ViewMode; label: string; icon: React.ReactNode }> = [
     { id: 'head', label: 'Head View', icon: <Grid className="w-3.5 h-3.5" /> },
@@ -437,20 +450,42 @@ export const Zone2_AttentionCanvas: React.FC = () => {
               Multi-Layer Information Flow (Tokens → Intermediate Heads → Outputs)
             </div>
             <svg viewBox="0 0 800 380" className="w-full h-auto max-h-[420px] bg-slate-950/90 rounded-xl border border-slate-800 p-4">
-              {/* Render Links */}
-              {sankeyData.links.map((link, idx) => (
-                <path
-                  key={idx}
-                  d={`M 120,${50 + (idx % N) * 32} C 280,${50 + (idx % N) * 32} 320,${60 + (idx % 4) * 70} 450,${60 + (idx % 4) * 70}`}
-                  fill="none"
-                  stroke="url(#flowGradient)"
-                  strokeWidth={Math.max(1.5, link.weight * 6)}
-                  strokeOpacity={0.6}
-                  className="hover:stroke-opacity-100 hover:stroke-cyan-300 transition-all cursor-pointer"
-                >
-                  <title>{`${link.source} → ${link.target} (Flow: ${link.weight.toFixed(3)})`}</title>
-                </path>
-              ))}
+              {/* Render Links with dynamic source and target coordinates */}
+              {sankeyData.links.map((link, idx) => {
+                const getCoords = (nodeId: string, isSource: boolean) => {
+                  if (nodeId.startsWith('input_')) {
+                    const i = parseInt(nodeId.replace('input_', ''), 10) || 0;
+                    return { x: 120, y: 37 + (i % N) * 32 };
+                  }
+                  if (nodeId.startsWith('output_')) {
+                    const i = parseInt(nodeId.replace('output_', ''), 10) || 0;
+                    return { x: 680, y: 37 + (i % N) * 32 };
+                  }
+                  const match = nodeId.match(/L\d+_H(\d+)/);
+                  const h = match ? parseInt(match[1], 10) : 0;
+                  const y = 50 + (h % 4) * 70;
+                  return isSource ? { x: 510, y } : { x: 420, y };
+                };
+
+                const p1 = getCoords(link.source, true);
+                const p2 = getCoords(link.target, false);
+                const cx1 = p1.x + (p2.x - p1.x) * 0.5;
+                const cx2 = p1.x + (p2.x - p1.x) * 0.5;
+
+                return (
+                  <path
+                    key={idx}
+                    d={`M ${p1.x},${p1.y} C ${cx1},${p1.y} ${cx2},${p2.y} ${p2.x},${p2.y}`}
+                    fill="none"
+                    stroke="url(#flowGradient)"
+                    strokeWidth={Math.max(1.5, link.weight * 5)}
+                    strokeOpacity={0.65}
+                    className="hover:stroke-opacity-100 hover:stroke-cyan-300 transition-all cursor-pointer"
+                  >
+                    <title>{`${link.source} → ${link.target} (Flow: ${link.weight.toFixed(3)})`}</title>
+                  </path>
+                );
+              })}
 
               <defs>
                 <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
