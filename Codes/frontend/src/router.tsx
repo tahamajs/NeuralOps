@@ -19,6 +19,30 @@ const DashboardPage = lazy(
 const DashboardWidgetsConfigPage = lazy(
   () => import("../features/dashboard/pages/DashboardWidgetsConfigPage"),
 );
+const StatisticsPage = lazy(
+  () => import("../features/dashboard/pages/StatisticsPage"),
+);
+const AuditLogDashboard = lazy(
+  () => import("../features/governance/pages/AuditLogDashboard"),
+);
+const AlertDashboard = lazy(
+  () => import("../features/mlops/pages/AlertDashboard"),
+);
+const ProviderDashboardPage = lazy(
+  () => import("../features/marketplace/pages/ProviderDashboardPage"),
+);
+const CostDashboard = lazy(
+  () => import("../features/llmHub/pages/CostDashboard"),
+);
+const FederationDashboardPage = lazy(
+  () => import("../features/gpuFederation/pages/FederationDashboardPage"),
+);
+const ValidatorDashboardPage = lazy(
+  () => import("../features/gpuValidator/pages/ValidatorDashboardPage"),
+);
+const CustomDashboardBuilder = lazy(
+  () => import("../features/experimentExplorer/pages/CustomDashboardBuilder"),
+);
 
 // ========================
 // Attention Dashboard (Zones 1-9) & Transformer Studios
@@ -276,12 +300,6 @@ const AdvancedAnalyticsPage = lazy(
 );
 const ResearchAnalysisPage = lazy(
   () => import("../features/analysis/pages/ResearchAnalysisPage"),
-);
-const AttentionInterpretabilitySuitePage = lazy(
-  () => import("../features/attentionDashboard/InterpretabilitySuite"),
-);
-const RepresentationStudiosPage = lazy(
-  () => import("../features/transformerStudios/RepresentationStudios"),
 );
 
 
@@ -659,13 +677,20 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
 
-      // Dashboard
+      // Dashboard & Secondary Dashboards
       { path: "/dashboard", element: <DashboardPage /> },
       {
         path: "/dashboard/widgets-config",
         element: <DashboardWidgetsConfigPage />,
       },
-      { path: "/statistics", element: <DashboardPage /> },
+      { path: "/statistics", element: <StatisticsPage /> },
+      { path: "/governance/audit", element: <AuditLogDashboard /> },
+      { path: "/mlops/alerts", element: <AlertDashboard /> },
+      { path: "/marketplace/provider", element: <ProviderDashboardPage /> },
+      { path: "/llm/cost", element: <CostDashboard /> },
+      { path: "/gpu/federation", element: <FederationDashboardPage /> },
+      { path: "/gpu/validator", element: <ValidatorDashboardPage /> },
+      { path: "/explorer/custom-dashboard", element: <CustomDashboardBuilder /> },
 
       // Experiments
       { path: "/experiments", element: <ExperimentListPage /> },
@@ -775,14 +800,12 @@ export const router = createBrowserRouter([
       // Analytics & Interpretability
       { path: "/analytics", element: <AdvancedAnalyticsPage /> },
       { path: "/analysis", element: <ResearchAnalysisPage /> },
-      { path: "/attention", element: <AttentionInterpretabilitySuitePage /> },
-      { path: "/interpretability", element: <AttentionInterpretabilitySuitePage /> },
-      { path: "/representation-studios", element: <RepresentationStudiosPage /> },
-      { path: "/studios", element: <RepresentationStudiosPage /> },
-      { path: "/embedding-explorer", element: <RepresentationStudiosPage /> },
-      { path: "/positional-encoding", element: <RepresentationStudiosPage /> },
-      { path: "/residual-stream", element: <RepresentationStudiosPage /> },
-      { path: "/layer-norm", element: <RepresentationStudiosPage /> },
+      { path: "/attention", element: <InterpretabilitySuite /> },
+      { path: "/interpretability", element: <InterpretabilitySuite /> },
+      { path: "/embedding-explorer", element: <RepresentationStudios /> },
+      { path: "/positional-encoding", element: <RepresentationStudios /> },
+      { path: "/residual-stream", element: <RepresentationStudios /> },
+      { path: "/layer-norm", element: <RepresentationStudios /> },
 
 
       // Templates
@@ -943,7 +966,7 @@ export const router = createBrowserRouter([
       { path: "/attention-dashboard", element: <AttentionCanvasSuite /> },
       { path: "/attention-interpretability", element: <InterpretabilitySuite /> },
       { path: "/interpretability-suite", element: <InterpretabilitySuite /> },
-      { path: "/studios", element: <ComputationStudios /> },
+      { path: "/studios", element: <Navigate to="/studios/representation" replace /> },
       { path: "/studios/representation", element: <RepresentationStudios /> },
       { path: "/representation-studios", element: <RepresentationStudios /> },
       { path: "/studios/computation", element: <ComputationStudios /> },

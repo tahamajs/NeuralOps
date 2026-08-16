@@ -683,5 +683,6 @@ export const ENDPOINTS = {
   STUDIOS: {
     REPRESENTATION: "/attention-visualization/studios/representation/",
     COMPUTATION: "/attention-visualization/studios/computation/",
+    OPTIMIZATION: "/attention-visualization/studios/optimization/",
   },
 };
