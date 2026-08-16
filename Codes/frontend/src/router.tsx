@@ -7,299 +7,299 @@ import { Spinner } from "./components/ui/Spinner";
 // ========================
 // Auth
 // ========================
-const LoginPage = lazy(() => import("../features/auth/pages/LoginPage"));
-const RegisterPage = lazy(() => import("../features/auth/pages/RegisterPage"));
+const LoginPage = lazy(() => import("./features/auth/pages/LoginPage"));
+const RegisterPage = lazy(() => import("./features/auth/pages/RegisterPage"));
 
 // ========================
 // Dashboard
 // ========================
 const DashboardPage = lazy(
-  () => import("../features/dashboard/pages/DashboardPage"),
+  () => import("./features/dashboard/pages/DashboardPage"),
 );
 const DashboardWidgetsConfigPage = lazy(
-  () => import("../features/dashboard/pages/DashboardWidgetsConfigPage"),
+  () => import("./features/dashboard/pages/DashboardWidgetsConfigPage"),
 );
 const StatisticsPage = lazy(
-  () => import("../features/dashboard/pages/StatisticsPage"),
+  () => import("./features/dashboard/pages/StatisticsPage"),
 );
 const AuditLogDashboard = lazy(
-  () => import("../features/governance/pages/AuditLogDashboard"),
+  () => import("./features/governance/pages/AuditLogDashboard"),
 );
 const AlertDashboard = lazy(
-  () => import("../features/mlops/pages/AlertDashboard"),
+  () => import("./features/mlops/pages/AlertDashboard"),
 );
 const ProviderDashboardPage = lazy(
-  () => import("../features/marketplace/pages/ProviderDashboardPage"),
+  () => import("./features/marketplace/pages/ProviderDashboardPage"),
 );
 const CostDashboard = lazy(
-  () => import("../features/llmHub/pages/CostDashboard"),
+  () => import("./features/llmHub/pages/CostDashboard"),
 );
 const FederationDashboardPage = lazy(
-  () => import("../features/gpuFederation/pages/FederationDashboardPage"),
+  () => import("./features/gpuFederation/pages/FederationDashboardPage"),
 );
 const ValidatorDashboardPage = lazy(
-  () => import("../features/gpuValidator/pages/ValidatorDashboardPage"),
+  () => import("./features/gpuValidator/pages/ValidatorDashboardPage"),
 );
 const CustomDashboardBuilder = lazy(
-  () => import("../features/experimentExplorer/pages/CustomDashboardBuilder"),
+  () => import("./features/experimentExplorer/pages/CustomDashboardBuilder"),
 );
 
 // ========================
 // Attention Dashboard (Zones 1-9) & Transformer Studios
 // ========================
 const AttentionCanvasSuite = lazy(
-  () => import("../features/attentionDashboard/AttentionCanvasSuite"),
+  () => import("./features/attentionDashboard/AttentionCanvasSuite"),
 );
 const InterpretabilitySuite = lazy(
-  () => import("../features/attentionDashboard/InterpretabilitySuite"),
+  () => import("./features/attentionDashboard/InterpretabilitySuite"),
 );
 const RepresentationStudios = lazy(
-  () => import("../features/transformerStudios/RepresentationStudios"),
+  () => import("./features/transformerStudios/RepresentationStudios"),
 );
 const ComputationStudios = lazy(
-  () => import("../features/transformerStudios/ComputationStudios"),
+  () => import("./features/transformerStudios/ComputationStudios"),
 );
 const OptimizationStudios = lazy(
-  () => import("../features/transformerStudios/OptimizationStudios"),
+  () => import("./features/transformerStudios/OptimizationStudios"),
 );
 
 // ========================
 // Experiments
 // ========================
 const ExperimentListPage = lazy(
-  () => import("../features/experiments/pages/ExperimentListPage"),
+  () => import("./features/experiments/pages/ExperimentListPage"),
 );
 const ExperimentDetailPage = lazy(
-  () => import("../features/experiments/pages/ExperimentDetailPage"),
+  () => import("./features/experiments/pages/ExperimentDetailPage"),
 );
 const ExperimentComparePage = lazy(
-  () => import("../features/experiments/pages/ExperimentComparePage"),
+  () => import("./features/experiments/pages/ExperimentComparePage"),
 );
 const ExperimentDiffPage = lazy(
-  () => import("../features/experiments/pages/ExperimentDiffPage"),
+  () => import("./features/experiments/pages/ExperimentDiffPage"),
 );
 const ExperimentMonitorPage = lazy(
-  () => import("../features/experiments/pages/ExperimentMonitorPage"),
+  () => import("./features/experiments/pages/ExperimentMonitorPage"),
 );
 const ExperimentReportPage = lazy(
-  () => import("../features/experiments/pages/ExperimentReportPage"),
+  () => import("./features/experiments/pages/ExperimentReportPage"),
 );
 const CustomMetricsPage = lazy(
-  () => import("../features/experiments/pages/CustomMetricsPage"),
+  () => import("./features/experiments/pages/CustomMetricsPage"),
 );
 const DataLineagePage = lazy(
-  () => import("../features/experiments/pages/DataLineagePage"),
+  () => import("./features/experiments/pages/DataLineagePage"),
 );
 const ModelCardPage = lazy(
-  () => import("../features/experiments/pages/ModelCardPage"),
+  () => import("./features/experiments/pages/ModelCardPage"),
 );
 const RunAnalysisOverviewPage = lazy(
-  () => import("../features/experiments/pages/RunAnalysisOverviewPage"),
+  () => import("./features/experiments/pages/RunAnalysisOverviewPage"),
 );
 const RunArtifactsPage = lazy(
-  () => import("../features/experiments/pages/RunArtifactsPage"),
+  () => import("./features/experiments/pages/RunArtifactsPage"),
 );
 const ModelDownloadPage = lazy(
-  () => import("../features/experiments/pages/ModelDownloadPage"),
+  () => import("./features/experiments/pages/ModelDownloadPage"),
 );
 const TrainingSnapshotsPage = lazy(
-  () => import("../features/experiments/pages/TrainingSnapshotsPage"),
+  () => import("./features/experiments/pages/TrainingSnapshotsPage"),
 );
 const UpdateRunConfigPage = lazy(
-  () => import("../features/experiments/pages/UpdateRunConfigPage"),
+  () => import("./features/experiments/pages/UpdateRunConfigPage"),
 );
 
 // ========================
 // Marketplace (basic)
 // ========================
 const MarketplacePage = lazy(
-  () => import("../features/marketplace/pages/MarketplacePage"),
+  () => import("./features/marketplace/pages/MarketplacePage"),
 );
 const MyOrdersPage = lazy(
-  () => import("../features/marketplace/pages/MyOrdersPage"),
+  () => import("./features/marketplace/pages/MyOrdersPage"),
 );
 const MyJobsPage = lazy(
-  () => import("../features/marketplace/pages/MyJobsPage"),
+  () => import("./features/marketplace/pages/MyJobsPage"),
 );
 const BillingPage = lazy(
-  () => import("../features/marketplace/pages/BillingPage"),
+  () => import("./features/marketplace/pages/BillingPage"),
 );
-const UsagePage = lazy(() => import("../features/marketplace/pages/UsagePage"));
+const UsagePage = lazy(() => import("./features/marketplace/pages/UsagePage"));
 const LeaderboardPage = lazy(
-  () => import("../features/marketplace/pages/LeaderboardPage"),
+  () => import("./features/marketplace/pages/LeaderboardPage"),
 );
 const ReputationPage = lazy(
-  () => import("../features/marketplace/pages/ReputationPage"),
+  () => import("./features/marketplace/pages/ReputationPage"),
 );
 
 // ========================
 // Launcher
 // ========================
 const LauncherPage = lazy(
-  () => import("../features/launcher/pages/LauncherPage"),
+  () => import("./features/launcher/pages/LauncherPage"),
 );
 
 // ========================
 // Notes
 // ========================
 const NotesListPage = lazy(
-  () => import("../features/notes/pages/NotesListPage"),
+  () => import("./features/notes/pages/NotesListPage"),
 );
 const NoteDetailPage = lazy(
-  () => import("../features/notes/pages/NoteDetailPage"),
+  () => import("./features/notes/pages/NoteDetailPage"),
 );
 const NoteCreatePage = lazy(
-  () => import("../features/notes/pages/NoteCreatePage"),
+  () => import("./features/notes/pages/NoteCreatePage"),
 );
 const NoteStatisticsPage = lazy(
-  () => import("../features/notes/pages/NoteStatisticsPage"),
+  () => import("./features/notes/pages/NoteStatisticsPage"),
 );
 const RecentNotesPage = lazy(
-  () => import("../features/notes/pages/RecentNotesPage"),
+  () => import("./features/notes/pages/RecentNotesPage"),
 );
 const BulkNotesPage = lazy(
-  () => import("../features/notes/pages/BulkNotesPage"),
+  () => import("./features/notes/pages/BulkNotesPage"),
 );
 const WebhookManagerPage = lazy(
-  () => import("../features/notes/pages/WebhookManagerPage"),
+  () => import("./features/notes/pages/WebhookManagerPage"),
 );
 const NoteVersionsPage = lazy(
-  () => import("../features/notes/pages/NoteVersionsPage"),
+  () => import("./features/notes/pages/NoteVersionsPage"),
 );
 const NoteVersionDetailPage = lazy(
-  () => import("../features/notes/pages/NoteVersionDetailPage"),
+  () => import("./features/notes/pages/NoteVersionDetailPage"),
 );
 const NoteRepliesPage = lazy(
-  () => import("../features/notes/pages/NoteRepliesPage"),
+  () => import("./features/notes/pages/NoteRepliesPage"),
 );
 const NoteMentionsPage = lazy(
-  () => import("../features/notes/pages/NoteMentionsPage"),
+  () => import("./features/notes/pages/NoteMentionsPage"),
 );
 
 // ========================
 // Jobs
 // ========================
 const JobDetailPage = lazy(
-  () => import("../features/jobs/pages/JobDetailPage"),
+  () => import("./features/jobs/pages/JobDetailPage"),
 );
 const JobHistoryPage = lazy(
-  () => import("../features/jobs/pages/JobHistoryPage"),
+  () => import("./features/jobs/pages/JobHistoryPage"),
 );
 const JobSchedulingPage = lazy(
-  () => import("../features/jobs/pages/JobSchedulingPage"),
+  () => import("./features/jobs/pages/JobSchedulingPage"),
 );
 const ConfigHistoryPage = lazy(
-  () => import("../features/jobs/pages/ConfigHistoryPage"),
+  () => import("./features/jobs/pages/ConfigHistoryPage"),
 );
 const EnvironmentInfoPage = lazy(
-  () => import("../features/jobs/pages/EnvironmentInfoPage"),
+  () => import("./features/jobs/pages/EnvironmentInfoPage"),
 );
 const MyScheduledJobsPage = lazy(
-  () => import("../features/jobs/pages/MyScheduledJobsPage"),
+  () => import("./features/jobs/pages/MyScheduledJobsPage"),
 );
 const JobConfigComparePage = lazy(
-  () => import("../features/jobs/pages/JobConfigComparePage"),
+  () => import("./features/jobs/pages/JobConfigComparePage"),
 );
 
 // ========================
 // Model Versioning
 // ========================
 const ModelVersionsPage = lazy(
-  () => import("../features/modelVersioning/pages/ModelVersionsPage"),
+  () => import("./features/modelVersioning/pages/ModelVersionsPage"),
 );
 const ModelVersionDetailPage = lazy(
-  () => import("../features/modelVersioning/pages/ModelVersionDetailPage"),
+  () => import("./features/modelVersioning/pages/ModelVersionDetailPage"),
 );
 const ModelVersionCompareFromRunPage = lazy(
   () =>
-    import("../features/modelVersioning/pages/ModelVersionCompareFromRunPage"),
+    import("./features/modelVersioning/pages/ModelVersionCompareFromRunPage"),
 );
 const ModelLineagePage = lazy(
-  () => import("../features/modelVersioning/pages/ModelLineagePage"),
+  () => import("./features/modelVersioning/pages/ModelLineagePage"),
 );
 const ModelVersionCleanupPage = lazy(
-  () => import("../features/modelVersioning/pages/ModelVersionCleanupPage"),
+  () => import("./features/modelVersioning/pages/ModelVersionCleanupPage"),
 );
 const PublishModelPage = lazy(
-  () => import("../features/modelVersioning/pages/PublishModelPage"),
+  () => import("./features/modelVersioning/pages/PublishModelPage"),
 );
 const ArchiveModelPage = lazy(
-  () => import("../features/modelVersioning/pages/ArchiveModelPage"),
+  () => import("./features/modelVersioning/pages/ArchiveModelPage"),
 );
 const SetProductionVersionPage = lazy(
-  () => import("../features/modelVersioning/pages/SetProductionVersionPage"),
+  () => import("./features/modelVersioning/pages/SetProductionVersionPage"),
 );
 
 // ========================
 // Drift / Fairness / Robustness
 // ========================
 const DriftCheckPage = lazy(
-  () => import("../features/drift/pages/DriftCheckPage"),
+  () => import("./features/drift/pages/DriftCheckPage"),
 );
 const FairnessPage = lazy(
-  () => import("../features/fairness/pages/FairnessPage"),
+  () => import("./features/fairness/pages/FairnessPage"),
 );
 const RobustnessPage = lazy(
-  () => import("../features/robustness/pages/RobustnessPage"),
+  () => import("./features/robustness/pages/RobustnessPage"),
 );
 
 // ========================
 // Prompts
 // ========================
 const PromptsListPage = lazy(
-  () => import("../features/prompts/pages/PromptsListPage"),
+  () => import("./features/prompts/pages/PromptsListPage"),
 );
 const PromptDetailPage = lazy(
-  () => import("../features/prompts/pages/PromptDetailPage"),
+  () => import("./features/prompts/pages/PromptDetailPage"),
 );
 const PromptHistoryPage = lazy(
-  () => import("../features/prompts/pages/PromptHistoryPage"),
+  () => import("./features/prompts/pages/PromptHistoryPage"),
 );
 
 // ========================
 // Cluster / Scheduler
 // ========================
 const ClusterOverviewPage = lazy(
-  () => import("../features/scheduler/pages/ClusterOverviewPage"),
+  () => import("./features/scheduler/pages/ClusterOverviewPage"),
 );
 
 // ========================
 // Search / Activity
 // ========================
 const GlobalSearchPage = lazy(
-  () => import("../features/search/pages/GlobalSearchPage"),
+  () => import("./features/search/pages/GlobalSearchPage"),
 );
 const ActivityFeedPage = lazy(
-  () => import("../features/activity/pages/ActivityFeedPage"),
+  () => import("./features/activity/pages/ActivityFeedPage"),
 );
 
 // ========================
 // Paper
 // ========================
 const PaperEditorPage = lazy(
-  () => import("../features/paper/pages/PaperEditorPage"),
+  () => import("./features/paper/pages/PaperEditorPage"),
 );
 const OverleafEditorPage = lazy(
-  () => import("../features/paper/pages/OverleafEditorPage"),
+  () => import("./features/paper/pages/OverleafEditorPage"),
 );
 const NewPaperProjectPage = lazy(
-  () => import("../features/paper/pages/NewPaperProjectPage"),
+  () => import("./features/paper/pages/NewPaperProjectPage"),
 );
 const PaperPreviewPage = lazy(
-  () => import("../features/paper/pages/PaperPreviewPage"),
+  () => import("./features/paper/pages/PaperPreviewPage"),
 );
 const PaperProjectsPage = lazy(
-  () => import("../features/paper/pages/PaperProjectsPage"),
+  () => import("./features/paper/pages/PaperProjectsPage"),
 );
 
 // ========================
 // Analysis / Stats
 // ========================
 const AdvancedAnalyticsPage = lazy(
-  () => import("../features/analytics/pages/AdvancedAnalyticsPage"),
+  () => import("./features/analytics/pages/AdvancedAnalyticsPage"),
 );
 const ResearchAnalysisPage = lazy(
-  () => import("../features/analysis/pages/ResearchAnalysisPage"),
+  () => import("./features/analysis/pages/ResearchAnalysisPage"),
 );
 
 
@@ -307,338 +307,338 @@ const ResearchAnalysisPage = lazy(
 // Templates
 // ========================
 const TemplatesListPage = lazy(
-  () => import("../features/templates/pages/TemplatesListPage"),
+  () => import("./features/templates/pages/TemplatesListPage"),
 );
 const TemplateDetailPage = lazy(
-  () => import("../features/templates/pages/TemplateDetailPage"),
+  () => import("./features/templates/pages/TemplateDetailPage"),
 );
 
 // ========================
 // HPO / Federated
 // ========================
-const HPOStatusPage = lazy(() => import("../features/hpo/pages/HPOStatusPage"));
+const HPOStatusPage = lazy(() => import("./features/hpo/pages/HPOStatusPage"));
 const FederatedStatusPage = lazy(
-  () => import("../features/federated/pages/FederatedStatusPage"),
+  () => import("./features/federated/pages/FederatedStatusPage"),
 );
 
 // ========================
 // Profile
 // ========================
 const UserProfilePage = lazy(
-  () => import("../features/profile/pages/UserProfilePage"),
+  () => import("./features/profile/pages/UserProfilePage"),
 );
 const ProfileSettingsPage = lazy(
-  () => import("../features/profile/pages/ProfileSettingsPage"),
+  () => import("./features/profile/pages/ProfileSettingsPage"),
 );
 const ChangePasswordPage = lazy(
-  () => import("../features/profile/pages/ChangePasswordPage"),
+  () => import("./features/profile/pages/ChangePasswordPage"),
 );
 
 // ========================
 // Admin
 // ========================
 const AdminDashboard = lazy(
-  () => import("../features/admin/pages/AdminDashboard"),
+  () => import("./features/admin/pages/AdminDashboard"),
 );
 const AdminJobsPage = lazy(
-  () => import("../features/admin/pages/AdminJobsPage"),
+  () => import("./features/admin/pages/AdminJobsPage"),
 );
 const AdminModelVersionsPage = lazy(
-  () => import("../features/admin/pages/AdminModelVersionsPage"),
+  () => import("./features/admin/pages/AdminModelVersionsPage"),
 );
 const AdminUsersPage = lazy(
-  () => import("../features/admin/pages/AdminUsersPage"),
+  () => import("./features/admin/pages/AdminUsersPage"),
 );
 const StopAllJobsPage = lazy(
-  () => import("../features/admin/pages/StopAllJobsPage"),
+  () => import("./features/admin/pages/StopAllJobsPage"),
 );
 
 // ========================
 // System
 // ========================
 const SystemStatusPage = lazy(
-  () => import("../features/system/pages/SystemStatusPage"),
+  () => import("./features/system/pages/SystemStatusPage"),
 );
-const HealthPage = lazy(() => import("../features/system/pages/HealthPage"));
-const VersionPage = lazy(() => import("../features/system/pages/VersionPage"));
-const ConfigPage = lazy(() => import("../features/config/pages/ConfigPage"));
+const HealthPage = lazy(() => import("./features/system/pages/HealthPage"));
+const VersionPage = lazy(() => import("./features/system/pages/VersionPage"));
+const ConfigPage = lazy(() => import("./features/config/pages/ConfigPage"));
 const ModelSearchPage = lazy(
-  () => import("../features/config/pages/ModelSearchPage"),
+  () => import("./features/config/pages/ModelSearchPage"),
 );
 
 // ========================
 // Community (Q&A)
 // ========================
 const QuestionListPage = lazy(
-  () => import("../features/community/pages/QuestionListPage"),
+  () => import("./features/community/pages/QuestionListPage"),
 );
 const QuestionDetailPage = lazy(
-  () => import("../features/community/pages/QuestionDetailPage"),
+  () => import("./features/community/pages/QuestionDetailPage"),
 );
 const AskQuestionPage = lazy(
-  () => import("../features/community/pages/AskQuestionPage"),
+  () => import("./features/community/pages/AskQuestionPage"),
 );
 const TagDetailPage = lazy(
-  () => import("../features/community/pages/TagDetailPage"),
+  () => import("./features/community/pages/TagDetailPage"),
 );
 const CommunityLeaderboardPage = lazy(
-  () => import("../features/community/pages/LeaderboardPage"),
+  () => import("./features/community/pages/LeaderboardPage"),
 );
-const BadgesPage = lazy(() => import("../features/community/pages/BadgesPage"));
+const BadgesPage = lazy(() => import("./features/community/pages/BadgesPage"));
 
 // ========================
 // Agent
 // ========================
 const AgentChatPage = lazy(
-  () => import("../features/agent/pages/AgentChatPage"),
+  () => import("./features/agent/pages/AgentChatPage"),
 );
 const AgentSessionsListPage = lazy(
-  () => import("../features/agent/pages/AgentSessionsListPage"),
+  () => import("./features/agent/pages/AgentSessionsListPage"),
 );
 const PaperLibraryPage = lazy(
-  () => import("../features/agent/pages/PaperLibraryPage"),
+  () => import("./features/agent/pages/PaperLibraryPage"),
 );
 const PromptTestingPage = lazy(
-  () => import("../features/agent/pages/PromptTestingPage"),
+  () => import("./features/agent/pages/PromptTestingPage"),
 );
 
 // ========================
 // Sweeps
 // ========================
 const SweepDashboardPage = lazy(
-  () => import("../features/sweeps/pages/SweepDashboardPage"),
+  () => import("./features/sweeps/pages/SweepDashboardPage"),
 );
 const SweepCreator = lazy(
-  () => import("../features/sweeps/components/SweepCreator"),
+  () => import("./features/sweeps/components/SweepCreator"),
 );
 
 // ========================
 // Organizations
 // ========================
 const OrganizationListPage = lazy(
-  () => import("../features/organizations/pages/OrganizationListPage"),
+  () => import("./features/organizations/pages/OrganizationListPage"),
 );
 const OrganizationDetailPage = lazy(
-  () => import("../features/organizations/pages/OrganizationDetailPage"),
+  () => import("./features/organizations/pages/OrganizationDetailPage"),
 );
 const InviteAcceptPage = lazy(
-  () => import("../features/organizations/pages/InviteAcceptPage"),
+  () => import("./features/organizations/pages/InviteAcceptPage"),
 );
 
 // ========================
 // Anomaly Detection
 // ========================
 const AnomalyListPage = lazy(
-  () => import("../features/anomaly/pages/AnomalyListPage"),
+  () => import("./features/anomaly/pages/AnomalyListPage"),
 );
 const AnomalyDetailPage = lazy(
-  () => import("../features/anomaly/pages/AnomalyDetailPage"),
+  () => import("./features/anomaly/pages/AnomalyDetailPage"),
 );
 
 // ========================
 // HPO (Hyperparameter Optimization)
 // ========================
-const HPORunsPage = lazy(() => import("../features/hpo/pages/HPORunsPage"));
+const HPORunsPage = lazy(() => import("./features/hpo/pages/HPORunsPage"));
 
 // ========================
 // Recommender (Experiment Recommendations)
 // ========================
 const RecommendationListPage = lazy(
-  () => import("../features/recommender/pages/RecommendationListPage"),
+  () => import("./features/recommender/pages/RecommendationListPage"),
 );
 
 // ========================
 // Failure Forensics
 // ========================
 const FailureAnalysisPage = lazy(
-  () => import("../features/forensics/pages/FailureAnalysisPage"),
+  () => import("./features/forensics/pages/FailureAnalysisPage"),
 );
 
 // ========================
 // AI Co‑Scientist
 // ========================
 const IdeaTournamentPage = lazy(
-  () => import("../features/coscientist/pages/IdeaTournamentPage"),
+  () => import("./features/coscientist/pages/IdeaTournamentPage"),
 );
 const HypothesisBrowser = lazy(
-  () => import("../features/coscientist/pages/HypothesisBrowser"),
+  () => import("./features/coscientist/pages/HypothesisBrowser"),
 );
 
 // ========================
 // Literature Discovery
 // ========================
 const LiteratureMapPage = lazy(
-  () => import("../features/literature/pages/LiteratureMapPage"),
+  () => import("./features/literature/pages/LiteratureMapPage"),
 );
 const CitationGraphViewer = lazy(
-  () => import("../features/literature/pages/CitationGraphViewer"),
+  () => import("./features/literature/pages/CitationGraphViewer"),
 );
 
 // ========================
 // Experiment Accelerator
 // ========================
 const AcceleratorDashboard = lazy(
-  () => import("../features/accelerator/pages/AcceleratorDashboard"),
+  () => import("./features/accelerator/pages/AcceleratorDashboard"),
 );
 
 // ========================
 // Coding Assistant
 // ========================
 const CodeAssistantPage = lazy(
-  () => import("../features/codingAssistant/pages/CodeAssistantPage"),
+  () => import("./features/codingAssistant/pages/CodeAssistantPage"),
 );
 
 // ========================
 // Marketplace AI
 // ========================
 const AgenticMarketplacePage = lazy(
-  () => import("../features/marketplaceAI/pages/AgenticMarketplacePage"),
+  () => import("./features/marketplaceAI/pages/AgenticMarketplacePage"),
 );
 const ComparisonBuilder = lazy(
-  () => import("../features/marketplaceAI/pages/ComparisonBuilder"),
+  () => import("./features/marketplaceAI/pages/ComparisonBuilder"),
 );
 
 // ========================
 // Autonomous Research
 // ========================
 const AutonomousPipelineMonitor = lazy(
-  () => import("../features/autonomous/pages/AutonomousPipelineMonitor"),
+  () => import("./features/autonomous/pages/AutonomousPipelineMonitor"),
 );
 const StepEditor = lazy(
-  () => import("../features/autonomous/pages/StepEditor"),
+  () => import("./features/autonomous/pages/StepEditor"),
 );
 
 // ========================
 // Impact Predictor
 // ========================
 const ImpactScorePage = lazy(
-  () => import("../features/impactPredictor/pages/ImpactScorePage"),
+  () => import("./features/impactPredictor/pages/ImpactScorePage"),
 );
 const ProjectLeaderboardPage = lazy(
-  () => import("../features/impactPredictor/pages/ProjectLeaderboard"),
+  () => import("./features/impactPredictor/pages/ProjectLeaderboard"),
 );
 
 // ========================
 // Collaborator Matching
 // ========================
 const CollaboratorSuggestionPage = lazy(
-  () => import("../features/collaborator/pages/CollaboratorSuggestionPage"),
+  () => import("./features/collaborator/pages/CollaboratorSuggestionPage"),
 );
 const MatchHistoryList = lazy(
-  () => import("../features/collaborator/pages/MatchHistoryList"),
+  () => import("./features/collaborator/pages/MatchHistoryList"),
 );
 
 // ========================
 // Expert Wall
 // ========================
 const ExpertDirectoryPage = lazy(
-  () => import("../features/expertWall/pages/ExpertDirectoryPage"),
+  () => import("./features/expertWall/pages/ExpertDirectoryPage"),
 );
 const ProjectApplicationPanel = lazy(
-  () => import("../features/expertWall/pages/ProjectApplicationPanel"),
+  () => import("./features/expertWall/pages/ProjectApplicationPanel"),
 );
 
 // ========================
 // Streaks
 // ========================
 const StreakHeatmapPage = lazy(
-  () => import("../features/streaks/pages/StreakHeatmapPage"),
+  () => import("./features/streaks/pages/StreakHeatmapPage"),
 );
 const WeeklySummaryViewer = lazy(
-  () => import("../features/streaks/pages/WeeklySummaryViewer"),
+  () => import("./features/streaks/pages/WeeklySummaryViewer"),
 );
 
 // ========================
 // Gamification
 // ========================
 const BadgeWallPage = lazy(
-  () => import("../features/gamification/pages/BadgeWallPage"),
+  () => import("./features/gamification/pages/BadgeWallPage"),
 );
 const ContributionLeaderboard = lazy(
-  () => import("../features/gamification/pages/ContributionLeaderboard"),
+  () => import("./features/gamification/pages/ContributionLeaderboard"),
 );
 
 // ========================
 // Trading / GPU Stock Market
 // ========================
 const GPUTradingTerminal = lazy(
-  () => import("../features/trading/components/GPUTradingTerminal"),
+  () => import("./features/trading/components/GPUTradingTerminal"),
 );
 
 // ========================
 // Deep Research
 // ========================
 const DeepResearchPage = lazy(
-  () => import("../features/research/pages/DeepResearchPage"),
+  () => import("./features/research/pages/DeepResearchPage"),
 );
 
 // ========================
 // 3D Model Viewer & Federated
 // ========================
 const ModelViewerPage = lazy(
-  () => import("../features/modelViewer/pages/ModelViewerPage"),
+  () => import("./features/modelViewer/pages/ModelViewerPage"),
 );
-const FLRunPage = lazy(() => import("../features/federated/pages/FLRunPage"));
+const FLRunPage = lazy(() => import("./features/federated/pages/FLRunPage"));
 
 // ========================
 // Chat (full‑page assistant)
 // ========================
-const ChatPanel = lazy(() => import("../features/chat/components/ChatPanel"));
+const ChatPanel = lazy(() => import("./features/chat/components/ChatPanel"));
 
 // ========================
 // Support Hub
 // ========================
 const SupportHubPage = lazy(
-  () => import("../features/support/pages/SupportHubPage"),
+  () => import("./features/support/pages/SupportHubPage"),
 ); // if exists
 
 // ========================
 // Datasets
 // ========================
 const DatasetListPage = lazy(
-  () => import("../features/datasets/pages/DatasetListPage"),
+  () => import("./features/datasets/pages/DatasetListPage"),
 );
 const DatasetDetailPage = lazy(
-  () => import("../features/datasets/pages/DatasetDetailPage"),
+  () => import("./features/datasets/pages/DatasetDetailPage"),
 );
 
 // ========================
 // Live Dashboards
 // ========================
 const LiveDashboardList = lazy(
-  () => import("../features/liveDashboards/pages/LiveDashboardList"),
+  () => import("./features/liveDashboards/pages/LiveDashboardList"),
 );
 const DashboardBuilder = lazy(
-  () => import("../features/liveDashboards/pages/DashboardBuilder"),
+  () => import("./features/liveDashboards/pages/DashboardBuilder"),
 );
 
 // ========================
 // Health Monitor
 // ========================
 const DriftMonitorSetup = lazy(
-  () => import("../features/healthMonitor/pages/DriftMonitorSetup"),
+  () => import("./features/healthMonitor/pages/DriftMonitorSetup"),
 );
 const AlertHistory = lazy(
-  () => import("../features/healthMonitor/pages/AlertHistory"),
+  () => import("./features/healthMonitor/pages/AlertHistory"),
 );
 const HealthDashboard = lazy(
-  () => import("../features/healthMonitor/pages/HealthDashboard"),
+  () => import("./features/healthMonitor/pages/HealthDashboard"),
 );
 
 // ========================
 // Protocols
 // ========================
 const ProtocolListPage = lazy(
-  () => import("../features/protocols/pages/ProtocolListPage"),
+  () => import("./features/protocols/pages/ProtocolListPage"),
 );
 const ProtocolBuilder = lazy(
-  () => import("../features/protocols/pages/ProtocolBuilder"),
+  () => import("./features/protocols/pages/ProtocolBuilder"),
 );
 
 // ========================
 // Fallback
 // ========================
-const NotFoundPage = lazy(() => import("../features/NotFoundPage"));
+const NotFoundPage = lazy(() => import("./features/NotFoundPage"));
 
 // ========================
 // Router Definition
