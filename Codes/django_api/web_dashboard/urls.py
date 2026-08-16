@@ -13,7 +13,7 @@ urlpatterns = [
     path("register/", views.register_page, name="dashboard_register"),
     path("dashboard/job/<uuid:job_id>/", views.job_detail, name="dashboard_job_detail"),
     path("api/dashboard/job/<uuid:job_id>/", views.job_detail, name="api_dashboard_job_detail"),
-    path("api/jobs/", views.consumer_jobs, name="dashboard_api_jobs"),
+    path("api/jobs/", views.api_jobs, name="dashboard_api_jobs"),
     # ─── Authentication API ────────────────────────────────────
     path("api/register/", views.api_register, name="dashboard_api_register"),
     path("api/login/", views.api_login, name="dashboard_api_login"),
