@@ -42,13 +42,13 @@ To understand why **Spectra V2** is so effective, consider how high-throughput s
 ### 1. The High-Resolution Digital Media Analogy (Physical/Data)
 Imagine capturing an uncompressed 8K RAW video stream ($7680 \times 4320$ pixels per frame). Storing every raw pixel value generates terabytes of redundant noise. Modern codecs (like H.265 or AV1) don't store individual raw pixels; they store macro-block movement vectors and dominant spatial frequency gradients. **Spectra V2** does the exact same thing to attention matrices: instead of computing dense, unconstrained token-to-token cross products, it extracts the principal semantic subspaces, capturing 99%+ of relational variance with a fraction of the computational weight.
 
-### 2. The Airport Baggage Hub Analogy (Industrial Logistics)
+### 2. The Airport Baggage Hub Analogy (Industrial/Logistics)
 In a naive airport with 500 gates, if every passenger had to individually search every single baggage claim terminal to find their suitcase, the airport would collapse in chaos ($\mathcal{O}(N^2)$ cross-checks). Modern airports use a centralized automated sorting conveyor with barcoded hubs: luggage is aggregated by flight number into high-capacity containers, transported in bulk, and routed directly to the designated carousel. **Spectra V2** structures token interaction into organized hierarchical channels, eliminating chaotic all-to-all cross-checks.
 
-### 3. The Executive Briefing Analogy (Human Cognitive)
+### 3. The Executive Briefing Analogy (Cognitive/Biological)
 A CEO managing a 50,000-person enterprise cannot read all 200,000 internal emails generated daily. Instead, vice presidents synthesize departmental progress into high-density executive memos ($h_t$). The CEO makes mission-critical decisions by operating directly on these compact, synthesized representations. **Spectra V2** replaces exhaustive all-token back-referencing with high-density latent summaries that preserve critical context while discarding redundant syntactic chatter.
 
-### 4. The Library Research Index Analogy (Information Retrieval)
+### 4. The Library Research Index Analogy (Information Retrieval/Library)
 When researching quantum electrodynamics in a million-book library, a scholar does not read every single page of every book sequentially. They consult the global catalog index (coarse routing) to pinpoint the exact 3 volumes required, and then read the specific chapters (focused attention). **Spectra V2** implements multi-scale structural routing to guarantee that compute resources are dedicated exclusively to high-entropy tokens.
 
 ---
@@ -92,16 +92,16 @@ graph TD
     style Step10 fill:#0F172A,stroke:#334155,color:#F8FAFC
 ```
 
-1. **Input Ingestion**: Ingests batch token activations $X \in \mathbb{R}^{B \times N \times D}$ where $B$ is batch size, $N$ sequence length, and $D$ hidden embedding dimension.
-2. **RMSNorm & Outlier Shielding**: Normalizes input variance across the hidden dimension with learnable gain $\gamma$, mitigating outlier coordinate spikes.
-3. **Subspace Projection Transformation**: Decomposes linear projections using structured rank bottlenecks or associative feature mapping.
-4. **Decoupled Positional Modulation**: Separates rotary positional embeddings (RoPE) from invariant semantic content channels.
-5. **State Space / Latent Buffer Registration**: Stores compact state representations ($r \ll D$) into persistent cache buffers instead of full dense vectors.
-6. **Hardware-Tiled Attention Affinity**: Evaluates token affinity scores using fused SRAM tile blocks, avoiding full $N \times N$ materialization.
-7. **Value Weighted Aggregation**: Aggregates value feature manifolds using normalized probabilistic score distributions.
-8. **Multi-Head Output Fusion**: Concatenates independent head representations and executes outward projection $W_O$.
-9. **Adaptive Residual Gating**: Combines the attention output with input activations via stabilized skip connections.
-10. **State Propagation & Cache Pointer Advance**: Advances sequence indices and commits updated recurrent or latent states to memory.
+1. **Input Activation Ingestion**: Ingests batch token activations $X \in \mathbb{R}^{B \times N \times D}$ where $B$ is batch size, $N$ sequence length, and $D$ hidden embedding dimension.
+2. **Pre-LayerNorm & Coordinate Scaling**: Normalizes input variance across the hidden dimension with learnable gain $\gamma$, mitigating outlier coordinate spikes.
+3. **Projection & Subspace Decomposition**: Decomposes linear projections using structured rank bottlenecks or associative feature mapping.
+4. **Feature Modulation & Gating Formulation**: Computes data-dependent gating and positional phase modulations.
+5. **State Update & Latent Cache Storage**: Stores compact state representations ($r \ll D$) into persistent cache buffers instead of full dense vectors.
+6. **Context Affinity Evaluation**: Evaluates token affinity scores using fused SRAM tile blocks, avoiding full $N \times N$ materialization.
+7. **Value Aggregation & Context Synthesis**: Aggregates value feature manifolds using normalized probabilistic score distributions.
+8. **Multi-Head Output Merge**: Concatenates independent head representations and executes outward projection $W_O$.
+9. **Residual Integration & Stabilized Dropout**: Combines the attention output with input activations via stabilized skip connections.
+10. **Downstream MLP Feedforward**: Advances sequence indices and commits updated recurrent or latent states to memory.
 
 ---
 
