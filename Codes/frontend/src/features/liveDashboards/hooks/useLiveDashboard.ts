@@ -1,6 +1,6 @@
 // src/features/liveDashboards/hooks/useLiveDashboard.ts
-import { useEffect, useState, useRef, useCallback } from "react";
-import { useAuthStore } from "../../auth/store/authStore";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { getAuthToken } from "../../../utils/authUtils";
 import { Widget, LiveDataPoint } from "../types";
 
 interface WebSocketMessage {
@@ -23,11 +23,12 @@ export function useLiveDashboard(
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );
-  const { token } = useAuthStore() as any;
+  const widgetIdsKey = useMemo(() => widgets.map((w) => w.id).sort().join(","), [widgets]);
 
   const connect = useCallback(() => {
     if (!dashboardId) return;
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const token = getAuthToken();
     const ws = new WebSocket(
       `${protocol}://${window.location.host}/ws/live-dash/${dashboardId}/?token=${token}`,
     );
@@ -36,13 +37,15 @@ export function useLiveDashboard(
     ws.onopen = () => {
       setIsConnected(true);
       // Send subscription for all widgets
+      const ids = widgetIdsKey ? widgetIdsKey.split(",") : [];
       ws.send(
         JSON.stringify({
           type: "subscribe",
-          widgetIds: widgets.map((w) => w.id),
+          widgetIds: ids,
         }),
       );
       // Heartbeat every 30s
+      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
       heartbeatIntervalRef.current = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN)
           ws.send(JSON.stringify({ type: "ping" }));
@@ -50,13 +53,19 @@ export function useLiveDashboard(
     };
 
     ws.onmessage = (event) => {
-      const msg: WebSocketMessage = JSON.parse(event.data);
-      if (msg.type === "data") {
-        setLiveData((prev) => ({ ...prev, [msg.widgetId]: msg.data }));
-      } else if (msg.type === "error") {
-        console.error("WebSocket error:", msg);
+      try {
+        const msg: WebSocketMessage = JSON.parse(event.data);
+        if (msg.type === "data") {
+          setLiveData((prev) => ({ ...prev, [msg.widgetId]: msg.data }));
+        } else if (msg.type === "error") {
+          console.error("LiveDashboard WebSocket error:", msg);
+        }
+      } catch (err) {
+        console.error("LiveDashboard WS parse error", err);
       }
     };
+
+    ws.onerror = () => setIsConnected(false);
 
     ws.onclose = () => {
       setIsConnected(false);
@@ -65,7 +74,7 @@ export function useLiveDashboard(
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = setTimeout(connect, 3000);
     };
-  }, [dashboardId, widgets, token]);
+  }, [dashboardId, widgetIdsKey]);
 
   useEffect(() => {
     if (!dashboardId) return;
