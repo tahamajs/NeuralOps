@@ -7,6 +7,8 @@ import { Spinner } from "./components/ui/Spinner";
 // ========================
 // Auth
 // ========================
+const LandingPage = lazy(() => import("./features/auth/pages/LandingPage"));
+const DocsPage = lazy(() => import("./features/auth/pages/DocsPage"));
 const LoginPage = lazy(() => import("./features/auth/pages/LoginPage"));
 const RegisterPage = lazy(() => import("./features/auth/pages/RegisterPage"));
 
@@ -645,6 +647,48 @@ const NotFoundPage = lazy(() => import("./features/NotFoundPage"));
 // ========================
 export const router = createBrowserRouter([
   {
+    path: "/",
+    element: (
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center bg-surface">
+            <Spinner />
+          </div>
+        }
+      >
+        <LandingPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/landing",
+    element: (
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center bg-surface">
+            <Spinner />
+          </div>
+        }
+      >
+        <LandingPage />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/docs",
+    element: (
+      <Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center bg-surface">
+            <Spinner />
+          </div>
+        }
+      >
+        <DocsPage />
+      </Suspense>
+    ),
+  },
+  {
     path: "/login",
     element: (
       <Suspense
@@ -867,12 +911,12 @@ export const router = createBrowserRouter([
       { path: "/invite/:token", element: <InviteAcceptPage /> },
 
       // Community (Q&A)
-      { path: "questions", element: <QuestionListPage /> },
-      { path: "questions/ask", element: <AskQuestionPage /> },
-      { path: "questions/:questionId", element: <QuestionDetailPage /> },
-      { path: "tags/:tagName", element: <TagDetailPage /> },
-      { path: "leaderboard", element: <CommunityLeaderboardPage /> },
-      { path: "badges", element: <BadgesPage /> },
+      { path: "/questions", element: <QuestionListPage /> },
+      { path: "/questions/ask", element: <AskQuestionPage /> },
+      { path: "/questions/:questionId", element: <QuestionDetailPage /> },
+      { path: "/tags/:tagName", element: <TagDetailPage /> },
+      { path: "/leaderboard", element: <CommunityLeaderboardPage /> },
+      { path: "/badges", element: <BadgesPage /> },
 
       // Anomaly Detection
       { path: "/anomalies", element: <AnomalyListPage /> },
