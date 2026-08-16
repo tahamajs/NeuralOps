@@ -10,12 +10,14 @@ import signal
 import struct
 import termios
 import threading
+import urllib.parse
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
+from rest_framework.authtoken.models import Token
 
 from .models import TerminalSession
 
@@ -27,38 +29,48 @@ SESSION_IDLE_TIMEOUT = getattr(settings, "TERMINAL_SESSION_IDLE_TIMEOUT", 0)
 
 class TerminalConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        # ── initialise ALL attributes FIRST ──
+        # Initialise all attributes
         self.user = None
         self.child_pid = None
         self.fd = None
         self.session = None
+        self.group_name = "terminal"
         self._stop_event = threading.Event()
         self._output_queue = queue.Queue()
         self._reader_thread = None
         self._drain_task = None
         self._idle_task = None
 
-        # Accept the connection first (so we can send error messages if needed)
+        # Accept the connection first
         await self.accept()
 
-        # Resolve user – may be anonymous if cookies aren't sent cross‑port
+        # Join channel layer group if available
+        if self.channel_layer:
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
+
+        # Resolve user – check scope or query param token
         raw_user = self.scope.get("user")
         if (
             raw_user is None
             or isinstance(raw_user, AnonymousUser)
-            or raw_user.is_anonymous
+            or getattr(raw_user, "is_anonymous", True)
         ):
-            # Allow anonymous access for development; restrict in production
-            self.user = None
-            logger.info(
-                "Terminal WebSocket connected – anonymous user (no auth cookie)"
-            )
+            raw_query = self.scope.get("query_string", b"").decode("utf-8")
+            if raw_query:
+                query_params = urllib.parse.parse_qs(raw_query)
+                token_key = query_params.get("token", [None])[0]
+                if token_key:
+                    self.user = await self._get_user_by_token(token_key)
+            if self.user is None:
+                self.user = None
+                logger.info(
+                    "Terminal WebSocket connected – anonymous user (no auth cookie or token)"
+                )
         else:
-            # Convert lazy user to real user object
             self.user = await database_sync_to_async(lambda: raw_user)()
 
         # Enforce session limit (only for authenticated users)
-        if self.user is not None:
+        if self.user is not None and getattr(self.user, "is_authenticated", False):
             active_count = await database_sync_to_async(
                 TerminalSession.objects.filter(user=self.user, is_active=True).count
             )()
@@ -74,10 +86,11 @@ class TerminalConsumer(AsyncWebsocketConsumer):
                 await self.close()
                 return
 
-        # Spawn a pseudo‑terminal (PTY)
+        # Spawn a pseudo-terminal (PTY)
         try:
             self.child_pid, self.fd = pty.fork()
         except OSError as e:
+            logger.error("Failed to spawn PTY: %s", e)
             await self.send(text_data=json.dumps({"type": "error", "data": str(e)}))
             await self.close()
             return
@@ -89,26 +102,25 @@ class TerminalConsumer(AsyncWebsocketConsumer):
             os.execvp(shell, [shell])
             os._exit(1)
         else:
-            # Parent – create session (user can be None for anonymous)
-            if self.user is not None:
+            # Parent – track session if authenticated
+            if self.user is not None and getattr(self.user, "is_authenticated", False):
                 self.session = await database_sync_to_async(
                     TerminalSession.objects.create
                 )(user=self.user, pid=self.child_pid, fd=self.fd)
             else:
-                # Create without a user (or skip session tracking for anonymous)
                 self.session = None
 
             self._reader_thread = threading.Thread(target=self._read_pty, daemon=True)
             self._reader_thread.start()
             self._drain_task = asyncio.ensure_future(self._drain_output())
 
-            # Welcome message
+            # Welcome banner
             await self.send(
                 text_data=json.dumps(
                     {
                         "type": "output",
                         "data": "\x1b[1;32m╔══════════════════════════════════════╗\x1b[0m\r\n"
-                        "\x1b[1;32m║   NeuralOps Terminal                ║\x1b[0m\r\n"
+                        "\x1b[1;32m║   NeuralOps Terminal                 ║\x1b[0m\r\n"
                         "\x1b[1;32m╚══════════════════════════════════════╝\x1b[0m\r\n\r\n",
                     }
                 )
@@ -119,12 +131,23 @@ class TerminalConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         self._stop_event.set()
+        if hasattr(self, "group_name") and self.channel_layer:
+            try:
+                await self.channel_layer.group_discard(
+                    self.group_name, self.channel_name
+                )
+            except Exception:
+                pass
+
         if self._drain_task:
             self._drain_task.cancel()
         if self._idle_task:
             self._idle_task.cancel()
         if self.session:
-            await database_sync_to_async(self.session.mark_inactive)()
+            try:
+                await database_sync_to_async(self.session.mark_inactive)()
+            except Exception:
+                pass
         if self.child_pid:
             try:
                 os.kill(self.child_pid, signal.SIGKILL)
@@ -137,38 +160,92 @@ class TerminalConsumer(AsyncWebsocketConsumer):
                 pass
 
     async def receive(self, text_data=None, bytes_data=None):
-        if not self.fd:
+        if text_data is None and bytes_data is None:
             return
+
+        if SESSION_IDLE_TIMEOUT > 0:
+            if self._idle_task and not self._idle_task.done():
+                self._idle_task.cancel()
+            self._idle_task = asyncio.ensure_future(self._idle_timeout())
+
+        # Handle binary input directly
+        if bytes_data is not None and self.fd:
+            try:
+                os.write(self.fd, bytes_data)
+                await self._touch_activity()
+            except OSError:
+                pass
+            return
+
+        # Attempt to parse as JSON; fallback to raw text writing
         try:
             data = json.loads(text_data)
-        except (json.JSONDecodeError, TypeError):
+        except (json.JSONDecodeError, TypeError, ValueError):
+            if isinstance(text_data, str) and self.fd:
+                try:
+                    os.write(self.fd, text_data.encode("utf-8", errors="replace"))
+                    await self._touch_activity()
+                except OSError:
+                    pass
             return
-        if data.get("type") == "input":
-            os.write(self.fd, data["data"].encode())
-            await self._touch_activity()
-        elif data.get("type") == "resize":
-            cols = data.get("cols", 80)
-            rows = data.get("rows", 24)
+
+        if not isinstance(data, dict):
+            if self.fd:
+                try:
+                    os.write(self.fd, str(data).encode("utf-8", errors="replace"))
+                    await self._touch_activity()
+                except OSError:
+                    pass
+            return
+
+        msg_type = data.get("type")
+        if msg_type == "input":
+            payload = data.get("data", "")
+            if isinstance(payload, str) and self.fd:
+                try:
+                    os.write(self.fd, payload.encode("utf-8", errors="replace"))
+                    await self._touch_activity()
+                except OSError:
+                    pass
+        elif msg_type == "resize":
+            if not self.fd:
+                return
             try:
+                cols = int(data.get("cols", 80))
+                rows = int(data.get("rows", 24))
                 winsize = struct.pack("HHHH", rows, cols, 0, 0)
                 fcntl.ioctl(self.fd, termios.TIOCSWINSZ, winsize)
             except Exception:
                 pass
+        elif msg_type == "ping":
+            await self.send(text_data=json.dumps({"type": "pong"}))
+
+    async def terminal_message(self, event):
+        """Handle broadcast messages sent to 'terminal' group."""
+        data = event.get("data", event)
+        if isinstance(data, dict):
+            await self.send(text_data=json.dumps(data))
+        else:
+            await self.send(text_data=str(data))
 
     def _read_pty(self):
         while not self._stop_event.is_set():
+            if not self.fd:
+                break
             try:
                 r, _, _ = select.select([self.fd], [], [], 0.5)
                 if r:
                     data = os.read(self.fd, 4096)
                     if data:
                         self._output_queue.put(data)
+                    else:
+                        break
             except (OSError, Exception):
                 break
 
     async def _drain_output(self):
         loop = asyncio.get_event_loop()
-        while True:
+        while not self._stop_event.is_set():
             try:
                 data = await loop.run_in_executor(
                     None, self._output_queue.get, True, 0.5
@@ -191,19 +268,34 @@ class TerminalConsumer(AsyncWebsocketConsumer):
                 break
 
     async def _idle_timeout(self):
-        await asyncio.sleep(SESSION_IDLE_TIMEOUT)
-        await self.send(
-            text_data=json.dumps(
-                {
-                    "type": "output",
-                    "data": "\r\n\x1b[1;31mSession timed out due to inactivity.\x1b[0m\r\n",
-                }
+        try:
+            await asyncio.sleep(SESSION_IDLE_TIMEOUT)
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "output",
+                        "data": "\r\n\x1b[1;31mSession timed out due to inactivity.\x1b[0m\r\n",
+                    }
+                )
             )
-        )
-        await self.close()
+            await self.close()
+        except asyncio.CancelledError:
+            pass
 
     async def _touch_activity(self):
         if self.session:
-            await database_sync_to_async(
-                TerminalSession.objects.filter(id=self.session.id).update
-            )(last_activity_at=timezone.now())
+            try:
+                await database_sync_to_async(
+                    TerminalSession.objects.filter(id=self.session.id).update
+                )(last_activity_at=timezone.now())
+            except Exception:
+                pass
+
+    @database_sync_to_async
+    def _get_user_by_token(self, token_key):
+        if not token_key:
+            return None
+        try:
+            return Token.objects.select_related("user").get(key=token_key).user
+        except (Token.DoesNotExist, Exception):
+            return None
