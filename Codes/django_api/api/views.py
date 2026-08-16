@@ -822,6 +822,8 @@ def run_results(request, run_id):
     if base.exists():
         for root, dirs, filenames in os.walk(base):
             for f in filenames:
+                rel = os.path.relpath(os.path.join(root, f), base)
+                files[rel] = request.build_absolute_uri(f"/media/{run_id}/{rel}")
     snapshots = [
         {
             "step": s.step,
