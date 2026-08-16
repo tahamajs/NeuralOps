@@ -904,26 +904,36 @@ def export_experiment_report_pdf(request, run_id):
     """Generate and download a PDF report for a training run."""
     run = get_object_or_404(TrainingRun, id=run_id)
     from notes.report_generator import generate_experiment_report
-    from weasyprint import HTML
 
     note = generate_experiment_report(
         run_id=str(run.id), author=request.user, save=False
     )
-    html_content = f"""
-    <html><head><style>
-        body {{ font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; }}
-        h1 {{ border-bottom: 2px solid #333; }}
-        table {{ border-collapse: collapse; width: 100%; }}
-        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-        th {{ background: #f5f5f5; }}
+    html_content = f"""<!DOCTYPE html>
+    <html><head><meta charset="utf-8"><title>Experiment Report {run_id}</title><style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; color: #1e293b; background: #fff; }}
+        h1 {{ border-bottom: 2px solid #0284c7; color: #0f172a; padding-bottom: 0.5rem; }}
+        h2 {{ color: #0369a1; margin-top: 1.5rem; }}
+        table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; }}
+        th, td {{ border: 1px solid #e2e8f0; padding: 8px 12px; text-align: left; }}
+        th {{ background: #f8fafc; font-weight: 600; color: #334155; }}
+        code {{ background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }}
     </style></head><body>{note.content}</body></html>
     """
-    pdf = HTML(string=html_content).write_pdf()
-    response = HttpResponse(pdf, content_type="application/pdf")
-    response["Content-Disposition"] = (
-        f'attachment; filename="experiment-report-{run_id}.pdf"'
-    )
-    return response
+    try:
+        from weasyprint import HTML
+        pdf = HTML(string=html_content).write_pdf()
+        response = HttpResponse(pdf, content_type="application/pdf")
+        response["Content-Disposition"] = (
+            f'attachment; filename="experiment-report-{run_id}.pdf"'
+        )
+        return response
+    except (ImportError, Exception):
+        # Graceful fallback to rich HTML/printable view
+        response = HttpResponse(html_content, content_type="text/html; charset=utf-8")
+        response["Content-Disposition"] = (
+            f'inline; filename="experiment-report-{run_id}.html"'
+        )
+        return response
 
 
 @api_view(["POST"])

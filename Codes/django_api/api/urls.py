@@ -1,5 +1,6 @@
 from api import views, views_attention_dashboard
 from django.urls import path
+from experiment import views as experiment_views
 
 urlpatterns = [
     # Auth
