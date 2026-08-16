@@ -33,6 +33,7 @@ ROUTING_MODULES = [
     "support.routing",
     "web_dashboard.routing",
     "experiment.routing",
+    "jobscheduler.routing",
     "api.routing",
     "community.routing",
 ]

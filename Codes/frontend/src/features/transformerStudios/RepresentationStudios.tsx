@@ -1023,291 +1023,262 @@ export const RepresentationStudios: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+      </ErrorBoundary>
+    )}
 
       {/* =============================================================== */}
       {/* TAB 2: POSITIONAL ENCODING STUDIO */}
       {/* =============================================================== */}
       {activeTab === 'positional' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* 3D RoPE Angle Spinner Canvas */}
-          <div className="lg:col-span-7 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <RotateCcw className="w-5 h-5 text-amber-400" />
-                <h2 className="font-semibold text-white">RoPE 3D Angle Rotation Rings</h2>
-                <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-400/30">
-                  θ_i = pos · base^(-2i/d)
-                </Badge>
-              </div>
+        <ErrorBoundary title="Failed to render RoPE Position Helix">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* 3D RoPE Angle Spinner Canvas */}
+            <div className="lg:col-span-7 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <RotateCcw className="w-5 h-5 text-amber-400" />
+                  <h2 className="font-semibold text-white">RoPE 3D Angle Rotation Rings</h2>
+                  <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-400/30">
+                    θ_i = pos · base^(-2i/d)
+                  </Badge>
+                </div>
 
-              {/* Scrubber Play/Pause Controls */}
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsPlayingRoPE(!isPlayingRoPE)}
-                  className="text-xs border-slate-700"
-                >
-                  {isPlayingRoPE ? <Pause className="w-3.5 h-3.5 mr-1" /> : <Play className="w-3.5 h-3.5 mr-1" />}
-                  {isPlayingRoPE ? 'Pause' : 'Animate pos'}
-                </Button>
-                <div className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-amber-300">
-                  pos = {currentPosition}
+                {/* Scrubber Play/Pause Controls */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsPlayingRoPE(!isPlayingRoPE)}
+                    className="text-xs border-slate-700"
+                  >
+                    {isPlayingRoPE ? <Pause className="w-3.5 h-3.5 mr-1" /> : <Play className="w-3.5 h-3.5 mr-1" />}
+                    {isPlayingRoPE ? 'Pause' : 'Animate pos'}
+                  </Button>
+                  <div className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-mono text-amber-300">
+                    pos = {currentPosition}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 3D WebGL Canvas */}
-            <div
-              ref={ropeCanvasRef}
-              className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-800/80 relative"
-            />
-
-            {/* Position Scrubber Slider */}
-            <div className="space-y-1.5 pt-2">
-              <div className="flex justify-between text-xs text-slate-400 font-mono">
-                <span>Token Position (p): {currentPosition}</span>
-                <span>Max Sequence: 64 tokens</span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={64}
-                value={currentPosition}
-                onChange={(e) => setCurrentPosition(Number(e.target.value))}
-                className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+              {/* 3D WebGL Canvas */}
+              <div
+                ref={ropeCanvasRef}
+                className="w-full h-[400px] rounded-xl overflow-hidden border border-slate-800/80 relative"
               />
+
+              {/* Position Scrubber Slider */}
+              <div className="space-y-1.5 pt-2">
+                <div className="flex justify-between text-xs text-slate-400 font-mono">
+                  <span>Token Position (p): {currentPosition}</span>
+                  <span>Max Sequence: 64 tokens</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={64}
+                  value={currentPosition}
+                  onChange={(e) => setCurrentPosition(Number(e.target.value))}
+                  className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                />
+              </div>
+            </div>
+
+            {/* Right Panel: Dimension Pairs & Mathematical Formulas */}
+            <div className="lg:col-span-5 space-y-6">
+              {/* Live Math Panel */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                  <h3 className="text-sm font-semibold text-white">RoPE 2D Rotation Matrix</h3>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 space-y-2">
+                  <div className="text-amber-400 font-semibold">
+                    R(p · θ_i) = [[cos(p·θ_i), -sin(p·θ_i)], [sin(p·θ_i), cos(p·θ_i)]]
+                  </div>
+                  <div className="text-slate-400 text-[11px]">
+                    For dimension pair {selectedDimPairIdx * 2}, {selectedDimPairIdx * 2 + 1}:
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
+                    <div>θ_{selectedDimPairIdx} = {ropePairs[selectedDimPairIdx]?.frequency.toExponential(3)}</div>
+                    <div>Angle = {ropePairs[selectedDimPairIdx]?.angleDeg.toFixed(1)}°</div>
+                    <div>cos(θ) = {ropePairs[selectedDimPairIdx]?.cosVal.toFixed(3)}</div>
+                    <div>sin(θ) = {ropePairs[selectedDimPairIdx]?.sinVal.toFixed(3)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wavelength & Frequency Chart */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-orange-400" />
+                    <h3 className="text-sm font-semibold text-white">Wavelength Spectrum Across Dimensions</h3>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] text-orange-400 border-orange-400/30">
+                    Log Scale
+                  </Badge>
+                </div>
+
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={ropePairs}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="pairIndex" stroke="#64748b" fontSize={10} label={{ value: 'Dim Pair', position: 'insideBottom', offset: -2, fill: '#64748b' }} />
+                      <YAxis stroke="#64748b" fontSize={10} scale="log" domain={['auto', 'auto']} />
+                      <RechartsTooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155', fontSize: '11px' }} />
+                      <Area type="monotone" dataKey="wavelength" stroke="#f97316" fill="#f97316" fillOpacity={0.2} name="Wavelength (tokens)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Relative Distance Preservation */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-blue-400" />
+                    <h3 className="text-sm font-semibold text-white">Relative Position Property</h3>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] text-blue-400 border-blue-400/30">
+                    q_m · k_n = f(m - n)
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  RoPE guarantees that the dot product of query vector at position <em>m</em> with key vector at position <em>n</em> depends strictly on the relative distance <code>(m - n)</code>, preserving translation invariance across context windows.
+                </p>
+              </div>
             </div>
           </div>
-
-          {/* Right Panel: Dimension Pairs & Mathematical Formulas */}
-          <div className="lg:col-span-5 space-y-6">
-            {/* Live Math Panel */}
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-400" />
-                <h3 className="text-sm font-semibold text-white">RoPE 2D Rotation Matrix</h3>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-slate-300 space-y-2">
-                <div className="text-amber-400 font-semibold">
-                  R(p · θ_i) = [[cos(p·θ_i), -sin(p·θ_i)], [sin(p·θ_i), cos(p·θ_i)]]
-                </div>
-                <div className="text-slate-400 text-[11px]">
-                  For dimension pair {selectedDimPairIdx * 2}, {selectedDimPairIdx * 2 + 1}:
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                  <div>θ_{selectedDimPairIdx} = {ropePairs[selectedDimPairIdx]?.frequency.toExponential(3)}</div>
-                  <div>Angle = {ropePairs[selectedDimPairIdx]?.angleDeg.toFixed(1)}°</div>
-                  <div>cos(θ) = {ropePairs[selectedDimPairIdx]?.cosVal.toFixed(3)}</div>
-                  <div>sin(θ) = {ropePairs[selectedDimPairIdx]?.sinVal.toFixed(3)}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Wavelength & Frequency Chart */}
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-orange-400" />
-                  <h3 className="text-sm font-semibold text-white">Wavelength Spectrum Across Dimensions</h3>
-                </div>
-                <Badge variant="outline" className="text-[10px] text-orange-400 border-orange-400/30">
-                  Log Scale
-                </Badge>
-              </div>
-
-              <div className="h-44 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={ropePairs}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="pairIndex" stroke="#64748b" fontSize={10} label={{ value: 'Dim Pair', position: 'insideBottom', offset: -2, fill: '#64748b' }} />
-                    <YAxis stroke="#64748b" fontSize={10} scale="log" domain={['auto', 'auto']} />
-                    <RechartsTooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155', fontSize: '11px' }} />
-                    <Area type="monotone" dataKey="wavelength" stroke="#f97316" fill="#f97316" fillOpacity={0.2} name="Wavelength (tokens)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Relative Distance Preservation */}
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Scale className="w-4 h-4 text-blue-400" />
-                  <h3 className="text-sm font-semibold text-white">Relative Position Property</h3>
-                </div>
-                <Badge variant="outline" className="text-[10px] text-blue-400 border-blue-400/30">
-                  q_m · k_n = f(m - n)
-                </Badge>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                RoPE guarantees that the dot product of query vector at position <em>m</em> with key vector at position <em>n</em> depends strictly on the relative distance <code>(m - n)</code>, preserving translation invariance across context windows.
-              </p>
-            </div>
-          </div>
-        </div>
+        </ErrorBoundary>
       )}
 
       {/* =============================================================== */}
       {/* TAB 3: RESIDUAL STREAM TRACER */}
       {/* =============================================================== */}
       {activeTab === 'residual' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* 3D Vector Arithmetic Scene */}
-          <div className="lg:col-span-6 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Layers className="w-5 h-5 text-purple-400" />
-                <h2 className="font-semibold text-white">Residual Vector Addition Sandbox</h2>
-              </div>
-              <Badge variant="outline" className="text-[10px] text-purple-400 border-purple-400/30 font-mono">
-                {"x_l = x_{l-1} + Attn + FFN"}
-              </Badge>
-            </div>
-
-            {/* Canvas */}
-            <div
-              ref={residualCanvasRef}
-              className="w-full h-[380px] rounded-xl overflow-hidden border border-slate-800/80 relative"
-            />
-
-            {/* Color Legend */}
-            <div className="flex flex-wrap items-center justify-between text-xs font-mono pt-1">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className="text-slate-300">{"x_{l-1} Stream"}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-cyan-400" />
-                <span className="text-slate-300">Attn Delta</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-slate-300">FFN Delta</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-purple-400" />
-                <span className="text-slate-300">x_l Output</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Layer-wise Norm Growth & Logit Lens Timeline */}
-          <div className="lg:col-span-6 space-y-6">
-            {/* Norm Growth Chart */}
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+        <ErrorBoundary title="Failed to render Residual Stream Tracer">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* 3D Vector Arithmetic Scene */}
+            <div className="lg:col-span-6 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-purple-400" />
-                  <h3 className="text-sm font-semibold text-white">Layer-wise Hidden State L2 Norm Growth</h3>
+                  <Layers className="w-5 h-5 text-purple-400" />
+                  <h2 className="font-semibold text-white">Residual Vector Addition Sandbox</h2>
                 </div>
-                <Badge variant="outline" className="text-[10px] text-purple-400 border-purple-400/30">
-                  Highway Dynamics
+                <Badge variant="outline" className="text-[10px] text-purple-400 border-purple-400/30 font-mono">
+                  {"x_l = x_{l-1} + Attn + FFN"}
                 </Badge>
               </div>
 
-              <div className="h-44 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={residualTraces}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="layer" stroke="#64748b" fontSize={10} />
-                    <YAxis stroke="#64748b" fontSize={10} />
-                    <RechartsTooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155', fontSize: '11px' }} />
-                    <Line type="monotone" dataKey="totalNorm" stroke="#a855f7" strokeWidth={2} name="Total Residual Norm" dot={{ r: 3 }} />
-                    <Line type="monotone" dataKey="attnNorm" stroke="#06b6d4" strokeWidth={1.5} strokeDasharray="3 3" name="Attn Norm" />
-                    <Line type="monotone" dataKey="ffnNorm" stroke="#22c55e" strokeWidth={1.5} strokeDasharray="3 3" name="FFN Norm" />
-                  </LineChart>
-                </ResponsiveContainer>
+              {/* Canvas */}
+              <div
+                ref={residualCanvasRef}
+                className="w-full h-[380px] rounded-xl overflow-hidden border border-slate-800/80 relative"
+              />
+
+              {/* Color Legend */}
+              <div className="flex flex-wrap items-center justify-between text-xs font-mono pt-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <span className="text-slate-300">{"x_{l-1} Stream"}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-cyan-400" />
+                  <span className="text-slate-300">Attn Delta</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-slate-300">FFN Delta</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-purple-400" />
+                  <span className="text-slate-300">x_l Output</span>
+                </div>
               </div>
             </div>
 
-            {/* Logit Lens Projection Timeline */}
-            <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-semibold text-white">Logit Lens Convergence (What Model Thinks)</h3>
+            {/* Layer-wise Norm Growth & Logit Lens Timeline */}
+            <div className="lg:col-span-6 space-y-6">
+              {/* Norm Growth Chart */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-purple-400" />
+                    <h3 className="text-sm font-semibold text-white">Layer-wise Hidden State L2 Norm Growth</h3>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] text-purple-400 border-purple-400/30">
+                    Highway Dynamics
+                  </Badge>
                 </div>
-                <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-400/30">
-                  Unembed @ LN(x_l)
-                </Badge>
+
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={residualTraces}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="layer" stroke="#64748b" fontSize={10} />
+                      <YAxis stroke="#64748b" fontSize={10} />
+                      <RechartsTooltip contentStyle={{ backgroundColor: '#020617', borderColor: '#334155', fontSize: '11px' }} />
+                      <Line type="monotone" dataKey="totalNorm" stroke="#a855f7" strokeWidth={2} name="Total Residual Norm" dot={{ r: 3 }} />
+                      <Line type="monotone" dataKey="attnNorm" stroke="#06b6d4" strokeWidth={1.5} strokeDasharray="3 3" name="Attn Norm" />
+                      <Line type="monotone" dataKey="ffnNorm" stroke="#22c55e" strokeWidth={1.5} strokeDasharray="3 3" name="FFN Norm" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
-                  <span>Inspecting Layer: {selectedResidualLayer}</span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={residualTraces.length - 1}
-                    value={selectedResidualLayer}
-                    onChange={(e) => setSelectedResidualLayer(Number(e.target.value))}
-                    className="w-32 accent-purple-500"
-                  />
+              {/* Logit Lens Projection Timeline */}
+              <div className="rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-semibold text-white">Logit Lens Convergence (What Model Thinks)</h3>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-400/30">
+                    Unembed @ LN(x_l)
+                  </Badge>
                 </div>
 
-                <div className="space-y-2 pt-1">
-                  {residualTraces[selectedResidualLayer]?.topLogits.map((item, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="flex justify-between text-xs font-mono">
-                        <span className="text-white font-semibold">{item.token}</span>
-                        <span className="text-emerald-400">{(item.probability * 100).toFixed(1)}%</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                    <span>Inspecting Layer: {selectedResidualLayer}</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={residualTraces.length - 1}
+                      value={selectedResidualLayer}
+                      onChange={(e) => setSelectedResidualLayer(Number(e.target.value))}
+                      className="w-32 accent-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {residualTraces[selectedResidualLayer]?.topLogits.map((item, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex justify-between text-xs font-mono">
+                          <span className="text-white font-semibold">{item.token}</span>
+                          <span className="text-emerald-400">{(item.probability * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400"
+                            style={{ width: `${item.probability * 100}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400"
-                          style={{ width: `${item.probability * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </ErrorBoundary>
       )}
 
       {/* =============================================================== */}
       {/* TAB 4: LAYER NORMALIZATION DYNAMICS */}
       {/* =============================================================== */}
       {activeTab === 'layernorm' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* 3D Hypersphere Projection Scene */}
-          <div className="lg:col-span-6 rounded-2xl bg-slate-900/80 border border-slate-800 p-4 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-teal-400" />
-                <h2 className="font-semibold text-white">Unit Hypersphere Projection</h2>
-              </div>
-              <Badge variant="outline" className="text-[10px] text-teal-400 border-teal-400/30 font-mono">
-                ||x̂|| = √d
-              </Badge>
-            </div>
-
-            {/* Canvas */}
-            <div
-              ref={hypersphereCanvasRef}
-              className="w-full h-[380px] rounded-xl overflow-hidden border border-slate-800/80 relative"
-            />
-
-            {/* Legend */}
-            <div className="flex items-center justify-between text-xs font-mono pt-1">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500" />
-                <span className="text-slate-300">Pre-LN Raw Vectors</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-slate-300">Post-LN on Sphere</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-1 bg-amber-400" />
-                <span className="text-slate-300">Projection Chord</span>
-              </div>
-            </div>
           </div>
 
           {/* Variance Stabilization & Gain/Bias Parameter Drift */}
