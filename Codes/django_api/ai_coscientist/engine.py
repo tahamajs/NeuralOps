@@ -7,7 +7,10 @@ import logging
 import random
 
 from django.utils import timezone
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
 
 logger = logging.getLogger(__name__)
 
