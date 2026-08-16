@@ -146,7 +146,7 @@ def api_register(request):
         return Response({"error": "Username already taken"}, status=400)
     user = User.objects.create_user(username=username, password=password)
     token = Token.objects.create(user=user)
-    auth_login(request, user)
+    auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
     resp = Response({"token": token.key, "username": user.username}, status=201)
     resp.set_cookie(
         "authToken",
@@ -167,7 +167,7 @@ def api_login(request):
     user = authenticate(request, username=username, password=password)
     if user:
         token, _ = Token.objects.get_or_create(user=user)
-        auth_login(request, user)
+        auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
         resp = Response({"token": token.key, "username": user.username})
         resp.set_cookie(
             "authToken",
