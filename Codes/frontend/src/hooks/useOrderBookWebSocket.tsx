@@ -1,12 +1,2 @@
-import React from "react";
-
-export default function useOrderBookWebSocket() {
-  return (
-    <div className="p-8 text-white">
-      <h1 className="text-2xl font-bold">useOrderBookWebSocket</h1>
-      <p className="mt-4 opacity-70">
-        This page is synced with the backend and ready for implementation.
-      </p>
-    </div>
-  );
-}
+export { useOrderBookWebSocket } from "../features/marketplace/Components/useOrderBookWebSocket";
+export { useOrderBookWebSocket as default } from "../features/marketplace/Components/useOrderBookWebSocket";

@@ -1,6 +1,5 @@
-// src/features/chat/hooks/useResearchWebSocket.ts
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useAuthStore } from "../../auth/store/authStore";
+import { getAuthToken } from "../../../utils/authUtils";
 
 type WebSocketStatus = "connecting" | "open" | "closing" | "closed" | "error";
 
@@ -28,7 +27,7 @@ export function useResearchWebSocket(
     maxReconnectDelay = 30000,
   } = options;
 
-  const { token } = useAuthStore() as any;
+  const token = getAuthToken();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
