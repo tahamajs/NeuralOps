@@ -52,6 +52,16 @@ const api: AxiosInstance = axios.create({
 // ----------------------------------------------------------------------
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    // Prevent double /api prefix if caller provided a path starting with /api/
+    if (
+      config.url &&
+      config.baseURL &&
+      config.baseURL.endsWith("/api") &&
+      config.url.startsWith("/api/")
+    ) {
+      config.url = config.url.replace(/^\/api/, "");
+    }
+
     // Proxy handling (prepend proxy URL)
     const proxyUrl = getProxyUrl();
     if (proxyUrl) {
@@ -85,10 +95,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       removeAuthToken();
-      // Avoid redirect loop if already on login page
+      // Avoid redirect loop if already on login or register page
       if (
         typeof window !== "undefined" &&
-        !window.location.pathname.startsWith("/login")
+        !window.location.pathname.startsWith("/login") &&
+        !window.location.pathname.startsWith("/register")
       ) {
         window.location.href = "/login";
       }
@@ -555,15 +566,53 @@ api.interceptors.response.use(
     }
 
     // Format error message for consistency
-    const errorMessage =
-      error.response?.data?.detail ||
-      error.response?.data?.message ||
-      error.response?.data?.error ||
-      error.message ||
-      "An unexpected error occurred";
+    let errorMessage: string = "";
+    if (error.response?.data) {
+      const data = error.response.data as any;
+      if (typeof data === "string") {
+        errorMessage = data;
+      } else if (data.detail) {
+        errorMessage = data.detail;
+      } else if (data.message) {
+        errorMessage = data.message;
+      } else if (data.error) {
+        errorMessage =
+          typeof data.error === "string"
+            ? data.error
+            : JSON.stringify(data.error);
+      } else if (data.non_field_errors && Array.isArray(data.non_field_errors)) {
+        errorMessage = data.non_field_errors.join(", ");
+      } else if (typeof data === "object") {
+        // Collect field validation errors
+        const entries = Object.entries(data).map(([k, v]) => {
+          const valStr = Array.isArray(v) ? v.join(", ") : String(v);
+          return `${k}: ${valStr}`;
+        });
+        if (entries.length > 0) {
+          errorMessage = entries.join("; ");
+        }
+      }
+    }
+
+    if (!errorMessage) {
+      if (error.response?.status === 401) {
+        errorMessage = "Unauthorized: Please log in to continue.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "Access denied: You do not have permission to perform this action.";
+      } else if (error.response?.status === 404) {
+        errorMessage = "The requested resource was not found.";
+      } else if (error.response?.status && error.response.status >= 500) {
+        errorMessage = "Internal server error. Please try again later.";
+      } else if (!error.response) {
+        errorMessage = "Network error: Unable to connect to the server.";
+      } else {
+        errorMessage = error.message || "An unexpected error occurred";
+      }
+    }
 
     // Attach formatted message to error object for easier handling in components
     (error as any).userMessage = errorMessage;
+    (error as any).status = error.response?.status;
 
     return Promise.reject(error);
   },

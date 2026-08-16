@@ -27,7 +27,12 @@ from experiment.models import Experiment, TrainingRun
 from experiment.runners import run_compression, run_evaluation, run_training
 from experiment.serializers import ExperimentSerializer, TrainingRunSerializer
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+    throttle_classes,
+)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
@@ -186,6 +191,7 @@ def _registry_list(request, registry, key_name):
 # Authentication & User Management
 # ═══════════════════════════════════════════════════════════════════
 @api_view(["POST"])
+@authentication_classes([])
 @permission_classes([AllowAny])
 @throttle_classes([AnonBurstRateThrottle])
 def register(request):
@@ -233,6 +239,7 @@ def register(request):
 
 
 @api_view(["POST"])
+@authentication_classes([])
 @permission_classes([AllowAny])
 @throttle_classes([AnonBurstRateThrottle])
 def login(request):
