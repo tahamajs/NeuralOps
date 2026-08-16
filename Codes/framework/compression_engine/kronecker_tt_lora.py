@@ -35,12 +35,56 @@ class KroneckerTTLoRALayer(nn.Module):
             r_min, r_max (int): Min and max bounds for dynamic rank adaptation.
             entropy_threshold (float): Target singular value entropy threshold.
         """
-        super().__init__()
         self.base_layer = base_layer
         self.base_layer.weight.requires_grad = False  # Freeze base weights
         
         self.in_features = base_layer.in_features
         self.out_features = base_layer.out_features
+
+    @staticmethod
+    def factorize_dimensions(in_features: int, out_features: int) -> dict:
+        """Find balanced factors for Kronecker and TT dimensions."""
+        def factor_pair(n: int) -> tuple:
+            for i in range(int(math.isqrt(n)), 0, -1):
+                if n % i == 0:
+                    return i, n // i
+            return 1, n
+
+        m1, m2 = factor_pair(out_features)
+        n1, n2 = factor_pair(in_features)
+        tt_shapes = (out_features, 1, in_features)
+        return {
+            "m1": m1, "n1": n1,
+            "m2": m2, "n2": n2,
+            "tt_shapes": tt_shapes,
+        }
+
+    @classmethod
+    def from_linear(
+        cls,
+        base_layer: nn.Linear,
+        m1: int = None,
+        n1: int = None,
+        m2: int = None,
+        n2: int = None,
+        tt_shapes: tuple = None,
+        tt_ranks: tuple = (1, 4, 4, 1),
+        gamma: float = 1.0,
+        **kwargs
+    ):
+        """Create KroneckerTTLoRALayer directly from linear layer with auto-factorization."""
+        dims = cls.factorize_dimensions(base_layer.in_features, base_layer.out_features)
+        return cls(
+            base_layer=base_layer,
+            m1=m1 or dims["m1"],
+            n1=n1 or dims["n1"],
+            m2=m2 or dims["m2"],
+            n2=n2 or dims["n2"],
+            tt_shapes=tt_shapes or dims["tt_shapes"],
+            tt_ranks=tt_ranks,
+            gamma=gamma,
+            **kwargs
+        )
         
         if m1 * m2 != self.out_features:
             raise ValueError(f"m1 * m2 ({m1 * m2}) must equal out_features ({self.out_features})")
