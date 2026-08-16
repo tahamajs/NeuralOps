@@ -519,22 +519,31 @@ class MultiModeBenchmarkRunner:
 
         # Lightweight fallback model for testing / CI
         logger.info("Initializing fallback DistilBert architecture for evaluation.")
-        config = DistilBertConfig(
-            vocab_size=30522,
-            max_position_embeddings=max(512, self.seq_len * 2),
-            hidden_size=256,
-            num_attention_heads=4,
-            num_hidden_layers=2,
-            dim=256,
-        )
         if HAS_TRANSFORMERS:
-            from transformers import DistilBertForSequenceClassification
+            from transformers import DistilBertConfig, DistilBertForSequenceClassification
+            config = DistilBertConfig(
+                vocab_size=30522,
+                max_position_embeddings=max(512, self.seq_len * 2),
+                hidden_size=256,
+                num_attention_heads=4,
+                num_hidden_layers=2,
+                dim=256,
+            )
             model = DistilBertForSequenceClassification(config)
         else:
+            class DummyConfig:
+                vocab_size = 30522
+                hidden_size = 256
+                num_attention_heads = 4
+                num_hidden_layers = 2
+                dim = 256
+            config = DummyConfig()
+
             # Minimal dummy transformer module
             class MinimalTransformer(nn.Module):
                 def __init__(self, d_model=256, n_heads=4):
                     super().__init__()
+                    self.config = config
                     self.embed = nn.Embedding(30522, d_model)
                     self.attn = nn.MultiheadAttention(d_model, n_heads, batch_first=True)
                     self.fc = nn.Linear(d_model, 2)

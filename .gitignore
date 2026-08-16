@@ -69,7 +69,9 @@ dist/
 # ============================================================
 # Model Artifacts & Datasets
 # ============================================================
-**/models/
+/models/
+/datasets/
+!/datasets/.gitkeep
 **/smart_adaptive_final_model/
 **/temp_finetune/
 **/models_cache/
@@ -81,8 +83,6 @@ dist/
 *.safetensors
 *.bin
 *.h5
-datasets/
-!datasets/.gitkeep
 
 # ============================================================
 # Large data files
