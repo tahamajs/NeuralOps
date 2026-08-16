@@ -90,6 +90,8 @@ class EndToEndIntegrationFlowTests(TransactionTestCase):
     # ═══════════════════════════════════════════════════════════════════
     def test_flow2_job_creation_attention_config_and_launch(self):
         """Test configuration discovery, attention selection (NASC/AEGIS/SVD), and job launch."""
+        from unittest.mock import patch
+
         user = User.objects.create_user(username="arch_dev", password="password123")
         token = Token.objects.create(user=user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
@@ -114,56 +116,57 @@ class EndToEndIntegrationFlowTests(TransactionTestCase):
         self.assertEqual(methods_resp.status_code, 200)
         self.assertIn("methods", methods_resp.data)
 
-        # 3. Launch Training Job with NASC Attention Architecture
-        nasc_job_config = {
-            "name": "NASC-GLUE-MRPC-Benchmark",
-            "model_name": "bert-base-uncased",
-            "task_name": "mrpc",
-            "attention_type": "nasc",
-            "method": "svd",
-            "compression_rank": 64,
-            "epochs": 3,
-            "batch_size": 16,
-            "learning_rate": 3e-5,
-            "max_seq_length": 128,
-            "fp16": True,
-            "seed": 42,
-        }
-        train_launch = self.client.post("/api/experiments/start_train/", nasc_job_config, format="json")
-        self.assertEqual(train_launch.status_code, 201)
-        self.assertIn("id", train_launch.data)
-        run_id = train_launch.data["id"]
-        self.assertIn(train_launch.data["status"], ["queued", "running"])
-        self.assertEqual(train_launch.data["config"]["attention_type"], "nasc")
+        with patch("api.views.start_job") as mock_start_job:
+            # 3. Launch Training Job with NASC Attention Architecture
+            nasc_job_config = {
+                "name": "NASC-GLUE-MRPC-Benchmark",
+                "model_name": "bert-base-uncased",
+                "task_name": "mrpc",
+                "attention_type": "nasc",
+                "method": "svd",
+                "compression_rank": 64,
+                "epochs": 3,
+                "batch_size": 16,
+                "learning_rate": 3e-5,
+                "max_seq_length": 128,
+                "fp16": True,
+                "seed": 42,
+            }
+            train_launch = self.client.post("/api/experiments/start_train/", nasc_job_config, format="json")
+            self.assertEqual(train_launch.status_code, 201)
+            self.assertIn("id", train_launch.data)
+            run_id = train_launch.data["id"]
+            self.assertIn(train_launch.data["status"], ["queued", "running"])
+            self.assertEqual(train_launch.data["config"]["attention_type"], "nasc")
 
-        # 4. Launch Evaluation Job with AEGIS Attention Architecture
-        aegis_job_config = {
-            "name": "AEGIS-V6-SST2-Eval",
-            "model_name": "distilbert-base-uncased",
-            "task_name": "sst2",
-            "attention_type": "aegis_v6",
-            "method": "baseline",
-            "compression_rank": 32,
-            "epochs": 1,
-            "batch_size": 32,
-        }
-        eval_launch = self.client.post("/api/experiments/start_evaluate/", aegis_job_config, format="json")
-        self.assertEqual(eval_launch.status_code, 201)
-        self.assertIn("id", eval_launch.data)
-        self.assertEqual(eval_launch.data["config"]["attention_type"], "aegis_v6")
+            # 4. Launch Evaluation Job with AEGIS Attention Architecture
+            aegis_job_config = {
+                "name": "AEGIS-V6-SST2-Eval",
+                "model_name": "distilbert-base-uncased",
+                "task_name": "sst2",
+                "attention_type": "aegis_v6",
+                "method": "baseline",
+                "compression_rank": 32,
+                "epochs": 1,
+                "batch_size": 32,
+            }
+            eval_launch = self.client.post("/api/experiments/start_evaluate/", aegis_job_config, format="json")
+            self.assertEqual(eval_launch.status_code, 201)
+            self.assertIn("id", eval_launch.data)
+            self.assertEqual(eval_launch.data["config"]["attention_type"], "aegis_v6")
 
-        # 5. Launch Compression Job with SVD
-        svd_job_config = {
-            "name": "SVD-Linear-Compression",
-            "model_name": "roberta-base",
-            "task_name": "mnli",
-            "attention_type": "svd",
-            "method": "svd",
-            "compression_rank": 48,
-        }
-        comp_launch = self.client.post("/api/experiments/start_compress/", svd_job_config, format="json")
-        self.assertEqual(comp_launch.status_code, 201)
-        self.assertIn("id", comp_launch.data)
+            # 5. Launch Compression Job with SVD
+            svd_job_config = {
+                "name": "SVD-Linear-Compression",
+                "model_name": "roberta-base",
+                "task_name": "mnli",
+                "attention_type": "svd",
+                "method": "svd",
+                "compression_rank": 48,
+            }
+            comp_launch = self.client.post("/api/experiments/start_compress/", svd_job_config, format="json")
+            self.assertEqual(comp_launch.status_code, 201)
+            self.assertIn("id", comp_launch.data)
 
         # 6. Verify run details endpoint
         run_detail = self.client.get(f"/api/runs/{run_id}/")
