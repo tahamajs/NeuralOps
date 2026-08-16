@@ -7,6 +7,8 @@ import { AVAILABLE_WINDOWS } from "../WindowLauncher";
 import { Spinner } from "../ui/Spinner";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { ErrorBoundary } from "../ui/ErrorBoundary";
+import { CommandPalette } from "../ui/CommandPalette";
+import { KeyboardShortcutsHelp } from "../ui/KeyboardShortcuts";
 import {
   Bell,
   Search,
@@ -481,6 +483,8 @@ export const MainLayout = () => {
           </main>
         </div>
       </div>
+      <CommandPalette />
+      <KeyboardShortcutsHelp />
     </>
   );
 };
