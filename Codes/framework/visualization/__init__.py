@@ -11,6 +11,7 @@ from .benchmark_visualizer import (
     plot_singular_value_decay,
 )
 from .dashboard_generator import generate_dashboard_html, generate_summary_json
+from .chart_generator import ChartGenerator
 from .attention_canvas_suite import (
     AttentionCanvasSuite,
     HeadViewData,
@@ -95,6 +96,7 @@ from .utils import (
 # register_default_plots()
 
 __all__ = [
+    "ChartGenerator",
     "BaseVisualizer",
     "VISUALIZER_REGISTRY",
     "Registry",

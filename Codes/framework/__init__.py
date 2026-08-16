@@ -76,6 +76,7 @@ _LAZY_EXPORTS = {
     "TextAdversarialTester": ("framework.evaluation.robustness", "TextAdversarialTester"),
     
     # Visualization & Dashboards
+    "ChartGenerator": ("framework.visualization.chart_generator", "ChartGenerator"),
     "BaseVisualizer": ("framework.visualization.base", "BaseVisualizer"),
     "VISUALIZER_REGISTRY": ("framework.visualization.base", "VISUALIZER_REGISTRY"),
     "PLOT_REGISTRY": ("framework.visualization.plot_registry", "PLOT_REGISTRY"),
