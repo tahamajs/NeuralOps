@@ -22,6 +22,7 @@ except ImportError:
     HAS_LANGGRAPH = False
 
 from typing_extensions import TypedDict
+from django.conf import settings
 from .tools import ALL_TOOLS
 
 logger = logging.getLogger(__name__)

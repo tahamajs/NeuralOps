@@ -51,10 +51,15 @@ def create_config_snapshot(job: Job, change_desc: str = None, user=None):
     return version
 
 
-from git import Repo
+try:
+    from git import Repo
+except ImportError:
+    Repo = None
 
 
 def capture_git_info(job: Job):
+    if Repo is None:
+        return
     try:
         repo = Repo(".", search_parent_directories=True)
         job.git_commit_hash = repo.head.commit.hexsha
