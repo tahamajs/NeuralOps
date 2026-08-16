@@ -9,12 +9,14 @@ def evaluate_llm_output(output_text: str, reference_text: str = None) -> dict:
 
     # ROUGE (simplified)
     if reference_text:
-        from rouge import Rouge
-
-        rouge = Rouge()
-        scores = rouge.get_scores(output_text, reference_text)
-        metrics["rouge-1"] = scores[0]["rouge-1"]["f"]
-        metrics["rouge-l"] = scores[0]["rouge-l"]["f"]
+        try:
+            from rouge import Rouge
+            rouge = Rouge()
+            scores = rouge.get_scores(output_text, reference_text)
+            metrics["rouge-1"] = scores[0]["rouge-1"]["f"]
+            metrics["rouge-l"] = scores[0]["rouge-l"]["f"]
+        except ImportError:
+            pass
 
     # BERTScore
     try:
