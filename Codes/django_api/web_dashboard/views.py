@@ -136,6 +136,46 @@ def register_page(request):
     return render(request, "web_dashboard/register.html")
 
 
+@login_required
+def job_queue_page(request):
+    return render(request, "web_dashboard/job_queue_manager.html")
+
+
+@login_required
+def experiments_page(request):
+    return render(request, "web_dashboard/dashboard.html")
+
+
+@login_required
+def analysis_page(request):
+    return render(request, "web_dashboard/research_analysis.html")
+
+
+@login_required
+def latex_editor_page(request):
+    return render(request, "web_dashboard/latex_editor.html")
+
+
+@login_required
+def notes_page(request):
+    return render(request, "web_dashboard/notes_manager.html")
+
+
+@login_required
+def models_page(request):
+    return render(request, "web_dashboard/model_versions.html")
+
+
+@login_required
+def scheduler_page(request):
+    return render(request, "web_dashboard/scheduler_panel.html")
+
+
+@login_required
+def metrics_page(request):
+    return render(request, "web_dashboard/metrics_dashboard.html")
+
+
 # ═════════════════════════════════════════════════════════════════
 # Authentication API (JWT via DRF Token)
 # ═════════════════════════════════════════════════════════════════
