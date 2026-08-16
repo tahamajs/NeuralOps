@@ -494,9 +494,9 @@ function renderMarkdown(md, item) {
         return id;
     });
 
-    // Step 4: Restore code blocks
+    // Step 4: Restore code blocks (using split-join to preserve dollar signs and special patterns)
     for (const c of codeStore) {
-        processed = processed.replace(c.id, c.content);
+        processed = processed.split(c.id).join(c.content);
     }
 
     // Step 5: Parse Markdown
