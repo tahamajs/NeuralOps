@@ -248,15 +248,16 @@ def verify_all_attentions():
                         elif 'layer' in p and not any(w in p for w in ('total', 'num', 'idx')): val = old_attn
                         elif any(w in p for w in ('comp', 'cfg', 'orion', 'phantom')): val = comp_cfg
                         elif any(w in p for w in ('config', 'model')): val = hf_cfg
-                        elif 'ranks' in p: val = {'q': 16, 'k': 16, 'v': 16, 'out': 16}
+                        elif 'ranks' in p: val = {'q': 16, 'k': 16, 'v': 16, 'out': 16, 'o': 16}
                         elif 'idx' in p: val = 0
                         elif any(w in p for w in ('total', 'num_layers')): val = 2
-                        elif any(w in p for w in ('rank', 'k_rank', 'qkv', 'out')): val = 16
+                        elif 'drop' in p: val = 0.0
+                        elif any(w in p for w in ('rank', 'k_rank', 'qkv', 'out', 'min_rank')): val = 16
                         elif any(w in p for w in ('dim', 'embed', 'hidden', 'size')): val = C
                         elif 'head' in p: val = num_heads
-                        elif 'drop' in p: val = 0.0
                         elif any(w in p for w in ('seq', 'len')): val = 128
-                        else: val = 0.0 if any(w in p for w in ('rate', 'prob', 'temp')) else 16
+                        elif 'method' in p: val = 'svd'
+                        else: val = 0.5 if any(w in p for w in ('rate', 'prob', 'temp', 'energy')) else 16
                         kwargs[p] = val
                         args.append(val)
                     kwargs_err = None
