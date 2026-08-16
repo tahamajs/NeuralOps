@@ -35,11 +35,39 @@ class KroneckerTTLoRALayer(nn.Module):
             r_min, r_max (int): Min and max bounds for dynamic rank adaptation.
             entropy_threshold (float): Target singular value entropy threshold.
         """
+        super().__init__()
         self.base_layer = base_layer
         self.base_layer.weight.requires_grad = False  # Freeze base weights
         
         self.in_features = base_layer.in_features
         self.out_features = base_layer.out_features
+        
+        if m1 * m2 != self.out_features:
+            raise ValueError(f"m1 * m2 ({m1 * m2}) must equal out_features ({self.out_features})")
+        if n1 * n2 != self.in_features:
+            raise ValueError(f"n1 * n2 ({n1 * n2}) must equal in_features ({self.in_features})")
+        if tt_shapes[0] * tt_shapes[1] * tt_shapes[2] != self.out_features * self.in_features:
+            raise ValueError("Product of tt_shapes must equal out_features * in_features")
+        if tt_ranks[0] != 1 or tt_ranks[3] != 1:
+            raise ValueError("Boundary TT ranks (r0 and r3) must be 1")
+            
+        self.m1, self.n1 = m1, n1
+        self.m2, self.n2 = m2, n2
+        self.tt_shapes = tt_shapes
+        self.tt_ranks = list(tt_ranks)
+        self.gamma = gamma
+        self.r_min = r_min
+        self.r_max = r_max
+        self.entropy_threshold = entropy_threshold
+        
+        # Kronecker factors
+        self.A1 = nn.Parameter(torch.randn(m1, n1) * math.sqrt(1.0 / n1))
+        self.A2 = nn.Parameter(torch.zeros(m2, n2))  # Initialize A2 to zero for identity map initially
+        
+        # Tensor-Train cores
+        self.G1 = nn.Parameter(torch.randn(self.tt_ranks[0], tt_shapes[0], self.tt_ranks[1]) * math.sqrt(1.0 / tt_shapes[0]))
+        self.G2 = nn.Parameter(torch.randn(self.tt_ranks[1], tt_shapes[1], self.tt_ranks[2]) * math.sqrt(1.0 / tt_shapes[1]))
+        self.G3 = nn.Parameter(torch.randn(self.tt_ranks[2], tt_shapes[2], self.tt_ranks[3]) * math.sqrt(1.0 / tt_shapes[2]))
 
     @staticmethod
     def factorize_dimensions(in_features: int, out_features: int) -> dict:
@@ -85,33 +113,6 @@ class KroneckerTTLoRALayer(nn.Module):
             gamma=gamma,
             **kwargs
         )
-        
-        if m1 * m2 != self.out_features:
-            raise ValueError(f"m1 * m2 ({m1 * m2}) must equal out_features ({self.out_features})")
-        if n1 * n2 != self.in_features:
-            raise ValueError(f"n1 * n2 ({n1 * n2}) must equal in_features ({self.in_features})")
-        if tt_shapes[0] * tt_shapes[1] * tt_shapes[2] != self.out_features * self.in_features:
-            raise ValueError("Product of tt_shapes must equal out_features * in_features")
-        if tt_ranks[0] != 1 or tt_ranks[3] != 1:
-            raise ValueError("Boundary TT ranks (r0 and r3) must be 1")
-            
-        self.m1, self.n1 = m1, n1
-        self.m2, self.n2 = m2, n2
-        self.tt_shapes = tt_shapes
-        self.tt_ranks = list(tt_ranks)
-        self.gamma = gamma
-        self.r_min = r_min
-        self.r_max = r_max
-        self.entropy_threshold = entropy_threshold
-        
-        # Kronecker factors
-        self.A1 = nn.Parameter(torch.randn(m1, n1) * math.sqrt(1.0 / n1))
-        self.A2 = nn.Parameter(torch.zeros(m2, n2))  # Initialize A2 to zero for identity map initially
-        
-        # Tensor-Train cores
-        self.G1 = nn.Parameter(torch.randn(self.tt_ranks[0], tt_shapes[0], self.tt_ranks[1]) * math.sqrt(1.0 / tt_shapes[0]))
-        self.G2 = nn.Parameter(torch.randn(self.tt_ranks[1], tt_shapes[1], self.tt_ranks[2]) * math.sqrt(1.0 / tt_shapes[1]))
-        self.G3 = nn.Parameter(torch.randn(self.tt_ranks[2], tt_shapes[2], self.tt_ranks[3]) * math.sqrt(1.0 / tt_shapes[2]))
 
     def get_tt_tensor(self):
         """Constructs the dense tensor from TT cores."""
