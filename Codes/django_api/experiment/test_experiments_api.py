@@ -38,8 +38,9 @@ class ExperimentAPITests(TestCase):
             run=self.run,
             step=100,
             train_loss=1.84,
-            val_loss=1.92,
-            metrics={"perplexity": 6.82, "grad_norm": 0.42}
+            eval_loss=1.92,
+            eval_accuracy=0.88,
+            learning_rate=0.0001
         )
 
     def test_list_experiments(self):
