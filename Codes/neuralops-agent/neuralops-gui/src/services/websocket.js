@@ -1,48 +1,115 @@
 // src/services/websocket.js
 /**
- * Real‑time WebSocket client for live updates.
- * Connects to Django Channels via the Electron main process.
+ * Real-time WebSocket Client for NeuralOps Provider Agent GUI.
+ * Communicates with backend Channels via Electron IPC proxy when available,
+ * or direct native WebSocket fallback.
  */
-let ws = null;
+
+let nativeWs = null;
 let reconnectTimer = null;
 let listeners = {};
+let ipcCleanups = [];
 
 export const wsClient = {
   connect(token, server) {
-    const wsUrl = server.replace('http', 'ws') + '/ws/provider/';
-    ws = new WebSocket(wsUrl + '?token=' + token);
+    const sUrl = server || localStorage.getItem('neuralops_server') || 'http://localhost:8000';
+    const sToken = token || localStorage.getItem('neuralops_token') || '';
 
-    ws.onopen = () => {
-      console.log('WebSocket connected');
-      this.emit('connected');
-    };
+    // Prefer Electron IPC WebSocket proxy
+    if (window.neuralopsAPI?.wsConnect) {
+      this.cleanupIpc();
+      window.neuralopsAPI.wsConnect(sToken, sUrl).then((connected) => {
+        if (connected) {
+          this.emit('connected');
+        }
+      });
 
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        this.emit('message', data);
-        if (data.type) this.emit(data.type, data);
-      } catch (e) {}
-    };
+      if (window.neuralopsAPI.onWsMessage) {
+        const unMsg = window.neuralopsAPI.onWsMessage((raw) => {
+          try {
+            const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            this.emit('message', data);
+            if (data?.type) this.emit(data.type, data);
+          } catch (e) {}
+        });
+        ipcCleanups.push(unMsg);
+      }
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected, reconnecting in 5s...');
-      this.emit('disconnected');
-      reconnectTimer = setTimeout(() => this.connect(token, server), 5000);
-    };
+      if (window.neuralopsAPI.onWsClosed) {
+        const unClosed = window.neuralopsAPI.onWsClosed(() => {
+          this.emit('disconnected');
+          clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(() => this.connect(sToken, sUrl), 5000);
+        });
+        ipcCleanups.push(unClosed);
+      }
 
-    ws.onerror = (err) => console.error('WebSocket error', err);
+      if (window.neuralopsAPI.onWsOpen) {
+        const unOpen = window.neuralopsAPI.onWsOpen(() => {
+          this.emit('connected');
+        });
+        ipcCleanups.push(unOpen);
+      }
+      return;
+    }
+
+    // Direct Browser WebSocket fallback
+    try {
+      const wsUrl = sUrl.replace(/^http/, 'ws') + `/ws/provider/?token=${encodeURIComponent(sToken)}`;
+      nativeWs = new WebSocket(wsUrl);
+
+      nativeWs.onopen = () => {
+        this.emit('connected');
+      };
+
+      nativeWs.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          this.emit('message', data);
+          if (data?.type) this.emit(data.type, data);
+        } catch (e) {}
+      };
+
+      nativeWs.onclose = () => {
+        this.emit('disconnected');
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(() => this.connect(sToken, sUrl), 5000);
+      };
+
+      nativeWs.onerror = (err) => {
+        this.emit('error', err);
+      };
+    } catch (err) {
+      console.warn('Direct WebSocket initialization error:', err);
+    }
+  },
+
+  cleanupIpc() {
+    ipcCleanups.forEach((cleanup) => {
+      if (typeof cleanup === 'function') cleanup();
+    });
+    ipcCleanups = [];
   },
 
   disconnect() {
     clearTimeout(reconnectTimer);
-    if (ws) ws.close();
-    ws = null;
+    this.cleanupIpc();
+    if (window.neuralopsAPI?.wsDisconnect) {
+      window.neuralopsAPI.wsDisconnect();
+    }
+    if (nativeWs) {
+      try { nativeWs.close(); } catch {}
+      nativeWs = null;
+    }
   },
 
   send(data) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(data));
+    if (window.neuralopsAPI?.wsSend) {
+      window.neuralopsAPI.wsSend(data);
+      return;
+    }
+    if (nativeWs && nativeWs.readyState === 1) { // OPEN
+      nativeWs.send(typeof data === 'string' ? data : JSON.stringify(data));
     }
   },
 
@@ -53,10 +120,14 @@ export const wsClient = {
 
   off(event, callback) {
     if (!listeners[event]) return;
-    listeners[event] = listeners[event].filter(cb => cb !== callback);
+    listeners[event] = listeners[event].filter((cb) => cb !== callback);
   },
 
   emit(event, data) {
-    (listeners[event] || []).forEach(cb => cb(data));
+    (listeners[event] || []).forEach((cb) => {
+      try { cb(data); } catch (e) { console.error(`Error in ws listener for ${event}:`, e); }
+    });
   },
 };
+
+export default wsClient;
