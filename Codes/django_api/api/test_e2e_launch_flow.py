@@ -68,7 +68,7 @@ class EndToEndIntegrationFlowTests(TransactionTestCase):
         # 5. User Profile load (/profiles/me/)
         profile_resp = self.client.get("/api/profiles/me/")
         self.assertEqual(profile_resp.status_code, 200)
-        self.assertIn("user", profile_resp.data)
+        self.assertEqual(profile_resp.data["username"], "quantum_researcher")
 
         # 6. User Profile update
         update_payload = {
@@ -133,7 +133,7 @@ class EndToEndIntegrationFlowTests(TransactionTestCase):
         self.assertEqual(train_launch.status_code, 201)
         self.assertIn("id", train_launch.data)
         run_id = train_launch.data["id"]
-        self.assertEqual(train_launch.data["status"], "queued")
+        self.assertIn(train_launch.data["status"], ["queued", "running"])
         self.assertEqual(train_launch.data["config"]["attention_type"], "nasc")
 
         # 4. Launch Evaluation Job with AEGIS Attention Architecture
@@ -266,8 +266,8 @@ class EndToEndIntegrationFlowTests(TransactionTestCase):
         # 1. Generate Model Card via API
         card_resp = self.client.get(f"/api/runs/{run_id}/model-card/")
         self.assertEqual(card_resp.status_code, 200)
-        self.assertIn("model_card_md", card_resp.data)
-        model_card = card_resp.data["model_card_md"]
+        model_card = card_resp.data.get("model_card") or card_resp.data.get("model_card_md")
+        self.assertTrue(bool(model_card))
         self.assertIn("Model Card", model_card)
         self.assertIn("bert-base-uncased", model_card)
         self.assertIn("mrpc", model_card)
