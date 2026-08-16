@@ -5,7 +5,7 @@ Inspired by W&B Reports and tfruns auto-reporting.
 
 import base64
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from django.conf import settings
 from experiment.models import TrainingRun, TrainingSnapshot
+from jobscheduler.models import Job
 from notes.models import ResearcherNote
 
 
@@ -40,9 +41,18 @@ class ExperimentReportGenerator:
         """Generate and optionally save the report."""
         content = self._build_content()
 
+        job_instance = None
+        if isinstance(self.run, Job):
+            job_instance = self.run
+        else:
+            try:
+                job_instance = Job.objects.filter(id=self.run.id).first()
+            except Exception:
+                job_instance = None
+
         note = ResearcherNote(
             author=author,
-            run=self.run,
+            run=job_instance,
             note_type="training_report",
             title=f"Training Report: {self.config.get('model_name', 'Model')} → {self.config.get('task_name', 'Task')}",
             content=content,
@@ -57,7 +67,7 @@ class ExperimentReportGenerator:
                 },
                 "metrics_snapshot": self.metrics,
                 "model_version": str(self.run.id),
-                "generated_at": datetime.utcnow().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "charts": self._generate_charts_data(),
             },
         )
