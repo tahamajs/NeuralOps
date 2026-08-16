@@ -43,6 +43,17 @@ from framework.trainer.custom_loop_trainer import CustomLoopTrainer
 from framework.trainer.optimizers import OPTIMIZER_REGISTRY
 from framework.trainer.schedulers import SCHEDULER_REGISTRY
 
+class DummyTokenizer:
+    def __init__(self):
+        self.vocab_size = 1000
+        self.pad_token_id = 0
+    def encode(self, text, *args, **kwargs):
+        return [1, 2, 3, 4]
+    def decode(self, tokens, *args, **kwargs):
+        return "sample text"
+    def __call__(self, text, *args, **kwargs):
+        return {"input_ids": torch.tensor([[1, 2, 3, 4]]), "attention_mask": torch.tensor([[1, 1, 1, 1]])}
+
 def print_header(title):
     print("\n" + "=" * 80)
     print(f"  {title}")
@@ -89,11 +100,9 @@ def verify_all_attentions():
                 if "rank" in params:
                     kwargs["rank"] = 16
                 
-                # Try instantiation with computed kwargs
                 try:
                     inst = cls_or_fn(**kwargs)
                 except Exception:
-                    # Fallback to embed_dim, num_heads positional or default
                     try:
                         inst = cls_or_fn(C, num_heads)
                     except Exception:
@@ -105,7 +114,6 @@ def verify_all_attentions():
             inst.eval() if hasattr(inst, "eval") else None
             with torch.no_grad():
                 if callable(inst):
-                    # Test various standard call signatures
                     try:
                         out = inst(x)
                     except TypeError:
@@ -138,30 +146,6 @@ def verify_all_attentions():
 def verify_all_compressors():
     print_header("STAGE 2: VERIFYING ALL COMPRESSION ENGINES")
     
-    # Import all modules from compression_engine directory
-    comp_dir = os.path.join(FRAMEWORK_DIR, "compression_engine")
-    discovered_compressor_classes = []
-    
-    if os.path.exists(comp_dir):
-        for f in sorted(os.listdir(comp_dir)):
-            if f.endswith(".py") and not f.startswith("__"):
-                mod_name = f"framework.compression_engine.{f[:-3]}"
-                try:
-class DummyTokenizer:
-    def __init__(self):
-        self.vocab_size = 1000
-        self.pad_token_id = 0
-    def encode(self, text, *args, **kwargs):
-        return [1, 2, 3, 4]
-    def decode(self, tokens, *args, **kwargs):
-        return "sample text"
-    def __call__(self, text, *args, **kwargs):
-        return {"input_ids": torch.tensor([[1, 2, 3, 4]]), "attention_mask": torch.tensor([[1, 1, 1, 1]])}
-
-def verify_all_compressors():
-    print_header("STAGE 2: VERIFYING ALL COMPRESSION ENGINES")
-    
-    # Import all modules from compression_engine directory
     comp_dir = os.path.join(FRAMEWORK_DIR, "compression_engine")
     discovered_compressor_classes = []
     
