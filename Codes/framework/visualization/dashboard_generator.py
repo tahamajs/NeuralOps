@@ -6,7 +6,7 @@ and Transformer benchmarks suitable for local inspection or embedding into Docs 
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Union
 
 
@@ -24,7 +24,7 @@ def generate_summary_json(
     Returns:
         Structured dictionary with normalized fields
     """
-    timestamp = benchmark_data.get("timestamp", datetime.utcnow().isoformat())
+    timestamp = benchmark_data.get("timestamp", datetime.now(timezone.utc).isoformat())
     
     # Build standard summary structure
     summary = {
