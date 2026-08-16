@@ -822,14 +822,24 @@ def run_results(request, run_id):
     if base.exists():
         for root, dirs, filenames in os.walk(base):
             for f in filenames:
-                rel = os.path.relpath(os.path.join(root, f), base)
-                files[rel] = request.build_absolute_uri(f"/media/{run_id}/{rel}")
+    snapshots = [
+        {
+            "step": s.step,
+            "epoch": s.epoch,
+            "train_loss": s.train_loss,
+            "eval_loss": s.eval_loss,
+            "eval_accuracy": s.eval_accuracy,
+            "learning_rate": s.learning_rate,
+        }
+        for s in run.snapshots.all().order_by("step")
+    ]
     return Response(
         {
-            "run_id": run_id,
+            "run_id": str(run_id),
             "status": run.status,
             "metrics": run.final_metrics,
             "history": run.training_history,
+            "snapshots": snapshots,
             "files": files,
         }
     )
