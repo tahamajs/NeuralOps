@@ -426,265 +426,96 @@ export const ComputationStudios: React.FC = () => {
       <main className="flex-1 overflow-y-auto p-6">
         {/* TAB 1: FFN / MLP NEURON EXPLORER */}
         {activeTab === 'ffn' && (
-          <div className="space-y-6">
-            {/* Top Stat Cards & Health Bar */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
-                  <span>Neuron Universe</span>
-                  <Activity className="w-4 h-4 text-cyan-400" />
-                </div>
-                <div className="text-2xl font-mono font-bold text-white">
-                  {ffnData.numNeurons} <span className="text-xs text-slate-400">neurons / layer</span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">Intermediate MLP activation dimension</p>
-              </div>
-
-              <div className="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
-                  <span>Dead Neuron Detector</span>
-                  <Flame className="w-4 h-4 text-rose-400" />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-mono font-bold text-rose-400">{deadNeuronCount}</span>
-                  <span className="text-xs text-slate-400">({deadNeuronRatio.toFixed(1)}%)</span>
-                </div>
-                <div className="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className={`h-full ${deadNeuronRatio < 10 ? 'bg-emerald-500' : 'bg-rose-500'}`}
-                    style={{ width: `${Math.max(5, deadNeuronRatio)}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
-                  <span>L0 Sparsity (SAE)</span>
-                  <Zap className="w-4 h-4 text-amber-400" />
-                </div>
-                <div className="text-2xl font-mono font-bold text-amber-300">
-                  14.2 <span className="text-xs text-slate-400">/ 1024 features</span>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-1">98.6% sparse monosemantic decomposition</p>
-              </div>
-
-              <div className="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 shadow-sm">
-                <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
-                  <span>Layer Health Status</span>
-                  {deadNeuronRatio < 15 ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  ) : (
-                    <AlertTriangle className="w-4 h-4 text-amber-400" />
-                  )}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={deadNeuronRatio < 15 ? 'success' : 'warning'}>
-                    {deadNeuronRatio < 15 ? 'HEALTHY MLP' : 'NEURON STARVATION'}
-                  </Badge>
-                </div>
-                <p className="text-[11px] text-slate-500 mt-2">Threshold: max(act) &lt; {ffnThreshold}</p>
-              </div>
-            </div>
-
-            {/* Main Interactive Grid & Sidebar Explorer */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Token x Neuron Heatmap Grid (2 cols) */}
-              <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 shadow-md">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                  <div>
-                    <h2 className="text-sm font-semibold text-slate-100 flex items-center space-x-2">
-                      <BarChart3 className="w-4 h-4 text-cyan-400" />
-                      <span>Neuron Activation Universe (Tokens × Neurons)</span>
-                    </h2>
-                    <p className="text-xs text-slate-400">Hover over cells to inspect activation intensities</p>
+          <ErrorBoundary title="Failed to render FFN Universe">
+            <div className="space-y-6">
+              {/* Top Stat Cards & Health Bar */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 shadow-sm">
+                  <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
+                    <span>Neuron Universe</span>
+                    <Activity className="w-4 h-4 text-cyan-400" />
                   </div>
+                  <div className="text-xl font-bold text-slate-100 font-mono">
+                    {ffnData.activeCount} <span className="text-xs font-normal text-slate-500">/ {ffnData.records.length}</span>
+                  </div>
+                  <div className="text-[11px] text-emerald-400 mt-1 flex items-center space-x-1">
+                    <span>{ffnData.sparsity}% Sparsity Rate</span>
+                  </div>
+                </div>
 
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
-                      {(['all', 'active', 'selective', 'dead'] as const).map((f) => (
-                        <button
-                          key={f}
-                          onClick={() => setNeuronFilter(f)}
-                          className={`px-2.5 py-1 rounded text-[11px] font-medium capitalize transition-all ${
-                            neuronFilter === f
-                              ? 'bg-cyan-600 text-white'
-                              : 'text-slate-400 hover:text-slate-200'
-                          }`}
-                        >
-                          {f}
-                        </button>
-                      ))}
+                <div className="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 shadow-sm">
+                  <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
+                    <span>Dead Neurons</span>
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  </div>
+                  <div className="text-xl font-bold text-rose-400 font-mono">
+                    {ffnData.deadCount}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-1">
+                    {((ffnData.deadCount / ffnData.records.length) * 100).toFixed(1)}% Capacity Lost
+                  </div>
+                </div>
+
+                <div className="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 shadow-sm">
+                  <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
+                    <span>Activation Mode</span>
+                    <Zap className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div className="text-xl font-bold text-amber-300 font-mono">SwiGLU</div>
+                  <div className="text-[11px] text-slate-500 mt-1">Gated Linear Unit</div>
+                </div>
+
+                <div className="bg-slate-900/70 border border-slate-800/80 rounded-xl p-4 shadow-sm">
+                  <div className="flex justify-between items-center text-xs text-slate-400 mb-1">
+                    <span>SAE Features Decoded</span>
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <div className="text-xl font-bold text-purple-300 font-mono">{saeFeatures.length}</div>
+                  <div className="text-[11px] text-slate-500 mt-1">Dictionary Exp: 4x</div>
+                </div>
+              </div>
+
+              {/* Main FFN Grid & Heatmap */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* 2 Cols: Interactive Neuron Activation Heatmap */}
+                <div className="lg:col-span-2 bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 shadow-md">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h2 className="text-sm font-semibold text-slate-100 flex items-center space-x-2">
+                        <Layers className="w-4 h-4 text-cyan-400" />
+                        <span>Token × Intermediate Neuron Activation Matrix</span>
+                      </h2>
+                      <p className="text-xs text-slate-400">
+                        Inspecting Layer {selectedLayer} Intermediate Projection Activations
+                      </p>
                     </div>
-                  </div>
-                </div>
 
-                {/* Heatmap Matrix Canvas */}
-                <div className="overflow-x-auto border border-slate-800 rounded-lg bg-slate-950/70 p-3">
-                  <div className="inline-block min-w-full">
-                    {/* Header Row (Neuron Indices) */}
-                    <div className="flex items-center pb-2 border-b border-slate-800 text-[10px] font-mono text-slate-400">
-                      <div className="w-24 shrink-0 font-sans text-slate-500">Token \ Neuron</div>
-                      <div className="flex space-x-1">
-                        {Array.from({ length: ffnData.numNeurons }).map((_, n) => (
-                          <div
-                            key={n}
-                            onClick={() => setSelectedNeuronIdx(n)}
-                            className={`w-5 text-center cursor-pointer transition-colors ${
-                              selectedNeuronIdx === n ? 'text-cyan-400 font-bold bg-cyan-950/50 rounded' : 'hover:text-slate-200'
+                    <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs">
+                        {(['all', 'active', 'selective', 'dead'] as const).map((filter) => (
+                          <button
+                            key={filter}
+                            onClick={() => setNeuronFilter(filter)}
+                            className={`px-2.5 py-1 rounded capitalize ${
+                              neuronFilter === filter
+                                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                                : 'text-slate-400 hover:text-white'
                             }`}
                           >
-                            {n}
-                          </div>
+                            {filter}
+                          </button>
                         ))}
                       </div>
                     </div>
-
-                    {/* Token Rows */}
-                    <div className="divide-y divide-slate-900 mt-1">
-                      {SAMPLE_TOKENS.map((token, tIdx) => (
-                        <div key={tIdx} className="flex items-center py-0.5">
-                          <div className="w-24 shrink-0 text-xs font-mono truncate text-slate-300 pr-2">
-                            <span className="text-slate-500 text-[10px] mr-1">{tIdx}</span>
-                            {token}
-                          </div>
-                          <div className="flex space-x-1">
-                            {ffnData.grid[tIdx].map((val, nIdx) => {
-                              const isDead = ffnData.records[nIdx]?.isDead;
-                              const isSelected = selectedNeuronIdx === nIdx;
-                              // Calculate color opacity
-                              const intensity = Math.min(1, val / 3.0);
-                              return (
-                                <div
-                                  key={nIdx}
-                                  onMouseEnter={() => setHoveredCell({ token, neuron: nIdx, val })}
-                                  onMouseLeave={() => setHoveredCell(null)}
-                                  onClick={() => setSelectedNeuronIdx(nIdx)}
-                                  className={`w-5 h-5 rounded-sm cursor-pointer transition-all ${
-                                    isSelected ? 'ring-1 ring-cyan-400' : ''
-                                  } ${
-                                    isDead
-                                      ? 'bg-rose-950/30 border border-rose-900/30'
-                                      : val === 0
-                                      ? 'bg-slate-900/40'
-                                      : 'bg-gradient-to-t from-cyan-600 to-indigo-500'
-                                  }`}
-                                  style={{
-                                    opacity: isDead ? 0.3 : val === 0 ? 0.4 : Math.max(0.25, intensity),
-                                  }}
-                                  title={`Token: ${token} | Neuron: ${nIdx} | Act: ${val}`}
-                                />
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Hover Details Footer */}
-                <div className="mt-3 flex items-center justify-between text-xs text-slate-400 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/60">
-                  <div className="flex items-center space-x-2">
-                    <Info className="w-3.5 h-3.5 text-cyan-400" />
-                    {hoveredCell ? (
-                      <span>
-                        Inspecting Token: <strong className="text-cyan-300 font-mono">"{hoveredCell.token}"</strong> |
-                        Neuron: <strong className="text-cyan-300 font-mono">N_{hoveredCell.neuron}</strong> |
-                        Activation: <strong className="text-amber-300 font-mono">{hoveredCell.val}</strong>
-                      </span>
-                    ) : (
-                      <span>Hover any cell to inspect activation moments</span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3 text-[11px]">
-                    <div className="flex items-center space-x-1">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-slate-900/40 inline-block border border-slate-700" />
-                      <span>Zero</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-cyan-600 inline-block" />
-                      <span>Active</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-rose-900 inline-block" />
-                      <span>Dead</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Neuron Inspector & SAE Breakdown (1 col) */}
-              <div className="space-y-5">
-                {/* Selected Neuron Inspector Card */}
-                <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 shadow-md">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-sm font-semibold text-slate-100 flex items-center space-x-2">
-                      <Search className="w-4 h-4 text-cyan-400" />
-                      <span>Neuron N_{selectedNeuronIdx} Inspector</span>
-                    </h3>
-                    <Badge variant={ffnData.records[selectedNeuronIdx]?.isDead ? 'danger' : 'success'}>
-                      {ffnData.records[selectedNeuronIdx]?.isDead ? 'DEAD' : 'ACTIVE'}
-                    </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs mb-4">
-                    <div className="bg-slate-950/60 p-2 rounded border border-slate-800">
-                      <div className="text-slate-400 text-[11px]">Max Activation</div>
-                      <div className="text-sm font-mono font-bold text-cyan-300">
-                        {ffnData.records[selectedNeuronIdx]?.maxActivation}
-                      </div>
-                    </div>
-                    <div className="bg-slate-950/60 p-2 rounded border border-slate-800">
-                      <div className="text-slate-400 text-[11px]">Selectivity (1 - H/Hmax)</div>
-                      <div className="text-sm font-mono font-bold text-amber-300">
-                        {ffnData.records[selectedNeuronIdx]?.selectivity}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Top Activating Examples */}
-                  <h4 className="text-xs font-semibold text-slate-300 mb-2">Top Activating Examples</h4>
-                  <div className="space-y-1.5">
-                    {ffnData.records[selectedNeuronIdx]?.topTokens.map((ex, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between bg-slate-950/40 px-2.5 py-1.5 rounded border border-slate-800/60 text-xs"
-                      >
-                        <span className="font-mono text-slate-200">
-                          #{idx + 1} "{ex.token}" <span className="text-slate-500 text-[10px]">(pos {ex.position})</span>
-                        </span>
-                        <span className="font-mono text-cyan-400 font-semibold">{ex.activation}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* SAE Monosemantic Features */}
-                <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 shadow-md">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-sm font-semibold text-slate-100 flex items-center space-x-2">
-                      <Sparkles className="w-4 h-4 text-indigo-400" />
-                      <span>SAE Monosemantic Features</span>
-                    </h3>
-                    <Badge variant="outline">SAELens</Badge>
-                  </div>
-
-                  <p className="text-xs text-slate-400 mb-3">
-                    Sparse Autoencoder feature dictionary分解 (Dictionary Size: 16,384)
-                  </p>
-
-                  <div className="space-y-2">
-                    {saeFeatures.map((feat) => (
-                      <div key={feat.featureIndex} className="bg-slate-950/50 p-2.5 rounded border border-slate-800 text-xs">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-mono font-bold text-indigo-300">Feature #{feat.featureIndex}</span>
-                          <span className="text-[11px] text-amber-400 font-mono">Max: {feat.maxActivation}</span>
-                        </div>
-                        <p className="text-slate-300 text-[11px] mb-1">{feat.label}</p>
-                        <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                          <div className="bg-indigo-500 h-full" style={{ width: `${feat.firingRate * 300}%` }} />
-                        </div>
-                      </div>
+                  {/* Heatmap Grid */}
+                  <div className="overflow-x-auto pb-2">
+                    <div className="min-w-[500px]">
+                      {/* Column Header (Neurons) */}
+                      <div className="flex items-center mb-1 pl-20">
+                        {ffnData.filteredRecords.slice(0, 24).map((rec) => (
+                          <div
                     ))}
                   </div>
                 </div>
