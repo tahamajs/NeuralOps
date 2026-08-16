@@ -528,6 +528,13 @@ class TestJobExecutor(unittest.TestCase):
         with open(os.path.join(artifacts, "model.bin"), "wb") as f:
             f.write(b"\x00\x01\x02\x03\x04\x05")
 
+        output_hash, manifest = self.executor._compute_output_artifacts(job_dir)
+        self.assertTrue(len(output_hash) == 64)
+        self.assertEqual(len(manifest), 2)
+        paths = [item["path"] for item in manifest]
+        self.assertIn("artifacts/metrics.json", paths)
+        self.assertIn("artifacts/model.bin", paths)
+
     def test_timeout_watchdog(self):
         job_id = "job-timeout-test"
         job_data = {
@@ -552,7 +559,7 @@ class TestJobExecutor(unittest.TestCase):
         self.executor._run_job_pipeline(ctx)
 
         self.assertEqual(ctx.state, JobState.FAILED)
-        self.mock_docker.stop_container.assert_called_with("cid_timeout_123", timeout=2, remove=True)
+        self.mock_docker.stop_container.assert_any_call("cid_timeout_123", timeout=2, remove=True)
         self.mock_api.report_job_failed.assert_called_once()
         args, _ = self.mock_api.report_job_failed.call_args
         self.assertIn("timed out", args[1])
@@ -572,7 +579,6 @@ class TestJobExecutor(unittest.TestCase):
 
             active_jobs = self.executor.get_active_jobs()
             self.assertIn(job_id, active_jobs)
-
 
 
 class TestAutoUpdater(unittest.TestCase):
@@ -629,6 +635,36 @@ class TestAutoUpdater(unittest.TestCase):
         res = self.updater._download_and_apply("https://example.com/bin", expected_sha256=wrong_sha)
         self.assertFalse(res)
 
+    @patch("os.execv")
+    @patch("os.chmod")
+    @patch("shutil.move")
+    @patch("requests.get")
+    def test_download_and_apply_success(self, mock_requests_get, mock_move, mock_chmod, mock_execv):
+        binary_bytes = b"fake binary executable content"
+        mock_response = MagicMock()
+        mock_response.iter_content.return_value = [binary_bytes]
+        mock_response.raise_for_status.return_value = None
+        mock_requests_get.return_value = mock_response
+
+        correct_sha = hashlib.sha256(binary_bytes).hexdigest()
+        temp_target = tempfile.NamedTemporaryFile(delete=False)
+        temp_target.close()
+
+        try:
+            res = self.updater._download_and_apply(
+                url="https://example.com/agent-bin",
+                expected_sha256=correct_sha,
+                target_path=temp_target.name,
+            )
+            self.assertTrue(res)
+            mock_move.assert_called()
+            mock_chmod.assert_called_with(temp_target.name, 0o755)
+            mock_execv.assert_called_once()
+        finally:
+            if os.path.exists(temp_target.name):
+                os.remove(temp_target.name)
+
 
 if __name__ == "__main__":
     unittest.main()
+

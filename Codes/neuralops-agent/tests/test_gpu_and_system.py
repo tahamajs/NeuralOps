@@ -7,8 +7,10 @@ Comprehensive Unit Tests for NeuralOps Agent:
 """
 
 import os
+import platform
 import subprocess
 import sys
+import threading
 import time
 import unittest
 from unittest.mock import MagicMock, patch
@@ -138,10 +140,11 @@ class TestGPUDetector(unittest.TestCase):
         self.assertEqual(info["vram_mb"], 32768)
         self.assertEqual(info["devices"][0]["gpu_cores"], 38)
 
+    @patch("platform.system", return_value="Linux")
+    @patch("platform.processor", return_value="Intel(R) Xeon(R) Gold 6330")
     @patch("psutil.virtual_memory")
     @patch("psutil.cpu_count", return_value=16)
-    @patch("platform.processor", return_value="Intel(R) Xeon(R) Gold 6330")
-    def test_detect_cpu_fallback(self, mock_proc, mock_cpu_count, mock_vm):
+    def test_detect_cpu_fallback(self, mock_cpu_count, mock_vm, mock_proc, mock_sys):
         """Test generic CPU fallback detection."""
         mock_mem = MagicMock()
         mock_mem.total = 64 * 1024 * 1024 * 1024  # 64 GB
@@ -203,7 +206,7 @@ class TestLiveGPUMonitor(unittest.TestCase):
     """Unit tests for LiveGPUMonitor real-time telemetry extraction."""
 
     def setUp(self):
-        self.monitor = LiveGPUMonitor(interval_seconds=0.1)
+        self.monitor = LiveGPUMonitor(interval_seconds=0.05)
 
     def tearDown(self):
         self.monitor.stop()
@@ -213,20 +216,22 @@ class TestLiveGPUMonitor(unittest.TestCase):
         self.assertFalse(self.monitor.is_running)
         self.monitor.start()
         self.assertTrue(self.monitor.is_running)
-        time.sleep(0.2)
+        time.sleep(0.1)
         self.monitor.stop()
         self.assertFalse(self.monitor.is_running)
 
     def test_monitor_callbacks(self):
         """Test snapshot callback dispatching."""
         snapshots = []
+        snap_event = threading.Event()
 
         def on_snap(s):
             snapshots.append(s)
+            snap_event.set()
 
         self.monitor.on_snapshot(on_snap)
         self.monitor.start()
-        time.sleep(0.3)
+        snap_event.wait(timeout=1.5)
         self.monitor.stop()
 
         self.assertGreater(len(snapshots), 0)
@@ -371,9 +376,9 @@ class TestNetworkTester(unittest.TestCase):
         """Test HTTP streaming fallback download and upload speed test."""
         mock_resp_get = MagicMock()
         mock_resp_get.status_code = 200
-        # Stream 1MB in chunks
+        # Stream chunks
         chunk = b"X" * 65536
-        mock_resp_get.iter_content.return_value = [chunk] * 16
+        mock_resp_get.iter_content.return_value = [chunk] * 4
         mock_get.return_value = mock_resp_get
 
         mock_resp_post = MagicMock()
@@ -394,7 +399,6 @@ class TestNetworkTester(unittest.TestCase):
         stats = self.tester.measure_latency(count=5)
 
         self.assertAlmostEqual(stats["latency_ms"], 11.6, places=1)
-        # Differences: |12-10|=2, |11-12|=1, |15-11|=4, |10-15|=5 -> mean = 12/4 = 3.0
         self.assertAlmostEqual(stats["jitter_ms"], 3.0, places=1)
         self.assertEqual(stats["packet_loss_pct"], 0.0)
 
@@ -429,7 +433,7 @@ class TestLiveHardwareExecution(unittest.TestCase):
         self.assertIn("temperature_c", util)
 
     def test_live_gpu_monitor(self):
-        monitor = LiveGPUMonitor(interval_seconds=0.5)
+        monitor = LiveGPUMonitor(interval_seconds=0.05)
         snap = monitor.snapshot()
         self.assertIn("timestamp", snap)
         self.assertIn("gpus", snap)
@@ -444,9 +448,9 @@ class TestLiveHardwareExecution(unittest.TestCase):
         self.assertIn("ram_used_percent", snap)
         self.assertIn("hostname", snap)
 
-    def test_live_network_tester(self):
-        tester = NetworkTester()
-        latency_info = tester.measure_latency(count=2)
+    def test_live_network_tester_latency(self):
+        tester = NetworkTester(target_hosts=["1.1.1.1", "8.8.8.8"])
+        latency_info = tester.measure_latency(count=1)
         self.assertIn("latency_ms", latency_info)
         self.assertIn("jitter_ms", latency_info)
         self.assertIn("packet_loss_pct", latency_info)

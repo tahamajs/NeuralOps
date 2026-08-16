@@ -25,6 +25,7 @@ try:
 
     HAS_NVML = True
 except ImportError:
+    pynvml = None
     HAS_NVML = False
 
 
@@ -62,7 +63,7 @@ class LiveGPUMonitor:
         self._running = True
 
         # Probe NVML
-        if HAS_NVML:
+        if HAS_NVML and pynvml is not None:
             try:
                 pynvml.nvmlInit()
                 self._gpu_count = pynvml.nvmlDeviceGetCount()
@@ -99,7 +100,7 @@ class LiveGPUMonitor:
         self._running = False
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=2.5)
-        if self._nvml_ok:
+        if self._nvml_ok and pynvml is not None:
             try:
                 pynvml.nvmlShutdown()
             except Exception:
@@ -119,14 +120,19 @@ class LiveGPUMonitor:
                         logger.debug("Error in snapshot callback: %s", e)
             except Exception:
                 logger.exception("GPU monitor loop error")
-            time.sleep(self.interval)
+
+            elapsed = 0.0
+            step = 0.05
+            while self._running and elapsed < self.interval:
+                time.sleep(min(step, max(0.01, self.interval - elapsed)))
+                elapsed += step
 
     def snapshot(self) -> Dict[str, Any]:
         """Return a complete GPU & process snapshot dictionary."""
         gpus: List[Dict[str, Any]] = []
         processes: List[Dict[str, Any]] = []
 
-        if self._nvml_ok:
+        if self._nvml_ok and pynvml is not None:
             gpus = self._snapshot_nvml()
             processes = self._get_processes_nvml()
         else:
@@ -157,6 +163,9 @@ class LiveGPUMonitor:
 
     def _snapshot_nvml(self) -> List[Dict[str, Any]]:
         gpus = []
+        if pynvml is None:
+            return gpus
+
         for i in range(self._gpu_count):
             try:
                 h = pynvml.nvmlDeviceGetHandleByIndex(i)
@@ -241,6 +250,9 @@ class LiveGPUMonitor:
 
     def _get_processes_nvml(self) -> List[Dict[str, Any]]:
         procs = []
+        if pynvml is None:
+            return procs
+
         import psutil
 
         for i in range(self._gpu_count):
@@ -469,7 +481,6 @@ class LiveGPUMonitor:
 
     def _snapshot_rocm(self) -> List[Dict[str, Any]]:
         gpus = []
-        # Try rocm-smi CLI
         try:
             out = subprocess.check_output(
                 ["rocm-smi", "--showuse", "--showmemuse", "--showtemp", "--showpower", "--json"],
