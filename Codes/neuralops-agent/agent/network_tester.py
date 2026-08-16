@@ -24,21 +24,29 @@ import requests
 
 logger = logging.getLogger("neuralops.network")
 
+try:
+    import speedtest
+
+    HAS_SPEEDTEST = True
+except ImportError:
+    speedtest = None
+    HAS_SPEEDTEST = False
+
 # Reliable CDN endpoints for throughput testing
 SPEED_TEST_ENDPOINTS = [
     {
         "name": "Cloudflare CDN",
-        "download_url": "https://speed.cloudflare.com/__down?bytes=5000000",  # 5 MB
+        "download_url": "https://speed.cloudflare.com/__down?bytes=1000000",  # 1 MB for responsiveness
         "upload_url": "https://speed.cloudflare.com/__up",
     },
     {
         "name": "Hetzner Speed Test",
-        "download_url": "https://speed.hetzner.de/1MB.bin",  # 1 MB
+        "download_url": "https://speed.hetzner.de/1MB.bin",
         "upload_url": None,
     },
 ]
 
-DEFAULT_PING_TARGETS = ["1.1.1.1", "8.8.8.8", "api.neuralops.com"]
+DEFAULT_PING_TARGETS = ["1.1.1.1", "8.8.8.8"]
 
 
 class NetworkTester:
@@ -70,8 +78,8 @@ class NetworkTester:
             "timestamp": time.time(),
         }
 
-        # 1. Try speedtest-cli first (if not in quick mode)
-        if not quick:
+        # 1. Try speedtest-cli first (if not in quick mode and module is present)
+        if not quick and speedtest is not None:
             speedtest_result = self._test_via_speedtest_cli()
             if speedtest_result:
                 return speedtest_result
@@ -82,7 +90,7 @@ class NetworkTester:
             return fallback_result
 
         # 3. Basic Latency only fallback if all HTTP transfers fail
-        latency_info = self.measure_latency()
+        latency_info = self.measure_latency(count=3)
         result.update(
             {
                 "latency_ms": latency_info["latency_ms"],
@@ -95,9 +103,9 @@ class NetworkTester:
 
     def _test_via_speedtest_cli(self) -> Optional[Dict[str, Any]]:
         """Run speed test using speedtest-cli library."""
+        if speedtest is None:
+            return None
         try:
-            import speedtest
-
             st = speedtest.Speedtest()
             st.get_best_server()
             dl = round(st.download() / 1e6, 1)
@@ -105,7 +113,7 @@ class NetworkTester:
             ping = round(st.results.ping, 1)
 
             # Measure jitter via socket samples
-            latency_stats = self.measure_latency()
+            latency_stats = self.measure_latency(count=3)
 
             return {
                 "download_mbps": dl,
@@ -116,9 +124,6 @@ class NetworkTester:
                 "test_method": "speedtest-cli",
                 "timestamp": time.time(),
             }
-        except ImportError:
-            logger.debug("speedtest-cli not installed, using HTTP fallback")
-            return None
         except Exception as e:
             logger.warning("speedtest-cli failed: %s – using fallback", e)
             return None
@@ -134,7 +139,7 @@ class NetworkTester:
                 continue
             try:
                 start = time.perf_counter()
-                resp = requests.get(dl_url, timeout=12, stream=True)
+                resp = requests.get(dl_url, timeout=5, stream=True)
                 total_bytes = 0
                 if resp.status_code == 200:
                     for chunk in resp.iter_content(chunk_size=65536):
@@ -153,10 +158,10 @@ class NetworkTester:
             if not ul_url:
                 continue
             try:
-                # 512 KB payload
-                payload = b"0" * (512 * 1024)
+                # 256 KB payload
+                payload = b"0" * (256 * 1024)
                 start = time.perf_counter()
-                resp = requests.post(ul_url, data=payload, timeout=10)
+                resp = requests.post(ul_url, data=payload, timeout=5)
                 elapsed = max(time.perf_counter() - start, 1e-4)
                 if resp.status_code in (200, 204):
                     ul_speed = round((len(payload) * 8) / (elapsed * 1e6), 1)
@@ -165,7 +170,10 @@ class NetworkTester:
             except Exception as e:
                 logger.debug("HTTP upload test failed for %s: %s", ul_url, e)
 
-        latency_stats = self.measure_latency()
+        latency_stats = self.measure_latency(count=3)
+
+        if dl_speed == 0.0 and ul_speed == 0.0 and latency_stats["latency_ms"] == 0.0:
+            return None
 
         return {
             "download_mbps": dl_speed,
@@ -177,7 +185,7 @@ class NetworkTester:
             "timestamp": time.time(),
         }
 
-    def measure_latency(self, count: int = 5) -> Dict[str, float]:
+    def measure_latency(self, count: int = 3) -> Dict[str, float]:
         """
         Measure network latency, jitter, and packet loss across target hosts.
         Uses TCP socket connection handshakes (cross-platform, works in Docker & non-root),
@@ -190,17 +198,17 @@ class NetworkTester:
         for host in self.target_hosts:
             for _ in range(count):
                 total_attempts += 1
-                sample = self._tcp_ping(host, port=443)
+                sample = self._tcp_ping(host, port=443, timeout_sec=1.0)
                 if sample is None:
-                    sample = self._tcp_ping(host, port=80)
+                    sample = self._tcp_ping(host, port=80, timeout_sec=1.0)
                 if sample is None:
-                    sample = self._icmp_ping_single(host)
+                    sample = self._icmp_ping_single(host, timeout_sec=1.0)
 
                 if sample is not None and sample > 0:
                     all_samples.append(sample)
                     successful_attempts += 1
 
-            if len(all_samples) >= 3:
+            if len(all_samples) >= 2:
                 break
 
         if not all_samples:
@@ -211,7 +219,6 @@ class NetworkTester:
             }
 
         avg_latency = statistics.mean(all_samples)
-        # Jitter: mean absolute difference between consecutive latency measurements
         if len(all_samples) > 1:
             diffs = [abs(all_samples[i] - all_samples[i - 1]) for i in range(1, len(all_samples))]
             jitter = statistics.mean(diffs)
@@ -226,7 +233,7 @@ class NetworkTester:
             "packet_loss_pct": lost_pct,
         }
 
-    def _tcp_ping(self, host: str, port: int = 443, timeout_sec: float = 2.0) -> Optional[float]:
+    def _tcp_ping(self, host: str, port: int = 443, timeout_sec: float = 1.0) -> Optional[float]:
         """Measure round-trip time for TCP 3-way handshake in milliseconds."""
         try:
             start = time.perf_counter()
@@ -236,7 +243,7 @@ class NetworkTester:
         except Exception:
             return None
 
-    def _icmp_ping_single(self, host: str, timeout_sec: float = 2.0) -> Optional[float]:
+    def _icmp_ping_single(self, host: str, timeout_sec: float = 1.0) -> Optional[float]:
         """Single ICMP ping measurement via subprocess."""
         param = "-n" if platform.system().lower() == "windows" else "-c"
         try:
@@ -244,7 +251,7 @@ class NetworkTester:
                 ["ping", param, "1", host],
                 capture_output=True,
                 text=True,
-                timeout=timeout_sec + 1.0,
+                timeout=timeout_sec + 0.5,
             )
             if result.returncode == 0:
                 for line in result.stdout.split("\n"):
