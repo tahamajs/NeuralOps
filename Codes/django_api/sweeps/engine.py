@@ -3,9 +3,14 @@ import logging
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-import optuna
-from django.conf import settings
+try:
+    import optuna
+    HAS_OPTUNA = True
+except ImportError:
+    optuna = None
+    HAS_OPTUNA = False
 
+from django.conf import settings
 from .models import Sweep
 
 logger = logging.getLogger(__name__)
@@ -19,26 +24,30 @@ def get_storage_path(sweep_id) -> str:
 
 
 # ── Sampler Factory ──────────────────────────────────────────────────
-SAMPLER_MAP = {
-    "tpe": optuna.samplers.TPESampler,
-    "cmaes": optuna.samplers.CmaEsSampler,
-    "nsgaii": optuna.samplers.NSGAIISampler,
-    "nsgaiii": optuna.samplers.NSGAIIISampler,
-    "grid": optuna.samplers.GridSampler,
-    "random": optuna.samplers.RandomSampler,
-    "qmc": optuna.samplers.QMCSampler,
-    "gp": optuna.samplers.GPSampler,
-    "botorch": optuna.integration.BoTorchSampler,
-    "auto": None,  # handled separately
-}
+if HAS_OPTUNA:
+    SAMPLER_MAP = {
+        "tpe": optuna.samplers.TPESampler,
+        "cmaes": optuna.samplers.CmaEsSampler,
+        "nsgaii": optuna.samplers.NSGAIISampler,
+        "nsgaiii": optuna.samplers.NSGAIIISampler,
+        "grid": optuna.samplers.GridSampler,
+        "random": optuna.samplers.RandomSampler,
+        "qmc": optuna.samplers.QMCSampler,
+        "gp": optuna.samplers.GPSampler,
+        "botorch": getattr(optuna.integration, "BoTorchSampler", optuna.samplers.TPESampler) if hasattr(optuna, "integration") else optuna.samplers.TPESampler,
+        "auto": None,  # handled separately
+    }
 
-PRUNER_MAP = {
-    "hyperband": optuna.pruners.HyperbandPruner,
-    "median": optuna.pruners.MedianPruner,
-    "wilcoxon": optuna.pruners.WilcoxonPruner,
-    "successive_halving": optuna.pruners.SuccessiveHalvingPruner,
-    "none": optuna.pruners.NopPruner,
-}
+    PRUNER_MAP = {
+        "hyperband": optuna.pruners.HyperbandPruner,
+        "median": optuna.pruners.MedianPruner,
+        "wilcoxon": getattr(optuna.pruners, "WilcoxonPruner", optuna.pruners.MedianPruner),
+        "successive_halving": optuna.pruners.SuccessiveHalvingPruner,
+        "none": optuna.pruners.NopPruner,
+    }
+else:
+    SAMPLER_MAP = {}
+    PRUNER_MAP = {}
 
 
 def _build_sampler(sweep: Sweep):
