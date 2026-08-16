@@ -1,4 +1,6 @@
-import { FixedSizeList as List } from "react-window";
+import { FixedSizeList } from "react-window";
+
+const List = FixedSizeList as any;
 
 interface VirtualizedListProps<T> {
   items: T[];
