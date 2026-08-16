@@ -8,6 +8,7 @@ urlpatterns = [
     path("dashboard/", views.dashboard, name="dashboard"),
     path("dashboard/home/", views.dashboard, name="dashboard_dashboard"),
     path("dashboard/job/<uuid:job_id>/", views.job_detail, name="dashboard_job_detail"),
+    path("api/dashboard/job/<uuid:job_id>/", views.job_detail, name="api_dashboard_job_detail"),
     # ─── Authentication API ────────────────────────────────────
     path("api/register/", views.api_register, name="api_register"),
     path("api/login/", views.api_login, name="api_login"),
