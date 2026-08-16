@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { TerminalCard } from "@/components/ui/TerminalCard";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { useSupportWebSocket } from "@/hooks/useSupportWebSocket";
 import { Brain, Search, Code, Calculator, Loader2, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
