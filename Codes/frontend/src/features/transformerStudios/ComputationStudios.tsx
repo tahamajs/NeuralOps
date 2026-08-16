@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import type {
   ComputationStudioTab,
   FFNNeuronRecord,
