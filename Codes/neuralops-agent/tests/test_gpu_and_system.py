@@ -141,10 +141,11 @@ class TestGPUDetector(unittest.TestCase):
         self.assertEqual(info["devices"][0]["gpu_cores"], 38)
 
     @patch("platform.system", return_value="Linux")
+    @patch("os.path.exists", return_value=False)
     @patch("platform.processor", return_value="Intel(R) Xeon(R) Gold 6330")
     @patch("psutil.virtual_memory")
     @patch("psutil.cpu_count", return_value=16)
-    def test_detect_cpu_fallback(self, mock_cpu_count, mock_vm, mock_proc, mock_sys):
+    def test_detect_cpu_fallback(self, mock_cpu_count, mock_vm, mock_proc, mock_exists, mock_sys):
         """Test generic CPU fallback detection."""
         mock_mem = MagicMock()
         mock_mem.total = 64 * 1024 * 1024 * 1024  # 64 GB
