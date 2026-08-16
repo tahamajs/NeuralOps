@@ -117,10 +117,14 @@ def statistics_page(request):
     total = TrainingRun.objects.count()
     completed = TrainingRun.objects.filter(status="completed").count()
     success_rate = round(completed / total * 100, 1) if total else 0
+    if success_rate == int(success_rate):
+        success_rate_val = int(success_rate)
+    else:
+        success_rate_val = success_rate
     return render(
         request,
-        "web_dashboard/dashboard.html",
-        {"success_rate": success_rate, "total_runs": total}
+        "web_dashboard/statistics.html",
+        {"success_rate": success_rate_val, "total_experiments": total}
     )
 
 
@@ -142,6 +146,8 @@ def api_register(request):
     password = request.data.get("password")
     if not username or not password:
         return Response({"error": "Username and password required"}, status=400)
+    if len(username) > 150:
+        return Response({"error": "Username too long (max 150 characters)"}, status=400)
     if User.objects.filter(username=username).exists():
         return Response({"error": "Username already taken"}, status=400)
     user = User.objects.create_user(username=username, password=password)
@@ -772,19 +778,32 @@ def consumer_orders(request):
     """
     from gpu_marketplace.models import ComputeOrder
 
-    if request.method == "GET":
-        qs = ComputeOrder.objects.filter(user=request.user).order_by("-created_at")
-        serializer = ComputeOrderSerializer(qs, many=True)
-        return Response(serializer.data)
-
-    elif request.method == "POST":
-        serializer = ComputeOrderSerializer(data=request.data)
-        if serializer.is_valid():
-            order = ComputeOrder.objects.create(
-                user=request.user, order_type="buy", **serializer.validated_data
-            )
-            return Response(ComputeOrderSerializer(order).data, status=201)
-        return Response(serializer.errors, status=400)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def api_jobs(request):
+    """List all training runs for dashboard jobs view."""
+    runs = TrainingRun.objects.select_related("experiment").order_by("-created_at")
+    data = []
+    for r in runs:
+        data.append({
+            "id": str(r.id),
+            "name": r.name,
+            "status": r.status,
+            "experiment_name": r.experiment.name if r.experiment else "Default",
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "started_at": r.started_at.isoformat() if getattr(r, "started_at", None) else None,
+            "completed_at": r.completed_at.isoformat() if getattr(r, "completed_at", None) else None,
+            "config": r.config or {},
+            "final_metrics": r.final_metrics or {},
+            "current_step": r.current_step,
+            "total_steps": r.total_steps,
+            "eta_seconds": getattr(r, "eta_seconds", 0) or 0,
+            "gpu_percent": getattr(r, "gpu_percent", 0.0) or 0.0,
+            "gpu_memory_mb": getattr(r, "gpu_memory_mb", 0.0) or 0.0,
+            "cpu_percent": getattr(r, "cpu_percent", 0.0) or 0.0,
+            "ram_mb": getattr(r, "ram_mb", 0.0) or 0.0,
+        })
+    return Response(data)
 
 
 # -------------------------------------------------------------------------
