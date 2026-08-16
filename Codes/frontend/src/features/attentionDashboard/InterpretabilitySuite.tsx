@@ -1,4 +1,3 @@
-// src/features/attentionDashboard/InterpretabilitySuite.tsx
 import React, { useState } from 'react';
 import { useAttentionStore } from './useAttentionStore';
 import { HeadScatter3DPanel } from './components/HeadScatter3DPanel';
@@ -11,6 +10,7 @@ import { GamificationSidebar } from './components/GamificationSidebar';
 import { CrossPlatformIntegrationPanel } from './components/CrossPlatformIntegrationPanel';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
+import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import {
   Layers,
   Scissors,
@@ -234,19 +234,49 @@ export const InterpretabilitySuite: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Main Panel Content (3 or 4 columns based on sidebar toggle) */}
         <div className={sidebarOpen ? 'lg:col-span-3 space-y-6' : 'lg:col-span-4 space-y-6'}>
-          {activeZoneTab === 'metrics' && <HeadScatter3DPanel />}
-          {activeZoneTab === 'ablation' && <HeadAblationLab />}
-          {activeZoneTab === 'circuits' && <CircuitTracerPanel />}
-          {activeZoneTab === 'pathways' && <SemanticPathwayPanel />}
-          {activeZoneTab === 'logitlens' && <LogitLensPanel />}
-          {activeZoneTab === 'social' && <SocialHubPanel />}
-          {activeZoneTab === 'integrations' && <CrossPlatformIntegrationPanel />}
+          {activeZoneTab === 'metrics' && (
+            <ErrorBoundary title="Failed to render 3D Diagnostics & Scatter">
+              <HeadScatter3DPanel />
+            </ErrorBoundary>
+          )}
+          {activeZoneTab === 'ablation' && (
+            <ErrorBoundary title="Failed to render Ablation Laboratory">
+              <HeadAblationLab />
+            </ErrorBoundary>
+          )}
+          {activeZoneTab === 'circuits' && (
+            <ErrorBoundary title="Failed to render Circuit Tracer Panel">
+              <CircuitTracerPanel />
+            </ErrorBoundary>
+          )}
+          {activeZoneTab === 'pathways' && (
+            <ErrorBoundary title="Failed to render Semantic Pathways Panel">
+              <SemanticPathwayPanel />
+            </ErrorBoundary>
+          )}
+          {activeZoneTab === 'logitlens' && (
+            <ErrorBoundary title="Failed to render Logit Lens Timeline">
+              <LogitLensPanel />
+            </ErrorBoundary>
+          )}
+          {activeZoneTab === 'social' && (
+            <ErrorBoundary title="Failed to render Social Hub Panel">
+              <SocialHubPanel />
+            </ErrorBoundary>
+          )}
+          {activeZoneTab === 'integrations' && (
+            <ErrorBoundary title="Failed to render Integrations & Export Panel">
+              <CrossPlatformIntegrationPanel />
+            </ErrorBoundary>
+          )}
         </div>
 
         {/* Zone 8 Gamification & Quest Sidebar */}
         {sidebarOpen && (
           <div className="lg:col-span-1">
-            <GamificationSidebar />
+            <ErrorBoundary title="Failed to render Quest Sidebar">
+              <GamificationSidebar />
+            </ErrorBoundary>
           </div>
         )}
       </div>

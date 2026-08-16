@@ -1,4 +1,3 @@
-# paper/routing.py
 from django.urls import re_path
 
 from . import consumers
@@ -14,6 +13,10 @@ websocket_urlpatterns = [
     ),
     re_path(
         r"ws/collab/(?P<project_id>[^/]+)/$",
+        consumers.CollaborationConsumer.as_asgi(),
+    ),
+    re_path(
+        r"ws/collaboration/(?P<doc_id>[^/]+)/$",
         consumers.CollaborationConsumer.as_asgi(),
     ),
 ]

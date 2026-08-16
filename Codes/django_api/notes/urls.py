@@ -4,6 +4,10 @@ from . import views
 
 urlpatterns = [
     # ── Core CRUD ─────────────────────────────────────────────
+    path("", views.versioned_view(views.note_list)),
+    path("<uuid:note_id>/", views.versioned_view(views.note_detail)),
+    path("notes/", views.versioned_view(views.note_list)),
+    path("notes/<uuid:note_id>/", views.versioned_view(views.note_detail)),
     path("v1/notes/", views.versioned_view(views.note_list)),
     path("v1/notes/<uuid:note_id>/", views.versioned_view(views.note_detail)),
     path("v1/notes/<uuid:note_id>/react/", views.versioned_view(views.note_reaction)),

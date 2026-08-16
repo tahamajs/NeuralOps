@@ -417,7 +417,7 @@ export function generateAttentionData(
     comparison_diff: {
       baseline_name: 'Standard Softmax MHA',
       baseline_formula: '\\text{softmax}\\left(\\frac{Q K^T}{\\sqrt{d_k}}\\right) V',
-      current_name: attention_type,
+      current_name: attentionType,
       current_formula:
         '\\text{softmax}\\left(\\frac{Q (K S_r)^T}{\\sqrt{d_k}}\\right) (V S_r)',
       differing_operations: [

@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import type {
   StudioTab,
   TokenNode3D,
@@ -1162,7 +1163,7 @@ export const RepresentationStudios: React.FC = () => {
                 <h2 className="font-semibold text-white">Residual Vector Addition Sandbox</h2>
               </div>
               <Badge variant="outline" className="text-[10px] text-purple-400 border-purple-400/30 font-mono">
-                x_l = x_{`{l-1}`} + Attn + FFN
+                {"x_l = x_{l-1} + Attn + FFN"}
               </Badge>
             </div>
 
@@ -1176,7 +1177,7 @@ export const RepresentationStudios: React.FC = () => {
             <div className="flex flex-wrap items-center justify-between text-xs font-mono pt-1">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-blue-500" />
-                <span className="text-slate-300">x_{`{l-1}`} Stream</span>
+                <span className="text-slate-300">{"x_{l-1} Stream"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-cyan-400" />

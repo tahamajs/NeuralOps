@@ -86,18 +86,20 @@ export const datasetsAPI = {
 
   // Artifacts & Lineage
   getArtifacts: (params?: { type?: string; run_id?: string; q?: string }) =>
-    request.get<{ results: Artifact[] }>("/artifacts/", { params }),
+    request.get<{ results: Artifact[] }>("/datasets/artifacts/", { params }),
   getArtifactLineage: (id: string) =>
-    request.get<{ nodes: any[]; edges: any[] }>(`/artifacts/${id}/lineage/`),
+    request.get<{ nodes: any[]; edges: any[] }>(
+      `/datasets/artifacts/${id}/lineage/`,
+    ),
 
   // Audit Logs
   getAuditLogs: (params?: {
     action_type?: string;
     resource_type?: string;
     severity?: string;
-  }) => request.get<{ results: AuditLog[] }>("/audit-logs/", { params }),
+  }) => request.get<{ results: AuditLog[] }>("/datasets/audit-logs/", { params }),
   requestAuditExport: (data: {
     format: "csv" | "json" | "pdf";
     filters?: Record<string, any>;
-  }) => request.post("/audit-logs/export/", data),
+  }) => request.post("/datasets/audit-logs/export/", data),
 };
