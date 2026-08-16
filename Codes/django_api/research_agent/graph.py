@@ -7,33 +7,54 @@ import json
 import logging
 from typing import Annotated, List
 
-from django.conf import settings
-from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
-from langchain_openai import ChatOpenAI
-from langgraph.graph import END, StateGraph
-from langgraph.graph.message import add_messages
-from typing_extensions import TypedDict
+try:
+    from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
+    from langchain_openai import ChatOpenAI
+    from langgraph.graph import END, StateGraph
+    from langgraph.graph.message import add_messages
+    HAS_LANGGRAPH = True
+except ImportError:
+    ChatOpenAI = None
+    AIMessage = SystemMessage = ToolMessage = None
+    END = None
+    StateGraph = None
+    add_messages = None
+    HAS_LANGGRAPH = False
 
+from typing_extensions import TypedDict
 from .tools import ALL_TOOLS
 
 logger = logging.getLogger(__name__)
 
 
 # State
-class ResearchState(TypedDict):
-    messages: Annotated[List, add_messages]
-    user_id: int
-    retrieved_context: List[str]
-    final_answer: str
+if HAS_LANGGRAPH:
+    class ResearchState(TypedDict):
+        messages: Annotated[List, add_messages]
+        user_id: int
+        retrieved_context: List[str]
+        final_answer: str
+else:
+    class ResearchState(TypedDict):
+        user_id: int
+        retrieved_context: List[str]
+        final_answer: str
 
 
-llm = ChatOpenAI(
-    model=getattr(settings, "OPENAI_MODEL", "gpt-4o"),
-    temperature=0.3,
-    api_key=settings.OPENAI_API_KEY or "mock-key-for-import",
-)
-
-llm_with_tools = llm.bind_tools(ALL_TOOLS)
+if HAS_LANGGRAPH and ChatOpenAI:
+    try:
+        llm = ChatOpenAI(
+            model=getattr(settings, "OPENAI_MODEL", "gpt-4o"),
+            temperature=0.3,
+            api_key=getattr(settings, "OPENAI_API_KEY", "") or "mock-key-for-import",
+        )
+        llm_with_tools = llm.bind_tools(ALL_TOOLS) if hasattr(llm, "bind_tools") else llm
+    except Exception:
+        llm = None
+        llm_with_tools = None
+else:
+    llm = None
+    llm_with_tools = None
 
 SYSTEM_PROMPT = """You are a helpful research assistant and coach for the NeuralOps platform.
 You have access to the user's experiments, notes, saved papers, reputation, and collaborator matches.

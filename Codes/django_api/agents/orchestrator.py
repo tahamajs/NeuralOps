@@ -2,23 +2,38 @@ import json
 import os
 from typing import Annotated, List, Optional, TypedDict
 
-from django.conf import settings
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.tools import tool
-from langgraph.checkpoint.sqlite import SqliteSaver
-from langgraph.graph import END, StateGraph
-from langgraph.graph.message import add_messages
+try:
+    from langchain_anthropic import ChatAnthropic
+    from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+    from langchain_core.tools import tool
+    from langgraph.checkpoint.sqlite import SqliteSaver
+    from langgraph.graph import END, StateGraph
+    from langgraph.graph.message import add_messages
+    HAS_LANGGRAPH = True
+except ImportError:
+    ChatAnthropic = None
+    AIMessage = HumanMessage = SystemMessage = ToolMessage = None
+    tool = lambda f: f
+    SqliteSaver = None
+    END = None
+    StateGraph = None
+    add_messages = None
+    HAS_LANGGRAPH = False
 
 from .models import ChatMessage, ChatSession
 from .prompts import SYSTEM_PROMPT
 
 
 # ====================== State Definition ======================
-class AgentState(TypedDict):
-    messages: Annotated[List, add_messages]
-    session_id: str
-    user_id: int
+if HAS_LANGGRAPH:
+    class AgentState(TypedDict):
+        messages: Annotated[List, add_messages]
+        session_id: str
+        user_id: int
+else:
+    class AgentState(TypedDict):
+        session_id: str
+        user_id: int
 
 
 # ====================== Tools (wrapped for LangChain) ======================

@@ -8,21 +8,36 @@ import logging
 import os
 from typing import Annotated, List, TypedDict
 
-from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.tools import tool
-from langgraph.graph import END, StateGraph
-from langgraph.graph.message import add_messages
+try:
+    from langchain_anthropic import ChatAnthropic
+    from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+    from langchain_core.tools import tool
+    from langgraph.graph import END, StateGraph
+    from langgraph.graph.message import add_messages
+    HAS_LANGGRAPH = True
+except ImportError:
+    ChatAnthropic = None
+    AIMessage = HumanMessage = SystemMessage = ToolMessage = None
+    tool = lambda f: f
+    END = None
+    StateGraph = None
+    add_messages = None
+    HAS_LANGGRAPH = False
 
 from .chroma_store import search_similar_experiments
 
 logger = logging.getLogger(__name__)
 
 
-class AgentState(TypedDict):
-    messages: Annotated[List, add_messages]
-    user_id: int
-    context: dict
+if HAS_LANGGRAPH:
+    class AgentState(TypedDict):
+        messages: Annotated[List, add_messages]
+        user_id: int
+        context: dict
+else:
+    class AgentState(TypedDict):
+        user_id: int
+        context: dict
 
 
 SYSTEM_PROMPT = """You are the NeuralOps AI Research Coach — an expert ML research assistant.

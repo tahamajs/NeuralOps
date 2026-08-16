@@ -73,7 +73,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install django>=4.2 djangorestframework>=3.14 django-cors-headers>=4.0 django-filter>=23.0 django-extensions>=3.2 channels>=4.0 daphne>=4.0 channels-redis>=4.0 djangorestframework-simplejwt>=5.3.0 python-decouple>=3.8 django-allauth pytest pytest-django pynvml transformers datasets evaluate scikit-learn pandas psutil pyyaml requests python-dateutil einops timm celery seaborn optuna
+          pip install django>=4.2 djangorestframework>=3.14 django-cors-headers>=4.0 django-filter>=23.0 django-extensions>=3.2 channels>=4.0 daphne>=4.0 channels-redis>=4.0 djangorestframework-simplejwt>=5.3.0 python-decouple>=3.8 django-allauth pytest pytest-django pynvml transformers datasets evaluate scikit-learn pandas psutil pyyaml requests python-dateutil einops timm celery seaborn optuna deepdiff
 
       - name: Run Django System Check
         working-directory: Codes/django_api
