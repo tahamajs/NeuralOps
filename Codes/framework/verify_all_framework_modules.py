@@ -155,17 +155,38 @@ def verify_all_attentions():
                     max_position_embeddings=128,
                     rank=16,
                 )
+                target_layer = nn.Linear(C, C)
+                target_mha = nn.MultiheadAttention(C, num_heads, batch_first=True)
 
-                # Injector function check
-                if callable(cls_or_fn) and (key.startswith("inject_") or "inject" in str(cls_or_fn)):
-                    target_layer = nn.Linear(C, C)
+                # Injector function handling
+                if callable(cls_or_fn) and ("inject" in key or (inspect.isfunction(cls_or_fn) and "inject" in cls_or_fn.__name__)):
+                    sig = inspect.signature(cls_or_fn)
+                    p = sig.parameters
+                    kw = {}
+                    if "layer" in p:
+                        kw["layer"] = target_layer
+                    if "model_config" in p:
+                        kw["model_config"] = hf_cfg
+                    if "config" in p:
+                        kw["config"] = hf_cfg
+                    if "comp_config" in p:
+                        kw["comp_config"] = {"rank": 16}
+                    if "layer_idx" in p:
+                        kw["layer_idx"] = 0
+                    if "total_layers" in p:
+                        kw["total_layers"] = 2
+                    if "num_layers" in p:
+                        kw["num_layers"] = 2
+                    if "old_attn" in p:
+                        kw["old_attn"] = target_mha
+                    
                     try:
-                        res = cls_or_fn(target_layer)
+                        cls_or_fn(**kw)
                     except Exception:
                         try:
-                            res = cls_or_fn(DummyHFLikeModel(d_model=C))
+                            cls_or_fn(target_layer)
                         except Exception:
-                            res = cls_or_fn()
+                            cls_or_fn()
                     continue
 
                 # Class / constructor instantiation
@@ -176,18 +197,30 @@ def verify_all_attentions():
                     kw = {}
                     if "config" in p:
                         kw["config"] = hf_cfg
+                    if "model_config" in p:
+                        kw["model_config"] = hf_cfg
                     if "comp_config" in p:
                         kw["comp_config"] = {"rank": 16}
                     if "layer_idx" in p:
                         kw["layer_idx"] = 0
+                    if "total_layers" in p:
+                        kw["total_layers"] = 2
                     if "num_layers" in p:
                         kw["num_layers"] = 2
                     if "old_attn" in p:
-                        kw["old_attn"] = nn.MultiheadAttention(C, num_heads, batch_first=True)
+                        kw["old_attn"] = target_mha
+                    if "orion_cfg" in p:
+                        kw["orion_cfg"] = {"rank": 16}
+                    if "phantom_cfg" in p:
+                        kw["phantom_cfg"] = {"rank": 16}
+                    if "k_rank" in p:
+                        kw["k_rank"] = 16
                     if "embed_dim" in p:
                         kw["embed_dim"] = C
                     if "dim" in p:
                         kw["dim"] = C
+                    if "hidden_size" in p:
+                        kw["hidden_size"] = C
                     if "num_heads" in p:
                         kw["num_heads"] = num_heads
                     if "n_heads" in p:
@@ -289,6 +322,8 @@ def verify_all_compressors():
                 sig = inspect.signature(cls_obj.__init__)
                 params = sig.parameters
                 kwargs = {}
+                if "hidden_size" in params:
+                    kwargs["hidden_size"] = 64
                 if "model" in params:
                     kwargs["model"] = target_model
                 if "tokenizer" in params:
@@ -334,9 +369,12 @@ def verify_all_compressors():
                                     inst = cls_obj(64, 64)
                                 except Exception:
                                     try:
-                                        inst = cls_obj(config=target_model.config)
+                                        inst = cls_obj(hidden_size=64)
                                     except Exception:
-                                        inst = cls_obj()
+                                        try:
+                                            inst = cls_obj(config=target_model.config)
+                                        except Exception:
+                                            inst = cls_obj()
 
             # Test compress or forward dynamically
             x = torch.randn(2, 16, 64)
