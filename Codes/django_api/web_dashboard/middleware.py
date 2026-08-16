@@ -14,7 +14,15 @@ class TokenAuthMiddleware:
         if request.path.startswith(skip_prefixes):
             return self.get_response(request)
 
+        if getattr(request, "user", None) and request.user.is_authenticated:
+            return self.get_response(request)
+
         token_key = request.COOKIES.get("authToken")
+        if not token_key:
+            auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION")
+            if auth_header and auth_header.startswith("Token "):
+                token_key = auth_header.split(" ")[1].strip()
+
         if token_key:
             try:
                 token = Token.objects.get(key=token_key)
