@@ -158,8 +158,14 @@ def verify_all_attentions():
                 target_layer = nn.Linear(C, C)
                 target_mha = nn.MultiheadAttention(C, num_heads, batch_first=True)
 
-                # Injector function handling
-                if callable(cls_or_fn) and ("inject" in key or (inspect.isfunction(cls_or_fn) and "inject" in cls_or_fn.__name__)):
+                # Injector function check
+                is_injector = (
+                    "inject" in key 
+                    or (inspect.isfunction(cls_or_fn) and "inject" in cls_or_fn.__name__)
+                    or (hasattr(cls_or_fn, "__name__") and cls_or_fn.__name__.startswith("inject_"))
+                )
+
+                if is_injector:
                     sig = inspect.signature(cls_or_fn)
                     p = sig.parameters
                     kw = {}
@@ -209,6 +215,12 @@ def verify_all_attentions():
                         kw["num_layers"] = 2
                     if "old_attn" in p:
                         kw["old_attn"] = target_mha
+                    if "original_layer" in p:
+                        kw["original_layer"] = target_mha
+                    if "rank_qkv" in p:
+                        kw["rank_qkv"] = 16
+                    if "rank_out" in p:
+                        kw["rank_out"] = 16
                     if "orion_cfg" in p:
                         kw["orion_cfg"] = {"rank": 16}
                     if "phantom_cfg" in p:
@@ -238,7 +250,10 @@ def verify_all_attentions():
                                 try:
                                     inst = cls_or_fn(embed_dim=C, num_heads=num_heads)
                                 except Exception:
-                                    inst = cls_or_fn()
+                                    try:
+                                        inst = cls_or_fn(original_layer=target_mha, rank_qkv=16, rank_out=16)
+                                    except Exception:
+                                        inst = cls_or_fn()
                 else:
                     inst = cls_or_fn
 
@@ -255,7 +270,10 @@ def verify_all_attentions():
                                 try:
                                     out = inst(query=x, key=x, value=x)
                                 except Exception:
-                                    out = inst(x, torch.ones(B, T))
+                                    try:
+                                        out = inst(hidden_states=x)
+                                    except Exception:
+                                        out = inst(x, torch.ones(B, T))
                         
                         if isinstance(out, tuple):
                             out = out[0]
