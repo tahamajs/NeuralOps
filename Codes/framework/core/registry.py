@@ -50,6 +50,17 @@ class Registry:
         """Return a list of all registered keys (in original casing)."""
         return list(self._dict.keys())
 
+    def items(self):
+        """Return registered key-value pairs."""
+        return self._dict.items()
+
+    def values(self):
+        """Return registered values."""
+        return self._dict.values()
+
+    def __iter__(self):
+        return iter(self._dict)
+
     def __contains__(self, key: str) -> bool:
         return key.lower() in self._dict
 
