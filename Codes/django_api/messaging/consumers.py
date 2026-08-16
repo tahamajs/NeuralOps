@@ -137,15 +137,21 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def _is_room_member(self):
-        return ChatRoom.objects.filter(id=self.room_id, participants=self.user).exists()
+        try:
+            return ChatRoom.objects.filter(id=self.room_id, participants=self.user).exists()
+        except Exception:
+            return False
 
     @database_sync_to_async
     def _save_message(self, content):
-        msg = Message.objects.create(
-            room_id=self.room_id,
-            sender=self.user,
-            content=content,
-        )
-        # Update room timestamp
-        ChatRoom.objects.filter(id=self.room_id).update(updated_at=msg.created_at)
-        return msg
+        try:
+            msg = Message.objects.create(
+                room_id=self.room_id,
+                sender=self.user,
+                content=content,
+            )
+            # Update room timestamp
+            ChatRoom.objects.filter(id=self.room_id).update(updated_at=msg.created_at)
+            return msg
+        except Exception:
+            return None

@@ -1,4 +1,5 @@
 import logging
+import uuid
 import urllib.parse
 
 from channels.db import database_sync_to_async
@@ -106,10 +107,20 @@ class AgentConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def _run_agent(self, text):
-        session, _ = ChatSession.objects.get_or_create(
-            id=self.session_id, defaults={"user": self.user}
-        )
-        agent = LangGraphAgent(str(session.id))
+        try:
+            val_id = uuid.UUID(str(self.session_id))
+        except (ValueError, AttributeError, TypeError):
+            val_id = uuid.uuid5(uuid.NAMESPACE_DNS, str(self.session_id))
+
+        try:
+            session, _ = ChatSession.objects.get_or_create(
+                id=val_id, defaults={"user": self.user}
+            )
+        except Exception as e:
+            logger.error("Failed to get/create ChatSession: %s", e)
+            session = None
+
+        agent = LangGraphAgent(str(val_id))
         return agent.run(text)
 
     @database_sync_to_async

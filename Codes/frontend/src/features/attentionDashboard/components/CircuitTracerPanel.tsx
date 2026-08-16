@@ -196,7 +196,7 @@ export const CircuitTracerPanel: React.FC = () => {
                     activeCircuitType === 'QK' ? 'bg-purple-600 text-white' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  $W_{`{QK}`}$ Matrix
+                  {"$W_{QK}$ Matrix"}
                 </button>
                 <button
                   onClick={() => setActiveCircuitType('OV')}
@@ -204,7 +204,7 @@ export const CircuitTracerPanel: React.FC = () => {
                     activeCircuitType === 'OV' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  $W_{`{OV}`}$ Matrix
+                  {"$W_{OV}$ Matrix"}
                 </button>
               </div>
               <Badge variant="outline">
@@ -217,19 +217,19 @@ export const CircuitTracerPanel: React.FC = () => {
                 {/* Spectral Metric Stats Grid */}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase font-mono">Effective Rank $r_{`{eff}`}$</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-mono">{"Effective Rank $r_{eff}$"}</span>
                     <p className="text-base font-mono font-bold text-emerald-400">{activeSVD.effective_rank}</p>
                   </div>
                   <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase font-mono">Condition Number $\kappa$</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-mono">{"Condition Number $\\kappa$"}</span>
                     <p className="text-base font-mono font-bold text-cyan-400">{activeSVD.condition_number}</p>
                   </div>
                   <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase font-mono">Spectral Radius $\rho$</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-mono">{"Spectral Radius $\\rho$"}</span>
                     <p className="text-base font-mono font-bold text-purple-400">{activeSVD.spectral_radius}</p>
                   </div>
                   <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800">
-                    <span className="text-[10px] text-slate-500 uppercase font-mono">Matrix Trace $\operatorname{Tr}$</span>
+                    <span className="text-[10px] text-slate-500 uppercase font-mono">{"Matrix Trace Tr(W)"}</span>
                     <p className="text-base font-mono font-bold text-amber-400">{activeSVD.trace}</p>
                   </div>
                 </div>
@@ -237,7 +237,7 @@ export const CircuitTracerPanel: React.FC = () => {
                 {/* Singular Value Decay Bars */}
                 <div className="space-y-1.5 pt-2">
                   <div className="flex justify-between text-xs text-slate-400 font-mono">
-                    <span>Singular Value Spectrum $\sigma_i$ (Top 12)</span>
+                    <span>{"Singular Value Spectrum $\\sigma_i$ (Top 12)"}</span>
                     <span>Energy 95% Cutoff</span>
                   </div>
                   <div className="space-y-1 bg-slate-950 p-3 rounded-lg border border-slate-800">
@@ -247,7 +247,7 @@ export const CircuitTracerPanel: React.FC = () => {
                       return (
                         <div key={idx} className="space-y-0.5">
                           <div className="flex justify-between text-[10px] font-mono text-slate-400">
-                            <span>σ_{idx + 1} = {sv}</span>
+                            <span>{`σ_${idx + 1} = ${sv}`}</span>
                             <span className="text-slate-500">{energy}% Cumul.</span>
                           </div>
                           <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">

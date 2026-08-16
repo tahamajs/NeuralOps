@@ -10,19 +10,19 @@ import {
 export const healthMonitorAPI = {
   // Drift monitors
   getDriftMonitors: () =>
-    api.get<DriftMonitor[]>("/health-monitor/drift-monitors/"),
+    api.get<DriftMonitor[]>("/health-monitor/monitors/"),
   getDriftMonitor: (id: string) =>
-    api.get<DriftMonitor>(`/health-monitor/drift-monitors/${id}/`),
+    api.get<DriftMonitor>(`/health-monitor/monitors/${id}/`),
   createDriftMonitor: (data: Partial<DriftMonitor>) =>
-    api.post<DriftMonitor>("/health-monitor/drift-monitors/", data),
+    api.post<DriftMonitor>("/health-monitor/monitors/", data),
   updateDriftMonitor: (id: string, data: Partial<DriftMonitor>) =>
-    api.patch(`/health-monitor/drift-monitors/${id}/`, data),
+    api.patch(`/health-monitor/monitors/${id}/`, data),
   deleteDriftMonitor: (id: string) =>
-    api.delete(`/health-monitor/drift-monitors/${id}/`),
+    api.delete(`/health-monitor/monitors/${id}/`),
   runDriftCheck: (id: string) =>
-    api.post<DriftCheck>(`/health-monitor/drift-monitors/${id}/check/`),
+    api.post<DriftCheck>(`/health-monitor/monitors/${id}/check/`),
   getDriftChecks: (id: string, limit?: number) =>
-    api.get<DriftCheck[]>(`/health-monitor/drift-monitors/${id}/checks/`, {
+    api.get<DriftCheck[]>(`/health-monitor/monitors/${id}/history/`, {
       params: { limit },
     }),
 
