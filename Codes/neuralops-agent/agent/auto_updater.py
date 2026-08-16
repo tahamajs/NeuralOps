@@ -77,15 +77,10 @@ class AutoUpdater:
         """Fetch latest version metadata from backend API."""
         try:
             current_ver = getattr(self.config, "version", "1.0.0")
-            if hasattr(self.api, "check_for_updates") and callable(self.api.check_for_updates):
+            
+            # Try primary method
+            if hasattr(self.api, "check_for_updates"):
                 resp = self.api.check_for_updates(current_ver)
-            elif hasattr(self.api, "_post") and callable(self.api._post):
-                resp = self.api._post(
-                    "/api/agent/check-update/", {"version": current_ver}
-                )
-            else:
-                resp = None
-
             if isinstance(resp, dict) and resp.get("version"):
                 return resp
             return None

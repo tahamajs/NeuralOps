@@ -22,6 +22,14 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("neuralops.gpu")
 
+try:
+    import pynvml
+
+    HAS_NVML = True
+except ImportError:
+    pynvml = None
+    HAS_NVML = False
+
 
 class GPUDetector:
     """Detect GPU hardware across NVIDIA, Apple Silicon, AMD ROCm, and CPU fallback."""
@@ -91,13 +99,17 @@ class GPUDetector:
 
     def _detect_nvidia_nvml(self) -> Optional[Dict[str, Any]]:
         """Detect NVIDIA GPUs using pynvml."""
-        try:
-            import pynvml
+        if pynvml is None:
+            return None
 
+        try:
             pynvml.nvmlInit()
             count = pynvml.nvmlDeviceGetCount()
             if count == 0:
-                pynvml.nvmlShutdown()
+                try:
+                    pynvml.nvmlShutdown()
+                except Exception:
+                    pass
                 return None
 
             try:
@@ -156,7 +168,13 @@ class GPUDetector:
                     }
                 )
 
-            pynvml.nvmlShutdown()
+            try:
+                pynvml.nvmlShutdown()
+            except Exception:
+                pass
+
+            if not devices:
+                return None
 
             primary_device = devices[0]
             return {
@@ -172,7 +190,7 @@ class GPUDetector:
                 "devices": devices,
                 "is_simulated": False,
             }
-        except (ImportError, Exception) as e:
+        except Exception as e:
             logger.debug("NVML detection skipped or failed: %s", e)
             return None
 
@@ -547,46 +565,48 @@ class GPUDetector:
           - clock_mem_mhz: int
         """
         # 1. Try NVML
-        try:
-            import pynvml
-
-            pynvml.nvmlInit()
-            handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-            util = pynvml.nvmlDeviceGetUtilizationRates(handle)
-            mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
-            temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
-
+        if pynvml is not None:
             try:
-                fan = pynvml.nvmlDeviceGetFanSpeed(handle)
+                pynvml.nvmlInit()
+                handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+                util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
+
+                try:
+                    fan = pynvml.nvmlDeviceGetFanSpeed(handle)
+                except Exception:
+                    fan = 0.0
+
+                try:
+                    power = pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0
+                except Exception:
+                    power = 0.0
+
+                try:
+                    sm_clock = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_SM)
+                    mem_clock = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_MEM)
+                except Exception:
+                    sm_clock = mem_clock = 0
+
+                try:
+                    pynvml.nvmlShutdown()
+                except Exception:
+                    pass
+
+                return {
+                    "gpu_percent": float(util.gpu),
+                    "memory_percent": round(float(mem.used) / float(mem.total) * 100.0, 1) if mem.total > 0 else 0.0,
+                    "vram_used_mb": mem.used // (1024 * 1024),
+                    "vram_total_mb": mem.total // (1024 * 1024),
+                    "temperature_c": float(temp),
+                    "power_watts": round(float(power), 1),
+                    "fan_speed_pct": float(fan),
+                    "clock_sm_mhz": sm_clock,
+                    "clock_mem_mhz": mem_clock,
+                }
             except Exception:
-                fan = 0.0
-
-            try:
-                power = pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0
-            except Exception:
-                power = 0.0
-
-            try:
-                sm_clock = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_SM)
-                mem_clock = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_MEM)
-            except Exception:
-                sm_clock = mem_clock = 0
-
-            pynvml.nvmlShutdown()
-
-            return {
-                "gpu_percent": float(util.gpu),
-                "memory_percent": round(float(mem.used) / float(mem.total) * 100.0, 1) if mem.total > 0 else 0.0,
-                "vram_used_mb": mem.used // (1024 * 1024),
-                "vram_total_mb": mem.total // (1024 * 1024),
-                "temperature_c": float(temp),
-                "power_watts": round(float(power), 1),
-                "fan_speed_pct": float(fan),
-                "clock_sm_mhz": sm_clock,
-                "clock_mem_mhz": mem_clock,
-            }
-        except Exception:
-            pass
+                pass
 
         # 2. Try nvidia-smi fallback
         try:
@@ -706,10 +726,10 @@ class BenchmarkRunner:
                 results["tests"].append(self._gemm_test(device_str="cuda"))
                 results["tests"].append(self._memory_bandwidth_test(device_str="cuda"))
             elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-                results["tests"].append(self._gemm_test(device_str="mps"))
-                results["tests"].append(self._memory_bandwidth_test(device_str="mps"))
+                results["tests"].append(self._gemm_test(device_str="mps", size=2048, iters=10))
+                results["tests"].append(self._memory_bandwidth_test(device_str="mps", size_mb=64, iters=5))
             else:
-                results["tests"].append(self._gemm_test(device_str="cpu", size=2048, iters=5))
+                results["tests"].append(self._gemm_test(device_str="cpu", size=1024, iters=3))
         except ImportError:
             # Fallback synthetic calculation when PyTorch is not installed
             results["tests"].append(self._synthetic_gemm_estimate())
@@ -731,7 +751,7 @@ class BenchmarkRunner:
         import torch
 
         device = torch.device(device_str)
-        warmup = max(2, iters // 4)
+        warmup = max(1, iters // 4)
 
         try:
             a = torch.randn(size, size, device=device, dtype=torch.float32)
