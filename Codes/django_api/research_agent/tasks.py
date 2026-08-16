@@ -3,7 +3,11 @@ import logging
 
 from celery import shared_task
 from django.conf import settings
-from langchain_openai import ChatOpenAI
+
+try:
+    from langchain_openai import ChatOpenAI
+except ImportError:
+    ChatOpenAI = None
 
 from .models import GeneratedIdea
 
@@ -20,7 +24,15 @@ def generate_ideas_for_user(user_id):
     from reputation.models import ReputationScore
 
     User = get_user_model()
-    user = User.objects.get(id=user_id)
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return 0
+
+    api_key = getattr(settings, "OPENAI_API_KEY", "")
+    if ChatOpenAI is None or not api_key:
+        logger.warning("ChatOpenAI or OPENAI_API_KEY not configured. Skipping automated idea generation.")
+        return 0
 
     # Collect data
     runs = TrainingRun.objects.filter(user=user).order_by("-created_at")[:10]
@@ -38,23 +50,24 @@ Papers: {json.dumps([p.title for p in papers])}
 Reputation: {score.total_score if score else 0}
 """
 
-    llm = ChatOpenAI(
-        model=getattr(settings, "OPENAI_MODEL", "gpt-4o"),
-        temperature=0.7,
-        api_key=settings.OPENAI_API_KEY,
-    )
+    try:
+        llm = ChatOpenAI(
+            model=getattr(settings, "OPENAI_MODEL", "gpt-4o"),
+            temperature=0.7,
+            api_key=api_key,
+        )
 
-    prompt = f"""Based on this researcher's activity, generate 3 personalised ideas for their next steps. Each idea should include a title, a short description, and a type (experiment, collaboration, paper_topic, improvement, or compression_strategy).
+        prompt = f"""Based on this researcher's activity, generate 3 personalised ideas for their next steps. Each idea should include a title, a short description, and a type (experiment, collaboration, paper_topic, improvement, or compression_strategy).
 
 {context}
 
 Return the ideas as a JSON list:
 [{{"title": "...", "description": "...", "type": "..."}}, ...]
 """
-    response = llm.invoke(prompt)
-    try:
+        response = llm.invoke(prompt)
         ideas = json.loads(response.content)
-    except json.JSONDecodeError:
+    except Exception as e:
+        logger.warning("Failed to generate ideas via ChatOpenAI: %s", e)
         ideas = []
 
     for idea in ideas:
