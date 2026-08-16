@@ -7,6 +7,11 @@ import psutil
 from django.conf import settings
 from django.utils import timezone
 
+try:
+    from framework.experiment_utils.mega_orchestrator import MegaOrchestrator
+except ImportError:
+    MegaOrchestrator = None
+
 from .jobs import push_update
 from .models import TrainingRun, TrainingSnapshot
 
@@ -48,9 +53,7 @@ def run_training(run: TrainingRun, stop_event=None):
     _update_status(run, "running")
     _log(run, "Starting training...")
 
-    try:
-        from framework.experiment_utils.mega_orchestrator import MegaOrchestrator
-    except ImportError:
+    if MegaOrchestrator is None:
         _log(run, "MegaOrchestrator not found – falling back to legacy runner")
         _run_training_legacy(run, stop_event)
         return
@@ -84,15 +87,17 @@ def run_training(run: TrainingRun, stop_event=None):
         )
 
     def log_callback(step, logs):
-        TrainingSnapshot.objects.create(
+        TrainingSnapshot.objects.update_or_create(
             run=run,
             step=step,
-            train_loss=logs.get("loss"),
-            eval_loss=logs.get("eval_loss"),
-            eval_accuracy=logs.get("eval_accuracy"),
-            learning_rate=logs.get("learning_rate"),
-            cpu_percent=psutil.cpu_percent(),
-            ram_mb=psutil.virtual_memory().used / (1024**2),
+            defaults={
+                "train_loss": logs.get("loss"),
+                "eval_loss": logs.get("eval_loss"),
+                "eval_accuracy": logs.get("eval_accuracy"),
+                "learning_rate": logs.get("learning_rate"),
+                "cpu_percent": psutil.cpu_percent(),
+                "ram_mb": psutil.virtual_memory().used / (1024**2),
+            },
         )
         metrics = {
             k: v
@@ -177,15 +182,17 @@ def _legacy_progress(run, step, total, pct):
 
 
 def _legacy_log(run, step, logs):
-    TrainingSnapshot.objects.create(
+    TrainingSnapshot.objects.update_or_create(
         run=run,
         step=step,
-        train_loss=logs.get("loss"),
-        eval_loss=logs.get("eval_loss"),
-        eval_accuracy=logs.get("eval_accuracy"),
-        learning_rate=logs.get("learning_rate"),
-        cpu_percent=psutil.cpu_percent(),
-        ram_mb=psutil.virtual_memory().used / (1024**2),
+        defaults={
+            "train_loss": logs.get("loss"),
+            "eval_loss": logs.get("eval_loss"),
+            "eval_accuracy": logs.get("eval_accuracy"),
+            "learning_rate": logs.get("learning_rate"),
+            "cpu_percent": psutil.cpu_percent(),
+            "ram_mb": psutil.virtual_memory().used / (1024**2),
+        },
     )
     push_update(run, {"type": "metrics", "data": logs})
     _log(run, f"Step {step}: {logs}")

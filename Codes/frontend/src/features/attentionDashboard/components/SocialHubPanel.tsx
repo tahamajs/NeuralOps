@@ -456,7 +456,7 @@ export const SocialHubPanel: React.FC = () => {
                 <strong className="text-cyan-400">0.94</strong>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 block">Rank $r_{eff}$</span>
+                <span className="text-[10px] text-slate-500 block">{"Rank $r_{eff}$"}</span>
                 <strong className="text-purple-400">6.42</strong>
               </div>
             </div>

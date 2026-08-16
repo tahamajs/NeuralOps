@@ -63,7 +63,7 @@ export const LogitLensPanel: React.FC = () => {
           <div>
             <h3 className="text-base font-semibold text-white">Logit Lens Prediction Timeline (nostalgebraist, 2020)</h3>
             <p className="text-xs text-slate-400">
-              Unembedding intermediate activations $p_l = \\operatorname{softmax}(W_U \\cdot h_l)$ layer by layer
+              {"Unembedding intermediate activations $p_l = \\operatorname{softmax}(W_U \\cdot h_l)$ layer by layer"}
             </p>
           </div>
         </div>

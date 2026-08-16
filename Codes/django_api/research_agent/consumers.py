@@ -1,4 +1,5 @@
 import logging
+import uuid
 import urllib.parse
 
 from channels.db import database_sync_to_async
@@ -70,11 +71,8 @@ class ResearchAgentConsumer(AsyncJsonWebsocketConsumer):
             if not user_text:
                 return
 
-            # Save user message
-            try:
-                await self._save_message("user", user_text)
-            except Exception as e:
-                logger.error("Failed to save user message: %s", e)
+            # Save user message safely
+            await self._save_message("user", user_text)
 
             try:
                 # Build graph and invoke
@@ -122,10 +120,7 @@ class ResearchAgentConsumer(AsyncJsonWebsocketConsumer):
             except Exception as e:
                 logger.exception("Error running research agent graph: %s", e)
                 error_msg = f"Agent execution error: {str(e)}"
-                try:
-                    await self._save_message("assistant", error_msg)
-                except Exception:
-                    pass
+                await self._save_message("assistant", error_msg)
                 await self.send_json({"type": "error", "error": error_msg})
 
     async def agent_message(self, event):
@@ -135,10 +130,19 @@ class ResearchAgentConsumer(AsyncJsonWebsocketConsumer):
 
     @database_sync_to_async
     def _save_message(self, role, content):
-        session, _ = AgentSession.objects.get_or_create(
-            id=self.session_id, defaults={"user": self.user}
-        )
-        return AgentMessage.objects.create(session=session, role=role, content=content)
+        try:
+            val_id = uuid.UUID(str(self.session_id))
+        except (ValueError, AttributeError, TypeError):
+            val_id = uuid.uuid5(uuid.NAMESPACE_DNS, str(self.session_id))
+
+        try:
+            session, _ = AgentSession.objects.get_or_create(
+                id=val_id, defaults={"user": self.user}
+            )
+            return AgentMessage.objects.create(session=session, role=role, content=content)
+        except Exception as e:
+            logger.error("Failed to save agent message: %s", e)
+            return None
 
     @database_sync_to_async
     def _get_user_by_token(self, token_key):

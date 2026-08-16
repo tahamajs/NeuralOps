@@ -42,13 +42,13 @@ export const experimentsService = {
     request.get<any>(ENDPOINTS.RUNS.RESULTS(runId)),
 
   getRunMetrics: (runId: string) =>
-    request.get<RunMetrics>(`/runs/${runId}/metrics/`),
+    request.get<RunMetrics>(ENDPOINTS.RUNS.METRICS(runId)),
 
   getRunAnalysis: (runId: string) =>
     request.get<RunAnalysis>(ENDPOINTS.TRAINING_ANALYSIS.RUN_ANALYSIS(runId)),
 
   getRunArtifacts: (runId: string) =>
-    request.get<RunArtifact[]>(`/runs/${runId}/artifacts/`),
+    request.get<RunArtifact[]>(ENDPOINTS.RUNS.ARTIFACTS(runId)),
 
   getDataLineage: (runId: string) =>
     request.get<DataLineage>(ENDPOINTS.RUNS.DATA_LINEAGE(runId)),

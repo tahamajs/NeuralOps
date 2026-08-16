@@ -91,6 +91,12 @@ export const ENDPOINTS = {
     STOP: (pk: string) => `/runs/${pk}/stop/`,
     RESULTS: (runId: string) => `/runs/${runId}/results/`,
     SAVE: (runId: string) => `/runs/${runId}/save/`,
+    METRICS: (runId: string) => `/runs/${runId}/metrics/`,
+    ARTIFACTS: (runId: string) => `/runs/${runId}/artifacts/`,
+    HISTORY: (runId: string) => `/runs/${runId}/history/`,
+    SNAPSHOTS: (runId: string) => `/runs/${runId}/snapshots/`,
+    ANALYSIS: (runId: string) => `/runs/${runId}/analysis/`,
+    STATUS: (runId: string) => `/runs/${runId}/status/`,
     DRIFT_REPORT: (runId: string) => `/runs/${runId}/drift/`,
     DRIFT_CHECK: (runId: string) => `/runs/${runId}/drift/check/`,
     FAIRNESS: (runId: string) => `/runs/${runId}/fairness/`,
@@ -596,6 +602,21 @@ export const ENDPOINTS = {
   },
   HEALTH_MONITOR: {
     ROOT: "/health-monitor/",
+    HEALTH: "/health-monitor/health/",
+    STORES: "/health-monitor/stores/",
+    GROUPS: "/health-monitor/groups/",
+    MONITORS: "/health-monitor/monitors/",
+    MONITOR_CHECK: (monitorId: string) =>
+      `/health-monitor/monitors/${monitorId}/check/`,
+    MONITOR_HISTORY: (monitorId: string) =>
+      `/health-monitor/monitors/${monitorId}/history/`,
+    ALERTS: "/health-monitor/alerts/",
+    ALERT_ACKNOWLEDGE: (alertId: string) =>
+      `/health-monitor/alerts/${alertId}/acknowledge/`,
+    CHANNELS: "/health-monitor/channels/",
+    CHANNEL_DELETE: (channelId: string) =>
+      `/health-monitor/channels/${channelId}/`,
+    PERFORMANCE: "/health-monitor/performance/",
   },
   COMMUNITY_LAB: {
     ROOT: "/community-lab/",
@@ -607,6 +628,11 @@ export const ENDPOINTS = {
     ROOT: "/datasets/",
     LIST: "/datasets/",
     DETAIL: (id: string) => `/datasets/${id}/`,
+    EXPORT: (id: string) => `/datasets/${id}/export/`,
+    ARTIFACTS: "/datasets/artifacts/",
+    ARTIFACT_LINEAGE: (id: string) => `/datasets/artifacts/${id}/lineage/`,
+    AUDIT_LOGS: "/datasets/audit-logs/",
+    AUDIT_EXPORT: "/datasets/audit-logs/export/",
   },
   LLM_HUB: {
     ROOT: "/llm/",

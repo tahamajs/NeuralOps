@@ -120,6 +120,8 @@ urlpatterns = [
     # Direct API root inclusions to support unified frontend ENDPOINTS mapping
     # ------------------------------------------------------------------
     path("api/", include("agents.urls")),
+    path("api/", include("experiment.urls")),
+    path("api/", include("notes.urls")),
     path("api/", include("jobscheduler.urls")),
     path("api/", include("sweeps.urls")),
     path("api/", include("model_versioning.urls")),

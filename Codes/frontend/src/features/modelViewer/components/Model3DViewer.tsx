@@ -88,8 +88,9 @@ export function Model3DViewer({ modelData, onClose }: Props) {
 
         setStatus("ready");
 
+        let animationFrameId: number;
         const animate = () => {
-          requestAnimationFrame(animate);
+          animationFrameId = requestAnimationFrame(animate);
           controls.update();
           if (
             rendererRef.current &&
@@ -123,8 +124,15 @@ export function Model3DViewer({ modelData, onClose }: Props) {
         };
         window.addEventListener("resize", handleResize);
         return () => {
+          cancelAnimationFrame(animationFrameId);
           window.removeEventListener("resize", handleResize);
-          if (rendererRef.current) rendererRef.current.dispose();
+          if (controlsRef.current) controlsRef.current.dispose();
+          if (rendererRef.current) {
+            rendererRef.current.dispose();
+          }
+          if (containerRef.current) {
+            containerRef.current.innerHTML = "";
+          }
         };
       } catch (err) {
         console.error(err);
