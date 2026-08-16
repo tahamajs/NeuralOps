@@ -5,9 +5,17 @@ Stores embeddings of experiment summaries and enables semantic search.
 
 import logging
 
-import chromadb
-from chromadb.config import Settings
-from chromadb.utils import embedding_functions
+try:
+    import chromadb
+    from chromadb.config import Settings
+    from chromadb.utils import embedding_functions
+    HAS_CHROMADB = True
+except ImportError:
+    chromadb = None
+    Settings = None
+    embedding_functions = None
+    HAS_CHROMADB = False
+
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -19,6 +27,8 @@ _ef = None
 
 def get_client():
     global _client, _collection, _ef
+    if not HAS_CHROMADB:
+        return None, None
     if _client is None:
         persist_dir = getattr(settings, "CHROMA_PERSIST_DIR", "./chroma_data")
         _client = chromadb.PersistentClient(
