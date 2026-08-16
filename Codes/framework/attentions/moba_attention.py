@@ -102,6 +102,14 @@ class MoBAAttention(BaseAttention):
         scale = 1.0 / math.sqrt(d)
         block_scores = torch.matmul(Q_mean, K_mean.transpose(-2, -1)) * scale  # (B, H, nb, nb)
 
+        is_causal = bool(kwargs.get("is_causal", getattr(self.config, "is_decoder", False) or getattr(self.config, "causal", False)))
+        if is_causal:
+            causal_block_mask = torch.triu(
+                torch.full((nb, nb), float("-inf"), device=block_scores.device, dtype=block_scores.dtype),
+                diagonal=1,
+            )
+            block_scores = block_scores + causal_block_mask.unsqueeze(0).unsqueeze(0)
+
         top_k = min(self.top_k, nb)
         _, top_idx = block_scores.topk(top_k, dim=-1)  # (B, H, nb, top_k)
 
@@ -113,6 +121,15 @@ class MoBAAttention(BaseAttention):
             V_sel = torch.gather(Vb, 2, idx_exp).view(B, H, top_k * self.block_size, d)
             Q_i = Qb[:, :, i]  # (B, H, block_size, d)
             scores = torch.matmul(Q_i, K_sel.transpose(-2, -1)) * scale  # (B, H, block_size, top_k * block_size)
+            if is_causal:
+                # Key global token offsets: idx has shape (B, H, top_k)
+                # Query global token offsets for block i: [i * block_size, ..., (i+1) * block_size - 1]
+                q_pos = (i * self.block_size + torch.arange(self.block_size, device=scores.device)).view(1, 1, self.block_size, 1)
+                # k_pos has shape (B, H, 1, top_k * block_size)
+                k_block_offsets = idx.unsqueeze(-1) * self.block_size + torch.arange(self.block_size, device=scores.device).view(1, 1, 1, self.block_size)
+                k_pos = k_block_offsets.view(B, H, 1, top_k * self.block_size)
+                invalid = k_pos > q_pos
+                scores = scores.masked_fill(invalid, float("-inf"))
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
             ctx = torch.matmul(attn, V_sel)
