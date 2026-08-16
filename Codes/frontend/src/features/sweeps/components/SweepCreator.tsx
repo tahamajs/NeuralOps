@@ -19,7 +19,11 @@ interface SearchParam {
   log?: boolean;
 }
 
-export default function SweepCreator({ onCreated }: { onCreated: () => void }) {
+export default function SweepCreator({
+  onCreated,
+}: {
+  onCreated?: () => void;
+}) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     name: "",
@@ -60,7 +64,13 @@ export default function SweepCreator({ onCreated }: { onCreated: () => void }) {
       };
       await api.post("/sweeps/", params);
     },
-    onSuccess: () => onCreated(),
+    onSuccess: () => {
+      if (onCreated) {
+        onCreated();
+      } else {
+        window.location.href = "/sweeps";
+      }
+    },
   });
 
   const addParam = () => {

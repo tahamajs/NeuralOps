@@ -174,8 +174,26 @@ export const ComputationStudios: React.FC = () => {
       });
     }
 
-    return { records, grid, numNeurons };
-  }, [selectedLayer, ffnThreshold]);
+    const deadCount = records.filter((r) => r.isDead).length;
+    const activeCount = records.length - deadCount;
+    const totalCells = SAMPLE_TOKENS.length * numNeurons;
+    let zeroCells = 0;
+    for (const r of grid) {
+      for (const val of r) {
+        if (val === 0) zeroCells++;
+      }
+    }
+    const sparsity = Math.round((zeroCells / totalCells) * 1000) / 10;
+
+    const filteredRecords = records.filter((r) => {
+      if (neuronFilter === "active") return !r.isDead && r.maxActivation > 1.0;
+      if (neuronFilter === "selective") return !r.isDead && r.selectivity > 0.7;
+      if (neuronFilter === "dead") return r.isDead;
+      return true;
+    });
+
+    return { records, grid, numNeurons, deadCount, activeCount, sparsity, filteredRecords };
+  }, [selectedLayer, ffnThreshold, neuronFilter]);
 
   const deadNeuronCount = useMemo(() => ffnData.records.filter(r => r.isDead).length, [ffnData]);
   const deadNeuronRatio = useMemo(() => (deadNeuronCount / ffnData.numNeurons) * 100, [deadNeuronCount, ffnData]);
@@ -513,15 +531,157 @@ export const ComputationStudios: React.FC = () => {
                   <div className="overflow-x-auto pb-2">
                     <div className="min-w-[500px]">
                       {/* Column Header (Neurons) */}
-                      <div className="flex items-center mb-1 pl-20">
-                        {ffnData.filteredRecords.slice(0, 24).map((rec) => (
+                      <div className="flex items-center mb-1 pl-24">
+                        {ffnData.filteredRecords.slice(0, 20).map((rec) => (
                           <div
-                    ))}
+                            key={rec.neuronIndex}
+                            onClick={() => setSelectedNeuronIdx(rec.neuronIndex)}
+                            className={`w-7 text-[10px] font-mono text-center cursor-pointer truncate ${
+                              selectedNeuronIdx === rec.neuronIndex
+                                ? 'text-cyan-400 font-bold'
+                                : 'text-slate-500 hover:text-slate-300'
+                            }`}
+                            title={`Neuron #${rec.neuronIndex}`}
+                          >
+                            N{rec.neuronIndex}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Rows for each token */}
+                      <div className="space-y-1">
+                        {SAMPLE_TOKENS.map((tok, tIdx) => (
+                          <div key={tIdx} className="flex items-center">
+                            <div className="w-24 text-[11px] font-mono text-slate-400 truncate pr-2 text-right">
+                              {tok}
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              {ffnData.filteredRecords.slice(0, 20).map((rec) => {
+                                const val = ffnData.grid[tIdx]?.[rec.neuronIndex] || 0;
+                                const isSelected = selectedNeuronIdx === rec.neuronIndex;
+                                const isHovered = hoveredCell?.token === tok && hoveredCell?.neuron === rec.neuronIndex;
+                                const opacity = val > 0 ? Math.min(1, 0.2 + val * 0.4) : 0.05;
+
+                                return (
+                                  <div
+                                    key={rec.neuronIndex}
+                                    onMouseEnter={() => setHoveredCell({ token: tok, neuron: rec.neuronIndex, val })}
+                                    onMouseLeave={() => setHoveredCell(null)}
+                                    onClick={() => setSelectedNeuronIdx(rec.neuronIndex)}
+                                    className={`w-7 h-6 rounded-xs flex items-center justify-center cursor-pointer transition-all ${
+                                      isSelected
+                                        ? 'ring-1 ring-cyan-400 z-10'
+                                        : isHovered
+                                        ? 'ring-1 ring-white z-10 scale-110'
+                                        : ''
+                                    }`}
+                                    style={{
+                                      backgroundColor: val > 0 ? `rgba(6, 182, 212, ${opacity})` : 'rgba(30, 41, 59, 0.4)',
+                                    }}
+                                    title={`Token: ${tok}, Neuron: N${rec.neuronIndex}, Activation: ${val}`}
+                                  >
+                                    <span className="text-[9px] font-mono text-slate-200">
+                                      {val > 0.5 ? val.toFixed(1) : ''}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {hoveredCell && (
+                    <div className="mt-3 p-2 bg-slate-950/80 rounded-lg border border-slate-800 text-xs font-mono text-slate-300 flex justify-between">
+                      <span>Token: <strong className="text-cyan-300">"{hoveredCell.token}"</strong></span>
+                      <span>Neuron: <strong className="text-cyan-300">N{hoveredCell.neuron}</strong></span>
+                      <span>Activation: <strong className="text-amber-300">{hoveredCell.val}</strong></span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 1 Col: Selected Neuron & SAE Dictionary Inspector */}
+                <div className="space-y-6">
+                  {/* Selected Neuron Card */}
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 shadow-md space-y-4">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                      <div>
+                        <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                          <Cpu className="w-4 h-4 text-cyan-400" />
+                          Neuron N{selectedNeuronIdx} Inspector
+                        </h3>
+                        <span className="text-[11px] text-slate-500 font-mono">Layer {selectedLayer} Intermediate</span>
+                      </div>
+                      <Badge variant={ffnData.records[selectedNeuronIdx]?.isDead ? 'danger' : 'info'}>
+                        {ffnData.records[selectedNeuronIdx]?.isDead ? 'DEAD' : 'ACTIVE'}
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                        <span className="text-slate-500 text-[10px] block">Max Activation</span>
+                        <span className="text-cyan-400 font-bold text-base">
+                          {ffnData.records[selectedNeuronIdx]?.maxActivation || 0}
+                        </span>
+                      </div>
+                      <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                        <span className="text-slate-500 text-[10px] block">Selectivity</span>
+                        <span className="text-emerald-400 font-bold text-base">
+                          {ffnData.records[selectedNeuronIdx]?.selectivity || 0}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <span className="text-xs font-semibold text-slate-300">Top Firing Tokens</span>
+                      <div className="space-y-1">
+                        {ffnData.records[selectedNeuronIdx]?.topTokens.map((tok, idx) => (
+                          <div
+                            key={idx}
+                            className="p-1.5 bg-slate-950/70 rounded border border-slate-800 flex justify-between text-xs font-mono"
+                          >
+                            <span className="text-white">"{tok.token}" (pos #{tok.position})</span>
+                            <span className="text-cyan-400 font-bold">{tok.activation}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sparse Autoencoders (SAE) Features */}
+                  <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-5 shadow-md space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-purple-400" />
+                        Monosemantic SAE Features
+                      </h3>
+                      <Badge variant="outline">4x Expansion</Badge>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Disentangled dictionary directions resolved via Anthropic-style Sparse Autoencoders:
+                    </p>
+
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {saeFeatures.map((feat) => (
+                        <div
+                          key={feat.featureIndex}
+                          className="p-2.5 rounded-lg bg-slate-950/80 border border-purple-500/20 text-xs space-y-1 font-mono"
+                        >
+                          <div className="flex justify-between text-purple-300 font-bold">
+                            <span>Feature #{feat.featureIndex}</span>
+                            <span className="text-slate-400 text-[10px]">Freq: {(feat.firingRate * 100).toFixed(0)}%</span>
+                          </div>
+                          <div className="text-slate-300 text-[11px]">{feat.label}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </ErrorBoundary>
         )}
 
         {/* TAB 2: KV CACHE MONITOR */}

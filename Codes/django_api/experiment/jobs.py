@@ -20,14 +20,24 @@ def start_job(run: TrainingRun, target_func):
     _stop_events[run_id] = threading.Event()
 
     def worker():
+        from django.db import connection
+        connection.close()
         try:
             target_func(run, _stop_events[run_id])
         except Exception:
-            run.status = "failed"
-            run.save()
+            try:
+                connection.close()
+                run.status = "failed"
+                run.save()
+            except Exception:
+                pass
             raise
         finally:
             _stop_events.pop(run_id, None)
+            try:
+                connection.close()
+            except Exception:
+                pass
 
     thread = threading.Thread(target=worker, daemon=True)
     thread.start()
