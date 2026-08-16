@@ -34,16 +34,27 @@ import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
 from scipy.linalg import svd
-from transformers import (
-    AutoConfig,
-    AutoModelForSequenceClassification,
-    AutoTokenizer,
-    EarlyStoppingCallback,
-    Trainer,
-    TrainerCallback,
-    TrainingArguments,
-    set_seed,
-)
+
+try:
+    from transformers import (
+        AutoConfig,
+        AutoModelForSequenceClassification,
+        AutoTokenizer,
+        EarlyStoppingCallback,
+        Trainer,
+        TrainerCallback,
+        TrainingArguments,
+        set_seed,
+    )
+except Exception:
+    AutoConfig = None
+    AutoModelForSequenceClassification = None
+    AutoTokenizer = None
+    EarlyStoppingCallback = object
+    Trainer = object
+    TrainerCallback = object
+    TrainingArguments = object
+    def set_seed(s): pass
 
 from datasets import Dataset, DatasetDict
 
