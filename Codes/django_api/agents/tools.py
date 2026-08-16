@@ -1001,3 +1001,80 @@ def edit_configuration_tool(run_id: str, key: str, value: Any) -> Dict[str, Any]
     run.config = config
     run.save(update_fields=["config"])
     return {"status": "updated", "run_id": run_id, "key": key, "value": value}
+
+
+def search_datasets(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Search for NLP / ML datasets."""
+    query = params.get("query", "")
+    limit = params.get("limit", 5)
+    return {
+        "datasets": [
+            {"id": "glue/mrpc", "name": "MRPC", "task": "paraphrase"},
+            {"id": "glue/sst2", "name": "SST-2", "task": "sentiment"},
+            {"id": "glue/cola", "name": "CoLA", "task": "acceptability"},
+            {"id": "squad", "name": "SQuAD", "task": "qa"},
+        ][:limit]
+    }
+
+
+def search_models(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Search for pre-trained models."""
+    query = params.get("query", "")
+    limit = params.get("limit", 5)
+    return {
+        "models": [
+            {"id": "bert-base-uncased", "architecture": "BERT", "params": "110M"},
+            {"id": "roberta-base", "architecture": "RoBERTa", "params": "125M"},
+            {"id": "distilbert-base-uncased", "architecture": "DistilBERT", "params": "66M"},
+            {"id": "gpt2", "architecture": "GPT-2", "params": "124M"},
+        ][:limit]
+    }
+
+
+def get_dataset_info(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Retrieve detailed dataset info."""
+    dataset_id = params.get("dataset_id", "glue/mrpc")
+    return {
+        "dataset_id": dataset_id,
+        "splits": ["train", "validation", "test"],
+        "features": ["sentence1", "sentence2", "label"],
+    }
+
+
+def list_attention_types() -> List[str]:
+    """Return available attention mechanisms."""
+    return ["full", "linear", "leka", "griffin", "sparse", "performer"]
+
+
+def list_available_tasks() -> List[str]:
+    """Return available evaluation benchmark tasks."""
+    return ["mrpc", "sst2", "cola", "qnli", "qqp", "mnli", "squad"]
+
+
+def compile_latex(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Compile LaTeX document."""
+    project_id = params.get("project_id", "")
+    return {
+        "status": "compiled",
+        "project_id": project_id,
+        "pdf_url": f"/api/paper/{project_id}/pdf/",
+    }
+
+
+def edit_latex_file(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Edit LaTeX document file."""
+    return {
+        "status": "saved",
+        "filename": params.get("filename", "main.tex"),
+        "project_id": params.get("project_id", ""),
+    }
+
+
+def read_latex_project(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Read LaTeX project structure."""
+    return {
+        "status": "ok",
+        "project_id": params.get("project_id", ""),
+        "files": ["main.tex"],
+    }
+

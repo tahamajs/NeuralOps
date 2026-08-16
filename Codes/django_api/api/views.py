@@ -1249,11 +1249,10 @@ def generate_model_card_view(request, run_id):
         from web_dashboard.model_card import generate_model_card
 
         card = generate_model_card(run)
-        return Response({"model_card_md": card})
+        return Response({"model_card": card, "model_card_md": card})
     except ImportError:
-        return Response(
-            {"model_card_md": f"# Model Card for {run.id}\n\nNot available."}
-        )
+        fallback = f"# Model Card for {run.id}\n\nNot available."
+        return Response({"model_card": fallback, "model_card_md": fallback})
 
 
 @api_view(["POST"])
