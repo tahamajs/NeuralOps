@@ -168,3 +168,25 @@ def inject_attention(
 def available_attention_types() -> list:
     """Available attention types."""
     return ATTENTION_REGISTRY.keys()
+
+
+def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
+    r"""Rectified non-negative sparse activation function with numerical stabilization.
+
+    Args:
+        x: Input logits tensor of shape `[..., N]`.
+        dim: Normalization dimension.
+        temperature: Softmax temperature parameter $\tau$.
+
+    Returns:
+        Sparse normalized probability distribution `[..., N]`.
+    """
+    m = x.max(dim=dim, keepdim=True).values
+    scaled = (x - m) / max(temperature, 1e-6)
+    scaled_clamped = torch.clamp(scaled, min=-50.0, max=50.0)
+    e = torch.exp(scaled_clamped)
+    m_clamped = torch.clamp(-m / max(temperature, 1e-6), min=-50.0, max=50.0)
+    denom = e - torch.exp(m_clamped)
+    p = torch.relu(denom)
+    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+

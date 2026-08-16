@@ -14,7 +14,7 @@ from .architecture import (
     get_transformer_layers,
 )
 from .attention_mask import apply_attention_mask, get_token_valid_mask
-from .attention_utils import available_attention_types, inject_attention
+from .attention_utils import available_attention_types, inject_attention, softpick
 from .base import BaseAttention, BaseCompressor
 from .compression_engine import CompressionPipeline, compress_model
 from .memory import GPUMemoryGuard, cleanup_gpu_memory, get_gpu_memory_stats
