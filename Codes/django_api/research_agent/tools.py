@@ -5,8 +5,12 @@ LangChain tools for the research agent – access to experiments, notes, papers,
 from agents.models import ResearchPaper
 from collaborator_matching.models import CollaboratorMatch
 from django.contrib.auth import get_user_model
-from experiment.models import TrainingRun
-from langchain_core.tools import tool
+try:
+    from langchain_core.tools import tool
+except ImportError:
+    def tool(func):
+        return func
+
 from notes.models import ResearcherNote
 from reputation.models import ReputationScore
 
