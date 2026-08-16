@@ -49,16 +49,21 @@ class MambaSVDFlash(BaseAttention):
 
     def __init__(
         self,
-        d_model: Optional[int] = None,
         config: Optional[Any] = None,
         rank: Optional[int] = 16,
+        d_model: Optional[int] = None,
         hidden_size: Optional[int] = None,
         num_heads: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
-        dim = d_model or hidden_size or getattr(config, "hidden_size", 64)
-        super().__init__(config, rank)
-        self.d_model: int = dim
+        if isinstance(config, int):
+            dim = config
+            config_obj = None
+        else:
+            config_obj = config
+            dim = d_model or hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 64))
+        super().__init__(config_obj, rank)
+        self.d_model: int = dim or 64
         self.rank: int = rank or 16
 
         # SVD-SSM path projections

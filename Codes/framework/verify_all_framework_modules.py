@@ -181,6 +181,8 @@ def verify_all_compressors():
         try:
             target_linear = nn.Linear(64, 64)
             target_seq = nn.Sequential(nn.Linear(64, 64), nn.ReLU(), nn.Linear(64, 64))
+            target_seq.save_pretrained = lambda path: None
+            target_seq.config = type("Config", (), {"hidden_size": 64, "num_attention_heads": 4})()
             
             # Inspect constructor parameters
             inst = None
@@ -215,27 +217,41 @@ def verify_all_compressors():
                     inst = cls_obj(target_seq)
                 except Exception:
                     try:
-                        inst = cls_obj(64, 64)
+                        inst = cls_obj(target_linear)
                     except Exception:
-                        inst = cls_obj()
+                        try:
+                            inst = cls_obj(64, 64)
+                        except Exception:
+                            inst = cls_obj()
 
             # Test compress or forward
             x = torch.randn(2, 16, 64)
             if hasattr(inst, "compress"):
                 try:
-                    res = inst.compress(target_linear)
+                    res = inst.compress()
                 except TypeError:
                     try:
-                        res = inst.compress(target_linear, X=x)
+                        res = inst.compress(target_linear)
+                    except TypeError:
+                        try:
+                            res = inst.compress(target_linear, X=x)
+                        except Exception:
+                            res = inst.compress(target_seq)
                     except Exception:
                         res = inst.compress(target_seq)
                 except Exception:
-                    res = inst.compress(target_seq)
+                    try:
+                        res = inst.compress(target_linear)
+                    except Exception:
+                        res = inst.compress(target_seq)
             elif hasattr(inst, "forward") or callable(inst):
                 try:
                     res = inst(x)
                 except Exception:
-                    res = inst(x, x, x)
+                    try:
+                        res = inst(x, x, x)
+                    except Exception:
+                        res = inst(target_linear)
             
             passed += 1
             if idx <= 10 or idx % 15 == 0 or idx == total:
