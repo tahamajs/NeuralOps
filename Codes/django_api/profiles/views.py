@@ -80,6 +80,20 @@ def user_profile_by_username(request, username):
     return Response(serializer.data)
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def user_profile_by_identifier(request, identifier):
+    """View profile by numeric user_id or username string."""
+    if str(identifier).isdigit():
+        profile = Profile.objects.filter(user_id=int(identifier)).first()
+    else:
+        profile = Profile.objects.filter(user__username=identifier).first()
+    if not profile:
+        profile = get_object_or_404(Profile, user__username=identifier)
+    serializer = ProfileSerializer(profile)
+    return Response(serializer.data)
+
+
 # ═══════════════════════════════════════════════════════════════
 # User Search
 # ═══════════════════════════════════════════════════════════════
