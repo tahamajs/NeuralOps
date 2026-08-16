@@ -70,10 +70,11 @@ print(f"  Total Registered Endpoints: {len(url_patterns)}")
 # 4. Check Framework Bridge & Attention / Compression Registries
 print("\n[4/5] PyTorch Framework Bridge Verification:")
 try:
-    from framework.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY, TRAINER_REGISTRY
+    from framework.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    from framework.trainer.registry import TrainerRegistry
     print(f"  - Framework ATTENTION_REGISTRY: {len(ATTENTION_REGISTRY)} attention architectures registered")
     print(f"  - Framework COMPRESSOR_REGISTRY: {len(COMPRESSOR_REGISTRY)} compression engines registered")
-    print(f"  - Framework TRAINER_REGISTRY: {len(TRAINER_REGISTRY)} trainers registered")
+    print(f"  - Framework TrainerRegistry: {len(TrainerRegistry._registry)} trainers registered")
     print("  PyTorch Framework Bridge: FULLY OPERATIONAL")
 except Exception as e:
     print(f"  Warning loading framework bridge: {e}")
