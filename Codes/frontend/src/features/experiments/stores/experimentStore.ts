@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-interface ExperimentState {
+export interface ExperimentState {
   status: string;
   logs: string[];
   metrics: { loss: number[]; accuracy: number[] };

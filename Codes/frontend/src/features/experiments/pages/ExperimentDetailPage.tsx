@@ -47,7 +47,12 @@ export default function ExperimentDetailPage() {
     total: experiment.total_steps,
     eta: 0,
   };
-  const logs = live.logs.length > 0 ? live.logs : experiment.logs || [];
+  const logs =
+    live.logs.length > 0
+      ? live.logs
+      : typeof experiment.logs === "string"
+        ? experiment.logs.split("\n")
+        : experiment.logs || [];
   const metrics =
     live.metrics.loss.length > 0
       ? live.metrics
