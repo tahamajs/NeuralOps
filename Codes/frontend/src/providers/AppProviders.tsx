@@ -7,7 +7,19 @@ import { router } from "../router";
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { refetchOnWindowFocus: false, retry: 1, staleTime: 10000 },
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: (failureCount, error: any) => {
+        const status = error?.response?.status;
+        if (status === 401 || status === 403 || status === 404) return false;
+        return failureCount < 2;
+      },
+      staleTime: 10000,
+      gcTime: 5 * 60 * 1000,
+    },
+    mutations: {
+      retry: false,
+    },
   },
 });
 
