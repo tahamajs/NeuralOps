@@ -76,15 +76,8 @@ class AutoUpdater:
     def _fetch_latest_version(self) -> Optional[Dict[str, Any]]:
         """Fetch latest version metadata from backend API."""
         try:
-            channel = getattr(self.config, "update_channel", "stable")
-            resp = self.api._post(
-                "/api/agent/check-update/",
-                {
-                    "version": getattr(self.config, "version", "1.0.0"),
-                    "channel": channel,
-                    "platform": sys.platform,
-                },
-            )
+            current_ver = getattr(self.config, "version", "1.0.0")
+            resp = self.api.check_for_updates(current_ver)
             return resp if isinstance(resp, dict) and resp.get("version") else None
         except Exception as e:
             logger.debug("Failed to fetch latest version from API: %s", e)
