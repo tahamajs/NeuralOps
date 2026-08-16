@@ -1,9 +1,9 @@
 // src/App.tsx
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { RouterProvider } from "react-router-dom";
+import { router } from "./router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { HardwareProvider } from "./features/hardware/context/HardwareContext";
-import { MainLayout } from "./components/layout/MainLayout";
 import FloatingWindowRenderer from "./components/floating/FloatingWindow";
 import FloatingWindowBar from "./components/floating/FloatingWindowBar";
 import { useWindowStore } from "./store/windowStore";
@@ -13,34 +13,7 @@ import { WorkspaceManager } from "./components/WorkspaceManager";
 import { Toaster } from "./components/ui/Toast";
 
 // ========================
-// 1. Core / Layout Pages (used in Router)
-// ========================
-import LandingPage from "./features/auth/pages/LandingPage";
-import DocsPage from "./features/auth/pages/DocsPage";
-import LoginPage from "./features/auth/pages/LoginPage";
-import RegisterPage from "./features/auth/pages/RegisterPage";
-import DashboardPage from "./features/dashboard/pages/DashboardPage";
-import ExperimentListPage from "./features/experiments/pages/ExperimentListPage";
-import ExperimentDetailPage from "./features/experiments/pages/ExperimentDetailPage";
-import LauncherPage from "./features/launcher/pages/LauncherPage";
-import MarketplacePage from "./features/marketplace/pages/MarketplacePage";
-import MyOrdersPage from "./features/marketplace/pages/MyOrdersPage";
-import MyJobsPage from "./features/marketplace/pages/MyJobsPage";
-import JobDetailPage from "./features/marketplace/pages/JobDetailPage";
-import BillingPage from "./features/marketplace/pages/BillingPage";
-import UsagePage from "./features/marketplace/pages/UsagePage";
-import LeaderboardPage from "./features/marketplace/pages/LeaderboardPage";
-import ReputationPage from "./features/marketplace/pages/ReputationPage";
-import NotesListPage from "./features/notes/pages/NotesListPage";
-import NoteDetailPage from "./features/notes/pages/NoteDetailPage";
-import NoteCreatePage from "./features/notes/pages/NoteCreatePage";
-import PaperEditorPage from "./features/paper/pages/PaperEditorPage";
-import UserProfilePage from "./features/profile/pages/UserProfilePage";
-import SystemStatusPage from "./features/system/pages/SystemStatusPage";
-import NotFoundPage from "./features/NotFoundPage";
-
-// ========================
-// 2. Floating Windows (used in DockableWindow componentMap)
+// 1. Floating Windows (used in DockableWindow componentMap)
 // ========================
 // Terminal & Chat
 import TerminalPanel from "./features/terminal/components/TerminalPanel";
@@ -403,85 +376,32 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <HardwareProvider>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          {/* Main Router for full‑page routes (authentication, dashboard, etc.) */}
-          <BrowserRouter>
-            <Routes>
-              <Route index element={<LandingPage />} />
-              <Route path="/docs" element={<DocsPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route element={<MainLayout />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/experiments" element={<ExperimentListPage />} />
-                <Route
-                  path="/experiments/:id"
-                  element={<ExperimentDetailPage />}
-                />
-                <Route path="/launcher" element={<LauncherPage />} />
-                <Route path="/marketplace" element={<MarketplacePage />} />
-                <Route path="/marketplace/orders" element={<MyOrdersPage />} />
-                <Route path="/marketplace/jobs" element={<MyJobsPage />} />
-                <Route
-                  path="/marketplace/jobs/:jobId"
-                  element={<JobDetailPage />}
-                />
-                <Route path="/marketplace/billing" element={<BillingPage />} />
-                <Route path="/marketplace/usage" element={<UsagePage />} />
-                <Route
-                  path="/marketplace/leaderboard"
-                  element={<LeaderboardPage />}
-                />
-                <Route
-                  path="/marketplace/reputation"
-                  element={<ReputationPage />}
-                />
-                <Route path="/notes" element={<NotesListPage />} />
-                <Route path="/notes/new" element={<NoteCreatePage />} />
-                <Route path="/notes/:id" element={<NoteDetailPage />} />
-                <Route path="/paper/editor" element={<PaperEditorPage />} />
-                <Route path="/paper/new" element={<NewPaperProjectPage />} />
-                <Route path="/profile" element={<UserProfilePage />} />
-                <Route path="/system" element={<SystemStatusPage />} />
-                <Route path="/support" element={<SupportHubPage />} />
-                <Route path="/analysis" element={<ResearchAnalysisPage />} />
-                {/* Agent routes */}
-                <Route path="/agent" element={<AgentDashboardPage />} />
-                <Route path="/agent/tools" element={<AgentToolsPage />} />
-                <Route
-                  path="/agent/sessions"
-                  element={<AgentSessionsListPage />}
-                />
-                <Route path="/agent/papers" element={<PaperLibraryPage />} />
-                <Route path="/agent/prompts" element={<PromptTestingPage />} />
-                <Route path="/agent/:sessionId" element={<AgentChatPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Route>
-            </Routes>
+          {/* Main Application Router */}
+          <RouterProvider router={router} />
 
-            {/* Floating window system (always on top, shares router context) */}
-            <div className="fixed inset-0 z-50 overflow-hidden pointer-events-none">
-              <div className="pointer-events-auto">
-                {windows.map((win) => {
-                  const Component = componentMap[win.type];
-                  if (!Component) return null;
-                  return (
-                    <DockableWindow key={win.id} window={win}>
-                      <Component
-                        onClose={() =>
-                          useWindowStore.getState().removeWindow(win.id)
-                        }
-                      />
-                    </DockableWindow>
-                  );
-                })}
-                <WindowLauncher />
-                <WorkspaceManager />
-                <FloatingWindowRenderer />
-                <FloatingWindowBar />
-                <Toaster />
-              </div>
+          {/* Floating window system (always on top, dockable windows & toasts) */}
+          <div className="fixed inset-0 z-50 overflow-hidden pointer-events-none">
+            <div className="pointer-events-auto">
+              {windows.map((win) => {
+                const Component = componentMap[win.type];
+                if (!Component) return null;
+                return (
+                  <DockableWindow key={win.id} window={win}>
+                    <Component
+                      onClose={() =>
+                        useWindowStore.getState().removeWindow(win.id)
+                      }
+                    />
+                  </DockableWindow>
+                );
+              })}
+              <WindowLauncher />
+              <WorkspaceManager />
+              <FloatingWindowRenderer />
+              <FloatingWindowBar />
+              <Toaster />
             </div>
-          </BrowserRouter>
+          </div>
         </ThemeProvider>
       </HardwareProvider>
     </QueryClientProvider>
@@ -489,3 +409,4 @@ function App() {
 }
 
 export default App;
+
