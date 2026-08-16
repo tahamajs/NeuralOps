@@ -53,27 +53,27 @@ As sequence length $N$ scales from $2\text{k}$ to $64\text{k}+$, the $N \times N
                   └────────────────────────────────────────────────────────┘
                  /                           |                          \
                 /                            |                           \
-   [1. Photography/Optics]         [2. Press Conference]          [3. Human Memory]
-   Sensor Pixel Binning            Elected Press Pool             Executive Digest &
-   & Resolution Resampling         Representative Delegations     Bullet-Point Synthesis
+   [1. Photography/Optics]         [2. Press Logistics]           [3. Human Memory]
+   Sensor Pixel Binning            Elected Press Pool             Executive Briefing &
+   & Frequency Resampling          Representative Delegations     Bullet-Point Synthesis
                 \                            |                           /
                  \                           |                          /
-                  └────────────── [4. Urban Transportation] ──────────┘
-                                   Metropolitan Commuter Hubs
-                                   & Multi-Stop Express Buses
+                  └────────────── [4. Library Indexing] ───────────────┘
+                                   Card Catalog & Research
+                                   Topical Landmark Indexes
 ```
 
-### 1. Optical Sensor Pixel Binning (Physical Metaphor)
+### 1. Optical Sensor Pixel Binning (Physical/Data Metaphor)
 A 100-megapixel camera sensor captures massive spatial detail. To transmit real-time 4K video at 120 FPS without thermal throttling, the camera ISP performs *pixel binning*: it groups adjacent $4 \times 4$ blocks of physical photodiodes into a single aggregated super-pixel. The downstream image processing pipeline operates on the compact super-pixel grid ($k \ll N$) while preserving all broad visual context. **Linformer** applies sequence binning to keys and values, condensing $N$ individual tokens into $k$ synthetic semantic landmarks.
 
-### 2. The White House Press Pool (Logistics Metaphor)
-In a nation of 330 million citizens, if every citizen personally asked the President a question, government operations would freeze in endless debate ($\mathcal{O}(N^2)$). Instead, the system designates $k=50$ press pool correspondents ($E \in \mathbb{R}^{k \times N}$) who aggregate public inquiries. Every citizen ($Q \in \mathbb{R}^{N \times d}$) attends to the responses delivered by these 50 pool reporters ($V_{\text{proj}} \in \mathbb{R}^{k \times d}$), resolving national communication in linear time $\mathcal{O}(N \cdot k)$.
+### 2. The White House Press Pool (Industrial/Logistics Metaphor)
+In a nation of 330 million citizens, if every citizen personally asked the President a question, government operations would freeze in endless debate ($\mathcal{O}(N^2)$). Instead, the logistics system designates $k=50$ press pool correspondents ($E \in \mathbb{R}^{k \times N}$) who aggregate public inquiries. Every citizen ($Q \in \mathbb{R}^{N \times d}$) attends to the responses delivered by these 50 pool reporters ($V_{\text{proj}} \in \mathbb{R}^{k \times d}$), resolving national communication in linear time $\mathcal{O}(N \cdot k)$.
 
-### 3. Executive Digest and Bullet-Point Briefing (Cognitive Metaphor)
-A Supreme Court justice reviewing a 5,000-page trial transcript does not re-read all 5,000 pages during final deliberation. Law clerks condense the testimony into a structured 20-page legal digest ($k=20$). The justice cross-references their questions directly against this 20-page digest, maintaining razor-sharp analytical clarity in linear time. Linformer’s $E K$ functions as this synthesized legal digest.
+### 3. Executive Digest and Bullet-Point Briefing (Cognitive/Biological Metaphor)
+A human executive reviewing a 5,000-page operational transcript does not hold all 5,000 raw pages simultaneously in working biological memory. Executive aides condense the briefings into a structured 20-point analytical summary ($k=20$). The brain cross-references strategic inquiries directly against this compact 20-point digest, maintaining razor-sharp cognitive clarity in linear time. Linformer’s $E K$ functions as this synthesized working memory digest.
 
-### 4. Express Airport Shuttle Terminals (Transportation Metaphor)
-In a city with 10,000 neighborhoods, routing direct individual taxis between every pair of neighborhoods requires 100 million routes. Modern transit networks route passengers from 10,000 neighborhoods to $k=8$ regional transit hubs via express connector lines ($E$). Commuters travel efficiently via hubs, reducing total system transit links to linear complexity.
+### 4. Library Research Card Catalog (Information Retrieval / Library Metaphor)
+When researching a specialized query in a million-volume research library, a scholar does not inspect every single sentence on every shelf ($\mathcal{O}(N^2)$ all-to-all search). Instead, they consult a compressed $k$-topic master card catalog ($E \in \mathbb{R}^{k \times N}$) that maps raw shelf locations to compact topical subject hubs. Queries attend directly to the indexed topical anchors, retrieving high-relevance citations in $\mathcal{O}(N \cdot k)$ linear retrieval steps.
 
 ---
 
@@ -81,23 +81,23 @@ In a city with 10,000 neighborhoods, routing direct individual taxis between eve
 
 ```mermaid
 timeline
-    title Path to Dimension-Reduced Attention
+    title Path to Dimension-Reduced Linear Attention
     2017 : Standard Transformer (Vaswani et al.) : Dense N x N Softmax attention
     2019 : Sparse Transformers (Child et al.) : Strided & local window heuristics
     2020 : Linformer (Wang et al.) : Low-rank sequence projection with JL lemma proof
     2020 : BigBird & Longformer (Zaheer et al., Beltagy et al.) : Random + global + window attention
     2022 : FlashAttention (Dao et al.) : Exact attention via SRAM tiling
-    Present : Hybrid Architectures : Combining low-rank global routing with local convolutions
+    Present : Low-Rank & Hybrid Architectures : Combining low-rank global routing with local kernels
 ```
 
-### The Three Critical Failure Modes Addressed:
+### The Three Critical Failure Modes of Vanilla Attention:
 
-1. **Quadratic HBM Memory Footprint**:
-   For sequence length $N = 32\text{k}$, standard attention materializes an attention map of size $32,768 \times 32,768$ elements. In FP16, this single tensor requires **$2.14\text{ GB}$ per head**, or **$68.7\text{ GB}$ across 32 heads for a single layer**.
-2. **Empirical Low-Rank Spectral Redundancy**:
-   Singular Value Decomposition of attention matrices in trained BERT and RoBERTa models reveals that the top $128$ singular values account for $>95\%$ of total spectral energy. Computing the remaining $32,000+$ dimensions represents wasted floating-point computation on near-zero singular directions.
-3. **Inability to Scale Sequence Length in Encoders**:
-   Bidirectional encoders (e.g., for document classification, DNA modeling, and code search) require full context visibility. Local window methods sacrifice global cross-token visibility, whereas Linformer retains full bidirectional receptive field across all $N$ tokens.
+1. **The Quadratic Attention Barrier $\mathcal{O}(N^2)$ & KV Cache Explosion**:
+   For sequence length $N = 32\text{k}$, standard attention materializes an attention map of size $32,768 \times 32,768$ elements per head. In FP16, this single tensor requires **$2.14\text{ GB}$ per head**, or **$68.7\text{ GB}$ across 32 heads for a single layer**, causing catastrophic out-of-memory (OOM) failures on modern accelerator VRAM.
+2. **Memory Bandwidth Wall & Arithmetic Stalls**:
+   During autoregressive token generation and large-context prefilling, GPU compute intensity drops dramatically (< 1 FLOP/byte). Standard attention becomes severely memory-bandwidth bound as tensor cores remain starved while fetching gigantic $N \times d$ KV cache tensors from off-chip HBM across the interconnect.
+3. **Outlier Activation Amplification & Spectral Concentration**:
+   Empirical Singular Value Decomposition of attention matrices in trained models demonstrates that $>95\%$ of spectral energy is concentrated in a tiny subspace ($k \le 128$), while extreme coordinate outlier channels emerge in deep layers ($>6\sigma$). Dense attention squanders vast compute evaluating thousands of near-zero singular directions that add zero semantic discriminability while exacerbating numerical variance.
 
 ---
 
