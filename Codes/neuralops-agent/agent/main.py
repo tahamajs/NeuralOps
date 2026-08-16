@@ -146,6 +146,7 @@ class GPUProviderAgent:
             on_cancel=self._handle_cancel,
             on_heartbeat_ack=self._handle_heartbeat_ack,
         )
+        self.job_executor.set_websocket_client(self.ws)
         self.ws.connect()
 
     def _handle_new_job(self, job_data: dict):
