@@ -37,16 +37,16 @@ As modern foundation models scale to tens and hundreds of billions of parameters
 
 ## 2. The Mental Model: 4 Real-World Analogies
 
-### 1. The Video Codec Keyframe Analogy (Data/Signal Processing)
+### 1. The Video Codec Keyframe Analogy (Physical/Data)
 When streaming a movie, a video codec (such as H.264/H.265) does not transmit 60 complete, uncompressed raw images every second. It transmits an occasional high-fidelity **I-Frame** (Keyframe), and then transmits only the small movement differences (**Delta Frames**) for subsequent frames. **Lillama Compressor** applies this exact concept to neural weights and state caches: it anchors principal baseline features and encodes subsequent variations with high-density compact representations.
 
-### 2. The Master Bonsai Gardener Analogy (Physical/Pruning)
+### 2. The Master Bonsai Gardener Analogy (Industrial/Logistics)
 A master gardener sculpting a prize-winning bonsai tree does not cut branches at random. They carefully study the trunk's nutrient conduits, removing only non-essential secondary twigs while protecting the vital structural limbs. The result is a tree that is lighter, healthier, and requires less water while retaining its complete artistic beauty. **Lillama Compressor** surgically trims redundant weight parameters while protecting high-saliency activation channels.
 
-### 3. The Professional Audio Mastering Analogy (Signal Dynamic Range)
+### 3. The Professional Audio Mastering Analogy (Cognitive/Biological)
 In sound engineering, an uncompressed vocal recording contains massive volume spikes that would blow out speakers if amplified naively. Sound engineers use a dynamic range compressor/limiter to tame high-energy transients before normalizing the master track. **Lillama Compressor** detects activation outlier channels, balances their dynamic range mathematically, and down-converts representations without clipping critical semantic signals.
 
-### 4. The Compact Moving Container Analogy (Logistics)
+### 4. The Compact Moving Container Analogy (Information Retrieval/Library)
 When packing a moving truck, an amateur leaves furniture assembled, wasting 70% of the volume with empty air gaps. A professional moving company disassembles table legs, packs items into uniform modular boxes, and stacks them with millimeter precision. **Lillama Compressor** decomposes bulky mathematical tensors into modular, tightly packed representations that maximize hardware cache utilization.
 
 ---
@@ -90,16 +90,16 @@ graph TD
     style Step10 fill:#0F172A,stroke:#334155,color:#F8FAFC
 ```
 
-1. **Calibration Dataset Ingestion**: Passes a small set of representative calibration tokens ($C=128$) through the uncompressed model.
-2. **Activation Covariance Profiling**: Accumulates empirical activation statistics $H = X^T X$ for every transformer layer.
-3. **Outlier Channel Identification**: Pinpoints high-entropy activation coordinates exceeding $6.0\sigma$ thresholds.
-4. **Unitary Basis Rotation**: Applies orthogonal transformations ($Q Q^T = I$) to redistribute activation variance uniformly across channels.
-5. **Structured Metric Evaluation**: Computes parameter saliency scores combining weight magnitude and activation energy ($S_{ij} = |W_{ij}| \cdot \|X_j\|_2$).
-6. **Subspace Truncation / Quantization Binning**: Truncates low-saliency singular components or maps weights into INT4/FP8 bins.
-7. **Second-Order Error Compensation**: Computes optimal bias adjustments to absorb the mean residual error into downstream layers.
-8. **Layer-Wise Calibration Sweep**: Iterates sequentially through attention projection and MLP blocks.
-9. **Fused Kernel Packing**: Packs integer weights into bit-aligned memory formats with scale and zero-point metadata.
-10. **Hardware-Accelerated Execution**: Dispatches quantized/pruned weights directly to GPU Tensor Cores.
+1. **Calibration Profile & Saliency Analysis**: Passes a small set of representative calibration tokens ($C=128$) through the uncompressed model.
+2. **Hessian / Covariance Estimation**: Accumulates empirical activation statistics $H = X^T X$ for every transformer layer.
+3. **Outlier Channel Isolation**: Pinpoints high-entropy activation coordinates exceeding $6.0\sigma$ thresholds.
+4. **Orthogonal Basis Transformation**: Applies orthogonal transformations ($Q Q^T = I$) to redistribute activation variance uniformly across channels.
+5. **Optimal Truncation / Integer Mapping**: Computes parameter saliency scores combining weight magnitude and activation energy ($S_{ij} = |W_{ij}| \cdot \|X_j\|_2$).
+6. **Quantization Scale & Zero-Point Computation**: Truncates low-saliency singular components or maps weights into INT4/FP8 bins.
+7. **Error Minimization & Bias Compensation**: Computes optimal bias adjustments to absorb the mean residual error into downstream layers.
+8. **Layer-by-Layer Reconstruction**: Iterates sequentially through attention projection and MLP blocks.
+9. **Fused Kernel Code Generation**: Packs integer weights into bit-aligned memory formats with scale and zero-point metadata.
+10. **High-Speed Inference Execution**: Dispatches quantized/pruned weights directly to GPU Tensor Cores.
 
 ---
 

@@ -1577,6 +1577,11 @@
             "path": "content/compressions_blog/cure_blog.md"
         },
         {
+            "id": "delta_kv_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/delta_kv_blog.md"
+        },
+        {
             "id": "dobi_svd_blog.md",
             "title": "\ud83c\udf1f Deep Dive",
             "path": "content/compressions_blog/dobi_svd_blog.md"
@@ -1762,6 +1767,11 @@
             "path": "content/compressions_blog/roast_hashed_linear_blog.md"
         },
         {
+            "id": "rotational_slicegpt_int4_blog.md",
+            "title": "\ud83c\udf1f Deep Dive",
+            "path": "content/compressions_blog/rotational_slicegpt_int4_blog.md"
+        },
+        {
             "id": "rpc_attention_blog.md",
             "title": "\ud83c\udf1f Deep Dive",
             "path": "content/compressions_blog/rpc_attention_blog.md"
@@ -1870,16 +1880,6 @@
             "id": "zerokv_neo_compressor_blog.md",
             "title": "\ud83c\udf1f Deep Dive",
             "path": "content/compressions_blog/zerokv_neo_compressor_blog.md"
-        },
-        {
-            "id": "delta_kv_blog.md",
-            "title": "\ud83c\udf1f Masterclass",
-            "path": "content/compressions_blog/delta_kv_blog.md"
-        },
-        {
-            "id": "rotational_slicegpt_int4_blog.md",
-            "title": "\ud83c\udf1f Masterclass",
-            "path": "content/compressions_blog/rotational_slicegpt_int4_blog.md"
         }
     ],
     "blog_series": [
