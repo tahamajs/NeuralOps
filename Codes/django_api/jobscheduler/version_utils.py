@@ -2,12 +2,18 @@ import subprocess
 import sys
 
 from django.conf import settings
-from git import Repo
+try:
+    from git import Repo
+except ImportError:
+    Repo = None
 
 from .models import VersionedConfig
 
 
 def capture_git_info(job):
+    if Repo is None:
+        print(f"Git info capture skipped for job {job.id}: GitPython not installed")
+        return
     try:
         repo = Repo(settings.BASE_DIR, search_parent_directories=True)
         job.git_commit_hash = repo.head.commit.hexsha
