@@ -25,6 +25,11 @@ def get_storage_path(sweep_id) -> str:
 
 # ── Sampler Factory ──────────────────────────────────────────────────
 if HAS_OPTUNA:
+    try:
+        from optuna_integration import BoTorchSampler
+    except Exception:
+        BoTorchSampler = optuna.samplers.TPESampler
+
     SAMPLER_MAP = {
         "tpe": optuna.samplers.TPESampler,
         "cmaes": optuna.samplers.CmaEsSampler,
@@ -33,15 +38,20 @@ if HAS_OPTUNA:
         "grid": optuna.samplers.GridSampler,
         "random": optuna.samplers.RandomSampler,
         "qmc": optuna.samplers.QMCSampler,
-        "gp": optuna.samplers.GPSampler,
-        "botorch": getattr(optuna.integration, "BoTorchSampler", optuna.samplers.TPESampler) if hasattr(optuna, "integration") else optuna.samplers.TPESampler,
+        "gp": getattr(optuna.samplers, "GPSampler", optuna.samplers.TPESampler),
+        "botorch": BoTorchSampler,
         "auto": None,  # handled separately
     }
+
+    try:
+        from optuna.pruners import WilcoxonPruner
+    except Exception:
+        WilcoxonPruner = optuna.pruners.MedianPruner
 
     PRUNER_MAP = {
         "hyperband": optuna.pruners.HyperbandPruner,
         "median": optuna.pruners.MedianPruner,
-        "wilcoxon": getattr(optuna.pruners, "WilcoxonPruner", optuna.pruners.MedianPruner),
+        "wilcoxon": WilcoxonPruner,
         "successive_halving": optuna.pruners.SuccessiveHalvingPruner,
         "none": optuna.pruners.NopPruner,
     }
