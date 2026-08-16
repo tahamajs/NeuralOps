@@ -133,3 +133,30 @@ jobs:
         run: |
           python generate_catalog.py
           git diff --exit-code Docs/catalog.json
+
+  neuralops-agent-ci:
+    name: NeuralOps Agent & GUI Bridge Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'Codes/neuralops-agent/requirements.txt'
+
+      - name: Install Agent Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -r Codes/neuralops-agent/requirements.txt
+          pip install pytest
+
+      - name: Run NeuralOps Agent Unit Test Suite
+        working-directory: Codes/neuralops-agent
+        run: |
+          pytest tests/ -v
