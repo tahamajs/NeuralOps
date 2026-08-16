@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
-import { FixedSizeList as List } from "react-window";
+import { FixedSizeList } from "react-window";
+
+const List = FixedSizeList as any;
 type Message = any;
 import { Avatar } from "../../../components/ui/Avatar";
 import { Bot, User } from "lucide-react";

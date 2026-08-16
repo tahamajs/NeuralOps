@@ -1,7 +1,8 @@
 // src/features/healthMonitor/pages/HealthDashboard.tsx
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import GridLayout from "react-grid-layout";
+import ReactGridLayout from "react-grid-layout";
+const GridLayout = ReactGridLayout as any;
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { healthMonitorAPI } from "../services/api";
