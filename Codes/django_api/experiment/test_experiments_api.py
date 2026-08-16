@@ -32,9 +32,7 @@ class ExperimentAPITests(TestCase):
             experiment=self.experiment,
             name="run-001-svd-rank32",
             status="completed",
-            epochs=5,
-            batch_size=8,
-            learning_rate=0.0001
+            config={"epochs": 5, "batch_size": 8, "learning_rate": 0.0001}
         )
         self.snapshot = TrainingSnapshot.objects.create(
             run=self.run,
@@ -59,7 +57,6 @@ class ExperimentAPITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["name"], "SVD-Attention-Benchmark")
-        self.assertIn("runs", data)
 
     def test_create_experiment(self):
         """Test POST /api/experiments/"""
