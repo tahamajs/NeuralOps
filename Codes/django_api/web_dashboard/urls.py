@@ -7,12 +7,17 @@ urlpatterns = [
     path("", views.index, name="dashboard_index"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("dashboard/home/", views.dashboard, name="dashboard_dashboard"),
+    path("dashboard/create/", views.create_job_page, name="dashboard_create_job"),
+    path("dashboard/statistics/", views.statistics_page, name="dashboard_statistics"),
+    path("login/", views.login_page, name="dashboard_login"),
+    path("register/", views.register_page, name="dashboard_register"),
     path("dashboard/job/<uuid:job_id>/", views.job_detail, name="dashboard_job_detail"),
     path("api/dashboard/job/<uuid:job_id>/", views.job_detail, name="api_dashboard_job_detail"),
+    path("api/jobs/", views.consumer_jobs, name="dashboard_api_jobs"),
     # ─── Authentication API ────────────────────────────────────
-    path("api/register/", views.api_register, name="api_register"),
-    path("api/login/", views.api_login, name="api_login"),
-    path("api/logout/", views.api_logout, name="api_logout"),
+    path("api/register/", views.api_register, name="dashboard_api_register"),
+    path("api/login/", views.api_login, name="dashboard_api_login"),
+    path("api/logout/", views.api_logout, name="dashboard_api_logout"),
     # ─── Widget Management ─────────────────────────────────────
     path("api/widgets/", views.dashboard_widgets, name="dashboard_widgets"),
     path(
@@ -26,7 +31,7 @@ urlpatterns = [
     ),
     # ─── Dashboard Statistics & Config ─────────────────────────
     path("api/dashboard/stats/", views.dashboard_stats, name="dashboard_stats"),
-    path("api/dashboard/statistics/", views.dashboard_stats, name="dashboard_statistics"),
+    path("api/dashboard/statistics/", views.dashboard_stats, name="api_dashboard_statistics"),
     path(
         "api/dashboard/settings/", views.dashboard_settings, name="dashboard_settings"
     ),

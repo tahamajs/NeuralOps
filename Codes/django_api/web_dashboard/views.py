@@ -18,7 +18,14 @@ from rest_framework.response import Response
 from sweeps.models import Sweep
 
 from .models import DashboardWidget
-from .serializers import DashboardWidgetSerializer
+from .serializers import (
+    ComputeJobSerializer,
+    ComputeOrderSerializer,
+    DashboardWidgetSerializer,
+    EscrowBalanceSerializer,
+    GPUListingSerializer,
+    InvoiceSerializer,
+)
 
 
 class StandardPagination(PageNumberPagination):
@@ -90,6 +97,10 @@ def index(request):
     return render(request, "web_dashboard/index.html", {"runs": runs})
 
 
+def create_job_page(request):
+    return render(request, "web_dashboard/dashboard.html")
+
+
 @login_required
 def dashboard(request):
     return render(request, "web_dashboard/dashboard.html")
@@ -99,6 +110,18 @@ def dashboard(request):
 def job_detail(request, job_id):
     run = get_object_or_404(TrainingRun, id=job_id)
     return render(request, "web_dashboard/experiment_monitor.html", {"run": run})
+
+
+@login_required
+def statistics_page(request):
+    total = TrainingRun.objects.count()
+    completed = TrainingRun.objects.filter(status="completed").count()
+    success_rate = round(completed / total * 100, 1) if total else 0
+    return render(
+        request,
+        "web_dashboard/dashboard.html",
+        {"success_rate": success_rate, "total_runs": total}
+    )
 
 
 def login_page(request):
