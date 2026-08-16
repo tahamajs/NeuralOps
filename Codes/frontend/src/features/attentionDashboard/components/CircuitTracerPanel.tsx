@@ -247,7 +247,7 @@ export const CircuitTracerPanel: React.FC = () => {
                       return (
                         <div key={idx} className="space-y-0.5">
                           <div className="flex justify-between text-[10px] font-mono text-slate-400">
-                            <span>$\sigma_{idx + 1}$ = {sv}</span>
+                            <span>σ_{idx + 1} = {sv}</span>
                             <span className="text-slate-500">{energy}% Cumul.</span>
                           </div>
                           <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
