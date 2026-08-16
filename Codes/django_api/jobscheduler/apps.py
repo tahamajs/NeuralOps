@@ -11,9 +11,11 @@ class JobschedulerConfig(AppConfig):
     def ready(self):
         import sys
 
-        if "test" in sys.argv:
+        # Avoid starting scheduler during tests, checks, migrations, or verification scripts
+        cli_commands = ["test", "check", "verify", "showmigrations", "migrate", "collectstatic"]
+        if any(cmd in " ".join(sys.argv) for cmd in cli_commands):
             return
-        # Avoid starting scheduler in migrate or collectstatic
+
         if os.environ.get("RUN_MAIN") != "true" and not os.environ.get(
             "DJANGO_AUTORELOAD"
         ):
