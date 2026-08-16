@@ -12,7 +12,7 @@ interface MessageListProps {
 }
 
 export function MessageList({ messages }: MessageListProps) {
-  const listRef = useRef<List>(null);
+  const listRef = useRef<FixedSizeList>(null);
 
   useEffect(() => {
     if (listRef.current && messages.length) {
