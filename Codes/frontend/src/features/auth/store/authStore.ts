@@ -7,8 +7,10 @@ import {
   removeAuthToken,
 } from "../../../utils/authUtils";
 
+import { User } from "../../../types/user";
+
 interface AuthState {
-  user: { username: string; email?: string } | null;
+  user: Partial<User> | null;
   token: string | null;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
@@ -29,7 +31,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     const res = await api.post(ENDPOINTS.AUTH.LOGIN, { username, password });
     if (res.data.token) {
       setAuthToken(res.data.token);
-      set({ user: { username }, token: res.data.token, isAuthenticated: true });
+      set({
+        user: {
+          id: res.data.user_id,
+          username: res.data.username || username,
+          email: res.data.email,
+          is_staff: res.data.is_staff,
+        },
+        token: res.data.token,
+        isAuthenticated: true,
+      });
     }
   },
   logout: () => {

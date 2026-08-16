@@ -8,7 +8,7 @@ urlpatterns = [
     path("me/avatar/", views.upload_avatar, name="upload_avatar"),
     path("me/avatar/remove/", views.remove_avatar, name="remove_avatar"),
     path("search/", views.search_users, name="search_users"),
-    path("user/<int:user_id>/", views.user_profile, name="user_profile"),
+    path("user/<str:identifier>/", views.user_profile_by_identifier, name="user_profile"),
     path(
         "username/<str:username>/",
         views.user_profile_by_username,

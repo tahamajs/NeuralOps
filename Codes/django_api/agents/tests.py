@@ -6,6 +6,7 @@ from django.test import TestCase
 from rest_framework.authtoken.models import Token
 
 from django_api.asgi import application
+from agents import consumers
 
 User = get_user_model()
 
@@ -53,7 +54,7 @@ class AgentConsumerWebSocketTests(TestCase):
 
         async_to_sync(test)()
 
-    @patch("agents.consumers.LangGraphAgent")
+    @patch.object(consumers, "LangGraphAgent")
     def test_agent_chat_send_message(self, mock_agent_class):
         mock_agent_instance = MagicMock()
         mock_agent_instance.run.return_value = {
@@ -71,7 +72,7 @@ class AgentConsumerWebSocketTests(TestCase):
             self.assertTrue(connected)
 
             await communicator.send_json_to({"type": "message", "text": "Hello Agent"})
-            
+
             # Should receive sync
             res_sync = await communicator.receive_json_from()
             self.assertEqual(res_sync.get("type"), "messages_sync")
