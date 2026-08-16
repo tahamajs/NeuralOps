@@ -33,6 +33,8 @@ import django
 django.setup()
 
 from django.core.management import call_command
+# Ensure all tables and migrations are applied before running audit
+call_command("migrate", verbosity=0)
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.core.cache import cache
