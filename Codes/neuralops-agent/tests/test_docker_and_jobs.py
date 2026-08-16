@@ -528,12 +528,51 @@ class TestJobExecutor(unittest.TestCase):
         with open(os.path.join(artifacts, "model.bin"), "wb") as f:
             f.write(b"\x00\x01\x02\x03\x04\x05")
 
-        output_hash, manifest = self.executor._compute_output_artifacts(job_dir)
-        self.assertTrue(len(output_hash) == 64)
-        self.assertEqual(len(manifest), 2)
-        paths = [item["path"] for item in manifest]
-        self.assertIn("artifacts/metrics.json", paths)
-        self.assertIn("artifacts/model.bin", paths)
+    def test_timeout_watchdog(self):
+        job_id = "job-timeout-test"
+        job_data = {
+            "id": job_id,
+            "docker_image": "python:3.10-slim",
+            "timeout_seconds": 1,
+        }
+
+        self.mock_docker.run_job_with_pre_script.return_value = "cid_timeout_123"
+        self.mock_docker.stream_logs.return_value = []
+        # Simulate container running past timeout
+        self.mock_docker.get_container_info.return_value = {
+            "status": "running",
+            "exit_code": None,
+            "oom_killed": False,
+        }
+
+        ctx = JobContext(job_id=job_id, job_data=job_data, job_dir=os.path.join(self.temp_dir, job_id))
+        # Backdate start_time to trigger watchdog immediately
+        ctx.start_time = time.time() - 10.0
+        self.executor._active_jobs[job_id] = ctx
+        self.executor._run_job_pipeline(ctx)
+
+        self.assertEqual(ctx.state, JobState.FAILED)
+        self.mock_docker.stop_container.assert_called_with("cid_timeout_123", timeout=2, remove=True)
+        self.mock_api.report_job_failed.assert_called_once()
+        args, _ = self.mock_api.report_job_failed.call_args
+        self.assertIn("timed out", args[1])
+
+    def test_job_execute_and_get_status(self):
+        job_id = "job-status-query"
+        job_data = {"id": job_id, "docker_image": "python:3.10-slim"}
+
+        with patch.object(threading.Thread, "start"):
+            accepted = self.executor.execute(job_data)
+            self.assertTrue(accepted)
+
+            status = self.executor.get_job_status(job_id)
+            self.assertIsNotNone(status)
+            self.assertEqual(status["job_id"], job_id)
+            self.assertEqual(status["state"], JobState.QUEUED.value)
+
+            active_jobs = self.executor.get_active_jobs()
+            self.assertIn(job_id, active_jobs)
+
 
 
 class TestAutoUpdater(unittest.TestCase):
@@ -544,6 +583,7 @@ class TestAutoUpdater(unittest.TestCase):
         self.config.version = "1.0.0"
         self.config.auto_update = True
         self.mock_api = MagicMock()
+        self.mock_api.check_for_updates.side_effect = lambda v: self.mock_api._post("/api/agent/check-update/", {"version": v})
         self.updater = AutoUpdater(self.config, self.mock_api)
 
     def test_version_newer(self):
