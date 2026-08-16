@@ -2,7 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import GridLayout from "react-grid-layout";
+import ReactGridLayout from "react-grid-layout";
+const GridLayout = ReactGridLayout as any;
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { liveDashboardsAPI } from "../services/api";
