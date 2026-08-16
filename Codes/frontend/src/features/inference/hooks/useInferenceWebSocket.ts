@@ -1,35 +1,46 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useAuthStore } from "../../auth/store/authStore";
+import { getAuthToken } from "../../../utils/authUtils";
 
 export function useInferenceWebSocket(runId: string | null) {
   const [logs, setLogs] = useState<string[]>([]);
   const [status, setStatus] = useState<string>("idle");
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
-  const { token } = useAuthStore() as any;
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const connect = useCallback(() => {
     if (!runId) return;
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const token = getAuthToken();
     const ws = new WebSocket(
       `${protocol}://${window.location.host}/ws/inference/${runId}/?token=${token}`,
     );
     wsRef.current = ws;
     ws.onopen = () => setIsConnected(true);
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "log") setLogs((prev) => [...prev, data.message]);
-      else if (data.type === "status") setStatus(data.status);
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "log") setLogs((prev) => [...prev, data.message]);
+        else if (data.type === "status") setStatus(data.status);
+      } catch (err) {
+        console.error("Inference WS parse error", err);
+      }
     };
+    ws.onerror = () => setIsConnected(false);
     ws.onclose = () => {
       setIsConnected(false);
-      setTimeout(connect, 3000);
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = setTimeout(connect, 3000);
     };
-  }, [runId, token]);
+  }, [runId]);
 
   useEffect(() => {
     connect();
-    return () => wsRef.current?.close();
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      wsRef.current?.close();
+    };
   }, [connect]);
+
   return { logs, status, isConnected };
 }

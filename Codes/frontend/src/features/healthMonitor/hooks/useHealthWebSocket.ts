@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useAuthStore } from "../../auth/store/authStore";
+import { getAuthToken } from "../../../utils/authUtils";
 import { Alert, SystemHealth } from "../types";
 
 export function useHealthWebSocket(dashboardId?: string) {
@@ -8,33 +8,42 @@ export function useHealthWebSocket(dashboardId?: string) {
   const [isConnected, setIsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { token } = useAuthStore() as any;
 
   const connect = useCallback(() => {
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const token = getAuthToken();
     const ws = new WebSocket(
       `${protocol}://${window.location.host}/ws/health/${dashboardId || "global"}/?token=${token}`,
     );
     wsRef.current = ws;
     ws.onopen = () => setIsConnected(true);
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "alert") {
-        setAlerts((prev) => [data.data, ...prev].slice(0, 100));
-      } else if (data.type === "health_update") {
-        setSystemHealth(data.data);
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "alert") {
+          setAlerts((prev) => [data.data, ...prev].slice(0, 100));
+        } else if (data.type === "health_update") {
+          setSystemHealth(data.data);
+        }
+      } catch (err) {
+        console.error("Health WebSocket parse error", err);
       }
     };
+    ws.onerror = () => setIsConnected(false);
     ws.onclose = () => {
       setIsConnected(false);
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = setTimeout(connect, 3000);
     };
-  }, [dashboardId, token]);
+  }, [dashboardId]);
 
   useEffect(() => {
     connect();
-    return () => wsRef.current?.close();
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      wsRef.current?.close();
+    };
   }, [connect]);
+
   return { alerts, systemHealth, isConnected };
 }
