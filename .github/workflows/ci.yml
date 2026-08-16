@@ -11,6 +11,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
+  FORCE_COLOR: "1"
+
 jobs:
   framework-ci:
     name: PyTorch Framework Tests (Python ${{ matrix.python-version }})
