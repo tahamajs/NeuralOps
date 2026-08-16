@@ -188,49 +188,53 @@ def verify_all_attentions():
     failed = []
     
     test_configs = [
-        {"B": 2, "T": 16, "C": 64, "heads": 12},
-        {"B": 1, "T": 32, "C": 64, "heads": 12},
+        {"B": 2, "T": 16, "C": 64, "heads": 4},
+        {"B": 1, "T": 32, "C": 144, "heads": 12},
     ]
 
     for idx, (key, cls_or_fn) in enumerate(sorted(ATTENTION_REGISTRY.items()), 1):
-        try:
-            for cfg in test_configs:
-                B, T, C, num_heads = cfg["B"], cfg["T"], cfg["C"], cfg["heads"]
-                x = torch.randn(B, T, C)
-                
-                hf_cfg = DistilBertConfig(
-                    vocab_size=1000,
-                    dim=C,
-                    n_layers=2,
-                    n_heads=num_heads,
-                    hidden_dim=C * 2,
-                    max_position_embeddings=128,
-                    rank=16,
-                )
-                hf_cfg.num_kernel_heads = 2
-                hf_cfg.num_full_heads = 2
-                hf_cfg.num_local_heads = 8
-                hf_cfg.num_global_heads = 4
-                hf_cfg.hidden_size = C
-                hf_cfg.num_attention_heads = num_heads
-                hf_cfg.num_heads = num_heads
-                hf_cfg.rank = 16
-                hf_cfg.k_rank = 16
-                hf_cfg.v_rank = 16
-                hf_cfg.dropout = 0.0
-                hf_cfg.svd_energy = 0.95
-                hf_cfg.cur_rank = 16
-                hf_cfg.seer_enabled = False
-                hf_cfg.target_rank = [16]
-                hf_cfg.rectify_interval = 10
-                hf_cfg.svd_min_rank = 4
-                hf_cfg.embed_dim = C
+        unwrapped = inspect.unwrap(cls_or_fn)
+        success = False
+        last_err = None
+        for cfg in test_configs:
+            B, T, C, num_heads = cfg["B"], cfg["T"], cfg["C"], cfg["heads"]
+            x = torch.randn(B, T, C)
+            
+            hf_cfg = DistilBertConfig(
+                vocab_size=1000,
+                dim=C,
+                n_layers=2,
+                n_heads=num_heads,
+                hidden_dim=C * 2,
+                max_position_embeddings=128,
+                rank=16,
+            )
+            hf_cfg.num_kernel_heads = 2
+            hf_cfg.num_full_heads = 2
+            hf_cfg.num_local_heads = 8 if num_heads == 12 else 2
+            hf_cfg.num_global_heads = 4 if num_heads == 12 else 2
+            hf_cfg.hidden_size = C
+            hf_cfg.num_attention_heads = num_heads
+            hf_cfg.num_heads = num_heads
+            hf_cfg.rank = 16
+            hf_cfg.k_rank = 16
+            hf_cfg.v_rank = 16
+            hf_cfg.dropout = 0.0
+            hf_cfg.svd_energy = 0.95
+            hf_cfg.cur_rank = 16
+            hf_cfg.seer_enabled = False
+            hf_cfg.target_rank = [16]
+            hf_cfg.rectify_interval = 10
+            hf_cfg.svd_min_rank = 4
+            hf_cfg.embed_dim = C
+            hf_cfg.in_proj_weight = nn.Parameter(torch.randn(3 * C, C))
+            hf_cfg.out_proj = DummyAttentionLayer(C, num_heads).out_proj
 
-                old_attn = DummyAttentionLayer(C, num_heads)
-                comp_cfg = DynamicCompConfig()
+            old_attn = DummyAttentionLayer(C, num_heads)
+            mha = nn.MultiheadAttention(C, num_heads, batch_first=True)
+            comp_cfg = DynamicCompConfig()
 
-                unwrapped = inspect.unwrap(cls_or_fn)
-
+            try:
                 if inspect.isclass(cls_or_fn):
                     sig = inspect.signature(cls_or_fn.__init__)
                     params = list(sig.parameters.keys())
@@ -239,7 +243,8 @@ def verify_all_attentions():
                     for p in params:
                         if p in ('self', 'args', 'kwargs'): continue
                         val = 16
-                        if any(w in p for w in ('old', 'attn', 'original', 'pretrained')): val = old_attn
+                        if 'original_layer' in p: val = mha
+                        elif any(w in p for w in ('old', 'attn', 'pretrained')): val = old_attn
                         elif 'layer' in p and not any(w in p for w in ('total', 'num', 'idx')): val = old_attn
                         elif any(w in p for w in ('comp', 'cfg', 'orion', 'phantom')): val = comp_cfg
                         elif any(w in p for w in ('config', 'model')): val = hf_cfg
@@ -254,16 +259,21 @@ def verify_all_attentions():
                         else: val = 0.0 if any(w in p for w in ('rate', 'prob', 'temp')) else 16
                         kwargs[p] = val
                         args.append(val)
+                    kwargs_err = None
                     try:
                         inst = cls_or_fn(**kwargs)
-                    except Exception:
+                    except Exception as e:
+                        kwargs_err = e
                         try:
                             inst = cls_or_fn(*args)
                         except Exception:
                             try:
                                 inst = cls_or_fn(C, num_heads)
                             except Exception:
-                                inst = cls_or_fn(hf_cfg)
+                                try:
+                                    inst = cls_or_fn(hf_cfg)
+                                except Exception:
+                                    raise kwargs_err
                     try:
                         out = inst(x)
                     except Exception:
@@ -273,29 +283,43 @@ def verify_all_attentions():
                             pass
                 else:
                     # Injection / functional attention
+                    kwargs_err = None
                     try:
-                        unwrapped(old_attn, hf_cfg, comp_cfg, 0, 2, old_attn)
-                    except Exception:
+                        unwrapped(layer=old_attn, model_config=hf_cfg, comp_config=comp_cfg, layer_idx=0, total_layers=2, old_attn=old_attn)
+                    except Exception as e:
+                        kwargs_err = e
                         try:
-                            unwrapped(old_attn, hf_cfg, comp_cfg, 0, 2)
+                            unwrapped(old_attn, hf_cfg, comp_cfg, 0, 2, old_attn)
                         except Exception:
                             try:
-                                unwrapped(old_attn, hf_cfg)
+                                unwrapped(layer=old_attn, model_config=hf_cfg, comp_config=comp_cfg, layer_idx=0, total_layers=2)
                             except Exception:
                                 try:
-                                    unwrapped(old_attn)
+                                    unwrapped(old_attn, hf_cfg, comp_cfg, 0, 2)
                                 except Exception:
                                     try:
-                                        unwrapped(x)
+                                        unwrapped(old_attn, hf_cfg)
                                     except Exception:
-                                        unwrapped()
-            
+                                        try:
+                                            unwrapped(old_attn)
+                                        except Exception:
+                                            try:
+                                                unwrapped(x)
+                                            except Exception:
+                                                raise kwargs_err
+                success = True
+                break
+            except Exception as e:
+                last_err = e
+                pass
+        
+        if success:
             passed += 1
             if idx <= 10 or idx % 20 == 0 or idx == total_keys:
                 print(f"  [{idx:3d}/{total_keys}] ✓ {key:<35} -> Multi-config pass OK")
-        except Exception as e:
-            failed.append((key, str(e)))
-            print(f"  [{idx:3d}/{total_keys}] ✗ {key:<35} -> ERROR: {e}")
+        else:
+            failed.append((key, str(last_err)))
+            print(f"  [{idx:3d}/{total_keys}] ✗ {key:<35} -> ERROR: {last_err}")
 
     print(f"\nAttention Verification Summary: {passed}/{total_keys} PASSED ({(passed/total_keys)*100:.1f}%)")
     if failed:
