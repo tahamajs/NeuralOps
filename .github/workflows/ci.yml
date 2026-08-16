@@ -56,6 +56,14 @@ jobs:
         run: |
           PYTHONPATH=Codes python Codes/framework/test_all_framework.py
 
+      - name: Verify All 120 Attention Architectures & 77 Compression Engines
+        run: |
+          PYTHONPATH=Codes/framework:Codes python Codes/framework/verify_all_framework_modules.py
+
+      - name: Run Compression Engine Test Suite
+        run: |
+          PYTHONPATH=Codes/framework:Codes python Codes/framework/test_all_compression_engines.py
+
   django-backend-ci:
     name: Django Backend & REST API Tests
     runs-on: ubuntu-latest
@@ -80,10 +88,25 @@ jobs:
         run: |
           python manage.py check
 
+      - name: Run Backend API & Authentication Audit (61 Tests)
+        working-directory: Codes/django_api
+        run: |
+          python audit_backend_api.py
+
       - name: Run Django Test Suite
         working-directory: Codes/django_api
         run: |
           python manage.py test api.test_attention_dashboard experiment.test_experiments_api web_dashboard --keepdb
+
+      - name: Run Real-Time WebSocket Channel Suite (7 Tests)
+        working-directory: Codes/django_api
+        run: |
+          python manage.py test django_api.test_websocket_audit --keepdb
+
+      - name: Run End-to-End Multi-Architecture Launch Flow Suite (4 Tests)
+        working-directory: Codes/django_api
+        run: |
+          python manage.py test api.test_e2e_launch_flow --keepdb
 
       - name: Verify All 78 Django Apps Ecosystem
         working-directory: Codes/django_api
@@ -108,10 +131,15 @@ jobs:
         run: |
           npm install --legacy-peer-deps
 
+      - name: Run TypeScript Typecheck (0 Errors)
+        working-directory: Codes/frontend
+        run: |
+          npx tsc --noEmit
+
       - name: Run Production Vite Build
         working-directory: Codes/frontend
         run: |
-          npm run build
+          NODE_OPTIONS=--max-old-space-size=4096 npm run build
 
   docs-hub-ci:
     name: Research Hub Documentation SPA Audit
