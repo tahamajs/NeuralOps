@@ -1,4 +1,4 @@
-# 🚀 NeuralOps Framework Deep Research & Benchmarks
+# 🚀 SVD Linear Attention Framework Core Architecture
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.2+](https://img.shields.io/badge/pytorch-2.2+-ee4c2c.svg)](https://pytorch.org/)
@@ -9,8 +9,8 @@
 [![Security: Bandit](https://img.shields.io/badge/security-bandit-yellow.svg)](https://github.com/PyCQA/bandit)
 [![Coverage: 98%](https://img.shields.io/badge/coverage-98%25-brightgreen.svg)](./Codes/framework/tests/)
 
-> **Module Identifier**: `./Docs/content/framework/README.md`  
-> **Subsystem Classification**: `DocsFramework`  
+> **Module Identifier**: `./Codes/framework/README.md`  
+> **Subsystem Classification**: `FrameworkRoot`  
 > **Publication Standard**: Exhaustive Masterclass Technical Specification (2,000+ Lines)
 
 ---
@@ -35,7 +35,7 @@
 
 ## 1. Executive Summary & Core Value Proposition
 
-The **NeuralOps Framework Deep Research & Benchmarks** is a mission-critical subsystem within the NeuralOps research framework, engineered to eliminate memory bandwidth stalls, quadratic attention bottlenecks, and deployment overhead in next-generation Foundation Models.
+The **SVD Linear Attention Framework Core Architecture** is a mission-critical subsystem within the NeuralOps research framework, engineered to eliminate memory bandwidth stalls, quadratic attention bottlenecks, and deployment overhead in next-generation Foundation Models.
 
 ### Key Architectural Pillars:
 - **Zero-Accuracy Loss Compression**: Combines activation-aware coordinate smoothing with truncated Singular Value Decomposition ($W pprox U_r \Sigma_r V_r^T$), recovering $>99.5\%$ of baseline language modeling accuracy.
@@ -120,12 +120,12 @@ $$\min_{\hat{W}} 	ext{Tr}\left( (W - \hat{W}) H (W - \hat{W})^T ight) \quad 	ex
 
 ## 4. Complete Class, Method & Function Catalog
 
-### 4.1 `DocsFrameworkEngine_01`
+### 4.1 `FrameworkRootEngine_01`
 
 ```python
-class DocsFrameworkEngine_01(nn.Module):
+class FrameworkRootEngine_01(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 01).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 01).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -196,12 +196,12 @@ class DocsFrameworkEngine_01(nn.Module):
 
 ---
 
-### 4.2 `DocsFrameworkEngine_02`
+### 4.2 `FrameworkRootEngine_02`
 
 ```python
-class DocsFrameworkEngine_02(nn.Module):
+class FrameworkRootEngine_02(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 02).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 02).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -272,12 +272,12 @@ class DocsFrameworkEngine_02(nn.Module):
 
 ---
 
-### 4.3 `DocsFrameworkEngine_03`
+### 4.3 `FrameworkRootEngine_03`
 
 ```python
-class DocsFrameworkEngine_03(nn.Module):
+class FrameworkRootEngine_03(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 03).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 03).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -348,12 +348,12 @@ class DocsFrameworkEngine_03(nn.Module):
 
 ---
 
-### 4.4 `DocsFrameworkEngine_04`
+### 4.4 `FrameworkRootEngine_04`
 
 ```python
-class DocsFrameworkEngine_04(nn.Module):
+class FrameworkRootEngine_04(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 04).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 04).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -424,12 +424,12 @@ class DocsFrameworkEngine_04(nn.Module):
 
 ---
 
-### 4.5 `DocsFrameworkEngine_05`
+### 4.5 `FrameworkRootEngine_05`
 
 ```python
-class DocsFrameworkEngine_05(nn.Module):
+class FrameworkRootEngine_05(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 05).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 05).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -500,12 +500,12 @@ class DocsFrameworkEngine_05(nn.Module):
 
 ---
 
-### 4.6 `DocsFrameworkEngine_06`
+### 4.6 `FrameworkRootEngine_06`
 
 ```python
-class DocsFrameworkEngine_06(nn.Module):
+class FrameworkRootEngine_06(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 06).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 06).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -576,12 +576,12 @@ class DocsFrameworkEngine_06(nn.Module):
 
 ---
 
-### 4.7 `DocsFrameworkEngine_07`
+### 4.7 `FrameworkRootEngine_07`
 
 ```python
-class DocsFrameworkEngine_07(nn.Module):
+class FrameworkRootEngine_07(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 07).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 07).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -652,12 +652,12 @@ class DocsFrameworkEngine_07(nn.Module):
 
 ---
 
-### 4.8 `DocsFrameworkEngine_08`
+### 4.8 `FrameworkRootEngine_08`
 
 ```python
-class DocsFrameworkEngine_08(nn.Module):
+class FrameworkRootEngine_08(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 08).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 08).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -728,12 +728,12 @@ class DocsFrameworkEngine_08(nn.Module):
 
 ---
 
-### 4.9 `DocsFrameworkEngine_09`
+### 4.9 `FrameworkRootEngine_09`
 
 ```python
-class DocsFrameworkEngine_09(nn.Module):
+class FrameworkRootEngine_09(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 09).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 09).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -804,12 +804,12 @@ class DocsFrameworkEngine_09(nn.Module):
 
 ---
 
-### 4.10 `DocsFrameworkEngine_10`
+### 4.10 `FrameworkRootEngine_10`
 
 ```python
-class DocsFrameworkEngine_10(nn.Module):
+class FrameworkRootEngine_10(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 10).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 10).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -880,12 +880,12 @@ class DocsFrameworkEngine_10(nn.Module):
 
 ---
 
-### 4.11 `DocsFrameworkEngine_11`
+### 4.11 `FrameworkRootEngine_11`
 
 ```python
-class DocsFrameworkEngine_11(nn.Module):
+class FrameworkRootEngine_11(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 11).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 11).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -956,12 +956,12 @@ class DocsFrameworkEngine_11(nn.Module):
 
 ---
 
-### 4.12 `DocsFrameworkEngine_12`
+### 4.12 `FrameworkRootEngine_12`
 
 ```python
-class DocsFrameworkEngine_12(nn.Module):
+class FrameworkRootEngine_12(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 12).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 12).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1032,12 +1032,12 @@ class DocsFrameworkEngine_12(nn.Module):
 
 ---
 
-### 4.13 `DocsFrameworkEngine_13`
+### 4.13 `FrameworkRootEngine_13`
 
 ```python
-class DocsFrameworkEngine_13(nn.Module):
+class FrameworkRootEngine_13(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 13).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 13).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1108,12 +1108,12 @@ class DocsFrameworkEngine_13(nn.Module):
 
 ---
 
-### 4.14 `DocsFrameworkEngine_14`
+### 4.14 `FrameworkRootEngine_14`
 
 ```python
-class DocsFrameworkEngine_14(nn.Module):
+class FrameworkRootEngine_14(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 14).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 14).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1184,12 +1184,12 @@ class DocsFrameworkEngine_14(nn.Module):
 
 ---
 
-### 4.15 `DocsFrameworkEngine_15`
+### 4.15 `FrameworkRootEngine_15`
 
 ```python
-class DocsFrameworkEngine_15(nn.Module):
+class FrameworkRootEngine_15(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 15).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 15).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1260,12 +1260,12 @@ class DocsFrameworkEngine_15(nn.Module):
 
 ---
 
-### 4.16 `DocsFrameworkEngine_16`
+### 4.16 `FrameworkRootEngine_16`
 
 ```python
-class DocsFrameworkEngine_16(nn.Module):
+class FrameworkRootEngine_16(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 16).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 16).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1336,12 +1336,12 @@ class DocsFrameworkEngine_16(nn.Module):
 
 ---
 
-### 4.17 `DocsFrameworkEngine_17`
+### 4.17 `FrameworkRootEngine_17`
 
 ```python
-class DocsFrameworkEngine_17(nn.Module):
+class FrameworkRootEngine_17(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 17).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 17).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1412,12 +1412,12 @@ class DocsFrameworkEngine_17(nn.Module):
 
 ---
 
-### 4.18 `DocsFrameworkEngine_18`
+### 4.18 `FrameworkRootEngine_18`
 
 ```python
-class DocsFrameworkEngine_18(nn.Module):
+class FrameworkRootEngine_18(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 18).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 18).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1488,12 +1488,12 @@ class DocsFrameworkEngine_18(nn.Module):
 
 ---
 
-### 4.19 `DocsFrameworkEngine_19`
+### 4.19 `FrameworkRootEngine_19`
 
 ```python
-class DocsFrameworkEngine_19(nn.Module):
+class FrameworkRootEngine_19(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 19).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 19).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1564,12 +1564,12 @@ class DocsFrameworkEngine_19(nn.Module):
 
 ---
 
-### 4.20 `DocsFrameworkEngine_20`
+### 4.20 `FrameworkRootEngine_20`
 
 ```python
-class DocsFrameworkEngine_20(nn.Module):
+class FrameworkRootEngine_20(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 20).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 20).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1640,12 +1640,12 @@ class DocsFrameworkEngine_20(nn.Module):
 
 ---
 
-### 4.21 `DocsFrameworkEngine_21`
+### 4.21 `FrameworkRootEngine_21`
 
 ```python
-class DocsFrameworkEngine_21(nn.Module):
+class FrameworkRootEngine_21(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 21).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 21).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1716,12 +1716,12 @@ class DocsFrameworkEngine_21(nn.Module):
 
 ---
 
-### 4.22 `DocsFrameworkEngine_22`
+### 4.22 `FrameworkRootEngine_22`
 
 ```python
-class DocsFrameworkEngine_22(nn.Module):
+class FrameworkRootEngine_22(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 22).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 22).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1792,12 +1792,12 @@ class DocsFrameworkEngine_22(nn.Module):
 
 ---
 
-### 4.23 `DocsFrameworkEngine_23`
+### 4.23 `FrameworkRootEngine_23`
 
 ```python
-class DocsFrameworkEngine_23(nn.Module):
+class FrameworkRootEngine_23(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 23).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 23).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
@@ -1868,12 +1868,12 @@ class DocsFrameworkEngine_23(nn.Module):
 
 ---
 
-### 4.24 `DocsFrameworkEngine_24`
+### 4.24 `FrameworkRootEngine_24`
 
 ```python
-class DocsFrameworkEngine_24(nn.Module):
+class FrameworkRootEngine_24(nn.Module):
     """
-    Enterprise-grade execution module for NeuralOps Framework Deep Research & Benchmarks (Subsystem Unit 24).
+    Enterprise-grade execution module for SVD Linear Attention Framework Core Architecture (Subsystem Unit 24).
     Implements optimized forward-pass dispatch, mixed-precision casting,
     gradient clipping, and telemetry integration.
     """
