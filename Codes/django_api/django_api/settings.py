@@ -349,6 +349,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+DOCS_URL = "/docs/"
+DOCS_ROOT = BASE_DIR.parent.parent / "Docs"
+
 # ----------------------------------------------------------------------
 # Internationalization
 # ----------------------------------------------------------------------
