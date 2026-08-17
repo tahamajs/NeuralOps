@@ -174,3 +174,5 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    if hasattr(settings, "DOCS_ROOT") and settings.DOCS_ROOT.exists():
+        urlpatterns += static(settings.DOCS_URL, document_root=settings.DOCS_ROOT)
