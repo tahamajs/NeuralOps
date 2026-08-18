@@ -1,12 +1,12 @@
 """
 Base data utilities: configuration, task‑aware preprocessing, DataLoader creation.
 """
-from typing import Any
-
+from typing import Any, Callable, Dict, List, Optional
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Optional
 
+import numpy as np
+import torch
 from torch.utils.data import DataLoader
 
 
@@ -197,9 +197,109 @@ def preprocess_function(examples, tokenizer, config: DataConfig) -> Any:
     raise ValueError(f"Unsupported task type: {config.task_type}")
 
 
+class ProductionDataCollator:
+    """
+    Production-grade data collator for PyTorch DataLoaders.
+    Guarantees standard batch dimensions and types for high-performance GPU servers:
+    - input_ids: [B, L], torch.long (padded to max_len or multiple of 8 for Tensor Cores)
+    - attention_mask: [B, L], torch.long
+    - token_type_ids: [B, L], torch.long (if present)
+    - labels: [B] (for 1D classification/regression) or [B, L] (for language modeling with -100 ignore index)
+    """
+
+    def __init__(
+        self,
+        pad_token_id: int = 0,
+        label_pad_token_id: int = -100,
+        pad_to_multiple_of: Optional[int] = 8,
+        max_length: Optional[int] = None,
+    ) -> None:
+        self.pad_token_id = pad_token_id
+        self.label_pad_token_id = label_pad_token_id
+        self.pad_to_multiple_of = pad_to_multiple_of
+        self.max_length = max_length
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+        if not features:
+            return {}
+
+        batch: Dict[str, Any] = {}
+        first = features[0]
+
+        # Determine sequence length
+        if "input_ids" in first:
+            seq_lens = [
+                len(f["input_ids"]) if isinstance(f["input_ids"], (list, torch.Tensor)) else 1
+                for f in features
+            ]
+            max_len = max(seq_lens)
+            if self.max_length is not None:
+                max_len = min(max_len, self.max_length)
+            if self.pad_to_multiple_of is not None and self.pad_to_multiple_of > 0:
+                max_len = ((max_len + self.pad_to_multiple_of - 1) // self.pad_to_multiple_of) * self.pad_to_multiple_of
+        else:
+            max_len = None
+
+        for key in first.keys():
+            if key in ("input_ids", "attention_mask", "token_type_ids"):
+                pad_val = 0 if key == "attention_mask" else self.pad_token_id
+                tensors = []
+                for f in features:
+                    val = f[key]
+                    if not isinstance(val, torch.Tensor):
+                        val = torch.tensor(val, dtype=torch.long)
+                    else:
+                        val = val.long()
+                    if max_len is not None:
+                        if val.size(0) < max_len:
+                            padd = torch.full((max_len - val.size(0),), pad_val, dtype=val.dtype)
+                            val = torch.cat([val, padd], dim=0)
+                        elif val.size(0) > max_len:
+                            val = val[:max_len]
+                    tensors.append(val)
+                batch[key] = torch.stack(tensors, dim=0).contiguous()
+
+            elif key in ("label", "labels"):
+                # Handle 1D classification vs 2D LM labels
+                is_2d = isinstance(first[key], (list, torch.Tensor)) and len(first[key]) > 1
+                if is_2d and max_len is not None:
+                    tensors = []
+                    for f in features:
+                        val = f[key]
+                        if not isinstance(val, torch.Tensor):
+                            val = torch.tensor(val, dtype=torch.long)
+                        else:
+                            val = val.long()
+                        if val.size(0) < max_len:
+                            padd = torch.full((max_len - val.size(0),), self.label_pad_token_id, dtype=val.dtype)
+                            val = torch.cat([val, padd], dim=0)
+                        elif val.size(0) > max_len:
+                            val = val[:max_len]
+                        tensors.append(val)
+                    batch["labels"] = torch.stack(tensors, dim=0).contiguous()
+                else:
+                    vals = [f[key] for f in features]
+                    if all(isinstance(v, (int, bool, np.integer)) or (isinstance(v, torch.Tensor) and v.numel() == 1 and v.dtype in (torch.int64, torch.int32, torch.bool)) for v in vals):
+                        batch["labels"] = torch.tensor([int(v) for v in vals], dtype=torch.long)
+                    else:
+                        batch["labels"] = torch.tensor([float(v) for v in vals], dtype=torch.float32)
+            else:
+                # Other auxiliary tensors
+                vals = [f[key] for f in features]
+                if isinstance(vals[0], torch.Tensor):
+                    batch[key] = torch.stack(vals, dim=0).contiguous()
+                elif isinstance(vals[0], (int, float)):
+                    batch[key] = torch.tensor(vals).contiguous()
+                else:
+                    batch[key] = vals
+
+        return batch
+
+
 def create_dataloader(dataset, tokenizer, config: DataConfig, **kwargs) -> DataLoader:
     """
     Create a DataLoader from a HuggingFace Dataset, applying preprocessing if not already tokenized.
+    Uses ProductionDataCollator to guarantee rock-solid batch dimensions and GPU Tensor Core alignment.
     """
     if "input_ids" in dataset.column_names and "attention_mask" in dataset.column_names:
         processed = dataset
@@ -210,14 +310,24 @@ def create_dataloader(dataset, tokenizer, config: DataConfig, **kwargs) -> DataL
             remove_columns=dataset.column_names,
         )
     columns = [
-        col for col in ["input_ids", "attention_mask", "labels", "start_positions", "end_positions"]
+        col for col in ["input_ids", "attention_mask", "labels", "start_positions", "end_positions", "token_type_ids"]
         if col in processed.column_names
     ]
     processed.set_format(type="torch", columns=columns)
+    
+    collate_fn = kwargs.pop("collate_fn", None)
+    if collate_fn is None:
+        collate_fn = ProductionDataCollator(
+            pad_token_id=getattr(tokenizer, "pad_token_id", 0) if tokenizer is not None else 0,
+            pad_to_multiple_of=8,
+            max_length=config.max_length,
+        )
+
     return DataLoader(
         processed,
         batch_size=config.batch_size,
         shuffle=config.shuffle,
         num_workers=config.num_workers,
+        collate_fn=collate_fn,
         **kwargs,
     )
