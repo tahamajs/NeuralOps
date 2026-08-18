@@ -4,7 +4,13 @@ DataLoader creation, and augmentation for all common tasks and models.
 """
 
 from .augmentation import AUGMENTATION_REGISTRY, random_mask_augment
-from .base import DataConfig, TaskType, create_dataloader, preprocess_function
+from .base import (
+    DataConfig,
+    ProductionDataCollator,
+    TaskType,
+    create_dataloader,
+    preprocess_function,
+)
 from .benchmark_datasets import (
     BenchmarkDatasetInfo,
     BenchmarkDatasetRegistry,
@@ -28,6 +34,7 @@ from .validation import DataValidator, ValidationReport
 __all__ = [
     # Base
     "DataConfig",
+    "ProductionDataCollator",
     "TaskType",
     "preprocess_function",
     "create_dataloader",
