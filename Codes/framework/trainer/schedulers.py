@@ -57,3 +57,7 @@ def create_cosine_warmup(
 def create_poly(optimizer, total_iters=10000, power=1.0, **kwargs) -> Any:
     """Build and return poly."""
     return lr_scheduler.PolynomialLR(optimizer, total_iters=total_iters, power=power)
+
+
+# FIX: Public alias for standard cosine warmup scheduler
+get_cosine_schedule_with_warmup = create_cosine_warmup
