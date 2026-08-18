@@ -67,18 +67,17 @@ $$W_{\text{ARMOR}} = W_{2:4} + W_{\text{corr}}$$
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Row-Wise Block Iteration**:
-   - Iterate over weight matrix rows in steps of $B_{\text{blk}} = 4$.
-   - Extract row block slice $W_{\text{blk}} \in \mathbb{R}^{4 \times M}$.
+Iterate over weight matrix rows in steps of $B_{\text{blk}} = 4$. Furthermore, Extract row block slice $W_{\text{blk}} \in \mathbb{R}^{4 \times M}$.
+
 2. **Top-2 Mask Generation**:
-   - Compute absolute magnitudes $|W_{\text{blk}}|$.
-   - Retrieve threshold via `np.sort(abs_blk, axis=1)[:, -2:]`.
-   - Apply boolean mask to produce $W_{2:4}$.
+Compute absolute magnitudes $|W_{\text{blk}}|$. Furthermore, Retrieve threshold via `np.sort(abs_blk, axis=1)[:, -2:]`. Concurrently, Apply boolean mask to produce $W_{2:4}$.
+
 3. **Residual Decomposition**:
-   - Calculate residual difference $R = W - W_{2:4}$.
-   - Perform numpy/scipy SVD: `U, S, Vt = np.linalg.svd(R, full_matrices=False)`.
+Calculate residual difference $R = W - W_{2:4}$. Furthermore, Perform numpy/scipy SVD: `U, S, Vt = np.linalg.svd(R, full_matrices=False)`.
+
 4. **Low-Rank Addition**:
-   - Construct rank-$r$ update $W_{\text{corr}} = U[:, :r] \cdot S[:r] \cdot V^T[:r, :]$.
-   - Update $W_{\text{ARMOR}} = W_{2:4} + W_{\text{corr}}$.
+Construct rank-$r$ update $W_{\text{corr}} = U[:, :r] \cdot S[:r] \cdot V^T[:r, :]$. Furthermore, Update $W_{\text{ARMOR}} = W_{2:4} + W_{\text{corr}}$.
+
 
 ```
 Input Weight W ──► Row-Block 2:4 Prune ──► Compute Residual R
@@ -114,8 +113,8 @@ Compared to naive 2:4 pruning (where error equals $\| R \|_F^2 = \sum_{j=1}^{\mi
 
 ### 5.2 Failure Cases
 
-- **Flat Singular Value Spectrum**: If residual singular values $\sigma_j$ decay slowly, low-rank correction ($r=16$) captures minimal error, reducing ARMOR to standard 2:4 pruning.
-- **Rank Overflow**: Setting rank $r > 64$ increases parameter count beyond original dense weights.
+Specifically, regarding \textbf{Flat Singular Value Spectrum}, if residual singular values $\sigma_j$ decay slowly, low-rank correction ($r=16$) captures minimal error, reducing ARMOR to standard 2:4 pruning. Furthermore, regarding \textbf{Rank Overflow}, setting rank $r > 64$ increases parameter count beyond original dense weights.
+
 
 ---
 

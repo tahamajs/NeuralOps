@@ -137,24 +137,20 @@ W_{K, g}^{\text{GQA}} = \frac{1}{R} \sum_{r=1}^R W_{K, (g-1)R + r}^{\text{MHA}} 
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H_Q$ query heads, $H_{KV}$ KV heads, and $R = H_Q / H_{KV}$.
 
 1. **Linear Projections**:
-   - $W_Q$: $2 B N D^2$ FLOPs.
-   - $W_K, W_V$: $2 \times (2 B N D \cdot (H_{KV} d_k)) = \frac{4}{R} B N D^2$ FLOPs.
-   - $W_O$: $2 B N D^2$ FLOPs.
-   - *Total Projection Cost*: $4 \left(1 + \frac{1}{R}\right) B N D^2$ FLOPs.
+$W_Q$: $2 B N D^2$ FLOPs. Furthermore, $W_K, W_V$: $2 \times (2 B N D \cdot (H_{KV} d_k)) = \frac{4}{R} B N D^2$ FLOPs. Concurrently, $W_O$: $2 B N D^2$ FLOPs. In this setting, *Total Projection Cost*: $4 \left(1 + \frac{1}{R}\right) B N D^2$ FLOPs.
+
 
 2. **Core Attention Workload**:
-   - $Q K_{\text{shared}}^\top$: $2 B H_Q N^2 d_k = 2 B N^2 D$ FLOPs.
-   - Softmax & Dropout: $\approx 7 B H_Q N^2$ FLOPs.
-   - $A V_{\text{shared}}$: $2 B H_Q N^2 d_k = 2 B N^2 D$ FLOPs.
-   - *Total Core Cost*: $4 B N^2 D + 7 B H_Q N^2$ FLOPs.
+$Q K_{\text{shared}}^\top$: $2 B H_Q N^2 d_k = 2 B N^2 D$ FLOPs. Furthermore, Softmax & Dropout: $\approx 7 B H_Q N^2$ FLOPs. Concurrently, $A V_{\text{shared}}$: $2 B H_Q N^2 d_k = 2 B N^2 D$ FLOPs. In this setting, *Total Core Cost*: $4 B N^2 D + 7 B H_Q N^2$ FLOPs.
+
 
 3. **Total Workload Summary**:
-   - **Total MACs**: $2 \left(1 + \frac{1}{R}\right) B N D^2 + 2 B N^2 D$
-   - **Total FLOPs**: $4 \left(1 + \frac{1}{R}\right) B N D^2 + 4 B N^2 D + 7 B H_Q N^2$
+Specifically, regarding \textbf{Total MACs}, $2 \left(1 + \frac{1}{R}\right) B N D^2 + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $4 \left(1 + \frac{1}{R}\right) B N D^2 + 4 B N^2 D + 7 B H_Q N^2$
+
 
 ### Memory Footprint & KV Cache Reduction
-- **Parameter Count**: $D^2 \left(2 + \frac{2}{R}\right) + D (H_Q d_k + 2 H_{KV} d_k)$ floats.
-- **Autoregressive Decoding KV Cache Footprint**:
+Specifically, regarding \textbf{Parameter Count}, $D^2 \left(2 + \frac{2}{R}\right) + D (H_Q d_k + 2 H_{KV} d_k)$ floats. Furthermore, regarding \textbf{Autoregressive Decoding KV Cache Footprint}, 
+
   \[
   \text{KV Cache Size}_{\text{GQA}} = 2 \cdot B \cdot H_{KV} \cdot N \cdot d_k \cdot b = \frac{2 B N D \cdot b}{R} \text{ bytes}
   \]

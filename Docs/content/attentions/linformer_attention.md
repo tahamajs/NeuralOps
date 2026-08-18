@@ -89,20 +89,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $k$: Projection Rank):
-- **Input Projections ($W_Q, W_K, W_V$)**: $3 	imes (2 B L D^2) = 6 B L D^2$ FLOPs
-- **Sequence Linear Projections ($E K, F V$)**: $2 	imes (2 B H \cdot k \cdot L \cdot d_k) = 4 B L k D$ FLOPs
-- **Score Matrix Computation ($Q \widetilde{K}^	op$)**: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
-- **Softmax Normalization**: $pprox 5 B H L k$ FLOPs
-- **Context Matrix Multiplication ($A \widetilde{V}$)**: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_Q, W_K, W_V$)}, $3 	imes (2 B L D^2) = 6 B L D^2$ FLOPs Furthermore, regarding \textbf{Sequence Linear Projections ($E K, F V$)}, $2 	imes (2 B H \cdot k \cdot L \cdot d_k) = 4 B L k D$ FLOPs Concurrently, regarding \textbf{Score Matrix Computation ($Q \widetilde{K}^	op$)}, $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs In this setting, regarding \textbf{Softmax Normalization}, $pprox 5 B H L k$ FLOPs Additionally, regarding \textbf{Context Matrix Multiplication ($A \widetilde{V}$)}, $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs Moreover, regarding \textbf{Output Projection ($W_O$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 4 B L k D$
-- **Total FLOPs**: $8 B L D^2 + 8 B L k D$ (Linear in $L$)
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 4 B L k D$ Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 8 B L k D$ (Linear in $L$)
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2 + 2 H \cdot k \cdot L$ (if projection weights $E, F$ are parametrized per length $L$).
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot L \cdot k)$, eliminating the $\mathcal{O}(B \cdot H \cdot L^2)$ memory wall.
+Specifically, regarding \textbf{Static Weights}, $4 D^2 + 2 H \cdot k \cdot L$ (if projection weights $E, F$ are parametrized per length $L$). Furthermore, regarding \textbf{Transient Activation Memory}, bounded by $\mathcal{O}(B \cdot H \cdot L \cdot k)$, eliminating the $\mathcal{O}(B \cdot H \cdot L^2)$ memory wall.
+
 
 ---
 

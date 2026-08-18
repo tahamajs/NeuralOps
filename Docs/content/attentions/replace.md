@@ -82,12 +82,12 @@ Pretrained Model Instance (BERT / GPT-2 / DistilBERT)
 ## 4. Analytical Complexity Profiling
 
 ### Computational Overhead
-- **Graph Traversal Time Complexity**: $\mathcal{O}(L)$ inspection steps over $L$ transformer blocks.
-- **Weight Transfer Compute**: $\mathcal{O}(L \cdot D^2)$ memory copy operations for dense linear layers, or $\mathcal{O}(L \cdot D^3)$ if truncated SVD decomposition is evaluated during injection.
+Specifically, regarding \textbf{Graph Traversal Time Complexity}, $\mathcal{O}(L)$ inspection steps over $L$ transformer blocks. Furthermore, regarding \textbf{Weight Transfer Compute}, $\mathcal{O}(L \cdot D^2)$ memory copy operations for dense linear layers, or $\mathcal{O}(L \cdot D^3)$ if truncated SVD decomposition is evaluated during injection.
+
 
 ### Memory Footprint & Tensor Store
-- **Transient Memory**: Double-allocation of layer weights during temporary substitution step: $4 D^2$ floats per layer.
-- **Post-Surgery Memory**: Exactly equal to target attention parameter count: $\sum_{l=1}^L \text{ParamCount}(\widetilde{f}_{\text{attn}}^{(l)})$.
+Specifically, regarding \textbf{Transient Memory}, double-allocation of layer weights during temporary substitution step: $4 D^2$ floats per layer. Furthermore, regarding \textbf{Post-Surgery Memory}, exactly equal to target attention parameter count: $\sum_{l=1}^L \text{ParamCount}(\widetilde{f}_{\text{attn}}^{(l)})$.
+
 
 ---
 

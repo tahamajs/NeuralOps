@@ -88,44 +88,39 @@ Input Hidden States X [B, N, D]
 ## 4. Analytical Complexity Profiling
 
 ### FLOP & MAC Counting
-1. **Frozen Base Linear Projections ($W_Q, W_K, W_V, W_O$)**: $8 B N D^2$ FLOPs.
-2. **LoRA Adapter Path (for 4 projections)**:
-   - Down-projection ($\mathbf{X} \mathbf{A}^\top$): $4 \times (2 B N D r) = 8 B N D r$ FLOPs.
-   - Up-projection ($\text{Down} \cdot \mathbf{B}^\top$): $4 \times (2 B N r D) = 8 B N D r$ FLOPs.
-3. **Score Matrix Product ($\mathbf{Q} \mathbf{K}^\top$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
-4. **Context Matrix Product ($\mathbf{A} \mathbf{V}$)**: $2 B H N^2 d = 2 B N^2 D$ FLOPs.
+The computational efficiency of Low-Rank Adaptation stems from isolating parameter updates to a low-dimensional manifold while freezing primary backbone projections. For an input sequence of length $N$, batch size $B$, model dimension $D$, attention head count $H$, head dimension $d = D/H$, and intrinsic adaptation rank $r$, the arithmetic and memory requirements decompose into distinct computational layers.
 
-**Total Computational Cost**:
+Evaluating the frozen base linear projections across query, key, value, and output operators accounts for $8 B N D^2$ floating-point operations ($4 B N D^2$ MACs). Concurrently, the four parallel low-rank adapter paths execute two-stage factorizations: the down-projection stage ($\mathbf{X} \mathbf{A}^\top$) requires $4 \times (2 B N D r) = 8 B N D r$ FLOPs, while the subsequent up-projection stage ($\operatorname{Down} \cdot \mathbf{B}^\top$) consumes an identical $8 B N D r$ FLOPs. Within the multi-head attention core, the pairwise query-key score product ($\mathbf{Q} \mathbf{K}^\top$) and value-context accumulation ($\mathbf{A} \mathbf{V}$) each incur $2 B H N^2 d = 2 B N^2 D$ FLOPs, yielding an aggregate attention core complexity of $4 B N^2 D$ FLOPs.
+
+Consequently, the total forward pass computational workload during training is formulated as:
 \[
 \text{Total FLOPs} = 8 B N D^2 + 16 B N D r + 4 B N^2 D
 \]
 
-During inference, weights can be merged off-line $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$, eliminating adapter FLOP overhead entirely.
+Crucially, during inference deployment, the adapter parameters can be folded directly into the base projections via static weight re-parameterization $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$, completely eliminating the $16 B N D r$ adapter FLOP overhead and restoring baseline inference throughput.
 
 ### Memory Footprint & Tensor Store
-- **Trainable Parameters**: $4 \times (r D + D r) = 8 D r$ parameters (vs $4 D^2$ frozen base parameters).
-- **Activation Memory**:
-  - Adapter Intermediate Tensors ($\operatorname{Down}$): $4 B N r$ floats.
-  - Score & Softmax Matrices ($\mathbf{S}, \mathbf{A}$): $B H N^2$ floats.
-  - Peak Activation Memory: $\mathcal{O}(B N D + B H N^2 + B N r)$.
+Regarding the parameter footprint and memory storage dynamics, LoRA restricts the volume of trainable parameters to $4 \times (r D + D r) = 8 D r$, contrasting sharply with the $4 D^2$ frozen base parameters. In high-dimensional regimes ($r \ll D$), this reduction exceeds $99\%$, dramatically shrinking optimizer gradient states in VRAM. The activation memory footprint requires storing intermediate rank-$r$ bottleneck tensors ($4 B N r$ floats) alongside the quadratic score and Softmax probability matrices ($B H N^2$ floats), establishing an overall peak activation complexity of $\mathcal{O}(B N D + B H N^2 + B N r)$.
 
 ---
 
-## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
+## 5. Architectural Bottlenecks, Rank Collapse & Optimization Dynamics
 
-1. **Un-Merged Dual-Stream Inference Latency**: Evaluating separate frozen base linear layers and low-rank adapter paths during inference introduces extra kernel launch overhead. Weights must be merged into $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$ prior to deployment.
-2. **Subspace Rank Saturation**: If rank $r$ is selected too small ($r < 4$), adapter expressivity collapses, restricting capacity to learn complex downstream task distributions.
-3. **Persistent Quadratic Attention Scaling**: LoRA optimizes parameter efficiency during fine-tuning but retains standard $N \times N$ attention matrices, scaling quadratically $\mathcal{O}(N^2)$ in sequence length.
+Despite its profound parameter efficiency, LoRA exhibits subtle structural tradeoffs, optimization constraints, and spectrum saturation phenomena across fine-tuning regimes. A primary latency bottleneck emerges when executing un-merged dual-stream forward passes in production. Evaluating independent GPU GEMM kernels for the frozen base weights and the low-rank branch incurs substantial kernel launch overhead and redundant memory-bus transfers of the input tensor $\mathbf{X}$. To eliminate this runtime penalty, offline weight fusion into a single unified tensor $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$ is indispensable prior to deployment.
+
+From a representation learning perspective, subspace rank saturation poses a significant failure mode. If the adaptation rank $r$ is constrained excessively ($r < 4$), the bottleneck restricts the dimensionality of the update manifold, precipitating rank collapse where the gradient updates fail to span the intrinsic task subspace. This leads to underfitting and severe optimization stagnation on complex downstream tasks. Conversely, scaling $r$ arbitrarily high yields diminishing returns and increases susceptibility to catastrophic forgetting of pre-trained priors.
+
+Furthermore, LoRA inherently preserves the standard scaled dot-product attention core, meaning that while parameter updates are compressed to $\mathcal{O}(D r)$, the context scaling persists as quadratic $\mathcal{O}(N^2)$ in sequence length. Consequently, LoRA does not alleviate long-context memory bottlenecks during decoding or training on extended context windows, necessitating complementary linear attention or FlashAttention integration to overcome asymptotic sequence scaling limits.
 
 ---
 
 ## 6. Hardware Acceleration Blueprint & Triton Optimization Strategies
 
 ### Memory Access & Vectorization Barriers
-Naive PyTorch executes `self.original_layer(x) + F.linear(F.linear(x, A), B)` via separate GPU GEMM calls, reading and writing activation tensor $X$ multiple times.
+Under standard execution frameworks, evaluating the composite operator $\mathbf{X} \mathbf{W}_0^\top + \frac{\alpha}{r} (\mathbf{X} \mathbf{A}^\top) \mathbf{B}^\top$ via naive PyTorch triggers multiple disjoint GEMM kernel invocations. This non-fused access pattern repeatedly loads and writes activation tensor $\mathbf{X}$ across the global GPU memory bus, creating high memory bandwidth contention.
 
 ### High-Performance Triton Kernel Fusion Strategy
-1. **Fused Weight-Merged Matrix-Vector Kernel**: Implement a Triton kernel that performs fused linear projection using pre-computed combined weights in SRAM registers without allocating separate adapter output memory.
+To maximize hardware throughput and register reuse, a dedicated Triton fused linear projection kernel streams input activation tiles directly into fast on-chip SRAM registers. Within a single thread block, the kernel performs the base GEMM projection alongside the sequential low-rank down-projection ($\mathbf{X} \mathbf{A}^\top$) and scaled up-projection ($\operatorname{Down} \cdot \mathbf{B}^\top$), accumulating both contributions directly into SRAM accumulators before writing the finalized output tensor back to global DRAM.
 
 ```python
 # Triton Pseudocode for Fused LoRA Linear Projection Kernel
@@ -153,7 +148,7 @@ def _lora_fused_linear_kernel(
     tl.store(Out_ptr + offsets_out, out_base + out_adapter)
 ```
 
-2. **Offline Weight Fusion for Zero-Overhead Inference**: Merge weights $\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$ prior to deployment to achieve zero latency overhead during production inference.
+Furthermore, prior to production deployment, complete offline weight fusion should be applied to fold adapter matrices into base parameters ($\mathbf{W}_{\text{merged}} = \mathbf{W}_0 + \frac{\alpha}{r} \mathbf{B} \mathbf{A}$), thereby attaining zero latency overhead and optimal Tensor Core occupancy during inference.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

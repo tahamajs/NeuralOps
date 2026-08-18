@@ -128,18 +128,19 @@ Y = \text{FactorisedLinear}_O(C) \in \mathbb{R}^{B \times N \times D}
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r_q, r_k, r_v, r_o$ SVD ranks.
 
 1. **Factorised Linear Projections**:
-   - Total projection workload: $4 B N D (r_q + r_k + r_v + r_o)$ FLOPs.
+Total projection workload: $4 B N D (r_q + r_k + r_v + r_o)$ FLOPs.
+
 2. **Core Attention Computation**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
+$Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H N^2$ FLOPs.
+
 
 3. **Total Workload Summary**:
-   - **Total MACs**: $2 B N D (r_q + r_k + r_v + r_o) + 2 B N^2 D$
-   - **Total FLOPs**: $4 B N D (r_q + r_k + r_v + r_o) + 4 B N^2 D + 7 B H N^2$
+Specifically, regarding \textbf{Total MACs}, $2 B N D (r_q + r_k + r_v + r_o) + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $4 B N D (r_q + r_k + r_v + r_o) + 4 B N^2 D + 7 B H N^2$
+
 
 ### Parameter & Memory Footprint Comparison
-- **Uncompressed Projection Parameters**: $4 D^2 + 4 D$ floats.
-- **MinimalSVD v2 Parameter Count**: $2 D (r_q + r_k + r_v + r_o) + 4 D$ floats.
+Specifically, regarding \textbf{Uncompressed Projection Parameters}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{MinimalSVD v2 Parameter Count}, $2 D (r_q + r_k + r_v + r_o) + 4 D$ floats.
+
   For $D = 768$ and average rank $r = 32$, parameter requirements drop by **$91.6\%$** ($2.36\text{M} \to 199\text{k}$).
 
 ---

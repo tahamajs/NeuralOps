@@ -5,9 +5,8 @@ The **Aegis-Spectron-FP8** module represents a state-of-the-art hybrid sequence 
 
 ## 2. Architectural Concept & Rationale
 Traditional Transformer layers apply homogenous attention mechanisms across all context windows, resulting in quadratic memory complexity and redundant computation for low-entropy sequences. The Aegis-Spectron-FP8 module mitigates this by decomposing attention into three specialized subnetworks:
-- **Local Branch**: Extracts high-frequency syntax and token-adjacent context via a sliding window.
-- **Global Branch**: Captures long-range document coherence through SVD-based low-rank projections.
-- **Linear Branch**: Maintains infinite-context state through recursive scans (similar to State-Space Models).
+Specifically, regarding \textbf{Local Branch}, extracts high-frequency syntax and token-adjacent context via a sliding window. Furthermore, regarding \textbf{Global Branch}, captures long-range document coherence through SVD-based low-rank projections. Concurrently, regarding \textbf{Linear Branch}, maintains infinite-context state through recursive scans (similar to State-Space Models).
+
 
 A dynamic Spectron routing gate continuously evaluates the information entropy of the sequence, ensuring that computationally expensive paths are only engaged when sequence complexity demands it.
 
@@ -45,9 +44,8 @@ By casting hidden states dynamically based on numerical stability constraints, t
 
 ## 7. Integration & Complexity Profile
 Integrating Aegis-Spectron-FP8 requires a simple drop-in replacement via the `@ATTENTION_REGISTRY` decorator. 
-- **Time Complexity:** $\mathcal{O}(L \cdot D \cdot (W + r + 1))$ 
-- **Memory Complexity:** $\mathcal{O}(L \cdot D)$ eliminating quadratic sequence caching entirely.
-- **Hardware Mapping:** Ideal for deep layers where high contextual entropy intersects with severe KV-cache limits, allowing continuous generative decoding without OOM regressions.
+**Time Complexity:** $\mathcal{O}(L \cdot D \cdot (W + r + 1))$ Furthermore, **Memory Complexity:** $\mathcal{O}(L \cdot D)$ eliminating quadratic sequence caching entirely. Concurrently, **Hardware Mapping:** Ideal for deep layers where high contextual entropy intersects with severe KV-cache limits, allowing continuous generative decoding without OOM regressions.
+
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

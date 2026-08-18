@@ -56,18 +56,14 @@ Let $\mathbf{w} = [w_1, w_2, \dots, w_N]$ be a sequence of quantized weight symb
 ### 3.1 Dataflow & Execution Pipeline
 
 1. **Histogram Extraction**:
-   - Flatten target weight tensor to 1D python list.
-   - Count frequencies using dictionary mapping `freq[w] = freq.get(w, 0) + 1`.
+Flatten target weight tensor to 1D python list. Furthermore, Count frequencies using dictionary mapping `freq[w] = freq.get(w, 0) + 1`.
+
 2. **Min-Heap Huffman Tree Construction**:
-   - Push single-element node lists `[freq, [sym, ""]]` onto min-heap `heapq`.
-   - While `len(heap) > 1`:
-     - Pop two smallest frequency nodes `lo` and `hi`.
-     - Prepend `"0"` to symbols in `lo` and `"1"` to symbols in `hi`.
-     - Push merged node `[lo[0] + hi[0]] + lo[1:] + hi[1:]` back to heap.
+Push single-element node lists `[freq, [sym, ""]]` onto min-heap `heapq`. Furthermore, While `len(heap) > 1`: Concurrently, Pop two smallest frequency nodes `lo` and `hi`. In this setting, Prepend `"0"` to symbols in `lo` and `"1"` to symbols in `hi`. Additionally, Push merged node `[lo[0] + hi[0]] + lo[1:] + hi[1:]` back to heap.
+
 3. **Bitstream Encoding & Decoding**:
-   - Extract code map `code_map = dict(heap[0][1:])`.
-   - Encode symbols: `encoded = [code_map[w] for w in flat]`.
-   - Decode by building inverted map `reverse_map = {v: k for k, v in code_map.items()}`.
+Extract code map `code_map = dict(heap[0][1:])`. Furthermore, Encode symbols: `encoded = [code_map[w] for w in flat]`. Concurrently, Decode by building inverted map `reverse_map = {v: k for k, v in code_map.items()}`.
+
 
 ```
 Quantized Weights ──► Build Min-Heap ──► Merge Lowest Freq Nodes ──► Generate Code Map
@@ -100,7 +96,8 @@ $$\| \mathbf{w} - \mathbf{w}_{\text{decoded}} \|_\infty = 0$$
 
 ### 5.2 Failure Cases
 
-- **Uniform Symbol Distributions**: If quantized weights follow a uniform distribution ($p(a_k) = 1/K$), entropy reaches maximum $H = \log_2 K$, rendering Huffman coding ineffective ($\bar{L} \approx b$).
+Specifically, regarding \textbf{Uniform Symbol Distributions}, if quantized weights follow a uniform distribution ($p(a_k) = 1/K$), entropy reaches maximum $H = \log_2 K$, rendering Huffman coding ineffective ($\bar{L} \approx b$).
+
 
 ---
 

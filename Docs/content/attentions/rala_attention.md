@@ -120,43 +120,29 @@ Y = \text{Concat}(O_{\text{fused}, 1}, \dots, O_{\text{fused}, H}) W_O + b_O \in
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### Computational Workload (FLOPs & MACs)
-Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ augmentation rank.
+### Computational Workload & Scaling Dynamics
+Let $B$ represent the batch size, $N$ sequence length, $D$ model dimension, $H$ the number of attention heads, $d_k = D/H$ the head dimension, and $r$ the rank of the parametric augmentation subspace where $r \ll d_k$. 
 
-1. **Linear Projections**:
-   - $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
-2. **Associative Memory Construction**:
-   - $KV$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
-   - Denominator calculation: $2 B N D$ FLOPs.
-3. **Linear Path Projection**:
-   - $O_{\text{lin}}$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
-4. **Rank-Augmented Path Projection**:
-   - $M_{\text{rank}} = U V^\top$: $2 H d_k^2 r$ FLOPs (evaluated once).
-   - $O_{\text{aug}}$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
+The arithmetic operational profile of Rank-Augmented Linear Attention demonstrates strict $\mathcal{O}(N)$ computational scalability across all sequence lengths. The initial input projection stage spanning transformations $W_Q, W_K, W_V,$ and $W_O$ requires $8 B N D^2$ floating-point operations ($4 B N D^2$ multiply-accumulate operations). Subsequently, associative state construction proceeds by contracting positive feature mappings into the Key-Value memory tensor $S_{\text{KV}}$, which consumes $2 B H N d_k^2 = 2 B N D d_k$ FLOPs alongside $2 B N D$ FLOPs dedicated to computing the normalization denominator sum. 
 
-5. **Total Workload Summary**:
-   - **Total MACs**: $4 B N D^2 + 3 B N D d_k + H d_k^2 r$
-   - **Total FLOPs**: $8 B N D^2 + 6 B N D d_k + 2 H d_k^2 r + 2 B N D$
-   - **Strict Linear Scaling**: Scalability in sequence length $N$ is strictly $\mathcal{O}(N)$ without intermediate $N \times N$ score matrices.
+Evaluation of the dual-path context representation executes with minimal asymptotic overhead. The primary kernel linear attention path $O_{\text{lin}}$ requires $2 B H N d_k^2 = 2 B N D d_k$ FLOPs to query the aggregated associative memory. In parallel, the parametric low-rank interaction matrix $M_{\text{rank}} = U V^\top$ is pre-computed once per head requiring $2 H d_k^2 r$ FLOPs, after which the query projections compute $O_{\text{aug}}$ in $2 B H N d_k^2 = 2 B N D d_k$ FLOPs. Aggregating these operations yields a cumulative workload of $4 B N D^2 + 3 B N D d_k + H d_k^2 r$ MACs (or $8 B N D^2 + 6 B N D d_k + 2 H d_k^2 r + 2 B N D$ FLOPs). Crucially, because no intermediate $N \times N$ token affinity matrices are materialized in memory, memory consumption and arithmetic complexity remain strictly linear with respect to sequence length.
 
-### Parameter Overhead Analysis
-- **Standard Linear Attention Parameters**: $4 D^2 + 4 D$ floats.
-- **RALA Parameter Count**:
-  \[
-  \text{Params}_{\text{RALA}} = 4 D^2 + 4 D + 2 \cdot H \cdot d_k \cdot r + 1 = 4 D^2 + 4 D + 2 D r + 1 \text{ floats}
-  \]
-  For $D = 4096, H = 32, d_k = 128, r = 8$:
-  - Extra parameters: $2 \times 4096 \times 8 + 1 = 65,537$ parameters (**$< 0.1\%$ parameter overhead** over standard linear attention).
+### Parameter Footprint and Subspace Capacity
+Compared to standard linear attention frameworks that parameterize $4 D^2 + 4 D$ weights for basic input-output projections, RALA incorporates low-rank factorization matrices $U, V \in \mathbb{R}^{H \times d_k \times r}$ and the learnable blending scalar $\alpha$:
+\[
+\text{Params}_{\text{RALA}} = 4 D^2 + 4 D + 2 \cdot H \cdot d_k \cdot r + 1 = 4 D^2 + 4 D + 2 D r + 1 \text{ parameters}
+\]
+Under representative large-scale model dimensions ($D = 4096, H = 32, d_k = 128, r = 8$), the additional parametric allocation amounts to $2 \times 4096 \times 8 + 1 = 65,537$ parameters. This represents an overhead of less than $0.1\%$ relative to the baseline architecture, achieving significant expressivity enhancements across complex associative retrieval tasks without measurable parametric expansion.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Zero Denominator Divide-by-Zero
-If all key activations undergo extreme negative masking, denominator vector $\text{Denom} = \Phi_Q \cdot z^\top$ can collapse to 0. Adding offset $\epsilon = 1e-8$ prevents divide-by-zero NaN outputs.
+### Normalization Stability and Denominator Vanishing
+A central stability consideration in kernelized linear attention mechanisms is the vulnerability to denominator collapse. In scenarios where extensive causal or sequence padding masks suppress large contiguous blocks of key tokens, the accumulated normalizer $\text{Denom}_{b, h, i} = \sum_{m=1}^{d_k} (\Phi_Q)_{b, h, i, m} \cdot z_{b, h, m}$ can vanish towards zero. This denominator degeneracy induces numerical singularity, generating exploding gradients and NaN activations in backpropagation. To guarantee gradient stability across degenerate sequence distributions, an additive damping constant $\epsilon = 10^{-8}$ is enforced within the normalization denominator, establishing a strictly positive lower bound on the loss landscape denominator manifold.
 
-### Rank Matrix Ill-Conditioning
-If parameter matrices $U, V$ are initialized with large variance, the augmented output magnitude $O_{\text{aug}}$ can overwhelm the kernel linear output $O_{\text{lin}}$. Initializing $U, V$ with small std ($0.02$) and setting $\alpha = 0.1$ preserves stable gradient dynamics.
+### Ill-Conditioning and Optimization Dynamics of Low-Rank Memory
+A potential optimization impediment arises from the unconstrained magnitude scaling of the parametric low-rank matrices $U$ and $V$. If $U$ and $V$ are initialized with large variance, the resulting parametric output $O_{\text{aug}}$ can drastically overpower the associative kernel output $O_{\text{lin}}$, effectively uncoupling the attention block from the dynamic input sequence context and collapsing it into an invariant static transformation. To preserve well-conditioned gradient flow across both paths, factor matrices $U$ and $V$ are initialized with Gaussian perturbations scaled to small standard deviations ($\sigma = 0.02$), while the scalar mixing coefficient is initialized conservatively to $\alpha = 0.1$. This ensures that initial training dynamics remain anchored to the associative memory path while the low-rank subspace progressively learns complementary high-order feature correlations.
 
 ---
 
@@ -192,9 +178,7 @@ A Triton kernel for RALA fuses the associative memory reduction $S_{\text{KV}}$,
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **State-Space RALA (Mamba-RALA)**: Interleave RALA rank-augmented linear layers with selective State-Space Models (SSM) for unified linear-time sequence modeling.
-2. **Quantized Low-Rank Parametric Memory**: Quantize rank memory matrices $U, V$ to INT4 format to minimize SRAM register overhead during long-context decoding.
-3. **Adaptive Mixing Scaling ($\alpha_h$)**: Parameterize independent mixing coefficients $\alpha_h$ per head to allow specialized channels to rely more heavily on parametric rank memory.
+The integration of parametric rank augmentation into linear attention architectures unlocks multiple avenues for structural innovation and hardware efficiency. One compelling direction involves unifying RALA with continuous-time State-Space Models (SSMs), establishing Mamba-RALA hybrid layers wherein selective recurrent state transitions track non-stationary temporal dynamics while low-rank parametric matrices maintain cross-channel associative capacity under strict linear-time complexity. Furthermore, memory footprint during high-throughput autoregressive decoding can be minimized by quantizing the static parametric memory tensors $U$ and $V$ into low-bit representations (such as INT4 or FP4 formats), thereby mitigating SRAM register pressure during fused kernel execution. Concurrently, parameterizing head-specific adaptive mixing coefficients $\alpha_h$ enables individual attention heads to autonomously determine their optimal reliance on static parametric rank memory versus dynamic associative state aggregation.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

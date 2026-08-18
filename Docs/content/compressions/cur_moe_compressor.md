@@ -114,9 +114,8 @@ The reconstructed expert weight $\hat{W}_e$ is synthesized as:
 ### 4.1 Global MoE Parameter Budget Equations
 For an MoE layer containing $E$ experts with feed-forward matrices $d_{\text{out}} \times d_{\text{in}}$:
 
-- **Uncompressed MoE Parameters**: $P_{\text{MoE}} = E \cdot d_{\text{out}} \cdot d_{\text{in}}$
-- **CUR-MoE Compressed Parameters**: $P_{\text{CUR-MoE}} = E \cdot r(d_{\text{out}} + d_{\text{in}} + r)$
-- **Global VRAM Savings**:
+Specifically, regarding \textbf{Uncompressed MoE Parameters}, $P_{\text{MoE}} = E \cdot d_{\text{out}} \cdot d_{\text{in}}$ Furthermore, regarding \textbf{CUR-MoE Compressed Parameters}, $P_{\text{CUR-MoE}} = E \cdot r(d_{\text{out}} + d_{\text{in}} + r)$ Concurrently, regarding \textbf{Global VRAM Savings}, 
+
 \[
 \text{Savings} = 1 - \frac{r(d_{\text{out}} + d_{\text{in}} + r)}{d_{\text{out}} \cdot d_{\text{in}}}
 \]

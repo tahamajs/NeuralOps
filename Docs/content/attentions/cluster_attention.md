@@ -115,35 +115,27 @@ Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ attention 
    $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
 2. **Iterative $K$-Means Clustering**:
    In each iteration $t \in \{1, \dots, I\}$:
-   - Euclidean Distance (`cdist`): $3 B L K D$ FLOPs (squared differences + sum + sqrt).
-   - Centroid mean updates: $2 B L D$ FLOPs.
-   Across $I$ iterations:
-   $$\operatorname{FLOPs}_{\text{kmeans}} = I \cdot (3 B L K D + 2 B L D) = 3 I B L K D + 2 I B L D$$
+Euclidean Distance (`cdist`): $3 B L K D$ FLOPs (squared differences + sum + sqrt). Furthermore, Centroid mean updates: $2 B L D$ FLOPs. Across $I$ iterations: $$\operatorname{FLOPs}_{\text{kmeans}} = I \cdot (3 B L K D + 2 B L D) = 3 I B L K D + 2 I B L D$$
+
 3. **Sequential Intra-Cluster Attention Loops**:
    The Python loop executes $K$ passes. In pass $k$, full $L \times L$ matrix multiplies $\mathbf{Q} \mathbf{K}^\top$ are computed:
-   - Attention score matmul: $2 B H L^2 d_h = 2 B L^2 D$
-   - Softmax & context matmul: $2 B H L^2 d_h = 2 B L^2 D$
-   Summing across all $K$ loop iterations in the un-optimized implementation:
-   $$\operatorname{FLOPs}_{\text{attn\_naive}} = K \times (4 B L^2 D) = 4 K B L^2 D$$
-   *(Note: In a theoretical grouped implementation without dense $L \times L$ masks, FLOPs scale as $4 B L (L / K) D = \frac{4 B L^2 D}{K}$)*.
+Attention score matmul: $2 B H L^2 d_h = 2 B L^2 D$ Furthermore, Softmax & context matmul: $2 B H L^2 d_h = 2 B L^2 D$ Summing across all $K$ loop iterations in the un-optimized implementation: $$\operatorname{FLOPs}_{\text{attn\_naive}} = K \times (4 B L^2 D) = 4 K B L^2 D$$ *(Note: In a theoretical grouped implementation without dense $L \times L$ masks, FLOPs scale as $4 B L (L / K) D = \frac{4 B L^2 D}{K}$)*.
+
 4. **Output Projection ($\mathbf{W}_O$)**:
    $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
 
 $$\text{Total Naive FLOPs} = 8 B L D^2 + 3 I B L K D + 4 K B L^2 D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 4 B L D^2 + 1.5 I B L K D + 2 K B L^2 D$$
-- **Peak Activation Memory**:
-  - Distance Tensor: $B \cdot L \cdot K \times 4 \text{ bytes}$
-  - Cluster Masks: $K \times B \cdot 1 \cdot 1 \cdot L \times 4 \text{ bytes}$
-  - Full Attention Matrix per cluster iteration: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$.
-  - Peak memory scale: $\mathcal{O}(B H L^2 + B L K)$ due to un-fused $L \times L$ attention matrices inside the loop.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Distance Tensor: $B \cdot L \cdot K \times 4 \text{ bytes}$ Concurrently, Cluster Masks: $K \times B \cdot 1 \cdot 1 \cdot L \times 4 \text{ bytes}$ In this setting, Full Attention Matrix per cluster iteration: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$. Additionally, Peak memory scale: $\mathcal{O}(B H L^2 + B L K)$ due to un-fused $L \times L$ attention matrices inside the loop.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **Un-Fused PyTorch ClusterFormer**: $\mathcal{O}(K L^2 D + I L K D)$ compute — **slower** than standard attention due to executing $K$ sequential $L \times L$ dense matrix multiplications in PyTorch!
-- **Optimized Grouped ClusterFormer**: $\mathcal{O}\left(I L K D + \frac{L^2 D}{K}\right)$ compute, achieving an optimal $K \times$ speedup.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory. Furthermore, regarding \textbf{Un-Fused PyTorch ClusterFormer}, $\mathcal{O}(K L^2 D + I L K D)$ compute — **slower** than standard attention due to executing $K$ sequential $L \times L$ dense matrix multiplications in PyTorch! Concurrently, regarding \textbf{Optimized Grouped ClusterFormer}, $\mathcal{O}\left(I L K D + \frac{L^2 D}{K}\right)$ compute, achieving an optimal $K \times$ speedup.
+
 
 ---
 
@@ -159,7 +151,8 @@ for k in range(num_k):
     out_k = torch.matmul(attn_k, V_k) # [B, H, L, D_h]
 ```
 Instead of computing attention exclusively on the subset of tokens inside cluster $k$, the code evaluates a **full $L \times L$ matrix product** $K$ separate times, relying on $-10^9$ additive masks to zero out non-cluster tokens.
-- **Computational Disparity**: Rather than accelerating attention by $K \times$, this implementation runs $K$ times slower than standard attention, scaling as $\mathcal{O}(K L^2 D)$.
+Specifically, regarding \textbf{Computational Disparity}, rather than accelerating attention by $K \times$, this implementation runs $K$ times slower than standard attention, scaling as $\mathcal{O}(K L^2 D)$.
+
 
 ### 5.2 Empty Cluster Collapse & Non-Differentiable Assignments
 1. **Empty Cluster Deadlocks**: If initial centroid sampling picks duplicate or outlier tokens, some clusters receive zero token assignments ($\sum \mathbb{I}(c_i = k) = 0$). `count_k.clamp(min=1.0)` prevents division-by-zero, but leaves dead centroids that waste computation.
@@ -167,7 +160,8 @@ Instead of computing attention exclusively on the subset of tokens inside cluste
 
 ### 5.3 Cluster Imbalance & Outlier Domination
 In natural language, semantic token distributions are highly skewed (e.g., common stop words form massive clusters, while domain-specific entity tokens form tiny clusters).
-- **Worst-Case Scaling**: If a single cluster absorbs $90\%$ of sequence tokens ($|C_1| \approx 0.9 L$), effective complexity reverts to $\mathcal{O}(L^2 D)$, eliminating sparse speedup advantages.
+Specifically, regarding \textbf{Worst-Case Scaling}, if a single cluster absorbs $90\%$ of sequence tokens ($|C_1| \approx 0.9 L$), effective complexity reverts to $\mathcal{O}(L^2 D)$, eliminating sparse speedup advantages.
+
 
 ---
 

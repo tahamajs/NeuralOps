@@ -71,19 +71,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Model Dim):
-- **Input Projections ($W_k, W_v, W_f$)**: $6 B L D^2$ FLOPs
-- **Outer Product Calculations ($k_t v_t^\top$)**: $L \times (2 B D^2) = 2 B L D^2$ FLOPs
-- **Convex State Accumulation**: $L \times (3 B D^2) = 3 B L D^2$ FLOPs
-- **Query Readout ($S_t x_t$)**: $L \times (2 B D^2) = 2 B L D^2$ FLOPs
-- **Output Projection ($W_{\text{out}}$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_k, W_v, W_f$)}, $6 B L D^2$ FLOPs Furthermore, regarding \textbf{Outer Product Calculations ($k_t v_t^\top$)}, $L \times (2 B D^2) = 2 B L D^2$ FLOPs Concurrently, regarding \textbf{Convex State Accumulation}, $L \times (3 B D^2) = 3 B L D^2$ FLOPs In this setting, regarding \textbf{Query Readout ($S_t x_t$)}, $L \times (2 B D^2) = 2 B L D^2$ FLOPs Additionally, regarding \textbf{Output Projection ($W_{\text{out}}$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $7.5 B L D^2$
-- **Total FLOPs**: $15 B L D^2$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+Specifically, regarding \textbf{Total MACs}, $7.5 B L D^2$ Furthermore, regarding \textbf{Total FLOPs}, $15 B L D^2$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2$ parameters.
-- **Decoding Memory Footprint**: Bounded by $\mathcal{O}(B \cdot D^2)$ state memory per sequence.
+Specifically, regarding \textbf{Static Weights}, $4 D^2$ parameters. Furthermore, regarding \textbf{Decoding Memory Footprint}, bounded by $\mathcal{O}(B \cdot D^2)$ state memory per sequence.
+
 
 ---
 

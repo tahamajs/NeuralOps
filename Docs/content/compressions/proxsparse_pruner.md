@@ -53,13 +53,14 @@ where $f(W)$ is the empirical loss and $h(W) = \lambda \|W\|_1$ is the $L_1$-nor
 ### 3.1 Dataflow & Execution Trace
 
 1. **Weight Initialization**:
-   - Extract weight tensor $W \in \mathbb{R}^{N \times M}$ from target `nn.Linear` module in FP32 format.
+Extract weight tensor $W \in \mathbb{R}^{N \times M}$ from target `nn.Linear` module in FP32 format.
+
 2. **Proximal Iteration Loop ($s = 1 \dots T$)**:
-   - Compute magnitude percentile threshold $\tau = \text{Percentile}(|W|, 100 \cdot (1 - S))$.
-   - Apply soft-threshold shrinkage map to derive $W_{\text{prox}}$.
-   - Update continuous weight array $W \leftarrow W - \lambda_{\text{prox}} \cdot (W - W_{\text{prox}})$.
+Compute magnitude percentile threshold $\tau = \text{Percentile}(|W|, 100 \cdot (1 - S))$. Furthermore, Apply soft-threshold shrinkage map to derive $W_{\text{prox}}$. Concurrently, Update continuous weight array $W \leftarrow W - \lambda_{\text{prox}} \cdot (W - W_{\text{prox}})$.
+
 3. **Sparse Assignment**:
-   - Assign final $W_{\text{prox}}$ tensor back to `module.weight.data` with original precision and CUDA device.
+Assign final $W_{\text{prox}}$ tensor back to `module.weight.data` with original precision and CUDA device.
+
 
 ```
 Input Weight W ──► Compute Percentile Threshold τ ──► Soft Shrinkage W_prox
@@ -95,7 +96,8 @@ This contraction ensures continuous, smooth convergence toward sparse boundaries
 
 ### 5.2 Failure Cases
 
-- **Excessive Step Size ($\lambda_{\text{prox}} > 0.5$)**: Overly large proximal steps reduce ProxSparse to hard magnitude thresholding, reintroducing instability.
+Specifically, regarding \textbf{Excessive Step Size ($\lambda_{\text{prox}} > 0.5$)}, overly large proximal steps reduce ProxSparse to hard magnitude thresholding, reintroducing instability.
+
 
 ---
 

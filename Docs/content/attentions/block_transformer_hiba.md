@@ -123,11 +123,8 @@ Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_
 1. **Linear Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$)**:
    $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
 2. **Sparse HIBA Layers (Fraction $\frac{T_{\text{rect}} - 1}{T_{\text{rect}}}$ of layers)**:
-   - **Intra-Block Causal Attention**:
-     Across $M$ blocks: $M \times (4 B H B_{\text{size}}^2 d_h) = 4 B H L B_{\text{size}} d_h = 4 B D L B_{\text{size}}$ FLOPs.
-   - **Inter-Block Top-$k$ Attention**:
-     Across $M$ blocks: $M \times (2 B H B_{\text{size}} (L - B_{\text{size}}) d_h) = 2 B D L (L - B_{\text{size}})$ FLOPs for raw scoring, plus $2 B D L k_{\text{inter}}$ FLOPs for top-$k$ value multiplication.
-     $$\operatorname{FLOPs}_{\text{sparse\_layer}} = 4 B D L B_{\text{size}} + 2 B D L^2 + 2 B D L k_{\text{inter}}$$
+Specifically, regarding \textbf{Intra-Block Causal Attention}, across $M$ blocks: $M \times (4 B H B_{\text{size}}^2 d_h) = 4 B H L B_{\text{size}} d_h = 4 B D L B_{\text{size}}$ FLOPs. Furthermore, regarding \textbf{Inter-Block Top-$k$ Attention}, across $M$ blocks: $M \times (2 B H B_{\text{size}} (L - B_{\text{size}}) d_h) = 2 B D L (L - B_{\text{size}})$ FLOPs for raw scoring, plus $2 B D L k_{\text{inter}}$ FLOPs for top-$k$ value multiplication. $$\operatorname{FLOPs}_{\text{sparse\_layer}} = 4 B D L B_{\text{size}} + 2 B D L^2 + 2 B D L k_{\text{inter}}$$
+
 3. **Dense Rectification Layers (Fraction $\frac{1}{T_{\text{rect}}}$ of layers)**:
    $$\operatorname{FLOPs}_{\text{dense\_layer}} = 4 B H L^2 d_h = 4 B D L^2$$
 4. **Output Projection ($\mathbf{W}_O$)**:
@@ -136,17 +133,15 @@ Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_
 $$\text{Average Per-Layer FLOPs} = 8 B L D^2 + 4 B D L B_{\text{size}} + 2 B D L k_{\text{inter}} + \left(2 + \frac{2}{T_{\text{rect}}}\right) B D L^2$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Average MACs} \approx 4 B L D^2 + 2 B D L B_{\text{size}} + B D L k_{\text{inter}} + \left(1 + \frac{1}{T_{\text{rect}}}\right) B D L^2$$
-- **Peak Activation Memory**:
-  - Sparse Layer Attention Score Tensors: $M \times B \cdot H \cdot B_{\text{size}} \cdot (L - B_{\text{size}}) \times 2 \text{ bytes}$
-  - Dense Rectification Layer Score Tensor: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$
-  - Peak Memory: Bounded by global dense rectification layer $\mathcal{O}(B H L^2)$.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Sparse Layer Attention Score Tensors: $M \times B \cdot H \cdot B_{\text{size}} \cdot (L - B_{\text{size}}) \times 2 \text{ bytes}$ Concurrently, Dense Rectification Layer Score Tensor: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$ In this setting, Peak Memory: Bounded by global dense rectification layer $\mathcal{O}(B H L^2)$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **HIBA Sparse Layers**: $\mathcal{O}\left(L D (D + B_{\text{size}} + k_{\text{inter}} + L)\right)$ compute.
-- *Note*: Because `_inter_block_sparse` computes raw scores $\mathbf{Q}_b \mathbf{K}_{\neg b}^\top$ over all $(L - B_{\text{size}})$ non-local keys before extracting top-$k$, the scoring step still scales quadratically with $L$, but with a reduced top-$k$ value matmul stage.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory. Furthermore, regarding \textbf{HIBA Sparse Layers}, $\mathcal{O}\left(L D (D + B_{\text{size}} + k_{\text{inter}} + L)\right)$ compute. Concurrently, *Note*: Because `_inter_block_sparse` computes raw scores $\mathbf{Q}_b \mathbf{K}_{\neg b}^\top$ over all $(L - B_{\text{size}})$ non-local keys before extracting top-$k$, the scoring step still scales quadratically with $L$, but with a reduced top-$k$ value matmul stage.
+
 
 ---
 
@@ -161,8 +156,8 @@ _, topk_idx = torch.topk(scores, top_k, dim=-1)
 mask = torch.zeros_like(scores).scatter_(-1, topk_idx, 1.0)
 scores = scores.masked_fill(mask == 0, float("-inf"))
 ```
-- **Quadratic Scoring Memory**: The kernel computes an explicit score tensor of size `[B, H, L_b, L - L_b]` and instantiates a dense zero mask `mask = torch.zeros_like(scores)`.
-- **VRAM Spikes**: Creating a dense floating-point mask of shape `[B, H, L_b, L - L_b]` per block allocates as much VRAM as full attention ($\mathcal{O}(L^2)$), negating memory savings during sparse layers.
+Specifically, regarding \textbf{Quadratic Scoring Memory}, the kernel computes an explicit score tensor of size `[B, H, L_b, L - L_b]` and instantiates a dense zero mask `mask = torch.zeros_like(scores)`. Furthermore, regarding \textbf{VRAM Spikes}, creating a dense floating-point mask of shape `[B, H, L_b, L - L_b]` per block allocates as much VRAM as full attention ($\mathcal{O}(L^2)$), negating memory savings during sparse layers.
+
 
 ### 5.2 Layer Counter Instance Desynchronization
 In `BlockTransformerHIBA.forward`:
@@ -170,8 +165,8 @@ In `BlockTransformerHIBA.forward`:
 use_rectify = self.layer_idx % self.rectification_interval == 0
 self.layer_idx += 1
 ```
-- **Independent State Trap**: `self.layer_idx` is stored as an instance attribute within each individual layer module (`self.layer_idx = 0`).
-- **Schedule Failure**: Every layer module maintains its own isolated counter (`0, 1, 2...`). Consequently, **every layer in the model executes dense rectification on its very first forward call** because `0 % T_rect == 0`. Subsequent calls increment each layer independently, breaking synchronized global rectification schedules across Transformer depth.
+Specifically, regarding \textbf{Independent State Trap}, `self.layer_idx` is stored as an instance attribute within each individual layer module (`self.layer_idx = 0`). Furthermore, regarding \textbf{Schedule Failure}, every layer module maintains its own isolated counter (`0, 1, 2...`). Consequently, **every layer in the model executes dense rectification on its very first forward call** because `0 % T_rect == 0`. Subsequent calls increment each layer independently, breaking synchronized global rectification schedules across Transformer depth.
+
 
 ### 5.3 Non-Causal Inter-Block Leakage in Autoregressive Tasks
 In `_inter_block_sparse`:
@@ -179,8 +174,8 @@ In `_inter_block_sparse`:
 if (block_idx + 1) * self.block_size < total_len:
     k_select.append(k_all[:, :, end_b:, :]) # FEEDS FUTURE KEYS!
 ```
-- **Future Token Leakage**: The inter-block attention routine appends keys from future blocks (`end_b:`).
-- **Causality Violation**: If deployed in autoregressive decoder models (e.g., GPT), query block $b$ attends to future keys $k > b$, leaking future token information and invalidating generative inference.
+Specifically, regarding \textbf{Future Token Leakage}, the inter-block attention routine appends keys from future blocks (`end_b:`). Furthermore, regarding \textbf{Causality Violation}, if deployed in autoregressive decoder models (e.g., GPT), query block $b$ attends to future keys $k > b$, leaking future token information and invalidating generative inference.
+
 
 ---
 

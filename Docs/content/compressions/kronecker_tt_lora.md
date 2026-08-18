@@ -45,9 +45,8 @@ $$
 where $\bar{\mathcal{H}}_{sv}$ is a user-defined entropy threshold (e.g., $0.75$).
 
 ## 6. Parameter Efficiency & Expressivity Analysis
-- **Parameter Overhead**: Kronecker-TT-LoRA dramatically reduces the parameter footprint—typically providing a **12x reduction** compared to standard LoRA at an equivalent representational capacity (e.g., standard rank $r=16$).
-- **Memory Footprint**: By constraining the adaptation size, the method allows full parameter-efficient fine-tuning of 70B+ scale foundation models on a single 80GB GPU.
-- **Representation Power**: Element-wise multiplication between Kronecker factors and Tensor-Train matrices allows for non-linear subspace mapping, preserving higher-order correlations that standard low-rank matrices discard.
+Specifically, regarding \textbf{Parameter Overhead}, kronecker-TT-LoRA dramatically reduces the parameter footprint—typically providing a **12x reduction** compared to standard LoRA at an equivalent representational capacity (e.g., standard rank $r=16$). Furthermore, regarding \textbf{Memory Footprint}, by constraining the adaptation size, the method allows full parameter-efficient fine-tuning of 70B+ scale foundation models on a single 80GB GPU. Concurrently, regarding \textbf{Representation Power}, element-wise multiplication between Kronecker factors and Tensor-Train matrices allows for non-linear subspace mapping, preserving higher-order correlations that standard low-rank matrices discard.
+
 
 ## 7. Implementation Details & Integration Guide
 The `Kronecker-TT-LoRA` layer is implemented as a direct drop-in replacement for `nn.Linear` adapters in PyTorch. 

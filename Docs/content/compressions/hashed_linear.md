@@ -53,20 +53,17 @@ Let $D_{\text{out}}$ be the output dimension, $D_{\text{in}}$ be the input dimen
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Hash Table Allocation**:
-   - Initialize `weight_table = nn.Parameter(torch.randn(n_buckets))`.
-   - Initialize bias parameter if required.
+Initialize `weight_table = nn.Parameter(torch.randn(n_buckets))`. Furthermore, Initialize bias parameter if required.
+
 2. **Hash Index Precomputation**:
-   - Construct index grid `i_idx` and `j_idx` for shape $[D_{\text{out}}, D_{\text{in}}]$.
-   - Compute hash indices `hash_idx = fast_hash(i_idx, j_idx, n_buckets)`.
-   - Register `hash_idx` as a non-trainable persistent module buffer.
+Construct index grid `i_idx` and `j_idx` for shape $[D_{\text{out}}, D_{\text{in}}]$. Furthermore, Compute hash indices `hash_idx = fast_hash(i_idx, j_idx, n_buckets)`. Concurrently, Register `hash_idx` as a non-trainable persistent module buffer.
+
 3. **Weight Average Initialization (`from_linear`)**:
-   - Copy bias from pre-trained layer.
-   - For each bucket $b \in [0, B-1]$:
-     - Find mask `mask = (hash_idx == b)`.
-     - Assign `weight_table[b] = W_dense[mask].mean()`.
+Copy bias from pre-trained layer. Furthermore, For each bucket $b \in [0, B-1]$: Concurrently, Find mask `mask = (hash_idx == b)`. In this setting, Assign `weight_table[b] = W_dense[mask].mean()`.
+
 4. **Forward Pass Execution**:
-   - Reconstruct $W = \text{weight\_table}[\text{hash\_idx}]$.
-   - Compute `F.linear(x, W, self.bias)`.
+Reconstruct $W = \text{weight\_table}[\text{hash\_idx}]$. Furthermore, Compute `F.linear(x, W, self.bias)`.
+
 
 ```
 Initialize HashedLinear ──► Compute Grid Hash Index Buffer ──► Average Initial Dense Weights
@@ -100,7 +97,8 @@ $$\mathbb{E}\left[ \| W_{\text{dense}} - W_{\text{hashed}} \|_F^2 \right] = \sum
 
 ### 5.2 Failure Cases
 
-- **Hash Collision Saturation**: If bucket count $B$ is too small ($B < 512$), unrelated channels map into identical hash buckets, degrading model representations.
+Specifically, regarding \textbf{Hash Collision Saturation}, if bucket count $B$ is too small ($B < 512$), unrelated channels map into identical hash buckets, degrading model representations.
+
 
 ---
 

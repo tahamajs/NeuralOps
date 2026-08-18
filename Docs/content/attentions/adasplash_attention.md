@@ -100,28 +100,21 @@ Input: hidden_states [B, L, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $T_{\text{iter}}$: Entmax Iterations):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Score Matrix Logits ($Q K^\top$)**: $2 B H L^2 d_k = 2 B L^2 D$ FLOPs
-- **Fixed-Point Entmax Loop ($T_{\text{iter}}$ iterations)**: $T_{\text{iter}} \times (6 B H L^2) = 6 T_{\text{iter}} B H L^2$ FLOPs
-- **Context Aggregation ($A V$)**: $2 B H L^2 d_k = 2 B L^2 D$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $T_{\text{iter}}$: Entmax Iterations)
 
-**Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 2 B L^2 D + 3 T_{\text{iter}} B H L^2$
-- **Total FLOPs**: $8 B L D^2 + 4 B L^2 D + 6 T_{\text{iter}} B H L^2$
+The computational complexity of AdaSplash Attention is governed by the projection operators, pairwise logit formulations, and the iterative entmax fixed-point refinement loop. Specifically, the input query, key, and value linear projections require $6 B L D^2$ FLOPs. Computing the unnormalized pairwise dot-product score matrix $S = Q K^\top / \sqrt{d_k}$ demands $2 B H L^2 d_k = 2 B L^2 D$ FLOPs. The iterative fixed-point entmax normalization entails $6 T_{\text{iter}} B H L^2$ FLOPs across $T_{\text{iter}}$ solver steps to converge upon the optimal thresholding Lagrange multiplier. Subsequently, context aggregation through the sparse probability matrix product $A V$ accounts for $2 B H L^2 d_k = 2 B L^2 D$ FLOPs, followed by the final linear projection $W_O$ which incurs $2 B L D^2$ FLOPs. In aggregate, the layer demands $8 B L D^2 + 4 B L^2 D + 6 T_{\text{iter}} B H L^2$ total FLOPs, corresponding to an operational complexity of $4 B L D^2 + 2 B L^2 D + 3 T_{\text{iter}} B H L^2$ Multiply-Accumulate (MAC) operations.
 
-### Memory Footprint:
-- **Static Weights**: $4 D^2$ parameters.
-- **Transient Activation Memory**: $\mathcal{O}(B \cdot H \cdot L^2)$ for attention score logit buffers.
+### Memory Footprint & Tensor Buffering
+
+The static parameter memory footprint is bounded by $4 D^2$ learned weights spanning the four linear transformations. During training and evaluation, transient activation memory scales as $\mathcal{O}(B \cdot H \cdot L^2)$, driven primarily by the intermediate dot-product score logit buffers and the iterative fixed-point state tensors retained prior to simplex-boundary sparse truncation.
 
 ---
 
-## 5. Failure Modes, Rank Collapse & Edge Cases
+## 5. Failure Modes, Optimization Stability & Structural Tradeoffs
 
-1. **Complete Sparsity Collapse (Zero Gradient)**: If score logit initialization assigns negative values with high dispersion, entmax can truncate all attention probabilities to zero for specific queries, causing gradient disconnection.
-2. **Fixed-Point Non-Convergence**: Near uniform probability distributions, fixed-point iterations $p^{(t+1)} = \sqrt{p^{(t)}} / \tau$ converge slowly, exceeding default iteration bounds ($T_{\text{iter}} = 10$).
-3. **FP16 Square-Root Underflow**: Computing $\sqrt{p}$ under FP16 for small non-zero probabilities ($p < 10^{-7}$) underflows to zero, prematurely altering sparsity boundaries.
+The mathematical formulation of exact simplex projection via Tsallis 1.5-entmax introduces distinct optimization pathologies and structural stability constraints that require rigorous mitigation. A primary failure mode is *complete sparsity collapse*, which occurs when pre-activation score logits exhibit excessive negative variance or extreme dispersion upon initialization. Under such regimes, the dynamic thresholding Lagrange multiplier $\tau$ can strictly dominate all unnormalized logits for a given query position, truncating the entire attention distribution support to exact zeros. This induces immediate gradient detachment ($\nabla_S \mathcal{L} = \mathbf{0}$), isolating the corresponding query representations from error propagation and trapping optimization parameters within uninformative plateaus on the loss landscape.
+
+Furthermore, the numerical stability and runtime determinism of the architecture are inherently bounded by the asymptotic convergence rate of the iterative fixed-point solver. In context windows where attention weights approach quasi-uniform distributions, the recurrent update mapping $p^{(t+1)} = \sqrt{p^{(t)}} / (\tau^{(t)} + \epsilon)$ exhibits sub-linear convergence, failing to satisfy strict boundary tolerances within fixed iteration limits (e.g., $T_{\text{iter}} = 10$). This incomplete convergence induces drift in the normalized probability mass, introducing non-negligible gradient bias during backpropagation. Concurrently, mixed-precision numerical formats (such as IEEE FP16) introduce subnormal floating-point vulnerabilities; specifically, evaluating the square-root transformation $\sqrt{p}$ over small non-zero probability values ($p < 10^{-7}$) triggers catastrophic underflow to zero, which prematurely shifts active sparsity boundaries and degrades optimization smoothness across deep transformer stacks.
 
 ---
 
@@ -165,9 +158,9 @@ def _entmax15_fused_kernel(
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Hardware-Accelerated Block-Sparse Entmax**: Combine 1.5-entmax thresholding with FlashAttention block-tiling to drop entire zero tiles, enabling $\mathcal{O}(L \log L)$ speedups.
-2. **Adaptive Learnable Alpha Entmax ($\alpha(x)$)**: Dynamically project $\alpha \in [1.0, 2.0]$ per token to transition smoothly between dense Softmax ($\alpha = 1.0$) and ultra-sparse entmax ($\alpha = 1.5$).
-3. **AdaSplash-Mamba Dynamic Gating**: Use entmax sparse masks to gate Mamba selective state updates, preventing noise accumulation from low-relevance tokens.
+To mitigate asymptotic memory bottlenecks and extend the expressive capacity of adaptive sparse routing, several architectural extensions present significant promise. Foremost among these is the integration of *hardware-accelerated block-sparse entmax kernels*, combining 1.5-entmax thresholding with FlashAttention-style SRAM block-tiling. By evaluating conservative upper bounds on block logit maxima, computation and memory traffic for entire inactive key-value tiles can be skipped dynamically, yielding empirical $\mathcal{O}(L \log L)$ execution complexity without compromising numerical fidelity.
+
+Concurrently, a compelling design evolution involves formulating an *adaptive token-conditioned $\alpha$-entmax mechanism*, wherein a continuous scalar $\alpha(x) \in [1.0, 2.0]$ is dynamically predicted from localized token representations. This formulation enables the model to smoothly interpolate between standard entropy-maximizing dense softmax ($\alpha = 1.0$) and ultra-sparse bounded projections ($\alpha = 1.5$ to $2.0$), dynamically adapting the dispersion budget according to semantic entropy requirements across different sequence modalities. Furthermore, integrating sparse entmax routing mechanisms into hybrid state-space models—such as AdaSplash-Mamba architectures—provides structured selective gating for recurrent state transitions. By leveraging exact zero simplex projections to filter low-relevance tokens prior to state updates, the recurrent backbone prevents state pollution, stabilizes long-range associative memory, and preserves gradient fidelity over extended sequence horizons.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

@@ -104,8 +104,8 @@ Thus, `ERCCompressor` provides an absolute guarantee that the relative Frobenius
 ### 4.1 Variable Rank Footprint Analysis
 Because `allowed_error` $\epsilon_{\text{allow}}$ dynamically dictates rank $r_l$ for each layer, parameter savings vary strictly as a function of the singular value decay rate.
 
-- **Fast Energy Decay Layers** (e.g., Attention Query/Key projections): Reach $99\%$ energy at low ranks $r_l \ll R_{\max}$, achieving high compression ($> 80\%$).
-- **Slow Energy Decay Layers** (e.g., MLP Down projections): Require larger ranks $r_l \approx 0.5 R_{\max}$ to capture 99% energy, preserving high capacity.
+**Fast Energy Decay Layers** (e.g., Attention Query/Key projections): Reach $99\%$ energy at low ranks $r_l \ll R_{\max}$, achieving high compression ($> 80\%$). Furthermore, **Slow Energy Decay Layers** (e.g., MLP Down projections): Require larger ranks $r_l \approx 0.5 R_{\max}$ to capture 99% energy, preserving high capacity.
+
 
 ### 4.2 ERC Compression Profile across Layer Types ($\epsilon_{\text{allow}} = 0.01 \implies 99\%$ Energy)
 

@@ -70,14 +70,12 @@ Input: hidden_states [B, N, D]
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, and $d_k = D / H$.
 
 1. **Wrapper Computational Overhead**:
-   - FLOPs: $0$ (Zero FLOP addition).
-   - MACs: $0$ (Zero MAC addition).
-   - Parameters: $0$ (Non-parametric pass-through wrapper).
+FLOPs: $0$ (Zero FLOP addition). Furthermore, MACs: $0$ (Zero MAC addition). Concurrently, Parameters: $0$ (Non-parametric pass-through wrapper).
+
 
 2. **Inherited Base Attention Complexity**:
-   - Full Attention (`FullAttention` wrapped): $\mathcal{O}(8 B N D^2 + 4 B N^2 D)$ FLOPs.
-   - Linear Attention (`LinformerAttention` wrapped): $\mathcal{O}(8 B N D^2 + 4 B N k D)$ FLOPs.
-   - Memory Footprint: Directly inherits activation retention buffers of wrapped module $\mathcal{F}_{\text{attn}}$.
+Full Attention (`FullAttention` wrapped): $\mathcal{O}(8 B N D^2 + 4 B N^2 D)$ FLOPs. Furthermore, Linear Attention (`LinformerAttention` wrapped): $\mathcal{O}(8 B N D^2 + 4 B N k D)$ FLOPs. Concurrently, Memory Footprint: Directly inherits activation retention buffers of wrapped module $\mathcal{F}_{\text{attn}}$.
+
 
 ---
 

@@ -20,8 +20,8 @@ W_{\text{adaptive}} = W_{\text{svd}} + W_{\text{res}} = U V + A B
 \]
 
 where:
-- $U \in \mathbb{R}^{d_{\text{out}} \times r_{\text{svd}}}, V \in \mathbb{R}^{r_{\text{svd}} \times d_{\text{in}}}$ hold pretrained truncated SVD factors.
-- $A \in \mathbb{R}^{d_{\text{out}} \times r_{\text{res}}}, B \in \mathbb{R}^{r_{\text{res}} \times d_{\text{in}}}$ hold learnable residual adapter parameters.
+$U \in \mathbb{R}^{d_{\text{out}} \times r_{\text{svd}}}, V \in \mathbb{R}^{r_{\text{svd}} \times d_{\text{in}}}$ hold pretrained truncated SVD factors. Furthermore, $A \in \mathbb{R}^{d_{\text{out}} \times r_{\text{res}}}, B \in \mathbb{R}^{r_{\text{res}} \times d_{\text{in}}}$ hold learnable residual adapter parameters.
+
 
 Forward transformation for input $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$:
 
@@ -123,24 +123,23 @@ Y = \text{AdaptiveSVDLinear}_O(C) \in \mathbb{R}^{B \times N \times D}
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, $r_{\text{svd}}$ base rank, and $r_{\text{res}}$ residual rank.
 
 1. **Adaptive SVD Linear Projections**:
-   - SVD Base Projections ($X V^\top U^\top$): $4 \times (4 B N D r_{\text{svd}}) = 16 B N D r_{\text{svd}}$ FLOPs.
-   - Residual Adapter Projections ($X B^\top A^\top$): $4 \times (4 B N D r_{\text{res}}) = 16 B N D r_{\text{res}}$ FLOPs.
-   - *Total Projection Workload*: $16 B N D (r_{\text{svd}} + r_{\text{res}})$ FLOPs ($8 B N D (r_{\text{svd}} + r_{\text{res}})$ MACs).
+SVD Base Projections ($X V^\top U^\top$): $4 \times (4 B N D r_{\text{svd}}) = 16 B N D r_{\text{svd}}$ FLOPs. Furthermore, Residual Adapter Projections ($X B^\top A^\top$): $4 \times (4 B N D r_{\text{res}}) = 16 B N D r_{\text{res}}$ FLOPs. Concurrently, *Total Projection Workload*: $16 B N D (r_{\text{svd}} + r_{\text{res}})$ FLOPs ($8 B N D (r_{\text{svd}} + r_{\text{res}})$ MACs).
+
 
 2. **Core Scaled Dot-Product Attention**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
+$Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H N^2$ FLOPs.
+
 
 3. **Total Workload Summary**:
-   - **Total MACs**: $8 B N D (r_{\text{svd}} + r_{\text{res}}) + 2 B N^2 D$
-   - **Total FLOPs**: $16 B N D (r_{\text{svd}} + r_{\text{res}}) + 4 B N^2 D + 7 B H N^2$
+Specifically, regarding \textbf{Total MACs}, $8 B N D (r_{\text{svd}} + r_{\text{res}}) + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $16 B N D (r_{\text{svd}} + r_{\text{res}}) + 4 B N^2 D + 7 B H N^2$
+
 
 ### Parameter Footprint & Trainable Parameter Reduction
-- **Frozen Parameters**: $4 \cdot r_{\text{svd}}(D + D) = 8 D r_{\text{svd}}$ floats.
-- **Trainable Parameters**: $4 \cdot r_{\text{res}}(D + D) + 4 D = 8 D r_{\text{res}} + 4 D$ floats.
+Specifically, regarding \textbf{Frozen Parameters}, $4 \cdot r_{\text{svd}}(D + D) = 8 D r_{\text{svd}}$ floats. Furthermore, regarding \textbf{Trainable Parameters}, $4 \cdot r_{\text{res}}(D + D) + 4 D = 8 D r_{\text{res}} + 4 D$ floats.
+
   For $D = 4096, r_{\text{svd}} = 32, r_{\text{res}} = 8$:
-  - Standard Trainable MHA Parameters: $4 \times 4096^2 \approx 67.1 \text{ million}$.
-  - Adaptive SVD Trainable Parameters: $8 \times 4096 \times 8 + 4(4096) \approx 278,528 \text{ parameters}$ (**$99.6\%$ reduction in trainable parameters during fine-tuning**).
+Standard Trainable MHA Parameters: $4 \times 4096^2 \approx 67.1 \text{ million}$. Furthermore, Adaptive SVD Trainable Parameters: $8 \times 4096 \times 8 + 4(4096) \approx 278,528 \text{ parameters}$ (**$99.6\%$ reduction in trainable parameters during fine-tuning**).
+
 
 ---
 

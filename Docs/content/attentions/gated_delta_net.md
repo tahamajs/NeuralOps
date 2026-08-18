@@ -85,19 +85,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Model Dim):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Gate Projections ($W_f, W_i, W_\beta$)**: $6 B L D^2$ FLOPs
-- **Delta Rule State Updates**: $L \times (4 B D^2) = 4 B L D^2$ FLOPs
-- **Query State Readout ($S_t q_t$)**: $L \times (2 B D^2) = 2 B L D^2$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_Q, W_K, W_V$)}, $6 B L D^2$ FLOPs Furthermore, regarding \textbf{Gate Projections ($W_f, W_i, W_\beta$)}, $6 B L D^2$ FLOPs Concurrently, regarding \textbf{Delta Rule State Updates}, $L \times (4 B D^2) = 4 B L D^2$ FLOPs In this setting, regarding \textbf{Query State Readout ($S_t q_t$)}, $L \times (2 B D^2) = 2 B L D^2$ FLOPs Additionally, regarding \textbf{Output Projection ($W_O$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $10 B L D^2$
-- **Total FLOPs**: $20 B L D^2$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+Specifically, regarding \textbf{Total MACs}, $10 B L D^2$ Furthermore, regarding \textbf{Total FLOPs}, $20 B L D^2$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+
 
 ### Memory Footprint:
-- **Static Weights**: $7 D^2$ parameters.
-- **Decoding Memory Footprint**: Bounded by $\mathcal{O}(B \cdot D^2)$ state memory per sequence.
+Specifically, regarding \textbf{Static Weights}, $7 D^2$ parameters. Furthermore, regarding \textbf{Decoding Memory Footprint}, bounded by $\mathcal{O}(B \cdot D^2)$ state memory per sequence.
+
 
 ---
 

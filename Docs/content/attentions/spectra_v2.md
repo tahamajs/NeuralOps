@@ -129,18 +129,16 @@ O_{\text{rect}} = \frac{\phi(Q) KV_{\text{rff}}}{\phi(Q) Z_{\text{rff}}^\top + \
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, $B_s$ block size, $k_{\text{inter}}$ top-$k$ candidates, and $d_r$ RFF dimension.
 
 1. **Standard Block-Sparse Layer Workload**:
-   - Projections $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs.
-   - Inter-block Top-$k$ scoring & gathering: $2 B H N L_{\text{inter}} d_k + B H N \log(L_{\text{inter}})$ FLOPs.
-   - Joint block score MatMul & Value aggregation: $4 B H N (B_s + k_{\text{inter}}) d_k = 4 B N (B_s + k_{\text{inter}}) D$ FLOPs.
+Projections $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs. Furthermore, Inter-block Top-$k$ scoring & gathering: $2 B H N L_{\text{inter}} d_k + B H N \log(L_{\text{inter}})$ FLOPs. Concurrently, Joint block score MatMul & Value aggregation: $4 B H N (B_s + k_{\text{inter}}) d_k = 4 B N (B_s + k_{\text{inter}}) D$ FLOPs.
+
 
 2. **Periodic RFF Rectification Layer Workload**:
-   - RFF projection $\phi(X)$: $4 B N D d_r$ FLOPs.
-   - Global associative memory $KV_{\text{rff}}$ & linear output: $4 B N D d_r$ FLOPs.
+RFF projection $\phi(X)$: $4 B N D d_r$ FLOPs. Furthermore, Global associative memory $KV_{\text{rff}}$ & linear output: $4 B N D d_r$ FLOPs.
+
 
 3. **Total Workload Summary**:
-   - **Block-Sparse Layer MACs**: $4 B N D^2 + 2 B N (B_s + k_{\text{inter}}) D$
-   - **RFF Rectification Layer MACs**: $4 B N D^2 + 4 B N D d_r$
-   - **Sub-Quadratic Complexity**: For sequence length $N = 16,384$, $B_s = 64, k_{\text{inter}} = 16$: effective attention length is $80$ tokens per query (**$204\times$ compute reduction** over $16,384 \times 16,384$ dense MHA).
+Specifically, regarding \textbf{Block-Sparse Layer MACs}, $4 B N D^2 + 2 B N (B_s + k_{\text{inter}}) D$ Furthermore, regarding \textbf{RFF Rectification Layer MACs}, $4 B N D^2 + 4 B N D d_r$ Concurrently, regarding \textbf{Sub-Quadratic Complexity}, for sequence length $N = 16,384$, $B_s = 64, k_{\text{inter}} = 16$: effective attention length is $80$ tokens per query (**$204\times$ compute reduction** over $16,384 \times 16,384$ dense MHA).
+
 
 ---
 

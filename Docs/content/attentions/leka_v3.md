@@ -101,13 +101,11 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 2. **Multi-Scale RFF Feature Mapping**:
    $$\text{FLOPs}_{\text{rff}} = 2 B N D (F_1 + F_2)$$
 3. **Value Semantic Landmark Scoring**:
-   - Bottleneck MLP operating on $V$: $2 B H N d_h (32) + 2 B H N (32) (1) = 64 B N D + 64 B H N$
-   $$\text{FLOPs}_{\text{score}} \approx 64 B N D$$
+Bottleneck MLP operating on $V$: $2 B H N d_h (32) + 2 B H N (32) (1) = 64 B N D + 64 B H N$ $$\text{FLOPs}_{\text{score}} \approx 64 B N D$$
+
 4. **Value Correction & Landmark Softpick Attention**:
-   - Value correction tensor product $V_{\text{land}} W_{\text{corr}}$: $2 B H L_{\max} d_h^2 = 2 B L_{\max} D d_h$
-   - Landmark score product $\phi(Q) K_{\text{land}}^T$: $2 B H N L_{\max} d_{\text{feat}}$
-   - Softpick & Value contraction $p V_{\text{adj}}$: $2 B H N L_{\max} d_h = 2 B N L_{\max} D$
-   $$\text{FLOPs}_{\text{land}} = 2 B L_{\max} D d_h + 2 B H N L_{\max} d_{\text{feat}} + 2 B N L_{\max} D$$
+Value correction tensor product $V_{\text{land}} W_{\text{corr}}$: $2 B H L_{\max} d_h^2 = 2 B L_{\max} D d_h$ Furthermore, Landmark score product $\phi(Q) K_{\text{land}}^T$: $2 B H N L_{\max} d_{\text{feat}}$ Concurrently, Softpick & Value contraction $p V_{\text{adj}}$: $2 B H N L_{\max} d_h = 2 B N L_{\max} D$ $$\text{FLOPs}_{\text{land}} = 2 B L_{\max} D d_h + 2 B H N L_{\max} d_{\text{feat}} + 2 B N L_{\max} D$$
+
 5. **Local Sliding Window Attention**:
    $$\text{FLOPs}_{\text{local}} = 4 B N D W_{\text{local}}$$
 
@@ -116,27 +114,27 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 $$\text{FLOPs}_{\text{total}} \approx 6 B N D^2 + 2 B H N L_{\max} d_{\text{feat}} + 2 B N L_{\max} D + 4 B N D W_{\text{local}}$$
 
 ### 4.2 Memory Footprint & Bandwidth
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = 4 D^2 + (d_h F_1 + d_h F_2) + \Theta_{\text{v\_scorer}} + H d_h^2 = 4 D^2 + d_h (F_1 + F_2) + 33 d_h + H d_h^2$$
-- **Activation Footprint**:
-  - Landmark feature buffers: $\mathcal{O}(B H L_{\max} d_{\text{feat}})$
-  - Landmark attention matrix: $\mathcal{O}(B H N L_{\max})$
-  - Local window logits: $\mathcal{O}(B H N W_{\text{local}})$
-  - Total Memory: $\mathcal{O}\left(B N D + B H N L_{\max} + B H N W_{\text{local}}\right)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Landmark feature buffers: $\mathcal{O}(B H L_{\max} d_{\text{feat}})$ Concurrently, Landmark attention matrix: $\mathcal{O}(B H N L_{\max})$ In this setting, Local window logits: $\mathcal{O}(B H N W_{\text{local}})$ Additionally, Total Memory: $\mathcal{O}\left(B N D + B H N L_{\max} + B H N W_{\text{local}}\right)$
+
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
 ### 5.1 Value-State Landmark Score Saturation
-- **Mechanism**: The landmark MLP scorer evaluates $\text{MLP}(V)$. If value states $V$ saturate due to large norm values in deep network layers, the MLP output logits flatten, leading to random Top-k landmark selection.
-- **Mitigation**: Apply RMSNorm to Value states $V$ before feeding into `landmark_scorer`.
+At the architectural level, the underlying operational mechanism reveals that the landmark MLP scorer evaluates $\text{MLP}(V)$. If value states $V$ saturate due to large norm values in deep network layers, the MLP output logits flatten, leading to random Top-k landmark selection. To systematically mitigate this constraint, the framework enforces an optimization protocol such that apply RMSNorm to Value states $V$ before feeding into `landmark_scorer`.
+
 
 ### 5.2 Value Correction Matrix Identity Collapse
-- **Mechanism**: $W_{\text{corr}}$ is initialized to identity matrices $I_{d_h}$. If learning rates are too high, $W_{\text{corr}}$ weights can drift towards zero, truncating landmark value output.
+At the architectural level, the underlying operational mechanism reveals that $W_{\text{corr}}$ is initialized to identity matrices $I_{d_h}$. If learning rates are too high, $W_{\text{corr}}$ weights can drift towards zero, truncating landmark value output.
+
 
 ### 5.3 Softpick Temperature Gradient Lock
-- **Mechanism**: Setting Softpick temperature $T < 0.2$ causes aggressive tail subtraction, zeroing off-diagonal landmark probabilities and locking backpropagation gradients.
+At the architectural level, the underlying operational mechanism reveals that setting Softpick temperature $T < 0.2$ causes aggressive tail subtraction, zeroing off-diagonal landmark probabilities and locking backpropagation gradients.
+
 
 ---
 
@@ -169,18 +167,16 @@ $$\text{FLOPs}_{\text{total}} \approx 6 B N D^2 + 2 B H N L_{\max} d_{\text{feat
 ```
 
 ### 6.1 Triton Strategy 1: Multi-Scale RFF Mapping & Feature Concatenation
-- Construct a single vectorized Triton kernel loading input $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times d_h}$ into SRAM.
-- Evaluate dual projections $X_i W_1$ and $X_i W_2$ in SRAM registers, compute trigonometric features, and write concatenated feature map $\phi(X_i) \in \mathbb{R}^{\text{BLOCK\_M} \times d_{\text{feat}}}$ directly to main DRAM.
+Construct a single vectorized Triton kernel loading input $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times d_h}$ into SRAM. Furthermore, Evaluate dual projections $X_i W_1$ and $X_i W_2$ in SRAM registers, compute trigonometric features, and write concatenated feature map $\phi(X_i) \in \mathbb{R}^{\text{BLOCK\_M} \times d_{\text{feat}}}$ directly to main DRAM.
+
 
 ### 6.2 Triton Strategy 2: Shared-Memory Value Landmark Scorer Kernel
-- Compute Value-based MLP scores $\text{MLP}(V)$ in shared memory.
-- Perform a parallel bitonic top-$k$ selection across sequence blocks to extract landmark indices $\mathcal{I}_{\text{land}}$.
-- Gather $K_{\text{land}}$ and $V_{\text{land}}$ vectors into continuous SRAM buffers, avoiding fragmented global memory reads.
+Compute Value-based MLP scores $\text{MLP}(V)$ in shared memory. Furthermore, Perform a parallel bitonic top-$k$ selection across sequence blocks to extract landmark indices $\mathcal{I}_{\text{land}}$. Concurrently, Gather $K_{\text{land}}$ and $V_{\text{land}}$ vectors into continuous SRAM buffers, avoiding fragmented global memory reads.
+
 
 ### 6.3 Triton Strategy 3: Fused Landmark Softpick & Local Window Kernel
-- Process sequence blocks of size `BLOCK_M = 64`.
-- Load continuous landmark key-value buffers $K_{\text{land}}, V_{\text{land}}$ into shared memory. Compute landmark Softpick attention context $C_{\text{land}}$ in register files.
-- Simultaneously compute local sliding-window attention $C_{\text{local}}$ and perform element-wise sigmoidal gate interpolation in SRAM before writing final context output $C$ to global DRAM.
+Process sequence blocks of size `BLOCK_M = 64`. Furthermore, Load continuous landmark key-value buffers $K_{\text{land}}, V_{\text{land}}$ into shared memory. Compute landmark Softpick attention context $C_{\text{land}}$ in register files. Concurrently, Simultaneously compute local sliding-window attention $C_{\text{local}}$ and perform element-wise sigmoidal gate interpolation in SRAM before writing final context output $C$ to global DRAM.
+
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

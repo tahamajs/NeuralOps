@@ -133,46 +133,43 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads
 1. **SVD Linear Projections ($Q, K, V, O$)**:
    $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
 2. **Local Softpick Attention ($H_l$ heads)**:
-   - Band score matmul: $2 B H_l N W d_h$
-   - Softpick rectification & Value contraction: $2 B H_l N W d_h + \mathcal{O}(B H_l N W)$
-   $$\text{FLOPs}_{\text{local}} = 4 B H_l N W d_h$$
+Band score matmul: $2 B H_l N W d_h$ Furthermore, Softpick rectification & Value contraction: $2 B H_l N W d_h + \mathcal{O}(B H_l N W)$ $$\text{FLOPs}_{\text{local}} = 4 B H_l N W d_h$$
+
 3. **Global RFF Linear Attention ($H_g$ heads)**:
-   - RFF Einstein sum projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$): $4 B H_g N d_h F$
-   - Memory State accumulation ($KV$): $2 B H_g N F d_h$
-   - Global Context retrieval: $2 B H_g N F d_h$
-   $$\text{FLOPs}_{\text{global}} = 8 B H_g N d_h F$$
+RFF Einstein sum projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$): $4 B H_g N d_h F$ Furthermore, Memory State accumulation ($KV$): $2 B H_g N F d_h$ Concurrently, Global Context retrieval: $2 B H_g N F d_h$ $$\text{FLOPs}_{\text{global}} = 8 B H_g N d_h F$$
+
 
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} = 8 B N D r + 2 B H_l N W d_h + 4 B H_g N d_h F$$
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = 8 D r + H_g d_h F + H$$
-- **Activation Footprint**:
-  - Local Softpick logits: $\mathcal{O}(B H_l N W)$
-  - RFF feature activations: $\mathcal{O}(B H_g N F)$
-  - Global memory matrix state: $\mathcal{O}(B H_g F d_h)$
-  - Total Memory: $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Local Softpick logits: $\mathcal{O}(B H_l N W)$ Concurrently, RFF feature activations: $\mathcal{O}(B H_g N F)$ In this setting, Global memory matrix state: $\mathcal{O}(B H_g F d_h)$ Additionally, Total Memory: $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **AEGIS-Attention V4**: $\mathcal{O}\left(N (D r + H_l W d_h + H_g d_h F)\right)$ compute, $\mathcal{O}(N D + H_g F d_h)$ memory footprint.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory. Furthermore, regarding \textbf{AEGIS-Attention V4}, $\mathcal{O}\left(N (D r + H_l W d_h + H_g d_h F)\right)$ compute, $\mathcal{O}(N D + H_g F d_h)$ memory footprint.
+
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Energy Truncation Loss in Pretrained Linear Projections
-- **Mechanism**: The energy threshold parameter $\tau_{\text{energy}} = 0.95$ dictates singular rank truncation. For pre-trained models exhibiting slow singular value decay (high spectral entropy), capping rank to $r_{\max} = 64$ discards more than $5\%$ of total Frobenius energy.
-- **Consequence**: Severe drop in zero-shot task performance prior to fine-tuning.
+At the architectural level, the underlying operational mechanism reveals that the energy threshold parameter $\tau_{\text{energy}} = 0.95$ dictates singular rank truncation. For pre-trained models exhibiting slow singular value decay (high spectral entropy), capping rank to $r_{\max} = 64$ discards more than $5\%$ of total Frobenius energy. Consequently, this dynamic induces structural implications wherein severe drop in zero-shot task performance prior to fine-tuning.
+
 
 ### 5.2 RFF Feature Map Numerical Instability
-- **Mechanism**: RFF kernel evaluation computes $\exp(\hat{Q} W_{\text{rff}})$. If input normalization fails or $W_{\text{rff}}$ scale std dev exceeds $0.05$, exponentiation under FP16 precision causes numerical overflow (`inf`), triggering NaN loss cascades.
-- **Mitigation**: Enforce strict L2 normalization $\hat{Q} = Q / \|Q\|_2$ and initialize $W_{\text{rff}}$ with standard deviation $\sigma = 0.02$.
+At the architectural level, the underlying operational mechanism reveals that rFF kernel evaluation computes $\exp(\hat{Q} W_{\text{rff}})$. If input normalization fails or $W_{\text{rff}}$ scale std dev exceeds $0.05$, exponentiation under FP16 precision causes numerical overflow (`inf`), triggering NaN loss cascades. To systematically mitigate this constraint, the framework enforces an optimization protocol such that enforce strict L2 normalization $\hat{Q} = Q / \|Q\|_2$ and initialize $W_{\text{rff}}$ with standard deviation $\sigma = 0.02$.
+
 
 ### 5.3 Softpick Temperature Gradient Lock
-- **Mechanism**: Setting Softpick temperature $T < 0.2$ results in aggressive tail subtraction, zeroing all off-diagonal probabilities. The resulting gradient $\frac{\partial p_{i, j}}{\partial S_{i, j}}$ collapses to zero everywhere except at the maximum index, locking local heads in a static identity routing pattern.
+At the architectural level, the underlying operational mechanism reveals that setting Softpick temperature $T < 0.2$ results in aggressive tail subtraction, zeroing all off-diagonal probabilities. The resulting gradient $\frac{\partial p_{i, j}}{\partial S_{i, j}}$ collapses to zero everywhere except at the maximum index, locking local heads in a static identity routing pattern.
+
 
 ---
 
@@ -200,19 +197,16 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 
 ### 6.1 Triton Strategy 1: Fused Energy-SVD GEMM Execution
 Instead of executing standard two-stage PyTorch matrix multiplications (`x @ W_down.T` followed by `@ W_up.T`), implement a custom fused Triton kernel:
-- Load tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ directly into SRAM.
-- Compute down-projection in SRAM registers, perform singular scaling, and multiply by $W_{\text{up}}^T$ before writing back to global memory.
-- Reduces memory traffic by avoiding intermediate rank-$r$ tensor HBM allocation.
+Load tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ directly into SRAM. Furthermore, Compute down-projection in SRAM registers, perform singular scaling, and multiply by $W_{\text{up}}^T$ before writing back to global memory. Concurrently, Reduces memory traffic by avoiding intermediate rank-$r$ tensor HBM allocation.
+
 
 ### 6.2 Triton Strategy 2: Block-Sparse Softpick Window Kernel
-- Process sliding window attention using SRAM blocks of size `64 x 64`.
-- Execute online maximum tracking $m_i$, exponential subtraction, thresholding, and value reduction within GPU register files.
-- Eliminates global memory allocation for the $[B, H_l, N, W]$ Softpick probability tensor.
+Process sliding window attention using SRAM blocks of size `64 x 64`. Furthermore, Execute online maximum tracking $m_i$, exponential subtraction, thresholding, and value reduction within GPU register files. Concurrently, Eliminates global memory allocation for the $[B, H_l, N, W]$ Softpick probability tensor.
+
 
 ### 6.3 Triton Strategy 3: Fused RFF Memory Accumulation Grid
-- Stream sequence tiles of size `BLOCK_N = 128` across global heads $H_g$.
-- Compute L2 normalization, RFF projection, and exponential activation in shared memory, accumulating outer products into $KV \in \mathbb{R}^{F \times d_h}$.
-- Avoids storing full sequence $[B, H_g, N, F]$ feature maps in DRAM.
+Stream sequence tiles of size `BLOCK_N = 128` across global heads $H_g$. Furthermore, Compute L2 normalization, RFF projection, and exponential activation in shared memory, accumulating outer products into $KV \in \mathbb{R}^{F \times d_h}$. Concurrently, Avoids storing full sequence $[B, H_g, N, F]$ feature maps in DRAM.
+
 
 ---
 

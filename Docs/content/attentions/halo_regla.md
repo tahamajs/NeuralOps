@@ -108,23 +108,20 @@ Input: hidden_states [B, L, D]
 Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, and $d_k = D / H$.
 
 1. **Linear Projections**:
-   - $W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+$W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+
 
 2. **Rotary Position Embedding (RoPE)**:
-   - $Q, K$ rotations: $2 \times 3 B H L d_k = 6 B L D$ FLOPs.
+$Q, K$ rotations: $2 \times 3 B H L d_k = 6 B L D$ FLOPs.
+
 
 3. **ReGLA Linear Associative Computations**:
-   - Key-Value Matrix Outer Product ($KV = K^\top V$): $[B, H, d_k, L] \times [B, H, L, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs ($B L D d_k$ MACs).
-   - Key Sum Vector ($Z_{\text{sum}}$): $B H L d_k = B L D$ FLOPs.
-   - Numerator Contracting Product ($\widetilde{Q} \cdot KV$): $[B, H, L, d_k] \times [B, H, d_k, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs ($B L D d_k$ MACs).
-   - Denominator Normalization ($\widetilde{Q} \cdot Z_{\text{sum}}$): $2 B H L d_k = 2 B L D$ FLOPs.
-   - Elementwise Division: $B L D$ FLOPs.
+Key-Value Matrix Outer Product ($KV = K^\top V$): $[B, H, d_k, L] \times [B, H, L, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs ($B L D d_k$ MACs). Furthermore, Key Sum Vector ($Z_{\text{sum}}$): $B H L d_k = B L D$ FLOPs. Concurrently, Numerator Contracting Product ($\widetilde{Q} \cdot KV$): $[B, H, L, d_k] \times [B, H, d_k, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs ($B L D d_k$ MACs). In this setting, Denominator Normalization ($\widetilde{Q} \cdot Z_{\text{sum}}$): $2 B H L d_k = 2 B L D$ FLOPs. Additionally, Elementwise Division: $B L D$ FLOPs.
+
 
 ### Complexity Summary:
-- **Total MACs**: $4 B L D^2 + 2 B L D d_k$
-- **Total FLOPs**: $8 B L D^2 + 4 B L D d_k + 10 B L D$
-- **Theoretical Speedup**: Completely eliminates sequence quadratic term $\mathcal{O}(L^2 D)$. Time complexity scales strictly linearly $\mathcal{O}(L)$ with sequence length.
-- **Memory Buffer Footprint**: Stores state matrix $(KV) \in \mathbb{R}^{B \times H \times d_k \times d_k}$ ($B H d_k^2$ floats), avoiding $B H L^2$ attention maps.
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 2 B L D d_k$ Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 4 B L D d_k + 10 B L D$ Concurrently, regarding \textbf{Theoretical Speedup}, completely eliminates sequence quadratic term $\mathcal{O}(L^2 D)$. Time complexity scales strictly linearly $\mathcal{O}(L)$ with sequence length. In this setting, regarding \textbf{Memory Buffer Footprint}, stores state matrix $(KV) \in \mathbb{R}^{B \times H \times d_k \times d_k}$ ($B H d_k^2$ floats), avoiding $B H L^2$ attention maps.
+
 
 ---
 

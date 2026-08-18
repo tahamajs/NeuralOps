@@ -79,13 +79,12 @@ Where $\alpha \in [0, 1]$ specifies the heavy-hitter full softmax retention rati
 Let $L$ be total transformer layers, $B$ batch size, $N$ sequence length, $D$ model dimension, and $\alpha$ heavy-hitter ratio.
 
 1. **Compression Dispatch Cost (One-Time Initialization)**:
-   - Replacement dispatch loop: $\mathcal{O}(L)$ layer attribute updates.
-   - Weight copying: $\mathcal{O}(L \cdot D^2)$ tensor memory operations.
+Replacement dispatch loop: $\mathcal{O}(L)$ layer attribute updates. Furthermore, Weight copying: $\mathcal{O}(L \cdot D^2)$ tensor memory operations.
+
 
 2. **Per-Layer Runtime Complexity Post-Compression**:
-   - Original MHA Runtime: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k + B \cdot N \cdot D^2)$.
-   - Compressed NHA Runtime: $\mathcal{O}(B \cdot H \cdot (\alpha N^2 + N d_k) d_k + B \cdot N \cdot D^2)$.
-   - For $\alpha = 0.1$, attention matrix compute FLOPs decrease by **$90\%$**.
+Original MHA Runtime: $\mathcal{O}(B \cdot H \cdot N^2 \cdot d_k + B \cdot N \cdot D^2)$. Furthermore, Compressed NHA Runtime: $\mathcal{O}(B \cdot H \cdot (\alpha N^2 + N d_k) d_k + B \cdot N \cdot D^2)$. Concurrently, For $\alpha = 0.1$, attention matrix compute FLOPs decrease by **$90\%$**.
+
 
 ---
 

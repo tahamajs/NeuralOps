@@ -77,15 +77,15 @@ Using this, one can avoid computing the N×N matrix entirely by applying the ass
 
 ### 2.4 Temperature and Order
 
-- **Order `p`**: Controls the approximation quality. `p=1` gives a linear attention (essentially a single dot‑product weighted sum). `p=2` or `3` better approximates the softmax shape. The code defaults to `order=2`.
-- **Temperature `τ`**: Shrinks or expands the scores before the polynomial. At `τ=1`, the kernel approximates softmax with unit temperature. Smaller `τ` makes the distribution sharper (more like argmax). The default is `1.0`.
+Specifically, regarding \textbf{Order `p`}, controls the approximation quality. `p=1` gives a linear attention (essentially a single dot‑product weighted sum). `p=2` or `3` better approximates the softmax shape. The code defaults to `order=2`. Furthermore, regarding \textbf{Temperature `τ`}, shrinks or expands the scores before the polynomial. At `τ=1`, the kernel approximates softmax with unit temperature. Smaller `τ` makes the distribution sharper (more like argmax). The default is `1.0`.
+
 
 ### 2.5 Mask Handling
 
 PADRe supports two types of masks common in DistilBERT:
 
-- **Additive mask**: shape `(B, N)` or `(B, 1, 1, N)` with `0` for valid tokens and large negative for padding. PADRe converts this to a multiplicative mask by checking `mask > -1e9`, then multiplies the attention weights and renormalises.
-- **Multiplicative mask**: directly multiplies and renormalises.
+Specifically, regarding \textbf{Additive mask}, shape `(B, N)` or `(B, 1, 1, N)` with `0` for valid tokens and large negative for padding. PADRe converts this to a multiplicative mask by checking `mask > -1e9`, then multiplies the attention weights and renormalises. Furthermore, regarding \textbf{Multiplicative mask}, directly multiplies and renormalises.
+
 
 This preserves the ability to handle padding correctly.
 
@@ -102,10 +102,8 @@ class PADReAttention(BaseAttention):
         ...
 ```
 
-- **`order`**: degree of the polynomial (default 2). Stored in `self.order`; also passed to the parent as `rank` for tracking.
-- **`temperature`**: scaling factor for scores (default 1.0).
-- The linear projections (query, key, value, output) are created as standard `nn.Linear` layers, matching the dimensions of the original DistilBERT attention.
-- `_reshape` transforms the projected tensors from `(B, N, H*D)` to `(B, H, N, D)`.
+Specifically, regarding \textbf{`order`}, degree of the polynomial (default 2). Stored in `self.order`; also passed to the parent as `rank` for tracking. Furthermore, regarding \textbf{`temperature`}, scaling factor for scores (default 1.0). Concurrently, The linear projections (query, key, value, output) are created as standard `nn.Linear` layers, matching the dimensions of the original DistilBERT attention. In this setting, `_reshape` transforms the projected tensors from `(B, N, H*D)` to `(B, H, N, D)`.
+
 
 **Forward pass**:
 
@@ -156,20 +154,13 @@ Then run the injection pipeline. The PADRe attention will replace the standard s
 
 ### Advantages
 
-- **Exponential‑free**: Avoids expensive and numerically tricky `exp` calls, potentially faster on hardware with slow transcendental units.
-- **Stable**: Centering and clamping avoid NaNs and infinite values even for large scores.
-- **Kernelisable**: The polynomial form naturally leads to linearised attention via feature maps, which can be added in the future for O(N) complexity.
-- **Temperature control**: Provides a knob to adjust the attention spread.
-- **Drop‑in**: Compatible with DistilBERT’s residual and mask structure; no other changes needed.
-- **Trainable**: The module can be trained end‑to‑end; the polynomial approximation is differentiable.
+Specifically, regarding \textbf{Exponential‑free}, avoids expensive and numerically tricky `exp` calls, potentially faster on hardware with slow transcendental units. Furthermore, regarding \textbf{Stable}, centering and clamping avoid NaNs and infinite values even for large scores. Concurrently, regarding \textbf{Kernelisable}, the polynomial form naturally leads to linearised attention via feature maps, which can be added in the future for O(N) complexity. In this setting, regarding \textbf{Temperature control}, provides a knob to adjust the attention spread. Additionally, regarding \textbf{Drop‑in}, compatible with DistilBERT’s residual and mask structure; no other changes needed. Moreover, regarding \textbf{Trainable}, the module can be trained end‑to‑end; the polynomial approximation is differentiable.
+
 
 ### Limitations
 
-- **Full N×N matrix still materialised**: The current implementation still computes and stores the full attention matrix, so memory complexity remains O(N²). The linearised version is not yet implemented.
-- **Approximation error**: A low‑order polynomial deviates from softmax, especially for extreme score distributions. This may hurt model accuracy unless fine‑tuned.
-- **Gradient of `pow`**: The power function can have zero gradient at very small base values; the clamp to `≥ 0` and adding a small epsilon in normalisation mitigates this, but gradient flow may still be weaker than softmax.
-- **Mask conversion heuristic**: The mask detection (checking shape and values) may fail for unusual mask formats. It assumes additive mask has large negative values for padding.
-- **No pre‑trained weight transfer**: The module creates fresh projection weights, so it would need to copy weights from a pretrained model or be fine‑tuned. (An injection function would handle weight copying.)
+Specifically, regarding \textbf{Full N×N matrix still materialised}, the current implementation still computes and stores the full attention matrix, so memory complexity remains O(N²). The linearised version is not yet implemented. Furthermore, regarding \textbf{Approximation error}, a low‑order polynomial deviates from softmax, especially for extreme score distributions. This may hurt model accuracy unless fine‑tuned. Concurrently, regarding \textbf{Gradient of `pow`}, the power function can have zero gradient at very small base values; the clamp to `≥ 0` and adding a small epsilon in normalisation mitigates this, but gradient flow may still be weaker than softmax. In this setting, regarding \textbf{Mask conversion heuristic}, the mask detection (checking shape and values) may fail for unusual mask formats. It assumes additive mask has large negative values for padding. Additionally, regarding \textbf{No pre‑trained weight transfer}, the module creates fresh projection weights, so it would need to copy weights from a pretrained model or be fine‑tuned. (An injection function would handle weight copying.)
+
 
 ### Comparison with Other Attention Variants
 

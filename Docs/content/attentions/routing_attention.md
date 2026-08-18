@@ -130,35 +130,27 @@ Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_
    $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
 2. **Iterative $k$-Means Clustering**:
    In each iteration $t \in \{1, \dots, T\}$:
-   - Pairwise distance (`cdist`): $3 B H L K d_h = 3 B L K D$ FLOPs.
-   - Centroid mean update: $2 B H L d_h = 2 B L D$ FLOPs.
-   Across $T$ iterations:
-   $$\operatorname{FLOPs}_{\text{kmeans}} = T \cdot (3 B L K D + 2 B L D) = 3 T B L K D + 2 T B L D$$
+Pairwise distance (`cdist`): $3 B H L K d_h = 3 B L K D$ FLOPs. Furthermore, Centroid mean update: $2 B H L d_h = 2 B L D$ FLOPs. Across $T$ iterations: $$\operatorname{FLOPs}_{\text{kmeans}} = T \cdot (3 B L K D + 2 B L D) = 3 T B L K D + 2 T B L D$$
+
 3. **Sequential Cluster Attention Loop**:
    The Python loop executes $K$ iterations. In iteration $k$, full $L \times L$ attention scores are calculated:
-   - Matmul $\mathbf{Q}^{(k)} \left(\mathbf{K}^{(k)}\right)^\top$: $2 B H L^2 d_h = 2 B L^2 D$ FLOPs.
-   - Matmul $\mathbf{A}^{(k)} \mathbf{V}^{(k)}$: $2 B H L^2 d_h = 2 B L^2 D$ FLOPs.
-   Across $K$ iterations in the un-optimized loop:
-   $$\operatorname{FLOPs}_{\text{attn\_naive}} = K \times 4 B L^2 D = 4 K B L^2 D$$
-   *(Note: In an optimized packed cluster implementation, FLOPs scale as $4 B L (L / K) D = \frac{4 B L^2 D}{K}$)*.
+Matmul $\mathbf{Q}^{(k)} \left(\mathbf{K}^{(k)}\right)^\top$: $2 B H L^2 d_h = 2 B L^2 D$ FLOPs. Furthermore, Matmul $\mathbf{A}^{(k)} \mathbf{V}^{(k)}$: $2 B H L^2 d_h = 2 B L^2 D$ FLOPs. Across $K$ iterations in the un-optimized loop: $$\operatorname{FLOPs}_{\text{attn\_naive}} = K \times 4 B L^2 D = 4 K B L^2 D$$ *(Note: In an optimized packed cluster implementation, FLOPs scale as $4 B L (L / K) D = \frac{4 B L^2 D}{K}$)*.
+
 4. **Output Projection ($\mathbf{W}_O$)**:
    $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
 
 $$\text{Total Naive FLOPs} = 8 B L D^2 + 3 T B L K D + 2 T B L D + 4 K B L^2 D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 4 B L D^2 + 1.5 T B L K D + 2 K B L^2 D$$
-- **Peak Activation Memory**:
-  - Distance Tensor: $B \cdot H \cdot L \cdot K \times 4 \text{ bytes}$
-  - Cluster Masks: $B \cdot H \cdot L \cdot 1 \times 4 \text{ bytes}$
-  - Attention Score Tensor per iteration: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$
-  - Peak Memory: $\mathcal{O}(B H L^2 + B H L K)$ due to un-fused $L \times L$ attention allocation inside the cluster loop.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Distance Tensor: $B \cdot H \cdot L \cdot K \times 4 \text{ bytes}$ Concurrently, Cluster Masks: $B \cdot H \cdot L \cdot 1 \times 4 \text{ bytes}$ In this setting, Attention Score Tensor per iteration: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$ Additionally, Peak Memory: $\mathcal{O}(B H L^2 + B H L K)$ due to un-fused $L \times L$ attention allocation inside the cluster loop.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **Un-Fused PyTorch Routing Attention**: $\mathcal{O}(K L^2 D + T L K D)$ compute — **$K \times$ slower** than standard attention due to repeating full $L \times L$ matrix multiplies $K$ times!
-- **Optimized Grouped Routing Attention**: $\mathcal{O}\left(T L K D + \frac{L^2 D}{K}\right)$ compute, delivering optimal $\frac{L^2}{K}$ scale execution.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory. Furthermore, regarding \textbf{Un-Fused PyTorch Routing Attention}, $\mathcal{O}(K L^2 D + T L K D)$ compute — **$K \times$ slower** than standard attention due to repeating full $L \times L$ matrix multiplies $K$ times! Concurrently, regarding \textbf{Optimized Grouped Routing Attention}, $\mathcal{O}\left(T L K D + \frac{L^2 D}{K}\right)$ compute, delivering optimal $\frac{L^2}{K}$ scale execution.
+
 
 ---
 
@@ -175,17 +167,18 @@ for k in range(num_clusters):
     out += torch.matmul(attn, Vk)
 ```
 Instead of gathering tokens in cluster $k$ into compact tensors of shape `[N_k, d_h]`, the code performs full matrix multiplication on `[B, H, L, d_h]` tensors $K$ separate times!
-- **Computational Slowdown**: Executes $K$ full $L \times L$ dense matrix multiplications, multiplying FLOPs and latency by $K \times$ instead of dividing by $K$.
+Specifically, regarding \textbf{Computational Slowdown}, executes $K$ full $L \times L$ dense matrix multiplications, multiplying FLOPs and latency by $K \times$ instead of dividing by $K$.
+
 
 ### 5.2 Initial Centroid Bias & Cold-Start Cluster Collapse
 The initial centroids are assigned as the first $K$ tokens of the sequence: `centroids = Q[:, :, :num_clusters, :]`.
-- **First-Token Bias**: If initial tokens are prefix formatting tokens (e.g., `<bos>`, system prompts, or whitespace), the initial centroids cluster around non-informative noise.
-- **Dead Centroid Traps**: If no query assigns to centroid $k$ (`mask.sum() == 0`), the iteration skips updating centroid $k$. The centroid remains locked as a dead node, reducing effective cluster capacity below $K$.
+Specifically, regarding \textbf{First-Token Bias}, if initial tokens are prefix formatting tokens (e.g., `<bos>`, system prompts, or whitespace), the initial centroids cluster around non-informative noise. Furthermore, regarding \textbf{Dead Centroid Traps}, if no query assigns to centroid $k$ (`mask.sum() == 0`), the iteration skips updating centroid $k$. The centroid remains locked as a dead node, reducing effective cluster capacity below $K$.
+
 
 ### 5.3 Straight-Through Gradient Blocking in Clustering
 The hard assignment $c_i = \operatorname{arg\,min}_k \mathbf{D}_{i, k}$ has zero derivative almost everywhere ($\frac{\partial c_i}{\partial \mathbf{Q}} = 0$).
-- Gradients flowing from the loss function $\mathcal{L}$ pass through intra-cluster attention $\operatorname{Softmax}(\mathbf{Q}^{(k)} (\mathbf{K}^{(k)})^\top)$, but **do not backpropagate through the $k$-means cluster assignment step**.
-- The query projection $\mathbf{W}_Q$ cannot learn to optimize cluster geometry directly, creating a disconnect between feature projection and geometric routing.
+Gradients flowing from the loss function $\mathcal{L}$ pass through intra-cluster attention $\operatorname{Softmax}(\mathbf{Q}^{(k)} (\mathbf{K}^{(k)})^\top)$, but **do not backpropagate through the $k$-means cluster assignment step**. Furthermore, The query projection $\mathbf{W}_Q$ cannot learn to optimize cluster geometry directly, creating a disconnect between feature projection and geometric routing.
+
 
 ---
 

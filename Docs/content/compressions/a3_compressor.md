@@ -24,10 +24,8 @@ W ≈ U_r Σ_r V_r^T
 ```
 
 where:
-- **U_r** ∈ ℝ<sup>m×r</sup> contains the first `r` left singular vectors,
-- **Σ_r** ∈ ℝ<sup>r×r</sup> is a diagonal matrix of the top `r` singular values,
-- **V_r^T** ∈ ℝ<sup>r×n</sup> contains the first `r` right singular vectors,
-- `r = min(rank, m, n, original_rank)` is the chosen rank.
+**U_r** ∈ ℝ<sup>m×r</sup> contains the first `r` left singular vectors, Furthermore, **Σ_r** ∈ ℝ<sup>r×r</sup> is a diagonal matrix of the top `r` singular values, Concurrently, **V_r^T** ∈ ℝ<sup>r×n</sup> contains the first `r` right singular vectors, In this setting, `r = min(rank, m, n, original_rank)` is the chosen rank.
+
 
 The low‑rank reconstruction `W_approx = (U_r Σ_r) V_r^T` directly replaces the original weight matrix. This reduces the number of parameters from `m × n` to `r × (m + n)`. When `r` is much smaller than `min(m, n)`, the savings are substantial.
 
@@ -130,22 +128,18 @@ A3 compression is orthogonal to the choice of attention mechanism. It can be app
 
 ### Advantages
 
-- **Simplicity**: Pure SVD, no training loops, no hyperparameter tuning beyond the rank.
-- **Memory savings**: Parameter count in attention layers is reduced by roughly a factor of `(m+n)/(r*(m+n))`? Actually, from `m*n` to `r*(m+n)`. For a typical 768×768 matrix (576k params), rank 64 yields ~98k params – about 83% reduction.
-- **Compatibility**: The model remains a standard PyTorch model; no custom layers are introduced.
+Specifically, regarding \textbf{Simplicity}, pure SVD, no training loops, no hyperparameter tuning beyond the rank. Furthermore, regarding \textbf{Memory savings}, parameter count in attention layers is reduced by roughly a factor of `(m+n)/(r*(m+n))`? Actually, from `m*n` to `r*(m+n)`. For a typical 768×768 matrix (576k params), rank 64 yields ~98k params – about 83% reduction. Concurrently, regarding \textbf{Compatibility}, the model remains a standard PyTorch model; no custom layers are introduced.
+
 
 ### Limitations
 
-- **No structural sparsity**: The approximation is not hardware‑friendly for speedups unless the low‑rank factors are explicitly extracted and used in place of the original linear layer (e.g., replacing with two smaller linear layers). The current approach only reduces the number of non‑zero parameters but leaves a full dense matrix; actual inference speed may not improve unless the framework leverages low‑rank structure.
-- **Global threshold**: The same rank is applied to all attention layers. Some layers may tolerate higher compression than others; a per‑layer rank scheduler could improve results.
-- **Reconstruction error**: SVD truncation discards singular vectors corresponding to small singular values. This may remove subtle but important directions, potentially hurting downstream accuracy if the rank is set too aggressively.
-- **Dtype handling**: The computation is done in float32, which is safe but requires memory for the SVD. For very large models, this could be a bottleneck.
+Specifically, regarding \textbf{No structural sparsity}, the approximation is not hardware‑friendly for speedups unless the low‑rank factors are explicitly extracted and used in place of the original linear layer (e.g., replacing with two smaller linear layers). The current approach only reduces the number of non‑zero parameters but leaves a full dense matrix; actual inference speed may not improve unless the framework leverages low‑rank structure. Furthermore, regarding \textbf{Global threshold}, the same rank is applied to all attention layers. Some layers may tolerate higher compression than others; a per‑layer rank scheduler could improve results. Concurrently, regarding \textbf{Reconstruction error}, sVD truncation discards singular vectors corresponding to small singular values. This may remove subtle but important directions, potentially hurting downstream accuracy if the rank is set too aggressively. In this setting, regarding \textbf{Dtype handling}, the computation is done in float32, which is safe but requires memory for the SVD. For very large models, this could be a bottleneck.
+
 
 ### Future Work
 
-- Replace the dense weight with two smaller linear layers (factorized implementation) to actually realize inference speedups.
-- Implement adaptive rank selection based on the singular value decay of each matrix.
-- Extend the compressor to other linear layers (e.g., MLP) under a separate method name.
+Replace the dense weight with two smaller linear layers (factorized implementation) to actually realize inference speedups. Furthermore, Implement adaptive rank selection based on the singular value decay of each matrix. Concurrently, Extend the compressor to other linear layers (e.g., MLP) under a separate method name.
+
 
 ---
 

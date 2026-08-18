@@ -12,9 +12,8 @@ The compression framework offers a variety of efficient attention modules that c
 
 This module can serve multiple purposes:
 
-- As a **sanity check** for the injection mechanism: if replacing the attention layer with this wrapper yields identical outputs, the replacement pipeline is verified.
-- As a **baseline** for evaluating other compression methods: any performance degradation of a true compression module can be compared against this uncompressed reference.
-- As a **placeholder** for future development: the name “token_compressed” may be intended for a future implementation that actually compresses tokens; currently it is a stub that passes through to the original attention.
+As a **sanity check** for the injection mechanism: if replacing the attention layer with this wrapper yields identical outputs, the replacement pipeline is verified. Furthermore, As a **baseline** for evaluating other compression methods: any performance degradation of a true compression module can be compared against this uncompressed reference. Concurrently, As a **placeholder** for future development: the name “token_compressed” may be intended for a future implementation that actually compresses tokens; currently it is a stub that passes through to the original attention.
+
 
 In this paper, we detail the architecture and the forward pass of `TokenCompressedAttention`, and discuss its role in the framework.
 
@@ -52,9 +51,8 @@ The injection function `inject_token_compressed` is registered under the key `"t
 
 ## 3. Implementation Details
 
-- The class `TokenCompressedAttention` is minimal; it only holds a reference to the original attention module.
-- The forward method simply returns the result of calling the original attention module.
-- The injection function is registered under `"token_compressed"`, making this module selectable via the compression configuration (e.g., `comp_config.attention_type = "token_compressed"`).
+The class `TokenCompressedAttention` is minimal; it only holds a reference to the original attention module. Furthermore, The forward method simply returns the result of calling the original attention module. Concurrently, The injection function is registered under `"token_compressed"`, making this module selectable via the compression configuration (e.g., `comp_config.attention_type = "token_compressed"`).
+
 
 ---
 
@@ -68,9 +66,8 @@ comp_config.attention_type = "token_compressed"
 
 The injection function will replace each layer’s attention with a `TokenCompressedAttention` wrapper, which does not alter the model’s behavior. This is useful for:
 
-- Testing the injection pipeline.
-- Establishing a baseline for performance metrics (e.g., accuracy, latency) without any actual compression.
-- Providing a placeholder that can later be swapped for a real token compression method.
+Testing the injection pipeline. Furthermore, Establishing a baseline for performance metrics (e.g., accuracy, latency) without any actual compression. Concurrently, Providing a placeholder that can later be swapped for a real token compression method.
+
 
 ---
 

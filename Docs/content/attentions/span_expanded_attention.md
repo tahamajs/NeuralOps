@@ -133,25 +133,22 @@ Y = O_{\text{fused}} W_O + b_O \in \mathbb{R}^{B \times L \times D}
 Let $B$ be batch size, $L$ query length, $L_{\text{span}}$ key-value span length, $D$ hidden dimension, $H$ heads, $d = D/H$, and $r$ LoRA rank.
 
 1. **Linear Projections**:
-   - Query projection $W_Q$: $2 B L D^2$ FLOPs.
-   - Key/Value projections $W_K, W_V$ (if uncached): $4 B L D^2$ FLOPs.
-   - Output projection $W_O$: $2 B L D^2$ FLOPs.
+Query projection $W_Q$: $2 B L D^2$ FLOPs. Furthermore, Key/Value projections $W_K, W_V$ (if uncached): $4 B L D^2$ FLOPs. Concurrently, Output projection $W_O$: $2 B L D^2$ FLOPs.
+
 2. **Parallel HyLoRA Adaptation**:
-   - $W_A$ projection ($D \to r$): $2 B L D r$ FLOPs.
-   - $W_B$ projection ($r \to D$): $2 B L r D$ FLOPs.
-   - *Total HyLoRA Cost*: $4 B L D r$ FLOPs ($2 B L D r$ MACs).
+$W_A$ projection ($D \to r$): $2 B L D r$ FLOPs. Furthermore, $W_B$ projection ($r \to D$): $2 B L r D$ FLOPs. Concurrently, *Total HyLoRA Cost*: $4 B L D r$ FLOPs ($2 B L D r$ MACs).
+
 3. **Core Span Attention Computation**:
-   - $Q K^\top$ MatMul: $2 B H L L_{\text{span}} d = 2 B L L_{\text{span}} D$ FLOPs.
-   - Softmax & Masking: $7 B H L L_{\text{span}}$ FLOPs.
-   - $A V$ MatMul: $2 B L L_{\text{span}} D$ FLOPs.
+$Q K^\top$ MatMul: $2 B H L L_{\text{span}} d = 2 B L L_{\text{span}} D$ FLOPs. Furthermore, Softmax & Masking: $7 B H L L_{\text{span}}$ FLOPs. Concurrently, $A V$ MatMul: $2 B L L_{\text{span}} D$ FLOPs.
+
 
 4. **Total Complexity Summary**:
-   - **Total MACs**: $4 B L D^2 + 2 B L D r + 2 B L L_{\text{span}} D$ (assuming un-cached KV).
-   - **Total FLOPs**: $8 B L D^2 + 4 B L D r + 4 B L L_{\text{span}} D + 7 B H L L_{\text{span}}$
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 2 B L D r + 2 B L L_{\text{span}} D$ (assuming un-cached KV). Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 4 B L D r + 4 B L L_{\text{span}} D + 7 B H L L_{\text{span}}$
+
 
 ### Memory Footprint & Parameter Count
-- **Parameter Count**: $4 D^2 + D + 2 D r$ floats.
-- **KV Cache Memory Footprint**:
+Specifically, regarding \textbf{Parameter Count}, $4 D^2 + D + 2 D r$ floats. Furthermore, regarding \textbf{KV Cache Memory Footprint}, 
+
   \[
   \text{KV Cache Size} = 2 \cdot B \cdot H \cdot L_{\text{span}} \cdot d \cdot b = 2 B L_{\text{span}} D \cdot b \text{ bytes}
   \]

@@ -26,17 +26,20 @@ Landmark queries $\widetilde{Q} \in \mathbb{R}^{B \times H \times r \times d}$ a
 \]
 
 ### Asymmetric Kernel Sub-Matrices:
-1. **Full Queries to Landmark Keys ($F_1$)**:
+To construct the low-rank kernelized approximation of the attention operator, the architecture factorizes the unmaterialized attention matrix into three cross-affinity sub-matrices. First, full sequence queries are projected against the landmark keys to yield the query-landmark affinity kernel $F_1$:
+
 \[
 F_1 = \frac{Q \widetilde{K}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times L \times r}
 \]
 
-2. **Landmark Queries to Landmark Keys ($F_2$)**:
+Concurrently, the interaction among the pooled query and key landmarks defines the core landmark kernel matrix $F_2 \in \mathbb{R}^{B \times H \times r \times r}$, capturing the intrinsic geometric skeleton of the sequence:
+
 \[
 F_2 = \frac{\widetilde{Q} \widetilde{K}^\top}{\sqrt{d}} \in \mathbb{R}^{B \times H \times r \times r}
 \]
 
-3. **Landmark Queries to Full Keys ($F_3$)**:
+Finally, the projection of landmark queries onto the full key representations produces the landmark-to-sequence kernel $F_3$, augmented with the structural masking matrix $M_{\text{mask}}$:
+
 \[
 F_3 = \frac{\widetilde{Q} K^\top}{\sqrt{d}} + M_{\text{mask}} \in \mathbb{R}^{B \times H \times r \times L}
 \]
@@ -114,31 +117,32 @@ Input: hidden_states [B, L, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $r$: Landmark Count):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Landmark Average Pooling**: $\mathcal{O}(B H L d)$ FLOPs (negligible)
-- **Kernel F1 ($Q \widetilde{K}^\top$)**: $2 B H L r d = 2 B L r D$ FLOPs
-- **Kernel F2 ($\widetilde{Q} \widetilde{K}^\top$)**: $2 B H r^2 d$ FLOPs
-- **Kernel F3 ($\widetilde{Q} K^\top$)**: $2 B H L r d = 2 B L r D$ FLOPs
-- **Iterative Pseudoinverse (6 iterations)**: $24 B H r^3$ FLOPs
-- **Associative Context Product ($F_1(F_2^+(F_3 V))$)**: $2 B L r D + 2 B H r^2 d + 2 B L r D$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+### Computational Workload and Asymptotic Complexity
+The computational profile of Primal Attention reflects a structural transition from standard quadratic pairwise attention to linear sequence complexity. For an input tensor parameterized by batch size $B$, sequence length $L$, model dimension $D$, head count $H$, and landmark rank $r$ (with per-head dimension $d = D/H$):
 
-**Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 3 B L r D + 12 B H r^3 + 2 B H r^2 d$
-- **Total FLOPs**: $8 B L D^2 + 6 B L r D + 24 B H r^3 + 4 B H r^2 d$
+The initial linear projections of input activations into query, key, and value manifolds require $6 B L D^2$ FLOPs. In contrast, the subsequent 1D adaptive segment pooling incurs an asymptotic overhead of $\mathcal{O}(B H L d)$ operations, which is computationally negligible relative to dense GEMM kernels. Evaluating the asymmetric kernel sub-matrices demands $2 B H L r d = 2 B L r D$ FLOPs for the query-landmark affinity $F_1$, $2 B H r^2 d$ FLOPs for the landmark-landmark kernel $F_2$, and an additional $2 B L r D$ FLOPs for the landmark-to-sequence kernel $F_3$. The iterative Newton-Schulz matrix inversion across $T=6$ iterations accounts for $24 B H r^3$ FLOPs. Finally, the associative right-to-left context aggregation sequence $F_1(F_2^+(F_3 V))$ expends $2 B L r D + 2 B H r^2 d + 2 B L r D$ operations, complemented by $2 B L D^2$ FLOPs for the final output projection $W_O$.
 
-### Memory Footprint:
-- **Static Weights**: $4 D^2$ parameters.
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot L \cdot r + B \cdot H \cdot r^2)$, bypassing the $\mathcal{O}(B \cdot H \cdot L^2)$ memory wall.
+Aggregating these individual operational components yields the total computational budget:
+\[
+\text{Total FLOPs} = 8 B L D^2 + 6 B L r D + 24 B H r^3 + 4 B H r^2 d
+\]
+which maps to $4 B L D^2 + 3 B L r D + 12 B H r^3 + 2 B H r^2 d$ Multiply-Accumulate (MAC) operations. When $r \ll L$, the asymptotic execution scales strictly as $\mathcal{O}(L \cdot D \cdot r + r^3)$, entirely bypassing the canonical $\mathcal{O}(L^2 D)$ memory and compute bottleneck.
+
+### Memory Footprint & Scaling Behavior
+The model architecture maintains a static parameter allocation of $4 D^2$ weights for the projection operators. Peak transient activation memory is rigorously bounded by $\mathcal{O}(B \cdot H \cdot L \cdot r + B \cdot H \cdot r^2)$, completely avoiding the quadratic $\mathcal{O}(B \cdot H \cdot L^2)$ memory wall. This sub-quadratic memory footprint enables extended context window scaling on accelerator architectures with constrained High-Bandwidth Memory (HBM).
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Ill-Conditioned Landmark Matrix $F_2$**: If landmark queries and keys are near co-linear, $F_2$ becomes ill-conditioned ($\text{cond}(F_2) \gg 10^4$), causing Newton-Schulz iterations to diverge.
-2. **Segment Pooling Over-Blurring**: Fixed uniform segment pooling blurs localized attention spikes, reducing token retrieval performance on tasks requiring exact token indexing.
-3. **Causal Masking Asymmetry**: Masking $F_3 \in \mathbb{R}^{r \times L}$ breaks symmetric rank properties, requiring causal mask compensation.
+### Ill-Conditioned Landmark Inversion and Spectral Instability
+A primary vulnerability in the Primal Attention formulation arises from the numerical conditioning of the landmark kernel matrix $F_2 = \frac{\widetilde{Q} \widetilde{K}^\top}{\sqrt{d}}$. When token representations within adjacent segments exhibit high mutual coherence or collapse into a lower-dimensional manifold, the resulting landmark queries and keys become near-colinear. This induces severe spectral degradation, driving the condition number $\text{cond}(F_2) \gg 10^4$. Under such ill-conditioned regimes, the iterative Newton-Schulz polynomial fails to converge within a fixed iteration budget $T$, leading to catastrophic numerical divergence in $F_2^+$ and gradient explosion during backpropagation. To guarantee stable convergence, the initial spectral scaling factor $\alpha_0 = 1 / (\|F_2\|_1 \|F_2\|_\infty)$ must remain strictly bounded, or regularized via adaptive diagonal damping.
+
+### Segment Pooling Resolution Loss and Retrieval Degradation
+The reliance on uniform 1D segment average pooling introduces an intrinsic structural tradeoff between computational compression and local representational fidelity. By averaging token activations across temporal spans of length $L/r$, high-frequency attention spikes corresponding to exact keyword matching or sparse syntactic dependencies are effectively low-pass filtered. This over-blurring phenomenon flattens the sharp peaks of the underlying attention distribution, impairing model performance on needle-in-a-haystack associative recall and fine-grained token retrieval tasks where specific positional indexing is imperative.
+
+### Causal Masking Asymmetries and Rank Distortion
+Enforcing autoregressive causality introduces an algebraic asymmetry into the factorized operator. Whereas standard multi-head attention applies a strict lower-triangular mask directly to the full $L \times L$ affinity matrix, Primal Attention must impose causal constraints indirectly onto the rectangular landmark affinity $F_3 \in \mathbb{R}^{B \times H \times r \times L}$. Because landmark representations pool future tokens within their segment windows, standard causal masking must either mask full blocks or discard unaligned segment boundaries. This structural constraint induces rank distortion in the reconstructed attention map, requiring explicit causal compensation mechanisms to avoid subtle information leakage across segment boundaries.
 
 ---
 
@@ -179,9 +183,14 @@ def _primal_fused_kernel(
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Adaptive Primal Centroid Selection**: Replace uniform segment pooling with dynamic k-means centroid clustering to adaptively sample landmark queries and keys based on information density.
-2. **Tikhonov-Regularized Schulz Steps**: Add dynamic diagonal regularization $F_2 + \lambda I_r$ inside Schulz iterations to guarantee numerical stability in FP16/FP8 execution.
-3. **Primal-Mamba Hybrid Architecture**: Interleave Primal Attention layers with Mamba selective scan modules to achieve high-throughput multi-modal sequence modeling.
+### Adaptive Density-Aware Landmark Centroid Clustering
+While static segment pooling offers deterministic computational schedules, future iterations of Primal Attention can integrate content-adaptive landmark selection mechanisms. By replacing uniform 1D pooling with differentiable k-means clustering or token-importance routing, the landmark budget $r$ can be dynamically concentrated in high-entropy sequence regions. This structural enhancement preserves sharp attention heads and critical associative tokens while aggressively compressing repetitive background context, thereby resolving the resolution degradation inherent in fixed pooling.
+
+### Tikhonov-Regularized Spectral Inversion in Reduced Precision
+To fortify numerical stability under half-precision (FP16) and eight-bit (FP8) quantization regimes, iterative Newton-Schulz updates can incorporate dynamic Tikhonov regularization. Injecting a learnable or condition-dependent damping term $(F_2 + \lambda I_r)$ ensures that the singular spectrum of $F_2$ remains strictly bounded away from zero. This guarantees quadratic convergence of the matrix polynomial even in the presence of degenerate token subspaces, smoothing the optimization loss landscape and preventing backpropagation gradient anomalies.
+
+### Primal-State Hybridization with Continuous Recurrence
+A promising architectural synergy lies in the hybridization of Primal Attention with continuous state-space models, such as Mamba or Gated Delta Networks. By interleaving linear Primal Attention layers for global landmark-guided associative retrieval with selective recurrent scan blocks for dense, high-frequency local recurrence, hybrid architectures can achieve near-optimal efficiency-accuracy Pareto frontiers across multi-million token context lengths.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

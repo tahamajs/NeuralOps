@@ -130,35 +130,21 @@ Y = X (W_i^{\text{down}})^\top (W_i^{\text{up}})^\top + X S_i^\top + b_i \in \ma
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### Computational Workload (FLOPs & MACs)
-Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, $\{r_q, r_k, r_v, r_o\}$ Lagrangian-assigned ranks, and $\rho$ sparse residual density.
+### Computational Workload and Arithmetic Complexity
+The arithmetic complexity of SpectronAttention is characterized by the joint execution of decomposed low-rank projections, sparse residual evaluations, and standard multi-head dot-product attention. Letting $B$ denote batch size, $N$ sequence length, $D$ model dimension, $H$ attention heads with per-head dimension $d_k = D/H$, $\{r_q, r_k, r_v, r_o\}$ the Lagrangian-assigned projection ranks, and $\rho$ the sparse residual density parameter, the total computational load is partitioned across two primary regimes. 
 
-1. **Low-Rank + Sparse Projections**:
-   - Low-rank down/up projections: $4 B N D (r_q + r_k + r_v + r_o)$ FLOPs.
-   - Sparse residual projections (if enabled): $4 B N D^2 (1 - \rho)$ FLOPs.
-2. **Core Scaled Dot-Product Attention**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
-
-3. **Total Workload Summary**:
-   - **Total MACs**: $2 B N D (r_q + r_k + r_v + r_o) + 2 B N D^2 (1 - \rho) + 2 B N^2 D$
-   - **Total FLOPs**: $4 B N D (r_q + r_k + r_v + r_o) + 4 B N D^2 (1 - \rho) + 4 B N^2 D + 7 B H N^2$
+First, the projection stage combines low-rank down- and up-projections demanding $4 B N D (r_q + r_k + r_v + r_o)$ floating-point operations (FLOPs) alongside optional sparse residual matrix products that require $4 B N D^2 (1 - \rho)$ FLOPs when active. Second, the core scaled dot-product attention kernel executes query-key score computation $Q K^\top$ and value aggregation $A V$, contributing $4 B N^2 D$ FLOPs, while row-wise softmax normalization and attention masking account for $7 B H N^2$ FLOPs. Aggregating these computational phases, the net multiply-accumulate operations reach $\text{Total MACs} = 2 B N D (r_q + r_k + r_v + r_o) + 2 B N D^2 (1 - \rho) + 2 B N^2 D$, yielding an overall floating-point workload of $\text{Total FLOPs} = 4 B N D (r_q + r_k + r_v + r_o) + 4 B N D^2 (1 - \rho) + 4 B N^2 D + 7 B H N^2$.
 
 ### Parameter Reduction Profile on DistilBERT
-For DistilBERT ($L = 6$ layers, $D = 768$, 24 projection matrices, original total parameters $14.15 \text{ million}$):
-- Target parameter ratio $\text{budget\_ratio} = 0.20$ ($B_{\text{target}} \approx 2.83 \text{ million parameters}$).
-- Lagrangian optimization assigns high ranks ($r \approx 48$) to key layers and low ranks ($r \approx 16$) to peripheral layers.
-- **Total Parameter Footprint**: Enforced strictly $\le 2,831,155$ parameters (**$80\%$ overall parameter compression**).
+When deployed on representative benchmark architectures such as DistilBERT ($L = 6$ transformer layers, hidden dimension $D = 768$, comprising 24 total projection operators with an uncompressed parameter baseline of $14.15 \times 10^6$ parameters), SpectronAttention enforces a stringent parameter budget ratio $\text{budget\_ratio} = 0.20$, constraining the maximum allowable parameters to $B_{\text{target}} \approx 2.83 \times 10^6$. Under this global budget constraint, the Lagrangian spectral optimization automatically redistributes capacity according to spectral curvature, assigning higher ranks ($r \approx 48$) to information-dense layers and aggressively compressing peripheral projections to lower ranks ($r \approx 16$). As a result, the total parameter footprint is strictly capped at $2,831,155$ parameters, achieving an overall parameter reduction of $80\%$ without degrading contextual representation capacity.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Bisection Lambda Non-Convergence
-If `target_budget` is set below $M \times (d_{\text{in}} + d_{\text{out}})$, bisection search over Lagrange multiplier $\lambda$ fails to find a valid allocation. SpectronAttention catches this boundary condition and safely falls back to $r_i = 1$ across all projections.
+The interplay between spectral truncation, Lagrangian multiplier optimization, and sparse residual mechanics introduces specific stability constraints across the optimization landscape. A primary structural boundary occurs when the global parameter budget $B_{\text{target}}$ is configured below the minimal rank-1 parameter threshold $M \times (d_{\text{in}} + d_{\text{out}})$. In this infeasible regime, the bisection root-finding procedure over the Lagrange multiplier $\lambda \in [\lambda_{\min}, \lambda_{\max}]$ fails to converge to an admissible rank configuration. To maintain training stability and prevent fatal execution failures, SpectronAttention incorporates an explicit fallback mechanism that clamps all projection ranks to $r_i = 1$, ensuring continuous gradient flow at the cost of minimal capacity.
 
-### Dense Parameter Memory Footprint of Uncompressed Sparse Residuals
-While low-rank matrices $W^{\text{up}}, W^{\text{down}}$ reduce memory allocations, adding dense PyTorch parameters for $S_i$ retains full $D \times D$ float allocations unless stored in sparse PyTorch CSR format.
+Concurrently, the interaction between uncompressed sparse residual tensors and memory residency presents a significant architectural tradeoff. Although the low-rank down- and up-projection matrices $W^{\text{down}}$ and $W^{\text{up}}$ yield substantial parameter compression, instantiating the sparse residual $S_i$ as a dense PyTorch tensor retains the original $\mathcal{O}(D^2)$ floating-point memory allocation. This induces a structural memory bottleneck during training unless explicitly converted to compressed sparse formats (such as CSR or COO). Furthermore, aggressive magnitude pruning in the presence of dynamic spectral updates can perturb the loss surface by abruptly altering the singular subspace alignment, necessitating smooth pruning schedules and momentum dampening within the `SparsePruningCallback` to prevent optimization instability.
 
 ---
 
@@ -193,9 +179,7 @@ A Triton kernel for SpectronAttention streams low-rank factor blocks and CSR-com
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Hessian-Weighted Lagrangian Rank Allocation**: Weight information loss $E_i(r)$ by second-order Fisher Information matrix diagonal entries $\mathbf{H}_{ii}$ to protect high-impact parameters.
-2. **Quantized Low-Rank + Block-Sparse Execution**: Quantize low-rank matrices $W^{\text{up}}, W^{\text{down}}$ to INT4 while storing sparse residuals in FP8 block-sparse formats for edge deployment.
-3. **Structured Block-Sparse Residuals**: Replace unstructured entrywise sparse residuals with $16 \times 16$ block-sparse masks to accelerate GPU SpMM execution.
+Several promising avenues exist to extend the theoretical foundation and hardware efficiency of SpectronAttention. Integrating Hessian-weighted Lagrangian rank allocation provides a compelling enhancement, wherein the spectral information loss metric $E_i(r)$ is weighted by the empirical Fisher Information Matrix diagonal $\operatorname{diag}(\mathbf{H}_{ii})$, thereby prioritizing parameter retention in directions of high loss curvature. Concurrently, synthesizing low-rank decomposition with mixed-precision arithmetic—such as quantizing the factorized matrices $W^{\text{up}}$ and $W^{\text{down}}$ to INT4 while encoding sparse residual outliers in FP8 block-sparse formats—presents an optimal deployment strategy for edge devices. Furthermore, transitioning from unstructured entry-wise sparsity to structured $16 \times 16$ or $32 \times 32$ block-sparse residual patterns enables native mapping to Sparse Tensor Cores (SpMM), eliminating memory bandwidth bottlenecks and unlocking superior execution speedups across modern accelerator architectures.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

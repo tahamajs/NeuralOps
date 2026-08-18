@@ -52,18 +52,14 @@ Let $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ be the weight matri
 ### 3.1 Dataflow & Execution Pipeline
 
 1. **Hook Attachment**:
-   - Register forward hooks on all `nn.Linear` layers in the target model.
+Register forward hooks on all `nn.Linear` layers in the target model.
+
 2. **Calibration Pass**:
-   - Run calibration sentences through the model.
-   - Capture and store output activation tensors `activations[name] = output.detach()`.
+Run calibration sentences through the model. Furthermore, Capture and store output activation tensors `activations[name] = output.detach()`.
+
 3. **Scale Computation & Weight Quantization**:
-   - Remove forward hooks.
-   - For each layer:
-     - Flatten activation tensor `act = activations[name].view(-1).float()`.
-     - Extract bounds `min_a, max_a = act.min(), act.max()`.
-     - Calculate scale `scale = (max_a - min_a) / (2**bits - 1)`.
-     - Quantize weights: `quant = torch.round((W - min_a) / scale) * scale + min_a`.
-     - Quantize bias using activation scale factor.
+Remove forward hooks. Furthermore, For each layer: Concurrently, Flatten activation tensor `act = activations[name].view(-1).float()`. In this setting, Extract bounds `min_a, max_a = act.min(), act.max()`. Additionally, Calculate scale `scale = (max_a - min_a) / (2**bits - 1)`. Moreover, Quantize weights: `quant = torch.round((W - min_a) / scale) * scale + min_a`. From an analytical standpoint, Quantize bias using activation scale factor.
+
 
 ```
 Calibration Pass ──► Forward Hook ──► Collect Output Act A ──► Extract Bounds [min_a, max_a]
@@ -97,7 +93,8 @@ $$\| A - A_q \|_F \le \| X \|_F \cdot \frac{a_{\max} - a_{\min}}{2 \cdot (2^b - 
 
 ### 5.2 Failure Cases
 
-- **Activation Mismatch Across Datasets**: If calibration inputs differ significantly in dynamic range from downstream test inputs, activation scale bounds $[a_{\min}, a_{\max}]$ misalign, leading to severe quantization clipping.
+Specifically, regarding \textbf{Activation Mismatch Across Datasets}, if calibration inputs differ significantly in dynamic range from downstream test inputs, activation scale bounds $[a_{\min}, a_{\max}]$ misalign, leading to severe quantization clipping.
+
 
 ---
 

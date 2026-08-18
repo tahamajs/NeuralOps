@@ -72,17 +72,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Model Dim):
-- **Gate Projections ($W_f, W_i$)**: $4 B L D^2$ FLOPs
-- **Element-wise Recurrence & Clamping**: $4 B L D$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Gate Projections ($W_f, W_i$)}, $4 B L D^2$ FLOPs Furthermore, regarding \textbf{Element-wise Recurrence & Clamping}, $4 B L D$ FLOPs Concurrently, regarding \textbf{Output Projection ($W_O$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $3 B L D^2$
-- **Total FLOPs**: $6 B L D^2$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+Specifically, regarding \textbf{Total MACs}, $3 B L D^2$ Furthermore, regarding \textbf{Total FLOPs}, $6 B L D^2$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+
 
 ### Memory Footprint:
-- **Static Weights**: $3 D^2$ parameters.
-- **Decoding Memory Footprint**: Bounded by $\mathcal{O}(B \cdot D)$ state memory per step.
+Specifically, regarding \textbf{Static Weights}, $3 D^2$ parameters. Furthermore, regarding \textbf{Decoding Memory Footprint}, bounded by $\mathcal{O}(B \cdot D)$ state memory per step.
+
 
 ---
 

@@ -3,9 +3,7 @@
 ## 1. Executive Abstract & Architectural Motivation
 Modern long-context architectures face a fundamental tension: dense Multi-Head Self-Attention (MHSA) models capture high-precision local syntactic patterns but scale quadratically $\mathcal{O}(L^2)$, whereas continuous-time State-Space Models (SSMs) like Mamba process global sequence contexts with linear complexity $\mathcal{O}(L)$ but struggle with precise associative recall. Furthermore, standard Feed-Forward Networks (FFNs) apply static parameter computations equally to all tokens, wasting parameter capacity.
 
-**SambaMoE (Sliding-window Attention, Mamba SSM, and Mixture-of-Experts)** unifies these three paradigms into a single, cohesive sub-quadratic layer block. SambaMoE synthesizes sequence representations in two sequential stages:
-1. **SAMBA-M3 Hybrid Stage**: Couples local sliding-window multi-head attention (receptive field $W$) with spectral state-space model recurrence (Mamba SSM) in a pre-layer normalized dual-residual pipeline.
-2. **REAPMoE Sparse Stage**: Refines the composite sequence representations via a Token-Choice Top-$k$ Mixture-of-Experts (MoE) sub-network, routing each token dynamically to $k$ active experts out of an $E$-expert pool.
+**SambaMoE (Sliding-window Attention, Mamba SSM, and Mixture-of-Experts)** unifies these three paradigms into a single, cohesive sub-quadratic layer block. SambaMoE synthesizes sequence representations across two tightly integrated sequential stages. In the first phase—the SAMBA-M3 Hybrid Stage—the architecture couples local sliding-window multi-head attention operating over a constrained receptive field $W$ with continuous-time spectral state-space recurrence (Mamba SSM) organized within a pre-layer normalized dual-residual pipeline. Subsequently, the REAPMoE Sparse Stage refines these composite sequence representations through a Token-Choice Top-$k$ Mixture-of-Experts sub-network, routing each token dynamically to $k$ active experts selected from an $E$-expert pool.
 
 By combining $W$-constrained local attention, linear global SSM recurrence, and sparse conditional expert computation, SambaMoE achieves strict $\mathcal{O}(L \cdot D \cdot (W + d_{\text{state}} + k \cdot d_{\text{ffn}}))$ linear scaling with sequence length $L$, expanding model parameter capacity without increasing per-token latency.
 
@@ -118,12 +116,11 @@ The intermediate output $\mathbf{X}^{(2)} \in \mathbb{R}^{B \times L \times D}$ 
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $W$ sliding window size, $d_{\text{state}}$ SSM state dimension, $E$ total experts, and $k$ active experts per token.
 
 1. **Sliding-Window Attention (SWA)**:
-   - Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}$): $8 B L D^2$
-   - Banded Matmul (Window size $W$): $2 \cdot 2 \cdot B \cdot H \cdot L \cdot W \cdot d_k = 4 B L D W$
-   $$\operatorname{FLOPs}_{\text{swa}} = 8 B L D^2 + 4 B L D W$$
+Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}$): $8 B L D^2$ Furthermore, Banded Matmul (Window size $W$): $2 \cdot 2 \cdot B \cdot H \cdot L \cdot W \cdot d_k = 4 B L D W$ $$\operatorname{FLOPs}_{\text{swa}} = 8 B L D^2 + 4 B L D W$$
+
 2. **Spectral Mamba SSM**:
-   - State-space recurrence & spectral channel gating:
-   $$\operatorname{FLOPs}_{\text{ssm}} \approx 2 B L D \cdot d_{\text{state}} + 2 B L D^2$$
+State-space recurrence & spectral channel gating: $$\operatorname{FLOPs}_{\text{ssm}} \approx 2 B L D \cdot d_{\text{state}} + 2 B L D^2$$
+
 3. **REAPMoE Router Gate**:
    $$\operatorname{FLOPs}_{\text{router}} = 2 B L D E$$
 4. **Active Expert MLPs**:
@@ -136,43 +133,33 @@ Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $W$ sliding wi
 $$\text{Total FLOPs} = 10 B L D^2 + 4 B L D W + 2 B L D d_{\text{state}} + 2 B L D E + 16 B L k D^2$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
-  $$\text{Total MACs} \approx 5 B L D^2 + 2 B L D W + B L D d_{\text{state}} + B L D E + 8 B L k D^2$$
-- **Peak Activation Memory**:
-  - Sliding Window Attention Matrix: $B \cdot H \cdot L \cdot W \times 2 \text{ bytes}$
-  - Mamba Hidden State Buffer: $B \cdot L \cdot D \cdot d_{\text{state}} \times 2 \text{ bytes}$
-  - Router Logits & Top-$k$ Indices: $B \cdot L \cdot (E + k) \times 2 \text{ bytes}$
-  - Masked Expert Intermediate Buffers: In iterative implementation, peak memory is bounded by single expert buffer $B \cdot L_{\text{masked}} \cdot 4D \times 2 \text{ bytes}$.
+The total multiply-accumulate operations (MACs) required by the hybrid block scale according to:
+$$\text{Total MACs} \approx 5 B L D^2 + 2 B L D W + B L D d_{\text{state}} + B L D E + 8 B L k D^2$$
+
+Regarding transient memory consumption, peak activation storage is governed by the concurrent allocation of intermediate representations across sub-modules. Specifically, the sliding-window attention matrix requires $2 B H L W$ bytes, the recurrent Mamba hidden state buffer consumes $2 B L D d_{\text{state}}$ bytes, and the routing gating logits alongside top-$k$ index tensors demand $2 B L (E + k)$ bytes in half-precision arithmetic. Within iterative execution pipelines, intermediate expert activations are bounded by a single active expert buffer of $8 B L_{\text{masked}} D$ bytes, which can be further streamlined into contiguous SRAM allocations through grouped GEMM execution.
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Transformer Block**: $\mathcal{O}(L^2 D + L D^2)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **SambaMoE Hybrid Block**: $\mathcal{O}\left(L D (D + W + d_{\text{state}} + k D)\right)$ compute, $\mathcal{O}(L D)$ memory.
-- Completely avoids $L^2$ scaling while providing high parameter capacity via $E$ experts.
+Whereas standard dense Transformer blocks incur prohibitive quadratic computational complexity $\mathcal{O}(L^2 D + L D^2)$ and quadratic activation memory overhead $\mathcal{O}(L^2 H)$ due to dense pairwise attention maps, the SambaMoE hybrid block strictly bounds resource utilization to $\mathcal{O}\left(L D (D + W + d_{\text{state}} + k D)\right)$ arithmetic operations and $\mathcal{O}(L D)$ transient memory footprint. By decoupling local high-frequency token associations (delegated to the sliding-window kernel) from long-range sequential context aggregation (compressed into the SSM recurrent state) and non-linear parameter capacity (expanded sparsely across the expert ensemble), SambaMoE eliminates the asymptotic memory bottleneck of standard self-attention while sustaining deep parametric expressivity.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Sequential Iterative Expert Masking Overhead
-In `REAPMoE.forward`:
+In standard iterative implementations such as `REAPMoE.forward`:
 ```python
 for e in range(self.n_experts):
     mask = (indices == e).any(dim=-1)
     if mask.any():
         out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
 ```
-- **Sequential Launch Overhead**: The `for e in range(n_experts):` loop launches $E$ separate PyTorch CUDA kernels sequentially. When $E=16$ or $32$, host-side overhead dominates, causing GPU warp starvation.
-- **Zero-Value Multiplication Waste**: `x * mask.unsqueeze(-1)` zero-masks unrouted tokens but passes full `[B, L, D]` tensor shapes through the expert linear layers, wasting compute on zero inputs.
+A primary structural limitation of this naive routing mechanism is the sequential kernel launch overhead induced by iterating over the expert ensemble with an explicit host loop. For an ensemble of size $E \in \{16, 32\}$, launching separate PyTorch CUDA kernels sequentially introduces significant host-to-device synchronization latency, which dominates total execution time and leads to severe GPU warp starvation. Concurrently, applying zero-masks via `x * mask.unsqueeze(-1)` passes full $[B, L, D]$ activation tensors through the linear transformation layers of each expert, thereby performing wasteful matrix multiplications over non-routed, zero-valued tokens and degrading theoretical arithmetic intensity.
 
-### 5.2 Window Receptive Field Starvation for Complex Graph Reasoning
-The sliding window $W$ restricts attention to local context $\le W$. If a task requires direct multi-hop retrieval across distance $\Delta > W$ (e.g., matching variable definitions in code at line 1 and line 10,000):
-- Local attention cannot bridge the gap directly.
-- The model relies entirely on Mamba state-space recurrence $\mathbf{h}_t$. If the SSM state dimension $d_{\text{state}}$ experiences lossy compression, associative recall fails completely.
+### 5.2 Window Receptive Field Starvation and Long-Range Recall Degradation
+The strict sliding window of length $W$ establishes a hard receptive field boundary that fundamentally constrains local multi-head self-attention. When downstream tasks demand associative reasoning across token separations $\Delta > W$—such as resolving distant variable definitions or synthesizing multi-hop document dependencies—local attention cannot bridge the contextual gap directly. Consequently, the architecture relies exclusively on the continuous-time Mamba state-space recurrence $\mathbf{h}_t$ to propagate historical context. If the latent SSM state dimension $d_{\text{state}}$ undergoes lossy compression or spectral decay, long-range associative recall degrades rapidly, inducing irrecoverable information bottlenecks across extended context windows.
 
-### 5.3 Router Over-Concentration & Expert Collapse
-Without dynamic capacity factors or auxiliary load-balancing loss $\mathcal{L}_{\text{balance}} = E \sum_{e=1}^E f_e P_e$:
-- Early gradient steps favor 1 or 2 high-norm experts.
-- Tokens route exclusively to these dominant experts while remaining experts receive zero updates, reducing effective capacity from $E$ to $k$.
+### 5.3 Router Over-Concentration, Gradient Starvation, and Expert Collapse
+In the absence of dynamic expert capacity factors or an explicit auxiliary load-balancing objective such as $\mathcal{L}_{\text{balance}} = E \sum_{e=1}^E f_e P_e$, the router optimization landscape exhibits pronounced positive feedback loops. During early training iterations, subtle stochastic variations favor a small subset of experts with marginally higher weight norms. The gating softmax rapidly concentrates probability mass onto these dominant experts, depriving unselected experts of meaningful gradient updates. This structural collapse reduces the effective parameter capacity from $E$ distinct expert pathways to a degenerate subspace of size $k$, destabilizing optimization trajectories and severely restricting the model's representational diversity.
 
 ---
 
@@ -283,17 +270,21 @@ def _sliding_window_flash_attn_kernel(
 ```
 
 ### 6.3 Hardware Acceleration Impact
-1. **DRAM Memory Traffic Elimination**: Sliding-Window FlashAttention computes masked attention entirely in SRAM registers, dropping activation memory writes from $\mathcal{O}(B H L W)$ to $\mathcal{O}(B L D)$.
-2. **Compact Contiguous Tokens**: Replacing `x * mask` with Triton token packing compresses active tokens into contiguous memory chunks before GEMM execution, raising Tensor Core MAC utilization to >90%.
+The fused Triton execution paradigm delivers fundamental memory-hierarchy and compute optimizations. First, sliding-window FlashAttention computes masked attention scores and reductions entirely within high-bandwidth SRAM registers, eliminating intermediate DRAM writes and reducing activation memory traffic from $\mathcal{O}(B H L W)$ to $\mathcal{O}(B L D)$. Furthermore, replacing naive masked multiplications with Triton-based token permutation and scatter-GEMM operations packs activated tokens into dense, contiguous memory buffers prior to matrix multiplication. This eliminates redundant compute over unrouted tokens and elevates Tensor Core compute occupancy beyond 90% of theoretical peak performance.
 
 ---
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Chunked Speculative Sliding-Window Routing**: Combine sliding window attention with dynamic long-range block sparse jumps so tokens can conditionally attend to distant blocks when SSM confidence scores fall below threshold.
-2. **DeepSeek-Style Fine-Grained MoE Splitting**: Divide expert capacity into $4E$ smaller experts with $k'=4k$ selection to increase expert specialization and functional redundancy.
-3. **SSM State Distillation into MoE Experts**: Distill recurrent state dynamics $\mathbf{h}_t$ into specialized MoE experts dedicated to long-range context retrieval.
-4. **FP8 Fused SWA-Mamba-MoE Block Kernel**: Unify SWA FlashAttention, Mamba SSM scan, and MoE token permutation into a single monolithic Triton block kernel executed entirely inside SRAM.
+To advance the capabilities of the SambaMoE paradigm, several architectural extensions present promising avenues for investigation:
+
+**Chunked Speculative Sliding-Window Routing**: Augmenting local sliding-window attention with dynamic, confidence-gated block-sparse projections allows tokens to conditionally query distant sequence chunks whenever the state-space recurrent model indicates high epistemic uncertainty, thereby closing the associative recall gap without incurring quadratic overhead.
+
+**Fine-Grained Expert Partitioning and Redundancy**: Following fine-grained MoE methodologies, dividing the monolithic expert parameter budget into $4E$ smaller sub-experts with top-$4k$ dynamic routing enhances functional specialization and mitigates routing collapse by smoothing the combinatorial selection space.
+
+**State-Space Recurrent Distillation into Expert Networks**: Formulating knowledge distillation objectives that transfer continuous state-space dynamics directly into specialized MoE feed-forward pathways equips active experts with inductive priors for long-range sequence compression and temporal retrieval.
+
+**Monolithic SRAM-Fused FP8 Block Execution**: Unifying sliding-window attention, parallel SSM recurrence scans, and grouped GEMM expert routing into a single monolithic FP8 Triton kernel allows complete layer forward and backward passes to execute within on-chip shared memory, maximizing operational throughput and minimizing global memory bandwidth pressure.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 
