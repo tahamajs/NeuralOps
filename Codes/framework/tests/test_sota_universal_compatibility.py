@@ -292,13 +292,13 @@ class TestUniversalSOTAIntegration:
         # Drifted test distribution (large mean shift)
         drift_acts = ref_acts + 10.0 * np.ones_like(ref_acts)
 
-        stat_same, _, drifted_same = fast_wasserstein_detector(ref_acts, same_acts, threshold=0.5)
-        stat_drift, _, drifted_drift = fast_wasserstein_detector(ref_acts, drift_acts, threshold=0.5)
+        stat_same, _, drifted_same = fast_wasserstein_detector(ref_acts, same_acts, threshold=5.0, seed=42)
+        stat_drift, _, drifted_drift = fast_wasserstein_detector(ref_acts, drift_acts, threshold=5.0, seed=42)
 
         assert stat_same < 1e-4
         assert not drifted_same
         assert drifted_drift
-        assert stat_drift > 5.0
+        assert stat_drift > 10.0
 
     def test_synthetic_zipfian_token_generator(self) -> None:
         """Verify Zipfian synthetic generator produces valid tokens and classification labels."""
