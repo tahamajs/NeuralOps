@@ -1,4 +1,4 @@
-"""
+r"""
 Fused SVD-Linear Layer with SRAM-Resident RMSNorm & Dual-Projection.
 
 RESEARCH FIX: Eliminates GPU High-Bandwidth Memory (HBM) roundtrip latency by fusing:
@@ -185,19 +185,18 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         # PyTorch Native Reference Implementation (Fallback)
         # RESEARCH FIX: Numerically identical reference implementation for CPU/MPS
         z = F.linear(x_2d, V)  # [M, R]
-        rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(x.dtype)
-        z_norm = z * rms
-        if norm_weight is not None:
-            z_norm = z_norm * norm_weight
+        rms = torch.rsqrt(torch.mean(z ** 2, dim=-1, keepdim=True) + eps)
+        z_hat = z * rms
+        z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
         y_2d = F.linear(z_norm, U, bias)
 
-        ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_norm)
+        ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
         ctx.eps = eps
         return y_2d.view(*orig_shape[:-1], K_out)
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
-        x_2d, V, U, norm_weight, bias, z, rms, z_norm = ctx.saved_tensors
+        x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm = ctx.saved_tensors
         eps = ctx.eps
 
         grad_output_2d = grad_output.reshape(-1, U.shape[0]).contiguous()
@@ -210,18 +209,18 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         # 2. Gradient backpropagated to z_norm
         grad_z_norm = torch.matmul(grad_output_2d, U)  # [M, R]
 
-        # 3. Gradient with respect to norm_weight
+        # 3. Gradient with respect to norm_weight and z_hat
         if norm_weight is not None:
-            grad_norm_weight = (grad_z_norm * (z * rms)).sum(dim=0)
-            grad_scaled = grad_z_norm * norm_weight
+            grad_norm_weight = (grad_z_norm * z_hat).sum(dim=0)
+            grad_z_hat = grad_z_norm * norm_weight
         else:
             grad_norm_weight = None
-            grad_scaled = grad_z_norm
+            grad_z_hat = grad_z_norm
 
-        # 4. RMSNorm backward: d(z_norm) / dz
-        # z_norm = z / sqrt(mean(z^2) + eps)
-        # dL/dz = rms * (dL/dz_norm - z_norm * mean(dL/dz_norm * z_norm))
-        grad_z = rms * (grad_scaled - z_norm * torch.mean(grad_scaled * z_norm, dim=-1, keepdim=True))
+        # 4. Exact RMSNorm backward: d(z_hat) / dz
+        # z_hat = z / sqrt(mean(z^2) + eps)
+        # dL/dz = rms * (dL/dz_hat - z_hat * mean(dL/dz_hat * z_hat))
+        grad_z = rms * (grad_z_hat - z_hat * torch.mean(grad_z_hat * z_hat, dim=-1, keepdim=True))
 
         # 5. Gradient with respect to V and input x
         grad_V = torch.matmul(grad_z.T, x_2d)  # [R, K_in]
