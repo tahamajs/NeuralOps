@@ -2,7 +2,7 @@
 SVD Factorized Linear Attention & Kernelized Linear Attention Modules.
 
 Provides two distinct operational modes:
-1. `ProjectionFactorizedAttention` (Default / Exact Softmax):
+1. `ProjectionFactorizedAttention` (Exact Softmax):
    Factorizes projection matrices $W_Q, W_K, W_V, W_O$ into $U \\Sigma V^\\top$ while maintaining
    exact softmax attention scores.
 2. `LinearKernelAttention` (True $\\mathcal{O}(N)$ Linear Complexity):
@@ -67,7 +67,7 @@ class SVDLinear(nn.Module):
             self.U.requires_grad = False
             self.V.requires_grad = False
 
-        # Optional LoRA Residual Adapter
+        # Optional LoRA Residual Adapter to prevent basis drift
         if lora_rank is not None and lora_rank > 0:
             self.lora_A = nn.Parameter(torch.empty(out_features, lora_rank, dtype=dtype, device=device))
             self.lora_B = nn.Parameter(torch.empty(lora_rank, in_features, dtype=dtype, device=device))
@@ -114,7 +114,10 @@ class SVDLinear(nn.Module):
             self.V.copy_(V_factor)
 
     def get_orthogonality_loss(self) -> torch.Tensor:
-        """Computes Stiefel manifold penalty: ||U^T U - I||_F^2 + ||V V^T - I||_F^2."""
+        """
+        FIX: Computes Stiefel manifold penalty ||U^T U - I||_F^2 + ||V V^T - I||_F^2
+        to prevent singular subspace collapse during fine-tuning.
+        """
         if self.freeze_svd:
             return torch.tensor(0.0, device=self.U.device)
         u_gram = torch.matmul(self.U.T, self.U)
@@ -173,18 +176,20 @@ class SVDLinearAttention(BaseAttention):
     def _forward_linear_kernel(
         self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, mask: Optional[torch.Tensor]
     ) -> torch.Tensor:
-        """True O(N) Linear Attention Kernel via ELU+1 feature map."""
-        # Feature maps: phi(x) = elu(x) + 1.0 (guarantees positive affinity)
+        """
+        FIX: True O(N) Linear Attention Kernel via ELU+1 feature map:
+        Associative scan computation: (phi(Q) @ (phi(K)^T @ V)) / (phi(Q) @ sum(phi(K))^T)
+        Eliminates the quadratic O(N^2) memory footprint and sequence length wall.
+        """
+        # Feature maps: phi(x) = elu(x) + 1.0 (guarantees non-negative affinity)
         phi_q = F.elu(q) + 1.0
         phi_k = F.elu(k) + 1.0
 
         if mask is not None:
-            # Apply mask to keys before accumulation
             mask_expanded = mask.unsqueeze(-1) if mask.dim() == 3 else mask
             phi_k = phi_k * mask_expanded.to(phi_k.dtype)
 
         # Associative state matrix: KV = sum_j (phi(k_j)^T @ v_j) -> shape [B, H, D, D]
-        # phi_k: [B, H, N, D], v: [B, H, N, D]
         kv_state = torch.matmul(phi_k.transpose(-1, -2), v)  # [B, H, D_k, D_v]
 
         # Numerator: phi(q) @ KV -> shape [B, H, N, D]
@@ -225,7 +230,7 @@ class SVDLinearAttention(BaseAttention):
         k = self._transpose_for_scores(self.k_proj(hidden_states))
         v = self._transpose_for_scores(self.v_proj(hidden_states))
 
-        # 2. Attention computation
+        # 2. Attention computation based on mode
         if self.mode == "linear":
             context = self._forward_linear_kernel(q, k, v, attention_mask)
             attn_probs = None
@@ -233,7 +238,6 @@ class SVDLinearAttention(BaseAttention):
             context, attn_probs = self._forward_exact_softmax(q, k, v, attention_mask)
 
         # 3. Head merge and factorized output projection
-        # [B, H, N, D] -> [B, N, H * D]
         b, h, n, d = context.size()
         context = context.permute(0, 2, 1, 3).contiguous().view(b, n, h * d)
         output = self.out_proj(context)
