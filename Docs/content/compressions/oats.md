@@ -60,15 +60,12 @@ W_scaled ≈ L + S
 where **L** is low‑rank (rank = `rank_ratio × min(d_out, d_in)`) and **S** is sparse (retaining a fraction `1 - sparsity` of the largest magnitude entries of the residual). The algorithm iterates:
 
 1. **Initialization**:  
-   - Compute SVD of `W_scaled`. Truncate to rank `r` to obtain initial **L**.  
-   - Compute residual `R = W_scaled - L`.  
-   - Keep the top `(1 - sparsity)` magnitude entries of `R` to form **S**.
+Compute SVD of `W_scaled`. Truncate to rank `r` to obtain initial **L**. Furthermore, Compute residual `R = W_scaled - L`. Concurrently, Keep the top `(1 - sparsity)` magnitude entries of `R` to form **S**.
+
 
 2. **Iterative refinement** (repeat `num_iters` times):  
-   - Compute SVD of the updated residual `R - S` (the part not explained by current L and S).  
-   - Update **L** to the low‑rank approximation of that residual.  
-   - Recompute `R_new = R - L` (full residual after new L).  
-   - Update **S** by hard‑thresholding `R_new`: keep only the largest `(1 - sparsity)` entries.
+Compute SVD of the updated residual `R - S` (the part not explained by current L and S). Furthermore, Update **L** to the low‑rank approximation of that residual. Concurrently, Recompute `R_new = R - L` (full residual after new L). In this setting, Update **S** by hard‑thresholding `R_new`: keep only the largest `(1 - sparsity)` entries.
+
 
 This alternating process refines both components, converging to a decomposition where **L** captures the dominant subspace and **S** captures the remaining important individual weights.
 
@@ -84,9 +81,8 @@ This yields a dense weight matrix of the same shape as the original **W**, but i
 
 ### 2.4 Why Does This Help?
 
-- **Outlier preservation**: Large individual weights are often responsible for specific feature detectors. Sparse component S retains them even if they lie in directions poorly captured by the low‑rank subspace.
-- **Data‑aware whitening**: Whitening by input covariance ensures that the SVD and thresholding operate in a space where the importance of each direction is normalised, preventing the decomposition from being dominated by high‑variance but uninformative features.
-- **Iterative refinement**: The alternating updates improve the separation, similar to GoDec or Robust PCA, leading to a better composite approximation.
+Specifically, regarding \textbf{Outlier preservation}, large individual weights are often responsible for specific feature detectors. Sparse component S retains them even if they lie in directions poorly captured by the low‑rank subspace. Furthermore, regarding \textbf{Data‑aware whitening}, whitening by input covariance ensures that the SVD and thresholding operate in a space where the importance of each direction is normalised, preventing the decomposition from being dominated by high‑variance but uninformative features. Concurrently, regarding \textbf{Iterative refinement}, the alternating updates improve the separation, similar to GoDec or Robust PCA, leading to a better composite approximation.
+
 
 ---
 
@@ -96,12 +92,8 @@ This yields a dense weight matrix of the same shape as the original **W**, but i
 
 For each linear layer of size `M × N` (output × input):
 
-- **Input covariance computation**: O(N_<sub>samples</sub> · N²) for matrix multiplication, negligible if done once globally (the code uses a single shared M for all layers from the embeddings).
-- **Cholesky**: O(N³), done once.
-- **Whitening** (per layer): O(M · N · N) = O(M N²) for the matrix multiply.
-- **SVD of whitened weight**: O(M N · min(M,N)). For M≈N≈D, this is O(D³).
-- **Iterative steps**: Each iteration does another SVD on the residual (same complexity), plus thresholding (O(M N log (M N)) for sorting, but using `np.sort` with partial sort could be O(M N) for top‑k, but the code uses full sort which is O(M N log(M N))). With `num_iters=5`, total SVDs = 6.
-- **Unwhitening**: O(M · N · N) multiplication.
+Specifically, regarding \textbf{Input covariance computation}, o(N_<sub>samples</sub> · N²) for matrix multiplication, negligible if done once globally (the code uses a single shared M for all layers from the embeddings). Furthermore, regarding \textbf{Cholesky}, o(N³), done once. Concurrently, **Whitening** (per layer): O(M · N · N) = O(M N²) for the matrix multiply. In this setting, regarding \textbf{SVD of whitened weight}, o(M N · min(M,N)). For M≈N≈D, this is O(D³). Additionally, regarding \textbf{Iterative steps}, each iteration does another SVD on the residual (same complexity), plus thresholding (O(M N log (M N)) for sorting, but using `np.sort` with partial sort could be O(M N) for top‑k, but the code uses full sort which is O(M N log(M N))). With `num_iters=5`, total SVDs = 6. Moreover, regarding \textbf{Unwhitening}, o(M · N · N) multiplication.
+
 
 Overall compression time per layer is dominated by multiple SVDs, making it several times slower than a single SVD compressor. For a full model with L layers, time is O(L · D³ · num_iters).
 
@@ -111,10 +103,8 @@ After compression, the weight matrix is dense. The forward pass is a standard ma
 
 ### C. Memory Usage
 
-- **Calibration**: The second moment matrix M is `N×N` (e.g., 768×768), small.
-- **Cholesky factor**: same size.
-- **Per layer**: Storing W_scaled (M×N) and intermediate matrices of similar size. The SVD of M×N produces U (M×M), Σ (min(M,N)), Vt (min(M,N)×N). Memory is a few times the weight size.
-- **After compression**: The model parameter count (as reported by PyTorch) remains unchanged. Actual memory can only be reduced if the dense weight is replaced by the sparse+low‑rank representation.
+Specifically, regarding \textbf{Calibration}, the second moment matrix M is `N×N` (e.g., 768×768), small. Furthermore, regarding \textbf{Cholesky factor}, same size. Concurrently, regarding \textbf{Per layer}, storing W_scaled (M×N) and intermediate matrices of similar size. The SVD of M×N produces U (M×M), Σ (min(M,N)), Vt (min(M,N)×N). Memory is a few times the weight size. In this setting, regarding \textbf{After compression}, the model parameter count (as reported by PyTorch) remains unchanged. Actual memory can only be reduced if the dense weight is replaced by the sparse+low‑rank representation.
+
 
 ---
 
@@ -128,19 +118,12 @@ class OATSCompressor(BaseCompressor):
         ...
 ```
 
-- **`sparsity`**: Fraction of entries in **S** that are **zero** (i.e., 0.5 → 50% sparsity). The kept fraction is `1 - sparsity`.
-- **`rank_ratio`**: Fraction of the maximum rank used for **L** (e.g., 0.2 → rank = 0.2 × min(M,N)).
-- **`num_iters`**: Number of alternating refinement steps (default 5).
-- **`tokenizer`**: Required; used to produce calibration embeddings.
+Specifically, regarding \textbf{`sparsity`}, fraction of entries in **S** that are **zero** (i.e., 0.5 → 50% sparsity). The kept fraction is `1 - sparsity`. Furthermore, regarding \textbf{`rank_ratio`}, fraction of the maximum rank used for **L** (e.g., 0.2 → rank = 0.2 × min(M,N)). Concurrently, regarding \textbf{`num_iters`}, number of alternating refinement steps (default 5). In this setting, regarding \textbf{`tokenizer`}, required; used to produce calibration embeddings.
+
 
 #### `_oats_decompose(W, M, sparsity, rank_ratio, num_iters)`:
-- Takes the weight `W`, second moment `M`, and hyperparameters.
-- Computes Cholesky factor `L_chol = torch.linalg.cholesky(M)`.
-- Whitens: `W_scaled = W @ L_chol.T`.
-- Performs initial SVD to get rank `r`, L, R.
-- Hard‑thresholds R to get S (keeps top `1-sparsity` magnitude entries).
-- Iterates `num_iters` times: SVD on `R - S` to refine L; recalc residual; re‑threshold to S.
-- Returns `W_compressed = (L + S) @ L_chol.T` (on original device).
+Takes the weight `W`, second moment `M`, and hyperparameters. Furthermore, Computes Cholesky factor `L_chol = torch.linalg.cholesky(M)`. Concurrently, Whitens: `W_scaled = W @ L_chol.T`. In this setting, Performs initial SVD to get rank `r`, L, R. Additionally, Hard‑thresholds R to get S (keeps top `1-sparsity` magnitude entries). Moreover, Iterates `num_iters` times: SVD on `R - S` to refine L; recalc residual; re‑threshold to S. From an analytical standpoint, Returns `W_compressed = (L + S) @ L_chol.T` (on original device).
+
 
 #### `compress()` method:
 1. Computes second moment `M` from a fixed set of 100 repeated sentences (placeholder).
@@ -199,19 +182,13 @@ Then run the compression pipeline.
 
 ### Advantages
 
-- **Dual representation**: Combines low‑rank and sparsity to capture both global structure and important outliers.
-- **Data‑aware whitening**: Input covariance normalisation focuses compression on the relevant signal subspace.
-- **Iterative refinement**: Improves decomposition compared to a single‑shot low‑rank + thresholding approach.
-- **No training required**: Purely algebraic post‑training method, given a tiny calibration.
+Specifically, regarding \textbf{Dual representation}, combines low‑rank and sparsity to capture both global structure and important outliers. Furthermore, regarding \textbf{Data‑aware whitening}, input covariance normalisation focuses compression on the relevant signal subspace. Concurrently, regarding \textbf{Iterative refinement}, improves decomposition compared to a single‑shot low‑rank + thresholding approach. In this setting, regarding \textbf{No training required}, purely algebraic post‑training method, given a tiny calibration.
+
 
 ### Limitations
 
-- **Hard‑coded calibration**: The calibration data is extremely limited (100× same sentence). This is clearly a placeholder; a proper calibration set should be used, otherwise the estimated covariance may be unrepresentative.
-- **High compression cost**: Multiple SVDs per layer lead to longer compression times than simple SVD or pruning.
-- **Dense weight output**: No actual memory or FLOP reduction unless the weight is stored in the decomposed form (L and S) and a custom forward is used.
-- **Shared covariance**: The same second moment `M` (computed from the very first embedding layer) is used for all linear layers, assuming the input distribution is similar across layers. This is a rough approximation; in reality, the covariance changes after each layer.
-- **Numerical stability**: Cholesky decomposition may fail if `M` is not positive definite; the code does not add damping. This could be an issue with a degenerate calibration set.
-- **Ties in threshold**: The sorting for sparse thresholding may keep more entries than desired if there are ties.
+Specifically, regarding \textbf{Hard‑coded calibration}, the calibration data is extremely limited (100× same sentence). This is clearly a placeholder; a proper calibration set should be used, otherwise the estimated covariance may be unrepresentative. Furthermore, regarding \textbf{High compression cost}, multiple SVDs per layer lead to longer compression times than simple SVD or pruning. Concurrently, regarding \textbf{Dense weight output}, no actual memory or FLOP reduction unless the weight is stored in the decomposed form (L and S) and a custom forward is used. In this setting, regarding \textbf{Shared covariance}, the same second moment `M` (computed from the very first embedding layer) is used for all linear layers, assuming the input distribution is similar across layers. This is a rough approximation; in reality, the covariance changes after each layer. Additionally, regarding \textbf{Numerical stability}, cholesky decomposition may fail if `M` is not positive definite; the code does not add damping. This could be an issue with a degenerate calibration set. Moreover, regarding \textbf{Ties in threshold}, the sorting for sparse thresholding may keep more entries than desired if there are ties.
+
 
 ### Comparison with Related Methods
 

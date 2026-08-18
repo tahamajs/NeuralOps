@@ -73,37 +73,34 @@ $$Y = \text{FactorisedLinear}_O\left( \text{Reshape}(O) \right) \in \mathbb{R}^{
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, and $r$ average SVD rank.
 
 1. **Factorized Projections ($Q, K, V, O$)**:
-   - Down-projection ($X B^T$): $2 B N D r$
-   - Up-projection ($Z A^T$): $2 B N r D$
-   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+Down-projection ($X B^T$): $2 B N D r$ Furthermore, Up-projection ($Z A^T$): $2 B N r D$ $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+
 2. **Attention Core**:
-   - Query-Key score product ($Q K^T$): $2 B H N^2 d_h = 2 B N^2 D$
-   - Softmax & Value contraction ($A V$): $2 B H N^2 d_h = 2 B N^2 D$
-   $$\text{FLOPs}_{\text{attn}} = 4 B N^2 D$$
+Query-Key score product ($Q K^T$): $2 B H N^2 d_h = 2 B N^2 D$ Furthermore, Softmax & Value contraction ($A V$): $2 B H N^2 d_h = 2 B N^2 D$ $$\text{FLOPs}_{\text{attn}} = 4 B N^2 D$$
+
 
 **Total FLOP Count**:
 
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B N^2 D$$
 
 ### 4.2 Memory Footprint & Bandwidth
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = 4 \times (D \cdot r + r \cdot D) = 8 D r \ll 4 D^2$$
-- **Activation Footprint**:
-  - Intermediate rank-$r$ bottleneck activations: $\mathcal{O}(B N r)$
-  - Full attention score tensor: $\mathcal{O}(B H N^2)$
-  - Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Intermediate rank-$r$ bottleneck activations: $\mathcal{O}(B N r)$ Concurrently, Full attention score tensor: $\mathcal{O}(B H N^2)$ In this setting, Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
+
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
 ### 5.1 Energy Truncation Loss in Deep Layers
-- **Mechanism**: Preserving $\eta_{\text{energy}} = 0.95$ energy caps maximum rank to $r_{\max} = 64$. For deep Transformer layers where singular values decay slowly (high spectral entropy), truncating at $r = 64$ discards more than $5\%$ of total Frobenius norm.
-- **Consequence**: Loss of fine-grained representation capacity, causing perplexity degradation on long-context benchmarks.
+At the architectural level, the underlying operational mechanism reveals that preserving $\eta_{\text{energy}} = 0.95$ energy caps maximum rank to $r_{\max} = 64$. For deep Transformer layers where singular values decay slowly (high spectral entropy), truncating at $r = 64$ discards more than $5\%$ of total Frobenius norm. Consequently, this dynamic induces structural implications wherein loss of fine-grained representation capacity, causing perplexity degradation on long-context benchmarks.
+
 
 ### 5.2 Zero-Bias Instability in Pre-Trained Transfer
-- **Mechanism**: If source linear layers contain biases ($b \neq 0$), omitting biases in low-rank factorized projections introduces systematically shifted activation distributions.
-- **Mitigation**: Ensure `pretrained_bias` is passed and copied directly to the `up` linear layer.
+At the architectural level, the underlying operational mechanism reveals that if source linear layers contain biases ($b \neq 0$), omitting biases in low-rank factorized projections introduces systematically shifted activation distributions. To systematically mitigate this constraint, the framework enforces an optimization protocol such that ensure `pretrained_bias` is passed and copied directly to the `up` linear layer.
+
 
 ---
 
@@ -131,13 +128,12 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B N^2 D$$
 Standard PyTorch executes two sequential matrix multiplications (`x @ down.weight.T` followed by `@ up.weight.T`), allocating an intermediate tensor $[B, N, r]$ in global DRAM.
 
 **Triton Optimization**:
-- Implement a custom Triton GEMM kernel that loads input tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Compute down-projection with $V_{:, :r}^T$ in register files and immediately evaluate up-projection with $(U_{:, :r} \Sigma_{:r})^T$.
-- **Speedup**: Reduces DRAM memory bandwidth consumption by $2\times$, achieving up to $1.8\times$ kernel latency reduction.
+Implement a custom Triton GEMM kernel that loads input tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM. Furthermore, Compute down-projection with $V_{:, :r}^T$ in register files and immediately evaluate up-projection with $(U_{:, :r} \Sigma_{:r})^T$. Concurrently, regarding \textbf{Speedup}, reduces DRAM memory bandwidth consumption by $2\times$, achieving up to $1.8\times$ kernel latency reduction.
+
 
 ### 6.2 Triton Strategy 2: FlashAttention-2 Core Integration
-- Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
-- Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, N, N]$ attention matrices.
+Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`. Furthermore, Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, N, N]$ attention matrices.
+
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

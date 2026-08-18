@@ -104,9 +104,8 @@ Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ head count,
 1. **Linear Q, K, V Projections**:
    $$\text{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
 2. **FlashAttention-3 Kernel Core**:
-   - Query-Key score matmul: $2 B H L^2 d_h = 2 B L^2 D$
-   - Softmax online scaling & Value contraction: $2 B H L^2 d_h = 2 B L^2 D$
-   $$\text{FLOPs}_{\text{core}} = 4 B L^2 D$$
+Query-Key score matmul: $2 B H L^2 d_h = 2 B L^2 D$ Furthermore, Softmax online scaling & Value contraction: $2 B H L^2 d_h = 2 B L^2 D$ $$\text{FLOPs}_{\text{core}} = 4 B L^2 D$$
+
 3. **Output Projection**:
    $$\text{FLOPs}_{\text{out}} = 2 B L D^2$$
 
@@ -115,27 +114,27 @@ $$\text{FLOPs}_{\text{total}} = 8 B L D^2 + 4 B L^2 D$$
 *(Note: Under FP8 mode, Tensor Core throughput for $\text{FLOPs}_{\text{core}}$ increases by $2\times$.)*
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} = 4 B L D^2 + 2 B L^2 D$$
-- **Standard Softmax Attention HBM IO**: $\mathcal{O}(B H L^2 + B L D)$
-- **FlashAttention-3 HBM IO**: $\mathcal{O}\left(B L D + \frac{B H L^2 d_h^2}{M_{\text{SRAM}}}\right)$ where $M_{\text{SRAM}}$ is GPU shared memory capacity ($\approx 228 \text{ KB}$ on Hopper H100).
-- **Parameter Footprint**: $\Theta = 4 D^2$.
+Specifically, regarding \textbf{Standard Softmax Attention HBM IO}, $\mathcal{O}(B H L^2 + B L D)$ Furthermore, regarding \textbf{FlashAttention-3 HBM IO}, $\mathcal{O}\left(B L D + \frac{B H L^2 d_h^2}{M_{\text{SRAM}}}\right)$ where $M_{\text{SRAM}}$ is GPU shared memory capacity ($\approx 228 \text{ KB}$ on Hopper H100). Concurrently, regarding \textbf{Parameter Footprint}, $\Theta = 4 D^2$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ DRAM IO scaling.
-- **FlashAttention-3 Engine**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L D)$ IO scaling, achieving $3\times$ speedup over FlashAttention-2 on Hopper GPUs.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ DRAM IO scaling. Furthermore, regarding \textbf{FlashAttention-3 Engine}, $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L D)$ IO scaling, achieving $3\times$ speedup over FlashAttention-2 on Hopper GPUs.
+
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Hardware Compatibility & Host Fallback
-- **Mechanism**: FlashAttention-3 TMA and WGMMA instructions strictly require NVIDIA Hopper architecture (compute capability `sm_90a`). Invoking `flash_attn_func` on Ampere (`sm_80`) or Ada Lovelace (`sm_89`) GPUs triggers runtime errors.
-- **Mitigation**: Implement explicit hardware detection fallbacks to PyTorch SDPA (`F.scaled_dot_product_attention`).
+At the architectural level, the underlying operational mechanism reveals that flashAttention-3 TMA and WGMMA instructions strictly require NVIDIA Hopper architecture (compute capability `sm_90a`). Invoking `flash_attn_func` on Ampere (`sm_80`) or Ada Lovelace (`sm_89`) GPUs triggers runtime errors. To systematically mitigate this constraint, the framework enforces an optimization protocol such that implement explicit hardware detection fallbacks to PyTorch SDPA (`F.scaled_dot_product_attention`).
+
 
 ### 5.2 FP8 Dynamic Range Underflow & Overflow
-- **Mechanism**: FP8 E4M3 has only 3 mantissa bits and a maximum representable value of 448. Unscaled attention logits $Q K^T / \sqrt{d_h}$ exceeding 448 immediately saturate to `NaN` or infinity.
-- **Mitigation**: Deploy per-tensor dynamic scaling factors $S_Q, S_K, S_V$ prior to FP8 quantization: $Q_{\text{fp8}} = \text{cast}(Q \cdot S_Q)$.
+At the architectural level, the underlying operational mechanism reveals that fP8 E4M3 has only 3 mantissa bits and a maximum representable value of 448. Unscaled attention logits $Q K^T / \sqrt{d_h}$ exceeding 448 immediately saturate to `NaN` or infinity. To systematically mitigate this constraint, the framework enforces an optimization protocol such that deploy per-tensor dynamic scaling factors $S_Q, S_K, S_V$ prior to FP8 quantization: $Q_{\text{fp8}} = \text{cast}(Q \cdot S_Q)$.
+
 
 ---
 
@@ -171,13 +170,12 @@ $$\text{FLOPs}_{\text{total}} = 8 B L D^2 + 4 B L^2 D$$
 Standard CUDA implementations use `cp.async` instructions, which still require warp register intervention.
 
 **Triton Optimization**:
-- Configure Triton TMA descriptors for 2D/3D tensor memory transfers.
-- Issue non-blocking TMA load requests for key-value tiles $K_{j+1}, V_{j+1}$ into shared memory pipelines while Tensor Cores execute GEMM on tile $j$.
+Configure Triton TMA descriptors for 2D/3D tensor memory transfers. Furthermore, Issue non-blocking TMA load requests for key-value tiles $K_{j+1}, V_{j+1}$ into shared memory pipelines while Tensor Cores execute GEMM on tile $j$.
+
 
 ### 6.2 Triton Strategy 2: Warp-Specialized Producer-Consumer Pipeline
-- Partition threadblock warps into 1 Producer warp and 3 Consumer warps.
-- The Producer warp manages TMA memory arrival barriers (`mbarrier`).
-- Consumer warps execute WGMMA matrix instructions on Tensor Cores continuously, eliminating warp synchronization latency.
+Partition threadblock warps into 1 Producer warp and 3 Consumer warps. Furthermore, The Producer warp manages TMA memory arrival barriers (`mbarrier`). Concurrently, Consumer warps execute WGMMA matrix instructions on Tensor Cores continuously, eliminating warp synchronization latency.
+
 
 ---
 

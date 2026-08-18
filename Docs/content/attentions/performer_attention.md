@@ -97,30 +97,19 @@ Input: hidden_states [B, L, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $m$: Random Features):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Random Feature Projections ($Q W^\top, K W^\top$)**: $2 \times (2 B H L \cdot d_k \cdot m) = 4 B L m D$ FLOPs
-- **Associative Matrix State ($KV = \phi(K)^\top V$)**: $2 B H \cdot m \cdot L \cdot d_k = 2 B L m D$ FLOPs
-- **Context Numerator Matrix Product ($\phi(Q) KV$)**: $2 B H \cdot L \cdot m \cdot d_k = 2 B L m D$ FLOPs
-- **Denominator Product ($\phi(Q) K_{\text{sum}}^\top$)**: $2 B H L m$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+### Computational and Analytical Complexity Breakdown
+The computational workload of the FAVOR+ mechanism is governed by the projection dimensionality, head allocation, and the chosen random feature budget $m$. Initial linear projections for queries, keys, and values ($W_Q, W_K, W_V$) demand $6 B L D^2$ floating-point operations (FLOPs). Subsequently, projecting query and key matrices into the randomized feature space via $Q W^\top$ and $K W^\top$ incurs $2 \times (2 B H L \cdot d_k \cdot m) = 4 B L m D$ FLOPs. Exploiting matrix multiplication associativity, the unmasked associative key-value state $KV = \phi(K)^\top V$ aggregates contextual information across the sequence with a computational budget of $2 B H \cdot m \cdot L \cdot d_k = 2 B L m D$ FLOPs. The context numerator product $\phi(Q) KV$ similarly accounts for $2 B H \cdot L \cdot m \cdot d_k = 2 B L m D$ FLOPs, while the scalar denominator normalizer $\phi(Q) K_{\text{sum}}^\top$ introduces an auxiliary overhead of $2 B H L m$ FLOPs. Concluding the forward pass, the linear output projection $W_O$ requires $2 B L D^2$ FLOPs. Consequently, the cumulative computational load reaches $4 B L D^2 + 4 B L m D$ multiply-accumulate operations (MACs), corresponding to $8 B L D^2 + 8 B L m D$ total FLOPs and establishing strict $\mathcal{O}(L)$ asymptotic complexity with respect to sequence length.
 
-**Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 4 B L m D$
-- **Total FLOPs**: $8 B L D^2 + 8 B L m D$ ($\mathcal{O}(L)$ linear complexity)
-
-### Memory Footprint:
-- **Static Weights**: $4 D^2$ model weights $+ m \cdot d_k$ orthogonal random projection matrix buffer.
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot m \cdot d_k + B \cdot H \cdot L \cdot m)$, completely bypassing $L \times L$ storage.
+### Memory Footprint and Activation Allocation
+In terms of memory residency, the model maintains a compact footprint composed of static parameter tensors and dynamic activation caches. Static allocations are restricted to $4 D^2$ projection weights complemented by an $m \cdot d_k$ orthogonal projection buffer. Concurrently, transient activation memory during training and autoregressive decoding remains strictly bounded by $\mathcal{O}(B \cdot H \cdot m \cdot d_k + B \cdot H \cdot L \cdot m)$, entirely circumventing the prohibitive quadratic $\mathcal{O}(L^2)$ matrix storage required by conventional multi-head attention.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Variance of Random Feature Estimator**: At small feature counts ($m \ll d_k$), the variance of $\phi(x)$ leads to noisy attention weight estimations, impairing fine-grained token retrieval.
-2. **Exponential Feature Overflow in FP16**: Computing $\exp(W x)$ can cause numerical overflow in standard IEEE half-precision (FP16). Subtraction of maximum logits $\max(W x)$ and execution in FP32 / BF16 is mandatory.
-3. **Causal Scan Memory Accumulation**: In causal autoregressive decoding, maintaining the associative matrix $KV_t = KV_{t-1} + \phi(K_t)^\top V_t$ requires numerical stabilization to prevent monotonic sum drift.
-4. **Rank Bottleneck**: The maximum rank of the attention map is strictly bounded by $\min(L, m)$.
+The theoretical convergence and practical stability of the FAVOR+ estimator are intimately linked to the number of random feature projections $m$ and the underlying precision regime. When the random feature dimension is constrained such that $m \ll d_k$, the Monte Carlo variance of the positive feature mapping $\phi(x)$ increases substantially. This stochastic variance distorts the implicit attention weight distribution, introducing non-negligible gradient noise that roughens the optimization landscape and degrades retrieval precision on associative recall tasks. 
+
+Furthermore, evaluating the exponential non-linearity $\exp(W x)$ introduces acute vulnerability to numerical overflow under standard IEEE half-precision (FP16) arithmetic. Subtracting maximum logit projections prior to exponentiation and executing feature mappings in high-precision formats (FP32 or BF16) is indispensable for preserving numerical conditioning. During causal autoregressive processing, continuous prefix accumulation in the recurrent state $KV_t = KV_{t-1} + \phi(K_t)^\top V_t$ can induce monotonic magnitude drift and eigenvalue explosion over extended context windows, necessitating periodic renormalization or decay factors. Finally, the effective expressivity of the linearized kernel operator is fundamentally constrained by an intrinsic rank bottleneck, wherein the rank of the implicit attention matrix cannot exceed $\min(L, m)$, thereby enforcing a structural upper bound on contextual capacity relative to dense full-rank attention.
 
 ---
 
@@ -172,9 +161,7 @@ def _performer_causal_scan_kernel(
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Structured Orthogonal Ensemble (ORF+)**: Replace i.i.d. Gaussian random projection matrices $W$ with Gram-Schmidt orthogonalized block Hadamard matrices to minimize feature estimator variance.
-2. **Hybrid Performer-Mamba Paradigm**: Combine FAVOR+ kernel feature maps with selective state-space discretization parameters to create continuous-time recurrent transformers.
-3. **Quantized FP8 Random Features**: Quantize feature maps $\phi(x)$ to FP8 (E4M3 format) for 2x memory throughput on modern Hopper/Blackwell GPU architectures.
+To advance the efficiency and representational fidelity of linearized kernel attention, several promising architectural directions emerge. First, replacing standard independently and identically distributed Gaussian projection matrices with Structured Orthogonal Ensembles (ORF+)—such as Gram-Schmidt orthogonalized block Hadamard matrices—substantially suppresses kernel approximation variance without incurring additional computational overhead. Furthermore, establishing a hybrid Performer-State Space Model (SSM) architecture by synthesizing FAVOR+ positive feature maps with selective discretization dynamics enables continuous-time recurrent memory updates while strictly maintaining linear algorithmic complexity. Concurrently, quantizing intermediate positive feature activations $\phi(x)$ into microscopic 8-bit floating-point formats (e.g., FP8 E4M3) offers the potential to double memory bus throughput and enhance arithmetic intensity across contemporary GPU architectures like NVIDIA Hopper and Blackwell, facilitating ultra-long sequence processing at minimal energetic cost.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

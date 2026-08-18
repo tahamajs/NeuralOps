@@ -100,43 +100,39 @@ $$Y = \text{Reshape}(O) W_O + b_O \in \mathbb{R}^{B \times N \times D}$$
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, and $r$ bottleneck rank ($r = \text{k\_rank}$).
 
 1. **SOA Bottleneck Projections ($Q, K, V$)**:
-   - Down-projection ($X W^{\text{down} T}$): $3 \times (2 B N D r) = 6 B N D r$
-   - Up-projection ($Z W^{\text{up} T}$): $3 \times (2 B N r D) = 6 B N D r$
-   $$\text{FLOPs}_{\text{proj}} = 12 B N D r$$
+Down-projection ($X W^{\text{down} T}$): $3 \times (2 B N D r) = 6 B N D r$ Furthermore, Up-projection ($Z W^{\text{up} T}$): $3 \times (2 B N r D) = 6 B N D r$ $$\text{FLOPs}_{\text{proj}} = 12 B N D r$$
+
 2. **Attention Core & Output Projection**:
-   - Query-Key dot products: $2 B H N^2 d_h = 2 B N^2 D$
-   - Softmax & Value contraction: $2 B H N^2 d_h = 2 B N^2 D$
-   - Output projection $W_O$: $2 B N D^2$
-   $$\text{FLOPs}_{\text{attn}} = 4 B N^2 D + 2 B N D^2$$
+Query-Key dot products: $2 B H N^2 d_h = 2 B N^2 D$ Furthermore, Softmax & Value contraction: $2 B H N^2 d_h = 2 B N^2 D$ Concurrently, Output projection $W_O$: $2 B N D^2$ $$\text{FLOPs}_{\text{attn}} = 4 B N^2 D + 2 B N D^2$$
+
 
 $$\text{FLOPs}_{\text{total}} = 2 B N D^2 + 12 B N D r + 4 B N^2 D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} = B N D^2 + 6 B N D r + 2 B N^2 D$$
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = 3 \times (D \cdot r + r \cdot D) + D^2 = 6 D r + D^2 \ll 4 D^2$$
-- **Activation Footprint**:
-  - Latent bottleneck tensors $Z_Q, Z_K, Z_V$: $\mathcal{O}(B N r)$
-  - Full attention logit matrix: $\mathcal{O}(B H N^2)$
-  - Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Latent bottleneck tensors $Z_Q, Z_K, Z_V$: $\mathcal{O}(B N r)$ Concurrently, Full attention logit matrix: $\mathcal{O}(B H N^2)$ In this setting, Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Projection MHSA**: $\mathcal{O}(D^2)$ projection compute per token.
-- **SOA Bottleneck Architecture**: $\mathcal{O}(D r)$ projection compute per token, achieving a parameter compression ratio of $\approx 4\times$ when $r = D/4$.
+Specifically, regarding \textbf{Standard Dense Projection MHSA}, $\mathcal{O}(D^2)$ projection compute per token. Furthermore, regarding \textbf{SOA Bottleneck Architecture}, $\mathcal{O}(D r)$ projection compute per token, achieving a parameter compression ratio of $\approx 4\times$ when $r = D/4$.
+
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### 5.1 Latent Rank Under-Estimation
-- **Mechanism**: Setting bottleneck rank $r < 16$ on deep layers causes truncation of significant pre-trained singular values $\sigma_{r+1 \dots D}$.
-- **Consequence**: Information loss in projection representations, degrading zero-shot transfer accuracy.
-- **Mitigation**: Select rank $r$ such that $\frac{\sum_{i=1}^r \sigma_i^2}{\sum \sigma_j^2} \ge 0.90$.
+At the architectural level, the underlying operational mechanism reveals that setting bottleneck rank $r < 16$ on deep layers causes truncation of significant pre-trained singular values $\sigma_{r+1 \dots D}$. Consequently, this dynamic induces structural implications wherein information loss in projection representations, degrading zero-shot transfer accuracy. To systematically mitigate this constraint, the framework enforces an optimization protocol such that select rank $r$ such that $\frac{\sum_{i=1}^r \sigma_i^2}{\sum \sigma_j^2} \ge 0.90$.
+
 
 ### 5.2 Down/Up Matrix Gradient Orthogonality Drift
-- **Mechanism**: Unconstrained fine-tuning of $W^{\text{down}}$ and $W^{\text{up}}$ can destroy the initial singular value orthogonality derived from SVD.
-- **Mitigation**: Apply an auxiliary orthogonal loss regularizer $\mathcal{L}_{\text{ortho}} = \|W^{\text{down}} (W^{\text{down}})^T - I_r\|_F^2$.
+At the architectural level, the underlying operational mechanism reveals that unconstrained fine-tuning of $W^{\text{down}}$ and $W^{\text{up}}$ can destroy the initial singular value orthogonality derived from SVD. To systematically mitigate this constraint, the framework enforces an optimization protocol such that apply an auxiliary orthogonal loss regularizer $\mathcal{L}_{\text{ortho}} = \|W^{\text{down}} (W^{\text{down}})^T - I_r\|_F^2$.
+
 
 ---
 
@@ -163,13 +159,12 @@ $$\text{FLOPs}_{\text{total}} = 2 B N D^2 + 12 B N D r + 4 B N^2 D$$
 Standard PyTorch executes two sequential matrix multiplications (`x @ down.weight.T` followed by `@ up.weight.T`), allocating intermediate tensor $[B, N, r]$ in global DRAM.
 
 **Triton Optimization**:
-- Implement a custom Triton GEMM kernel loading input tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Compute down-projection $W^{\text{down} T}$ in register files and immediately evaluate up-projection $W^{\text{up} T}$.
-- **Speedup**: Reduces DRAM memory bandwidth overhead by $2\times$, achieving up to $1.8\times$ latency reduction.
+Implement a custom Triton GEMM kernel loading input tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM. Furthermore, Compute down-projection $W^{\text{down} T}$ in register files and immediately evaluate up-projection $W^{\text{up} T}$. Concurrently, regarding \textbf{Speedup}, reduces DRAM memory bandwidth overhead by $2\times$, achieving up to $1.8\times$ latency reduction.
+
 
 ### 6.2 Triton Strategy 2: FlashAttention-2 Core Integration
-- Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
-- Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, N, N]$ attention matrices.
+Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`. Furthermore, Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, N, N]$ attention matrices.
+
 
 ---
 

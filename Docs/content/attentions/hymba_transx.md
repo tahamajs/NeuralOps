@@ -84,18 +84,20 @@ Input: hidden_states [B, L, D], Meta-Tokens [N_meta, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Sequence Len, $N_{\text{meta}}$: Meta-Tokens, $D$: Dim):
-- **UnifiedRoPE Embedding**: $4 B (N_{\text{meta}} + L) D$ FLOPs
-- **SimpleSSM Branch**: $6 B (N_{\text{meta}} + L) D D_{\text{inner}} + 4 B (N_{\text{meta}} + L) D_{\text{inner}} d_{\text{state}}$ FLOPs
-- **MHA Branch**: $8 B (N_{\text{meta}} + L) D^2 + 4 B (N_{\text{meta}} + L)^2 D$ FLOPs
-- **Gated Fusion & Projection**: $2 B (N_{\text{meta}} + L) D$ FLOPs
+### Computational Workload and Theoretical Scaling
+Let $B$ denote batch size, $L$ sequence length, $N_{\text{meta}}$ the cardinality of prepended meta-tokens, $D$ model dimension, $D_{\text{inner}}$ the expanded state dimension within the SSM recurrence, and $d_{\text{state}}$ the hidden recurrent state size. The computational profile of Hymba TransX reflects a dual-path hybrid architecture operating over an augmented context horizon $L_{\text{aug}} = N_{\text{meta}} + L$. 
+
+In the initial transformation stage, applying UnifiedRoPE across representations incurs $4 B (N_{\text{meta}} + L) D$ floating-point operations to perform pairwise 2D planar coordinate rotations across feature subspaces. Following positional injection, execution branches into concurrent state-space and attention channels. The SimpleSSM linear recurrence evaluates continuous-time state transitions incurring $6 B (N_{\text{meta}} + L) D D_{\text{inner}} + 4 B (N_{\text{meta}} + L) D_{\text{inner}} d_{\text{state}}$ FLOPs, maintaining strict $\mathcal{O}(L_{\text{aug}})$ computational scaling in sequence length. Concurrently, the exact associative Multi-Head Attention (MHA) branch evaluates query-key-value transformations and dense affinity softmax aggregation, consuming $8 B (N_{\text{meta}} + L) D^2 + 4 B (N_{\text{meta}} + L)^2 D$ FLOPs. Finally, the element-wise gated fusion and linear output projection contribute $2 B (N_{\text{meta}} + L) D$ FLOPs. By offloading broad temporal tracking to the SSM branch and restricting the quadratic attention budget to specialized local or pruned attention windows, the hybrid system bounds end-to-end memory bandwidth demands while sustaining exact associative recall.
 
 ---
 
-## 5. Failure Modes, Rank Collapse & Edge Cases
+## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-1. **Meta-Token Over-Concentration**: Attention heads may route high probability mass exclusively to meta-tokens, starving token-to-token contextual interaction.
-2. **UnifiedRoPE Frequency Mismatch**: If positional base $b$ is miscalibrated, high-frequency rotational components can induce phase noise in linear SSM updates.
+### Attention Sinks and Meta-Token Over-Concentration
+A critical vulnerability in meta-token augmented architectures arises from representational over-concentration and attention sink pathologies during backpropagation. When optimizing deep hybrid architectures, attention heads can develop degenerate equilibria where disproportionately massive softmax probability mass is allocated exclusively to the prepended meta-tokens $\mathcal{M}$. This routing imbalance effectively starves intermediate token-to-token contextual pathways, collapsing the expressive rank of the attention map over sequence tokens and impairing fine-grained semantic comprehension. Mitigating this degradation requires introducing entropy regularization across attention maps or establishing gradient routing constraints that preserve non-trivial direct token interactions while allowing meta-tokens to aggregate global contextual summaries.
+
+### Phase Coherence and UnifiedRoPE Harmonic Interference
+A subtle structural constraint emerges from the mathematical coupling between rotary positional embeddings and linear state-space operators. If the base frequency parameter $b$ governing UnifiedRoPE is misaligned with the effective temporal scale of the sequence, high-frequency rotational harmonics introduce disruptive phase noise into the SSM recurrent state updates. Because state-space transitions assume shift-invariant continuous convolutions or stable discrete transition matrices, rapid rotational phase shifts in input activations corrupt the eigenvalue spectra of the recurrent transition operator. Maintaining stability across extended context lengths necessitates calibrating rotary frequency distributions or selectively applying positional rotations strictly within query-key associative projections.
 
 ---
 
@@ -111,8 +113,7 @@ A Triton kernel for Hymba TransX fuses UnifiedRoPE rotation and dual-branch gati
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Dynamic Meta-Token Allocation ($N_{\text{meta}}(x)$)**: Dynamically adjust the number of prepended meta-tokens per sequence based on context length.
-2. **Hymba-Mamba MoE Hybrid**: Combine Hymba TransX dual-path execution with Expert-Choice Mixture of Experts FFN layers.
+Future architectural trajectories for the Hymba TransX design paradigm emphasize adaptive parameter allocation and multi-expert modularity. A prominent opportunity lies in context-conditioned dynamic meta-token allocation ($N_{\text{meta}}(x)$), wherein the cardinality and initialization of prepended prompt tokens are dynamically parameterized based on the sequence length and syntactic entropy of the input stream, thereby conserving computational bandwidth on local sequences while expanding working memory capacity for extended context documents. Concurrently, integrating Hymba TransX hybrid cells within Mixture of Experts (MoE) topologies facilitates selective compute routing; individual expert layers can be steered to dynamically arbitrate between SSM-dominant recurrent compression and attention-dominant associative retrieval based on fine-grained token-level routing probabilities.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

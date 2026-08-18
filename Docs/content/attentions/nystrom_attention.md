@@ -108,22 +108,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $m$: Landmarks):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Landmark Average Pooling**: $\mathcal{O}(B H L d_k)$ FLOPs (negligible)
-- **Kernel F1 ($Q \widetilde{K}^\top$)**: $2 B H \cdot L \cdot m \cdot d_k = 2 B L m D$ FLOPs
-- **Kernel F2 ($\widetilde{Q} \widetilde{K}^\top$)**: $2 B H \cdot m^2 \cdot d_k = 2 B H m^2 d_k$ FLOPs
-- **Kernel F3 ($\widetilde{Q} K^\top$)**: $2 B H \cdot m \cdot L \cdot d_k = 2 B L m D$ FLOPs
-- **Iterative Pseudoinverse (6 iterations of $V_{k+1} = V_k(2I - F_2 V_k)$)**: $6 \times 2 \times (2 B H m^3) = 24 B H m^3$ FLOPs
-- **Associative Context Product ($F_1(F_2^+(F_3 V))$)**: $2 B L m D + 2 B H m^2 d_k + 2 B L m D$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_Q, W_K, W_V$)}, $6 B L D^2$ FLOPs Furthermore, regarding \textbf{Landmark Average Pooling}, $\mathcal{O}(B H L d_k)$ FLOPs (negligible) Concurrently, regarding \textbf{Kernel F1 ($Q \widetilde{K}^\top$)}, $2 B H \cdot L \cdot m \cdot d_k = 2 B L m D$ FLOPs In this setting, regarding \textbf{Kernel F2 ($\widetilde{Q} \widetilde{K}^\top$)}, $2 B H \cdot m^2 \cdot d_k = 2 B H m^2 d_k$ FLOPs Additionally, regarding \textbf{Kernel F3 ($\widetilde{Q} K^\top$)}, $2 B H \cdot m \cdot L \cdot d_k = 2 B L m D$ FLOPs Moreover, regarding \textbf{Iterative Pseudoinverse (6 iterations of $V_{k+1} = V_k(2I - F_2 V_k)$)}, $6 \times 2 \times (2 B H m^3) = 24 B H m^3$ FLOPs From an analytical standpoint, regarding \textbf{Associative Context Product ($F_1(F_2^+(F_3 V))$)}, $2 B L m D + 2 B H m^2 d_k + 2 B L m D$ FLOPs In terms of operational dynamics, regarding \textbf{Output Projection ($W_O$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 3 B L m D + 12 B H m^3 + 2 B H m^2 d_k$
-- **Total FLOPs**: $\mathcal{O}(B L D^2 + B L m D + B H m^3)$ (Strictly linear in $L$)
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 3 B L m D + 12 B H m^3 + 2 B H m^2 d_k$ Furthermore, regarding \textbf{Total FLOPs}, $\mathcal{O}(B L D^2 + B L m D + B H m^3)$ (Strictly linear in $L$)
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2$ parameters.
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot L \cdot m + B \cdot H \cdot m^2)$, replacing the $\mathcal{O}(B \cdot H \cdot L^2)$ memory footprint.
+Specifically, regarding \textbf{Static Weights}, $4 D^2$ parameters. Furthermore, regarding \textbf{Transient Activation Memory}, bounded by $\mathcal{O}(B \cdot H \cdot L \cdot m + B \cdot H \cdot m^2)$, replacing the $\mathcal{O}(B \cdot H \cdot L^2)$ memory footprint.
+
 
 ---
 

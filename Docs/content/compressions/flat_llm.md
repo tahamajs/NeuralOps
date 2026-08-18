@@ -57,20 +57,17 @@ Let $A \in \mathbb{R}^{N \times D_{\text{out}}}$ be the activation matrix captur
 ### 3.1 Dataflow & Execution Pipeline
 
 1. **Hook Attachment**:
-   - Register forward hooks on all target `nn.Linear` layers.
+Register forward hooks on all target `nn.Linear` layers.
+
 2. **Calibration Inference**:
-   - Tokenize calibration texts and execute a forward pass.
-   - Detach and collect output activations $A \in \mathbb{R}^{N \times D_{\text{out}}}$.
+Tokenize calibration texts and execute a forward pass. Furthermore, Detach and collect output activations $A \in \mathbb{R}^{N \times D_{\text{out}}}$.
+
 3. **Eigendecomposition Loop**:
-   - Remove hooks.
-   - For each linear layer:
-     - Compute covariance matrix `cov = np.cov(act_flat.T)`.
-     - Calculate eigenvalues via `eigenvalues, _ = np.linalg.eigh(cov)`.
-     - Determine top index set `idx = np.argsort(eigenvalues)[::-1][:keep_dims]`.
+Remove hooks. Furthermore, For each linear layer: Concurrently, Compute covariance matrix `cov = np.cov(act_flat.T)`. In this setting, Calculate eigenvalues via `eigenvalues, _ = np.linalg.eigh(cov)`. Additionally, Determine top index set `idx = np.argsort(eigenvalues)[::-1][:keep_dims]`.
+
 4. **Row Mask Application**:
-   - Create row mask vector `mask[idx] = 1.0`.
-   - Update weights `module.weight.data *= mask.unsqueeze(1)`.
-   - Update bias `module.bias.data *= mask` (if bias exists).
+Create row mask vector `mask[idx] = 1.0`. Furthermore, Update weights `module.weight.data *= mask.unsqueeze(1)`. Concurrently, Update bias `module.bias.data *= mask` (if bias exists).
+
 
 ```
 Forward Calibration ──► Collect Output Act A ──► Compute Covariance Matrix
@@ -104,8 +101,8 @@ $$\mathbb{E}\left[ \| Y - \widehat{Y} \|_2^2 \right] \le \sum_{i \notin \mathcal
 
 ### 5.2 Failure Cases
 
-- **Covariance Matrix Overflow**: For ultra-large layers ($D_{\text{out}} > 32768$), calculating $D_{\text{out}} \times D_{\text{out}}$ covariance matrices causes CPU/GPU out-of-memory errors.
-- **Isotropic Activation Distributions**: If activation eigenvalues are uniform ($\lambda_1 \approx \lambda_D$), row pruning causes severe accuracy drops.
+Specifically, regarding \textbf{Covariance Matrix Overflow}, for ultra-large layers ($D_{\text{out}} > 32768$), calculating $D_{\text{out}} \times D_{\text{out}}$ covariance matrices causes CPU/GPU out-of-memory errors. Furthermore, regarding \textbf{Isotropic Activation Distributions}, if activation eigenvalues are uniform ($\lambda_1 \approx \lambda_D$), row pruning causes severe accuracy drops.
+
 
 ---
 

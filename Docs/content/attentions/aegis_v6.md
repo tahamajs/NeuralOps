@@ -19,9 +19,8 @@ For input tensor $X \in \mathbb{R}^{B \times N \times d_{\text{in}}}$, linear pr
 $$Y = X V \text{diag}(S) U^T + (X B^T) A^T$$
 
 where:
-- $U \in \mathbb{R}^{d_{\text{out}} \times r_{\text{svd}}}, V \in \mathbb{R}^{d_{\text{in}} \times r_{\text{svd}}}$ are registered frozen orthogonal buffers obtained via SVD of pre-trained weight $W_0$.
-- $S \in \mathbb{R}^{r_{\text{svd}}}$ is a learnable singular scaling vector initialized with singular values.
-- $A \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}, B \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ are learnable low-rank adapter matrices.
+$U \in \mathbb{R}^{d_{\text{out}} \times r_{\text{svd}}}, V \in \mathbb{R}^{d_{\text{in}} \times r_{\text{svd}}}$ are registered frozen orthogonal buffers obtained via SVD of pre-trained weight $W_0$. Furthermore, $S \in \mathbb{R}^{r_{\text{svd}}}$ is a learnable singular scaling vector initialized with singular values. Concurrently, $A \in \mathbb{R}^{d_{\text{out}} \times r_{\text{lora}}}, B \in \mathbb{R}^{r_{\text{lora}} \times d_{\text{in}}}$ are learnable low-rank adapter matrices.
+
 
 Reshaping into $H$ heads with head dimension $d_h = D / H$ yields $Q, K, V \in \mathbb{R}^{B \times H \times N \times d_h}$.
 
@@ -131,53 +130,48 @@ Shape: [B, H, N, d_h] phi(Q), phi(K)     │
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $r_{\text{svd}}$ SVD rank, $r_{\text{lora}}$ LoRA rank, $W$ local window radius, and $m$ FAVOR+ random feature dimension.
 
 1. **SVD+LoRA Projections ($Q, K, V, O$)**:
-   - SVD path ($X V \text{diag}(S) U^T$): $2 \times (2 B N D r_{\text{svd}}) = 4 B N D r_{\text{svd}}$
-   - LoRA path ($(X B^T) A^T$): $4 B N D r_{\text{lora}}$
-   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 4 B N D r_{\text{svd}} + 4 B N D r_{\text{lora}} \right) = 16 B N D (r_{\text{svd}} + r_{\text{lora}})$$
+SVD path ($X V \text{diag}(S) U^T$): $2 \times (2 B N D r_{\text{svd}}) = 4 B N D r_{\text{svd}}$ Furthermore, LoRA path ($(X B^T) A^T$): $4 B N D r_{\text{lora}}$ $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 4 B N D r_{\text{svd}} + 4 B N D r_{\text{lora}} \right) = 16 B N D (r_{\text{svd}} + r_{\text{lora}})$$
+
 2. **Tiled Local Sliding-Window Branch**:
-   - Tiled query-key dot products ($W$ keys per query): $2 B H N W d_h = 2 B N D W$
-   - Softmax & Value contraction: $2 B H N W d_h = 2 B N D W$
-   $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+Tiled query-key dot products ($W$ keys per query): $2 B H N W d_h = 2 B N D W$ Furthermore, Softmax & Value contraction: $2 B H N W d_h = 2 B N D W$ $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+
 3. **Global FAVOR+ Linear Branch**:
-   - RMSNorm pre-norm: $\mathcal{O}(B N D)$
-   - FAVOR+ projection matrix product ($X \Pi$): $2 B H N d_h m = 2 B N m d_h$
-   - Memory matrix accumulation ($M^{\text{global}}$): $2 B H N m d_h = 2 B N m d_h$
-   - Query context retrieval: $2 B H N m d_h = 2 B N m d_h$
-   $$\text{FLOPs}_{\text{global}} = 6 B N m d_h$$
+RMSNorm pre-norm: $\mathcal{O}(B N D)$ Furthermore, FAVOR+ projection matrix product ($X \Pi$): $2 B H N d_h m = 2 B N m d_h$ Concurrently, Memory matrix accumulation ($M^{\text{global}}$): $2 B H N m d_h = 2 B N m d_h$ In this setting, Query context retrieval: $2 B H N m d_h = 2 B N m d_h$ $$\text{FLOPs}_{\text{global}} = 6 B N m d_h$$
+
 4. **Context Fusion Gating & Output Assembly**:
    $$\text{FLOPs}_{\text{fusion}} = 2 B N H (3 d_h) + 3 B N D = 9 B N D$$
 
 $$\text{FLOPs}_{\text{total}} \approx 16 B N D (r_{\text{svd}} + r_{\text{lora}}) + 4 B N D W + 6 B N m d_h + 9 B N D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 8 B N D (r_{\text{svd}} + r_{\text{lora}}) + 2 B N D W + 3 B N m d_h + 4.5 B N D$$
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = 4 r_{\text{svd}} + 8 D r_{\text{lora}} + d_h m + 3 D$$
-- **Activation Footprint**:
-  - Local tiled outputs: $\mathcal{O}(B H N d_h)$
-  - FAVOR+ random feature tensor $\phi(\hat{Q})$: $\mathcal{O}(B H N m)$
-  - Global memory accumulator matrix $M^{\text{global}}$: $\mathcal{O}(B H m d_h)$
-  - Total Activation Memory: $\mathcal{O}(B N D + B H N m + B H m d_h)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Local tiled outputs: $\mathcal{O}(B H N d_h)$ Concurrently, FAVOR+ random feature tensor $\phi(\hat{Q})$: $\mathcal{O}(B H N m)$ In this setting, Global memory accumulator matrix $M^{\text{global}}$: $\mathcal{O}(B H m d_h)$ Additionally, Total Activation Memory: $\mathcal{O}(B N D + B H N m + B H m d_h)$
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **AEGIS-Attention V6**: $\mathcal{O}\left(N (D (r_{\text{svd}} + r_{\text{lora}}) + W D + m d_h)\right)$ compute, $\mathcal{O}(N D + H m d_h)$ memory footprint.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory. Furthermore, regarding \textbf{AEGIS-Attention V6}, $\mathcal{O}\left(N (D (r_{\text{svd}} + r_{\text{lora}}) + W D + m d_h)\right)$ compute, $\mathcal{O}(N D + H m d_h)$ memory footprint.
+
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 LoRA Adapter Singular Vector Interference
-- **Mechanism**: The projection matrix combines frozen SVD basis $U \text{diag}(S) V^T$ with trainable LoRA adapter $A B^T$. If LoRA update $A B^T$ aligns with discarded singular vectors of $W_0$, gradient dynamics can destabilize the singular value scaling vector $S$, leading to divergence during early training.
+At the architectural level, the underlying operational mechanism reveals that the projection matrix combines frozen SVD basis $U \text{diag}(S) V^T$ with trainable LoRA adapter $A B^T$. If LoRA update $A B^T$ aligns with discarded singular vectors of $W_0$, gradient dynamics can destabilize the singular value scaling vector $S$, leading to divergence during early training.
+
 
 ### 5.2 FAVOR+ Exponential Overflow Under FP16
-- **Mechanism**: The FAVOR+ feature map computes $\exp\left( x \Pi - \|x\|_2^2 / 2 \right)$. Without logit clamping, large entries in $x \Pi$ exceed 88.7 in FP16, causing instant overflow to `inf` and driving softmax/normalization scalars to zero (`NaN`).
-- **Mitigation**: Strictly enforce logit clamping bounds $[c_{\min}, c_{\max}] = [-20.0, 20.0]$ and deploy RMSNorm pre-normalization prior to feature projection.
+At the architectural level, the underlying operational mechanism reveals that the FAVOR+ feature map computes $\exp\left( x \Pi - \|x\|_2^2 / 2 \right)$. Without logit clamping, large entries in $x \Pi$ exceed 88.7 in FP16, causing instant overflow to `inf` and driving softmax/normalization scalars to zero (`NaN`). To systematically mitigate this constraint, the framework enforces an optimization protocol such that strictly enforce logit clamping bounds $[c_{\min}, c_{\max}] = [-20.0, 20.0]$ and deploy RMSNorm pre-normalization prior to feature projection.
+
 
 ### 5.3 Local Tiled Window Mask Underflow
-- **Mechanism**: When processing short sequences or padded edge tiles, entire tile rows in `_tiled_sliding_window_attention` may be masked to $-\infty$. Passing all-$-\infty$ rows to PyTorch SDPA produces `NaN` outputs.
-- **Mitigation**: Guard edge tiles by replacing all-$-\infty$ attention logit rows with 0.0 prior to value contraction.
+At the architectural level, the underlying operational mechanism reveals that when processing short sequences or padded edge tiles, entire tile rows in `_tiled_sliding_window_attention` may be masked to $-\infty$. Passing all-$-\infty$ rows to PyTorch SDPA produces `NaN` outputs. To systematically mitigate this constraint, the framework enforces an optimization protocol such that guard edge tiles by replacing all-$-\infty$ attention logit rows with 0.0 prior to value contraction.
+
 
 ---
 
@@ -207,19 +201,16 @@ $$\text{FLOPs}_{\text{total}} \approx 16 B N D (r_{\text{svd}} + r_{\text{lora}}
 Standard PyTorch executes four independent GEMM calls per projection (`x @ V`, scaling by `S`, `@ U.T`, plus `x @ B.T @ A.T`), incurring significant DRAM memory bandwidth overhead.
 
 **Triton Optimization**:
-- Construct a single fused GEMM kernel loading $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Evaluate SVD product $(X_i V) \text{diag}(S) U^T$ and LoRA product $(X_i B^T) A^T$ simultaneously in register files.
-- **Speedup**: Reduces DRAM read/write traffic by $3\times$, yielding up to $2.2\times$ kernel latency improvement.
+Construct a single fused GEMM kernel loading $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM. Furthermore, Evaluate SVD product $(X_i V) \text{diag}(S) U^T$ and LoRA product $(X_i B^T) A^T$ simultaneously in register files. Concurrently, regarding \textbf{Speedup}, reduces DRAM read/write traffic by $3\times$, yielding up to $2.2\times$ kernel latency improvement.
+
 
 ### 6.2 Triton Strategy 2: Block-Sparse Local Tiled SDPA Kernel
-- Divide the sequence into block tiles of size `BLOCK_M = 64` and `BLOCK_N = 64`.
-- Enforce sliding window bounds $|i \cdot 64 - j \cdot 64| < W$. Skip execution of out-of-band tile blocks entirely.
-- Implement FlashAttention SRAM online softmax accumulation (`m_i`, `l_i`), eliminating DRAM allocation for local attention logits.
+Divide the sequence into block tiles of size `BLOCK_M = 64` and `BLOCK_N = 64`. Furthermore, Enforce sliding window bounds $|i \cdot 64 - j \cdot 64| < W$. Skip execution of out-of-band tile blocks entirely. Concurrently, Implement FlashAttention SRAM online softmax accumulation (`m_i`, `l_i`), eliminating DRAM allocation for local attention logits.
+
 
 ### 6.3 Triton Strategy 3: Fused FAVOR+ Global Memory Grid Engine
-- Parallelize across batch $B$ and heads $H$.
-- Load sequence tiles of size `BLOCK_N = 128`. Compute RMSNorm, projection $x \Pi$, clamping, and exponential activation in shared memory.
-- Accumulate key-value outer products into shared memory matrix $M^{\text{global}} \in \mathbb{R}^{m \times d_h}$ in a single streaming pass, bypassing global memory writes for feature activations $\phi(K)$.
+Parallelize across batch $B$ and heads $H$. Furthermore, Load sequence tiles of size `BLOCK_N = 128`. Compute RMSNorm, projection $x \Pi$, clamping, and exponential activation in shared memory. Concurrently, Accumulate key-value outer products into shared memory matrix $M^{\text{global}} \in \mathbb{R}^{m \times d_h}$ in a single streaming pass, bypassing global memory writes for feature activations $\phi(K)$.
+
 
 ---
 

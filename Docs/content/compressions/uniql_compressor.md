@@ -30,9 +30,8 @@ W = U Σ V^T
 
 where **U** ∈ ℝ<sup>M×K</sup>, **Σ** ∈ ℝ<sup>K×K</sup> (diagonal), **V^T** ∈ ℝ<sup>K×N</sup>, and K = min(M,N). The singular values are ordered decreasingly. A target rank `r` is chosen (default 64). The low‑rank factors are truncated to:
 
-- **U_r** = U[:, :r]   (M × r)
-- **S_r** = Σ[:r]       (r,)
-- **V_r^T** = V^T[:r, :]  (r × N)
+**U_r** = U[:, :r]   (M × r) Furthermore, **S_r** = Σ[:r]       (r,) Concurrently, **V_r^T** = V^T[:r, :]  (r × N)
+
 
 These three matrices capture the optimal rank‑`r` approximation in Frobenius norm: `W ≈ U_r Σ_r V_r^T`.
 
@@ -65,9 +64,8 @@ Because the weight is stored densely, **the model’s parameter count does not d
 
 ### A. Compression Time Complexity
 
-- **SVD**: O(M·N·min(M,N)) for the full SVD. For a 768×768 matrix, this is ~4.5×10⁸ operations, taking milliseconds on a GPU.
-- **Quantisation**: O(M·r + r·N) for computing min/max and rounding—negligible compared to the SVD.
-- Overall, per‑layer time is dominated by the SVD. For a model with L linear layers (e.g., ~72 in DistilBERT), total compression takes a few seconds.
+Specifically, regarding \textbf{SVD}, o(M·N·min(M,N)) for the full SVD. For a 768×768 matrix, this is ~4.5×10⁸ operations, taking milliseconds on a GPU. Furthermore, regarding \textbf{Quantisation}, o(M·r + r·N) for computing min/max and rounding—negligible compared to the SVD. Concurrently, Overall, per‑layer time is dominated by the SVD. For a model with L linear layers (e.g., ~72 in DistilBERT), total compression takes a few seconds.
+
 
 ### B. Inference Complexity
 
@@ -75,8 +73,8 @@ After compression, the weight tensor is a full M×N matrix. The forward pass sti
 
 ### C. Memory Usage
 
-- **During compression**: The original weight (M·N floats) and its SVD factors (U, Σ, V^T) require a few times the weight size temporarily.
-- **After compression**: The weight remains M·N floats; the model’s memory footprint is unchanged. The bias is also kept at the same size.
+Specifically, regarding \textbf{During compression}, the original weight (M·N floats) and its SVD factors (U, Σ, V^T) require a few times the weight size temporarily. Furthermore, regarding \textbf{After compression}, the weight remains M·N floats; the model’s memory footprint is unchanged. The bias is also kept at the same size.
+
 
 Thus, UniQL is a **storage‑format compression** only when the factors are saved separately; as is, it only reduces the effective degrees of freedom.
 
@@ -94,8 +92,8 @@ class UniQLCompressor(BaseCompressor):
         self.bits = bits
 ```
 
-- **`rank`**: Target rank for SVD truncation (default 64).
-- **`bits`**: Quantisation bit‑width for the factors (default 8).
+Specifically, regarding \textbf{`rank`}, target rank for SVD truncation (default 64). Furthermore, regarding \textbf{`bits`}, quantisation bit‑width for the factors (default 8).
+
 
 **`_quantize(tensor, bits)`**: static method performing per‑tensor affine quantisation. Returns a float tensor.
 
@@ -153,17 +151,13 @@ Then run the compression pipeline. All linear layers will be replaced by their l
 
 ### Advantages
 
-- **Hybrid compression**: Jointly reduces the subspace dimensionality (rank) and numerical precision, providing two complementary knobs for compression.
-- **No calibration data**: Works purely on weight tensors; one‑shot application.
-- **Simple and fast**: Only a single SVD and min‑max quantisation per layer.
-- **Tunable**: The rank and bit‑width can be adjusted independently to trade off accuracy and compression.
+Specifically, regarding \textbf{Hybrid compression}, jointly reduces the subspace dimensionality (rank) and numerical precision, providing two complementary knobs for compression. Furthermore, regarding \textbf{No calibration data}, works purely on weight tensors; one‑shot application. Concurrently, regarding \textbf{Simple and fast}, only a single SVD and min‑max quantisation per layer. In this setting, regarding \textbf{Tunable}, the rank and bit‑width can be adjusted independently to trade off accuracy and compression.
+
 
 ### Limitations
 
-- **No immediate memory or speed benefit**: The weight is stored densely; real parameter reduction requires storing the factors separately.
-- **Fixed rank and bits across layers**: All layers receive the same rank and bit‑width, which may be suboptimal for layers with different sensitivity.
-- **Reconstruction quantisation error**: Quantising the factors and then reconstructing the weight may amplify the error compared to quantising the final weight directly. The product of quantised matrices can have a larger dynamic range than the original.
-- **Bias quantisation may hurt**: Biases are often small and quantising them may introduce noticeable offset, especially for low bit‑widths.
+Specifically, regarding \textbf{No immediate memory or speed benefit}, the weight is stored densely; real parameter reduction requires storing the factors separately. Furthermore, regarding \textbf{Fixed rank and bits across layers}, all layers receive the same rank and bit‑width, which may be suboptimal for layers with different sensitivity. Concurrently, regarding \textbf{Reconstruction quantisation error}, quantising the factors and then reconstructing the weight may amplify the error compared to quantising the final weight directly. The product of quantised matrices can have a larger dynamic range than the original. In this setting, regarding \textbf{Bias quantisation may hurt}, biases are often small and quantising them may introduce noticeable offset, especially for low bit‑widths.
+
 
 ### Comparison with Other Joint Methods
 

@@ -85,29 +85,21 @@ Input: hidden_states [B, L, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $d$: Head Dim, $d_p$: Sketched Dim):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Random Subspace Projection ($\widetilde{Q} = Q P, \widetilde{K} = K P$)**: $2 \times (2 B H L \cdot d \cdot d_p) = 4 B L D d_p$ FLOPs
-- **Sketched Score Computation ($\widetilde{Q} \widetilde{K}^\top$)**: $2 B H L^2 d_p = 2 B L^2 (H d_p)$ FLOPs
-- **Softmax Normalization**: $\approx 5 B H L^2$ FLOPs
-- **Value Aggregation ($A V$)**: $2 B H L^2 d = 2 B L^2 D$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+### Computational Workload and Arithmetic Complexity
+The arithmetic complexity of Randomized Phase Cluster (RPC) Attention is governed by batch size $B$, sequence length $L$, total model dimension $D$, head count $H$, head dimension $d = D/H$, and the compressed sketching dimension $d_p \ll d$. The primary linear projections mapping input representations to query, key, and value manifolds account for $6 B L D^2$ FLOPs across weight tensors $W_Q, W_K, W_V$. The subsequent random subspace sketching step—transforming queries and keys via fixed Gaussian sketch tensors $P \in \mathbb{R}^{H \times d \times d_p}$ into $\widetilde{Q}$ and $\widetilde{K}$—incurs $4 B L D d_p$ FLOPs.
 
-**Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 2 B L D d_p + B L^2 (H d_p + D)$
-- **Total FLOPs**: $8 B L D^2 + 4 B L D d_p + 2 B L^2 (H d_p + D)$
+Within the compressed attention computation, evaluating the pairwise sketched score matrix $\widetilde{Q} \widetilde{K}^\top$ demands $2 B L^2 (H d_p)$ FLOPs, representing an asymptotic reduction factor of $d / d_p$ over standard query-key dot products. Normalizing the affinity matrix via causal masking and row-wise softmax consumes approximately $5 B H L^2$ FLOPs. Uncompressed value aggregation via $A V$ preserves output representational fidelity at $2 B L^2 D$ FLOPs, and the final projection $W_O$ contributes $2 B L D^2$ FLOPs. Cumulatively, the total computational workload evaluates to $4 B L D^2 + 2 B L D d_p + B L^2 (H d_p + D)$ MACs, which equates to $8 B L D^2 + 4 B L D d_p + 2 B L^2 (H d_p + D)$ FLOPs.
 
-### Memory Footprint:
-- **Static Weights**: $4 D^2$ parameters $+ H \cdot d \cdot d_p$ non-trainable random matrix buffer $P$.
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot L \cdot d_p + B \cdot H \cdot L^2)$.
+### Memory Footprint and Activation Overhead
+The static memory footprint comprises $4 D^2$ trainable parameters augmented by a fixed, non-trainable random projection buffer of $H \cdot d \cdot d_p = D d_p$ floating-point scalars. Crucially, transient activation storage during training and forward evaluation is dominated by the sketched tensors $\mathcal{O}(B \cdot H \cdot L \cdot d_p)$ and intermediate attention maps $\mathcal{O}(B \cdot H \cdot L^2)$. By compressing the inner-dimension from $d$ to $d_p$, the architecture substantially reduces register pressure and SRAM footprint during score materialization.
 
 ---
 
-## 5. Failure Modes, Rank Collapse & Edge Cases
+## 5. Architectural Bottlenecks, Optimization Stability & Failure Modes
 
-1. **JL Projection Variance**: When $d_p$ is set too small ($d_p < 16$), the Johnson-Lindenstrauss error bound increases, introducing variance into query-key pairwise distances.
-2. **Subspace Alignment Deficit**: Fixed Gaussian projection matrices $P$ operate statically and cannot adaptively align with dynamic feature manifolds learned during deep training.
-3. **Causal Auto-regressive Latency**: For single-step autoregressive inference, computing $q_t P$ adds an extra GEMM call before scoring.
+The theoretical foundation of RPC Attention rests upon the Johnson-Lindenstrauss (JL) Lemma; however, its practical implementation exposes distinct structural tradeoffs and optimization pathologies. A critical failure mode arises from projection distortion variance when the sketched dimension $d_p$ is aggressively reduced (e.g., $d_p < 16$). According to JL bounds, the metric distortion $\epsilon$ scales inversely with sketching rank ($\epsilon \sim \mathcal{O}(1/\sqrt{d_p})$). When $d_p$ falls below the critical dimensionality threshold, stochastic fluctuations in sketched dot products $\langle \widetilde{q}, \widetilde{k} \rangle$ distort the softmax logits, inducing entropy dispersion across attention distributions and degrading retrieval precision.
+
+Furthermore, static random Gaussian sketching introduces a persistent subspace alignment deficit. Because the projection operator $P$ remains frozen throughout training, it cannot adaptively align with anisotropic feature manifolds or low-dimensional semantic attractors discovered by deep transformer layers. This induces a structural constraint on representation capacity, preventing the model from isolating subtle orthogonal features. Concurrently, during token-by-token autoregressive decoding, computing the intermediate linear sketch $q_t P$ introduces an additional sequential GEMM kernel launch prior to score evaluation, which can increase kernel launch overhead and decoding latency unless fused directly into query projection operators.
 
 ---
 
@@ -146,9 +138,9 @@ def _rpc_fused_kernel(
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Learned Dynamic Projection Manifolds**: Replace static Gaussian projections $P$ with dynamic routing MLPs $P(x_t)$ that adapt projection angles to input content.
-2. **Orthogonal Fast Walsh-Hadamard Sketches**: Utilize Fast Walsh-Hadamard Transforms (FWHT) for $P$ to perform random projections in $\mathcal{O}(d \log d_p)$ time without storing explicit matrices.
-3. **RPC-SSM Hybrid**: Apply random projection subspace compression to State Space Model state matrices to reduce SSM hidden state dimensionality.
+Extending randomized sketching methodologies to modern sequence modeling frameworks offers rich avenues for future investigation. A compelling innovation lies in Learned Dynamic Projection Manifolds, wherein static Gaussian sketch matrices are replaced by lightweight, input-conditioned projection networks $P(x_t)$. Such adaptive sketching operators dynamically reorient the projection subspace toward high-entropy activation coordinates, preserving metric fidelity while retaining low dimensional overhead.
+
+Concurrently, structured random projections—such as Fast Walsh-Hadamard Transforms (FWHT) or Subsampled Randomized Hadamard Transforms (SRHT)—can replace dense matrix sketching, executing the dimension reduction in $\mathcal{O}(d \log d_p)$ time with zero persistent parameter storage. Furthermore, synthesizing random sketching with State Space Models (RPC-SSM) enables the randomized compression of recurrent state matrices, constraining hidden state memory footprint and accelerating associative scan operations across ultra-wide architectural configurations.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

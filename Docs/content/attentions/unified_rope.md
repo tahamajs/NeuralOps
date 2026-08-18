@@ -107,23 +107,22 @@ where $R_{m-n}$ is an orthogonal block-diagonal rotation matrix dependent strict
 Let $B$ be batch size, $N$ sequence length, and $D$ feature dimension.
 
 1. **Precomputed Cache Construction (Once per initialization/resizing)**:
-   - Outer product $t \cdot \theta_i$: $N_{\max} \cdot (D/2)$ FLOPs.
-   - Trigonometric evaluation ($\cos, \sin$): $2 N_{\max} D$ FLOPs.
+Outer product $t \cdot \theta_i$: $N_{\max} \cdot (D/2)$ FLOPs. Furthermore, Trigonometric evaluation ($\cos, \sin$): $2 N_{\max} D$ FLOPs.
+
 
 2. **Forward Rotation Pass**:
-   - `_rotate_half` slicing: $0$ FLOPs (pointer view).
-   - Hadamard multiplications ($X \odot \cos$ and $\mathcal{R}_{\text{half}}(X) \odot \sin$): $2 B N D$ FLOPs.
-   - Elementwise addition: $B N D$ FLOPs.
-   - *Total Forward Workload*: $3 B N D$ FLOPs ($B N D$ MACs equivalent).
+`_rotate_half` slicing: $0$ FLOPs (pointer view). Furthermore, Hadamard multiplications ($X \odot \cos$ and $\mathcal{R}_{\text{half}}(X) \odot \sin$): $2 B N D$ FLOPs. Concurrently, Elementwise addition: $B N D$ FLOPs. In this setting, *Total Forward Workload*: $3 B N D$ FLOPs ($B N D$ MACs equivalent).
+
 
 ### Memory Footprint & Parameter Requirements
-- **Parameter Count**: $0$ trainable parameters (`persistent=False` registered buffers).
-- **Transient Memory Footprint**:
+Specifically, regarding \textbf{Parameter Count}, $0$ trainable parameters (`persistent=False` registered buffers). Furthermore, regarding \textbf{Transient Memory Footprint}, 
+
   \[
   \text{Cache Storage} = 2 \cdot N_{\max} \cdot D \cdot b \text{ bytes}
   \]
   For $N_{\max} = 4096, D = 4096, b = 2$ (FP16):
-  - Cosine + Sine Caches: $2 \times 4096 \times 4096 \times 2 = 67,108,864 \text{ bytes} \approx \mathbf{67.1 \text{ MB}}$.
+Cosine + Sine Caches: $2 \times 4096 \times 4096 \times 2 = 67,108,864 \text{ bytes} \approx \mathbf{67.1 \text{ MB}}$.
+
 
 ---
 

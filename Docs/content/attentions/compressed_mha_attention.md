@@ -144,34 +144,30 @@ Y = F_{\text{fused}} U_{\text{out}}[:, :r_{\text{out}}]^\top + b_{\text{out}} \i
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $r_{\text{qkv}}$ QKV rank, $r_{\text{out}}$ output rank, $H$ heads, and $d_h = D/H$.
 
 1. **Compressed QKV Projections**:
-   - $X V_{\text{qkv}}^\top$: $2 B N D r_{\text{qkv}}$ FLOPs.
-   - Singular value scaling: $B N r_{\text{qkv}}$ FLOPs.
-   - $P_{\text{proj}} U_{\text{qkv}}^\top$: $2 B N r_{\text{qkv}} (3D) = 6 B N D r_{\text{qkv}}$ FLOPs.
-   - *Total QKV Projection Cost*: $8 B N D r_{\text{qkv}} + B N r_{\text{qkv}}$ FLOPs.
+$X V_{\text{qkv}}^\top$: $2 B N D r_{\text{qkv}}$ FLOPs. Furthermore, Singular value scaling: $B N r_{\text{qkv}}$ FLOPs. Concurrently, $P_{\text{proj}} U_{\text{qkv}}^\top$: $2 B N r_{\text{qkv}} (3D) = 6 B N D r_{\text{qkv}}$ FLOPs. In this setting, *Total QKV Projection Cost*: $8 B N D r_{\text{qkv}} + B N r_{\text{qkv}}$ FLOPs.
+
 
 2. **Core Scaled Attention**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
+$Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H N^2$ FLOPs.
+
 
 3. **Compressed Output Projections**:
-   - $C V_{\text{out}}^\top$: $2 B N D r_{\text{out}}$ FLOPs.
-   - Singular value scaling: $B N r_{\text{out}}$ FLOPs.
-   - $F_{\text{fused}} U_{\text{out}}^\top$: $2 B N r_{\text{out}} D$ FLOPs.
-   - *Total Output Projection Cost*: $4 B N D r_{\text{out}} + B N r_{\text{out}}$ FLOPs.
+$C V_{\text{out}}^\top$: $2 B N D r_{\text{out}}$ FLOPs. Furthermore, Singular value scaling: $B N r_{\text{out}}$ FLOPs. Concurrently, $F_{\text{fused}} U_{\text{out}}^\top$: $2 B N r_{\text{out}} D$ FLOPs. In this setting, *Total Output Projection Cost*: $4 B N D r_{\text{out}} + B N r_{\text{out}}$ FLOPs.
+
 
 4. **Total Workload Summary**:
-   - **Total MACs**: $4 B N D r_{\text{qkv}} + 2 B N D r_{\text{out}} + 2 B N^2 D$
-   - **Total FLOPs**: $8 B N D r_{\text{qkv}} + 4 B N D r_{\text{out}} + 4 B N^2 D + 7 B H N^2 + B N (r_{\text{qkv}} + r_{\text{out}})$
+Specifically, regarding \textbf{Total MACs}, $4 B N D r_{\text{qkv}} + 2 B N D r_{\text{out}} + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $8 B N D r_{\text{qkv}} + 4 B N D r_{\text{out}} + 4 B N^2 D + 7 B H N^2 + B N (r_{\text{qkv}} + r_{\text{out}})$
+
 
 ### Memory Footprint & Parameter Reduction
-- **Uncompressed MHA Parameter Count**: $4 D^2 + 4 D$ floats.
-- **Compressed Parameter Count**:
+Specifically, regarding \textbf{Uncompressed MHA Parameter Count}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{Compressed Parameter Count}, 
+
   \[
   \text{Params}_{\text{comp}} = (3D + D) \cdot r_{\text{qkv}} + 2D \cdot r_{\text{out}} + 4D \text{ floats}
   \]
   For $D = 768, r_{\text{qkv}} = 32, r_{\text{out}} = 32$:
-  - Uncompressed: $4 \times 768^2 \approx 2,359,296$ parameters.
-  - Compressed: $4(768)(32) + 2(768)(32) \approx 147,456$ parameters (**16$\times$ parameter reduction**).
+Uncompressed: $4 \times 768^2 \approx 2,359,296$ parameters. Furthermore, Compressed: $4(768)(32) + 2(768)(32) \approx 147,456$ parameters (**16$\times$ parameter reduction**).
+
 
 ---
 

@@ -122,12 +122,8 @@ Input Hidden States X [B, N, D]
 When window radius $W_{\text{size}} \ll N$, attention computation scales linearly with sequence length $N$.
 
 ### Memory Footprint & Tensor Store
-- **Parameters**: $5 D^2 + D$ floats.
-- **Activation Memory**:
-  - Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$): $3 B N D$ floats.
-  - Window Scores Matrix ($\mathbf{S}$): $B N^2$ (or $B N W_{\text{size}}$ with block sparse storage) floats.
-  - Gating Weights ($\mathbf{g}$): $B N$ floats.
-  - Peak Memory Footprint: $\mathcal{O}(B N D + B N W_{\text{size}})$.
+Specifically, regarding \textbf{Parameters}, $5 D^2 + D$ floats. Furthermore, regarding \textbf{Activation Memory},  Concurrently, Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$): $3 B N D$ floats. In this setting, Window Scores Matrix ($\mathbf{S}$): $B N^2$ (or $B N W_{\text{size}}$ with block sparse storage) floats. Additionally, Gating Weights ($\mathbf{g}$): $B N$ floats. Moreover, Peak Memory Footprint: $\mathcal{O}(B N D + B N W_{\text{size}})$.
+
 
 ---
 

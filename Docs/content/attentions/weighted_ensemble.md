@@ -104,39 +104,29 @@ Input: task_id (t), all_logits [M, B, C], input_ids [B, L], attention_mask [B, L
 
 ## 4. Analytical Complexity Profiling
 
-### Computational Overhead & Workload (FLOPs & MACs)
+### Computational Overhead & Workload Breakdown
+The computational overhead introduced by the Smart Weighted Ensemble is exceptionally lightweight compared to the underlying backbone model passes. For an ensemble consisting of $M$ constituent models evaluated across $T$ downstream tasks with batch size $B$, output class dimension $C$, and task embedding rank $d_{\text{emb}}$:
 
-Let $M$ be the number of models, $T$ number of tasks, $B$ batch size, $C$ number of classes, $D$ model dimension, and $d_{\text{emb}}$ task embedding rank ($d_{\text{emb}}=64$).
+The Task-Aware Attention pathway projects task embeddings via query and key matrices $W_Q, W_K \in \mathbb{R}^{d_{\text{emb}} \times d_{\text{emb}}}$, requiring $2(M + 1)d_{\text{emb}}^2$ FLOPs. Evaluating dot-product compatibility scores $e_t \cdot e_m^\top$ incurs $2 M d_{\text{emb}}$ FLOPs ($M d_{\text{emb}}$ MACs), followed by $5 M + M B C$ operations for Softmax normalization and logit weighting. Concurrently, the Dynamic Confidence module processes the output logits of each model, incurring $5 M B C$ FLOPs for class-wise Softmax evaluation and maximum-probability reduction. Finally, the convex hybrid blending step combines both logit streams via $2 M B C$ operations.
 
-1. **Task-Aware Attention Overhead**:
-   - Query & Key Projections ($W_Q, W_K$): $2 \times (1 + M) \cdot d_{\text{emb}}^2$ FLOPs.
-   - Dot-Product Score Calculation ($e_t \cdot e_m^\top$): $2 M d_{\text{emb}}$ FLOPs ($M d_{\text{emb}}$ MACs).
-   - Softmax & Summation: $\approx 5 M + M B C$ FLOPs.
-
-2. **Dynamic Confidence Overhead**:
-   - Forward pass over $M$ models: $M \times \text{ForwardFLOPs}(D, N)$.
-   - Class Softmax & Max Reduction: $M \cdot B \cdot C \cdot 5$ FLOPs.
-
-3. **Hybrid Ensemble Logit Blending**:
-   - $2 \times M \cdot B \cdot C$ FLOPs.
-
-### Complexity Totals:
-- **Ensemble Combination MACs**: $M d_{\text{emb}} + M B C$ (excluding individual model forward passes).
-- **Ensemble Combination FLOPs**: $2 (M + 1) d_{\text{emb}}^2 + 2 M d_{\text{emb}} + 4 M B C$.
-- **Additional Parameters**: $T \cdot d_{\text{emb}} + 2 d_{\text{emb}}^2 + T^2$ floats (e.g., for $T=10, d_{\text{emb}}=64$, adding $16,576$ parameters).
+Excluding the baseline forward passes of the individual models, the total fusion overhead amounts to:
+\[
+\text{Total FLOPs} = 2(M + 1)d_{\text{emb}}^2 + 2 M d_{\text{emb}} + 4 M B C
+\]
+which corresponds to $M d_{\text{emb}} + M B C$ Multiply-Accumulate (MAC) operations. The auxiliary parameter footprint scales modestly as $T \cdot d_{\text{emb}} + 2 d_{\text{emb}}^2 + T^2$ floats. For typical configurations ($T=10, d_{\text{emb}}=64$), this introduces merely $16,576$ parameters, ensuring that multi-model fusion imposes virtually zero memory pressure on host accelerators.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-### Dynamic Weight Inefficiency
-In `_get_dynamic_weights`, computing confidence scores $c_m$ requires executing a complete forward pass through all $M$ models sequentially in PyTorch (`for i, model in enumerate(self.models)`). For large LLM ensembles ($M \ge 8$), evaluating $M$ redundant forward passes increases inference latency by $M\times$.
+### Computational Latency and Forward Pass Serialization
+A primary operational bottleneck within naive multi-model fusion pipelines stems from the sequential serialization of inference forward passes. When evaluating dynamic confidence scores $c_m$, standard implementations iterate through all $M$ candidate architectures sequentially in eager execution mode. For large language model ensembles ($M \ge 8$), this sequential pipeline multiplies latency by a factor of $M\times$, severely bottlenecking real-time serving. Furthermore, evaluating full model activations solely to extract scalar certainty metrics represents an asymptotic resource inefficiency when early-exit or speculative routing mechanisms could prune unpromising model pathways.
 
-### Softmax Overconfidence Calibration Distortion
-Neural networks often suffer from un-calibrated overconfidence, where incorrect class predictions produce high Softmax probabilities $\max_c p_{m, c} \approx 1.0$. Consequently, poorly calibrated models receive artificially inflated dynamic confidence weights $w_m^{\text{dyn}}$, degrading ensemble accuracy.
+### Uncalibrated Softmax Overconfidence and Loss Landscape Distortion
+A critical failure mode arises from the widespread phenomenon of predictive miscalibration in modern deep networks. Deep overparameterized models frequently exhibit extreme overconfidence, assigning near-unity maximum Softmax probabilities ($\max_c p_{m, c} \approx 1.0$) even when generating erroneous predictions out-of-distribution. Consequently, uncalibrated ensemble members can dominate the dynamic confidence weighting $w_m^{\text{dyn}}$, overriding superior predictions from better-calibrated models. This induces severe optimization instability in the fused loss landscape, where noisy logit gradients from overconfident experts distort the blended objective.
 
-### Static Round-Robin Prototype Misalignment
-If model prototype tasks `model_task_ids` are assigned via round-robin placeholders (`i % num_tasks`) rather than true fine-tuning task provenance, task-aware attention scores $S_m$ learn erroneous task similarity priors.
+### Prototype Task Space Misalignment and Degenerate Similarity Priors
+The structural fidelity of the task-aware attention mechanism hinges upon accurate alignment between the learnable task embeddings and the true empirical provenance of each model. If model prototype assignments `model_task_ids` are initialized arbitrarily (e.g., through round-robin indexing) rather than grounded in actual fine-tuning data distributions, the task similarity matrix $\Sigma \in \mathbb{R}^{T \times T}$ learns spurious cross-task correlations. This misalignment flattens the attention distribution $w^{\text{attn}}$, collapsing the task routing mechanism into uniform averaging and negating the specialized inductive biases of individual experts.
 
 ---
 
@@ -169,16 +159,31 @@ To eliminate sequential model iteration and memory round trips, Triton kernels p
       └────────────────────────────────────────────────────────┘
 ```
 
-### Key Triton Implementation Guidelines:
-1. **Parallel Model Memory Coalescing**:
-   Store model logits in contiguous memory layouts $[B, M, C]$, enabling 128-bit SIMD vector reads across models within a single CUDA block warp.
-2. **Temperature-Scaled Softmax Calibration**:
-   Apply temperature scaling $\tau_m > 0$ to model logits prior to dynamic confidence calculation to calibrate confidence estimates:
-   \[
-   p_{m, b, c} = \text{Softmax}\left( \frac{L_{m, b, c}}{\tau_m} \right)
-   \]
-3. **Asynchronous Multi-Stream Execution**:
-   Launch model forward passes concurrently across independent CUDA Streams (`torch.cuda.Stream()`), overlapping GPU execution to eliminate sequential iteration bottlenecks.
+### High-Throughput Memory Coalescing and Vectorized Execution
+To maximize memory bandwidth utilization during logit fusion, model outputs are structured into contiguous memory layouts of shape $[B, M, C]$. This arrangement facilitates 128-bit SIMD vectorized loads across ensemble members directly within a single CUDA warp, eliminating scattered memory reads across separate tensor allocations.
+
+### Temperature-Scaled Confidence Calibration
+To counteract the destructive effects of uncalibrated overconfidence, dynamic logit reduction integrates learnable per-model temperature scaling factors $\tau_m > 0$. Evaluating temperature-adjusted probabilities:
+\[
+p_{m, b, c} = \text{Softmax}\left( \frac{L_{m, b, c}}{\tau_m} \right)
+\]
+smooths overconfident outlier logits, guaranteeing that dynamic weights $w_m^{\text{dyn}}$ faithfully mirror genuine Bayesian predictive certainty rather than uncalibrated Softmax sharpness.
+
+### Asynchronous Multi-Stream Model Concurrency
+To eradicate sequential iteration bottlenecks, concurrent forward execution distributes individual model workloads across independent CUDA streams. By overlapping compute kernels and memory transfers asynchronously across physical streaming multiprocessors (SMs), the fusion runtime achieves near-ideal hardware occupancy and minimizes end-to-end inference latency.
+
+---
+
+## 7. Next-Generation Innovations & Synthesis Opportunities
+
+### Bayesian Dynamic Routing with Evidential Uncertainty
+Future iterations of task-aware fusion can replace heuristic maximum-probability confidence with formal evidential deep learning or Dirichlet prior networks. By parameterizing higher-order probability distributions over class logits, the ensemble can analytically decouple epistemic uncertainty (data scarcity) from aleatoric uncertainty (intrinsic class overlap). This enables rigorous routing decisions that dynamically suppress models suffering from domain shift while prioritizing experts with provable epistemic confidence.
+
+### Learnable Gradient-Optimized Metric Task Subspaces
+Rather than relying on static scalar task embeddings, task compatibility can be formulated through continuous Riemannian metric learning. Projecting task attributes and model representations onto a manifold parameterized by learnable hyperbolic distances allows hierarchical task taxonomies to be captured naturally, accelerating transfer learning across hundreds of downstream tasks without quadratic similarity matrix blowup.
+
+### Speculative Ensemble Cascading and Early Exit
+To dramatically amortize computational overhead, the fusion framework can implement speculative ensemble cascading. Lightweight anchor models evaluate initial confidence thresholds; full forward evaluation of heavier ensemble constituents is triggered only when input ambiguity exceeds a dynamic tolerance limit. This speculative execution model preserves the full generative capacity of the collective ensemble while reducing average inference latency to that of a single compact model.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

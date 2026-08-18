@@ -63,17 +63,17 @@ Let $X \in \mathbb{R}^{N \times D}$ be the flattened activation matrix collected
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Activation Hooking**:
-   - Register forward hook on reference encoder layer (e.g., `encoder.layer.0` or first `nn.Linear`).
-   - Run forward pass on calibration sentences to capture output activations.
+Register forward hook on reference encoder layer (e.g., `encoder.layer.0` or first `nn.Linear`). Furthermore, Run forward pass on calibration sentences to capture output activations.
+
 2. **PCA Modeling**:
-   - Reshape activation array to shape $[N, D]$.
-   - Fit `sklearn.decomposition.PCA(n_components=D)`.
-   - Calculate normalized cumulative explained variance array.
+Reshape activation array to shape $[N, D]$. Furthermore, Fit `sklearn.decomposition.PCA(n_components=D)`. Concurrently, Calculate normalized cumulative explained variance array.
+
 3. **Threshold Calculation**:
-   - Determine retain cutoff $k = \text{searchsorted}(\text{cumsum}, 1 - S) + 1$.
+Determine retain cutoff $k = \text{searchsorted}(\text{cumsum}, 1 - S) + 1$.
+
 4. **Soft Pruning Assignment**:
-   - Broadcast binary mask vector $M \in \mathbb{R}^D$ across rows of target linear weight matrices.
-   - Update $W \leftarrow W \odot M^T$.
+Broadcast binary mask vector $M \in \mathbb{R}^D$ across rows of target linear weight matrices. Furthermore, Update $W \leftarrow W \odot M^T$.
+
 
 ```
 Calibration Pass ──► Forward Hook ──► Reshape Act [N, D] ──► PCA Fit
@@ -107,8 +107,8 @@ $$\| Y - Y_{\text{pruned}} \|_F \le \| W \|_F \cdot \sqrt{\sum_{j=k+1}^D \lambda
 
 ### 5.2 Failure Cases
 
-- **Lack of Calibration Data**: If calibration texts are too short ($N < D$), the covariance matrix $\Sigma$ becomes rank-deficient, misidentifying principal components.
-- **Uniform Variance Distributions**: In networks with heavy LayerNorm entropy scaling, activation variance is uniformly distributed across dimensions, reducing PCA compression effectiveness.
+Specifically, regarding \textbf{Lack of Calibration Data}, if calibration texts are too short ($N < D$), the covariance matrix $\Sigma$ becomes rank-deficient, misidentifying principal components. Furthermore, regarding \textbf{Uniform Variance Distributions}, in networks with heavy LayerNorm entropy scaling, activation variance is uniformly distributed across dimensions, reducing PCA compression effectiveness.
+
 
 ---
 

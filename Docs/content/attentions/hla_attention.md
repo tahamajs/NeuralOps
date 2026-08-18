@@ -79,19 +79,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $d_k$: Head Dim):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Outer Product Memory Updates ($K_t^\top V_t$)**: $L \times (2 B H d_k^2) = 2 B L H d_k^2 = 2 B L D d_k$ FLOPs
-- **State Accumulation ($H_{t-1} + \text{Outer}$)**: $L \times (B H d_k^2) = B L D d_k$ FLOPs
-- **Query Matrix Multiplication ($Q_t H_t$)**: $L \times (2 B H d_k^2) = 2 B L D d_k$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_Q, W_K, W_V$)}, $6 B L D^2$ FLOPs Furthermore, regarding \textbf{Outer Product Memory Updates ($K_t^\top V_t$)}, $L \times (2 B H d_k^2) = 2 B L H d_k^2 = 2 B L D d_k$ FLOPs Concurrently, regarding \textbf{State Accumulation ($H_{t-1} + \text{Outer}$)}, $L \times (B H d_k^2) = B L D d_k$ FLOPs In this setting, regarding \textbf{Query Matrix Multiplication ($Q_t H_t$)}, $L \times (2 B H d_k^2) = 2 B L D d_k$ FLOPs Additionally, regarding \textbf{Output Projection ($W_O$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 2 B L D d_k$
-- **Total FLOPs**: $8 B L D^2 + 5 B L D d_k$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 2 B L D d_k$ Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 5 B L D d_k$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2$ parameters.
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot d_k^2)$ per step during decoding, completely bypassing quadratic $L^2$ memory storage.
+Specifically, regarding \textbf{Static Weights}, $4 D^2$ parameters. Furthermore, regarding \textbf{Transient Activation Memory}, bounded by $\mathcal{O}(B \cdot H \cdot d_k^2)$ per step during decoding, completely bypassing quadratic $L^2$ memory storage.
+
 
 ---
 

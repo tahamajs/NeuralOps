@@ -128,19 +128,15 @@ Let $B$ be batch size, $H$ number of heads, $d_k$ head dimension ($D = H d_k$), 
 $$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_{\text{sz}}^2} + 4 B D L k B_{\text{sz}} + 2 B L D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 4 B L D^2 + \frac{B D L^2}{B_{\text{sz}}^2} + 2 B D L k B_{\text{sz}}$$
-- **Peak Activation Memory**:
-  - Unpadded/Padded Q, K, V tensors: $3 \times B \cdot L_p \cdot D \times 2 \text{ bytes}$ (FP16/BF16)
-  - Centroid matrices: $2 \times B \cdot H \cdot n_b \cdot d_k \times 2 \text{ bytes}$
-  - Block Affinity Score matrix: $B \cdot H \cdot n_b \cdot n_b \times 2 \text{ bytes}$
-  - Gathered $K_{\text{sel}}, V_{\text{sel}}$ (in sequential block loop): $2 \times B \cdot H \cdot k B_{\text{sz}} \cdot d_k \times 2 \text{ bytes}$ per iteration.
-  - Per-block attention matrix: $B \cdot H \cdot B_{\text{sz}} \cdot (k B_{\text{sz}}) \times 2 \text{ bytes}$.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Unpadded/Padded Q, K, V tensors: $3 \times B \cdot L_p \cdot D \times 2 \text{ bytes}$ (FP16/BF16) Concurrently, Centroid matrices: $2 \times B \cdot H \cdot n_b \cdot d_k \times 2 \text{ bytes}$ In this setting, Block Affinity Score matrix: $B \cdot H \cdot n_b \cdot n_b \times 2 \text{ bytes}$ Additionally, Gathered $K_{\text{sel}}, V_{\text{sel}}$ (in sequential block loop): $2 \times B \cdot H \cdot k B_{\text{sz}} \cdot d_k \times 2 \text{ bytes}$ per iteration. Moreover, Per-block attention matrix: $B \cdot H \cdot B_{\text{sz}} \cdot (k B_{\text{sz}}) \times 2 \text{ bytes}$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 d + L D^2)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **MoBA Attention**: $\mathcal{O}\left(L D^2 + \frac{L^2 D}{B_{\text{sz}}^2} + L k B_{\text{sz}} D\right)$ compute, $\mathcal{O}\left(\frac{L^2 H}{B_{\text{sz}}^2} + L k B_{\text{sz}} H\right)$ memory.
-- When $B_{\text{sz}} = 64, k = 4$, block scaling reduces quadratic matrix elements by a factor of $B_{\text{sz}}^2 = 4096 \times$.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(L^2 d + L D^2)$ compute, $\mathcal{O}(L^2 H)$ memory. Furthermore, regarding \textbf{MoBA Attention}, $\mathcal{O}\left(L D^2 + \frac{L^2 D}{B_{\text{sz}}^2} + L k B_{\text{sz}} D\right)$ compute, $\mathcal{O}\left(\frac{L^2 H}{B_{\text{sz}}^2} + L k B_{\text{sz}} H\right)$ memory. Concurrently, When $B_{\text{sz}} = 64, k = 4$, block scaling reduces quadratic matrix elements by a factor of $B_{\text{sz}}^2 = 4096 \times$.
+
 
 ---
 
@@ -153,15 +149,15 @@ The coarse routing phase compresses an entire block of $B_{\text{sz}}$ tokens in
 
 ### 5.2 Discrete Routing Non-Differentiability & Gradient Starvation
 The discrete selection $\operatorname{TopK}(\mathbf{S}^{\text{block}}_{i, :}, k)$ is a hard thresholding operation. Because $\frac{\partial \operatorname{TopK}}{\partial \mathbf{S}^{\text{block}}} = 0$ almost everywhere:
-- Gradients cannot backpropagate directly through the discrete routing decisions to adjust the projection matrices $\mathbf{W}_Q, \mathbf{W}_K$ specifically for block routing.
-- Blocks not selected in the top-$k$ receive zero gradient updates during the backward pass ($\nabla_{\mathbf{K}_{\text{unselected}}} \mathcal{L} = 0$), leading to cold-start routing collapse where early-selected blocks dominate future routing indefinitely.
+Gradients cannot backpropagate directly through the discrete routing decisions to adjust the projection matrices $\mathbf{W}_Q, \mathbf{W}_K$ specifically for block routing. Furthermore, Blocks not selected in the top-$k$ receive zero gradient updates during the backward pass ($\nabla_{\mathbf{K}_{\text{unselected}}} \mathcal{L} = 0$), leading to cold-start routing collapse where early-selected blocks dominate future routing indefinitely.
+
 
 ### 5.3 Rank Collapse in Block Subspaces
 When sequence length $L$ grows extremely large, key block centroids $\bar{\mathbf{K}}_j$ tend to converge toward the global mean of the token distribution due to the Law of Large Numbers. This reduces the variance across block centroids, causing $\operatorname{Rank}(\mathbf{S}^{\text{block}}) \ll n_b$. The resulting routing matrix becomes isotropic, leading to random or uniform block selection that degrades task performance to that of random block sampling.
 
 ### 5.4 Python Loop Overhead and Unmasked Zero-Padding Artifacts
-- **Sequential Execution Trap**: Executing an explicit Python `for i in range(nb):` loop incurs substantial host-to-device kernel launch overhead, stalling GPU SM execution pipelines when $n_b$ is large.
-- **Padding Pollution**: Zero-padding to length $L_p$ introduces zero vectors into the final block. Without explicit boolean attention masking, zero vectors alter the block mean magnitude $\frac{1}{B_{\text{sz}}} \sum \mathbf{Q}$, distorting cosine affinity and participating in softmax exponentiation ($\exp(0) = 1$), causing non-zero probability leakage to dummy tokens.
+Specifically, regarding \textbf{Sequential Execution Trap}, executing an explicit Python `for i in range(nb):` loop incurs substantial host-to-device kernel launch overhead, stalling GPU SM execution pipelines when $n_b$ is large. Furthermore, regarding \textbf{Padding Pollution}, zero-padding to length $L_p$ introduces zero vectors into the final block. Without explicit boolean attention masking, zero vectors alter the block mean magnitude $\frac{1}{B_{\text{sz}}} \sum \mathbf{Q}$, distorting cosine affinity and participating in softmax exponentiation ($\exp(0) = 1$), causing non-zero probability leakage to dummy tokens.
+
 
 ---
 

@@ -1,0 +1,54 @@
+\documentclass{article}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\usepackage{listings}
+\usepackage[utf8]{inputenc}
+
+\definecolor{codebg}{HTML}{F8F9FA}
+\definecolor{codeframe}{HTML}{E9ECEF}
+\definecolor{keywordcolor}{HTML}{005CC5}
+\definecolor{stringcolor}{HTML}{032F62}
+\definecolor{commentcolor}{HTML}{6A737D}
+\definecolor{numbercolor}{HTML}{005CC5}
+
+\lstset{
+    backgroundcolor=\color{codebg},
+    basicstyle=\ttfamily\scriptsize\color{black},
+    keywordstyle=\color{keywordcolor}\bfseries,
+    stringstyle=\color{stringcolor},
+    commentstyle=\color{commentcolor}\itshape,
+    numberstyle=\tiny\color{numbercolor},
+    numbers=left,
+    numbersep=8pt,
+    frame=none,
+    breaklines=true,
+    breakatwhitespace=true,
+    keepspaces=true,
+    showstringspaces=false,
+    tabsize=4,
+    xleftmargin=12pt
+}
+
+\begin{document}
+
+Here is a beautiful code block:
+
+\begin{mdframed}[backgroundcolor=codebg, linecolor=codeframe, linewidth=1pt, roundcorner=4pt, innerleftmargin=2pt, innerrightmargin=5pt, innertopmargin=5pt, innerbottommargin=5pt]
+\begin{lstlisting}[language=Python]
+import torch
+import torch.nn as nn
+
+class BeautifulAttention(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        # This is a comment
+        self.qkv = nn.Linear(dim, dim * 3)
+        self.scale = dim ** -0.5
+        
+    def forward(self, x):
+        print("Running attention!")
+        return x
+\end{lstlisting}
+\end{mdframed}
+
+\end{document}

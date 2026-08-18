@@ -77,11 +77,8 @@ The resulting **W_approx** is a dense matrix that approximates the original **W*
 
 The compressor only compresses layers where `module.weight.grad is not None`. This means that the model must have undergone at least one backward pass before compression. In typical use, one would:
 
-- Provide a small calibration dataset.
-- Perform a forward pass.
-- Compute a scalar loss (e.g., language modelling loss).
-- Call `loss.backward()` to populate gradients.
-- Then run the GFWS compressor.
+Provide a small calibration dataset. Furthermore, Perform a forward pass. Concurrently, Compute a scalar loss (e.g., language modelling loss). In this setting, Call `loss.backward()` to populate gradients. Additionally, Then run the GFWS compressor.
+
 
 Layers without gradients are skipped, so not all layers may be compressed if gradients are not available everywhere.
 
@@ -99,8 +96,8 @@ class GFWSCompressor(BaseCompressor):
         self.damping = damping
 ```
 
-- **`rank`**: Target rank for the truncated SVD (default 64).
-- **`damping`**: Small constant added to the diagonal of the Fisher matrix for numerical stability (default 0.01).
+Specifically, regarding \textbf{`rank`}, target rank for the truncated SVD (default 64). Furthermore, regarding \textbf{`damping`}, small constant added to the diagonal of the Fisher matrix for numerical stability (default 0.01).
+
 
 The `compress()` method:
 
@@ -167,18 +164,13 @@ compressed_model = compression_pipeline(model, comp_config)
 
 ### Advantages
 
-- **Loss‑aware**: By using gradient information, the compression is guided by the actual sensitivity of the loss to each parameter direction. This can preserve accuracy better than weight‑only SVD for the same rank.
-- **Applicable to pretrained models**: If you can run a few forward‑backward passes on a small calibration set, you can use GFWSVD as a post‑training step without full retraining.
-- **Numerical stability**: Damping and Cholesky‑based whitening are robust.
-- **Selective compression**: Layers without gradients (e.g., those that were frozen) are skipped, avoiding unintended damage.
+Specifically, regarding \textbf{Loss‑aware}, by using gradient information, the compression is guided by the actual sensitivity of the loss to each parameter direction. This can preserve accuracy better than weight‑only SVD for the same rank. Furthermore, regarding \textbf{Applicable to pretrained models}, if you can run a few forward‑backward passes on a small calibration set, you can use GFWSVD as a post‑training step without full retraining. Concurrently, regarding \textbf{Numerical stability}, damping and Cholesky‑based whitening are robust. In this setting, regarding \textbf{Selective compression}, layers without gradients (e.g., those that were frozen) are skipped, avoiding unintended damage.
+
 
 ### Limitations
 
-- **Requires gradients**: The method cannot be used on a model without first computing gradients. This adds an extra step compared to zero‑shot compressors like A3.
-- **Single gradient sample**: Using only the current gradient may yield a poor Fisher estimate. For better results, one should accumulate gradients over multiple batches (or use an empirical Fisher from multiple samples), but the provided code does not support that natively.
-- **Dense weight output**: Like many SVD‑based compressors, the weight remains a full dense matrix; to reduce memory or computation, further factorization steps are needed.
-- **SVD cost**: Full SVD on the whitened weight can be expensive for large matrices.
-- **Only linear layers**: Only `nn.Linear` modules are targeted; other parameter types are ignored.
+Specifically, regarding \textbf{Requires gradients}, the method cannot be used on a model without first computing gradients. This adds an extra step compared to zero‑shot compressors like A3. Furthermore, regarding \textbf{Single gradient sample}, using only the current gradient may yield a poor Fisher estimate. For better results, one should accumulate gradients over multiple batches (or use an empirical Fisher from multiple samples), but the provided code does not support that natively. Concurrently, regarding \textbf{Dense weight output}, like many SVD‑based compressors, the weight remains a full dense matrix; to reduce memory or computation, further factorization steps are needed. In this setting, regarding \textbf{SVD cost}, full SVD on the whitened weight can be expensive for large matrices. Additionally, regarding \textbf{Only linear layers}, only `nn.Linear` modules are targeted; other parameter types are ignored.
+
 
 ### Comparison with Other Weight‑Aware Compressors
 

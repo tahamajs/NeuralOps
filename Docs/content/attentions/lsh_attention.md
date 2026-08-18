@@ -136,16 +136,15 @@ Let $B$ be batch size, $N$ sequence length, $D$ hidden dimension, $H$ heads, $d_
 $$\text{Total FLOPs} = 8 B N D^2 + 2 n_r B N D b + \frac{4 n_r B N^2 D}{b}$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 4 B N D^2 + n_r B N D b + \frac{2 n_r B N^2 D}{b}$$
-- **Peak Activation Memory**:
-  - Random Projection Matrix: $d_k \times (b/2) \times 4 \text{ bytes}$
-  - Hash Codes: $2 \times B \cdot H \cdot N \times 8 \text{ bytes}$
-  - Dynamic Bucket Slice Activations: $\mathcal{O}(n_q d_k + n_k d_k)$. Memory scales linearly as $\mathcal{O}(n_r B H N)$.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Random Projection Matrix: $d_k \times (b/2) \times 4 \text{ bytes}$ Concurrently, Hash Codes: $2 \times B \cdot H \cdot N \times 8 \text{ bytes}$ In this setting, Dynamic Bucket Slice Activations: $\mathcal{O}(n_q d_k + n_k d_k)$. Memory scales linearly as $\mathcal{O}(n_r B H N)$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **LSH Reformer Attention**: Setting $b \approx \sqrt{N}$ yields $\mathcal{O}(n_r N^{1.5} D)$ compute and $\mathcal{O}(n_r N H)$ memory footprint.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory. Furthermore, regarding \textbf{LSH Reformer Attention}, setting $b \approx \sqrt{N}$ yields $\mathcal{O}(n_r N^{1.5} D)$ compute and $\mathcal{O}(n_r N H)$ memory footprint.
+
 
 ---
 
@@ -163,18 +162,18 @@ for r in range(self.rounds):
                 ...
                 out[b, h, q_idx] += ctx
 ```
-- **Host-Device Launch Bottleneck**: Executing 4 nested Python loops over `rounds`, `batch`, `heads`, and `buckets` launches thousands of tiny PyTorch CUDA kernels sequentially.
-- **GPU Under-Utilization**: GPU Tensor Cores sit idle while CPU host threads execute loop conditionals, causing $100\times$ slower runtime execution than standard dense attention for short/medium sequence lengths.
+Specifically, regarding \textbf{Host-Device Launch Bottleneck}, executing 4 nested Python loops over `rounds`, `batch`, `heads`, and `buckets` launches thousands of tiny PyTorch CUDA kernels sequentially. Furthermore, regarding \textbf{GPU Under-Utilization}, gPU Tensor Cores sit idle while CPU host threads execute loop conditionals, causing $100\times$ slower runtime execution than standard dense attention for short/medium sequence lengths.
+
 
 ### 5.2 Hash Collision Failure & False-Negative Erasure
 LSH is probabilistic: two semantically related tokens $i$ and $j$ with high dot product $\mathbf{q}_i \mathbf{k}_j^\top$ may fall into different buckets if their hyperplanes happen to split them.
-- **Recall Degradation**: If $n_r$ is too small (e.g., $n_r=1$), critical key tokens are dropped completely ($\mathbf{A}_{i, j} = 0$), causing false-negative memory erasure.
-- **Variance Instability**: Because projection matrix $R^{(r)} \sim \mathcal{N}(0, 1)$ is sampled stochastically on every forward pass (`torch.randn`), model outputs for identical input sequences exhibit high Monte Carlo variance.
+Specifically, regarding \textbf{Recall Degradation}, if $n_r$ is too small (e.g., $n_r=1$), critical key tokens are dropped completely ($\mathbf{A}_{i, j} = 0$), causing false-negative memory erasure. Furthermore, regarding \textbf{Variance Instability}, because projection matrix $R^{(r)} \sim \mathcal{N}(0, 1)$ is sampled stochastically on every forward pass (`torch.randn`), model outputs for identical input sequences exhibit high Monte Carlo variance.
+
 
 ### 5.3 Angular Hyperplane Bucket Imbalance
 If query embeddings inhabit a narrow directional cone in feature space (anisotropy / rank collapse), random hyperplanes fail to bisect the distribution evenly.
-- **Bucket Overcrowding**: A single bucket receives $\approx 90\%$ of tokens ($n_q \approx N$), while remaining buckets remain empty.
-- Complexity degrades back to $\mathcal{O}(N^2 D)$ while incurring additional hashing FLOPs overhead.
+Specifically, regarding \textbf{Bucket Overcrowding}, a single bucket receives $\approx 90\%$ of tokens ($n_q \approx N$), while remaining buckets remain empty. Furthermore, Complexity degrades back to $\mathcal{O}(N^2 D)$ while incurring additional hashing FLOPs overhead.
+
 
 ---
 

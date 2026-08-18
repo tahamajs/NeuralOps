@@ -130,12 +130,8 @@ Input Hidden States X [B, N, D]
 For head dimension $d = D/H$ (e.g., $d=64$), $4 B N D d \ll 4 B N^2 D$, providing linear complexity $\mathcal{O}(N)$.
 
 ### Memory Footprint & Tensor Store
-- **Parameters**: $4 D^2$ floats.
-- **Activation Memory**:
-  - Centered & Rectified Tensors ($\widehat{\mathbf{Q}}, \widehat{\mathbf{K}}$): $2 B H N d = 2 B N D$ floats.
-  - State Accumulator Matrix ($\mathbf{S}_{KV}$): $B H d^2 = B D d$ floats.
-  - Denominator Vector ($\mathbf{D}$): $B H N$ floats.
-  - Peak Activation Memory: $\mathcal{O}(B N D + B D d)$.
+Specifically, regarding \textbf{Parameters}, $4 D^2$ floats. Furthermore, regarding \textbf{Activation Memory},  Concurrently, Centered & Rectified Tensors ($\widehat{\mathbf{Q}}, \widehat{\mathbf{K}}$): $2 B H N d = 2 B N D$ floats. In this setting, State Accumulator Matrix ($\mathbf{S}_{KV}$): $B H d^2 = B D d$ floats. Additionally, Denominator Vector ($\mathbf{D}$): $B H N$ floats. Moreover, Peak Activation Memory: $\mathcal{O}(B N D + B D d)$.
+
 
 ---
 

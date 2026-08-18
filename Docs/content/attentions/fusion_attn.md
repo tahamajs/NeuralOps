@@ -90,28 +90,13 @@ The module returns \(\mathbf{O}\) and `None` (for compatibility with interfaces 
 
 ---
 
-## 3. Implementation Details
+## 3. Implementation Architecture & Execution Mechanics
 
-The `FullAttention` class is registered under the key `"full"` in the `ATTENTION_REGISTRY`. It inherits from `nn.Module` (not from `BaseAttention` as some other modules, but that does not affect its functionality). Key implementation aspects:
+The `FullAttention` module is registered under the key `"full"` in the central `ATTENTION_REGISTRY`, subclassing `nn.Module` to establish native compatibility with the DistilBERT compression framework. 
 
-- **Constructor**: 
-  - Takes a `config` object providing `num_attention_heads`, `hidden_size`, and `dropout`.
-  - Computes `head_dim = hidden_size // num_heads` and `all_head_size = num_heads * head_dim`.
-  - Creates four `nn.Linear` layers with biases (the default). The query, key, value projections output `all_head_size`, while the output projection maps `all_head_size` back to `hidden_size`.
-  - Initialises dropout.
+During module initialization, the constructor ingests a configuration object defining the aggregate model dimension, attention head multiplicity, and dropout probability. It dynamically derives the per-head projection dimension $d_h = d_{\text{model}} / H$ alongside the total projected dimension $H \cdot d_h$, and instantiates parameterized affine transformations for query, key, value, and output projections equipped with learnable bias vectors. Concurrently, a stochastic dropout operator is registered to regularize the materialized attention distribution.
 
-- **Forward**:
-  1. Computes Q, K, V by applying the linear layers and reshaping to `(B, H, N, d_h)`.
-  2. Computes scores = `(Q @ K.transpose(-2, -1)) / sqrt(d_head)`.
-  3. Handles attention mask:
-     - If mask is 2D, adds dimensions to become `(B, 1, 1, N)`.
-     - If mask is already multi‑dimensional, it is used as‑is (assumed broadcastable).
-     - The mask is converted to an additive form: `(1.0 - mask) * -1e9` and added to scores.
-  4. Applies softmax, dropout, and weighted sum with V.
-  5. Reshapes to `(B, N, all_head_size)` and applies output projection.
-  6. Returns `(output, None)`.
-
-The module does **not** return attention weights; the second element of the tuple is always `None`. This is consistent with the framework’s typical usage, where attention weights are only computed when explicitly requested (but the `output_attentions` flag is ignored).
+The forward execution pipeline operates through a deterministic multi-stage tensor transformation. First, input representations $\mathbf{H}$ are linearly mapped into query, key, and value subspaces and permuted into multi-head tensor views of shape $(B, H, N, d_h)$. Second, unnormalized attention logits are computed via batched matrix multiplication $\mathbf{S} = \mathbf{Q} \mathbf{K}^\top / \sqrt{d_h}$, scaling dot-product magnitudes to prevent softmax gradient saturation. Third, sequence validity masks are incorporated; if a two-dimensional padding mask $(B, N)$ is supplied, the module broadcasts it to $(B, 1, 1, N)$ and applies an additive large negative penalty $(1.0 - \text{mask}) \times (-10^9)$ to nullify attention scores at invalid sequence indices. Fourth, the stabilized logit tensor undergoes softmax exponentiation along the temporal key dimension, followed by dropout regularization and value aggregation $\mathbf{C} = \mathbf{A} \mathbf{V}$. Finally, multi-head context vectors are concatenated and projected through the output linear transformation $\mathbf{W}_O$, returning the final representation tuple compatible with the model compression framework.
 
 ---
 
@@ -138,13 +123,11 @@ layer.attention = full_attn
 
 ---
 
-## 5. Discussion
+## 5. Architectural Discussion, Optimization Stability & Structural Tradeoffs
 
-Full Attention is the gold‑standard attention mechanism, providing dense connectivity that excels at capturing long‑range dependencies. Its quadratic complexity \(O(N^2 \cdot d)\) limits its use for very long sequences, but for typical sequence lengths (up to a few hundred tokens) it remains the preferred choice. The module’s implementation is straightforward, ensuring correctness and compatibility with the DistilBERT framework.
+Full Attention establishes the canonical gold standard for transformer context routing, providing unconstrained dense pairwise token connectivity that captures complex, non-local semantic interactions. However, this expressive representational capacity incurs distinct computational, memory, and optimization tradeoffs. Most prominently, the explicit materialization of the full pairwise attention score matrix $\mathbf{S} \in \mathbb{R}^{B \times H \times N \times N}$ in High Bandwidth Memory (HBM) imposes an asymptotic quadratic memory scaling $\mathcal{O}(N^2)$ and introduces a memory bandwidth bottleneck. For extended sequence lengths, storing these activation buffers during forward passes restricts batch concurrency and increases cache pressure on hardware accelerators.
 
-The main limitation of this particular implementation is that it materialises the full attention matrix of shape `(B, H, N, N)`, which can consume significant memory. However, for moderate batch sizes and lengths this is acceptable. The module also ignores the `output_attentions` flag, always returning `None` for the attention weights; this can be extended if attention maps are required for interpretability or loss functions.
-
-Because the module does not include any pretrained weight initialisation, when used as a replacement for a pretrained attention layer, the weights must be copied manually (e.g., from the original `q_lin`, `k_lin`, etc.) to preserve zero‑shot performance. The injection functions in the broader framework typically handle this transfer.
+From an optimization stability perspective, standard softmax attention provides robust gradient propagation across diverse training regimes, yet remains vulnerable to logit saturation and vanishing gradients when unnormalized dot products attain large magnitudes. While the scaling multiplier $1/\sqrt{d_h}$ preserves variance stability under standard isotropic weight initializations, deeper transformer layers can nonetheless suffer from attention entropy collapse. In this failure regime, softmax distributions over-concentrate probability mass on localized sink tokens (such as delimiter or punctuation indices), thereby flattening the local loss landscape and diminishing gradient responsiveness for non-dominant tokens. Furthermore, because this baseline implementation abstains from low-rank projections or heuristic sparsity masks, it preserves the full singular value spectrum of the attention operator, serving as an empirical upper bound for representational fidelity. When deploying the module as an architectural surrogate within pretrained models, rigorous weight alignment and projection tensor transposition are essential to maintain zero-shot manifold fidelity and preserve downstream optimization trajectories.
 
 ---
 

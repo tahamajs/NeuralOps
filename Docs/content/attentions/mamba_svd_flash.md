@@ -77,20 +77,22 @@ Input: hidden_states [B, L, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### Complexity Breakdown:
-- **SVD-SSM Time Complexity**: $\mathcal{O}(B \cdot L \cdot D \cdot r)$ — strict linear scaling in $L$ bounded by rank $r$.
-- **Dense Attention Time Complexity**: $\mathcal{O}(B \cdot L^2 \cdot d_{head})$ (executed in FP8).
-- **Total FLOP Count**: $\mathcal{O}\left(2 B L D r + 2 B L^2 d_{head} \cdot (1-\bar{\gamma})\right)$.
-- **Memory Footprint**: $\mathcal{O}\left(B \cdot D \cdot r + B \cdot L \cdot d_{head} / 4\right)$.
-- **Hardware Profile**: TMA & Register Allocation utilizes 128-byte alignment for Hopper TMA (Tensor Memory Accelerator) loads, executing 2:4 sparse FP8 WGMMA instructions to maximize Tensor Core utilization.
+### Complexity & Hardware Characterization
+The computational complexity and hardware execution profile reflect the synergistic bifurcation between low-rank state-space recurrence and quantized exact attention. The SVD-SSM recurrent path achieves strict linear computational scaling in sequence length, evaluated with an asymptotic time complexity of $\mathcal{O}(B \cdot L \cdot D \cdot r)$ where operational expenditure is strictly bounded by the rank parameter $r \ll D$. Concurrently, the dense attention path processes high-entropy token interactions with an asymptotic time complexity of $\mathcal{O}(B \cdot L^2 \cdot d_{\text{head}})$, executed efficiently under low-precision FP8 quantization.
+
+The aggregate floating-point arithmetic volume scales as $\mathcal{O}\left(2 B L D r + 2 B L^2 d_{\text{head}} \cdot (1-\bar{\gamma})\right)$, where $\bar{\gamma}$ represents the empirical mean routing weight across the sequence. Memory consumption scales favorably as $\mathcal{O}\left(B \cdot D \cdot r + B \cdot L \cdot d_{\text{head}} / 4\right)$, drastically curtailing transient memory allocation relative to standard precision baselines. At the hardware execution level, the architecture leverages 128-byte alignment tailored for NVIDIA Hopper Tensor Memory Accelerator (TMA) asynchronous memory transfers, coordinating with 2:4 structured sparse FP8 Warp Group Matrix Multiply and Accumulate (WGMMA) instructions to achieve maximal Tensor Core occupancy.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Rank Starvation**: If the target rank $r$ is too small ($<8$), the online SVD approximation of $A_t$ loses high-frequency tracking capability, degrading the SSM into a low-pass filter.
-2. **Gating Imbalance**: In poorly initialized networks, the $\gamma$ gate can collapse to $0$ or $1$, rendering one of the dual paths completely inactive and reducing the module to a pure transformer or pure SSM.
-3. **Sequential Scan Bottleneck**: The recurrence loop (calculating $h_t$) in PyTorch natively is sequential. Triton optimizations or prefix scan implementations are required to avoid $\mathcal{O}(L)$ latency limits on GPUs.
+The optimization dynamics and architectural topology of MambaSVD-Flash exhibit several potential failure modes and spectral stability boundaries:
+
+Primary among these is the rank starvation pathology within the online truncated SVD formulation. When the target decomposition rank is constrained excessively ($r < 8$), the low-rank projection manifold fails to span the higher-order spectral modes of the state transition matrix $\mathbf{A}_t$. Consequently, the selective state-space path loses the capacity to track high-frequency temporal variations, degenerating functionally into a diffuse low-pass filter that blurs sharp token-level transitions. To preserve spectral fidelity, rank thresholds must be calibrated dynamically or regularized via spectral energy preservation constraints.
+
+Furthermore, the parameterized routing gate $\gamma = \sigma(W_g X)$ introduces optimization fragility across the loss landscape. If the routing linear projection is improperly initialized or subjected to ill-conditioned gradient updates during early training epochs, the sigmoid gating mechanism readily saturates toward its asymptotic limits ($\gamma \to 0$ or $\gamma \to 1$). This saturation induces permanent branch suppression: the suppressed pathway receives vanishing gradient flow ($\nabla \mathcal{L} \to 0$), trapping the model in a degenerate local minimum where it operates as either a pure Transformer or an un-augmented SSM, entirely forfeiting the expressivity-efficiency benefits of hybrid execution.
+
+Concurrently, native sequential execution of the recurrence loop $\mathbf{h}_t = \mathbf{U}_{t, r} \mathbf{\Sigma}_{t, r} \mathbf{V}_{t, r}^T \mathbf{h}_{t-1} + \mathbf{B}_t x_t$ in standard imperative frameworks incurs a severe hardware latency bottleneck. Because iterative step-by-step kernel dispatches underutilize GPU massive parallelism, un-fused execution suffers from severe memory launch overhead. Overcoming this structural constraint necessitates chunked parallel associative prefix scans and custom fused Triton kernel implementations that process recurrent states within high-speed SRAM registers.
 
 ---
 
@@ -119,9 +121,13 @@ The architecture uses a two-phase compilation: first executing the linear rank-$
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Dynamic Rank Allocation (SVD-MoE)**: Extending this architecture to dynamically adjust rank $r$ depending on localized spectral entropy, similar to Kronecker-TT-LoRA principles.
-2. **Block-Sparse Flash Path**: Replacing the exact $\mathcal{O}(L^2)$ FlashAttention path with a Block-Sparse MoE Paged attention to reach infinite sequence lengths across both paths.
-3. **Quantized State Recurrence**: Combining W4A16 Register unpacking natively into the SVD $U, \Sigma, V$ projections to reduce memory read bandwidth to $0.25 \times$ standard 16-bit limits.
+Several compelling architectural advancements offer significant potential for further extending the MambaSVD-Flash design:
+
+Dynamic rank allocation via Mixture-of-Experts (SVD-MoE) principles represents a powerful paradigm, wherein the operational SVD rank $r$ is modulated dynamically per token based on localized spectral entropy and singular value distributions. This allows tokens exhibiting intricate syntactic dependencies to allocate high-rank state transitions while routing simpler background tokens through ultra-low-rank projections.
+
+Concurrently, replacing the exact quadratic FlashAttention path with a block-sparse paged attention mechanism eliminates the residual $\mathcal{O}(L^2)$ computational wall, enabling both the recurrent and attention branches to scale gracefully to virtually unbounded sequence lengths.
+
+Finally, integrating quantized state recurrence by embedding 4-bit weight unpacking (W4A16) directly into the SVD projection kernels ($U, \Sigma, V$) reduces memory read bandwidth consumption to $0.25\times$ standard 16-bit baselines, unlocking dramatic speedups on bandwidth-constrained hardware platforms.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

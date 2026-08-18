@@ -100,23 +100,20 @@ Input: hidden_states (x) [B, L, D]
 Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, and $d_k = D / H$.
 
 1. **Linear Projection FLOPs**:
-   - $W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+$W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+
 
 2. **Core Attention Score & Context FLOPs**:
-   - $Q K^\top$: $[B, H, L, d_k] \times [B, H, d_k, L] \implies 2 B L^2 D$ FLOPs ($B L^2 D$ MACs).
-   - Softmax & Head Mask Scaling: $\approx 6 B H L^2$ FLOPs.
-   - $A V$: $[B, H, L, L] \times [B, H, L, d_k] \implies 2 B L^2 D$ FLOPs ($B L^2 D$ MACs).
+$Q K^\top$: $[B, H, L, d_k] \times [B, H, d_k, L] \implies 2 B L^2 D$ FLOPs ($B L^2 D$ MACs). Furthermore, Softmax & Head Mask Scaling: $\approx 6 B H L^2$ FLOPs. Concurrently, $A V$: $[B, H, L, L] \times [B, H, L, d_k] \implies 2 B L^2 D$ FLOPs ($B L^2 D$ MACs).
+
 
 3. **Active Head FLOP Reduction (Under Head Pruning $H_{\text{active}} < H$)**:
-   - If $H - H_{\text{active}}$ heads are masked to zero ($H_{\text{mask}, h} = 0$), actual computation scales down to:
-     \[
-     \text{FLOPs}_{\text{distilled}} = 8 B L D^2 + 4 B L^2 \left( \frac{H_{\text{active}}}{H} \right) D
-     \]
+If $H - H_{\text{active}}$ heads are masked to zero ($H_{\text{mask}, h} = 0$), actual computation scales down to: \[ \text{FLOPs}_{\text{distilled}} = 8 B L D^2 + 4 B L^2 \left( \frac{H_{\text{active}}}{H} \right) D \]
+
 
 ### Total Complexity:
-- **Total MACs**: $4 B L D^2 + 2 B L^2 D$
-- **Total FLOPs**: $8 B L D^2 + 4 B L^2 D + 6 B H L^2$
-- **Parameter Count**: $4 D^2 + 4 D$ parameters.
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 2 B L^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 4 B L^2 D + 6 B H L^2$ Concurrently, regarding \textbf{Parameter Count}, $4 D^2 + 4 D$ parameters.
+
 
 ---
 

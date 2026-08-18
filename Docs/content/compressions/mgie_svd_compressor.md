@@ -27,8 +27,8 @@ The spectral information entropy $\mathcal{H}_l$ (measured in bits) of layer $l$
 
 where $\epsilon = 10^{-12}$ avoids numerical instability for zero singular values.
 
-- **High Entropy ($\mathcal{H}_l \to \log_2 R$)**: Uniform singular values; information is broadly distributed across all components.
-- **Low Entropy ($\mathcal{H}_l \to 0$)**: Highly skewed singular values; information is concentrated in top principal components.
+Specifically, regarding \textbf{High Entropy ($\mathcal{H}_l \to \log_2 R$)}, uniform singular values; information is broadly distributed across all components. Furthermore, regarding \textbf{Low Entropy ($\mathcal{H}_l \to 0$)}, highly skewed singular values; information is concentrated in top principal components.
+
 
 ### 2.3 Entropy-Proportional Global Rank Budget Allocation
 Given a user-specified global total rank budget $B_{\text{total}} \in \mathbb{Z}^+$ across all $L$ linear layers, the normalized global entropy fraction $\beta_l$ is:

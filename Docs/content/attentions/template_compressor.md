@@ -40,11 +40,8 @@ The bias is copied directly. This initialisation ensures that the compressed lay
 
 The `YourCustomCompressor` class inherits from `BaseCompressor` and is registered under the placeholder key `"your_compressor_name"`. The constructor accepts:
 
-- `model`: the pretrained Transformer model (e.g., DistilBERT).
-- `target_sparsity`: fraction of weights to prune (for pruning/hybrid).
-- `target_rank`: rank \(r\) for low‑rank factorisation.
-- `method`: one of `"standard"`, `"low_rank"`, `"pruning"`, `"quantization"`, or `"hybrid"`. (Note: `"standard"` actually invokes the hybrid method in the current code—a small inconsistency.)
-- `**kwargs`: additional parameters like `custom_param` (used for quantisation bits).
+`model`: the pretrained Transformer model (e.g., DistilBERT). Furthermore, `target_sparsity`: fraction of weights to prune (for pruning/hybrid). Concurrently, `target_rank`: rank \(r\) for low‑rank factorisation. In this setting, `method`: one of `"standard"`, `"low_rank"`, `"pruning"`, `"quantization"`, or `"hybrid"`. (Note: `"standard"` actually invokes the hybrid method in the current code—a small inconsistency.) Additionally, `**kwargs`: additional parameters like `custom_param` (used for quantisation bits).
+
 
 The core entry point is the `compress` method, which orchestrates the compression in five steps:
 
@@ -56,21 +53,16 @@ The core entry point is the `compress` method, which orchestrates the compressio
 
 Each of these methods relies on `_compress_linear_layers`, which iterates over a module’s direct children, and for each `nn.Linear` found, creates a compressed replacement based on the selected `method`:
 
-- **Low‑rank**: Instantiates an `SVDLinearLayer` with the given target rank.
-- **Pruning**: Calls `_create_pruned_layer`, which removes rows (and corresponding input features) with the smallest row norms. The new size is determined by `target_sparsity`: out_features → `max(1, int(out_features * (1 - target_sparsity)))`, and similarly for in_features. This is a structured pruning that reduces both dimensions proportionally. The top‑\(k\) rows by L2 norm are kept, and the weight matrix is sliced accordingly.
-- **Quantization**: Calls `_create_quantized_layer`, which uniformly quantises the weights to a fixed number of bits (given by `custom_param`, default 8). The weights are scaled to the range \([-scale, scale]\), rounded, and rescaled, simulating a simple uniform quantisation.
-- **Hybrid**: First applies pruning to the original layer (using `_create_pruned_layer`), then applies low‑rank factorisation to the pruned layer via `SVDLinearLayer`, with the rank set to `target_rank // 2`. This demonstrates a pipeline combination.
+Specifically, regarding \textbf{Low‑rank}, instantiates an `SVDLinearLayer` with the given target rank. Furthermore, regarding \textbf{Pruning}, calls `_create_pruned_layer`, which removes rows (and corresponding input features) with the smallest row norms. The new size is determined by `target_sparsity`: out_features → `max(1, int(out_features * (1 - target_sparsity)))`, and similarly for in_features. This is a structured pruning that reduces both dimensions proportionally. The top‑\(k\) rows by L2 norm are kept, and the weight matrix is sliced accordingly. Concurrently, regarding \textbf{Quantization}, calls `_create_quantized_layer`, which uniformly quantises the weights to a fixed number of bits (given by `custom_param`, default 8). The weights are scaled to the range \([-scale, scale]\), rounded, and rescaled, simulating a simple uniform quantisation. In this setting, regarding \textbf{Hybrid}, first applies pruning to the original layer (using `_create_pruned_layer`), then applies low‑rank factorisation to the pruned layer via `SVDLinearLayer`, with the rank set to `target_rank // 2`. This demonstrates a pipeline combination.
+
 
 After creating the new layer, `_replace_layer` uses `setattr` to swap the original layer in the parent module. Information about each replacement is stored in `self.compressed_layers` for later reporting.
 
 ### 2.3 Compression Statistics and Visualisation
 
 The compressor tracks various metrics:
-- `_original_params`: total parameters of the model before compression.
-- `_compressed_params`: total parameters after compression.
-- `compression_stats`: a dictionary with fields like `compression_ratio`, `parameters_saved`, `reduction_percentage`, and `compressed_layers` (a list of per‑layer details).
-- `get_layer_wise_report()`: returns a pandas DataFrame summarising all compressed layers.
-- `visualize_compression()`: uses matplotlib to plot a side‑by‑side bar chart of original vs. compressed parameters per layer and a pie chart of compression types (attention, FFN, etc.). The plots can be saved to disk.
+`_original_params`: total parameters of the model before compression. Furthermore, `_compressed_params`: total parameters after compression. Concurrently, `compression_stats`: a dictionary with fields like `compression_ratio`, `parameters_saved`, `reduction_percentage`, and `compressed_layers` (a list of per‑layer details). In this setting, `get_layer_wise_report()`: returns a pandas DataFrame summarising all compressed layers. Additionally, `visualize_compression()`: uses matplotlib to plot a side‑by‑side bar chart of original vs. compressed parameters per layer and a pie chart of compression types (attention, FFN, etc.). The plots can be saved to disk.
+
 
 These utilities aid in evaluating the compression’s impact and diagnosing potential bottlenecks.
 
@@ -90,12 +82,8 @@ The template’s modular structure makes it straightforward to experiment with n
 
 ## 3. Implementation Details
 
-- **`SVDLinearLayer`**: Inherits from `nn.Module`. Uses `torch.linalg.svd` to factorise the original weight. The `U` and `V` layers are `nn.Linear` with biases set to `False`; the original bias (if any) is stored separately as `self.bias` (a `nn.Parameter`). The forward pass applies `V` then `U` then adds the bias.
-- **`YourCustomCompressor`**: Inherits from `BaseCompressor`. The `compress` method must be called to perform compression; it returns a tuple `(compressed_model, stats_dict)`. The class is registered with `@COMPRESSOR_REGISTRY.register("your_compressor_name")`.
-- **Layer traversal**: The `_compress_linear_layers` method uses `module.named_modules()` to recurse through sub‑modules. It replaces only direct `nn.Linear` instances. The replacement is done in‑place via `setattr`.
-- **Pruning details**: The pruning method is aggressive: it reduces both input and output dimensions, effectively creating a smaller linear layer. This may break the model if not handled carefully (e.g., subsequent layers must also be adjusted). In practice, a compressor would need to ensure dimension consistency across the network; this template provides a simplified demonstration.
-- **Quantisation**: The quantised weights are stored in floating point but with values restricted to a discrete set. This is a simulation of quantisation; a real deployment would convert to an integer representation. The number of bits defaults to 8.
-- **Hybrid method**: The hybrid method first prunes and then low‑rank factorises. The rank is halved to maintain a similar parameter budget. The pruned layer’s dimensions are already reduced, so the SVD is performed on a smaller matrix, which can be beneficial.
+Specifically, regarding \textbf{`SVDLinearLayer`}, inherits from `nn.Module`. Uses `torch.linalg.svd` to factorise the original weight. The `U` and `V` layers are `nn.Linear` with biases set to `False`; the original bias (if any) is stored separately as `self.bias` (a `nn.Parameter`). The forward pass applies `V` then `U` then adds the bias. Furthermore, regarding \textbf{`YourCustomCompressor`}, inherits from `BaseCompressor`. The `compress` method must be called to perform compression; it returns a tuple `(compressed_model, stats_dict)`. The class is registered with `@COMPRESSOR_REGISTRY.register("your_compressor_name")`. Concurrently, regarding \textbf{Layer traversal}, the `_compress_linear_layers` method uses `module.named_modules()` to recurse through sub‑modules. It replaces only direct `nn.Linear` instances. The replacement is done in‑place via `setattr`. In this setting, regarding \textbf{Pruning details}, the pruning method is aggressive: it reduces both input and output dimensions, effectively creating a smaller linear layer. This may break the model if not handled carefully (e.g., subsequent layers must also be adjusted). In practice, a compressor would need to ensure dimension consistency across the network; this template provides a simplified demonstration. Additionally, regarding \textbf{Quantisation}, the quantised weights are stored in floating point but with values restricted to a discrete set. This is a simulation of quantisation; a real deployment would convert to an integer representation. The number of bits defaults to 8. Moreover, regarding \textbf{Hybrid method}, the hybrid method first prunes and then low‑rank factorises. The rank is halved to maintain a similar parameter budget. The pruned layer’s dimensions are already reduced, so the SVD is performed on a smaller matrix, which can be beneficial.
+
 
 ---
 
@@ -129,11 +117,8 @@ The YourCustomCompressor template is a versatile starting point for implementing
 
 However, there are several limitations that a developer should address when building a production‑ready compressor:
 
-- **Dimension consistency**: The pruning method naively reduces both input and output dimensions, which will break the connectivity between layers unless all affected layers are adjusted simultaneously. A practical compressor must ensure that the output dimension of one layer matches the input dimension of the next.
-- **Embedding compression**: The embedding layer is treated as a linear layer; a more sophisticated approach might involve sharing weights with the output projection or applying a specialised factorisation (e.g., ALBERT‑style factorisation).
-- **Quantisation simulation**: The quantisation is stored in floating point but not truly quantised to integer arithmetic; this does not yield inference speed‑up. A real quantisation compressor would insert quantisation/dequantisation nodes or convert weights to integer tensors.
-- **Lack of fine‑tuning support**: The template does not include a training loop; after compression, fine‑tuning is typically required to recover lost accuracy. The compressor returns the model, which can then be passed to a trainer.
-- **Rigid method dispatch**: The `method` string defines the algorithm; a more flexible design might use a registry of compression methods that can be combined or applied per layer differently.
+Specifically, regarding \textbf{Dimension consistency}, the pruning method naively reduces both input and output dimensions, which will break the connectivity between layers unless all affected layers are adjusted simultaneously. A practical compressor must ensure that the output dimension of one layer matches the input dimension of the next. Furthermore, regarding \textbf{Embedding compression}, the embedding layer is treated as a linear layer; a more sophisticated approach might involve sharing weights with the output projection or applying a specialised factorisation (e.g., ALBERT‑style factorisation). Concurrently, regarding \textbf{Quantisation simulation}, the quantisation is stored in floating point but not truly quantised to integer arithmetic; this does not yield inference speed‑up. A real quantisation compressor would insert quantisation/dequantisation nodes or convert weights to integer tensors. In this setting, regarding \textbf{Lack of fine‑tuning support}, the template does not include a training loop; after compression, fine‑tuning is typically required to recover lost accuracy. The compressor returns the model, which can then be passed to a trainer. Additionally, regarding \textbf{Rigid method dispatch}, the `method` string defines the algorithm; a more flexible design might use a registry of compression methods that can be combined or applied per layer differently.
+
 
 Despite these simplifications, the template achieves its goal of providing a clear, extensible base for rapid prototyping. The included visualisation tools and statistics reporting are valuable for quickly assessing the impact of different compression settings.
 

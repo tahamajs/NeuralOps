@@ -114,27 +114,26 @@ Y = \text{SVDLinear}_O(C) \in \mathbb{R}^{B \times N \times D}
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ factor rank.
 
 1. **SVD Linear Projections**:
-   - Down-projections ($X V^\top$): $4 \times (2 B N D r) = 8 B N D r$ FLOPs.
-   - Up-projections ($Z U^\top$): $4 \times (2 B N r D) = 8 B N D r$ FLOPs.
-   - *Total Projection Workload*: $16 B N D r$ FLOPs ($8 B N D r$ MACs).
+Down-projections ($X V^\top$): $4 \times (2 B N D r) = 8 B N D r$ FLOPs. Furthermore, Up-projections ($Z U^\top$): $4 \times (2 B N r D) = 8 B N D r$ FLOPs. Concurrently, *Total Projection Workload*: $16 B N D r$ FLOPs ($8 B N D r$ MACs).
+
 
 2. **Core Scaled Attention**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
+$Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H N^2$ FLOPs.
+
 
 3. **Total Workload Summary**:
-   - **Total MACs**: $8 B N D r + 2 B N^2 D$
-   - **Total FLOPs**: $16 B N D r + 4 B N^2 D + 7 B H N^2$
+Specifically, regarding \textbf{Total MACs}, $8 B N D r + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $16 B N D r + 4 B N^2 D + 7 B H N^2$
+
 
 ### Parameter Footprint Comparison
-- **Dense MHA Projection Parameters**: $4 D^2 + 4 D$ floats.
-- **SVD Linear MHA Parameter Count**:
+Specifically, regarding \textbf{Dense MHA Projection Parameters}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{SVD Linear MHA Parameter Count}, 
+
   \[
   \text{Params}_{\text{SVDLinear}} = 4 \cdot r(D + D) + 4 D = 8 D r + 4 D \text{ floats}
   \]
   For $D = 4096, r = 64$:
-  - Dense MHA: $4 \times 4096^2 \approx 67.1 \text{ million parameters}$.
-  - SVD Linear MHA: $8 \times 4096 \times 64 \approx 2.09 \text{ million parameters}$ (**$96.8\%$ parameter compression**).
+Dense MHA: $4 \times 4096^2 \approx 67.1 \text{ million parameters}$. Furthermore, SVD Linear MHA: $8 \times 4096 \times 64 \approx 2.09 \text{ million parameters}$ (**$96.8\%$ parameter compression**).
+
 
 ---
 
