@@ -1,3 +1,4 @@
+import math
 from typing import Any
 import torch
 from framework.core.registry import Registry
@@ -39,14 +40,15 @@ def create_cosine_warmup(
     optimizer, num_warmup_steps=500, num_training_steps=10000, **kwargs
 ) -> Any:
     """Build and return cosine warmup."""
-    def lr_lambda(current_step) -> Any:
+    def lr_lambda(current_step: int) -> float:
         """Lr lambda."""
         if current_step < num_warmup_steps:
             return float(current_step) / float(max(1, num_warmup_steps))
         progress = float(current_step - num_warmup_steps) / float(
             max(1, num_training_steps - num_warmup_steps)
         )
-        return max(0.0, 0.5 * (1.0 + torch.cos(torch.pi * progress)))
+        # FIX: Use math.cos and math.pi instead of torch.cos on Python float to avoid TypeError
+        return max(0.0, 0.5 * (1.0 + math.cos(math.pi * progress)))
 
     return lr_scheduler.LambdaLR(optimizer, lr_lambda)
 
