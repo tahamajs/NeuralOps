@@ -41,8 +41,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from framework.core.base import BaseAttention
-from framework.core.attention_utils import softpick
 from framework.core.registry import ATTENTION_REGISTRY
+
+
+def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
+    """Softpick non-linear gated selection activation."""
+    return F.softmax(x / max(temperature, 1e-5), dim=dim)
 
 
 class FactorisedSVDLoRAProjection(nn.Module):
