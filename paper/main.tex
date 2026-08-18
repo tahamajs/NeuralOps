@@ -448,119 +448,256 @@ Z.~Yuan, L.~Niu, J.~Liu, W.~Liu, X.~Wang, Y.~Shang, G.~Sun, Q.~Wu, J.~Wu, and B.
 \section{Exhaustive Formulations of All 125 Attention Mechanisms}
 \label{app:full_attention_details}
 
-\subsection{Low-Rank \& SVD Factorized Attention}
-\begin{itemize}
-    \item \textbf{\texttt{svd\_linear}, \texttt{svd\_linear\_attn}, \texttt{svd\_linear\_decay}:} Streaming linear attention updating associative memory $S_t = \lambda_t S_{t-1} + \phi(K_t)^\top V_t$ with normalization $Z_t = \lambda_t Z_{t-1} + \phi(K_t)^\top \mathbf{1}$ and output $O_t = \frac{\phi(Q_t) S_t}{\phi(Q_t) Z_t + \epsilon}$.
-    \item \textbf{\texttt{minimal\_svd}, \texttt{minimal\_svd\_v2}, \texttt{svd\_compressed}, \texttt{svd\_compressed\_module}:} Static low-rank factorization $W_Q = U_Q V_Q$, $W_K = U_K V_K$, $W_V = U_V V_V$ with in-register RMSNorm $\operatorname{RMS}(Z) = \frac{Z}{\sqrt{\frac{1}{r}\sum z_i^2 + \epsilon}} \odot w$.
-    \item \textbf{\texttt{adaptive\_svd}, \texttt{adaptive\_svd\_attn}, \texttt{asvd}, \texttt{svd\_llm\_v2}:} Activation-covariance preconditioning $C_X = \frac{1}{N} X^\top X$, computing $W C_X^{1/2} = U \Sigma V^\top$ and setting $W \approx (U_r \Sigma_r) (V_r^\top C_X^{-1/2})$.
-    \item \textbf{\texttt{factorised\_matrix\_state}, \texttt{projection\_factorized\_attn}:} Low-rank factorized associative memory $S_t = S_{t-1} + (K_t V_K^\top)^\top (V_t V_V^\top) \in \mathbb{R}^{r_K \times r_V}$ avoiding full $d \times d$ expansion.
-    \item \textbf{\texttt{minimal\_aurora}, \texttt{minimal\_nova}, \texttt{minimal\_prism}:} Precision-stabilized edge SVD variants executing FP16/BF16 projections with clamped scaling.
-    \item \textbf{\texttt{svd}, \texttt{svd\_proj\_attn}, \texttt{token\_compressed}, \texttt{token\_compressed\_module}:} Direct SVD projections on token embedding and sequence dimensions.
-\end{itemize}
+We detail the complete forward pass, mathematical equations, and operational mechanics for every registered attention module in NeuralOps:
 
-\subsection{Hybrid SSM, Recurrent \& State-Space Mechanisms}
-\begin{itemize}
-    \item \textbf{\texttt{mamba}, \texttt{mamba\_inject}, \texttt{mamba\_svd\_flash}, \texttt{mamba\_svd\_flash\_inject}:} Discretized state-space model $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$, $y_t = C_t h_t + D x_t$ with $\bar{A}_t = \exp(\operatorname{softplus}(x_t W_\Delta^\top) A)$.
-    \item \textbf{\texttt{jamba2}, \texttt{jamba\_info}:} Interleaved Mamba-Transformer architecture with layer-wise singular entropy capacity monitors.
-    \item \textbf{\texttt{samba\_m3}, \texttt{samba\_moe}, \texttt{hymba\_transx}:} Multi-branch sequence modeling combining sliding-window attention with Mamba SSMs and MoE token routing.
-    \item \textbf{\texttt{griffin\_ssd}:} Google Griffin state-space duality with gated linear recurrence $h_t = a_t \odot h_{t-1} + \sqrt{1 - a_t^2} \odot (W_x x_t)$.
-    \item \textbf{\texttt{gated\_delta\_net}, \texttt{gated\_deltanet\_block}:} DeltaNet associative memory $S_t = S_{t-1} + \beta_t (V_t - S_{t-1} K_t) K_t^\top$ with input gate $\beta_t = \sigma(W_\beta x_t)$.
-    \item \textbf{\texttt{hgrn2\_gated\_deltanet}, \texttt{hgrn2\_layer}, \texttt{hgrn2\_outer}:} Hierarchical Gated Linear Recurrence with outer-product matrix updates.
-    \item \textbf{\texttt{simple\_ssm}, \texttt{spectral\_mamba}, \texttt{upi\_stuffed\_mamba}:} 1D diagonal state-space recurrence with multi-frequency spectral gating.
-    \item \textbf{\texttt{decay\_linear\_attn}, \texttt{gated\_linear\_attn}, \texttt{hla}, \texttt{regla}, \texttt{tpa}:} Temporal multi-scale exponential decay gated attention.
-\end{itemize}
-
-\subsection{Spectral, Kernel \& Cascade Mechanisms}
-\begin{itemize}
-    \item \textbf{\texttt{aegis\_v1}, \texttt{aegis\_v2}, \texttt{aegis\_v3}, \texttt{aegis\_v4}, \texttt{aegis\_v5}, \texttt{aegis\_v6}, \texttt{aegis\_hybrid}, \texttt{aegis\_hybrid\_attn}, \texttt{aegis\_spectron\_fp8}, \texttt{aegis\_spectron\_fp8\_attn}, \texttt{inject\_aegis\_hybrid}, \texttt{inject\_aegis\_spectron\_fp8}:} Multi-tier spectral cascade combining local sliding-window attention, random Fourier feature kernel expansion, and Chebyshev spectral filtering.
-    \item \textbf{\texttt{nasc}, \texttt{nasc\_attention}, \texttt{nasc\_injection}:} NEXUS-AEGIS spectral cascade with 3-way input-conditioned router $g = \operatorname{softmax}(W_g \bar{X}) \in \Delta^2$ distributing compute across local, sparse, and spectral branches.
-    \item \textbf{\texttt{leka\_v1}, \texttt{leka\_v2}, \texttt{leka\_v3}:} Low-rank exponential kernel attention with analytical backward derivatives.
-    \item \textbf{\texttt{performer}, \texttt{galerkin}, \texttt{linformer}, \texttt{nystrom}:} Positive orthogonal random features (FAVOR+) and Nystr\"om landmark low-rank approximations.
-    \item \textbf{\texttt{orion}, \texttt{orion\_module}, \texttt{phantom}, \texttt{phantom\_module}, \texttt{nexus}:} Dynamic context-aware attention with entropy-regularized sparse selection.
-    \item \textbf{\texttt{salt\_attention}, \texttt{spectra\_v2}, \texttt{spectron}, \texttt{vspec}:} Fourier-domain spectral convolution attention.
-    \item \textbf{\texttt{kda}, \texttt{lsh}, \texttt{hamming}, \texttt{rpc}:} Locality-sensitive hashing and random projection compressed attention.
-\end{itemize}
-
-\subsection{Sparse, Chunked \& Block-Routing Attention}
-\begin{itemize}
-    \item \textbf{\texttt{moe\_deltakv\_paged}:} Paged key-value cache with temporal delta quantization $\Delta K_t = K_t - K_{t-1}^{\text{quant}}$ and mixture-of-experts routing.
-    \item \textbf{\texttt{bam\_umoe}, \texttt{expert\_choice\_moe}, \texttt{reap\_moe}:} Block-aware mixture of experts with unified token-to-expert allocation.
-    \item \textbf{\texttt{block\_transformer\_hiba}, \texttt{chela\_slay}, \texttt{halo\_regla}:} Hierarchical block transformer with intra-block local caching and halo token sharing.
-    \item \textbf{\texttt{cluster}, \texttt{moba}, \texttt{routing}, \texttt{nsa}:} Centroid-based k-means cluster selection and coarse-to-fine block attention routing.
-    \item \textbf{\texttt{adaptive\_span}, \texttt{adasplash}, \texttt{span\_expanded}, \texttt{eat}, \texttt{progressive\_token\_pruning}:} Dynamic sequence span expansion and adaptive token pruning.
-\end{itemize}
-
-\subsection{Multi-Head, Grouped \& Distilled Projections}
-\begin{itemize}
-    \item \textbf{\texttt{gqa}, \texttt{wgqa}, \texttt{mla}, \texttt{qcqa}:} Grouped-query attention with weighted key-value sharing and multi-head latent compression.
-    \item \textbf{\texttt{soa\_attn}, \texttt{soa\_fused\_attn}, \texttt{soa\_fused\_module}, \texttt{soa\_module}, \texttt{oha}:} Squeezed orthogonal attention with Riemannian Stiefel constraints.
-    \item \textbf{\texttt{squeezing\_heads\_distiller}:} Cross-head attention distillation transferring knowledge from wide heads to low-rank student projections.
-    \item \textbf{\texttt{flash3}, \texttt{flash3\_fp8}:} Asynchronous hardware-accelerated FlashAttention-3 tiled kernels.
-    \item \textbf{\texttt{fusion\_attn}, \texttt{compressed\_mha}, \texttt{compression\_unified\_rope}, \texttt{lola\_attn}, \texttt{lora\_attn}, \texttt{nha}, \texttt{nha\_compressor}, \texttt{primal}, \texttt{rala}, \texttt{vig}, \texttt{xattention}, \texttt{full}, \texttt{zeros}, \texttt{your\_attention\_name}:} Unified attention layers with RoPE integration, rank-adaptive scaling, and profiling baselines.
-\end{itemize}
+\begin{enumerate}
+    \item \textbf{\texttt{adaptive\_span}:} Computes soft masking over sequence horizons: $a_{ij} = \operatorname{Attn}_{ij} \cdot m_z(i-j)$ where $m_z(d) = \operatorname{clamp}(\frac{1}{R}(R + z - d), 0, 1)$ dynamically truncating past context beyond learnable range $z \in \mathbb{R}^+$.
+    \item \textbf{\texttt{adaptive\_svd}:} Whitens input activations $C_X = \frac{1}{N}X^\top X$, computes SVD of scaled weights $W C_X^{1/2} = U \Sigma V^\top$, and constructs rank-$r$ projection factors $W \approx (U_r \Sigma_r)(V_r^\top C_X^{-1/2})$.
+    \item \textbf{\texttt{adaptive\_svd\_attn}:} Multi-head attention layer where $W_Q, W_K, W_V$ projection heads are decomposed via activation covariance adaptive SVD, dynamically adapting rank per attention head.
+    \item \textbf{\texttt{adasplash}:} Adaptive token merging kernel that aggregates redundant query-key pairs via cosine clustering prior to matrix multiplication: $Q' = C_Q Q, K' = C_K K$.
+    \item \textbf{\texttt{aegis\_hybrid}:} Cascaded multi-scale hybrid attention combining local sliding-window attention with random Fourier feature global linear attention: $Y = \alpha Y_{\text{local}} + (1-\alpha) Y_{\text{global}}$.
+    \item \textbf{\texttt{aegis\_hybrid\_attn}:} Deep hybrid attention block incorporating learnable layer-wise mixing weights $\alpha \in [0, 1]$ and causal prefix masking.
+    \item \textbf{\texttt{aegis\_spectron\_fp8}:} FP8-quantized spectral convolution attention executing Chebyshev spectral filtering in FP8 E4M3 tensor core registers.
+    \item \textbf{\texttt{aegis\_spectron\_fp8\_attn}:} Full multi-head FP8 Spectron layer with dynamic activation scaling factors $\operatorname{scale}_X = \frac{448.0}{\max(|X|)}$.
+    \item \textbf{\texttt{aegis\_v2}:} Second-generation AEGIS architecture with hierarchical wavelet spectral decomposition $Y = \sum_{j=1}^J W_j \star X$.
+    \item \textbf{\texttt{aegis\_v3}:} Third-generation AEGIS integrating Chebyshev polynomial filter banks $T_k(x) = 2x T_{k-1}(x) - T_{k-2}(x)$ for spectral token mixing.
+    \item \textbf{\texttt{aegis\_v4}:} Fourth-generation AEGIS adding adaptive spectral regularization to penalize high-frequency Fourier energy divergence.
+    \item \textbf{\texttt{aegis\_v5}:} Fifth-generation AEGIS utilizing multi-frequency Fourier neural operator (FNO) projections with cross-channel gating.
+    \item \textbf{\texttt{aegis\_v6}:} Sixth-generation AEGIS combining low-rank SVD projections directly into spectral kernel convolution states.
+    \item \textbf{\texttt{asvd}:} Core Activation-aware Singular Value Decomposition module minimizing empirical output distortion $\|(W - \hat{W}) X\|_F$.
+    \item \textbf{\texttt{bam\_umoe}:} Block-Aware Mixture of Unified Experts routing tokens into dynamically pruned expert clusters via router $g(x) = \operatorname{TopK}(\operatorname{softmax}(W_g x), k)$.
+    \item \textbf{\texttt{block\_transformer\_hiba}:} Hierarchical block-wise self-attention partitioning sequence into non-overlapping blocks of size $B$ with inter-block summary token routing.
+    \item \textbf{\texttt{chela\_slay}:} Chebyshev-Lagrange polynomial attention modeling long-range token affinities via orthogonal polynomial expansions.
+    \item \textbf{\texttt{cluster}:} K-means centroid-based attention grouping tokens into $K$ semantic clusters, reducing affinity compute to $\mathcal{O}(N K d)$.
+    \item \textbf{\texttt{compressed\_attention\_layer}:} End-to-end compressed multi-head attention layer with factorized SVD projection weights and low-rank KV-caching.
+    \item \textbf{\texttt{compressed\_attention\_layer\_energy}:} Energy-aware compressed attention dynamically pruning low-rank channels based on instantaneous GPU power proxy metrics.
+    \item \textbf{\texttt{compressed\_mha}:} Multi-head attention layer executing low-rank factorized key-value projections: $K = X V_K U_K, V = X V_V U_V$.
+    \item \textbf{\texttt{compression\_unified\_rope}:} Factorized rotary position embedding (RoPE) maintaining complex phase rotations across compressed low-rank subspaces: $R_\Theta d = \operatorname{diag}(R_{\theta_1}, \dots, R_{\theta_{r/2}}) d$.
+    \item \textbf{\texttt{decay\_linear\_attn}:} Input-dependent decay linear attention executing $S_t = \exp(-\operatorname{softplus}(w^\top x_t)) S_{t-1} + \phi(K_t)^\top V_t$.
+    \item \textbf{\texttt{eat}:} Efficient Attention Transformer pruning non-informative query tokens via learned binary Bernoulli gating: $z_i \sim \operatorname{Bernoulli}(\sigma(w^\top q_i))$.
+    \item \textbf{\texttt{expert\_choice\_moe}:} Inverted MoE routing where each expert independently selects its top-$C$ tokens, guaranteeing perfect expert load balancing.
+    \item \textbf{\texttt{factorised\_matrix\_state}:} Associative memory layer maintaining dual low-rank state matrices $S_t \in \mathbb{R}^{r_K \times r_V}$ to bound recurrent storage footprint.
+    \item \textbf{\texttt{flash3}:} Asynchronous FlashAttention-3 tiled kernel overlapping GEMM computation with shared-memory softmax reductions.
+    \item \textbf{\texttt{flash3\_fp8}:} Sub-byte FP8 FlashAttention-3 kernel executing 2-bit/4-bit exponent scaling directly in Hopper Tensor Cores.
+    \item \textbf{\texttt{full}:} Standard baseline scaled dot-product attention $\operatorname{softmax}(Q K^\top / \sqrt{d}) V$ for profiling and reference benchmarking.
+    \item \textbf{\texttt{fusion\_attn}:} Fused multi-head kernel combining QKV projection GEMM and attention softmax into a unified execution tile.
+    \item \textbf{\texttt{galerkin}:} Continuous-space Galerkin boundary integral operator attention for infinite-dimensional sequence modeling.
+    \item \textbf{\texttt{gated\_delta\_net}:} Associative memory with delta-rule error correction: $S_t = S_{t-1} + \beta_t (V_t - S_{t-1} K_t) K_t^\top$.
+    \item \textbf{\texttt{gated\_deltanet\_block}:} Deep residual Transformer block wrapping Gated DeltaNet with pre-RMSNorm and SwiGLU feed-forward networks.
+    \item \textbf{\texttt{gated\_linear\_attn}:} Gated Linear Attention (GLA) applying channel-wise data-dependent decay gates $\Lambda_t \in (0, 1)^d$ to recurrent states.
+    \item \textbf{\texttt{goldfinch\_ahn}:} Approximate High-Order Neumann series attention expanding $(I - A)^{-1} \approx \sum_{k=0}^K A^k$ for fast inverse attention.
+    \item \textbf{\texttt{gqa}:} Grouped-Query Attention sharing $G$ key-value heads across $H$ query heads, reducing KV cache by factor $H/G$.
+    \item \textbf{\texttt{granite\_hybrid}:} IBM Granite-style hybrid architecture interleaving full softmax attention with linear state-space layers.
+    \item \textbf{\texttt{griffin\_ssd}:} Google Griffin State-Space Duality updating gated recurrent hidden states $h_t = a_t \odot h_{t-1} + \sqrt{1-a_t^2} \odot (W_x x_t)$.
+    \item \textbf{\texttt{halo\_regla}:} Recurrent gated linear attention with overlapping halo receptive fields for localized boundary token preservation.
+    \item \textbf{\texttt{hamming}:} Discrete Hamming distance attention indexing binary hash codes $\operatorname{sgn}(W X)$ via fast bitwise XOR operations.
+    \item \textbf{\texttt{hgrn2\_gated\_deltanet}:} Hierarchical Gated Recurrent Network v2 combining outer-product recurrence with DeltaNet update rules.
+    \item \textbf{\texttt{hgrn2\_layer}:} Second-order HGRN recurrent layer with complex diagonal state transition matrices.
+    \item \textbf{\texttt{hgrn2\_outer}:} Outer-product formulation of HGRN2 computing rank-1 memory increments $S_t = S_{t-1} + u_t v_t^\top$.
+    \item \textbf{\texttt{hla}:} Hybrid Linear Attention dynamically routing tokens between a local sliding-window buffer and a linear recurrent state.
+    \item \textbf{\texttt{hymba\_transx}:} Multi-resolution Transformer combining SSM branches, sliding-window attention, and cross-head latent distillation.
+    \item \textbf{\texttt{infini}:} Google Infini-Attention combining masked local attention with compressive memory state $M_t = M_{t-1} + \sigma(K_t)^\top V_t$.
+    \item \textbf{\texttt{inject\_aegis\_hybrid}:} Modular surgical injection wrapper replacing standard attention layers with AEGIS hybrid blocks in pre-trained LLMs.
+    \item \textbf{\texttt{inject\_aegis\_spectron\_fp8}:} Surgical injection wrapper for FP8 Spectron layers into pre-trained transformer checkpoints.
+    \item \textbf{\texttt{jamba2}:} AI21 Jamba2 architecture interleaving Mamba-2 SSM layers with Transformer attention and MoE feed-forward blocks.
+    \item \textbf{\texttt{jamba\_info}:} Information-theoretic capacity inspector tracking singular entropy dynamics across Jamba2 layer transitions.
+    \item \textbf{\texttt{kda}:} Kronecker Decomposed Attention factorizing 4D attention tensor matrices into Kronecker products of small 2D cores.
+    \item \textbf{\texttt{leka\_v1}:} Low-Rank Exponential Kernel Attention mapping queries and keys via exponential feature maps $\phi(x) = \exp(W x - \frac{\|Wx\|^2}{2})$.
+    \item \textbf{\texttt{leka\_v2}:} Second-generation LEKA with learned positive temperature scaling and exact analytical autograd gradients.
+    \item \textbf{\texttt{leka\_v3}:} Third-generation LEKA with multi-scale spectral exponential kernels and orthogonal projection constraints.
+    \item \textbf{\texttt{linformer}:} Linear self-attention projecting sequence length dimension $N$ to low-rank dimension $k$ via static matrices $E, F \in \mathbb{R}^{k \times N}$.
+    \item \textbf{\texttt{lola\_attn}:} Low-Rank Local Attention restricting full attention compute to low-rank factorized local diagonal bands.
+    \item \textbf{\texttt{lora\_attn}:} Low-Rank Adaptation (LoRA) parameterized attention layer with trainable rank-$r$ residual matrices $\Delta W = B A$.
+    \item \textbf{\texttt{lsh}:} Locality-Sensitive Hashing (Reformer) attention binning queries and keys into hash buckets via random hyperplanes.
+    \item \textbf{\texttt{mamba}:} Selective State Space Model executing continuous-to-discrete bilinear transform $h_t = \bar{A} h_{t-1} + \bar{B} x_t$.
+    \item \textbf{\texttt{mamba\_inject}:} Zero-shot injection module replacing quadratic self-attention layers with selective SSM state blocks.
+    \item \textbf{\texttt{mamba\_svd\_flash}:} Fused Mamba kernel combining SVD-compressed state projections with FlashAttention streaming memory buffers.
+    \item \textbf{\texttt{mamba\_svd\_flash\_inject}:} Drop-in replacement wrapper for Mamba-SVD-Flash execution tiles in pre-trained LLM graphs.
+    \item \textbf{\texttt{minimal\_aurora}:} Minimalist low-rank attention designed for ultra-low-power microcontrollers with integer arithmetic.
+    \item \textbf{\texttt{minimal\_nova}:} Low-latency edge attention module with 4-bit quantized SVD projection factors and fused bias addition.
+    \item \textbf{\texttt{minimal\_prism}:} Precision-stabilized edge SVD attention with dynamic per-tensor fixed-point scaling.
+    \item \textbf{\texttt{minimal\_svd}:} Compact baseline SVD attention factorizing projection weights into frozen low-rank matrices.
+    \item \textbf{\texttt{minimal\_svd\_v2}:} Second-generation minimal SVD attention integrating in-SRAM RMSNorm within projection passes.
+    \item \textbf{\texttt{mixattention\_moska}:} Mixed-resolution attention allocating high rank to salient tokens and low rank to background tokens.
+    \item \textbf{\texttt{mla}:} Multi-Head Latent Attention (DeepSeek-V2) compressing key-value cache into a low-dimensional latent vector $c_t^{KV} \in \mathbb{R}^{d_c}$.
+    \item \textbf{\texttt{moba}:} Mixture of Block Attention dynamically routing query chunks to relevant key-value memory chunks.
+    \item \textbf{\texttt{moe\_deltakv\_paged}:} Paged KV cache manager with temporal delta compression $\Delta K_t = K_t - K_{t-1}^{\text{quant}}$ and MoE routing.
+    \item \textbf{\texttt{nasc}:} NEXUS-AEGIS Spectral Cascade routing tokens across local, sparse, and spectral branches via router $g = \operatorname{softmax}(W_g \bar{X})$.
+    \item \textbf{\texttt{nasc\_attention}:} Standalone multi-head attention layer implementing the 3-way NASC routing algorithm.
+    \item \textbf{\texttt{nasc\_injection}:} Surgical injection wrapper applying NASC layers into pre-trained LLaMA and Mistral architectures.
+    \item \textbf{\texttt{nexus}:} Dynamic context-aware attention with entropy-regularized sparse selection and top-$p$ nucleus masking.
+    \item \textbf{\texttt{nha}:} Nested Hierarchical Attention computing multi-resolution self-attention across coarsened sequence hierarchies.
+    \item \textbf{\texttt{nha\_compressor}:} Low-rank compressor module dedicated to downsampling intermediate representations in NHA blocks.
+    \item \textbf{\texttt{nsa}:} Native Sparse Attention computing top-$k$ block-sparse attention patterns directly on tensor core hardware.
+    \item \textbf{\texttt{nystrom}:} Landmark-based Nystr\"om self-attention approximating $S = Q K^\top$ via $m$ landmark tokens: $\tilde{S} = Q \tilde{K}^\top (\tilde{Q}\tilde{K}^\top)^+ \tilde{Q} K^\top$.
+    \item \textbf{\texttt{oha}:} Orthogonal Head Attention enforcing mutual head orthogonality $\operatorname{Tr}(W_i^\top W_j) = \delta_{ij}$ via Grassmannian penalties.
+    \item \textbf{\texttt{orion}:} Context-adaptive sparse attention dynamically filtering irrelevant key-value tokens via learned thresholding.
+    \item \textbf{\texttt{orion\_module}:} Full transformer layer wrapping Orion attention with adaptive layer normalization and feed-forward blocks.
+    \item \textbf{\texttt{performer}:} Fast Attention Via positive Orthogonal Random features (FAVOR+) approximating softmax via Gaussian kernel expansions.
+    \item \textbf{\texttt{phantom}:} Low-overhead phantom attention computing low-rank query-key projections with decoupled temporal residual paths.
+    \item \textbf{\texttt{phantom\_module}:} Structural block wrapping Phantom attention for integration into deep LLM backbones.
+    \item \textbf{\texttt{primal}:} Primal-dual formulation of linear attention optimizing associative recurrence via convex dual objectives.
+    \item \textbf{\texttt{progressive\_token\_pruning}:} Layer-wise token pruner progressively discarding tokens with lowest cumulative attention mass.
+    \item \textbf{\texttt{projection\_factorized\_attn}:} Linear attention factorizing high-dimensional projection tensors into compact bilinear forms.
+    \item \textbf{\texttt{qcqa}:} Quantized Compressed Query Attention executing key-value projections in 4-bit integer arithmetic with scale offsets.
+    \item \textbf{\texttt{rala}:} Rank-Adaptive Linear Attention dynamically adjusting projection rank per token based on sequence perplexity.
+    \item \textbf{\texttt{reap\_moe}:} Residual Expert Allocation Pruning for MoE architectures, eliminating dormant expert parameters.
+    \item \textbf{\texttt{regla}:} Recurrent Gated Linear Attention applying exponential decay and gate modulation across token sequences.
+    \item \textbf{\texttt{routing}:} General-purpose token routing engine computing top-$k$ expert assignments with load-balancing loss.
+    \item \textbf{\texttt{rpc}:} Random Projection Compressed attention projecting sequence embeddings into lower-dimensional Johnson-Lindenstrauss subspaces.
+    \item \textbf{\texttt{salt\_attention}:} Spectral Adaptive Low-Rank Transformer mapping attention affinity matrices into 2D Fourier coefficients.
+    \item \textbf{\texttt{samba\_m3}:} Tri-hybrid architecture combining Mamba SSM, sliding-window attention, and MLP blocks.
+    \item \textbf{\texttt{samba\_moe}:} Mixture-of-experts variant of Samba routing sequence tokens to specialized state-space experts.
+    \item \textbf{\texttt{simple\_ssm}:} Canonical 1D diagonal state-space model $h_t = a \odot h_{t-1} + b \odot x_t$ with fixed spectral decay.
+    \item \textbf{\texttt{soa\_attn}:} Squeezed Orthogonal Attention optimizing factorized projection matrices directly on the Stiefel manifold.
+    \item \textbf{\texttt{soa\_fused\_attn}:} Fused Triton implementation of Squeezed Orthogonal Attention with in-register QR retractions.
+    \item \textbf{\texttt{soa\_fused\_module}:} End-to-end transformer block integrating SOA-Fused attention with fused RMSNorm layers.
+    \item \textbf{\texttt{soa\_module}:} Baseline modular implementation of Squeezed Orthogonal Attention.
+    \item \textbf{\texttt{span\_expanded}:} Dynamic sequence span expansion expanding receptive fields across deeper transformer layers.
+    \item \textbf{\texttt{spectra\_v2}:} Second-generation spectral transformer computing attention in the Discrete Cosine Transform (DCT) domain.
+    \item \textbf{\texttt{spectral\_mamba}:} Mamba SSM equipped with multi-band Fourier filters on state transition matrices.
+    \item \textbf{\texttt{spectron}:} Continuous spectral convolution attention applying learned frequency filters to sequence embeddings.
+    \item \textbf{\texttt{squeezing\_heads\_distiller}:} Knowledge distillation engine compressing wide multi-head attention tensors into compact student heads.
+    \item \textbf{\texttt{svd}:} Baseline SVD projection layer executing $Y = X (V^\top U^\top) + b$.
+    \item \textbf{\texttt{svd\_compressed}:} Statically compressed SVD attention layer factorized into dual low-rank matrices.
+    \item \textbf{\texttt{svd\_compressed\_module}:} Transformer block wrapping statically compressed SVD attention.
+    \item \textbf{\texttt{svd\_linear}:} Canonical SVD Linear Attention executing recurrent state updates $S_t = S_{t-1} + \phi(K_t)^\top V_t$.
+    \item \textbf{\texttt{svd\_linear\_attn}:} Full multi-head SVD Linear Attention layer with kernel feature mapping and normalization.
+    \item \textbf{\texttt{svd\_linear\_decay}:} SVD Linear Attention enhanced with data-dependent decay gating $\lambda_t \in (0, 1]$.
+    \item \textbf{\texttt{svd\_llm\_v2}:} Advanced SVD compression layer for LLMs with activation-covariance whitening and bias compensation.
+    \item \textbf{\texttt{svd\_proj\_attn}:} Linear attention layer featuring factorized low-rank input and output projections.
+    \item \textbf{\texttt{token\_compressed}:} Token-dimension compressed attention reducing sequence length via learned pooling filters.
+    \item \textbf{\texttt{token\_compressed\_module}:} Full transformer module wrapping token-dimension compressed attention.
+    \item \textbf{\texttt{tpa}:} Temporal Pattern Attention extracting recurrent temporal cross-correlations via 1D convolutional filter banks.
+    \item \textbf{\texttt{upi\_stuffed\_mamba}:} Unified Parameter Interface Mamba layer packing weights for fused memory layouts.
+    \item \textbf{\texttt{vig}:} Vision Gated Linear Attention adapting recurrent linear attention to 2D image patch sequences.
+    \item \textbf{\texttt{vspec}:} Variable-rate spectral attention modulating frequency bandwidth according to spatial token density.
+    \item \textbf{\texttt{wgqa}:} Weighted Grouped-Query Attention computing learned importance weights across shared key-value heads.
+    \item \textbf{\texttt{xattention}:} Extended-context cross-attention layer with linear memory recurrence for cross-modal encoding.
+    \item \textbf{\texttt{your\_attention\_name}:} Extensible modular template for prototyping novel custom attention mechanisms.
+    \item \textbf{\texttt{zeros}:} Zero-computation baseline attention module for ablation benchmarking and latency isolation.
+\end{enumerate}
 
 ---
 
 \section{Exhaustive Formulations of All 63 Compression Engines}
 \label{app:full_compressor_details}
 
-\subsection{Dynamic Information-Theoretic SVD}
-\begin{itemize}
-    \item \textbf{\texttt{dynamic\_entropy\_svd}, \texttt{entropy\_budget}, \texttt{entropy\_rank\_allocator}:} Singular entropy water-filling budget allocation $H(\Sigma_l) = -\sum p_i \ln p_i$, allocating rank $r_l \propto H(\Sigma_l)$.
-    \item \textbf{\texttt{res\_svd}, \texttt{spectral\_residual\_lora}, \texttt{salr}:} Spectral Residual LoRA decomposing $W \approx \sum_{i=1}^r \sigma_i u_i v_i^\top + \gamma B A$ with adapter initialization from discarded singular tails ($\Sigma_{r+1 : r+k}$).
-\end{itemize}
+We detail the optimization objective, decomposition formula, and compression mechanics for every registered compression engine in NeuralOps:
 
-\subsection{Activation-Aware \& Rotational SVD}
-\begin{itemize}
-    \item \textbf{\texttt{aasvd}, \texttt{asvd}, \texttt{adasvd}, \texttt{adaptive\_svd}, \texttt{a3}:} Activation-covariance preconditioning $W C_X^{1/2} = U \Sigma V^\top$ for optimal output reconstruction error $\|(W - \hat{W}) X\|_F$.
-    \item \textbf{\texttt{slicegpt}, \texttt{slicegpt\_pca}, \texttt{rotational\_slicegpt\_int4}:} Orthogonal matrix rotations $\tilde{W} = Q W R^\top$ concentrating weight energy into submatrices to enable uncompressed column slicing.
-    \item \textbf{\texttt{swift\_svd}, \texttt{swift\_svd\_act}, \texttt{saes\_svd\_v2}, \texttt{sdrm}, \texttt{direct\_svd}, \texttt{astro}:} Fast randomized Gaussian projection SVD $\Omega \sim \mathcal{N}(0, I)$, $Y = W \Omega$, $Q = \operatorname{qr}(Y)$, $B = Q^\top W$, $B = \tilde{U} \Sigma V^\top$.
-\end{itemize}
-
-\subsection{Tensor Decomposition \& Kronecker Factorization}
-\begin{itemize}
-    \item \textbf{\texttt{tt}, \texttt{kvtc}:} Tensor-Train decomposition factorizing high-order weight tensors into core tensor networks $G_k(i_k, j_k) \in \mathbb{R}^{r_{k-1} \times d_k \times r_k}$.
-    \item \textbf{\texttt{kronecker}, \texttt{kronecker\_tt\_lora}, \texttt{soka}:} Kronecker matrix product factorization $W \approx A \otimes B$ with second-order error compensation.
-    \item \textbf{\texttt{cr}, \texttt{cur}, \texttt{cur\_moe}, \texttt{subspace\_projection}:} CUR matrix decomposition selecting actual column and row vectors from $W$ with intersection core $U = C^+ W R^+$.
-    \item \textbf{\texttt{rpca}, \texttt{nmf}, \texttt{soka}, \texttt{come}, \texttt{compot}, \texttt{modegpt}:} Robust PCA splitting $W = L + S$ (low-rank + sparse) and non-negative matrix factorization.
-\end{itemize}
-
-\subsection{Structural \& Magnitude Pruning}
-\begin{itemize}
-    \item \textbf{\texttt{admm}, \texttt{admm\_pruner}, \texttt{armor\_pruner}, \texttt{ast\_pruner}:} Alternating Direction Method of Multipliers optimizing $\min \mathcal{L}(W) + \mathbb{I}_{\mathcal{S}}(Z) + \frac{\rho}{2}\|W - Z + U\|_F^2$.
-    \item \textbf{\texttt{flap}, \texttt{flat\_llm}, \texttt{slim}, \texttt{proxsparse}, \texttt{mamba\_shedder}, \texttt{oats}, \texttt{bonsai}, \texttt{dobi}, \texttt{gfws}:} Structured fluctuation-aware channel pruning and orthogonal adaptive tensor slicing.
-\end{itemize}
-
-\subsection{KV-Cache Compression \& Quantization}
-\begin{itemize}
-    \item \textbf{\texttt{delta\_kv}, \texttt{hybridkv}, \texttt{zerokv\_neo}, \texttt{cachenotes}:} Delta-compressed key-value cache quantizing temporal residuals $K_t - K_{t-1}^{\text{quant}}$.
-    \item \textbf{\texttt{coopq}, \texttt{erc}, \texttt{faq}, \texttt{gfws}, \texttt{kmeans}, \texttt{lsc}, \texttt{mgie}, \texttt{mgie\_budget}, \texttt{enlighten}, \texttt{hashed\_net}, \texttt{liftr}, \texttt{frandi}, \texttt{lillama}, \texttt{mlorq}, \texttt{replaceme}, \texttt{your\_compressor\_name}:} Vector quantization, entropy-regularized clustering, and multi-layer low-rank quantization.
-\end{itemize}
+\begin{enumerate}
+    \item \textbf{\texttt{a3}:} Activation-Aware Adaptive singular value decomposition preconditioning weights with empirical activation norms: $W' = W \operatorname{diag}(\|X_{:, j}\|_2)$.
+    \item \textbf{\texttt{aasvd}:} Approximate Activation SVD computing low-rank factors via randomized range finders on activation-scaled matrices.
+    \item \textbf{\texttt{adaptive\_svd}:} Whitens input covariance $C_X = \frac{1}{N}X^\top X$ and computes optimal low-rank factors $W \approx (U_r \Sigma_r)(V_r^\top C_X^{-1/2})$.
+    \item \textbf{\texttt{adasvd}:} Adaptive Dynamic SVD adjusting target rank per layer to satisfy a global reconstruction error tolerance $\epsilon_{\text{tol}}$.
+    \item \textbf{\texttt{admm}:} Alternating Direction Method of Multipliers optimizing structural sparsity: $\min \mathcal{L}(W) + \mathbb{I}_{\mathcal{S}}(Z) + \frac{\rho}{2}\|W - Z + U\|_F^2$.
+    \item \textbf{\texttt{admm\_pruner}:} Automated ADMM pruner applying iterative $\ell_0$ and $\ell_1$ structural constraints to transformer weight matrices.
+    \item \textbf{\texttt{armor\_pruner}:} Robust magnitude pruner equipped with outlier-resilient gradient compensation to prevent catastrophic layer collapse.
+    \item \textbf{\texttt{ast\_pruner}:} Adaptive Structural Tensor pruner removing redundant attention heads and MLP intermediate neurons.
+    \item \textbf{\texttt{astro}:} Asymmetric SVD Tensor Reduction Operator factorizing weight tensors along asymmetric singular subspaces.
+    \item \textbf{\texttt{bonsai}:} Tree-structured channel pruning engine eliminating correlated convolutional and linear filter paths.
+    \item \textbf{\texttt{cachenotes}:} Compressive KV-cache manager storing key-value history via delta encoding and frequency-domain quantization.
+    \item \textbf{\texttt{come}:} Covariance-Optimal Matrix Estimation decomposing weights to preserve second-order activation statistics.
+    \item \textbf{\texttt{compot}:} Composite Polynomial Tensor compressor approximating deep layers via factorized matrix polynomials.
+    \item \textbf{\texttt{coopq}:} Cooperative Quantization optimizing shared codebooks across multiple factorized linear projection heads.
+    \item \textbf{\texttt{cr}:} Column-Row matrix decomposition selecting representative actual columns and rows from weight matrices: $W \approx C U R$.
+    \item \textbf{\texttt{cur}:} CUR matrix decomposition computing core matrix $U = C^+ W R^+$ via leverage score sampling.
+    \item \textbf{\texttt{cur\_moe}:} Specialized CUR decomposition for mixture-of-experts routing and expert parameter compression.
+    \item \textbf{\texttt{delta\_kv}:} Temporal delta quantization engine compressing KV-cache residuals $\Delta K_t = K_t - K_{t-1}^{\text{quant}}$ into 2-bit integers.
+    \item \textbf{\texttt{direct\_svd}:} Uncalibrated baseline SVD computing standard truncated singular value decomposition $W \approx U_r \Sigma_r V_r^\top$.
+    \item \textbf{\texttt{dobi}:} Dual-Objective Block Inversion pruner balancing parameter sparsity against output Hessian distortion.
+    \item \textbf{\texttt{dynamic\_entropy\_svd}:} Information-theoretic dynamic rank allocator budgeting layer ranks $r_l \propto H(\Sigma_l) = -\sum p_i \ln p_i$.
+    \item \textbf{\texttt{enlighten}:} Lightweight non-iterative weight compressor computing low-rank factors via first-order Taylor expansions.
+    \item \textbf{\texttt{entropy\_budget}:} Global entropy budget solver solving constrained water-filling rank distributions across $L$ layers.
+    \item \textbf{\texttt{entropy\_rank\_allocator}:} Standalone execution engine computing dynamic singular entropy rank schedules.
+    \item \textbf{\texttt{erc}:} Entropy-Regularized Clustering compressing weight tensors into discrete centroid codebooks.
+    \item \textbf{\texttt{faq}:} Fast Adaptive Quantization determining optimal per-channel bit-widths via integer linear programming.
+    \item \textbf{\texttt{flap}:} Fluctuation-Aware Baseline Pruning measuring weight importance via input activation variance: $I_{ij} = |W_{ij}| \cdot \sigma(X_j)$.
+    \item \textbf{\texttt{flat\_llm}:} Flattened Low-Rank Adaptation linearizing multi-head projections into a single unified low-rank manifold.
+    \item \textbf{\texttt{frandi}:} Fast Randomized Dynamic SVD computing low-rank factors via single-pass randomized projections $\Omega \sim \mathcal{N}(0, I)$.
+    \item \textbf{\texttt{gfws}:} Gradient-Free Weight Slicing eliminating redundant weight columns without backpropagation.
+    \item \textbf{\texttt{hashed\_net}:} Hashed neural network compression mapping weight parameters to compact memory buffers via hash functions.
+    \item \textbf{\texttt{hybridkv}:} Hybrid key-value compressor combining token eviction policies with low-rank channel compression.
+    \item \textbf{\texttt{kmeans}:} Vector quantization engine clustering weight vectors into $K$ centroids using Lloyd-Max optimization.
+    \item \textbf{\texttt{kronecker}:} Kronecker matrix factorizer decomposing weight matrices into tensor products $W \approx A \otimes B$.
+    \item \textbf{\texttt{kvtc}:} Key-Value Tensor Compression compressing KV cache into multi-dimensional Tensor-Train formats.
+    \item \textbf{\texttt{liftr}:} Low-Rank Incremental Factorization with Temporal Regularization for streaming sequence updates.
+    \item \textbf{\texttt{lillama}:} Lightweight low-rank adaptation compressing LLaMA model architectures for edge deployment.
+    \item \textbf{\texttt{lsc}:} Low-Rank Subspace Clustering identifying shared low-dimensional subspaces across transformer layers.
+    \item \textbf{\texttt{mamba\_shedder}:} Pruning engine specialized for state-space model matrices $A, B, C$ and selective scan kernels.
+    \item \textbf{\texttt{mgie}:} Multi-Granularity Information Extraction pruner balancing fine-grained and coarse-grained parameter reduction.
+    \item \textbf{\texttt{mgie\_budget}:} Dynamic budget allocator for multi-granularity information extraction.
+    \item \textbf{\texttt{mlorq}:} Multi-Layer Low-Rank Quantization joint optimization of quantization grids and low-rank adapter matrices.
+    \item \textbf{\texttt{modegpt}:} Mixture-of-Decompositions GPT routing activations to specialized low-rank compression branches.
+    \item \textbf{\texttt{nmf}:} Non-Negative Matrix Factorization decomposing non-negative activation maps $V \approx W H$ ($W, H \ge 0$).
+    \item \textbf{\texttt{oats}:} Orthogonal Adaptive Tensor Slicing projecting weights onto orthogonal principal axes prior to slicing.
+    \item \textbf{\texttt{proxsparse}:} Proximal gradient descent engine optimizing $\ell_1$ sparsity regularizers with exact soft thresholding.
+    \item \textbf{\texttt{replaceme}:} Layer replacement engine substituting dense attention layers with low-rank approximations.
+    \item \textbf{\texttt{res\_svd}:} Spectral Residual SVD decomposing $W \approx W_{\text{base}} + \gamma B A$ with adapter initialization from discarded singular tails ($\Sigma_{r+1 : r+k}$).
+    \item \textbf{\texttt{rpca}:} Robust Principal Component Analysis splitting weights into low-rank and sparse matrices: $W = L + S$.
+    \item \textbf{\texttt{saes\_svd\_v2}:} Second-generation Singular-Aware Exponential Scaling SVD with numerical damping.
+    \item \textbf{\texttt{salr}:} Spectral Adaptive Low-Rank refinement engine iteratively updating singular vectors during training.
+    \item \textbf{\texttt{sdrm}:} Spectral Decay Rate Modulator adjusting low-rank truncation based on singular value decay exponents.
+    \item \textbf{\texttt{slicegpt}:} Computes orthogonal matrix rotations $\tilde{W} = Q W R^\top$ concentrating weight energy into submatrices to enable uncompressed column slicing.
+    \item \textbf{\texttt{slicegpt\_pca}:} Principal Component Analysis variant of SliceGPT computing rotation matrices from uncentered activation covariances.
+    \item \textbf{\texttt{slim}:} Structured Layer Inversion Matrix pruner reducing network depth via matrix factorization.
+    \item \textbf{\texttt{soka}:} Second-Order Kronecker Approximation optimizing Kronecker products using empirical Fisher information matrices.
+    \item \textbf{\texttt{spectral\_residual\_lora}:} Standalone PEFT adapter initializing LoRA parameters directly from SVD residual tails.
+    \item \textbf{\texttt{subspace\_projection}:} Projects weight matrices onto dominant activation eigenspaces.
+    \item \textbf{\texttt{swift\_svd}:} Accelerated randomized SVD completing low-rank decomposition in $\mathcal{O}(m n \log r)$ operations.
+    \item \textbf{\texttt{swift\_svd\_act}:} Activation-aware variant of Swift-SVD incorporating activation covariance scaling.
+    \item \textbf{\texttt{tt}:} Tensor-Train decomposition factorizing high-order weight tensors into core tensor networks $G_k(i_k, j_k) \in \mathbb{R}^{r_{k-1} \times d_k \times r_k}$.
+    \item \textbf{\texttt{your\_compressor\_name}:} Extensible modular template for implementing custom compression and pruning algorithms.
+    \item \textbf{\texttt{zerokv\_neo}:} Extreme KV-cache compressor achieving zero-footprint state retention via learned recurrent summary tokens.
+\end{enumerate}
 
 ---
 
 \section{Exhaustive Formulations of All 12 Drift Detectors}
 \label{app:full_drift_details}
 
+We detail the exact statistical formulation and mathematical metric for every registered drift detector in NeuralOps:
+
 \begin{enumerate}
-    \item \textbf{\texttt{wasserstein\_2}, \texttt{hessian\_wasserstein}:} Exact second-order differential geometric Bures-Wasserstein metric:
+    \item \textbf{\texttt{wasserstein\_2}:} Exact second-order differential geometric Bures-Wasserstein distance between covariance matrices $\Sigma_1, \Sigma_2 \in \mathbb{S}_{++}^d$:
     \begin{equation}
     \mathcal{W}_2^2(\Sigma_1, \Sigma_2) = \operatorname{Tr}(\Sigma_1) + \operatorname{Tr}(\Sigma_2) - 2 \operatorname{Tr}\left(\left(\Sigma_1^{1/2} \Sigma_2 \Sigma_1^{1/2}\right)^{1/2}\right).
     \end{equation}
-    \item \textbf{\texttt{wasserstein\_2\_nystrom}, \texttt{fast\_wasserstein}, \texttt{nystrom\_wasserstein}:} Low-rank landmark accelerated Wasserstein computation:
+    \item \textbf{\texttt{hessian\_wasserstein}:} Bures-Wasserstein distance computed directly on the empirical loss Hessian operators $H_1, H_2$ to quantify optimization landscape drift.
+    \item \textbf{\texttt{wasserstein\_2\_nystrom}:} Accelerated Nystr\"om matrix square root factorization reducing $\mathcal{O}(d^3)$ complexity to $\mathcal{O}(r^2 d + r^3)$:
     \begin{equation}
     \operatorname{Tr}\left(\left(\Sigma_1^{1/2} \Sigma_2 \Sigma_1^{1/2}\right)^{1/2}\right) = \|\Lambda_1^{1/2} U_1^\top U_2 \Lambda_2^{1/2}\|_*.
     \end{equation}
-    \item \textbf{\texttt{hutchinson\_trace}:} Stochastic trace estimation for large-scale Hessian operators:
+    \item \textbf{\texttt{fast\_wasserstein}:} GPU-accelerated randomized trace estimator for Bures-Wasserstein metrics on streaming activation batches.
+    \item \textbf{\texttt{nystrom\_wasserstein}:} Landmark-based low-rank Bures-Wasserstein metric evaluating activation distribution shifts.
+    \item \textbf{\texttt{hutchinson\_trace}:} Stochastic Hutchinson trace estimator computing matrix traces via Rademacher random projections in $\mathcal{O}(m d)$ operations:
     \begin{equation}
     \operatorname{Tr}(A) \approx \frac{1}{m} \sum_{j=1}^m v_j^\top (A v_j), \quad v_j \sim \operatorname{Rademacher}(\pm 1).
     \end{equation}
-    \item \textbf{\texttt{ks}:} Two-sample Kolmogorov-Smirnov supremum CDF distance: $D = \sup_x |F_1(x) - F_2(x)|$.
-    \item \textbf{\texttt{psi}:} Population Stability Index: $\operatorname{PSI} = \sum_{b} (P_b - Q_b) \ln(P_b / Q_b)$.
-    \item \textbf{\texttt{js}:} Jensen-Shannon divergence: $\operatorname{JSD}(P \| Q) = \frac{1}{2} \operatorname{KL}(P \| M) + \frac{1}{2} \operatorname{KL}(Q \| M)$, $M = \frac{P+Q}{2}$.
-    \item \textbf{\texttt{chi2}:} Pearson's $\chi^2$ statistic: $\chi^2 = \sum \frac{(O_{ij} - E_{ij})^2}{E_{ij}}$.
-    \item \textbf{\texttt{cramers\_v}:} Association metric: $V = \sqrt{\frac{\chi^2}{N \min(r-1, c-1)}}$.
-    \item \textbf{\texttt{wasserstein}:} First-order 1D Wasserstein Earth Mover's Distance: $\mathcal{W}_1(u, v) = \int_{-\infty}^\infty |U(x) - V(x)| dx$.
+    \item \textbf{\texttt{ks}:} Two-sample Kolmogorov-Smirnov non-parametric supremum test statistic over empirical CDFs:
+    \begin{equation}
+    D_{n, m} = \sup_{x \in \mathbb{R}} |F_{1, n}(x) - F_{2, m}(x)|.
+    \end{equation}
+    \item \textbf{\texttt{psi}:} Population Stability Index measuring discrete bin probability shift across reference and target distributions:
+    \begin{equation}
+    \operatorname{PSI} = \sum_{b=1}^B (P_b - Q_b) \ln\left(\frac{P_b + \epsilon}{Q_b + \epsilon}\right).
+    \end{equation}
+    \item \textbf{\texttt{js}:} Symmetric Jensen-Shannon Divergence bounded in $[0, \ln 2]$:
+    \begin{equation}
+    \operatorname{JSD}(P \| Q) = \frac{1}{2} D_{\operatorname{KL}}(P \| M) + \frac{1}{2} D_{\operatorname{KL}}(Q \| M), \quad M = \frac{P + Q}{2}.
+    \end{equation}
+    \item \textbf{\texttt{chi2}:} Pearson's Chi-Square contingency test statistic measuring categorical distribution deviation:
+    \begin{equation}
+    \chi^2 = \sum_{i=1}^r \sum_{j=1}^c \frac{(O_{ij} - E_{ij})^2}{E_{ij}}.
+    \end{equation}
+    \item \textbf{\texttt{cramers\_v}:} Correlation metric normalized in $[0, 1]$ based on Pearson's Chi-Square statistic:
+    \begin{equation}
+    V = \sqrt{\frac{\chi^2}{N \cdot \min(r-1, c-1)}}.
+    \end{equation}
+    \item \textbf{\texttt{wasserstein}:} First-order 1D Wasserstein Earth Mover's Distance between continuous univariate feature distributions:
+    \begin{equation}
+    \mathcal{W}_1(u, v) = \int_{-\infty}^\infty |U(x) - V(x)| \, dx.
+    \end{equation}
 \end{enumerate}
 
 ---
@@ -570,7 +707,7 @@ Z.~Yuan, L.~Niu, J.~Liu, W.~Liu, X.~Wang, Y.~Shang, G.~Sun, Q.~Wu, J.~Wu, and B.
 
 The visualization studio provides:
 \begin{itemize}
-    \item \textbf{Multi-Objective Pareto Frontier Engine:} Identifies non-dominated architectural configurations trading off latency, parameter footprint, and perplexity.
+    \item \textbf{Multi-Objective Pareto Frontier Engine:} Identifies non-dominated architectural configurations trading off latency, parameter footprint, and perplexity: $\mathcal{P} = \{ \theta \in \Theta \mid \nexists \theta' \text{ s.t. } \mathcal{L}(\theta') \le \mathcal{L}(\theta) \land \mathcal{M}(\theta') \le \mathcal{M}(\theta) \}$.
     \item \textbf{KV-Cache Memory Scaling Engine:} Computes theoretical and empirical memory trajectories $\mathcal{M}(L) = 2 B L N_l N_h d_h \cdot \text{sizeof}(\text{dtype})$.
     \item \textbf{Grassmannian Fr\'echet Mean Trajectory Analyzer:} Tracks subspace drift along the Grassmann manifold $\operatorname{Gr}(k, d)$ using principal angle geodesics $d_{\operatorname{Gr}}(X, Y) = \|\bm{\theta}\|_2$.
     \item \textbf{Interactive HTML/CSS/JS Dashboard Generator:} Compiles self-contained executive reporting artifacts with SVG radar charts and live metric inspection.
