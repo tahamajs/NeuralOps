@@ -23,6 +23,8 @@ def clean_label_for_tikz(text):
     text = text.replace('\f', ' ').replace('\t', ' ').replace('\r', ' ').replace('\v', ' ').replace('\b', ' ')
     for k, v in unicode_ascii_map.items(): text = text.replace(k, ' ')
     for k, v in unicode_math_map.items(): text = text.replace(k, v)
+    for k, v in [('θ', r'$\theta$'), ('φ', r'$\phi$'), ('ψ', r'$\psi$'), ('λ', r'$\lambda$'), ('β', r'$\beta$'), ('γ', r'$\gamma$'), ('π', r'$\pi$'), ('Ω', r'$\Omega$'), ('η', r'$\eta$'), ('→', r'$\rightarrow$'), ('←', r'$\leftarrow$'), ('↑', r'$\uparrow$'), ('↓', r'$\downarrow$'), ('•', r'$\bullet$'), ('…', r'$\dots$'), ('×', r'$\times$'), ('÷', r'$\div$'), ('±', r'$\pm$'), ('≠', r'$\neq$'), ('∑', r'$\sum$'), ('∏', r'$\prod$'), ('∫', r'$\int$'), ('∂', r'$\partial$'), ('∇', r'$\nabla$'), ('ρ', r'$\rho$'), ('Λ', r'$\Lambda$'), ('₁', '$_1$'), ('₂', '$_2$'), ('‘', "'"), ('’', "'"), ('“', '"'), ('”', '"'), ('–', '-'), ('—', '--')]:
+        text = text.replace(k, v)
     text = text.replace('&', '\\&').replace('%', '\\%').replace('#', '\\#')
     text = text.replace('^', r'\textasciicircum{}').replace('~', r'\textasciitilde{}')
     for ch in ['┌', '┐', '└', '┘', '├', '┤', '┬', '┴', '┼', '─', '│', '►', '▼', '◄', '▲', '+---', '|---', '+', '──►', '───►', '-->', '==>', '->']:
@@ -274,7 +276,7 @@ def escape_latex_clean(text):
             close_envs()
             level = len(re.match(r'^#+', stripped).group(0))
             title = stripped.lstrip('#').strip()
-            title = re.sub(r'^\d+(\.\d+)*\s*', '', title)
+            title = re.sub(r'^\d+(\.\d+)*\.?\s*', '', title)
             title = escape_line(title)
             
             if level <= 2:
@@ -336,6 +338,16 @@ def escape_latex_clean(text):
                 
         if in_table:
             close_envs()
+        
+        # Skip bare markdown horizontal rule lines
+        if re.match(r'^[-*_]{3,}$', stripped):
+            continue
+        
+        # Remove trailing em-dash artifacts (e.g. "Some text ---" or "— ")
+        stripped = re.sub(r'\s*---\s*$', '', stripped)
+        stripped = re.sub(r'^\s*---\s*', '', stripped)
+        if not stripped:
+            continue
             
         out_lines.append(escape_line(stripped))
 
