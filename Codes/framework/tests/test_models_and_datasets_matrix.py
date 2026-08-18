@@ -18,6 +18,7 @@ import numpy as np
 import pytest
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from framework.attentions.fused_svd_kernel import FusedSVDLinear, fused_svd_linear
@@ -30,7 +31,8 @@ from framework.data.benchmark_datasets import (
     BenchmarkDatasetRegistry,
     load_benchmark_dataset,
 )
-from framework.data.glue_loader import GLUELoader, load_glue_task
+from framework.data.glue import load_glue_dataset
+from framework.data.glue_loader import get_num_labels_and_is_regression, load_glue_local
 from framework.data.multi_choice import MultiChoiceDataset
 from framework.data.synthetic_generator import (
     SyntheticClassificationDataset,
@@ -236,7 +238,7 @@ class TestModelsAndDatasetsMatrix:
         """Verify DistilBERT compresses via Dynamic Entropy SVD and executes inference."""
         torch.manual_seed(42)
         model = CompactBertForClassification(vocab_size=500, hidden_size=64, num_layers=2)
-        dataset = SyntheticPerplexityDataset(num_samples=16, seq_len=16, vocab_size=500)
+        dataset = SyntheticClassificationDataset(num_samples=16, seq_len=16, vocab_size=500, num_classes=2)
         loader = DataLoader(dataset, batch_size=4)
 
         compressor = DynamicEntropySVDCompressor(
@@ -308,20 +310,29 @@ class TestModelsAndDatasetsMatrix:
 
     def test_multi_choice_dataset_pipeline(self) -> None:
         """Verify MultiChoiceDataset loading and tensor shaping for ARC/MMLU/HellaSwag tasks."""
+        import pandas as pd
         torch.manual_seed(42)
-        samples = [
-            {
-                "prompt": "Which element has atomic number 1?",
-                "choices": ["Hydrogen", "Helium", "Lithium", "Beryllium"],
-                "label": 0,
-            },
-            {
-                "prompt": "What is the speed of light?",
-                "choices": ["300 km/s", "300,000 km/s", "150,000 km/s", "Infinity"],
-                "label": 1,
-            },
-        ]
-        dataset = MultiChoiceDataset(samples=samples, num_choices=4, max_length=16)
+
+        data = {
+            "question": [
+                "Which element has atomic number 1?",
+                "What is the speed of light in vacuum?",
+            ],
+            "choices": [
+                ["Hydrogen", "Helium", "Lithium", "Beryllium"],
+                ["300 km/s", "300,000 km/s", "150,000 km/s", "Infinity"],
+            ],
+            "label": [0, 1],
+        }
+        df = pd.DataFrame(data)
+
+        def mock_tokenizer(text, truncation=True, padding=True, max_length=16, return_tensors="pt"):
+            return {
+                "input_ids": torch.randint(1, 500, (1, max_length)),
+                "attention_mask": torch.ones((1, max_length)),
+            }
+
+        dataset = MultiChoiceDataset(df=df, tokenizer=mock_tokenizer, max_length=16)
         loader = DataLoader(dataset, batch_size=2)
         batch = next(iter(loader))
 
