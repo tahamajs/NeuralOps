@@ -65,10 +65,11 @@ export default function AnomalyListPage({ onClose }: { onClose?: () => void }) {
       header: "Run",
       cell: ({ row }: any) => (
         <Link
-          to={`/runs/${row.original.run_id}`}
+          to={`/runs/${row.original.run_id || ""}`}
           className="text-neon-blue hover:underline"
         >
-          {row.original.run_name || row.original.run_id.slice(0, 8)}
+          {row.original.run_name ||
+            (row.original.run_id ? row.original.run_id.slice(0, 8) : "Unknown")}
         </Link>
       ),
     },
@@ -77,7 +78,7 @@ export default function AnomalyListPage({ onClose }: { onClose?: () => void }) {
       header: "Type",
       cell: ({ row }: any) => (
         <Badge variant="warning">
-          {row.original.anomaly_type.replace("_", " ")}
+          {(row.original.anomaly_type || "anomaly").replace(/_/g, " ")}
         </Badge>
       ),
     },
@@ -85,13 +86,14 @@ export default function AnomalyListPage({ onClose }: { onClose?: () => void }) {
       accessorKey: "severity",
       header: "Severity",
       cell: ({ row }: any) => {
+        const severity = row.original.severity || "medium";
         const color = {
           low: "info",
           medium: "warning",
           high: "danger",
           critical: "danger",
-        }[row.original.severity];
-        return <Badge variant={color as any}>{row.original.severity}</Badge>;
+        }[severity] || "warning";
+        return <Badge variant={color as any}>{severity}</Badge>;
       },
     },
     { accessorKey: "summary", header: "Summary" },
@@ -102,7 +104,7 @@ export default function AnomalyListPage({ onClose }: { onClose?: () => void }) {
         <Badge
           variant={row.original.status === "resolved" ? "success" : "warning"}
         >
-          {row.original.status}
+          {row.original.status || "open"}
         </Badge>
       ),
     },
@@ -110,17 +112,21 @@ export default function AnomalyListPage({ onClose }: { onClose?: () => void }) {
       accessorKey: "detected_at",
       header: "Detected",
       cell: ({ row }: any) =>
-        new Date(row.original.detected_at).toLocaleString(),
+        row.original.detected_at
+          ? new Date(row.original.detected_at).toLocaleString()
+          : "-",
     },
     {
       id: "actions",
       header: "",
       cell: ({ row }: any) => (
         <div className="flex gap-2">
-          <Link to={`/anomalies/${row.original.id}`}>
-            <Eye size={16} className="text-slate-400 hover:text-white" />
-          </Link>
-          {row.original.status !== "resolved" && (
+          {row.original.id && (
+            <Link to={`/anomalies/${row.original.id}`}>
+              <Eye size={16} className="text-slate-400 hover:text-white" />
+            </Link>
+          )}
+          {row.original.status !== "resolved" && row.original.id && (
             <button onClick={() => resolveMutation.mutate(row.original.id)}>
               <CheckCircle size={16} className="text-green-400" />
             </button>
@@ -132,8 +138,13 @@ export default function AnomalyListPage({ onClose }: { onClose?: () => void }) {
 
   if (isLoading) return <Spinner />;
 
-  const anomalies = (data as any)?.results || [];
-  const totalPages = Math.ceil(((data as any)?.count || 0) / 20);
+  const anomalies = Array.isArray(data)
+    ? data
+    : (data as any)?.results || [];
+  const totalCount = Array.isArray(data)
+    ? data.length
+    : (data as any)?.count || anomalies.length || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / 20));
 
   return (
     <div className="flex flex-col h-full">
@@ -187,9 +198,12 @@ export default function AnomalyListPage({ onClose }: { onClose?: () => void }) {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() =>
-              detectMutation.mutate(prompt("Enter Run ID to scan:") || "")
-            }
+            onClick={() => {
+              const runId = prompt("Enter Run ID to scan:");
+              if (runId && runId.trim()) {
+                detectMutation.mutate(runId.trim());
+              }
+            }}
           >
             Trigger Scan
           </Button>

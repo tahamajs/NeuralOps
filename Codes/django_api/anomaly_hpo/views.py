@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from .models import ExperimentLogAnalysis, HPORun, HPOTrial
@@ -24,14 +24,13 @@ class StandardPagination(PageNumberPagination):
 # Log Analysis & Anomaly Detection
 # ═══════════════════════════════════════════════════════════════
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def anomaly_list(request):
-    """List all anomalies for a specific run."""
+    """List anomalies, optionally filtered by run_id."""
     run_id = request.query_params.get("run_id")
-    if not run_id:
-        return Response({"error": "run_id query parameter required"}, status=400)
-
-    qs = ExperimentLogAnalysis.objects.filter(run_id=run_id).order_by("-created_at")
+    qs = ExperimentLogAnalysis.objects.all().order_by("-created_at")
+    if run_id:
+        qs = qs.filter(run_id=run_id)
 
     anomaly_type = request.query_params.get("type")
     if anomaly_type:
@@ -39,7 +38,10 @@ def anomaly_list(request):
 
     min_severity = request.query_params.get("min_severity")
     if min_severity:
-        qs = qs.filter(severity__gte=float(min_severity))
+        try:
+            qs = qs.filter(severity__gte=float(min_severity))
+        except ValueError:
+            pass
 
     paginator = StandardPagination()
     page = paginator.paginate_queryset(qs, request)

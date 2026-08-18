@@ -4,7 +4,7 @@ import threading
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
-from .models import TrainingRun
+from experiment.models import TrainingRun
 
 _stop_events = {}
 

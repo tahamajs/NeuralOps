@@ -189,7 +189,10 @@ def raise_dispute(request, job_id):
     """Raise a dispute for a completed compute job."""
     from gpu_marketplace.models import ComputeJob
 
-    job = get_object_or_404(ComputeJob, id=job_id)
+    try:
+        job = ComputeJob.objects.get(id=job_id)
+    except Exception:
+        return Response({"error": "ComputeJob not found"}, status=404)
 
     if job.status not in ("completed", "failed", "disputed"):
         return Response(
@@ -215,7 +218,7 @@ def raise_dispute(request, job_id):
 
         account = EscrowAccount.objects.get(user=request.user)
         account.withdraw(dispute.dispute_fee_usd, f"Dispute fee for job {job.id}")
-    except:
+    except Exception:
         pass
 
     return Response(DisputeSerializer(dispute).data, status=201)
@@ -225,7 +228,10 @@ def raise_dispute(request, job_id):
 @permission_classes([IsAuthenticated])
 def dispute_detail(request, dispute_id):
     """Get dispute details including jury and votes."""
-    dispute = get_object_or_404(Dispute, id=dispute_id)
+    try:
+        dispute = Dispute.objects.get(id=dispute_id)
+    except Exception:
+        return Response({"error": "Dispute not found"}, status=404)
     data = DisputeSerializer(dispute).data
     data["jury_members"] = [
         {"username": jm.user.username, "has_voted": jm.has_voted}
