@@ -51,7 +51,7 @@ def escape_latex_clean(text):
         if in_table:
             out_lines.append(r'\bottomrule')
             out_lines.append(r'\end{tabular}')
-            out_lines.append(r'\end{table}')
+            out_lines.append(r'\end{center}')
             in_table = False
 
     def escape_line(l):
@@ -83,11 +83,11 @@ def escape_latex_clean(text):
             if ptype == 'code_block':
                 val = val.strip()
                 val = re.sub(r'^[a-zA-Z0-9]+\n', '', val) # remove lang
-                out_lines.append(r'\begin{figure}[h!]')
+                out_lines.append(r'\vspace{0.5em}')
                 out_lines.append(r'\begin{verbatim}')
                 out_lines.append(val)
                 out_lines.append(r'\end{verbatim}')
-                out_lines.append(r'\end{figure}')
+                out_lines.append(r'\vspace{0.5em}')
             elif ptype == 'math_block':
                 val = val.strip()
                 val = re.sub(r'\n\s*\n', '\n', val)
@@ -133,9 +133,8 @@ def escape_latex_clean(text):
                 
             cells = [c.strip() for c in stripped.strip('|').split('|')]
             if not in_table:
-                # Start table
-                out_lines.append(r'\begin{table}[h!]')
-                out_lines.append(r'\centering')
+                # Start table without float!
+                out_lines.append(r'\begin{center}')
                 out_lines.append(r'\renewcommand{\arraystretch}{1.2}')
                 cols = 'l' * len(cells)
                 out_lines.append(f"\\begin{{tabular}}{{{cols}}}")
@@ -207,10 +206,7 @@ def replace_sub(match):
 
 new_tex_content = pattern.sub(replace_sub, tex_content)
 
-if r'\usepackage{booktabs}' not in new_tex_content:
-    new_tex_content = new_tex_content.replace(r'\usepackage{amsmath,amssymb,amsfonts,amsthm}', r'\usepackage{amsmath,amssymb,amsfonts,amsthm}\n\usepackage{booktabs}\n\usepackage{float}')
-
 with open(main_tex_path, "w") as f:
     f.write(new_tex_content)
 
-print("Beautiful conversion complete.")
+print("Float-free beautiful conversion complete.")
