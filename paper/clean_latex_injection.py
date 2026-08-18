@@ -19,6 +19,13 @@ unicode_ascii_map = {
 }
 
 def escape_latex_clean(text):
+    # Fix literal control characters caused by bad string generation previously!
+    text = text.replace('\f', '\\f')
+    text = text.replace('\t', '\\t')
+    text = text.replace('\r', '\\r')
+    text = text.replace('\v', '\\v')
+    text = text.replace('\b', '\\b')
+
     for k, v in unicode_ascii_map.items(): text = text.replace(k, v)
     for k, v in unicode_math_map.items(): text = text.replace(k, f"${v}$")
         
@@ -209,4 +216,4 @@ new_tex_content = pattern.sub(replace_sub, tex_content)
 with open(main_tex_path, "w") as f:
     f.write(new_tex_content)
 
-print("Float-free beautiful conversion complete.")
+print("Float-free beautiful conversion complete with control-character unescaping.")

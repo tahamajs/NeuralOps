@@ -3882,51 +3882,51 @@ This module integrates directly within the NeuralOps ecosystem, providing optimi
 
 \subsubsection*{. Executive Abstract \& Architectural Motivation}
 
-Standard Multi-Head Self-Attention (Vaswani et al., 2017) computes pairwise token interactions across length $L$, incurring an $\mathcal{O}(L^2)$ computational and memory complexity wall. Linformer (Wang et al., 2020) mitigates this bottleneck by proving empirically and theoretically that the normalized attention matrix $A \in \mathbb{R}^{L 	imes L}$ is low-rank. 
+Standard Multi-Head Self-Attention (Vaswani et al., 2017) computes pairwise token interactions across length $L$, incurring an $\mathcal{O}(L^2)$ computational and memory complexity wall. Linformer (Wang et al., 2020) mitigates this bottleneck by proving empirically and theoretically that the normalized attention matrix $A \in \mathbb{R}^{L \times L}$ is low-rank. 
 
-The core architectural motivation of Linformer is to decompose the key and value sequence length projections down to a fixed, compact parameter $k \ll L$. By applying linear projection matrices $E, F \in \mathbb{R}^{k 	imes L}$ along the sequence length dimension, Linformer compresses the key and value representations from $\mathbb{R}^{L 	imes d}$ to $\mathbb{R}^{k 	imes d}$. This enables scaled dot-product attention to be computed in $\mathcal{O}(L \cdot k)$ time and memory, maintaining linear scaling with respect to sequence length $L$. Linformer is particularly effective for long-document processing where $L \gg k$.
+The core architectural motivation of Linformer is to decompose the key and value sequence length projections down to a fixed, compact parameter $k \ll L$. By applying linear projection matrices $E, F \in \mathbb{R}^{k \times L}$ along the sequence length dimension, Linformer compresses the key and value representations from $\mathbb{R}^{L \times d}$ to $\mathbb{R}^{k \times d}$. This enables scaled dot-product attention to be computed in $\mathcal{O}(L \cdot k)$ time and memory, maintaining linear scaling with respect to sequence length $L$. Linformer is particularly effective for long-document processing where $L \gg k$.
 
 ---
 
 \subsubsection*{. Mathematical Formulations \& Derivations}
 
-Given input sequence representations $X \in \mathbb{R}^{B 	imes L 	imes D}$, Linformer projects $X$ into query, key, and value subspaces:
+Given input sequence representations $X \in \mathbb{R}^{B \times L \times D}$, Linformer projects $X$ into query, key, and value subspaces:
 
 \begin{equation*}
-Q = X W_Q \in \mathbb{R}^{B 	imes L 	imes D}, \quad K = X W_K \in \mathbb{R}^{B 	imes L 	imes D}, \quad V = X W_V \in \mathbb{R}^{B 	imes L 	imes D}
+Q = X W_Q \in \mathbb{R}^{B \times L \times D}, \quad K = X W_K \in \mathbb{R}^{B \times L \times D}, \quad V = X W_V \in \mathbb{R}^{B \times L \times D}
 \end{equation*}
 
-Partitioning into $H$ heads with head dimension $d_k = D / H$ yields $Q_h, K_h, V_h \in \mathbb{R}^{B 	imes H 	imes L 	imes d_k}$.
+Partitioning into $H$ heads with head dimension $d_k = D / H$ yields $Q_h, K_h, V_h \in \mathbb{R}^{B \times H \times L \times d_k}$.
 
-To compress sequence length, head-specific or parameter-shared linear projection matrices $E_h, F_h \in \mathbb{R}^{k 	imes L}$ project sequence dimensions of $K_h$ and $V_h$:
+To compress sequence length, head-specific or parameter-shared linear projection matrices $E_h, F_h \in \mathbb{R}^{k \times L}$ project sequence dimensions of $K_h$ and $V_h$:
 
 \begin{equation*}
-\widetilde{K}_h = E_h K_h \in \mathbb{R}^{B 	imes H 	imes k 	imes d_k}, \quad \widetilde{V}_h = F_h V_h \in \mathbb{R}^{B 	imes H 	imes k 	imes d_k}
+\widetilde{K}_h = E_h K_h \in \mathbb{R}^{B \times H \times k \times d_k}, \quad \widetilde{V}_h = F_h V_h \in \mathbb{R}^{B \times H \times k \times d_k}
 \end{equation*}
 
-The scaled dot-product score matrix $S_h \in \mathbb{R}^{B 	imes H 	imes L 	imes k}$ is computed as:
+The scaled dot-product score matrix $S_h \in \mathbb{R}^{B \times H \times L \times k}$ is computed as:
 
 \begin{equation*}
-S_h = rac{Q_h \widetilde{K}_h^	op}{\sqrt{d_k}} \in \mathbb{R}^{B 	imes H 	imes L 	imes k}
+S_h = \frac{Q_h \widetilde{K}_h^\top}{\sqrt{d_k}} \in \mathbb{R}^{B \times H \times L \times k}
 \end{equation*}
 
 Applying row-wise Softmax along the compressed dimension $k$:
 
 \begin{equation*}
-A_h = 	ext{Softmax}_k (S_h) \in \mathbb{R}^{B 	imes H 	imes L 	imes k}
+A_h = \text{Softmax}_k (S_h) \in \mathbb{R}^{B \times H \times L \times k}
 \end{equation*}
 
-Context aggregation yields head representation $O_h \in \mathbb{R}^{B 	imes H 	imes L 	imes d_k}$:
+Context aggregation yields head representation $O_h \in \mathbb{R}^{B \times H \times L \times d_k}$:
 
 \begin{equation*}
-O_h = A_h \widetilde{V}_h = 	ext{Softmax}\left( rac{Q_h (E_h K_h)^	op}{\sqrt{d_k}} 
+O_h = A_h \widetilde{V}_h = \text{Softmax}\left( \frac{Q_h (E_h K_h)^\top}{\sqrt{d_k}} 
 ight) (F_h V_h)
 \end{equation*}
 
 Finally, head outputs are concatenated and projected to model dimension $D$:
 
 \begin{equation*}
-ext{Context} = 	ext{Concat}(O_1, \dots, O_H) \in \mathbb{R}^{B 	imes L 	imes D}, \quad Y = 	ext{Context} \cdot W_O \in \mathbb{R}^{B 	imes L 	imes D}
+\text{Context} = \text{Concat}(O_1, \dots, O_H) \in \mathbb{R}^{B \times L \times D}, \quad Y = \text{Context} \cdot W_O \in \mathbb{R}^{B \times L \times D}
 \end{equation*}
 
 ---
@@ -3979,9 +3979,9 @@ Step & Operation & Tensor Shape & Description \\
 
 \paragraph{FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $k$: Projection Rank):}
 \begin{itemize}
-\item \textbf{Input Projections ($W_Q, W_K, W_V$)}: $3 	imes (2 B L D^2) = 6 B L D^2$ FLOPs
-\item \textbf{Sequence Linear Projections ($E K, F V$)}: $2 	imes (2 B H \cdot k \cdot L \cdot d_k) = 4 B L k D$ FLOPs
-\item \textbf{Score Matrix Computation ($Q \widetilde{K}^	op$)}: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
+\item \textbf{Input Projections ($W_Q, W_K, W_V$)}: $3 \times (2 B L D^2) = 6 B L D^2$ FLOPs
+\item \textbf{Sequence Linear Projections ($E K, F V$)}: $2 \times (2 B H \cdot k \cdot L \cdot d_k) = 4 B L k D$ FLOPs
+\item \textbf{Score Matrix Computation ($Q \widetilde{K}^\top$)}: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
 \item \textbf{Softmax Normalization}: $pprox 5 B H L k$ FLOPs
 \item \textbf{Context Matrix Multiplication ($A \widetilde{V}$)}: $2 B H \cdot L \cdot k \cdot d_k = 2 B L k D$ FLOPs
 \item \textbf{Output Projection ($W_O$)}: $2 B L D^2$ FLOPs
@@ -4003,8 +4003,8 @@ Step & Operation & Tensor Shape & Description \\
 
 \subsubsection*{. Failure Modes, Rank Collapse \& Edge Cases}
 
-1. \textbf{Fixed Sequence Length Parameterization}: Standard Linformer binds projection matrices $E, F \in \mathbb{R}^{k 	imes L}$ to a pre-defined maximum sequence length $L$. Dynamic sequence lengths require interpolation or adaptive pooling.
-2. \textbf{Subspace Rank Collapse ($k < 	ext{rank}(A)$)}: When sequence content features high entropy and broad context dispersion, projecting down to $k$ dimensions causes information loss and rank collapse in attention weights.
+1. \textbf{Fixed Sequence Length Parameterization}: Standard Linformer binds projection matrices $E, F \in \mathbb{R}^{k \times L}$ to a pre-defined maximum sequence length $L$. Dynamic sequence lengths require interpolation or adaptive pooling.
+2. \textbf{Subspace Rank Collapse ($k < \text{rank}(A)$)}: When sequence content features high entropy and broad context dispersion, projecting down to $k$ dimensions causes information loss and rank collapse in attention weights.
 3. \textbf{Causal Masking Incompatibility}: Linformer sequence projections $E, F$ pool information across the entire sequence length $L$. Applying causal masks breaks linear complexity benefits because lower triangular triangularity is destroyed by length projection.
 4. \textbf{FP16 Numerical Underflow}: Under FP16 precision, long sequence projections ($L > 16384$) accumulate large inner products before projection, requiring FP32 accumulator registers.
 
