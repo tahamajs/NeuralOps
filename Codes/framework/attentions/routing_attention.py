@@ -87,7 +87,10 @@ class RoutingAttention(nn.Module):
 
     def _kmeans_assign(self, Q: torch.Tensor, centroids: torch.Tensor) -> torch.Tensor:
         r"""Assign queries to nearest centroids via Euclidean distance."""
-        dist = torch.cdist(Q, centroids)  # (B, H, L, K)
+        # FIX: [Cast to float32 for torch.cdist execution to ensure CPU float16/bfloat16 compatibility]
+        Q_f = Q.float() if Q.dtype in (torch.float16, torch.bfloat16) else Q
+        centroids_f = centroids.float() if centroids.dtype in (torch.float16, torch.bfloat16) else centroids
+        dist = torch.cdist(Q_f, centroids_f)  # (B, H, L, K)
         return torch.argmin(dist, dim=-1)  # (B, H, L)
 
     def forward(
@@ -146,6 +149,8 @@ class RoutingAttention(nn.Module):
         cluster_ids = self._kmeans_assign(Q, centroids)
         out = torch.zeros_like(V)
         scale = d**-0.5
+        # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
+        mask_val = -1e4 if Q.dtype in (torch.float16, torch.bfloat16) else -1e9
 
         for k in range(num_clusters):
             mask = (cluster_ids == k).unsqueeze(-1)
@@ -157,7 +162,7 @@ class RoutingAttention(nn.Module):
             scores = torch.matmul(Qk, Kk.transpose(-2, -1)) * scale
             if valid is not None:
                 key_valid = valid.unsqueeze(1).unsqueeze(-2).to(scores.dtype)
-                scores = scores.masked_fill(key_valid == 0, -1e9)
+                scores = scores.masked_fill(key_valid == 0, mask_val)
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)
             out += torch.matmul(attn, Vk)

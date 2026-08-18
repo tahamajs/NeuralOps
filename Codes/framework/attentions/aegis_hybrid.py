@@ -171,12 +171,14 @@ class AegisHybridAttention(nn.Module):
         idx = torch.arange(N, device=hidden_states.device)
         band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.local_window  # (N, N)
         band_mask = band_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, N, N)
-        scores = scores.masked_fill(~band_mask, float("-inf"))
+        # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
+        mask_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else float("-inf")
+        scores = scores.masked_fill(~band_mask, mask_val)
 
         # also apply padding mask to keys (B, 1, 1, N)
         if mask_2d is not None:
             key_mask = mask_2d.unsqueeze(1).unsqueeze(2)  # (B, 1, 1, N)
-            scores = scores.masked_fill(~key_mask, float("-inf"))
+            scores = scores.masked_fill(~key_mask, mask_val)
 
         # Safe softmax to avoid NaNs if all scores in a row are -inf
         attn_local = F.softmax(scores, dim=-1)
@@ -208,14 +210,16 @@ class AegisHybridAttention(nn.Module):
 
         KV = torch.matmul(phi_K_t, Vg_t)  # (B, h, d, d)
 
-        ones = torch.ones(B, self.num_heads, N, 1, device=Kg.device)  # (B, h, N, 1)
+        # FIX: [Ensure ones tensor adopts the device and dtype of input tensor Kg to prevent dtype mismatch]
+        ones = torch.ones(B, self.num_heads, N, 1, device=Kg.device, dtype=Kg.dtype)  # (B, h, N, 1)
         Z = torch.matmul(phi_K_t, ones)  # (B, h, d, 1)
 
         phi_Q_t = phi_Q.permute(0, 2, 1, 3).unsqueeze(-2)  # (B, h, N, 1, d)
 
         global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2)  # (B, h, N, d)
+        norm_eps = 1e-4 if Kg.dtype in (torch.float16, torch.bfloat16) else 1e-8
         norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)  # (B, h, N, 1)
-        global_out = global_out / (norm + 1e-8)
+        global_out = global_out / (norm + norm_eps)
         global_out = global_out.permute(0, 2, 1, 3)  # (B, N, h, d)
 
         # ============== 3. Adaptive fusion ==============

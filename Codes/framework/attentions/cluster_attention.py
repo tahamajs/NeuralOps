@@ -79,12 +79,15 @@ class ClusterAttention(nn.Module):
         centroids = x[:, idx, :].clone()
 
         cluster_ids = torch.zeros(B, L, dtype=torch.long, device=x.device)
+        # FIX: [Cast to float32 for torch.cdist execution to ensure CPU float16/bfloat16 compatibility]
+        x_f = x.float() if x.dtype in (torch.float16, torch.bfloat16) else x
         for _ in range(iters):
-            dist = torch.cdist(x, centroids)  # (B, L, K)
+            centroids_f = centroids.float() if centroids.dtype in (torch.float16, torch.bfloat16) else centroids
+            dist = torch.cdist(x_f, centroids_f)  # (B, L, K)
             cluster_ids = torch.argmin(dist, dim=-1)  # (B, L)
             new_centroids = torch.zeros_like(centroids)
             for k in range(K):
-                mask_k = (cluster_ids == k).unsqueeze(-1).float()
+                mask_k = (cluster_ids == k).unsqueeze(-1).to(dtype=x.dtype)
                 sum_k = (x * mask_k).sum(dim=1, keepdim=True)
                 count_k = mask_k.sum(dim=1, keepdim=True).clamp(min=1.0)
                 new_centroids[:, k, :] = (sum_k / count_k).squeeze(1)
@@ -125,10 +128,12 @@ class ClusterAttention(nn.Module):
         out = torch.zeros_like(V)
         scale = 1.0 / math.sqrt(D_h)
         num_k = min(self.num_clusters, seq_len)
+        # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow and type mismatch]
+        mask_val = -1e4 if Q.dtype in (torch.float16, torch.bfloat16) else -1e9
 
         for k in range(num_k):
             mem_mask = (cluster_ids == k).unsqueeze(1).unsqueeze(2)  # (B, 1, 1, L)
-            mask_add = (~mem_mask).float() * -1e9
+            mask_add = (~mem_mask).to(dtype=Q.dtype) * mask_val
 
             Q_k = Q.permute(0, 2, 1, 3)  # (B, H, L, D_h)
             K_k = K.permute(0, 2, 1, 3)
@@ -139,7 +144,7 @@ class ClusterAttention(nn.Module):
 
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
-                    pad_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).float()) * -1e9
+                    pad_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).to(dtype=scores_k.dtype)) * mask_val
                     scores_k = scores_k + pad_mask
 
             attn_k = F.softmax(scores_k, dim=-1)
@@ -147,7 +152,7 @@ class ClusterAttention(nn.Module):
             out_k = torch.matmul(attn_k, V_k)  # (B, H, L, D_h)
 
             # curr_mem: (B, L) -> (B, 1, L, 1) for broadcasting with (B, H, L, D_h)
-            curr_mem = (cluster_ids == k).unsqueeze(1).unsqueeze(-1).float()  # (B, 1, L, 1)
+            curr_mem = (cluster_ids == k).unsqueeze(1).unsqueeze(-1).to(dtype=out_k.dtype)  # (B, 1, L, 1)
             out = out + (out_k * curr_mem).permute(0, 2, 1, 3)
 
         context = out.contiguous().view(batch_size, seq_len, -1)
