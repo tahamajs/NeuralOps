@@ -167,7 +167,8 @@ def save_recommendation(request, rec_id):
     if not ResearchPaper.objects.filter(
         saved_by=request.user, id=rec.paper_id
     ).exists():
-        rec.paper.saved_by.add(request.user)
+        rec.paper.saved_by = request.user
+        rec.paper.save(update_fields=["saved_by"])
     return Response({"status": "saved"})
 
 

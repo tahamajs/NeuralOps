@@ -11,9 +11,9 @@ class JobschedulerConfig(AppConfig):
     def ready(self):
         import sys
 
-        # Avoid starting scheduler during tests, checks, migrations, or verification scripts
-        cli_commands = ["test", "check", "verify", "showmigrations", "migrate", "collectstatic"]
-        if any(cmd in " ".join(sys.argv) for cmd in cli_commands):
+        # Avoid starting scheduler during tests, checks, migrations, verification scripts, or shell
+        cli_commands = ["test", "check", "verify", "showmigrations", "migrate", "collectstatic", "shell", "-c", "audit"]
+        if any(cmd in " ".join(sys.argv) for cmd in cli_commands) or os.environ.get("DISABLE_SCHEDULER") == "true":
             return
 
         if os.environ.get("RUN_MAIN") != "true" and not os.environ.get(

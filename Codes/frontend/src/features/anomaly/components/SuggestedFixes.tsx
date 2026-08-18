@@ -23,7 +23,9 @@ export function SuggestedFixes({ anomalyId }: { anomalyId: string }) {
     onError: () => error("Failed to apply fix"),
   });
 
-  const fixesData = (fixes as any)?.data || fixes;
+  const fixesData = Array.isArray(fixes)
+    ? fixes
+    : (fixes as any)?.results || (fixes as any)?.data || [];
 
   if (isLoading) return <Spinner size="sm" />;
   if (!fixesData?.length)
@@ -35,28 +37,32 @@ export function SuggestedFixes({ anomalyId }: { anomalyId: string }) {
 
   return (
     <div className="space-y-3">
-      {fixesData.map((fix: any) => (
-        <TerminalCard key={fix.id} className="p-4">
+      {fixesData.map((fix: any, idx: number) => (
+        <TerminalCard key={fix?.id || idx} className="p-4">
           <div className="flex justify-between items-start">
             <div>
-              <div className="font-medium text-white">{fix.description}</div>
-              <div className="text-xs text-slate-400 mt-1">
-                Command: <code className="text-neon-mint">{fix.command}</code>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              onClick={() => applyFix.mutate(fix.id)}
-              disabled={applyFix.isPending || fix.status !== "pending"}
-            >
-              {fix.status === "pending" ? (
-                "Apply"
-              ) : fix.status === "applied" ? (
-                <CheckCircle size={14} />
-              ) : (
-                <XCircle size={14} />
+              <div className="font-medium text-white">{fix?.description || "Suggested resolution"}</div>
+              {fix?.command && (
+                <div className="text-xs text-slate-400 mt-1">
+                  Command: <code className="text-neon-mint">{fix.command}</code>
+                </div>
               )}
-            </Button>
+            </div>
+            {fix?.id && (
+              <Button
+                size="sm"
+                onClick={() => applyFix.mutate(fix.id)}
+                disabled={applyFix.isPending || fix.status !== "pending"}
+              >
+                {fix.status === "pending" ? (
+                  "Apply"
+                ) : fix.status === "applied" ? (
+                  <CheckCircle size={14} />
+                ) : (
+                  <XCircle size={14} />
+                )}
+              </Button>
+            )}
           </div>
         </TerminalCard>
       ))}

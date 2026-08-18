@@ -8,6 +8,12 @@ from .grant_matcher import GrantDiscoveryEngine
 from .hypothesis import HypothesisGenerator
 from .literature import LiteratureSynthesizer
 from .models import *
+from .serializers import (
+    LiteratureReviewSerializer,
+    GeneratedHypothesisSerializer,
+    ResearchGapAnalysisSerializer,
+    GrantMatchSerializer,
+)
 
 
 # ── Literature Synthesis ───────────────────────────────────────

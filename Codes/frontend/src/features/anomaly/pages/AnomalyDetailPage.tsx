@@ -38,7 +38,12 @@ export default function AnomalyDetailPage({
   });
 
   const reanalyzeMutation = useMutation({
-    mutationFn: () => anomalyAPI.detectAnomaly(anomaly!.run_id),
+    mutationFn: () => {
+      if (anomaly?.run_id) {
+        return anomalyAPI.detectAnomaly(anomaly.run_id);
+      }
+      return Promise.reject(new Error("No run ID"));
+    },
     onSuccess: () => success("Re‑analysis triggered"),
   });
 
@@ -52,17 +57,19 @@ export default function AnomalyDetailPage({
         <div>
           <h1 className="text-xl font-bold text-white">Anomaly Details</h1>
           <p className="text-sm text-slate-400">
-            {anomaly.run_name || anomaly.run_id}
+            {anomaly.run_name || anomaly.run_id || "Unknown Run"}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => reanalyzeMutation.mutate()}
-          >
-            <RefreshCw size={14} /> Re‑analyze
-          </Button>
+          {anomaly.run_id && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => reanalyzeMutation.mutate()}
+            >
+              <RefreshCw size={14} /> Re‑analyze
+            </Button>
+          )}
           {anomaly.status !== "resolved" && (
             <Button
               size="sm"
@@ -86,15 +93,15 @@ export default function AnomalyDetailPage({
             <Badge
               variant={
                 anomaly.severity === "critical"
-                  ? "failed"
+                  ? "danger"
                   : anomaly.severity === "high"
-                    ? "failed"
+                    ? "danger"
                     : anomaly.severity === "medium"
                       ? "warning"
                       : "info"
               }
             >
-              {anomaly.severity}
+              {anomaly.severity || "medium"}
             </Badge>
           </TerminalCard>
           <TerminalCard className="p-4">
@@ -102,26 +109,30 @@ export default function AnomalyDetailPage({
             <Badge
               variant={anomaly.status === "resolved" ? "success" : "warning"}
             >
-              {anomaly.status}
+              {anomaly.status || "open"}
             </Badge>
           </TerminalCard>
           <TerminalCard className="p-4">
             <div className="text-slate-400 text-xs">Detected</div>
-            <div>{new Date(anomaly.detected_at).toLocaleString()}</div>
+            <div>
+              {anomaly.detected_at
+                ? new Date(anomaly.detected_at).toLocaleString()
+                : "-"}
+            </div>
           </TerminalCard>
           {anomaly.resolved_at && (
             <TerminalCard className="p-4">
               <div className="text-slate-400 text-xs">Resolved</div>
               <div>
                 {new Date(anomaly.resolved_at).toLocaleString()} by{" "}
-                {anomaly.resolved_by}
+                {anomaly.resolved_by || "System"}
               </div>
             </TerminalCard>
           )}
         </div>
         <TerminalCard className="p-4">
           <div className="text-sm font-bold text-white mb-1">Summary</div>
-          <div className="text-slate-300">{anomaly.summary}</div>
+          <div className="text-slate-300">{anomaly.summary || "No summary provided"}</div>
         </TerminalCard>
         <Tabs defaultValue="details">
           <TabList>
@@ -132,7 +143,7 @@ export default function AnomalyDetailPage({
           <TabPanel value="details">
             <TerminalCard className="p-4">
               <pre className="text-xs text-slate-300 whitespace-pre-wrap overflow-auto max-h-96">
-                {JSON.stringify(anomaly.details, null, 2)}
+                {JSON.stringify(anomaly.details || {}, null, 2)}
               </pre>
             </TerminalCard>
           </TabPanel>
@@ -141,8 +152,8 @@ export default function AnomalyDetailPage({
           </TabPanel>
           <TabPanel value="chart">
             <MetricChart
-              runId={anomaly.run_id}
-              metricName={anomaly.details.metric_name}
+              runId={anomaly.run_id || ""}
+              metricName={anomaly?.details?.metric_name || "loss"}
             />
           </TabPanel>
         </Tabs>
