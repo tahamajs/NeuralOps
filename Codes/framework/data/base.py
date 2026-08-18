@@ -261,7 +261,8 @@ class ProductionDataCollator:
 
             elif key in ("label", "labels"):
                 # Handle 1D classification vs 2D LM labels
-                is_2d = isinstance(first[key], (list, torch.Tensor)) and len(first[key]) > 1
+                val0 = first[key]
+                is_2d = (isinstance(val0, list) and len(val0) > 1) or (isinstance(val0, torch.Tensor) and val0.dim() > 0 and val0.numel() > 1)
                 if is_2d and max_len is not None:
                     tensors = []
                     for f in features:
