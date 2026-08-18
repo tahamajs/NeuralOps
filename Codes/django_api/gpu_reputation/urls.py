@@ -24,11 +24,11 @@ urlpatterns = [
     ),
     # ── Disputes ─────────────────────────────────────────────
     path("disputes/", views.my_disputes, name="my_disputes"),
-    path("disputes/raise/<uuid:job_id>/", views.raise_dispute, name="raise_dispute"),
-    path("disputes/<uuid:dispute_id>/", views.dispute_detail, name="dispute_detail"),
-    path("disputes/<uuid:dispute_id>/jury/", views.select_jury, name="select_jury"),
+    path("disputes/raise/<str:job_id>/", views.raise_dispute, name="raise_dispute"),
+    path("disputes/<str:dispute_id>/", views.dispute_detail, name="dispute_detail"),
+    path("disputes/<str:dispute_id>/jury/", views.select_jury, name="select_jury"),
     path(
-        "disputes/<uuid:dispute_id>/vote/", views.cast_jury_vote, name="cast_jury_vote"
+        "disputes/<str:dispute_id>/vote/", views.cast_jury_vote, name="cast_jury_vote"
     ),
     # ── Badges ───────────────────────────────────────────────
     path("badges/", views.badge_list, name="badge_list"),

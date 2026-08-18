@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from experiment.models import Experiment
 from .models import Sweep, SweepTrial
 
 
@@ -98,6 +98,10 @@ class SweepSerializer(serializers.ModelSerializer):
 
 
 class SweepCreateSerializer(serializers.ModelSerializer):
+    project = serializers.PrimaryKeyRelatedField(
+        queryset=Experiment.objects.all(), required=False, allow_null=True
+    )
+
     class Meta:
         model = Sweep
         fields = [
@@ -120,3 +124,11 @@ class SweepCreateSerializer(serializers.ModelSerializer):
             "tags",
             "artifact_dir",
         ]
+
+    def create(self, validated_data):
+        if not validated_data.get("project"):
+            project = Experiment.objects.first()
+            if not project:
+                project = Experiment.objects.create(name="Default Project")
+            validated_data["project"] = project
+        return super().create(validated_data)

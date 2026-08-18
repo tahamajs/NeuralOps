@@ -8,7 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from .jobs import push_update
-from .models import TrainingRun, TrainingSnapshot
+from experiment.models import TrainingRun, TrainingSnapshot
 
 
 # ----------------------------------------------------------------------

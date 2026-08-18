@@ -94,6 +94,7 @@ urlpatterns = [
     path("api/collaborators/", include("collaborator_matching.urls")),
     path("api/impact/", include("impact_predictor.urls")),
     path("api/literature/", include("literature_review.urls")),
+    path("api/literature/discovery/", include("literature_discovery.urls")),
     path("api/discovery/", include("literature_discovery.urls")),
     path("api/coscientist/", include("ai_coscientist.urls")),
     path("api/ideas/", include("idea_tournament.urls")),

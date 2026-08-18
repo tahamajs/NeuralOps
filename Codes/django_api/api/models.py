@@ -57,6 +57,13 @@ def log_activity(
     )
     if content_object:
         entry.content_type = ContentType.objects.get_for_model(content_object)
-        entry.object_id = str(content_object.pk)
     entry.save()
     return entry
+
+
+# Backward compatibility aliases
+try:
+    from experiment.models import Experiment, TrainingRun, TrainingSnapshot
+except ImportError:
+    pass
+

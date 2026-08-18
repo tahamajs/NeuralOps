@@ -42,21 +42,41 @@ export default function HyperparameterExplorer({
     enabled: !!selectedMetric,
   });
 
+  const experimentList = Array.isArray(experiments) ? experiments : [];
+
   const numericParams = useMemo(() => {
-    if (!experiments?.length) return [];
-    const firstExp = experiments[0];
-    return Object.keys(firstExp.parameters).filter(
-      (key) => typeof firstExp.parameters[key] === "number",
-    );
-  }, [experiments]);
+    if (!experimentList.length) return ["learning_rate", "batch_size", "dropout"];
+    const paramSet = new Set<string>();
+    experimentList.forEach((exp) => {
+      if (exp?.parameters && typeof exp.parameters === "object") {
+        Object.entries(exp.parameters).forEach(([key, val]) => {
+          if (typeof val === "number" && !isNaN(val)) paramSet.add(key);
+        });
+      }
+    });
+    const arr = Array.from(paramSet);
+    return arr.length > 0 ? arr : ["learning_rate", "batch_size", "dropout"];
+  }, [experimentList]);
 
   const numericMetrics = useMemo(() => {
-    if (!experiments?.length) return [];
-    const firstExp = experiments[0];
-    return Object.keys(firstExp.metrics).filter(
-      (key) => typeof firstExp.metrics[key] === "number",
-    );
-  }, [experiments]);
+    if (!experimentList.length) return ["accuracy", "loss", "f1"];
+    const metricSet = new Set<string>();
+    experimentList.forEach((exp) => {
+      if (exp?.metrics && typeof exp.metrics === "object") {
+        Object.entries(exp.metrics).forEach(([key, val]) => {
+          if (typeof val === "number" && !isNaN(val)) metricSet.add(key);
+        });
+      }
+    });
+    const arr = Array.from(metricSet);
+    return arr.length > 0 ? arr : ["accuracy", "loss", "f1"];
+  }, [experimentList]);
+
+  const activeMetric = numericMetrics.includes(selectedMetric) ? selectedMetric : numericMetrics[0];
+  const activeX = numericParams.includes(xParam) ? xParam : numericParams[0];
+  const activeY = numericParams.includes(yParam) ? yParam : (numericParams[1] || numericParams[0]);
+  const activeZ = numericParams.includes(zParam) ? zParam : (numericParams[2] || numericParams[0]);
+  const activeColor = numericMetrics.includes(colorMetric) ? colorMetric : numericMetrics[0];
 
   if (isLoading) return <Spinner />;
 
@@ -89,31 +109,31 @@ export default function HyperparameterExplorer({
           <Select
             label="Target Metric"
             options={numericMetrics.map((m) => ({ value: m, label: m }))}
-            value={selectedMetric}
+            value={activeMetric}
             onChange={(e) => setSelectedMetric(e.target.value)}
           />
           <Select
             label="3D X‑Axis"
             options={numericParams.map((p) => ({ value: p, label: p }))}
-            value={xParam}
+            value={activeX}
             onChange={(e) => setXParam(e.target.value)}
           />
           <Select
             label="3D Y‑Axis"
             options={numericParams.map((p) => ({ value: p, label: p }))}
-            value={yParam}
+            value={activeY}
             onChange={(e) => setYParam(e.target.value)}
           />
           <Select
             label="3D Z‑Axis"
             options={numericParams.map((p) => ({ value: p, label: p }))}
-            value={zParam}
+            value={activeZ}
             onChange={(e) => setZParam(e.target.value)}
           />
           <Select
             label="Color by"
             options={numericMetrics.map((m) => ({ value: m, label: m }))}
-            value={colorMetric}
+            value={activeColor}
             onChange={(e) => setColorMetric(e.target.value)}
           />
         </div>
@@ -127,19 +147,19 @@ export default function HyperparameterExplorer({
           <TabPanel value="parallel">
             <TerminalCard className="p-2" style={{ height: "500px" }}>
               <ParallelCoordinatesPlot
-                experiments={experiments || []}
-                targetMetric={selectedMetric}
+                experiments={experimentList}
+                targetMetric={activeMetric}
               />
             </TerminalCard>
           </TabPanel>
           <TabPanel value="scatter3d">
             <TerminalCard className="p-2" style={{ height: "500px" }}>
               <ThreeDScatterPlot
-                experiments={experiments || []}
-                xParam={xParam}
-                yParam={yParam}
-                zParam={zParam}
-                colorMetric={colorMetric}
+                experiments={experimentList}
+                xParam={activeX}
+                yParam={activeY}
+                zParam={activeZ}
+                colorMetric={activeColor}
               />
             </TerminalCard>
           </TabPanel>
@@ -147,7 +167,7 @@ export default function HyperparameterExplorer({
             <TerminalCard className="p-2" style={{ height: "500px" }}>
               <CorrelationMatrix
                 correlations={(correlations as any) || []}
-                targetMetric={selectedMetric}
+                targetMetric={activeMetric}
               />
             </TerminalCard>
           </TabPanel>

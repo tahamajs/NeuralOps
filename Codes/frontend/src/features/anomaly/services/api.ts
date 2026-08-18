@@ -1,4 +1,4 @@
-import api from "../../../api/client";
+import { request } from "../../../api/client";
 import { Anomaly, FixAction } from "../types";
 
 export const anomalyAPI = {
@@ -8,30 +8,30 @@ export const anomalyAPI = {
     severity?: string;
     run_id?: string;
   }) =>
-    api.get<{ results: Anomaly[]; count: number }>("/anomaly-hpo/anomalies/", {
+    request.get<{ results: Anomaly[]; count: number }>("/anomaly-hpo/anomalies/", {
       params,
     }),
 
   // Get single anomaly
-  getAnomaly: (id: string) => api.get<Anomaly>(`/anomaly-hpo/anomalies/${id}/`),
+  getAnomaly: (id: string) => request.get<Anomaly>(`/anomaly-hpo/anomalies/${id}/`),
 
   // Trigger detection for a specific run
   detectAnomaly: (runId: string) =>
-    api.post(`/anomaly-hpo/anomalies/detect/${runId}/`),
+    request.post(`/anomaly-hpo/anomalies/detect/${runId}/`),
 
   // Get summary stats
-  getAnomalySummary: () => api.get("/anomaly-hpo/anomalies/summary/"),
+  getAnomalySummary: () => request.get("/anomaly-hpo/anomalies/summary/"),
 
   // Resolve anomaly
   resolveAnomaly: (id: string, resolved: boolean) =>
-    api.patch(`/anomaly-hpo/anomalies/${id}/`, {
+    request.patch(`/anomaly-hpo/anomalies/${id}/`, {
       status: resolved ? "resolved" : "open",
     }),
 
   // Get suggested fixes for an anomaly
   getFixes: (anomalyId: string) =>
-    api.get<FixAction[]>(`/anomaly-hpo/anomalies/${anomalyId}/fixes/`),
+    request.get<FixAction[]>(`/anomaly-hpo/anomalies/${anomalyId}/fixes/`),
 
   // Apply a fix
-  applyFix: (fixId: string) => api.post(`/anomaly-hpo/fixes/${fixId}/apply/`),
+  applyFix: (fixId: string) => request.post(`/anomaly-hpo/fixes/${fixId}/apply/`),
 };
