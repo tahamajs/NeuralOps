@@ -181,6 +181,10 @@ class SyntheticPerplexityDataset(Dataset):
         }
 
 
+# RESEARCH FIX: Compatibility alias for language modeling datasets
+SyntheticLanguageModelingDataset = SyntheticPerplexityDataset
+
+
 class SyntheticClassificationDataset(Dataset):
     """
     High-fidelity synthetic classification dataset using Zipfian token distributions

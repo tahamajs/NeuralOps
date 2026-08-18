@@ -71,9 +71,9 @@ class SVDLinearLayer(nn.Module):
                 use_rms_norm=self.use_rms_norm,
             )
 
-        # Standard forward pass: (x @ Vh^T) * diag(S) @ U^T
-        x_v = torch.matmul(x, self.Vh.t())
-        out = torch.matmul(x_v * self.S.unsqueeze(0), self.U.t())
+        # Standard forward pass: (x @ V^T) @ U^T + bias
+        x_v = torch.matmul(x, self.V.t())
+        out = torch.matmul(x_v, self.U.t())
         if self.bias is not None:
             out = out + self.bias
         return out
