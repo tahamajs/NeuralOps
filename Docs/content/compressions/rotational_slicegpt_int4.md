@@ -55,9 +55,8 @@ where \(s\) and \(z\) dynamically map the weight bounds to the optimal codebook 
 
 ## 7. Hardware Efficiency, Complexity & Compression Analysis
 The `Rotational-SliceGPT-INT4` engine is meticulously designed for modern accelerator topologies:
-- **Compression Ratio**: Yields a peak 4.2x reduction in end-to-end model memory footprint by transitioning from 16-bit FP representations to 4-bit INT4 formats, combined with structural dimensionality reduction.
-- **Perplexity Retention**: Maintains a negligible \(< 0.12\) perplexity delta on standard evaluation benchmarks (e.g., WikiText-2, C4) at a 25% parameter slicing ratio.
-- **Hardware Execution**: The pre-rotated and sliced projection \(Q P_r\) is fused into a single inference buffer. At runtime, the architecture simply requires a standard dense low-bit GEMM kernel (e.g., Triton W4A16 unpacker), eliminating any dynamic rotation overhead and strictly optimizing for tensor core utilization.
+Specifically, regarding \textbf{Compression Ratio}, yields a peak 4.2x reduction in end-to-end model memory footprint by transitioning from 16-bit FP representations to 4-bit INT4 formats, combined with structural dimensionality reduction. Furthermore, regarding \textbf{Perplexity Retention}, maintains a negligible \(< 0.12\) perplexity delta on standard evaluation benchmarks (e.g., WikiText-2, C4) at a 25% parameter slicing ratio. Concurrently, regarding \textbf{Hardware Execution}, the pre-rotated and sliced projection \(Q P_r\) is fused into a single inference buffer. At runtime, the architecture simply requires a standard dense low-bit GEMM kernel (e.g., Triton W4A16 unpacker), eliminating any dynamic rotation overhead and strictly optimizing for tensor core utilization.
+
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

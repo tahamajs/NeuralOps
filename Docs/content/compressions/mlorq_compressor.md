@@ -70,18 +70,17 @@ Let $W \in \mathbb{R}^{M \times N}$ be a linear layer weight matrix.
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Layer Discovery & Shape Profiling**:
-   - Extract linear layer shape information $(M, N)$ for all layers.
+Extract linear layer shape information $(M, N)$ for all layers.
+
 2. **Budget Search Loop**:
-   - Initialize cumulative memory cost $\text{total\_cost} = 0$.
-   - For each layer, evaluate candidate bit widths $b \in [8, 4, 2]$ and ranks $r \in [\min(M, N) \dots 1]$.
-   - Pick the maximum rank-bit tuple $(r, b)$ fitting remaining memory budget.
+Initialize cumulative memory cost $\text{total\_cost} = 0$. Furthermore, For each layer, evaluate candidate bit widths $b \in [8, 4, 2]$ and ranks $r \in [\min(M, N) \dots 1]$. Concurrently, Pick the maximum rank-bit tuple $(r, b)$ fitting remaining memory budget.
+
 3. **SVD & Quantization**:
-   - Compute SVD of layer weight $W$.
-   - Extract top $r$ singular vectors and values.
-   - Quantize $U_r, S_r, V_r^T$ using $b$-bit min-max quantization.
+Compute SVD of layer weight $W$. Furthermore, Extract top $r$ singular vectors and values. Concurrently, Quantize $U_r, S_r, V_r^T$ using $b$-bit min-max quantization.
+
 4. **Weight Reconstitution**:
-   - Reconstruct $W_{\text{new}} = U_q \cdot \text{diag}(S_q) \cdot V_q^T$.
-   - Update `module.weight.data` and quantize bias if present.
+Reconstruct $W_{\text{new}} = U_q \cdot \text{diag}(S_q) \cdot V_q^T$. Furthermore, Update `module.weight.data` and quantize bias if present.
+
 
 ```
 Extract Linear Layers ──► Greedy Budget Allocation ──► SVD Factorization W = U Σ V^T
@@ -115,7 +114,8 @@ $$\| W - W_{\text{MLoRQ}} \|_F^2 \le \sum_{j=r+1}^{\min(M, N)} \sigma_j^2 + \| U
 
 ### 5.2 Failure Cases
 
-- **Overly Restrictive Budget**: If $B_{\text{total}}$ forces rank $r_l < 4$ and $b_l = 2$, low-rank truncation removes structural feature channels, degrading model performance.
+Specifically, regarding \textbf{Overly Restrictive Budget}, if $B_{\text{total}}$ forces rank $r_l < 4$ and $b_l = 2$, low-rank truncation removes structural feature channels, degrading model performance.
+
 
 ---
 

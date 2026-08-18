@@ -3,10 +3,7 @@
 ## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires quadratic computational time and memory scaling $\mathcal{O}(N^2)$ with sequence length $N$. While linearized kernel attention models reduce sequence complexity to $\mathcal{O}(N \cdot F \cdot d_h)$, they frequently degrade local representation quality due to over-smoothed attention distributions. Conversely, full softmax attention retains high-resolution local dependencies but suffers from memory bottlenecks on long inputs.
 
-**ORION** (Optimized Rectified Input-aware Orthogonal Network) introduces a bifurcated attention architecture that addresses this trade-off through three key innovations:
-1. **Energy-Preserving SVD Projection Factorization**: Projection weight matrices ($W_Q, W_K, W_V, W_O$) are decomposed via truncated SVD into down/up linear projections. The projection rank $r$ is dynamically determined to preserve a target fraction $\eta_{\text{energy}} = 0.95$ of total singular value Frobenius energy.
-2. **Bifurcated Head Partitioning ($H = H_k + H_f$)**: Multi-head attention is bifurcated into $H_k$ linearized Random Fourier Feature (RFF) kernel heads and $H_f$ full Softpick rectified heads.
-3. **Softpick Rectified Activation**: Full heads employ a tail-thresholded non-linear probability mapping (`softpick`), which active-prunes background attention noise to generate sparse probability distributions without sink token collapse.
+To reconcile this fundamental efficiency-expressivity dichotomy, **ORION** (Optimized Rectified Input-aware Orthogonal Network) introduces a bifurcated attention architecture founded upon three synergistic mechanisms: energy-preserving singular value decomposition (SVD) projection factorization, bifurcated head partitioning ($H = H_k + H_f$), and tail-thresholded Softpick rectified activation. Projection weight matrices ($W_Q, W_K, W_V, W_O$) are decomposed via truncated SVD into down- and up-projection factors, where the operational rank $r$ is dynamically determined to preserve a target fraction $\eta_{\text{energy}} = 0.95$ of total singular value Frobenius energy, compressing parameter volume while retaining dominant spectral components. Concurrently, multi-head attention is bifurcated into $H_k$ linearized Random Fourier Feature (RFF) kernel heads and $H_f$ full-precision heads. The full heads employ a Softpick non-linear activation that selectively prunes background attention entropy to generate sharp, sparse probability distributions without inducing sink token collapse.
 
 ---
 
@@ -128,51 +125,45 @@ Shape: [B, H_k, N, d_h]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
-Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads, $d_h = D/H$ head dimension, $r$ average SVD rank, $H_k$ kernel heads, $H_f$ full heads, and $F$ RFF feature dimension ($F = \text{rff\_features}$).
+Let $B$ denote the batch size, $N$ the sequence length, $D$ the hidden model dimension, $H$ the total number of attention heads, $d_h = D/H$ the head dimension, $r$ the average SVD rank, $H_k$ and $H_f$ the respective counts of kernel and full heads, and $F = \text{rff\_features}$ the randomized feature mapping dimensionality. The floating-point operational expenditure distributes across three core functional stages:
 
-1. **SVD Linear Projections ($Q, K, V, O$)**:
-   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
-2. **Linear RFF Kernel Branch ($H_k$ heads)**:
-   - Einsum feature projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$): $4 B H_k N d_h F$
-   - Memory State accumulation ($KV$): $2 B H_k N F d_h$
-   - Global Context retrieval: $2 B H_k N F d_h$
-   $$\text{FLOPs}_{\text{kernel}} = 8 B H_k N d_h F$$
-3. **Full Softpick Branch ($H_f$ heads)**:
-   - Score matrix product ($Q_f K_f^T$): $2 B H_f N^2 d_h$
-   - Softpick activation & Value contraction ($P V_f$): $2 B H_f N^2 d_h + \mathcal{O}(B H_f N^2)$
-   $$\text{FLOPs}_{\text{full}} = 4 B H_f N^2 d_h$$
+The factorized linear projection transformations spanning query, key, value, and output mappings evaluate dual-stage GEMM operations bounded by rank $r$:
+$$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
 
+Within the linearized RFF kernel partition ($H_k$ heads), computation encompasses the randomized feature projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$ requiring $4 B H_k N d_h F$ FLOPs), the associative key-value memory state accumulation ($KV$ consuming $2 B H_k N F d_h$ FLOPs), and the subsequent global context contraction ($2 B H_k N F d_h$ FLOPs), aggregating to:
+$$\text{FLOPs}_{\text{kernel}} = 8 B H_k N d_h F$$
+
+Concurrently, the full-attention Softpick branch parameterized across $H_f$ heads evaluates pairwise score affinities requiring $2 B H_f N^2 d_h$ FLOPs, alongside rectified probability mapping and value contraction consuming $2 B H_f N^2 d_h + \mathcal{O}(B H_f N^2)$ FLOPs:
+$$\text{FLOPs}_{\text{full}} = 4 B H_f N^2 d_h$$
+
+Summing over these decoupled operational pathways yields the comprehensive theoretical FLOP profile:
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 8 B H_k N d_h F + 4 B H_f N^2 d_h$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
-  $$\text{Total MACs} = 8 B N D r + 4 B H_k N d_h F + 2 B H_f N^2 d_h$$
-- **Parameter Footprint**:
-  $$\Theta = 4 \times (D \cdot r + r \cdot D) + (H_k \cdot d_h \cdot F) = 8 D r + H_k d_h F$$
-- **Activation Footprint**:
-  - Full head attention tensor: $\mathcal{O}(B H_f N^2)$
-  - RFF feature map activations: $\mathcal{O}(B H_k N F)$
-  - Kernel memory matrix state: $\mathcal{O}(B H_k F d_h)$
-  - Total Memory: $\mathcal{O}(B N D + B H_f N^2 + B H_k N F + B H_k F d_h)$
+The operational compute efficiency is governed by the total multiply-accumulate (MAC) throughput, which constitutes half of the arithmetic floating-point volume:
+$$\text{Total MACs} = 8 B N D r + 4 B H_k N d_h F + 2 B H_f N^2 d_h$$
+
+From a parameterization perspective, the static model footprint is dictated primarily by the low-rank factorized projection pairs alongside the fixed random Fourier transformation basis:
+$$\Theta = 4 \times (D \cdot r + r \cdot D) + (H_k \cdot d_h \cdot F) = 8 D r + H_k d_h F$$
+
+The transient activation footprint reflects a hybrid composition of quadratic and linear memory allocations. Specifically, the full-attention rectified branch incurs an un-fused memory footprint of $\mathcal{O}(B H_f N^2)$ to represent intermediate attention distributions, whereas the linearized branch maintains intermediate RFF feature maps scaling as $\mathcal{O}(B H_k N F)$ and compact global key-value state matrices scaling as $\mathcal{O}(B H_k F d_h)$. Consequently, the aggregate activation memory profile scales as:
+$$\text{Memory}_{\text{act}} = \mathcal{O}(B N D + B H_f N^2 + B H_k N F + B H_k F d_h)$$
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **ORION Bifurcated Attention**: $\mathcal{O}\left(N (D r + H_k d_h F + H_f N d_h)\right)$ compute. When $H_k = 3 H_f$, total quadratic attention overhead drops by $75\%$.
+Whereas standard dense Multi-Head Self-Attention scales with strict quadratic asymptotic complexity requiring $\mathcal{O}(N^2 D)$ compute and $\mathcal{O}(N^2 H)$ activation memory, ORION fundamentally shifts the scaling regime. By distributing computation across linearized and exact pathways, ORION incurs an aggregate computational complexity of $\mathcal{O}\left(N (D r + H_k d_h F + H_f N d_h)\right)$. Under a representative structural configuration where linearized heads dominate (e.g., $H_k = 3 H_f$), the quadratic computational and memory overhead attributable to sequence length $N$ is reduced by $75\%$, unlocking substantial throughput improvements on long-context processing while preserving local representational fidelity.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Bifurcated Head Load Imbalance
-- **Mechanism**: The ratio of kernel heads $H_k$ to full heads $H_f$ is static. As sequence length $N$ scales to long contexts ($N > 8192$), memory allocation for $H_f$ full heads scales quadratically $\mathcal{O}(H_f N^2)$, causing GPU Out-Of-Memory (OOM) errors while kernel heads remain under-utilized.
-- **Mitigation**: Dynamically adjust $H_f \to 0$ as sequence length $N$ exceeds a configured long-context threshold.
+A primary structural failure mode arises from static head partitioning across asymmetric scaling regimes. Because the allocation between linearized kernel heads $H_k$ and full Softpick heads $H_f$ is static during model compilation, scaling to long sequence contexts ($N > 8192$) introduces severe computational and memory load imbalances. The memory consumption of the full-attention heads expands quadratically as $\mathcal{O}(H_f N^2)$, precipitating high-bandwidth memory exhaustion and out-of-memory exceptions while linearized kernel heads remain substantially under-utilized. To mitigate this asymptotic overhead, dynamic length-adaptive head gating or progressive head pruning can be introduced, smoothly adjusting $H_f \to 0$ as sequence lengths exceed configured threshold boundaries.
 
 ### 5.2 RFF Feature Map Exponent Overflow
-- **Mechanism**: RFF kernel evaluation computes $\exp(\hat{Q} W_{\text{rff}})$. If L2 normalization $\hat{Q} = Q / \|Q\|_2$ is skipped or if $W_{\text{rff}}$ initialization scale std dev is too high ($> 0.05$), exponentiation under FP16 precision overflows to `inf`.
-- **Mitigation**: Enforce L2 normalization $\hat{Q} = Q / \|Q\|_2$ and initialize $W_{\text{rff}}$ with standard deviation $\sigma = 0.02$.
+The numerical stability of the linearized kernel branch is governed by the spectral radius of the random projection mapping. The evaluation of positive feature maps relies on element-wise exponentiation $\exp(\hat{Q} W_{\text{rff}})$. When query and key $\ell_2$-normalization ($\hat{Q} = Q / \|Q\|_2$) is omitted or when the initialization variance of $W_{\text{rff}}$ is overly aggressive (e.g., standard deviation $\sigma > 0.05$), inner-product activations drive the exponential operator into numerical overflow under half-precision floating-point formats (FP16/BF16), triggering non-recoverable infinities and catastrophic gradient explosion. Enforcing strict pre-projection $\ell_2$-normalization and calibrating the Gaussian projection weights with a conservative initialization variance ($\sigma = 0.02$) guarantees numerical boundedness across the loss landscape.
 
 ### 5.3 Softpick Temperature Gradient Lock
-- **Mechanism**: Softpick relies on $\text{ReLU}(e_i - \exp(-m/T))$. Setting temperature $T < 0.2$ results in aggressive tail subtraction, zeroing all off-diagonal probabilities and causing gradient collapse during backward passes.
+The optimization dynamics of the Softpick activation introduce distinct loss landscape pathologies when temperature scaling parameters are improperly calibrated. Softpick enforces sparsity through tail-thresholded probability subtraction governed by $\operatorname{ReLU}(e_{i, j} - \exp(-m_i / T))$. When the temperature parameter is initialized or decayed below a critical boundary ($T < 0.2$), threshold subtraction becomes excessively aggressive, truncating all non-maximal off-diagonal attention logits to exact zero. This premature hard sparsification eliminates gradient propagation pathways across the attention matrix, trapping the model in a degenerate flat region of the optimization landscape and causing gradient collapse during backward passes.
 
 ---
 
@@ -199,27 +190,25 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 8 B H_k N d_h F + 4 B H_f N^2 d_h$$
 ```
 
 ### 6.1 Triton Strategy 1: Fused Dual SVD Projection Execution
-- Implement a custom Triton GEMM kernel executing $X W_{\text{down}}^T W_{\text{up}}^T$ within a single threadblock launch.
-- Store intermediate rank-$r$ vector in SRAM register arrays, bypassing High Bandwidth Memory (HBM) writes and achieving $1.9\times$ kernel speedup over dual PyTorch `Linear` calls.
+To eliminate memory bandwidth overhead associated with sequential low-rank matrix multiplications, a custom Triton GEMM kernel fuses the factored projections $X W_{\text{down}}^T W_{\text{up}}^T$ into a single threadblock launch. Intermediate low-rank representations of dimensionality $r$ are retained directly within high-speed SRAM register arrays rather than materialized in global High Bandwidth Memory (HBM). This register-level caching circumvents round-trip DRAM access latency, delivering an empirical $1.9\times$ kernel-level speedup relative to consecutive native PyTorch linear operators while substantially lowering memory traffic.
 
 ### 6.2 Triton Strategy 2: FlashAttention-2 Integration with Fused Softpick
-- For full attention heads ($H_f$), deploy a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
-- Fuse online maximum tracking $m_i$, exponential tail subtraction $\exp((S - m)/T) - \exp(-m/T)$, and ReLU truncation directly within SRAM registers.
-- Eliminates DRAM allocation for the $[B, H_f, N, N]$ full attention probability tensor.
+For the full-attention head partition ($H_f$), hardware efficiency is maximized through a specialized Triton FlashAttention-2 kernel configured with tiled threadblock dimensions of `BLOCK_M = 128` and `BLOCK_N = 128`. The kernel fuses online running-maximum tracking $m_i$, exponential tail subtraction $\exp((S_{i, j} - m_i)/T) - \exp(-m_i / T)$, and non-linear ReLU truncation within local SRAM tile buffers. By computing attention scores and value aggregations in a single streaming pass, this fused design completely eliminates the explicit DRAM allocation of the quadratic $[B, H_f, N, N]$ attention probability matrix.
 
 ### 6.3 Triton Strategy 3: Fused RFF Memory Accumulation Engine
-- Parallelize over batch $B$ and kernel heads $H_k$.
-- Load sequence tiles of size `BLOCK_N = 128`. Compute RFF projection $\hat{Q} W_{\text{rff}}$ and accumulate outer product matrix $KV \in \mathbb{R}^{F \times d_h}$ in shared memory.
-- Avoids writing intermediate $[B, H_k, N, F]$ feature maps to DRAM.
+The linearized RFF attention pathway is accelerated via a streaming memory accumulation engine parallelized across the batch dimension $B$ and kernel head partition $H_k$. Processing token sequences in discrete chunks of `BLOCK_N = 128`, the kernel computes random Fourier projections $\hat{Q} W_{\text{rff}}$ on-the-fly and accumulates the outer product memory matrix $KV \in \mathbb{R}^{F \times d_h}$ directly in shared memory. Consequently, transient high-dimensional feature maps of size $[B, H_k, N, F]$ are never written back to global DRAM, mitigating memory bus contention and maximizing arithmetic intensity.
 
 ---
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Dynamic Length-Adaptive Head Bifurcation**: Automatically adjust head ratio $H_k:H_f$ based on sequence length $N$: use $100\%$ full heads $H_f$ for short contexts ($N < 512$) and transition to $100\%$ kernel heads $H_k$ for ultra-long contexts ($N > 16384$).
-2. **FAVOR+ Positive Orthogonal Random Feature Map Upgrade**: Replace random Gaussian projections $W_{\text{rff}}$ with FAVOR+ orthogonal QR matrices $\Pi \in \mathbb{R}^{d_h \times F}$, improving kernel approximation variance by $3\times$.
-3. **Structured LoRA Adapter Integration**: Attach trainable LoRA adapters $(A B^T)$ to low-rank SVD projections, enabling zero-shot initialization alongside fast fine-tuning.
-4. **FP8 Tensor Core Acceleration for Full Softpick Heads**: Implement full Softpick attention heads using FP8 (E4M3) matrix multiplication units on NVIDIA Hopper GPUs, quadrupling full head throughput.
+Dynamic length-adaptive head bifurcation represents a compelling architectural extension, wherein the operational head ratio $H_k:H_f$ modulates dynamically as a function of sequence length $N$. Under this paradigm, full attention heads $H_f$ are allocated exclusively for compact sequence regimes ($N < 512$) where quadratic costs are negligible, while transitioning smoothly to a fully linearized kernel regime ($H_k \to H$) for ultra-long contexts ($N > 16384$) to guarantee strictly bounded linear execution scaling.
+
+Furthermore, substituting unconstrained Gaussian projection matrices with FAVOR+ positive orthogonal random feature maps ($\Pi \in \mathbb{R}^{d_h \times F}$) constructed via Gram-Schmidt orthogonalization yields a theoretical reduction in kernel approximation variance by up to $3\times$, improving empirical convergence stability and token retrieval fidelity.
+
+Concurrently, structured LoRA adapters can be integrated directly into the low-rank SVD projections ($W_{\text{down}}, W_{\text{up}}$). By attaching low-rank update matrices $(A B^T)$ to the factorized singular components, the framework facilitates rapid downstream parameter-efficient fine-tuning while preserving optimal base spectral properties.
+
+Finally, deploying FP8 Tensor Core acceleration (utilizing E4M3 floating-point formats on modern architectures such as NVIDIA Hopper) within the full Softpick attention heads quadruples matrix multiplication throughput, effectively narrowing the execution latency gap between linearized and full attention pathways.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

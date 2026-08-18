@@ -135,29 +135,28 @@ Orthogonality regularization loss is evaluated on the extracted basis $U_r \in \
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ sequence SVD rank.
 
 1. **Linear Projections**:
-   - $Q, K, V, O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+$Q, K, V, O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+
 2. **Randomized QR Basis Extraction**:
-   - Random projection $Y = X \Omega$: $2 B N D r$ FLOPs.
-   - Householder QR decomposition: $2 B N r^2$ FLOPs.
+Random projection $Y = X \Omega$: $2 B N D r$ FLOPs. Furthermore, Householder QR decomposition: $2 B N r^2$ FLOPs.
+
 3. **Sequence Subspace Compression**:
-   - $K_{\text{proj}} = U_r^\top K$: $2 B H (r N d_k) = 2 B N r D$ FLOPs.
-   - $V_{\text{proj}} = U_r^\top V$: $2 B N r D$ FLOPs.
+$K_{\text{proj}} = U_r^\top K$: $2 B H (r N d_k) = 2 B N r D$ FLOPs. Furthermore, $V_{\text{proj}} = U_r^\top V$: $2 B N r D$ FLOPs.
+
 4. **Compressed Attention Core**:
-   - $Q K_{\text{proj}}^\top$ MatMul: $2 B H N r d_k = 2 B N r D$ FLOPs.
-   - Softmax & Dropout: $7 B H N r$ FLOPs.
-   - $A V_{\text{proj}}$ MatMul: $2 B H N r d_k = 2 B N r D$ FLOPs.
+$Q K_{\text{proj}}^\top$ MatMul: $2 B H N r d_k = 2 B N r D$ FLOPs. Furthermore, Softmax & Dropout: $7 B H N r$ FLOPs. Concurrently, $A V_{\text{proj}}$ MatMul: $2 B H N r d_k = 2 B N r D$ FLOPs.
+
 
 5. **Total Workload Summary**:
-   - **Total MACs**: $4 B N D^2 + 4 B N r D + B N D r + B N r^2$
-   - **Total FLOPs**: $8 B N D^2 + 8 B N r D + 2 B N D r + 2 B N r^2 + 7 B H N r$
-   - **Linear Scaling in Sequence Length**: As $N \to \infty$, core attention scaling is $\mathcal{O}(N \cdot r)$ rather than $\mathcal{O}(N^2)$.
+Specifically, regarding \textbf{Total MACs}, $4 B N D^2 + 4 B N r D + B N D r + B N r^2$ Furthermore, regarding \textbf{Total FLOPs}, $8 B N D^2 + 8 B N r D + 2 B N D r + 2 B N r^2 + 7 B H N r$ Concurrently, regarding \textbf{Linear Scaling in Sequence Length}, as $N \to \infty$, core attention scaling is $\mathcal{O}(N \cdot r)$ rather than $\mathcal{O}(N^2)$.
+
 
 ### Memory Footprint & Activation Reduction
-- **Standard MHA Attention Matrix Memory**: $B \cdot H \cdot N^2 \cdot b$ bytes.
-- **SVD Attention Matrix Memory**: $B \cdot H \cdot N \cdot r \cdot b$ bytes.
+Specifically, regarding \textbf{Standard MHA Attention Matrix Memory}, $B \cdot H \cdot N^2 \cdot b$ bytes. Furthermore, regarding \textbf{SVD Attention Matrix Memory}, $B \cdot H \cdot N \cdot r \cdot b$ bytes.
+
   For $N = 16,384, r = 64$:
-  - Standard MHA: $16384^2 = 268,435,456$ elements per head.
-  - SVD Attention: $16384 \times 64 = 1,048,576$ elements per head (**256$\times$ reduction in intermediate score memory**).
+Standard MHA: $16384^2 = 268,435,456$ elements per head. Furthermore, SVD Attention: $16384 \times 64 = 1,048,576$ elements per head (**256$\times$ reduction in intermediate score memory**).
+
 
 ---
 

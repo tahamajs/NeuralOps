@@ -109,49 +109,45 @@ Shape: [B, L, D]   Shape: [B, L, D]      │
 Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $d_{\text{state}}$ state dimension, $E$ total experts, $k$ active experts per token, $D_{\text{ff}}$ FFN inner dimension, and $R$ Mamba-to-Attention ratio.
 
 1. **Mamba-2 Recurrence Step ($R / (R+1)$ fraction of layers)**:
-   - In-projection: $2 B L D (2 D_{\text{inner}}) = 8 B L D^2$ (assuming $\text{expand} = 2$)
-   - 1D Convolution: $2 B L D_{\text{inner}} d_{\text{conv}} = 16 B L D$ (for $d_{\text{conv}} = 4$)
-   - Recurrence update: $2 B L D d_{\text{state}}$
-   - Out-projection: $2 B L D_{\text{inner}} D = 4 B L D^2$
-   $$\text{FLOPs}_{\text{mamba}} = 12 B L D^2 + 2 B L D d_{\text{state}}$$
+In-projection: $2 B L D (2 D_{\text{inner}}) = 8 B L D^2$ (assuming $\text{expand} = 2$) Furthermore, 1D Convolution: $2 B L D_{\text{inner}} d_{\text{conv}} = 16 B L D$ (for $d_{\text{conv}} = 4$) Concurrently, Recurrence update: $2 B L D d_{\text{state}}$ In this setting, Out-projection: $2 B L D_{\text{inner}} D = 4 B L D^2$ $$\text{FLOPs}_{\text{mamba}} = 12 B L D^2 + 2 B L D d_{\text{state}}$$
+
 2. **Dense MHA Step ($1 / (R+1)$ fraction of layers)**:
    $$\text{FLOPs}_{\text{attn}} = 4 B L D^2 + 2 B L^2 D$$
 3. **Mixture-of-Experts (MoE) Step**:
-   - Router projection: $2 B L D E$
-   - Expert FFN evaluation ($k$ active experts): $k \times \left( 2 B L D D_{\text{ff}} + 2 B L D_{\text{ff}} D \right) = 4 k B L D D_{\text{ff}}$
-   $$\text{FLOPs}_{\text{moe}} = 2 B L D E + 4 k B L D D_{\text{ff}}$$
+Router projection: $2 B L D E$ Furthermore, Expert FFN evaluation ($k$ active experts): $k \times \left( 2 B L D D_{\text{ff}} + 2 B L D_{\text{ff}} D \right) = 4 k B L D D_{\text{ff}}$ $$\text{FLOPs}_{\text{moe}} = 2 B L D E + 4 k B L D D_{\text{ff}}$$
+
 
 $$\text{FLOPs}_{\text{avg}} = \frac{R}{R+1} \text{FLOPs}_{\text{mamba}} + \frac{1}{R+1} \text{FLOPs}_{\text{attn}} + \text{FLOPs}_{\text{moe}}$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx \frac{R}{R+1} (6 B L D^2 + B L D d_{\text{state}}) + \frac{1}{R+1} (2 B L D^2 + B L^2 D) + 2 k B L D D_{\text{ff}}$$
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = (6 D^2 + D d_{\text{state}}) + 4 D^2 + (D E + 2 k E D_{\text{ff}})$$
-- **Activation Footprint**:
-  - Mamba recurrence state: $\mathcal{O}(B D d_{\text{state}})$
-  - Dense MHA attention logit matrix: $\mathcal{O}(B L^2)$ (at MHA layers)
-  - MoE routing activation: $\mathcal{O}(B L E + k B L D)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Mamba recurrence state: $\mathcal{O}(B D d_{\text{state}})$ Concurrently, Dense MHA attention logit matrix: $\mathcal{O}(B L^2)$ (at MHA layers) In this setting, MoE routing activation: $\mathcal{O}(B L E + k B L D)$
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Transformer**: $\mathcal{O}(L^2 D + L D_{\text{ff}})$ compute per layer.
-- **Granite-Hybrid Architecture**: $\mathcal{O}\left(\frac{R}{R+1} L D d_{\text{state}} + \frac{1}{R+1} L^2 D + k L D D_{\text{ff}}\right)$ compute per layer, slashing total generation FLOPs by $80\%$ when $R=9$.
+Specifically, regarding \textbf{Standard Dense Transformer}, $\mathcal{O}(L^2 D + L D_{\text{ff}})$ compute per layer. Furthermore, regarding \textbf{Granite-Hybrid Architecture}, $\mathcal{O}\left(\frac{R}{R+1} L D d_{\text{state}} + \frac{1}{R+1} L^2 D + k L D D_{\text{ff}}\right)$ compute per layer, slashing total generation FLOPs by $80\%$ when $R=9$.
+
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 MoE Router Collapse & Load Imbalance
-- **Mechanism**: The routing linear layer $S = Y W_{\text{router}}$ can experience routing collapse, where a small subset of experts ($< k$) receives all token assignments while remaining experts receive zero tokens.
-- **Consequence**: Defeats sparse computational savings and causes HBM memory bandwidth bottlenecks on over-allocated expert GPUs.
-- **Mitigation**: Add an auxiliary load-balancing loss $\mathcal{L}_{\text{balance}} = E \sum_{e=1}^E f_e P_e$, where $f_e$ is token fraction routed to expert $e$ and $P_e$ is average routing probability.
+At the architectural level, the underlying operational mechanism reveals that the routing linear layer $S = Y W_{\text{router}}$ can experience routing collapse, where a small subset of experts ($< k$) receives all token assignments while remaining experts receive zero tokens. Consequently, this dynamic induces structural implications wherein defeats sparse computational savings and causes HBM memory bandwidth bottlenecks on over-allocated expert GPUs. To systematically mitigate this constraint, the framework enforces an optimization protocol such that add an auxiliary load-balancing loss $\mathcal{L}_{\text{balance}} = E \sum_{e=1}^E f_e P_e$, where $f_e$ is token fraction routed to expert $e$ and $P_e$ is average routing probability.
+
 
 ### 5.2 Mamba State Recurrence Gradient Vanishing/Explosion
-- **Mechanism**: The discrete time step update $h_t = h_{t-1} \exp(\Delta t_t A)$ relies on exponentiating $\Delta t_t A$. If $\Delta t_t$ projects to large positive values, $\exp(\Delta t_t A)$ explodes for positive $A$ or vanishes to absolute 0 for negative $A$.
-- **Mitigation**: Constrain $A = -\exp(A_{\log})$ to be strictly negative and apply `softplus` non-linearity to $\Delta t$ projections.
+At the architectural level, the underlying operational mechanism reveals that the discrete time step update $h_t = h_{t-1} \exp(\Delta t_t A)$ relies on exponentiating $\Delta t_t A$. If $\Delta t_t$ projects to large positive values, $\exp(\Delta t_t A)$ explodes for positive $A$ or vanishes to absolute 0 for negative $A$. To systematically mitigate this constraint, the framework enforces an optimization protocol such that constrain $A = -\exp(A_{\log})$ to be strictly negative and apply `softplus` non-linearity to $\Delta t$ projections.
+
 
 ### 5.3 MHA Layer Switching Context Shock
-- **Mechanism**: Interleaving Mamba layers (linear state space memory) with dense MHA layers (quadratic KV cache) forces sharp transitions in representation geometry. If $R$ is set too large ($R > 16$), the single MHA layer fails to re-align global associative keys.
+At the architectural level, the underlying operational mechanism reveals that interleaving Mamba layers (linear state space memory) with dense MHA layers (quadratic KV cache) forces sharp transitions in representation geometry. If $R$ is set too large ($R > 16$), the single MHA layer fails to re-align global associative keys.
+
 
 ---
 
@@ -182,21 +178,19 @@ $$\text{FLOPs}_{\text{avg}} = \frac{R}{R+1} \text{FLOPs}_{\text{mamba}} + \frac{
 Standard PyTorch sequential loops over sequence length $L$ incur $L$ distinct GPU kernel launches, causing catastrophic overhead.
 
 **Triton Optimization**:
-- Implement a persistent C++/Triton kernel that loads input sequence blocks into shared memory.
-- Fuse 1D convolution, softplus timescale projection $\Delta t$, and state recurrence $h_t = h_{t-1} \exp(\Delta t A) + x \Delta t$ into a single threadblock sweep across sequence length $L$.
-- Keep state tensor $h_t \in \mathbb{R}^{D \times d_{\text{state}}}$ entirely within SRAM registers.
+Implement a persistent C++/Triton kernel that loads input sequence blocks into shared memory. Furthermore, Fuse 1D convolution, softplus timescale projection $\Delta t$, and state recurrence $h_t = h_{t-1} \exp(\Delta t A) + x \Delta t$ into a single threadblock sweep across sequence length $L$. Concurrently, Keep state tensor $h_t \in \mathbb{R}^{D \times d_{\text{state}}}$ entirely within SRAM registers.
+
 
 ### 6.2 Triton Strategy 2: FlashAttention-2 Interleaved Integration
-- For dense MHA execution steps, invoke a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
-- Compute online Softmax normalization in SRAM registers, eliminating DRAM reads and writes for the $[B, L, L]$ attention logit matrix.
+For dense MHA execution steps, invoke a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`. Furthermore, Compute online Softmax normalization in SRAM registers, eliminating DRAM reads and writes for the $[B, L, L]$ attention logit matrix.
+
 
 ### 6.3 Triton Strategy 3: Grouped GEMM Fused MoE Execution
 Standard MoE implementations launch separate GEMM calls for each expert module, incurring high launch latencies for small token batches.
 
 **Triton Optimization**:
-- Group tokens by assigned expert index using a fast SRAM parallel radix sort.
-- Execute a single Triton Grouped GEMM kernel where each threadblock handles token batches assigned to expert $e$.
-- Perform scatter-gather accumulation directly in GPU shared memory before writing back to global DRAM.
+Group tokens by assigned expert index using a fast SRAM parallel radix sort. Furthermore, Execute a single Triton Grouped GEMM kernel where each threadblock handles token batches assigned to expert $e$. Concurrently, Perform scatter-gather accumulation directly in GPU shared memory before writing back to global DRAM.
+
 
 ---
 

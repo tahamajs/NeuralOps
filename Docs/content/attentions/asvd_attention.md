@@ -125,28 +125,26 @@ X->V_q->scale(S_q)->U_q       X->V_k->scale(S_k)->U_k       X->V_v->scale(S_v)->
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ factor rank.
 
 1. **ASVD Projection Layers**:
-   - Down-projections ($X V^\top$): $4 \times (2 B N D r) = 8 B N D r$ FLOPs.
-   - Singular scaling ($\odot S$): $4 B N r$ FLOPs.
-   - Up-projections ($Z U^\top$): $4 \times (2 B N r D) = 8 B N D r$ FLOPs.
-   - *Total Projection Workload*: $16 B N D r + 4 B N r$ FLOPs ($8 B N D r$ MACs).
+Down-projections ($X V^\top$): $4 \times (2 B N D r) = 8 B N D r$ FLOPs. Furthermore, Singular scaling ($\odot S$): $4 B N r$ FLOPs. Concurrently, Up-projections ($Z U^\top$): $4 \times (2 B N r D) = 8 B N D r$ FLOPs. In this setting, *Total Projection Workload*: $16 B N D r + 4 B N r$ FLOPs ($8 B N D r$ MACs).
+
 
 2. **Core Scaled Dot-Product Attention**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
+$Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H N^2$ FLOPs.
+
 
 3. **Total Workload Summary**:
-   - **Total MACs**: $8 B N D r + 2 B N^2 D$
-   - **Total FLOPs**: $16 B N D r + 4 B N r + 4 B N^2 D + 7 B H N^2$
+Specifically, regarding \textbf{Total MACs}, $8 B N D r + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $16 B N D r + 4 B N r + 4 B N^2 D + 7 B H N^2$
+
 
 ### Parameter Footprint Comparison
-- **Dense Uncompressed MHA**: $4 D^2 + 4 D$ floats.
-- **ASVD MHA Parameter Count**:
+Specifically, regarding \textbf{Dense Uncompressed MHA}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{ASVD MHA Parameter Count}, 
+
   \[
   \text{Params}_{\text{ASVD}} = 4 \cdot [D \cdot r + r + r \cdot D] + 4 D = 8 D r + 4 r + 4 D \text{ floats}
   \]
   For $D = 4096, r = 32$:
-  - Dense MHA: $4 \times 4096^2 \approx 67.1 \text{ million parameters}$.
-  - ASVD MHA: $8 \times 4096 \times 32 + 128 + 16384 \approx 1.06 \text{ million parameters}$ (**$98.4\%$ parameter compression**).
+Dense MHA: $4 \times 4096^2 \approx 67.1 \text{ million parameters}$. Furthermore, ASVD MHA: $8 \times 4096 \times 32 + 128 + 16384 \approx 1.06 \text{ million parameters}$ (**$98.4\%$ parameter compression**).
+
 
 ---
 

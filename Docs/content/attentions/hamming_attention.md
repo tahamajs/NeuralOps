@@ -125,11 +125,8 @@ Input Hidden States X [B, N, D]
 During quantized inference, floating-point multiplications for $\mathbf{Q}_b \mathbf{K}_b^\top$ convert to bitwise XNOR and POPCOUNT logic operations.
 
 ### Memory Footprint & Tensor Store
-- **Parameters**: $4 D^2 + 2 H$ floats (where $\gamma_Q, \gamma_K$ contribute $2 H$ scalars).
-- **Activation Memory**:
-  - Pseudo-Binary Vectors ($\mathbf{Q}_b, \mathbf{K}_b$): $2 B H N d = 2 B N D$ floats (or 1-bit quantized integers).
-  - Score & Sparse Mask Tensors ($\mathbf{S}, \mathbf{M}_{\text{sparse}}$): $2 B H N^2$ floats.
-  - Peak Memory Footprint: $\mathcal{O}(B N D + B H N^2)$.
+Specifically, regarding \textbf{Parameters}, $4 D^2 + 2 H$ floats (where $\gamma_Q, \gamma_K$ contribute $2 H$ scalars). Furthermore, regarding \textbf{Activation Memory},  Concurrently, Pseudo-Binary Vectors ($\mathbf{Q}_b, \mathbf{K}_b$): $2 B H N d = 2 B N D$ floats (or 1-bit quantized integers). In this setting, Score & Sparse Mask Tensors ($\mathbf{S}, \mathbf{M}_{\text{sparse}}$): $2 B H N^2$ floats. Additionally, Peak Memory Footprint: $\mathcal{O}(B N D + B H N^2)$.
+
 
 ---
 

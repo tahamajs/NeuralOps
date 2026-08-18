@@ -97,33 +97,31 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 3. **Dynamic SVD Projections ($Q, K, V, O$)**:
    $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B k D r + 2 B k r D \right) = 16 B k D r$$
 4. **Routed Multi-Head Attention Core**:
-   - Query-Key dot products ($k$ tokens): $2 B H k^2 d_h = 2 B k^2 D$
-   - Softmax & Value contraction: $2 B H k^2 d_h = 2 B k^2 D$
-   $$\text{FLOPs}_{\text{attn}} = 4 B k^2 D$$
+Query-Key dot products ($k$ tokens): $2 B H k^2 d_h = 2 B k^2 D$ Furthermore, Softmax & Value contraction: $2 B H k^2 d_h = 2 B k^2 D$ $$\text{FLOPs}_{\text{attn}} = 4 B k^2 D$$
+
 
 **Total FLOP Count**:
 
 $$\text{FLOPs}_{\text{total}} = 64 B N D + 16 B k D r + 4 B k^2 D$$
 
 ### 4.2 Memory Footprint & Bandwidth
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = 4 \times (D \cdot r) + \Theta_{\text{router}} + \Theta_{\text{vgate}} + \Theta_{\text{hgate}} = 4 D r + 33 D + 384 r + 33 D$$
-- **Activation Footprint**:
-  - Routed token sequence $\widetilde{X}$: $\mathcal{O}(B k D)$
-  - Routed attention logit matrix: $\mathcal{O}(B H k^2)$
-  - Total Activation Memory: $\mathcal{O}(B N D + B k D + B H k^2) \ll \mathcal{O}(B H N^2)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Routed token sequence $\widetilde{X}$: $\mathcal{O}(B k D)$ Concurrently, Routed attention logit matrix: $\mathcal{O}(B H k^2)$ In this setting, Total Activation Memory: $\mathcal{O}(B N D + B k D + B H k^2) \ll \mathcal{O}(B H N^2)$
+
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
 ### 5.1 Token Routing Collapse & Gradient Vanishing
-- **Mechanism**: The token router scores $s_i = \sigma(\text{MLP}(x_i))$. If the MLP weight gradients vanish, $s_i$ converges to uniform constants, turning Top-k selection into arbitrary index truncation.
-- **Consequence**: Critical task-relevant tokens are discarded, degrading model performance.
-- **Mitigation**: Add an auxiliary sparsity loss $\mathcal{L}_{\text{sparsity}} = \|\bar{s} - \text{keep\_ratio}\|_2^2$ to enforce active token scoring entropy.
+At the architectural level, the underlying operational mechanism reveals that the token router scores $s_i = \sigma(\text{MLP}(x_i))$. If the MLP weight gradients vanish, $s_i$ converges to uniform constants, turning Top-k selection into arbitrary index truncation. Consequently, this dynamic induces structural implications wherein critical task-relevant tokens are discarded, degrading model performance. To systematically mitigate this constraint, the framework enforces an optimization protocol such that add an auxiliary sparsity loss $\mathcal{L}_{\text{sparsity}} = \|\bar{s} - \text{keep\_ratio}\|_2^2$ to enforce active token scoring entropy.
+
 
 ### 5.2 Variational Gate Collapse ($\sigma \to 0$)
-- **Mechanism**: The variational gate reparameterization $z = \mu + \epsilon \odot \exp(\log \sigma)$ can suffer from KL divergence collapse where $\log \sigma \to -\infty$, causing gate $g = \sigma(\mu)$ to become deterministic and losing input-adaptive spectral regularizations.
+At the architectural level, the underlying operational mechanism reveals that the variational gate reparameterization $z = \mu + \epsilon \odot \exp(\log \sigma)$ can suffer from KL divergence collapse where $\log \sigma \to -\infty$, causing gate $g = \sigma(\mu)$ to become deterministic and losing input-adaptive spectral regularizations.
+
 
 ---
 
@@ -157,18 +155,16 @@ $$\text{FLOPs}_{\text{total}} = 64 B N D + 16 B k D r + 4 B k^2 D$$
 ```
 
 ### 6.1 Triton Strategy 1: Fused Saliency Scoring & Parallel Bitonic Top-k Gather
-- Implement a custom Triton kernel loading $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Compute saliency scores $s_i$ in register space and execute a parallel shared-memory bitonic top-$k$ sort.
-- Gather routed token sequence $\widetilde{X} \in \mathbb{R}^{B \times k \times D}$ into continuous DRAM buffers in a single pass.
+Implement a custom Triton kernel loading $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM. Furthermore, Compute saliency scores $s_i$ in register space and execute a parallel shared-memory bitonic top-$k$ sort. Concurrently, Gather routed token sequence $\widetilde{X} \in \mathbb{R}^{B \times k \times D}$ into continuous DRAM buffers in a single pass.
+
 
 ### 6.2 Triton Strategy 2: Fused Dynamic SVD Projection Operator
-- Load routed sequence tile $\widetilde{X}_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Perform down-projection $\widetilde{X}_i V^T$ in registers, scale elements by $S_{\text{eff}} = S \odot g$, and compute up-projection with $U^T$.
-- Reduces DRAM memory traffic by $2.1\times$ compared to standard multi-step PyTorch calls.
+Load routed sequence tile $\widetilde{X}_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM. Furthermore, Perform down-projection $\widetilde{X}_i V^T$ in registers, scale elements by $S_{\text{eff}} = S \odot g$, and compute up-projection with $U^T$. Concurrently, Reduces DRAM memory traffic by $2.1\times$ compared to standard multi-step PyTorch calls.
+
 
 ### 6.3 Triton Strategy 3: Fused Scatter-Update Output Kernel
-- After computing routed output $O_{\text{proj}} \in \mathbb{R}^{B \times k \times D}$, execute a specialized Triton scatter kernel.
-- Overwrite routed token positions $\mathcal{I}_{\text{route}}$ directly into the global memory output tensor $Y$, avoiding intermediate Python loops.
+After computing routed output $O_{\text{proj}} \in \mathbb{R}^{B \times k \times D}$, execute a specialized Triton scatter kernel. Furthermore, Overwrite routed token positions $\mathcal{I}_{\text{route}}$ directly into the global memory output tensor $Y$, avoiding intermediate Python loops.
+
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

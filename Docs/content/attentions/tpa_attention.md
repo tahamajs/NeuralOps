@@ -125,32 +125,30 @@ q1: [B, N, H, r]    q2: [B, N, H, r]          k1: [B, N, H, r]    k2: [B, N, H, 
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_h = D/H$, and $r$ factor rank.
 
 1. **Linear Projections**:
-   - $W_{Q1}, W_{Q2}, W_{K1}, W_{K2}$: $4 \times (2 B N D (H r)) = 8 B N D H r$ FLOPs.
-   - $W_V, W_O$: $4 B N D^2$ FLOPs.
-   - *Total Projection Cost*: $4 B N D^2 + 8 B N D H r$ FLOPs.
+$W_{Q1}, W_{Q2}, W_{K1}, W_{K2}$: $4 \times (2 B N D (H r)) = 8 B N D H r$ FLOPs. Furthermore, $W_V, W_O$: $4 B N D^2$ FLOPs. Concurrently, *Total Projection Cost*: $4 B N D^2 + 8 B N D H r$ FLOPs.
+
 
 2. **Tensor Product Expansion (`einsum`)**:
-   - $Q = q_1 \otimes q_2$: $2 B N H r^2$ FLOPs.
-   - $K = k_1 \otimes k_2$: $2 B N H r^2$ FLOPs.
+$Q = q_1 \otimes q_2$: $2 B N H r^2$ FLOPs. Furthermore, $K = k_1 \otimes k_2$: $2 B N H r^2$ FLOPs.
+
 
 3. **Core Attention Workload**:
-   - MatMul score $Q K^\top$: $2 B H N^2 r^2$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
-   - MatMul context $A V$: $2 B H N^2 d_h = 2 B N^2 D$ FLOPs.
+MatMul score $Q K^\top$: $2 B H N^2 r^2$ FLOPs. Furthermore, Softmax & Masking: $7 B H N^2$ FLOPs. Concurrently, MatMul context $A V$: $2 B H N^2 d_h = 2 B N^2 D$ FLOPs.
+
 
 4. **Total Workload Summary**:
-   - **Total MACs**: $2 B N D^2 + 4 B N D H r + B N H r^2 + B H N^2 (r^2 + d_h)$
-   - **Total FLOPs**: $4 B N D^2 + 8 B N D H r + 4 B N H r^2 + 2 B H N^2 r^2 + 2 B N^2 D + 7 B H N^2$
+Specifically, regarding \textbf{Total MACs}, $2 B N D^2 + 4 B N D H r + B N H r^2 + B H N^2 (r^2 + d_h)$ Furthermore, regarding \textbf{Total FLOPs}, $4 B N D^2 + 8 B N D H r + 4 B N H r^2 + 2 B H N^2 r^2 + 2 B N^2 D + 7 B H N^2$
+
 
 ### Parameter Footprint Analysis
-- **Standard MHA Parameter Count**: $4 D^2 + 4 D$ floats.
-- **TPAttention Parameter Count**:
+Specifically, regarding \textbf{Standard MHA Parameter Count}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{TPAttention Parameter Count}, 
+
   \[
   \text{Params}_{\text{TPA}} = 2 D^2 + 4 D H r + 2 D \text{ floats}
   \]
   For $D = 4096, H = 32, r = 8$:
-  - Standard MHA QKV+O projections: $4 \times 4096^2 = 67,108,864$ parameters.
-  - TPA QKV+O projections: $2(4096)^2 + 4(4096)(32)(8) \approx 37,748,736$ parameters (**43.7% parameter reduction on QKV projections**).
+Standard MHA QKV+O projections: $4 \times 4096^2 = 67,108,864$ parameters. Furthermore, TPA QKV+O projections: $2(4096)^2 + 4(4096)(32)(8) \approx 37,748,736$ parameters (**43.7% parameter reduction on QKV projections**).
+
 
 ---
 

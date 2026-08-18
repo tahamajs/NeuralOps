@@ -135,28 +135,20 @@ Y = \text{Concat}(O_1, \dots, O_H) W_O + b_O \in \mathbb{R}^{B \times N \times D
 For sequence length $N$, model dimension $D$, and head count $H$ with $d_k = D/H$:
 
 1. **Linear Projections ($Q, K, V, O$)**:
-   - $W_Q, W_K, W_V$: $3 \times (2 B N D^2)$ FLOPs = $6 B N D^2$ FLOPs ($3 B N D^2$ MACs).
-   - $W_O$: $2 B N D^2$ FLOPs ($B N D^2$ MACs).
-   - *Total Projection Cost*: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+$W_Q, W_K, W_V$: $3 \times (2 B N D^2)$ FLOPs = $6 B N D^2$ FLOPs ($3 B N D^2$ MACs). Furthermore, $W_O$: $2 B N D^2$ FLOPs ($B N D^2$ MACs). Concurrently, *Total Projection Cost*: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+
 
 2. **Core Attention Computation**:
-   - $Q K^\top$ MatMul: $2 B H N^2 d_k = 2 B N^2 D$ FLOPs ($B N^2 D$ MACs).
-   - Scaling & Masking: $2 B H N^2$ FLOPs.
-   - Softmax: $\approx 5 B H N^2$ FLOPs (Max reduction, exponentiation, sum reduction, division).
-   - $A V$ MatMul: $2 B H N^2 d_k = 2 B N^2 D$ FLOPs ($B N^2 D$ MACs).
-   - *Total Core Attention Cost*: $4 B N^2 D + 7 B H N^2$ FLOPs.
+$Q K^\top$ MatMul: $2 B H N^2 d_k = 2 B N^2 D$ FLOPs ($B N^2 D$ MACs). Furthermore, Scaling & Masking: $2 B H N^2$ FLOPs. Concurrently, Softmax: $\approx 5 B H N^2$ FLOPs (Max reduction, exponentiation, sum reduction, division). In this setting, $A V$ MatMul: $2 B H N^2 d_k = 2 B N^2 D$ FLOPs ($B N^2 D$ MACs). Additionally, *Total Core Attention Cost*: $4 B N^2 D + 7 B H N^2$ FLOPs.
+
 
 3. **Total Workload**:
-   - **Total MACs**: $4 B N D^2 + 2 B N^2 D$
-   - **Total FLOPs**: $8 B N D^2 + 4 B N^2 D + 7 B H N^2$
+Specifically, regarding \textbf{Total MACs}, $4 B N D^2 + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $8 B N D^2 + 4 B N^2 D + 7 B H N^2$
+
 
 ### Memory Footprint & Peak KV Cache Analysis
-- **Model Parameters**: $4 D^2 + 4 D$ (with biases).
-- **Transient Activation Footprint**:
-  - $Q, K, V$ states: $3 \times B \times H \times N \times d_k \times \text{BytesPerElement} = 3 B N D \cdot b$ bytes.
-  - Raw + Modulated Score Matrix: $2 \times B \times H \times N^2 \cdot b$ bytes.
-  - Context Matrix: $B \times N \times D \cdot b$ bytes.
-- **Autoregressive Decoding KV Cache Footprint**:
+Specifically, regarding \textbf{Model Parameters}, $4 D^2 + 4 D$ (with biases). Furthermore, regarding \textbf{Transient Activation Footprint},  Concurrently, $Q, K, V$ states: $3 \times B \times H \times N \times d_k \times \text{BytesPerElement} = 3 B N D \cdot b$ bytes. In this setting, Raw + Modulated Score Matrix: $2 \times B \times H \times N^2 \cdot b$ bytes. Additionally, Context Matrix: $B \times N \times D \cdot b$ bytes. Moreover, regarding \textbf{Autoregressive Decoding KV Cache Footprint}, 
+
   During decoding at token step $N$:
   \[
   \text{KV Cache Size} = 2 \cdot B \cdot H \cdot N \cdot d_k \cdot b = 2 B N D \cdot b \text{ bytes}

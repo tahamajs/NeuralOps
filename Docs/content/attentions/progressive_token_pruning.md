@@ -91,27 +91,23 @@ Let $B$ be batch size, $L$ input sequence length, $D$ hidden dimension, $\rho$ r
 1. **Saliency Score Projection**:
    $$\operatorname{FLOPs}_{\text{score}} = 2 B L D$$
 2. **Top-$k$ Extraction & Sorting**:
-   - Top-$k$ heap search: $B \cdot L \log k$ FLOPs.
-   - Bitonic monotonic sort: $B \cdot k \log k$ FLOPs.
-   $$\operatorname{FLOPs}_{\text{topk\_sort}} = B L \log k + B k \log k$$
+Top-$k$ heap search: $B \cdot L \log k$ FLOPs. Furthermore, Bitonic monotonic sort: $B \cdot k \log k$ FLOPs. $$\operatorname{FLOPs}_{\text{topk\_sort}} = B L \log k + B k \log k$$
+
 3. **Tensor Gathering Operation**:
    $$\operatorname{FLOPs}_{\text{gather}} = B k D \quad (\text{Memory copy operation})$$
 
 $$\text{Total FLOPs} = 2 B L D + B k D + B L \log k + B k \log k$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx B L D$$
-- **Peak Activation Memory**:
-  - Score Tensor: $B \cdot L \times 4 \text{ bytes}$
-  - Kept Index Tensor: $B \cdot k \times 8 \text{ bytes}$
-  - Compacted Output Activation Buffer: $B \cdot k \cdot D \times 2 \text{ bytes}$ (FP16/BF16).
-  - Memory Footprint drops from $2 B L D$ to $2 B k D$ bytes.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Score Tensor: $B \cdot L \times 4 \text{ bytes}$ Concurrently, Kept Index Tensor: $B \cdot k \times 8 \text{ bytes}$ In this setting, Compacted Output Activation Buffer: $B \cdot k \cdot D \times 2 \text{ bytes}$ (FP16/BF16). Additionally, Memory Footprint drops from $2 B L D$ to $2 B k D$ bytes.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Sequence Layer**: $\mathcal{O}(L D)$ compute, $\mathcal{O}(L D)$ memory footprint.
-- **Progressive Token Pruning**: $\mathcal{O}(L D + k D)$ compute, $\mathcal{O}(k D)$ downstream memory footprint.
-- Downstream layer attention FLOPs drop by $\left(\frac{k}{L}\right)^2 = \rho^2 \times$.
+Specifically, regarding \textbf{Standard Sequence Layer}, $\mathcal{O}(L D)$ compute, $\mathcal{O}(L D)$ memory footprint. Furthermore, regarding \textbf{Progressive Token Pruning}, $\mathcal{O}(L D + k D)$ compute, $\mathcal{O}(k D)$ downstream memory footprint. Concurrently, Downstream layer attention FLOPs drop by $\left(\frac{k}{L}\right)^2 = \rho^2 \times$.
+
 
 ---
 
@@ -119,21 +115,18 @@ $$\text{Total FLOPs} = 2 B L D + B k D + B L \log k + B k \log k$$
 
 ### 5.1 Straight-Through Non-Differentiability & Gradient Disconnect
 The index extraction $\mathcal{U} = \operatorname{TopK}(\mathbf{s}, k)$ and sorting operations are discrete step functions.
-- **Zero Gradient Derivative**: $\frac{\partial \mathcal{I}}{\partial \mathbf{s}} = 0$ everywhere.
-- **Pruning Scorer Disconnect**: Gradients flowing from task loss $\mathcal{L}$ pass through gathered features $\mathbf{X}_{\text{pruned}}$, but **do not backpropagate through $\operatorname{TopK}$ to optimize the scoring weights $\mathbf{W}_s$**.
-- Without soft relaxation (e.g., Gumbel-Softmax or straight-through estimator scaling $\mathbf{X} \cdot \mathbf{s}$), scoring weights $\mathbf{W}_s$ remain un-optimized or rely purely on heuristic initialization.
+Specifically, regarding \textbf{Zero Gradient Derivative}, $\frac{\partial \mathcal{I}}{\partial \mathbf{s}} = 0$ everywhere. Furthermore, regarding \textbf{Pruning Scorer Disconnect}, gradients flowing from task loss $\mathcal{L}$ pass through gathered features $\mathbf{X}_{\text{pruned}}$, but **do not backpropagate through $\operatorname{TopK}$ to optimize the scoring weights $\mathbf{W}_s$**. Concurrently, Without soft relaxation (e.g., Gumbel-Softmax or straight-through estimator scaling $\mathbf{X} \cdot \mathbf{s}$), scoring weights $\mathbf{W}_s$ remain un-optimized or rely purely on heuristic initialization.
+
 
 ### 5.2 Dynamic Length Ragged Tensor Stalls in Multi-GPU Training
 If batch size $B > 1$ and token pruning evaluates dynamic scores:
-- In variable sequence contexts, sorting indices $\mathcal{I}_b$ for sample 1 might pick different semantic boundaries than sample 2.
-- If $k$ varies per sample ($k_1 \neq k_2$), rectangular tensor format `[B, k, D]` collapses, producing ragged arrays that force costly CPU host fallback and re-padding overhead.
+In variable sequence contexts, sorting indices $\mathcal{I}_b$ for sample 1 might pick different semantic boundaries than sample 2. Furthermore, If $k$ varies per sample ($k_1 \neq k_2$), rectangular tensor format `[B, k, D]` collapses, producing ragged arrays that force costly CPU host fallback and re-padding overhead.
+
 
 ### 5.3 Eviction Cascades & Premature Feature Destruction
 If $\rho = 0.5$ across 6 consecutive pruning layers:
-- Layer 1: $L \to 0.5 L$
-- Layer 2: $0.5 L \to 0.25 L$
-- Layer 6: $L \to 0.015 L$ ($1.5\%$ of tokens remaining!).
-- **Severe Context Starvation**: Exponential compounding reduces sequence length to a tiny fragment, destroying essential multi-token syntactic structures before deep layers can process them.
+Layer 1: $L \to 0.5 L$ Furthermore, Layer 2: $0.5 L \to 0.25 L$ Concurrently, Layer 6: $L \to 0.015 L$ ($1.5\%$ of tokens remaining!). In this setting, regarding \textbf{Severe Context Starvation}, exponential compounding reduces sequence length to a tiny fragment, destroying essential multi-token syntactic structures before deep layers can process them.
+
 
 ---
 

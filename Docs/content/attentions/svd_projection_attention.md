@@ -123,26 +123,28 @@ Y = \text{SVDProjectionLinear}_O(C) \in \mathbb{R}^{B \times N \times D}
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ rank.
 
 1. **Reconstruction FLOPs ($W = U V$)**:
-   - $4 \times (2 D r D) = 8 D^2 r$ FLOPs per forward pass (independent of batch size $B$ or sequence length $N$).
+$4 \times (2 D r D) = 8 D^2 r$ FLOPs per forward pass (independent of batch size $B$ or sequence length $N$).
+
 2. **Linear Projections**:
-   - $Q, K, V, O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+$Q, K, V, O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+
 3. **Core Scaled Dot-Product Attention**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
+$Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H N^2$ FLOPs.
+
 
 4. **Total Workload Summary**:
-   - **Total MACs**: $4 B N D^2 + 4 D^2 r + 2 B N^2 D$
-   - **Total FLOPs**: $8 B N D^2 + 8 D^2 r + 4 B N^2 D + 7 B H N^2$
+Specifically, regarding \textbf{Total MACs}, $4 B N D^2 + 4 D^2 r + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $8 B N D^2 + 8 D^2 r + 4 B N^2 D + 7 B H N^2$
+
 
 ### Parameter Footprint Comparison
-- **Uncompressed Dense MHA**: $4 D^2 + 4 D$ floats.
-- **SVD Projection Parameter Count**:
+Specifically, regarding \textbf{Uncompressed Dense MHA}, $4 D^2 + 4 D$ floats. Furthermore, regarding \textbf{SVD Projection Parameter Count}, 
+
   \[
   \text{Params}_{\text{SVDProj}} = 4 \cdot r (D + D) + 4 D = 8 D r + 4 D \text{ floats}
   \]
   For $D = 4096, r = 32$:
-  - Uncompressed: $4 \times 4096^2 \approx 67.1 \text{ million parameters}$.
-  - SVD Projection: $8 \times 4096 \times 32 \approx 1.05 \text{ million parameters}$ (**$98.4\%$ parameter compression**).
+Uncompressed: $4 \times 4096^2 \approx 67.1 \text{ million parameters}$. Furthermore, SVD Projection: $8 \times 4096 \times 32 \approx 1.05 \text{ million parameters}$ (**$98.4\%$ parameter compression**).
+
 
 ---
 

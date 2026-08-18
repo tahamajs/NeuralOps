@@ -46,8 +46,8 @@ where `r = min(rank, d_out, d_in)` is the user‑specified rank (default 64). Th
 
 The residual **R** = **W** – **L** contains the information discarded by the low‑rank approximation. To compress it, ENLighten applies a **2:4 structured sparsity** pattern:
 
-- For each row of **R**, partition the entries into non‑overlapping blocks of 4 consecutive columns.
-- In each block, keep exactly the two entries with the largest absolute values; set the other two to zero.
+For each row of **R**, partition the entries into non‑overlapping blocks of 4 consecutive columns. Furthermore, In each block, keep exactly the two entries with the largest absolute values; set the other two to zero.
+
 
 Mathematically, for row `i` and block starting at column `j` (where `j = 0, 4, 8, …`):
 
@@ -69,8 +69,8 @@ W_enlighten = L + R_2:4
 ```
 
 Because **L** has low rank and **R_2:4** is 50% sparse, the resulting matrix can be stored efficiently:
-- **L** can be factorized as two matrices: `A = U_r Σ_r` (size d_out × r) and `B = V_r` (size r × d_in).
-- **R_2:4** can be stored in a 2:4 sparse format (values + 2‑bit indices per block).
+**L** can be factorized as two matrices: `A = U_r Σ_r` (size d_out × r) and `B = V_r` (size r × d_in). Furthermore, **R_2:4** can be stored in a 2:4 sparse format (values + 2‑bit indices per block).
+
 
 The current implementation writes the dense matrix back to the layer, but the decomposition enables further extraction for actual parameter reduction.
 
@@ -94,8 +94,8 @@ class ENLightenCompressor(BaseCompressor):
         self.sparsity = sparsity
 ```
 
-- **`rank`**: Target rank for the low‑rank component (default 64).
-- **`sparsity`**: This parameter is defined but **not used** in the current code. The sparsity is always exactly 50% due to the 2:4 pattern. The attribute is kept for potential future extensions (e.g., 4:8 sparsity with a different block size).
+Specifically, regarding \textbf{`rank`}, target rank for the low‑rank component (default 64). Furthermore, regarding \textbf{`sparsity`}, this parameter is defined but **not used** in the current code. The sparsity is always exactly 50% due to the 2:4 pattern. The attribute is kept for potential future extensions (e.g., 4:8 sparsity with a different block size).
+
 
 The `compress()` method:
 
@@ -155,20 +155,13 @@ Then run the compression pipeline. All linear layers will be compressed with a r
 
 ### Advantages
 
-- **Dual representation**: Combines the benefits of low‑rank (global structure) and structured sparsity (fine details), which can be more expressive than either alone.
-- **Photonic accelerator compatibility**: The regular 2:4 pattern is especially suitable for emerging photonic tensor core hardware that expects structured sparsity for efficient light‑based computation.
-- **No calibration data**: Works purely on weight matrices, no forward passes needed.
-- **Interpretable**: The low‑rank part can be inspected as the principal modes, and the sparse correction highlights important weight entries that deviate from those modes.
-- **Inference speed‑up potential**: When the factors are stored separately, the forward pass can be implemented as `y = (x·B^T)·A^T + sparse_mm(x, R_2:4)` which reduces total FLOPs, particularly on hardware that accelerates structured sparsity.
+Specifically, regarding \textbf{Dual representation}, combines the benefits of low‑rank (global structure) and structured sparsity (fine details), which can be more expressive than either alone. Furthermore, regarding \textbf{Photonic accelerator compatibility}, the regular 2:4 pattern is especially suitable for emerging photonic tensor core hardware that expects structured sparsity for efficient light‑based computation. Concurrently, regarding \textbf{No calibration data}, works purely on weight matrices, no forward passes needed. In this setting, regarding \textbf{Interpretable}, the low‑rank part can be inspected as the principal modes, and the sparse correction highlights important weight entries that deviate from those modes. Additionally, regarding \textbf{Inference speed‑up potential}, when the factors are stored separately, the forward pass can be implemented as `y = (x·B^T)·A^T + sparse_mm(x, R_2:4)` which reduces total FLOPs, particularly on hardware that accelerates structured sparsity.
+
 
 ### Limitations
 
-- **Dense output**: The current code stores a dense `W_new`, so no immediate parameter reduction. Actual compression requires extracting and storing the factors.
-- **Fixed sparsity pattern**: The 2:4 pattern is hard‑coded; there is no option to vary the sparsity level or block size. The `sparsity` parameter is misleading.
-- **No per‑layer adaptation**: The rank is uniform across all layers. Layers with different singular value decays would benefit from adaptive rank selection.
-- **SVD cost**: Full SVD on CPU via NumPy may be slow for large matrices.
-- **Residual may be dense after 2:4**: The 2:4 pattern only zeroes 50% of entries, which is still a dense matrix in the sense of storage if not using a sparse format. The structured sparsity is for hardware, not storage reduction per se.
-- **No fine‑tuning**: Like other post‑training compressors, a drop in accuracy may occur. Fine‑tuning can recover performance, but the structure (low‑rank + 2:4) would need to be preserved during training (e.g., using a custom layer that applies the decomposition).
+Specifically, regarding \textbf{Dense output}, the current code stores a dense `W_new`, so no immediate parameter reduction. Actual compression requires extracting and storing the factors. Furthermore, regarding \textbf{Fixed sparsity pattern}, the 2:4 pattern is hard‑coded; there is no option to vary the sparsity level or block size. The `sparsity` parameter is misleading. Concurrently, regarding \textbf{No per‑layer adaptation}, the rank is uniform across all layers. Layers with different singular value decays would benefit from adaptive rank selection. In this setting, regarding \textbf{SVD cost}, full SVD on CPU via NumPy may be slow for large matrices. Additionally, regarding \textbf{Residual may be dense after 2:4}, the 2:4 pattern only zeroes 50% of entries, which is still a dense matrix in the sense of storage if not using a sparse format. The structured sparsity is for hardware, not storage reduction per se. Moreover, regarding \textbf{No fine‑tuning}, like other post‑training compressors, a drop in accuracy may occur. Fine‑tuning can recover performance, but the structure (low‑rank + 2:4) would need to be preserved during training (e.g., using a custom layer that applies the decomposition).
+
 
 ### Comparison with Similar Decompositions
 

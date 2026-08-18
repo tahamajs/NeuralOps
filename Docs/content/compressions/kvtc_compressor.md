@@ -70,19 +70,17 @@ Let $W \in \mathbb{R}^{M \times N}$ be a linear projection weight matrix.
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Layer Iteration**:
-   - Locate all `nn.Linear` modules in target model.
+Locate all `nn.Linear` modules in target model.
+
 2. **PCA Decorrelation**:
-   - Compute SVD of weight matrix $W$: `U, S, Vt = torch.linalg.svd(W, full_matrices=False)`.
-   - Calculate cumulative energy array `cum_energy = torch.cumsum(S**2, dim=0) / total_energy`.
-   - Find energy rank cutoff `rank = torch.searchsorted(cum_energy, pca_energy).item() + 1`.
-   - Clamp rank `rank = max(4, min(rank, min(W.shape)))`.
+Compute SVD of weight matrix $W$: `U, S, Vt = torch.linalg.svd(W, full_matrices=False)`. Furthermore, Calculate cumulative energy array `cum_energy = torch.cumsum(S**2, dim=0) / total_energy`. Concurrently, Find energy rank cutoff `rank = torch.searchsorted(cum_energy, pca_energy).item() + 1`. In this setting, Clamp rank `rank = max(4, min(rank, min(W.shape)))`.
+
 3. **Low-Rank Assembly & Adaptive Quantization**:
-   - Compute low-rank approximation `W_lowrank = (U_r * S_r) @ Vt_r`.
-   - Apply dynamic scale factor `scale = (max_val - min_val) / (2**bits - 1)`.
-   - Quantize `W_quant = torch.round((W_lowrank - min_val) / scale) * scale + min_val`.
+Compute low-rank approximation `W_lowrank = (U_r * S_r) @ Vt_r`. Furthermore, Apply dynamic scale factor `scale = (max_val - min_val) / (2**bits - 1)`. Concurrently, Quantize `W_quant = torch.round((W_lowrank - min_val) / scale) * scale + min_val`.
+
 4. **Entropy Estimation**:
-   - Compute entropy compression ratio estimate via `SimpleEntropyCoder`.
-   - Log mean entropy compression ratio in `_compression_stats`.
+Compute entropy compression ratio estimate via `SimpleEntropyCoder`. Furthermore, Log mean entropy compression ratio in `_compression_stats`.
+
 
 ```
 Target Linear Weights ──► SVD Eigen-Energy Decomposition ──► Cutoff Rank r at 95% Energy

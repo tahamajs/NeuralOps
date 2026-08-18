@@ -131,21 +131,20 @@ Y = X (W_i^{\text{down}})^\top (W_i^{\text{up}})^\top + b_i + X S_i^\top \in \ma
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, $\{r_q, r_k, r_v, r_o\}$ Lagrangian-assigned ranks, and $\rho$ sparse residual density.
 
 1. **Low-Rank + Sparse Linear Projections**:
-   - Low-rank down/up projections: $4 B N D (r_q + r_k + r_v + r_o)$ FLOPs.
-   - Sparse matrix projections (if enabled): $4 B N D^2 (1 - \rho)$ FLOPs.
+Low-rank down/up projections: $4 B N D (r_q + r_k + r_v + r_o)$ FLOPs. Furthermore, Sparse matrix projections (if enabled): $4 B N D^2 (1 - \rho)$ FLOPs.
+
 2. **Core Scaled Dot-Product Attention**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
+$Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H N^2$ FLOPs.
+
 
 3. **Total Workload Summary**:
-   - **Total MACs**: $2 B N D (r_q + r_k + r_v + r_o) + 2 B N D^2 (1 - \rho) + 2 B N^2 D$
-   - **Total FLOPs**: $4 B N D (r_q + r_k + r_v + r_o) + 4 B N D^2 (1 - \rho) + 4 B N^2 D + 7 B H N^2$
+Specifically, regarding \textbf{Total MACs}, $2 B N D (r_q + r_k + r_v + r_o) + 2 B N D^2 (1 - \rho) + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $4 B N D (r_q + r_k + r_v + r_o) + 4 B N D^2 (1 - \rho) + 4 B N^2 D + 7 B H N^2$
+
 
 ### Parameter Budget Compression Verification
 For DistilBERT ($L = 6$ layers, $D = 768$, 24 attention projection matrices, original total parameters $24 \times 768^2 = 14.15 \text{ million}$):
-- Target budget ratio $\text{budget\_ratio} = 0.20$ ($B_{\text{target}} \approx 2.83 \text{ million parameters}$).
-- Lagrangian optimization allocates high rank ($r \approx 48$) to critical query/key matrices in layers 0 and 1, and low rank ($r \approx 16$) to value/output matrices in layers 4 and 5.
-- **Exact Budget Enforced**: Total parameters $\le 2,831,155$ (**$80\%$ parameter reduction overall**).
+Target budget ratio $\text{budget\_ratio} = 0.20$ ($B_{\text{target}} \approx 2.83 \text{ million parameters}$). Furthermore, Lagrangian optimization allocates high rank ($r \approx 48$) to critical query/key matrices in layers 0 and 1, and low rank ($r \approx 16$) to value/output matrices in layers 4 and 5. Concurrently, regarding \textbf{Exact Budget Enforced}, total parameters $\le 2,831,155$ (**$80\%$ parameter reduction overall**).
+
 
 ---
 

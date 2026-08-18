@@ -3,13 +3,11 @@
 ## 1. Executive Abstract & Architectural Motivation
 Standard Multi-Head Self-Attention (MHSA) in Transformer models requires quadratic computational time and memory scaling $\mathcal{O}(N^2)$ with sequence length $N$. Existing sparse attention techniques enforce rigid local windows (losing global context), heuristic token dropping (degrading accuracy), or linearized kernels (suffering from spatial over-smoothing).
 
-**NEXUS** (Neural Efficient X-scoring Unified Sparse Attention) introduces a unified multi-scale sparse attention paradigm incorporating six synergistic mechanisms:
-1. **XAttention Antidiagonal Block Scoring**: Subsamples query-key tokens at stride $\sigma$ to compute coarse inter-block correlation maps $S_{bi, bj}$ in training-free sub-quadratic time.
-2. **SeerAttention Learnable Block Gating**: Employs a low-rank query-key pooling network to predict head-wise dynamic sparsity budgets and refine block retention masks.
-3. **DuSA Dual-Stage Sparse Engine**: Combines full intra-block token pairs ($bi = bj$) with top-$k$ inter-block token pairs.
-4. **AnchorAttention Fine-Grained Stripe Masking**: Applies intra-block diagonal band-stripe masking of width $S_w$ to achieve sub-block token-level sparsity.
-5. **Spectraformer RFF Global Rectification**: Interleaves global Random Fourier Feature (RFF) linear attention layers every $L_{\text{rectify}}$ transformer blocks, guaranteeing sequence-wide associative context recovery in $\mathcal{O}(N \cdot F \cdot d_h)$ time.
-6. **Softpick Rectified Activation**: Replaces standard softmax with a thresholded tail-subtraction non-linearity (`softpick`), producing non-negative sparse probabilities without artificial sink token collapse.
+**NEXUS** (Neural Efficient X-scoring Unified Sparse Attention) introduces a unified multi-scale sparse attention paradigm that reconciles sub-quadratic computational efficiency with global representational expressivity through six synergistic architectural mechanisms.
+
+At the macro-structural level, the framework executes **XAttention Antidiagonal Block Scoring**, subsampling query and key tokens at stride $\sigma$ to compute coarse inter-block correlation maps $S_{bi, bj}$ in training-free sub-quadratic time. Concurrently, **SeerAttention Learnable Block Gating** employs a low-rank query-key pooling network to predict head-wise dynamic sparsity budgets and adaptively refine block retention masks based on input complexity. Within the selected receptive field, the **DuSA Dual-Stage Sparse Engine** seamlessly integrates full intra-block token pairs ($bi = bj$) with dynamically routed top-$k$ inter-block token pairs.
+
+To achieve sub-block granularity, **AnchorAttention Fine-Grained Stripe Masking** enforces an intra-block diagonal band-stripe mask of width $S_w$, filtering out redundant local interactions. To counteract the inductive bias and potential context starvation inherent in localized sparsity, **Spectraformer RFF Global Rectification** periodically interleaves global Random Fourier Feature (RFF) linear attention layers every $L_{\text{rectify}}$ transformer blocks, guaranteeing sequence-wide associative context recovery in strictly linear $\mathcal{O}(N \cdot F \cdot d_h)$ time. Finally, the **Softpick Rectified Activation** replaces standard softmax with a thresholded tail-subtraction non-linearity, producing exact non-negative sparse probabilities while preventing artificial sink token collapse and maintaining stable gradient dynamics.
 
 ---
 
@@ -130,54 +128,34 @@ Shape: [B, H, M, M] Shape: [B, H]    Shape: [B, H, N, d_h]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
-Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $B_s$ block size, $k$ top-k inter-blocks, $\sigma$ XAttention stride, $S_w$ stripe width, and $F$ RFF feature dimension.
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, $B_s$ block size, $k$ top-$k$ retained inter-blocks, $\sigma$ the XAttention subsampling stride, $S_w$ the stripe bandwidth, and $F$ the RFF projection dimension.
 
-1. **Linear Projections ($Q, K, V, O$)**:
-   $$\text{FLOPs}_{\text{proj}} = 4 \times 2 B N D^2 = 8 B N D^2$$
-2. **XAttention Subsampled Block Scoring**:
-   - Subsampled score matmul ($N/\sigma$ tokens): $2 B H (N/\sigma)^2 d_h = \frac{2 B N^2 D}{\sigma^2}$
-   $$\text{FLOPs}_{\text{xattn}} = \frac{2 B N^2 D}{\sigma^2}$$
-3. **Dual-Stage Stripe Attention ($M = N / B_s$ query blocks)**:
-   - Active keys per query block $N_{\text{active}} = B_s + k B_s = B_s (1 + k)$
-   - Intra + Inter dot product: $M \times \left( 2 B H B_s N_{\text{active}} d_h \right) = 2 B N D B_s (1 + k)$
-   - Softpick & Value contraction: $2 B N D B_s (1 + k)$
-   $$\text{FLOPs}_{\text{dss}} = 4 B N D B_s (1 + k)$$
-4. **Global RFF Rectification Layer (Every $L_{\text{rectify}}$ layers)**:
-   $$\text{FLOPs}_{\text{rff}} = 8 B H N d_h F = 8 B N D F$$
+The computational complexity decomposes across four primary mathematical operations:
 
-**Total FLOP Count (Sparse Layer)**:
+For input-output projections, the linear transformations mapping $Q, K, V$, and context output $Y$ require $\text{FLOPs}_{\text{proj}} = 4 \times 2 B N D^2 = 8 B N D^2$. In the coarse routing stage, XAttention evaluates subsampled inner products across $(N/\sigma)$ tokens, incurring $\text{FLOPs}_{\text{xattn}} = 2 B H (N/\sigma)^2 d_h = \frac{2 B N^2 D}{\sigma^2}$. Within the dual-stage sparse engine across $M = N / B_s$ query blocks, each block attends to $N_{\text{active}} = B_s (1 + k)$ key tokens; computing the pairwise dot products and subsequent Softpick value contractions demands $\text{FLOPs}_{\text{dss}} = 4 B N D B_s (1 + k)$. Finally, for periodic rectification layers occurring every $L_{\text{rectify}}$ blocks, global linear attention accumulation requires $\text{FLOPs}_{\text{rff}} = 8 B H N d_h F = 8 B N D F$.
+
+Summing these individual operational contributions yields the overall floating-point workload for a sparse execution layer:
 
 $$\text{FLOPs}_{\text{sparse}} = 8 B N D^2 + \frac{2 B N^2 D}{\sigma^2} + 4 B N D B_s (1 + k)$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
-  $$\text{Total MACs} = 4 B N D^2 + \frac{B N^2 D}{\sigma^2} + 2 B N D B_s (1 + k)$$
-- **Parameter Footprint**:
-  $$\Theta = 4 D^2 + 4 d_h r_{\text{gate}} + d_h F$$
-- **Activation Footprint**:
-  - Block score matrix: $\mathcal{O}(B H M^2)$
-  - Active key/value buffers: $\mathcal{O}(B H N (1 + k) B_s)$
-  - Total Memory: $\mathcal{O}\left(B N D + B H \left( \frac{N}{B_s} \right)^2 + B H N k B_s\right) \ll \mathcal{O}(B H N^2)$
+The total Multiply-Accumulate (MAC) workload evaluates to $\text{Total MACs} = 4 B N D^2 + \frac{B N^2 D}{\sigma^2} + 2 B N D B_s (1 + k)$, with parameter storage bounded by $\Theta = 4 D^2 + 4 d_h r_{\text{gate}} + d_h F$. In terms of activation memory, the coarse block score matrix requires $\mathcal{O}(B H M^2)$ storage, while active key-value buffers consume $\mathcal{O}(B H N (1 + k) B_s)$ bytes. This restricts aggregate activation memory to $\mathcal{O}\left(B N D + B H (N / B_s)^2 + B H N k B_s\right)$, establishing an exponential reduction relative to the quadratic $\mathcal{O}(B H N^2)$ overhead of standard attention.
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **NEXUS Unified Sparse Attention**: $\mathcal{O}\left(N \cdot \left( D^2 + \frac{N D}{\sigma^2} + D B_s (1 + k) \right)\right)$ compute. On sequences where $N = 64,000$, NEXUS achieves up to $22\times$ memory reduction.
+Standard dense attention exhibits strict quadratic scaling $\mathcal{O}(N^2 D)$ in compute and $\mathcal{O}(N^2 H)$ in activation memory. In contrast, NEXUS contracts runtime arithmetic complexity to $\mathcal{O}\left(N \cdot \left( D^2 + \frac{N D}{\sigma^2} + D B_s (1 + k) \right)\right)$. On long-sequence workloads ($N = 64,000$), this multi-tier sparse formulation achieves up to a $22\times$ reduction in peak memory consumption while sustaining linear token processing rates.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### 5.1 XAttention Subsampling Misalignment & Block Omission
-- **Mechanism**: XAttention evaluates coarse block interactions using strided subsampling ($\sigma = 2$). If critical query-key interactions occur in a localized spike between sampled token indices, the block score $S_{bi, bj}$ drops below the top-$k$ threshold.
-- **Consequence**: The inter-block pair is omitted from active computation, causing lost context and retrieval failures.
-- **Mitigation**: Ensure $B_s / \sigma \ge 8$ so that sampled tokens represent block statistics accurately.
+XAttention approximates inter-block affinity by evaluating inner products over a strided subsampling lattice ($\sigma = 2$). However, when salient query-key interactions manifest as high-frequency localized spikes confined between sampled token coordinates, the resulting coarse score $S_{bi, bj}$ can severely underestimate true block relevance. Consequently, the affected inter-block pair fails to surpass the top-$k$ retention threshold, inducing false block omission and context retrieval failure. To mitigate this sampling aliasing, the block-to-stride ratio must satisfy $B_s / \sigma \ge 8$, ensuring that sampled activations sufficiently capture the underlying block manifold statistics.
 
-### 5.2 Seer Gating Dynamic Budget Collapse
-- **Mechanism**: The Seer gating network predicts block retention capacity $k_{\text{seer}} = \lfloor \sigma(\cdot) \cdot M \rfloor$. If initialization biases drive $\sigma(\cdot) \to 0$, $k_{\text{seer}}$ collapses to $1$, reducing sparse attention to isolated intra-block diagonal interactions.
-- **Mitigation**: Initialize Seer gating bias to $+2.0$, forcing full block retention early in training.
+### 5.2 Seer Gating Dynamic Budget Collapse & Gradient Starvation
+The learnable Seer gating network predicts dynamic block capacity via the discretized mapping $k_{\text{seer}} = \text{clamp}\left(\lfloor \sigma(\cdot) \cdot M \rfloor, 1, M\right)$. In the presence of unfavorable weight initialization or early negative gradient momentum, the sigmoid activation can saturate near zero ($\sigma(\cdot) \to 0$), collapsing $k_{\text{seer}}$ to its minimal bound of 1. This degenerates NEXUS into isolated intra-block diagonal attention, severing cross-block gradient propagation. To prevent premature capacity collapse and ensure stable early-stage exploration, gating linear projections are initialized with a positive bias offset ($+2.0$), guaranteeing broad block retention during initial optimization phases.
 
-### 5.3 Softpick Tail Subtraction Discontinuity
-- **Mechanism**: Softpick relies on $\text{ReLU}(e_{i, j} - \exp(-m/\tau))$. Under extremely low temperatures ($\tau < 0.2$), all off-diagonal scores are zeroed, causing zero-gradient propagation across active inter-block keys.
+### 5.3 Softpick Tail Subtraction Discontinuity & Saturation
+The Softpick activation non-linearity enforces exact sparsity by subtracting an exponential threshold offset: $\max\left(0, e_{i, j} - \exp(-m_i / \tau)\right)$. Under aggressive temperature configurations ($\tau < 0.2$) or dispersed score distributions, the offset exceeds all non-maximal candidate scores, truncating entire off-diagonal probability rows to exact zeros. This induces gradient dead zones where $\frac{\partial p_{i, j}}{\partial \text{Scores}_{i, j}} = 0$ across all inter-block connections, preventing parameter updates from refining non-local routing weights. Maintaining calibrated temperature scaling ($\tau \ge 1.0$) prevents premature gradient truncation and preserves optimization stability.
 
 ---
 
@@ -210,29 +188,27 @@ $$\text{FLOPs}_{\text{sparse}} = 8 B N D^2 + \frac{2 B N^2 D}{\sigma^2} + 4 B N 
 ```
 
 ### 6.1 Triton Strategy 1: Subsampled Strided Block Scorer Kernel
-- Implement a lightweight Triton kernel executing strided query-key inner products over subsampled sequence tiles of size `32 x 32`.
-- Perform spatial block reduction directly in GPU shared memory, writing coarse block interaction matrix $S_{bi, bj}$ to global DRAM in a single pass.
+A dedicated Triton kernel accelerates coarse block scoring by executing strided query-key inner products across subsampled $32 \times 32$ SRAM tiles. Spatial block reduction is evaluated directly within GPU shared memory, enabling the complete coarse interaction matrix $S_{bi, bj}$ to be committed to global memory in a single high-throughput memory pass.
 
 ### 6.2 Triton Strategy 2: Block-Sparse Dual-Stage Stripe Engine
-Standard PyTorch implementations collect inter-block key tensors via `torch.cat`, creating high HBM allocation overhead.
-
-**Triton Optimization**:
-- Construct a block-sparse Triton kernel where each threadblock handles a query block $bi$.
-- Use indirection pointers $\mathcal{K}_{bi}$ to load active inter-block keys directly from main key memory into shared memory.
-- Fuse stripe diagonal mask checks and online Softpick tail subtraction into register iteration loops.
+Conventional PyTorch implementations assemble active inter-block keys via dynamic tensor concatenation (`torch.cat`), introducing severe High-Bandwidth Memory (HBM) allocation bottlenecks. The Triton implementation mitigates this by assigning individual threadblocks to manage each query block $bi$, utilizing indirection pointers $\mathcal{K}_{bi}$ to load active inter-block keys directly from global buffers into SRAM scratchpads. Furthermore, stripe diagonal mask validation and online Softpick tail subtraction are fused directly into register-level accumulation loops, bypassing DRAM round-trips.
 
 ### 6.3 Triton Strategy 3: Periodic RFF Streaming Linear Engine
-- For rectification layers ($l \pmod{L_{\text{rectify}}} == 0$), execute a streaming RFF linear attention kernel.
-- Stream sequence blocks of size `BLOCK_N = 128` to accumulate outer products into shared memory buffer $KV \in \mathbb{R}^{F \times d_h}$, bypassing global memory allocations for feature activations $\phi(K)$.
+For global rectification layers ($l \pmod{L_{\text{rectify}}} == 0$), execution switches to a streaming RFF linear attention kernel. Sequence blocks of dimension `BLOCK_N = 128` stream sequentially through Tensor Cores, accumulating outer products into a shared memory buffer $KV \in \mathbb{R}^{F \times d_h}$. This streaming design entirely bypasses intermediate global memory allocations for explicit feature activations $\phi(K)$, maximizing operational arithmetic intensity.
 
 ---
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **FAVOR+ Positive Orthogonal Random Feature Map Integration**: Replace naive exponential RFF projections $\exp(\text{Norm}(x) W_{\text{rff}})$ in global rectification layers with FAVOR+ orthogonal QR matrices $\Pi \in \mathbb{R}^{d_h \times F}$, eliminating kernel variance and numerical instability.
-2. **FlashAttention-3 FP8 Tile Quantization**: Execute the dual-stage stripe attention kernel using 8-bit floating point precision (E4M3) on NVIDIA Hopper GPUs, quadrupling intra-block matmul throughput.
-3. **Decoupled Local-Global Head Heterogeneity**: Allocate $75\%$ of heads to localized strided block sparse FlashAttention ($k = 4, S_w = 4$) and $25\%$ of heads to unconstrained global linear RFF attention, eliminating global rectification layer switching.
-4. **Adaptive Hierarchical Macro/Micro Block Tiling**: Implement 2-level macro ($B_{\text{macro}} = 256$) and micro ($B_{\text{micro}} = 32$) block hierarchies, achieving logarithmic $\mathcal{O}(\log M)$ routing on 1M-token contexts.
+The modular architecture of NEXUS provides a robust foundation for several cutting-edge synthesis paradigms:
+
+**FAVOR+ Positive Orthogonal Random Feature Map Integration**: Rather than utilizing standard heuristic exponential projections $\exp(\text{normalize}(x) W_{\text{rff}})$ within global rectification layers, incorporating FAVOR+ positive orthogonal random features ($\Pi \in \mathbb{R}^{d_h \times F}$ constructed via Gram-Schmidt QR decomposition) eliminates kernel approximation variance and provides mathematically rigorous, unbiased estimators of full softmax attention.
+
+**FlashAttention-3 FP8 Tile Quantization**: Lowering numerical precision within the dual-stage stripe attention engine to sub-byte 8-bit floating point formats (FP8 E4M3/E5M2) allows modern Tensor Cores to double GEMM throughput. Combining FP8 matrix products with online Softpick register rescaling preserves dynamic range while significantly accelerating long-context processing.
+
+**Decoupled Local-Global Head Heterogeneity**: Instead of periodically alternating entire layers between sparse and linear regimes via $L_{\text{rectify}}$, attention heads within every layer can be functionally partitioned. Allocating 75% of heads to localized strided block-sparse FlashAttention ($k = 4, S_w = 4$) and 25% of heads to concurrent unconstrained linear RFF attention provides continuous sequence-wide context recovery without discrete layer-switching boundaries.
+
+**Adaptive Hierarchical Macro/Micro Block Tiling**: Implementing a multi-tier spatial hierarchy featuring macro-blocks ($B_{\text{macro}} = 256$) for coarse regional gating and micro-blocks ($B_{\text{micro}} = 32$) for fine-grained stripe attention enables sub-quadratic logarithmic $\mathcal{O}(\log M)$ routing, extending context windows efficiently to million-token scales.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

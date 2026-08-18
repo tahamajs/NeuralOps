@@ -87,20 +87,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $d$: Head Dim):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **L2 Key Normalization**: $3 B H L d$ FLOPs
-- **Outer Product Aggregation ($k_t v_t^\top$)**: $L \times (2 B H d^2) = 2 B L H d^2 = 2 B L D d$ FLOPs
-- **Decay State Accumulation ($\gamma h_{t-1} + \text{Outer}$)**: $L \times (2 B H d^2) = 2 B L D d$ FLOPs
-- **Query State MatMul ($h_t q_t$)**: $L \times (2 B H d^2) = 2 B L D d$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_Q, W_K, W_V$)}, $6 B L D^2$ FLOPs Furthermore, regarding \textbf{L2 Key Normalization}, $3 B H L d$ FLOPs Concurrently, regarding \textbf{Outer Product Aggregation ($k_t v_t^\top$)}, $L \times (2 B H d^2) = 2 B L H d^2 = 2 B L D d$ FLOPs In this setting, regarding \textbf{Decay State Accumulation ($\gamma h_{t-1} + \text{Outer}$)}, $L \times (2 B H d^2) = 2 B L D d$ FLOPs Additionally, regarding \textbf{Query State MatMul ($h_t q_t$)}, $L \times (2 B H d^2) = 2 B L D d$ FLOPs Moreover, regarding \textbf{Output Projection ($W_O$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 3 B L D d$
-- **Total FLOPs**: $8 B L D^2 + 6 B L D d$ ($\mathcal{O}(L)$ linear sequence scaling)
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 3 B L D d$ Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 6 B L D d$ ($\mathcal{O}(L)$ linear sequence scaling)
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2 + H$ (Parameters $W_Q, W_K, W_V, W_O$ plus head decay vector $\beta$).
-- **Transient Activation Memory**: $\mathcal{O}(B \cdot H \cdot d^2)$ per step during decoding, completely bypassing quadratic $L^2$ storage.
+Specifically, regarding \textbf{Static Weights}, $4 D^2 + H$ (Parameters $W_Q, W_K, W_V, W_O$ plus head decay vector $\beta$). Furthermore, regarding \textbf{Transient Activation Memory}, $\mathcal{O}(B \cdot H \cdot d^2)$ per step during decoding, completely bypassing quadratic $L^2$ storage.
+
 
 ---
 

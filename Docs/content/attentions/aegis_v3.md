@@ -3,11 +3,9 @@
 ## 1. Executive Abstract & Architectural Motivation
 Standard multi-head self-attention (MHSA) architectures suffer from quadratic time and memory complexity $\mathcal{O}(N^2)$ with sequence length $N$. Existing linear attention variants replace quadratic attention with non-negative kernel feature maps; however, they frequently exhibit degraded local representation accuracy due to spatial feature blurring and over-smoothed attention distributions.
 
-**AEGIS-Attention V3** addresses these limitations through a multi-branch split-head attention architecture featuring four key innovations:
-1. **Energy-Preserving Dynamic SVD Factorization**: Linear projection matrices ($W_Q, W_K, W_V, W_O$) are decomposed via Singular Value Decomposition (SVD), with projection rank $r$ dynamically determined to retain a target cumulative Frobenius energy threshold $\tau$ (e.g., $\tau = 0.95$).
-2. **Split-Head Local-Global Receptive Fields**: The $H$ attention heads are split into $H_l$ local heads dedicated to fine-grained spatial modeling within window $W$, and $H_g$ global heads handling long-range dependencies.
-3. **Softpick Local Activation Mechanism**: Replaces standard softmax with a thresholded tail-subtraction non-linearity (`softpick`), which active-prunes low-probability attention tails to prevent soft background noise accumulation.
-4. **Random Fourier Feature (RFF) Global Linear Kernel**: Global heads map normalized key-query vectors into an $F$-dimensional RFF space with zero-sum key mean-centering, executing global context accumulation in linear $\mathcal{O}(N \cdot F \cdot d_h)$ time.
+To reconcile the conflicting demands of quadratic expressivity and linear computational scaling, **AEGIS-Attention V3** establishes a bifurcated multi-branch split-head attention architecture governed by four synergistic mechanisms:
+
+First, the architecture employs **Energy-Preserving Dynamic SVD Factorization**, wherein all dense linear projection matrices ($W_Q, W_K, W_V, W_O$) undergo Singular Value Decomposition, dynamically calibrating the projection rank $r$ to guarantee the retention of a prescribed cumulative Frobenius energy threshold $\tau \ge 0.95$. Second, the module introduces **Split-Head Local-Global Receptive Fields**, partitioning the total head ensemble $H$ into localized heads $H_l$ dedicated to high-frequency spatial interactions within a sliding window $W$, and global heads $H_g$ tasked with synthesizing long-range structural dependencies. Third, the local branch incorporates the **Softpick Local Activation Mechanism**, replacing conventional softmax with a thresholded tail-subtraction non-linearity that actively prunes diffuse, low-probability probability mass, thereby suppressing background noise accumulation and sharpening local focal boundaries. Finally, the global pathway integrates a **Random Fourier Feature (RFF) Global Linear Kernel**, projecting normalized key-query representations into an $F$-dimensional randomized feature space with zero-sum key mean-centering, which executes global sequence accumulation in strictly linear $\mathcal{O}(N \cdot F \cdot d_h)$ time.
 
 ---
 
@@ -134,49 +132,48 @@ Shape: [B, H_l, N, d_h]  ▼
 ### 4.1 FLOPs Computation Breakdown
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads, $d_h = D/H$ head dimension, $r$ average SVD rank, $W$ local window radius, and $F$ RFF feature dimension ($F = \text{rff\_features}$).
 
-1. **SVD Linear Projections ($Q, K, V, O$)**:
-   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
-2. **Local Softpick Branch ($H_l$ heads)**:
-   - Band score matmul: $2 B H_l N W d_h$
-   - Softpick non-linearity & Value contraction: $2 B H_l N W d_h + \mathcal{O}(B H_l N W)$
-   $$\text{FLOPs}_{\text{local}} = 4 B H_l N W d_h$$
-3. **Global RFF Linear Branch ($H_g$ heads)**:
-   - RFF Einstein sum projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$): $2 \times (2 B H_g N d_h F) = 4 B H_g N d_h F$
-   - Memory State accumulation ($KV$): $2 B H_g N F d_h$
-   - Global Context retrieval: $2 B H_g N F d_h$
-   $$\text{FLOPs}_{\text{global}} = 8 B H_g N d_h F$$
+The total computational complexity of AEGIS-Attention V3 decomposes across the low-rank projection manifolds, the localized windowed attention paths, and the global randomized kernel operations. For the SVD factorized projections ($Q, K, V, O$), down- and up-projections scale as:
+
+$$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+
+Within the local branch ($H_l$ heads), evaluating band-diagonal score matrices and applying the Softpick non-linearity alongside value contraction requires:
+
+$$\text{FLOPs}_{\text{local}} = 4 B H_l N W d_h$$
+
+Concurrently, the global linear branch ($H_g$ heads) maps input representations through Random Fourier Feature projections ($\hat{Q} W_{\text{rff}}, \hat{K} W_{\text{rff}}$), accumulates intermediate outer-product state buffers ($KV$), and contracts query vectors against the linear state, incurring:
+
+$$\text{FLOPs}_{\text{global}} = 8 B H_g N d_h F$$
+
+Synthesizing these decoupled pathways yields the cumulative operational FLOP demand:
 
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
-  $$\text{Total MACs} = 8 B N D r + 2 B H_l N W d_h + 4 B H_g N d_h F$$
-- **Parameter Count**:
-  $$\Theta = 8 D r + H_g d_h F + H$$
-- **Activation Footprint**:
-  - Local Softpick attention tensor: $\mathcal{O}(B H_l N W)$
-  - RFF feature activations: $\mathcal{O}(B H_g N F)$
-  - Global memory matrix state: $\mathcal{O}(B H_g F d_h)$
-  - Total Memory: $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$
+From the standpoint of arithmetic intensity and memory utilization, the aggregate Multiply-Accumulate Operations (MACs) are expressed as:
+
+$$\text{Total MACs} = 8 B N D r + 2 B H_l N W d_h + 4 B H_g N d_h F$$
+
+The static parameter allocation spans the factorized projection weights, the global RFF projection tensors, and the per-head gating parameters, yielding:
+
+$$\Theta = 8 D r + H_g d_h F + H$$
+
+Meanwhile, the runtime activation footprint accounts for the local Softpick score allocations $\mathcal{O}(B H_l N W)$, intermediate RFF mapped features $\mathcal{O}(B H_g N F)$, and the global recurrent outer-product state buffers $\mathcal{O}(B H_g F d_h)$, leading to an overall memory scaling of $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$.
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **AEGIS-Attention V3**: $\mathcal{O}\left(N (D r + H_l W d_h + H_g d_h F)\right)$ compute, $\mathcal{O}(N D + H_g F d_h)$ memory footprint.
+Whereas canonical dense multi-head attention exhibits quadratic scaling with sequence length—demanding $\mathcal{O}(N^2 D)$ compute and $\mathcal{O}(N^2 H)$ activation memory—AEGIS-Attention V3 achieves strict linear asymptotic complexity. It bounds operational throughput to $\mathcal{O}\left(N (D r + H_l W d_h + H_g d_h F)\right)$ and restricts memory scaling to $\mathcal{O}(N D + H_g F d_h)$, rendering long-context sequence modeling computationally tractable without incurring prohibitive hardware memory footprints.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Dynamic Rank Under-Estimation & Energy Truncation Loss
-- **Mechanism**: The energy threshold $\tau$ (e.g., $0.95$) determines rank $r$. For weight matrices with long singular tails, preserving $95\%$ energy may result in rank $r > r_{\max}$, triggering hard truncation to $r_{\max}$.
-- **Consequence**: High-frequency spectral components of pre-trained weights are discarded, causing severe validation loss degradation during early fine-tuning steps.
+The dynamic rank estimation mechanism relies on the cumulative Frobenius energy threshold $\tau$ (e.g., $0.95$) to determine the truncated rank $r$. When projecting weight matrices characterized by heavy-tailed spectral distributions, preserving $95\%$ of the total energy requires a rank exceeding the prescribed hardware bound $r_{\max}$, necessitating hard truncation. This truncation abruptly discards high-frequency singular modes that encode subtle cross-channel features, inducing acute representation loss and sharp degradation in initial validation loss landscapes during fine-tuning. Optimization trajectories can become ill-conditioned as gradient updates struggle to compensate for discarded subspace orthogonalities.
 
 ### 5.2 Exponential RFF Feature Explosion & Overflow
-- **Mechanism**: RFF kernel evaluation computes $\exp(\hat{Q} W_{\text{rff}})$. If the L2-normalization step is omitted or if $W_{\text{rff}}$ contains large standard deviation entries ($> 0.1$), the exponential function overflows to `inf` under IEEE FP16 training.
-- **Mitigation**: Strictly enforce L2 normalization $\hat{Q} = Q / \|Q\|_2$ and initialize $W_{\text{rff}}$ with standard deviation $\sigma \le 0.02$.
+The global linear attention branch relies on exponential feature mapping $\exp(\hat{Q} W_{\text{rff}})$ to ensure non-negative kernel inner products. In the absence of strict L2-normalization, or when weight matrix $W_{\text{rff}}$ is initialized with variance exceeding $\sigma > 0.1$, the unbounded nature of the exponential function induces numerical overflow under half-precision (IEEE FP16) training regimes. This dynamic instability manifests as non-finite activations (`inf`/`NaN`) that immediately corrupt recurrent state accumulation. To ensure robust numerical stability and preserve loss landscape regularity, unit-norm sphere projections $\hat{Q} = Q / \|Q\|_2$ must be strictly enforced alongside conservative initialization standard deviations ($\sigma \le 0.02$).
 
 ### 5.3 Softpick Gradient Sparsification & Zero-Gradient Lock
-- **Mechanism**: The Softpick operator subtracts the tail threshold $\exp(-m/T)$ and applies ReLU. If temperature $T$ is set too low ($T < 0.1$), all off-diagonal scores are zeroed ($p_{i, j} = 0$), trapping local attention in an identity-map state with zero backpropagation gradients.
+The Softpick operator introduces a tail-subtraction non-linearity $\exp(-m/T)$ followed by non-negative clipping. While effective at pruning diffuse background attention mass, setting the temperature parameter too low ($T < 0.1$) causes aggressive thresholding wherein all non-maximal local affinity scores are truncated to zero ($p_{i, j} = 0$). This extreme gradient sparsification collapses the local attention map into a rigid identity operator, causing the vanishing of backpropagation gradients across the local branch and trapping optimization in suboptimal local minima.
 
 ---
 
@@ -203,31 +200,19 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 ```
 
 ### 6.1 Triton Kernel Design: Fused Dynamic SVD GEMM
-- Instantiate a custom Triton GEMM kernel that loads input $X \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Dynamically perform down-projection $X W_{\text{down}}^T$ into register space, then immediately multiply by $W_{\text{up}}^T$.
-- Bypass intermediate HBM allocation for rank-$r$ activations, lowering DRAM traffic by $2\times$.
+To minimize off-chip bandwidth bottlenecks, a custom Triton GEMM kernel stages input tiles $X \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ directly into on-chip SRAM. The operator evaluates the down-projection $X W_{\text{down}}^T$ within register files and immediately chains the result into the up-projection tensor product $W_{\text{up}}^T$. By bypassing the intermediate High-Bandwidth Memory (HBM) allocation for rank-$r$ representations, this fused execution halves off-chip memory traffic and optimizes compute pipeline throughput.
 
 ### 6.2 Triton Kernel Design: Fused Softpick Sliding-Window Kernel
-Standard PyTorch creates an explicit $[B, H_l, N, W]$ logit tensor before evaluating `softpick`.
-
-**Triton Optimization**:
-- Execute block-sparse sliding window iteration using SRAM tiles of size `64 x 64`.
-- Fuse online maximum tracking $m_i$, exponential evaluation $\exp((S - m)/T)$, threshold subtraction, and ReLU truncation directly inside SRAM registers.
-- Write context output $O^{\text{local}}$ directly to global memory, maintaining $\mathcal{O}(1)$ activation memory overhead.
+Conventional framework implementations materialize an explicit intermediate logit tensor of shape $[B, H_l, N, W]$ prior to computing the Softpick non-linearity. To overcome this memory bottleneck, the Triton implementation organizes computation into block-sparse sliding window tiles of size $64 \times 64$. Online maximum tracking $m_i$, exponential evaluation $\exp((S - m)/T)$, baseline subtraction, and non-negative rectification are fused directly within SRAM registers. This architecture writes context outputs $O^{\text{local}}$ straight to global memory, maintaining an $\mathcal{O}(1)$ intermediate activation footprint.
 
 ### 6.3 Triton Kernel Design: Streaming RFF Memory Reduction
-- Parallelize over global heads $H_g$ and batch $B$.
-- Load tokens in sequence tiles of `BLOCK_N = 128`. Compute normalized projection $\exp(\hat{K} W_{\text{rff}}) / \sqrt{F}$ and accumulate outer products into shared memory buffer $KV \in \mathbb{R}^{F \times d_h}$.
-- Stream across sequence blocks in a single pass without storing full $[B, H_g, N, F]$ RFF feature tensors in DRAM.
+The global linear kernel pipeline parallelizes execution over global heads $H_g$ and batch items $B$, processing input sequences in discrete tiles of size `BLOCK_N = 128`. Within each tile, the kernel computes normalized projections $\exp(\hat{K} W_{\text{rff}}) / \sqrt{F}$ and continuously accumulates outer products into a shared memory buffer $KV \in \mathbb{R}^{F \times d_h}$. By streaming token blocks across a single unified pass, the kernel entirely avoids storing full $[B, H_g, N, F]$ feature tensors in DRAM, thereby maintaining peak memory bandwidth efficiency.
 
 ---
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Cosine-Sine Dual Random Fourier Feature Mapping**: Replace pure exponential maps $\exp(\hat{X} W_{\text{rff}})$ with true shift-invariant Gaussian kernel approximators $\phi(X) = \frac{1}{\sqrt{F}} [\cos(X W_{\text{rff}}); \sin(X W_{\text{rff}})]$, resolving numerical exponentiation overflow.
-2. **Adaptive Softpick Temperature Annealing**: Dynamically anneal softpick temperature $T_\ell$ across layer depth $\ell$, maintaining high entropy ($T = 2.0$) in initial layers for global search and low entropy ($T = 0.5$) in deep layers for precise local extraction.
-3. **Structured Low-Rank Tensor Train (TT) Factorization**: Upgrade SVD matrix factorization to Tensor Train decomposition for 4D weight tensors, compressing projections down to rank $r = 8$.
-4. **FP8 Quantized RFF State Accumulator**: Compute outer products $KV = \sum \phi_K(K)^T \otimes V$ using 8-bit FP8 (E4M3) operations on NVIDIA Hopper GPUs, doubling linear attention throughput.
+Several architectural extensions offer promising avenues for extending the capabilities of the AEGIS-Attention framework. To resolve numerical instabilities in exponential mapping, the framework can incorporate a **Cosine-Sine Dual Random Fourier Feature Mapping**, replacing pure exponential transforms $\exp(\hat{X} W_{\text{rff}})$ with shift-invariant Gaussian kernel approximators $\phi(X) = \frac{1}{\sqrt{F}} [\cos(X W_{\text{rff}}); \sin(X W_{\text{rff}})]$ to guarantee bounded representations across arbitrarily long sequences. Furthermore, an **Adaptive Softpick Temperature Annealing** schedule can dynamically adjust temperature parameters $T_\ell$ across network depth $\ell$, maintaining elevated entropy ($T = 2.0$) in early layers to facilitate broad contextual search while enforcing lower entropy ($T = 0.5$) in deeper layers for localized precision. To achieve even higher compression, SVD matrix factorization may be generalized to a **Structured Low-Rank Tensor Train (TT) Factorization** on high-order weight tensors, compressing projection ranks down to $r = 8$. Finally, an **FP8 Quantized RFF State Accumulator** can compute outer products $KV = \sum \phi_K(K)^T \otimes V$ using 8-bit FP8 (E4M3) tensor operations on modern hardware architectures, drastically increasing linear attention throughput.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

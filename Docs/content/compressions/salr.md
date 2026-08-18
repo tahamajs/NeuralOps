@@ -25,9 +25,8 @@ W = U Σ V^T
 
 where **Σ** = diag(σ₁, σ₂, …, σ<sub>K</sub>) with σ₁ ≥ σ₂ ≥ … ≥ 0 and K = min(d_out, d_in). The user specifies a target rank `r` (default 64). The low‑rank factors are initialised as:
 
-- **U_r** = U[:, :r]  (d_out × r)
-- **S_r** = σ₁, …, σ_r  (length r)
-- **Vt_r** = V^T[:r, :]  (r × d_in)
+**U_r** = U[:, :r]  (d_out × r) Furthermore, **S_r** = σ₁, …, σ_r  (length r) Concurrently, **Vt_r** = V^T[:r, :]  (r × d_in)
+
 
 These three tensors become learnable parameters of the new layer, while the bias is copied unchanged.
 
@@ -53,10 +52,8 @@ which has rank at most the number of non‑zero entries in `diag(M)`, i.e., the 
 
 The number of trainable parameters is:
 
-- **U_r**: d_out · r
-- **S_r**: r
-- **Vt_r**: r · d_in
-- bias: d_out
+Specifically, regarding \textbf{U_r}, d_out · r Furthermore, regarding \textbf{S_r}, r Concurrently, regarding \textbf{Vt_r}, r · d_in In this setting, bias: d_out
+
 
 plus the non‑trainable mask buffer (r² bits). The total is `r·(d_out + d_in) + r + d_out`. This is the same as a standard rank‑`r` SVD factorisation; the mask does not add parameters, but it reduces the **effective rank** further by zeroing some singular values. The actual rank of the approximation is `r · (1 – sparsity)` on average.
 
@@ -66,9 +63,8 @@ plus the non‑trainable mask buffer (r² bits). The total is `r·(d_out + d_in)
 
 ### A. Compression Time Complexity
 
-- **SVD** of each weight matrix: O(d_out·d_in·min(d_out,d_in)). For a 768×768 matrix, this is ≈ 4.5×10⁸ operations, done once per layer on CPU/GPU.
-- **Mask generation**: O(r²), negligible.
-- Overall compression time is dominated by the SVDs. For a full transformer (e.g., 72 linear layers), it takes a few seconds.
+**SVD** of each weight matrix: O(d_out·d_in·min(d_out,d_in)). For a 768×768 matrix, this is ≈ 4.5×10⁸ operations, done once per layer on CPU/GPU. Furthermore, regarding \textbf{Mask generation}, o(r²), negligible. Concurrently, Overall compression time is dominated by the SVDs. For a full transformer (e.g., 72 linear layers), it takes a few seconds.
+
 
 ### B. Inference Complexity
 
@@ -76,8 +72,8 @@ During inference, the weight matrix is reconstructed on‑the‑fly by computing
 
 ### C. Memory Usage
 
-- **During compression**: Storing the weight and its SVD factors (U, Σ, V^T) requires a few times the weight size.
-- **After compression**: The parameters are U_r (d_out×r), S_r (r), Vt_r (r×d_in), plus the mask buffer (r² integers). For r ≪ min(d_out,d_in), this is significantly less than d_out·d_in. For example, 768×768 with r=64 gives 64·(768+768) + 64 + 768 ≈ 98,368 parameters vs. 589,824 original—a 6× reduction. The mask adds negligible storage.
+Specifically, regarding \textbf{During compression}, storing the weight and its SVD factors (U, Σ, V^T) requires a few times the weight size. Furthermore, regarding \textbf{After compression}, the parameters are U_r (d_out×r), S_r (r), Vt_r (r×d_in), plus the mask buffer (r² integers). For r ≪ min(d_out,d_in), this is significantly less than d_out·d_in. For example, 768×768 with r=64 gives 64·(768+768) + 64 + 768 ≈ 98,368 parameters vs. 589,824 original—a 6× reduction. The mask adds negligible storage.
+
 
 ---
 
@@ -91,15 +87,12 @@ class SALRLayer(nn.Module):
         ...
 ```
 
-- Computes SVD of the original weight (float32).
-- Initialises `self.U` (out×r), `self.S` (r), `self.Vt` (r×in) as `nn.Parameter`s.
-- Creates `self.mask` buffer of shape (r, r) with entries sampled from Bernoulli(1 – sparsity).
-- Bias is cloned if it exists, else a zero bias is created.
+Computes SVD of the original weight (float32). Furthermore, Initialises `self.U` (out×r), `self.S` (r), `self.Vt` (r×in) as `nn.Parameter`s. Concurrently, Creates `self.mask` buffer of shape (r, r) with entries sampled from Bernoulli(1 – sparsity). In this setting, Bias is cloned if it exists, else a zero bias is created.
+
 
 **Forward**:
-- `S_sparse = self.S * self.mask[:self.rank, :self.rank]` → (r, r) matrix.
-- `W = self.U @ torch.diag(S_sparse) @ self.Vt` — `torch.diag` on a 2D tensor extracts the diagonal, returning a 1D tensor of length r. Then `torch.diag` on that 1D tensor creates an r×r diagonal matrix. So effectively, only the diagonal of the mask matters.
-- `return x @ W.T + self.bias`
+`S_sparse = self.S * self.mask[:self.rank, :self.rank]` → (r, r) matrix. Furthermore, `W = self.U @ torch.diag(S_sparse) @ self.Vt` — `torch.diag` on a 2D tensor extracts the diagonal, returning a 1D tensor of length r. Then `torch.diag` on that 1D tensor creates an r×r diagonal matrix. So effectively, only the diagonal of the mask matters. Concurrently, `return x @ W.T + self.bias`
+
 
 ### SALRCompressor Class
 
@@ -109,8 +102,8 @@ class SALRCompressor(BaseCompressor):
         ...
 ```
 
-- `rank` and `sparsity` control the compression.
-- `compress()` replaces every `nn.Linear` with a `SALRLayer` by navigating the module hierarchy using `_get_parent`.
+`rank` and `sparsity` control the compression. Furthermore, `compress()` replaces every `nn.Linear` with a `SALRLayer` by navigating the module hierarchy using `_get_parent`.
+
 
 ### Factory Function
 
@@ -153,18 +146,13 @@ Then run the compression pipeline. All linear layers will be replaced with `SALR
 
 ### Advantages
 
-- **Dual compression**: The layer simultaneously benefits from low‑rank factorisation (reducing parameters) and structured sparsity on the singular values (further reducing effective rank).
-- **Simple and fast**: The decomposition is a single SVD plus random mask generation.
-- **No calibration data**: Works immediately on any pretrained model.
-- **Learnable**: The factors **U**, **S**, **Vt** can be fine‑tuned to recover accuracy; the mask remains fixed but could be made trainable as well.
+Specifically, regarding \textbf{Dual compression}, the layer simultaneously benefits from low‑rank factorisation (reducing parameters) and structured sparsity on the singular values (further reducing effective rank). Furthermore, regarding \textbf{Simple and fast}, the decomposition is a single SVD plus random mask generation. Concurrently, regarding \textbf{No calibration data}, works immediately on any pretrained model. In this setting, regarding \textbf{Learnable}, the factors **U**, **S**, **Vt** can be fine‑tuned to recover accuracy; the mask remains fixed but could be made trainable as well.
+
 
 ### Limitations
 
-- **Random mask may not be optimal**: The singular values are dropped randomly, disregarding their magnitudes. Important small singular values may be lost while large ones survive only by chance. A magnitude‑based threshold would be more principled, but the random mask introduces a form of regularisation.
-- **Dense forward pass**: The weight is reconstructed into a dense matrix before multiplication, so inference speed is identical to the uncompressed layer. Real FLOP reduction requires using the factorised form (two smaller matmuls), which the current implementation does not do.
-- **Mask storage overhead**: The mask of shape (r, r) is stored as a `long` buffer (or float), which for r up to 128 is tiny, so not an issue.
-- **Double `diag` operation**: The code’s handling of the mask is somewhat convoluted; a more straightforward implementation would store a 1D mask directly on the singular values.
-- **Bias initialisation**: If the original layer had no bias, a zero bias is created, which may alter the layer’s output distribution.
+Specifically, regarding \textbf{Random mask may not be optimal}, the singular values are dropped randomly, disregarding their magnitudes. Important small singular values may be lost while large ones survive only by chance. A magnitude‑based threshold would be more principled, but the random mask introduces a form of regularisation. Furthermore, regarding \textbf{Dense forward pass}, the weight is reconstructed into a dense matrix before multiplication, so inference speed is identical to the uncompressed layer. Real FLOP reduction requires using the factorised form (two smaller matmuls), which the current implementation does not do. Concurrently, regarding \textbf{Mask storage overhead}, the mask of shape (r, r) is stored as a `long` buffer (or float), which for r up to 128 is tiny, so not an issue. In this setting, regarding \textbf{Double `diag` operation}, the code’s handling of the mask is somewhat convoluted; a more straightforward implementation would store a 1D mask directly on the singular values. Additionally, regarding \textbf{Bias initialisation}, if the original layer had no bias, a zero bias is created, which may alter the layer’s output distribution.
+
 
 ### Comparison with Other Hybrid Methods
 

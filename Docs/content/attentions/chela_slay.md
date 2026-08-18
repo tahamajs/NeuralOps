@@ -99,21 +99,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads, $m$: Fourier Features):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **L2 Spherical Normalization**: $6 B H L d = 6 B L D$ FLOPs
-- **Trigonometric Random Projections ($W \widehat{Q}, W \widehat{K}$)**: $2 \times (2 B H L d m) = 4 B L m D$ FLOPs
-- **Sine / Cosine Evaluators**: $4 B H L m$ FLOPs
-- **Associative State Matrix ($KV = \phi(\widehat{K})^\top V$)**: $2 B H (2m) L d = 4 B L m D$ FLOPs
-- **Context Numerator ($\phi(\widehat{Q}) KV$)**: $2 B H L (2m) d = 4 B L m D$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_Q, W_K, W_V$)}, $6 B L D^2$ FLOPs Furthermore, regarding \textbf{L2 Spherical Normalization}, $6 B H L d = 6 B L D$ FLOPs Concurrently, regarding \textbf{Trigonometric Random Projections ($W \widehat{Q}, W \widehat{K}$)}, $2 \times (2 B H L d m) = 4 B L m D$ FLOPs In this setting, regarding \textbf{Sine / Cosine Evaluators}, $4 B H L m$ FLOPs Additionally, regarding \textbf{Associative State Matrix ($KV = \phi(\widehat{K})^\top V$)}, $2 B H (2m) L d = 4 B L m D$ FLOPs Moreover, regarding \textbf{Context Numerator ($\phi(\widehat{Q}) KV$)}, $2 B H L (2m) d = 4 B L m D$ FLOPs From an analytical standpoint, regarding \textbf{Output Projection ($W_O$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 6 B L m D$
-- **Total FLOPs**: $8 B L D^2 + 12 B L m D$ ($\mathcal{O}(L)$ linear complexity)
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 6 B L m D$ Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 12 B L m D$ ($\mathcal{O}(L)$ linear complexity)
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2$ model parameters $+ m \cdot d$ random weight matrix $W$.
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot m \cdot d + B \cdot H \cdot L \cdot m)$.
+Specifically, regarding \textbf{Static Weights}, $4 D^2$ model parameters $+ m \cdot d$ random weight matrix $W$. Furthermore, regarding \textbf{Transient Activation Memory}, bounded by $\mathcal{O}(B \cdot H \cdot m \cdot d + B \cdot H \cdot L \cdot m)$.
+
 
 ---
 

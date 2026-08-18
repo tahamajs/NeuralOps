@@ -3,11 +3,7 @@
 ## 1. Executive Abstract & Architectural Motivation
 Transformer architectures parameterized purely by dense Multi-Head Self-Attention (MHSA) suffer from an $\mathcal{O}(L^2)$ computational memory wall when scaling to long sequence lengths. While local sliding-window attention restricts interactions to a finite context window $W$ to achieve linear complexity $\mathcal{O}(L \cdot W)$, it loses the capacity to maintain global long-range context across distant sequence tokens. Conversely, continuous-time selective State-Space Models (SSMs) like Mamba process sequence histories in $\mathcal{O}(L)$ time via selective state recurrence, but struggle with precise associative retrieval within small, dense token spans.
 
-**SAMBA-M3 (Sliding-window Attention and Spectral Mamba Hybrid)** resolves this trade-off by interleaving localized windowed attention with a continuous-time selective state-space model enhanced by **Spectral Time-Scale Modulation**. The architecture is structured as a dual-residual pre-layer-normalized block:
-1. **Local Sliding-Window Attention Sub-Layer**: Computes exact causal self-attention within a bounded temporal window $W$, modeling fine-grained local syntax and token-pair alignment.
-2. **Spectral Mamba SSM Sub-Layer**: Evaluates selective state recurrence across the sequence, modulated by a learnable channel-wise time-scale gating vector $\Delta_{\text{scale}} \in \mathbb{R}^D$ that adaptively filters spectral frequencies.
-
-This hybrid synthesis achieves strict $\mathcal{O}(L \cdot D \cdot (W + d_{\text{state}}))$ linear computational scalability, bridging exact local attention and global state-space modeling.
+To reconcile this fundamental efficiency-expressivity dichotomy, **SAMBA-M3 (Sliding-window Attention and Spectral Mamba Hybrid)** introduces a dual-path architectural framework that interleaves localized windowed attention with a continuous-time selective state-space model enhanced by **Spectral Time-Scale Modulation**. The architecture is structured around two pre-layer-normalized residual stages. In the primary stage, a localized sliding-window attention sub-layer evaluates exact causal dot-product affinities strictly within a bounded temporal horizon $W$, capturing high-resolution syntactic patterns, dense token-pair interactions, and local inductive biases. In the subsequent stage, a continuous-time selective state-space model processes the sequence via input-dependent recurrent dynamics, modulated by a learnable channel-wise spectral gating vector $\Delta_{\text{scale}} \in \mathbb{R}^D$ that adaptively isolates and filters temporal frequency components. Through this interleaved hierarchy, SAMBA-M3 achieves strict $\mathcal{O}(L \cdot D \cdot (W + d_{\text{state}}))$ linear computational scalability, harmonizing localized precision with global contextual memory.
 
 ---
 
@@ -96,35 +92,31 @@ $$\mathbf{X}^{(2)} = \operatorname{LayerNorm}\left( \mathbf{X}^{(1)} + \mathbf{X
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
-Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $W$ window size, and $d_{\text{state}}$ state dimension.
+Let $B$ denote the batch size, $L$ the sequence length, $D$ the hidden dimension, $W$ the localized sliding-window reach, and $d_{\text{state}}$ the recurrent state dimension. The computational arithmetic footprint decomposes across four distinct architectural stages:
 
-1. **Sliding-Window Attention**:
-   - Linear projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}$): $8 B L D^2$
-   - Banded Matmul (Window $W$): $2 \cdot 2 \cdot B \cdot H \cdot L \cdot W \cdot d_k = 4 B L D W$
-   $$\operatorname{FLOPs}_{\text{swa}} = 8 B L D^2 + 4 B L D W$$
-2. **Selective State-Space Model (Mamba Scan)**:
-   - Discretization & recurrence scan: $2 B L D d_{\text{state}}$
-   - Input/Output projections ($2 \times$ expansion factor): $2 \times (2 \cdot B \cdot L \cdot D \cdot 2D) = 8 B L D^2$
-   $$\operatorname{FLOPs}_{\text{mamba}} = 8 B L D^2 + 2 B L D d_{\text{state}}$$
-3. **Spectral Time-Scale Modulation**:
-   $$\operatorname{FLOPs}_{\text{spectral}} = B L D$$
-4. **Layer Normalizations & Residual Additions**:
-   $$\operatorname{FLOPs}_{\text{norm}} = 6 B L D$$
+For the sliding-window attention module, the computational load includes the linear projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}$) demanding $8 B L D^2$ FLOPs alongside the banded pairwise matrix multiplications bounded by window $W$ consuming $4 B L D W$ FLOPs:
+$$\operatorname{FLOPs}_{\text{swa}} = 8 B L D^2 + 4 B L D W$$
 
+The selective state-space sub-layer incurs continuous-time discretization and recurrence scan operations requiring $2 B L D d_{\text{state}}$ FLOPs, supplemented by dual input/output linear projections configured with a $2\times$ channel expansion factor consuming $8 B L D^2$ FLOPs:
+$$\operatorname{FLOPs}_{\text{mamba}} = 8 B L D^2 + 2 B L D d_{\text{state}}$$
+
+Spectral time-scale modulation applies element-wise channel-selective gating across hidden activations, contributing:
+$$\operatorname{FLOPs}_{\text{spectral}} = B L D$$
+
+Finally, pre-layer normalizations and residual accumulations aggregate to:
+$$\operatorname{FLOPs}_{\text{norm}} = 6 B L D$$
+
+Summing across all constituent operations yields the aggregate arithmetic profile:
 $$\text{Total FLOPs} = 16 B L D^2 + 4 B L D W + 2 B L D d_{\text{state}} + 7 B L D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
-  $$\text{Total MACs} \approx 8 B L D^2 + 2 B L D W + B L D d_{\text{state}}$$
-- **Peak Activation Memory**:
-  - Additive Sliding Window Mask Matrix: $L \times L \times 4 \text{ bytes}$ (In non-fused PyTorch implementation, consumes quadratic VRAM memory $\mathcal{O}(L^2)$).
-  - Attention Score Matrix: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$ (If windowing is un-fused).
-  - Mamba Recurrence State Vector: $B \cdot L \cdot D \cdot d_{\text{state}} \times 2 \text{ bytes}$.
+The operational compute efficiency is governed by the total multiply-accumulate (MAC) throughput, which accounts for roughly half of the total floating-point arithmetic:
+$$\text{Total MACs} \approx 8 B L D^2 + 2 B L D W + B L D d_{\text{state}}$$
+
+The transient activation memory profile depends critically on the execution substrate. In an un-fused implementation, allocating an explicit 2D additive sliding-window mask matrix incurs a quadratic memory allocation of $L \times L \times 4 \text{ bytes}$, creating an asymptotic $\mathcal{O}(L^2)$ memory wall. Concurrently, un-fused attention score materialization requires $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$, while the Mamba recurrence state trajectories require $B \cdot L \cdot D \cdot d_{\text{state}} \times 2 \text{ bytes}$.
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention Block**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **Un-Fused PyTorch SAMBA-M3**: $\mathcal{O}(L D (D + W + d_{\text{state}}))$ compute, but suffers from $\mathcal{O}(L^2)$ memory bottleneck due to 2D mask matrix allocation.
-- **Fused Triton SAMBA-M3**: $\mathcal{O}(L D (D + W + d_{\text{state}}))$ compute, $\mathcal{O}(L D)$ memory footprint.
+Standard dense Multi-Head Self-Attention scales quadratically with sequence length, demanding $\mathcal{O}(L^2 D)$ compute and $\mathcal{O}(L^2 H)$ activation memory. While an un-fused naive implementation of SAMBA-M3 achieves $\mathcal{O}(L D (D + W + d_{\text{state}}))$ arithmetic scaling, it remains bound by the $\mathcal{O}(L^2)$ memory footprint of the explicit 2D mask. In contrast, fully fused Triton execution eliminates the quadratic mask tensor, achieving true $\mathcal{O}(L D (D + W + d_{\text{state}}))$ compute and strictly linear $\mathcal{O}(L D)$ memory scaling.
 
 ---
 
@@ -137,19 +129,13 @@ valid = causal & window
 mask = torch.zeros(L, L, device=device, dtype=torch.float32)
 mask = mask.masked_fill(~valid, float("-inf"))
 ```
-Allocating an explicit 2D floating-point matrix `[L, L]` in global VRAM introduces a severe hidden memory bottleneck:
-- For $L = 64,000$, an explicit `[64000, 64000]` float32 tensor requires **16.38 GB of VRAM** for the mask alone.
-- This invalidates the theoretical linear memory advantage of sliding-window attention.
+Allocating an explicit 2D floating-point matrix of dimension $[L, L]$ in global device memory introduces a severe structural bottleneck that undermines the linear asymptotic advantage of sliding-window attention. For instance, at extended context lengths such as $L = 64,000$, materializing an explicit $[64000, 64000]$ single-precision float tensor demands approximately 16.38 GB of VRAM solely for the mask buffer. This quadratic memory explosion triggers premature out-of-memory (OOM) faults during training and inference, negating the theoretical complexity gains unless tile-level implicit masking is enforced.
 
 ### 5.2 Spectral Channel Saturation & Gate Suppression
-The channel modulation vector $\gamma = \sigma(\Delta_{\text{scale}})$ initializes to $\sigma(0) = 0.5$.
-- **Gradient Vanishing**: If $\Delta_{\text{scale}}$ receives negative gradients during early training steps, $\sigma(\Delta_{\text{scale}}) \to 0$, permanently shutting down information flow from the Mamba branch ($\mathbf{X}_{\text{mamba}} \to 0$).
-- **Spectral Collapse**: Once a channel's scale collapses to zero, $\frac{\partial \mathcal{L}}{\partial \mathbf{Y}_{\text{mamba}}} \to 0$, trapping the Mamba layer in an un-trainable state where only local window attention functions.
+The channel modulation vector initializes uniformly at $\gamma = \sigma(\Delta_{\text{scale}}) = \sigma(0) = 0.5$. During early optimization phases, if $\Delta_{\text{scale}}$ receives persistent negative gradients, the sigmoid activation saturates toward zero ($\sigma(\Delta_{\text{scale}}) \to 0$). This induces a severe optimization pathology termed spectral collapse: as $\mathbf{X}_{\text{mamba}} \to 0$, the corresponding gradient pathways vanish ($\frac{\partial \mathcal{L}}{\partial \mathbf{Y}_{\text{mamba}}} \to 0$). Consequently, the state-space recurrent parameters become locked in an un-trainable regime, collapsing the architecture into a pure sliding-window attention model deprived of global contextual dynamics.
 
 ### 5.3 Long-Range Associative Memory Blindspot
-Because sliding window attention limits key-query interactions to distance $W$:
-- If a target entity appears at index $t_1$ and its reference appears at $t_2$ where $t_2 - t_1 > W$, the attention matrix weight $A_{t_2, t_1} = 0$.
-- The model depends entirely on Mamba's compressed state vector $\mathbf{h}_t$. If $d_{\text{state}} < D$, state compression losses prevent exact token copying over long spans.
+Because sliding-window attention strictly constrains direct key-query dot-product interactions to a local span of width $W$, token pairs separated by temporal distances exceeding the window boundary ($t_2 - t_1 > W$) receive zero direct attention weight ($A_{t_2, t_1} = 0$). Under this constraint, long-range associative recall depends entirely on the recurrent compression dynamics of Mamba's hidden state vector $\mathbf{h}_t$. When the state dimensionality is constrained ($d_{\text{state}} < D$), the information-theoretic capacity of the recurrent bottleneck is exceeded, causing lossy state compression and degrading exact token retrieval across extended spans.
 
 ---
 
@@ -255,17 +241,19 @@ def _samba_m3_fused_window_attn_kernel(
 ```
 
 ### 6.3 Hardware Performance Gains
-1. **Zero Memory Allocation for Masks**: Eliminates the 16+ GB `[L, L]` floating-point mask tensor completely, restoring true $\mathcal{O}(L)$ memory consumption.
-2. **5.4x DRAM Bandwidth Reduction**: Bounded tile iterations (`min_tile_n` to `max_tile_n`) skip non-windowed key-value memory loads entirely, dramatically increasing GPU SM execution speed.
+The fused sliding-window Triton implementation achieves two primary hardware-level advantages. First, implicit tile-level coordinate masking completely eliminates the multi-gigabyte $[L, L]$ floating-point attention mask tensor, restoring true $\mathcal{O}(L)$ memory scaling across ultra-long contexts. Second, by bounding the tile iteration loops between `min_tile_n` and `max_tile_n`, the kernel skips non-windowed key-value memory transactions entirely, delivering a $5.4\times$ reduction in DRAM bandwidth traffic and maximizing streaming multiprocessor (SM) compute throughput.
 
 ---
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Complex Spectral Frequency Decomposition**: Replace scalar time-scale modulation $\Delta_{\text{scale}}$ with 1D Fast Fourier Transform (FFT) complex bandpass filters to isolate high/low frequency sequence components dynamically.
-2. **Chunk-Level Hybrid State Passing**: Pass final Mamba hidden states $\mathbf{h}_{L}$ across chunk boundaries as continuous KV-cache representations to endow sliding-window attention with infinite contextual memory.
-3. **Decoupled Head Receptive Windows**: Assign heterogeneous window sizes $W_h \in \{32, 128, 512, 2048\}$ across different attention heads $h$ to multi-scale temporal resolution.
-4. **FP8 Quantized Selective Scan State Space**: Quantize state transition matrices $\mathbf{A}, \mathbf{B}, \mathbf{C}$ to FP8 (E5M2/E4M3), accelerating linear scan rates by up to $3.5\times$ on NVIDIA H100 Hopper GPUs.
+Several prospective innovations build upon the SAMBA-M3 architecture to extend its representational capacity and computational efficiency. Complex spectral frequency decomposition can supersede scalar time-scale modulation by incorporating 1D Fast Fourier Transform (FFT) complex bandpass filters, enabling dynamic frequency isolation across recurrent channels.
+
+Furthermore, chunk-level hybrid state passing allows the terminal recurrent state $\mathbf{h}_L$ from preceding sequence chunks to be injected as continuous key-value cache representations into subsequent chunks, providing sliding-window attention with an infinite associative context horizon.
+
+Concurrently, decoupled multi-scale receptive windows can be assigned across distinct attention heads ($W_h \in \{32, 128, 512, 2048\}$), allowing individual heads to specialize across diverse temporal resolutions.
+
+Finally, quantizing the state-space transition matrices ($\mathbf{A}, \mathbf{B}, \mathbf{C}$) to FP8 precision formats (such as E5M2/E4M3) accelerates linear recurrence scan operations by up to $3.5\times$ on modern tensor architectures such as NVIDIA H100 Hopper GPUs.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

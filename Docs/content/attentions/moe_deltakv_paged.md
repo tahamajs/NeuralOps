@@ -28,14 +28,12 @@ The architecture is structured in three cascading stages:
 3. **Paged Block-Sparse Attention**: Gathers the top-$k$ active key/value pages based on the routing indices. It evaluates the exact dot-product attention, applying intra-block causal masks dynamically to avoid future-token leakage within the currently active block.
 
 ## 5. Complexity & Hardware Efficiency
-- **KV Cache Memory Footprint**: Reduces per-token cache storage from $2 \cdot d_{model}$ bytes (in 16-bit) to approximately $0.25 \cdot d_{model}$ bytes (8x compression). 
-- **Time Complexity**: $\mathcal{O}(L \cdot k \cdot S_{page} \cdot d)$ compared to $\mathcal{O}(L^2 \cdot d)$ of dense attention. 
-- **Hardware Profile**: Supports structured memory fetching. The low-rank delta reconstruction operates inside GPU shared memory (SRAM), allowing uncompressed states to exist only ephemerally in fast registers before block-attention evaluation.
+Specifically, regarding \textbf{KV Cache Memory Footprint}, reduces per-token cache storage from $2 \cdot d_{model}$ bytes (in 16-bit) to approximately $0.25 \cdot d_{model}$ bytes (8x compression). Furthermore, regarding \textbf{Time Complexity}, $\mathcal{O}(L \cdot k \cdot S_{page} \cdot d)$ compared to $\mathcal{O}(L^2 \cdot d)$ of dense attention. Concurrently, regarding \textbf{Hardware Profile}, supports structured memory fetching. The low-rank delta reconstruction operates inside GPU shared memory (SRAM), allowing uncompressed states to exist only ephemerally in fast registers before block-attention evaluation.
+
 
 ## 6. Hyperparameter & Routing Dynamics
-- **`page_size` ($S_{page}$)**: Dictates the granularity of routing and compression. Larger pages (e.g., 64 or 128) maximize Tensor Core efficiency but increase the coarseness of routing.
-- **`k_experts`**: The number of pages selected per query block. Empirically, selecting 4 to 8 pages is sufficient to preserve perplexity on context lengths up to 128k.
-- **`svd_rank`**: The rank of the delta compression (default: 16). Higher ranks improve state reconstruction fidelity at the cost of larger compressed cache footprints.
+Specifically, regarding \textbf{`page_size` ($S_{page}$)}, dictates the granularity of routing and compression. Larger pages (e.g., 64 or 128) maximize Tensor Core efficiency but increase the coarseness of routing. Furthermore, regarding \textbf{`k_experts`}, the number of pages selected per query block. Empirically, selecting 4 to 8 pages is sufficient to preserve perplexity on context lengths up to 128k. Concurrently, regarding \textbf{`svd_rank`}, the rank of the delta compression (default: 16). Higher ranks improve state reconstruction fidelity at the cost of larger compressed cache footprints.
+
 
 ## 7. Conclusion & Future Work
 MoE-DeltaKV-Paged represents a fundamental shift from dense, monolithic sequence memory to a dynamic, paged, and temporally compressed hierarchical cache. Future optimizations will integrate dynamic rank adaptation based on the spectral entropy of the temporal deltas (allocating larger SVD ranks to tokens with high information density) and deploying customized Triton kernels to perform the W4A16 register unpacking in a fused pass.

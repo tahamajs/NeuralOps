@@ -132,45 +132,45 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ total heads
 1. **SVD Linear Projections ($Q, K, V, O$)**:
    $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
 2. **Local Softpick Branch ($H_l$ heads)**:
-   - Window scores matmul: $2 B H_l N W d_h$
-   - Softpick & Value contraction: $2 B H_l N W d_h + \mathcal{O}(B H_l N W)$
-   $$\text{FLOPs}_{\text{local}} = 4 B H_l N W d_h$$
+Window scores matmul: $2 B H_l N W d_h$ Furthermore, Softpick & Value contraction: $2 B H_l N W d_h + \mathcal{O}(B H_l N W)$ $$\text{FLOPs}_{\text{local}} = 4 B H_l N W d_h$$
+
 3. **Global RFF Branch ($H_g$ heads)**:
-   - RFF Einsum projections ($Q W_{\text{rff}}, K W_{\text{rff}}$): $4 B H_g N d_h F$
-   - Memory accumulation ($KV$): $2 B H_g N F d_h$
-   - Context query contraction: $2 B H_g N F d_h$
-   $$\text{FLOPs}_{\text{global}} = 8 B H_g N d_h F$$
+RFF Einsum projections ($Q W_{\text{rff}}, K W_{\text{rff}}$): $4 B H_g N d_h F$ Furthermore, Memory accumulation ($KV$): $2 B H_g N F d_h$ Concurrently, Context query contraction: $2 B H_g N F d_h$ $$\text{FLOPs}_{\text{global}} = 8 B H_g N d_h F$$
+
 
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} = 8 B N D r + 2 B H_l N W d_h + 4 B H_g N d_h F$$
-- **Parameter Count**:
+Specifically, regarding \textbf{Parameter Count}, 
+
   $$\Theta = 8 D r + H_g d_h F + H$$
-- **Activation Memory**:
-  - Local Softpick attention tensor: $\mathcal{O}(B H_l N W)$
-  - RFF feature activations: $\mathcal{O}(B H_g N F)$
-  - Global memory matrix state: $\mathcal{O}(B H_g F d_h)$
-  - Total Memory: $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$
+Specifically, regarding \textbf{Activation Memory},  Furthermore, Local Softpick attention tensor: $\mathcal{O}(B H_l N W)$ Concurrently, RFF feature activations: $\mathcal{O}(B H_g N F)$ In this setting, Global memory matrix state: $\mathcal{O}(B H_g F d_h)$ Additionally, Total Memory: $\mathcal{O}(B N D + B H_l N W + B H_g N F + B H_g F d_h)$
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **AEGIS-Attention V5**: $\mathcal{O}\left(N (D r + H_l W d_h + H_g d_h F)\right)$ compute, $\mathcal{O}(N D + H_g F d_h)$ memory footprint.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory. Furthermore, regarding \textbf{AEGIS-Attention V5}, $\mathcal{O}\left(N (D r + H_l W d_h + H_g d_h F)\right)$ compute, $\mathcal{O}(N D + H_g F d_h)$ memory footprint.
+
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Energy-Preserving Rank Inflation
-- **Mechanism**: Setting a high energy threshold $\tau_{\text{energy}} = 0.98$ on layers with heavy singular value tails forces $r \to r_{\max} = 64$.
-- **Impact**: Defeats the parameter compression goal, causing linear memory consumption to approach standard dense projections.
+At the architectural level, the underlying operational mechanism reveals that setting a high energy threshold $\tau_{\text{energy}} = 0.98$ on layers with heavy singular value tails forces $r \to r_{\max} = 64$.
+
+Specifically, regarding \textbf{Impact}, defeats the parameter compression goal, causing linear memory consumption to approach standard dense projections.
+
 
 ### 5.2 RFF Projection Linear Degeneracy
-- **Mechanism**: The global branch uses linear projection $Q W_{\text{rff}}$ without non-linear exponential activations. If $W_{\text{rff}}$ collapses into a low-rank matrix during backpropagation, $Q_{\text{feat}}$ and $K_{\text{feat}}$ lose expressivity, degrading the global linear attention branch into a low-rank linear projection.
+At the architectural level, the underlying operational mechanism reveals that the global branch uses linear projection $Q W_{\text{rff}}$ without non-linear exponential activations. If $W_{\text{rff}}$ collapses into a low-rank matrix during backpropagation, $Q_{\text{feat}}$ and $K_{\text{feat}}$ lose expressivity, degrading the global linear attention branch into a low-rank linear projection.
+
 
 ### 5.3 Softpick Temperature Discontinuity
-- **Mechanism**: Softpick relies on $\text{ReLU}(e_i - \exp(-m/T))$. Extremely small values of $T$ ($T \to 0$) make the denominator step function discontinuous, inducing exploding gradients during backward passes on padded sequences.
+At the architectural level, the underlying operational mechanism reveals that softpick relies on $\text{ReLU}(e_i - \exp(-m/T))$. Extremely small values of $T$ ($T \to 0$) make the denominator step function discontinuous, inducing exploding gradients during backward passes on padded sequences.
+
 
 ---
 
@@ -197,18 +197,16 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B H_l N W d_h + 8 B H_g N d_h F$$
 ```
 
 ### 6.1 Triton Strategy 1: Fused Dual SVD Projection Kernel
-- Implement a custom Triton kernel executing $X W_{\text{down}}^T W_{\text{up}}^T$ within a single threadblock launch.
-- Store intermediate rank-$r$ vector in SRAM register arrays, bypassing High Bandwidth Memory (HBM) writes and achieving $1.9\times$ kernel speedup over dual PyTorch `Linear` calls.
+Implement a custom Triton kernel executing $X W_{\text{down}}^T W_{\text{up}}^T$ within a single threadblock launch. Furthermore, Store intermediate rank-$r$ vector in SRAM register arrays, bypassing High Bandwidth Memory (HBM) writes and achieving $1.9\times$ kernel speedup over dual PyTorch `Linear` calls.
+
 
 ### 6.2 Triton Strategy 2: Block-Sparse Softpick Sliding Window
-- Execute local window attention over `64 x 64` sequence tiles.
-- Keep online maximum $m_i$ and thresholded tail subtraction inside SRAM registers (FlashAttention-style).
-- Eliminates global DRAM allocation for the $[B, H_l, N, W]$ Softpick probability tensor.
+Execute local window attention over `64 x 64` sequence tiles. Furthermore, Keep online maximum $m_i$ and thresholded tail subtraction inside SRAM registers (FlashAttention-style). Concurrently, Eliminates global DRAM allocation for the $[B, H_l, N, W]$ Softpick probability tensor.
+
 
 ### 6.3 Triton Strategy 3: Fused Global Einsum Reduction Engine
-- Parallelize over batch $B$ and global heads $H_g$.
-- Load tiles of sequence length `BLOCK_N = 128`. Compute RFF projection $Q_{\text{global}} W_{\text{rff}}$ and accumulate outer product matrix $KV \in \mathbb{R}^{F \times d_h}$ in shared memory.
-- Avoids writing intermediate $[B, H_g, N, F]$ RFF feature tensors to DRAM.
+Parallelize over batch $B$ and global heads $H_g$. Furthermore, Load tiles of sequence length `BLOCK_N = 128`. Compute RFF projection $Q_{\text{global}} W_{\text{rff}}$ and accumulate outer product matrix $KV \in \mathbb{R}^{F \times d_h}$ in shared memory. Concurrently, Avoids writing intermediate $[B, H_g, N, F]$ RFF feature tensors to DRAM.
+
 
 ---
 

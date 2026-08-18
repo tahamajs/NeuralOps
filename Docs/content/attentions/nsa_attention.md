@@ -3,11 +3,9 @@
 ## 1. Executive Abstract & Architectural Motivation
 Dense Multi-Head Self-Attention (MHSA) scales quadratically $\mathcal{O}(L^2 d)$ with sequence length $L$, computing pairwise attention interactions across all token pairs regardless of semantic distance. Purely localized attention models enforce fixed spatial windows of size $W$, reducing computational complexity to $\mathcal{O}(L \cdot W \cdot d)$, but completely sever long-range associative dependencies across distant sequence positions.
 
-**Native Sparse Attention (`NativeSparseAttention`)** unifies high-precision local syntactic modeling with dynamic, content-adaptive long-range routing. The attention pattern is constructed as the explicit boolean union of two complementary structural masks:
-1. **Static Local Sliding-Window Mask ($\mathcal{M}_{\text{local}}$)**: Enforces a local band of half-width $W$, guaranteeing dense attention over immediate spatial neighbors $|i - j| \le W$.
-2. **Dynamic Top-$k$ Global Routing Mask ($\mathcal{M}_{\text{topk}}$)**: For each query token $i$, non-local key scores $|i - j| > W$ are evaluated, and the $k$ keys with the highest dot-product similarity are dynamically routed into the active attention pool.
+**Native Sparse Attention (`NativeSparseAttention`)** unifies high-precision local syntactic modeling with dynamic, content-adaptive long-range routing. The sparse connectivity topology is established via the explicit boolean union of two complementary structural mechanisms. Primarily, a static local sliding-window mask ($\mathcal{M}_{\text{local}}$) enforces a compact band of half-width $W$, guaranteeing dense attention over immediate spatial neighbors $|i - j| \le W$ to capture foundational local syntactic dependencies and lexical collocations. Concurrently, a dynamic top-$k$ global routing mask ($\mathcal{M}_{\text{topk}}$) evaluates non-local affinity scores $|i - j| > W$ for each query token $i$, dynamically routing the $k$ key vectors exhibiting maximal dot-product similarity into the active attention pool.
 
-By combining $W$-bounded local attention with $k$-sparse global routing, NSA reduces active key-value token interactions per query from $L$ to $(2W + k)$, lowering computational complexity to $\mathcal{O}\left(B \cdot H \cdot L \cdot (2W + k) \cdot d_h\right)$.
+By synthesizing $W$-bounded local attention with $k$-sparse global routing, NSA restricts active key-value token interactions per query from the unconstrained sequence length $L$ to a compact budget of $(2W + k)$, lowering computational complexity to $\mathcal{O}\left(B \cdot H \cdot L \cdot (2W + k) \cdot d_h\right)$.
 
 ---
 
@@ -113,43 +111,26 @@ $$\mathbf{Y} = \operatorname{Reshape}(\mathbf{O}) \mathbf{W}_O \quad \in \mathbb
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### 4.1 FLOPs Computation Breakdown
-Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_h = D/H$, $W$ local window half-width, and $k$ top-$k$ non-local keys.
+Let $B$ denote the batch size, $L$ the sequence length, $D$ the hidden dimension, $H$ the attention head count, $d_h = D/H$ the head dimension, $W$ the sliding-window half-width, and $k$ the top-$k$ non-local key budget.
 
-1. **Linear Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$)**:
-   $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
-2. **Dense Raw Score Matrix Materialization**:
-   In the naive PyTorch implementation, dense matrix product $\mathbf{Q} \mathbf{K}^\top$ is fully materialized:
-   $$\operatorname{FLOPs}_{\text{dense\_scores}} = 2 B H L^2 d_h = 2 B L^2 D$$
-3. **Sequential Top-$k$ Sorting**:
-   For each query $i \in \{1, \dots, L\}$, top-$k$ extraction over $(L - 2W)$ elements requires:
-   $$\operatorname{FLOPs}_{\text{topk\_sort}} \approx B \cdot H \cdot L \cdot (L \log k)$$
-4. **Sparse Context Matmul ($\mathbf{A} \mathbf{V}$)**:
-   Because $\mathbf{A}$ has at most $(2W + k)$ non-zero entries per query row, sparse context multiplication requires:
-   $$\operatorname{FLOPs}_{\text{sparse\_v}} = 2 B H L (2W + k) d_h = 2 B D L (2W + k)$$
-5. **Output Projection ($\mathbf{W}_O$)**:
-   $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
+The computational demands of Native Sparse Attention decompose into projection, scoring, selection, and aggregation phases:
+
+For the input transformations, linear projections generating $\mathbf{Q}$, $\mathbf{K}$, and $\mathbf{V}$ require $\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$. In a naive un-fused implementation, the dense pairwise score matrix $\mathbf{Q} \mathbf{K}^\top$ is fully instantiated prior to masking, demanding $\operatorname{FLOPs}_{\text{dense\_scores}} = 2 B H L^2 d_h = 2 B L^2 D$. Subsequently, sequential top-$k$ selection across $(L - 2W)$ non-local candidates for each query position incurs an asymptotic sorting workload of $\operatorname{FLOPs}_{\text{topk\_sort}} \approx B \cdot H \cdot L \cdot (L \log k)$. Because the final attention map $\mathbf{A}$ contains at most $(2W + k)$ active non-zero elements per query row, sparse value aggregation requires $\operatorname{FLOPs}_{\text{sparse\_v}} = 2 B H L (2W + k) d_h = 2 B D L (2W + k)$, followed by the final output projection requiring $\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$. Aggregating these stages yields a cumulative un-fused operational workload of:
 
 $$\text{Total Naive FLOPs} = 8 B L D^2 + 2 B L^2 D + 2 B D L (2W + k)$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
-  $$\text{Total MACs} \approx 4 B L D^2 + B L^2 D + B D L (2W + k)$$
-- **Peak Activation Memory**:
-  - Full Score Tensor: $B \cdot H \cdot L \cdot L \times 4 \text{ bytes}$ (In un-fused PyTorch implementation, consumes quadratic VRAM memory $\mathcal{O}(L^2)$).
-  - Boolean Mask Tensors: $2 \times B \cdot H \cdot L \cdot L \times 1 \text{ byte}$.
-  - Peak Memory: Bounded by un-fused $L \times L$ score matrix allocation $\mathcal{O}(B H L^2)$.
+The aggregate Multiply-Accumulate (MAC) count scales as $\text{Total MACs} \approx 4 B L D^2 + B L^2 D + B D L (2W + k)$. In un-fused implementations, peak activation memory is heavily dominated by the intermediate quadratic score tensor requiring $B \cdot H \cdot L \cdot L \times 4 \text{ bytes}$, supplemented by boolean mask storage requiring $2 \times B \cdot H \cdot L \cdot L \times 1 \text{ byte}$. Consequently, the un-fused architecture suffers from a quadratic $\mathcal{O}(B H L^2)$ memory bottleneck, completely eclipsing the theoretical sparsity advantages.
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **Un-Fused PyTorch NSA**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory — **no FLOPs or VRAM savings** due to computing full $L \times L$ score matrices inside the loop!
-- **Fused Triton NSA**: $\mathcal{O}\left(B H L (2W + k) d_h\right)$ compute, $\mathcal{O}(B L D)$ memory footprint.
+Whereas standard dense Multi-Head Attention scales with $\mathcal{O}(L^2 D)$ arithmetic operations and $\mathcal{O}(L^2 H)$ activation footprint, naive un-fused NSA remains constrained to identical asymptotic upper bounds ($\mathcal{O}(L^2 D)$ compute and $\mathcal{O}(L^2 H)$ memory) due to full intermediate matrix instantiation within the host-side dispatch loop. In sharp contrast, a hardware-fused Triton implementation executes sliding-window and routed attention entirely within SRAM tiles, achieving the theoretical optimum of $\mathcal{O}\left(B H L (2W + k) d_h\right)$ computational complexity and a strictly linear $\mathcal{O}(B L D)$ memory footprint.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 The Dense Score Matrix Materialization Memory Trap
-In `NativeSparseAttention.forward`:
+In naive un-fused PyTorch implementations:
 ```python
 scores = torch.matmul(Q, K.transpose(-2, -1)) * scale # [B, H, L, L]
 for i in range(L):
@@ -158,18 +139,15 @@ for i in range(L):
     _, topk_ind = torch.topk(s_i, k_val, dim=-1)
     topk_mask[:, :, i, :].scatter_(-1, topk_ind, 1.0)
 ```
-- **Computational Contradiction**: To find top-$k$ keys, the code computes the entire $L \times L$ attention matrix in VRAM first, negating the theoretical $O(L(2W+k))$ speedup of sparse attention.
-- **Sequential Launch Overhead**: The `for i in range(L):` loop launches $L$ separate `topk` and `scatter` CUDA calls sequentially from Python host threads, stalling GPU SM execution pipelines.
+This formulation manifests a severe computational contradiction: to identify the top-$k$ non-local keys, the entire $L \times L$ pairwise attention matrix is fully materialized in High-Bandwidth Memory (HBM), completely forfeiting the theoretical $\mathcal{O}(L(2W+k))$ complexity advantage of sparse attention. Furthermore, the iterative host-side loop (`for i in range(L):`) dispatches $L$ consecutive `topk` and `scatter` kernel invocations sequentially. This serial kernel launching floods the CUDA stream command queue, causing GPU Streaming Multiprocessors (SMs) to suffer severe pipeline starvation and latency under-utilization.
 
 ### 5.2 Top-$k$ Selection Instability & Gradient Blocking
-The discrete selection $\operatorname{TopK}(\tilde{\mathbf{S}}_i, k)$ uses hard integer indices.
-- **Zero Gradient Derivative**: $\frac{\partial \operatorname{TopK}}{\partial \mathbf{S}} = 0$ almost everywhere. Gradients from the loss function $\mathcal{L}$ flow through the softmax values of selected keys, but cannot backpropagate to adjust query/key projections $\mathbf{W}_Q, \mathbf{W}_K$ to alter routing decisions.
-- **Top-$k$ Oscillations**: If two non-local keys have nearly identical scores ($S_{i, j_1} \approx S_{i, j_2}$), tiny floating-point noise causes top-$k$ assignments to flip erratically between optimization steps, destabilizing training convergence.
+The discrete selection operator $\operatorname{TopK}(\tilde{\mathbf{S}}_i, k)$ operates on discrete integer indices, introducing severe non-smoothness into the optimization landscape. Because the partial derivative $\frac{\partial \operatorname{TopK}}{\partial \mathbf{S}} = 0$ vanishes almost everywhere, objective gradients backpropagating through the loss function $\mathcal{L}$ flow exclusively into the value and projection matrices of active indices, but are completely obstructed from providing supervisory gradient signals to the Query and Key projection weights ($\mathbf{W}_Q, \mathbf{W}_K$) to adjust routing decisions. 
+
+Moreover, when competing non-local keys exhibit nearly degenerate inner product scores ($S_{i, j_1} \approx S_{i, j_2}$), stochastic gradient perturbations and numerical roundoff noise cause discrete top-$k$ membership to oscillate erratically across optimization steps. This abrupt switching behavior induces sudden discontinuities in the loss surface, destabilizing optimizer momentum buffers and degrading training convergence.
 
 ### 5.3 Receptive Field Starvation in Long Sequences
-If sequence length $L = 100,000$ and hyperparameter settings are $W = 128, k = 32$:
-- Each query token attends to at most $256 + 32 = 288$ key tokens out of 100,000.
-- If a task requires integrating context from thousands of weak distributed signals (e.g., global document topic modeling), hard top-$32$ pruning drops $99.7\%$ of sequence context, causing severe information loss.
+Under extreme sequence scaling regimes (e.g., context lengths $L = 100,000$ with hyperparameters $W = 128$ and $k = 32$), each query token is strictly restricted to interacting with at most $2W + k = 288$ key tokens. In tasks requiring broad semantic integration across distributed, low-magnitude signals—such as multi-hop reasoning, broad topic summarization, or needle-in-a-haystack associative recall—hard top-$k$ truncation discards over $99.7\%$ of contextual information. This creates an information bottleneck where non-local tokens with diffuse collective relevance are systematically pruned, inducing catastrophic context starvation.
 
 ---
 
@@ -278,17 +256,21 @@ def _nsa_fused_local_global_kernel(
 ```
 
 ### 6.3 Hardware Optimization Impact
-1. **Zero Matrix Allocation**: Computes local sliding-window attention directly in SRAM registers, dropping VRAM allocation from $\mathcal{O}(B H L^2)$ to zero.
-2. **Fused Register Rescaling**: Online Softmax rescales local and global attention accumulators in SRAM, eliminating intermediate GPU memory writebacks.
+By evaluating local sliding-window attention directly within SRAM register tiles, the fused kernel achieves zero global intermediate matrix allocation, collapsing the memory footprint from $\mathcal{O}(B H L^2)$ to zero intermediate overhead. Furthermore, executing online softmax rescaling across local and non-local accumulators directly in register space entirely eliminates costly DRAM round-trips and memory bandwidth saturation.
 
 ---
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **DeepSeek-Style Coarse Block Key Compression**: Group keys into blocks of size $B_{\text{block}} = 64$ and compute coarse block-level routing scores before selecting individual top-$k$ tokens, cutting top-$k$ search overhead by $64\times$.
-2. **Dynamic Gumbel-Softmax Top-$k$ Masking**: Replace non-differentiable hard `topk` indexing with continuous straight-through Gumbel-Softmax selection to enable end-to-end backpropagation through non-local key projections.
-3. **Decoupled Local-Global Head Heterogeneity**: Allocate $75\%$ of attention heads exclusively to ultra-fast local FlashAttention ($W = 256, k = 0$) and $25\%$ of heads exclusively to global routed FlashAttention ($W = 0, k = 64$).
-4. **FP8 Quantized Native Sparse Attention**: Execute sliding-window FlashAttention and non-local block routing using FP8 (E4M3) Tensor Cores on NVIDIA Hopper/Blackwell GPUs.
+The structural flexibility of Native Sparse Attention suggests several promising avenues for future architectural advancement:
+
+**Coarse Block-Level Key Clustered Routing**: To resolve the asymptotic overhead of token-level sorting, keys can be grouped into uniform geometric blocks ($B_{\text{block}} = 64$). Computing coarse inter-block centroid routing scores prior to fine-grained token selection curtails the top-$k$ search space by a factor of 64, preserving linear scaling without compromising routing precision.
+
+**Differentiable Continuous Top-$k$ Gumbel-Softmax Masking**: Replacing non-differentiable hard integer indexing with a continuous straight-through Gumbel-Softmax or perturbed top-$k$ operator restores end-to-end gradient propagation through non-local query and key projections. This smooth relaxation eliminates optimization discontinuities and allows routing policies to be learned jointly with token representations.
+
+**Decoupled Local-Global Head Heterogeneity**: Rather than enforcing homogeneous routing hyperparameters across all attention heads, heads can be functionally partitioned into specialized sub-networks. For instance, allocating 75% of heads exclusively to ultra-fast local FlashAttention ($W = 256, k = 0$) and 25% of heads exclusively to global routed FlashAttention ($W = 0, k = 64$) maximizes hardware execution efficiency while preserving cross-document associative reach.
+
+**FP8 Quantized Native Sparse Attention**: Implementing sliding-window FlashAttention and non-local block routing on sub-byte FP8 (E4M3/E5M2) Tensor Cores on modern GPU architectures doubles computational arithmetic throughput and significantly reduces KV-cache bandwidth demands during long-context decoding.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

@@ -52,12 +52,8 @@ Because each expert only computes a small fraction of the output features, the t
 
 ### 5. Parameter Count and Computation
 
-- **Original layer**: `d_out · d_in + d_out` parameters (weight + bias). Computational cost per token: `d_out · d_in` multiplications.
-- **ToMoE layer**: 
-  - Experts: Σ<sub>e</sub> (out_e · d_in + out_e) = d_out · d_in + d_out (same total weight parameters), but now stored separately.
-  - Router: `d_in · E + E` parameters.
-  - Total parameters slightly increased by the router.
-  - Computation per token (if k=2, experts roughly balanced): roughly `2 · (d_out/E) · d_in` for the experts plus `d_in · E` for the router. For E=4, k=2, the expert computation is about `(2/4) d_out d_in = 0.5 d_out d_in`, plus router overhead. So the FLOPs can be reduced by ≈50% compared to the dense layer.
+Specifically, regarding \textbf{Original layer}, `d_out · d_in + d_out` parameters (weight + bias). Computational cost per token: `d_out · d_in` multiplications. Furthermore, regarding \textbf{ToMoE layer},  Concurrently, Experts: Σ<sub>e</sub> (out_e · d_in + out_e) = d_out · d_in + d_out (same total weight parameters), but now stored separately. In this setting, Router: `d_in · E + E` parameters. Additionally, Total parameters slightly increased by the router. Moreover, Computation per token (if k=2, experts roughly balanced): roughly `2 · (d_out/E) · d_in` for the experts plus `d_in · E` for the router. For E=4, k=2, the expert computation is about `(2/4) d_out d_in = 0.5 d_out d_in`, plus router overhead. So the FLOPs can be reduced by ≈50% compared to the dense layer.
+
 
 The actual savings depend on the uniformity of expert sizes and the overhead of the scatter/gather operations, which in the current Python implementation involve loops and may not be faster than the dense layer on GPU. However, with optimized CUDA kernels, MoE layers can achieve substantial speed‑ups.
 
@@ -67,19 +63,19 @@ The actual savings depend on the uniformity of expert sizes and the overhead of 
 
 ### A. Compression Time Complexity
 
-- **k‑means clustering**: O(d_out · d_in · E · I) where I is the number of k‑means iterations (max_iter default 300). For a typical 3072×768 matrix with E=4, this is fast (a few seconds). The clustering is done on CPU via scikit‑learn.
-- **Expert creation**: O(d_out) to slice and copy weights.
-- **Router initialisation**: Random, no cost.
+Specifically, regarding \textbf{k‑means clustering}, o(d_out · d_in · E · I) where I is the number of k‑means iterations (max_iter default 300). For a typical 3072×768 matrix with E=4, this is fast (a few seconds). The clustering is done on CPU via scikit‑learn. Furthermore, regarding \textbf{Expert creation}, o(d_out) to slice and copy weights. Concurrently, regarding \textbf{Router initialisation}, random, no cost.
+
 
 ### B. Inference Complexity (Theoretical)
 
 If the experts are balanced, each expert has ≈ d_out / E output features. With top‑k=2, the expert FLOPs per token ≈ `2 · (d_out/E) · d_in`. The router adds `d_in · E`. For a typical FFN intermediate layer (d_in=768, d_out=3072), E=4, k=2:
-- Original: 3072·768 ≈ 2.36M operations.
-- MoE: 2·(768)·768? Wait: expert out = 3072/4 = 768, so each expert: 768·768 = 0.59M; two experts: 1.18M, plus router 768·4 = 3k. Total ≈ 1.18M, roughly 50% reduction.
+Original: 3072·768 ≈ 2.36M operations. Furthermore, MoE: 2·(768)·768? Wait: expert out = 3072/4 = 768, so each expert: 768·768 = 0.59M; two experts: 1.18M, plus router 768·4 = 3k. Total ≈ 1.18M, roughly 50% reduction.
+
 
 ### C. Memory Usage
 
-- **After compression**: The total number of expert weights equals the original weight, plus router parameters. Thus the model size slightly increases. The benefit is in computational efficiency, not parameter reduction. The `_count_params` will reflect the increase.
+Specifically, regarding \textbf{After compression}, the total number of expert weights equals the original weight, plus router parameters. Thus the model size slightly increases. The benefit is in computational efficiency, not parameter reduction. The `_count_params` will reflect the increase.
+
 
 ---
 
@@ -93,22 +89,19 @@ class ToMoELinear(nn.Module):
         ...
 ```
 
-- **`original`**: the source `nn.Linear` to convert.
-- **`num_experts`**: number of experts (e.g., 4).
-- **`top_k`**: number of active experts per token (e.g., 2).
+Specifically, regarding \textbf{`original`}, the source `nn.Linear` to convert. Furthermore, regarding \textbf{`num_experts`}, number of experts (e.g., 4). Concurrently, regarding \textbf{`top_k`}, number of active experts per token (e.g., 2).
+
 
 **Initialization**:
-- Clusters the rows of `original.weight` using KMeans.
-- Creates an `nn.ModuleList` of experts, each a smaller `nn.Linear`. The bias is included if the original had bias.
-- Stores the boolean masks `self.masks` for each expert, indicating which output features belong to it.
-- Creates a router `self.router` as `nn.Linear(in_features, num_experts)`.
+Clusters the rows of `original.weight` using KMeans. Furthermore, Creates an `nn.ModuleList` of experts, each a smaller `nn.Linear`. The bias is included if the original had bias. Concurrently, Stores the boolean masks `self.masks` for each expert, indicating which output features belong to it. In this setting, Creates a router `self.router` as `nn.Linear(in_features, num_experts)`.
+
 
 **`forward(x)`**:
 1. Compute router logits, top‑k softmax.
 2. Initialize an output tensor of shape `(..., out_features)` with zeros.
 3. For each of the top‑k indices:
-   - For each expert `e`, if the index matches `e`, compute that expert’s output, scatter it into the full output using the mask, multiply by the gate weight, and accumulate.
-   - The implementation uses a loop over experts for each `k`, which is inefficient for large `E` but acceptable for small values (E≤8).
+For each expert `e`, if the index matches `e`, compute that expert’s output, scatter it into the full output using the mask, multiply by the gate weight, and accumulate. Furthermore, The implementation uses a loop over experts for each `k`, which is inefficient for large `E` but acceptable for small values (E≤8).
+
 
 ### ToMoECompressor Class
 
@@ -120,13 +113,12 @@ class ToMoECompressor(BaseCompressor):
         self.top_k = top_k
 ```
 
-- **`num_experts`**: Number of experts per MoE layer (default 4).
-- **`top_k`**: Number of active experts per token (default 2).
+Specifically, regarding \textbf{`num_experts`}, number of experts per MoE layer (default 4). Furthermore, regarding \textbf{`top_k`}, number of active experts per token (default 2).
+
 
 **`compress()`**:
-- Scans all named modules, selects those that are `nn.Linear` and have `'ffn'` or `'intermediate'` in their name (case‑insensitive).
-- Replaces each with a `ToMoELinear` instance.
-- Updates internal compressed parameter count.
+Scans all named modules, selects those that are `nn.Linear` and have `'ffn'` or `'intermediate'` in their name (case‑insensitive). Furthermore, Replaces each with a `ToMoELinear` instance. Concurrently, Updates internal compressed parameter count.
+
 
 ### Factory Function
 
@@ -161,19 +153,13 @@ Then run the compression pipeline. FFN layers will be converted to MoE.
 
 ### Advantages
 
-- **Conditional computation**: Only a subset of parameters are used per token, potentially reducing inference FLOPs.
-- **Dynamic routing**: The network learns which experts to activate based on input, enabling specialization.
-- **No calibration data**: Clustering uses only the weight matrix.
-- **Preserves original dimension**: Output size remains identical; the module can be a drop‑in replacement for standard linear layers.
+Specifically, regarding \textbf{Conditional computation}, only a subset of parameters are used per token, potentially reducing inference FLOPs. Furthermore, regarding \textbf{Dynamic routing}, the network learns which experts to activate based on input, enabling specialization. Concurrently, regarding \textbf{No calibration data}, clustering uses only the weight matrix. In this setting, regarding \textbf{Preserves original dimension}, output size remains identical; the module can be a drop‑in replacement for standard linear layers.
+
 
 ### Limitations
 
-- **Increased total parameters**: The sum of expert parameters equals the original, plus the router, so model size grows slightly.
-- **Inefficient loops**: The forward pass involves Python loops over experts and top‑k, which is slow on GPUs. A production implementation would require vectorised gather/scatter operations.
-- **Router overhead**: Every token must pass through the router, adding a small but non‑zero cost.
-- **Hard‑coded layer selection**: Only layers with 'ffn' or 'intermediate' in their name are converted; other linear layers (e.g., attention projections) are left untouched. This may miss opportunities or require adaptation for different naming conventions.
-- **Random seed**: K‑means uses a fixed random state, ensuring reproducibility, but the clustering may not be globally optimal.
-- **Expert balance**: The k‑means clustering does not guarantee balanced expert sizes; some experts may be very small, reducing the effective speed‑up. Further, the top‑k routing may consistently favour a subset of experts, leading to load imbalance.
+Specifically, regarding \textbf{Increased total parameters}, the sum of expert parameters equals the original, plus the router, so model size grows slightly. Furthermore, regarding \textbf{Inefficient loops}, the forward pass involves Python loops over experts and top‑k, which is slow on GPUs. A production implementation would require vectorised gather/scatter operations. Concurrently, regarding \textbf{Router overhead}, every token must pass through the router, adding a small but non‑zero cost. In this setting, regarding \textbf{Hard‑coded layer selection}, only layers with 'ffn' or 'intermediate' in their name are converted; other linear layers (e.g., attention projections) are left untouched. This may miss opportunities or require adaptation for different naming conventions. Additionally, regarding \textbf{Random seed}, k‑means uses a fixed random state, ensuring reproducibility, but the clustering may not be globally optimal. Moreover, regarding \textbf{Expert balance}, the k‑means clustering does not guarantee balanced expert sizes; some experts may be very small, reducing the effective speed‑up. Further, the top‑k routing may consistently favour a subset of experts, leading to load imbalance.
+
 
 ### Comparison with Other MoE Methods
 
