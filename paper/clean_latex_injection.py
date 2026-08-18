@@ -223,14 +223,45 @@ def escape_latex_clean(text):
             in_table = False
 
     def escape_line(l):
-        l = l.replace('\\', '\\textbackslash{}')
-        l = l.replace('&', '\\&').replace('%', '\\%').replace('#', '\\#')
-        l = l.replace('_', '\\_').replace('{', '\\{').replace('}', '\\}')
-        l = l.replace('~', '\\textasciitilde{}').replace('^', '\\textasciicircum{}')
-        l = l.replace('$', '\\$')
+        # Step 1: Protect existing LaTeX math spans ($ ... $) before escaping
+        math_spans = {}
+        mc = [0]
+        def protect_math(m):
+            key = f"MATHPH{mc[0]}X"
+            mc[0] += 1
+            math_spans[key] = m.group(0)
+            return key
+        l = re.sub(r'\$\$.*?\$\$|\$[^$\n]+?\$', protect_math, l)
         
+        # Step 2: Protect \command{content} patterns - and escape underscores inside them
+        cmd_spans = {}
+        cc = [0]
+        def protect_cmd(m):
+            key = f"CMDPH{cc[0]}X"
+            cc[0] += 1
+            # Escape _ inside the command content to prevent "Missing $" errors
+            full = m.group(0)
+            cmd_spans[key] = full.replace('_', r'\_')
+            return key
+        l = re.sub(r'\\[a-zA-Z]+(?:\[[^\]]*\])?(?:\{[^{}]*\})+', protect_cmd, l)
+        l = re.sub(r'\\[a-zA-Z]+\b', protect_cmd, l)
+        
+        # Step 3: Escape remaining special chars
+        l = l.replace('&', r'\&').replace('%', r'\%').replace('#', r'\#')
+        l = l.replace('_', r'\_')
+        l = l.replace('{', r'\{').replace('}', r'\}')
+        l = l.replace('~', r'\textasciitilde{}').replace('^', r'\textasciicircum{}')
+        l = l.replace('$', r'\$')
+        
+        # Step 4: Convert markdown bold/italic
         l = re.sub(r'\*\*(.*?)\*\*', r'\\textbf{\1}', l)
-        l = re.sub(r'\*(.*?)\*', r'\\textit{\1}', l)
+        l = re.sub(r'(?<!\*)\*([^*\n]+?)\*(?!\*)', r'\\textit{\1}', l)
+        
+        # Step 5: Restore protected spans
+        for key, val in cmd_spans.items():
+            l = l.replace(key, val)
+        for key, val in math_spans.items():
+            l = l.replace(key, val)
         return l
 
     for line in lines:
@@ -332,10 +363,7 @@ def escape_latex_clean(text):
             continue
             
         line_indent = len(line) - len(line.lstrip())
-        if list_stack and line_indent == 0:
-            while list_stack:
-                out_lines.append(f"\\end{{{list_stack.pop()[1]}}}")
-                
+        
         if in_table:
             close_envs()
         
@@ -348,8 +376,17 @@ def escape_latex_clean(text):
         stripped = re.sub(r'^\s*---\s*', '', stripped)
         if not stripped:
             continue
-            
-        out_lines.append(escape_line(stripped))
+        
+        # If inside a list and this is indented continuation content,
+        # append it as inline continuation (no new \item)
+        if list_stack and line_indent > 0:
+            out_lines.append(escape_line(stripped))
+        else:
+            # Close any open lists for zero-indent non-list, non-heading content
+            if list_stack and line_indent == 0:
+                while list_stack:
+                    out_lines.append(f"\\end{{{list_stack.pop()[1]}}}")
+            out_lines.append(escape_line(stripped))
 
     close_envs()
     
