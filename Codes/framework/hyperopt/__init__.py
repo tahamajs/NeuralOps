@@ -1,4 +1,4 @@
-from .base import HPO_REGISTRY, BaseOptimizer, BasePruner
+from .base import HPO_REGISTRY, BaseOptimizer, BasePruner, broadcast_pruned_state
 from .config import HPOAlgorithm, HPOBackend, HPOConfig, PruningMethod
 from .integration import run_hpo_experiment
 from .optimizer import HyperOptimizer
@@ -18,6 +18,7 @@ __all__ = [
     "HPO_REGISTRY",
     "BaseOptimizer",
     "BasePruner",
+    "broadcast_pruned_state",
     "suggest_float",
     "suggest_int",
     "suggest_categorical",
@@ -26,3 +27,4 @@ __all__ = [
     "run_hpo_experiment",
     "HyperOptimizer",
 ]
+

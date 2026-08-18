@@ -1,9 +1,14 @@
 """Nevergrad backend – NGOpt, PSO, DE, etc."""
 
+from __future__ import annotations
+
 import logging
 from typing import Any, Callable, Dict, Tuple
 
-import nevergrad as ng
+try:
+    import nevergrad as ng
+except (ImportError, AttributeError):
+    ng = None  # type: ignore
 
 from ..base import HPO_REGISTRY, BaseOptimizer
 from ..config import HPOConfig
@@ -21,6 +26,7 @@ class NevergradOptimizer(BaseOptimizer):
         "de": "DE",
         "random": "RandomSearch",
     }
+
 
     def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)

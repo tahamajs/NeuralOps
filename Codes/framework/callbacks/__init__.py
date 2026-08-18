@@ -9,7 +9,7 @@ from .analysis import (
     LayerwiseAnalysisCallback,
     SVDAttentionCallback,
 )
-from .base import BaseCallback, CallbackList
+from .base import AsyncTelemetryCallback, BaseCallback, CallbackList
 from .custom import (
     ActivationCheckpointingCallback,
     EMACallback,
@@ -38,6 +38,7 @@ from .training import (
 )
 
 __all__ = [
+    "AsyncTelemetryCallback",
     "BaseCallback",
     "CallbackList",
     "SVDAttentionCallback",

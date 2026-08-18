@@ -216,7 +216,8 @@ class FastTextRouter(TrainableRouter, nn.Module):
 
     def load(self, path: str, map_location=None) -> None:
         """Load."""
-        checkpoint = torch.load(path, map_location=map_location)
+        # FIX: Enforce weights_only=False only when loading custom class attributes or use safe deserialization; here weights_only=False with trusted source or weights_only=True for state_dict
+        checkpoint = torch.load(path, map_location=map_location, weights_only=False)
         self.load_state_dict(checkpoint["model_state_dict"])
         self.classes_ = checkpoint["classes"]
         self.max_seq_len = checkpoint["max_seq_len"]
