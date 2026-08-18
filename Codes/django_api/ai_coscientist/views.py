@@ -19,10 +19,12 @@ class StandardPagination(PageNumberPagination):
     max_page_size = 100
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def session_list(request):
-    """List the authenticated user's research sessions."""
+    """List or create research sessions."""
+    if request.method == "POST":
+        return create_session(request)
     qs = ResearchSession.objects.filter(user=request.user).order_by("-created_at")
     paginator = StandardPagination()
     page = paginator.paginate_queryset(qs, request)

@@ -11,7 +11,7 @@ from celery import shared_task
 from django.conf import settings
 from django.utils import timezone
 
-from .models import TrainingRun
+from experiment.models import TrainingRun
 
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=60)

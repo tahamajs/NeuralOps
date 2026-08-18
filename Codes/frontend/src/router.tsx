@@ -54,6 +54,12 @@ const ValidatorDashboardPage = lazy(
 const CustomDashboardBuilder = lazy(
   () => import("./features/experimentExplorer/pages/CustomDashboardBuilder"),
 );
+const HyperparameterExplorer = lazy(
+  () => import("./features/experimentExplorer/pages/HyperparameterExplorer"),
+);
+const GroupDiscussionPage = lazy(
+  () => import("./features/social/pages/GroupDiscussionPage"),
+);
 
 // ========================
 // Attention Dashboard (Zones 1-9) & Transformer Studios
@@ -747,6 +753,8 @@ export const router = createBrowserRouter([
       { path: "/gpu/federation", element: <FederationDashboardPage /> },
       { path: "/gpu/validator", element: <ValidatorDashboardPage /> },
       { path: "/explorer/custom-dashboard", element: <CustomDashboardBuilder /> },
+      { path: "/explorer/hyperparameters", element: <HyperparameterExplorer /> },
+      { path: "/hyperparameters", element: <HyperparameterExplorer /> },
 
       // Experiments
       { path: "/experiments", element: <ExperimentListPage /> },
@@ -922,13 +930,16 @@ export const router = createBrowserRouter([
       { path: "/orgs/:orgId", element: <OrganizationDetailPage /> },
       { path: "/invite/:token", element: <InviteAcceptPage /> },
 
-      // Community (Q&A)
+      // Community (Q&A) & Social
       { path: "/questions", element: <QuestionListPage /> },
       { path: "/questions/ask", element: <AskQuestionPage /> },
       { path: "/questions/:questionId", element: <QuestionDetailPage /> },
       { path: "/tags/:tagName", element: <TagDetailPage /> },
       { path: "/leaderboard", element: <CommunityLeaderboardPage /> },
       { path: "/badges", element: <BadgesPage /> },
+      { path: "/social/discussions", element: <GroupDiscussionPage /> },
+      { path: "/social/discussions/:groupId", element: <GroupDiscussionPage /> },
+      { path: "/groups/:groupId/discussions", element: <GroupDiscussionPage /> },
 
       // Anomaly Detection
       { path: "/anomalies", element: <AnomalyListPage /> },

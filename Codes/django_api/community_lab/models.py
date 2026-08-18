@@ -31,7 +31,9 @@ class ResearchLab(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_labs"
     )
     prompt = models.TextField(
-        help_text="The original prompt that created this lab, e.g. 'Build a lab to improve MRPC accuracy above 0.9'"
+        blank=True,
+        default="",
+        help_text="The original prompt that created this lab, e.g. 'Build a lab to improve MRPC accuracy above 0.9'",
     )
     objective = models.TextField(blank=True)
 
