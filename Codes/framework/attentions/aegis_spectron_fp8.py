@@ -67,14 +67,15 @@ class SpectronSpectralEntropyRouter(nn.Module):
                 S_sq = S.pow(2)
                 S_sum = S_sq.sum(dim=-1, keepdim=True) + 1e-9
                 p = S_sq / S_sum
-                entropy = -(p * torch.log(p + 1e-9)).sum(dim=-1)
+                entropy = -(p * torch.log(p + 1e-9)).sum(dim=-1).to(dtype=X.dtype)
             except Exception:
                 entropy = torch.ones(B, device=X.device, dtype=X.dtype)
                 
         H_b = self.h_proj(X.mean(dim=1))
-        H_b = H_b * entropy.unsqueeze(-1)
+        # FIX: [Ensure entropy tensor matches dtype of H_b before broadcast multiplication]
+        H_b = H_b * entropy.unsqueeze(-1).to(dtype=H_b.dtype)
         
-        c = self.costs.to(dtype=X.dtype, device=X.device)
+        c = self.costs.to(dtype=H_b.dtype, device=X.device)
         logits = (H_b - self.lam * c) / self.tau
         return F.softmax(logits, dim=-1)
 
@@ -143,9 +144,9 @@ class AegisSpectronFP8Attention(BaseAttention):
         
         idx = torch.arange(N, device=Q.device)
         dist = (idx.unsqueeze(-1) - idx.unsqueeze(-2)).abs()
-        mask = (dist > W).unsqueeze(0).unsqueeze(0)
-        
-        attn_weights = attn_weights.masked_fill(mask, -1e9)
+        # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
+        mask_val = -1e4 if attn_weights.dtype in (torch.float16, torch.bfloat16) else -1e9
+        attn_weights = attn_weights.masked_fill(mask, mask_val)
         attn = F.softmax(attn_weights, dim=-1)
         attn = F.dropout(attn, p=self.config.dropout, training=self.training)
         

@@ -151,8 +151,10 @@ class PrimalAttention(BaseAttention):
         F2 = torch.matmul(Q_land, K_land.transpose(-2, -1)) * scale
         F3 = torch.matmul(Q_land, K.transpose(-2, -1)) * scale
 
-        X0 = torch.linalg.pinv(F2)
-        I = torch.eye(F2.size(-1), device=F2.device).unsqueeze(0).unsqueeze(0)
+        # FIX: [Cast to float32 for torch.linalg.pinv to ensure CPU float16/bfloat16 compatibility]
+        F2_f = F2.float() if F2.dtype in (torch.float16, torch.bfloat16) else F2
+        X0 = torch.linalg.pinv(F2_f).to(dtype=F2.dtype)
+        I = torch.eye(F2.size(-1), device=F2.device, dtype=F2.dtype).unsqueeze(0).unsqueeze(0)
         F2_pinv = X0
         for _ in range(self.pinv_iters):
             F2_pinv = torch.matmul(F2_pinv, 2 * I - torch.matmul(F2, F2_pinv))
@@ -160,11 +162,12 @@ class PrimalAttention(BaseAttention):
         attn = torch.matmul(F1, torch.matmul(F2_pinv, F3))
 
         if attention_mask is not None:
+            mask_val = -1e4 if attn.dtype in (torch.float16, torch.bfloat16) else -1e9
             if attention_mask.dim() == 2:
                 mask = attention_mask[:, None, None, :].to(dtype=attn.dtype)
-                attn = attn + (1.0 - mask) * -1e9
+                attn = attn + (1.0 - mask) * mask_val
             else:
-                attn = attn + attention_mask
+                attn = attn + attention_mask.to(dtype=attn.dtype)
 
         probs = F.softmax(attn, dim=-1)
         probs = self.dropout(probs)
