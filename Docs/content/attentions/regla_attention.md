@@ -124,24 +124,24 @@ Input: hidden_states (x) [B, L, D]
 Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, $d_k = D / H$, and $k_{\text{conv}}$ depthwise kernel size.
 
 1. **Linear Projection FLOPs**:
-   - $W_Q, W_K, W_V, W_G, W_O$: $5 \times 2 B L D^2 = 10 B L D^2$ FLOPs ($5 B L D^2$ MACs).
+$W_Q, W_K, W_V, W_G, W_O$: $5 \times 2 B L D^2 = 10 B L D^2$ FLOPs ($5 B L D^2$ MACs).
+
 
 2. **Depthwise Convolution FLOPs**:
-   - $\text{Conv1D}_{\text{dw}}$ ($D$ groups, kernel $k_{\text{conv}}$): $2 B L D k_{\text{conv}}$ FLOPs ($B L D k_{\text{conv}}$ MACs).
+$\text{Conv1D}_{\text{dw}}$ ($D$ groups, kernel $k_{\text{conv}}$): $2 B L D k_{\text{conv}}$ FLOPs ($B L D k_{\text{conv}}$ MACs).
+
 
 3. **Gating & Key Masking**:
-   - Sigmoid evaluation & elementwise multiplication: $3 B L D$ FLOPs.
+Sigmoid evaluation & elementwise multiplication: $3 B L D$ FLOPs.
+
 
 4. **Global Linear Attention Accumulation & Query MatMul**:
-   - $KV$ Matrix State Accumulation ($K_{\text{gated}}^\top V$): $[B, H, d_k, L] \times [B, H, L, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs.
-   - Numerator Contracting MatMul ($Q \cdot KV$): $[B, H, L, d_k] \times [B, H, d_k, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs.
-   - Key Sum Vector ($Z_{\text{sum}}$) & Denominator MatMul: $3 B L D$ FLOPs.
+$KV$ Matrix State Accumulation ($K_{\text{gated}}^\top V$): $[B, H, d_k, L] \times [B, H, L, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs. Furthermore, Numerator Contracting MatMul ($Q \cdot KV$): $[B, H, L, d_k] \times [B, H, d_k, d_k] \implies 2 B H L d_k^2 = 2 B L D d_k$ FLOPs. Concurrently, Key Sum Vector ($Z_{\text{sum}}$) & Denominator MatMul: $3 B L D$ FLOPs.
+
 
 ### Complexity Summary:
-- **Total MACs**: $5 B L D^2 + B L D k_{\text{conv}} + 2 B L D d_k$
-- **Total FLOPs**: $10 B L D^2 + 2 B L D k_{\text{conv}} + 4 B L D d_k + 6 B L D$
-- **Parameter Footprint**: $5 D^2 + D k_{\text{conv}} + 5 D$ floats.
-- **Asymptotic Complexity**: Strictly linear $\mathcal{O}(L)$ in sequence length.
+Specifically, regarding \textbf{Total MACs}, $5 B L D^2 + B L D k_{\text{conv}} + 2 B L D d_k$ Furthermore, regarding \textbf{Total FLOPs}, $10 B L D^2 + 2 B L D k_{\text{conv}} + 4 B L D d_k + 6 B L D$ Concurrently, regarding \textbf{Parameter Footprint}, $5 D^2 + D k_{\text{conv}} + 5 D$ floats. In this setting, regarding \textbf{Asymptotic Complexity}, strictly linear $\mathcal{O}(L)$ in sequence length.
+
 
 ---
 

@@ -70,8 +70,8 @@ Because **W_sp** is sparse (50% zeros) and **Δ** is low‑rank (rank ≤ `r`), 
 
 ### 4. Why This Combination?
 
-- **Quantization + Sparsity**: Applying sparsity **after** quantization ensures that the zeroed entries are exact zeros (not merely small values), which is critical for sparse storage formats. The 2:4 pattern is chosen for its hardware support.
-- **Low‑Rank Correction**: Pure quantization + sparsity loses a significant amount of information; adding a small low‑rank correction recovers much of the accuracy with minimal parameter overhead. The correction acts as a compressed representation of the pruning/quantization error.
+Specifically, regarding \textbf{Quantization + Sparsity}, applying sparsity **after** quantization ensures that the zeroed entries are exact zeros (not merely small values), which is critical for sparse storage formats. The 2:4 pattern is chosen for its hardware support. Furthermore, regarding \textbf{Low‑Rank Correction}, pure quantization + sparsity loses a significant amount of information; adding a small low‑rank correction recovers much of the accuracy with minimal parameter overhead. The correction acts as a compressed representation of the pruning/quantization error.
+
 
 ---
 
@@ -81,10 +81,8 @@ Because **W_sp** is sparse (50% zeros) and **Δ** is low‑rank (rank ≤ `r`), 
 
 For a linear layer of size `M × N`:
 
-- **Quantization**: O(M·N) to compute min, max, and round. Negligible.
-- **2:4 Sparsity**: O(M·N) to scan each row in blocks of 4 and find the top‑2 values. The loops in the current implementation are Python loops over rows and blocks, which are slow for large matrices but acceptable for post‑processing. Complexity is O(M·N).
-- **Residual SVD**: O(M·N·min(M,N)) for the full SVD of the residual via `np.linalg.svd`. This is the dominant cost. For a 768×768 matrix, about 4.5×10⁸ operations, a few milliseconds on CPU.
-- **Total per layer**: O(M·N·min(M,N)). For a model with L layers, total time is O(L·D³) where D is typical hidden size. For DistilBERT (L~72), compression takes a few seconds.
+Specifically, regarding \textbf{Quantization}, o(M·N) to compute min, max, and round. Negligible. Furthermore, regarding \textbf{2:4 Sparsity}, o(M·N) to scan each row in blocks of 4 and find the top‑2 values. The loops in the current implementation are Python loops over rows and blocks, which are slow for large matrices but acceptable for post‑processing. Complexity is O(M·N). Concurrently, regarding \textbf{Residual SVD}, o(M·N·min(M,N)) for the full SVD of the residual via `np.linalg.svd`. This is the dominant cost. For a 768×768 matrix, about 4.5×10⁸ operations, a few milliseconds on CPU. In this setting, regarding \textbf{Total per layer}, o(M·N·min(M,N)). For a model with L layers, total time is O(L·D³) where D is typical hidden size. For DistilBERT (L~72), compression takes a few seconds.
+
 
 ### B. Inference Complexity
 
@@ -98,15 +96,12 @@ then the FLOPs could be reduced: the sparse part costs ≈ 0.5·M·N (due to 50%
 
 ### C. Memory Usage
 
-- **During compression**:  
-  - Original weight **W**: M·N floats.  
-  - Quantized and sparse copies: a few more M·N arrays.  
-  - SVD of residual: U (M×min(M,N)), Σ (min(M,N)), V^T (min(M,N)×N).  
+Specifically, regarding \textbf{During compression},  Furthermore, Original weight **W**: M·N floats. Concurrently, Quantized and sparse copies: a few more M·N arrays. In this setting, SVD of residual: U (M×min(M,N)), Σ (min(M,N)), V^T (min(M,N)×N).
+
   Total temporary memory is roughly 3–4× the weight size, which is manageable.
 
-- **After compression**:  
-  - The weight tensor is still a full `M × N` dense matrix; the model’s parameter count does not decrease.  
-  - To achieve memory savings, one must store **W_sp** in a sparse format (e.g., 2‑bit indices + values) and **Δ** as two matrices **A** and **B**. The total stored parameters would drop from `M·N` to about `0.5·M·N` (sparse) + `r·(M+N)` (low‑rank). For M=N=768, r=8, the original 589k parameters become ≈ 294k + 8·1536 ≈ 306k, a reduction of ~48%. With lower bit‑width for the sparse values, even more savings are possible.
+Specifically, regarding \textbf{After compression},  Furthermore, The weight tensor is still a full `M × N` dense matrix; the model’s parameter count does not decrease. Concurrently, To achieve memory savings, one must store **W_sp** in a sparse format (e.g., 2‑bit indices + values) and **Δ** as two matrices **A** and **B**. The total stored parameters would drop from `M·N` to about `0.5·M·N` (sparse) + `r·(M+N)` (low‑rank). For M=N=768, r=8, the original 589k parameters become ≈ 294k + 8·1536 ≈ 306k, a reduction of ~48%. With lower bit‑width for the sparse values, even more savings are possible.
+
 
 ---
 
@@ -123,9 +118,8 @@ class SLiMCompressor(BaseCompressor):
         self.rank = rank
 ```
 
-- **`bits`**: Quantization bit‑width (default 4). Must be ≥ 2.
-- **`sparsity`**: This parameter is defined but **not used** in the logic; the 2:4 pattern enforces a fixed 50% sparsity. The attribute remains for possible future extensions (e.g., varying block sizes).
-- **`rank`**: Rank of the low‑rank correction (default 8). Higher rank preserves more information but adds more parameters.
+Specifically, regarding \textbf{`bits`}, quantization bit‑width (default 4). Must be ≥ 2. Furthermore, regarding \textbf{`sparsity`}, this parameter is defined but **not used** in the logic; the 2:4 pattern enforces a fixed 50% sparsity. The attribute remains for possible future extensions (e.g., varying block sizes). Concurrently, regarding \textbf{`rank`}, rank of the low‑rank correction (default 8). Higher rank preserves more information but adds more parameters.
+
 
 **`compress()` method**:
 
@@ -186,18 +180,13 @@ Then run the compression pipeline. All linear layer weights will be replaced by 
 
 ### Advantages
 
-- **One‑shot, data‑free**: No calibration or fine‑tuning required; the pipeline is purely algebraic.
-- **Explicit structure**: The resulting weight matrix is a sum of a 2:4 sparse matrix and a low‑rank matrix, both of which are highly compressible for storage.
-- **Hardware‑friendly**: The 2:4 pattern is directly accelerated by NVIDIA sparse tensor cores, and the low‑rank part can be computed as two small matrix multiplies.
-- **Tunable**: The bit‑width and correction rank provide two knobs to balance accuracy and compression.
+Specifically, regarding \textbf{One‑shot, data‑free}, no calibration or fine‑tuning required; the pipeline is purely algebraic. Furthermore, regarding \textbf{Explicit structure}, the resulting weight matrix is a sum of a 2:4 sparse matrix and a low‑rank matrix, both of which are highly compressible for storage. Concurrently, regarding \textbf{Hardware‑friendly}, the 2:4 pattern is directly accelerated by NVIDIA sparse tensor cores, and the low‑rank part can be computed as two small matrix multiplies. In this setting, regarding \textbf{Tunable}, the bit‑width and correction rank provide two knobs to balance accuracy and compression.
+
 
 ### Limitations
 
-- **No immediate speed‑up**: The weight is stored densely; a custom forward implementation is required to realise the computational benefits.
-- **Fixed sparsity pattern**: The 2:4 pattern is rigid; some rows might benefit from a different distribution, but the method forces exact 50% sparsity.
-- **Correction rank uniform**: The same rank is used for all layers, which may be suboptimal for layers with different spectral properties.
-- **Python loops for 2:4**: The current implementation of the 2:4 sparsity is not vectorised and may be slow for extremely large matrices; a GPU‑based implementation would be faster.
-- **Quantization before sparsity may distort pattern**: The 2:4 selection is based on the quantized magnitudes, which may differ from the original. This could be either beneficial (matching the final representation) or harmful (discarding weights that were important before quantization).
+Specifically, regarding \textbf{No immediate speed‑up}, the weight is stored densely; a custom forward implementation is required to realise the computational benefits. Furthermore, regarding \textbf{Fixed sparsity pattern}, the 2:4 pattern is rigid; some rows might benefit from a different distribution, but the method forces exact 50% sparsity. Concurrently, regarding \textbf{Correction rank uniform}, the same rank is used for all layers, which may be suboptimal for layers with different spectral properties. In this setting, regarding \textbf{Python loops for 2:4}, the current implementation of the 2:4 sparsity is not vectorised and may be slow for extremely large matrices; a GPU‑based implementation would be faster. Additionally, regarding \textbf{Quantization before sparsity may distort pattern}, the 2:4 selection is based on the quantized magnitudes, which may differ from the original. This could be either beneficial (matching the final representation) or harmful (discarding weights that were important before quantization).
+
 
 ### Comparison with Related Hybrid Methods
 

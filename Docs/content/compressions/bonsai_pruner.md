@@ -50,16 +50,14 @@ Let $S \in (0, 1)$ be the target final sparsity ratio and $T \in \mathbb{N}$ be 
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Initialization**:
-   - Extract weight matrix $W \in \mathbb{R}^{N \times M}$ in FP32 precision.
-   - Set `final_mask = torch.ones_like(W)`.
+Extract weight matrix $W \in \mathbb{R}^{N \times M}$ in FP32 precision. Furthermore, Set `final_mask = torch.ones_like(W)`.
+
 2. **Progressive Iteration Loop ($s = 0 \dots T-1$)**:
-   - Compute step target sparsity $S_{\text{step}} = S \cdot \frac{s + 1}{T}$.
-   - Flatten $|W|$ into a 1D tensor.
-   - Find magnitude quantile threshold $\tau$ retaining top $(1 - S_{\text{step}})$ fraction.
-   - Construct step binary mask matrix $M = (|W| \ge \tau)$.
-   - Apply mask $W \leftarrow W \odot M$.
+Compute step target sparsity $S_{\text{step}} = S \cdot \frac{s + 1}{T}$. Furthermore, Flatten $|W|$ into a 1D tensor. Concurrently, Find magnitude quantile threshold $\tau$ retaining top $(1 - S_{\text{step}})$ fraction. In this setting, Construct step binary mask matrix $M = (|W| \ge \tau)$. Additionally, Apply mask $W \leftarrow W \odot M$.
+
 3. **Final Assembly**:
-   - Store $W_{\text{pruned}} = W \odot M_{\text{final}}$ back into `module.weight.data`.
+Store $W_{\text{pruned}} = W \odot M_{\text{final}}$ back into `module.weight.data`.
+
 
 ```
 Input Weight W ──► Iterative Loop s = 0...T-1 ──► Compute Threshold τ_s
@@ -95,7 +93,8 @@ Because intermediate threshold increments $\tau_t - \tau_{t-1}$ are small, gradi
 
 ### 5.2 Failure Cases
 
-- **Lack of Intermediate Re-optimization**: If weights are not fine-tuned between steps, Bonsai reduces mathematically to single-shot pruning with higher overhead.
+Specifically, regarding \textbf{Lack of Intermediate Re-optimization}, if weights are not fine-tuned between steps, Bonsai reduces mathematically to single-shot pruning with higher overhead.
+
 
 ---
 

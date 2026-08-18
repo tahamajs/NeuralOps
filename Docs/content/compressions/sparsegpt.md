@@ -63,17 +63,14 @@ where $[H^{-1}]_{j, j}$ represents the diagonal entry of the inverse Hessian for
 ### 3.1 Dataflow & Execution Pipeline
 
 1. **Activation Capture**:
-   - Register forward hook on target `nn.Linear` module.
-   - Pass $N_{\text{samples}}$ calibration sequences (e.g., 128 C4 samples) to capture input activation $X \in \mathbb{R}^{d_{\text{in}} \times N}$.
+Register forward hook on target `nn.Linear` module. Furthermore, Pass $N_{\text{samples}}$ calibration sequences (e.g., 128 C4 samples) to capture input activation $X \in \mathbb{R}^{d_{\text{in}} \times N}$.
+
 2. **Inverse Hessian Accumulation**:
-   - Iteratively update $H \leftarrow H + 2 X_i X_i^T$.
-   - Compute inverse $H^{-1} = (H + \lambda I)^{-1}$ via Cholesky decomposition.
+Iteratively update $H \leftarrow H + 2 X_i X_i^T$. Furthermore, Compute inverse $H^{-1} = (H + \lambda I)^{-1}$ via Cholesky decomposition.
+
 3. **Block-Wise Pruning & Weight Compensation**:
-   - Process $W$ in column blocks of size $B_{\text{blk}} = 128$.
-   - For each column $j$ within the block:
-     - Evaluate metric $S_{j} = \frac{|W_{:, j}|^2}{[H^{-1}]_{j, j}^2}$.
-     - Apply 2:4 or unstructured sparsity mask.
-     - Broadcast error update to remaining columns in the block and downstream weights.
+Process $W$ in column blocks of size $B_{\text{blk}} = 128$. Furthermore, For each column $j$ within the block: Concurrently, Evaluate metric $S_{j} = \frac{|W_{:, j}|^2}{[H^{-1}]_{j, j}^2}$. In this setting, Apply 2:4 or unstructured sparsity mask. Additionally, Broadcast error update to remaining columns in the block and downstream weights.
+
 
 ```
 Calibration Inputs ──► Forward Hook ──► Accumulate H = 2 X X^T
@@ -107,8 +104,8 @@ $$\Delta \mathcal{L}_j = \frac{1}{2} \sum_{i=1}^{d_{\text{out}}} \frac{\left( W_
 
 ### 5.2 Perplexity Metrics on Standard Datasets
 
-- **OPT-66B (50% Unstructured)**: $\Delta \text{PPL}_{\text{WikiText2}} \le +0.35$
-- **LLaMA-2-70B (2:4 Semi-Structured)**: $\Delta \text{PPL}_{\text{C4}} \le +0.42$
+Specifically, regarding \textbf{OPT-66B (50% Unstructured)}, $\Delta \text{PPL}_{\text{WikiText2}} \le +0.35$ Furthermore, regarding \textbf{LLaMA-2-70B (2:4 Semi-Structured)}, $\Delta \text{PPL}_{\text{C4}} \le +0.42$
+
 
 ---
 

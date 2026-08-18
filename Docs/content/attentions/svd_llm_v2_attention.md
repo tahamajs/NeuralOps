@@ -127,40 +127,33 @@ Y = F.linear(C, W_O) \in \mathbb{R}^{B \times N \times D}
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### Computational Workload (FLOPs & MACs)
-Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $r$ rank.
+### Computational Workload & Asymptotic Complexity
+The computational workload of SVD-LLM V2 encompasses explicit factor synthesis alongside standard scaled dot-product attention operations. Parameterized by batch size $B$, sequence length $N$, hidden dimension $D$, attention head count $H$ (with per-head dimension $d_k = D/H$), and truncated compression rank $r$:
 
-1. **Weight Matrix Synthesis**:
-   - For each projection: $2 D r D = 2 D^2 r$ FLOPs. Total for 4 projections: $8 D^2 r$ FLOPs.
-2. **Linear Projections**:
-   - $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
-3. **Core Attention Workload**:
-   - $Q K^\top$ & $A V$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H N^2$ FLOPs.
+During forward propagation, synthesizing the effective projection weight matrices $W_{\text{synth}} = (U \odot S) V^H$ across the four attention projections ($W_Q, W_K, W_V, W_O$) requires $4 \times 2 D^2 r = 8 D^2 r$ FLOPs. Once synthesized, the dense linear transformations mapping input activations into multi-head query, key, value, and output representations consume $8 B N D^2$ FLOPs ($4 B N D^2$ MACs). Concurrently, evaluating the scaled dot-product affinity matrix $Q K^\top$ and aggregating context values $A V$ demands $4 B N^2 D$ FLOPs, supplemented by $7 B H N^2$ FLOPs for causal masking and Softmax normalization.
 
-4. **Total Workload Summary**:
-   - **Total MACs**: $4 B N D^2 + 4 D^2 r + 2 B N^2 D$
-   - **Total FLOPs**: $8 B N D^2 + 8 D^2 r + 4 B N^2 D + 7 B H N^2$
+Summing these individual operational stages yields the total computational budget:
+\[
+\text{Total FLOPs} = 8 B N D^2 + 8 D^2 r + 4 B N^2 D + 7 B H N^2
+\]
+which corresponds to $4 B N D^2 + 4 D^2 r + 2 B N^2 D$ Multiply-Accumulate (MAC) operations. When factors are fused ahead of time or executed via two-stage low-rank matrix multiplications, the $8 D^2 r$ synthesis overhead is entirely avoided.
 
 ### Parameter Footprint & Memory Reduction
-- **Dense MHA Parameter Count**: $4 D^2 + 4 D$ floats.
-- **SVD-LLM V2 Parameter Count**:
-  \[
-  \text{Params}_{\text{SVDLLMV2}} = 4 \cdot [D \cdot r + r + r \cdot D] = 4 \cdot r (2D + 1) \text{ floats}
-  \]
-  For $D = 4096, r = 64$:
-  - Dense MHA: $4 \times 4096^2 \approx 67.1 \text{ million parameters}$.
-  - SVD-LLM V2: $4 \times 64 \times (8193) \approx 2.10 \text{ million parameters}$ (**$96.9\%$ parameter compression**).
+The primary architectural advantage of SVD-LLM V2 lies in its aggressive parameter compression. While standard dense multi-head attention blocks demand $4 D^2 + 4 D$ parameters, the factorized representation stores only the explicit singular triplets:
+\[
+\text{Params}_{\text{SVDLLMV2}} = 4 \cdot [D \cdot r + r + r \cdot D] = 4 \cdot r (2D + 1) \text{ floats}
+\]
+For a typical model dimension of $D = 4096$ with compression rank $r = 64$, dense attention requires approximately $67.1$ million parameters, whereas SVD-LLM V2 requires merely $2.10$ million parameters—achieving an extraordinary **$96.9\%$ reduction in projection weight memory** while capturing the vast majority of spectral energy.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### On-the-Fly Weight Matrix Synthesis Overhead
-Executing `(u * s) @ vh` on every forward pass adds $8 D^2 r$ FLOPs. For inference loops, pre-calculating and caching $W_{\text{synth}}$ avoids redundant matrix multiplications.
+### Runtime Matrix Materialization and Memory Bandwidth Overhead
+A substantial computational bottleneck arises when projection weights are synthesized dynamically on every forward pass via $W_{\text{synth}} = (U \odot S) V^H$. In eager execution, allocating temporary memory for the dense $D \times D$ reconstructed matrices incurs an auxiliary cost of $8 D^2 r$ FLOPs per layer along with elevated GPU High-Bandwidth Memory (HBM) traffic. During auto-regressive token generation, repeatedly reconstructing identical weight matrices introduces redundant arithmetic overhead. To mitigate this latency penalty, production deployment requires either static pre-synthesis caching or fused factor decomposition that maps activations directly through $X V^H \text{diag}(S) U^\top$ without materializing full weight matrices.
 
-### Singular Value Underflow ($S_k \to 0$)
-If singular values in parameter buffer $S$ decay to zero during training, corresponding columns of $U$ and rows of $V^H$ receive zero gradient updates, collapsing effective rank. Adding lower bound regularizers ($S \ge \epsilon$) maintains factor rank.
+### Spectral Underflow, Gradient Vanishing, and Rank Collapse
+During fine-tuning or post-training adaptation, the explicit parameterization of singular values $S \in \mathbb{R}^r$ exposes the model to severe optimization instability. If small singular values decay toward zero under gradient descent, the gradient updates flowing back into the corresponding left-singular columns $U_{:, k}$ and right-singular rows $V^H_{k, :}$ vanish proportionally, as $\nabla_U \mathcal{L} \propto S_k$ and $\nabla_V \mathcal{L} \propto S_k$. This induces an unrecoverable rank collapse where dead spectral channels become frozen in optimization saddle points. To preserve the effective dimensionality of the factorized subspace, the training objective must incorporate spectral lower bounds ($S_k \ge \epsilon$) or spectral entropy penalties to stabilize gradient dynamics across the loss landscape.
 
 ---
 
@@ -195,9 +188,14 @@ A Triton kernel for SVD-LLM V2 bypasses full $D \times D$ matrix synthesis by st
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Pre-Computed Inference Caching**: Fuse factor buffers $W = (U \odot S) V^H$ prior to generation loops to eliminate runtime factor synthesis overhead.
-2. **Singular Value Entropy Regularization**: Add spectral entropy loss $\mathcal{L}_{\text{entropy}} = -\sum p_i \log p_i$ to push singular value energy into a minimal subset of rank channels.
-3. **Quantized Factor Buffers**: Store $U$ and $V^H$ in INT4 format while retaining FP32 for scalar singular values $S$, achieving up to $32\times$ parameter memory compression.
+### Zero-Cost Static Weight Consolidation for Inference
+Prior to deployment in auto-regressive generation engines, the explicit factor buffers can be deterministically fused into static dense projection weights $W = (U \odot S) V^H$. This pre-computation completely eliminates runtime synthesis FLOPs and intermediate activation buffers, allowing compressed checkpoints to execute with the standard high-throughput execution profile of native GEMM kernels while maintaining extreme storage efficiency during distribution.
+
+### Spectral Entropy Loss for Optimal Energy Compaction
+To maximize representation density across the factorized rank budget, model fine-tuning can incorporate a spectral entropy regularization term $\mathcal{L}_{\text{entropy}} = -\sum_{k=1}^r p_k \log p_k$, where $p_k = S_k / \sum_{j} S_j$. This objective penalizes diffuse singular value spectra and drives the dominant matrix energy into the top principal components, facilitating dynamic post-training pruning to even lower ranks without performance degradation.
+
+### Mixed-Precision Quantized Factor Parameterization
+A powerful architectural synergy combines low-rank spectral decomposition with extreme quantization. By quantizing the high-dimensional singular vector matrices $U$ and $V^H$ into ultra-low bitwidths (e.g., INT4 or FP4) while preserving full FP32 precision for the compact vector of singular values $S \in \mathbb{R}^r$, the architecture achieves up to $32\times$ parameter compression. The explicit singular value scaling acts as a natural channel-wise scale factor, counteracting quantization noise and stabilizing the representational capacity of the quantized manifold.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

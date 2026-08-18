@@ -129,49 +129,47 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 1. **Low-Rank Projections ($Q, K, V, O$)**:
    $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
 2. **Local Sliding-Window Branch**:
-   - Scores: $2 B H N W d_h = 2 B N D W$
-   - Softmax & Value product: $2 B H N W d_h = 2 B N D W$
-   $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+Scores: $2 B H N W d_h = 2 B N D W$ Furthermore, Softmax & Value product: $2 B H N W d_h = 2 B N D W$ $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+
 3. **Global Soft-Pruned Kernel Branch**:
-   - Pruning MLP: $2 B N D (D/4) + 2 B N (D/4) H = \frac{1}{2} B N D^2 + \frac{1}{2} B N D H$
-   - Key/Value soft-pruning modulation: $2 B N H d_h = 2 B N D$
-   - Memory State accumulation $\phi(K_g)^T V_g$: $2 B H N d_h^2 = 2 B N D d_h$
-   - Query projection $\phi(Q) M^{\text{global}}$: $2 B H N d_h^2 = 2 B N D d_h$
-   $$\text{FLOPs}_{\text{global}} = \frac{1}{2} B N D^2 + \frac{1}{2} B N D H + 4 B N D d_h + 2 B N D$$
+Pruning MLP: $2 B N D (D/4) + 2 B N (D/4) H = \frac{1}{2} B N D^2 + \frac{1}{2} B N D H$ Furthermore, Key/Value soft-pruning modulation: $2 B N H d_h = 2 B N D$ Concurrently, Memory State accumulation $\phi(K_g)^T V_g$: $2 B H N d_h^2 = 2 B N D d_h$ In this setting, Query projection $\phi(Q) M^{\text{global}}$: $2 B H N d_h^2 = 2 B N D d_h$ $$\text{FLOPs}_{\text{global}} = \frac{1}{2} B N D^2 + \frac{1}{2} B N D H + 4 B N D d_h + 2 B N D$$
+
 4. **Fusion Gating & Output Assembly**:
    $$\text{FLOPs}_{\text{fusion}} = 2 B N D H + 3 B N D$$
 
 $$\text{FLOPs}_{\text{total}} \approx 16 B N D r + 4 B N D W + \frac{1}{2} B N D^2 + 4 B N D d_h$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 8 B N D r + 2 B N D W + \frac{1}{4} B N D^2 + 2 B N D d_h$$
-- **Parameter Memory**:
+Specifically, regarding \textbf{Parameter Memory}, 
+
   $$\Theta = 8 D r + \frac{D^2}{4} + \frac{5 D H}{4}$$
-- **Activation Footprint**:
-  - Un-fused local logits: $\mathcal{O}(B H N W)$
-  - Global memory state: $\mathcal{O}(B H d_h^2)$
-  - Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Un-fused local logits: $\mathcal{O}(B H N W)$ Concurrently, Global memory state: $\mathcal{O}(B H d_h^2)$ In this setting, Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **Aegis-Attention V2**: $\mathcal{O}\left(N D (r + W + d_h + D/N)\right)$ compute, $\mathcal{O}(N D + H d_h^2)$ memory footprint.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory. Furthermore, regarding \textbf{Aegis-Attention V2}, $\mathcal{O}\left(N D (r + W + d_h + D/N)\right)$ compute, $\mathcal{O}(N D + H d_h^2)$ memory footprint.
+
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Low-Rank Approximation Error & Rank Collapse
-- **Mechanism**: Approximating $W_0 \in \mathbb{R}^{D \times D}$ via rank $r \ll D$ truncates the singular value tail. If pre-trained Transformer layers possess isotropic weight spectra (singular values decay slowly), rank truncation causes severe reconstruction loss $\|W_0 - W_1 W_2\|_F^2 \gg 0$.
-- **Failure Mode**: Network fails to converge during zero-shot initialization if $r < 32$ on deep layers.
+At the architectural level, the underlying operational mechanism reveals that approximating $W_0 \in \mathbb{R}^{D \times D}$ via rank $r \ll D$ truncates the singular value tail. If pre-trained Transformer layers possess isotropic weight spectra (singular values decay slowly), rank truncation causes severe reconstruction loss $\|W_0 - W_1 W_2\|_F^2 \gg 0$.
+
+Specifically, regarding \textbf{Failure Mode}, network fails to converge during zero-shot initialization if $r < 32$ on deep layers.
+
 
 ### 5.2 Soft-Pruning Gating Collapse
-- **Mechanism**: The sigmoid pruning gate $g = \sigma(\text{MLP}(X))$ can suffer from vanishing gradients if initialized poorly, leading to $g \to 0$ across all sequence tokens.
-- **Consequence**: Key and value representations in the global branch become zeroed ($K_g = 0, V_g = 0$), causing the global matrix $M^{\text{global}}$ to collapse to zero and triggering division by zero ($\epsilon = 1e-8$ instability).
+At the architectural level, the underlying operational mechanism reveals that the sigmoid pruning gate $g = \sigma(\text{MLP}(X))$ can suffer from vanishing gradients if initialized poorly, leading to $g \to 0$ across all sequence tokens. Consequently, this dynamic induces structural implications wherein key and value representations in the global branch become zeroed ($K_g = 0, V_g = 0$), causing the global matrix $M^{\text{global}}$ to collapse to zero and triggering division by zero ($\epsilon = 1e-8$ instability).
+
 
 ### 5.3 Softmax Underflow in Local Window Branch
-- **Mechanism**: When tokens inside the sliding window are heavily masked due to padding $M^{\text{pad}}$, rows containing all $-\infty$ entries produce $\text{NaN}$ outputs during PyTorch `F.softmax(S, dim=-1)`.
-- **Mitigation**: Execute `torch.nan_to_num(attn_local, nan=0.0)` or apply explicit guard conditions prior to value multiplication.
+At the architectural level, the underlying operational mechanism reveals that when tokens inside the sliding window are heavily masked due to padding $M^{\text{pad}}$, rows containing all $-\infty$ entries produce $\text{NaN}$ outputs during PyTorch `F.softmax(S, dim=-1)`. To systematically mitigate this constraint, the framework enforces an optimization protocol such that execute `torch.nan_to_num(attn_local, nan=0.0)` or apply explicit guard conditions prior to value multiplication.
+
 
 ---
 
@@ -201,19 +199,16 @@ $$\text{FLOPs}_{\text{total}} \approx 16 B N D r + 4 B N D W + \frac{1}{2} B N D
 Executing two separate matrix multiplications (`Linear(D, r)` followed by `Linear(r, D)`) requires storing the intermediate tensor $[B, N, r]$ back to High Bandwidth Memory (HBM).
 
 **Triton Optimization**:
-- Implement a single Triton kernel that loads a tile of $X \in \mathbb{R}^{64 \times D}$ into SRAM.
-- Perform first GEMM with $W_1 \in \mathbb{R}^{D \times r}$ into SRAM register files.
-- Perform second GEMM directly with $W_2 \in \mathbb{R}^{r \times D}$ from registers.
-- **HBM Bandwidth Reduction**: Eliminates HBM write/read overhead for $[B, N, r]$, achieving up to $1.8\times$ latency reduction.
+Implement a single Triton kernel that loads a tile of $X \in \mathbb{R}^{64 \times D}$ into SRAM. Furthermore, Perform first GEMM with $W_1 \in \mathbb{R}^{D \times r}$ into SRAM register files. Concurrently, Perform second GEMM directly with $W_2 \in \mathbb{R}^{r \times D}$ from registers. In this setting, regarding \textbf{HBM Bandwidth Reduction}, eliminates HBM write/read overhead for $[B, N, r]$, achieving up to $1.8\times$ latency reduction.
+
 
 ### 6.2 Triton Strategy 2: Block-Sparse Local Window Attention
-- Construct a block-sparse attention kernel where threadblocks process 2D tiles of size `BLOCK_M = 64` and `BLOCK_N = 64`.
-- A tile $(i, j)$ is completely skipped if $|i \cdot 64 - j \cdot 64| > W_{\text{local}} + 64$.
-- Incorporate FlashAttention-style online softmax normalization using SRAM registers (`m_i` maximum tracking, `l_i` sum tracking), reducing local branch memory overhead from $\mathcal{O}(B H N W)$ to $\mathcal{O}(1)$.
+Construct a block-sparse attention kernel where threadblocks process 2D tiles of size `BLOCK_M = 64` and `BLOCK_N = 64`. Furthermore, A tile $(i, j)$ is completely skipped if $|i \cdot 64 - j \cdot 64| > W_{\text{local}} + 64$. Concurrently, Incorporate FlashAttention-style online softmax normalization using SRAM registers (`m_i` maximum tracking, `l_i` sum tracking), reducing local branch memory overhead from $\mathcal{O}(B H N W)$ to $\mathcal{O}(1)$.
+
 
 ### 6.3 Triton Strategy 3: Fused Global Kernel Aggregation Grid
-- Fuse the token soft-pruning MLP, feature activation $\phi(x) = \text{ELU}(x) + 1.0$, key scaling, and outer product calculation into a single block reduction kernel.
-- Each threadblock computes local tile outer products $\sum_{j \in \text{Tile}} \phi(K_{g, j})^T V_{g, j}$ directly inside shared memory and performs atomic addition into the global memory matrix $M^{\text{global}} \in \mathbb{R}^{B \times H \times d_h \times d_h}$.
+Fuse the token soft-pruning MLP, feature activation $\phi(x) = \text{ELU}(x) + 1.0$, key scaling, and outer product calculation into a single block reduction kernel. Furthermore, Each threadblock computes local tile outer products $\sum_{j \in \text{Tile}} \phi(K_{g, j})^T V_{g, j}$ directly inside shared memory and performs atomic addition into the global memory matrix $M^{\text{global}} \in \mathbb{R}^{B \times H \times d_h \times d_h}$.
+
 
 ---
 

@@ -110,23 +110,20 @@ Input: hidden_states [B, L, D]
 Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ heads, $d_k = D / H$, and $\rho$ retention ratio ($K_{\text{keep}} = \rho L$).
 
 1. **Linear Projections**:
-   - $W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+$W_Q, W_K, W_V, W_O$: $4 \times 2 B L D^2 = 8 B L D^2$ FLOPs ($4 B L D^2$ MACs).
+
 
 2. **FASA Importance Calculation & Top-K Gathering**:
-   - Mean & Variance over head dimension: $2 B H L d_k = 2 B L D$ FLOPs.
-   - Head mean reduction: $B H L$ FLOPs.
-   - Top-K Sort ($B \times L$ array): $\mathcal{O}(B \cdot L \log K_{\text{keep}})$ operations.
-   - Tensor Gather: Index lookup & memory copying.
+Mean & Variance over head dimension: $2 B H L d_k = 2 B L D$ FLOPs. Furthermore, Head mean reduction: $B H L$ FLOPs. Concurrently, Top-K Sort ($B \times L$ array): $\mathcal{O}(B \cdot L \log K_{\text{keep}})$ operations. In this setting, Tensor Gather: Index lookup & memory copying.
+
 
 3. **Pruned Core Attention FLOPs ($Q K_{\text{pruned}}^\top$ & $A V_{\text{pruned}}$)**:
-   - $Q K_{\text{pruned}}^\top$: $[B, H, L, d_k] \times [B, H, d_k, \rho L] \implies 2 B H L (\rho L) d_k = 2 \rho B L^2 D$ FLOPs ($ \rho B L^2 D$ MACs).
-   - Softmax overhead: $\approx 5 B H L (\rho L) = 5 \rho B H L^2$ FLOPs.
-   - $A V_{\text{pruned}}$: $[B, H, L, \rho L] \times [B, H, \rho L, d_k] \implies 2 \rho B L^2 D$ FLOPs ($ \rho B L^2 D$ MACs).
+$Q K_{\text{pruned}}^\top$: $[B, H, L, d_k] \times [B, H, d_k, \rho L] \implies 2 B H L (\rho L) d_k = 2 \rho B L^2 D$ FLOPs ($ \rho B L^2 D$ MACs). Furthermore, Softmax overhead: $\approx 5 B H L (\rho L) = 5 \rho B H L^2$ FLOPs. Concurrently, $A V_{\text{pruned}}$: $[B, H, L, \rho L] \times [B, H, \rho L, d_k] \implies 2 \rho B L^2 D$ FLOPs ($ \rho B L^2 D$ MACs).
+
 
 ### Complexity Summary:
-- **Total MACs**: $4 B L D^2 + 2 \rho B L^2 D$
-- **Total FLOPs**: $8 B L D^2 + 4 \rho B L^2 D + 2 B L D + 5 \rho B H L^2$
-- **Theoretical Flop Reduction**: For $\rho = 0.189$, core attention FLOPs drop by $\approx 81.1\%$ ($5.29\times$ speedup on matrix multiplication).
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 2 \rho B L^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 4 \rho B L^2 D + 2 B L D + 5 \rho B H L^2$ Concurrently, regarding \textbf{Theoretical Flop Reduction}, for $\rho = 0.189$, core attention FLOPs drop by $\approx 81.1\%$ ($5.29\times$ speedup on matrix multiplication).
+
 
 ---
 

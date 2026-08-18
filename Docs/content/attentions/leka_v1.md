@@ -86,15 +86,13 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 1. **Linear Q, K, V Projections**:
    $$\text{FLOPs}_{\text{proj}} = 3 \times 2 B N D^2 = 6 B N D^2$$
 2. **Random Fourier Feature Mapping**:
-   - Einstein product $x W_{\text{proj}}$: $2 \times (2 B H N d_h F) = 4 B N D F$
-   - Trigonometric evaluation ($\cos, \sin$): $\mathcal{O}(B H N F)$ transcendental operations.
-   $$\text{FLOPs}_{\text{rff}} = 4 B N D F$$
+Einstein product $x W_{\text{proj}}$: $2 \times (2 B H N d_h F) = 4 B N D F$ Furthermore, Trigonometric evaluation ($\cos, \sin$): $\mathcal{O}(B H N F)$ transcendental operations. $$\text{FLOPs}_{\text{rff}} = 4 B N D F$$
+
 3. **Global Memory Accumulation ($KV$)**:
    $$\text{FLOPs}_{\text{accum}} = 2 B H N (2F) d_h = 4 B N D F$$
 4. **Query Context Retrieval & Normalization**:
-   - Numerator contraction $\phi(Q) KV$: $2 B H N (2F) d_h = 4 B N D F$
-   - Denominator contraction $\phi(Q) Z^T$: $2 B H N (2F) = 4 B N H F$
-   $$\text{FLOPs}_{\text{query}} = 4 B N D F + 4 B N H F$$
+Numerator contraction $\phi(Q) KV$: $2 B H N (2F) d_h = 4 B N D F$ Furthermore, Denominator contraction $\phi(Q) Z^T$: $2 B H N (2F) = 4 B N H F$ $$\text{FLOPs}_{\text{query}} = 4 B N D F + 4 B N H F$$
+
 5. **Output Projection**:
    $$\text{FLOPs}_{\text{out}} = 2 B N D^2$$
 
@@ -102,28 +100,29 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 
 $$\text{FLOPs}_{\text{total}} = 8 B N D^2 + 12 B N D F + 4 B N H F$$
 
-### 4.2 Memory Footprint & Bandwidth
-- **Parameter Footprint**:
-  $$\Theta = 4 D^2 + (H \cdot d_h \cdot F) = 4 D^2 + D F$$
-- **Activation Footprint**:
-  - Trigonometric feature maps $\phi(Q), \phi(K)$: $\mathcal{O}(B H N F)$
-  - Global memory accumulator matrix $KV$: $\mathcal{O}(B H F d_h)$
-  - Total Activation Memory: $\mathcal{O}(B N D + B H N F + B H F d_h)$
+### 4.2 Memory Footprint & Bandwidth Allocation
+
+The static memory allocation of the LEKAv1 architecture is determined by the standard linear projection parameter weights alongside the static Random Fourier projection buffer:
+
+$$\Theta = 4 D^2 + (H \cdot d_h \cdot F) = 4 D^2 + D F$$
+
+In contrast to standard quadratic attention which materializes $\mathcal{O}(B H N^2)$ intermediate attention matrices in High Bandwidth Memory (HBM), the transient activation footprint in LEKAv1 scales strictly linearly with context length. The memory overhead is bounded by the trigonometric feature projections $\phi(Q), \phi(K) \in \mathcal{O}(B H N F)$ and the sequence-aggregated state accumulator matrix $KV \in \mathcal{O}(B H F d_h)$. Consequently, the aggregate activation memory footprint evaluates to $\mathcal{O}(B N D + B H N F + B H F d_h)$, eliminating sequence-length-induced memory bottlenecks during long-context autoregressive decoding and training.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
-### 5.1 RFF Feature Dimensionality Under-Estimation
-- **Mechanism**: The accuracy of the Random Fourier Feature kernel approximation $\langle \phi(q), \phi(k) \rangle \approx \exp(-\|q - k\|^2 / 2\sigma^2)$ depends on the Monte Carlo sample size $F$. Setting $F < 128$ causes high variance in the kernel estimator.
-- **Consequence**: High variance degrades associative token retrieval, causing severe validation loss penalties on language modeling benchmarks.
+### 5.1 Monte Carlo Variance & Feature Dimensionality Bottlenecks
 
-### 5.2 Denominator Underflow & Zero-Division
-- **Mechanism**: If key feature representations $\phi(K)$ vanish or if query vectors $\phi(Q)$ are orthogonal to $Z$, the denominator $\phi(Q) Z^T + \epsilon$ approaches zero.
-- **Mitigation**: Add a positive constant $\epsilon = 10^{-8}$ and enforce non-negative L2 normalization on input query and key vectors.
+The theoretical fidelity of the Random Fourier Feature kernel approximation $\langle \phi(q), \phi(k) \rangle \approx \exp(-\|q - k\|_2^2 / 2\sigma^2)$ is inherently governed by the Monte Carlo sample dimension $F$. When $F$ is constrained ($F < 128$) to minimize computational overhead, the empirical estimator incurs high variance across random trigonometric projections. This estimator variance manifests as high-frequency perturbation in attention weight assignments, which destabilizes associative token retrieval and degrades convergence behavior on language modeling benchmarks. Furthermore, because the random projection buffer $W_{\text{proj}}$ remains static throughout training, suboptimal sampling in high-dimensional feature space can permanently restrict the expressive rank of the kernel representation, inducing irrecoverable representational bottlenecks.
 
-### 5.3 Loss of Fine-Grained Local Attention Resolution
-- **Mechanism**: LEKAv1 maps all sequence tokens into a global accumulator matrix $KV$. Unlike softmax attention, which maintains pairwise token interactions $Q_i K_j^T$, LEKAv1 over-smooths local syntactic relationships.
+### 5.2 Denominator Singularities & Gradient Dispersion
+
+The associative normalization formulation introduces numerical stability vulnerabilities when evaluating the denominator inner product $\phi(Q) Z^\top + \epsilon$. In scenarios where key feature projections $\phi(K)$ exhibit near-orthogonal cancellation across sequence positions or where query vectors reside in the null space of the cumulative sum vector $Z$, the denominator approaches zero. This near-zero divisor produces severe gradient dispersion and extreme gradient spikes ($\nabla \mathcal{L} \to \infty$) during backpropagation, precipitating floating-point NaN generation and destabilizing layer normalization dynamics. To preserve numerical stability across deep architectures, an additive safety regularizer $\epsilon = 10^{-8}$ is mandated alongside strict L2 pre-normalization of query and key projections prior to trigonometric expansion.
+
+### 5.3 Over-Smoothing & Loss of Local Syntactic Resolution
+
+By collapsing token interactions into a single global associative state matrix $KV = \sum_{t=1}^N \phi(K_t)^\top \otimes V_t$, LEKAv1 forfeits the position-specific sharpness characteristic of standard pairwise softmax attention. This uniform aggregation creates an over-smoothing effect across long context horizons, wherein localized syntactic dependencies and high-frequency token associations are diluted by global background context. Consequently, the architecture exhibits structural tradeoffs between asymptotic throughput efficiency and the fine-grained representational capacity required for precise token-level retrieval tasks.
 
 ---
 
@@ -155,17 +154,16 @@ $$\text{FLOPs}_{\text{total}} = 8 B N D^2 + 12 B N D F + 4 B N H F$$
 ```
 
 ### 6.1 Triton Strategy 1: Fused QKV Projection & RFF Mapping
-- Combine Q, K, V linear projections and the Random Fourier Feature mapping into a single fused GPU kernel.
-- Load activation tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM. Compute query projection $Q_i$, evaluate trigonometric features $\phi(Q_i) = \frac{1}{\sqrt{F}} [\cos(Q_i W_{\text{proj}}), \sin(Q_i W_{\text{proj}})]$ in SRAM registers, and write $\phi(Q_i)$ directly to main memory.
+
+To eliminate intermediate DRAM roundtrips and minimize kernel launch overhead, the linear query, key, and value projections are fused directly with the Random Fourier Feature mapping into a unified GPU kernel. Input activation tiles $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ are staged into high-speed on-chip SRAM, where the query and key projections are evaluated and immediately transformed via register-resident sine and cosine transcendental operations: $\phi(Q_i) = \frac{1}{\sqrt{F}} [\cos(Q_i W_{\text{proj}}), \sin(Q_i W_{\text{proj}})]$. The resulting trigonometric features are streamed directly to downstream accumulation stages, circumventing global High Bandwidth Memory (HBM) allocation.
 
 ### 6.2 Triton Strategy 2: Single-Pass Streaming KV Accumulator Kernel
-- Parallelize execution over batch $B$ and heads $H$.
-- Stream sequence blocks of size `BLOCK_N = 128`. Compute outer products $\phi(K_j)^T V_j$ and accumulate intermediate results in shared memory matrix $KV \in \mathbb{R}^{2F \times d_h}$.
-- Eliminates global DRAM memory allocation for the $[B, H, N, 2F]$ feature maps.
+
+Parallel execution is organized across batch and attention head dimensions ($B, H$), streaming contiguous sequence tiles of length $\text{BLOCK\_N} = 128$. The kernel computes localized outer products $\phi(K_j)^\top V_j$ and accumulates partial results in-place within shared memory buffers $KV \in \mathbb{R}^{2F \times d_h}$. By maintaining the accumulator matrix entirely within on-chip shared memory across the sequence reduction loop, the kernel completely avoids materializing the intermediate $[B, H, N, 2F]$ feature maps in global DRAM, maximizing operational arithmetic intensity.
 
 ### 6.3 Triton Strategy 3: Vectorized Query Retrieval & Output GEMM
-- Multiply query feature tiles $\phi(Q_i)$ with shared memory matrix $KV$ in a single GEMM pass.
-- Execute vectorized division by $\text{Denom}_i$ directly inside SRAM registers before feeding into output projection layer $W_{\text{out}}$.
+
+The final context generation step is executed by contracting query feature tiles $\phi(Q_i)$ with the SRAM-resident state matrix $KV$ in a single high-throughput GEMM pass. Concurrently, the normalization scalar $\text{Denom}_i = \phi(Q_i) Z^\top + \epsilon$ is evaluated in vector registers, enabling fused element-wise division before directly projecting representations through the output weight matrix $W_{\text{out}}$. This tightly fused execution pipeline minimizes memory bandwidth saturation and sustains high Tensor Core occupancy throughout the linear attention pass.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

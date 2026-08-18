@@ -97,19 +97,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $W$: Window, $s$: Stride, $k_{\text{rank}}$: SVD Rank):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **SVD Low-Rank Compression**: $\mathcal{O}(B H L d k_{\text{rank}})$ FLOPs
-- **Multi-Tier Score Matrix ($Q \widetilde{K}^\top$)**: $2 B H L (W + L/s + k_{\text{rank}}) d$ FLOPs
-- **Softmax & Value Aggregation**: $2 B H L (W + L/s + k_{\text{rank}}) d$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_Q, W_K, W_V$)}, $6 B L D^2$ FLOPs Furthermore, regarding \textbf{SVD Low-Rank Compression}, $\mathcal{O}(B H L d k_{\text{rank}})$ FLOPs Concurrently, regarding \textbf{Multi-Tier Score Matrix ($Q \widetilde{K}^\top$)}, $2 B H L (W + L/s + k_{\text{rank}}) d$ FLOPs In this setting, regarding \textbf{Softmax & Value Aggregation}, $2 B H L (W + L/s + k_{\text{rank}}) d$ FLOPs Additionally, regarding \textbf{Output Projection ($W_O$)}, $2 B L D^2$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $4 B L D^2 + 2 B H L (W + L/s + k_{\text{rank}}) d$
-- **Total FLOPs**: $8 B L D^2 + 4 B H L (W + L/s + k_{\text{rank}}) d$
+Specifically, regarding \textbf{Total MACs}, $4 B L D^2 + 2 B H L (W + L/s + k_{\text{rank}}) d$ Furthermore, regarding \textbf{Total FLOPs}, $8 B L D^2 + 4 B H L (W + L/s + k_{\text{rank}}) d$
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2$ parameters.
-- **Cache Memory Footprint**: Bounded by $\mathcal{O}(B \cdot H \cdot (W + L/s + k_{\text{rank}}) \cdot d)$, dramatically reducing memory storage compared to $\mathcal{O}(B \cdot H \cdot L \cdot d)$.
+Specifically, regarding \textbf{Static Weights}, $4 D^2$ parameters. Furthermore, regarding \textbf{Cache Memory Footprint}, bounded by $\mathcal{O}(B \cdot H \cdot (W + L/s + k_{\text{rank}}) \cdot d)$, dramatically reducing memory storage compared to $\mathcal{O}(B \cdot H \cdot L \cdot d)$.
+
 
 ---
 

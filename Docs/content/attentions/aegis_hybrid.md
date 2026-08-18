@@ -131,47 +131,47 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 1. **Low-Rank Projections ($Q, K, V, O$)**:
    $$\text{FLOPs}_{\text{proj}} = 4 \times 2 \cdot B \cdot N \cdot D \cdot r = 8 B N D r$$
 2. **Local Sliding-Window Branch**:
-   - Query-Key product within window ($W$ elements per token): $2 \cdot B \cdot H \cdot N \cdot W \cdot d_h = 2 B N D W$
-   - Softmax & Value contraction: $2 \cdot B \cdot H \cdot N \cdot W \cdot d_h = 2 B N D W$
-   $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+Query-Key product within window ($W$ elements per token): $2 \cdot B \cdot H \cdot N \cdot W \cdot d_h = 2 B N D W$ Furthermore, Softmax & Value contraction: $2 \cdot B \cdot H \cdot N \cdot W \cdot d_h = 2 B N D W$ $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+
 3. **Global Linear Branch**:
-   - Pruning Gate MLP: $2 B N D (D/4) + 2 B N (D/4) H \approx \frac{1}{2} B N D^2$
-   - Memory State outer product $\phi(\tilde{K})^T \tilde{V}$: $2 B H N d_h^2 = 2 B N D d_h$
-   - Global Context Matmul $\phi(Q) M$: $2 B H N d_h^2 = 2 B N D d_h$
-   $$\text{FLOPs}_{\text{global}} = \frac{1}{2} B N D^2 + 4 B N D d_h$$
+Pruning Gate MLP: $2 B N D (D/4) + 2 B N (D/4) H \approx \frac{1}{2} B N D^2$ Furthermore, Memory State outer product $\phi(\tilde{K})^T \tilde{V}$: $2 B H N d_h^2 = 2 B N D d_h$ Concurrently, Global Context Matmul $\phi(Q) M$: $2 B H N d_h^2 = 2 B N D d_h$ $$\text{FLOPs}_{\text{global}} = \frac{1}{2} B N D^2 + 4 B N D d_h$$
+
 4. **Fusion Gate & Combination**:
    $$\text{FLOPs}_{\text{fusion}} = 2 B N D H + 3 B N D$$
 
 $$\text{Total FLOPs} \approx 8 B N D r + 4 B N D W + \frac{1}{2} B N D^2 + 4 B N D d_h$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 4 B N D r + 2 B N D W + \frac{1}{4} B N D^2 + 2 B N D d_h$$
-- **Parameters**:
+Specifically, regarding \textbf{Parameters}, 
+
   $$\Theta = 8 D r + \frac{D^2}{4} + \frac{D H}{4} + D H$$
-- **Activation Memory**:
-  - Un-fused Local Logits Matrix: $\mathcal{O}(B \cdot H \cdot N \cdot W)$
-  - Global Memory States: $\mathcal{O}(B \cdot H \cdot d_h^2)$
-  - Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$
+Specifically, regarding \textbf{Activation Memory},  Furthermore, Un-fused Local Logits Matrix: $\mathcal{O}(B \cdot H \cdot N \cdot W)$ Concurrently, Global Memory States: $\mathcal{O}(B \cdot H \cdot d_h^2)$ In this setting, Total Memory: $\mathcal{O}(B N D + B H N W + B H d_h^2)$
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **Aegis-Hybrid Attention**: $\mathcal{O}\left(N D (r + W + d_h + D/N)\right)$ compute, $\mathcal{O}(N D + H d_h^2)$ memory footprint.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory. Furthermore, regarding \textbf{Aegis-Hybrid Attention}, $\mathcal{O}\left(N D (r + W + d_h + D/N)\right)$ compute, $\mathcal{O}(N D + H d_h^2)$ memory footprint.
+
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
 ### 5.1 Low-Rank Projection Collapse
-- **Mechanism**: Restricting intermediate projections to rank $r \ll D$ forces $Q, K, V$ into an $r$-dimensional subspace. If the singular value spectrum of the pre-trained weight matrix exhibits high entropy (slow decay), truncation to rank $r$ discards significant information, leading to representation capacity loss.
-- **Detection**: Calculate nuclear norm ratio $\frac{\|W_{:r}\|_*}{\|W\|_*}$. A ratio $< 0.85$ indicates severe energy truncation.
+At the architectural level, the underlying operational mechanism reveals that restricting intermediate projections to rank $r \ll D$ forces $Q, K, V$ into an $r$-dimensional subspace. If the singular value spectrum of the pre-trained weight matrix exhibits high entropy (slow decay), truncation to rank $r$ discards significant information, leading to representation capacity loss.
+
+Specifically, regarding \textbf{Detection}, calculate nuclear norm ratio $\frac{\|W_{:r}\|_*}{\|W\|_*}$. A ratio $< 0.85$ indicates severe energy truncation.
+
 
 ### 5.2 Global Accumulator Saturation & Vanishing Gradients
-- **Mechanism**: In the global branch, denominator $Z = \sum_{j=1}^N \phi(\tilde{K}_j)^T$ grows linearly with sequence length $N$. As $N \to \infty$, the magnitude of $Z$ scales up to $\mathcal{O}(N)$, causing $\frac{\phi(Q) M}{\phi(Q) Z + \epsilon}$ gradients with respect to early key representations to decay as $\mathcal{O}(1/N^2)$.
-- **Mitigation**: Introduce zero-sum key centering or length-normalized scaling factors $\frac{1}{\sqrt{N}}$ within the kernel feature map.
+At the architectural level, the underlying operational mechanism reveals that in the global branch, denominator $Z = \sum_{j=1}^N \phi(\tilde{K}_j)^T$ grows linearly with sequence length $N$. As $N \to \infty$, the magnitude of $Z$ scales up to $\mathcal{O}(N)$, causing $\frac{\phi(Q) M}{\phi(Q) Z + \epsilon}$ gradients with respect to early key representations to decay as $\mathcal{O}(1/N^2)$. To systematically mitigate this constraint, the framework enforces an optimization protocol such that introduce zero-sum key centering or length-normalized scaling factors $\frac{1}{\sqrt{N}}$ within the kernel feature map.
+
 
 ### 5.3 Local-Global Gating Dominance Degeneracy
-- **Mechanism**: The fusion parameter $\alpha = \sigma(X W_{\text{fusion}})$ can experience saturated logit distributions ($\alpha \to 1.0$ or $\alpha \to 0.0$). If $\alpha \to 1.0$, the global kernel branch receives zero backpropagation gradient, rendering the long-range sub-network un-trainable.
+At the architectural level, the underlying operational mechanism reveals that the fusion parameter $\alpha = \sigma(X W_{\text{fusion}})$ can experience saturated logit distributions ($\alpha \to 1.0$ or $\alpha \to 0.0$). If $\alpha \to 1.0$, the global kernel branch receives zero backpropagation gradient, rendering the long-range sub-network un-trainable.
+
 
 ---
 
@@ -200,14 +200,13 @@ $$\text{Total FLOPs} \approx 8 B N D r + 4 B N D W + \frac{1}{2} B N D^2 + 4 B N
 Standard PyTorch low-rank execution invokes two distinct GPU kernel launches per projection (`x @ W1` followed by `@ W2`), incurring DRAM round-trips for the intermediate rank-$r$ tensor. 
 
 **Triton Strategy**: Fuse `W1` and `W2` into a single custom C++/Triton kernel using persistent SRAM registers for intermediate rank outputs:
-- Block Size Configuration: `BLOCK_M = 64`, `BLOCK_N = 64`, `BLOCK_K = 32`.
-- Load input block $X_{i} \in \mathbb{R}^{64 \times D}$ into SRAM. Compute tile $X_{i} W_1 \in \mathbb{R}^{64 \times r}$ in registers, then immediately multiply by $W_2$ before writing back to global memory.
+Block Size Configuration: `BLOCK_M = 64`, `BLOCK_N = 64`, `BLOCK_K = 32`. Furthermore, Load input block $X_{i} \in \mathbb{R}^{64 \times D}$ into SRAM. Compute tile $X_{i} W_1 \in \mathbb{R}^{64 \times r}$ in registers, then immediately multiply by $W_2$ before writing back to global memory.
+
 
 ### 6.2 Triton Kernel Design: Fused Local Sliding-Window Attention
 Instead of instantiating the dense $[B, H, N, N]$ tensor and applying masked fill:
-- Use a block-sparse Triton kernel with `BLOCK_SIZE_M = 64` and `BLOCK_SIZE_N = 64`.
-- Skip block pairs $(i, j)$ where $|i \cdot 64 - j \cdot 64| > W_{\text{local}} + 64$.
-- Keep online Softmax accumulators (FlashAttention-style $m_i, l_i$) directly in SRAM registers to execute local windowed attention in $\mathcal{O}(N \cdot W)$ IO complexity.
+Use a block-sparse Triton kernel with `BLOCK_SIZE_M = 64` and `BLOCK_SIZE_N = 64`. Furthermore, Skip block pairs $(i, j)$ where $|i \cdot 64 - j \cdot 64| > W_{\text{local}} + 64$. Concurrently, Keep online Softmax accumulators (FlashAttention-style $m_i, l_i$) directly in SRAM registers to execute local windowed attention in $\mathcal{O}(N \cdot W)$ IO complexity.
+
 
 ---
 

@@ -78,14 +78,12 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($E$: Total Experts, $k$: Active Experts per Token):
-- **Mamba Layer FLOPs**: $6 B L D D_{\text{inner}} + 4 B L D_{\text{inner}} d_{\text{state}}$
-- **MHA Layer FLOPs**: $8 B L D^2 + 4 B L^2 D$
-- **MoE Routing FLOPs**: $2 B L D E$
-- **Active Expert FFN FLOPs**: $k \times (4 B L D D_{\text{ff}})$
+Specifically, regarding \textbf{Mamba Layer FLOPs}, $6 B L D D_{\text{inner}} + 4 B L D_{\text{inner}} d_{\text{state}}$ Furthermore, regarding \textbf{MHA Layer FLOPs}, $8 B L D^2 + 4 B L^2 D$ Concurrently, regarding \textbf{MoE Routing FLOPs}, $2 B L D E$ In this setting, regarding \textbf{Active Expert FFN FLOPs}, $k \times (4 B L D D_{\text{ff}})$
+
 
 ### Memory Footprint:
-- **Static Weights**: Scaled by $E$ experts ($E \times 2 D D_{\text{ff}}$ parameters).
-- **Decoding KV Cache**: Reduced by factor of $M$, saving up to 8x KV cache DRAM allocations.
+Specifically, regarding \textbf{Static Weights}, scaled by $E$ experts ($E \times 2 D D_{\text{ff}}$ parameters). Furthermore, regarding \textbf{Decoding KV Cache}, reduced by factor of $M$, saving up to 8x KV cache DRAM allocations.
+
 
 ---
 

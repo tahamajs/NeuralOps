@@ -114,8 +114,8 @@ class SVDSingleHead(nn.Module):
         ...
 ```
 
-- **`hidden_size`**: Dimensionality of the token embeddings.
-- **`svd_rank`**: Number of top singular components to retain (default 20). Controls the rank of the approximation and the computational cost.
+Specifically, regarding \textbf{`hidden_size`}, dimensionality of the token embeddings. Furthermore, regarding \textbf{`svd_rank`}, number of top singular components to retain (default 20). Controls the rank of the approximation and the computational cost.
+
 
 The module uses a buffer `pos_encoding` to cache the positional encoding for the current sequence length. The SVD is performed with `torch.linalg.svd`, which is differentiable, so the layer can be trained end‑to‑end (though in practice gradients through SVD can be unstable; the module is presented more as an inference‑only alternative).
 
@@ -127,7 +127,8 @@ class DirectSVDEncoderLayer(nn.Module):
         ...
 ```
 
-- **`config`**: A configuration object containing `hidden_size`, `num_attention_heads`, `intermediate_size`, dropout probability, layer norm eps, and optionally `svd_rank`.
+Specifically, regarding \textbf{`config`}, a configuration object containing `hidden_size`, `num_attention_heads`, `intermediate_size`, dropout probability, layer norm eps, and optionally `svd_rank`.
+
 
 The layer’s forward signature mimics that of a HuggingFace BERT encoder layer (`forward(hidden_states, attention_mask=None, ...)`), but `attention_mask` is not used by the SVD layer; it is accepted for compatibility but ignored. The FFN uses a GELU activation (as in BERT).
 
@@ -204,18 +205,13 @@ Setting `comp_config.comp_method = "direct_svd"` will call the factory, which wi
 
 ### Advantages
 
-- **Linear complexity (in principle)**: While full SVD is `O(N·D·min(N,D))`, for moderate sequence lengths this can be faster than `O(N²·D)` attention, especially when `min(N,D)` is small relative to `N`. However, the SVD cost can be high for very large `N`.
-- **No trainable parameters**: `SVDSingleHead` has no learnable weights, reducing the parameter count and preventing overfitting. The whole layer relies on the FFN and layer norms to adapt.
-- **Deterministic & interpretable**: The SVD provides a clear decomposition of the data; the softmax over singular values acts as an attention‑like weighting but is entirely data‑driven.
-- **Global mixing**: Unlike local/convolutional attention, the SVD mixes all tokens globally, capturing long‑range dependencies without a quadratic matrix.
+Specifically, regarding \textbf{Linear complexity (in principle)}, while full SVD is `O(N·D·min(N,D))`, for moderate sequence lengths this can be faster than `O(N²·D)` attention, especially when `min(N,D)` is small relative to `N`. However, the SVD cost can be high for very large `N`. Furthermore, regarding \textbf{No trainable parameters}, `SVDSingleHead` has no learnable weights, reducing the parameter count and preventing overfitting. The whole layer relies on the FFN and layer norms to adapt. Concurrently, regarding \textbf{Deterministic & interpretable}, the SVD provides a clear decomposition of the data; the softmax over singular values acts as an attention‑like weighting but is entirely data‑driven. In this setting, regarding \textbf{Global mixing}, unlike local/convolutional attention, the SVD mixes all tokens globally, capturing long‑range dependencies without a quadratic matrix.
+
 
 ### Limitations
 
-- **Computational cost of SVD**: For long sequences, SVD on the full `(B*N, D)` matrix can be prohibitively expensive, both in time and memory. Batched SVD and approximations would be needed for practical long‑sequence use.
-- **No masking**: The SVD treats all tokens equally; padding tokens will influence the singular vectors and values, potentially corrupting the representation. Special handling (e.g., masking the input before SVD) would be required for real applications.
-- **Gradient instability**: If the layer is used during training, backpropagating through SVD can be numerically unstable (particularly near repeated singular values). PyTorch’s autograd through SVD is supported but may produce NaNs. The module appears designed for inference or as a fixed transformation.
-- **No per‑head diversity**: The single‑head SVD may not capture the multiple subspaces that multi‑head attention can model.
-- **Compressor incomplete**: The automated replacement of layers is not implemented, making integration manual and error‑prone.
+Specifically, regarding \textbf{Computational cost of SVD}, for long sequences, SVD on the full `(B*N, D)` matrix can be prohibitively expensive, both in time and memory. Batched SVD and approximations would be needed for practical long‑sequence use. Furthermore, regarding \textbf{No masking}, the SVD treats all tokens equally; padding tokens will influence the singular vectors and values, potentially corrupting the representation. Special handling (e.g., masking the input before SVD) would be required for real applications. Concurrently, regarding \textbf{Gradient instability}, if the layer is used during training, backpropagating through SVD can be numerically unstable (particularly near repeated singular values). PyTorch’s autograd through SVD is supported but may produce NaNs. The module appears designed for inference or as a fixed transformation. In this setting, regarding \textbf{No per‑head diversity}, the single‑head SVD may not capture the multiple subspaces that multi‑head attention can model. Additionally, regarding \textbf{Compressor incomplete}, the automated replacement of layers is not implemented, making integration manual and error‑prone.
+
 
 ### Comparison with Other Attention Alternatives
 

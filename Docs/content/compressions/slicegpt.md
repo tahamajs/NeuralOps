@@ -48,18 +48,20 @@ Because RMSNorm / LayerNorm operations are invariant to orthogonal rotations und
 ### 3.1 Dataflow & Slicing Pipeline
 
 1. **Model Export & Subprocess Execution**:
-   - Save temporary model checkpoint and tokenizer to disk.
-   - Launch external `slicegpt` module with specified target sparsity $S$.
+Save temporary model checkpoint and tokenizer to disk. Furthermore, Launch external `slicegpt` module with specified target sparsity $S$.
+
 2. **Covariance Accumulation**:
-   - Run forward pass on calibration data to collect layer inputs $X_l$.
-   - Compute covariance $C_l = X_l^T X_l$.
+Run forward pass on calibration data to collect layer inputs $X_l$. Furthermore, Compute covariance $C_l = X_l^T X_l$.
+
 3. **Eigen-Decomposition & Rotation**:
-   - Compute $Q_l$ from $C_l = Q_l \Lambda_l Q_l^T$.
-   - Rotate linear layer weights: $W_l \leftarrow Q_l^T W_l Q_{l+1}$.
+Compute $Q_l$ from $C_l = Q_l \Lambda_l Q_l^T$. Furthermore, Rotate linear layer weights: $W_l \leftarrow Q_l^T W_l Q_{l+1}$.
+
 4. **Physical Matrix Slicing**:
-   - Crop transformed weights from $[D, D]$ down to $[D', D']$.
+Crop transformed weights from $[D, D]$ down to $[D', D']$.
+
 5. **Optional Post-Slicing Fine-Tuning**:
-   - Execute LoRA or full parameter fine-tuning on sliced dense model.
+Execute LoRA or full parameter fine-tuning on sliced dense model.
+
 
 ```
 Model Checkpoint ──► Calibration Passes ──► Accumulate Covariance C
@@ -93,8 +95,8 @@ $$\| X W - X_{\text{sliced}} W_{\text{sliced}} \|_F^2 \le \| W \|_2^2 \cdot \sum
 
 ### 5.2 Failure Cases
 
-- **Non-Rotational Layers**: Architectures with non-linear activation functions in residual streams (without LayerNorm resets) break orthogonal invariance.
-- **Extreme Slicing Ratios**: Slicing beyond $S = 0.35$ removes essential semantic channels, causing severe perplexity breakdown.
+Specifically, regarding \textbf{Non-Rotational Layers}, architectures with non-linear activation functions in residual streams (without LayerNorm resets) break orthogonal invariance. Furthermore, regarding \textbf{Extreme Slicing Ratios}, slicing beyond $S = 0.35$ removes essential semantic channels, causing severe perplexity breakdown.
+
 
 ---
 

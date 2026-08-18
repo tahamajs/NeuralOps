@@ -132,22 +132,22 @@ Y = \text{Concat}(O_1, \dots, O_{H_Q}) W_O \in \mathbb{R}^{B \times N \times D}
 For batch size $B$, sequence length $N$, hidden dimension $D$, query heads $H_Q$, KV heads $H_{KV}$, and factor $R = H_Q / H_{KV}$:
 
 1. **Linear Projections**:
-   - $W_Q$: $2 B N D^2$ FLOPs.
-   - $W_K, W_V$: $\frac{4}{R} B N D^2$ FLOPs.
-   - $W_O$: $2 B N D^2$ FLOPs.
+$W_Q$: $2 B N D^2$ FLOPs. Furthermore, $W_K, W_V$: $\frac{4}{R} B N D^2$ FLOPs. Concurrently, $W_O$: $2 B N D^2$ FLOPs.
+
 2. **Importance Scaling**:
-   - $w_K, w_V$ Hadamard scaling: $2 B N H_{KV} d_k = \frac{2}{R} B N D$ FLOPs (negligible).
+$w_K, w_V$ Hadamard scaling: $2 B N H_{KV} d_k = \frac{2}{R} B N D$ FLOPs (negligible).
+
 3. **Core Attention Computation**:
-   - $Q K_{\text{exp}}^\top$ & $A V_{\text{exp}}$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H_Q N^2$ FLOPs.
+$Q K_{\text{exp}}^\top$ & $A V_{\text{exp}}$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H_Q N^2$ FLOPs.
+
 
 4. **Total Workload Summary**:
-   - **Total MACs**: $2 \left(1 + \frac{1}{R}\right) B N D^2 + 2 B N^2 D$
-   - **Total FLOPs**: $4 \left(1 + \frac{1}{R}\right) B N D^2 + 4 B N^2 D + 7 B H_Q N^2 + \frac{2}{R} B N D$
+Specifically, regarding \textbf{Total MACs}, $2 \left(1 + \frac{1}{R}\right) B N D^2 + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $4 \left(1 + \frac{1}{R}\right) B N D^2 + 4 B N^2 D + 7 B H_Q N^2 + \frac{2}{R} B N D$
+
 
 ### Memory Footprint & KV Cache Analysis
-- **Parameter Count**: $D^2 \left(2 + \frac{2}{R}\right) + 2 H_{KV}$ (only $2 H_{KV}$ extra parameters over standard GQA).
-- **Autoregressive KV Cache Size**: Unchanged from standard GQA:
+Specifically, regarding \textbf{Parameter Count}, $D^2 \left(2 + \frac{2}{R}\right) + 2 H_{KV}$ (only $2 H_{KV}$ extra parameters over standard GQA). Furthermore, regarding \textbf{Autoregressive KV Cache Size}, unchanged from standard GQA:
+
   \[
   \text{KV Cache Size}_{\text{WGQA}} = 2 \cdot B \cdot H_{KV} \cdot N \cdot d_k \cdot b = \frac{2 B N D \cdot b}{R} \text{ bytes}
   \]

@@ -107,19 +107,16 @@ Input Segment: hidden_states [B, N, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $N$: Segment Len, $D$: Dim, $H$: Heads, $d_k$: Head Dim):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B N D^2$ FLOPs
-- **Local Sliding Window Attention ($Q K^\top, A V$)**: $4 B H N^2 d_k = 4 B N^2 D$ FLOPs
-- **Compressive Memory Retrieval ($\phi(Q) M$)**: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs
-- **Compressive Memory State Update ($\phi(K)^\top V$)**: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs
-- **Output Projection ($W_O$)**: $2 B N D^2$ FLOPs
+Specifically, regarding \textbf{Input Projections ($W_Q, W_K, W_V$)}, $6 B N D^2$ FLOPs Furthermore, regarding \textbf{Local Sliding Window Attention ($Q K^\top, A V$)}, $4 B H N^2 d_k = 4 B N^2 D$ FLOPs Concurrently, regarding \textbf{Compressive Memory Retrieval ($\phi(Q) M$)}, $2 B H N d_k^2 = 2 B N D d_k$ FLOPs In this setting, regarding \textbf{Compressive Memory State Update ($\phi(K)^\top V$)}, $2 B H N d_k^2 = 2 B N D d_k$ FLOPs Additionally, regarding \textbf{Output Projection ($W_O$)}, $2 B N D^2$ FLOPs
+
 
 **Total Complexity per Segment**:
-- **Total MACs**: $4 B N D^2 + 2 B N^2 D + 2 B N D d_k$
-- **Total FLOPs**: $8 B N D^2 + 4 B N^2 D + 4 B N D d_k$ ($\mathcal{O}(N)$ linear sequence length scaling per segment)
+Specifically, regarding \textbf{Total MACs}, $4 B N D^2 + 2 B N^2 D + 2 B N D d_k$ Furthermore, regarding \textbf{Total FLOPs}, $8 B N D^2 + 4 B N^2 D + 4 B N D d_k$ ($\mathcal{O}(N)$ linear sequence length scaling per segment)
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2 + H$ parameters.
-- **Persistent Compressive State Memory**: Bounded by $\mathcal{O}(B \cdot H \cdot d_k^2)$ persistent tensor memory, independent of total past stream length $L$.
+Specifically, regarding \textbf{Static Weights}, $4 D^2 + H$ parameters. Furthermore, regarding \textbf{Persistent Compressive State Memory}, bounded by $\mathcal{O}(B \cdot H \cdot d_k^2)$ persistent tensor memory, independent of total past stream length $L$.
+
 
 ---
 

@@ -106,20 +106,16 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $D_{\text{inner}}$: Inner Dim, $d_{\text{state}}$: State Dim):
-- **Dual Input Projection ($W_{\text{in}}$)**: $2 B L D (2 D_{\text{inner}}) = 4 B L D D_{\text{inner}}$ FLOPs
-- **Depthwise Causal Conv1D**: $2 B L D_{\text{inner}} d_{\text{conv}}$ FLOPs
-- **Selection Projections ($\Delta t, B, C$)**: $2 B L D_{\text{inner}} (1 + 2 d_{\text{state}})$ FLOPs
-- **Parallel Scan State Recurrence**: $2 B L D_{\text{inner}} d_{\text{state}}$ FLOPs
-- **SSM Output Contraction ($C_{\text{output}}$)**: $2 B L D_{\text{inner}} d_{\text{state}}$ FLOPs
-- **Output Projection ($W_{\text{out}}$)**: $2 B L D_{\text{inner}} D$ FLOPs
+Specifically, regarding \textbf{Dual Input Projection ($W_{\text{in}}$)}, $2 B L D (2 D_{\text{inner}}) = 4 B L D D_{\text{inner}}$ FLOPs Furthermore, regarding \textbf{Depthwise Causal Conv1D}, $2 B L D_{\text{inner}} d_{\text{conv}}$ FLOPs Concurrently, regarding \textbf{Selection Projections ($\Delta t, B, C$)}, $2 B L D_{\text{inner}} (1 + 2 d_{\text{state}})$ FLOPs In this setting, regarding \textbf{Parallel Scan State Recurrence}, $2 B L D_{\text{inner}} d_{\text{state}}$ FLOPs Additionally, regarding \textbf{SSM Output Contraction ($C_{\text{output}}$)}, $2 B L D_{\text{inner}} d_{\text{state}}$ FLOPs Moreover, regarding \textbf{Output Projection ($W_{\text{out}}$)}, $2 B L D_{\text{inner}} D$ FLOPs
+
 
 **Total Complexity**:
-- **Total MACs**: $3 B L D D_{\text{inner}} + 2 B L D_{\text{inner}} d_{\text{state}}$
-- **Total FLOPs**: $6 B L D D_{\text{inner}} + 4 B L D_{\text{inner}} d_{\text{state}}$ ($\mathcal{O}(L)$ strictly linear sequence complexity)
+Specifically, regarding \textbf{Total MACs}, $3 B L D D_{\text{inner}} + 2 B L D_{\text{inner}} d_{\text{state}}$ Furthermore, regarding \textbf{Total FLOPs}, $6 B L D D_{\text{inner}} + 4 B L D_{\text{inner}} d_{\text{state}}$ ($\mathcal{O}(L)$ strictly linear sequence complexity)
+
 
 ### Memory Footprint:
-- **Static Weights**: $2 D \cdot D_{\text{inner}} + D_{\text{inner}} d_{\text{conv}} + D_{\text{inner}}(1 + 2 d_{\text{state}}) + D_{\text{inner}} D + D_{\text{inner}} d_{\text{state}}$ parameters.
-- **Decoding State Memory**: Bounded by $\mathcal{O}(B \cdot D_{\text{inner}} \cdot d_{\text{state}})$ per step, completely eliminating sequence-length dependent KV cache growth.
+Specifically, regarding \textbf{Static Weights}, $2 D \cdot D_{\text{inner}} + D_{\text{inner}} d_{\text{conv}} + D_{\text{inner}}(1 + 2 d_{\text{state}}) + D_{\text{inner}} D + D_{\text{inner}} d_{\text{state}}$ parameters. Furthermore, regarding \textbf{Decoding State Memory}, bounded by $\mathcal{O}(B \cdot D_{\text{inner}} \cdot d_{\text{state}})$ per step, completely eliminating sequence-length dependent KV cache growth.
+
 
 ---
 

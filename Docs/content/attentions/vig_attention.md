@@ -110,34 +110,36 @@ Input: hidden_states [B, N, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $N$: Tokens, $H, W$: Grid Dim $\approx \sqrt{N}$, $D$: Dim):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B N_{\text{pad}} D^2$ FLOPs
-- **Gate Net Projection**: $4 B N_{\text{pad}} D H_h$ FLOPs
-- **Row Linear Attention Pass**: $2 \times (2 B H_h W \cdot H \cdot d_k^2) = 4 B N_{\text{pad}} H_h d_k^2 = 4 B N_{\text{pad}} D d_k$ FLOPs
-- **Column Linear Attention Pass**: $2 \times (2 B H_h H \cdot W \cdot d_k^2) = 4 B N_{\text{pad}} H_h d_k^2 = 4 B N_{\text{pad}} D d_k$ FLOPs
-- **Output Projection ($W_O$)**: $2 B N D^2$ FLOPs
+### FLOP and MAC Breakdown
+Let $B$ denote batch size, $N$ input sequence length, $H \times W$ the factorized 2D grid dimensions (such that $H \cdot W = N_{\text{pad}} \approx N$), $D$ the model hidden dimension, $H_h$ the number of attention heads, and $d_k = D / H_h$ head dimension. The computational lifecycle begins with Query, Key, and Value linear projections demanding $6 B N_{\text{pad}} D^2$ FLOPs, alongside gate generation requiring $4 B N_{\text{pad}} D H_h$ FLOPs. In the spatial factorization stage, the row-wise linear attention pass computes associative outer-product states over $H_h \cdot W$ rows of length $H$, requiring $4 B N_{\text{pad}} D d_k$ FLOPs. Symmetrically, the column-wise linear pass processes $H_h \cdot H$ columns of length $W$, contributing an identical $4 B N_{\text{pad}} D d_k$ FLOPs. Following sigmoidal gated blending, final linear projection back to hidden dimension $D$ consumes $2 B N D^2$ FLOPs.
 
-**Total Complexity**:
-- **Total MACs**: $4 B N D^2 + 4 B N D d_k$
-- **Total FLOPs**: $8 B N D^2 + 8 B N D d_k$ ($\mathcal{O}(N \sqrt{N})$ overall spatial complexity)
+Summing these contributions yields the cumulative operational footprint:
+$$\text{Total MACs} \approx 4 B N D^2 + 4 B N D d_k$$
+$$\text{Total FLOPs} \approx 8 B N D^2 + 8 B N D d_k$$
 
-### Memory Footprint:
-- **Static Weights**: $4 D^2 + 2 D H_h$ parameters.
-- **Transient Activation Memory**: Bounded by $\mathcal{O}(B \cdot H_h \cdot H \cdot W \cdot d_k)$, reducing spatial activation overhead by $O(N^{1.5})$.
+Crucially, by factorizing full 2D self-attention into orthogonal 1D passes along the grid axes, the asymptotic spatial interaction complexity scales as $\mathcal{O}(N (H + W)) \approx \mathcal{O}(N \sqrt{N})$, achieving sub-quadratic scaling while maintaining global bidirectional spatial context across both grid dimensions.
+
+### Memory Footprint & Tensor Layout
+The static model parameter footprint is governed by the multi-head projection layers and gating networks, totaling $4 D^2 + 2 D H_h$ weights. Transient activation memory is strictly bounded by $\mathcal{O}(B \cdot H_h \cdot H \cdot W \cdot d_k)$, entirely eliminating the quadratic $\mathcal{O}(B \cdot H_h \cdot N^2)$ attention matrix storage required by standard Transformers. This reduces transient peak memory from $\mathcal{O}(N^2)$ to $\mathcal{O}(N)$, drastically decreasing cache pressure on modern GPU architectures.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Severe Grid Padding Overhead**: When $N$ is a prime number (e.g., $N = 1009$), $H=31, W=33 \implies N_{\text{pad}} = 1023$, introducing extra zero-padded tokens that consume FLOPs.
-2. **Loss of Diagonal Receptive Field**: Standard 2D grid factorization passes information horizontally and vertically, requiring multiple stacked layers to establish true diagonal token interaction paths.
-3. **ELU Gradient Saturation**: Under negative logit inputs, $\text{ELU}(x) + 1.0 = \exp(x) \to 0$, causing key activation sparsity that reduces effective memory capacity.
+### 5.1 Prime Sequence Grid Padding and Inefficient FLOP Utilization
+When the sequence length $N$ is a prime number or has highly asymmetric integer factorizations (such as $N = 1009$, where $H = 31$ and $W = 33 \implies N_{\text{pad}} = 1023$), the required grid padding introduces non-negligible computational slack. These padded virtual tokens participate in row and column linear kernel accumulations, consuming arithmetic FLOPs and memory bandwidth while contributing zero semantic information. In extreme aspect ratios ($H \gg W$ or $W \gg H$), this geometric distortion skews receptive field balance and induces non-uniform gradient propagation across the row and column pathways.
+
+### 5.2 Orthogonal Axis Decoupling and Diagonal Receptive Field Latency
+Because ViG factorizes spatial attention into strictly decoupled horizontal and vertical passes, immediate single-layer interactions are restricted to tokens sharing either the same row or column coordinate. Direct cross-diagonal token interactions (i.e., between positions $(i_1, j_1)$ and $(i_2, j_2)$ where $i_1 \neq i_2$ and $j_1 \neq j_2$) cannot occur within a single layer; they require at least two cascaded Transformer layers to propagate information through intermediate row-column intersections. This structural constraint delays diagonal feature synthesis and can limit performance on complex visual reasoning tasks requiring immediate omnidirectional receptive fields.
+
+### 5.3 Kernel Underflow and Gradient Saturation in Positive Feature Maps
+The non-negative ELU kernel transformation $\phi(x) = \text{ELU}(x) + 1.0$ guarantees non-negativity for valid kernel inner-product formulation. However, for large negative pre-activations, $\phi(x) = \exp(x) \to 0$, causing key and query feature maps to underflow toward zero. When entire token vectors approach this near-zero regime, the associative accumulator matrix $M_{\text{row}} = \phi(K)^\top V$ suffers from severe numerical rank deficiency and key activation sparsity. Furthermore, the gradient $\frac{\partial \phi(x)}{\partial x} = \exp(x)$ vanishes exponentially in negative regimes, stalling optimization progress and degrading the stability of the loss landscape during early training iterations.
 
 ---
 
 ## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-A Triton kernel for ViG fuses ELU feature mapping, row/column associative matrix products, and dynamic gating directly into SRAM, preventing intermediate grid tensor transpositions back to HBM.
+To maximize hardware throughput and eliminate memory bandwidth bottlenecks, a fused Triton kernel executes ELU feature mapping, row and column associative matrix products, and dynamic sigmoidal gating entirely within on-chip SRAM registers, preventing intermediate grid tensor transpositions from round-tripping to DRAM.
 
 ```python
 # Triton Fused Grid Row/Column Linear Attention Blueprint
@@ -173,9 +175,13 @@ def _vig_grid_fused_kernel(
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Shifted Grid Windows (Swin-ViG)**: Shift row/column grid partition boundaries across alternating Transformer layers to accelerate cross-diagonal spatial receptive field expansion.
-2. **ViG-Mamba Hybrid 2D Vision**: Replace 1D flattened image scans in Vision Mamba with 2D ViG grid linear attention layers for optimal spatial context modeling.
-3. **Deformable Grid Topology**: Dynamically adjust grid dimensions $H(x), W(x)$ per input image aspect ratio to minimize zero-padding overhead.
+To advance the capabilities and versatility of bidirectional grid attention architectures, several promising research directions emerge:
+
+**Shifted Grid Window Partitions (Swin-ViG)**: Introducing cyclic partition shifts across successive Transformer blocks dynamically alternates the row and column boundaries, bridging the diagonal receptive field gap within a single stacked block and accelerating cross-spatial feature composition.
+
+**Hybrid Grid-SSM Multidimensional Ensembles**: Integrating 2D ViG grid linear attention with continuous-time bidirectional State-Space Models replaces flattened 1D scan heuristics in Vision Mamba with geometrically grounded 2D continuous state dynamics.
+
+**Dynamic Deformable Grid Topologies**: Parameterizing grid dimensions $H(x)$ and $W(x)$ via input-dependent routing enables the network to adaptively match arbitrary image aspect ratios and irregularly sized inputs, completely eliminating zero-padding waste and equalizing directional receptive fields.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

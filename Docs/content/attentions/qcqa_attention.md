@@ -132,26 +132,24 @@ Y = \text{Concat}(O_1, \dots, O_{H_q}) W_O \in \mathbb{R}^{B \times N \times D}
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H_q$ query heads, $H_{kv}$ compressed KV heads, and ratio $R = H_q / H_{kv}$.
 
 1. **Linear Projections**:
-   - $W_Q, W_O$: $4 B N D^2$ FLOPs.
-   - $W_K, W_V$: $\frac{4}{R} B N D^2$ FLOPs.
-   - Router Projection $W_{\text{router}}$: $2 B N H_q d_k H_{kv} = 2 B N D H_{kv}$ FLOPs.
+$W_Q, W_O$: $4 B N D^2$ FLOPs. Furthermore, $W_K, W_V$: $\frac{4}{R} B N D^2$ FLOPs. Concurrently, Router Projection $W_{\text{router}}$: $2 B N H_q d_k H_{kv} = 2 B N D H_{kv}$ FLOPs.
+
 
 2. **Head Mixture Synthesis (`torch.bmm`)**:
-   - $W_{\text{flat}} K_{\text{flat}}$: $2 (B N) H_q H_{kv} d_k = 2 B N D H_{kv}$ FLOPs.
-   - $W_{\text{flat}} V_{\text{flat}}$: $2 B N D H_{kv}$ FLOPs.
-   - *Total Routing & Mixture Cost*: $6 B N D H_{kv}$ FLOPs ($3 B N D H_{kv}$ MACs).
+$W_{\text{flat}} K_{\text{flat}}$: $2 (B N) H_q H_{kv} d_k = 2 B N D H_{kv}$ FLOPs. Furthermore, $W_{\text{flat}} V_{\text{flat}}$: $2 B N D H_{kv}$ FLOPs. Concurrently, *Total Routing & Mixture Cost*: $6 B N D H_{kv}$ FLOPs ($3 B N D H_{kv}$ MACs).
+
 
 3. **Core Scaled Dot-Product Attention**:
-   - $Q \widetilde{K}^\top$ & $A \widetilde{V}$: $4 B N^2 D$ FLOPs.
-   - Softmax & Masking: $7 B H_q N^2$ FLOPs.
+$Q \widetilde{K}^\top$ & $A \widetilde{V}$: $4 B N^2 D$ FLOPs. Furthermore, Softmax & Masking: $7 B H_q N^2$ FLOPs.
+
 
 4. **Total Complexity Summary**:
-   - **Total MACs**: $2 \left(1 + \frac{1}{R}\right) B N D^2 + 3 B N D H_{kv} + 2 B N^2 D$
-   - **Total FLOPs**: $4 \left(1 + \frac{1}{R}\right) B N D^2 + 6 B N D H_{kv} + 4 B N^2 D + 7 B H_q N^2$
+Specifically, regarding \textbf{Total MACs}, $2 \left(1 + \frac{1}{R}\right) B N D^2 + 3 B N D H_{kv} + 2 B N^2 D$ Furthermore, regarding \textbf{Total FLOPs}, $4 \left(1 + \frac{1}{R}\right) B N D^2 + 6 B N D H_{kv} + 4 B N^2 D + 7 B H_q N^2$
+
 
 ### Memory Footprint & KV Cache Analysis
-- **Parameter Count**: $D^2 \left(2 + \frac{2}{R}\right) + d_k H_{kv} + D + H_q d_k$ floats.
-- **Autoregressive Decoding KV Cache Size**: Only compressed $H_{kv}$ heads are cached:
+Specifically, regarding \textbf{Parameter Count}, $D^2 \left(2 + \frac{2}{R}\right) + d_k H_{kv} + D + H_q d_k$ floats. Furthermore, regarding \textbf{Autoregressive Decoding KV Cache Size}, only compressed $H_{kv}$ heads are cached:
+
   \[
   \text{KV Cache Size}_{\text{QCQA}} = 2 \cdot B \cdot H_{kv} \cdot N \cdot d_k \cdot b = \frac{2 B N D \cdot b}{R} \text{ bytes}
   \]

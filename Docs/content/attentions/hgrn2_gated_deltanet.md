@@ -70,16 +70,15 @@ Input: X_0 [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($N$ Total Layers, $R$ Hybrid Ratio):
-- **Number of HGRN-2 Layers**: $N \cdot \frac{R}{R+1}$ layers
-- **Number of MHA Layers**: $N \cdot \frac{1}{R+1}$ layers
-- **Total FLOPs**:
+Specifically, regarding \textbf{Number of HGRN-2 Layers}, $N \cdot \frac{R}{R+1}$ layers Furthermore, regarding \textbf{Number of MHA Layers}, $N \cdot \frac{1}{R+1}$ layers Concurrently, regarding \textbf{Total FLOPs}, 
+
 \[
 \text{Total FLOPs} = N \cdot \left( \frac{R}{R+1} \cdot 12 B L D^2 + \frac{1}{R+1} \cdot (16 B L D^2 + 4 B L^2 D) \right)
 \]
 
 ### Memory Footprint:
-- **Static Weights**: $N \times 4 D^2$ parameters.
-- **Decoding KV Cache Footprint**: Reduced by factor of $(R+1)$, storing KV cache only for the $\frac{N}{R+1}$ MHA layers.
+Specifically, regarding \textbf{Static Weights}, $N \times 4 D^2$ parameters. Furthermore, regarding \textbf{Decoding KV Cache Footprint}, reduced by factor of $(R+1)$, storing KV cache only for the $\frac{N}{R+1}$ MHA layers.
+
 
 ---
 

@@ -84,19 +84,12 @@ Input: hidden_states [B, L, D]
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $H$: Heads):
-- **Pre & Post LayerNorm**: $\mathcal{O}(B L D)$ FLOPs
-- **Path A (HGRN-2 Linear Recurrence)**:
-  - Gate Projections: $6 B L D^2$ FLOPs
-  - Recurrent State Update: $4 B L D$ FLOPs
-  - Total Path A FLOPs: $12 B L D^2$
-- **Path B (Dense MHA Bypass)**:
-  - Projections: $8 B L D^2$ FLOPs
-  - Attention Map ($Q K^\top, A V$): $4 B L^2 D$ FLOPs
-  - Total Path B FLOPs: $16 B L D^2 + 4 B L^2 D$
+Specifically, regarding \textbf{Pre & Post LayerNorm}, $\mathcal{O}(B L D)$ FLOPs Furthermore, regarding \textbf{Path A (HGRN-2 Linear Recurrence)},  Concurrently, Gate Projections: $6 B L D^2$ FLOPs In this setting, Recurrent State Update: $4 B L D$ FLOPs Additionally, Total Path A FLOPs: $12 B L D^2$ Moreover, regarding \textbf{Path B (Dense MHA Bypass)},  From an analytical standpoint, Projections: $8 B L D^2$ FLOPs In terms of operational dynamics, Attention Map ($Q K^\top, A V$): $4 B L^2 D$ FLOPs Specifically, Total Path B FLOPs: $16 B L D^2 + 4 B L^2 D$
+
 
 ### Memory Footprint:
-- **Static Weights**: $4 D^2$ (Path A) or $4 D^2$ (Path B).
-- **Transient Memory**: Bounded by $\mathcal{O}(B \cdot L \cdot D)$ in Path A vs $\mathcal{O}(B \cdot H \cdot L^2)$ in Path B.
+Specifically, regarding \textbf{Static Weights}, $4 D^2$ (Path A) or $4 D^2$ (Path B). Furthermore, regarding \textbf{Transient Memory}, bounded by $\mathcal{O}(B \cdot L \cdot D)$ in Path A vs $\mathcal{O}(B \cdot H \cdot L^2)$ in Path B.
+
 
 ---
 

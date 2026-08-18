@@ -112,23 +112,20 @@ Input: hidden_states [B, N, D]
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D / H$, and $r$ rank bottleneck.
 
 1. **Linear Projection FLOPs**:
-   - $W_Q, W_K, W_V, W_O$: $4 \times 2 B N D^2 = 8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+$W_Q, W_K, W_V, W_O$: $4 \times 2 B N D^2 = 8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+
 
 2. **Rank Modulation FLOPs (if $r > 0$)**:
-   - Sequence Mean-Pooling: $B \cdot N \cdot D$ FLOPs.
-   - Bottleneck Projection ($W_{\text{rank}}$): $2 B D r$ FLOPs ($B D r$ MACs).
-   - Sigmoid & Mean Reduction: $2 B r$ FLOPs.
-   - Score Modulation Scaling: $B H N^2$ FLOPs.
+Sequence Mean-Pooling: $B \cdot N \cdot D$ FLOPs. Furthermore, Bottleneck Projection ($W_{\text{rank}}$): $2 B D r$ FLOPs ($B D r$ MACs). Concurrently, Sigmoid & Mean Reduction: $2 B r$ FLOPs. In this setting, Score Modulation Scaling: $B H N^2$ FLOPs.
+
 
 3. **Core Attention Computation ($Q K^\top$ & $A V$)**:
-   - $Q K^\top$: $[B, H, N, d_k] \times [B, H, d_k, N] \implies 2 B N^2 D$ FLOPs.
-   - Softmax: $\approx 5 B H N^2$ FLOPs.
-   - $A V$: $[B, H, N, N] \times [B, H, N, d_k] \implies 2 B N^2 D$ FLOPs.
+$Q K^\top$: $[B, H, N, d_k] \times [B, H, d_k, N] \implies 2 B N^2 D$ FLOPs. Furthermore, Softmax: $\approx 5 B H N^2$ FLOPs. Concurrently, $A V$: $[B, H, N, N] \times [B, H, N, d_k] \implies 2 B N^2 D$ FLOPs.
+
 
 ### Total Complexity:
-- **Total MACs**: $4 B N D^2 + 2 B N^2 D + B D r$
-- **Total FLOPs**: $8 B N D^2 + 4 B N^2 D + B N D + 2 B D r + B H N^2 (1 + 5/H)$
-- **Parameter Count**: $4 D^2 + D r$ floats.
+Specifically, regarding \textbf{Total MACs}, $4 B N D^2 + 2 B N^2 D + B D r$ Furthermore, regarding \textbf{Total FLOPs}, $8 B N D^2 + 4 B N^2 D + B N D + 2 B D r + B H N^2 (1 + 5/H)$ Concurrently, regarding \textbf{Parameter Count}, $4 D^2 + D r$ floats.
+
 
 ---
 

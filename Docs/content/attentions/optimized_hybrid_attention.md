@@ -93,15 +93,11 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 1. **Linear Q, K, V Projections**:
    $$\text{FLOPs}_{\text{proj}} = 3 \times 2 B N D^2 = 6 B N D^2$$
 2. **Local Sliding-Window Branch**:
-   - Scores matmul ($W$ keys per token): $2 B H N W d_h = 2 B N D W$
-   - Softmax & Value contraction: $2 B H N W d_h = 2 B N D W$
-   $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+Scores matmul ($W$ keys per token): $2 B H N W d_h = 2 B N D W$ Furthermore, Softmax & Value contraction: $2 B H N W d_h = 2 B N D W$ $$\text{FLOPs}_{\text{local}} = 4 B N D W$$
+
 3. **Global Sequence-Compressed Branch**:
-   - Sequence compression projections ($X W_K^{\text{comp}}, X W_V^{\text{comp}}$): $2 \times (2 B N D R) = 4 B N D R$
-   - Compressed KV contractions ($P_K^T K, P_V^T V$): $2 \times (2 B H N R d_h) = 4 B N D R$
-   - Global scores matmul ($Q \widetilde{K}^T$): $2 B H N R d_h = 2 B N D R$
-   - Global value contraction ($A^{\text{global}} \widetilde{V}$): $2 B H N R d_h = 2 B N D R$
-   $$\text{FLOPs}_{\text{global}} = 12 B N D R$$
+Sequence compression projections ($X W_K^{\text{comp}}, X W_V^{\text{comp}}$): $2 \times (2 B N D R) = 4 B N D R$ Furthermore, Compressed KV contractions ($P_K^T K, P_V^T V$): $2 \times (2 B H N R d_h) = 4 B N D R$ Concurrently, Global scores matmul ($Q \widetilde{K}^T$): $2 B H N R d_h = 2 B N D R$ In this setting, Global value contraction ($A^{\text{global}} \widetilde{V}$): $2 B H N R d_h = 2 B N D R$ $$\text{FLOPs}_{\text{global}} = 12 B N D R$$
+
 4. **Gated Fusion & Output Projection**:
    $$\text{FLOPs}_{\text{fusion}} = 2 B N D H + 2 B N D^2$$
 
@@ -110,24 +106,23 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 $$\text{FLOPs}_{\text{total}} = 8 B N D^2 + 4 B N D W + 12 B N D R + 2 B N D H$$
 
 ### 4.2 Memory Footprint & Bandwidth
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = 4 D^2 + (2 D R) + D H = 4 D^2 + 2 D R + D H$$
-- **Activation Footprint**:
-  - Local logits matrix: $\mathcal{O}(B H N W)$
-  - Compressed key-value matrices $\widetilde{K}, \widetilde{V}$: $\mathcal{O}(B H R d_h)$
-  - Global attention matrix: $\mathcal{O}(B H N R)$
-  - Total Memory: $\mathcal{O}(B N D + B H N W + B H N R)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Local logits matrix: $\mathcal{O}(B H N W)$ Concurrently, Compressed key-value matrices $\widetilde{K}, \widetilde{V}$: $\mathcal{O}(B H R d_h)$ In this setting, Global attention matrix: $\mathcal{O}(B H N R)$ Additionally, Total Memory: $\mathcal{O}(B N D + B H N W + B H N R)$
+
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
 ### 5.1 Sequence Compression Softmax Collapse
-- **Mechanism**: The compression pooling matrix evaluates $P_K = \text{Softmax}(X W_K^{\text{comp}}, \text{dim}=N)$. If logits exhibit high variance, softmax probabilities collapse to a one-hot distribution, causing $\widetilde{K}$ to capture only a single token position across the entire sequence.
-- **Mitigation**: Apply temperature scaling $\tau = 2.0$ inside sequence-dimension softmax or add entropy regularization $\mathcal{L}_{\text{entropy}} = -\sum P_K \log P_K$.
+At the architectural level, the underlying operational mechanism reveals that the compression pooling matrix evaluates $P_K = \text{Softmax}(X W_K^{\text{comp}}, \text{dim}=N)$. If logits exhibit high variance, softmax probabilities collapse to a one-hot distribution, causing $\widetilde{K}$ to capture only a single token position across the entire sequence. To systematically mitigate this constraint, the framework enforces an optimization protocol such that apply temperature scaling $\tau = 2.0$ inside sequence-dimension softmax or add entropy regularization $\mathcal{L}_{\text{entropy}} = -\sum P_K \log P_K$.
+
 
 ### 5.2 Fusion Gate Saturation
-- **Mechanism**: The fusion gate $g = \sigma(X W_{\text{gate}} + b_{\text{gate}})$ is initialized with $b_{\text{gate}} = 2.0$. If learning rates are excessively high, $g \to 1.0$ across all positions, suppressing backpropagation gradients to the global sequence compression branch.
+At the architectural level, the underlying operational mechanism reveals that the fusion gate $g = \sigma(X W_{\text{gate}} + b_{\text{gate}})$ is initialized with $b_{\text{gate}} = 2.0$. If learning rates are excessively high, $g \to 1.0$ across all positions, suppressing backpropagation gradients to the global sequence compression branch.
+
 
 ---
 
@@ -159,17 +154,16 @@ $$\text{FLOPs}_{\text{total}} = 8 B N D^2 + 4 B N D W + 12 B N D R + 2 B N D H$$
 ```
 
 ### 6.1 Triton Strategy 1: Block-Sparse Local Window Kernel
-- Process local sliding window attention using SRAM blocks of size `BLOCK_M = 64` and `BLOCK_N = 64`.
-- Enforce sliding window bounds $|i \cdot 64 - j \cdot 64| < W_{\text{window}}$. Skip execution of out-of-band tile blocks entirely.
-- Implement FlashAttention SRAM online softmax accumulation (`m_i`, `l_i`), eliminating DRAM allocation for local attention logits.
+Process local sliding window attention using SRAM blocks of size `BLOCK_M = 64` and `BLOCK_N = 64`. Furthermore, Enforce sliding window bounds $|i \cdot 64 - j \cdot 64| < W_{\text{window}}$. Skip execution of out-of-band tile blocks entirely. Concurrently, Implement FlashAttention SRAM online softmax accumulation (`m_i`, `l_i`), eliminating DRAM allocation for local attention logits.
+
 
 ### 6.2 Triton Strategy 2: Parallel Sequence Compression Engine
-- Parallelize over batch $B$ and latent compression channels $R$.
-- Stream sequence blocks of size `BLOCK_N = 128`. Compute sequence-dimension softmax probabilities $P_K, P_V$ and accumulate compressed key-value matrices $\widetilde{K}, \widetilde{V} \in \mathbb{R}^{R \times d_h}$ directly in shared memory.
+Parallelize over batch $B$ and latent compression channels $R$. Furthermore, Stream sequence blocks of size `BLOCK_N = 128`. Compute sequence-dimension softmax probabilities $P_K, P_V$ and accumulate compressed key-value matrices $\widetilde{K}, \widetilde{V} \in \mathbb{R}^{R \times d_h}$ directly in shared memory.
+
 
 ### 6.3 Triton Strategy 3: Fused Global Querying & Gated Fusion
-- Multiply queries $Q$ with compressed key matrix $\widetilde{K}^T$ in SRAM registers.
-- Compute global value contraction $O^{\text{global}}$ and perform element-wise sigmoidal gate interpolation with local context $O^{\text{local}}$ in a single pass before writing to global memory.
+Multiply queries $Q$ with compressed key matrix $\widetilde{K}^T$ in SRAM registers. Furthermore, Compute global value contraction $O^{\text{global}}$ and perform element-wise sigmoidal gate interpolation with local context $O^{\text{local}}$ in a single pass before writing to global memory.
+
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

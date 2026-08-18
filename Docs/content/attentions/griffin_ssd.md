@@ -83,27 +83,21 @@ Input: hidden_states [B, L, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Model Dim):
-- **Input Projections ($W_Q, W_K, W_V$)**: $6 B L D^2$ FLOPs
-- **Recurrent State Updates ($k_t v_t^\top$)**: $L \times (2 B D^2) = 2 B L D^2$ FLOPs
-- **State Query Projection ($q_t H_t$)**: $L \times (2 B D^2) = 2 B L D^2$ FLOPs
-- **Output Projection ($W_O$)**: $2 B L D^2$ FLOPs
+### Computational Workload and Arithmetic Complexity
+The arithmetic complexity of the Griffin SSD kernel scales strictly linearly with respect to sequence length $L$, establishing an $\mathcal{O}(L \cdot D^2)$ asymptotic bound parameterized by batch size $B$, sequence length $L$, and hidden model dimension $D$. The linear projection stage mapping input activations to query, key, and value states requires $6 B L D^2$ FLOPs across operators $W_Q, W_K, W_V$. During sequential recurrence or parallel chunk evaluation, recurrent outer-product state updates of the form $k_t v_t^\top$ contribute $2 B L D^2$ FLOPs across $L$ temporal steps. The corresponding context retrieval phase via matrix-vector contraction $q_t H_t$ consumes an equivalent $2 B L D^2$ FLOPs, while the final linear projection $W_O$ adds $2 B L D^2$ FLOPs.
 
-**Total Complexity**:
-- **Total MACs**: $6 B L D^2$
-- **Total FLOPs**: $12 B L D^2$ ($\mathcal{O}(L)$ strictly linear sequence scaling)
+Cumulatively, the architecture requires $6 B L D^2$ multiply-accumulate operations (MACs), yielding a total workload of $12 B L D^2$ FLOPs. Unlike quadratic softmax attention which scales as $\mathcal{O}(L^2 D)$, the computational intensity of Griffin SSD remains invariant to sequence expansion, presenting pronounced efficiency advantages when processing ultra-long sequences.
 
-### Memory Footprint:
-- **Static Weights**: $4 D^2$ parameters.
-- **Decoding Memory Footprint**: Bounded by $\mathcal{O}(B \cdot D^2)$ state memory per sequence, eliminating KV cache growth.
+### Memory Footprint and State Allocation
+The model parameter footprint is defined by $4 D^2$ static projection parameters. From an execution perspective, autoregressive decoding eliminates the conventional unbounded Key-Value cache growth. Instead, memory consumption is strictly bounded by a constant-size persistent state matrix $H_t \in \mathbb{R}^{B \times D \times D}$, demanding $\mathcal{O}(B \cdot D^2)$ memory per batch element. Consequently, memory allocations remain static across infinite generation horizons, removing memory-capacity thresholds as a barrier to persistent streaming inference.
 
 ---
 
-## 5. Failure Modes, Rank Collapse & Edge Cases
+## 5. Architectural Bottlenecks, Optimization Stability & Failure Modes
 
-1. **Unbounded Memory Magnitude Accumulation**: Without decay factors, $H_t = H_{t-1} + k_t v_t^\top$ grows monotonically over long context horizons ($L > 65536$), leading to FP16 overflow.
-2. **Lack of Recency Weighting**: Equal weighting across all past positions impairs performance on localized context retrieval.
-3. **High FLOP Cost for Large $D$**: Matrix state size $D \times D$ requires $2 D^2$ FLOPs per token step.
+The unconstrained linear recurrence underpinning state space duality introduces distinct numerical and optimization challenges that manifest predominantly across deep architectures and extended context regimes. A fundamental failure mode stems from unbounded state magnitude accumulation in the un-gated recurrence $H_t = H_{t-1} + k_t v_t^\top$. In the absence of continuous or discrete forgetting mechanisms, the matrix state norms grow monotonically with sequence length $L$. Across extended sequence contexts ($L > 65536$), this monotonic accumulation precipitates numerical overflow under standard half-precision (FP16/BF16) training regimes and degrades gradient signal stability.
+
+Concurrently, the absence of input-dependent recency weighting induces an isotropic temporal memory bias. Because every historical token contributes additively to $H_t$ without exponential decay or associative gating, early context signals compete symmetrically with immediate token transitions, dampening local syntax resolution and degrading associative recall on dense retrieval benchmarks. Furthermore, while the linear recurrence achieves $\mathcal{O}(L)$ scaling with respect to sequence length, the quadratic dependency on hidden dimensionality ($D \times D$ state requiring $2 D^2$ FLOPs per step) induces substantial computational overhead for wide layer configurations ($D \ge 4096$). This structural tradeoff necessitates chunked associative scanning kernels to maintain high Tensor Core occupancy.
 
 ---
 
@@ -144,9 +138,15 @@ def _griffin_ssd_chunk_kernel(
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Decay-Gated SSD (Mamba-SSD Dual)**: Add input-dependent decay parameters $\gamma_t = \sigma(W_{\gamma} x_t)$ to modulate matrix updates: $H_t = \gamma_t H_{t-1} + k_t v_t^\top$.
-2. **Griffin-Mamba Hybrid Models**: Interleave Griffin SSD linear recurrence blocks with Mamba selective scan layers to achieve optimal long-context language modeling.
-3. **FP8 Quantized Matrix States**: Quantize 2D matrix state $H_t$ to FP8 format for 2x memory reduction during long streaming decoding.
+Advancements in state space duality and recurrent linear attention present multiple avenues for architectural synthesis. A foundational trajectory involves the incorporation of input-dependent decay gating into the recurrent update:
+
+\[
+H_t = \gamma_t H_{t-1} + k_t v_t^\top, \quad \text{where } \gamma_t = \sigma(W_{\gamma} x_t)
+\]
+
+This parameterization dynamically bounds the spectral radius of $H_t$, preventing activation overflow while equipping the network with adaptive forgetting dynamics characteristic of selective state space models like Mamba-2.
+
+Furthermore, hybrid architectures that strategically interleave Griffin SSD linear recurrence blocks with selective scan or local sliding-window attention layers yield favorable Pareto frontiers, combining linear generation efficiency with fine-grained local syntactic discrimination. Concurrently, low-precision state quantization techniques—specifically casting the 2D matrix state $H_t$ into FP8 or block-scaled micro-tensor formats—halve memory bandwidth traffic during state loading in SRAM-limited accelerator kernels, unlocking high-throughput long-context streaming capabilities.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

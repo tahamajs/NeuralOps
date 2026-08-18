@@ -105,36 +105,35 @@ Let $B$ be batch size, $L$ sequence length, $D$ model dimension, $H$ head count,
 1. **Linear Projections ($Q, K, V, O$)**:
    $$\text{FLOPs}_{\text{proj}} = 4 \times 2 B L D^2 = 8 B L D^2$$
 2. **FlashAttention-3 FP8 Kernel Core**:
-   - Query-Key score matmul: $2 B H L^2 d_h = 2 B L^2 D$
-   - Softmax online scaling & Value contraction: $2 B H L^2 d_h = 2 B L^2 D$
-   $$\text{FLOPs}_{\text{core\_fp8}} = 4 B L^2 D \quad (\text{executed at } 2\times \text{ Tensor Core throughput})$$
+Query-Key score matmul: $2 B H L^2 d_h = 2 B L^2 D$ Furthermore, Softmax online scaling & Value contraction: $2 B H L^2 d_h = 2 B L^2 D$ $$\text{FLOPs}_{\text{core\_fp8}} = 4 B L^2 D \quad (\text{executed at } 2\times \text{ Tensor Core throughput})$$
+
 
 **Total FLOP Count**:
 
 $$\text{FLOPs}_{\text{total}} = 8 B L D^2 + 4 B L^2 D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} = 4 B L D^2 + 2 B L^2 D$$
-- **SRAM-HBM Memory Traffic**: 8-bit precision halves $Q, K, V$ data movement volume from $2 \text{ bytes/element}$ (FP16/BF16) to $1 \text{ byte/element}$ (FP8).
-- **HBM Activation IO Complexity**: $\mathcal{O}\left(B L D + \frac{B H L^2 d_h^2}{M_{\text{SRAM}}}\right)$.
-- **Parameter Footprint**: $\Theta = 4 D^2$.
+Specifically, regarding \textbf{SRAM-HBM Memory Traffic}, 8-bit precision halves $Q, K, V$ data movement volume from $2 \text{ bytes/element}$ (FP16/BF16) to $1 \text{ byte/element}$ (FP8). Furthermore, regarding \textbf{HBM Activation IO Complexity}, $\mathcal{O}\left(B L D + \frac{B H L^2 d_h^2}{M_{\text{SRAM}}}\right)$. Concurrently, regarding \textbf{Parameter Footprint}, $\Theta = 4 D^2$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense FP16 Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ DRAM IO scaling.
-- **FlashAttention-3 FP8 Engine**: $\mathcal{O}(L^2 D)$ compute (at $2\times$ Tensor Core speed), $\mathcal{O}(L D)$ IO scaling (at $50\%$ reduced byte volume), achieving $4\times$ overall throughput gain over FP16 FlashAttention-2.
+Specifically, regarding \textbf{Standard Dense FP16 Attention}, $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ DRAM IO scaling. Furthermore, regarding \textbf{FlashAttention-3 FP8 Engine}, $\mathcal{O}(L^2 D)$ compute (at $2\times$ Tensor Core speed), $\mathcal{O}(L D)$ IO scaling (at $50\%$ reduced byte volume), achieving $4\times$ overall throughput gain over FP16 FlashAttention-2.
+
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### 5.1 Dynamic Range Clipping in E4M3 FP8 Format
-- **Mechanism**: The E4M3 format supports a maximum finite value of 448. Unscaled attention logits $Q K^T / \sqrt{d_h}$ exceeding 448 overflow to `NaN` during kernel execution.
-- **Mitigation**: Apply dynamic pre-scaling factors $S_Q, S_K$ before casting: $Q_{\text{fp8}} = \text{cast}(Q \cdot S_Q)$.
+At the architectural level, the underlying operational mechanism reveals that the E4M3 format supports a maximum finite value of 448. Unscaled attention logits $Q K^T / \sqrt{d_h}$ exceeding 448 overflow to `NaN` during kernel execution. To systematically mitigate this constraint, the framework enforces an optimization protocol such that apply dynamic pre-scaling factors $S_Q, S_K$ before casting: $Q_{\text{fp8}} = \text{cast}(Q \cdot S_Q)$.
+
 
 ### 5.2 Hardware Requirement Bottleneck
-- **Mechanism**: FP8 WGMMA hardware instructions are strictly supported on NVIDIA Hopper GPUs (`sm_90a`). Invoking FP8 kernels on older architectures causes immediate CUDA illegal instruction errors.
-- **Mitigation**: Implement automated fallback to PyTorch SDPA (`F.scaled_dot_product_attention`).
+At the architectural level, the underlying operational mechanism reveals that fP8 WGMMA hardware instructions are strictly supported on NVIDIA Hopper GPUs (`sm_90a`). Invoking FP8 kernels on older architectures causes immediate CUDA illegal instruction errors. To systematically mitigate this constraint, the framework enforces an optimization protocol such that implement automated fallback to PyTorch SDPA (`F.scaled_dot_product_attention`).
+
 
 ---
 
@@ -167,11 +166,12 @@ $$\text{FLOPs}_{\text{total}} = 8 B L D^2 + 4 B L^2 D$$
 ```
 
 ### 6.1 Triton Strategy 1: Vectorized FP8 Quantization Kernel
-- Implement a custom Triton kernel for FP8 quantization: load FP16/BF16 activations into SRAM, evaluate per-channel maximums, scale by $S_Q$, and cast to `torch.float8_e4m3fn` using vectorized 16-byte packed writes.
+Implement a custom Triton kernel for FP8 quantization: load FP16/BF16 activations into SRAM, evaluate per-channel maximums, scale by $S_Q$, and cast to `torch.float8_e4m3fn` using vectorized 16-byte packed writes.
+
 
 ### 6.2 Triton Strategy 2: Hopper WGMMA FP8 Tensor Core Pipeline
-- Issue native FP8 WGMMA matrix instructions on Consumer warps, achieving up to $2\times$ higher TFLOP execution speeds over FP16 Tensor Cores.
-- Use TMA asynchronous load engines to prefetch FP8 key-value tiles into shared memory pipelines without warp blocking.
+Issue native FP8 WGMMA matrix instructions on Consumer warps, achieving up to $2\times$ higher TFLOP execution speeds over FP16 Tensor Cores. Furthermore, Use TMA asynchronous load engines to prefetch FP8 key-value tiles into shared memory pipelines without warp blocking.
+
 
 ---
 

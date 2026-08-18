@@ -36,23 +36,18 @@ $$\mathbf{Y}_{\text{topk}} = \operatorname{Gather}\left(\mathbf{E}_{\text{out}},
 $$\mathbf{Y} = \sum_{j=1}^k \mathbf{P}_{:, :, j} \odot \mathbf{Y}_{\text{topk}, :, :, j, :} \quad \in \mathbb{R}^{B \times L \times d_{\text{out}}}$$
 
 ### 2.3 Layer Pipeline: QKV-MoE & FFN-MoE Integration
-The overall `BAMUMoEBlock` executes the following sequence:
-
-1. **QKV-MoE Projection**:
-   $$\mathbf{QKV} = \operatorname{UnifiedMoE}_{\text{qkv}}(\mathbf{X}) \in \mathbb{R}^{B \times L \times (3 \cdot D)}$$
-   The projected output is split into Query, Key, and Value representations:
-   $$\mathbf{Q}, \mathbf{K}, \mathbf{V} = \operatorname{Chunk}\left(\mathbf{QKV}, 3, \text{dim}=-1\right), \quad \mathbf{V} \in \mathbb{R}^{B \times L \times D}$$
-
-2. **Output Linear Projection & Residual Norm 1**:
-   $$\mathbf{H}_{\text{proj}} = \mathbf{V} \mathbf{W}_{\text{out}} \in \mathbb{R}^{B \times L \times D}$$
-   $$\mathbf{H}_1 = \operatorname{LayerNorm}\left( \mathbf{X} + \operatorname{Dropout}(\mathbf{H}_{\text{proj}}) \right)$$
-
-3. **FFN-MoE Projection & Residual Norm 2**:
-   $$\mathbf{H}_{\text{ffn}} = \operatorname{UnifiedMoE}_{\text{ffn}}(\mathbf{H}_1) \in \mathbb{R}^{B \times L \times D}$$
-   $$\mathbf{H}_2 = \operatorname{LayerNorm}\left( \mathbf{H}_1 + \operatorname{Dropout}(\mathbf{H}_{\text{ffn}}) \right)$$
-
-4. **Attention Masking (if provided)**:
-   $$\mathbf{Y}_{\text{final}} = \mathbf{H}_2 \odot \mathbf{M}_{\text{attn}}$$
+The forward execution trace of the `BAMUMoEBlock` proceeds through a structured, multi-stage pipeline coupling specialized sparse mixture-of-experts projections with residual normalizations. Initially, the input activation tensor $\mathbf{X}$ is processed by the QKV mixture-of-experts module:
+$$\mathbf{QKV} = \operatorname{UnifiedMoE}_{\text{qkv}}(\mathbf{X}) \in \mathbb{R}^{B \times L \times (3 \cdot D)}$$
+This unified projected tensor is subsequently partitioned across its trailing dimension into individual query, key, and value states:
+$$\mathbf{Q}, \mathbf{K}, \mathbf{V} = \operatorname{Chunk}\left(\mathbf{QKV}, 3, \text{dim}=-1\right), \quad \mathbf{V} \in \mathbb{R}^{B \times L \times D}$$
+The extracted value representations are then mapped through a linear projection layer $\mathbf{W}_{\text{out}}$ and merged with the identity path via an initial pre-layer normalization residual connection:
+$$\mathbf{H}_{\text{proj}} = \mathbf{V} \mathbf{W}_{\text{out}} \in \mathbb{R}^{B \times L \times D}$$
+$$\mathbf{H}_1 = \operatorname{LayerNorm}\left( \mathbf{X} + \operatorname{Dropout}(\mathbf{H}_{\text{proj}}) \right)$$
+Following this initial projection stage, intermediate representation $\mathbf{H}_1$ is routed through the second feed-forward mixture-of-experts block, followed by secondary residual addition and normalization:
+$$\mathbf{H}_{\text{ffn}} = \operatorname{UnifiedMoE}_{\text{ffn}}(\mathbf{H}_1) \in \mathbb{R}^{B \times L \times D}$$
+$$\mathbf{H}_2 = \operatorname{LayerNorm}\left( \mathbf{H}_1 + \operatorname{Dropout}(\mathbf{H}_{\text{ffn}}) \right)$$
+Finally, where padding or sequence boundaries are enforced, the normalized representations are modulated via element-wise attention masking:
+$$\mathbf{Y}_{\text{final}} = \mathbf{H}_2 \odot \mathbf{M}_{\text{attn}}$$
 
 ---
 
@@ -128,67 +123,32 @@ The overall `BAMUMoEBlock` executes the following sequence:
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### 4.1 FLOPs Computation Breakdown
-Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $E$ total experts, and $k$ top active experts.
+### 4.1 FLOPs and Arithmetic Workload Breakdown
+Let $B$ represent the batch size, $L$ the sequence length, $D$ the hidden feature dimension, $E$ the total expert pool size, and $k$ the number of top active experts selected per token. The arithmetic complexity of the un-fused baseline implementation can be characterized systematically across its sequential operational phases.
 
-1. **QKV-MoE Router Logits**:
-   $$\operatorname{FLOPs}_{\text{qkv\_router}} = 2 B L D E$$
-2. **QKV Expert Computations**:
-   For each expert $e$, inner projection maps $D \to 6D$ ($2 d_{\text{out}} = 6D$) requiring $2 \cdot 6 D^2$ FLOPs; outer projection maps $6D \to 3D$ requiring $2 \cdot 6D \cdot 3D = 36 D^2$ FLOPs.
-   Total per expert $= 12 D^2 + 36 D^2 = 48 D^2$ FLOPs.
-   Evaluating all $E$ experts across $B \times L$ tokens:
-   $$\operatorname{FLOPs}_{\text{qkv\_experts}} = 48 B L E D^2$$
-3. **QKV Gated Weighted Sum**:
-   $$\operatorname{FLOPs}_{\text{qkv\_sum}} = 2 B L k (3D) = 6 B L k D$$
-4. **Linear Output Projection ($\mathbf{W}_{\text{out}}$)**:
-   $$\operatorname{FLOPs}_{\text{out\_proj}} = 2 B L D^2$$
-5. **FFN-MoE Router Logits**:
-   $$\operatorname{FLOPs}_{\text{ffn\_router}} = 2 B L D E$$
-6. **FFN Expert Computations**:
-   For each FFN expert, inner projection maps $D \to 2D$ ($4 D^2$ FLOPs); outer projection maps $2D \to D$ ($4 D^2$ FLOPs). Total per expert $= 8 D^2$ FLOPs.
-   Evaluating all $E$ experts across $B \times L$ tokens:
-   $$\operatorname{FLOPs}_{\text{ffn\_experts}} = 8 B L E D^2$$
-7. **FFN Gated Weighted Sum**:
-   $$\operatorname{FLOPs}_{\text{ffn\_sum}} = 2 B L k D$$
+The initial routing stage evaluates gating logits across all candidate experts via linear projection $\mathbf{W}_{\text{gate, QKV}}$, incurring $\operatorname{FLOPs}_{\text{qkv\_router}} = 2 B L D E$. During expert evaluation, each expert sub-network $e$ applies an expansion projection $D \to 6D$ requiring $2 \cdot 6 D^2 = 12 D^2$ FLOPs followed by a contracting projection $6D \to 3D$ requiring $2 \cdot 6D \cdot 3D = 36 D^2$ FLOPs, culminating in $48 D^2$ FLOPs per expert. Evaluating all $E$ experts across $B \times L$ tokens yields $\operatorname{FLOPs}_{\text{qkv\_experts}} = 48 B L E D^2$. Gathering and weighting the top-$k$ expert outputs introduces an additional $\operatorname{FLOPs}_{\text{qkv\_sum}} = 2 B L k (3D) = 6 B L k D$, while the subsequent linear projection on the value component accounts for $\operatorname{FLOPs}_{\text{out\_proj}} = 2 B L D^2$. 
 
+Concurrently, the feed-forward mixture-of-experts (FFN-MoE) pipeline mirrors this structure: router logit generation requires $\operatorname{FLOPs}_{\text{ffn\_router}} = 2 B L D E$, while each FFN expert performs an expansion $D \to 2D$ ($4 D^2$ FLOPs) and contraction $2D \to D$ ($4 D^2$ FLOPs) for a cumulative $8 D^2$ FLOPs per expert, totaling $\operatorname{FLOPs}_{\text{ffn\_experts}} = 8 B L E D^2$ across the full expert bank. Finally, weighted gating summation in the FFN stage contributes $\operatorname{FLOPs}_{\text{ffn\_sum}} = 2 B L k D$. Summing these individual components establishes the aggregate computational requirement:
 $$\text{Total FLOPs} = 56 B L E D^2 + 2 B L D^2 + 4 B L D E + 8 B L k D$$
 
-### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
-  $$\text{Total MACs} \approx 28 B L E D^2 + B L D^2 + 2 B L D E$$
-- **Peak Activation Memory**:
-  - Router Logits: $2 \times B \cdot L \cdot E \times 2 \text{ bytes}$
-  - QKV Expert Stack Buffer: $B \cdot L \cdot E \cdot 3D \times 2 \text{ bytes}$ (In un-grouped naive implementation, requires huge memory)
-  - FFN Expert Stack Buffer: $B \cdot L \cdot E \cdot D \times 2 \text{ bytes}$
-  - Intermediate activations scale linearly with $L$: $\mathcal{O}(B L E D)$ (no $L^2$ dependence).
+### 4.2 MACs and Memory Footprint Analysis
+The net multiply-accumulate operations closely parallel the floating-point workload, scaling as $\text{Total MACs} \approx 28 B L E D^2 + B L D^2 + 2 B L D E$. In terms of memory residency, peak transient activation consumption is dominated by the gating logit buffers ($2 \times B \cdot L \cdot E \times 2 \text{ bytes}$), the un-grouped QKV expert stack tensor ($B \cdot L \cdot E \cdot 3D \times 2 \text{ bytes}$), and the FFN expert stack tensor ($B \cdot L \cdot E \cdot D \times 2 \text{ bytes}$). Significantly, all intermediate activations scale strictly linearly with sequence length as $\mathcal{O}(B L E D)$, avoiding the quadratic $\mathcal{O}(B H L^2)$ storage constraints inherent to dense self-attention.
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **BAM-UMoE Block**: $\mathcal{O}(L E D^2)$ compute, $\mathcal{O}(L E D)$ memory.
-- BAM-UMoE completely eliminates sequence length quadratic dependency, allowing linear scaling to arbitrary $L$.
+Whereas conventional Multi-Head Self-Attention requires $\mathcal{O}(L^2 D)$ computational operations and $\mathcal{O}(L^2 H)$ attention matrix memory, the BAM-UMoE formulation scales with linear asymptotic complexity $\mathcal{O}(L E D^2)$ in compute and $\mathcal{O}(L E D)$ in transient memory. By decoupling computational overhead from quadratic sequence interactions, the architecture facilitates sequence length scaling to arbitrary context horizons, shifting the computational bottleneck from sequence length $L$ to model width $D$ and expert capacity $E$.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
-### 5.1 Naive Torch Stack Memory Allocation Explosion
-In the Python implementation:
-```python
-experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)
-```
-Every token evaluates **all $E$ experts** regardless of top-$k$ routing decisions, storing the intermediate outputs of all $E$ experts in global VRAM before gathering the top-$k$.
-- **VRAM Waste**: Expands activation memory by a factor of $E / k$ (e.g., $8 / 2 = 4 \times$ unnecessary allocation).
-- **FLOPs Waste**: Computes $E$ forward passes instead of $k$ forward passes, burning $E / k \times$ more compute than theoretical conditional computation.
+### 5.1 Memory Allocation Explosion in Naive Implementations
+In un-fused implementations relying on sequential list comprehensions and tensor stacking (e.g., `experts_out = torch.stack([exp(x) for exp in self.experts], dim=2)`), every input token evaluates the entire expert pool $E$ prior to top-$k$ gating. This implementation artifact induces an acute memory bottleneck, inflating dynamic activation allocations by an unnecessary factor of $E / k$ (e.g., a $4\times$ memory penalty when $E=8, k=2$) and executing redundant floating-point operations. Consequently, un-grouped evaluation eliminates the practical latency advantages of conditional computation unless fused with grouped scatter-gather kernel dispatch.
 
-### 5.2 Complete Loss of Spatial Token Interaction
-BAM-UMoE processes tokens strictly independently along sequence axis $L$.
-- **Receptive Field Collapse**: Receptive field of any token is strictly $1$. The model has zero cross-token context aggregation mechanism.
-- **Positional Degeneracy**: If positional embeddings are omitted or weakly integrated, sentence-level permutation invariance occurs. The architecture cannot perform context-dependent semantic binding.
+### 5.2 Complete Loss of Spatial Token Interaction and Semantic Binding
+Because BAM-UMoE operates strictly token-wise along the sequence axis, each token representation evolves in complete isolation without pairwise cross-token communication. Consequently, the effective receptive field of any individual token is strictly bounded to $1$, eliminating the network's intrinsic capacity for associative context aggregation. Furthermore, in the absence of robust, deeply integrated positional encodings, the architecture exhibits permutation invariance across sequence tokens, precluding context-dependent syntactic binding, coreference resolution, and long-range semantic synthesis.
 
-### 5.3 Expert Routing Collapse & Load Imbalance
-In router gate $\operatorname{Softmax}\left(\operatorname{TopK}(\mathbf{X} \mathbf{W}_{\text{gate}})\right)$, without auxiliary load balancing loss (such as Switch Transformer or DeepSeek MoE auxiliary balance loss):
-- A small subset of experts (e.g., 1 or 2 experts) quickly acquire large norm weights $\mathbf{W}_{\text{gate}}$.
-- The router constantly selects the same over-utilized experts, causing remaining experts to become dead nodes ($\nabla_{\mathbf{W}_e} \mathcal{L} = 0$).
+### 5.3 Routing Collapse, Expert Starvation, and Loss Surface Degeneracy
+In the absence of explicit auxiliary load-balancing constraints within the gating objective $\operatorname{Softmax}\left(\operatorname{TopK}(\mathbf{X} \mathbf{W}_{\text{gate}})\right)$, the optimization trajectory is susceptible to severe routing collapse. Early during training, stochastic initialization biases cause a minor subset of experts to receive a disproportionate share of token assignments. As these favored experts receive frequent gradient updates, their gating parameters $\mathbf{W}_{\text{gate}}$ grow in magnitude, creating a positive feedback loop that monopolizes token routing. Concurrently, under-utilized experts experience gradient starvation ($\nabla_{\mathbf{W}_e} \mathcal{L} \to 0$), effectively collapsing the active model capacity into a narrow sub-network and degrading the smoothness of the loss landscape.
 
 ---
 
@@ -258,19 +218,14 @@ def _umoe_scatter_kernel(
         tl.store(gx_ptrs, x_val)
 ```
 
-### 6.3 Hardware Memory Optimization Summary
-1. **True Conditional Computation**: Compute is strictly bounded by $\mathcal{O}(k \cdot B \cdot L \cdot D^2)$ instead of $\mathcal{O}(E \cdot B \cdot L \cdot D^2)$.
-2. **Zero Stack Allocation**: Eliminates `torch.stack` intermediate tensors, reducing peak memory usage from $\mathcal{O}(B L E D)$ to $\mathcal{O}(B L k D)$.
-3. **Tensor Core Utilization**: Re-ordering tokens into contiguous expert blocks enables dense matrix multiplication (`tl.dot`) targeting Tensor Cores at full hardware utilization.
+### 6.3 Hardware Memory Optimization Analysis
+The transition from naive PyTorch execution to the fused Triton grouped kernel delivers several critical architectural advantages. By dispatching computations strictly to active experts, arithmetic complexity is bounded by true conditional scaling $\mathcal{O}(k \cdot B \cdot L \cdot D^2)$ rather than total expert capacity $\mathcal{O}(E \cdot B \cdot L \cdot D^2)$. Furthermore, eliminating intermediate tensor stack buffers reduces peak transient memory residency from $\mathcal{O}(B L E D)$ to $\mathcal{O}(B L k D)$, preventing out-of-memory faults during long-context training. Finally, reordering token activations into contiguous memory tiles prior to execution maximizes Tensor Core occupancy via dense warp-level matrix multiplications (`tl.dot`), achieving near-peak arithmetic throughput across modern GPU streaming multiprocessors.
 
 ---
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Hybrid Inter-Token SSM + UMoE Layer Interleaving**: Interleave lightweight 1D linear recurrences (such as Mamba-2 or RWKV-6) every $N$ layers to provide spatial sequence context aggregation while retaining $\mathcal{O}(L)$ compute scaling.
-2. **Auxiliary Load-Balanced Soft Router Loss**: Integrate sequence-level expert balancing cross-entropy constraints into $W_{\text{gate}}$ training to prevent expert starvation and maximize capacity utilization.
-3. **Shared Expert Base Architecture**: Allocate $1$ or $2$ shared static experts that process all tokens unconditionally, combined with $E-2$ dynamically routed top-$k$ experts to capture invariant domain knowledge.
-4. **FP8 Block Quantized Expert Weights**: Quantize expert linear weights $W_{1, e}, W_{2, e}$ to FP8 (E4M3), enabling fitting 64+ experts into H100 SXM SRAM/VRAM without dynamic DRAM swapping.
+To overcome the spatial aggregation limitations of pure token-wise mixture-of-experts architectures while retaining linear complexity, several promising synthesis directions emerge. Interleaving lightweight one-dimensional linear state-space models (such as Mamba-2 or RWKV-6) with BAM-UMoE blocks establishes an effective hybrid hierarchy, restoring cross-token context propagation across the sequence while strictly maintaining $\mathcal{O}(L)$ compute scaling. Concurrently, incorporating auxiliary load-balancing losses and router cross-entropy constraints mitigates expert starvation, ensuring balanced capacity distribution across the expert ensemble. Furthermore, establishing a shared expert topology—wherein fixed static experts unconditionally process all tokens alongside dynamically routed top-$k$ experts—ensures invariant general domain representation while allowing dynamic experts to capture specialized sub-domain patterns. Finally, quantizing expert linear projections to microscopic 8-bit formats (e.g., FP8 E4M3) enables hosting extensive expert ensembles (64+ experts) directly within on-chip SRAM and high-bandwidth memory, eliminating dynamic DRAM swapping penalties during large-scale inference.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

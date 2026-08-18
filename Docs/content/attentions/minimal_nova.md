@@ -4,10 +4,7 @@
 
 Standard Multi-Head Self-Attention (MHSA) in Transformer architectures requires dense projection matrices ($W_Q, W_K, W_V, W_O \in \mathbb{R}^{D \times D}$) that introduce heavy parameter memory footprints and high matrix multiplication FLOP counts. Standard low-rank compression methods apply static projection ranks across all network layers, ignoring the empirical singular value distribution of pre-trained parameters.
 
-**MinimalNOVA Attention** implements an energy-preserving drop-in attention module based on Singular Value Decomposition (SVD):
-1. **Spectral Energy Ratio Truncation**: For each projection matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, full SVD is evaluated. The bottleneck rank $r$ is dynamically determined per layer to retain a target cumulative Frobenius energy ratio $\eta_{\text{energy}} = 0.95$.
-2. **Dual-Linear Factorization**: Projection layers are factorized into down-projection matrix $B = V_{:, :r}^T \in \mathbb{R}^{r \times d_{\text{in}}}$ and up-projection matrix $A = U_{:, :r} \operatorname{diag}(\Sigma_{:r}) \in \mathbb{R}^{d_{\text{out}} \times r}$, executing linear projections in $\mathcal{O}(B \cdot N \cdot r \cdot (d_{\text{in}} + d_{\text{out}}))$ time.
-3. **Zero-Shot Drop-In Compatibility**: Preserves standard scaled dot-product attention logits, enabling immediate injection into pre-trained Transformer layers without zero-shot performance collapse.
+To circumvent the parameter redundancy and quadratic operational scaling of uncompressed projections, **MinimalNOVA Attention** establishes an energy-preserving drop-in attention module anchored in Singular Value Decomposition (SVD). The architecture operates via dynamic spectral energy ratio truncation, wherein the full singular value decomposition is evaluated for each projection matrix $W_0 \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ to dynamically calibrate the bottleneck rank $r$ on a per-layer basis, rigorously preserving a target cumulative Frobenius energy ratio of $\eta_{\text{energy}} = 0.95$. Building upon this spectral selection, the projection layers are cast into a dual-linear factorization comprising a down-projection operator $B = V_{:, :r}^T \in \mathbb{R}^{r \times d_{\text{in}}}$ and an up-projection operator $A = U_{:, :r} \operatorname{diag}(\Sigma_{:r}) \in \mathbb{R}^{d_{\text{out}} \times r}$, which restricts intermediate linear transformations to an asymptotic complexity of $\mathcal{O}(B \cdot N \cdot r \cdot (d_{\text{in}} + d_{\text{out}}))$. Furthermore, the module enforces strict zero-shot drop-in compatibility by retaining the canonical scaled dot-product attention logit formulation, thereby permitting seamless post-hoc integration into pre-trained Transformer architectures without inducing catastrophic zero-shot representation collapse.
 
 ---
 
@@ -72,38 +69,34 @@ $$Y = \text{FactorisedLinear}_O\left( \text{Reshape}(O) \right) \in \mathbb{R}^{
 ### 4.1 Floating Point Operations (FLOPs)
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count, $d_h = D/H$ head dimension, and $r$ average SVD rank.
 
-1. **Factorized Projections ($Q, K, V, O$)**:
-   - Down-projection ($X B^T$): $2 B N D r$
-   - Up-projection ($Z A^T$): $2 B N r D$
-   $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
-2. **Attention Core**:
-   - Query-Key score product ($Q K^T$): $2 B H N^2 d_h = 2 B N^2 D$
-   - Softmax & Value contraction ($A V$): $2 B H N^2 d_h = 2 B N^2 D$
-   $$\text{FLOPs}_{\text{attn}} = 4 B N^2 D$$
+The theoretical computational workload is governed by the factorized tensor projections and the core scaled dot-product attention mechanism. For the factorized projections encompassing Query, Key, Value, and Output transformations, the execution decomposes into a down-projection step ($X B^T$) contributing $2 B N D r$ FLOPs and an up-projection step ($Z A^T$) contributing $2 B N r D$ FLOPs. Aggregating across all four projection operators yields:
 
-**Total FLOP Count**:
+$$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
+
+Concurrently, the canonical multi-head attention core evaluates the query-key score matrix product ($Q K^T$) and the subsequent softmax-weighted value contraction ($A V$), each requiring $2 B H N^2 d_h = 2 B N^2 D$ floating-point operations:
+
+$$\text{FLOPs}_{\text{attn}} = 4 B N^2 D$$
+
+Synthesizing these dual computational phases produces the cumulative operational complexity:
 
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B N^2 D$$
 
 ### 4.2 Memory Footprint & Bandwidth
-- **Parameter Footprint**:
-  $$\Theta = 4 \times (D \cdot r + r \cdot D) = 8 D r \ll 4 D^2$$
-- **Activation Footprint**:
-  - Intermediate rank-$r$ bottleneck activations: $\mathcal{O}(B N r)$
-  - Full attention score tensor: $\mathcal{O}(B H N^2)$
-  - Total Memory: $\mathcal{O}(B N D + B N r + B H N^2)$
+Evaluating the memory profile reveals substantial efficiency gains in static parameter storage alongside distinct dynamic memory regimes. The total static parameter footprint scales as:
+
+$$\Theta = 4 \times (D \cdot r + r \cdot D) = 8 D r \ll 4 D^2$$
+
+which introduces massive parameter compression whenever the selected rank satisfies $r \ll D$. Concurrently, the runtime activation footprint is characterized by intermediate rank-$r$ bottleneck activations scaling as $\mathcal{O}(B N r)$ and the full attention score tensor demanding $\mathcal{O}(B H N^2)$ storage, culminating in an aggregate peak activation memory overhead of $\mathcal{O}(B N D + B N r + B H N^2)$.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Failure Modes
 
 ### 5.1 Energy Truncation Loss in Deep Layers
-- **Mechanism**: Preserving $\eta_{\text{energy}} = 0.95$ energy caps maximum rank to $r_{\max} = 64$. For deep Transformer layers where singular values decay slowly (high spectral entropy), truncating at $r = 64$ discards more than $5\%$ of total Frobenius norm.
-- **Consequence**: Loss of fine-grained representation capacity, causing perplexity degradation on long-context benchmarks.
+The spectral energy truncation threshold $\eta_{\text{energy}} = 0.95$ operates under an upper-bound rank constraint of $r_{\max} = 64$. In deep Transformer representations, layer representations tend toward isotropic dispersion characterized by high spectral entropy and slowly decaying singular value tails. Consequently, enforcing a hard truncation cap at $r = 64$ discards a non-negligible portion (exceeding 5%) of the total Frobenius norm. This structural truncation induces an unrecoverable projection loss in high-order subspace interactions, which manifests empirically as degraded representation capacity and elevated perplexity on long-context benchmarks. From an optimization perspective, this spectral attenuation alters the gradient conditioning across residual streams, flattening sensitive directions in the local loss landscape and impeding fine-grained convergence during post-decomposition adaptation.
 
 ### 5.2 Zero-Bias Instability in Pre-Trained Transfer
-- **Mechanism**: If source linear layers contain biases ($b \neq 0$), omitting biases in low-rank factorized projections introduces systematically shifted activation distributions.
-- **Mitigation**: Ensure `pretrained_bias` is passed and copied directly to the `up` linear layer.
+A subtle yet critical instability arises during pre-trained weight transfer when source linear projection layers possess non-zero bias vectors ($b \neq 0$). Omitting affine bias parameters during low-rank factorization introduces systematic distributional shifts in the forward activation space. This discrepancy disrupts the delicate layer normalization statistics calibrated throughout pre-training, causing early-step gradient shocks and potential divergence in fine-tuning trajectories. To preserve numerical fidelity and stabilize the underlying loss landscape, the pre-trained bias vector must be explicitly retained and assigned to the up-projection operator ($W_{\text{up}}$), thereby ensuring exact preservation of the affine manifold geometry.
 
 ---
 
@@ -128,16 +121,10 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 B N^2 D$$
 ```
 
 ### 6.1 Triton Strategy 1: Fused Dual-GEMM Factorized Projection Operator
-Standard PyTorch executes two sequential matrix multiplications (`x @ down.weight.T` followed by `@ up.weight.T`), allocating an intermediate tensor $[B, N, r]$ in global DRAM.
-
-**Triton Optimization**:
-- Implement a custom Triton GEMM kernel that loads input tile $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Compute down-projection with $V_{:, :r}^T$ in register files and immediately evaluate up-projection with $(U_{:, :r} \Sigma_{:r})^T$.
-- **Speedup**: Reduces DRAM memory bandwidth consumption by $2\times$, achieving up to $1.8\times$ kernel latency reduction.
+In standard execution pipelines, naive frameworks execute two sequential matrix multiplications—specifically evaluating $X W_{\text{down}}^T$ followed by the subsequent up-projection across $W_{\text{up}}^T$—which necessitates the materialization and round-trip memory allocation of an intermediate tensor of shape $[B, N, r]$ within global high-bandwidth memory (DRAM). To eliminate this memory bandwidth bottleneck, a custom Triton GEMM kernel stages input tiles $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ directly into on-chip static RAM (SRAM). The down-projection against $V_{:, :r}^T$ is computed entirely within local register files, immediately chaining into the up-projection matrix product against $(U_{:, :r} \Sigma_{:r})^T$ without intermediary DRAM writes. This register-level fusion reduces off-chip memory traffic by approximately $2\times$, realizing up to a $1.8\times$ reduction in overall kernel execution latency.
 
 ### 6.2 Triton Strategy 2: FlashAttention-2 Core Integration
-- Stream Q, K, V tensors through a Triton FlashAttention-2 kernel with `BLOCK_M = 128` and `BLOCK_N = 128`.
-- Maintain online maximum tracking $m_i$ and normalizer $l_i$ directly in SRAM registers, eliminating global memory allocation for $[B, H, N, N]$ attention matrices.
+To mitigate the quadratic memory overhead associated with attention logit materialization, Query, Key, and Value tensors are streamed through a specialized Triton FlashAttention-2 kernel configured with tiling parameters `BLOCK_M = 128` and `BLOCK_N = 128`. By maintaining running row-wise maximum tracking $m_i$ and partition function normalizers $l_i$ within SRAM registers via online softmax rescaling, the implementation completely eliminates global HBM allocations for the $[B, H, N, N]$ attention score matrix, maintaining optimal Tensor Core arithmetic intensity.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

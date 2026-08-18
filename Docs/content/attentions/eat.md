@@ -101,16 +101,14 @@ $$\mathbf{T}_{\text{idx}}^{\text{new}} = \operatorname{Gather}\left( \mathbf{T}_
 Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ attention heads, $d_h = D/H$, and $\gamma$ pruning retention ratio ($L' = \gamma L$).
 
 1. **Multi-Head Self-Attention (MHSA)**:
-   - Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}$): $8 B L D^2$
-   - Score matmul & context matmul: $4 B H L^2 d_h = 4 B D L^2$
-   $$\operatorname{FLOPs}_{\text{mhsa}} = 8 B L D^2 + 4 B D L^2$$
+Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}, \mathbf{O}$): $8 B L D^2$ Furthermore, Score matmul & context matmul: $4 B H L^2 d_h = 4 B D L^2$ $$\operatorname{FLOPs}_{\text{mhsa}} = 8 B L D^2 + 4 B D L^2$$
+
 2. **Position-wise Feed-Forward Network (FFN)**:
-   - Expansion $D \to 4D$ and projection $4D \to D$: $2 \times (2 B L D (4D)) = 16 B L D^2$
-   $$\operatorname{FLOPs}_{\text{ffn}} = 16 B L D^2$$
+Expansion $D \to 4D$ and projection $4D \to D$: $2 \times (2 B L D (4D)) = 16 B L D^2$ $$\operatorname{FLOPs}_{\text{ffn}} = 16 B L D^2$$
+
 3. **Progressive Token Pruning Stage**:
-   - Salience scoring: $2 B L D$ FLOPs.
-   - Top-$k$ sorting: $B L \log L'$ FLOPs.
-   $$\operatorname{FLOPs}_{\text{prune}} = 2 B L D + B L \log L'$$
+Salience scoring: $2 B L D$ FLOPs. Furthermore, Top-$k$ sorting: $B L \log L'$ FLOPs. $$\operatorname{FLOPs}_{\text{prune}} = 2 B L D + B L \log L'$$
+
 
 $$\text{Total Block FLOPs} = 24 B L D^2 + 4 B D L^2 + 2 B L D + B L \log L'$$
 
@@ -118,17 +116,15 @@ Downstream Transformer layer $\ell+1$ operates on reduced length $L'$, cutting i
 $$\Delta \text{FLOPs}_{\text{downstream}} = 4 B D (L^2 - L'^2) + 24 B (L - L') D^2 = 4 B D L^2 (1 - \gamma^2) + 24 B L D^2 (1 - \gamma)$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 12 B L D^2 + 2 B D L^2$$
-- **Peak Activation Memory**:
-  - Attention Score Tensor: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$
-  - Intermediate FFN Buffer: $B \cdot L \cdot 4D \times 2 \text{ bytes}$
-  - Pruned Output Buffer: $B \cdot L' \cdot D \times 2 \text{ bytes}$
-  - Memory scales as $\mathcal{O}(B H L^2 + B L D)$.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Attention Score Tensor: $B \cdot H \cdot L \cdot L \times 2 \text{ bytes}$ Concurrently, Intermediate FFN Buffer: $B \cdot L \cdot 4D \times 2 \text{ bytes}$ In this setting, Pruned Output Buffer: $B \cdot L' \cdot D \times 2 \text{ bytes}$ Additionally, Memory scales as $\mathcal{O}(B H L^2 + B L D)$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Transformer Layer Stack**: $\mathcal{O}(M \cdot L^2 D)$ compute across $M$ layers.
-- **EAT Progressive Pruning Stack**: $\mathcal{O}\left( D \sum_{\ell=1}^M L_\ell^2 \right)$ compute, where $L_\ell = \gamma^\ell L_0$. Asymptotically bounds total attention compute to $\mathcal{O}\left( \frac{1}{1 - \gamma^2} L_0^2 D \right)$, making deep Transformer inference up to $3\times$ faster.
+Specifically, regarding \textbf{Standard Transformer Layer Stack}, $\mathcal{O}(M \cdot L^2 D)$ compute across $M$ layers. Furthermore, regarding \textbf{EAT Progressive Pruning Stack}, $\mathcal{O}\left( D \sum_{\ell=1}^M L_\ell^2 \right)$ compute, where $L_\ell = \gamma^\ell L_0$. Asymptotically bounds total attention compute to $\mathcal{O}\left( \frac{1}{1 - \gamma^2} L_0^2 D \right)$, making deep Transformer inference up to $3\times$ faster.
+
 
 ---
 
@@ -136,17 +132,18 @@ $$\Delta \text{FLOPs}_{\text{downstream}} = 4 B D (L^2 - L'^2) + 24 B (L - L') D
 
 ### 5.1 Ragged Tensor Memory Fragmentation
 When sequence lengths prune dynamically per sequence in a batch ($L'_{b, 1} \neq L'_{b, 2}$):
-- **Batch Realignment Overhead**: Standard PyTorch tensor layouts require padding all batch items to $\max(L'_b)$, wasting VRAM and CPU cycles on padded dummy tokens.
-- **Memory Thrashing**: Continuous reallocation of dynamic tensor shapes (`[B, L', D]`) causes host CUDA memory allocator fragmentation.
+Specifically, regarding \textbf{Batch Realignment Overhead}, standard PyTorch tensor layouts require padding all batch items to $\max(L'_b)$, wasting VRAM and CPU cycles on padded dummy tokens. Furthermore, regarding \textbf{Memory Thrashing}, continuous reallocation of dynamic tensor shapes (`[B, L', D]`) causes host CUDA memory allocator fragmentation.
+
 
 ### 5.2 Irreversible Context Pruning & Information Erasure
 Progressive token pruning is a hard, one-way decision ($\mathcal{I}_{\text{keep}} \subset \{1, \dots, L\}$).
-- **False Positive Pruning**: If a critical entity token (e.g., a rare medical term or negated verb) receives a low salience score at early layer $\ell=2$, it is permanently dropped.
-- **Error Propagation**: Downstream layers $\ell > 2$ can never recover dropped tokens, causing severe semantic drift and hallucination on complex reasoning tasks.
+Specifically, regarding \textbf{False Positive Pruning}, if a critical entity token (e.g., a rare medical term or negated verb) receives a low salience score at early layer $\ell=2$, it is permanently dropped. Furthermore, regarding \textbf{Error Propagation}, downstream layers $\ell > 2$ can never recover dropped tokens, causing severe semantic drift and hallucination on complex reasoning tasks.
+
 
 ### 5.3 Non-Differentiable Top-$k$ Indexing
 The selection $\operatorname{TopK}(\mathbf{s}_{\text{salience}}, L')$ is non-differentiable ($\frac{\partial \operatorname{TopK}}{\partial \mathbf{s}} = 0$).
-- Gradients cannot backpropagate through token dropping choices during training without specialized Gumbel-Softmax relaxations or straight-through estimators, risking suboptimal score network training.
+Gradients cannot backpropagate through token dropping choices during training without specialized Gumbel-Softmax relaxations or straight-through estimators, risking suboptimal score network training.
+
 
 ---
 

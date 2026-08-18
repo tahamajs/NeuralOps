@@ -113,9 +113,8 @@ Y = Z_{\text{scaled}} U_r^T + b \quad \in \mathbb{R}^{B \times N \times d_{\text
 1. **Weight Inspection**: Given an existing layer $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$, determine target rank $r = \min(\text{rank}, d_{\text{in}}, d_{\text{out}})$.
 2. **CPU/GPU Decomposition**: Run exact SVD on $W$: $[U, S, V^T] = \operatorname{svd}(W, \text{full\_matrices}=\text{False})$.
 3. **Truncation**:
-   - Extract top-$r$ left singular vectors: $U_r = U[:, :r]$ of shape $(d_{\text{out}}, r)$.
-   - Extract top-$r$ singular values: $S_r = S[:r]$ of shape $(r,)$.
-   - Extract top-$r$ right singular vectors: $V_r^T = V^T[:r, :]$ of shape $(r, d_{\text{in}})$.
+Extract top-$r$ left singular vectors: $U_r = U[:, :r]$ of shape $(d_{\text{out}}, r)$. Furthermore, Extract top-$r$ singular values: $S_r = S[:r]$ of shape $(r,)$. Concurrently, Extract top-$r$ right singular vectors: $V_r^T = V^T[:r, :]$ of shape $(r, d_{\text{in}})$.
+
 4. **Parameter Registration**: Store `self.U`, `self.S`, `self.Vh` as trainable PyTorch `nn.Parameter` tensors to enable end-to-end post-decomposition fine-tuning.
 
 ---
@@ -125,27 +124,31 @@ Y = Z_{\text{scaled}} U_r^T + b \quad \in \mathbb{R}^{B \times N \times d_{\text
 ### 4.1 Parameter Formulas
 Let $M = d_{\text{out}}$ and $N = d_{\text{in}}$.
 
-- **Dense Baseline Parameters**:
+Specifically, regarding \textbf{Dense Baseline Parameters}, 
+
 \[
 P_{\text{dense}} = M \cdot N + M \quad (\text{including bias})
 \]
-- **SVD Factorized Parameters**:
+Specifically, regarding \textbf{SVD Factorized Parameters}, 
+
 \[
 P_{\text{SVD}} = M \cdot r + r + r \cdot N + M = r(M + N + 1) + M
 \]
-- **Absolute Parameter Reduction**:
+Specifically, regarding \textbf{Absolute Parameter Reduction}, 
+
 \[
 \Delta P = M \cdot N - r(M + N + 1)
 \]
-- **Compression Ratio $\mathcal{C}_R$**:
+Specifically, regarding \textbf{Compression Ratio $\mathcal{C}_R$}, 
+
 \[
 \mathcal{C}_R = \frac{M \cdot N}{r(M + N + 1)} \approx \frac{M \cdot N}{r(M + N)}
 \]
 
 ### 4.2 FLOP Analysis per Token
 For a single token vector $x \in \mathbb{R}^{1 \times N}$:
-- **Dense Linear FLOPs**: $2 M N$
-- **SVD Linear FLOPs**:
+Specifically, regarding \textbf{Dense Linear FLOPs}, $2 M N$ Furthermore, regarding \textbf{SVD Linear FLOPs}, 
+
   1. $x V_r^T$: $2 N r$ FLOPs
   2. $\cdot S_r$: $r$ FLOPs
   3. $\cdot U_r^T$: $2 M r$ FLOPs

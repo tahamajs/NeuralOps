@@ -69,32 +69,31 @@ Input: hidden_states [B, L, D]
 
 ## 4. Analytical Complexity & Hardware Profiling
 
-### FLOP and MAC Breakdown ($B$: Batch, $L$: Length, $D$: Dim, $d_{\text{bottleneck}}$: Bottleneck Dim):
-- **Down Projection ($W_{\text{down}}$)**: $2 B L D d_{\text{bottleneck}}$ FLOPs
-- **GELU Non-linearity**: $\approx 8 B L d_{\text{bottleneck}}$ FLOPs
-- **Up Projection ($W_{\text{up}}$)**: $2 B L d_{\text{bottleneck}} D$ FLOPs
-- **Simple SSM Recurrence**: $6 B L D D_{\text{inner}} + 4 B L D_{\text{inner}} d_{\text{state}}$ FLOPs
+### FLOP and MAC Breakdown
+Let $B$ denote the batch size, $L$ the sequence length, $D$ the model hidden dimension, $d_{\text{bottleneck}}$ the compressed concept dimension, $D_{\text{inner}}$ the internal SSM expansion dimension, and $d_{\text{state}}$ the latent state size. The computational cost of the concept bottleneck stage is characterized by the linear down-projection $W_{\text{down}}$ requiring $2 B L D d_{\text{bottleneck}}$ FLOPs, followed by elementwise non-linear GELU activation adding approximately $8 B L d_{\text{bottleneck}}$ FLOPs, and the subsequent linear reconstruction $W_{\text{up}}$ demanding $2 B L d_{\text{bottleneck}} D$ FLOPs. Concurrently, the downstream selective state-space recurrence incurs $6 B L D D_{\text{inner}} + 4 B L D_{\text{inner}} d_{\text{state}}$ FLOPs across convolution and parallel scan operations.
 
-**Total Complexity**:
-- **Total MACs**: $2 B L D d_{\text{bottleneck}} + 3 B L D D_{\text{inner}}$
-- **Total FLOPs**: $4 B L D d_{\text{bottleneck}} + 6 B L D D_{\text{inner}}$
+Aggregating these components, the overall operational footprint evaluates to:
+$$\text{Total MACs} \approx 2 B L D d_{\text{bottleneck}} + 3 B L D D_{\text{inner}}$$
+$$\text{Total FLOPs} \approx 4 B L D d_{\text{bottleneck}} + 6 B L D D_{\text{inner}}$$
 
-### Memory Footprint:
-- **Static Weights**: $2 D \cdot d_{\text{bottleneck}} + \text{SSM\_params}$ parameters.
-- **Activation Memory**: Reduced intermediate activation storage bounded by $\mathcal{O}(B \cdot L \cdot d_{\text{bottleneck}})$.
+### Memory Footprint & Bandwidth Characteristics
+The static parameter allocation comprises $2 D \cdot d_{\text{bottleneck}}$ weights for the bottleneck projection matrices in addition to the base SSM parameters $\text{SSM\_params}$. Crucially, transient activation storage during intermediate forward passes is bounded by $\mathcal{O}(B \cdot L \cdot d_{\text{bottleneck}})$ rather than $\mathcal{O}(B \cdot L \cdot D)$. By channeling intermediate representations through a compact subspace where $d_{\text{bottleneck}} \ll D$, the architecture drastically mitigates high-bandwidth memory (HBM) read/write overhead, alleviating the arithmetic intensity bottleneck typical of wide transformer layers.
 
 ---
 
 ## 5. Failure Modes, Rank Collapse & Edge Cases
 
-1. **Information Bottleneck Loss ($d_{\text{bottleneck}} \ll D$)**: Setting $d_{\text{bottleneck}}$ too small ($d_{\text{bottleneck}} < 32$) forces high-rank feature loss, degrading reasoning performance.
-2. **GELU Gradient Saturation**: Extreme activation magnitudes can saturate GELU derivatives during backpropagation.
+### 5.1 Dimensional Rank Collapse and Information Bottleneck Degradation
+A critical structural vulnerability arises when the concept bottleneck subspace dimension is constrained too aggressively ($d_{\text{bottleneck}} \ll D$, such as $d_{\text{bottleneck}} < 32$). While severe compression minimizes memory traffic, it imposes a strict rank ceiling of $\operatorname{rank}(\widehat{X}) \le d_{\text{bottleneck}}$ on the reconstructed activation manifold. In tasks requiring multi-modal feature composition or fine-grained associative recall, this aggressive rank constriction precipitates severe informational collapse, eliminating orthogonal semantic features and flattening the loss landscape into suboptimal local minima.
+
+### 5.2 Non-Linear Saturation and Gradient Vanishing Dynamics
+Under unnormalized high-magnitude input activations, intermediate projections through $W_{\text{down}}$ can drive pre-activations into the asymptotic saturation regimes of the GELU function. Because the derivative $\frac{\partial \text{GELU}(z)}{\partial z}$ approaches zero for large negative inputs and unity for positive values, unevenly distributed feature scales induce severe gradient vanishing across specific concept channels during backpropagation. This non-uniform gradient flow destabilizes optimization trajectories in early layers and hinders the adaptive alignment of the concept bottleneck with downstream selective state-space matrices.
 
 ---
 
 ## 6. Hardware Acceleration Blueprint & Triton Kernel Design
 
-A Triton kernel for Jamba-Info fuses down-projection, GELU activation, and up-projection into SRAM to avoid intermediate HBM writes.
+To maximize hardware throughput, a fused Triton kernel combines the down-projection, GELU non-linearity, and up-projection into a single SRAM execution pass, eliminating intermediate HBM read/write round-trips.
 
 ```python
 # Triton Fused Concept Bottleneck Kernel Blueprint
@@ -116,8 +115,11 @@ def _jamba_info_fused_kernel(
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Adaptive Dynamic Bottleneck ($d_{\text{bottleneck}}(x)$)**: Dynamically shrink or expand bottleneck dimension per token based on information entropy.
-2. **Quantized FP4 Concept Bottleneck**: Quantize bottleneck projections $W_{\text{down}}, W_{\text{up}}$ to FP4 for maximum GPU memory bandwidth speedup.
+To advance the computational and representational efficiency of concept-bottlenecked state-space models, several architectural extensions present promising avenues for investigation:
+
+**Dynamic Entropy-Gated Bottleneck Allocation**: Rather than enforcing a static bottleneck rank $d_{\text{bottleneck}}$ across all sequence tokens, an adaptive router can dynamically adjust the projection rank $d_{\text{bottleneck}}(x)$ per token conditioned on local information entropy. This allows information-dense tokens to retain high-rank expressivity while aggressively pruning redundancy in predictable syntactic tokens.
+
+**Ultra-Low-Precision Microscaling Projections**: Quantizing the concept bottleneck projection matrices $W_{\text{down}}$ and $W_{\text{up}}$ into sub-byte formats (such as FP4 or microscaling FP8) with per-tensor scales significantly compresses the static memory footprint while enabling hardware-native tensor cores to execute the entire bottleneck cycle directly inside SRAM caches at peak arithmetic throughput.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

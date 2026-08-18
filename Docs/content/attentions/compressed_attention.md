@@ -113,25 +113,15 @@ Input: query (x) [B, N, D]
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D / H$, $r_{\text{qkv}}$ QKV rank, and $r_{\text{out}}$ output rank.
 
 1. **Parameter Savings**:
-   - Original Uncompressed Parameters: $3 D^2 (W_{\text{in}}) + D^2 (W_{\text{out}}) = 4 D^2$.
-   - SVD Parameters (`U_qkv`, `S_qkv_sqrt`, `Vh_qkv`, `U_out`, `S_out_sqrt`, `Vh_out`):
-     - $W_{\text{qkv}}$ factors: $3 D r_{\text{qkv}} + r_{\text{qkv}} + r_{\text{qkv}} D = r_{\text{qkv}} (4D + 1)$.
-     - $W_{\text{out}}$ factors: $D r_{\text{out}} + r_{\text{out}} + r_{\text{out}} D = r_{\text{out}} (2D + 1)$.
-   - Total SVD Parameters: $r_{\text{qkv}} (4D + 1) + r_{\text{out}} (2D + 1)$.
-   - Compression Ratio (e.g., $D=768, r_{\text{qkv}}=64, r_{\text{out}}=64$):
-     - Original: $2,359,296$ parameters ($9.44 \text{ MB}$).
-     - SVD Compressed: $64(3073) + 64(1537) = 196,672 + 98,368 = 295,040$ parameters ($1.18 \text{ MB}$).
-     - **Parameter Footprint Savings**: $\approx 8.0\times$ compression ($87.5\%$ savings).
+Original Uncompressed Parameters: $3 D^2 (W_{\text{in}}) + D^2 (W_{\text{out}}) = 4 D^2$. Furthermore, SVD Parameters (`U_qkv`, `S_qkv_sqrt`, `Vh_qkv`, `U_out`, `S_out_sqrt`, `Vh_out`): Concurrently, $W_{\text{qkv}}$ factors: $3 D r_{\text{qkv}} + r_{\text{qkv}} + r_{\text{qkv}} D = r_{\text{qkv}} (4D + 1)$. In this setting, $W_{\text{out}}$ factors: $D r_{\text{out}} + r_{\text{out}} + r_{\text{out}} D = r_{\text{out}} (2D + 1)$. Additionally, Total SVD Parameters: $r_{\text{qkv}} (4D + 1) + r_{\text{out}} (2D + 1)$. Moreover, Compression Ratio (e.g., $D=768, r_{\text{qkv}}=64, r_{\text{out}}=64$): From an analytical standpoint, Original: $2,359,296$ parameters ($9.44 \text{ MB}$). In terms of operational dynamics, SVD Compressed: $64(3073) + 64(1537) = 196,672 + 98,368 = 295,040$ parameters ($1.18 \text{ MB}$). Specifically, regarding \textbf{Parameter Footprint Savings}, $\approx 8.0\times$ compression ($87.5\%$ savings).
+
 
 2. **Computational FLOPs & MACs**:
-   - QKV Low-Rank Down-Projection: $2 B N D r_{\text{qkv}}$ FLOPs ($B N D r_{\text{qkv}}$ MACs).
-   - QKV Low-Rank Up-Projection: $2 B N r_{\text{qkv}} (3D) = 6 B N D r_{\text{qkv}}$ FLOPs ($3 B N D r_{\text{qkv}}$ MACs).
-   - Core Attention Scores & Context ($Q K^\top$ & $A V$): $4 B N^2 D$ FLOPs ($2 B N^2 D$ MACs).
-   - Output Low-Rank Down-Projection: $2 B N D r_{\text{out}}$ FLOPs ($B N D r_{\text{out}}$ MACs).
-   - Output Low-Rank Up-Projection: $2 B N r_{\text{out}} D$ FLOPs ($B N D r_{\text{out}}$ MACs).
+QKV Low-Rank Down-Projection: $2 B N D r_{\text{qkv}}$ FLOPs ($B N D r_{\text{qkv}}$ MACs). Furthermore, QKV Low-Rank Up-Projection: $2 B N r_{\text{qkv}} (3D) = 6 B N D r_{\text{qkv}}$ FLOPs ($3 B N D r_{\text{qkv}}$ MACs). Concurrently, Core Attention Scores & Context ($Q K^\top$ & $A V$): $4 B N^2 D$ FLOPs ($2 B N^2 D$ MACs). In this setting, Output Low-Rank Down-Projection: $2 B N D r_{\text{out}}$ FLOPs ($B N D r_{\text{out}}$ MACs). Additionally, Output Low-Rank Up-Projection: $2 B N r_{\text{out}} D$ FLOPs ($B N D r_{\text{out}}$ MACs).
 
-- **Total MACs**: $B N \left[ 4 D r_{\text{qkv}} + 2 D r_{\text{out}} + 2 N D \right]$
-- **Total FLOPs**: $B N \left[ 8 D r_{\text{qkv}} + 4 D r_{\text{out}} + 4 N D \right]$
+
+Specifically, regarding \textbf{Total MACs}, $B N \left[ 4 D r_{\text{qkv}} + 2 D r_{\text{out}} + 2 N D \right]$ Furthermore, regarding \textbf{Total FLOPs}, $B N \left[ 8 D r_{\text{qkv}} + 4 D r_{\text{out}} + 4 N D \right]$
+
 
 ---
 

@@ -4,9 +4,9 @@
 
 Native Hybrid Attention (`NHAAttention` in `nha_attention.py`) introduces a sequence processing paradigm that unifies quadratic full softmax attention with linear-complexity positive kernel recurrent attention. Standard Multi-Head Attention provides unconstrained pairwise expressive power but suffers from quadratic time and memory scaling ($\mathcal{O}(N^2)$). Conversely, pure linear attention architectures achieve linear scaling ($\mathcal{O}(N)$) using kernel approximations, but struggle to focus on critical high-salience tokens (heavy-hitters).
 
-NHA overcomes this limitation by partitioning sequence tokens per batch item into two dynamically selected sets:
-1. **Heavy-Hitter Set ($\mathcal{S}_{\text{top}}$)**: High-salience tokens (identified via query norm thresholds `full_ratio`) are processed using full scaled softmax attention.
-2. **Context Background Set ($\mathcal{S}_{\text{context}}$)**: Remaining context tokens are processed using an $\mathcal{O}(N)$ linear kernel attention mapping ($\phi(x) = \text{ELU}(x) + 1.0$).
+To overcome the expressive bottlenecks of pure linear approximations while circumventing the quadratic scaling of dense self-attention, Native Hybrid Attention dynamically partitions input sequence tokens into two complementary computational subsets based on per-token salience metrics:
+
+First, high-salience tokens are isolated into the **Heavy-Hitter Set ($\mathcal{S}_{\text{top}}$)** via query norm thresholding (`full_ratio`), routing critical contextual anchors through full unconstrained scaled dot-product softmax attention. Concurrently, the broader token sequence is designated as the **Context Background Set ($\mathcal{S}_{\text{context}}$)** and evaluated through an $\mathcal{O}(N)$ linear kernel mapping ($\phi(x) = \text{ELU}(x) + 1.0$). By orchestrating these two pathways via a differentiable indicator selection mechanism (`torch.where(full_mask, full_out, lin_out)`), NHA preserves sharp focal attention over pivotal semantic tokens while reducing background computational overhead to strictly linear time over extensive context windows.
 
 By combining these outputs via boolean selection (`torch.where(full_mask, full_out, lin_out)`), NHA achieves full attention quality on key tokens while drastically reducing computational overhead across long context windows.
 
@@ -147,40 +147,32 @@ Y = \text{Concat}(O_{\text{fused}, 1}, \dots, O_{\text{fused}, H}) W_O + b_O \in
 ## 4. Analytical Complexity & Hardware Profiling
 
 ### Computational Workload (FLOPs & MACs)
-Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_k = D/H$, and $\rho$ heavy-hitter ratio.
+Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ query heads, $d_k = D/H$ head dimension, and $\rho \in (0, 1)$ the heavy-hitter selection ratio.
 
-1. **Linear Projections**:
-   - $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
-2. **Heavy-Hitter Selection**:
-   - Norm calculation & TopK sorting: $B H N d_k + B N \log(\rho N)$ FLOPs.
-3. **Full Attention Path ($\mathcal{S}_{\text{top}}$)**:
-   - Softmax attention over $k = \rho N$ tokens: $4 B H (\rho N) N d_k = 4 \rho B N^2 D$ FLOPs.
-4. **Linear Attention Path ($\mathcal{S}_{\text{context}}$)**:
-   - ELU activations: $2 B N D$ FLOPs.
-   - $KV_{\text{lin}}$ Einsum: $2 B H N d_k^2 = 2 B N D d_k$ FLOPs.
-   - Output Einsum & Denominator division: $2 B N D d_k + 2 B N D$ FLOPs.
+The computational demands decompose into dense projection operations, salience-based token ranking, and the dual-path hybrid attention core. Standard linear input and output projections ($W_Q, W_K, W_V, W_O$) incur $8 B N D^2$ FLOPs ($4 B N D^2$ MACs). Concurrently, identifying high-salience heavy hitters requires token-wise query norm computation and Top-K ranking, consuming $B H N d_k + B N \log(\rho N)$ FLOPs. 
 
-5. **Total Workload Summary**:
-   - **Total MACs**: $4 B N D^2 + 2 \rho B N^2 D + 2 B N D d_k$
-   - **Total FLOPs**: $8 B N D^2 + 4 \rho B N^2 D + 4 B N D d_k + 7 B H (\rho N) N$
-   - When $\rho = 0.1$, heavy-hitter score matrix FLOPs drop by **90%** compared to standard MHA.
+Within the hybrid attention core, the full softmax path ($\mathcal{S}_{\text{top}}$) restricts pairwise quadratic matrix multiplications strictly to the $k = \lceil \rho N \rceil$ heavy-hitter tokens, requiring $4 B H (\rho N) N d_k = 4 \rho B N^2 D$ FLOPs. In parallel, the linear recurrent path ($\mathcal{S}_{\text{context}}$) executes ELU feature transformations in $2 B N D$ FLOPs, accumulates the global key-value state tensor ($KV_{\text{lin}}$) via outer products in $2 B H N d_k^2 = 2 B N D d_k$ FLOPs, and performs query contractions alongside scalar denominator normalization in $2 B N D d_k + 2 B N D$ FLOPs.
+
+Aggregating these components yields a total workload of:
+
+$$\text{Total MACs} = 4 B N D^2 + 2 \rho B N^2 D + 2 B N D d_k$$
+
+$$\text{Total FLOPs} = 8 B N D^2 + 4 \rho B N^2 D + 4 B N D d_k + 7 B H (\rho N) N$$
+
+Consequently, configuring $\rho = 0.1$ yields an empirical reduction of approximately $90\%$ in heavy-hitter attention logit FLOPs relative to dense Multi-Head Attention.
 
 ### Memory Footprint Profile
-- **Standard MHA Intermediate Score Memory**: $B \cdot H \cdot N^2 \cdot b$ bytes.
-- **NHA Intermediate Score Memory**: $B \cdot H \cdot (\rho N) \cdot N \cdot b$ bytes.
-  For $N = 16,384, \rho = 0.1$:
-  - Standard MHA: $268.4 \text{ million elements per head}$.
-  - NHA: $26.8 \text{ million elements per head}$ (**$90\%$ reduction in score matrix DRAM allocation**).
+The dual-path hybridization dramatically reduces high-bandwidth memory allocation during intermediate activation caching. Whereas standard multi-head attention mandates the allocation of $B \cdot H \cdot N^2 \cdot b$ bytes for full attention score matrices, NHA restricts score tensor materialization strictly to the heavy-hitter subset, requiring only $B \cdot H \cdot (\rho N) \cdot N \cdot b$ bytes. For a sequence length of $N = 16,384$ at $\rho = 0.1$, this transformation compresses memory requirements from $268.4$ million elements per head down to $26.8$ million elements per head, realizing an immediate $90\%$ reduction in score matrix DRAM allocation.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### TopK Index Sorting Latency on GPU
-Executing `torch.topk(token_score, k=num_full)` per sequence block requires global sorting along sequence length $N$, which can become latency-bound on GPUs for short sequence lengths ($N < 512$).
+### 5.1 Top-K Index Sorting Latency on GPU Architectures
+The heavy-hitter partitioning mechanism requires evaluating `torch.topk(token_score, k=num_full)` across sequence length $N$. On massively parallel GPU accelerators, global index sorting introduces substantial synchronization overhead and irregular memory access patterns. For short context regimes ($N < 512$), the kernel launch overhead and non-coalesced memory reads of the sorting step can dominate runtime latency, diminishing the theoretical computational speedup of the linear background path. Furthermore, the discrete non-differentiable nature of Top-K selection introduces sharp discontinuities in the optimization landscape, which can induce routing oscillations across adjacent optimization steps unless stabilized with temperature annealing or soft gating.
 
-### Denominator Division Underflow in Linear Path
-If feature maps $\phi(K)$ sum to zero across all unmasked tokens, denominator $Z_{\text{lin}} = \phi(K).sum() + \epsilon$ approaches zero. Adding offset $\epsilon = 1e-8$ avoids divide-by-zero NaN outputs.
+### 5.2 Denominator Division Underflow and Numerical Stability
+Within the linear attention path, context normalization relies on dividing the numerator state by the scalar accumulator $Z_{\text{lin}} = \sum_{j=1}^N \phi(K_j) + \epsilon$. If the non-linear positive feature mapping $\phi(K)$ produces near-zero activations across extensive sequence segments—or if masked padding tokens dominate the context window—the denominator approaches zero. Under low-precision floating-point formats (such as IEEE FP16 or BF16), this underflow triggers numerical singularities (`NaN` or `Inf`), destabilizing gradient backpropagation and causing destructive updates to weight matrices. Enforcing an explicit numerical clamp with baseline offset $\epsilon = 10^{-8}$ is essential to guarantee smooth loss landscape geometries and prevent optimization divergence.
 
 ---
 
@@ -216,9 +208,9 @@ A Triton kernel for Native Hybrid Attention fuses heavy-hitter mask construction
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Dynamic Heavy-Hitter Ratio Allocation**: Dynamically adjust $\rho$ per layer based on attention entropy ($\rho = 0.2$ for early syntactic layers, $\rho = 0.05$ for deep semantic layers).
-2. **NHA + State-Space Model Fusion (NHA-Mamba)**: Replace the positive kernel linear path with a Mamba SSM block for infinite context memory while keeping full softmax attention on heavy hitters.
-3. **Quantized Linear KV Aggregation**: Store linear key-value state $KV_{\text{lin}} \in \mathbb{R}^{B \times H \times d_k \times d_k}$ in FP8 format to maximize decoding throughput.
+To further enhance the representational capacity and hardware efficiency of Native Hybrid Attention, several architectural extensions can be synthesized:
+
+First, the architecture can incorporate **Dynamic Heavy-Hitter Ratio Allocation**, replacing the fixed parameter $\rho$ with an adaptive entropy-driven scheduler that assigns larger allocations ($\rho = 0.2$) to initial layers characterized by broad syntactic parsing, while narrowing to compact allocations ($\rho = 0.05$) in deep semantic layers. Furthermore, **NHA + State-Space Model Hybridization (NHA-Mamba)** can substitute the positive kernel linear path with a continuous-time selective state-space model, enabling sub-quadratic context processing while retaining full scaled dot-product fidelity on isolated heavy-hitter tokens. Concurrently, **Quantized Linear KV Aggregation** enables storing the global key-value state tensor $KV_{\text{lin}} \in \mathbb{R}^{B \times H \times d_k \times d_k}$ in low-precision FP8 (E4M3/E5M2) formats, doubling matrix arithmetic throughput on modern Tensor Core hardware while minimizing memory bandwidth saturation during auto-regressive generation.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

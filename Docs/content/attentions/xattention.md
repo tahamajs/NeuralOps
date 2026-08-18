@@ -131,33 +131,27 @@ Let $B$ be batch size, $L$ sequence length, $D$ hidden dimension, $H$ heads, $d_
 1. **Linear Projections ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$)**:
    $$\operatorname{FLOPs}_{\text{proj}} = 3 \times 2 B L D^2 = 6 B L D^2$$
 2. **Centroid Reduction & Inter-Block Scoring**:
-   - Masked key centroid reduction: $2 B L D$ FLOPs.
-   - Inter-block affinity matmul ($\bar{\mathbf{Q}} \bar{\mathbf{K}}^\top$): $2 B H M^2 d_h = \frac{2 B D L^2}{B_s^2}$ FLOPs.
-   $$\operatorname{FLOPs}_{\text{coarse}} = \frac{2 B D L^2}{B_s^2} + 2 B L D$$
+Masked key centroid reduction: $2 B L D$ FLOPs. Furthermore, Inter-block affinity matmul ($\bar{\mathbf{Q}} \bar{\mathbf{K}}^\top$): $2 B H M^2 d_h = \frac{2 B D L^2}{B_s^2}$ FLOPs. $$\operatorname{FLOPs}_{\text{coarse}} = \frac{2 B D L^2}{B_s^2} + 2 B L D$$
+
 3. **Unified Candidate Block Attention**:
    Across all $M$ query blocks, fine-grained attention maps $B_s$ query tokens to $k \cdot B_s$ candidate key tokens:
-   - Attention score matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B H L (k B_s) d_h = 2 B D L (k B_s)$
-   - Context output matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B D L (k B_s)$
-   Since $k B_s = L(1-s)$:
-   $$\operatorname{FLOPs}_{\text{fine}} = 4 B D L^2 (1-s)$$
+Attention score matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B H L (k B_s) d_h = 2 B D L (k B_s)$ Furthermore, Context output matmul: $M \times (2 B H B_s (k B_s) d_h) = 2 B D L (k B_s)$ Since $k B_s = L(1-s)$: $$\operatorname{FLOPs}_{\text{fine}} = 4 B D L^2 (1-s)$$
+
 4. **Output Projection ($\mathbf{W}_O$)**:
    $$\operatorname{FLOPs}_{\text{out}} = 2 B L D^2$$
 
 $$\text{Total FLOPs} = 8 B L D^2 + \frac{2 B D L^2}{B_s^2} + 4 B D L^2 (1-s) + 2 B L D$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} \approx 4 B L D^2 + \frac{B D L^2}{B_s^2} + 2 B D L^2 (1-s)$$
-- **Peak Activation Memory**:
-  - Block Centroid Matrices: $2 \times B \cdot H \cdot M \cdot d_k \times 2 \text{ bytes}$
-  - Coarse Block Affinity Matrix: $B \cdot H \cdot M \cdot M \times 2 \text{ bytes}$
-  - Candidate Keys/Values Buffer per query block: $2 \times B \cdot H \cdot (k B_s) \cdot d_k \times 2 \text{ bytes}$
-  - Per-Block Attention Matrix: $B \cdot H \cdot B_s \cdot (k B_s) \times 2 \text{ bytes}$.
+Specifically, regarding \textbf{Peak Activation Memory},  Furthermore, Block Centroid Matrices: $2 \times B \cdot H \cdot M \cdot d_k \times 2 \text{ bytes}$ Concurrently, Coarse Block Affinity Matrix: $B \cdot H \cdot M \cdot M \times 2 \text{ bytes}$ In this setting, Candidate Keys/Values Buffer per query block: $2 \times B \cdot H \cdot (k B_s) \cdot d_k \times 2 \text{ bytes}$ Additionally, Per-Block Attention Matrix: $B \cdot H \cdot B_s \cdot (k B_s) \times 2 \text{ bytes}$.
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory.
-- **XAttention Block-Sparse**: $\mathcal{O}\left(L D^2 + \frac{L^2 D}{B_s^2} + L^2 D (1-s)\right)$ compute.
-- When $s = 0.75$, XAttention reduces fine-grained token-level matrix operations by $75\%$, providing substantial compute reduction.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(L^2 D)$ compute, $\mathcal{O}(L^2 H)$ memory. Furthermore, regarding \textbf{XAttention Block-Sparse}, $\mathcal{O}\left(L D^2 + \frac{L^2 D}{B_s^2} + L^2 D (1-s)\right)$ compute. Concurrently, When $s = 0.75$, XAttention reduces fine-grained token-level matrix operations by $75\%$, providing substantial compute reduction.
+
 
 ---
 
@@ -174,16 +168,18 @@ for i in range(n_blocks):
     ...
 ```
 Executing an explicit Python `for i in range(n_blocks):` loop introduces severe host-to-device kernel invocation overhead:
-- **GPU Under-Utilization**: Launching $M$ separate `gather`, `matmul`, and `softmax` ops sequentially stalls GPU SM hardware pipelines when $M \ge 64$.
+Specifically, regarding \textbf{GPU Under-Utilization}, launching $M$ separate `gather`, `matmul`, and `softmax` ops sequentially stalls GPU SM hardware pipelines when $M \ge 64$.
+
 
 ### 5.2 Outlier Token Masking & Centroid Distortion
 Coarse block routing computes block similarity using arithmetic key averages $\bar{\mathbf{K}}_j = \frac{1}{B_s} \sum \mathbf{K}_{j, t}$.
-- **Centroid Dilution**: Salient outlier tokens with high feature norm (such as delimiter tokens or task-critical keywords) become diluted when averaged with $B_s - 1$ background tokens.
-- **False Pruning**: If a key block contains a critical token but its average norm is low, coarse scoring drops the block ($\mathcal{I}_i \notin \text{TopK}$), causing irreversible attention information loss.
+Specifically, regarding \textbf{Centroid Dilution}, salient outlier tokens with high feature norm (such as delimiter tokens or task-critical keywords) become diluted when averaged with $B_s - 1$ background tokens. Furthermore, regarding \textbf{False Pruning}, if a key block contains a critical token but its average norm is low, coarse scoring drops the block ($\mathcal{I}_i \notin \text{TopK}$), causing irreversible attention information loss.
+
 
 ### 5.3 Non-Differentiable Block Routing & Hard Boundary Thresholds
 The selection $\operatorname{TopK}(\mathbf{S}^{\text{block}}, k)$ uses hard discrete indexing.
-- **Zero Gradient Flow**: Gradients $\frac{\partial \mathcal{L}}{\partial \mathbf{S}^{\text{block}}} = 0$ everywhere, preventing backpropagation from training the projection weights $\mathbf{W}_Q, \mathbf{W}_K$ to optimize block routing geometry.
+Specifically, regarding \textbf{Zero Gradient Flow}, gradients $\frac{\partial \mathcal{L}}{\partial \mathbf{S}^{\text{block}}} = 0$ everywhere, preventing backpropagation from training the projection weights $\mathbf{W}_Q, \mathbf{W}_K$ to optimize block routing geometry.
+
 
 ---
 

@@ -134,38 +134,26 @@ Y = \text{Concat}(O_1, \dots, O_H) W_O + b_O \in \mathbb{R}^{B \times N \times D
 ### Computational Workload (FLOPs & MACs)
 Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ heads, $d_h = D/H$, $S_{\max}$ max span, and $\bar{S} = \frac{1}{H} \sum_{h=1}^H S_h$ average learned head span.
 
-1. **Linear Projections**:
-   - $W_Q, W_K, W_V, W_O$: $8 B N D^2$ FLOPs ($4 B N D^2$ MACs).
+The computational throughput of Adaptive Span Attention exhibits a bifurcated scaling profile governed by the hardware execution paradigm. In the input projection stage, linear transformations across projection matrices $W_Q, W_K, W_V,$ and $W_O$ require $8 B N D^2$ floating-point operations ($4 B N D^2$ multiply-accumulate operations), scaling quadratically with the hidden dimension but strictly linearly with sequence length. 
 
-2. **Core Adaptive Span Attention**:
-   - Raw score matrix calculation $Q K^\top$: $2 B N^2 D$ FLOPs.
-   - Distance matrix calculation & mask evaluation: $H N^2 + B H N^2$ FLOPs.
-   - Softmax & Value Aggregation (with active span $\bar{S}$):
-     - Un-optimized dense implementation: $2 B N^2 D + 7 B H N^2$ FLOPs.
-     - Block-sparse optimized implementation: $4 B H N \bar{S} d_h = 4 B N \bar{S} D$ FLOPs.
-
-3. **Total Workload Summary**:
-   - **Dense PyTorch FLOPs**: $8 B N D^2 + 4 B N^2 D + 8 B H N^2$
-   - **Sparse-Optimized FLOPs**: $8 B N D^2 + 4 B N \bar{S} D + 7 B H N \bar{S}$ (linear scaling in sequence length when $\bar{S} \ll N$).
+Within the core attention mechanism, the theoretical complexity diverges substantially between naive dense evaluation and specialized sparse execution. An un-optimized dense materialization incurs $2 B N^2 D$ FLOPs for raw affinity score computation $Q K^\top$, alongside $H N^2 + B H N^2$ FLOPs dedicated to relative distance construction and mask evaluation. In contrast, under a block-sparse or custom kernel execution where computation is strictly localized to active head windows $\bar{S}$, the softmax aggregation and value multiplication require only $4 B H N \bar{S} d_h = 4 B N \bar{S} D$ FLOPs. Consequently, while standard dense framework implementations yield an asymptotic burden of $8 B N D^2 + 4 B N^2 D + 8 B H N^2$ FLOPs, a hardware-aligned sparse execution achieves $8 B N D^2 + 4 B N \bar{S} D + 7 B H N \bar{S}$ FLOPs, transitioning to near-linear complexity when the mean receptive field satisfies $\bar{S} \ll N$.
 
 ### Memory Footprint & Parameter Overhead
-- **Parameter Count**: $4 D^2 + 4 D + H$ (only $H$ extra scalar logit parameters).
-- **KV Cache MemoryFootprint during Inference**:
-  Instead of caching $N$ tokens for all heads, head $h$ caches only its active span $S_h$:
-  \[
-  \text{KV Cache Size}_{\text{AdaptiveSpan}} = 2 \cdot B \cdot d_h \cdot \sum_{h=1}^H \min(N, S_h) \cdot b = 2 B \bar{S} D \cdot b \text{ bytes}
-  \]
-  If $\bar{S} = 64$ while $N = 4096$, KV cache memory is reduced by **98.4%**.
+From a parametric perspective, the architecture introduces negligible capacity overhead, requiring only $4 D^2 + 4 D + H$ parameters where the additional $H$ scalar logit weights parameterize the head-specific receptive fields. The primary operational advantage manifests during autoregressive generation within the key-value (KV) cache allocation. Rather than buffering the full context history of length $N$ uniformly across all heads, each head $h$ dynamically constrains its KV cache storage to its effective span $S_h$:
+\[
+\text{KV Cache Size}_{\text{AdaptiveSpan}} = 2 \cdot B \cdot d_h \cdot \sum_{h=1}^H \min(N, S_h) \cdot b = 2 B \bar{S} D \cdot b \text{ bytes}
+\]
+Under representative operational regimes where $\bar{S} = 64$ against an extended context of $N = 4096$, this selective retention mechanism contracts the inference memory footprint by approximately $98.4\%$, thereby mitigating bandwidth saturation at the memory bus.
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
-### Span Collapse ($S_h \to 0$)
-If gradient flow causes span logit $\theta_h \to -\infty$, effective span collapses to $S_h = 0$. Head $h$ can attend only to self-tokens ($i = j$), disabling cross-token context gathering. Adding span length L1 regularization ($\lambda \sum S_h$) requires balancing to avoid premature span collapse.
+### Optimization Stability and Span Collapse ($S_h \to 0$)
+A principal vulnerability within differentiable span gating concerns the risk of span collapse during gradient descent. When negative gradient trajectories push the unconstrained logit parameter $\theta_h \to -\infty$, the resulting Sigmoid activation saturates, contracting the effective receptive field to $S_h = 0$. Under this degenerate regime, the corresponding attention head collapses into an isolated self-attention mechanism restricted strictly to diagonal elements ($i = j$), entirely precluding the assimilation of cross-token semantic context. This structural failure mode is particularly acute when incorporating auxiliary $\ell_1$ regularization penalties ($\lambda \sum S_h$) intended to encourage global sparsity; an improperly calibrated regularization schedule induces steep gradients on the loss landscape, prematurely pruning heads before multi-scale syntactic features can stabilize. Mitigating this degradation requires careful warmup schedules for $\lambda$, gradient clipping on the span parameter manifold, and setting lower bounds on the differentiable soft-ramp activation.
 
-### Dense Score Materialization Bottleneck in PyTorch
-In naive PyTorch code, score matrices $[B, H, N, N]$ are computed fully before applying `masked_fill`. As a result, memory consumption remains quadratic $\mathcal{O}(N^2)$ during forward propagation unless custom block-sparse GPU kernels are used.
+### Materialization Constraints and Memory Landscape in Standard Frameworks
+A persistent architectural bottleneck in high-level tensor frameworks arises from the eager materialization of full intermediate affinity structures. In un-fused PyTorch execution pipelines, the dense pairwise score tensor $\mathbb{R}^{B \times H \times N \times N}$ is completely computed in global high-bandwidth memory (HBM) prior to the application of the boolean span mask via `masked_fill`. Consequently, the intermediate spatial allocation remains bound to quadratic complexity $\mathcal{O}(N^2)$ during forward and backward passes, negating theoretical memory savings unless custom hardware-aligned block-sparse kernels (e.g., custom Triton or CUDA primitives) are explicitly deployed to restrict DRAM transactions to active span windows.
 
 ---
 
@@ -201,9 +189,7 @@ A Triton kernel for Adaptive Span Attention executes variable block-sparse tilin
 
 ## 7. Next-Generation Innovations & Synthesis Opportunities
 
-1. **Asymmetric Causal-Bidirectional Spans**: Parameterize independent backward span $S_h^{\text{back}}$ and forward span $S_h^{\text{fwd}}$ for encoder-decoder models.
-2. **Span-Aware Quantization**: Apply aggressive 2-bit quantization to long-span heads while maintaining 8-bit precision on short-span local heads.
-3. **Adaptive Span + Mamba SSM Hybrids**: Interleave short-span local attention layers with linear state-space model (SSM) blocks to handle infinite context with bounded memory.
+Emerging frontiers in dynamic receptive field gating explore multi-scale architectural hybridizations and hardware-aware precision adaptations to extend sequence modeling capabilities. One compelling direction involves the parameterization of asymmetric causal-bidirectional spans, wherein independent backward receptive fields $S_h^{\text{back}}$ and forward receptive fields $S_h^{\text{fwd}}$ are assigned across sequence dimensions, enabling encoder-decoder and non-causal architectures to decouple left-to-right syntactic gathering from right-to-left semantic lookahead. Concurrently, span-aware mixed-precision quantization offers substantial throughput improvements; by allocating aggressive low-bit representations (such as 2-bit integer formats) to long-span heads while reserving high-precision 8-bit representations for localized short-span heads, the architecture minimizes off-chip memory bandwidth consumption without compromising critical local syntactic resolution. Furthermore, hybridizing adaptive span attention with selective state-space models (SSMs), such as Mamba architectures, yields a hierarchical context engine: continuous state recurrences efficiently capture unbounded global background representations, while dynamically gated attention heads resolve sharp, token-level associative queries under strictly bounded memory overhead.
 
 ## 8. Empirical Benchmark Results & Comparative Profiling
 

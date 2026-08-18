@@ -14,8 +14,8 @@ W ≈ C · P
 ```
 
 where:
-- **C** = **W[:, idx]** contains `r` carefully chosen columns of **W** (the “skeleton” columns),
-- **P** ∈ ℝ<sup>r×n</sup> is a projection matrix (often with many zeros) that reconstructs the full matrix from those columns.
+**C** = **W[:, idx]** contains `r` carefully chosen columns of **W** (the “skeleton” columns), Furthermore, **P** ∈ ℝ<sup>r×n</sup> is a projection matrix (often with many zeros) that reconstructs the full matrix from those columns.
+
 
 This decomposition is especially attractive for model compression because **C** consists of real, interpretable weight vectors, and **P** can be stored compactly. If the interpolative decomposition fails (e.g., due to numerical issues), the compressor falls back to a truncated SVD.
 
@@ -36,9 +36,8 @@ W ≈ W[:, idx] · P   with   ‖W – W[:, idx]·P‖_F ≤ ε
 where `ε` is controlled by the algorithm. Importantly, **P** is often very sparse – typically containing an embedded `r×r` identity matrix and a dense remainder – which can be exploited for storage. The columns are chosen greedily to maximize volume or minimize approximation error; SciPy’s `interp_decomp` uses a rank‑revealing QR factorization.
 
 The key benefits:
-- **Interpretability**: The compressed representation uses actual columns from the original weight, making it easier to inspect and understand which input features are emphasized.
-- **Storage efficiency**: If we store the indices `idx` and the projection matrix **P**, we can reconstruct **W** on the fly. In the current implementation, the dense product `C @ P` is stored back as a full matrix, but in principle one could keep the factorized form for reduced memory.
-- **Sparsity‑friendly**: Because **P** often contains an identity block, many entries are zero, potentially leading to further compression.
+Specifically, regarding \textbf{Interpretability}, the compressed representation uses actual columns from the original weight, making it easier to inspect and understand which input features are emphasized. Furthermore, regarding \textbf{Storage efficiency}, if we store the indices `idx` and the projection matrix **P**, we can reconstruct **W** on the fly. In the current implementation, the dense product `C @ P` is stored back as a full matrix, but in principle one could keep the factorized form for reduced memory. Concurrently, regarding \textbf{Sparsity‑friendly}, because **P** often contains an identity block, many entries are zero, potentially leading to further compression.
+
 
 ### 2. Algorithm Steps
 
@@ -46,10 +45,8 @@ For each linear layer with weight **W**:
 
 1. **Determine rank**: `r = min(rank, m, n)` – the user‑specified rank is capped by the matrix dimensions.
 2. **Attempt ID**:
-   - Call `scipy.linalg.interpolative.interp_decomp(W, r)`.
-   - This returns `idx` (array of column indices) and `proj` (the projection matrix, shape (r, n)).
-   - Extract the skeleton columns: `C = W[:, idx[:r]]`.
-   - Form approximation: `W_approx = C @ proj[:r, :]`.
+Call `scipy.linalg.interpolative.interp_decomp(W, r)`. Furthermore, This returns `idx` (array of column indices) and `proj` (the projection matrix, shape (r, n)). Concurrently, Extract the skeleton columns: `C = W[:, idx[:r]]`. In this setting, Form approximation: `W_approx = C @ proj[:r, :]`.
+
 3. **Fallback (SVD)**: If the ID fails (e.g., SciPy not installed or numerical error), a standard rank‑`r` truncated SVD is performed:
    ```
    U, S, Vt = np.linalg.svd(W, full_matrices=False)
@@ -74,7 +71,8 @@ class CRCompressor(BaseCompressor):
         self.rank = rank
 ```
 
-- **`rank`**: Target rank of the decomposition (default 64). This is the number of columns to keep.
+Specifically, regarding \textbf{`rank`}, target rank of the decomposition (default 64). This is the number of columns to keep.
+
 
 The `compress()` method iterates over all `nn.Linear` modules, converts the weight to CPU float32 NumPy, applies ID (or fallback), and writes the result back.
 
@@ -122,18 +120,13 @@ Then run the compression pipeline. All linear layers will be compressed via inte
 
 ### Advantages
 
-- **Interpretability**: The compressed weight uses actual columns of the original matrix, which can be useful for understanding feature importance (each column corresponds to an input feature).
-- **Potential for factored storage**: While the current implementation stores the dense product, one could store `idx` and `proj` to achieve `r·n + m·r + r` parameters instead of `m·n`, reducing memory when `r` is small.
-- **Graceful fallback**: If ID fails, it falls back to SVD, ensuring robustness.
-- **No calibration needed**: Works purely on weights.
+Specifically, regarding \textbf{Interpretability}, the compressed weight uses actual columns of the original matrix, which can be useful for understanding feature importance (each column corresponds to an input feature). Furthermore, regarding \textbf{Potential for factored storage}, while the current implementation stores the dense product, one could store `idx` and `proj` to achieve `r·n + m·r + r` parameters instead of `m·n`, reducing memory when `r` is small. Concurrently, regarding \textbf{Graceful fallback}, if ID fails, it falls back to SVD, ensuring robustness. In this setting, regarding \textbf{No calibration needed}, works purely on weights.
+
 
 ### Limitations
 
-- **Scipy dependency**: The ID implementation requires `scipy`, which may not be available in all environments. The fallback SVD avoids crashing but loses the benefits of column selection.
-- **Dense final weight**: The code writes back `C @ proj` as a dense matrix, so the parameter count is not immediately reduced (still `m·n`). To achieve actual compression, the factorized representation must be stored separately, which the current module does not do.
-- **Fixed rank**: Same rank is applied to all layers, which may be suboptimal. An adaptive version could allocate ranks based on energy or sensitivity.
-- **Potential accuracy loss**: As with any low‑rank compression, the approximation error may reduce performance; fine‑tuning can help.
-- **ID may not always be optimal**: While ID provides interpretable columns, it may yield a slightly larger approximation error than SVD for a given rank because SVD is optimal in Frobenius norm. The trade‑off between interpretability and accuracy should be considered.
+Specifically, regarding \textbf{Scipy dependency}, the ID implementation requires `scipy`, which may not be available in all environments. The fallback SVD avoids crashing but loses the benefits of column selection. Furthermore, regarding \textbf{Dense final weight}, the code writes back `C @ proj` as a dense matrix, so the parameter count is not immediately reduced (still `m·n`). To achieve actual compression, the factorized representation must be stored separately, which the current module does not do. Concurrently, regarding \textbf{Fixed rank}, same rank is applied to all layers, which may be suboptimal. An adaptive version could allocate ranks based on energy or sensitivity. In this setting, regarding \textbf{Potential accuracy loss}, as with any low‑rank compression, the approximation error may reduce performance; fine‑tuning can help. Additionally, regarding \textbf{ID may not always be optimal}, while ID provides interpretable columns, it may yield a slightly larger approximation error than SVD for a given rank because SVD is optimal in Frobenius norm. The trade‑off between interpretability and accuracy should be considered.
+
 
 ### Comparison with SVD‑based Compressors
 

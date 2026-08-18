@@ -124,48 +124,43 @@ Let $B$ be batch size, $N$ sequence length, $D$ model dimension, $H$ head count,
 1. **CUR Linear Projections ($Q, K, V, O$)**:
    $$\text{FLOPs}_{\text{proj}} = 4 \times \left( 2 B N D r + 2 B N r D \right) = 16 B N D r$$
 2. **LSH Hyperplane Hash Evaluation**:
-   - Query & key L2 normalization: $4 B H N d_h = 4 B N D$
-   - Hyperplane inner-product matmul ($M$ rounds): $M \times \left( 4 B H N d_h B_s \right) = 4 M B N D B_s$
-   $$\text{FLOPs}_{\text{hash}} = 4 B N D + 4 M B N D B_s$$
+Query & key L2 normalization: $4 B H N d_h = 4 B N D$ Furthermore, Hyperplane inner-product matmul ($M$ rounds): $M \times \left( 4 B H N d_h B_s \right) = 4 M B N D B_s$ $$\text{FLOPs}_{\text{hash}} = 4 B N D + 4 M B N D B_s$$
+
 3. **Intra-Bucket Softpick Attention**:
-   - Average bucket size $N_{\text{bucket}} = N / 2^{B_s}$
-   - Score evaluation per token across $M$ rounds: $M \times \left( 2 B H N \cdot \frac{N}{2^{B_s}} \cdot d_h \right) = 2 M B N D \cdot \frac{N}{2^{B_s}}$
-   - Softpick non-linearity & Value contraction: $2 M B N D \cdot \frac{N}{2^{B_s}}$
-   $$\text{FLOPs}_{\text{lsh\_attn}} = 4 M B N D \cdot \frac{N}{2^{B_s}}$$
+Average bucket size $N_{\text{bucket}} = N / 2^{B_s}$ Furthermore, Score evaluation per token across $M$ rounds: $M \times \left( 2 B H N \cdot \frac{N}{2^{B_s}} \cdot d_h \right) = 2 M B N D \cdot \frac{N}{2^{B_s}}$ Concurrently, Softpick non-linearity & Value contraction: $2 M B N D \cdot \frac{N}{2^{B_s}}$ $$\text{FLOPs}_{\text{lsh\_attn}} = 4 M B N D \cdot \frac{N}{2^{B_s}}$$
+
 
 $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 M B N D B_s + 4 M B N D \cdot \frac{N}{2^{B_s}}$$
 
 ### 4.2 MACs & Memory Footprint Analysis
-- **Multiply-Accumulate Operations (MACs)**:
+Specifically, regarding \textbf{Multiply-Accumulate Operations (MACs)}, 
+
   $$\text{Total MACs} = 8 B N D r + 2 M B N D B_s + 2 M B N D \cdot \frac{N}{2^{B_s}}$$
-- **Parameter Footprint**:
+Specifically, regarding \textbf{Parameter Footprint}, 
+
   $$\Theta = 4 \times \left( d_{\text{in}} r + r d_{\text{out}} \right) = 8 D r$$
-- **Activation Footprint**:
-  - Hash codes tensor: $\mathcal{O}(M B H N)$
-  - Bucket index mapping buffers: $\mathcal{O}(M B H N)$
-  - Intra-bucket score tensors: $\mathcal{O}\left(M B H N \cdot \frac{N}{2^{B_s}}\right)$
-  - Total Memory: $\mathcal{O}\left(B N D + M B H N + M B H \frac{N^2}{2^{B_s}}\right)$
+Specifically, regarding \textbf{Activation Footprint},  Furthermore, Hash codes tensor: $\mathcal{O}(M B H N)$ Concurrently, Bucket index mapping buffers: $\mathcal{O}(M B H N)$ In this setting, Intra-bucket score tensors: $\mathcal{O}\left(M B H N \cdot \frac{N}{2^{B_s}}\right)$ Additionally, Total Memory: $\mathcal{O}\left(B N D + M B H N + M B H \frac{N^2}{2^{B_s}}\right)$
+
 
 ### 4.3 Asymptotic Scalability Comparison
-- **Standard Dense Attention**: $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory.
-- **PHANTOM LSH Attention**: $\mathcal{O}\left(N \cdot \left(D r + M D B_s + M D \frac{N}{2^{B_s}}\right)\right)$ compute. When $2^{B_s} \gg N$, total sequence attention scales linearly $\mathcal{O}(N)$.
+Specifically, regarding \textbf{Standard Dense Attention}, $\mathcal{O}(N^2 D)$ compute, $\mathcal{O}(N^2 H)$ memory. Furthermore, regarding \textbf{PHANTOM LSH Attention}, $\mathcal{O}\left(N \cdot \left(D r + M D B_s + M D \frac{N}{2^{B_s}}\right)\right)$ compute. When $2^{B_s} \gg N$, total sequence attention scales linearly $\mathcal{O}(N)$.
+
 
 ---
 
 ## 5. Architectural Bottlenecks, Rank Collapse & Edge Cases
 
 ### 5.1 CUR Intersection Matrix Ill-Conditioning
-- **Mechanism**: The CUR up-projection matrix relies on $W_{\cap}^{\dagger} = \text{pinv}(W_{\mathcal{I}_{\text{row}}, \mathcal{I}_{\text{col}}})$. If selected top-leverage rows and columns contain linearly dependent vectors, the intersection submatrix $W_{\cap} \in \mathbb{R}^{r \times r}$ becomes singular or severely ill-conditioned (condition number $\kappa(W_{\cap}) > 10^7$).
-- **Consequence**: Computing the pseudoinverse amplifies numerical noise, leading to exploding projection weights during forward execution.
-- **Mitigation**: Add a ridge regularization penalty $W_{\cap}^{\dagger} = (W_{\cap}^T W_{\cap} + \epsilon I)^{-1} W_{\cap}^T$ with $\epsilon = 10^{-6}$.
+At the architectural level, the underlying operational mechanism reveals that the CUR up-projection matrix relies on $W_{\cap}^{\dagger} = \text{pinv}(W_{\mathcal{I}_{\text{row}}, \mathcal{I}_{\text{col}}})$. If selected top-leverage rows and columns contain linearly dependent vectors, the intersection submatrix $W_{\cap} \in \mathbb{R}^{r \times r}$ becomes singular or severely ill-conditioned (condition number $\kappa(W_{\cap}) > 10^7$). Consequently, this dynamic induces structural implications wherein computing the pseudoinverse amplifies numerical noise, leading to exploding projection weights during forward execution. To systematically mitigate this constraint, the framework enforces an optimization protocol such that add a ridge regularization penalty $W_{\cap}^{\dagger} = (W_{\cap}^T W_{\cap} + \epsilon I)^{-1} W_{\cap}^T$ with $\epsilon = 10^{-6}$.
+
 
 ### 5.2 LSH Bucket Imbalance & Hash Collisions
-- **Mechanism**: Random Gaussian hyperplanes partition token space into angular regions. If token embeddings are non-uniformly distributed (e.g., clustering around a single directional axis), a single bucket receives $> 90\%$ of tokens, causing computational complexity to regress to full $\mathcal{O}(N^2)$.
-- **Mitigation**: Deploy orthogonalized random hyperplanes ($P^T P = I$) and apply mean-centering to queries and keys prior to hyperplane projection.
+At the architectural level, the underlying operational mechanism reveals that random Gaussian hyperplanes partition token space into angular regions. If token embeddings are non-uniformly distributed (e.g., clustering around a single directional axis), a single bucket receives $> 90\%$ of tokens, causing computational complexity to regress to full $\mathcal{O}(N^2)$. To systematically mitigate this constraint, the framework enforces an optimization protocol such that deploy orthogonalized random hyperplanes ($P^T P = I$) and apply mean-centering to queries and keys prior to hyperplane projection.
+
 
 ### 5.3 Softpick Intra-Bucket Empty-Bucket Underflow
-- **Mechanism**: If a query token $q_i$ maps to a hash code bucket $c$ that contains zero key tokens ($|\mathcal{B}_c| = 0$), intra-bucket Softpick receives an empty logit array.
-- **Mitigation**: Implement fallback key assignment, routing queries with empty buckets to attend to the sequence start token (CLS/BOS token).
+At the architectural level, the underlying operational mechanism reveals that if a query token $q_i$ maps to a hash code bucket $c$ that contains zero key tokens ($|\mathcal{B}_c| = 0$), intra-bucket Softpick receives an empty logit array. To systematically mitigate this constraint, the framework enforces an optimization protocol such that implement fallback key assignment, routing queries with empty buckets to attend to the sequence start token (CLS/BOS token).
+
 
 ---
 
@@ -200,22 +195,19 @@ $$\text{FLOPs}_{\text{total}} = 16 B N D r + 4 M B N D B_s + 4 M B N D \cdot \fr
 Standard PyTorch executes `x @ R.T` followed by `@ (C @ W_int).T`, writing intermediate rank-$r$ activations back to DRAM.
 
 **Triton Optimization**:
-- Implement a custom fused GEMM kernel loading $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM.
-- Evaluate down-projection with $R^T$ in SRAM registers, then immediately compute up-projection with $(C W_{\cap}^{\dagger})^T$.
-- Reduces DRAM memory bandwidth overhead by $2\times$.
+Implement a custom fused GEMM kernel loading $X_i \in \mathbb{R}^{\text{BLOCK\_M} \times D}$ into SRAM. Furthermore, Evaluate down-projection with $R^T$ in SRAM registers, then immediately compute up-projection with $(C W_{\cap}^{\dagger})^T$. Concurrently, Reduces DRAM memory bandwidth overhead by $2\times$.
+
 
 ### 6.2 Triton Strategy 2: Fused SRAM Hyperplane Hashing Kernel
-- Fuse L2 normalization $\hat{Q} = Q / \|Q\|_2$, matrix product $\hat{Q} P$, sign comparison $> 0$, and bit-shift summation into a single Triton kernel pass.
-- Store bit-shift powers $2^k$ in GPU constant memory.
-- Writes integer hash codes $h(q) \in \mathbb{R}^{B \times H \times N}$ directly to global DRAM in a single pass.
+Fuse L2 normalization $\hat{Q} = Q / \|Q\|_2$, matrix product $\hat{Q} P$, sign comparison $> 0$, and bit-shift summation into a single Triton kernel pass. Furthermore, Store bit-shift powers $2^k$ in GPU constant memory. Concurrently, Writes integer hash codes $h(q) \in \mathbb{R}^{B \times H \times N}$ directly to global DRAM in a single pass.
+
 
 ### 6.3 Triton Strategy 3: Block-Sparse Intra-Bucket Softpick Engine
 Executing intra-bucket attention via Python loops incurs severe CPU-GPU launch overhead.
 
 **Triton Optimization**:
-- Sort tokens by hash code using a parallel shared-memory radix sort kernel.
-- Launch a block-sparse Triton kernel where each threadblock processes tokens belonging to a single hash bucket $\mathcal{B}_c$.
-- Load bucket keys $K_{\mathcal{B}_c}$ and values $V_{\mathcal{B}_c}$ into SRAM, evaluating online Softpick score tail subtraction and value contraction entirely within register space.
+Sort tokens by hash code using a parallel shared-memory radix sort kernel. Furthermore, Launch a block-sparse Triton kernel where each threadblock processes tokens belonging to a single hash bucket $\mathcal{B}_c$. Concurrently, Load bucket keys $K_{\mathcal{B}_c}$ and values $V_{\mathcal{B}_c}$ into SRAM, evaluating online Softpick score tail subtraction and value contraction entirely within register space.
+
 
 ---
 

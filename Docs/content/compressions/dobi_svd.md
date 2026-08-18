@@ -118,9 +118,8 @@ where $\lambda_{\text{reg}}$ is an optional $L_1$ rank penalty $\mathcal{L}_{\te
 ### 3.2 Dynamic Training Trace Steps
 1. **Module Replacement**: `DobiSVDCompressor` traverses model submodules and replaces standard `nn.Linear` layers with `DobiSVDLinearLayer` instances.
 2. **Forward Step**:
-   - Evaluate dynamic rank $r = \lfloor \theta_{\text{ratio}} \cdot R_{\max} \rfloor$.
-   - Run `torch.linalg.svd(W)`, slice to rank $r$, and reconstruct $\hat{W}$.
-   - Compute forward activation pass $Y = X \hat{W}^T + b$.
+Evaluate dynamic rank $r = \lfloor \theta_{\text{ratio}} \cdot R_{\max} \rfloor$. Furthermore, Run `torch.linalg.svd(W)`, slice to rank $r$, and reconstruct $\hat{W}$. Concurrently, Compute forward activation pass $Y = X \hat{W}^T + b$.
+
 3. **Backward Step**: Compute gradients $\frac{\partial \mathcal{L}}{\partial W}$ and $\frac{\partial \mathcal{L}}{\partial \theta_{\text{ratio}}}$. Optimizer adjusts both weight values and rank allocation parameters.
 4. **Post-Training Freezing**: Convert learned rank parameters to static factorized matrices $(U_r \sqrt{\Sigma_r})$ and $(\sqrt{\Sigma_r} V_r^T)$ to eliminate inline SVD overhead during inference.
 
@@ -131,8 +130,8 @@ where $\lambda_{\text{reg}}$ is an optional $L_1$ rank penalty $\mathcal{L}_{\te
 ### 4.1 Memory Footprint Dynamics
 During training, `DobiSVDLinearLayer` stores full weight $W$ ($d_{\text{out}} \times d_{\text{in}}$) plus scalar $\theta_{\text{ratio}}$. After training convergence and dynamic factor freezing, parameters collapse to low-rank factors:
 
-- **Training Parameter Memory (FP32)**: $d_{\text{out}} \cdot d_{\text{in}} + 1$
-- **Inference Frozen Memory (FP16)**: $r_{\text{learned}} \cdot (d_{\text{out}} + d_{\text{in}} + 1)$
+Specifically, regarding \textbf{Training Parameter Memory (FP32)}, $d_{\text{out}} \cdot d_{\text{in}} + 1$ Furthermore, regarding \textbf{Inference Frozen Memory (FP16)}, $r_{\text{learned}} \cdot (d_{\text{out}} + d_{\text{in}} + 1)$
+
 
 ### 4.2 Learned Rank Profile (LLaMA-7B Projection Layers, $\gamma_0 = 0.5$)
 

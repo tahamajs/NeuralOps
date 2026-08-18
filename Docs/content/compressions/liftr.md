@@ -9,9 +9,8 @@
 
 LIFTR (Linearized Function Trick Compressor) takes a trained transformer model and drastically reduces its computational complexity by removing all non‑linearities from the forward pass. Specifically, it:
 
-- Replaces **ReLU** and **GELU** activations with a linear approximation (identity for ReLU, 0.8·x for GELU).
-- Replaces the standard **softmax self‑attention** with a fixed **average pooling over the sequence dimension** (mean of values).
-- Leaves linear projections and layer normalisation untouched.
+Replaces **ReLU** and **GELU** activations with a linear approximation (identity for ReLU, 0.8·x for GELU). Furthermore, Replaces the standard **softmax self‑attention** with a fixed **average pooling over the sequence dimension** (mean of values). Concurrently, Leaves linear projections and layer normalisation untouched.
+
 
 The result is a model where each encoder block consists of:
 1. A linear “attention” that simply averages the value vectors across tokens,
@@ -32,9 +31,8 @@ The compressor is registered under `"liftr"` and can be applied to any DistilBER
 
 The transformer’s feed‑forward network uses an activation function, typically **GELU** in BERT variants. LIFTR replaces:
 
-- **ReLU** → `nn.Identity()` (output equals input).
-- **GELU** → `_LinearizedGELU`: a simple scalar multiplication `0.8 · x`.
-- **SiLU** (swish) → also `0.8 · x`.
+**ReLU** → `nn.Identity()` (output equals input). Furthermore, **GELU** → `_LinearizedGELU`: a simple scalar multiplication `0.8 · x`. Concurrently, **SiLU** (swish) → also `0.8 · x`.
+
 
 The factor 0.8 is a heuristic that roughly aligns the slope of GELU around the origin. The idea is to preserve the scaling of the signal while removing the non‑linear curve. This makes the FFN block entirely linear (apart from the layer norm): `FFN(x) = W₂( 0.8 · (W₁x + b₁) ) + b₂`, which collapses to a single affine transformation `A x + b`. In practice, because layer norms are not replaced, the block is not fully linear but the inner activation is gone.
 
@@ -52,19 +50,16 @@ The attention module is wrapped in `_LinearizedAttention`, which preserves the o
 
 ### 3. Effect on Model Complexity
 
-- **Original attention**: O(N²·D) (quadratic in sequence length).
-- **LIFTR attention**: O(N·D) (mean and expand).
-- **Original FFN**: includes an expensive GELU computation.
-- **LIFTR FFN**: multiplication by a scalar (extremely cheap).
+Specifically, regarding \textbf{Original attention}, o(N²·D) (quadratic in sequence length). Furthermore, regarding \textbf{LIFTR attention}, o(N·D) (mean and expand). Concurrently, regarding \textbf{Original FFN}, includes an expensive GELU computation. In this setting, regarding \textbf{LIFTR FFN}, multiplication by a scalar (extremely cheap).
+
 
 The number of parameters does not change; the compression is entirely in computational cost. The model is now a series of linear projections and layer normalizations, which can be fused for further optimisation if desired.
 
 ### 4. Recursive Replacement
 
 The compressor recursively walks through all sub‑modules of the model. For each child module:
-- If it is an instance of `nn.ReLU`, `nn.GELU`, or `nn.SiLU`, it is replaced by the appropriate linear alternative.
-- If the child is named `'attention'` and `replace_attention` is `True`, the entire attention sub‑module is replaced by a `_LinearizedAttention` wrapper that re‑uses the original linear projections.
-- Otherwise, the function recurses into the children.
+If it is an instance of `nn.ReLU`, `nn.GELU`, or `nn.SiLU`, it is replaced by the appropriate linear alternative. Furthermore, If the child is named `'attention'` and `replace_attention` is `True`, the entire attention sub‑module is replaced by a `_LinearizedAttention` wrapper that re‑uses the original linear projections. Concurrently, Otherwise, the function recurses into the children.
+
 
 This ensures that all activation functions are removed and (optionally) the attention is simplified.
 
@@ -81,7 +76,8 @@ class LIFTRCompressor(BaseCompressor):
         self.replace_attention = replace_attention
 ```
 
-- **`replace_attention`**: If `True` (default), replaces the attention module with the linearized version. If `False`, only activations are linearized; the model still uses full attention.
+Specifically, regarding \textbf{`replace_attention`}, if `True` (default), replaces the attention module with the linearized version. If `False`, only activations are linearized; the model still uses full attention.
+
 
 The `compress()` method calls `_linearize_module(self.model)` recursively and then updates the internal parameter count (parameters remain unchanged). Returns `(model, stats)`.
 
@@ -161,26 +157,18 @@ Then run the compression pipeline. The model will be altered in‑place.
 
 ### Advantages
 
-- **Extreme speed‑up**: Removing softmax and activations turns O(N²) attention into O(N) and eliminates expensive transcendental functions.
-- **Zero training**: No fine‑tuning needed to apply; the model is simply modified.
-- **Simple**: The code is easy to understand and extend.
-- **Plug‑and‑play**: Works with DistilBERT architecture; can be adapted to other transformers.
+Specifically, regarding \textbf{Extreme speed‑up}, removing softmax and activations turns O(N²) attention into O(N) and eliminates expensive transcendental functions. Furthermore, regarding \textbf{Zero training}, no fine‑tuning needed to apply; the model is simply modified. Concurrently, regarding \textbf{Simple}, the code is easy to understand and extend. In this setting, regarding \textbf{Plug‑and‑play}, works with DistilBERT architecture; can be adapted to other transformers.
+
 
 ### Limitations
 
-- **Severe accuracy loss**: Replacing non‑linearities destroys the model’s ability to represent complex functions. This is intended only for scenarios where speed is paramount and some accuracy can be sacrificed, or as a baseline.
-- **Not fully linear**: Layer norm is not replaced, so the model is not a pure linear function; it still involves dynamic normalisation. But layer norm is cheap.
-- **Unnecessary computation**: The linearized attention still computes Q and K (which are then not used), wasting cycles. A correct implementation should skip those projections entirely.
-- **No parameter reduction**: The model size in bytes does not shrink; only computational cost is reduced.
-- **Heuristic GELU factor**: The factor 0.8 is ad‑hoc and may not be optimal for all models or layers.
-- **Attention mask ignored**: The mean‑pooling does not respect padding masks; padding tokens will influence the average. This could be mitigated by masked averaging, but is not implemented.
+Specifically, regarding \textbf{Severe accuracy loss}, replacing non‑linearities destroys the model’s ability to represent complex functions. This is intended only for scenarios where speed is paramount and some accuracy can be sacrificed, or as a baseline. Furthermore, regarding \textbf{Not fully linear}, layer norm is not replaced, so the model is not a pure linear function; it still involves dynamic normalisation. But layer norm is cheap. Concurrently, regarding \textbf{Unnecessary computation}, the linearized attention still computes Q and K (which are then not used), wasting cycles. A correct implementation should skip those projections entirely. In this setting, regarding \textbf{No parameter reduction}, the model size in bytes does not shrink; only computational cost is reduced. Additionally, regarding \textbf{Heuristic GELU factor}, the factor 0.8 is ad‑hoc and may not be optimal for all models or layers. Moreover, regarding \textbf{Attention mask ignored}, the mean‑pooling does not respect padding masks; padding tokens will influence the average. This could be mitigated by masked averaging, but is not implemented.
+
 
 ### Use Cases
 
-- **Rapid prototyping**: Get a very fast model to test infrastructure or upper bounds on speed.
-- **Edge deployment**: On devices where inference time is the bottleneck and some accuracy can be traded.
-- **Baseline for compression**: Compare other compression techniques against a trivial linearization.
-- **Knowledge distillation**: Use the linearized model as a cheap teacher or student.
+Specifically, regarding \textbf{Rapid prototyping}, get a very fast model to test infrastructure or upper bounds on speed. Furthermore, regarding \textbf{Edge deployment}, on devices where inference time is the bottleneck and some accuracy can be traded. Concurrently, regarding \textbf{Baseline for compression}, compare other compression techniques against a trivial linearization. In this setting, regarding \textbf{Knowledge distillation}, use the linearized model as a cheap teacher or student.
+
 
 ### Comparison with Other “Extreme” Compressors
 

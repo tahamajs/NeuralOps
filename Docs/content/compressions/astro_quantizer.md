@@ -54,15 +54,17 @@ Let $W \in \mathbb{R}^{N \times M}$ be a weight tensor and $b \in \{4, 8, 16\}$ 
 ### 3.1 Dataflow & Execution Pipeline
 
 1. **Linear Layer Iteration**:
-   - Iterate over all `nn.Linear` modules in target model.
+Iterate over all `nn.Linear` modules in target model.
+
 2. **Min-Max Range Search**:
-   - Compute `min_v, max_v = W.min(), W.max()`.
-   - Validate condition `max_v > min_v`.
+Compute `min_v, max_v = W.min(), W.max()`. Furthermore, Validate condition `max_v > min_v`.
+
 3. **Scale Factor & Grid Shift**:
-   - Compute scale `scale = (max_v - min_v) / (2**bits - 1)`.
-   - Apply element-wise round & scale: `W_q = torch.round((W - min_v) / scale) * scale + min_v`.
+Compute scale `scale = (max_v - min_v) / (2**bits - 1)`. Furthermore, Apply element-wise round & scale: `W_q = torch.round((W - min_v) / scale) * scale + min_v`.
+
 4. **Bias Processing**:
-   - Apply min-max dynamic scaling independently to layer bias if present.
+Apply min-max dynamic scaling independently to layer bias if present.
+
 
 ```
 Input Weight W ──► Compute min_v & max_v ──► Scale s = (max_v - min_v) / (2^b - 1)
@@ -96,7 +98,8 @@ $$\| W - W_q \|_\infty \le \frac{s}{2} = \frac{v_{\max} - v_{\min}}{2 \cdot (2^b
 
 ### 5.2 Failure Cases
 
-- **Extreme Outlier Parameters**: Large outlier values inflate dynamic range $[v_{\min}, v_{\max}]$, increasing step size $s$ and causing quantization errors across non-outlier parameters.
+Specifically, regarding \textbf{Extreme Outlier Parameters}, large outlier values inflate dynamic range $[v_{\min}, v_{\max}]$, increasing step size $s$ and causing quantization errors across non-outlier parameters.
+
 
 ---
 
