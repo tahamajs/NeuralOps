@@ -206,7 +206,6 @@ def train_model(
                     # FIX: Normalize loss for accumulation steps
                     if gradient_accumulation_steps > 1:
                         loss = loss / gradient_accumulation_steps
-                        loss = loss / gradient_accumulation_steps
 
                 if torch.isfinite(loss):
                     if scaler.is_enabled():
