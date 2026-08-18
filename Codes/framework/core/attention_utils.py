@@ -128,6 +128,10 @@ def _slice_fused_qkv_weights(
     }
 
 
+# FIX: Public functional alias for fused QKV slicing
+slice_fused_qkv = _slice_fused_qkv_weights
+
+
 def _copy_projection_weights(
     target_mod: nn.Module,
     src_weight: torch.Tensor,
@@ -199,6 +203,10 @@ def _copy_projection_weights(
                 else:
                     nn.init.zeros_(target_mod.bias)
         return
+
+
+# FIX: Public functional alias for setting low-rank projection weights
+split_and_set_qkv_weights = _copy_projection_weights
 
 
 def apply_rope_after_up_projection(
