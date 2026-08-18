@@ -203,3 +203,43 @@ The empirical evaluation of `svd_linear_attention` across standard sequence leng
 | **$L = 4096$** | 1.10 ms | 336 MB | $4.20\times$ |
 | **$L = 8192$** | **2.10 ms** | **480 MB** | **6.10x** |
 
+---
+
+## 9. Data-Dependent Exponential Decay Gating Mechanism
+
+### 9.1 Motivation: Solving the Needle-in-a-Haystack Associative Saturation Cliff
+Standard non-decayed linear attention accumulates outer products over the full sequence:
+\[
+S_N = \sum_{j=1}^N \phi(K_j)^\top V_j, \quad Z_N = \sum_{j=1}^N \phi(K_j)^\top
+\]
+As sequence length $N$ scales beyond $32\text{k}$, $\|S_N\|_F$ grows as $\mathcal{O}(N)$, causing the associative memory matrix to saturate with background distractor tokens. Specific key-value pairs (the "Needle") become mathematically unretrievable because their energy is diluted in the unbounded sum.
+
+### 9.2 Mathematical Formulation & Recurrence Equations
+`SVDLinearAttention` introduces a data-dependent exponential decay projection (`self.decay_gate` / `self.gate_proj`):
+
+1. **Input-Dependent Decay Logit & Retention Rate:**
+   \[
+   g_t = \text{decay\_gate}(x_t) \in \mathbb{R}^{H}, \quad \lambda_t = \exp(-\text{softplus}(g_t)) \in (0, 1)
+   \]
+   Because $\text{softplus}(g_t) > 0$, $\lambda_t \le 1.0$ unconditionally, guaranteeing stability without explosive accumulation.
+
+2. **Associative State & Normalizer Recurrence:**
+   \[
+   S_t = \lambda_t S_{t-1} + \phi(K_t)^\top V_t \in \mathbb{R}^{H \times d_k \times d_v}
+   \]
+   \[
+   Z_t = \lambda_t Z_{t-1} + \phi(K_t)^\top \in \mathbb{R}^{H \times d_k \times 1}
+   \]
+
+3. **Normalized Query Readout:**
+   \[
+   Y_t = \frac{\phi(Q_t) S_t}{\phi(Q_t) Z_t + \epsilon} \in \mathbb{R}^{H \times 1 \times d_v}
+   \]
+
+### 9.3 Bounded Memory & Single-Step Streaming Generation
+Under exponential retention $\lambda \in (0, 1)$, the recurrent state norm is strictly bounded by:
+\[
+\|S_t\| \le \frac{M_{\text{token}}}{1 - \lambda} = \mathcal{O}(1)
+\]
+Single-token streaming generation executes in constant $\mathcal{O}(1)$ time per step via `step_recurrent(x_t, past_state=(S_{t-1}, Z_{t-1}))` with zero memory footprint growth.
+
