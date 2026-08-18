@@ -13,6 +13,8 @@ class AggregationStrategy(Enum):
     SCAFFOLD = "scaffold"
     FEDNOVA = "fednova"
     MOON = "moon"
+    GRASSMANN_FEDAVG = "grassmann_fedavg"
+    RIEMANNIAN_FEDAVG = "riemannian_fedavg"
 
 
 class ClientSelectionStrategy(Enum):
@@ -51,6 +53,10 @@ class FLConfig:
     aggregation: AggregationStrategy = AggregationStrategy.FEDAVG
     server_learning_rate: float = 1.0
     server_momentum: float = 0.9
+
+    # Grassmann / Riemannian specific
+    # FIX: Options: "spectral" (exact chordal Fréchet projection mean) or "karcher" (geodesic gradient descent)
+    grassmann_method: str = "spectral"
 
     # FedProx specific
     fedprox_mu: float = 0.01

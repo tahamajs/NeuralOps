@@ -2,9 +2,9 @@
 High-Fidelity Synthetic Dataset & Token Generator for NLP / LLM Evaluation.
 
 Replaces uniform random token noise with a power-law Zipfian distribution:
-$$P(k) = \\frac{1 / k^s}{\\sum_{n=1}^V 1 / n^s} \\quad \\text{with } s \\approx 1.1$$
-and a 2nd-order Markov transition generator to simulate realistic natural language entropy,
-word frequencies, and authentic perplexity evaluation dynamics.
+$$P(k) = \\frac{1 / k^s}{\\sum_{n=1}^V 1 / n^s} \\quad \\text{with } s \\approx 1.15$$
+to simulate authentic natural language entropy, word rank frequency curves,
+and valid causal perplexity evaluation dynamics.
 """
 
 from __future__ import annotations
@@ -31,27 +31,154 @@ def generate_zipfian_tokens(
     vocab_size: int = 32000,
     zipf_param: float = 1.15,
     seed: int = 42,
+    min_token_id: int = 1,
 ) -> torch.Tensor:
     """
     Generates token sequences following a Zipfian power-law distribution.
     
     Ensures that low-index tokens (common stop words, articles) occur with high frequency
     while high-index tokens (rare technical terms) occur sparsely, mirroring natural language.
+
+    Args:
+        num_samples: Number of sequences to generate.
+        seq_len: Sequence length (number of tokens per sample).
+        vocab_size: Size of vocabulary.
+        zipf_param: Power-law exponent $s > 0$ (default $1.15$, typical for natural language).
+        seed: Random seed for deterministic reproducibility.
+        min_token_id: Minimum token ID offset (default 1 to reserve 0 for PAD).
+
+    Returns:
+        torch.Tensor: Long tensor of shape `(num_samples, seq_len)` containing sampled token IDs.
     """
     np_rng = np.random.default_rng(seed)
 
-    # Compute Zipfian rank probabilities: p(k) = (1 / k^s) / zeta(s)
-    ranks = np.arange(1, min(vocab_size, 50000) + 1, dtype=np.float64)
+    effective_vocab = max(2, vocab_size - min_token_id)
+    
+    # FIX: Compute exact Zipfian rank probabilities: P(k) = (1 / k^s) / zeta(s)
+    # to simulate authentic natural language entropy and prevent flat uniform noise distortion.
+    ranks = np.arange(1, effective_vocab + 1, dtype=np.float64)
     probs = 1.0 / (ranks ** zipf_param)
-    probs /= probs.sum()
+    probs_sum = np.sum(probs)
+    if probs_sum > 0:
+        probs /= probs_sum
+    else:
+        probs = np.full(effective_vocab, 1.0 / effective_vocab)
 
-    # Sample token indices
+    # Sample token indices from power-law distribution
     flat_tokens = np_rng.choice(
-        len(ranks), size=(num_samples, seq_len), p=probs, replace=True
+        effective_vocab, size=(num_samples, seq_len), p=probs, replace=True
     )
-    # Shift indices to avoid special tokens 0 (PAD)
-    token_tensor = torch.from_numpy(flat_tokens + 1).long()
+    
+    # Shift indices to respect min_token_id (reserving special tokens)
+    token_tensor = torch.from_numpy(flat_tokens + min_token_id).long()
     return token_tensor
+
+
+def generate_zipfian_markov_tokens(
+    num_samples: int,
+    seq_len: int,
+    vocab_size: int = 32000,
+    zipf_param: float = 1.15,
+    transition_temp: float = 0.8,
+    seed: int = 42,
+    min_token_id: int = 1,
+) -> torch.Tensor:
+    """
+    Generates token sequences with Zipfian marginal rank distribution combined with
+    first-order Markov sequential transition coupling.
+
+    Args:
+        num_samples: Number of sequences.
+        seq_len: Sequence length.
+        vocab_size: Vocabulary size.
+        zipf_param: Zipf exponent.
+        transition_temp: Softmax temperature for Markov transition matrix.
+        seed: Random seed.
+        min_token_id: Minimum token ID offset.
+
+    Returns:
+        torch.Tensor: Long tensor of shape `(num_samples, seq_len)`.
+    """
+    np_rng = np.random.default_rng(seed)
+    effective_vocab = max(2, min(vocab_size - min_token_id, 2048))
+    
+    # FIX: Compute Zipfian unigram prior
+    ranks = np.arange(1, effective_vocab + 1, dtype=np.float64)
+    unigram_probs = 1.0 / (ranks ** zipf_param)
+    unigram_probs /= unigram_probs.sum()
+
+    tokens = np.zeros((num_samples, seq_len), dtype=np.int64)
+    tokens[:, 0] = np_rng.choice(effective_vocab, size=num_samples, p=unigram_probs)
+
+    for t in range(1, seq_len):
+        prev = tokens[:, t - 1]
+        # Transition distribution biased by previous token and global Zipfian prior
+        next_choices = np_rng.choice(effective_vocab, size=num_samples, p=unigram_probs)
+        # 30% local Markov continuity, 70% Zipfian base distribution
+        mask = np_rng.random(size=num_samples) < 0.3
+        local_step = (prev + np_rng.integers(-3, 4, size=num_samples)) % effective_vocab
+        tokens[:, t] = np.where(mask, local_step, next_choices)
+
+    return torch.from_numpy(tokens + min_token_id).long()
+
+
+def compute_empirical_entropy(tokens: torch.Tensor, vocab_size: int = 32000) -> float:
+    """
+    Computes the empirical Shannon entropy (in bits) of a tokenized tensor.
+
+    Args:
+        tokens: Long tensor of token IDs.
+        vocab_size: Total vocabulary size.
+
+    Returns:
+        float: Shannon entropy $H(X) = -\\sum p_i \\log_2(p_i)$ in bits.
+    """
+    flat = tokens.view(-1).cpu().numpy()
+    counts = np.bincount(flat, minlength=vocab_size)
+    counts = counts[counts > 0]
+    probs = counts / counts.sum()
+    entropy = -np.sum(probs * np.log2(probs))
+    return float(entropy)
+
+
+class SyntheticPerplexityDataset(Dataset):
+    """
+    Synthetic Language Modeling Dataset using Zipfian power-law token distribution
+    for authentic causal perplexity evaluation without empirical artifact distortion.
+    """
+
+    def __init__(
+        self,
+        num_samples: int = 128,
+        seq_len: int = 128,
+        vocab_size: int = 32000,
+        zipf_param: float = 1.15,
+        seed: int = 42,
+    ) -> None:
+        self.num_samples = num_samples
+        self.seq_len = seq_len
+        self.vocab_size = vocab_size
+
+        # FIX: Generate Zipfian tokens to reflect natural language entropy
+        self.input_ids = generate_zipfian_tokens(
+            num_samples=num_samples,
+            seq_len=seq_len,
+            vocab_size=vocab_size,
+            zipf_param=zipf_param,
+            seed=seed,
+        )
+        self.attention_mask = torch.ones((num_samples, seq_len), dtype=torch.long)
+        self.labels = self.input_ids.clone()
+
+    def __len__(self) -> int:
+        return self.num_samples
+
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+        return {
+            "input_ids": self.input_ids[idx],
+            "attention_mask": self.attention_mask[idx],
+            "labels": self.labels[idx],
+        }
 
 
 class SyntheticClassificationDataset(Dataset):
@@ -74,7 +201,7 @@ class SyntheticClassificationDataset(Dataset):
         self.vocab_size = vocab_size
         self.num_classes = num_classes
 
-        # Generate Zipfian base tokens
+        # FIX: Generate Zipfian base tokens
         self.input_ids = generate_zipfian_tokens(
             num_samples=num_samples,
             seq_len=seq_len,
@@ -92,7 +219,6 @@ class SyntheticClassificationDataset(Dataset):
         # Inject class-conditional salient tokens to simulate real sentiment / classification signal
         for i in range(num_samples):
             label_val = self.labels[i].item()
-            # Salient marker token placed in the middle
             salient_token = 10 + label_val * 5
             pos = rng.integers(1, seq_len - 1)
             self.input_ids[i, pos] = salient_token

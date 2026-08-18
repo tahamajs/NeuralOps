@@ -27,6 +27,35 @@ class BaseCallback(TrainerCallback):
         pass
 
 
+class AsyncTelemetryCallback(BaseCallback):
+    """
+    Base callback providing non-blocking asynchronous metric telemetry and tensor offloading.
+    Uses concurrent.futures.ThreadPoolExecutor to prevent GPU CUDA stream stalls.
+    """
+
+    def __init__(self, max_workers: int = 2, thread_name_prefix: str = "AsyncTelemetry") -> None:
+        import concurrent.futures
+
+        # FIX: Push metric extraction and .cpu().numpy() conversions into a non-blocking ThreadPoolExecutor to unblock the main CUDA stream
+        self._executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers,
+            thread_name_prefix=thread_name_prefix,
+        )
+
+    def submit_async(self, fn, *args, **kwargs):
+        """Submit a telemetry extraction or processing callable to the async background worker pool."""
+        return self._executor.submit(fn, *args, **kwargs)
+
+    def on_train_end(self, args, state, control, **kwargs) -> None:
+        """Ensure all pending async telemetry tasks finish before shutdown."""
+        self._executor.shutdown(wait=True)
+
+    def on_training_end(self, args, state, control, **kwargs) -> None:
+        """Ensure all pending async telemetry tasks finish before shutdown."""
+        self._executor.shutdown(wait=True)
+
+
+
 class CallbackList:
     """Container that calls each callback in order."""
 

@@ -188,7 +188,8 @@ class ModelVersionService:
                     download_from_s3(model_file)  # populate local file
                 else:
                     raise FileNotFoundError(f"Model file not found: {model_file}")
-            return torch.load(model_file, map_location=map_location)
+            # FIX: Enforce weights_only=True for secure model artifact loading
+            return torch.load(model_file, map_location=map_location, weights_only=True)
         except ModelVersion.DoesNotExist:
             logger.error("ModelVersion %s not found", version_id)
             return None

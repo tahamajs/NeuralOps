@@ -135,6 +135,69 @@ class AASVDCompressor(BaseCompressor):
             else next(model.parameters()).device
         )
 
+    def compress_linear(
+        self,
+        layer: nn.Linear,
+        rank: Optional[int] = None,
+        cov: Optional[torch.Tensor] = None,
+    ) -> SVDLinear:
+        """
+        FIX: Factored linear compression implementing activation-aware subspace projection
+        and symmetric singular value distribution.
+        
+        Args:
+            layer: Source nn.Linear layer to compress
+            rank: Target low-rank bottleneck dimension
+            cov: Optional empirical activation covariance matrix (X^T @ X) / B
+            
+        Returns:
+            Structural SVDLinear replacement module.
+        """
+        in_feat = layer.in_features
+        out_feat = layer.out_features
+        r = min(rank or self.rank, in_feat, out_feat)
+
+        if cov is not None:
+            # Principal activation directions via SVD of covariance
+            try:
+                _, _, Vh_act = torch.linalg.svd(cov.cpu().float(), full_matrices=False)
+                anchor = Vh_act[:r, :].to(layer.weight.device)  # [r, in_feat]
+            except Exception:
+                anchor = torch.eye(in_feat, device=layer.weight.device)[:r, :]
+
+            # Project weight W onto principal activation subspace
+            W = layer.weight.data.float()  # [out_feat, in_feat]
+            W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))  # [out_feat, in_feat]
+        else:
+            W_proj = layer.weight.data.float().cpu()
+
+        # Truncated SVD on projected weight
+        U, S, Vt = torch.linalg.svd(W_proj.cpu().float(), full_matrices=False)
+
+        # FIX: Symmetrical Square-Root Singular Value Allocation U_r = U @ sqrt(S), V_r = sqrt(S) @ V^T
+        sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+        U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
+            device=layer.weight.device, dtype=layer.weight.dtype
+        )
+        V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
+            device=layer.weight.device, dtype=layer.weight.dtype
+        )
+
+        # FIX: Instantiate structural SVDLinear replacement module (true parameter reduction)
+        svd_layer = SVDLinear(
+            in_features=in_feat,
+            out_features=out_feat,
+            rank=r,
+            bias=layer.bias is not None,
+            dtype=layer.weight.dtype,
+            device=layer.weight.device,
+        )
+        svd_layer.set_low_rank_factors(U_r, V_r)
+        if layer.bias is not None:
+            svd_layer.bias.data.copy_(layer.bias.data)
+
+        return svd_layer
+
     def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """
         Executes streaming covariance estimation over calibration batches,
@@ -157,9 +220,9 @@ class AASVDCompressor(BaseCompressor):
                 # Input shape: [batch_size, seq_len, in_features]
                 x = inp[0].detach().float()
                 x_flat = x.view(-1, x.size(-1))  # [total_tokens, in_features]
+                # FIX: Streaming Exponential Moving Average (EMA) Covariance Accumulation: (X^T @ X) / B
                 batch_cov = torch.matmul(x_flat.T, x_flat) / max(1, x_flat.size(0))
 
-                # FIX: Streaming Exponential Moving Average (EMA) Covariance Accumulation
                 if name not in covariances:
                     covariances[name] = batch_cov
                 else:
@@ -193,49 +256,7 @@ class AASVDCompressor(BaseCompressor):
         replaced_count = 0
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear) and name in covariances:
-                in_feat = module.in_features
-                out_feat = module.out_features
-                r = min(self.rank, in_feat, out_feat)
-
-                cov = covariances[name]  # [in_feat, in_feat]
-
-                # Principal activation directions via SVD of covariance
-                try:
-                    _, _, Vh_act = torch.linalg.svd(cov.cpu().float(), full_matrices=False)
-                    anchor = Vh_act[:r, :].to(module.weight.device)  # [r, in_feat]
-                except Exception:
-                    anchor = torch.eye(in_feat, device=module.weight.device)[:r, :]
-
-                # Project weight W onto principal activation subspace
-                W = module.weight.data.float()  # [out_feat, in_feat]
-                W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))  # [out_feat, in_feat]
-
-                # Truncated SVD on projected weight
-                U, S, Vt = torch.linalg.svd(W_proj.cpu().float(), full_matrices=False)
-
-                # FIX: Symmetrical Square-Root Singular Value Allocation
-                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
-                    device=module.weight.device, dtype=module.weight.dtype
-                )
-                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
-                    device=module.weight.device, dtype=module.weight.dtype
-                )
-
-                # FIX: Instantiate structural SVDLinear replacement module (true parameter reduction)
-                svd_layer = SVDLinear(
-                    in_features=in_feat,
-                    out_features=out_feat,
-                    rank=r,
-                    bias=module.bias is not None,
-                    dtype=module.weight.dtype,
-                    device=module.weight.device,
-                )
-                svd_layer.set_low_rank_factors(U_r, V_r)
-                if module.bias is not None:
-                    svd_layer.bias.data.copy_(module.bias.data)
-
-                # Replace in model hierarchy
+                svd_layer = self.compress_linear(module, rank=self.rank, cov=covariances[name])
                 replace_module(self.model, name, svd_layer)
                 replaced_count += 1
 
@@ -244,34 +265,12 @@ class AASVDCompressor(BaseCompressor):
 
     def _compress_unweighted_svd(self) -> Tuple[nn.Module, Dict[str, Any]]:
         """Fallback when no tokenizer is present."""
+        replaced_count = 0
         for name, module in list(self.model.named_modules()):
             if isinstance(module, nn.Linear):
-                in_feat, out_feat = module.in_features, module.out_features
-                r = min(self.rank, in_feat, out_feat)
-
-                W = module.weight.data.float().cpu()
-                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-
-                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
-                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
-                    device=module.weight.device, dtype=module.weight.dtype
-                )
-                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
-                    device=module.weight.device, dtype=module.weight.dtype
-                )
-
-                svd_layer = SVDLinear(
-                    in_features=in_feat,
-                    out_features=out_feat,
-                    rank=r,
-                    bias=module.bias is not None,
-                    dtype=module.weight.dtype,
-                    device=module.weight.device,
-                )
-                svd_layer.set_low_rank_factors(U_r, V_r)
-                if module.bias is not None:
-                    svd_layer.bias.data.copy_(module.bias.data)
-
+                svd_layer = self.compress_linear(module, rank=self.rank, cov=None)
                 replace_module(self.model, name, svd_layer)
+                replaced_count += 1
 
+        logger.info("AASVD (unweighted): Structurally factorized %d linear layers into SVDLinear.", replaced_count)
         return self.model, self.get_compression_stats()

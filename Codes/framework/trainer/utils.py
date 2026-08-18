@@ -4,6 +4,7 @@ High-Performance Model Training, Factorized Gradient Clipping & Evaluation Utili
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import math
@@ -28,55 +29,99 @@ def clip_grad_norm_factorized(
     parameters: Union[torch.Tensor, Iterable[torch.Tensor], nn.Module],
     max_norm: float = 1.0,
     norm_type: float = 2.0,
+    u_max_norm: Optional[float] = None,
+    v_max_norm: Optional[float] = None,
+    dense_max_norm: Optional[float] = None,
 ) -> torch.Tensor:
     """
-    Factorized-Aware Layerwise Gradient Clipping.
-    
-    Separates parameter gradients into distinct functional groups:
-    1. Low-rank factorized base parameters (U, V, down_proj, up_proj)
-    2. Adapter parameters (LoRA A, B)
-    3. Normalization parameters (LayerNorm, RMSNorm)
-    4. Dense linear projections & embeddings
-    
-    Prevents high singular energy components in U or dense output heads
-    from disproportionately scaling down gradients on narrow factorized V bases.
+    Adaptive Factorized-Aware Layerwise Gradient Clipping.
+
+    Scales grad(U) and grad(V) independently along with dense and normalization parameters.
+    Prevents singular energy dominance from factor U or dense projection heads from disproportionately
+    quenching the gradient signal on factor V bases in low-rank factorized attention models.
+
+    Args:
+        parameters: Module, Tensor, or Iterable of Tensors to clip.
+        max_norm: Default maximum gradient norm for all groups.
+        norm_type: Type of the used p-norm (default 2.0 for L2 norm).
+        u_max_norm: Specialized max norm for left low-rank factors U (defaults to max_norm).
+        v_max_norm: Specialized max norm for right low-rank factors V (defaults to max_norm).
+        dense_max_norm: Specialized max norm for dense projections (defaults to max_norm).
+
+    Returns:
+        torch.Tensor: Total combined norm of all parameter groups.
     """
-    if isinstance(parameters, nn.Module):
-        param_list = [p for p in parameters.parameters() if p.grad is not None]
-    elif isinstance(parameters, torch.Tensor):
-        param_list = [parameters] if parameters.grad is not None else []
-    else:
-        param_list = [p for p in parameters if p.grad is not None]
+    u_limit = float(u_max_norm) if u_max_norm is not None else float(max_norm)
+    v_limit = float(v_max_norm) if v_max_norm is not None else float(max_norm)
+    dense_limit = float(dense_max_norm) if dense_max_norm is not None else float(max_norm)
 
-    if len(param_list) == 0:
-        return torch.tensor(0.0)
-
-    # Group parameters by structural dimensionality and physical scale
-    factorized_params: List[torch.Tensor] = []
+    u_params: List[torch.Tensor] = []
+    v_params: List[torch.Tensor] = []
     dense_params: List[torch.Tensor] = []
 
-    for p in param_list:
-        # Check if parameter belongs to low-rank factorized bottleneck (rank dimension < 128)
-        if p.dim() >= 2 and min(p.shape) <= 128 and max(p.shape) >= 512:
-            factorized_params.append(p)
-        else:
-            dense_params.append(p)
+    # FIX: Partition parameters into U factors, V factors, and dense projections based on named module semantics and tensor shape
+    if isinstance(parameters, nn.Module):
+        for name, p in parameters.named_parameters():
+            if p.grad is None or not p.requires_grad:
+                continue
+            name_lower = name.lower()
+            if any(key in name_lower for key in ["head", "classifier", "decoder", "embed", "bias", "norm"]):
+                dense_params.append(p)
+            elif any(key in name_lower for key in ["u_proj", ".u.", "svd_u", "lora_a", "down_proj", "u_weight", "left_proj"]):
+                u_params.append(p)
+            elif any(key in name_lower for key in ["v_proj", ".v.", "svd_v", "lora_b", "up_proj", "v_weight", "right_proj"]):
+                v_params.append(p)
+            elif p.dim() >= 2 and min(p.shape) <= 128 and max(p.shape) >= 256:
+                # Shape-based heuristic for low-rank bottleneck: tall = U, wide = V
+                if p.shape[0] >= p.shape[1]:
+                    u_params.append(p)
+                else:
+                    v_params.append(p)
+            else:
+                dense_params.append(p)
+    elif isinstance(parameters, torch.Tensor):
+        if parameters.grad is not None and parameters.requires_grad:
+            dense_params.append(parameters)
+    else:
+        for p in parameters:
+            if p.grad is None or not p.requires_grad:
+                continue
+            if p.dim() >= 2 and min(p.shape) <= 128 and max(p.shape) >= 256:
+                if p.shape[0] >= p.shape[1]:
+                    u_params.append(p)
+                else:
+                    v_params.append(p)
+            else:
+                dense_params.append(p)
 
-    # 1. Clip Factorized Parameters with specialized norm budget
-    total_norm_factorized = 0.0
-    if factorized_params:
-        total_norm_factorized = torch.nn.utils.clip_grad_norm_(
-            factorized_params, max_norm=max_norm, norm_type=norm_type
-        )
+    if not u_params and not v_params and not dense_params:
+        return torch.tensor(0.0)
 
-    # 2. Clip Dense Parameters independently
-    total_norm_dense = 0.0
+    # FIX: Scale grad(U) and grad(V) independently to maintain balanced gradient propagation through factorized layers
+    group_norms: List[torch.Tensor] = []
+    
+    # 1. Clip Left Factor U
+    if u_params:
+        norm_u = torch.nn.utils.clip_grad_norm_(u_params, max_norm=u_limit, norm_type=norm_type)
+        group_norms.append(norm_u if isinstance(norm_u, torch.Tensor) else torch.tensor(float(norm_u)))
+
+    # 2. Clip Right Factor V independently
+    if v_params:
+        norm_v = torch.nn.utils.clip_grad_norm_(v_params, max_norm=v_limit, norm_type=norm_type)
+        group_norms.append(norm_v if isinstance(norm_v, torch.Tensor) else torch.tensor(float(norm_v)))
+
+    # 3. Clip Dense & Normalization Parameters independently
     if dense_params:
-        total_norm_dense = torch.nn.utils.clip_grad_norm_(
-            dense_params, max_norm=max_norm, norm_type=norm_type
-        )
+        norm_dense = torch.nn.utils.clip_grad_norm_(dense_params, max_norm=dense_limit, norm_type=norm_type)
+        group_norms.append(norm_dense if isinstance(norm_dense, torch.Tensor) else torch.tensor(float(norm_dense)))
 
-    return total_norm_factorized + total_norm_dense
+    if not group_norms:
+        return torch.tensor(0.0)
+
+    stacked_norms = torch.stack(group_norms)
+    if norm_type == float("inf"):
+        return torch.max(stacked_norms)
+    return torch.norm(stacked_norms, p=norm_type)
 
 
 def train_model(
@@ -88,12 +133,15 @@ def train_model(
     num_labels: int,
     is_multichoice: bool = False,
 ) -> Dict[str, float]:
-    """Train model with maximum GPU compute utilization, AMP precision, and factorized gradient safety."""
+    """
+    Train model with maximum GPU compute utilization, AMP precision, DDP gradient accumulation,
+    and adaptive factorized gradient clipping safety.
+    """
     cleanup_gpu_memory(force=True)
     model.to(device)
     model.train()
 
-    use_amp = getattr(config, "fp16", False) or getattr(config, "amp", True)
+    use_amp = bool(getattr(config, "fp16", False) or getattr(config, "amp", True))
     amp_dtype = (
         torch.bfloat16
         if (device.type == "cuda" and torch.cuda.is_bf16_supported())
@@ -112,54 +160,77 @@ def train_model(
 
     epochs = getattr(config, "epochs", 3)
     max_grad_norm = getattr(config, "max_grad_norm", 1.0)
+    gradient_accumulation_steps = max(1, int(getattr(config, "gradient_accumulation_steps", 1)))
     steps_per_epoch = max(1, len(train_loader))
     total_loss = 0.0
 
     for epoch in range(epochs):
         epoch_loss = 0.0
+        optimizer.zero_grad(set_to_none=True)
         pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+
         for step, batch in enumerate(pbar):
-            optimizer.zero_grad(set_to_none=True)
+            # FIX: Determine whether this micro-batch is the synchronization step of the accumulation window
+            is_sync_step = ((step + 1) % gradient_accumulation_steps == 0) or (step + 1 == len(train_loader))
 
-            with torch.autocast(
-                device_type=device.type, dtype=amp_dtype, enabled=(use_amp and device.type in ["cuda", "mps"])
-            ):
-                if is_multichoice:
-                    input_ids = batch["input_ids"].to(device, non_blocking=True)
-                    attention_mask = batch["attention_mask"].to(device, non_blocking=True)
-                    true_labels = batch["labels"].to(device, non_blocking=True)
-                    bs, nc, sl = input_ids.shape
-                    flat_ids = input_ids.view(-1, sl)
-                    flat_mask = attention_mask.view(-1, sl)
-                    outputs = model(input_ids=flat_ids, attention_mask=flat_mask)
-                    logits = outputs["logits"] if isinstance(outputs, dict) else outputs.logits
-                    combined_labels = true_labels.repeat_interleave(nc)
-                    loss = nn.functional.cross_entropy(logits, combined_labels)
+            # FIX: Wrap non-final micro-batches in model.no_sync() for DDP to eliminate redundant all-reduce synchronization
+            sync_context = (
+                contextlib.nullcontext()
+                if (is_sync_step or not hasattr(model, "no_sync") or not callable(getattr(model, "no_sync")))
+                else model.no_sync()
+            )
+
+            with sync_context:
+                with torch.autocast(
+                    device_type=device.type, dtype=amp_dtype, enabled=(use_amp and device.type in ["cuda", "mps"])
+                ):
+                    if is_multichoice:
+                        input_ids = batch["input_ids"].to(device, non_blocking=True)
+                        attention_mask = batch["attention_mask"].to(device, non_blocking=True)
+                        true_labels = batch["labels"].to(device, non_blocking=True)
+                        bs, nc, sl = input_ids.shape
+                        flat_ids = input_ids.view(-1, sl)
+                        flat_mask = attention_mask.view(-1, sl)
+                        outputs = model(input_ids=flat_ids, attention_mask=flat_mask)
+                        logits = outputs["logits"] if isinstance(outputs, dict) else (outputs.logits if hasattr(outputs, "logits") else outputs)
+                        combined_labels = true_labels.repeat_interleave(nc)
+                        loss = nn.functional.cross_entropy(logits, combined_labels)
+                    else:
+                        input_ids = batch["input_ids"].to(device, non_blocking=True)
+                        attention_mask = batch["attention_mask"].to(device, non_blocking=True)
+                        labels = batch["labels"].to(device, non_blocking=True)
+                        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                        logits = outputs["logits"] if isinstance(outputs, dict) else (outputs.logits if hasattr(outputs, "logits") else outputs)
+                        loss = nn.functional.cross_entropy(logits, labels)
+
+                    # FIX: Normalize loss for accumulation steps
+                    if gradient_accumulation_steps > 1:
+                        loss = loss / gradient_accumulation_steps
+                        loss = loss / gradient_accumulation_steps
+
+                if torch.isfinite(loss):
+                    if scaler.is_enabled():
+                        scaler.scale(loss).backward()
+                    else:
+                        loss.backward()
+
+                    curr_loss = loss.detach().item() * gradient_accumulation_steps
+                    epoch_loss += curr_loss
+                    total_loss += curr_loss
                 else:
-                    input_ids = batch["input_ids"].to(device, non_blocking=True)
-                    attention_mask = batch["attention_mask"].to(device, non_blocking=True)
-                    labels = batch["labels"].to(device, non_blocking=True)
-                    outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-                    logits = outputs["logits"] if isinstance(outputs, dict) else outputs.logits
-                    loss = nn.functional.cross_entropy(logits, labels)
+                    curr_loss = 0.0
 
-            if torch.isfinite(loss):
+            # FIX: Gradient clipping and optimizer step on accumulation boundaries
+            if is_sync_step:
                 if scaler.is_enabled():
-                    scaler.scale(loss).backward()
                     scaler.unscale_(optimizer)
                     clip_grad_norm_factorized(model, max_norm=max_grad_norm)
                     scaler.step(optimizer)
                     scaler.update()
                 else:
-                    loss.backward()
                     clip_grad_norm_factorized(model, max_norm=max_grad_norm)
                     optimizer.step()
-
-                curr_loss = loss.detach().item()
-                epoch_loss += curr_loss
-                total_loss += curr_loss
-            else:
-                curr_loss = 0.0
+                optimizer.zero_grad(set_to_none=True)
 
             if (step + 1) % max(1, getattr(config, "logging_steps", 10)) == 0 or step == len(train_loader) - 1:
                 pbar.set_postfix({"loss": f"{curr_loss:.4f}"})

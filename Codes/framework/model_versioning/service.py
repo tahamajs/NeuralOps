@@ -157,7 +157,8 @@ class ModelVersionService:
                 model_file = extract_archive(local_path, os.path.dirname(local_path))
             else:
                 model_file = os.path.join(local_path, "model.pth")
-            return torch.load(model_file, map_location=map_location)
+            # FIX: Enforce weights_only=True for secure model artifact loading
+            return torch.load(model_file, map_location=map_location, weights_only=True)
         except Exception as e:
             logger.exception("Load version %s failed: %s", version_id, e)
             return None
