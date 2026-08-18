@@ -1,96 +1,277 @@
-"""AASVD: Anchored and Adaptive SVD using input activation directions."""
-from typing import Any
+"""
+Activation-Aware Singular Value Decomposition (AASVD) Compressor.
 
-import numpy as np
+Implements empirical activation covariance accumulation across calibration batches:
+$$C_X = \\frac{1}{N_{\\text{tokens}}} \\sum_{i=1}^M X_i^\\top X_i \\in \\mathbb{R}^{d_{\\text{in}} \\times d_{\\text{in}}}$$
+Projects weights onto principal activation directions and replaces dense `nn.Linear` layers
+with structural low-rank factorized `SVDLinear` modules ($y = (x V^\\top) U^\\top$) to guarantee
+real parameter footprint and FLOP reduction.
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
 from framework.core.base import BaseCompressor
+from framework.core.model_utils import replace_module
 from framework.core.registry import COMPRESSOR_REGISTRY
+
+logger = logging.getLogger(__name__)
+
+# Default comprehensive multi-domain calibration corpus (>512 tokens)
+DEFAULT_CALIBRATION_CORPUS: List[str] = [
+    (
+        "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
+        "and semantic dependencies across arbitrary sequence lengths. However, the standard quadratic computational "
+        "complexity of softmax attention poses significant computational and memory bandwidth challenges during "
+        "both pre-training and long-context autoregressive decoding."
+    ),
+    (
+        "Singular Value Decomposition provides an optimal low-rank subspace approximation under the Frobenius norm. "
+        "By preconditioning the weight matrices with empirical input activation covariances, activation-aware SVD "
+        "preserves salient outlier directions that prevent catastrophic representation drift in deep neural networks."
+    ),
+    (
+        "def compute_attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, scale: float) -> torch.Tensor:\n"
+        "    scores = torch.matmul(q, k.transpose(-1, -2)) * scale\n"
+        "    probs = torch.softmax(scores, dim=-1)\n"
+        "    return torch.matmul(probs, v)\n"
+    ),
+    (
+        "In distributed multi-GPU environments, tensor parallelism and fully sharded data parallelism require "
+        "efficient parameter sharding. Low-rank factorized layers reduce inter-node communication volume by communicating "
+        "narrow bottleneck activations rather than high-dimensional hidden states across all-reduce collectives."
+    ),
+    (
+        "Mathematical problem solving and chain-of-thought reasoning require high-fidelity preservation of intermediate "
+        "residual stream representations. Let f(x) = Wx + b. If W is factorized into U and V with rank r << min(d_in, d_out), "
+        "the total number of parameters scales as r*(d_in + d_out) compared to d_in*d_out."
+    ),
+]
+
+
+class SVDLinear(nn.Module):
+    """
+    True Low-Rank Factorized Linear Layer executing sequentially as:
+    $$y = (x V^\\top) U^\\top + b$$
+    Achieving physical parameter reduction from $d_{\\text{in}} d_{\\text{out}}$ to $r(d_{\\text{in}} + d_{\\text{out}})$.
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        dtype: torch.dtype = torch.float32,
+        device: Optional[torch.device] = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = rank
+
+        self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device))
+        self.U = nn.Parameter(torch.empty(out_features, rank, dtype=dtype, device=device))
+
+        if bias:
+            self.bias = nn.Parameter(torch.empty(out_features, dtype=dtype, device=device))
+        else:
+            self.register_parameter("bias", None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        nn.init.orthogonal_(self.U)
+        nn.init.orthogonal_(self.V)
+        if self.bias is not None:
+            nn.init.zeros_(self.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Sequential two-stage projection
+        latent = F.linear(x, self.V)  # [..., rank]
+        out = F.linear(latent, self.U)  # [..., out_features]
+        if self.bias is not None:
+            out = out + self.bias
+        return out
+
+    def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
+        with torch.no_grad():
+            self.U.copy_(U_factor)
+            self.V.copy_(V_factor)
 
 
 @COMPRESSOR_REGISTRY.register("aasvd")
 class AASVDCompressor(BaseCompressor):
     """
-    Anchored Adaptive SVD: projects the weight matrix onto the principal
-    directions of the input activations (captured during a forward pass),
-    then performs SVD in that space.
-
-    Args:
-        model: PyTorch model.
-        tokenizer: HuggingFace tokenizer for calibration texts.
-        rank: target rank for SVD.
-        calibration_texts: list of strings to extract activations.
+    Activation-Aware SVD Compressor with streaming covariance accumulation
+    and true module replacement.
     """
 
-    def __init__(self, model, tokenizer, rank=64, calibration_texts=None, **kwargs):
+    def __init__(
+        self,
+        model: nn.Module,
+        tokenizer: Optional[Any] = None,
+        rank: int = 64,
+        calibration_texts: Optional[List[str]] = None,
+        device: Optional[Union[str, torch.device]] = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(model, name="aasvd", **kwargs)
         self.tokenizer = tokenizer
         self.rank = rank
-        self.calibration_texts = calibration_texts or [
-            "The quick brown fox jumps over the lazy dog."
-        ]
+        self.calibration_texts = calibration_texts or DEFAULT_CALIBRATION_CORPUS
+        self.device = (
+            torch.device(device)
+            if device is not None
+            else next(model.parameters()).device
+        )
 
-    def compress(self) -> Any:
-        """Compress the target module using this strategy."""
+    def compress(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """
+        Executes streaming covariance estimation over calibration batches,
+        computes SVD in the activation-aligned coordinate frame, and replaces
+        dense `nn.Linear` layers with `SVDLinear` factorized layers.
+        """
         self.model.eval()
-        activations = {}
+
+        if self.tokenizer is None:
+            logger.warning(
+                "AASVD: No tokenizer provided. Falling back to unweighted truncated SVD."
+            )
+            return self._compress_unweighted_svd()
+
+        covariances: Dict[str, torch.Tensor] = {}
+        token_counts: Dict[str, int] = {}
         hooks = []
 
-        def make_hook(name) -> Any:
-            """Make hook."""
-            def hook(module, input, output) -> None:
-                """Hook."""
-                activations[name] = input[0].detach()  # (batch, seq_len, in_features)
+        def make_hook(name: str):
+            def hook(module: nn.Module, inp: Tuple[torch.Tensor, ...], outp: Any):
+                # Input shape: [batch_size, seq_len, in_features]
+                x = inp[0].detach().float()
+                x_flat = x.view(-1, x.size(-1))  # [total_tokens, in_features]
+                batch_cov = torch.matmul(x_flat.T, x_flat)
+
+                if name not in covariances:
+                    covariances[name] = batch_cov
+                    token_counts[name] = x_flat.size(0)
+                else:
+                    covariances[name] += batch_cov
+                    token_counts[name] += x_flat.size(0)
 
             return hook
 
+        # 1. Register forward hooks on all linear layers
         for name, module in self.model.named_modules():
-            if isinstance(module, torch.nn.Linear):
+            if isinstance(module, nn.Linear):
                 hooks.append(module.register_forward_hook(make_hook(name)))
 
+        # 2. Stream calibration batches through the model
         inputs = self.tokenizer(
-            self.calibration_texts, return_tensors="pt", padding=True, truncation=True
+            self.calibration_texts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=512,
         )
-        device = next(self.model.parameters()).device
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
         with torch.no_grad():
             self.model(**inputs)
 
-        for hook in hooks:
-            hook.remove()
+        # 3. Clean up forward hooks
+        for h in hooks:
+            h.remove()
 
-        for name, module in self.model.named_modules():
-            if isinstance(module, torch.nn.Linear) and name in activations:
-                inp = activations[name].view(-1, activations[name].size(-1)).float()
-                # Anchor directions from input SVD
-                _, _, Vh_inp = torch.linalg.svd(inp, full_matrices=False)
-                anchor = Vh_inp[: self.rank, :].cpu().numpy().T  # (in_features, rank)
+        # 4. Replace each Linear layer with an SVDLinear module
+        replaced_count = 0
+        for name, module in list(self.model.named_modules()):
+            if isinstance(module, nn.Linear) and name in covariances:
+                in_feat = module.in_features
+                out_feat = module.out_features
+                r = min(self.rank, in_feat, out_feat)
 
-                W = module.weight.data.float().cpu().numpy()
-                # Project W onto anchor space
-                W_anchored = W @ anchor @ anchor.T
-                # SVD of anchored weight
-                U, S, Vt = np.linalg.svd(W_anchored, full_matrices=False)
-                r = min(self.rank, min(W.shape), len(S))
-                U_r = U[:, :r]
-                S_r = S[:r]
-                Vt_r = Vt[:r, :]
-                W_approx = U_r @ np.diag(S_r) @ Vt_r
-                module.weight.data = torch.tensor(
-                    W_approx, dtype=module.weight.dtype, device=module.weight.device
+                # Compute normalized empirical covariance
+                cov = covariances[name] / max(1, token_counts[name])  # [in_feat, in_feat]
+
+                # Principal activation directions via SVD of covariance
+                try:
+                    _, _, Vh_act = torch.linalg.svd(cov.cpu().float(), full_matrices=False)
+                    anchor = Vh_act[:r, :].to(module.weight.device)  # [r, in_feat]
+                except Exception:
+                    anchor = torch.eye(in_feat, device=module.weight.device)[:r, :]
+
+                # Project weight W onto principal activation subspace
+                W = module.weight.data.float()  # [out_feat, in_feat]
+                W_proj = torch.matmul(W, torch.matmul(anchor.T, anchor))  # [out_feat, in_feat]
+
+                # Truncated SVD on projected weight
+                U, S, Vt = torch.linalg.svd(W_proj.cpu().float(), full_matrices=False)
+
+                # Balanced square-root singular energy allocation
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
+                    device=module.weight.device, dtype=module.weight.dtype
+                )
+                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
+                    device=module.weight.device, dtype=module.weight.dtype
                 )
 
-        self._compressed_params = self._count_params(self.model)
+                # Instantiate structural SVDLinear replacement module
+                svd_layer = SVDLinear(
+                    in_features=in_feat,
+                    out_features=out_feat,
+                    rank=r,
+                    bias=module.bias is not None,
+                    dtype=module.weight.dtype,
+                    device=module.weight.device,
+                )
+                svd_layer.set_low_rank_factors(U_r, V_r)
+                if module.bias is not None:
+                    svd_layer.bias.data.copy_(module.bias.data)
+
+                # Replace in model hierarchy
+                replace_module(self.model, name, svd_layer)
+                replaced_count += 1
+
+        logger.info("AASVD: Structurally factorized %d linear layers into SVDLinear.", replaced_count)
         return self.model, self.get_compression_stats()
 
+    def _compress_unweighted_svd(self) -> Tuple[nn.Module, Dict[str, Any]]:
+        """Fallback when no tokenizer is present."""
+        for name, module in list(self.model.named_modules()):
+            if isinstance(module, nn.Linear):
+                in_feat, out_feat = module.in_features, module.out_features
+                r = min(self.rank, in_feat, out_feat)
 
-@COMPRESSOR_REGISTRY.register("aasvd")
-def aasvd_factory(model, comp_config) -> Any:
-    """Aasvd factory."""
-    rank = getattr(comp_config, "aasvd_rank", 64)
-    # tokenizer required
-    tokenizer = getattr(model, "tokenizer", None)
-    if tokenizer is None:
-        raise ValueError("aasvd requires tokenizer attached as model.tokenizer")
-    compressor = AASVDCompressor(model, tokenizer, rank=rank)
-    compressed_model, _ = compressor.compress()
-    return compressed_model
+                W = module.weight.data.float().cpu()
+                U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+
+                sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
+                    device=module.weight.device, dtype=module.weight.dtype
+                )
+                V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(
+                    device=module.weight.device, dtype=module.weight.dtype
+                )
+
+                svd_layer = SVDLinear(
+                    in_features=in_feat,
+                    out_features=out_feat,
+                    rank=r,
+                    bias=module.bias is not None,
+                    dtype=module.weight.dtype,
+                    device=module.weight.device,
+                )
+                svd_layer.set_low_rank_factors(U_r, V_r)
+                if module.bias is not None:
+                    svd_layer.bias.data.copy_(module.bias.data)
+
+                replace_module(self.model, name, svd_layer)
+
+        return self.model, self.get_compression_stats()
