@@ -15,10 +15,21 @@ def set_plot_style(style: str = "seaborn-v0_8-darkgrid") -> None:
     sns.set_context("paper", font_scale=1.2)
 
 
-def save_figure(fig, path: str, dpi: int = 150, bbox_inches: str = "tight") -> None:
-    """Persist figure to disk."""
-    fig.savefig(path, dpi=dpi, bbox_inches=bbox_inches)
-    plt.close(fig)
+def save_figure(fig: Any, path: str, dpi: int = 150, bbox_inches: str = "tight") -> None:
+    """
+    Persist figure to disk and rigorously clean up matplotlib memory buffers.
+    """
+    try:
+        fig.savefig(path, dpi=dpi, bbox_inches=bbox_inches)
+    finally:
+        # FIX: Eradicate matplotlib memory leaks by clearing canvas and closing figure in finally block
+        if fig is not None:
+            fig.clf()
+            plt.close(fig)
+        import gc
+
+        gc.collect()
+
 
 
 def get_color_palette(n_colors: int, palette: str = "viridis") -> List[str]:

@@ -87,8 +87,9 @@ class ElasticTrainer:
         )
         if not files:
             return None
+        # FIX: Enforce weights_only=True for secure checkpoint loading to prevent code execution
         ckpt = torch.load(
-            os.path.join(self.cfg.checkpoint_dir, files[0]), map_location="cpu"
+            os.path.join(self.cfg.checkpoint_dir, files[0]), map_location="cpu", weights_only=True
         )
         model.load_state_dict(ckpt["model"])
         optimizer.load_state_dict(ckpt["optimizer"])

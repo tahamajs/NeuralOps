@@ -180,6 +180,7 @@ class ElasticTrainer:
         if not files:
             return None
         path = os.path.join(ckpt_dir, files[0])
-        checkpoint = torch.load(path, map_location="cpu")
+        # FIX: Enforce weights_only=True for secure checkpoint deserialization
+        checkpoint = torch.load(path, map_location="cpu", weights_only=True)
         logger.info("Loaded elastic checkpoint from %s", path)
         return checkpoint

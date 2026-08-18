@@ -168,6 +168,75 @@ class SVDLinearAttention(BaseAttention):
 
         self.dropout = nn.Dropout(self.dropout_rate)
 
+        if pretrained_attn is not None:
+            self.copy_weights(pretrained_attn)
+
+    def copy_weights(self, pretrained_attn: nn.Module) -> None:
+        """
+        FIX: Copies and symmetrically factorizes pretrained attention weights into SVD projections.
+        """
+        from framework.core.attention_utils import (
+            FUSED_QKV_REGEX,
+            PROJ_REGEX_PATTERNS,
+            _find_submodule_by_regex,
+            _slice_fused_qkv_weights,
+        )
+
+        # 1. Check for unified fused QKV layer
+        fused_mod = None
+        for child_name, child_mod in pretrained_attn.named_children():
+            if FUSED_QKV_REGEX.match(child_name) and hasattr(child_mod, "weight"):
+                fused_mod = child_mod
+                break
+
+        if fused_mod is not None:
+            sliced = _slice_fused_qkv_weights(
+                fused_mod.weight.data,
+                fused_mod.bias.data if hasattr(fused_mod, "bias") and fused_mod.bias is not None else None,
+                num_heads=self.num_heads,
+                head_dim=self.head_dim,
+            )
+            for proj_key, target in [("q", self.q_proj), ("k", self.k_proj), ("v", self.v_proj)]:
+                w, b = sliced[proj_key]
+                self._factorize_and_set(target, w, b)
+
+            # Output projection
+            target_o = _find_submodule_by_regex(pretrained_attn, PROJ_REGEX_PATTERNS["o"])
+            if target_o is not None and hasattr(target_o, "weight"):
+                self._factorize_and_set(
+                    self.out_proj,
+                    target_o.weight.data,
+                    target_o.bias.data if hasattr(target_o, "bias") and target_o.bias is not None else None,
+                )
+        else:
+            # 2. Decoupled Q, K, V, O projections
+            for proj_key, target in [
+                ("q", self.q_proj),
+                ("k", self.k_proj),
+                ("v", self.v_proj),
+                ("o", self.out_proj),
+            ]:
+                sub = _find_submodule_by_regex(pretrained_attn, PROJ_REGEX_PATTERNS[proj_key])
+                if sub is not None and hasattr(sub, "weight"):
+                    w = sub.weight.data
+                    b = sub.bias.data if hasattr(sub, "bias") and sub.bias is not None else None
+                    self._factorize_and_set(target, w, b)
+
+    def _factorize_and_set(
+        self, target_linear: SVDLinear, weight: torch.Tensor, bias: Optional[torch.Tensor] = None
+    ) -> None:
+        """Symmetrically factorizes weight matrix W -> U @ diag(sqrt(S)) and diag(sqrt(S)) @ V^T."""
+        with torch.no_grad():
+            U, S, Vt = torch.linalg.svd(weight.detach().cpu().float(), full_matrices=False)
+            r = min(target_linear.rank, U.size(1), Vt.size(0))
+            # FIX: Symmetrical Square-Root Singular Energy Allocation: U_r = U @ sqrt(S), V_r = sqrt(S) @ V^T
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=weight.device, dtype=weight.dtype)
+            V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=weight.device, dtype=weight.dtype)
+            target_linear.set_low_rank_factors(U_r, V_r)
+            if bias is not None and target_linear.bias is not None:
+                target_linear.bias.data.copy_(bias.to(target_linear.bias.device, target_linear.bias.dtype))
+
     def _transpose_for_scores(self, x: torch.Tensor) -> torch.Tensor:
         # [B, N, H * D] -> [B, H, N, D]
         b, n, _ = x.size()

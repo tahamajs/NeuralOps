@@ -57,9 +57,9 @@ PROJ_REGEX_PATTERNS: Dict[str, List[re.Pattern]] = {
     ],
 }
 
-# FIX: Regex matcher for unified multi-head projection layers (Falcon, StarCoder, GPT-2, GPT-NeoX)
+# FIX: Regex matcher for unified multi-head projection layers (Falcon, StarCoder, GPT-2, GPT-NeoX, LLaMA-fused)
 FUSED_QKV_REGEX: re.Pattern = re.compile(
-    r"^(qkv_proj|query_key_value|c_attn|qkv|Wqkv|in_proj)$", re.I
+    r"^(qkv_proj|query_key_value|c_attn|qkv|Wqkv|W_qkv|in_proj|fused_qkv|qkv_linear)$", re.I
 )
 
 
@@ -82,6 +82,16 @@ def _slice_fused_qkv_weights(
     """
     FIX: Slices fused QKV projection tensors into separate Q, K, and V weight and bias tensors
     supporting Standard Multi-Head Attention (MHA), Grouped-Query Attention (GQA), and Multi-Query Attention (MQA).
+    
+    Args:
+        fused_weight: Fused QKV weight tensor of shape [total_out_dim, in_dim]
+        fused_bias: Optional fused bias tensor of shape [total_out_dim]
+        num_heads: Number of query attention heads
+        num_kv_heads: Number of key/value heads (for GQA/MQA)
+        head_dim: Dimension per attention head
+        
+    Returns:
+        Dictionary mapping 'q', 'k', 'v' to tuples of (weight, optional_bias).
     """
     total_out_dim = fused_weight.size(0)
     in_dim = fused_weight.size(1)
@@ -124,8 +134,8 @@ def _copy_projection_weights(
 ) -> None:
     """
     FIX: Symmetrically distributes singular values across U and V using square-root scaling:
-    U_r = U[:, :r] * sqrt(S[:r])
-    V_r = sqrt(S[:r]) * V^T[:r, :]
+    U_r = U[:, :r] @ diag(sqrt(S[:r]))
+    V_r = diag(sqrt(S[:r])) @ V^T[:r, :]
     This eliminates gradient scale mismatch during backpropagation.
     """
     # 1. Standard nn.Linear target
@@ -149,7 +159,11 @@ def _copy_projection_weights(
         return
 
     # 2. Factorized SVD Linear Module (e.g. SVDLinear)
-    if hasattr(target_mod, "set_low_rank_factors") or hasattr(target_mod, "set_svd_factors"):
+    if (
+        hasattr(target_mod, "set_low_rank_factors")
+        or hasattr(target_mod, "set_svd_factors")
+        or (hasattr(target_mod, "U") and hasattr(target_mod, "V"))
+    ):
         setter_fn = getattr(target_mod, "set_low_rank_factors", getattr(target_mod, "set_svd_factors", None))
         with torch.no_grad():
             # Perform SVD in FP32 on CPU for numerical stability across all matrix sizes
@@ -163,7 +177,7 @@ def _copy_projection_weights(
             )
             r = min(target_rank, U.size(1), Vt.size(0))
 
-            # FIX: Balanced Square-Root Singular Energy Allocation
+            # FIX: Symmetrically distribute singular energy: U_r = U @ sqrt(S), V_r = sqrt(S) @ V^T
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_balanced = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
                 device=src_weight.device, dtype=getattr(target_mod, "U", src_weight).dtype
@@ -172,7 +186,11 @@ def _copy_projection_weights(
                 device=src_weight.device, dtype=getattr(target_mod, "V", src_weight).dtype
             )
 
-            setter_fn(U_balanced, V_balanced)
+            if setter_fn is not None:
+                setter_fn(U_balanced, V_balanced)
+            else:
+                target_mod.U.data.copy_(U_balanced)
+                target_mod.V.data.copy_(V_balanced)
 
             if hasattr(target_mod, "bias") and target_mod.bias is not None:
                 if src_bias is not None:
@@ -187,15 +205,32 @@ def apply_rope_after_up_projection(
     k: torch.Tensor,
     cos: torch.Tensor,
     sin: torch.Tensor,
-    position_ids: torch.Tensor,
+    position_ids: Optional[torch.Tensor] = None,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     """
     FIX: Applies Rotary Position Embeddings (RoPE) AFTER low-rank up-projection to full
     head dimensions, preserving spatial coordinate geometry and relative frequency angles.
+    
+    Args:
+        q: Query tensor of shape [B, H, N, D_head]
+        k: Key tensor of shape [B, H, N, D_head]
+        cos: Cosine rotary embedding tensor
+        sin: Sine rotary embedding tensor
+        position_ids: Optional token position indices
+        
+    Returns:
+        Tuple of (q_embedded, k_embedded) with RoPE relative rotation applied.
     """
     # q, k shape: [B, H, N, D_head]
-    cos = cos[position_ids].unsqueeze(1)  # [B, 1, N, D_head]
-    sin = sin[position_ids].unsqueeze(1)  # [B, 1, N, D_head]
+    if position_ids is not None and cos.dim() == 2:
+        cos = cos[position_ids].unsqueeze(1)  # [B, 1, N, D_head]
+        sin = sin[position_ids].unsqueeze(1)  # [B, 1, N, D_head]
+    elif cos.dim() == 3:
+        cos = cos.unsqueeze(1)  # [B, 1, N, D_head]
+        sin = sin.unsqueeze(1)  # [B, 1, N, D_head]
+    elif cos.dim() == 2:
+        cos = cos.unsqueeze(0).unsqueeze(1)  # [1, 1, N, D_head]
+        sin = sin.unsqueeze(0).unsqueeze(1)  # [1, 1, N, D_head]
 
     def rotate_half(x: torch.Tensor) -> torch.Tensor:
         x1 = x[..., : x.shape[-1] // 2]

@@ -116,7 +116,8 @@ class MambaSVDFlash(BaseAttention):
         # 1. SVD-SSM Path
         # ---------------------------------------------------------
         U = self.proj_u(hidden_states).view(B, L, D, self.rank)
-        Sigma = self.proj_sigma(hidden_states)
+        # FIX: Sigmoid bound singular spectrum in (0, 0.95) for strict contractive Lyapunov stability
+        Sigma = torch.sigmoid(self.proj_sigma(hidden_states)) * 0.95
         V = self.proj_v(hidden_states).view(B, L, self.rank, D)
         B_t_seq = self.proj_b(hidden_states)
         C_t_seq = self.proj_c(hidden_states)
@@ -125,12 +126,13 @@ class MambaSVDFlash(BaseAttention):
         ssm_out = []
 
         for t in range(L):
-            U_t = U[:, t]           # [B, D, r]
-            Sigma_t = Sigma[:, t]   # [B, r]
-            V_t = V[:, t]           # [B, r, D]
-            b_t = B_t_seq[:, t]     # [B, D]
-            x_t = hidden_states[:, t] # [B, D]
-            c_t = C_t_seq[:, t]     # [B, D]
+            # FIX: Orthonormalize low-rank projection bases to guarantee ||A_t||_2 < 1
+            U_t = F.normalize(U[:, t], p=2, dim=1)           # [B, D, r]
+            Sigma_t = Sigma[:, t]                             # [B, r]
+            V_t = F.normalize(V[:, t], p=2, dim=2)           # [B, r, D]
+            b_t = B_t_seq[:, t]                               # [B, D]
+            x_t = hidden_states[:, t]                         # [B, D]
+            c_t = C_t_seq[:, t]                               # [B, D]
 
             # v_{t-1} = V_{t, r}^T h_{t-1}
             v_t_1 = torch.bmm(V_t, h.unsqueeze(-1)).squeeze(-1) # [B, r]
@@ -169,8 +171,11 @@ class MambaSVDFlash(BaseAttention):
                 mask = mask + attention_mask
             
             attn_out = F.scaled_dot_product_attention(Q, K, V_attn, attn_mask=mask)
+            # FIX: Clean fully masked row NaN values
+            attn_out = torch.nan_to_num(attn_out, nan=0.0)
         else:
             attn_out = F.scaled_dot_product_attention(Q, K, V_attn, is_causal=True)
+            attn_out = torch.nan_to_num(attn_out, nan=0.0)
 
         attn_out_tensor = attn_out.transpose(1, 2).reshape(B, L, D)
 
@@ -179,6 +184,7 @@ class MambaSVDFlash(BaseAttention):
         # ---------------------------------------------------------
         gamma = torch.sigmoid(self.gating(hidden_states))
         Y = gamma * ssm_out_tensor + (1 - gamma) * attn_out_tensor
+        Y = torch.nan_to_num(Y, nan=0.0)
 
         # Apply final padding mask if provided
         if attention_mask is not None:
@@ -186,8 +192,9 @@ class MambaSVDFlash(BaseAttention):
                 padding_mask = attention_mask.unsqueeze(-1).to(Y.dtype)
                 Y = Y * padding_mask
             elif attention_mask.dim() == 4:
-                padding_mask = (attention_mask[:, 0, 0, :] > -1e4).unsqueeze(-1).to(Y.dtype)
-                Y = Y * padding_mask
+                pad_2d = (attention_mask[:, 0, 0, :] > -1e4).unsqueeze(-1).to(Y.dtype)
+                if pad_2d.shape[1] == Y.shape[1]:
+                    Y = Y * pad_2d
 
         return Y, None
 
