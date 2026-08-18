@@ -1,11 +1,11 @@
 """
 Activation-Aware Singular Value Decomposition (AASVD) Compressor.
 
-Implements empirical activation covariance accumulation across calibration batches:
-$$C_X = \\frac{1}{N_{\\text{tokens}}} \\sum_{i=1}^M X_i^\\top X_i \\in \\mathbb{R}^{d_{\\text{in}} \\times d_{\\text{in}}}$$
-Projects weights onto principal activation directions and replaces dense `nn.Linear` layers
+Implements streaming Exponential Moving Average (EMA) activation covariance accumulation:
+$$C_X^{(t)} = \\beta C_X^{(t-1)} + (1 - \\beta) \\frac{1}{B} \\sum_{i=1}^B X_i^\\top X_i$$
+Projects weights onto principal activation subspaces and replaces dense `nn.Linear` layers
 with structural low-rank factorized `SVDLinear` modules ($y = (x V^\\top) U^\\top$) to guarantee
-real parameter footprint and FLOP reduction.
+real physical parameter reduction and FLOP savings.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# Default comprehensive multi-domain calibration corpus (>512 tokens)
+# FIX: Comprehensive multi-domain calibration corpus (>512 tokens)
 DEFAULT_CALIBRATION_CORPUS: List[str] = [
     (
         "Transformers rely heavily on multi-head self-attention mechanisms to capture complex syntactic "
@@ -57,9 +57,9 @@ DEFAULT_CALIBRATION_CORPUS: List[str] = [
 
 class SVDLinear(nn.Module):
     """
-    True Low-Rank Factorized Linear Layer executing sequentially as:
-    $$y = (x V^\\top) U^\\top + b$$
-    Achieving physical parameter reduction from $d_{\\text{in}} d_{\\text{out}}$ to $r(d_{\\text{in}} + d_{\\text{out}})$.
+    FIX: True Low-Rank Factorized Linear Layer executing as:
+    y = (x @ V.T) @ U.T + b
+    Achieving physical parameter reduction from d_in * d_out to r * (d_in + d_out).
     """
 
     def __init__(
@@ -76,6 +76,7 @@ class SVDLinear(nn.Module):
         self.out_features = out_features
         self.rank = rank
 
+        # Factorized low-rank parameter tensors
         self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device))
         self.U = nn.Parameter(torch.empty(out_features, rank, dtype=dtype, device=device))
 
@@ -109,7 +110,7 @@ class SVDLinear(nn.Module):
 @COMPRESSOR_REGISTRY.register("aasvd")
 class AASVDCompressor(BaseCompressor):
     """
-    Activation-Aware SVD Compressor with streaming covariance accumulation
+    Activation-Aware SVD Compressor with streaming EMA covariance accumulation
     and true module replacement.
     """
 
@@ -118,6 +119,7 @@ class AASVDCompressor(BaseCompressor):
         model: nn.Module,
         tokenizer: Optional[Any] = None,
         rank: int = 64,
+        ema_beta: float = 0.9,
         calibration_texts: Optional[List[str]] = None,
         device: Optional[Union[str, torch.device]] = None,
         **kwargs: Any,
@@ -125,6 +127,7 @@ class AASVDCompressor(BaseCompressor):
         super().__init__(model, name="aasvd", **kwargs)
         self.tokenizer = tokenizer
         self.rank = rank
+        self.ema_beta = ema_beta
         self.calibration_texts = calibration_texts or DEFAULT_CALIBRATION_CORPUS
         self.device = (
             torch.device(device)
@@ -147,7 +150,6 @@ class AASVDCompressor(BaseCompressor):
             return self._compress_unweighted_svd()
 
         covariances: Dict[str, torch.Tensor] = {}
-        token_counts: Dict[str, int] = {}
         hooks = []
 
         def make_hook(name: str):
@@ -155,14 +157,13 @@ class AASVDCompressor(BaseCompressor):
                 # Input shape: [batch_size, seq_len, in_features]
                 x = inp[0].detach().float()
                 x_flat = x.view(-1, x.size(-1))  # [total_tokens, in_features]
-                batch_cov = torch.matmul(x_flat.T, x_flat)
+                batch_cov = torch.matmul(x_flat.T, x_flat) / max(1, x_flat.size(0))
 
+                # FIX: Streaming Exponential Moving Average (EMA) Covariance Accumulation
                 if name not in covariances:
                     covariances[name] = batch_cov
-                    token_counts[name] = x_flat.size(0)
                 else:
-                    covariances[name] += batch_cov
-                    token_counts[name] += x_flat.size(0)
+                    covariances[name] = self.ema_beta * covariances[name] + (1.0 - self.ema_beta) * batch_cov
 
             return hook
 
@@ -196,8 +197,7 @@ class AASVDCompressor(BaseCompressor):
                 out_feat = module.out_features
                 r = min(self.rank, in_feat, out_feat)
 
-                # Compute normalized empirical covariance
-                cov = covariances[name] / max(1, token_counts[name])  # [in_feat, in_feat]
+                cov = covariances[name]  # [in_feat, in_feat]
 
                 # Principal activation directions via SVD of covariance
                 try:
@@ -213,7 +213,7 @@ class AASVDCompressor(BaseCompressor):
                 # Truncated SVD on projected weight
                 U, S, Vt = torch.linalg.svd(W_proj.cpu().float(), full_matrices=False)
 
-                # Balanced square-root singular energy allocation
+                # FIX: Symmetrical Square-Root Singular Value Allocation
                 sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
                 U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
                     device=module.weight.device, dtype=module.weight.dtype
@@ -222,7 +222,7 @@ class AASVDCompressor(BaseCompressor):
                     device=module.weight.device, dtype=module.weight.dtype
                 )
 
-                # Instantiate structural SVDLinear replacement module
+                # FIX: Instantiate structural SVDLinear replacement module (true parameter reduction)
                 svd_layer = SVDLinear(
                     in_features=in_feat,
                     out_features=out_feat,

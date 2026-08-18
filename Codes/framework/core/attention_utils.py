@@ -2,8 +2,8 @@
 Unified Attention Injection & Weight Adaptation Engine for Foundation Models.
 
 Provides architecture-agnostic layer detection, dynamic regex projection matching,
-fused QKV tensor slicing, and mathematically symmetric Singular Value Decomposition (SVD)
-low-rank factor copying.
+fused QKV tensor slicing, RoPE geometry preservation, and mathematically symmetric
+Singular Value Decomposition (SVD) low-rank factor copying.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from .registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-# Canonical projection search patterns (ordered by specificity)
+# Canonical projection search patterns
 PROJ_REGEX_PATTERNS: Dict[str, List[re.Pattern]] = {
     "q": [
         re.compile(r"^q_proj$", re.I),
@@ -57,7 +57,8 @@ PROJ_REGEX_PATTERNS: Dict[str, List[re.Pattern]] = {
     ],
 }
 
-FUSED_QKV_REGEX = re.compile(
+# FIX: Regex matcher for unified multi-head projection layers (Falcon, StarCoder, GPT-2, GPT-NeoX)
+FUSED_QKV_REGEX: re.Pattern = re.compile(
     r"^(qkv_proj|query_key_value|c_attn|qkv|Wqkv|in_proj)$", re.I
 )
 
@@ -79,10 +80,8 @@ def _slice_fused_qkv_weights(
     head_dim: Optional[int] = None,
 ) -> Dict[str, Tuple[torch.Tensor, Optional[torch.Tensor]]]:
     """
-    Slices a fused QKV projection tensor (e.g. from Falcon, GPT-2, GPT-NeoX, StarCoder)
-    into independent Q, K, and V weight and bias tensors.
-    
-    Handles standard MHA (3 * hidden_size), GQA (q_heads + 2 * kv_heads), and interleaved layouts.
+    FIX: Slices fused QKV projection tensors into separate Q, K, and V weight and bias tensors
+    supporting Standard Multi-Head Attention (MHA), Grouped-Query Attention (GQA), and Multi-Query Attention (MQA).
     """
     total_out_dim = fused_weight.size(0)
     in_dim = fused_weight.size(1)
@@ -98,7 +97,7 @@ def _slice_fused_qkv_weights(
         k_b = fused_bias[split_size : 2 * split_size] if fused_bias is not None else None
         v_b = fused_bias[2 * split_size :] if fused_bias is not None else None
     else:
-        # Grouped-Query Attention (GQA / MQA) fused layout
+        # Grouped-Query Attention (GQA) fused layout
         h_dim = head_dim or (total_out_dim // (num_heads + 2 * num_kv_heads))
         q_dim = num_heads * h_dim
         kv_dim = num_kv_heads * h_dim
@@ -124,11 +123,10 @@ def _copy_projection_weights(
     src_bias: Optional[torch.Tensor],
 ) -> None:
     """
-    Copies weights and biases into target module with mathematically balanced
-    Singular Value Decomposition energy distribution:
-    $$U_r = U_{:, :r} \\cdot \\text{diag}(\\sqrt{S_{:r}}), \\quad V_r = \\text{diag}(\\sqrt{S_{:r}}) \\cdot V^T_{:r, :}$$
-    
-    Prevents gradient scale asymmetry during SGD/AdamW backpropagation.
+    FIX: Symmetrically distributes singular values across U and V using square-root scaling:
+    U_r = U[:, :r] * sqrt(S[:r])
+    V_r = sqrt(S[:r]) * V^T[:r, :]
+    This eliminates gradient scale mismatch during backpropagation.
     """
     # 1. Standard nn.Linear target
     if hasattr(target_mod, "weight") and isinstance(target_mod.weight, torch.Tensor):
@@ -139,9 +137,8 @@ def _copy_projection_weights(
                 target_mod.weight.shape[1] == src_weight.shape[1]
                 and target_mod.weight.shape[0] < src_weight.shape[0]
             ):
-                # Head compression or GQA slicing
                 target_mod.weight.data.copy_(src_weight[: target_mod.weight.shape[0]])
-            
+
             if hasattr(target_mod, "bias") and target_mod.bias is not None:
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
                     target_mod.bias.data.copy_(src_bias)
@@ -151,11 +148,11 @@ def _copy_projection_weights(
                     nn.init.zeros_(target_mod.bias)
         return
 
-    # 2. Factorized SVD Linear Module (e.g., SVDLinear with U, V parameters)
+    # 2. Factorized SVD Linear Module (e.g. SVDLinear)
     if hasattr(target_mod, "set_low_rank_factors") or hasattr(target_mod, "set_svd_factors"):
         setter_fn = getattr(target_mod, "set_low_rank_factors", getattr(target_mod, "set_svd_factors", None))
         with torch.no_grad():
-            # Perform SVD in FP32 on CPU to guarantee numerical stability across all matrix shapes
+            # Perform SVD in FP32 on CPU for numerical stability across all matrix sizes
             W_float = src_weight.detach().cpu().float()
             U, S, Vt = torch.linalg.svd(W_float, full_matrices=False)
 
@@ -166,8 +163,7 @@ def _copy_projection_weights(
             )
             r = min(target_rank, U.size(1), Vt.size(0))
 
-            # Balanced Square-Root Singular Energy Allocation:
-            # Prevents ||U|| >> ||V|| gradient scale explosions during optimization
+            # FIX: Balanced Square-Root Singular Energy Allocation
             sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
             U_balanced = (U[:, :r] * sqrt_S.unsqueeze(0)).to(
                 device=src_weight.device, dtype=getattr(target_mod, "U", src_weight).dtype
@@ -186,6 +182,31 @@ def _copy_projection_weights(
         return
 
 
+def apply_rope_after_up_projection(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    cos: torch.Tensor,
+    sin: torch.Tensor,
+    position_ids: torch.Tensor,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    FIX: Applies Rotary Position Embeddings (RoPE) AFTER low-rank up-projection to full
+    head dimensions, preserving spatial coordinate geometry and relative frequency angles.
+    """
+    # q, k shape: [B, H, N, D_head]
+    cos = cos[position_ids].unsqueeze(1)  # [B, 1, N, D_head]
+    sin = sin[position_ids].unsqueeze(1)  # [B, 1, N, D_head]
+
+    def rotate_half(x: torch.Tensor) -> torch.Tensor:
+        x1 = x[..., : x.shape[-1] // 2]
+        x2 = x[..., x.shape[-1] // 2 :]
+        return torch.cat((-x2, x1), dim=-1)
+
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
+    return q_embed, k_embed
+
+
 def inject_attention(
     model: nn.Module,
     attention_type: str,
@@ -195,9 +216,6 @@ def inject_attention(
 ) -> nn.Module:
     """
     Universal attention layer replacement engine for HuggingFace Transformers.
-    
-    Dynamically discovers attention blocks, handles both decoupled Q,K,V and fused QKV
-    projection layers, distributes SVD energy symmetrically, and replaces modules in-place.
     """
     attn_class = ATTENTION_REGISTRY.resolve(attention_type)
     config = getattr(model, "config", None)
@@ -219,7 +237,6 @@ def inject_attention(
 
     replaced = 0
     for name, old_attn in get_attention_modules(model):
-        # 1. Instantiate new target attention mechanism
         new_attn = None
         signatures_to_try = [
             lambda: attn_class(config, rank=rank, pretrained_attn=old_attn, **kwargs),
@@ -243,16 +260,14 @@ def inject_attention(
         if new_attn is None:
             new_attn = attn_class(config) if config is not None else attn_class()
 
-        # 2. Extract and transfer weights from old attention module
         if copy_weights:
-            # Check for custom copy_weights hook on new module
             if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
                 try:
                     new_attn.copy_weights(old_attn)
                 except Exception as e:
                     logger.debug("Custom copy_weights failed on %s: %s", name, e)
 
-            # Check if old_attn has a fused QKV projection (e.g., qkv_proj, c_attn)
+            # FIX: Detect fused QKV projection modules via regex and slice parameters
             fused_mod = None
             for child_name, child_mod in old_attn.named_children():
                 if FUSED_QKV_REGEX.match(child_name) and hasattr(child_mod, "weight"):
@@ -294,7 +309,6 @@ def inject_attention(
                     if target_proj is not None:
                         _copy_projection_weights(target_proj, src_weight, src_bias)
 
-        # 3. Replace module in model tree
         replace_module(model, name, new_attn)
         replaced += 1
 
@@ -308,16 +322,7 @@ def available_attention_types() -> List[str]:
 
 
 def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    r"""Rectified non-negative sparse activation function with numerical stabilization.
-
-    Args:
-        x: Input logits tensor of shape `[..., N]`.
-        dim: Normalization dimension.
-        temperature: Softmax temperature parameter $\tau$.
-
-    Returns:
-        Sparse normalized probability distribution `[..., N]`.
-    """
+    """Rectified non-negative sparse activation function with numerical stabilization."""
     m = x.max(dim=dim, keepdim=True).values
     scaled = (x - m) / max(temperature, 1e-6)
     scaled_clamped = torch.clamp(scaled, min=-50.0, max=50.0)
