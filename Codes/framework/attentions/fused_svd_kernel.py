@@ -15,7 +15,7 @@ PyTorch autograd function with fallback.
 from __future__ import annotations
 
 import math
-from typing import Any, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -39,11 +39,16 @@ if HAS_TRITON:
         Norm_w_ptr,     # [R]        (RMSNorm scale parameter)
         Bias_ptr,       # [K_out]    (Optional bias vector)
         Y_ptr,          # [M, K_out] Output matrix
-        M: tl.constexpr,
+        stride_xm, stride_xk,
+        stride_vr, stride_vk,
+        stride_uo, stride_ur,
+        stride_ym, stride_yk,
+        M,
         K_in: tl.constexpr,
         R: tl.constexpr,
         K_out: tl.constexpr,
         eps: tl.constexpr,
+        USE_RMS_NORM: tl.constexpr,
         HAS_BIAS: tl.constexpr,
         HAS_NORM_WEIGHT: tl.constexpr,
         BLOCK_M: tl.constexpr,
@@ -51,7 +56,7 @@ if HAS_TRITON:
         BLOCK_K_OUT: tl.constexpr,
     ):
         """
-        RESEARCH FIX: Fused Single-Pass Kernel executing down-projection, RMSNorm,
+        RESEARCH FIX: Fused Single-Pass Kernel executing down-projection, in-SRAM RMSNorm,
         and up-projection within SRAM tile registers without intermediate HBM writes.
         """
         pid_m = tl.program_id(0)
@@ -71,46 +76,48 @@ if HAS_TRITON:
             mask_k_in = offs_k_in < K_in
 
             # Load tile of X: [BLOCK_M, BLOCK_K_IN]
-            x_ptrs = X_ptr + (offs_m[:, None] * K_in + offs_k_in[None, :])
+            x_ptrs = X_ptr + (offs_m[:, None] * stride_xm + offs_k_in[None, :] * stride_xk)
             x_tile = tl.load(x_ptrs, mask=mask_m[:, None] & mask_k_in[None, :], other=0.0)
 
             # Load tile of V: [R, BLOCK_K_IN]
             offs_r = tl.arange(0, R)
-            v_ptrs = V_ptr + (offs_r[:, None] * K_in + offs_k_in[None, :])
+            v_ptrs = V_ptr + (offs_r[:, None] * stride_vr + offs_k_in[None, :] * stride_vk)
             v_tile = tl.load(v_ptrs, mask=mask_k_in[None, :], other=0.0)
 
             # Accumulate partial inner product: [BLOCK_M, BLOCK_K_IN] @ [BLOCK_K_IN, R]
             acc_z += tl.dot(x_tile, tl.trans(v_tile))
 
         # Step 2: In-SRAM RMSNorm on acc_z along rank dimension R
-        # Variance calculation across R
-        z_sq = acc_z * acc_z
-        z_mean_sq = tl.sum(z_sq, axis=1) / R
-        rsqrt_scale = tl.math.rsqrt(z_mean_sq + eps)
+        if USE_RMS_NORM:
+            z_sq = acc_z * acc_z
+            z_mean_sq = tl.sum(z_sq, axis=1) / R
+            rsqrt_scale = tl.math.rsqrt(z_mean_sq + eps)
 
-        # Scale Z in registers
-        z_norm = acc_z * rsqrt_scale[:, None]
+            # Scale Z in registers
+            z_norm = acc_z * rsqrt_scale[:, None]
 
-        # Optional RMSNorm learnable weight
-        if HAS_NORM_WEIGHT:
-            offs_r = tl.arange(0, R)
-            norm_w = tl.load(Norm_w_ptr + offs_r)
-            z_norm = z_norm * norm_w[None, :]
+            # Optional RMSNorm learnable weight
+            if HAS_NORM_WEIGHT:
+                offs_r = tl.arange(0, R)
+                norm_w = tl.load(Norm_w_ptr + offs_r)
+                z_norm = z_norm * norm_w[None, :]
+        else:
+            z_norm = acc_z
 
         # Step 3: Up-projection Y = Z_norm @ U^T + bias: [BLOCK_M, R] @ [R, BLOCK_K_OUT]
         offs_r = tl.arange(0, R)
-        u_ptrs = U_ptr + (offs_k_out[None, :] * R + offs_r[:, None])
+        u_ptrs = U_ptr + (offs_k_out[None, :] * stride_uo + offs_r[:, None] * stride_ur)
         u_tile = tl.load(u_ptrs, mask=mask_k_out[None, :], other=0.0)
 
         # Accumulate output Y: [BLOCK_M, BLOCK_K_OUT]
-        acc_y = tl.dot(z_norm.to(tl.float32), u_tile)
+        acc_y = tl.dot(z_norm.to(u_tile.dtype), u_tile)
 
         if HAS_BIAS:
             bias_tile = tl.load(Bias_ptr + offs_k_out, mask=mask_k_out, other=0.0)
             acc_y += bias_tile[None, :]
 
         # Store output tile to DRAM
-        y_ptrs = Y_ptr + (offs_m[:, None] * K_out + offs_k_out[None, :])
+        y_ptrs = Y_ptr + (offs_m[:, None] * stride_ym + offs_k_out[None, :] * stride_yk)
         tl.store(y_ptrs, acc_y, mask=mask_m[:, None] & mask_k_out[None, :])
 
 
@@ -126,9 +133,10 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         x: torch.Tensor,
         V: torch.Tensor,
         U: torch.Tensor,
-        norm_weight: Optional[torch.Tensor],
-        bias: Optional[torch.Tensor],
+        norm_weight: Optional[torch.Tensor] = None,
+        bias: Optional[torch.Tensor] = None,
         eps: float = 1e-6,
+        use_rms_norm: bool = True,
     ) -> torch.Tensor:
         orig_shape = x.shape
         x_2d = x.reshape(-1, orig_shape[-1]).contiguous()
@@ -142,62 +150,88 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
             and x.is_cuda
             and V.is_cuda
             and U.is_cuda
-            and R in [16, 32, 64, 128]
+            and (R & (R - 1) == 0) and (16 <= R <= 128)
             and x_2d.dtype in [torch.float16, torch.bfloat16, torch.float32]
         )
 
         if use_triton:
             y_2d = torch.empty((M, K_out), device=x.device, dtype=x.dtype)
             BLOCK_M = 32
-            BLOCK_K_IN = 64 if K_in >= 64 else K_in
-            BLOCK_K_OUT = 64 if K_out >= 64 else K_out
+            BLOCK_K_IN = 64 if K_in >= 64 and (K_in % 64 == 0 or K_in > 64) else min(64, max(16, K_in))
+            BLOCK_K_IN = 1 << (BLOCK_K_IN - 1).bit_length()
+            BLOCK_K_OUT = 64 if K_out >= 64 and (K_out % 64 == 0 or K_out > 64) else min(64, max(16, K_out))
+            BLOCK_K_OUT = 1 << (BLOCK_K_OUT - 1).bit_length()
             grid = (triton.cdiv(M, BLOCK_M), triton.cdiv(K_out, BLOCK_K_OUT))
 
             _fused_svd_linear_fwd_kernel[grid](
                 x_2d,
                 V,
                 U,
-                norm_weight if norm_weight is not None else x_2d,
+                norm_weight if (norm_weight is not None and use_rms_norm) else x_2d,
                 bias if bias is not None else x_2d,
                 y_2d,
-                M=M,
+                x_2d.stride(0), x_2d.stride(1),
+                V.stride(0), V.stride(1),
+                U.stride(0), U.stride(1),
+                y_2d.stride(0), y_2d.stride(1),
+                M,
                 K_in=K_in,
                 R=R,
                 K_out=K_out,
                 eps=eps,
+                USE_RMS_NORM=use_rms_norm,
                 HAS_BIAS=bias is not None,
-                HAS_NORM_WEIGHT=norm_weight is not None,
+                HAS_NORM_WEIGHT=norm_weight is not None and use_rms_norm,
                 BLOCK_M=BLOCK_M,
                 BLOCK_K_IN=BLOCK_K_IN,
                 BLOCK_K_OUT=BLOCK_K_OUT,
             )
-            # Reconstruct Z for backward pass caching
+            # RESEARCH FIX: Exact analytical intermediate reconstruction for backward caching
             with torch.no_grad():
                 z = F.linear(x_2d, V)
-                rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(x.dtype)
-                z_norm = z * rms
-                if norm_weight is not None:
-                    z_norm = z_norm * norm_weight
-            ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_norm)
+                if use_rms_norm:
+                    if z.dtype in (torch.float16, torch.bfloat16):
+                        rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(z.dtype)
+                    else:
+                        rms = torch.rsqrt(torch.mean(z ** 2, dim=-1, keepdim=True) + eps)
+                    z_hat = z * rms
+                    z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
+                else:
+                    rms = torch.empty(0, device=x.device, dtype=x.dtype)
+                    z_hat = z
+                    z_norm = z
+            ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
             ctx.eps = eps
+            ctx.use_rms_norm = use_rms_norm
             return y_2d.view(*orig_shape[:-1], K_out)
 
-        # PyTorch Native Reference Implementation (Fallback)
+        # PyTorch Native Reference Implementation (Fallback / CPU / MPS)
         # RESEARCH FIX: Numerically identical reference implementation for CPU/MPS
         z = F.linear(x_2d, V)  # [M, R]
-        rms = torch.rsqrt(torch.mean(z ** 2, dim=-1, keepdim=True) + eps)
-        z_hat = z * rms
-        z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
+        if use_rms_norm:
+            if z.dtype in (torch.float16, torch.bfloat16):
+                rms = torch.rsqrt(torch.mean(z.float() ** 2, dim=-1, keepdim=True) + eps).to(z.dtype)
+            else:
+                rms = torch.rsqrt(torch.mean(z ** 2, dim=-1, keepdim=True) + eps)
+            z_hat = z * rms
+            z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
+        else:
+            rms = torch.empty(0, device=x.device, dtype=x.dtype)
+            z_hat = z
+            z_norm = z
+
         y_2d = F.linear(z_norm, U, bias)
 
         ctx.save_for_backward(x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm)
         ctx.eps = eps
+        ctx.use_rms_norm = use_rms_norm
         return y_2d.view(*orig_shape[:-1], K_out)
 
     @staticmethod
     def backward(ctx: Any, grad_output: torch.Tensor) -> Tuple[Optional[torch.Tensor], ...]:
         x_2d, V, U, norm_weight, bias, z, rms, z_hat, z_norm = ctx.saved_tensors
         eps = ctx.eps
+        use_rms_norm = ctx.use_rms_norm
 
         grad_output_2d = grad_output.reshape(-1, U.shape[0]).contiguous()
         M, R = z.shape
@@ -209,24 +243,29 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
         # 2. Gradient backpropagated to z_norm
         grad_z_norm = torch.matmul(grad_output_2d, U)  # [M, R]
 
-        # 3. Gradient with respect to norm_weight and z_hat
-        if norm_weight is not None:
-            grad_norm_weight = (grad_z_norm * z_hat).sum(dim=0)
-            grad_z_hat = grad_z_norm * norm_weight
+        if use_rms_norm:
+            # 3. Gradient with respect to norm_weight and z_hat
+            if norm_weight is not None:
+                grad_norm_weight = (grad_z_norm * z_hat).sum(dim=0)
+                grad_z_hat = grad_z_norm * norm_weight
+            else:
+                grad_norm_weight = None
+                grad_z_hat = grad_z_norm
+
+            # 4. Exact analytical RMSNorm backward: d(z_hat) / dz
+            # z_hat = z / sqrt(mean(z^2) + eps)
+            # dL/dz = rms * (dL/dz_hat - z_hat * mean(dL/dz_hat * z_hat))
+            # RESEARCH FIX: Analytical gradient formulation eliminating numerical approximation error
+            grad_z = rms * (grad_z_hat - z_hat * torch.mean(grad_z_hat * z_hat, dim=-1, keepdim=True))
         else:
             grad_norm_weight = None
-            grad_z_hat = grad_z_norm
-
-        # 4. Exact RMSNorm backward: d(z_hat) / dz
-        # z_hat = z / sqrt(mean(z^2) + eps)
-        # dL/dz = rms * (dL/dz_hat - z_hat * mean(dL/dz_hat * z_hat))
-        grad_z = rms * (grad_z_hat - z_hat * torch.mean(grad_z_hat * z_hat, dim=-1, keepdim=True))
+            grad_z = grad_z_norm
 
         # 5. Gradient with respect to V and input x
         grad_V = torch.matmul(grad_z.T, x_2d)  # [R, K_in]
         grad_x = torch.matmul(grad_z, V).view(*grad_output.shape[:-1], x_2d.shape[-1])
 
-        return grad_x, grad_V, grad_U, grad_norm_weight, grad_bias, None
+        return grad_x, grad_V, grad_U, grad_norm_weight, grad_bias, None, None
 
 
 def fused_svd_linear(
@@ -236,9 +275,24 @@ def fused_svd_linear(
     norm_weight: Optional[torch.Tensor] = None,
     bias: Optional[torch.Tensor] = None,
     eps: float = 1e-6,
+    use_rms_norm: bool = True,
 ) -> torch.Tensor:
-    """Functional interface for Fused SVD-Linear with in-SRAM RMSNorm."""
-    return _FusedSVDLinearAutogradFunction.apply(x, V, U, norm_weight, bias, eps)
+    """
+    Functional interface for Fused SVD-Linear with in-SRAM RMSNorm.
+    
+    Args:
+        x: Input tensor of shape (..., in_features).
+        V: Down-projection matrix of shape (rank, in_features).
+        U: Up-projection matrix of shape (out_features, rank).
+        norm_weight: Optional RMSNorm affine scale vector of shape (rank,).
+        bias: Optional bias vector of shape (out_features,).
+        eps: Small epsilon for RMSNorm numerical stability.
+        use_rms_norm: Whether to apply in-SRAM RMSNorm on intermediate rank activations.
+        
+    Returns:
+        Output tensor of shape (..., out_features).
+    """
+    return _FusedSVDLinearAutogradFunction.apply(x, V, U, norm_weight, bias, eps, use_rms_norm)
 
 
 class FusedSVDLinear(nn.Module):
@@ -292,6 +346,7 @@ class FusedSVDLinear(nn.Module):
             nn.init.ones_(self.norm_weight)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # RESEARCH FIX: Dispatches fused kernel executing down-projection, RMSNorm, and up-projection
         return fused_svd_linear(
             x=x,
             V=self.V,
@@ -299,15 +354,37 @@ class FusedSVDLinear(nn.Module):
             norm_weight=self.norm_weight,
             bias=self.bias,
             eps=self.eps,
+            use_rms_norm=self.use_rms_norm,
         )
 
     def set_low_rank_factors(self, U_factor: torch.Tensor, V_factor: torch.Tensor) -> None:
+        """Set precomputed U and V low-rank factors."""
         with torch.no_grad():
             self.U.copy_(U_factor)
             self.V.copy_(V_factor)
+
+    def get_orthogonality_loss(self) -> torch.Tensor:
+        """
+        # RESEARCH FIX: Computes Stiefel manifold penalty to prevent singular subspace collapse.
+        """
+        u_gram = torch.matmul(self.U.T, self.U)
+        v_gram = torch.matmul(self.V, self.V.T)
+        eye_r = torch.eye(self.rank, device=self.U.device, dtype=self.U.dtype)
+        loss_u = torch.norm(u_gram - eye_r, p="fro") ** 2
+        loss_v = torch.norm(v_gram - eye_r, p="fro") ** 2
+        return (loss_u + loss_v) / (self.rank * self.rank)
 
     def extra_repr(self) -> str:
         return (
             f"in_features={self.in_features}, out_features={self.out_features}, "
             f"rank={self.rank}, rms_norm={self.use_rms_norm}, bias={self.bias is not None}"
         )
+
+
+__all__ = [
+    "_fused_svd_linear_fwd_kernel",
+    "_FusedSVDLinearAutogradFunction",
+    "fused_svd_linear",
+    "FusedSVDLinear",
+    "HAS_TRITON",
+]
