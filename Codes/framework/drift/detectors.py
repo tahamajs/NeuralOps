@@ -419,8 +419,14 @@ def wasserstein(
     min_eig = kwargs.get("min_eig", 1e-8)
 
     if ref.ndim == 2 and cur.ndim == 2:
-        stat = bures_wasserstein_distance(ref, cur, damping=damping, min_eig=min_eig)
-        return float(stat), None, bool(stat > threshold)
+        if ref.shape[0] == ref.shape[1] and cur.shape[0] == cur.shape[1]:
+            stat = bures_wasserstein_distance(ref, cur, damping=damping, min_eig=min_eig)
+            return float(stat), None, bool(stat > threshold)
+        elif ref.shape[1] == cur.shape[1]:
+            mean1, mean2 = np.mean(ref, axis=0), np.mean(cur, axis=0)
+            cov1, cov2 = np.cov(ref, rowvar=False), np.cov(cur, rowvar=False)
+            stat = bures_wasserstein_distance(cov1, cov2, mean1=mean1, mean2=mean2, damping=damping, min_eig=min_eig)
+            return float(stat), None, bool(stat > threshold)
 
     stat = stats.wasserstein_distance(ref.ravel(), cur.ravel())
     return float(stat), None, bool(stat > threshold)
