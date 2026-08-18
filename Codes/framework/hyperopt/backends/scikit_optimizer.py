@@ -1,10 +1,20 @@
 """Scikit‑optimize (skopt) backend – Gaussian Processes, Random Forests."""
 
+from __future__ import annotations
+
 import logging
 from typing import Any, Callable, Dict, Tuple
 
-from skopt import dummy_minimize, forest_minimize, gp_minimize
-from skopt.space import Categorical, Integer, Real
+try:
+    from skopt import dummy_minimize, forest_minimize, gp_minimize
+    from skopt.space import Categorical, Integer, Real
+except (ImportError, AttributeError):
+    dummy_minimize = None  # type: ignore
+    forest_minimize = None  # type: ignore
+    gp_minimize = None  # type: ignore
+    Categorical = None  # type: ignore
+    Integer = None  # type: ignore
+    Real = None  # type: ignore
 
 from ..base import HPO_REGISTRY, BaseOptimizer
 from ..config import HPOConfig
@@ -21,6 +31,7 @@ class ScikitOptimizer(BaseOptimizer):
         "bayesian": "GP",
         "random": "dummy",
     }
+
 
     def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)

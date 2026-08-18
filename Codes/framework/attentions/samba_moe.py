@@ -75,7 +75,7 @@ class REAPMoE(nn.Module):
         )
         self.router = nn.Linear(d_model, n_experts)
 
-    def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         r"""Route tokens to top-$k$ experts and accumulate weighted outputs.
 
         Args:
@@ -83,7 +83,7 @@ class REAPMoE(nn.Module):
             **kwargs: Additional keyword arguments.
 
         Returns:
-            Expert aggregated output tensor `[Batch, SeqLen, HiddenDim]`.
+            Tuple of (expert aggregated output tensor `[Batch, SeqLen, HiddenDim]`, None).
         """
         B, L, D = x.shape
         scores = self.router(x)
@@ -97,7 +97,7 @@ class REAPMoE(nn.Module):
                     dim=-1, keepdim=True
                 )
                 out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
-        return out
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("samba_moe")
@@ -156,5 +156,8 @@ class SambaMoEBlock(nn.Module):
                 - attention_weights: Attention matrix or None.
         """
         x, attn_w = self.swa_mamba(hidden_states, attention_mask=attention_mask, **kwargs)
-        x = self.norm(x + self.moe(x))
+        moe_out = self.moe(x)
+        if isinstance(moe_out, tuple):
+            moe_out = moe_out[0]
+        x = self.norm(x + moe_out)
         return x, attn_w

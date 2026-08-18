@@ -1,9 +1,23 @@
 """Hyperopt backend – TPE, Random, Adaptive TPE."""
 
+from __future__ import annotations
+
 import logging
 from typing import Any, Callable, Dict, Tuple
 
-from hyperopt import Trials, fmin, hp, rand, tpe
+try:
+    import hyperopt as hp_lib
+    Trials = hp_lib.Trials
+    fmin = hp_lib.fmin
+    hp = hp_lib.hp
+    rand = hp_lib.rand
+    tpe = hp_lib.tpe
+except (ImportError, AttributeError):
+    Trials = None  # type: ignore
+    fmin = None  # type: ignore
+    hp = None  # type: ignore
+    rand = None  # type: ignore
+    tpe = None  # type: ignore
 
 from ..base import HPO_REGISTRY, BaseOptimizer
 from ..config import HPOConfig
@@ -16,9 +30,10 @@ class HyperoptOptimizer(BaseOptimizer):
     """Hyperopt hyperparameter optimization."""
 
     ALGO_MAP = {
-        "tpe": tpe.suggest,
-        "random": rand.suggest,
+        "tpe": getattr(tpe, "suggest", None) if tpe else None,
+        "random": getattr(rand, "suggest", None) if rand else None,
     }
+
 
     def __init__(self, config: HPOConfig) -> None:
         super().__init__(config)

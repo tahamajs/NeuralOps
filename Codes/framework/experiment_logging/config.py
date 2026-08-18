@@ -16,8 +16,13 @@ class LoggingConfig:
     experiment_name: str = "experiment"
     run_id: Optional[str] = None
     use_timestamp: bool = True
+    # Rank-specific and thread-safe logging
+    rank: Optional[int] = None  # FIX: Local rank for DDP isolated file logging
+    rank_specific_logs: bool = True  # FIX: Enforce isolated rank_{i}.log files per process
+    use_queue_handler: bool = True  # FIX: Enforce thread-safe asynchronous logging via QueueHandler
     # Metrics tracking
     metrics_enabled: bool = True
     metrics_flush_every: int = 10  # flush metrics file every N logs
     # Extra metadata added to every event
     extra_metadata: Dict[str, Any] = field(default_factory=dict)
+

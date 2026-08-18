@@ -1,11 +1,16 @@
-"""Optuna backend – supports TPE, CMA‑ES, Random, BOHB, NSGA‑II."""
+"""
+Optuna backend – supports TPE, CMA‑ES, Random, BOHB, NSGA‑II with distributed TrialPruned broadcast.
+"""
+
+from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import optuna
+import torch
 
-from ..base import HPO_REGISTRY, BaseOptimizer
+from ..base import HPO_REGISTRY, BaseOptimizer, broadcast_pruned_state
 from ..config import HPOConfig
 
 logger = logging.getLogger(__name__)
@@ -13,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @HPO_REGISTRY.register("optuna")
 class OptunaOptimizer(BaseOptimizer):
-    """Optuna hyperparameter optimization."""
+    """Optuna hyperparameter optimization with distributed NCCL deadlock prevention."""
 
     SAMPLER_MAP = {
         "tpe": optuna.samplers.TPESampler,
@@ -27,9 +32,9 @@ class OptunaOptimizer(BaseOptimizer):
     def optimize(
         self,
         objective_fn: Callable[[Dict[str, Any]], float],
-        **kwargs,
+        **kwargs: Any,
     ) -> Tuple[Dict[str, Any], float]:
-        """Optimize."""
+        """Optimize hyperparameters with synchronous distributed trial pruning."""
         direction = "maximize" if self.config.direction == "maximize" else "minimize"
         sampler_cls = self.SAMPLER_MAP.get(
             self.config.algorithm.value, optuna.samplers.TPESampler
@@ -48,8 +53,10 @@ class OptunaOptimizer(BaseOptimizer):
         )
 
         def wrapped_trial(trial: optuna.Trial) -> float:
-            """Wrapped trial."""
-            params = {}
+            """
+            Wrapped trial execution with distributed synchronization and NCCL deadlock prevention.
+            """
+            params: Dict[str, Any] = {}
             for name, spec in self.config.search_space.items():
                 if spec["type"] == "float":
                     params[name] = trial.suggest_float(
@@ -61,13 +68,36 @@ class OptunaOptimizer(BaseOptimizer):
                     )
                 elif spec["type"] == "categorical":
                     params[name] = trial.suggest_categorical(name, spec["choices"])
-            score = objective_fn(params)
 
-            # Manual pruning support
-            if pruner:
-                trial.report(score, step=trial.last_step if trial.last_step else 0)
-                if trial.should_prune():
-                    raise optuna.TrialPruned()
+            # FIX: Execute objective with TrialPruned exception interception
+            is_pruned = False
+            score = 0.0
+            try:
+                score = float(objective_fn(params))
+            except optuna.TrialPruned:
+                is_pruned = True
+
+            # FIX: Use torch.distributed.all_gather_object to broadcast Optuna TrialPruned states so all ranks exit trials synchronously
+            if broadcast_pruned_state(is_pruned):
+                raise optuna.TrialPruned("Trial pruned during distributed objective evaluation")
+
+            # Manual pruning support with Optuna pruners
+            if pruner is not None:
+                local_should_prune = False
+                rank = (
+                    torch.distributed.get_rank()
+                    if (torch.distributed.is_available() and torch.distributed.is_initialized())
+                    else 0
+                )
+                if rank == 0:
+                    trial.report(score, step=trial.last_step if trial.last_step is not None else 0)
+                    local_should_prune = trial.should_prune()
+
+                # FIX: Broadcast rank 0 pruner decision to all ranks using all_gather_object to prevent NCCL hang
+                if broadcast_pruned_state(local_should_prune):
+                    logger.info("Trial %d pruned synchronously across distributed ranks.", trial.number)
+                    raise optuna.TrialPruned("Trial pruned by Optuna pruner across all ranks")
+
             return score
 
         study.optimize(
@@ -83,7 +113,7 @@ class OptunaOptimizer(BaseOptimizer):
         return best_params, best_score
 
     def _create_pruner(self) -> Any:
-        """ create pruner."""
+        """Create Optuna pruner instance based on configuration."""
         if self.config.pruning == "median":
             return optuna.pruners.MedianPruner(
                 n_startup_trials=self.config.pruner_n_startup_trials,
@@ -95,3 +125,4 @@ class OptunaOptimizer(BaseOptimizer):
         elif self.config.pruning == "threshold":
             return optuna.pruners.ThresholdPruner(lower=0.0)
         return None
+

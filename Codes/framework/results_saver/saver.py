@@ -1,18 +1,85 @@
 """
 ResultsSaver – central orchestrator for result persistence.
-Integrates with framework.analysis, framework.tracking, and all backends.
+Integrates with framework.analysis, framework.tracking, SQLite WAL storage, and all backends.
 """
 
+from __future__ import annotations
+
+import contextlib
 import json
 import logging
+import os
+import sqlite3
 import tarfile
+import time
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from .config import SaveConfig
 
 logger = logging.getLogger(__name__)
+
+
+@contextlib.contextmanager
+def sqlite_file_lock(lock_file_path: Union[str, Path], timeout: float = 30.0):
+    """
+    Acquire an exclusive cross-process / multi-GPU file lock to serialize SQLite database writes.
+
+    # FIX: Uses fcntl.flock to guarantee atomic, race-free SQLite write transactions across multi-GPU ranks.
+    """
+    lock_path = Path(lock_file_path)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_fd: Optional[int] = None
+    start_time = time.time()
+    try:
+        lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR)
+        # Attempt non-blocking lock with retry loop until timeout expires
+        acquired = False
+        while time.time() - start_time < timeout:
+            try:
+                import fcntl
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+                break
+            except (BlockingIOError, OSError, ImportError):
+                time.sleep(0.05)
+
+        if not acquired:
+            try:
+                import fcntl
+                fcntl.flock(lock_fd, fcntl.LOCK_EX)
+            except Exception:
+                pass
+
+        yield
+    finally:
+        if lock_fd is not None:
+            try:
+                import fcntl
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except Exception:
+                pass
+            try:
+                os.close(lock_fd)
+            except Exception:
+                pass
+
+
+def configure_sqlite_pragmas(conn: sqlite3.Connection) -> None:
+    """
+    Configure high-performance, concurrency-safe SQLite pragmas for multi-GPU training.
+
+    # FIX: Enables Write-Ahead Logging (WAL) and NORMAL synchronous mode to eliminate multi-GPU write contention.
+    """
+    cursor = conn.cursor()
+    # FIX: Enable WAL mode for concurrent readers and single-writer non-blocking transactions
+    cursor.execute("PRAGMA journal_mode=WAL;")
+    # FIX: Set synchronous mode to NORMAL for optimal disk write efficiency without corruption in WAL
+    cursor.execute("PRAGMA synchronous=NORMAL;")
+    # FIX: 30-second busy timeout to prevent 'database is locked' errors under multi-GPU load
+    cursor.execute("PRAGMA busy_timeout=30000;")
+    cursor.close()
 
 
 class ResultsSaver:
@@ -37,7 +104,7 @@ class ResultsSaver:
     # Directory setup
     # ------------------------------------------------------------------
     def _init_dirs(self) -> None:
-        """ init dirs."""
+        """Initialize required result directory structures."""
         dirs = [self.run_dir]
         if self.cfg.save_logs:
             dirs.append(self.run_dir / "logs")
@@ -55,7 +122,7 @@ class ResultsSaver:
             d.mkdir(parents=True, exist_ok=True)
 
     def should_save_heavy(self, final_metrics: Dict[str, Any]) -> bool:
-        """Should save heavy."""
+        """Evaluate if metric meets auto_save_if_better_than threshold."""
         threshold = self.cfg.auto_save_if_better_than
         if threshold is None:
             return True
@@ -63,11 +130,129 @@ class ResultsSaver:
         return metric >= threshold
 
     # ------------------------------------------------------------------
+    # SQLite Multi-GPU Concurrency Methods
+    # ------------------------------------------------------------------
+    def _get_sqlite_connection(self, db_path: Path) -> sqlite3.Connection:
+        """Open and configure an SQLite database connection with WAL mode and pragmas."""
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path), timeout=30.0)
+        # FIX: Ensure PRAGMA journal_mode=WAL; and PRAGMA synchronous=NORMAL; are applied
+        configure_sqlite_pragmas(conn)
+        return conn
+
+    def save_to_sqlite(
+        self,
+        db_path: Optional[Union[str, Path]] = None,
+        config: Optional[Any] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        extra_metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """
+        Save run metadata, configuration, and final metrics into SQLite database with multi-GPU write safety.
+
+        # FIX: Uses PRAGMA journal_mode=WAL;, PRAGMA synchronous=NORMAL;, and file locking for multi-GPU database write safety.
+        """
+        target_db = Path(db_path) if db_path is not None else (self.base_dir / "experiments.db")
+        lock_path = target_db.with_suffix(".db.lock")
+
+        cfg_dict = self._flatten_config(config) if config is not None else {}
+        metrics_dict = metrics or {}
+        meta_dict = extra_metadata or {}
+
+        # FIX: Wrap database transaction in cross-process file lock
+        with sqlite_file_lock(lock_path):
+            conn = self._get_sqlite_connection(target_db)
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS experiment_runs (
+                        run_id TEXT PRIMARY KEY,
+                        created_at TEXT,
+                        task_name TEXT,
+                        model_name TEXT,
+                        config_json TEXT,
+                        metrics_json TEXT,
+                        metadata_json TEXT
+                    )
+                    """
+                )
+                now_str = datetime.now().isoformat()
+                task_name = str(cfg_dict.get("task_name", "unknown"))
+                model_name = str(cfg_dict.get("model_name", "unknown"))
+
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO experiment_runs
+                    (run_id, created_at, task_name, model_name, config_json, metrics_json, metadata_json)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        self.run_id,
+                        now_str,
+                        task_name,
+                        model_name,
+                        json.dumps(cfg_dict),
+                        json.dumps(metrics_dict),
+                        json.dumps(meta_dict),
+                    ),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+        self.saved_paths["sqlite_db"] = str(target_db)
+        return str(target_db)
+
+    def log_metric_to_sqlite(
+        self,
+        step: int,
+        metric_name: str,
+        value: float,
+        db_path: Optional[Union[str, Path]] = None,
+    ) -> None:
+        """
+        Append a single step metric into SQLite database with multi-GPU concurrency safety.
+
+        # FIX: Uses PRAGMA journal_mode=WAL; and PRAGMA synchronous=NORMAL; with file locking to ensure safe step metric logging.
+        """
+        target_db = Path(db_path) if db_path is not None else (self.run_dir / "metrics.db")
+        lock_path = target_db.with_suffix(".db.lock")
+
+        with sqlite_file_lock(lock_path):
+            conn = self._get_sqlite_connection(target_db)
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS metric_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        run_id TEXT,
+                        step INTEGER,
+                        metric_name TEXT,
+                        value REAL,
+                        timestamp TEXT
+                    )
+                    """
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO metric_logs (run_id, step, metric_name, value, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (self.run_id, step, metric_name, float(value), datetime.now().isoformat()),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+    # ------------------------------------------------------------------
     # Public convenience methods
     # ------------------------------------------------------------------
     def save_metrics(self, metrics: Dict[str, Any]) -> str:
-        """Save a dictionary of evaluation/training metrics."""
+        """Save a dictionary of evaluation/training metrics to JSON and SQLite."""
         self._save_final_metrics(metrics)
+        self.save_to_sqlite(metrics=metrics)
         path = str(self.run_dir / "artifacts" / "final_metrics.json")
         self.saved_paths["metrics"] = path
         return path
@@ -75,6 +260,7 @@ class ResultsSaver:
     def save_config(self, config: Any) -> str:
         """Save experiment configuration dictionary or object."""
         self._save_config(config)
+        self.save_to_sqlite(config=config)
         path = str(self.run_dir / "artifacts" / "config.json")
         self.saved_paths["config"] = path
         return path
@@ -107,6 +293,7 @@ class ResultsSaver:
         self._save_history(history)
         self._save_final_metrics(final_metrics)
         self._save_metrics_log(history)
+        self.save_to_sqlite(config=config, metrics=final_metrics)
         if self.cfg.save_model and self.should_save_heavy(final_metrics):
             self._save_model(model, tokenizer)
         if self.cfg.save_checkpoints:

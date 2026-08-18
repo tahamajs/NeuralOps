@@ -47,20 +47,21 @@ class SpectralMamba(nn.Module):
         self.mamba = Mamba(d_model)
         self.dt_scale = nn.Parameter(torch.zeros(d_model))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         r"""Compute modulated state-space sequence output.
 
         Args:
             x: Input tensor of shape `[Batch, SeqLen, HiddenDim]`.
+            **kwargs: Extra runtime arguments.
 
         Returns:
-            Modulated SSM output tensor `[Batch, SeqLen, HiddenDim]`.
+            Tuple of (modulated SSM output tensor `[Batch, SeqLen, HiddenDim]`, None).
         """
         out = self.mamba(x)
         if isinstance(out, tuple):
             out = out[0]
         out = out * torch.sigmoid(self.dt_scale).unsqueeze(0).unsqueeze(0)
-        return out
+        return out, None
 
 
 @ATTENTION_REGISTRY.register("samba_m3")
@@ -131,7 +132,10 @@ class SAMBAM3Block(nn.Module):
         mask = self.sliding_window_mask(L, device=x.device)
         attn_out, attn_w = self.attn(x, x, x, attn_mask=mask)
         x = self.norm1(x + attn_out)
-        x = self.norm2(x + self.mamba(x))
+        m_out = self.mamba(x)
+        if isinstance(m_out, tuple):
+            m_out = m_out[0]
+        x = self.norm2(x + m_out)
         return x, attn_w
 
 
