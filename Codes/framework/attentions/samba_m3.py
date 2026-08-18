@@ -99,14 +99,16 @@ class SAMBAM3Block(nn.Module):
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
 
-    def sliding_window_mask(self, L: int, device: torch.device) -> torch.Tensor:
+    def sliding_window_mask(self, L: int, device: torch.device, dtype: torch.dtype = torch.float32) -> torch.Tensor:
         r"""Construct 2D causal sliding-window additive attention mask of shape `[L, L]`."""
         idx = torch.arange(L, device=device)
         causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
         window = (idx.unsqueeze(1) - idx.unsqueeze(0)) < self.window_size
         valid = causal & window
-        mask = torch.zeros(L, L, device=device, dtype=torch.float32)
-        mask = mask.masked_fill(~valid, float("-inf"))
+        # FIX: [Ensure attention mask dtype matches input tensor dtype for nn.MultiheadAttention compatibility]
+        mask = torch.zeros(L, L, device=device, dtype=dtype)
+        mask_val = -1e4 if dtype in (torch.float16, torch.bfloat16) else float("-inf")
+        mask = mask.masked_fill(~valid, mask_val)
         return mask
 
     def forward(
@@ -129,7 +131,8 @@ class SAMBAM3Block(nn.Module):
         """
         x = hidden_states
         B, L, D = x.shape
-        mask = self.sliding_window_mask(L, device=x.device)
+        # FIX: [Pass input dtype to sliding_window_mask to prevent float/double/half mismatch]
+        mask = self.sliding_window_mask(L, device=x.device, dtype=x.dtype)
         attn_out, attn_w = self.attn(x, x, x, attn_mask=mask)
         x = self.norm1(x + attn_out)
         m_out = self.mamba(x)

@@ -93,7 +93,8 @@ class REAPMoE(nn.Module):
         for e in range(self.n_experts):
             mask = (indices == e).any(dim=-1)
             if mask.any():
-                selected_weights = (weights * (indices == e).float()).sum(
+                # FIX: [Cast mask indicator to weights.dtype to ensure dtype homogeneity in weighting]
+                selected_weights = (weights * (indices == e).to(dtype=weights.dtype)).sum(
                     dim=-1, keepdim=True
                 )
                 out += selected_weights * self.experts[e](x * mask.unsqueeze(-1))
