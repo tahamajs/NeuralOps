@@ -68,6 +68,7 @@ class SVDLinear(nn.Module):
         out_features: int,
         rank: int,
         bias: bool = True,
+        use_fused_kernel: bool = False,
         dtype: torch.dtype = torch.float32,
         device: Optional[torch.device] = None,
     ) -> None:
@@ -75,6 +76,7 @@ class SVDLinear(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.rank = rank
+        self.use_fused_kernel = use_fused_kernel
 
         # Factorized low-rank parameter tensors
         self.V = nn.Parameter(torch.empty(rank, in_features, dtype=dtype, device=device))
@@ -94,6 +96,11 @@ class SVDLinear(nn.Module):
             nn.init.zeros_(self.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.use_fused_kernel:
+            # RESEARCH FIX: Accelerated fused kernel dispatch
+            from framework.attentions.fused_svd_kernel import fused_svd_linear
+            return fused_svd_linear(x=x, V=self.V, U=self.U, bias=self.bias, use_rms_norm=False)
+
         # Sequential two-stage projection
         latent = F.linear(x, self.V)  # [..., rank]
         out = F.linear(latent, self.U)  # [..., out_features]

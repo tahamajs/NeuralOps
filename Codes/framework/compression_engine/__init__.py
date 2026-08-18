@@ -1,19 +1,45 @@
 """
-Auto-import all compressor modules, silently skipping those with missing dependencies.
+Compression Engine modules for Efficient Transformer Toolkit.
+
+Provides low-rank factorizations (SVD, AASVD, Dynamic Entropy SVD, Res-SVD),
+quantization, pruning, tensor train, and hybrid compression strategies.
 """
 
+import importlib
 import logging
-import os
+
+from framework.compression_engine.dynamic_rank import (
+    DynamicEntropySVDCompressor,
+    DynamicSVDLinear,
+    allocate_entropy_ranks,
+    compute_singular_entropy,
+)
+from framework.compression_engine.res_svd import (
+    ResSVDCompressor,
+    ResSVDLinear,
+    SpectralResidualLoRA,
+)
 
 logger = logging.getLogger(__name__)
 
-__all__ = []
+__all__ = [
+    "DynamicEntropySVDCompressor",
+    "DynamicSVDLinear",
+    "compute_singular_entropy",
+    "allocate_entropy_ranks",
+    "ResSVDCompressor",
+    "ResSVDLinear",
+    "SpectralResidualLoRA",
+]
 
-for file in os.listdir(os.path.dirname(__file__)):
-    if file.endswith(".py") and file != "__init__.py":
-        module_name = file[:-3]
-        try:
-            __import__(f"framework.compression_engine.{module_name}")
-            __all__.append(module_name)
-        except ImportError as e:
-            logger.warning(f"Skipping compressor module '{module_name}' due to: {e}")
+
+def __getattr__(name: str):
+    """Lazy module loader for other compression engines."""
+    try:
+        module = importlib.import_module(f"framework.compression_engine.{name}")
+        globals()[name] = module
+        return module
+    except ImportError as e:
+        raise AttributeError(
+            f"module 'framework.compression_engine' has no attribute '{name}' ({e})"
+        )

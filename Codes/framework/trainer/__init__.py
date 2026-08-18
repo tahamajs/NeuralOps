@@ -30,6 +30,12 @@ from .metrics import (
 from .registry import TrainerRegistry
 from .results_manager import ResultsManager
 from .trainer_factory import TRAINER_FACTORY_REGISTRY, get_trainer
+from .optimizers import (
+    OPTIMIZER_REGISTRY,
+    RiemannianStiefelOptimizer,
+    project_stiefel_gradient,
+    stiefel_qr_retraction,
+)
 from .utils import (
     benchmark_model,
     compute_metrics,
@@ -69,4 +75,9 @@ __all__ = [
     "plot_training_curves",
     "HuggingFaceTrainer",
     "CustomLoopTrainer",
+    "OPTIMIZER_REGISTRY",
+    "RiemannianStiefelOptimizer",
+    "project_stiefel_gradient",
+    "stiefel_qr_retraction",
 ]
+
