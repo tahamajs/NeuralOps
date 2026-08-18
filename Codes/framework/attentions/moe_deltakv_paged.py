@@ -32,14 +32,15 @@ def low_rank_svd_quantize(delta: torch.Tensor, rank: int) -> torch.Tensor:
     if delta_reshaped.shape[0] < rank or delta_reshaped.shape[1] < rank:
         return uniform_quantize_4bit(delta)
         
-    # Standard SVD for low-rank approximation
-    U, S, Vh = torch.linalg.svd(delta_reshaped, full_matrices=False)
+    # FIX: [Cast to float32 for torch.linalg.svd execution to ensure CPU float16/bfloat16 compatibility]
+    delta_f = delta_reshaped.float() if delta_reshaped.dtype in (torch.float16, torch.bfloat16) else delta_reshaped
+    U, S, Vh = torch.linalg.svd(delta_f, full_matrices=False)
     U = U[:, :rank]
     S = S[:rank]
     Vh = Vh[:rank, :]
     
     # Reconstruct the low-rank delta
-    delta_approx = (U * S.unsqueeze(0)) @ Vh
+    delta_approx = ((U * S.unsqueeze(0)) @ Vh).to(dtype=delta.dtype)
     delta_approx = delta_approx.reshape(B, H, N, d)
     
     return uniform_quantize_4bit(delta_approx)

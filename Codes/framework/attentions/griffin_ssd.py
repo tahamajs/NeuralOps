@@ -121,11 +121,13 @@ class GriffinSSDBlock(BaseAttention):
         causal = idx.unsqueeze(1) >= idx.unsqueeze(0)
         window = (idx.unsqueeze(1) - idx.unsqueeze(0)) < self.window_size
         local_mask = ~(causal & window)
+        # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
+        mask_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 pad_mask = attention_mask.unsqueeze(1) == 0  # (B, 1, L)
-                scores = scores.masked_fill(pad_mask, float("-1e9"))
-        scores = scores.masked_fill(local_mask.unsqueeze(0), float("-1e9"))
+                scores = scores.masked_fill(pad_mask, mask_val)
+        scores = scores.masked_fill(local_mask.unsqueeze(0), mask_val)
         local_out = torch.bmm(F.softmax(scores, dim=-1), v_local)
 
         # Global linear attention
@@ -134,7 +136,7 @@ class GriffinSSDBlock(BaseAttention):
         v_global = self.W_v(hidden_states)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                m = attention_mask.unsqueeze(-1)
+                m = attention_mask.unsqueeze(-1).to(dtype=k_global.dtype)
                 k_global = k_global * m
                 v_global = v_global * m
         global_out = ssd_kernel(q_global, k_global, v_global)
@@ -142,5 +144,5 @@ class GriffinSSDBlock(BaseAttention):
         out = self.out_proj(local_out + global_out)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                out = out * attention_mask.unsqueeze(-1)
+                out = out * attention_mask.unsqueeze(-1).to(dtype=out.dtype)
         return out, None
