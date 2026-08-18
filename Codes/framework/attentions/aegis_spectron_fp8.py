@@ -144,6 +144,7 @@ class AegisSpectronFP8Attention(BaseAttention):
         
         idx = torch.arange(N, device=Q.device)
         dist = (idx.unsqueeze(-1) - idx.unsqueeze(-2)).abs()
+        mask = (dist > W).unsqueeze(0).unsqueeze(0)
         # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
         mask_val = -1e4 if attn_weights.dtype in (torch.float16, torch.bfloat16) else -1e9
         attn_weights = attn_weights.masked_fill(mask, mask_val)
