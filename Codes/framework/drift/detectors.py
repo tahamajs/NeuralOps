@@ -302,6 +302,10 @@ def fast_bures_wasserstein_nystrom(
     return float(np.sqrt(max(0.0, w2_sq)))
 
 
+# RESEARCH FIX: Compatibility alias for fast Nystrom Wasserstein distance calculation
+fast_wasserstein_distance_nystrom = fast_bures_wasserstein_nystrom
+
+
 def bures_wasserstein_distance(
     cov1: np.ndarray,
     cov2: np.ndarray,
