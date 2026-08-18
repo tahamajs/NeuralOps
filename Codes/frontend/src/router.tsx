@@ -1,8 +1,17 @@
-// src/router/index.tsx
 import { lazy, Suspense } from "react";
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import { Spinner } from "./components/ui/Spinner";
+import { FloatingWorkspaceLayer } from "./components/FloatingWorkspaceLayer";
+
+function RootLayout() {
+  return (
+    <>
+      <Outlet />
+      <FloatingWorkspaceLayer />
+    </>
+  );
+}
 
 // ========================
 // Auth
@@ -647,7 +656,10 @@ const NotFoundPage = lazy(() => import("./features/NotFoundPage"));
 // ========================
 export const router = createBrowserRouter([
   {
-    path: "/",
+    element: <RootLayout />,
+    children: [
+      {
+        path: "/",
     element: (
       <Suspense
         fallback={
@@ -1020,6 +1032,8 @@ export const router = createBrowserRouter([
 
       // 404 – must be last
       { path: "*", element: <NotFoundPage /> },
+    ],
+  },
     ],
   },
 ]);
