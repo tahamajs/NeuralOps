@@ -130,26 +130,40 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    // esbuild is much faster & lower memory than terser
+    minify: "esbuild",
+    target: "esnext",
     rollupOptions: {
+      maxParallelFileOps: 3,
       output: {
-        manualChunks: {
-          vendor: [
-            "react",
-            "react-dom",
-            "react-router-dom",
-            "@tanstack/react-query",
-          ],
-          charts: ["plotly.js-dist-min"],
+        manualChunks(id) {
+          if (id.includes("node_modules/react/") || id.includes("node_modules/react-dom/")) {
+            return "vendor-react";
+          }
+          if (id.includes("react-router-dom") || id.includes("react-router/")) {
+            return "vendor-router";
+          }
+          if (id.includes("@tanstack/")) {
+            return "vendor-query";
+          }
+          if (id.includes("plotly") || id.includes("d3-") || id.includes("d3/")) {
+            return "vendor-charts";
+          }
+          if (id.includes("monaco-editor") || id.includes("@monaco-editor")) {
+            return "vendor-monaco";
+          }
+          if (id.includes("lucide-react")) {
+            return "vendor-icons";
+          }
+          if (id.includes("framer-motion") || id.includes("clsx") || id.includes("class-variance")) {
+            return "vendor-ui";
+          }
+          if (id.includes("node_modules/")) {
+            return "vendor-misc";
+          }
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
   },
 });
