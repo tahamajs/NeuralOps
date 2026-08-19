@@ -213,18 +213,18 @@ export default function AcceleratorDashboard({
           <div className="space-y-6">
             <OpportunityScoreWidget
               score={
-                opportunityScore?.data ||
-                opportunityScore || {
-                  total: 84,
-                  breakdown: {
-                    hyperparameter_tuning: 88,
-                    architecture_change: 82,
-                    data_augmentation: 75,
-                    early_stopping: 90,
-                    learning_rate_adjustment: 85,
-                  },
-                  recommended_focus: "SVD Rank Optimization & LR decay",
-                }
+                (((opportunityScore as any)?.data ||
+                  opportunityScore || {
+                    total: 84,
+                    breakdown: {
+                      hyperparameter_tuning: 88,
+                      architecture_change: 82,
+                      data_augmentation: 75,
+                      early_stopping: 90,
+                      learning_rate_adjustment: 85,
+                    },
+                    recommended_focus: "SVD Rank Optimization & LR decay",
+                  }) as any)
               }
             />
             <div className="space-y-3">

@@ -1,4 +1,4 @@
-import { request as api } from "../../../api/client";
+import api from "../../../api/client";
 import {
   DriftMonitor,
   DriftCheck,
