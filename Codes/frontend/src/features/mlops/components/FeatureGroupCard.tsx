@@ -200,19 +200,23 @@ export function FeatureGroupCard({
             </div>
             <div className="flex flex-wrap gap-1">
               {group.features.slice(0, 6).map((f) => (
-                <Badge
+                <span
                   key={f.name}
-                  variant={typeColorMap[f.type] || "secondary"}
-                  className="font-mono text-xs py-0.5 cursor-pointer hover:bg-white/20"
                   onClick={() => {
                     setSelectedFeature(f);
                     setShowStatsModal(true);
                   }}
+                  className="cursor-pointer"
                   title={`${f.name} (${f.type}): ${f.description || "No description"}`}
                 >
-                  {f.name}
-                  <span className="opacity-60 ml-1 text-[10px]">:{f.type}</span>
-                </Badge>
+                  <Badge
+                    variant={typeColorMap[f.type] || "secondary"}
+                    className="font-mono text-xs py-0.5 hover:bg-white/20"
+                  >
+                    {f.name}
+                    <span className="opacity-60 ml-1 text-[10px]">:{f.type}</span>
+                  </Badge>
+                </span>
               ))}
               {group.features.length > 6 && (
                 <Badge variant="secondary" className="text-xs">

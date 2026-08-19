@@ -1,6 +1,12 @@
 export type ActionType =
   "create" | "update" | "delete" | "login" | "logout" | "export" | "share";
-export type SeverityLevel = "info" | "warning" | "critical";
+export type SeverityLevel =
+  | "info"
+  | "warning"
+  | "critical"
+  | "high"
+  | "medium"
+  | "low";
 export type ComplianceStatus =
   "compliant" | "non_compliant" | "partial" | "not_applicable";
 export type ScanStatus = "completed" | "in_progress" | "failed";

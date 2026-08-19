@@ -1,6 +1,11 @@
 // src/features/coscientist/types.ts
 export type HypothesisStatus =
-  "generated" | "reviewed" | "ranked" | "evolved" | "selected";
+  | "generated"
+  | "reviewed"
+  | "ranked"
+  | "evolved"
+  | "selected"
+  | "proposed";
 export type AgentType =
   | "generation"
   | "reflection"
@@ -56,6 +61,7 @@ export interface TournamentMatch {
 
 export interface ResearchSession {
   id: string;
+  session_id?: string;
   goal: string;
   status: "running" | "completed" | "failed";
   hypotheses: Hypothesis[];
