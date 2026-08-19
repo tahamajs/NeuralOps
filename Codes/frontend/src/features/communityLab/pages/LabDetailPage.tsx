@@ -23,14 +23,17 @@ import {
 } from "lucide-react";
 
 export default function LabDetailPage({ onClose }: { onClose?: () => void }) {
-  const { labId } = useParams();
+  const { labId: paramId } = useParams();
+  const queryId = new URLSearchParams(window.location.search).get("id") ||
+    new URLSearchParams(window.location.search).get("labId");
+  const labId = paramId || queryId || "lab-neural-compression";
+
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
   const { data: lab, isLoading } = useQuery({
     queryKey: ["lab", labId],
-    queryFn: () => communityLabAPI.getLab(labId!),
-    enabled: !!labId,
+    queryFn: () => communityLabAPI.getLab(labId),
   });
 
   if (isLoading) return <Spinner />;

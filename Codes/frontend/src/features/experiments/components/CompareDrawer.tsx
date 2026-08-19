@@ -59,7 +59,7 @@ export default function CompareDrawer({ runIds, onClose }: Props) {
           <thead>
             <tr>
               <th className="text-left py-1 text-slate-400">Key</th>
-              {Object.keys(data.config_diff.runs).map((rid: string) => (
+              {Object.keys(data?.config_diff?.runs || {}).map((rid: string) => (
                 <th
                   key={rid}
                   className="text-left py-1 text-white font-mono text-[10px]"
@@ -70,13 +70,13 @@ export default function CompareDrawer({ runIds, onClose }: Props) {
             </tr>
           </thead>
           <tbody>
-            {data.config_diff.keys.map((key: string) => (
+            {(data?.config_diff?.keys || []).map((key: string) => (
               <tr key={key} className="border-b border-white/5">
                 <td className="py-1 text-slate-400">{key}</td>
-                {Object.entries(data.config_diff.runs).map(
+                {Object.entries(data?.config_diff?.runs || {}).map(
                   ([rid, cfg]: any) => (
                     <td key={rid} className="py-1 text-white">
-                      {JSON.stringify(cfg[key])}
+                      {JSON.stringify(cfg?.[key])}
                     </td>
                   ),
                 )}
@@ -86,9 +86,9 @@ export default function CompareDrawer({ runIds, onClose }: Props) {
         </table>
       ) : (
         <Plot
-          data={Object.entries(data.metrics.loss).map(([rid, pts]: any) => ({
-            x: pts.map((p: any) => p[0]),
-            y: pts.map((p: any) => p[1]),
+          data={Object.entries(data?.metrics?.loss || {}).map(([rid, pts]: any) => ({
+            x: Array.isArray(pts) ? pts.map((p: any) => (Array.isArray(p) ? p[0] : p.step || 0)) : [],
+            y: Array.isArray(pts) ? pts.map((p: any) => (Array.isArray(p) ? p[1] : p.value || 0)) : [],
             type: "scatter",
             mode: "lines",
             name: rid.slice(0, 6),
