@@ -36,6 +36,7 @@ import {
   ExternalLink,
   Wallet,
   CheckCheck,
+  ShieldCheck,
 } from "lucide-react";
 import { PreFlightCheckModal } from "../../launcher/components/PreFlightCheckModal";
 

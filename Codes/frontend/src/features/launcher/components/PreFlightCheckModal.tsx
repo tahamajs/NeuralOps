@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
 import { Button } from "../../../components/ui/Button";
-import { useToast } from "../../../hooks/useToast";
 
 export interface PreFlightJobConfig {
   name: string;
@@ -102,12 +101,12 @@ export function PreFlightCheckModal({
   jobConfig,
   isLaunching = false,
 }: PreFlightCheckModalProps) {
-  const { success, error: toastError } = useToast();
   const [selectedMachineId, setSelectedMachineId] = useState("local-triton");
   const [userCreditBalance, setUserCreditBalance] = useState(248.5);
   const [isVerifyingPing, setIsVerifyingPing] = useState(false);
   const [showTopUp, setShowTopUp] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState(50);
+  const [bannerMessage, setBannerMessage] = useState<string | null>(null);
 
   const selectedMachine =
     AVAILABLE_MACHINES.find((m) => m.id === selectedMachineId) ||
@@ -141,23 +140,23 @@ export function PreFlightCheckModal({
     setIsVerifyingPing(true);
     setTimeout(() => {
       setIsVerifyingPing(false);
-      success("Node connectivity & WebSocket heartbeat verified (Latency: 3.8ms)");
+      setBannerMessage("Node connectivity & WebSocket heartbeat verified (Latency: 3.8ms)");
     }, 600);
   };
 
   const handleTopUp = () => {
     setUserCreditBalance((prev) => prev + topUpAmount);
     setShowTopUp(false);
-    success(`Successfully added $${topUpAmount}.00 to compute balance!`);
+    setBannerMessage(`Successfully added $${topUpAmount}.00 to compute balance!`);
   };
 
   const handleConfirm = () => {
     if (!hasSufficientCredits) {
-      toastError("Insufficient credit balance. Please top up your account balance.");
+      setBannerMessage("Insufficient credit balance. Please top up your account balance.");
       return;
     }
     if (!hasVramHeadroom) {
-      toastError("Insufficient VRAM on the selected node. Please pick another machine.");
+      setBannerMessage("Insufficient VRAM on the selected node. Please pick another machine.");
       return;
     }
     onConfirmLaunch(selectedMachine);
@@ -165,10 +164,10 @@ export function PreFlightCheckModal({
 
   return (
     <Modal
-      isOpen={isOpen}
+      open={isOpen}
       onClose={onClose}
       title="🚀 Pre-Flight Job & Machine Verification"
-      size="xl"
+      className="max-w-3xl"
     >
       <div className="space-y-6">
         {/* Step 1: Target Machine & Provider Agent Selection */}
@@ -364,6 +363,19 @@ export function PreFlightCheckModal({
           </div>
         </div>
 
+        {/* Banner Notification */}
+        {bannerMessage && (
+          <div className="p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-xs font-mono text-cyan-300 flex items-center justify-between animate-fade-in">
+            <span>{bannerMessage}</span>
+            <button
+              onClick={() => setBannerMessage(null)}
+              className="text-slate-400 hover:text-white text-xs ml-2 cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2">
           <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
@@ -378,7 +390,7 @@ export function PreFlightCheckModal({
             <Button
               variant="primary"
               onClick={handleConfirm}
-              isLoading={isLaunching}
+              loading={isLaunching}
               disabled={!hasSufficientCredits || !hasVramHeadroom}
               className="flex-1 sm:flex-none font-bold font-mono text-xs px-6 bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:brightness-110 text-black shadow-lg shadow-cyan-500/20"
             >
