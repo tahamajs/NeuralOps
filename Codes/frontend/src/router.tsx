@@ -79,6 +79,9 @@ const ComputationStudios = lazy(
 const OptimizationStudios = lazy(
   () => import("./features/transformerStudios/OptimizationStudios"),
 );
+const WorkspaceStudioPage = lazy(
+  () => import("./features/workspace/pages/WorkspaceStudioPage"),
+);
 
 // ========================
 // Experiments
@@ -1040,6 +1043,11 @@ export const router = createBrowserRouter([
       { path: "/computation-studios", element: <ComputationStudios /> },
       { path: "/studios/optimization", element: <OptimizationStudios /> },
       { path: "/optimization-studios", element: <OptimizationStudios /> },
+
+      // Workspace Studio Mission Control
+      { path: "/workspace", element: <WorkspaceStudioPage /> },
+      { path: "/workspace-studio", element: <WorkspaceStudioPage /> },
+      { path: "/studio", element: <WorkspaceStudioPage /> },
 
       // 404 – must be last
       { path: "*", element: <NotFoundPage /> },
