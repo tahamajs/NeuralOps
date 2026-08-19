@@ -442,31 +442,98 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Floating Workspace Quick Directory */}
+      {/* Floating Workspace Tool Directory */}
       <div className="pt-6 border-t border-white/10">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Layers className="text-cyan-400" size={18} /> Floating Tool Directory ({AVAILABLE_WINDOWS.length} Tools)
+            <Layers className="text-cyan-400" size={18} />
+            Floating Tool Directory
+            <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-mono">
+              {AVAILABLE_WINDOWS.length} Tools
+            </span>
           </h2>
-          <span className="text-xs text-slate-400">Click to open as draggable multi-window</span>
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Search tools..."
+              value={toolSearch}
+              onChange={(e) => setToolSearch(e.target.value)}
+              className="pl-8 pr-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-slate-500 outline-none focus:border-cyan-500/40 w-48 transition-colors"
+            />
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {AVAILABLE_WINDOWS.map((app) => (
-            <button
-              key={app.type}
-              onClick={() => launchFeature(app.type)}
-              className="text-left glass p-3 rounded-xl border border-white/5 hover:border-cyan-500/40 hover:bg-white/5 transition-all flex items-center gap-2.5 group cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
-                <span className="text-base">{app.icon}</span>
+        {/* Category filter pills */}
+        {(() => {
+          const categories = ["All", "Core", "Experiments", "AI & Research", "Marketplace", "MLOps", "LLM Hub", "Literature", "Visualization", "Finance", "Admin"];
+          const categoryMap: Record<string, string[]> = {
+            "Core": ["terminal", "chat", "notes", "paper-editor", "community", "support"],
+            "Experiments": ["experiments", "analysis", "analytics", "accelerator", "hpo", "sweeps", "recommendations", "forensics", "anomaly"],
+            "AI & Research": ["tournament", "hypotheses", "research", "coding-assistant", "pipeline-monitor", "step-editor"],
+            "Marketplace": ["marketplace", "gpumarket", "marketplace-ai", "comparison-builder", "provider-dashboard", "disputes"],
+            "MLOps": ["feature-store", "drift-monitors", "alerts", "performance", "audit-logs", "compliance", "contracts", "security-scans", "access-policies", "drift-monitor", "alert-history", "health-dashboard"],
+            "LLM Hub": ["llm-providers", "playground", "prompts", "evaluations", "costs", "memory", "tools", "arena", "guardrails", "prompt-playground", "model-comparison", "tool-test-console"],
+            "Literature": ["literature-map", "citation-graph", "literature-synthesizer", "hypothesis-generator", "database-explorer", "grant-matcher"],
+            "Visualization": ["model3d", "federated", "hyperparameter-explorer", "dashboard-builder", "sql-editor", "live-dashboards"],
+            "Finance": ["futures", "compute-index", "invoices", "payouts", "subscriptions"],
+            "Admin": ["admin", "cluster", "organizations", "profile", "datasets", "labs", "model-registry", "approvals", "promotions", "access-manager", "catalog"],
+          };
+
+          const filtered = AVAILABLE_WINDOWS.filter((app) => {
+            const matchSearch = !toolSearch || app.title.toLowerCase().includes(toolSearch.toLowerCase()) || app.type.includes(toolSearch.toLowerCase());
+            const matchCat = toolCategory === "All" || (categoryMap[toolCategory] ?? []).includes(app.type);
+            return matchSearch && matchCat;
+          });
+
+          return (
+            <>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setToolCategory(cat)}
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                      toolCategory === cat
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                        : "bg-white/5 text-slate-400 border border-white/5 hover:text-white hover:border-white/15"
+                    }`}
+                  >
+                    {cat}
+                    {cat !== "All" && (
+                      <span className="ml-1 opacity-60">
+                        {(categoryMap[cat] ?? []).filter((t) => AVAILABLE_WINDOWS.some((w) => w.type === t)).length}
+                      </span>
+                    )}
+                  </button>
+                ))}
               </div>
-              <span className="text-xs font-semibold text-slate-300 group-hover:text-white line-clamp-1 leading-tight">
-                {app.title}
-              </span>
-            </button>
-          ))}
-        </div>
+
+              {filtered.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 text-sm font-mono">
+                  No tools match "{toolSearch}"
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                  {filtered.map((app) => (
+                    <button
+                      key={app.type}
+                      onClick={() => launchFeature(app.type)}
+                      className="text-left glass p-3 rounded-xl border border-white/5 hover:border-cyan-500/40 hover:bg-white/5 transition-all flex items-center gap-2.5 group cursor-pointer"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform flex-shrink-0">
+                        <span className="text-base">{app.icon}</span>
+                      </div>
+                      <span className="text-xs font-semibold text-slate-300 group-hover:text-white line-clamp-2 leading-tight">
+                        {app.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );
