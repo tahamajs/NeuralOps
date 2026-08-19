@@ -1,0 +1,59 @@
+{
+  "builder_name": "parquet",
+  "citation": "",
+  "config_name": "qqp",
+  "dataset_name": "glue",
+  "dataset_size": 111924497,
+  "description": "",
+  "download_size": 73982265,
+  "features": {
+    "question1": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "question2": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "label": {
+      "names": [
+        "not_duplicate",
+        "duplicate"
+      ],
+      "_type": "ClassLabel"
+    },
+    "idx": {
+      "dtype": "int32",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 185906762,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 50991782,
+      "num_examples": 363846,
+      "dataset_name": "glue"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 5663862,
+      "num_examples": 40430,
+      "dataset_name": "glue"
+    },
+    "test": {
+      "name": "test",
+      "num_bytes": 55268853,
+      "num_examples": 390965,
+      "dataset_name": "glue"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}
