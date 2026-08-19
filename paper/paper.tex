@@ -6,8 +6,6 @@
 \usepackage{caption}
 \usepackage{url}           % <-- ADD THIS
 \usepackage{subcaption}
-\usepackage{algorithm}
-\usepackage{algorithmic}
 \usepackage{listings}
 \usepackage{xcolor}
 
@@ -182,35 +180,34 @@ In multi-head attention, we have $h$ heads, each with dimension $d_h = d / h$. T
 \subsection{Fallback to Full Attention}
 If $N \le r$, there is no compression benefit, and we simply use the standard attention mechanism. In practice, for GLUE tasks with maximum length 128, we set $r \ge 64$ so that fallback rarely occurs (only for very short sequences).
 
-\subsection{Pseudo-Code}
-\begin{algorithm}[H]
-\caption{SVD-Lin Attention Forward Pass}
-\begin{algorithmic}[1]
-\REQUIRE Hidden state $H \in \mathbb{R}^{B \times N \times d}$, rank $r$, mask $M$ (optional)
-\STATE Compute $Q = H W_Q$, $K = H W_K$, $V = H W_V$ \COMMENT{Linear projections}
-\STATE Reshape $Q,K,V$ to $[B, h, N, d_h]$
-\IF{$N > r$}
-    \FOR{$b = 1$ to $B$}
-        \STATE $U, \Sigma, V_t = \texttt{svd\_lowrank}(H[b], q=r)$
-        \STATE $U_r[b] = U[:, :r]$
-    \ENDFOR
-    \STATE $U_r \in \mathbb{R}^{B \times N \times r}$
-    \STATE $U_r = U_r.\texttt{unsqueeze}(1)$ \COMMENT{Add head dimension: $[B,1,N,r]$}
-    \STATE $\tilde{K} = \texttt{einsum}('bhnk,bhkd \rightarrow bhrd', U_r, K)$
-    \STATE $\tilde{V} = \texttt{einsum}('bhnk,bhkd \rightarrow bhrd', U_r, V)$
-    \STATE $S = \texttt{einsum}('bhmd,bhrd \rightarrow bhmr', Q, \tilde{K}) / \sqrt{d_h}$
-    \IF{$M$ is not None}
-        \STATE $S = S + M.\texttt{unsqueeze}(-1)$ \COMMENT{Broadcast mask}
-    \ENDIF
-    \STATE $A = \texttt{softmax}(S, \text{dim}=-1)$
-    \STATE $O = \texttt{einsum}('bhmr,bhrd \rightarrow bhmd', A, \tilde{V})$
-\ELSE
-    \STATE Use standard attention (full $QK^\top$)
-\ENDIF
-\STATE Concatenate heads and apply output projection
-\RETURN $O$
-\end{algorithmic}
-\end{algorithm}
+\subsection{Algorithm \& Pseudo-Code}
+\begin{lstlisting}[language=Python, caption={SVD-Lin Attention Forward Pass}]
+# SVD-Lin Attention Forward Pass
+# Input: H in R^{B x N x d}, rank r, optional mask M
+Q = H @ W_Q; K = H @ W_K; V = H @ W_V
+Q, K, V = reshape_heads(Q, K, V)  # [B, h, N, d_h]
+
+if N > r:
+    # 1. Compute left singular vectors U_r
+    U, Sigma, Vt = torch.svd_lowrank(H, q=r)
+    U_r = U[:, :, :r].unsqueeze(1)  # [B, 1, N, r]
+
+    # 2. Compress Keys and Values via U_r projection
+    K_tilde = torch.einsum('bhnk,bhkd->bhrd', U_r, K)
+    V_tilde = torch.einsum('bhnk,bhkd->bhrd', U_r, V)
+
+    # 3. Compute Low-Rank Attention Scores
+    S = torch.einsum('bhmd,bhrd->bhmr', Q, K_tilde) / sqrt(d_h)
+    if M is not None:
+        S = S + M.unsqueeze(-1)
+    A = torch.softmax(S, dim=-1)
+    O = torch.einsum('bhmr,bhrd->bhmd', A, V_tilde)
+else:
+    # Standard O(N^2) full attention fallback
+    O = standard_scaled_dot_product(Q, K, V, M)
+
+return output_projection(concat_heads(O))
+\end{lstlisting}
 
 \subsection{Integration into BERT}
 We replace each `BertSelfAttention` layer in the HuggingFace implementation with our `SVDLinearAttention`. The rest of the BERT architecture (layer norm, feed-forward networks, residuals) remains unchanged. We initialize the linear projections $W_Q, W_K, W_V$ from the pre-trained BERT weights to preserve the original model's knowledge. The SVD projection does not introduce new trainable parameters, so the model size is identical to BERT.
