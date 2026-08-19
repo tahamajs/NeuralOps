@@ -37,7 +37,9 @@ interface WindowStore {
   windows: WindowItem[];
   nextZIndex: number;
   addWindow: (type: string, title: string, icon?: string) => void;
+  openWindow: (type: string, title: string, icon?: string) => void;
   removeWindow: (id: string) => void;
+  closeAllWindows: () => void;
   updateWindow: (id: string, updates: Partial<WindowItem>) => void;
   bringToFront: (id: string) => void;
   toggleMinimize: (id: string) => void;
@@ -57,6 +59,8 @@ export const useWindowStore = create<WindowStore>()(
     (set, get) => ({
       windows: [],
       nextZIndex: 100,
+      openWindow: (type, title, icon) => get().addWindow(type, title, icon),
+      closeAllWindows: () => set({ windows: [] }),
       addWindow: (type, title, icon) => {
         const count = get().windows.length;
         const newZ = get().nextZIndex + 1;
