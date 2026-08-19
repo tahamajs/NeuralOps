@@ -331,14 +331,16 @@ class SVDLinearAttention(BaseAttention):
         # Initialized with multi-scale geometric decay horizons to maintain both short- and long-range memory.
         gate_out_dim = self.all_head_size if self.decay_channel_wise else self.num_heads
         self.decay_gate = nn.Linear(self.hidden_size, gate_out_dim, bias=True)
-        self.gate_proj = self.decay_gate  # RESEARCH FIX: Direct alias for flexible SOTA naming compliance
-
         self.dropout = nn.Dropout(self.dropout_rate)
-
         self._init_decay_gate()
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
+
+    @property
+    def gate_proj(self) -> nn.Linear:
+        """Alias for decay_gate to support legacy naming."""
+        return self.decay_gate
 
     def _init_decay_gate(self) -> None:
         """
