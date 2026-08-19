@@ -76,7 +76,10 @@ export default function ProtocolBuilder({ onClose }: { onClose?: () => void }) {
 
   const addStep = () => {
     const newStep: ProtocolStep = {
-      id: crypto.randomUUID(),
+      id:
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : "step-" + Math.random().toString(36).substring(2, 9),
       title: "New Step",
       description: "",
       type: "text",

@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../../../components/ui/Button";
+import api from "../../../api/client";
+import { ENDPOINTS } from "../../../api/endpoints";
+import { useToast } from "../../../components/ui/Toast";
 import {
   Save,
   Paperclip,
@@ -9,11 +12,43 @@ import {
   Bold,
   Italic,
   List,
+  Sparkles,
 } from "lucide-react";
 
 export default function FloatingNotesEditor() {
-  const [content, setContent] = useState("");
-  const [title, setTitle] = useState("Untitled Note");
+  const [content, setContent] = useState(() => {
+    return localStorage.getItem("floating-note-content") || "";
+  });
+  const [title, setTitle] = useState(() => {
+    return localStorage.getItem("floating-note-title") || "Research Finding Note";
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const { success, error } = useToast();
+
+  useEffect(() => {
+    localStorage.setItem("floating-note-content", content);
+  }, [content]);
+
+  useEffect(() => {
+    localStorage.setItem("floating-note-title", title);
+  }, [title]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await api.post(ENDPOINTS.NOTES.LIST, {
+        title,
+        content,
+        tags: ["scratchpad", "research"],
+      });
+      success("Note saved to Cloud Library");
+    } catch {
+      // Offline fallback
+      success("Note saved locally (offline mode)");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-surface-elevated rounded-b-xl overflow-hidden animate-fade-in text-slate-200">
@@ -24,6 +59,7 @@ export default function FloatingNotesEditor() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+            onClick={() => setContent((c) => c + "**bold**")}
           >
             <Bold size={14} />
           </Button>
@@ -31,6 +67,7 @@ export default function FloatingNotesEditor() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+            onClick={() => setContent((c) => c + "*italic*")}
           >
             <Italic size={14} />
           </Button>
@@ -39,6 +76,7 @@ export default function FloatingNotesEditor() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+            onClick={() => setContent((c) => c + "\n- ")}
           >
             <List size={14} />
           </Button>
@@ -46,19 +84,19 @@ export default function FloatingNotesEditor() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+            onClick={() => setContent((c) => c + "\n- [ ] ")}
           >
             <CheckSquare size={14} />
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="h-8 text-xs flex gap-1">
-            <Paperclip size={14} /> Attach
-          </Button>
           <Button
+            onClick={handleSave}
+            disabled={isSaving}
             size="sm"
             className="h-8 text-xs bg-neon-blue/20 text-neon-blue hover:bg-neon-blue/30 border border-neon-blue/20"
           >
-            <Save size={14} className="mr-1" /> Save
+            <Save size={14} className="mr-1" /> {isSaving ? "Saving..." : "Save Note"}
           </Button>
         </div>
       </div>

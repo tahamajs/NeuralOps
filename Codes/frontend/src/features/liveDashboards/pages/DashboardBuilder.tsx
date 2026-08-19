@@ -32,7 +32,11 @@ export default function DashboardBuilder({
 }: {
   onClose?: () => void;
 }) {
-  const { dashboardId } = useParams();
+  const { dashboardId: paramId } = useParams();
+  const queryId = new URLSearchParams(window.location.search).get("id") ||
+    new URLSearchParams(window.location.search).get("dashboardId");
+  const dashboardId = paramId || queryId || "dash-svd-live";
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
@@ -43,8 +47,7 @@ export default function DashboardBuilder({
 
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ["dashboard", dashboardId],
-    queryFn: () => liveDashboardsAPI.getDashboard(dashboardId!),
-    enabled: !!dashboardId,
+    queryFn: () => liveDashboardsAPI.getDashboard(dashboardId),
   });
 
   const { liveData, isConnected } = useLiveDashboard(
@@ -55,7 +58,7 @@ export default function DashboardBuilder({
 
   const updateDashboard = useMutation({
     mutationFn: (data: any) =>
-      liveDashboardsAPI.updateDashboard(dashboardId!, data),
+      liveDashboardsAPI.updateDashboard(dashboardId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard", dashboardId] });
       success("Dashboard saved");

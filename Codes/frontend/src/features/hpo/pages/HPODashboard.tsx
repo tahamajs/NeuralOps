@@ -95,7 +95,9 @@ export default function HPODashboard({ onClose }: { onClose?: () => void }) {
     },
   ];
 
-  const sweeps = sweepsData?.results || [];
+  const sweeps = Array.isArray(sweepsData)
+    ? sweepsData
+    : (sweepsData as any)?.results || [];
 
   return (
     <div className="flex flex-col h-full">

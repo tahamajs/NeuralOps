@@ -15,12 +15,46 @@ const NotesEditorPanel = lazy(
 const SystemMonitorPanel = lazy(
   () => import("../../features/hardware/components/SystemMonitorPanel"),
 );
+const ChatPanel = lazy(
+  () => import("../../features/chat/components/ChatPanel"),
+);
+const AcceleratorPanel = lazy(
+  () => import("../../features/accelerator/pages/AcceleratorDashboard"),
+);
+const HPOPanel = lazy(
+  () => import("../../features/hpo/pages/HPODashboard"),
+);
+const AnomalyPanel = lazy(
+  () => import("../../features/anomaly/pages/AnomalyListPage"),
+);
+const ForensicsPanel = lazy(
+  () => import("../../features/forensics/pages/FailureAnalysisPage"),
+);
+const SupportPanel = lazy(
+  () => import("../../features/support/pages/SupportHubPage"),
+);
+const ResearchAnalysisPanel = lazy(
+  () => import("../../features/analysis/pages/ResearchAnalysisPage"),
+);
+const ExperimentsPanel = lazy(
+  () => import("../../features/experiments/pages/ExperimentListPage"),
+);
 
 const CONTENT_RENDERERS: Record<string, React.ComponentType<any>> = {
   terminal: TerminalPanel,
+  chat: ChatPanel,
   "paper-editor": PaperEditorPanel,
   "notes-editor": NotesEditorPanel,
+  notes: NotesEditorPanel,
   "system-monitor": SystemMonitorPanel,
+  accelerator: AcceleratorPanel,
+  hpo: HPOPanel,
+  sweeps: HPOPanel,
+  anomaly: AnomalyPanel,
+  forensics: ForensicsPanel,
+  support: SupportPanel,
+  analysis: ResearchAnalysisPanel,
+  experiments: ExperimentsPanel,
 };
 
 export default function FloatingWindowRenderer() {

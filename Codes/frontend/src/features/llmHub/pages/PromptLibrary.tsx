@@ -29,12 +29,31 @@ export default function PromptLibrary({ onClose }: { onClose?: () => void }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["prompts"] });
       setShowEditor(false);
+      setSelectedPrompt(null);
       success("Prompt created");
     },
+    onError: () => error("Failed to create prompt"),
   });
+
+  const updatePrompt = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      llmHubAPI.updatePrompt(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+      setShowEditor(false);
+      setSelectedPrompt(null);
+      success("Prompt updated");
+    },
+    onError: () => error("Failed to update prompt"),
+  });
+
   const deletePrompt = useMutation({
     mutationFn: (id: string) => llmHubAPI.deletePrompt(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prompts"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+      success("Prompt deleted");
+    },
+    onError: () => error("Failed to delete prompt"),
   });
 
   if (isLoading) return <Spinner />;
@@ -120,7 +139,7 @@ export default function PromptLibrary({ onClose }: { onClose?: () => void }) {
           initialPrompt={selectedPrompt}
           onSave={(data) =>
             selectedPrompt
-              ? llmHubAPI.updatePrompt(selectedPrompt.id, data)
+              ? updatePrompt.mutate({ id: selectedPrompt.id, data })
               : createPrompt.mutate(data)
           }
         />

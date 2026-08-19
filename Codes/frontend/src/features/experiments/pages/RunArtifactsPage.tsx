@@ -13,23 +13,39 @@ export default function RunArtifactsPage() {
   });
 
   if (isLoading) return <Spinner />;
-  const files = data?.files || {};
+  const rawFiles = data?.files || data || [];
+  const filesList: { name: string; url: string; size?: string }[] = Array.isArray(rawFiles)
+    ? rawFiles.map((f: any) => ({
+        name: typeof f === "string" ? f : f.name || f.filename || "file",
+        url: f.url || "#",
+        size: f.size ? `${f.size} MB` : undefined,
+      }))
+    : Object.entries(rawFiles).map(([name, val]: any) => ({
+        name,
+        url: typeof val === "string" ? val : val?.url || "#",
+        size: typeof val === "object" && val?.size ? `${val.size} MB` : undefined,
+      }));
 
   return (
     <div className="space-y-6 animate-fade-in">
       <h1 className="text-2xl font-black text-white">ARTIFACTS</h1>
       <Card>
-        {Object.keys(files).length === 0 ? (
+        {filesList.length === 0 ? (
           <p className="text-slate-500">No artifacts found.</p>
         ) : (
           <div className="space-y-2">
-            {Object.entries(files).map(([name, url]: any) => (
+            {filesList.map((file, idx) => (
               <div
-                key={name}
+                key={idx}
                 className="flex justify-between items-center bg-cyber-800 p-3 rounded"
               >
-                <span className="text-sm text-white">{name}</span>
-                <a href={url} download>
+                <div>
+                  <span className="text-sm text-white font-mono">{file.name}</span>
+                  {file.size && (
+                    <span className="text-xs text-slate-400 ml-2">({file.size})</span>
+                  )}
+                </div>
+                <a href={file.url} download target="_blank" rel="noopener noreferrer">
                   <Button size="sm" variant="secondary">
                     Download
                   </Button>

@@ -207,7 +207,15 @@ export const useFloatingWindowStore = create<FloatingWindowState>(
 
 export const WINDOW_TYPES = {
   TERMINAL: "terminal",
+  CHAT: "chat",
   PAPER_EDITOR: "paper-editor",
   NOTES_EDITOR: "notes-editor",
   SYSTEM_MONITOR: "system-monitor",
+  EXPERIMENTS: "experiments",
+  ANALYSIS: "analysis",
+  ACCELERATOR: "accelerator",
+  HPO: "hpo",
+  ANOMALY: "anomaly",
+  FORENSICS: "forensics",
+  SUPPORT: "support",
 } as const;

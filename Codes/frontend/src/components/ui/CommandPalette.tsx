@@ -9,6 +9,11 @@ import {
   Settings,
   Terminal,
   Users,
+  Bot,
+  Sparkles,
+  AlertTriangle,
+  Shield,
+  LifeBuoy,
 } from "lucide-react";
 import { useFloatingWindowStore } from "../floating/FloatingWindowManager";
 
@@ -66,6 +71,78 @@ export function CommandPalette() {
           title: "Terminal",
           icon: ">_",
           content: "terminal",
+        }),
+    },
+    {
+      id: "chat",
+      title: "Open AI Research Chat",
+      icon: <Bot size={16} />,
+      action: () =>
+        useFloatingWindowStore.getState().addWindow({
+          id: "chat",
+          title: "AI Chat",
+          icon: "💬",
+          content: "chat",
+        }),
+    },
+    {
+      id: "accelerator",
+      title: "Open Experiment Accelerator",
+      icon: <Sparkles size={16} />,
+      action: () =>
+        useFloatingWindowStore.getState().addWindow({
+          id: "accelerator",
+          title: "Accelerator",
+          icon: "⚡",
+          content: "accelerator",
+        }),
+    },
+    {
+      id: "hpo",
+      title: "Open HPO Sweeps Dashboard",
+      icon: <BarChart3 size={16} />,
+      action: () =>
+        useFloatingWindowStore.getState().addWindow({
+          id: "hpo",
+          title: "HPO Sweeps",
+          icon: "🎛️",
+          content: "hpo",
+        }),
+    },
+    {
+      id: "anomaly",
+      title: "Open Anomaly Detection",
+      icon: <AlertTriangle size={16} />,
+      action: () =>
+        useFloatingWindowStore.getState().addWindow({
+          id: "anomaly",
+          title: "Anomaly Detection",
+          icon: "⚠️",
+          content: "anomaly",
+        }),
+    },
+    {
+      id: "forensics",
+      title: "Open Failure Forensics",
+      icon: <Shield size={16} />,
+      action: () =>
+        useFloatingWindowStore.getState().addWindow({
+          id: "forensics",
+          title: "Failure Forensics",
+          icon: "🛡️",
+          content: "forensics",
+        }),
+    },
+    {
+      id: "support",
+      title: "Open Support Hub",
+      icon: <LifeBuoy size={16} />,
+      action: () =>
+        useFloatingWindowStore.getState().addWindow({
+          id: "support",
+          title: "Support Hub",
+          icon: "🛟",
+          content: "support",
         }),
     },
     {

@@ -11,6 +11,9 @@ export interface FeatureGroup {
   entity_key: string;
   online_enabled: boolean;
   offline_enabled: boolean;
+  tags?: string[];
+  version?: string;
+  records_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +33,7 @@ export interface FeatureStats {
   null_count: number;
   unique_count?: number;
   histogram?: number[];
+  bins?: string[];
 }
 
 export interface DriftMonitor {
@@ -42,6 +46,9 @@ export interface DriftMonitor {
   status: DriftStatus;
   last_checked_at: string;
   created_at: string;
+  method?: "psi" | "ks" | "emd" | "js";
+  current_p_value?: number;
+  current_divergence?: number;
 }
 
 export interface DriftCheck {
@@ -52,6 +59,8 @@ export interface DriftCheck {
   divergence: number;
   status: DriftStatus;
   sample_size: number;
+  reference_histogram?: number[];
+  current_histogram?: number[];
 }
 
 export interface Alert {
@@ -68,7 +77,7 @@ export interface Alert {
 
 export interface AlertChannel {
   id: string;
-  type: "slack" | "email" | "webhook";
+  type: "slack" | "email" | "webhook" | "pagerduty";
   name: string;
   config: Record<string, any>;
   enabled: boolean;
@@ -92,3 +101,4 @@ export interface PerformanceSnapshot {
   concept_drift_score: number;
   feature_stats: Record<string, FeatureStats>;
 }
+

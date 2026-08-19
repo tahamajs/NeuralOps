@@ -19,15 +19,18 @@ export default function ModelAccessManager({
 }: {
   onClose?: () => void;
 }) {
-  const { modelId } = useParams();
+  const { modelId: paramId } = useParams();
+  const queryId = new URLSearchParams(window.location.search).get("id") ||
+    new URLSearchParams(window.location.search).get("modelId");
+  const modelId = paramId || queryId || "m-griffin-v1";
+
   const [showForm, setShowForm] = useState(false);
   const queryClient = useQueryClient();
   const { success, error } = useToast();
 
   const { data: policies, isLoading } = useQuery({
     queryKey: ["access-policies", modelId],
-    queryFn: () => modelHubAPI.getAccessPolicies(modelId!),
-    enabled: !!modelId,
+    queryFn: () => modelHubAPI.getAccessPolicies(modelId),
   });
 
   const revokeAccess = useMutation({
