@@ -25,6 +25,19 @@ def load_glue_local(task_name: str, base_path: str = None) -> DatasetDict:
     Load a GLUE task from local Parquet files, falling back to HuggingFace Datasets hub.
     Compatible with local, Kaggle, Colab, and remote GPU/HPC environments.
     """
+    from pathlib import Path
+    from datasets import load_from_disk
+
+    # 1. First priority: Check on-disk saved dataset
+    candidates = [
+        Path(__file__).resolve().parent / "glue_data" / task_name,
+        Path.cwd() / "data" / "glue_data" / task_name,
+        Path("C:/Users/Hadi Schumacher/SVD_Project/Codes/framework/data/glue_data") / task_name,
+    ]
+    for cand in candidates:
+        if cand.exists():
+            return load_from_disk(str(cand))
+
     if not base_path:
         # Check Kaggle input dataset first if present
         kaggle_glue = f"/kaggle/input/glue-dataset/{task_name}"
