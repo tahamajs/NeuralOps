@@ -34,7 +34,10 @@ import {
   Laptop,
   CheckCircle,
   ExternalLink,
+  Wallet,
+  CheckCheck,
 } from "lucide-react";
+import { PreFlightCheckModal } from "../../launcher/components/PreFlightCheckModal";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -42,6 +45,7 @@ export default function LandingPage() {
   const [copiedInstallCmd, setCopiedInstallCmd] = useState(false);
   const [selectedOS, setSelectedOS] = useState<"mac" | "linux" | "windows" | "docker" | "pip">("mac");
   const [activeTab, setActiveTab] = useState<"svd" | "flash" | "mamba" | "softmax">("svd");
+  const [showPreFlightDemo, setShowPreFlightDemo] = useState(false);
 
   const [stats, setStats] = useState({
     gpusOnline: 1248,
@@ -498,8 +502,98 @@ export default function LandingPage() {
               </div>
             </div>
 
+            {/* Telegram-style Multi-Platform Download Cards Grid */}
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <h4 className="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <Laptop size={14} className="text-cyan-400" /> Choose Your Platform (Official Binaries & Web Apps)
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {[
+                  {
+                    name: "macOS",
+                    tag: "Apple Silicon / Intel",
+                    icon: Laptop,
+                    pkg: "DMG / Homebrew",
+                    action: "Download .dmg",
+                    highlight: true,
+                    onClick: () => setSelectedOS("mac"),
+                  },
+                  {
+                    name: "Windows",
+                    tag: "64-bit / WSL2 CUDA",
+                    icon: HardDrive,
+                    pkg: "Setup.exe (64-bit)",
+                    action: "Download .exe",
+                    highlight: false,
+                    onClick: () => setSelectedOS("windows"),
+                  },
+                  {
+                    name: "Linux",
+                    tag: "Ubuntu / RHEL / Arch",
+                    icon: Server,
+                    pkg: "Tarball / DEB",
+                    action: "Download .tar.gz",
+                    highlight: false,
+                    onClick: () => setSelectedOS("linux"),
+                  },
+                  {
+                    name: "Web Operating System",
+                    tag: "Instant in Browser",
+                    icon: Globe,
+                    pkg: "Zero Install Required",
+                    action: "Launch Web OS",
+                    highlight: true,
+                    onClick: () => navigate("/dashboard"),
+                  },
+                  {
+                    name: "Docker Engine",
+                    tag: "NVIDIA GPU Passthrough",
+                    icon: Network,
+                    pkg: "neuralops/agent",
+                    action: "View Container",
+                    highlight: false,
+                    onClick: () => setSelectedOS("docker"),
+                  },
+                  {
+                    name: "Python CLI / SDK",
+                    tag: "pip install",
+                    icon: Code2,
+                    pkg: "PyPI Package",
+                    action: "Copy pip cmd",
+                    highlight: false,
+                    onClick: () => setSelectedOS("pip"),
+                  },
+                ].map((item, idx) => {
+                  const Icon = item.icon;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={item.onClick}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between text-center group ${
+                        item.highlight
+                          ? "bg-cyan-500/10 border-cyan-500/40 hover:bg-cyan-500/20 hover:border-cyan-400"
+                          : "bg-white/[0.02] border-white/10 hover:bg-white/[0.06] hover:border-white/20"
+                      }`}
+                    >
+                      <div className="flex flex-col items-center">
+                        <div className="w-10 h-10 rounded-2xl bg-white/5 group-hover:bg-cyan-500/20 flex items-center justify-center text-cyan-300 mb-2 transition-colors">
+                          <Icon size={20} />
+                        </div>
+                        <span className="text-xs font-bold text-white block">{item.name}</span>
+                        <span className="text-[10px] font-mono text-slate-400 block mb-1">{item.tag}</span>
+                        <span className="text-[9px] font-mono text-cyan-400/80 block">{item.pkg}</span>
+                      </div>
+                      <button className="mt-3 w-full py-1 rounded-xl bg-white/10 group-hover:bg-cyan-500 group-hover:text-black text-[10px] font-bold font-mono text-slate-200 transition-colors">
+                        {item.action}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* 3-Step Rapid Setup Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
               <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-start gap-3">
                 <div className="w-7 h-7 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-xs shrink-0">1</div>
                 <div>
@@ -526,6 +620,158 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* ========================================================================= */}
+        {/* NEW SECTION: Pre-Flight Machine, Escrow & GPU Provider Validator Sandbox  */}
+        {/* ========================================================================= */}
+        <section id="pre-flight-validator" className="w-full max-w-5xl text-left mb-24">
+          <div className="text-center mb-10">
+            <span className="text-xs font-mono text-emerald-400 uppercase tracking-widest flex items-center justify-center gap-1.5">
+              <ShieldCheck size={14} className="text-emerald-400" /> Pre-Flight Safety Architecture
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white mt-1">
+              Pre-Flight Machine, Credit & Agent Verification
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl mx-auto mt-2">
+              Every training and compression run is validated against hardware capability, provider daemon availability, and smart escrow balances prior to job dispatch.
+            </p>
+          </div>
+
+          <div className="glass border border-emerald-500/30 rounded-3xl p-6 sm:p-8 bg-[#0a121d]/90 backdrop-blur-2xl shadow-2xl relative overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Pillar 1: Target Machine & Provider Agent */}
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center">
+                      <Server size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Machine & Node Selection</h4>
+                      <span className="text-[10px] text-slate-400 font-mono">Which GPU Cluster to Target?</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-300 mb-3 leading-relaxed">
+                    Choose between your local GPU node (RTX 4090 / MPS), enterprise cloud clusters (8x H100 SXM5), or decentralized peer provider rigs.
+                  </p>
+                  <div className="space-y-1.5 text-[11px] font-mono text-slate-400">
+                    <div className="flex justify-between py-1 border-b border-white/5">
+                      <span>Local RTX 4090:</span>
+                      <span className="text-emerald-400 font-bold">Free ($0.00/hr)</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-white/5">
+                      <span>Cloud 8x H100:</span>
+                      <span className="text-cyan-300 font-bold">$2.15/hr</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span>Provider Peer #841:</span>
+                      <span className="text-purple-300 font-bold">$1.45/hr (-32%)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 2: Credit & Escrow Validation */}
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center">
+                      <Wallet size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Credit & Smart Escrow</h4>
+                      <span className="text-[10px] text-slate-400 font-mono">Guaranteed Compute Pricing</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-300 mb-3 leading-relaxed">
+                    Estimated job cost is calculated dynamically. Compute funds are locked in escrow and released only upon successful loss convergence.
+                  </p>
+                  <div className="space-y-1.5 text-[11px] font-mono text-slate-400">
+                    <div className="flex justify-between py-1 border-b border-white/5">
+                      <span>Available Balance:</span>
+                      <span className="text-emerald-400 font-bold">$248.50 USD</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-white/5">
+                      <span>Estimated Job Cost:</span>
+                      <span className="text-white font-bold">$5.38 (2.5 hrs)</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span>Pre-Run Balance Check:</span>
+                      <span className="text-emerald-400 font-bold">✓ Approved</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pillar 3: Provider Agent WebSocket Health */}
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/10 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center">
+                      <Zap size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Provider Connectivity</h4>
+                      <span className="text-[10px] text-slate-400 font-mono">Real-time WebSocket Heartbeat</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-300 mb-3 leading-relaxed">
+                    Pre-flight pings verify that the remote agent daemon has Triton 3.0, PyTorch 2.4, and sufficient free VRAM buffer.
+                  </p>
+                  <div className="space-y-1.5 text-[11px] font-mono text-slate-400">
+                    <div className="flex justify-between py-1 border-b border-white/5">
+                      <span>Agent Daemon:</span>
+                      <span className="text-emerald-400 font-bold">ONLINE (v2.4.0)</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-white/5">
+                      <span>Ping Latency:</span>
+                      <span className="text-cyan-300 font-bold">3.8ms</span>
+                    </div>
+                    <div className="flex justify-between py-1">
+                      <span>VRAM Headroom:</span>
+                      <span className="text-purple-300 font-bold">21.4 GB Free (OK)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Pre-Flight Launch Trigger */}
+            <div className="mt-6 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs font-mono text-slate-400 flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-emerald-400" />
+                <span>Test our interactive Pre-Flight Validation Engine before dispatching jobs:</span>
+              </div>
+              <button
+                onClick={() => setShowPreFlightDemo(true)}
+                className="px-6 py-2.5 bg-gradient-to-r from-emerald-400 via-cyan-500 to-blue-600 hover:brightness-110 text-black font-extrabold text-xs rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                <Zap size={14} /> Open Pre-Flight Validation Simulator
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Pre-Flight Modal for Landing Page */}
+        <PreFlightCheckModal
+          isOpen={showPreFlightDemo}
+          onClose={() => setShowPreFlightDemo(false)}
+          jobConfig={{
+            name: "svd-linear-attention-demo",
+            model_name: "distilbert-base-uncased",
+            task_name: "mrpc",
+            attention_type: "griffin_ssd",
+            method: "lora",
+            compression_rank: 16,
+            epochs: 3,
+            batch_size: 32,
+            cluster: "local-triton",
+          }}
+          onConfirmLaunch={(machine) => {
+            setShowPreFlightDemo(false);
+            navigate("/launcher");
+          }}
+        />
 
         {/* Interactive Attention Architecture Comparator */}
         <section id="comparisons" className="w-full max-w-5xl text-left mb-24">
