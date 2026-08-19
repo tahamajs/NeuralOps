@@ -34,6 +34,8 @@ import {
   HardDrive,
   Gauge,
   Workflow,
+  Search,
+  Filter,
 } from "lucide-react";
 import {
   AreaChart,
@@ -58,6 +60,8 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { addWindow } = useWindowStore();
   const [activeMetricTab, setActiveMetricTab] = useState<"throughput" | "vram">("throughput");
+  const [toolSearch, setToolSearch] = useState("");
+  const [toolCategory, setToolCategory] = useState<string>("All");
 
   const { data: experiments = [] } = useQuery({
     queryKey: ["experiments"],
@@ -113,9 +117,11 @@ export default function DashboardPage() {
     : 1;
 
   const launchFeature = (type: string) => {
+    const appDef = AVAILABLE_WINDOWS.find((w) => w.type === type);
     addWindow(
       type,
-      type.charAt(0).toUpperCase() + type.slice(1).replace("-", " "),
+      appDef?.title ?? (type.charAt(0).toUpperCase() + type.slice(1).replace(/-/g, " ")),
+      appDef?.icon,
     );
   };
 
