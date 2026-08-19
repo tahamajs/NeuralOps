@@ -245,15 +245,14 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
         learning_rate=cfg.lr,
         weight_decay=0.01,
         lr_scheduler_type="linear",
-        warmup_steps=min(500, int(0.1 * len(dataset["train"]) / cfg.batch_size * cfg.epochs)),
+        warmup_steps=min(500, int(0.1 * len(dataset["train"]) / max(1, cfg.batch_size) * cfg.epochs)),
         logging_steps=50,
         eval_strategy="epoch",
-        save_strategy="epoch",
-        save_total_limit=2,
-        load_best_model_at_end=True,
-        metric_for_best_model=metric_for_best,
-        greater_is_better=True,
+        save_strategy="no",  # STORAGE OPTIMIZATION: Do not save heavy intermediate checkpoints
+        load_best_model_at_end=False,
         fp16=torch.cuda.is_available(),
+        dataloader_num_workers=2,
+        dataloader_pin_memory=torch.cuda.is_available(),
         remove_unused_columns=False,
         report_to="none",
         max_grad_norm=cfg.max_grad_norm,
@@ -290,11 +289,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     for k, v in eval_result.items():
         logger.info("  %s: %s", k, f"{v:.4f}" if isinstance(v, float) else v)
 
-    # ── Save everything ────────────────────────────────────────────────────
-    model_dir = out_dir / "model"
-    trainer.save_model(str(model_dir))
-    tokenizer.save_pretrained(str(model_dir))
-
+    # ── Save Results (Storage Optimized) ──────────────────────────────────
     rw = fw["ResultWriter"](out_dir)
     rw.save_config(cfg)
     rw.save_metrics(eval_result, tag="eval_final")
@@ -303,7 +298,18 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     rw.save_plots(trainer.state.log_history)
     rw.write_summary_md(exp_name, cfg, eval_result, elapsed)
 
+    # Clean intermediate checkpoint disk space
+    import shutil
+    shutil.rmtree(out_dir / "checkpoints", ignore_errors=True)
+
+    if getattr(cfg, "save_model", False):
+        model_dir = out_dir / "model"
+        trainer.save_model(str(model_dir))
+        tokenizer.save_pretrained(str(model_dir))
+
     fw["clear_memory"]()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     logger.info("Results saved → %s", out_dir)
     return {"eval": eval_result, "train_runtime": elapsed, "output_dir": str(out_dir)}
 
