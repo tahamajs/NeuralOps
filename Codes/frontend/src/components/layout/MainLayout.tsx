@@ -43,20 +43,53 @@ export const MainLayout = () => {
   const notificationRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const [notifications] = useState([
+  const [notifications, setNotifications] = useState([
     {
-      id: 1,
-      text: 'Experiment "bert-mrpc" completed successfully',
-      time: "5 min ago",
+      id: "1",
+      title: "SVD Compression Completed",
+      text: 'Experiment "Griffin-SSD MRPC" reached target 0.865 accuracy with 42% parameter reduction.',
+      time: "2 min ago",
       read: false,
+      type: "experiment",
+      link: "/experiments/1c615fbe-7d0e-42ea-b195-27ee5e049867",
     },
     {
-      id: 2,
-      text: "New note shared with you by Research Team",
+      id: "2",
+      title: "Local GPU Cluster Active",
+      text: "Triton CUDA Engine initialized: 4 nodes online (395.2 TFLOPS).",
+      time: "15 min ago",
+      read: false,
+      type: "system",
+      link: "/system-status",
+    },
+    {
+      id: "3",
+      title: "New AI Hypothesis Generated",
+      text: "AI Co-Scientist synthesized: Dynamic Entropy Rank Scheduling on LLaMA-3.",
       time: "1 hour ago",
       read: true,
+      type: "agent",
+      link: "/agent",
     },
   ]);
+
+  const [notificationFilter, setNotificationFilter] = useState<"all" | "unread">("all");
+
+  const markAllNotificationsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+  };
+
+  const markNotificationRead = (id: string, link?: string) => {
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    if (link) {
+      navigate(link);
+      setShowNotifications(false);
+    }
+  };
 
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -369,38 +402,95 @@ export const MainLayout = () => {
                   >
                     <Bell size={18} />
                     {notifications.filter((n) => !n.read).length > 0 && (
-                      <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-neon-blue rounded-full shadow-sm shadow-neon-blue" />
+                      <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#38bdf8] ring-2 ring-[#080d19] animate-pulse" />
                     )}
                   </button>
 
                   {showNotifications && (
-                    <div className="absolute right-0 top-12 w-80 glass border border-white/10 rounded-2xl shadow-2xl p-4 z-50 animate-scale-in">
-                      <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
-                        <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                          Notifications
-                        </h3>
-                        <span className="text-[10px] text-neon-blue font-semibold">
-                          {notifications.filter((n) => !n.read).length} new
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        {notifications.map((n) => (
-                          <div
-                            key={n.id}
-                            className={`p-2.5 rounded-xl transition-colors ${
-                              n.read
-                                ? "bg-white/[0.02] opacity-70"
-                                : "bg-neon-blue/5 border border-neon-blue/20"
-                            }`}
+                    <div className="absolute right-0 top-12 w-88 sm:w-96 glass border border-white/10 rounded-2xl shadow-2xl p-4 z-50 animate-scale-in bg-[#0c1222]/95 backdrop-blur-2xl">
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                            Notifications
+                          </h3>
+                          <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-bold">
+                            {notifications.filter((n) => !n.read).length} new
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={markAllNotificationsRead}
+                            className="text-[10px] text-slate-400 hover:text-cyan-300 transition-colors font-medium cursor-pointer"
                           >
-                            <p className="text-xs text-white leading-relaxed">
-                              {n.text}
-                            </p>
-                            <p className="text-[10px] text-slate-500 mt-1">
-                              {n.time}
-                            </p>
+                            Mark all read
+                          </button>
+                          <span className="text-slate-600 text-xs">·</span>
+                          <button
+                            onClick={clearAllNotifications}
+                            className="text-[10px] text-slate-400 hover:text-red-400 transition-colors font-medium cursor-pointer"
+                          >
+                            Clear
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Filter Pills */}
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <button
+                          onClick={() => setNotificationFilter("all")}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                            notificationFilter === "all"
+                              ? "bg-white/10 text-white border border-white/20"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          All ({notifications.length})
+                        </button>
+                        <button
+                          onClick={() => setNotificationFilter("unread")}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                            notificationFilter === "unread"
+                              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          Unread ({notifications.filter((n) => !n.read).length})
+                        </button>
+                      </div>
+
+                      {/* Notification Items */}
+                      <div className="space-y-2 max-h-80 overflow-y-auto scrollbar-thin pr-1">
+                        {notifications
+                          .filter((n) => notificationFilter === "all" || !n.read)
+                          .map((n) => (
+                            <div
+                              key={n.id}
+                              onClick={() => markNotificationRead(n.id, n.link)}
+                              className={`p-3 rounded-xl transition-all cursor-pointer border ${
+                                n.read
+                                  ? "bg-white/[0.02] border-white/5 opacity-70 hover:opacity-100"
+                                  : "bg-cyan-950/20 border-cyan-500/30 hover:border-cyan-500/60 shadow-lg shadow-cyan-500/5"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs font-bold text-slate-200">
+                                  {n.title}
+                                </span>
+                                <span className="text-[10px] text-slate-500 font-mono">
+                                  {n.time}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-300 leading-relaxed">
+                                {n.text}
+                              </p>
+                            </div>
+                          ))}
+                        {notifications.filter((n) => notificationFilter === "all" || !n.read).length === 0 && (
+                          <div className="py-6 text-center text-xs text-slate-500 font-mono">
+                            No notifications to display
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
                   )}
@@ -465,11 +555,11 @@ export const MainLayout = () => {
           </header>
 
           {/* Main Content Router Outlet wrapped in ErrorBoundary and Suspense */}
-          <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+          <main className="flex-1 p-4 md:p-8 overflow-y-auto flex flex-col">
             <ErrorBoundary>
               <Suspense
                 fallback={
-                  <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 animate-fade-in">
+                  <div className="flex-1 w-full min-h-[70vh] flex flex-col items-center justify-center m-auto p-8 animate-fade-in text-center">
                     <Spinner size="xl" label="Synchronizing NeuralOps Quantum Workspace..." />
                   </div>
                 }

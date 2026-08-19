@@ -138,11 +138,12 @@ export default function DocsPage() {
             category: "General"
           };
         }
+        const v = val as any;
         return {
           id: key,
-          title: val.title || val.name || key.replace(/_/g, " "),
-          path: val.path || val.file || (activeTab === "attentions_blog" ? `content/attentions_blog/${key}.md` : `content/compressions_blog/${key}.md`),
-          category: val.category || "General"
+          title: v?.title || v?.name || key.replace(/_/g, " "),
+          path: v?.path || v?.file || (activeTab === "attentions_blog" ? `content/attentions_blog/${key}.md` : `content/compressions_blog/${key}.md`),
+          category: v?.category || "General"
         };
       });
     }

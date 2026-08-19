@@ -242,25 +242,25 @@ export default function PaperEditorPage() {
           onClick={() => insertSnippet("\\mathrm{St}(d, r) = \\{W \\in \\mathbb{R}^{d \\times r} \\mid W^\\top W = I_r\\}")}
           className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors"
         >
-          $W^\top W = I$
+          {"$W^⊤ W = I$"}
         </button>
         <button
           onClick={() => insertSnippet("\\mathrm{grad} \\mathcal{L}(W) = G - W G^\\top W")}
           className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors"
         >
-          $\mathrm{grad}\,\mathcal{L}(W)$
+          {"grad L(W)"}
         </button>
         <button
           onClick={() => insertSnippet("r_l = r_{\\min} + \\lfloor (r_{\\max} - r_{\\min}) \\cdot \\frac{H(\\Sigma_l)}{\\max_j H(\\Sigma_j)} \\rfloor")}
           className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors"
         >
-          $r_l \propto H(\Sigma_l)$
+          {"r_l ∝ H(Σ_l)"}
         </button>
         <button
           onClick={() => insertSnippet("\\mathrm{Retr}_W(\\xi) = \\mathrm{qf}(W + \\xi)")}
           className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors"
         >
-          $\mathrm{Retr}_W(\xi)$
+          {"Retr_W(ξ)"}
         </button>
         <button
           onClick={() => insertSnippet("\\begin{equation}\n  \\mathcal{L}_{\\text{total}} = \\mathcal{L}_{\\text{task}} + \\lambda \\|A^\\top A - I\\|_F^2\n\\end{equation}")}

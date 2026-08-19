@@ -358,8 +358,8 @@ export function FloatingWorkspaceLayer() {
               <ErrorBoundary title={`Error in ${win.title || "Window"}`}>
                 <Suspense
                   fallback={
-                    <div className="flex items-center justify-center p-8">
-                      <Spinner />
+                    <div className="w-full h-full min-h-[220px] flex flex-col items-center justify-center m-auto p-6 text-center">
+                      <Spinner size="lg" label="Loading window module..." />
                     </div>
                   }
                 >
