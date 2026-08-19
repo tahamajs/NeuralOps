@@ -183,19 +183,19 @@ export default function ExperimentDetailPage() {
           <h3 className="text-sm font-display font-bold text-white mb-3">
             Artifacts
           </h3>
-          {(ArtifactList as any)({ experimentId: id! })}
+          <ArtifactList artifacts={(experiment as any).artifacts} />
         </Card>
         <Card>
           <h3 className="text-sm font-display font-bold text-white mb-3">
             Model
           </h3>
-          {(DownloadModelButton as any)({ experimentId: id! })}
+          <DownloadModelButton runId={id} />
         </Card>
         <Card>
           <h3 className="text-sm font-display font-bold text-white mb-3">
             Paper
           </h3>
-          {(DownloadPaperButton as any)({ experimentId: id! })}
+          <DownloadPaperButton runId={id} />
         </Card>
       </div>
     </div>

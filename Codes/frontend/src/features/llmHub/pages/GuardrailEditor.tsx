@@ -45,13 +45,21 @@ export default function GuardrailEditor({ onClose }: { onClose?: () => void }) {
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["guardrails"] }),
   });
+  const [selectedRuleId, setSelectedRuleId] = useState<string>("");
+
   const testGuardrail = useMutation({
     mutationFn: ({ id, text }: { id: string; text: string }) =>
       llmHubAPI.testGuardrail(id, text),
-    onSuccess: (res) => setTestResult(res.data),
+    onSuccess: (res: any) => {
+      setTestResult(res?.data || res);
+      success("Guardrail test completed");
+    },
+    onError: () => error("Guardrail test failed"),
   });
 
   if (isLoading) return <Spinner />;
+
+  const activeTestId = selectedRuleId || guardrails?.[0]?.id || "default";
 
   return (
     <div className="flex flex-col h-full">
@@ -76,70 +84,99 @@ export default function GuardrailEditor({ onClose }: { onClose?: () => void }) {
         </div>
       </div>
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {guardrails?.map((g) => (
-          <TerminalCard key={g.id} className="p-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-white">{g.name}</h3>
-                  <Badge variant={g.type as any}>{g.type}</Badge>
-                  <Badge variant={g.action === "block" ? "failed" : "warning"}>
-                    {g.action}
-                  </Badge>
-                  <Badge
-                    variant={g.severity === "high" ? "failed" : "secondary"}
-                  >
-                    {g.severity}
-                  </Badge>
-                </div>
-                <div className="text-xs text-slate-400 mt-1">
-                  Pattern: {g.pattern}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() =>
-                    testGuardrail.mutate({ id: g.id, text: testText })
-                  }
+        <div className="space-y-3">
+          {guardrails?.map((g) => (
+            <TerminalCard
+              key={g.id}
+              className={`p-3 transition-colors ${selectedRuleId === g.id ? "border-neon-blue" : ""}`}
+            >
+              <div className="flex justify-between items-start">
+                <div
+                  className="cursor-pointer flex-1"
+                  onClick={() => setSelectedRuleId(g.id)}
                 >
-                  <TestTube size={14} />
-                </Button>
-                <button onClick={() => deleteGuardrail.mutate(g.id)}>
-                  <Trash2 size={14} className="text-red-400" />
-                </button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-white">{g.name}</h3>
+                    <Badge variant={g.type as any}>{g.type}</Badge>
+                    <Badge variant={g.action === "block" ? "failed" : "warning"}>
+                      {g.action}
+                    </Badge>
+                    <Badge
+                      variant={g.severity === "high" ? "failed" : "secondary"}
+                    >
+                      {g.severity}
+                    </Badge>
+                  </div>
+                  <div className="text-xs font-mono text-slate-400 mt-1">
+                    Pattern: {g.pattern}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={selectedRuleId === g.id ? "primary" : "ghost"}
+                    onClick={() => {
+                      setSelectedRuleId(g.id);
+                      testGuardrail.mutate({ id: g.id, text: testText || "sample prompt test" });
+                    }}
+                  >
+                    <TestTube size={14} className="mr-1" /> Test
+                  </Button>
+                  <button
+                    onClick={() => deleteGuardrail.mutate(g.id)}
+                    className="p-1 hover:bg-white/5 rounded text-red-400 hover:text-red-300"
+                    title="Delete rule"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
-            </div>
-          </TerminalCard>
-        ))}
+            </TerminalCard>
+          ))}
+        </div>
+
         <TerminalCard className="p-4">
-          <h3 className="text-sm font-bold text-white mb-2">Test Guardrail</h3>
+          <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+            <TestTube size={16} className="text-neon-mint" /> Test Guardrail Workbench
+          </h3>
+          <p className="text-xs text-slate-400 mb-2">
+            Testing against rule: <span className="text-white font-mono">{guardrails?.find(g => g.id === activeTestId)?.name || "All Rules"}</span>
+          </p>
           <Textarea
             rows={3}
             value={testText}
             onChange={(e) => setTestText(e.target.value)}
-            placeholder="Enter text to test..."
+            placeholder="Enter prompt or response text to test against guardrails..."
           />
           <div className="flex gap-2 mt-2">
             <Button
               size="sm"
-              variant="ghost"
               onClick={() =>
-                testGuardrail.mutate({ id: guardrails[0]?.id, text: testText })
+                testGuardrail.mutate({ id: activeTestId, text: testText || "Test string" })
               }
+              disabled={testGuardrail.isPending}
             >
-              Test
+              {testGuardrail.isPending ? "Testing..." : "Run Guardrail Check"}
             </Button>
           </div>
           {testResult && (
-            <div className="mt-3 p-2 rounded bg-white/5 text-sm">
-              <div className="text-neon-mint">
-                Result: {testResult.flagged ? "⚠️ Flagged" : "✅ Safe"}
+            <div className={`mt-3 p-3 rounded text-sm border ${testResult.flagged ? "bg-rose-950/40 border-rose-500/30 text-rose-200" : "bg-emerald-950/40 border-emerald-500/30 text-emerald-200"}`}>
+              <div className="font-bold flex items-center gap-2">
+                {testResult.flagged ? "⚠️ Violation Flagged" : "✅ Safe (Passed Guardrail)"}
+                {testResult.confidence && (
+                  <span className="text-xs font-normal opacity-75">
+                    ({(testResult.confidence * 100).toFixed(0)}% confidence)
+                  </span>
+                )}
               </div>
-              {testResult.matches && (
-                <div className="text-xs text-slate-400">
-                  Matches: {testResult.matches.join(", ")}
+              {testResult.matches && testResult.matches.length > 0 && (
+                <div className="text-xs mt-1.5 space-y-1">
+                  <div className="font-semibold text-slate-400">Triggered Patterns:</div>
+                  {testResult.matches.map((m: string, idx: number) => (
+                    <div key={idx} className="font-mono bg-black/40 px-2 py-0.5 rounded">
+                      {m}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
