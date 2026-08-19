@@ -36,45 +36,49 @@ def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any
             "Please provide attention block arguments directly."
         )
 
-    # Recursively replace attention modules
-    replaced_count = 0
+    # Collect top-level attention module targets (avoiding submodules)
+    targets = []
     for name, module in model.named_modules():
-        # Common attention module names in HF models: 'attention', 'self_attn', 'self', 'attn'
-        if isinstance(module, (nn.MultiheadAttention,)) or any(
-            attn_name in name.lower()
-            for attn_name in ["attention", "self_attn", "attn"]
-        ):
+        parts = name.split(".")
+        if not parts or not parts[-1]:
+            continue
+        leaf = parts[-1].lower()
+        if leaf in ["attention", "self_attn", "self", "attn"] or isinstance(module, (nn.MultiheadAttention,)):
+            # Check if an ancestor was already selected
+            if not any(name.startswith(t[0] + ".") for t in targets):
+                # Check layer_indices if specified
+                layer_idx = None
+                for part in parts:
+                    if part.isdigit():
+                        layer_idx = int(part)
+                        break
+                if layer_indices is None or layer_idx in layer_indices:
+                    targets.append((name, module))
 
-            # Check if this layer should be replaced based on layer_indices
-            # Extract layer index from name (e.g., "encoder.layer.3.attention")
-            layer_idx = None
-            parts = name.split(".")
-            for i, part in enumerate(parts):
-                if part.isdigit():
-                    layer_idx = int(part)
-                    break
+    replaced_count = 0
+    for name, old_module in targets:
+        # Instantiate the new attention block
+        try:
+            new_attn = attn_class(config, **kwargs)
+        except TypeError:
+            new_attn = attn_class(**kwargs)
 
-            if layer_indices is not None and layer_idx not in layer_indices:
-                continue
-
-            # Instantiate the new attention block
+        # Copy weights if copy_weights is supported
+        if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
             try:
-                new_attn = attn_class(config, **kwargs)
-            except TypeError:
-                # Fallback: try without config if block expects different signature
-                new_attn = attn_class(**kwargs)
+                new_attn.copy_weights(old_module)
+            except Exception:
+                pass
 
-            # Find the parent module and replace
-            parent_name = ".".join(name.split(".")[:-1])
-            child_name = name.split(".")[-1]
-            if parent_name:
-                parent = model.get_submodule(parent_name)
-            else:
-                parent = model
+        # Find parent module and replace
+        parts = name.split(".")
+        parent_name = ".".join(parts[:-1])
+        child_name = parts[-1]
+        parent = model.get_submodule(parent_name) if parent_name else model
 
-            setattr(parent, child_name, new_attn)
-            replaced_count += 1
-            print(f"Replaced {name} with {attention_key}")
+        setattr(parent, child_name, new_attn)
+        replaced_count += 1
+        print(f"Replaced {name} with {attention_key}")
 
     print(f"Replaced {replaced_count} attention layers.")
     return model

@@ -621,8 +621,12 @@ class SVDLinearAttention(BaseAttention):
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        hidden_states: Optional[torch.Tensor] = None,
+        query: Optional[torch.Tensor] = None,
+        key: Optional[torch.Tensor] = None,
+        value: Optional[torch.Tensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
+        mask: Optional[torch.Tensor] = None,
         head_mask: Optional[torch.Tensor] = None,
         output_attentions: bool = False,
         past_state: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
@@ -635,6 +639,11 @@ class SVDLinearAttention(BaseAttention):
         2. "linear" with `use_decay_gating=False` -> Standard non-decayed $\mathcal{O}(N)$ Linear Kernel Attention.
         3. "linear" or "decay" with `use_decay_gating=True` -> Data-Dependent Exponential Decay Recurrent Attention.
         """
+        if hidden_states is None:
+            hidden_states = query if query is not None else key
+        if attention_mask is None:
+            attention_mask = mask
+
         # 1. Low-rank factorized projections for Q, K, V
         q = self._transpose_for_scores(self.q_proj(hidden_states))
         k = self._transpose_for_scores(self.k_proj(hidden_states))
