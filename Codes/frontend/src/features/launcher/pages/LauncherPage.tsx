@@ -12,6 +12,7 @@ import { MethodPicker } from "../components/MethodPicker";
 import { HyperparameterFields } from "../components/HyperparameterFields";
 import { PresetSelector } from "../components/PresetSelector";
 import { LaunchButton } from "../components/LaunchButton";
+import { PreFlightCheckModal } from "../components/PreFlightCheckModal";
 import {
   Rocket,
   Cpu,
@@ -48,6 +49,7 @@ export default function LauncherPage() {
   const [tab, setTab] = useState<JobType>("training");
   const [form, setForm] = useState(initialForm);
   const [selectedCluster, setSelectedCluster] = useState("local-triton");
+  const [showPreFlightModal, setShowPreFlightModal] = useState(false);
   const navigate = useNavigate();
 
   // Theoretical parameter reduction estimation
@@ -192,7 +194,7 @@ export default function LauncherPage() {
 
               <LaunchButton
                 loading={mutation.isPending}
-                onClick={() => mutation.mutate()}
+                onClick={() => setShowPreFlightModal(true)}
               />
             </div>
           </Card>
@@ -241,6 +243,18 @@ export default function LauncherPage() {
           </Card>
         </div>
       </div>
+
+      {/* Pre-Flight Validation Modal */}
+      <PreFlightCheckModal
+        isOpen={showPreFlightModal}
+        onClose={() => setShowPreFlightModal(false)}
+        jobConfig={{ ...form, cluster: selectedCluster }}
+        isLaunching={mutation.isPending}
+        onConfirmLaunch={(machine) => {
+          setSelectedCluster(machine.id);
+          mutation.mutate();
+        }}
+      />
     </div>
   );
 }
