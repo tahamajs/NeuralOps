@@ -251,8 +251,8 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
         save_strategy="no",  # STORAGE OPTIMIZATION: Do not save heavy intermediate checkpoints
         load_best_model_at_end=False,
         fp16=torch.cuda.is_available(),
-        dataloader_num_workers=2,
-        dataloader_pin_memory=torch.cuda.is_available(),
+        dataloader_num_workers=0,  # Windows PyTorch CUDA stability fix (prevents WinError 1455 paging error)
+        dataloader_pin_memory=False,
         remove_unused_columns=False,
         report_to="none",
         max_grad_norm=cfg.max_grad_norm,
