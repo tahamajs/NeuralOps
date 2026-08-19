@@ -37,6 +37,10 @@ export function useAgentChat(sessionId?: string) {
 
   // WebSocket connection
   useEffect(() => {
+    if (!sessionId || sessionId === "undefined" || sessionId.startsWith("temp-")) {
+      setWsStatus("closed");
+      return;
+    }
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
     const host =
       (import.meta as any).env?.VITE_WS_URL ||
