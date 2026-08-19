@@ -53,21 +53,21 @@ export function WorkspaceManager() {
     closeAllWindows?.();
     setTimeout(() => {
       if (presetKey === "coscientist") {
-        openWindow("terminal", { x: 50, y: 80, width: 620, height: 420 });
-        openWindow("chat", { x: 700, y: 80, width: 520, height: 600 });
-        openWindow("notes", { x: 50, y: 520, width: 620, height: 350 });
+        openWindow("terminal", { title: "Terminal", x: 50, y: 80, width: 620, height: 420 });
+        openWindow("chat", { title: "AI Chat", x: 700, y: 80, width: 520, height: 600 });
+        openWindow("notes", { title: "Notes", x: 50, y: 520, width: 620, height: 350 });
       } else if (presetKey === "gpu_market") {
-        openWindow("gpuMarketplace", { x: 60, y: 80, width: 750, height: 550 });
-        openWindow("gpuTradingTerminal", { x: 830, y: 80, width: 500, height: 550 });
-        openWindow("terminal", { x: 60, y: 650, width: 1270, height: 280 });
+        openWindow("marketplace", { title: "GPU Marketplace", x: 60, y: 80, width: 750, height: 550 });
+        openWindow("gpumarket", { title: "GPU Trading Terminal", x: 830, y: 80, width: 500, height: 550 });
+        openWindow("terminal", { title: "Terminal", x: 60, y: 650, width: 1270, height: 280 });
       } else if (presetKey === "svd_lab") {
-        openWindow("researchAnalysis", { x: 50, y: 80, width: 780, height: 580 });
-        openWindow("acceleratorDashboard", { x: 850, y: 80, width: 480, height: 580 });
-        openWindow("terminal", { x: 50, y: 680, width: 1280, height: 260 });
+        openWindow("analysis", { title: "Research Analysis", x: 50, y: 80, width: 780, height: 580 });
+        openWindow("accelerator", { title: "Experiment Accelerator", x: 850, y: 80, width: 480, height: 580 });
+        openWindow("terminal", { title: "Terminal", x: 50, y: 680, width: 1280, height: 260 });
       } else if (presetKey === "paper_suite") {
-        openWindow("paperEditor", { x: 60, y: 80, width: 760, height: 620 });
-        openWindow("citationGraphViewer", { x: 840, y: 80, width: 480, height: 620 });
-        openWindow("notes", { x: 60, y: 720, width: 1260, height: 220 });
+        openWindow("paper-editor", { title: "Paper Editor", x: 60, y: 80, width: 760, height: 620 });
+        openWindow("citation-graph", { title: "Citation Graph", x: 840, y: 80, width: 480, height: 620 });
+        openWindow("notes", { title: "Notes", x: 60, y: 720, width: 1260, height: 220 });
       }
       setFeedback("Preset workspace applied!");
       setTimeout(() => setFeedback(""), 2000);

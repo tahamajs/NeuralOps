@@ -33,11 +33,20 @@ export interface WindowItem {
   groupId?: string;
 }
 
+export interface OpenWindowOptions {
+  title?: string;
+  icon?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
 interface WindowStore {
   windows: WindowItem[];
   nextZIndex: number;
   addWindow: (type: string, title: string, icon?: string) => void;
-  openWindow: (type: string, title: string, icon?: string) => void;
+  openWindow: (type: string, options?: OpenWindowOptions) => void;
   removeWindow: (id: string) => void;
   closeAllWindows: () => void;
   updateWindow: (id: string, updates: Partial<WindowItem>) => void;
@@ -59,7 +68,29 @@ export const useWindowStore = create<WindowStore>()(
     (set, get) => ({
       windows: [],
       nextZIndex: 100,
-      openWindow: (type, title, icon) => get().addWindow(type, title, icon),
+      openWindow: (type, options = {}) => {
+        const count = get().windows.length;
+        const newZ = get().nextZIndex + 1;
+        set({
+          windows: [
+            ...get().windows,
+            {
+              id: uuid(),
+              type,
+              title: options.title ?? type,
+              icon: options.icon,
+              width: options.width ?? DEFAULT_WIDTH,
+              height: options.height ?? DEFAULT_HEIGHT,
+              x: options.x ?? (80 + ((count * CASCADE) % 300)),
+              y: options.y ?? (80 + ((count * CASCADE) % 300)),
+              zIndex: newZ,
+              minimized: false,
+              maximized: false,
+            },
+          ],
+          nextZIndex: newZ,
+        });
+      },
       closeAllWindows: () => set({ windows: [] }),
       addWindow: (type, title, icon) => {
         const count = get().windows.length;
