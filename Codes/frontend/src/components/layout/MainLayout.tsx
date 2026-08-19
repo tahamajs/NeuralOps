@@ -32,6 +32,7 @@ import {
   Layers,
   HelpCircle,
   Activity,
+  CheckCircle2,
 } from "lucide-react";
 
 export const MainLayout = () => {
@@ -43,7 +44,9 @@ export const MainLayout = () => {
   const notificationRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const [notifications, setNotifications] = useState([
+  const NOTIFICATIONS_STORAGE_KEY = "svd_platform_notifications_v2";
+
+  const defaultNotifications = [
     {
       id: "1",
       title: "SVD Compression Completed",
@@ -71,23 +74,58 @@ export const MainLayout = () => {
       type: "agent",
       link: "/agent",
     },
-  ]);
+  ];
+
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // Fallback
+    }
+    return defaultNotifications;
+  });
 
   const [notificationFilter, setNotificationFilter] = useState<"all" | "unread">("all");
 
+  const saveNotifications = (updated: typeof notifications) => {
+    setNotifications(updated);
+    try {
+      localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updated));
+    } catch {
+      // Ignore
+    }
+  };
+
   const markAllNotificationsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    saveNotifications(notifications.map((n) => ({ ...n, read: true })));
   };
 
   const clearAllNotifications = () => {
-    setNotifications([]);
+    saveNotifications([]);
+  };
+
+  const dismissNotification = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    saveNotifications(notifications.filter((n) => n.id !== id));
   };
 
   const markNotificationRead = (id: string, link?: string) => {
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    saveNotifications(notifications.map((n) => (n.id === id ? { ...n, read: true } : n)));
     if (link) {
       navigate(link);
       setShowNotifications(false);
+    }
+  };
+
+  const handleToggleNotifications = () => {
+    const nextState = !showNotifications;
+    setShowNotifications(nextState);
+    if (nextState) {
+      // When opened/seen, automatically mark all as read so the badge vanishes immediately
+      markAllNotificationsRead();
     }
   };
 
@@ -396,13 +434,14 @@ export const MainLayout = () => {
                 {/* Notifications Dropdown */}
                 <div className="relative" ref={notificationRef}>
                   <button
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className="p-2 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors relative"
+                    onClick={handleToggleNotifications}
+                    className="p-2 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-colors relative cursor-pointer"
                     aria-label="Notifications"
+                    title="Notifications"
                   >
                     <Bell size={18} />
                     {notifications.filter((n) => !n.read).length > 0 && (
-                      <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#38bdf8] ring-2 ring-[#080d19] animate-pulse" />
+                      <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_8px_#38bdf8] ring-2 ring-[#080d19]" />
                     )}
                   </button>
 
@@ -414,9 +453,15 @@ export const MainLayout = () => {
                           <h3 className="text-xs font-bold text-white uppercase tracking-wider">
                             Notifications
                           </h3>
-                          <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-bold">
-                            {notifications.filter((n) => !n.read).length} new
-                          </span>
+                          {notifications.filter((n) => !n.read).length > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-mono font-bold">
+                              {notifications.filter((n) => !n.read).length} new
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full bg-white/5 text-slate-400 text-[10px] font-mono">
+                              0 unread
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -430,33 +475,43 @@ export const MainLayout = () => {
                             onClick={clearAllNotifications}
                             className="text-[10px] text-slate-400 hover:text-red-400 transition-colors font-medium cursor-pointer"
                           >
-                            Clear
+                            Clear all
                           </button>
                         </div>
                       </div>
 
                       {/* Filter Pills */}
-                      <div className="flex items-center gap-1.5 mb-3">
-                        <button
-                          onClick={() => setNotificationFilter("all")}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                            notificationFilter === "all"
-                              ? "bg-white/10 text-white border border-white/20"
-                              : "text-slate-400 hover:text-white"
-                          }`}
-                        >
-                          All ({notifications.length})
-                        </button>
-                        <button
-                          onClick={() => setNotificationFilter("unread")}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
-                            notificationFilter === "unread"
-                              ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                              : "text-slate-400 hover:text-white"
-                          }`}
-                        >
-                          Unread ({notifications.filter((n) => !n.read).length})
-                        </button>
+                      <div className="flex items-center justify-between gap-1.5 mb-3">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => setNotificationFilter("all")}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                              notificationFilter === "all"
+                                ? "bg-white/10 text-white border border-white/20"
+                                : "text-slate-400 hover:text-white"
+                            }`}
+                          >
+                            All ({notifications.length})
+                          </button>
+                          <button
+                            onClick={() => setNotificationFilter("unread")}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                              notificationFilter === "unread"
+                                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                                : "text-slate-400 hover:text-white"
+                            }`}
+                          >
+                            Unread ({notifications.filter((n) => !n.read).length})
+                          </button>
+                        </div>
+                        {notifications.length > 0 && (
+                          <button
+                            onClick={clearAllNotifications}
+                            className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                          >
+                            Dismiss all
+                          </button>
+                        )}
                       </div>
 
                       {/* Notification Items */}
@@ -467,13 +522,13 @@ export const MainLayout = () => {
                             <div
                               key={n.id}
                               onClick={() => markNotificationRead(n.id, n.link)}
-                              className={`p-3 rounded-xl transition-all cursor-pointer border ${
+                              className={`group relative p-3 rounded-xl transition-all cursor-pointer border ${
                                 n.read
                                   ? "bg-white/[0.02] border-white/5 opacity-70 hover:opacity-100"
                                   : "bg-cyan-950/20 border-cyan-500/30 hover:border-cyan-500/60 shadow-lg shadow-cyan-500/5"
                               }`}
                             >
-                              <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center justify-between mb-1 pr-5">
                                 <span className="text-xs font-bold text-slate-200">
                                   {n.title}
                                 </span>
@@ -481,14 +536,24 @@ export const MainLayout = () => {
                                   {n.time}
                                 </span>
                               </div>
-                              <p className="text-xs text-slate-300 leading-relaxed">
+                              <p className="text-xs text-slate-300 leading-relaxed pr-4">
                                 {n.text}
                               </p>
+                              {/* Dismiss X button */}
+                              <button
+                                onClick={(e) => dismissNotification(n.id, e)}
+                                className="absolute top-2.5 right-2.5 p-1 text-slate-500 hover:text-red-400 rounded-md hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                                title="Dismiss notification"
+                              >
+                                <X size={12} />
+                              </button>
                             </div>
                           ))}
                         {notifications.filter((n) => notificationFilter === "all" || !n.read).length === 0 && (
-                          <div className="py-6 text-center text-xs text-slate-500 font-mono">
-                            No notifications to display
+                          <div className="py-8 text-center text-xs text-slate-500 font-mono space-y-1">
+                            <CheckCircle2 size={24} className="mx-auto text-slate-600 mb-2" />
+                            <p>No notifications to display</p>
+                            <p className="text-[10px] text-slate-600">All caught up</p>
                           </div>
                         )}
                       </div>
