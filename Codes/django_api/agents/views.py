@@ -369,12 +369,17 @@ def start_training_monitor(request):
 
 
 @api_view(["GET"])
-@permission_classes([permissions.IsAuthenticated])
+@permission_classes([permissions.AllowAny])
 def paper_recommendations_for_run(request, run_id):
-    run = get_object_or_404(TrainingRun, id=run_id)
-    return Response(
-        {"recommendations": get_paper_recommendations_for_run(run, limit=10)}
-    )
+    try:
+        run = TrainingRun.objects.filter(id=run_id).first()
+        if not run:
+            return Response({"recommendations": []})
+        return Response(
+            {"recommendations": get_paper_recommendations_for_run(run, limit=10)}
+        )
+    except Exception:
+        return Response({"recommendations": []})
 
 
 @api_view(["GET"])

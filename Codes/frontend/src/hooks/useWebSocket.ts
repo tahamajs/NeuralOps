@@ -26,7 +26,9 @@ export function useWebSocket(experimentId: string | undefined) {
       const protocol = window.location.protocol === "https:" ? "wss" : "ws";
       const wsUrl =
         (import.meta as any).env?.VITE_WS_URL ||
-        `${protocol}://${window.location.host}`;
+        (window.location.port === "3000"
+          ? `${protocol}://${window.location.hostname}:8000`
+          : `${protocol}://${window.location.host}`);
       const url = `${wsUrl}/ws/experiments/${experimentId}/`;
       const socket = new WebSocket(url);
       wsRef.current = socket;
