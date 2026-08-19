@@ -19,35 +19,39 @@ export default function DataLineagePage() {
         DATA <span className="text-neon-blue">LINEAGE</span>
       </h1>
       <Card>
-        {!data?.datasets?.length ? (
+        {!data || (!data.datasets?.length && !data.transformations?.length) ? (
           <p className="text-slate-500">No lineage data recorded.</p>
         ) : (
           <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-white mb-2">Datasets</h3>
-              {data.datasets.map((ds: any, i: number) => (
-                <div key={i} className="bg-cyber-800 p-3 rounded mb-2 text-xs">
-                  <p className="font-mono text-neon-blue">{ds.name}</p>
-                  <p className="text-slate-400">
-                    Version: {ds.version || "N/A"} | Checksum:{" "}
-                    {ds.checksum?.slice(0, 12)}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-white mb-2">
-                Transformations
-              </h3>
-              {data.transformations.map((t: any, i: number) => (
-                <div key={i} className="bg-cyber-800 p-3 rounded mb-2 text-xs">
-                  <p className="text-slate-400">
-                    {t.name}: {t.input} → {t.output}
-                  </p>
-                </div>
-              ))}
-            </div>
-            {data.model_trained_on?.length > 0 && (
+            {data.datasets && data.datasets.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-white mb-2">Datasets</h3>
+                {data.datasets.map((ds: any, i: number) => (
+                  <div key={i} className="bg-cyber-800 p-3 rounded mb-2 text-xs">
+                    <p className="font-mono text-neon-blue">{ds.name || ds.label}</p>
+                    <p className="text-slate-400">
+                      Version: {ds.version || "N/A"} | Checksum:{" "}
+                      {ds.checksum?.slice(0, 12) || "—"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {data.transformations && data.transformations.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-white mb-2">
+                  Transformations
+                </h3>
+                {data.transformations.map((t: any, i: number) => (
+                  <div key={i} className="bg-cyber-800 p-3 rounded mb-2 text-xs">
+                    <p className="text-slate-400">
+                      {t.name}: {t.input} → {t.output}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {data.model_trained_on && data.model_trained_on.length > 0 && (
               <div>
                 <h3 className="text-sm font-bold text-white mb-2">
                   Model Trained On
@@ -57,8 +61,8 @@ export default function DataLineagePage() {
                     key={i}
                     className="bg-cyber-800 p-3 rounded mb-2 text-xs"
                   >
-                    <p>Model version: {m.model_version}</p>
-                    <p>Checksums: {m.dataset_checksums.join(", ")}</p>
+                    <p>Model version: {m.model_version || "v1.0"}</p>
+                    <p>Checksums: {Array.isArray(m.dataset_checksums) ? m.dataset_checksums.join(", ") : "—"}</p>
                   </div>
                 ))}
               </div>

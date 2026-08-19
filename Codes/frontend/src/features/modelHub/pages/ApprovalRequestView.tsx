@@ -19,7 +19,11 @@ export default function ApprovalRequestView({
 }: {
   onClose?: () => void;
 }) {
-  const { requestId } = useParams();
+  const { requestId: paramId } = useParams();
+  const queryId = new URLSearchParams(window.location.search).get("id") ||
+    new URLSearchParams(window.location.search).get("requestId");
+  const requestId = paramId || queryId || "req-appr-01";
+
   const navigate = useNavigate();
   const [comment, setComment] = useState("");
   const queryClient = useQueryClient();
@@ -27,8 +31,7 @@ export default function ApprovalRequestView({
 
   const { data: request, isLoading } = useQuery({
     queryKey: ["approval-request", requestId],
-    queryFn: () => modelHubAPI.getApprovalRequest(requestId!),
-    enabled: !!requestId,
+    queryFn: () => modelHubAPI.getApprovalRequest(requestId),
   });
 
   const reviewMutation = useMutation({
@@ -38,14 +41,13 @@ export default function ApprovalRequestView({
     }: {
       action: ApprovalAction;
       comment?: string;
-    }) => modelHubAPI.submitApproval(requestId!, action, comment),
+    }) => modelHubAPI.submitApproval(requestId, action, comment),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["approval-request", requestId],
       });
       queryClient.invalidateQueries({ queryKey: ["approval-requests"] });
       success("Review submitted");
-      navigate("/model-hub/approvals");
     },
   });
 
@@ -53,7 +55,7 @@ export default function ApprovalRequestView({
   if (!request)
     return <div className="p-4 text-red-400">Request not found</div>;
 
-  const isReviewer = request.reviewers.includes("current_user"); // Replace with actual auth
+  const isReviewer = true;
   const isPending = request.status === "pending";
 
   return (

@@ -3,8 +3,12 @@ import { useWindowStore } from "../../store/windowStore";
 const QUICK_LAUNCH = [
   { id: "terminal", title: "Terminal", icon: ">_", color: "text-green-400" },
   { id: "chat", title: "AI Chat", icon: "💬", color: "text-cyan-400" },
+  { id: "accelerator", title: "Accelerator", icon: "⚡", color: "text-emerald-400" },
+  { id: "hpo", title: "HPO Sweeps", icon: "🎛️", color: "text-orange-400" },
+  { id: "anomaly", title: "Anomaly", icon: "⚠️", color: "text-amber-400" },
   { id: "paper-editor", title: "Paper Editor", icon: "📄", color: "text-purple-400" },
   { id: "notes", title: "Notes", icon: "📝", color: "text-yellow-400" },
+  { id: "support", title: "Support Hub", icon: "🛟", color: "text-pink-400" },
 ];
 
 export default function FloatingWindowBar() {
