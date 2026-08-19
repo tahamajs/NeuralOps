@@ -183,19 +183,43 @@ export const useWindowStore = create<WindowStore>()(
       loadLayout: (name) => {
         const raw = localStorage.getItem(`workspace-${name}`);
         if (raw) {
-          const layout = JSON.parse(raw);
-          set({
-            windows: layout.map((w: any) => ({
-              ...w,
-              zIndex: 0,
-              minimized: false,
-              maximized: false,
-            })),
-            nextZIndex: 100,
-          });
+          try {
+            const layout = JSON.parse(raw);
+            if (Array.isArray(layout)) {
+              set({
+                windows: layout.map((w: any) => ({
+                  ...w,
+                  title: typeof w.title === "string" ? w.title : (typeof w.type === "string" ? w.type : "Window"),
+                  icon: typeof w.icon === "string" ? w.icon : "▣",
+                  zIndex: 0,
+                  minimized: false,
+                  maximized: false,
+                })),
+                nextZIndex: 100,
+              });
+            }
+          } catch {
+            // ignore
+          }
         }
       },
     }),
-    { name: "neuralops-windows" },
+    {
+      name: "neuralops-windows",
+      onRehydrateStorage: () => (state) => {
+        if (state && Array.isArray(state.windows)) {
+          state.windows = state.windows.map((w: any) => ({
+            ...w,
+            title:
+              typeof w.title === "string"
+                ? w.title
+                : typeof w.type === "string"
+                ? w.type.charAt(0).toUpperCase() + w.type.slice(1).replace(/-/g, " ")
+                : "Window",
+            icon: typeof w.icon === "string" ? w.icon : "▣",
+          }));
+        }
+      },
+    },
   ),
 );
