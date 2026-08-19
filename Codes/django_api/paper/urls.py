@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     # Standalone Live Compiler & Monograph Stream
     path("compile-pdf/", views.compile_standalone_pdf, name="paper_compile_standalone"),
+    path("load-source/", views.load_paper_source, name="paper_load_source"),
     path("download-monograph-pdf/", views.download_monograph_pdf, name="paper_download_monograph_pdf"),
     # Projects
     path("projects/", views.project_list, name="paper_project_list"),
