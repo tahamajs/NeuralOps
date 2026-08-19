@@ -176,9 +176,22 @@ class MegaOrchestrator:
 
         # 3c. Apply training method (LoRA, R-Drop, etc.)
         if cfg.get("method") and cfg.get("method") != "baseline":
-            from framework.trainer.methods.registry import METHOD_REGISTRY
+            from framework.trainer.methods.registry import METHOD_REGISTRY, get_method
 
-            method = METHOD_REGISTRY.resolve(cfg["method"])
+            method_name = cfg["method"]
+            method = None
+            if hasattr(METHOD_REGISTRY, "resolve"):
+                method = METHOD_REGISTRY.resolve(method_name)
+            if not method:
+                fn = get_method(method_name) if callable(get_method) else METHOD_REGISTRY.get(method_name)
+                if fn:
+                    class MethodWrapper:
+                        def __init__(self, f):
+                            self.f = f
+                        def apply(self, m, c):
+                            res = self.f(m, c)
+                            return res if res is not None else m
+                    method = MethodWrapper(fn)
             if method:
                 self.model = method.apply(self.model, cfg)
 
