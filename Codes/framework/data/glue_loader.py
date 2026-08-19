@@ -69,6 +69,13 @@ def load_glue_local(task_name: str, base_path: str = None) -> DatasetDict:
         if "train" in splits:
             return DatasetDict(splits)
 
+    # Check for on-disk pre-saved dataset
+    from pathlib import Path
+    local_disk_dir = Path(__file__).resolve().parent / "glue_data" / task_name
+    if local_disk_dir.exists():
+        from datasets import load_from_disk
+        return load_from_disk(str(local_disk_dir))
+
     # Fallback to HuggingFace datasets hub (ideal for Kaggle / Colab / cloud)
     from datasets import load_dataset as hf_load_dataset
     try:
