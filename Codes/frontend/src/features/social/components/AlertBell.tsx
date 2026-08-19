@@ -26,8 +26,15 @@ export function AlertBell() {
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-lg hover:bg-white/5 transition-colors"
+        onClick={() => {
+          const nextState = !open;
+          setOpen(nextState);
+          if (nextState && unreadCount > 0) {
+            markAllRead.mutate();
+          }
+        }}
+        className="relative p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+        aria-label="Alerts"
       >
         <Bell
           size={18}
