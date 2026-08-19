@@ -258,6 +258,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
         report_to="none",
         max_grad_norm=cfg.max_grad_norm,
         gradient_checkpointing=cfg.gradient_checkpointing,
+        save_safetensors=False,
     )
 
     compute_metrics = fw["get_task_metrics"](cfg.task)
