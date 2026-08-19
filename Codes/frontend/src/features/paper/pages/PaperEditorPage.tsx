@@ -175,6 +175,8 @@ export default function PaperEditorPage() {
     setTimeout(() => setCopiedCode(false), 2000);
   };
 
+  const [editorMode, setEditorMode] = useState<"monaco" | "raw">("monaco");
+
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] max-w-7xl mx-auto p-4 space-y-4">
       <div className="glass px-5 py-3 rounded-2xl border border-white/10 flex items-center justify-between gap-3 flex-wrap shadow-xl">
@@ -236,31 +238,31 @@ export default function PaperEditorPage() {
         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">Insert Math:</span>
         <button
           onClick={() => insertSnippet("\\mathrm{St}(d, r) = \\{W \\in \\mathbb{R}^{d \\times r} \\mid W^\\top W = I_r\\}")}
-          className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors"
+          className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors cursor-pointer"
         >
           {"$W^⊤ W = I$"}
         </button>
         <button
           onClick={() => insertSnippet("\\mathrm{grad} \\mathcal{L}(W) = G - W G^\\top W")}
-          className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors"
+          className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors cursor-pointer"
         >
           {"grad L(W)"}
         </button>
         <button
           onClick={() => insertSnippet("r_l = r_{\\min} + \\lfloor (r_{\\max} - r_{\\min}) \\cdot \\frac{H(\\Sigma_l)}{\\max_j H(\\Sigma_j)} \\rfloor")}
-          className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors"
+          className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors cursor-pointer"
         >
           {"r_l ∝ H(Σ_l)"}
         </button>
         <button
           onClick={() => insertSnippet("\\mathrm{Retr}_W(\\xi) = \\mathrm{qf}(W + \\xi)")}
-          className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors"
+          className="bg-white/5 hover:bg-cyan-500/20 px-2 py-1 rounded text-cyan-300 font-mono transition-colors cursor-pointer"
         >
           {"Retr_W(ξ)"}
         </button>
         <button
           onClick={() => insertSnippet("\\begin{equation}\n  \\mathcal{L}_{\\text{total}} = \\mathcal{L}_{\\text{task}} + \\lambda \\|A^\\top A - I\\|_F^2\n\\end{equation}")}
-          className="bg-white/5 hover:bg-purple-500/20 px-2 py-1 rounded text-purple-300 font-mono transition-colors"
+          className="bg-white/5 hover:bg-purple-500/20 px-2 py-1 rounded text-purple-300 font-mono transition-colors cursor-pointer"
         >
           Equation Block
         </button>
@@ -272,6 +274,28 @@ export default function PaperEditorPage() {
             <div className="flex items-center gap-2">
               <Code size={14} className="text-cyan-400" />
               <span className="text-xs font-bold text-white font-mono">main.tex</span>
+              <div className="flex items-center gap-1 bg-black/40 p-0.5 rounded-lg border border-white/10 ml-2">
+                <button
+                  onClick={() => setEditorMode("monaco")}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    editorMode === "monaco"
+                      ? "bg-cyan-500 text-black shadow"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Monaco IDE
+                </button>
+                <button
+                  onClick={() => setEditorMode("raw")}
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    editorMode === "raw"
+                      ? "bg-cyan-500 text-black shadow"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  Raw Editor
+                </button>
+              </div>
             </div>
             <span className="text-[10px] font-mono text-slate-400">
               {latexSource.split("\n").length} lines · UTF-8
@@ -279,11 +303,20 @@ export default function PaperEditorPage() {
           </div>
 
           <div className="flex-1 relative">
-            <MonacoEditor
-              value={latexSource}
-              onChange={(val) => setLatexSource(val || "")}
-              editorRef={editorRef}
-            />
+            {editorMode === "monaco" ? (
+              <MonacoEditor
+                value={latexSource}
+                onChange={(val) => setLatexSource(val || "")}
+                editorRef={editorRef}
+              />
+            ) : (
+              <textarea
+                value={latexSource}
+                onChange={(e) => setLatexSource(e.target.value)}
+                className="w-full h-full p-4 bg-[#1e1e1e] text-slate-200 font-mono text-xs focus:outline-none resize-none selection:bg-cyan-500 selection:text-black leading-relaxed"
+                spellCheck={false}
+              />
+            )}
           </div>
         </div>
 
@@ -369,13 +402,13 @@ export default function PaperEditorPage() {
                     1. Riemannian Stiefel Optimization
                   </h3>
                   <p className="text-slate-800 text-justify">
-                    Given the orthogonal basis update $W \in \mathrm{St}(d, r)$, the Riemannian gradient is obtained by projecting Euclidean gradient $G = \nabla_W \mathcal{L}$ onto the horizontal tangent space:
+                    Given the orthogonal basis update W &isin; St(d, r), the Riemannian gradient is obtained by projecting Euclidean gradient G = &nabla;<sub>W</sub> L onto the horizontal tangent space:
                   </p>
                   <div className="my-2 p-2 bg-slate-100 rounded text-center font-mono text-[11px] text-indigo-900 font-bold">
                     grad L(W) = G - W Gᵀ W
                   </div>
                   <p className="text-slate-800 text-justify">
-                    The QR-based retraction mapping tangent vectors $\xi \in T_W \mathrm{St}(d, r)$ back onto the Stiefel manifold satisfies $\mathrm{Retr}_W(\xi) = \mathrm{qf}(W + \xi)$ with non-zero singular value convergence.
+                    The QR-based retraction mapping tangent vectors &xi; &isin; T<sub>W</sub>St(d, r) back onto the Stiefel manifold satisfies Retr<sub>W</sub>(&xi;) = qf(W + &xi;) with non-zero singular value convergence.
                   </p>
                 </div>
 
