@@ -77,7 +77,12 @@ export function useResearchWebSocket(
     }
 
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-    const wsUrl = `${protocol}://${window.location.host}/ws/chat/${sessionId}/?token=${token}`;
+    const host =
+      (import.meta as any).env?.VITE_WS_URL ||
+      (window.location.port === "3000"
+        ? `${window.location.hostname}:8000`
+        : `${window.location.host}`);
+    const wsUrl = `${protocol}://${host}/ws/chat/${sessionId}/?token=${token}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
     updateStatus("connecting");
@@ -107,7 +112,6 @@ export function useResearchWebSocket(
     };
 
     ws.onerror = (event) => {
-      console.error("WebSocket error", event);
       updateStatus("error");
       onError?.(event);
     };
