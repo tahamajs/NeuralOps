@@ -37,7 +37,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # ---------------------------------------------------------------------------
-# Bootstrap: add framework root to sys.path so bare `python main.py` works
+# Bootstrap: add framework root to sys.path and configure HF mirror/cache
 # ---------------------------------------------------------------------------
 _HERE = Path(__file__).resolve().parent
 _CODES = _HERE.parent  # /Users/tahamajs/Documents/uni/Project/Codes
@@ -45,6 +45,27 @@ if str(_CODES) not in sys.path:
     sys.path.insert(0, str(_CODES))
 if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
+
+# Mirror and cache defaults
+if "HF_ENDPOINT" not in os.environ:
+    os.environ["HF_ENDPOINT"] = "https://hf.devneeds.ir"
+os.environ.setdefault("HF_HUB_ETAG_TIMEOUT", "300")
+os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "120")
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
+# Point to local cache if present
+_potential_caches = [
+    _CODES.parent / "cache",
+    Path.home() / ".cache" / "huggingface" / "hub",
+    Path("C:/Users/Hadi Schumacher/SVD_Project/cache"),
+    Path("C:/Users/Hadi Schumacher/.cache/huggingface/hub"),
+]
+for pc in _potential_caches:
+    if pc.exists():
+        os.environ.setdefault("HF_HOME", str(pc))
+        os.environ.setdefault("HF_HUB_CACHE", str(pc))
+        os.environ.setdefault("TRANSFORMERS_CACHE", str(pc))
+        break
 
 # ---------------------------------------------------------------------------
 # Lazy heavy imports (torch / transformers loaded only when needed)
