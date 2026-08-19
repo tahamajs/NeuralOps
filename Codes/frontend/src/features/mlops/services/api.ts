@@ -739,11 +739,11 @@ export const mlopsAPI = {
       current_histogram: [12, 28, 42, 70, 64, 38, 14, 6],
     };
 
-    const monitors = getStoredDriftMonitors().map((m) =>
+    const monitors = (getStoredDriftMonitors().map((m) =>
       m.id === monitorId
         ? { ...m, status, current_p_value: p_value, current_divergence: divergence, last_checked_at: new Date().toISOString() }
         : m
-    );
+    )) as DriftMonitor[];
     saveStoredDriftMonitors(monitors);
     return check;
   },

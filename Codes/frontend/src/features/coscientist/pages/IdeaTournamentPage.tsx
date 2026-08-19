@@ -128,8 +128,8 @@ export default function IdeaTournamentPage({
 
   const startMutation = useMutation({
     mutationFn: () => coscientistAPI.startSession(goal, config),
-    onSuccess: (res) => {
-      const newId = res.data?.session_id || res.data?.id || "demo-session";
+    onSuccess: (res: any) => {
+      const newId = res?.data?.session_id || res?.data?.id || res?.session_id || res?.id || "demo-session";
       setSessionId(newId);
       setIsCreating(false);
       success(

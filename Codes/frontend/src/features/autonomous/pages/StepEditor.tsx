@@ -52,7 +52,7 @@ export default function StepEditor({ onClose }: { onClose?: () => void }) {
 
   useEffect(() => {
     if (existingDef) {
-      setDefinition(existingDef.data || existingDef);
+      setDefinition((existingDef as any).data || existingDef);
     }
   }, [existingDef]);
 
@@ -65,7 +65,7 @@ export default function StepEditor({ onClose }: { onClose?: () => void }) {
       queryClient.invalidateQueries({ queryKey: ["workflow-definitions"] });
       success("Workflow saved successfully");
       if (saved?.data?.id || saved?.id) {
-        navigate(`/autonomous/definitions/${saved.data?.id || saved.id}`);
+        navigate(`/autonomous/definitions/${saved?.data?.id || saved?.id}`);
       }
     },
     onError: () => {

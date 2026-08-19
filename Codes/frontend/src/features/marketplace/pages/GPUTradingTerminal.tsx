@@ -163,7 +163,11 @@ export default function GPUTradingTerminal({
   });
 
   const activeAsset = useMemo(() => {
-    const raw = Array.isArray(listingsData?.data) ? listingsData.data : [];
+    const raw: any[] = Array.isArray((listingsData as any)?.data)
+      ? (listingsData as any).data
+      : Array.isArray(listingsData)
+      ? (listingsData as any)
+      : [];
     const foundInApi = raw.find((l: any) => l.id === selectedAssetId);
     if (foundInApi) {
       return {
