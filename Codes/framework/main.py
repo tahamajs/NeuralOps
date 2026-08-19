@@ -298,9 +298,16 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     rw.save_plots(trainer.state.log_history)
     rw.write_summary_md(exp_name, cfg, eval_result, elapsed)
 
-    # Clean intermediate checkpoint disk space
+    # Storage Zero-Bloat Guarantee: Clean all weight binaries and checkpoints
     import shutil
     shutil.rmtree(out_dir / "checkpoints", ignore_errors=True)
+    shutil.rmtree(out_dir / "model", ignore_errors=True)
+    for p in out_dir.glob("*.bin"):
+        p.unlink(missing_ok=True)
+    for p in out_dir.glob("*.safetensors"):
+        p.unlink(missing_ok=True)
+    for p in out_dir.glob("*.pt"):
+        p.unlink(missing_ok=True)
 
     if getattr(cfg, "save_model", False):
         model_dir = out_dir / "model"
