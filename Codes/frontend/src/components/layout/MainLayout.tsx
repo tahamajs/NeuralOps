@@ -469,11 +469,8 @@ export const MainLayout = () => {
             <ErrorBoundary>
               <Suspense
                 fallback={
-                  <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
-                    <Spinner size="lg" />
-                    <p className="text-xs text-slate-500 font-mono tracking-wider animate-pulse">
-                      Loading NeuralOps module...
-                    </p>
+                  <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 animate-fade-in">
+                    <Spinner size="xl" label="Synchronizing NeuralOps Quantum Workspace..." />
                   </div>
                 }
               >
