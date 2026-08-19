@@ -22,6 +22,14 @@ export function DockableWindow({
   const { windows } = useWindowStore();
   const minimizedWindows = windows.filter((w) => w.minimized);
 
+  const displayTitle =
+    typeof win.title === "string"
+      ? win.title
+      : typeof win.type === "string"
+      ? win.type.charAt(0).toUpperCase() + win.type.slice(1).replace(/-/g, " ")
+      : "Window";
+  const displayIcon = typeof win.icon === "string" ? win.icon : "▣";
+
   if (win.minimized) {
     const minIdx = minimizedWindows.findIndex((w) => w.id === win.id);
     const offsetLeft = 16 + minIdx * 160; // 160px spacing for each item
@@ -32,8 +40,8 @@ export function DockableWindow({
         style={{ left: `${offsetLeft}px` }}
       >
         <span className="truncate flex items-center gap-1.5">
-          <span>{win.icon || "▣"}</span>
-          <span className="truncate">{win.title}</span>
+          <span>{displayIcon}</span>
+          <span className="truncate">{displayTitle}</span>
         </span>
         <button
           onClick={(e) => {
@@ -83,8 +91,8 @@ export function DockableWindow({
     >
       <div className="window-drag-handle flex items-center justify-between bg-black/40 px-3 py-2 cursor-move border-b border-white/10">
         <div className="flex items-center gap-2 text-sm font-mono text-neon-mint">
-          {win.icon && <span>{win.icon}</span>}
-          <span>{win.title}</span>
+          {displayIcon && <span>{displayIcon}</span>}
+          <span>{displayTitle}</span>
         </div>
         <div className="flex gap-1">
           <button
