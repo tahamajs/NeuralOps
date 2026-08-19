@@ -31,8 +31,13 @@ export default function TerminalPanel({ onClose }: TerminalPanelProps) {
       return;
 
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const host =
+      (import.meta as any).env?.VITE_WS_URL ||
+      (window.location.port === "3000"
+        ? `${protocol}://${window.location.hostname}:8000`
+        : `${protocol}://${window.location.host}`);
     const token = getAuthToken();
-    const url = `${protocol}://${window.location.host}/ws/terminal/?token=${token}`;
+    const url = `${host}/ws/terminal/?token=${token}`;
     const ws = new WebSocket(url);
     wsRef.current = ws;
     setStatus("connecting");
