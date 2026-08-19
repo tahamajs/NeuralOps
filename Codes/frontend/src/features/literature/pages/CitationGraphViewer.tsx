@@ -35,6 +35,18 @@ export default function CitationGraphViewer({
     queryFn: () => literatureAPI.getFeed(),
   });
 
+  const landscapesList = Array.isArray(landscapes)
+    ? landscapes
+    : Array.isArray((landscapes as any)?.results)
+      ? (landscapes as any).results
+      : [];
+
+  const feedList = Array.isArray(feed)
+    ? feed
+    : Array.isArray((feed as any)?.results)
+      ? (feed as any).results
+      : [];
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex justify-between items-center p-4 border-b border-white/10">
@@ -51,10 +63,10 @@ export default function CitationGraphViewer({
             <TerminalCard className="p-2" style={{ height: "500px" }}>
               {isLoading ? (
                 <Spinner />
-              ) : graph ? (
+              ) : graph && Array.isArray((graph as any).nodes) ? (
                 <ForceGraph
-                  nodes={graph.nodes}
-                  links={graph.links}
+                  nodes={(graph as any).nodes}
+                  links={(graph as any).links || []}
                   onNodeClick={(node) => setPaperId(node.id)}
                   height={460}
                 />
@@ -78,14 +90,14 @@ export default function CitationGraphViewer({
           </TabList>
           <TabPanel value="landscapes">
             <div className="grid md:grid-cols-2 gap-3">
-              {(landscapes || []).map((l) => (
+              {landscapesList.map((l: any) => (
                 <LandscapeCard key={l.id} landscape={l} />
               ))}
             </div>
           </TabPanel>
           <TabPanel value="feed">
             <div className="space-y-2">
-              {(feed || []).slice(0, 10).map((f) => (
+              {feedList.slice(0, 10).map((f: any) => (
                 <FeedItemComponent key={f.id} item={f} />
               ))}
             </div>
