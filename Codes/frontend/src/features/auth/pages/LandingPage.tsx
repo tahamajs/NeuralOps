@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
 import {
   Terminal,
   Brain,
@@ -42,6 +43,13 @@ import { PreFlightCheckModal } from "../../launcher/components/PreFlightCheckMod
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
   const [copiedBibtex, setCopiedBibtex] = useState(false);
   const [copiedInstallCmd, setCopiedInstallCmd] = useState(false);
   const [selectedOS, setSelectedOS] = useState<"mac" | "linux" | "windows" | "docker" | "pip">("mac");
