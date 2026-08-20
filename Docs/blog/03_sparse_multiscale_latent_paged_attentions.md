@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Live Empirical Trajectories:** As part of this comprehensive review, we are actively executing a 120-run GPU benchmark grid. You will find the **real-time training loss charts, hyperparameters, and GLUE metrics** dynamically injected at the absolute bottom of this article. These metrics synchronize directly from the GPU orchestrator every 60 seconds.
+
 # ⚡ Part 3: Sparse, Multi-Scale, Latent & Paged Attention Architectures
 
 > **The Architectural Playbook for Long-Context LLMs: How Latent Bottlenecks, Virtual Memory Paging, Hardware-Aware Tiling, and Dynamic Sparsity Break the $O(N^2)$ Complexity Wall.**
