@@ -99,3 +99,4 @@ ompleted)
 [2026-08-20 22:54:53] [Worker-3] [33/120] << SUCCESS: attn=full | task=qnli | Acc: 85.15% | F1: 85.15% | Loss: 0.3472 | Time: 616.1s
 [2026-08-20 22:54:56] [Worker-3] [35/120] >> Launching: attn=performer | task=qnli | seed=42
 [2026-08-20 22:58:13] [Worker-2] [34/120] << SUCCESS: attn=lora_attn | task=qnli | Acc: 49.46% | F1: 33.09% | Loss: nan | Time: 403.3s
+[2026-08-20 22:58:15] [Worker-2] [36/120] >> Launching: attn=nystrom | task=qnli | seed=42
