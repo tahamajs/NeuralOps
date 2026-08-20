@@ -151,9 +151,9 @@ class MinimalPRISMAttention(BaseAttention):
         )
         if mask is not None:
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-                token_valid = mask[:, 0, 0, :] > -1e9
+                token_valid = mask[:, 0, 0, :] > -10000.0
             elif mask.dim() == 4:
-                token_valid = mask.squeeze(1).squeeze(1) > -1e9
+                token_valid = mask.squeeze(1).squeeze(1) > -10000.0
             elif mask.dim() == 3:
                 token_valid = mask.squeeze(1).bool()
             elif mask.dim() == 2:

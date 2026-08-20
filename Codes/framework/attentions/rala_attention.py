@@ -71,7 +71,7 @@ class RALALinearAttention(nn.Module):
         else:
             mask = attention_mask
         mask_val: torch.Tensor = (
-            (1.0 - mask.to(torch.float32)).clamp(min=0) * -1e9
+            (1.0 - mask.to(torch.float32)).clamp(min=0) * -10000.0
         )
         return k + mask_val.to(k.dtype)
 

@@ -132,7 +132,7 @@ class SOAFusedAttention(nn.Module):
         if mask is not None:
             if mask.dim() == 2:
                 mask = mask[:, None, None, :].to(scores.dtype)
-                scores = scores + (1.0 - mask) * -1e9
+                scores = scores + (1.0 - mask) * -10000.0
             elif mask.dim() == 3:
                 scores = scores + mask.unsqueeze(1)
             else:

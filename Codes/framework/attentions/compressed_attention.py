@@ -138,7 +138,7 @@ class CompressedAttentionLayer(nn.Module):
             attn_scores = attn_scores + attn_mask
         if key_padding_mask is not None:
             attn_scores = attn_scores.masked_fill(
-                key_padding_mask.unsqueeze(1).unsqueeze(2), -1e9
+                key_padding_mask.unsqueeze(1).unsqueeze(2), -10000.0
             )
 
         attn_weights = F.softmax(attn_scores, dim=-1)
@@ -273,7 +273,7 @@ class CompressedAttentionLayer2(nn.Module):
             attn_scores = attn_scores + attn_mask
         if key_padding_mask is not None:
             attn_scores = attn_scores.masked_fill(
-                key_padding_mask.unsqueeze(1).unsqueeze(2), -1e9
+                key_padding_mask.unsqueeze(1).unsqueeze(2), -10000.0
             )
 
         attn_weights = F.softmax(attn_scores, dim=-1)

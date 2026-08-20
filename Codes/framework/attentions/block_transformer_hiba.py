@@ -185,7 +185,7 @@ class BlockTransformerHIBA(BaseAttention):
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
                     mask_4d = attention_mask.unsqueeze(1).unsqueeze(2).float()
-                    scores = scores + (1.0 - mask_4d) * -1e9
+                    scores = scores + (1.0 - mask_4d) * -10000.0
                 elif attention_mask.dim() == 4:
                     scores = scores + attention_mask.float()
             attn_probs = F.softmax(scores, dim=-1)

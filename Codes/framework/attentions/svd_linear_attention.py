@@ -478,7 +478,7 @@ class SVDLinearAttention(BaseAttention):
         if mask is not None:
             # RESEARCH FIX: Universal mask conversion for 2D [B, N], 3D [B, 1, N], and 4D [B, 1, 1, N] tensors
             if mask.dtype in (torch.float16, torch.float32, torch.float64, torch.bfloat16):
-                mask_binary = (mask > -1e4).to(phi_k.dtype) if (mask < 0).any() else mask.to(phi_k.dtype)
+                mask_binary = (mask > -10000.0).to(phi_k.dtype) if (mask < 0).any() else mask.to(phi_k.dtype)
             else:
                 mask_binary = mask.to(phi_k.dtype)
 
@@ -574,7 +574,7 @@ class SVDLinearAttention(BaseAttention):
 
         if mask is not None:
             if mask.dtype in (torch.float16, torch.float32, torch.float64, torch.bfloat16):
-                mask_binary = (mask > -1e4).to(phi_k.dtype) if (mask < 0).any() else mask.to(phi_k.dtype)
+                mask_binary = (mask > -10000.0).to(phi_k.dtype) if (mask < 0).any() else mask.to(phi_k.dtype)
             else:
                 mask_binary = mask.to(phi_k.dtype)
 

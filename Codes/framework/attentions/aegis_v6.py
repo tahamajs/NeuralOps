@@ -403,7 +403,7 @@ class AegisAttentionV3(BaseAttention):
             v_tile = V[:, :, k_start:k_end, :]
 
             kv_mask = pad_mask_1d[:, :, :, k_start:k_end].to(q_tile.dtype)
-            attn_mask = (1.0 - kv_mask) * -1e9
+            attn_mask = (1.0 - kv_mask) * -10000.0
 
             if square_mask is not None:
                 tile_sq_mask = square_mask[:, :, start:end, k_start:k_end]
@@ -415,7 +415,7 @@ class AegisAttentionV3(BaseAttention):
             attn_mask = attn_mask + win_mask
 
             q_mask = pad_mask_1d[:, :, :, start:end].to(q_tile.dtype)
-            q_mask_inv = (1.0 - q_mask) * -1e9
+            q_mask_inv = (1.0 - q_mask) * -10000.0
             attn_mask = attn_mask + q_mask_inv.transpose(-2, -1)
 
             tile_out = F.scaled_dot_product_attention(
@@ -436,7 +436,7 @@ class AegisAttentionV3(BaseAttention):
         kv_idx = torch.arange(kvlen, device=self.kernel_map.proj.device) + kv_start
         dist = (q_idx.unsqueeze(-1) - kv_idx.unsqueeze(-2)).abs()
         win = (dist < self.window).float()
-        return (1.0 - win) * -1e9
+        return (1.0 - win) * -10000.0
 
     def _global_linear_attention(
         self,
@@ -513,7 +513,7 @@ class AegisAttentionV3(BaseAttention):
             elif mask_tensor.dim() == 3:
                 if mask_tensor.size(1) == mask_tensor.size(2):
                     square_mask = mask_tensor.unsqueeze(1)
-                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -1e9).to(dtype=hidden_states.dtype)
+                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -10000.0).to(dtype=hidden_states.dtype)
                     pad_mask_1d = pad_1d.unsqueeze(1).unsqueeze(2)
                 else:
                     pad_mask_1d = mask_tensor.unsqueeze(2)
@@ -521,7 +521,7 @@ class AegisAttentionV3(BaseAttention):
             elif mask_tensor.dim() == 4:
                 if mask_tensor.size(-1) == mask_tensor.size(-2) and mask_tensor.size(-1) > 1:
                     square_mask = mask_tensor
-                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -1e9).to(dtype=hidden_states.dtype)
+                    pad_1d = (square_mask.squeeze(1).max(dim=-1).values > -10000.0).to(dtype=hidden_states.dtype)
                     pad_mask_1d = pad_1d.unsqueeze(1).unsqueeze(2)
                 else:
                     pad_mask_1d = mask_tensor

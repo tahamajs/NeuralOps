@@ -112,7 +112,7 @@ class GoldFinchAHNBlock(BaseAttention):
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                pad_mask = (1.0 - attention_mask.unsqueeze(1).float()) * -1e9
+                pad_mask = (1.0 - attention_mask.unsqueeze(1).float()) * -10000.0
                 scores = scores + pad_mask
             elif attention_mask.dim() == 4:
                 scores = scores + attention_mask.squeeze(1).float()

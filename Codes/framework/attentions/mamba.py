@@ -112,7 +112,7 @@ class Mamba(BaseAttention):
                 mask = attention_mask.unsqueeze(-1).to(out.dtype)
                 out = out * mask
             elif attention_mask.dim() == 4:
-                mask = (attention_mask[:, 0, 0, :] > -1e4).unsqueeze(-1).to(out.dtype)
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(-1).to(out.dtype)
                 out = out * mask
 
         return out, None

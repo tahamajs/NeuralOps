@@ -94,7 +94,7 @@ class ReGLAAttention(BaseAttention):
             elif attention_mask.dim() == 3:
                 mask = attention_mask.unsqueeze(-1).to(k_gated.dtype)
             elif attention_mask.dim() == 4:
-                mask = (attention_mask > -1e4).to(k_gated.dtype)
+                mask = (attention_mask > -10000.0).to(k_gated.dtype)
             else:
                 mask = attention_mask.to(k_gated.dtype)
             k_gated = k_gated * mask
