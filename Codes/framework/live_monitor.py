@@ -228,7 +228,28 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(css_path.read_bytes())
                 return
+        elif self.path.endswith(".md"):
+            md_path = WEB_DIR / self.path.lstrip('/')
+            if md_path.exists():
+                self.send_response(200)
+                self.send_header("Content-type", "text/markdown; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(md_path.read_bytes())
+                return
+        elif self.path.endswith(".json"):
+            json_path = WEB_DIR / self.path.lstrip('/')
+            if json_path.exists():
+                self.send_response(200)
+                self.send_header("Content-type", "application/json; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json_path.read_bytes())
+                return
+        
         elif self.path == "/api/stats":
+
+
             self.send_response(200)
             self.send_header("Content-type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
