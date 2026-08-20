@@ -27,3 +27,4 @@
 [2026-08-20 22:35:10] [Worker-3] [9/120] NOTICE: attn=mamba | task=sst2 | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 2.4s
 [2026-08-20 22:35:11] [Worker-1] [10/120] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
 [2026-08-20 22:35:13] [Worker-1] [10/120] NOTICE: attn=gated_delta_net | task=sst2 | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 2.5s
+[2026-08-20 22:35:16] [Worker-2] [8/120] NOTICE: attn=flash3 | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 11.2s
