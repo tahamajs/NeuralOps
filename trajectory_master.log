@@ -1,4 +1,4 @@
-[2026-08-20 22:32:54] ============================================================
+﻿[2026-08-20 22:32:54] ============================================================
 [2026-08-20 22:32:54]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
 [2026-08-20 22:32:54] ============================================================
 [2026-08-20 22:32:54] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
@@ -6,11 +6,7 @@
 [2026-08-20 22:33:27] [Worker-1] [1/120] >> Launching: attn=svd_linear | task=sst2 | seed=42
 [2026-08-20 22:33:27] [Worker-3] [2/120] >> Launching: attn=svd | task=sst2 | seed=42
 [2026-08-20 22:33:27] [Worker-2] [3/120] >> Launching: attn=full | task=sst2 | seed=42
-[2026-08-20 22:33:53] [Worker-3] [2/120] NOTICE: attn=svd | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 26.1s
-[2026-08-20 22:33:53] [Worker-2] [3/120] NOTICE: attn=full | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 26.1s
 [2026-08-20 22:33:56] [Worker-2] [4/120] >> Launching: attn=lora_attn | task=sst2 | seed=42
-[2026-08-20 22:33:59] [Worker-2] [4/120] NOTICE: attn=lora_attn | task=sst2 | Error: pretrained_attn required for zero-shot init | Time: 2.4s
-[2026-08-20 22:34:02] [Worker-1] [1/120] NOTICE: attn=svd_linear | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 35.4s
 [2026-08-20 22:34:04] ============================================================
 [2026-08-20 22:34:04]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
 [2026-08-20 22:34:04] ============================================================
@@ -19,38 +15,21 @@
 [2026-08-20 22:34:09] [Worker-3] [5/120] >> Launching: attn=performer | task=sst2 | seed=42
 [2026-08-20 22:34:18] [Worker-2] [6/120] >> Launching: attn=nystrom | task=sst2 | seed=42
 [2026-08-20 22:34:20] [Worker-1] [7/120] >> Launching: attn=linformer | task=sst2 | seed=42
-[2026-08-20 22:34:24] [Worker-3] [5/120] NOTICE: attn=performer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 15.1s
-[2026-08-20 22:34:36] [Worker-2] [6/120] NOTICE: attn=nystrom | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 17.8s
-[2026-08-20 22:34:41] [Worker-1] [7/120] NOTICE: attn=linformer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 20.5s
 [2026-08-20 22:35:05] [Worker-2] [8/120] >> Launching: attn=flash3 | task=sst2 | seed=42
 [2026-08-20 22:35:08] [Worker-3] [9/120] >> Launching: attn=mamba | task=sst2 | seed=42
-[2026-08-20 22:35:10] [Worker-3] [9/120] NOTICE: attn=mamba | task=sst2 | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 2.4s
 [2026-08-20 22:35:11] [Worker-1] [10/120] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
-[2026-08-20 22:35:13] [Worker-1] [10/120] NOTICE: attn=gated_delta_net | task=sst2 | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 2.5s
-[2026-08-20 22:35:16] [Worker-2] [8/120] NOTICE: attn=flash3 | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 11.2s
 [2026-08-20 22:35:20] [Worker-3] [11/120] >> Launching: attn=adasplash | task=sst2 | seed=42
 [2026-08-20 22:35:20] [Worker-1] [12/120] >> Launching: attn=aegis_v3 | task=sst2 | seed=42
 [2026-08-20 22:35:22] [Worker-2] [13/120] >> Launching: attn=griffin_ssd | task=sst2 | seed=42
-[2026-08-20 22:35:25] [Worker-1] [12/120] NOTICE: attn=aegis_v3 | task=sst2 | Error: inject_aegis_v3() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 5.1s
-[2026-08-20 22:35:30] [Worker-2] [13/120] NOTICE: attn=griffin_ssd | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 7.7s
-[2026-08-20 22:35:32] [Worker-3] [11/120] NOTICE: attn=adasplash | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 12.2s
 [2026-08-20 22:35:36] [Worker-1] [14/120] >> Launching: attn=spectra_v2 | task=sst2 | seed=42
 [2026-08-20 22:35:36] [Worker-3] [15/120] >> Launching: attn=samba_m3 | task=sst2 | seed=42
 [2026-08-20 22:35:38] [Worker-2] [16/120] >> Launching: attn=svd_linear | task=mrpc | seed=42
-[2026-08-20 22:35:39] [Worker-1] [14/120] NOTICE: attn=spectra_v2 | task=sst2 | Error: inject_spectra_v2() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 3.0s
-[2026-08-20 22:35:41] [Worker-3] [15/120] NOTICE: attn=samba_m3 | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 4.8s
 [2026-08-20 22:35:46] [Worker-3] [17/120] >> Launching: attn=svd | task=mrpc | seed=42
 [2026-08-20 22:35:47] [Worker-1] [18/120] >> Launching: attn=full | task=mrpc | seed=42
-[2026-08-20 22:35:49] [Worker-3] [17/120] NOTICE: attn=svd | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 2.8s
-[2026-08-20 22:35:50] [Worker-2] [16/120] NOTICE: attn=svd_linear | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 12.4s
-[2026-08-20 22:35:54] [Worker-1] [18/120] NOTICE: attn=full | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 7.0s
 [2026-08-20 22:35:57] [Worker-3] [19/120] >> Launching: attn=lora_attn | task=mrpc | seed=42
 [2026-08-20 22:35:59] [Worker-2] [20/120] >> Launching: attn=performer | task=mrpc | seed=42
-[2026-08-20 22:36:01] [Worker-3] [19/120] NOTICE: attn=lora_attn | task=mrpc | Error: pretrained_attn required for zero-shot init | Time: 4.0s
-[2026-08-20 22:36:02] [Worker-2] [20/120] NOTICE: attn=performer | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 2.4s
 [2026-08-20 22:36:08] [Worker-3] [21/120] >> Launching: attn=nystrom | task=mrpc | seed=42
 [2026-08-20 22:36:09] [Worker-1] [22/120] >> Launching: attn=linformer | task=mrpc | seed=42
-[2026-08-20 22:36:14] [Worker-1] [22/120] NOTICE: attn=linformer | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 4.3s
 [2026-08-20 22:41:57] ============================================================
 [2026-08-20 22:41:57]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
 [2026-08-20 22:41:57] ============================================================
@@ -76,18 +55,12 @@ ompleted)
 [2026-08-20 22:42:18] [Worker-2] [22/120] -- SKIPPING: attn=linformer | task=mrpc (Already completed)
 [2026-08-20 22:42:18] [Worker-2] [23/120] >> Launching: attn=flash3 | task=mrpc | seed=42
 [2026-08-20 22:42:21] [Worker-3] [24/120] >> Launching: attn=mamba | task=mrpc | seed=42
-[2026-08-20 22:42:21] [Worker-3] [24/120] NOTICE: attn=mamba | task=mrpc | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 0.4s
 [2026-08-20 22:42:23] [Worker-3] [25/120] >> Launching: attn=gated_delta_net | task=mrpc | seed=42
-[2026-08-20 22:42:24] [Worker-3] [25/120] NOTICE: attn=gated_delta_net | task=mrpc | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 0.3s
 [2026-08-20 22:42:26] [Worker-3] [26/120] >> Launching: attn=adasplash | task=mrpc | seed=42
 [2026-08-20 22:43:23] [Worker-2] [23/120] << SUCCESS: attn=flash3 | task=mrpc | Acc: 68.38% | F1: 0.00% | Loss: 0.6083 | Time: 64.9s
 [2026-08-20 22:43:27] [Worker-2] [27/120] >> Launching: attn=aegis_v3 | task=mrpc | seed=42
-[2026-08-20 22:43:37] [Worker-2] [27/120] NOTICE: attn=aegis_v3 | task=mrpc | Error: value cannot be converted to type at::Half without overflow | Time: 10.5s
 [2026-08-20 22:43:39] [Worker-2] [28/120] >> Launching: attn=griffin_ssd | task=mrpc | seed=42
-[2026-08-20 22:43:41] [Worker-2] [28/120] NOTICE: attn=griffin_ssd | task=mrpc | Error: CUDA out of memory. Tried to allocate 18.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.15 GiB is free. Of the allocated memory 5.70 GiB is allocated by PyTorch, and 2.75 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.9s
-[2026-08-20 22:43:41] [Worker-3] [26/120] NOTICE: attn=adasplash | task=mrpc | Error: CUDA out of memory. Tried to allocate 24.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 3.23 GiB is free. Of the allocated memory 3.61 GiB is allocated by PyTorch, and 18.09 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 75.1s
 [2026-08-20 22:43:50] [Worker-3] [29/120] >> Launching: attn=spectra_v2 | task=mrpc | seed=42
-[2026-08-20 22:43:50] [Worker-3] [29/120] NOTICE: attn=spectra_v2 | task=mrpc | Error: inject_spectra_v2() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 0.3s
 [2026-08-20 22:43:55] [Worker-3] [30/120] >> Launching: attn=samba_m3 | task=mrpc | seed=42
 [2026-08-20 22:43:57] [Worker-2] [31/120] >> Launching: attn=svd_linear | task=qnli | seed=42
 [2026-08-20 22:44:08] [Worker-1] [21/120] << SUCCESS: attn=nystrom | task=mrpc | Acc: 68.38% | F1: 0.00% | Loss: 0.6254 | Time: 109.6s
@@ -147,10 +120,71 @@ ompleted)
 [2026-08-21 00:56:38] [Worker-3] [38/120] >> Launching: attn=flash3 | task=qnli | seed=42
 [2026-08-21 00:58:32] [Worker-2] [37/120] << SUCCESS: attn=linformer | task=qnli | Acc: 50.61% | F1: 42.31% | Loss: 0.6915 | Time: 178.0s
 [2026-08-21 00:58:34] [Worker-2] [39/120] >> Launching: attn=mamba | task=qnli | seed=42
-[2026-08-21 00:58:35] [Worker-2] [39/120] NOTICE: attn=mamba | task=qnli | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 0.4s
 [2026-08-21 00:58:37] [Worker-2] [40/120] >> Launching: attn=gated_delta_net | task=qnli | seed=42
-[2026-08-21 00:58:37] [Worker-2] [40/120] NOTICE: attn=gated_delta_net | task=qnli | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 0.4s
 [2026-08-21 00:58:40] [Worker-2] [41/120] >> Launching: attn=adasplash | task=qnli | seed=42
 [2026-08-21 01:00:39] [Worker-3] [38/120] << SUCCESS: attn=flash3 | task=qnli | Acc: 59.31% | F1: 58.51% | Loss: 0.6632 | Time: 241.0s
 [2026-08-21 01:00:41] [Worker-3] [42/120] >> Launching: attn=aegis_v3 | task=qnli | seed=42
-[2026-08-21 01:00:53] [Worker-3] [42/120] NOTICE: attn=aegis_v3 | task=qnli | Error: value cannot be converted to type at::Half without overflow | Time: 11.3s
+[2026-08-21 01:16:52] ============================================================
+[2026-08-21 01:16:52]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-21 01:16:52] ============================================================
+[2026-08-21 01:16:52] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-21 01:16:52] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-21 01:17:16] [Worker-1] [1/120] -- SKIPPING: attn=svd_linear | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [2/120] -- SKIPPING: attn=svd | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [3/120] -- SKIPPING: attn=full | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [4/120] -- SKIPPING: attn=lora_attn | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [5/120] -- SKIPPING: attn=performer | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [6/120] -- SKIPPING: attn=nystrom | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [7/120] -- SKIPPING: attn=linformer | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [8/120] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [9/120] -- SKIPPING: attn=mamba | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [10/120] -- SKIPPING: attn=gated_delta_net | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [11/120] -- SKIPPING: attn=adasplash | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [12/120] -- SKIPPING: attn=aegis_v3 | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [13/120] -- SKIPPING: attn=griffin_ssd | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [14/120] -- SKIPPING: attn=spectra_v2 | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [15/120] -- SKIPPING: attn=samba_m3 | task=sst2 (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [16/120] -- SKIPPING: attn=svd_linear | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [17/120] -- SKIPPING: attn=svd | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [18/120] -- SKIPPING: attn=full | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [19/120] -- SKIPPING: attn=lora_attn | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [20/120] -- SKIPPING: attn=performer | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [21/120] -- SKIPPING: attn=nystrom | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [22/120] -- SKIPPING: attn=linformer | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [23/120] -- SKIPPING: attn=flash3 | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [24/120] -- SKIPPING: attn=mamba | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [25/120] -- SKIPPING: attn=gated_delta_net | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [26/120] -- SKIPPING: attn=adasplash | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [27/120] -- SKIPPING: attn=aegis_v3 | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [28/120] -- SKIPPING: attn=griffin_ssd | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [29/120] -- SKIPPING: attn=spectra_v2 | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [30/120] -- SKIPPING: attn=samba_m3 | task=mrpc (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [31/120] -- SKIPPING: attn=svd_linear | task=qnli (Already completed)
+[2026-08-21 01:17:16] [Worker-1] [32/120] >> Launching: attn=svd | task=qnli | seed=42
+[2026-08-21 01:17:18] [Worker-2] [33/120] -- SKIPPING: attn=full | task=qnli (Already completed)
+[2026-08-21 01:17:18] [Worker-2] [34/120] -- SKIPPING: attn=lora_attn | task=qnli (Already completed)
+[2026-08-21 01:17:18] [Worker-2] [35/120] -- SKIPPING: attn=performer | task=qnli (Already completed)
+[2026-08-21 01:17:18] [Worker-2] [36/120] -- SKIPPING: attn=nystrom | task=qnli (Already completed)
+[2026-08-21 01:17:18] [Worker-2] [37/120] -- SKIPPING: attn=linformer | task=qnli (Already completed)
+[2026-08-21 01:17:18] [Worker-2] [38/120] -- SKIPPING: attn=flash3 | task=qnli (Already completed)
+[2026-08-21 01:17:18] [Worker-2] [39/120] -- SKIPPING: attn=mamba | task=qnli (Already completed)
+[2026-08-21 01:17:18] [Worker-2] [40/120] -- SKIPPING: attn=gated_delta_net | task=qnli (Already completed)
+[2026-08-21 01:17:18] [Worker-2] [41/120] >> Launching: attn=adasplash | task=qnli | seed=42
+[2026-08-21 01:17:22] [Worker-3] [42/120] -- SKIPPING: attn=aegis_v3 | task=qnli (Already completed)
+[2026-08-21 01:17:22] [Worker-3] [43/120] >> Launching: attn=griffin_ssd | task=qnli | seed=42
+[2026-08-21 01:17:46] ============================================================
+[2026-08-21 01:17:46]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-21 01:17:46] ============================================================
+[2026-08-21 01:17:46] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-21 01:17:46] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-21 01:18:09] [Worker-1] [1/120] >> Launching: attn=svd_linear | task=sst2 | seed=42
+[2026-08-21 01:18:13] [Worker-2] [2/120] >> Launching: attn=svd | task=sst2 | seed=42
+[2026-08-21 01:18:19] [Worker-3] [3/120] >> Launching: attn=full | task=sst2 | seed=42
+[2026-08-21 01:19:27] ============================================================
+[2026-08-21 01:19:27]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-21 01:19:27] ============================================================
+[2026-08-21 01:19:27] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-21 01:19:27] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-21 01:19:47] [Worker-1] [1/120] >> Launching: attn=svd_linear | task=sst2 | seed=42
+[2026-08-21 01:19:55] [Worker-2] [2/120] >> Launching: attn=svd | task=sst2 | seed=42
+[2026-08-21 01:20:02] [Worker-3] [3/120] >> Launching: attn=full | task=sst2 | seed=42
