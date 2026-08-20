@@ -155,7 +155,6 @@ class LoRAAttention(BaseAttention):
         return output, (attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("lora_attn")
 def inject_lora_attn(
     layer: nn.Module,
     model_config: Any,
