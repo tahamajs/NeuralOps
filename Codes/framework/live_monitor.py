@@ -81,7 +81,7 @@ def get_trajectory_matrix():
     completed_keys = set()
     if RESULTS_DIR.exists():
         for d in RESULTS_DIR.iterdir():
-            if d.is_dir() and (d / "eval_final.json").exists():
+            if d.is_dir() and (d / "metrics" / "eval_final.json").exists():
                 completed_keys.add(d.name)
 
     matrix = []
@@ -124,7 +124,7 @@ def get_active_training_info():
     if RESULTS_DIR.exists():
         for d in sorted(RESULTS_DIR.iterdir(), key=os.path.getmtime, reverse=True):
             if d.is_dir():
-                hist_file = d / "train_history.json"
+                hist_file = d / "history" / "log_history.json"
                 if hist_file.exists():
                     try:
                         hist = json.loads(hist_file.read_text(encoding="utf-8"))
@@ -161,7 +161,7 @@ def get_completed_results():
     if RESULTS_DIR.exists():
         for d in RESULTS_DIR.iterdir():
             if d.is_dir():
-                eval_file = d / "eval_final.json"
+                eval_file = d / "metrics" / "eval_final.json"
                 sys_file = d / "system_info.json"
                 cfg_file = d / "config.json"
                 if eval_file.exists():
