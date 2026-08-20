@@ -91,7 +91,23 @@ def main():
     total = len(ATTN_MODELS) * len(TASKS)
     idx = 0
 
+    
+    completed_runs = []
+    if MASTER_LOG.exists():
+        with open(MASTER_LOG, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if "<< SUCCESS:" in line or "⚠️ NOTICE:" in line:
+                    if "attn=" in line and "task=" in line:
+                        parts = line.split(" | ")
+                        a = [p for p in parts if "attn=" in p]
+                        t = [p for p in parts if "task=" in p]
+                        if a and t:
+                            attn_val = a[0].split("=")[1].strip()
+                            task_val = t[0].split("=")[1].strip()
+                            completed_runs.append((attn_val, task_val))
+
     log_master(f"Trajectory Matrix: {len(ATTN_MODELS)} Models x {len(TASKS)} Tasks = {total} Runs")
+
 
     for task in TASKS:
         log_master(f"▶ GLUE TASK: {task.upper()}")
@@ -117,9 +133,19 @@ def main():
                 f1 = eval_metrics.get("eval_f1_macro", 0.0)
                 loss = eval_metrics.get("eval_loss", 0.0)
                 log_master(f"[{idx}/{total}] << SUCCESS: attn={attn} | task={task} | Acc: {acc*100:.2f}% | F1: {f1*100:.2f}% | Loss: {loss:.4f} | Time: {elapsed:.1f}s")
+            
             except Exception as e:
                 elapsed = time.time() - t0
                 log_master(f"[{idx}/{total}] ⚠️ NOTICE: attn={attn} | task={task} | Error: {e} | Time: {elapsed:.1f}s")
+
+            # Push results to git for live github pages
+            try:
+                import subprocess
+                subprocess.run(["git", "add", "-f", str(RESULTS_DIR)], cwd=str(PROJECT_DIR), check=True)
+                subprocess.run(["git", "commit", "-m", f"Auto-commit: {attn} on {task}"], cwd=str(PROJECT_DIR), check=False)
+                subprocess.run(["git", "push"], cwd=str(PROJECT_DIR), check=False)
+            except Exception as e:
+                log_master(f"Git push failed: {e}")
 
             # Clean GPU memory & cache
             if torch.cuda.is_available():
