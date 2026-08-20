@@ -164,6 +164,20 @@
                     </div>
                     <span class="text-[10px] bg-cyan-950/80 text-cyan-400 border border-cyan-800 px-2 py-1 rounded font-mono">AUTOSCALE</span>
                 </div>
+                <!-- Settings Panel -->
+                <div class="glass p-3 border-b border-gray-800/60 mb-2 rounded-t-lg bg-black/20 flex flex-wrap gap-4 items-end">
+                    <div>
+                        <label class="text-[10px] text-gray-500 font-mono block mb-1">Batch Size (Max 16)</label>
+                        <input id="set-batch" type="number" max="16" class="bg-gray-900 border border-gray-700 text-xs px-2 py-1 rounded text-gray-300 w-20 outline-none focus:border-cyan-500" value="16">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-gray-500 font-mono block mb-1">Dataloader Workers</label>
+                        <input id="set-workers" type="number" max="8" class="bg-gray-900 border border-gray-700 text-xs px-2 py-1 rounded text-gray-300 w-20 outline-none focus:border-cyan-500" value="4">
+                    </div>
+                    <div>
+                        <button onclick="saveSettings()" class="text-xs px-3 py-1.5 rounded bg-cyan-950/60 border border-cyan-700 text-cyan-400 hover:bg-cyan-900/60 transition-colors">Apply Config</button>
+                    </div>
+                </div>
                 <div class="h-64 relative w-full">
                     <canvas id="lossChart"></canvas>
                 </div>
