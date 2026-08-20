@@ -530,9 +530,29 @@ function renderMarkdown(md, item) {
             <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">`;
         plotMatches.forEach(k => {
             const taskName = taskNames.find(t => k.includes("_" + t + "_"));
+            const dataObj = plotHistories[k];
+            const isNewFmt = !Array.isArray(dataObj);
+            const conf = isNewFmt ? (dataObj.config || {}) : {};
+            const met = isNewFmt ? (dataObj.metrics || {}) : {};
+            
+            let statsHtml = '';
+            if (Object.keys(conf).length > 0 || Object.keys(met).length > 0) {
+                statsHtml = `<div class="mt-4 grid grid-cols-2 gap-2 text-xs font-mono text-[var(--tx-muted)] bg-black/20 p-2 rounded">`;
+                if (conf.batch_size) statsHtml += `<div>BATCH: <span class="text-cyan-400">${conf.batch_size}</span></div>`;
+                if (conf.learning_rate) statsHtml += `<div>LR: <span class="text-cyan-400">${conf.learning_rate}</span></div>`;
+                if (conf.epochs) statsHtml += `<div>EPOCHS: <span class="text-cyan-400">${conf.epochs}</span></div>`;
+                if (met.accuracy) statsHtml += `<div>ACC: <span class="text-emerald-400">${met.accuracy}%</span></div>`;
+                if (met.f1) statsHtml += `<div>F1: <span class="text-emerald-400">${met.f1}%</span></div>`;
+                if (met.time_seconds) statsHtml += `<div>TIME: <span class="text-amber-400">${met.time_seconds}s</span></div>`;
+                statsHtml += `</div>`;
+            }
+
             plotHtml += `<div class="glass p-4 rounded-lg border border-[var(--border-color)]">
-                <h4 class="text-sm font-bold text-[var(--tx-muted)] mb-2 uppercase tracking-wide">GLUE Task: ${taskName}</h4>
-                <div style="height:250px; position:relative;"><canvas id="chart-${k}"></canvas></div>
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-sm font-bold text-[var(--tx-muted)] uppercase tracking-wide">GLUE Task: ${taskName}</h4>
+                </div>
+                <div style="height:220px; position:relative;"><canvas id="chart-${k}"></canvas></div>
+                ${statsHtml}
             </div>`;
         });
         plotHtml += `</div></div>`;
@@ -546,7 +566,8 @@ function renderMarkdown(md, item) {
         plotMatches.forEach(k => {
             const ctx = document.getElementById(`chart-${k}`);
             if (ctx) {
-                const hist = plotHistories[k];
+                const dataObj = plotHistories[k];
+                const hist = Array.isArray(dataObj) ? dataObj : (dataObj.history || []);
                 const labels = hist.map(d => `Step ${d.step || Math.round(d.epoch*1000)}`);
                 const data = hist.map(d => d.loss);
                 new Chart(ctx.getContext('2d'), {
