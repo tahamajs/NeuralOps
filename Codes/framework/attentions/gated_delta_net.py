@@ -97,6 +97,7 @@ class HGRN2Layer(nn.Module):
         return torch.stack(outs, dim=1)
 
 
+@ATTENTION_REGISTRY.register("gated_delta_net")
 class GatedDeltaNetBlock(nn.Module):
     r"""
     Hybrid Gated DeltaNet Block with Optional Multi-Head Attention Bypass.
@@ -118,12 +119,18 @@ class GatedDeltaNetBlock(nn.Module):
 
     def __init__(
         self,
-        d_model: Union[int, Any] = 768,
-        n_heads: int = 12,
+        d_model: Optional[Union[int, Any]] = None,
+        n_heads: Optional[int] = None,
         use_full_attention: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__()
+        
+        if d_model is None:
+            d_model = kwargs.get("hidden_size", 768)
+        if n_heads is None:
+            n_heads = kwargs.get("num_attention_heads", kwargs.get("num_heads", 12))
+            
         if hasattr(d_model, "hidden_size"):
             config = d_model
             d_model = config.hidden_size
@@ -185,7 +192,7 @@ class GatedDeltaNetBlock(nn.Module):
         return out, (attn_weights if output_attentions else None)
 
 
-@ATTENTION_REGISTRY.register("gated_delta_net")
+@ATTENTION_REGISTRY.register("gated_delta_net_inject")
 def inject_gated_delta_net(
     layer: nn.Module,
     model_config: Any,
