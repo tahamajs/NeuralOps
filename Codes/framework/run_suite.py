@@ -57,14 +57,15 @@ def log_master(msg: str):
 
 
 def main():
-    log_master("═" * 60)
-    log_master("  SVD LINEAR ATTENTION — SINGLE-PROCESS PERSISTENT GPU RUNNER")
+    log_master("=" * 60)
+    log_master("  STARTING SVD COMPRESSION GPU ORCHESTRATION SUITE  ")
+    log_master("=" * 60)
     log_master(f"  Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
     if torch.cuda.is_available():
         vram = torch.cuda.get_device_properties(0).total_memory / 1e9
         log_master(f"  VRAM: {vram:.1f} GB | CUDA: {torch.version.cuda} | PyTorch: {torch.__version__}")
     log_master("  Storage Policy: ZERO-BLOAT (Metrics JSON only, no weights saved)")
-    log_master("═" * 60)
+    log_master("=" * 60)
 
     fw = _import_framework()
 
@@ -96,12 +97,12 @@ def main():
         log_master(f"▶ GLUE TASK: {task.upper()}")
         for attn in ATTN_MODELS:
             idx += 1
-            log_master(f"[{idx}/{total}] >> Launching: attn={attn} | task={task} | epochs=3 | seed=42")
+            log_master(f"[{idx}/{total}] >> Launching: attn={attn} | task={task} | epochs=0.5 | seed=42")
             
             cfg = fw["ExperimentConfig"]()
             cfg.attn_type = attn
             cfg.task = task
-            cfg.epochs = 3
+            cfg.epochs = 0.5
             cfg.batch_size = 32
             cfg.seed = 42
             cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
@@ -125,9 +126,9 @@ def main():
                 torch.cuda.empty_cache()
             gc.collect()
 
-    log_master("═" * 60)
+    log_master("=" * 60)
     log_master("  ALL 45 EXPERIMENT TRAJECTORIES COMPLETED SUCCESSFULLY!")
-    log_master("═" * 60)
+    log_master("=" * 60)
 
 
 if __name__ == "__main__":
