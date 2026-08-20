@@ -142,7 +142,7 @@ class SAMBAM3Block(nn.Module):
         return x, attn_w
 
 
-@ATTENTION_REGISTRY.register("mamba")
+@ATTENTION_REGISTRY.register("mamba_inject")
 def inject_mamba(
     layer: Any,
     model_config: Any,
