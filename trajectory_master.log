@@ -34,3 +34,7 @@
 [2026-08-20 22:35:25] [Worker-1] [12/120] NOTICE: attn=aegis_v3 | task=sst2 | Error: inject_aegis_v3() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 5.1s
 [2026-08-20 22:35:30] [Worker-2] [13/120] NOTICE: attn=griffin_ssd | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 7.7s
 [2026-08-20 22:35:32] [Worker-3] [11/120] NOTICE: attn=adasplash | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 12.2s
+[2026-08-20 22:35:36] [Worker-1] [14/120] >> Launching: attn=spectra_v2 | task=sst2 | seed=42
+[2026-08-20 22:35:36] [Worker-3] [15/120] >> Launching: attn=samba_m3 | task=sst2 | seed=42
+[2026-08-20 22:35:38] [Worker-2] [16/120] >> Launching: attn=svd_linear | task=mrpc | seed=42
+[2026-08-20 22:35:39] [Worker-1] [14/120] NOTICE: attn=spectra_v2 | task=sst2 | Error: inject_spectra_v2() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 3.0s
