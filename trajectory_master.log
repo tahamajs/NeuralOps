@@ -16,3 +16,7 @@
 [2026-08-20 22:34:04] ============================================================
 [2026-08-20 22:34:05] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
 [2026-08-20 22:34:05] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-20 22:34:09] [Worker-3] [5/120] >> Launching: attn=performer | task=sst2 | seed=42
+[2026-08-20 22:34:18] [Worker-2] [6/120] >> Launching: attn=nystrom | task=sst2 | seed=42
+[2026-08-20 22:34:20] [Worker-1] [7/120] >> Launching: attn=linformer | task=sst2 | seed=42
+[2026-08-20 22:34:24] [Worker-3] [5/120] NOTICE: attn=performer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 15.1s
