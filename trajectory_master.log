@@ -47,3 +47,4 @@
 [2026-08-20 22:35:57] [Worker-3] [19/120] >> Launching: attn=lora_attn | task=mrpc | seed=42
 [2026-08-20 22:35:59] [Worker-2] [20/120] >> Launching: attn=performer | task=mrpc | seed=42
 [2026-08-20 22:36:01] [Worker-3] [19/120] NOTICE: attn=lora_attn | task=mrpc | Error: pretrained_attn required for zero-shot init | Time: 4.0s
+[2026-08-20 22:36:02] [Worker-2] [20/120] NOTICE: attn=performer | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 2.4s
