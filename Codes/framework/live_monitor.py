@@ -258,6 +258,41 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
 
         super().do_GET()
 
+    def do_POST(self):
+        if self.path == "/api/action":
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                req = json.loads(post_data.decode("utf-8"))
+                action = req.get("action")
+                msg = "Unknown action"
+                if action == "stop":
+                    # Kill only the orchestrator and its workers (avoid killing this monitor)
+                    kill_cmd = "Get-WmiObject Win32_Process | Where-Object { $_.CommandLine -match 'run_suite_multiprocess.py' } | ForEach-Object { $_.Terminate() }"
+                    subprocess.run(["powershell", "-Command", kill_cmd])
+                    # Update worker status to stopped
+                    with open(WORKER_STATE_FILE, "w", encoding="utf-8") as f:
+                        json.dump({str(i): {"status": "stopped", "attn": "-", "task": "-", "idx": "--"} for i in (1, 2, 3)}, f)
+                    msg = "Orchestrator successfully stopped. All GPU workers terminated."
+                elif action == "start":
+                    # Run the scheduled task to restart the orchestrator
+                    subprocess.run(["schtasks", "/run", "/tn", "RunOrchestrator"])
+                    msg = "Orchestrator triggered successfully via schtasks."
+                
+                self.send_response(200)
+                self.send_header("Content-type", "application/json; charset=utf-8")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "ok", "message": msg}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+            return
+        
+        self.send_response(404)
+        self.end_headers()
+
 
 def main():
     socketserver.TCPServer.allow_reuse_address = True
