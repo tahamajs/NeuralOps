@@ -25,6 +25,8 @@
                 <p class="text-xs text-gray-400 mt-1 font-mono">Zero-Bloat Telemetry | 3 Concurrent Workers | 120-Run Matrix | GitHub Live Sync</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
+                <button id="btn-stop" onclick="sendCommand('stop')" class="text-xs px-3 py-1.5 rounded-lg bg-red-950/50 border border-red-500/40 text-red-400 font-mono hover:bg-red-900/50 transition-colors cursor-pointer active:scale-95">STOP</button>
+                <button id="btn-start" onclick="sendCommand('start')" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-950/50 border border-emerald-500/40 text-emerald-400 font-mono hover:bg-emerald-900/50 transition-colors cursor-pointer active:scale-95">START</button>
                 <span class="text-xs px-3 py-1.5 rounded-lg glass border border-emerald-500/40 text-emerald-400 font-mono flex items-center gap-2">
                     <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span> Git Auto-Push: Active
                 </span>
