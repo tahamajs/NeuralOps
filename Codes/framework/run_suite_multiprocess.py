@@ -117,20 +117,25 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
         cfg = fw["ExperimentConfig"]()
         cfg.attn_type = attn
         cfg.task = task
-        cfg.epochs = 0.5
+        if task in ("qnli", "qqp", "mnli"):
+            cfg.epochs = 0.1
+        else:
+            cfg.epochs = 0.5
+            
         cfg.output_dir = str(RESULTS_DIR)
         cfg.save_model = False
         cfg.seed = 42
 
         # Optimized batch sizing for 3 parallel processes to push 90-100% GPU
+        # Reduced to cap VRAM strictly below 7.0 GB
         if attn in ("full", "flash3", "griffin_ssd", "aegis_v3", "spectra_v2", "samba_m3"):
-            cfg.batch_size = 16
-        elif attn in ("svd_linear", "performer", "linformer", "nystrom"):
-            cfg.batch_size = 48
-        elif attn in ("adasplash", "mamba"):
             cfg.batch_size = 8
-        else:
+        elif attn in ("svd_linear", "performer", "linformer", "nystrom"):
             cfg.batch_size = 16
+        elif attn in ("adasplash", "mamba"):
+            cfg.batch_size = 4
+        else:
+            cfg.batch_size = 8
 
         cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
 
