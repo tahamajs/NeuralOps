@@ -210,6 +210,34 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
     logger.info(f"Worker-{worker_id} finished all tasks.")
 
 
+def telemetry_sync_thread():
+    import time, subprocess, glob, json, os
+    from pathlib import Path
+    docs_res_dir = PROJECT_DIR / "Docs" / "results"
+    while True:
+        try:
+            hist_res = {}
+            for p in glob.glob(str(RESULTS_DIR / "*" / "history" / "log_history.json")):
+                d = os.path.basename(os.path.dirname(os.path.dirname(p)))
+                try: hist_res[d] = json.load(open(p, encoding="utf-8", errors="ignore"))
+                except: pass
+            
+            docs_res_dir.mkdir(parents=True, exist_ok=True)
+            out_file = docs_res_dir / "all_histories.json"
+            with open(out_file, "w", encoding="utf-8") as f:
+                json.dump(hist_res, f)
+
+            # Check if there are changes before pushing to avoid empty commits
+            status = subprocess.run(["git", "status", "--porcelain", str(out_file)], cwd=str(PROJECT_DIR), capture_output=True, text=True)
+            if status.stdout.strip():
+                subprocess.run(["git", "add", "-f", str(out_file)], cwd=str(PROJECT_DIR), check=False)
+                subprocess.run(["git", "commit", "-m", "chore(telemetry): Live training telemetry update"], cwd=str(PROJECT_DIR), capture_output=True, check=False)
+                subprocess.run(["git", "pull", "origin", "main", "--rebase"], cwd=str(PROJECT_DIR), capture_output=True, check=False)
+                subprocess.run(["git", "push", "origin", "main"], cwd=str(PROJECT_DIR), capture_output=True, check=False)
+        except Exception as e:
+            pass
+        time.sleep(60)
+
 def main():
     # Set multiprocessing start method for Windows
     try:
@@ -220,6 +248,11 @@ def main():
     log_master("=" * 60)
     log_master("  STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  ")
     log_master("=" * 60)
+
+    import threading
+    t = threading.Thread(target=telemetry_sync_thread, daemon=True)
+    t.start()
+    log_master("Started background telemetry sync thread.")
 
     ATTN_MODELS = [
         "svd_linear",
