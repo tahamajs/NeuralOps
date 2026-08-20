@@ -101,7 +101,8 @@ class SpectraV2Attention(nn.Module):
         self.head_dim: int = model_config.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim
         self.hidden_size: int = model_config.hidden_size
-        self.cfg: SpectraConfig = spectra_cfg
+        self.cfg: SpectraConfig = spectra_cfg if spectra_cfg is not None else SpectraConfig()
+        spectra_cfg = self.cfg
         self.layer_idx: int = layer_idx
         self.total_layers: int = total_layers
         self.bert_mode: bool = bert_mode

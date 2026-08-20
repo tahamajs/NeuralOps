@@ -7,7 +7,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Callable, Dict, Optional, Tuple
 
-import optuna
+try:
+    import optuna
+except ImportError:
+    optuna = None
 import torch
 
 from ..base import HPO_REGISTRY, BaseOptimizer, broadcast_pruned_state

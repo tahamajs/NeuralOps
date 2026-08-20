@@ -193,6 +193,20 @@ def load_data(cfg, tokenizer):
 # Training pipeline
 # ---------------------------------------------------------------------------
 
+
+import json
+from transformers import TrainerCallback
+
+class LiveHistoryCallback(TrainerCallback):
+    def __init__(self, out_dir):
+        self.history_file = Path(out_dir) / "history" / "log_history.json"
+        self.history_file.parent.mkdir(parents=True, exist_ok=True)
+        
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if state.log_history:
+            with open(self.history_file, "w", encoding="utf-8") as f:
+                json.dump(state.log_history, f, indent=2, default=str)
+
 def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     """Full training pipeline: data → model → train → eval → save."""
     torch = fw["torch"]
@@ -271,7 +285,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
 
     compute_metrics = fw["get_task_metrics"](cfg.task)
 
-    callbacks = [fw["MemoryCallback"](), fw["TimeCallback"]()]
+    callbacks = [fw["MemoryCallback"](), fw["TimeCallback"](), LiveHistoryCallback(out_dir)]
     if getattr(cfg, "compressor", None):
         callbacks.append(fw["SVDAttentionCallback"]())
 
