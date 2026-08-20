@@ -171,10 +171,14 @@ def get_all_active_loss_histories(workers):
         if w.get("status") == "running":
             attn = w.get("attn", "")
             task = w.get("task", "")
-            target_dir = f"{attn}_{task}"
+            import glob
+            target_pattern = str(RESULTS_DIR / f"{attn}_{task}_*" / "history" / "log_history.json")
+            matches = glob.glob(target_pattern)
             
-            hist_file = RESULTS_DIR / target_dir / "history" / "log_history.json"
-            if hist_file.exists():
+            if matches:
+                # Sort by mtime to get the most recent one if multiple exist
+                matches.sort(key=os.path.getmtime, reverse=True)
+                hist_file = Path(matches[0])
                 try:
                     data = json.loads(hist_file.read_text(encoding="utf-8", errors="ignore"))
                     histories.append({
