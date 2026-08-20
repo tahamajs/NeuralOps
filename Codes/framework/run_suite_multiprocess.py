@@ -127,8 +127,10 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
             cfg.batch_size = 16
         elif attn in ("svd_linear", "performer", "linformer", "nystrom"):
             cfg.batch_size = 48
+        elif attn in ("adasplash", "mamba"):
+            cfg.batch_size = 8
         else:
-            cfg.batch_size = 32
+            cfg.batch_size = 16
 
         cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
 
