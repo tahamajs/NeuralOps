@@ -128,7 +128,7 @@ class TokenRouter(nn.Module):
         B, N, D = x.shape
         scores = torch.sigmoid(self.net(x).squeeze(-1))  # (B, N)
         if valid_mask is not None:
-            scores = scores.masked_fill(~valid_mask, -1e9)
+            scores = scores.masked_fill(~valid_mask, -10000.0)
         keep = max(self.min_tokens, int(N * self.keep_ratio))
         idx = scores.topk(keep, dim=1).indices
         routed = torch.stack([x[b, idx[b]] for b in range(B)])

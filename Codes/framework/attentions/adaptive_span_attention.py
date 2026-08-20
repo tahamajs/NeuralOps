@@ -138,7 +138,7 @@ class AdaptiveSpanAttention(nn.Module):
         # Span mask: 1 if within span, 0 otherwise
         mask_span = (dist <= span.unsqueeze(1).unsqueeze(2)).float()
         # Apply mask (set scores outside span to -inf)
-        scores = scores.masked_fill(mask_span == 0, -1e9)
+        scores = scores.masked_fill(mask_span == 0, -10000.0)
 
         # Standard attention masking (padding)
         if attention_mask is not None:
@@ -148,7 +148,7 @@ class AdaptiveSpanAttention(nn.Module):
                 mask = attention_mask
             # Convert boolean mask to float (True -> 1.0, False -> 0.0)
             mask_float = mask.float()
-            scores = scores + (1.0 - mask_float) * -1e9
+            scores = scores + (1.0 - mask_float) * -10000.0
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)

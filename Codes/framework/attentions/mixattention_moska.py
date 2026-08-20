@@ -124,7 +124,7 @@ class MixAttentionMoSKA(BaseAttention):
         attn_scores = torch.matmul(q, k_p.transpose(-2, -1)) * scale
 
         if p_mask is not None:
-            attn_scores = attn_scores + (1.0 - p_mask[:, None, None, :].to(attn_scores.dtype)) * -1e9
+            attn_scores = attn_scores + (1.0 - p_mask[:, None, None, :].to(attn_scores.dtype)) * -10000.0
 
         attn_weights = F.softmax(attn_scores, dim=-1)
         out = torch.matmul(attn_weights, v_p).permute(0, 2, 1, 3).contiguous().view(B, L, D)

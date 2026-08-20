@@ -109,7 +109,7 @@ class FlashAttention3(BaseAttention):
             attn_mask = None
             if attention_mask is not None:
                 if attention_mask.dim() == 2:
-                    attn_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).to(q_sdpa.dtype)) * -1e9
+                    attn_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).to(q_sdpa.dtype)) * -10000.0
                 elif attention_mask.dim() == 4:
                     attn_mask = attention_mask.to(q_sdpa.dtype)
 

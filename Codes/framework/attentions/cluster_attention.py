@@ -129,7 +129,7 @@ class ClusterAttention(nn.Module):
         scale = 1.0 / math.sqrt(D_h)
         num_k = min(self.num_clusters, seq_len)
         # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow and type mismatch]
-        mask_val = -1e4 if Q.dtype in (torch.float16, torch.bfloat16) else -1e9
+        mask_val = -10000.0 if Q.dtype in (torch.float16, torch.bfloat16) else -10000.0
 
         for k in range(num_k):
             mem_mask = (cluster_ids == k).unsqueeze(1).unsqueeze(2)  # (B, 1, 1, L)

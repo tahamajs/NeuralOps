@@ -154,7 +154,7 @@ class AegisHybridAttention(nn.Module):
             if attention_mask.dim() == 2:
                 mask_2d = attention_mask.bool()  # (B, N)
             elif attention_mask.dim() == 4:
-                mask_2d = (attention_mask[:, 0, 0, :] > -1e4).bool()  # (B, N)
+                mask_2d = (attention_mask[:, 0, 0, :] > -10000.0).bool()  # (B, N)
 
         # zero out padded tokens in Q, K, V  (B, N, 1, 1)
         if mask_2d is not None:
@@ -172,7 +172,7 @@ class AegisHybridAttention(nn.Module):
         band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.local_window  # (N, N)
         band_mask = band_mask.unsqueeze(0).unsqueeze(0)  # (1, 1, N, N)
         # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
-        mask_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else float("-inf")
+        mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else float("-inf")
         scores = scores.masked_fill(~band_mask, mask_val)
 
         # also apply padding mask to keys (B, 1, 1, N)

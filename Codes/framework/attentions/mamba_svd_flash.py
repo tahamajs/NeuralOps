@@ -192,7 +192,7 @@ class MambaSVDFlash(BaseAttention):
                 padding_mask = attention_mask.unsqueeze(-1).to(Y.dtype)
                 Y = Y * padding_mask
             elif attention_mask.dim() == 4:
-                pad_2d = (attention_mask[:, 0, 0, :] > -1e4).unsqueeze(-1).to(Y.dtype)
+                pad_2d = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(-1).to(Y.dtype)
                 if pad_2d.shape[1] == Y.shape[1]:
                     Y = Y * pad_2d
 

@@ -103,7 +103,7 @@ class NativeSparseAttention(nn.Module):
                 mask = attention_mask.unsqueeze(1).unsqueeze(2)
             else:
                 mask = attention_mask
-            scores = scores + (1.0 - mask.to(scores.dtype)) * -1e9
+            scores = scores + (1.0 - mask.to(scores.dtype)) * -10000.0
 
         attn = F.softmax(scores, dim=-1)
         attn = self.dropout(attn)

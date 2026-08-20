@@ -127,7 +127,7 @@ class AdaSplashAttention(BaseAttention):
             else:
                 mask = attention_mask
             mask_float = mask.float()
-            logits = logits + (1.0 - mask_float) * -1e9
+            logits = logits + (1.0 - mask_float) * -10000.0
 
         if self.alpha == 1.5:
             attn = entmax15(logits, dim=-1, n_iter=self.n_iter)

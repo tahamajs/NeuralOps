@@ -174,8 +174,8 @@ class HymbaTransXBlock(BaseAttention):
                 pad_mask = (
                     (attention_mask == 0).unsqueeze(1).unsqueeze(2)
                 )  # (B, 1, 1, L)
-                scores1 = scores1.masked_fill(pad_mask, float("-1e9"))
-                scores2 = scores2.masked_fill(pad_mask, float("-1e9"))
+                scores1 = scores1.masked_fill(pad_mask, float("-10000.0"))
+                scores2 = scores2.masked_fill(pad_mask, float("-10000.0"))
         attn1 = F.softmax(scores1, dim=-1)
         attn2 = F.softmax(scores2, dim=-1)
         diff_attn = F.relu(attn1 - 0.5 * attn2)
