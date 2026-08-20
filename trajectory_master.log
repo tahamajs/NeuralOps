@@ -64,3 +64,5 @@ python main.py: error: unrecognized arguments: mrpc qnli
 [2026-08-20 22:08:42] [Worker-2] [4/120] NOTICE: attn=lora_attn | task=sst2 | Error: pretrained_attn required for zero-shot init | Time: 0.4s
 [2026-08-20 22:08:44] [Worker-2] [5/120] >> Launching: attn=performer | task=sst2 | epochs=0.5 | seed=42
 [2026-08-20 22:12:56] [Worker-2] [5/120] << SUCCESS: attn=performer | task=sst2 | Acc: 82.22% | F1: 82.22% | Loss: 0.4154 | Time: 251.3s
+[2026-08-20 22:12:59] [Worker-2] [6/120] >> Launching: attn=nystrom | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 22:18:21] [Worker-2] [6/120] << SUCCESS: attn=nystrom | task=sst2 | Acc: 83.60% | F1: 83.59% | Loss: 0.3808 | Time: 321.5s
