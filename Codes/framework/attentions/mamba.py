@@ -55,12 +55,14 @@ class Mamba(BaseAttention):
 
     def __init__(
         self,
-        d_model: int,
+        d_model: Optional[int] = None,
         config: Optional[Any] = None,
         rank: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        if d_model is None:
+            d_model = kwargs.get("hidden_size", 768)
         self.d_model: int = d_model
         # Projects input to 2× width then splits into two gating branches.
         self.in_proj: nn.Linear = nn.Linear(d_model, d_model * 2)
