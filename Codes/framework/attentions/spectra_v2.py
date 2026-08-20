@@ -366,14 +366,14 @@ class SpectraV2Attention(nn.Module):
 
 @ATTENTION_REGISTRY.register("spectra_v2")
 def inject_spectra_v2(
-    layer: Any,
     model_config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    total_layers: int,
-    old_attn: Any,
+    **kwargs: Any
 ) -> SpectraV2Attention:
     r"""Bridge helper injecting SpectraV2Attention into a transformer layer."""
+    comp_config = kwargs.get("comp_config", None)
+    layer_idx = kwargs.get("layer_idx", 0)
+    total_layers = kwargs.get("total_layers", 12)
+    old_attn = kwargs.get("old_attn", None)
     cfg = SpectraConfig(
         hidden_size=model_config.hidden_size,
         num_attention_heads=model_config.num_attention_heads,
