@@ -146,6 +146,7 @@ if (copyLinkBtn) {
     });
 }
 
+let plotHistories = {};
 // ── Catalog Load ─────────────────────────────────────────────
 async function loadCatalog() {
     try {
@@ -156,6 +157,10 @@ async function loadCatalog() {
         catalogData = { attentions: [], compressions: [], framework: [] };
         console.warn('catalog.json not found, using empty catalog:', e);
     }
+    try {
+        const hRes = await fetch('results/all_histories.json');
+        if (hRes.ok) plotHistories = await hRes.json();
+    } catch (e) { console.warn('Could not load plot histories'); }
 
     // Flatten all items
     allItems = [
@@ -512,8 +517,68 @@ function renderMarkdown(md, item) {
         html = html.split(m.id).join(m.rendered);
     }
 
+    // Training Plots Injection
+    const taskNames = ['sst2', 'mrpc', 'qnli', 'qqp', 'mnli', 'cola', 'rte', 'stsb', 'wnli'];
+    let plotMatches = [];
+    if (plotHistories) {
+        plotMatches = Object.keys(plotHistories).filter(k => taskNames.some(t => k === item.id + "_" + t + "_s42"));
+    }
+    
+    if (plotMatches.length > 0) {
+        let plotHtml = `<div class="mt-8 border-t border-[var(--border-color)] pt-8">
+            <h3 class="text-xl font-bold mb-4">Empirical Training Trajectories</h3>
+            <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">`;
+        plotMatches.forEach(k => {
+            const taskName = taskNames.find(t => k.includes("_" + t + "_"));
+            plotHtml += `<div class="glass p-4 rounded-lg border border-[var(--border-color)]">
+                <h4 class="text-sm font-bold text-[var(--tx-muted)] mb-2 uppercase tracking-wide">GLUE Task: ${taskName}</h4>
+                <div style="height:250px; position:relative;"><canvas id="chart-${k}"></canvas></div>
+            </div>`;
+        });
+        plotHtml += `</div></div>`;
+        html += plotHtml;
+    }
+
     mdContainer.innerHTML = html;
     mdContainer.classList.add('fade-in');
+
+    if (plotMatches.length > 0 && window.Chart) {
+        plotMatches.forEach(k => {
+            const ctx = document.getElementById(`chart-${k}`);
+            if (ctx) {
+                const hist = plotHistories[k];
+                const labels = hist.map(d => `Step ${d.step || Math.round(d.epoch*1000)}`);
+                const data = hist.map(d => d.loss);
+                new Chart(ctx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Training Loss',
+                            data: data,
+                            borderColor: '#06b6d4',
+                            backgroundColor: 'rgba(6, 182, 212, 0.12)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        scales: {
+                            x: { grid: { color: 'rgba(75, 85, 99, 0.15)' }, ticks: { color: '#9ca3af', font: { size: 9, family: 'monospace' } } },
+                            y: { grid: { color: 'rgba(75, 85, 99, 0.15)' }, ticks: { color: '#9ca3af', font: { size: 9, family: 'monospace' } } }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        });
+    }
 
     // Step 7: Fallback KaTeX pass for any dynamically injected formulas
     if (window.renderMathInElement) {
