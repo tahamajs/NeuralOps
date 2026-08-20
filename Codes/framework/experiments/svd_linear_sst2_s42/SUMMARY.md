@@ -1,5 +1,5 @@
 # Run Summary: `svd_linear_sst2_s42`
-> Generated: 2026-08-20 04:59:50
+> Generated: 2026-08-20 21:48:03
 
 ## Configuration
 ```
@@ -62,14 +62,14 @@
 | eval_accuracy | 0.886468 |
 | eval_f1_macro | 0.886285 |
 | eval_f1_weighted | 0.886368 |
-| eval_runtime | 0.928000 |
-| eval_samples_per_second | 939.692000 |
-| eval_steps_per_second | 15.087000 |
+| eval_runtime | 0.926000 |
+| eval_samples_per_second | 941.692000 |
+| eval_steps_per_second | 15.119000 |
 | epoch | 0.500238 |
 | gpu_memory_allocated | 706.449707 |
 | gpu_memory_reserved | 2154.000000 |
-| elapsed_time | 141.015558 |
+| elapsed_time | 131.723630 |
 
-**Total runtime:** 2m 20s
+**Total runtime:** 2m 11s
 
 **Output dir:** `experiments\svd_linear_sst2_s42`
