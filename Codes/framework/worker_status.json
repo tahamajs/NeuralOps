@@ -1,26 +1,26 @@
 {
   "2": {
     "status": "running",
-    "attn": "nystrom",
-    "task": "qnli",
-    "idx": "36/120",
-    "pid": 16820,
-    "start_time": 1787254095.891905
+    "attn": "svd",
+    "task": "sst2",
+    "idx": "2/120",
+    "pid": 26908,
+    "start_time": 1787262595.6289966
   },
   "1": {
     "status": "running",
-    "attn": "svd",
-    "task": "qnli",
-    "idx": "32/120",
-    "pid": 4856,
-    "start_time": 1787253251.772448
+    "attn": "svd_linear",
+    "task": "sst2",
+    "idx": "1/120",
+    "pid": 10252,
+    "start_time": 1787262587.8951552
   },
   "3": {
     "status": "running",
-    "attn": "performer",
-    "task": "qnli",
-    "idx": "35/120",
-    "pid": 10252,
-    "start_time": 1787253896.2743766
+    "attn": "full",
+    "task": "sst2",
+    "idx": "3/120",
+    "pid": 6604,
+    "start_time": 1787262602.0058265
   }
 }
