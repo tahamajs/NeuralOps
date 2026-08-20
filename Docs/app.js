@@ -523,7 +523,39 @@ function renderMarkdown(md, item) {
     const taskNames = ['sst2', 'mrpc', 'qnli', 'qqp', 'mnli', 'cola', 'rte', 'stsb', 'wnli'];
     let plotMatches = [];
     if (plotHistories) {
-        plotMatches = Object.keys(plotHistories).filter(k => taskNames.some(t => k === item.id + "_" + t + "_s42"));
+        if (item.category === 'blog_series') {
+            const blogMap = {
+                '01': ['svd_linear', 'aegis', 'svd', 'asvd', 'nystrom'],
+                '02': ['mamba', 'gated_delta_net', 'linformer', 'performer', 'flash3'],
+                '03': ['mla', 'nsa', 'adaptive', 'sparse'],
+                '04': ['lora', 'lowrank', 'svd_compressed'],
+                '05': ['quant', 'prun', 'fp8', 'int4']
+            };
+            const prefix = item.id.substring(0, 2);
+            const targets = blogMap[prefix] || [];
+            plotMatches = Object.keys(plotHistories).filter(k => {
+                return targets.some(t => k.startsWith(t));
+            });
+        } else {
+            plotMatches = Object.keys(plotHistories).filter(k => {
+                for (let t of taskNames) {
+                    if (k.includes('_' + t + '_')) {
+                        let attn = k.split('_' + t + '_')[0];
+                        let idBase = item.id.replace('.md', '').replace('_attention', '');
+                        let attnBase = attn.replace('_attention', '');
+                        if (idBase === attnBase || item.id.startsWith(attn + '.md') || item.id.startsWith(attn + '_')) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            });
+        }
+    }
+                }
+            }
+            return false;
+        });
     }
     
     if (plotMatches.length > 0) {
@@ -549,9 +581,18 @@ function renderMarkdown(md, item) {
                 statsHtml += `</div>`;
             }
 
+            let attnName = k;
+            for(let t of taskNames) {
+                if(k.includes('_' + t + '_')) {
+                    attnName = k.split('_' + t + '_')[0];
+                    break;
+                }
+            }
             plotHtml += `<div class="glass p-4 rounded-lg border border-[var(--border-color)]">
                 <div class="flex justify-between items-center mb-2">
-                    <h4 class="text-sm font-bold text-[var(--tx-muted)] uppercase tracking-wide">GLUE Task: ${taskName}</h4>
+                    <h4 class="text-sm font-bold text-[var(--tx-muted)] uppercase tracking-wide">
+                        <span class="text-white">${attnName}</span> | GLUE: ${taskName}
+                    </h4>
                 </div>
                 <div style="height:220px; position:relative;"><canvas id="chart-${k}"></canvas></div>
                 ${statsHtml}
