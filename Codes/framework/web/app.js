@@ -179,6 +179,21 @@ async function updateDashboard() {
     }
 }
 
+async function sendCommand(action) {
+    if (!confirm(`Are you sure you want to ${action.toUpperCase()} the orchestrator?`)) return;
+    try {
+        const res = await fetch('/api/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action })
+        });
+        const data = await res.json();
+        alert(data.message || `Command ${action} executed`);
+    } catch (err) {
+        alert("Error executing command: " + err.message);
+    }
+}
+
 window.onload = () => {
     initChart();
     updateDashboard();
