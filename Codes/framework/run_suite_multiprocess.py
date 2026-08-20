@@ -174,9 +174,21 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
 
         # Auto-commit to Git
         try:
-            import subprocess
+            import subprocess, glob
+            # Generate the unified history json for the Docs frontend
+            hist_res = {}
+            for p in glob.glob(str(RESULTS_DIR / "*" / "history" / "log_history.json")):
+                d = os.path.basename(os.path.dirname(os.path.dirname(p)))
+                try: hist_res[d] = json.load(open(p, encoding="utf-8", errors="ignore"))
+                except: pass
+            
+            docs_res_dir = PROJECT_DIR / "Docs" / "results"
+            docs_res_dir.mkdir(parents=True, exist_ok=True)
+            with open(docs_res_dir / "all_histories.json", "w", encoding="utf-8") as f:
+                json.dump(hist_res, f)
+
             msg = f"feat(benchmark): [{idx}/{total_tasks}] {attn} on {task} | Acc: {acc*100:.2f}% | F1: {f1*100:.2f}% | Loss: {loss:.4f}"
-            subprocess.run(["git", "add", "-f", str(RESULTS_DIR), str(MASTER_LOG)], cwd=str(PROJECT_DIR), check=True)
+            subprocess.run(["git", "add", "-f", str(RESULTS_DIR), str(MASTER_LOG), str(docs_res_dir / "all_histories.json")], cwd=str(PROJECT_DIR), check=True)
             subprocess.run(["git", "commit", "-m", msg], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
             subprocess.run(["git", "pull", "origin", "main", "--rebase"], cwd=str(PROJECT_DIR), capture_output=True, check=False)
             subprocess.run(["git", "push", "origin", "main"], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
