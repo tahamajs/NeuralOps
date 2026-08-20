@@ -72,3 +72,5 @@ python main.py: error: unrecognized arguments: mrpc qnli
 [2026-08-20 22:27:01] [Worker-2] [8/120] << SUCCESS: attn=flash3 | task=sst2 | Acc: 82.91% | F1: 82.91% | Loss: 0.4073 | Time: 314.8s
 [2026-08-20 22:27:04] [Worker-2] [9/120] >> Launching: attn=mamba | task=sst2 | epochs=0.5 | seed=42
 [2026-08-20 22:27:05] [Worker-2] [9/120] NOTICE: attn=mamba | task=sst2 | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 0.4s
+[2026-08-20 22:27:07] [Worker-2] [10/120] >> Launching: attn=gated_delta_net | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 22:27:08] [Worker-2] [10/120] NOTICE: attn=gated_delta_net | task=sst2 | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 0.4s
