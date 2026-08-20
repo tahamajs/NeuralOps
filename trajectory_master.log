@@ -144,3 +144,5 @@ ompleted)
 [2026-08-21 00:55:31] [Worker-2] [35/120] << SUCCESS: attn=performer | task=qnli | Acc: 49.46% | F1: 33.09% | Loss: 0.6931 | Time: 196.7s
 [2026-08-21 00:55:34] [Worker-2] [37/120] >> Launching: attn=linformer | task=qnli | seed=42
 [2026-08-21 00:56:35] [Worker-3] [36/120] << SUCCESS: attn=nystrom | task=qnli | Acc: 59.62% | F1: 58.75% | Loss: 0.6616 | Time: 256.6s
+[2026-08-21 00:56:38] [Worker-3] [38/120] >> Launching: attn=flash3 | task=qnli | seed=42
+[2026-08-21 00:58:32] [Worker-2] [37/120] << SUCCESS: attn=linformer | task=qnli | Acc: 50.61% | F1: 42.31% | Loss: 0.6915 | Time: 178.0s
