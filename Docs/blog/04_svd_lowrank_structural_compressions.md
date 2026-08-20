@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Live Empirical Trajectories:** As part of this comprehensive review, we are actively executing a 120-run GPU benchmark grid. You will find the **real-time training loss charts, hyperparameters, and GLUE metrics** dynamically injected at the absolute bottom of this article. These metrics synchronize directly from the GPU orchestrator every 60 seconds.
+
 # 🌟 Part 4: SVD, Low-Rank & Structural Compression Engines
 
 > **The Definitive Visual Guide to Compressing Large Language Models: How Mathematical Factorization, Activation-Aware Projections, and Tensor Networks Break the Memory Bandwidth Bottleneck.**

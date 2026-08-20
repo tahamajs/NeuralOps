@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Live Empirical Trajectories:** As part of this comprehensive review, we are actively executing a 120-run GPU benchmark grid. You will find the **real-time training loss charts, hyperparameters, and GLUE metrics** dynamically injected at the absolute bottom of this article. These metrics synchronize directly from the GPU orchestrator every 60 seconds.
+
 # ⚡ Part 2: Linear, Kernelized, Recurrent & State Space (SSM) Attentions
 
 > **The Visual Guide to Escaping Quadratic Complexity: How Matrix Associativity, Kernel Maps, Selective Recurrences, and State Space Duality Power the Next Generation of Sub-Quadratic Language Models.**

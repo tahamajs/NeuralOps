@@ -1,3 +1,6 @@
+> [!NOTE]
+> **Live Empirical Trajectories:** As part of this comprehensive review, we are actively executing a 120-run GPU benchmark grid. You will find the **real-time training loss charts, hyperparameters, and GLUE metrics** dynamically injected at the absolute bottom of this article. These metrics synchronize directly from the GPU orchestrator every 60 seconds.
+
 # 🌟 Part 1: Spectral, SVD, Low-Rank & Factorized Attention Architectures
 
 > **The Visual Guide to Factorizing Transformers: How Singular Value Decomposition, Spectral Energy Routing, and Low-Rank Projections Break the Matrix Memory Barrier.**
