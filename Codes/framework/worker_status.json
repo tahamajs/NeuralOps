@@ -1,26 +1,26 @@
 {
   "2": {
-    "status": "error",
-    "attn": "performer",
-    "task": "mrpc",
-    "idx": "20/120",
-    "error": "TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors'",
-    "pid": 47873
+    "status": "running",
+    "attn": "nystrom",
+    "task": "qnli",
+    "idx": "36/120",
+    "pid": 16820,
+    "start_time": 1787254095.891905
   },
   "1": {
-    "status": "error",
-    "attn": "linformer",
-    "task": "mrpc",
-    "idx": "22/120",
-    "error": "TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors'",
-    "pid": 47842
+    "status": "running",
+    "attn": "svd",
+    "task": "qnli",
+    "idx": "32/120",
+    "pid": 4856,
+    "start_time": 1787253251.772448
   },
   "3": {
     "status": "running",
-    "attn": "nystrom",
-    "task": "mrpc",
-    "idx": "21/120",
-    "pid": 47891,
-    "start_time": 1787252768.622049
+    "attn": "performer",
+    "task": "qnli",
+    "idx": "35/120",
+    "pid": 10252,
+    "start_time": 1787253896.2743766
   }
 }
