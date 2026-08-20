@@ -188,3 +188,4 @@ ompleted)
 [2026-08-21 01:19:47] [Worker-1] [1/120] >> Launching: attn=svd_linear | task=sst2 | seed=42
 [2026-08-21 01:19:55] [Worker-2] [2/120] >> Launching: attn=svd | task=sst2 | seed=42
 [2026-08-21 01:20:02] [Worker-3] [3/120] >> Launching: attn=full | task=sst2 | seed=42
+[2026-08-21 01:27:57] [Worker-1] [1/120] << SUCCESS: attn=svd_linear | task=sst2 | Acc: 89.22% | F1: 89.22% | Loss: 0.2633 | Time: 489.5s
