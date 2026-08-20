@@ -203,3 +203,7 @@ test_marker.txt
 Codes/framework/kaggle_deploy_*/
 kaggle_deploy_temp/
 results_kaggle_gpu/
+
+*.zip
+*.tar.gz
+*.rar
