@@ -152,3 +152,5 @@ ompleted)
 [2026-08-21 00:58:37] [Worker-2] [40/120] NOTICE: attn=gated_delta_net | task=qnli | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 0.4s
 [2026-08-21 00:58:40] [Worker-2] [41/120] >> Launching: attn=adasplash | task=qnli | seed=42
 [2026-08-21 01:00:39] [Worker-3] [38/120] << SUCCESS: attn=flash3 | task=qnli | Acc: 59.31% | F1: 58.51% | Loss: 0.6632 | Time: 241.0s
+[2026-08-21 01:00:41] [Worker-3] [42/120] >> Launching: attn=aegis_v3 | task=qnli | seed=42
+[2026-08-21 01:00:53] [Worker-3] [42/120] NOTICE: attn=aegis_v3 | task=qnli | Error: value cannot be converted to type at::Half without overflow | Time: 11.3s
