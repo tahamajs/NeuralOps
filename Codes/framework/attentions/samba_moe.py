@@ -87,7 +87,8 @@ class REAPMoE(nn.Module):
         """
         B, L, D = x.shape
         scores = self.router(x)
-        weights, indices = torch.topk(scores, self.top_k, dim=-1)
+        k = min(self.top_k, scores.size(-1))
+        weights, indices = torch.topk(scores, k, dim=-1)
         weights = F.softmax(weights, dim=-1)
         out = torch.zeros_like(x)
         for e in range(self.n_experts):
