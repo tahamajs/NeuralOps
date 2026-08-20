@@ -91,3 +91,5 @@ ompleted)
 [2026-08-20 22:43:55] [Worker-3] [30/120] >> Launching: attn=samba_m3 | task=mrpc | seed=42
 [2026-08-20 22:43:57] [Worker-2] [31/120] >> Launching: attn=svd_linear | task=qnli | seed=42
 [2026-08-20 22:44:08] [Worker-1] [21/120] << SUCCESS: attn=nystrom | task=mrpc | Acc: 68.38% | F1: 0.00% | Loss: 0.6254 | Time: 109.6s
+[2026-08-20 22:44:11] [Worker-1] [32/120] >> Launching: attn=svd | task=qnli | seed=42
+[2026-08-20 22:44:33] [Worker-3] [30/120] << SUCCESS: attn=samba_m3 | task=mrpc | Acc: 68.38% | F1: 0.00% | Loss: 0.6242 | Time: 38.7s
