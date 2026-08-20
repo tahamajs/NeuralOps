@@ -792,7 +792,75 @@ function renderHome() {
                 <div class="stat-card-icon" style="background:rgba(245,158,11,.12);color:var(--accent-4);">🔄</div>
             </div>
         </div>
+`;
+    // LEADERBOARD INJECTION
+    let leaderboardHtml = '';
+    if (Object.keys(plotHistories).length > 0) {
+        let rows = [];
+        for (const [key, dataObj] of Object.entries(plotHistories)) {
+            const isNewFmt = !Array.isArray(dataObj);
+            const met = isNewFmt ? (dataObj.metrics || {}) : {};
+            const conf = isNewFmt ? (dataObj.config || {}) : {};
+            if (met.accuracy) {
+                // Key format: attn_task_seed (e.g. svd_linear_sst2_s42)
+                const parts = key.split('_');
+                // find the task by checking which part is in taskNames
+                const taskNames = ['sst2', 'mrpc', 'qnli', 'qqp', 'mnli', 'cola', 'rte', 'stsb', 'wnli'];
+                let task = 'unknown';
+                let attn = key;
+                for (let t of taskNames) {
+                    if (key.includes('_' + t + '_')) {
+                        task = t.toUpperCase();
+                        attn = key.split('_' + t + '_')[0];
+                        break;
+                    }
+                }
+                rows.push({ attn, task, acc: met.accuracy, time: met.time_seconds || 0, epochs: conf.epochs || '?' });
+            }
+        }
+        
+        if (rows.length > 0) {
+            rows.sort((a,b) => b.acc - a.acc); // sort by accuracy desc
+            leaderboardHtml = `
+            <div class="mt-12 mb-8 p-6 glass rounded-xl border border-[var(--border-color)]">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+                    </span>
+                    <h2 class="text-xl font-bold tracking-tight">Live GPU Benchmark Leaderboard</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm font-mono text-[var(--tx-muted)]">
+                        <thead class="text-xs uppercase bg-black/40 text-gray-400 border-b border-[var(--border-color)]">
+                            <tr>
+                                <th class="px-4 py-3">Architecture</th>
+                                <th class="px-4 py-3">GLUE Task</th>
+                                <th class="px-4 py-3">Accuracy</th>
+                                <th class="px-4 py-3">Epochs</th>
+                                <th class="px-4 py-3">Wall Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows.slice(0, 15).map((r, i) => `
+                            <tr class="border-b border-[var(--border-color)] hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3 font-bold text-gray-200">
+                                    <span class="text-[10px] text-gray-500 mr-2">#${i+1}</span>${r.attn}
+                                </td>
+                                <td class="px-4 py-3 text-cyan-400">${r.task}</td>
+                                <td class="px-4 py-3 text-emerald-400 font-bold">${r.acc}%</td>
+                                <td class="px-4 py-3">${r.epochs}</td>
+                                <td class="px-4 py-3 text-amber-400">${r.time}s</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-[10px] text-gray-500 mt-3 text-right">Top 15 Runs · Auto-synced directly from GPU cluster</div>
+            </div>`;
+        }
+    }
 
+    mdContainer.innerHTML += leaderboardHtml + `
         <div class="arch-grid-section">
             <div class="section-row">
                 <span class="section-title-small">Featured Research Architectures</span>
