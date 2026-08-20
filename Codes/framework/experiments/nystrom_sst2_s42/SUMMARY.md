@@ -1,11 +1,11 @@
 # Run Summary: `nystrom_sst2_s42`
-> Generated: 2026-08-20 22:18:21
+> Generated: 2026-08-21 01:51:48
 
 ## Configuration
 ```
   attn_implementation: full
   attn_type: nystrom
-  batch_size: 32
+  batch_size: 16
   compression_rank: 64
   compressor: None
   config: None
@@ -58,18 +58,18 @@
 
 | Metric | Value |
 |:---|:---|
-| eval_loss | 0.380800 |
-| eval_accuracy | 0.836009 |
-| eval_f1_macro | 0.835895 |
-| eval_f1_weighted | 0.835974 |
-| eval_runtime | 1.664800 |
-| eval_samples_per_second | 523.799000 |
-| eval_steps_per_second | 8.410000 |
-| epoch | 0.500238 |
-| gpu_memory_allocated | 2027.868164 |
-| gpu_memory_reserved | 4568.000000 |
-| elapsed_time | 319.026812 |
+| eval_loss | 0.422666 |
+| eval_accuracy | 0.821101 |
+| eval_f1_macro | 0.821007 |
+| eval_f1_weighted | 0.821082 |
+| eval_runtime | 3.274900 |
+| eval_samples_per_second | 266.271000 |
+| eval_steps_per_second | 8.550000 |
+| epoch | 0.500000 |
+| gpu_memory_allocated | 793.110840 |
+| gpu_memory_reserved | 1936.000000 |
+| elapsed_time | 686.908024 |
 
-**Total runtime:** 5m 17s
+**Total runtime:** 11m 23s
 
 **Output dir:** `C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments\nystrom_sst2_s42`
