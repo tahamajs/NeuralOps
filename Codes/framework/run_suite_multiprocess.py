@@ -161,12 +161,32 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
         t0 = time.time()
         acc, f1, loss = 0.0, 0.0, 0.0
         try:
+            # Save the training configuration to disk so the telemetry thread can capture it
+            exp_dir = RESULTS_DIR / f"{attn}_{task}_s{cfg.seed}"
+            exp_dir.mkdir(parents=True, exist_ok=True)
+            with open(exp_dir / "run_config.json", "w", encoding="utf-8") as f:
+                import json
+                json.dump({
+                    "batch_size": cfg.batch_size,
+                    "num_workers": getattr(cfg, "num_workers", 4),
+                    "learning_rate": cfg.lr,
+                    "epochs": cfg.epochs,
+                    "seed": cfg.seed,
+                    "attn": attn,
+                    "task": task
+                }, f)
+
             result = run_train(cfg, fw, logger)
             elapsed = time.time() - t0
             eval_metrics = result.get("eval", {})
             acc = eval_metrics.get("eval_accuracy", 0.0)
             f1 = eval_metrics.get("eval_f1_macro", 0.0)
             loss = eval_metrics.get("eval_loss", 0.0)
+            
+            # Save final metrics
+            with open(exp_dir / "metrics.json", "w", encoding="utf-8") as f:
+                json.dump({"accuracy": round(acc*100, 2), "f1": round(f1*100, 2), "loss": round(loss, 4), "time_seconds": round(elapsed, 1)}, f)
+
             log_master(f"[Worker-{worker_id}] [{idx}/{total_tasks}] << SUCCESS: attn={attn} | task={task} | Acc: {acc*100:.2f}% | F1: {f1*100:.2f}% | Loss: {loss:.4f} | Time: {elapsed:.1f}s")
             update_worker_status_file(worker_id, {
                 "status": "completed", "attn": attn, "task": task, "idx": f"{idx}/{total_tasks}", "last_acc": round(acc*100, 2), "last_loss": round(loss, 4), "pid": os.getpid()
@@ -219,7 +239,24 @@ def telemetry_sync_thread():
             hist_res = {}
             for p in glob.glob(str(RESULTS_DIR / "*" / "history" / "log_history.json")):
                 d = os.path.basename(os.path.dirname(os.path.dirname(p)))
-                try: hist_res[d] = json.load(open(p, encoding="utf-8", errors="ignore"))
+                try: 
+                    hist_data = json.load(open(p, encoding="utf-8", errors="ignore"))
+                    
+                    config_data = {}
+                    config_path = os.path.join(os.path.dirname(os.path.dirname(p)), "run_config.json")
+                    if os.path.exists(config_path):
+                        config_data = json.load(open(config_path, encoding="utf-8", errors="ignore"))
+                        
+                    metrics_data = {}
+                    metrics_path = os.path.join(os.path.dirname(os.path.dirname(p)), "metrics.json")
+                    if os.path.exists(metrics_path):
+                        metrics_data = json.load(open(metrics_path, encoding="utf-8", errors="ignore"))
+
+                    hist_res[d] = {
+                        "history": hist_data,
+                        "config": config_data,
+                        "metrics": metrics_data
+                    }
                 except: pass
             
             docs_res_dir.mkdir(parents=True, exist_ok=True)
