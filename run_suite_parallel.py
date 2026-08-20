@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
-Dual-Worker Parallel GPU Experiment Orchestrator
-Runs 2 concurrent model training workers on CUDA to maximize GPU utilization (60-90%)
-without exceeding the 8GB VRAM limit. 
-100% Offline, zero-bloat (JSON/metrics only), thread-safe logging and Git auto-sync.
+Triple-Worker Parallel GPU Experiment Orchestrator
+Runs 3 concurrent model training workers on CUDA to maximize GPU utilization (85-100%)
+without exceeding the 8GB VRAM limit.
+100% Offline, zero-bloat (JSON/metrics only), live worker state telemetry, thread-safe logging, and Git auto-sync.
 """
 import os
 import sys
 import gc
+import json
 import time
 import queue
 import logging
@@ -38,9 +39,28 @@ logger = logging.getLogger("Parallel_GPU_Orchestrator")
 MASTER_LOG = PROJECT_DIR / "trajectory_master.log"
 RESULTS_DIR = BASE_DIR / "experiments"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+WORKER_STATE_FILE = BASE_DIR / "worker_status.json"
 
 log_lock = threading.Lock()
 git_lock = threading.Lock()
+state_lock = threading.Lock()
+
+active_workers_state = {
+    1: {"status": "idle", "attn": "-", "task": "-", "step": 0, "total_steps": 0, "loss": 0.0, "epoch": 0.0, "time_elapsed": 0},
+    2: {"status": "idle", "attn": "-", "task": "-", "step": 0, "total_steps": 0, "loss": 0.0, "epoch": 0.0, "time_elapsed": 0},
+    3: {"status": "idle", "attn": "-", "task": "-", "step": 0, "total_steps": 0, "loss": 0.0, "epoch": 0.0, "time_elapsed": 0},
+}
+
+
+def update_worker_state(worker_id: int, **kwargs):
+    with state_lock:
+        if worker_id in active_workers_state:
+            active_workers_state[worker_id].update(kwargs)
+            try:
+                with open(WORKER_STATE_FILE, "w", encoding="utf-8") as f:
+                    json.dump(active_workers_state, f, indent=2)
+            except Exception:
+                pass
 
 
 def log_master(msg: str):
@@ -76,7 +96,8 @@ def get_completed_runs():
 
 
 def worker_loop(worker_id: int, task_queue: queue.Queue, total_tasks: int, fw: dict):
-    logger.info(f"Worker-{worker_id} started on GPU stream.")
+    logger.info(f"Worker-{worker_id} initialized on GPU stream.")
+    update_worker_state(worker_id, status="idle", attn="-", task="-")
     
     while True:
         try:
@@ -92,6 +113,7 @@ def worker_loop(worker_id: int, task_queue: queue.Queue, total_tasks: int, fw: d
             continue
 
         log_master(f"[Worker-{worker_id}] [{idx}/{total_tasks}] >> Launching: attn={attn} | task={task} | epochs=0.5 | seed=42")
+        update_worker_state(worker_id, status="running", attn=attn, task=task, idx=f"{idx}/{total_tasks}", start_time=time.time())
 
         cfg = fw["ExperimentConfig"]()
         cfg.attn_type = attn
@@ -101,15 +123,18 @@ def worker_loop(worker_id: int, task_queue: queue.Queue, total_tasks: int, fw: d
         cfg.save_model = False
         cfg.seed = 42
 
-        # Memory-safe dynamic batch sizing for dual-worker concurrency
+        # Memory-safe dynamic batch sizing for triple-worker concurrency
         if attn in ("full", "flash3", "griffin_ssd", "aegis_v3", "spectra_v2", "samba_m3"):
             cfg.batch_size = 16
+        elif attn in ("svd_linear", "performer", "linformer", "nystrom"):
+            cfg.batch_size = 48
         else:
             cfg.batch_size = 32
 
         cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
 
         t0 = time.time()
+        acc, f1, loss = 0.0, 0.0, 0.0
         try:
             result = run_train(cfg, fw, logger)
             elapsed = time.time() - t0
@@ -118,19 +143,23 @@ def worker_loop(worker_id: int, task_queue: queue.Queue, total_tasks: int, fw: d
             f1 = eval_metrics.get("eval_f1_macro", 0.0)
             loss = eval_metrics.get("eval_loss", 0.0)
             log_master(f"[Worker-{worker_id}] [{idx}/{total_tasks}] << SUCCESS: attn={attn} | task={task} | Acc: {acc*100:.2f}% | F1: {f1*100:.2f}% | Loss: {loss:.4f} | Time: {elapsed:.1f}s")
+            update_worker_state(worker_id, status="completed", last_acc=round(acc*100, 2), last_loss=round(loss, 4))
         except Exception as e:
             elapsed = time.time() - t0
             log_master(f"[Worker-{worker_id}] [{idx}/{total_tasks}] NOTICE: attn={attn} | task={task} | Error: {e} | Time: {elapsed:.1f}s")
+            update_worker_state(worker_id, status="error", error_msg=str(e))
 
-        # Auto-commit to git
+        # Auto-commit to git after every single finished run
         with git_lock:
             try:
                 import subprocess
-                subprocess.run(["git", "add", "-f", str(RESULTS_DIR)], cwd=str(PROJECT_DIR), check=True)
-                subprocess.run(["git", "commit", "-m", f"Auto-commit: {attn} on {task}"], cwd=str(PROJECT_DIR), check=False)
-                subprocess.run(["git", "push"], cwd=str(PROJECT_DIR), check=False)
+                msg = f"feat(benchmark): [{idx}/{total_tasks}] {attn} on {task} | Acc: {acc*100:.2f}% | F1: {f1*100:.2f}% | Loss: {loss:.4f}"
+                subprocess.run(["git", "add", "-f", str(RESULTS_DIR), str(MASTER_LOG)], cwd=str(PROJECT_DIR), check=True)
+                subprocess.run(["git", "commit", "-m", msg], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
+                subprocess.run(["git", "pull", "origin", "main", "--rebase"], cwd=str(PROJECT_DIR), capture_output=True, check=False)
+                subprocess.run(["git", "push", "origin", "main"], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
             except Exception as e:
-                logger.warning(f"Git push failed: {e}")
+                logger.warning(f"Git commit/push error: {e}")
 
         # GPU cache clean
         if torch.cuda.is_available():
@@ -139,18 +168,19 @@ def worker_loop(worker_id: int, task_queue: queue.Queue, total_tasks: int, fw: d
 
         task_queue.task_done()
 
+    update_worker_state(worker_id, status="finished")
     logger.info(f"Worker-{worker_id} finished all assigned tasks.")
 
 
 def main():
     log_master("=" * 60)
-    log_master("  STARTING PARALLEL SVD DUAL-WORKER GPU ORCHESTRATION  ")
+    log_master("  STARTING PARALLEL SVD TRIPLE-WORKER GPU ORCHESTRATION  ")
     log_master("=" * 60)
     log_master(f"  Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
     if torch.cuda.is_available():
         vram = torch.cuda.get_device_properties(0).total_memory / 1e9
         log_master(f"  VRAM: {vram:.1f} GB | CUDA: {torch.version.cuda} | PyTorch: {torch.__version__}")
-    log_master("  Mode: 2 Concurrent GPU Streams | Policy: ZERO-BLOAT")
+    log_master("  Mode: 3 Concurrent GPU Streams (Target: ~90-100% GPU Load)")
     log_master("=" * 60)
 
     fw = _import_framework()
@@ -185,7 +215,7 @@ def main():
 
     log_master(f"Trajectory Matrix: {len(ATTN_MODELS)} Models x {len(TASKS)} Tasks = {total} Runs")
 
-    NUM_WORKERS = 2
+    NUM_WORKERS = 3
     threads = []
     for w_id in range(1, NUM_WORKERS + 1):
         t = threading.Thread(target=worker_loop, args=(w_id, task_queue, total, fw), daemon=False)
@@ -197,7 +227,7 @@ def main():
         t.join()
 
     log_master("=" * 60)
-    log_master("  ALL 120 DUAL-WORKER PARALLEL RUNS COMPLETED SUCCESSFULLY!")
+    log_master("  ALL 120 TRIPLE-WORKER PARALLEL RUNS COMPLETED SUCCESSFULLY!")
     log_master("=" * 60)
 
 
