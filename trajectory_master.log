@@ -78,3 +78,5 @@ python main.py: error: unrecognized arguments: mrpc qnli
 [2026-08-20 22:34:59] [Worker-2] [11/120] << SUCCESS: attn=adasplash | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6929 | Time: 469.4s
 [2026-08-20 22:35:02] [Worker-2] [12/120] >> Launching: attn=aegis_v3 | task=sst2 | epochs=0.5 | seed=42
 [2026-08-20 22:35:15] [Worker-2] [12/120] NOTICE: attn=aegis_v3 | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 12.1s
+[2026-08-20 22:35:17] [Worker-2] [13/120] >> Launching: attn=griffin_ssd | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 22:35:27] [Worker-2] [13/120] NOTICE: attn=griffin_ssd | task=sst2 | Error: CUDA out of memory. Tried to allocate 18.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 0 bytes is free. Of the allocated memory 14.33 GiB is allocated by PyTorch, and 102.63 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 10.5s
