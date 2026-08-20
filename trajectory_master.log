@@ -21,3 +21,4 @@
 [2026-08-20 22:34:20] [Worker-1] [7/120] >> Launching: attn=linformer | task=sst2 | seed=42
 [2026-08-20 22:34:24] [Worker-3] [5/120] NOTICE: attn=performer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 15.1s
 [2026-08-20 22:34:36] [Worker-2] [6/120] NOTICE: attn=nystrom | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 17.8s
+[2026-08-20 22:34:41] [Worker-1] [7/120] NOTICE: attn=linformer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 20.5s
