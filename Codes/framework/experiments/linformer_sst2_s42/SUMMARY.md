@@ -1,11 +1,11 @@
 # Run Summary: `linformer_sst2_s42`
-> Generated: 2026-08-20 22:21:43
+> Generated: 2026-08-21 01:48:11
 
 ## Configuration
 ```
   attn_implementation: full
   attn_type: linformer
-  batch_size: 32
+  batch_size: 16
   compression_rank: 64
   compressor: None
   config: None
@@ -58,18 +58,18 @@
 
 | Metric | Value |
 |:---|:---|
-| eval_loss | 0.447716 |
-| eval_accuracy | 0.803899 |
-| eval_f1_macro | 0.803897 |
-| eval_f1_weighted | 0.803909 |
-| eval_runtime | 1.320900 |
-| eval_samples_per_second | 660.150000 |
-| eval_steps_per_second | 10.599000 |
-| epoch | 0.500238 |
-| gpu_memory_allocated | 2532.055664 |
-| gpu_memory_reserved | 3898.000000 |
-| elapsed_time | 196.326995 |
+| eval_loss | 0.470878 |
+| eval_accuracy | 0.794725 |
+| eval_f1_macro | 0.794606 |
+| eval_f1_weighted | 0.794696 |
+| eval_runtime | 2.131100 |
+| eval_samples_per_second | 409.169000 |
+| eval_steps_per_second | 13.138000 |
+| epoch | 0.500000 |
+| gpu_memory_allocated | 799.235840 |
+| gpu_memory_reserved | 1620.000000 |
+| elapsed_time | 469.214753 |
 
-**Total runtime:** 3m 15s
+**Total runtime:** 7m 47s
 
 **Output dir:** `C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments\linformer_sst2_s42`
