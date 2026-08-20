@@ -17,7 +17,7 @@ from pathlib import Path
 PORT = 8080
 PROJECT_DIR = Path("C:/Users/Hadi Schumacher/SVD_Project")
 WORKDIR = PROJECT_DIR / "Codes/framework"
-RESULTS_DIR = WORKDIR / "results"
+RESULTS_DIR = WORKDIR / "experiments"
 MASTER_LOG = PROJECT_DIR / "trajectory_master.log"
 
 ATTN_ARCHITECTURES = [
@@ -81,7 +81,7 @@ def get_trajectory_matrix():
     completed_keys = set()
     if RESULTS_DIR.exists():
         for d in RESULTS_DIR.iterdir():
-            if d.is_dir() and (d / "eval_final.json").exists():
+            if d.is_dir() and (d / "metrics" / "eval_final.json").exists():
                 completed_keys.add(d.name)
 
     matrix = []
@@ -124,7 +124,7 @@ def get_active_training_info():
     if RESULTS_DIR.exists():
         for d in sorted(RESULTS_DIR.iterdir(), key=os.path.getmtime, reverse=True):
             if d.is_dir():
-                hist_file = d / "train_history.json"
+                hist_file = d / "history" / "log_history.json"
                 if hist_file.exists():
                     try:
                         hist = json.loads(hist_file.read_text(encoding="utf-8"))
@@ -161,7 +161,7 @@ def get_completed_results():
     if RESULTS_DIR.exists():
         for d in RESULTS_DIR.iterdir():
             if d.is_dir():
-                eval_file = d / "eval_final.json"
+                eval_file = d / "metrics" / "eval_final.json"
                 sys_file = d / "system_info.json"
                 cfg_file = d / "config.json"
                 if eval_file.exists():
@@ -201,405 +201,199 @@ HTML_PAGE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVD Linear Attention — Full GPU Experiment & Analytics Hub</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #030712;
-            color: #f3f4f6;
-            padding: 24px;
-            min-height: 100vh;
-        }
-        .container { max-width: 1380px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
-        .glass {
-            background: rgba(17, 24, 39, 0.9);
-            border: 1px solid rgba(55, 65, 81, 0.7);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.6);
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #06b6d4;
-            padding-bottom: 18px;
-        }
-        .title { font-size: 26px; font-weight: 800; color: #38bdf8; letter-spacing: -0.02em; }
-        .subtitle { font-size: 13px; color: #9ca3af; margin-top: 4px; }
-        .badge {
-            background: rgba(16, 185, 129, 0.2);
-            color: #34d399;
-            border: 1px solid rgba(16, 185, 129, 0.4);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-        .stat-card {
-            background: rgba(31, 41, 55, 0.7);
-            border: 1px solid rgba(75, 85, 99, 0.5);
-            border-radius: 12px;
-            padding: 16px;
-        }
-        .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; font-weight: 700; }
-        .stat-val { font-size: 28px; font-weight: 800; font-family: ui-monospace, monospace; margin: 8px 0; color: #06b6d4; }
-        .progress-bg { width: 100%; height: 8px; background: #374151; border-radius: 4px; overflow: hidden; margin-top: 8px; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #06b6d4, #3b82f6); width: 0%; transition: width 0.4s; }
-        .progress-fill-purple { height: 100%; background: linear-gradient(90deg, #a855f7, #ec4899); width: 0%; transition: width 0.4s; }
-        .stat-sub { font-size: 11px; color: #9ca3af; display: flex; justify-content: space-between; margin-top: 6px; }
-        
-        .main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        @media(max-width: 960px) { .main-grid { grid-template-columns: 1fr; } }
-        
-        .chart-box { height: 280px; position: relative; width: 100%; }
-        canvas { width: 100%; height: 100%; display: block; }
-        .logs-box {
-            background: #000;
-            border: 1px solid #374151;
-            border-radius: 10px;
-            padding: 12px;
-            font-family: ui-monospace, monospace;
-            font-size: 11px;
-            color: #d1d5db;
-            height: 280px;
-            overflow-y: auto;
-            line-height: 1.6;
-        }
-
-        .matrix-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 14px; }
-        .matrix-card {
-            background: rgba(31, 41, 55, 0.5);
-            border: 1px solid rgba(75, 85, 99, 0.4);
-            border-radius: 8px;
-            padding: 10px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
-        }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .dot-done { background: #34d399; box-shadow: 0 0 8px #34d399; }
-        .dot-active { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; animation: pulse 1.5s infinite; }
-        .dot-queued { background: #6b7280; }
-        
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; margin-top: 14px; }
-        th { font-size: 11px; text-transform: uppercase; color: #9ca3af; padding: 12px 14px; border-bottom: 1px solid #374151; font-family: ui-monospace, monospace; }
-        td { padding: 12px 14px; border-bottom: 1px solid rgba(55, 65, 81, 0.4); font-family: ui-monospace, monospace; }
-        tr:hover { background: rgba(55, 65, 81, 0.25); }
-        .acc { color: #34d399; font-weight: 700; }
-        .f1 { color: #818cf8; font-weight: 700; }
-        .loss { color: #fbbf24; }
-        .tag-model { background: rgba(6, 182, 212, 0.15); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); padding: 3px 8px; border-radius: 6px; font-weight: 600; }
-        
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
-    </style>
+    <title>SVD Compression Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-    <div class="container">
-        <!-- Header Banner -->
-        <div class="glass header">
+<body class="bg-gray-900 text-gray-100 font-sans p-6">
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Header -->
+        <header class="flex justify-between items-end border-b border-gray-700 pb-4">
             <div>
-                <div class="title">SVD Linear Attention — Complete Experiment & Analytics Hub</div>
-                <div class="subtitle">
-                    NVIDIA GeForce RTX 4070 Laptop GPU (8.6GB VRAM) • CUDA 12.4 • FP16 Mixed Precision • Zero-Bloat Storage
+                <h1 class="text-3xl font-bold text-cyan-400">GPU Orchestrator Live</h1>
+                <p class="text-gray-400">Zero-Bloat Attention Compression Pipeline</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-mono text-gray-500">Target: 192.168.1.100</p>
+                <div class="flex items-center space-x-2 text-green-400 font-bold">
+                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                    <span id="conn-status">CONNECTED</span>
                 </div>
             </div>
-            <div class="badge" id="live-badge">EXPERIMENTS ACTIVE</div>
-        </div>
+        </header>
 
-        <!-- Real-Time Hardware & Training Telemetry -->
-        <div class="glass">
-            <div class="grid-4">
-                <!-- GPU Core -->
-                <div class="stat-card">
-                    <div class="stat-label">GPU Core Utilization</div>
-                    <div class="stat-val" id="gpu-util">0%</div>
-                    <div class="progress-bg"><div id="gpu-bar" class="progress-fill"></div></div>
-                    <div class="stat-sub"><span>Temp: <b id="gpu-temp" style="color:#fff">0°C</b></span><span>Power: <b id="gpu-power" style="color:#fff">0 W</b></span></div>
-                </div>
-
-                <!-- VRAM Allocation -->
-                <div class="stat-card">
-                    <div class="stat-label">VRAM Allocation</div>
-                    <div class="stat-val" id="vram-val" style="color: #c084fc;">0 / 8.2 GB</div>
-                    <div class="progress-bg"><div id="vram-bar" class="progress-fill-purple"></div></div>
-                    <div class="stat-sub"><span>Precision: <b>FP16 CUDA</b></span><span id="vram-pct" style="color:#c084fc">0%</span></div>
-                </div>
-
-                <!-- Active Model -->
-                <div class="stat-card">
-                    <div class="stat-label">Active Trajectory</div>
-                    <div class="stat-val" id="active-model" style="color: #fbbf24; font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Loading...</div>
-                    <div class="stat-sub"><span>Task: <b id="active-task" style="color:#fbbf24">-</b></span><span>Progress: <b id="active-idx" style="color:#fff">0/45</b></span></div>
-                </div>
-
-                <!-- Current Step Loss -->
-                <div class="stat-card">
-                    <div class="stat-label">Latest Step Loss</div>
-                    <div class="stat-val" id="curr-loss" style="color: #34d399;">0.0000</div>
-                    <div class="stat-sub"><span>Epoch: <b id="active-epoch" style="color:#fff">-</b></span><span>Disk Used: <b id="storage-val" style="color:#34d399">0 MB</b></span></div>
-                </div>
+        <!-- System Stats -->
+        <div class="grid grid-cols-4 gap-4">
+            <div class="bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700">
+                <p class="text-xs text-gray-400 uppercase">GPU Load</p>
+                <p class="text-2xl font-bold text-cyan-300" id="gpu-util">--%</p>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700">
+                <p class="text-xs text-gray-400 uppercase">VRAM Usage</p>
+                <p class="text-2xl font-bold text-purple-400"><span id="vram-used">--</span> / <span id="vram-total">--</span> GB</p>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700">
+                <p class="text-xs text-gray-400 uppercase">GPU Power</p>
+                <p class="text-2xl font-bold text-orange-400" id="gpu-power">-- W</p>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700">
+                <p class="text-xs text-gray-400 uppercase">GPU Temp</p>
+                <p class="text-2xl font-bold text-red-400" id="gpu-temp">-- °C</p>
             </div>
         </div>
 
-        <!-- Loss Curve & Stream Logs -->
-        <div class="main-grid">
-            <div class="glass">
-                <div style="font-weight: 700; font-size: 15px; margin-bottom: 12px; display: flex; justify-content: space-between;">
-                    <span>Live Loss Trajectory Curve</span>
-                    <span style="font-size: 11px; color: #9ca3af; font-family: ui-monospace, monospace;">Auto-refresh 1.5s</span>
+        <div class="grid grid-cols-3 gap-6">
+            <!-- Active Run -->
+            <div class="col-span-2 bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">Live Training Curve</h2>
+                    <div class="text-sm font-mono bg-gray-700 px-3 py-1 rounded text-cyan-300">
+                        <span id="active-model">Loading...</span> | Task: <span id="active-task">--</span> | Run: <span id="active-index">--/45</span>
+                    </div>
                 </div>
-                <div class="chart-box">
-                    <canvas id="lossCanvas"></canvas>
+                <div class="h-64 w-full">
+                    <canvas id="lossChart"></canvas>
                 </div>
             </div>
 
-            <div class="glass">
-                <div style="font-weight: 700; font-size: 15px; margin-bottom: 12px;">Live Trajectory Execution Log</div>
-                <div class="logs-box" id="log-box">
-                    <div style="color: #06b6d4;">> Initializing live stream telemetry...</div>
+            <!-- Trajectory Matrix -->
+            <div class="col-span-1 bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 overflow-y-auto" style="max-height: 400px;">
+                <h2 class="text-xl font-bold text-white mb-4">Pipeline Matrix (<span id="completed-count">0</span>/45)</h2>
+                <div id="matrix-container" class="space-y-4">
+                    <!-- Matrix injected here -->
                 </div>
             </div>
         </div>
-
-        <!-- 45-Trajectory Matrix Grid -->
-        <div class="glass">
-            <div style="font-weight: 700; font-size: 15px; display: flex; justify-content: space-between;">
-                <span>45-Trajectory Experiment Matrix Status</span>
-                <span style="font-size: 11px; color: #9ca3af; font-family: ui-monospace, monospace;" id="matrix-summary">15 Models x 3 Tasks</span>
+        
+        <!-- Live Terminal -->
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+            <h2 class="text-xl font-bold text-white mb-4">Console Stream</h2>
+            <div class="bg-black p-4 rounded font-mono text-sm h-48 overflow-y-auto text-green-400" id="terminal-out">
+                > Connecting to orchestrator...
             </div>
-            <div class="matrix-grid" id="matrix-container">
-                <!-- Dynamically populated -->
-            </div>
-        </div>
-
-        <!-- Completed Experiments Leaderboard -->
-        <div class="glass">
-            <div style="font-weight: 700; font-size: 15px; display: flex; justify-content: space-between;">
-                <span>Benchmark Leaderboard & Results</span>
-                <span style="font-size: 11px; color: #9ca3af; font-family: ui-monospace, monospace;" id="completed-count">0 runs completed</span>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Model Architecture</th>
-                        <th>Task</th>
-                        <th>Accuracy</th>
-                        <th>Macro F1</th>
-                        <th>Final Loss</th>
-                        <th>Throughput</th>
-                        <th>Runtime</th>
-                    </tr>
-                </thead>
-                <tbody id="results-body">
-                    <tr><td colspan="7" style="text-align: center; color: #6b7280; padding: 20px;">Waiting for completed trajectories...</td></tr>
-                </tbody>
-            </table>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('lossCanvas');
-        const ctx = canvas.getContext('2d');
+        let lossChart;
         
-        function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        function drawLossChart(points) {
-            resizeCanvas();
-            const w = canvas.width;
-            const h = canvas.height;
-            ctx.clearRect(0, 0, w, h);
-
-            if (!points || points.length < 2) {
-                ctx.fillStyle = '#6b7280';
-                ctx.font = '12px ui-monospace, monospace';
-                ctx.fillText('Streaming live training loss steps...', 20, h / 2);
-                return;
-            }
-
-            const losses = points.map(p => p.loss);
-            const minL = Math.max(0, Math.min(...losses) * 0.9);
-            const maxL = Math.max(...losses) * 1.1 || 1.0;
-
-            // Grid lines
-            ctx.strokeStyle = 'rgba(55, 65, 81, 0.3)';
-            ctx.lineWidth = 1;
-            for (let i = 0; i <= 4; i++) {
-                const y = h - 25 - (i / 4) * (h - 45);
-                ctx.beginPath();
-                ctx.moveTo(45, y);
-                ctx.lineTo(w - 10, y);
-                ctx.stroke();
-
-                const val = minL + (i / 4) * (maxL - minL);
-                ctx.fillStyle = '#9ca3af';
-                ctx.font = '10px ui-monospace, monospace';
-                ctx.fillText(val.toFixed(2), 5, y + 3);
-            }
-
-            // Draw line
-            ctx.strokeStyle = '#06b6d4';
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            points.forEach((p, i) => {
-                const x = 45 + (i / (points.length - 1)) * (w - 55);
-                const y = h - 25 - ((p.loss - minL) / (maxL - minL)) * (h - 45);
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
+        function initChart() {
+            const ctx = document.getElementById('lossChart').getContext('2d');
+            lossChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Training Loss',
+                        data: [],
+                        borderColor: '#22d3ee',
+                        backgroundColor: 'rgba(34, 211, 238, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: '#374151' },
+                            ticks: { color: '#9ca3af' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af', maxTicksLimit: 10 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
             });
-            ctx.stroke();
-
-            // Gradient Fill
-            const grad = ctx.createLinearGradient(0, 0, 0, h);
-            grad.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
-            grad.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
-            ctx.fillStyle = grad;
-            ctx.lineTo(w - 10, h - 25);
-            ctx.lineTo(45, h - 25);
-            ctx.closePath();
-            ctx.fill();
         }
 
         async function updateDashboard() {
             try {
+                // Ensure we handle absolute and relative paths correctly
                 const res = await fetch('/api/stats');
-                if (!res.ok) return;
+                if (!res.ok) throw new Error("HTTP " + res.status);
                 const data = await res.json();
+                
+                document.getElementById('conn-status').innerText = 'CONNECTED';
+                document.getElementById('conn-status').className = 'text-green-400';
 
-                // GPU Telemetry
-                document.getElementById('gpu-util').innerText = data.gpu.gpu_util + '%';
-                document.getElementById('gpu-bar').style.width = data.gpu.gpu_util + '%';
-                document.getElementById('gpu-temp').innerText = data.gpu.temp_c + '°C';
-                document.getElementById('gpu-power').innerText = (data.gpu.power_w || 0) + ' W';
-
-                const memUsedGb = (data.gpu.mem_used_mb / 1024).toFixed(1);
-                const memTotalGb = (data.gpu.mem_total_mb / 1024).toFixed(1);
-                const vramPct = Math.round((data.gpu.mem_used_mb / data.gpu.mem_total_mb) * 100);
-                document.getElementById('vram-val').innerText = `${memUsedGb} / ${memTotalGb} GB`;
-                document.getElementById('vram-bar').style.width = vramPct + '%';
-                document.getElementById('vram-pct').innerText = vramPct + '%';
-
-                // Training State
-                document.getElementById('active-model').innerText = data.train.active_model;
-                document.getElementById('active-task').innerText = data.train.active_task.toUpperCase();
-                document.getElementById('active-idx').innerText = data.train.active_index || '1/45';
-                document.getElementById('active-epoch').innerText = typeof data.train.step_info.epoch === 'number' ? data.train.step_info.epoch.toFixed(2) : '-';
-                document.getElementById('curr-loss').innerText = typeof data.train.step_info.loss === 'number' ? data.train.step_info.loss.toFixed(4) : '0.0000';
-                document.getElementById('storage-val').innerText = (data.storage.used_mb || 0) + ' MB';
-
-                // Loss Chart
-                if (data.train.loss_history) {
-                    drawLossChart(data.train.loss_history);
+                // GPU
+                if (data.gpu) {
+                    document.getElementById('gpu-util').innerText = data.gpu.gpu_util + "%";
+                    document.getElementById('vram-used').innerText = (data.gpu.mem_used_mb / 1024).toFixed(1);
+                    document.getElementById('vram-total').innerText = (data.gpu.mem_total_mb / 1024).toFixed(1);
+                    document.getElementById('gpu-power').innerText = data.gpu.power_w + " W";
+                    document.getElementById('gpu-temp').innerText = data.gpu.temp_c + " °C";
                 }
 
-                // Trajectory Matrix
-                if (data.matrix && data.matrix.length > 0) {
-                    let matrixHtml = '';
-                    let completedCount = 0;
-                    data.matrix.forEach(taskGroup => {
-                        taskGroup.runs.forEach(run => {
-                            let dotClass = 'dot-queued';
-                            let statusText = 'Queued';
-                            if (run.status === 'completed') {
-                                dotClass = 'dot-done';
-                                statusText = 'Done';
-                                completedCount++;
-                            } else if (data.train.active_model.includes(run.attn_id) && data.train.active_task.toLowerCase() === run.task.toLowerCase()) {
-                                dotClass = 'dot-active';
-                                statusText = 'Training';
-                            }
-                            matrixHtml += `
-                                <div class="matrix-card">
-                                    <div>
-                                        <span class="status-dot ${dotClass}"></span>
-                                        <b>${run.attn_id}</b>
-                                    </div>
-                                    <span style="font-size: 10px; text-transform: uppercase; color: #9ca3af;">${run.task}</span>
-                                </div>
-                            `;
+                // Train active
+                if (data.train) {
+                    document.getElementById('active-model').innerText = data.train.active_model.toUpperCase();
+                    document.getElementById('active-task').innerText = data.train.active_task.toUpperCase();
+                    document.getElementById('active-index').innerText = data.train.active_index;
+                    
+                    if (data.train.loss_history && data.train.loss_history.length > 0) {
+                        const labels = data.train.loss_history.map(d => `Step ${d.step || Math.round(d.epoch*1000)}`);
+                        const losses = data.train.loss_history.map(d => d.loss);
+                        lossChart.data.labels = labels;
+                        lossChart.data.datasets[0].data = losses;
+                        lossChart.update();
+                    }
+                }
+
+                // Matrix
+                if (data.matrix) {
+                    let totalRuns = 0;
+                    let completedRuns = 0;
+                    let html = '';
+                    
+                    data.matrix.forEach(t => {
+                        html += `<div class="mb-2"><h3 class="text-sm font-bold text-gray-400 uppercase border-b border-gray-700 pb-1 mb-2">${t.task}</h3><div class="space-y-1">`;
+                        t.runs.forEach(r => {
+                            totalRuns++;
+                            let color = 'text-gray-500';
+                            let icon = '○';
+                            if (r.status === 'completed') { color = 'text-green-400'; icon = '●'; completedRuns++; }
+                            else if (r.status === 'running') { color = 'text-blue-400 animate-pulse'; icon = '►'; }
+                            
+                            html += `<div class="flex items-center text-sm ${color}">
+                                <span class="mr-2">${icon}</span> ${r.attn_id}
+                            </div>`;
                         });
+                        html += `</div></div>`;
                     });
-                    document.getElementById('matrix-container').innerHTML = matrixHtml;
-                    document.getElementById('matrix-summary').innerText = `${completedCount}/45 Completed`;
+                    document.getElementById('matrix-container').innerHTML = html;
+                    document.getElementById('completed-count').innerText = completedRuns;
                 }
 
-                // Leaderboard Table
-                if (data.results && data.results.length > 0) {
-                    document.getElementById('completed-count').innerText = data.results.length + ' runs completed';
-                    document.getElementById('results-body').innerHTML = data.results.map(r => `
-                        <tr>
-                            <td><span class="tag-model">${r.attn}</span></td>
-                            <td style="color:#fbbf24; font-weight:700;">${r.task}</td>
-                            <td class="acc">${(r.accuracy * 100).toFixed(2)}%</td>
-                            <td class="f1">${(r.f1 * 100).toFixed(2)}%</td>
-                            <td class="loss">${r.loss.toFixed(4)}</td>
-                            <td style="color:#a78bfa;">${Math.round(r.throughput || 0)}/s</td>
-                            <td style="color:#9ca3af;">${Math.round(r.runtime_s)}s</td>
-                            <td>
-                                <button onclick="showPlots('${r.key}', '${r.attn}', '${r.task}')" style="background:rgba(6,182,212,0.2); color:#38bdf8; border:1px solid rgba(6,182,212,0.4); padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; font-weight:600;">📊 Plots</button>
-                            </td>
-                        </tr>
-                    `).join('');
+                // Terminal
+                if (data.logs) {
+                    const term = document.getElementById('terminal-out');
+                    term.innerHTML = data.logs.join('<br>');
+                    term.scrollTop = term.scrollHeight;
                 }
 
-                // Logs Stream
-                if (data.logs && data.logs.length > 0) {
-                    document.getElementById('log-box').innerHTML = data.logs.slice(-20).map(l => `<div>${l}</div>`).join('');
-                }
-            } catch (e) {
-                console.error("Dashboard update error:", e);
+            } catch (err) {
+                console.error("Dashboard update error: ", err);
+                document.getElementById('conn-status').innerText = 'ERROR';
+                document.getElementById('conn-status').className = 'text-red-500';
             }
         }
 
-        function showPlots(key, attn, task) {
-            const modal = document.getElementById('plotModal');
-            document.getElementById('modalTitle').innerText = `${attn.toUpperCase()} on ${task.toUpperCase()} — Saved Plots`;
-            document.getElementById('lossImg').src = `/plots/${key}/loss_curve.png?t=${Date.now()}`;
-            document.getElementById('metricImg').src = `/plots/${key}/metric_curve.png?t=${Date.now()}`;
-            modal.style.display = 'flex';
-        }
-
-        function closePlots() {
-            document.getElementById('plotModal').style.display = 'none';
-        }
-
-        setInterval(updateDashboard, 1500);
+        initChart();
+        setInterval(updateDashboard, 2000);
         updateDashboard();
     </script>
-
-    <!-- Modal for Saved Plot Images -->
-    <div id="plotModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding:20px;">
-        <div style="background:#111827; border:1px solid #374151; border-radius:16px; max-width:900px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; position:relative; display:flex; flex-direction:column; gap:16px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #374151; padding-bottom:12px;">
-                <h3 id="modalTitle" style="color:#38bdf8; font-size:18px; font-weight:700;">Saved Experiment Plots</h3>
-                <button onclick="closePlots()" style="background:#ef4444; color:#fff; border:none; padding:4px 12px; border-radius:8px; cursor:pointer; font-weight:700;">✕ Close</button>
-            </div>
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(350px, 1fr)); gap:16px;">
-                <div style="background:#1f2937; padding:12px; border-radius:10px; border:1px solid #374151;">
-                    <div style="color:#9ca3af; font-size:12px; margin-bottom:8px; font-weight:600;">LOSS TRAJECTORY CURVE</div>
-                    <img id="lossImg" style="width:100%; border-radius:8px;" onerror="this.src=''; this.alt='Plot generating or unavailable';" />
-                </div>
-                <div style="background:#1f2937; padding:12px; border-radius:10px; border:1px solid #374151;">
-                    <div style="color:#9ca3af; font-size:12px; margin-bottom:8px; font-weight:600;">VALIDATION ACCURACY / METRIC CURVE</div>
-                    <img id="metricImg" style="width:100%; border-radius:8px;" onerror="this.src=''; this.alt='Plot generating or unavailable';" />
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
 """
-
 
 class DashboardHandler(http.server.BaseHTTPRequestHandler):
     def do_OPTIONS(self):
