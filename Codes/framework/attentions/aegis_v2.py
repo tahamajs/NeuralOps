@@ -153,9 +153,9 @@ class AegisAttentionV2(nn.Module):
         if attention_mask is not None:
             if attention_mask.dim() == 4:
                 if attention_mask.shape[-2] == attention_mask.shape[-1]:
-                    token_valid = attention_mask[:, 0, 0, :] > -1e9
+                    token_valid = attention_mask[:, 0, 0, :] > -10000.0
                 else:
-                    token_valid = attention_mask.squeeze(1).squeeze(1) > -1e9
+                    token_valid = attention_mask.squeeze(1).squeeze(1) > -10000.0
             elif attention_mask.dim() == 3:
                 token_valid = attention_mask.squeeze(1).bool()
             elif attention_mask.dim() == 2:

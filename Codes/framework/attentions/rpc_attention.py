@@ -125,7 +125,7 @@ class RPCAttention(BaseAttention):
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 mask = attention_mask[:, None, None, :].to(scores.dtype)
-                scores = scores + (1.0 - mask) * -1e9
+                scores = scores + (1.0 - mask) * -10000.0
             elif attention_mask.dim() == 3:
                 scores = scores + attention_mask.unsqueeze(1)
             else:

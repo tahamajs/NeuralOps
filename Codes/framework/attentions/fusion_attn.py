@@ -193,7 +193,7 @@ class FUSIONATTN(nn.Module):
             if attention_mask.dim() == 2:
                 mask = attention_mask.unsqueeze(1).unsqueeze(-1)
             elif attention_mask.dim() == 4:
-                mask = (attention_mask > -1e9).float().squeeze(1).squeeze(1).unsqueeze(-1)
+                mask = (attention_mask > -10000.0).float().squeeze(1).squeeze(1).unsqueeze(-1)
             else:
                 mask = attention_mask
             context = context * mask.to(context.dtype)

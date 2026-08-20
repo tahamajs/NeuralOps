@@ -120,7 +120,7 @@ class ChelaSlayAttention(BaseAttention):
             if attention_mask.dim() == 2:
                 mask = attention_mask.unsqueeze(1).unsqueeze(-1).to(k_feat.dtype)
             elif attention_mask.dim() == 4:
-                mask = (attention_mask > -1e9).float().to(k_feat.dtype).transpose(-2, -1)
+                mask = (attention_mask > -10000.0).float().to(k_feat.dtype).transpose(-2, -1)
             else:
                 mask = attention_mask.to(k_feat.dtype)
             k_feat = k_feat * mask

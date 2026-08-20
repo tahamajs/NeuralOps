@@ -107,7 +107,7 @@ class SAMBAM3Block(nn.Module):
         valid = causal & window
         # FIX: [Ensure attention mask dtype matches input tensor dtype for nn.MultiheadAttention compatibility]
         mask = torch.zeros(L, L, device=device, dtype=dtype)
-        mask_val = -1e4 if dtype in (torch.float16, torch.bfloat16) else float("-inf")
+        mask_val = -10000.0 if dtype in (torch.float16, torch.bfloat16) else float("-inf")
         mask = mask.masked_fill(~valid, mask_val)
         return mask
 

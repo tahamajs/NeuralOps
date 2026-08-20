@@ -122,7 +122,7 @@ class GriffinSSDBlock(BaseAttention):
         window = (idx.unsqueeze(1) - idx.unsqueeze(0)) < self.window_size
         local_mask = ~(causal & window)
         # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
-        mask_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
+        mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
         if attention_mask is not None:
             if attention_mask.dim() == 2:
                 pad_mask = attention_mask.unsqueeze(1) == 0  # (B, 1, L)

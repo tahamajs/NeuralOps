@@ -106,7 +106,7 @@ class InfiniAttention(BaseAttention):
         scale = 1.0 / math.sqrt(Dh)
         scores = torch.matmul(q, k.transpose(-2, -1)) * scale
         # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
-        mask_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
+        mask_val = -10000.0 if scores.dtype in (torch.float16, torch.bfloat16) else -10000.0
         scores = scores.masked_fill(~window_mask.unsqueeze(0).unsqueeze(0), mask_val)
 
         if attention_mask is not None:

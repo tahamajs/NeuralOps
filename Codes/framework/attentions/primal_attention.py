@@ -162,7 +162,7 @@ class PrimalAttention(BaseAttention):
         attn = torch.matmul(F1, torch.matmul(F2_pinv, F3))
 
         if attention_mask is not None:
-            mask_val = -1e4 if attn.dtype in (torch.float16, torch.bfloat16) else -1e9
+            mask_val = -10000.0 if attn.dtype in (torch.float16, torch.bfloat16) else -10000.0
             if attention_mask.dim() == 2:
                 mask = attention_mask[:, None, None, :].to(dtype=attn.dtype)
                 attn = attn + (1.0 - mask) * mask_val
