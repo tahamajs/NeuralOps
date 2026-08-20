@@ -150,3 +150,5 @@ ompleted)
 [2026-08-21 00:58:35] [Worker-2] [39/120] NOTICE: attn=mamba | task=qnli | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 0.4s
 [2026-08-21 00:58:37] [Worker-2] [40/120] >> Launching: attn=gated_delta_net | task=qnli | seed=42
 [2026-08-21 00:58:37] [Worker-2] [40/120] NOTICE: attn=gated_delta_net | task=qnli | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 0.4s
+[2026-08-21 00:58:40] [Worker-2] [41/120] >> Launching: attn=adasplash | task=qnli | seed=42
+[2026-08-21 01:00:39] [Worker-3] [38/120] << SUCCESS: attn=flash3 | task=qnli | Acc: 59.31% | F1: 58.51% | Loss: 0.6632 | Time: 241.0s
