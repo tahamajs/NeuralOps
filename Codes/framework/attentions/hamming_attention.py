@@ -130,13 +130,13 @@ class HammingAttention(BaseAttention):
                 mask = attention_mask[:, None, None, :]
             else:
                 mask = attention_mask
-            scores = scores + (1.0 - mask) * -1e9
+            scores = scores + (1.0 - mask) * -10000.0
 
         if self.sparsity_ratio > 0:
             keep_k = max(1, int(L * self.sparsity_ratio))
             _, top_idx = torch.topk(scores, k=keep_k, dim=-1)
             sparse_mask = torch.zeros_like(scores).scatter(-1, top_idx, 1.0)
-            scores = scores * sparse_mask + (1.0 - sparse_mask) * -1e9
+            scores = scores * sparse_mask + (1.0 - sparse_mask) * -10000.0
 
         probs = F.softmax(scores, dim=-1)
         probs = self.dropout(probs)

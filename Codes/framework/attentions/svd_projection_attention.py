@@ -192,7 +192,7 @@ class SVDProjectionAttention(nn.Module):
                 mask = attention_mask[:, None, None, :]
             else:
                 mask = attention_mask
-            scores = scores + (1.0 - mask) * -1e9
+            scores = scores + (1.0 - mask) * -10000.0
 
         attn_weights: torch.Tensor = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)

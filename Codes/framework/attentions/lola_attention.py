@@ -279,7 +279,7 @@ class LoLAAttention(BaseAttention):
                     B, 1, 1, C, device=mask.device, dtype=mask.dtype
                 )
                 mask = torch.cat([mask, cache_mask], dim=-1)
-            scores = scores + (1.0 - mask.to(scores.dtype)) * -1e9
+            scores = scores + (1.0 - mask.to(scores.dtype)) * -10000.0
 
         attn_weights = F.softmax(scores, dim=-1)
         attn_weights = self.dropout(attn_weights)

@@ -150,7 +150,7 @@ class RoutingAttention(nn.Module):
         out = torch.zeros_like(V)
         scale = d**-0.5
         # FIX: [Use float16/bfloat16 safe mask value to prevent numerical overflow]
-        mask_val = -1e4 if Q.dtype in (torch.float16, torch.bfloat16) else -1e9
+        mask_val = -10000.0 if Q.dtype in (torch.float16, torch.bfloat16) else -10000.0
 
         for k in range(num_clusters):
             mask = (cluster_ids == k).unsqueeze(-1)

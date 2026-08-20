@@ -161,7 +161,7 @@ class MinimalSVDAttention(BaseAttention):
                 extended_mask = attention_mask[:, None, None, :]
             else:
                 extended_mask = attention_mask
-            extended_mask = (1.0 - extended_mask.to(scores.dtype)) * -1e9
+            extended_mask = (1.0 - extended_mask.to(scores.dtype)) * -10000.0
             scores = scores + extended_mask
 
         attn_weights = F.softmax(scores, dim=-1)

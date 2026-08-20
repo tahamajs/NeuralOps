@@ -97,7 +97,7 @@ class MLAAttention(nn.Module):
         ) / math.sqrt(self.head_dim)
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                scores = scores + (1.0 - attention_mask[:, None, None, :]) * -1e9
+                scores = scores + (1.0 - attention_mask[:, None, None, :]) * -10000.0
             else:
                 scores = scores + attention_mask.unsqueeze(1)
 

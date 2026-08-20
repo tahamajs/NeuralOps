@@ -167,9 +167,9 @@ class SpectraV2Attention(nn.Module):
         if mask is None:
             return None
         if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-            token_valid = mask[:, 0, 0, :] > -1e9
+            token_valid = mask[:, 0, 0, :] > -10000.0
         elif mask.dim() == 4:
-            token_valid = mask.squeeze(1).squeeze(1) > -1e9
+            token_valid = mask.squeeze(1).squeeze(1) > -10000.0
         elif mask.dim() == 3:
             token_valid = mask.squeeze(1).bool()
         elif mask.dim() == 2:
@@ -296,7 +296,7 @@ class SpectraV2Attention(nn.Module):
                     )
                 else:
                     total_valid = intra_valid.squeeze(-1)
-                scores = scores.masked_fill(total_valid.unsqueeze(2) == 0, -1e9)
+                scores = scores.masked_fill(total_valid.unsqueeze(2) == 0, -10000.0)
 
             attn = F.softmax(scores, dim=-1)
             attn = self.dropout(attn)

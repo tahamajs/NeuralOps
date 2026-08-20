@@ -77,7 +77,7 @@ class HGRN2Layer(nn.Module):
             if attention_mask.dim() == 2:
                 mask_2d = attention_mask.bool()
             elif attention_mask.dim() == 4:
-                mask_2d = (attention_mask[:, 0, 0, :] > -1e4).bool()
+                mask_2d = (attention_mask[:, 0, 0, :] > -10000.0).bool()
 
         for t in range(L):
             xt = x[:, t]  # [B, D]
@@ -179,7 +179,7 @@ class GatedDeltaNetBlock(nn.Module):
                 if attention_mask.dim() == 2:
                     key_padding_mask = (attention_mask == 0)
                 elif attention_mask.dim() == 4:
-                    key_padding_mask = (attention_mask[:, 0, 0, :] <= -1e4)
+                    key_padding_mask = (attention_mask[:, 0, 0, :] <= -10000.0)
 
             attn_out, attn_weights = self.attn(
                 x, x, x, key_padding_mask=key_padding_mask, need_weights=output_attentions
