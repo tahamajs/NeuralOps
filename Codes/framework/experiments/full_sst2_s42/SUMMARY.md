@@ -1,11 +1,11 @@
 # Run Summary: `full_sst2_s42`
-> Generated: 2026-08-20 22:08:39
+> Generated: 2026-08-21 01:31:47
 
 ## Configuration
 ```
   attn_implementation: full
   attn_type: full
-  batch_size: 16
+  batch_size: 8
   compression_rank: 64
   compressor: None
   config: None
@@ -58,18 +58,18 @@
 
 | Metric | Value |
 |:---|:---|
-| eval_loss | 0.322715 |
-| eval_accuracy | 0.887615 |
-| eval_f1_macro | 0.887529 |
-| eval_f1_weighted | 0.887586 |
-| eval_runtime | 1.747700 |
-| eval_samples_per_second | 498.940000 |
-| eval_steps_per_second | 16.021000 |
-| epoch | 0.500000 |
-| gpu_memory_allocated | 2003.477539 |
-| gpu_memory_reserved | 3380.000000 |
-| elapsed_time | 315.768416 |
+| eval_loss | 0.359908 |
+| eval_accuracy | 0.895642 |
+| eval_f1_macro | 0.895603 |
+| eval_f1_weighted | 0.895640 |
+| eval_runtime | 2.268800 |
+| eval_samples_per_second | 384.338000 |
+| eval_steps_per_second | 24.242000 |
+| epoch | 0.500059 |
+| gpu_memory_allocated | 788.110840 |
+| gpu_memory_reserved | 1426.000000 |
+| elapsed_time | 702.963514 |
 
-**Total runtime:** 5m 14s
+**Total runtime:** 11m 40s
 
 **Output dir:** `C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments\full_sst2_s42`
