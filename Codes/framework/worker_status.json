@@ -1,0 +1,26 @@
+{
+  "2": {
+    "status": "error",
+    "attn": "performer",
+    "task": "mrpc",
+    "idx": "20/120",
+    "error": "TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors'",
+    "pid": 47873
+  },
+  "1": {
+    "status": "error",
+    "attn": "linformer",
+    "task": "mrpc",
+    "idx": "22/120",
+    "error": "TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors'",
+    "pid": 47842
+  },
+  "3": {
+    "status": "running",
+    "attn": "nystrom",
+    "task": "mrpc",
+    "idx": "21/120",
+    "pid": 47891,
+    "start_time": 1787252768.622049
+  }
+}
