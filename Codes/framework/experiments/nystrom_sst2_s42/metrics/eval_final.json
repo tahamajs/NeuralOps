@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-08-20T22:18:20.025479",
-  "eval_loss": 0.3808004856109619,
-  "eval_accuracy": 0.8360091743119266,
-  "eval_f1_macro": 0.8358950062840937,
-  "eval_f1_weighted": 0.8359744275208469,
-  "eval_runtime": 1.6648,
-  "eval_samples_per_second": 523.799,
-  "eval_steps_per_second": 8.41,
-  "epoch": 0.5002375296912114,
-  "gpu_memory_allocated": 2027.8681640625,
-  "gpu_memory_reserved": 4568.0,
-  "elapsed_time": 319.02681159973145
+  "timestamp": "2026-08-21T01:51:47.090449",
+  "eval_loss": 0.42266592383384705,
+  "eval_accuracy": 0.8211009174311926,
+  "eval_f1_macro": 0.8210067580370113,
+  "eval_f1_weighted": 0.8210820855523564,
+  "eval_runtime": 3.2749,
+  "eval_samples_per_second": 266.271,
+  "eval_steps_per_second": 8.55,
+  "epoch": 0.5,
+  "gpu_memory_allocated": 793.11083984375,
+  "gpu_memory_reserved": 1936.0,
+  "elapsed_time": 686.9080243110657
 }
