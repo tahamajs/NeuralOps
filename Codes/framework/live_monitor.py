@@ -164,25 +164,28 @@ def get_trajectory_matrix(completed_results, active_workers):
     return matrix
 
 
-def get_latest_loss_history():
-    loss_history = []
-    active_model = "Orchestrator Idle"
-    active_task = "None"
+def get_all_active_loss_histories(workers):
+    histories = []
     
-    if RESULTS_DIR.exists():
-        dirs = sorted([d for d in RESULTS_DIR.iterdir() if d.is_dir()], key=lambda d: d.stat().st_mtime, reverse=True)
-        for d in dirs:
-            hist_file = d / "history" / "log_history.json"
+    for wid, w in workers.items():
+        if w.get("status") == "running":
+            attn = w.get("attn", "")
+            task = w.get("task", "")
+            target_dir = f"{attn}_{task}"
+            
+            hist_file = RESULTS_DIR / target_dir / "history" / "log_history.json"
             if hist_file.exists():
                 try:
                     data = json.loads(hist_file.read_text(encoding="utf-8", errors="ignore"))
-                    active_model = d.name.split("_")[0]
-                    active_task = d.name.split("_")[1] if "_" in d.name else "sst2"
-                    loss_history = data[-30:] if len(data) > 30 else data
-                    break
+                    histories.append({
+                        "worker_id": wid,
+                        "active_model": attn,
+                        "active_task": task,
+                        "loss_history": data[-30:] if len(data) > 30 else data
+                    })
                 except Exception:
                     pass
-    return {"active_model": active_model, "active_task": active_task, "loss_history": loss_history}
+    return histories
 
 
 class DashboardHandler(http.server.SimpleHTTPRequestHandler):
@@ -234,7 +237,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             workers = get_active_workers()
             results = get_completed_results()
             matrix = get_trajectory_matrix(results, workers)
-            train = get_latest_loss_history()
+            train_multi = get_all_active_loss_histories(workers)
 
             logs = []
             if MASTER_LOG.exists():
@@ -249,7 +252,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 "workers": workers,
                 "results": results,
                 "matrix": matrix,
-                "train": train,
+                "train_multi": train_multi,
                 "logs": logs,
             }
             json_str = json.dumps(response).replace("NaN", "null").replace("Infinity", "null")
@@ -287,7 +290,24 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self.send_response(500)
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode("utf-8"))
+            return
+
+        if self.path == "/api/settings":
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                req = json.loads(post_data.decode("utf-8"))
+                with open(PROJECT_DIR / "orchestrator_settings.json", "w", encoding="utf-8") as f:
+                    json.dump(req, f)
+                self.send_response(200)
+                self.send_header("Content-type", "application/json; charset=utf-8")
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "ok", "message": "Settings updated!"}).encode("utf-8"))
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(json.dumps({"status": "error", "message": str(e)}).encode("utf-8"))
             return
         
         self.send_response(404)

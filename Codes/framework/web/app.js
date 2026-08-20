@@ -6,17 +6,38 @@ function initChart() {
         type: 'line',
         data: {
             labels: [],
-            datasets: [{
-                label: 'Step Loss',
-                data: [],
-                borderColor: '#06b6d4',
-                backgroundColor: 'rgba(6, 182, 212, 0.12)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.3,
-                pointRadius: 2,
-                pointHoverRadius: 5
-            }]
+            datasets: [
+                {
+                    label: 'Worker 1 Loss',
+                    data: [],
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Worker 2 Loss',
+                    data: [],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Worker 3 Loss',
+                    data: [],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0
+                }
+            ]
         },
         options: {
             responsive: true,
@@ -146,17 +167,32 @@ async function updateDashboard() {
         }
 
         // 5. Chart
-        if (data.train) {
-            document.getElementById('active-model').innerText = data.train.active_model;
-            document.getElementById('active-task').innerText = data.train.active_task;
+        if (data.train_multi && data.train_multi.length > 0) {
+            let activeModels = [];
+            let allLabels = new Set();
             
-            if (data.train.loss_history && data.train.loss_history.length > 0) {
-                const labels = data.train.loss_history.map(d => `Step ${d.step || Math.round(d.epoch*1000)}`);
-                const losses = data.train.loss_history.map(d => d.loss);
-                lossChart.data.labels = labels;
-                lossChart.data.datasets[0].data = losses;
-                lossChart.update();
-            }
+            data.train_multi.forEach(workerHist => {
+                if(workerHist.loss_history) {
+                    workerHist.loss_history.forEach((d, i) => allLabels.add(`Step ${i}`));
+                }
+            });
+            
+            let sortedLabels = Array.from(allLabels).sort((a,b) => parseInt(a.split(' ')[1]) - parseInt(b.split(' ')[1]));
+            lossChart.data.labels = sortedLabels;
+            
+            data.train_multi.forEach(workerHist => {
+                activeModels.push(`${workerHist.active_model} (${workerHist.active_task})`);
+                const wId = parseInt(workerHist.worker_id) - 1; // 0, 1, or 2
+                
+                if (workerHist.loss_history && wId >= 0 && wId < 3) {
+                    lossChart.data.datasets[wId].data = workerHist.loss_history.map(d => d.loss);
+                    lossChart.data.datasets[wId].label = `W${workerHist.worker_id}: ${workerHist.active_model}`;
+                }
+            });
+            
+            document.getElementById('active-model').innerText = activeModels.join(" | ");
+            document.getElementById('active-task').innerText = "";
+            lossChart.update();
         }
 
         // 6. Logs
@@ -191,6 +227,22 @@ async function sendCommand(action) {
         alert(data.message || `Command ${action} executed`);
     } catch (err) {
         alert("Error executing command: " + err.message);
+    }
+}
+
+async function saveSettings() {
+    const batch = document.getElementById('set-batch').value;
+    const workers = document.getElementById('set-workers').value;
+    try {
+        const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ batch_size: parseInt(batch), dl_workers: parseInt(workers) })
+        });
+        const data = await res.json();
+        alert(data.message || "Settings updated. They will apply to the next task.");
+    } catch (err) {
+        alert("Error saving settings: " + err.message);
     }
 }
 
