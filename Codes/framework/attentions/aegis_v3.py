@@ -197,6 +197,7 @@ def kernel_linear_attention(
     return ctx
 
 
+@ATTENTION_REGISTRY.register("aegis_v3")
 class AegisAttention(nn.Module):
     r"""
     Aegis-Attention V3 multi-head attention module.
@@ -370,7 +371,7 @@ class AegisAttention(nn.Module):
         return torch.tensor(0.0, device=self.out_proj.up.weight.device)
 
 
-@ATTENTION_REGISTRY.register("aegis_v3")
+
 def inject_aegis_v3(
     layer: nn.Module,
     model_config: Any,

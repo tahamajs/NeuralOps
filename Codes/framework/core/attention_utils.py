@@ -353,7 +353,9 @@ def inject_attention(
                     if target_proj is not None:
                         _copy_projection_weights(target_proj, src_weight, src_bias)
 
-        replace_module(model, name, new_attn)
+        from framework.utils.replace_attention import UniversalAttentionWrapper
+        wrapped_attn = UniversalAttentionWrapper(new_attn)
+        replace_module(model, name, wrapped_attn)
         replaced += 1
 
     logger.info("Successfully injected '%s' into %d transformer blocks.", attention_type, replaced)
