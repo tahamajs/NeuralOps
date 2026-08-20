@@ -192,3 +192,4 @@ ompleted)
 [2026-08-21 01:28:00] [Worker-1] [4/120] >> Launching: attn=lora_attn | task=sst2 | seed=42
 [2026-08-21 01:31:47] [Worker-3] [3/120] << SUCCESS: attn=full | task=sst2 | Acc: 89.56% | F1: 89.56% | Loss: 0.3599 | Time: 705.6s
 [2026-08-21 01:40:15] [Worker-1] [4/120] << SUCCESS: attn=lora_attn | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: nan | Time: 735.3s
+[2026-08-21 01:40:16] [Worker-3] [5/120] << SUCCESS: attn=performer | task=sst2 | Acc: 82.91% | F1: 82.90% | Loss: 0.4295 | Time: 504.8s

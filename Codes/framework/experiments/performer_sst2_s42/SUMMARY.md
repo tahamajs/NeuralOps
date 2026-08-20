@@ -1,11 +1,11 @@
 # Run Summary: `performer_sst2_s42`
-> Generated: 2026-08-20 22:12:56
+> Generated: 2026-08-21 01:40:15
 
 ## Configuration
 ```
   attn_implementation: full
   attn_type: performer
-  batch_size: 32
+  batch_size: 16
   compression_rank: 64
   compressor: None
   config: None
@@ -58,18 +58,18 @@
 
 | Metric | Value |
 |:---|:---|
-| eval_loss | 0.415369 |
-| eval_accuracy | 0.822248 |
-| eval_f1_macro | 0.822195 |
-| eval_f1_weighted | 0.822251 |
-| eval_runtime | 1.238600 |
-| eval_samples_per_second | 703.997000 |
-| eval_steps_per_second | 11.303000 |
-| epoch | 0.500238 |
-| gpu_memory_allocated | 2185.977539 |
-| gpu_memory_reserved | 4174.000000 |
-| elapsed_time | 248.747398 |
+| eval_loss | 0.429538 |
+| eval_accuracy | 0.829128 |
+| eval_f1_macro | 0.828988 |
+| eval_f1_weighted | 0.829078 |
+| eval_runtime | 2.539700 |
+| eval_samples_per_second | 343.354000 |
+| eval_steps_per_second | 11.025000 |
+| epoch | 0.500000 |
+| gpu_memory_allocated | 798.329590 |
+| gpu_memory_reserved | 1740.000000 |
+| elapsed_time | 501.957097 |
 
-**Total runtime:** 4m 7s
+**Total runtime:** 8m 19s
 
 **Output dir:** `C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments\performer_sst2_s42`
