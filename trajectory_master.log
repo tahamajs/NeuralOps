@@ -51,3 +51,29 @@
 [2026-08-20 22:36:08] [Worker-3] [21/120] >> Launching: attn=nystrom | task=mrpc | seed=42
 [2026-08-20 22:36:09] [Worker-1] [22/120] >> Launching: attn=linformer | task=mrpc | seed=42
 [2026-08-20 22:36:14] [Worker-1] [22/120] NOTICE: attn=linformer | task=mrpc | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 4.3s
+[2026-08-20 22:41:57] ============================================================
+[2026-08-20 22:41:57]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-20 22:41:57] ============================================================
+[2026-08-20 22:41:57] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-20 22:41:57] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-20 22:42:18] [Worker-2] [2/120] -- SKIPPING: attn=svd | task=sst2 (Already completed)
+[2026-08-20 22:42:18] [Worker-1] [1/120] -- SKIPPING: attn=svd_linear | task=sst2 (Already completed)
+[2026-08-20 22:42:18] [Worker-2] [3/120] -- SKIPPING: attn=full | task=sst2 (Already completed)
+ed)
+[2026-08-20 22:42:18] [Worker-1] [5/120] -- SKIPPING: attn=performer | task=sst2 (Already completed)
+[2026-08-20 22:42:18] [Worker-2] [8/120] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+)
+[2026-08-20 22:42:18] [Worker-2] [9/120] -- SKIPPING: attn=mamba | task=sst2 (Already completed)
+ompleted)
+[2026-08-20 22:42:18] [Worker-2] [12/120] -- SKIPPING: attn=aegis_v3 | task=sst2 (Already completed)
+[2026-08-20 22:42:18] [Worker-1] [11/120] -- SKIPPING: attn=adasplash | task=sst2 (Already completed)
+[2026-08-20 22:42:18] [Worker-1] [13/120] -- SKIPPING: attn=griffin_ssd | task=sst2 (Already completed)
+[2026-08-20 22:42:18] [Worker-2] [14/120] -- SKIPPING: attn=spectra_v2 | task=sst2 (Already completed)
+[2026-08-20 22:42:18] [Worker-1] [15/120] -- SKIPPING: attn=samba_m3 | task=sst2 (Already completed)
+[2026-08-20 22:42:18] [Worker-2] [16/120] -- SKIPPING: attn=svd_linear | task=mrpc (Already completed)
+[2026-08-20 22:42:18] [Worker-2] [18/120] -- SKIPPING: attn=full | task=mrpc (Already completed)
+[2026-08-20 22:42:18] [Worker-2] [19/120] -- SKIPPING: attn=lora_attn | task=mrpc (Already completed)
+[2026-08-20 22:42:18] [Worker-2] [22/120] -- SKIPPING: attn=linformer | task=mrpc (Already completed)
+[2026-08-20 22:42:18] [Worker-2] [23/120] >> Launching: attn=flash3 | task=mrpc | seed=42
+[2026-08-20 22:42:21] [Worker-3] [24/120] >> Launching: attn=mamba | task=mrpc | seed=42
+[2026-08-20 22:42:21] [Worker-3] [24/120] NOTICE: attn=mamba | task=mrpc | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 0.4s
