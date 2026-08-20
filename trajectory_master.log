@@ -148,3 +148,5 @@ ompleted)
 [2026-08-21 00:58:32] [Worker-2] [37/120] << SUCCESS: attn=linformer | task=qnli | Acc: 50.61% | F1: 42.31% | Loss: 0.6915 | Time: 178.0s
 [2026-08-21 00:58:34] [Worker-2] [39/120] >> Launching: attn=mamba | task=qnli | seed=42
 [2026-08-21 00:58:35] [Worker-2] [39/120] NOTICE: attn=mamba | task=qnli | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 0.4s
+[2026-08-21 00:58:37] [Worker-2] [40/120] >> Launching: attn=gated_delta_net | task=qnli | seed=42
+[2026-08-21 00:58:37] [Worker-2] [40/120] NOTICE: attn=gated_delta_net | task=qnli | Error: inject_gated_delta_net() missing 5 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', and 'total_layers' | Time: 0.4s
