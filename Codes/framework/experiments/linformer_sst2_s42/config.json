@@ -5,7 +5,7 @@
   "compressor": null,
   "task": "sst2",
   "max_len": 128,
-  "batch_size": 32,
+  "batch_size": 16,
   "epochs": 0.5,
   "lr": 5e-05,
   "grad_accum": 1,
