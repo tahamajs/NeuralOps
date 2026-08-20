@@ -165,17 +165,32 @@
                     <span class="text-[10px] bg-cyan-950/80 text-cyan-400 border border-cyan-800 px-2 py-1 rounded font-mono">AUTOSCALE</span>
                 </div>
                 <!-- Settings Panel -->
-                <div class="glass p-3 border-b border-gray-800/60 mb-2 rounded-t-lg bg-black/20 flex flex-wrap gap-4 items-end">
-                    <div>
-                        <label class="text-[10px] text-gray-500 font-mono block mb-1">Batch Size (Max 16)</label>
-                        <input id="set-batch" type="number" max="16" class="bg-gray-900 border border-gray-700 text-xs px-2 py-1 rounded text-gray-300 w-20 outline-none focus:border-cyan-500" value="16">
+                <div class="glass p-3 border-b border-gray-800/60 mb-2 rounded-t-lg bg-black/20">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] text-gray-400 font-bold font-mono tracking-wider">HYPERPARAMETER TUNING CONSOLE</span>
+                        <button onclick="saveSettings()" class="text-[10px] px-3 py-1 rounded bg-cyan-950/60 border border-cyan-700 text-cyan-400 hover:bg-cyan-900/60 transition-colors font-bold tracking-wide">APPLY TO NEXT RUN</button>
                     </div>
-                    <div>
-                        <label class="text-[10px] text-gray-500 font-mono block mb-1">Dataloader Workers</label>
-                        <input id="set-workers" type="number" max="8" class="bg-gray-900 border border-gray-700 text-xs px-2 py-1 rounded text-gray-300 w-20 outline-none focus:border-cyan-500" value="4">
-                    </div>
-                    <div>
-                        <button onclick="saveSettings()" class="text-xs px-3 py-1.5 rounded bg-cyan-950/60 border border-cyan-700 text-cyan-400 hover:bg-cyan-900/60 transition-colors">Apply Config</button>
+                    <div class="flex flex-wrap gap-4 items-end">
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-mono block mb-1">Batch Size</label>
+                            <input id="set-batch" type="number" min="1" max="64" class="bg-gray-900 border border-gray-700 text-[11px] font-mono px-2 py-1 rounded text-gray-300 w-16 outline-none focus:border-cyan-500 transition-colors" value="8">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-mono block mb-1">DL Workers</label>
+                            <input id="set-workers" type="number" min="0" max="16" class="bg-gray-900 border border-gray-700 text-[11px] font-mono px-2 py-1 rounded text-gray-300 w-16 outline-none focus:border-cyan-500 transition-colors" value="4">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-mono block mb-1">Learning Rate</label>
+                            <input id="set-lr" type="text" class="bg-gray-900 border border-gray-700 text-[11px] font-mono px-2 py-1 rounded text-gray-300 w-20 outline-none focus:border-cyan-500 transition-colors" value="5e-5">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-mono block mb-1">Epochs (Frac)</label>
+                            <input id="set-epochs" type="text" class="bg-gray-900 border border-gray-700 text-[11px] font-mono px-2 py-1 rounded text-gray-300 w-16 outline-none focus:border-cyan-500 transition-colors" value="0.1">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-mono block mb-1">Random Seed</label>
+                            <input id="set-seed" type="number" class="bg-gray-900 border border-gray-700 text-[11px] font-mono px-2 py-1 rounded text-gray-300 w-20 outline-none focus:border-cyan-500 transition-colors" value="42">
+                        </div>
                     </div>
                 </div>
                 <div class="h-64 relative w-full">
