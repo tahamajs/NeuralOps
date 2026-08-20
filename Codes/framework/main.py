@@ -36,6 +36,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+# Ensure UTF-8 console output on Windows to prevent UnicodeEncodeError
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 # ---------------------------------------------------------------------------
 # Bootstrap: add framework root to sys.path and configure HF mirror/cache
 # ---------------------------------------------------------------------------
@@ -143,7 +152,7 @@ def setup_logger(log_dir: str, exp_name: str) -> logging.Logger:
     ch.setFormatter(fmt)
     root.addHandler(ch)
 
-    fh = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=3)
+    fh = RotatingFileHandler(log_file, maxBytes=10 * 1024 * 1024, backupCount=3, encoding="utf-8", errors="replace")
     fh.setFormatter(fmt)
     root.addHandler(fh)
 
@@ -277,7 +286,7 @@ def run_train(cfg, fw: dict, logger: logging.Logger) -> Dict[str, Any]:
     )
 
     # ── Train ──────────────────────────────────────────────────────────────
-    logger.info("═" * 60)
+    logger.info("=" * 60)
     logger.info("Starting training: %s", exp_name)
     t0 = time.time()
     train_result = trainer.train()
@@ -561,11 +570,11 @@ def run_list(fw: dict) -> None:
     """Print all registered components."""
     components = fw["list_all_components"]()
     for registry_name, keys in components.items():
-        print(f"\n{'═'*50}")
+        print(f"\n{'='*50}")
         print(f"  {registry_name.upper()} ({len(keys)} registered)")
-        print(f"{'─'*50}")
+        print(f"{'-'*50}")
         for k in sorted(keys):
-            print(f"    • {k}")
+            print(f"    - {k}")
     print()
 
 
@@ -655,10 +664,10 @@ def main() -> None:
     )
     logger = setup_logger(getattr(args, "log_dir", "./logs"), exp_name)
 
-    logger.info("═" * 60)
+    logger.info("=" * 60)
     logger.info("Efficient Attention Framework  |  command=%s", args.command)
     logger.info("Python %s | Platform: %s", sys.version.split()[0], platform.platform())
-    logger.info("═" * 60)
+    logger.info("=" * 60)
 
     # ── Framework ──────────────────────────────────────────────────────────
     logger.info("Importing framework...")
