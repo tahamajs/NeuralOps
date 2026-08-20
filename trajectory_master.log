@@ -201,3 +201,5 @@ ompleted)
 [2026-08-21 02:00:17] [Worker-3] [10/120] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
 [2026-08-21 02:02:30] [Worker-2] [2/120] << SUCCESS: attn=svd | task=sst2 | Acc: 80.05% | F1: 80.04% | Loss: 0.4786 | Time: 2555.2s
 [2026-08-21 02:09:46] [Worker-1] [9/120] << SUCCESS: attn=mamba | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6986 | Time: 1075.4s
+[2026-08-21 02:09:49] [Worker-1] [12/120] >> Launching: attn=aegis_v3 | task=sst2 | seed=42
+[2026-08-21 02:10:00] [Worker-1] [12/120] NOTICE: attn=aegis_v3 | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 10.6s
