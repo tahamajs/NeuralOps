@@ -22,3 +22,7 @@
 [2026-08-20 22:34:24] [Worker-3] [5/120] NOTICE: attn=performer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 15.1s
 [2026-08-20 22:34:36] [Worker-2] [6/120] NOTICE: attn=nystrom | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 17.8s
 [2026-08-20 22:34:41] [Worker-1] [7/120] NOTICE: attn=linformer | task=sst2 | Error: TrainingArguments.__init__() got an unexpected keyword argument 'save_safetensors' | Time: 20.5s
+[2026-08-20 22:35:05] [Worker-2] [8/120] >> Launching: attn=flash3 | task=sst2 | seed=42
+[2026-08-20 22:35:08] [Worker-3] [9/120] >> Launching: attn=mamba | task=sst2 | seed=42
+[2026-08-20 22:35:10] [Worker-3] [9/120] NOTICE: attn=mamba | task=sst2 | Error: inject_mamba() missing 6 required positional arguments: 'layer', 'model_config', 'comp_config', 'layer_idx', 'total_layers', and 'old_attn' | Time: 2.4s
+[2026-08-20 22:35:11] [Worker-1] [10/120] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
