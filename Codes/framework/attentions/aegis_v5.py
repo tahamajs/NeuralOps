@@ -85,27 +85,16 @@ class FactorisedLinear(nn.Module):
         return self.up(self.down(x))
 
 
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    r"""
-    Rectified softmax generating sparse attention probability distributions.
-
-    Mathematical Formulation:
-        $$m = \max_j x_j, \quad e_i = \exp\left(\frac{x_i - m}{T}\right)$$
-        $$p_i = \frac{\left[ e_i - \exp(-m / T) \right]_+}{\sum_j \left[ e_j - \exp(-m / T) \right]_+ + \epsilon}$$
-
-    Args:
-        x (torch.Tensor): Attention logits of arbitrary shape.
-        dim (int): Softmax normalization axis.
-        temperature (float): Scaling temperature $T$.
-
-    Returns:
-        torch.Tensor: Normalized sparse probability distribution.
-    """
+def softpick(x, dim: int = -1, temperature: float = 1.0):
+    import torch.nn.functional as F
+    orig_dtype = x.dtype
+    x = x.float()
     m = x.max(dim=dim, keepdim=True).values
     e = torch.exp((x - m) / temperature)
-    denom = e - torch.exp(-m / temperature)
+    m_scaled = torch.clamp(-m / temperature, max=80.0)
+    denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
 
 
 def local_window_attention(
@@ -137,9 +126,9 @@ def local_window_attention(
     mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
 
     scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-    scores = scores.masked_fill(~mask, -1e9)
+    scores = scores.masked_fill(~mask, -10000.0)
     if token_valid is not None:
-        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e9)
+        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -10000.0)
     attn = softpick(scores, dim=-1, temperature=temperature)
     return torch.matmul(attn, V)
 
@@ -243,9 +232,9 @@ class AegisAttention(nn.Module):
             return None
         if attention_mask.dim() == 4:
             if attention_mask.shape[-2] == attention_mask.shape[-1]:
-                token_valid = attention_mask[:, 0, 0, :] > -1e9
+                token_valid = attention_mask[:, 0, 0, :] > -10000.0
             else:
-                token_valid = attention_mask.squeeze(1).squeeze(1) > -1e9
+                token_valid = attention_mask.squeeze(1).squeeze(1) > -10000.0
         elif attention_mask.dim() == 3:
             token_valid = attention_mask.squeeze(1).bool()
         elif attention_mask.dim() == 2:

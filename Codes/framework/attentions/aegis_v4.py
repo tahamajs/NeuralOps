@@ -87,27 +87,16 @@ class FactorisedLinear(nn.Module):
         return self.up(self.down(x))
 
 
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    r"""
-    Softpick non-linear activation with thresholded tail subtraction.
-
-    Mathematical Formulation:
-        $$m = \max_j x_j, \quad e_i = \exp\left(\frac{x_i - m}{T}\right)$$
-        $$p_i = \frac{\left[ e_i - \exp(-m / T) \right]_+}{\sum_j \left[ e_j - \exp(-m / T) \right]_+ + \epsilon}$$
-
-    Args:
-        x (torch.Tensor): Attention logits of arbitrary shape.
-        dim (int): Softmax normalization axis.
-        temperature (float): Scaling temperature $T$.
-
-    Returns:
-        torch.Tensor: Normalized sparse probability distribution.
-    """
+def softpick(x, dim: int = -1, temperature: float = 1.0):
+    import torch.nn.functional as F
+    orig_dtype = x.dtype
+    x = x.float()
     m = x.max(dim=dim, keepdim=True).values
     e = torch.exp((x - m) / temperature)
-    denom = e - torch.exp(-m / temperature)
+    m_scaled = torch.clamp(-m / temperature, max=80.0)
+    denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
 
 
 def local_window_attention(
@@ -138,9 +127,9 @@ def local_window_attention(
     dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
     mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
     scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-    scores = scores.masked_fill(~mask, -1e9)
+    scores = scores.masked_fill(~mask, -10000.0)
     if token_valid is not None:
-        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e9)
+        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -10000.0)
     attn = softpick(scores, dim=-1, temperature=temperature)
     return torch.matmul(attn, V)
 
@@ -152,37 +141,22 @@ def kernel_linear_attention(
     rff_proj: torch.Tensor,
     use_zero_sum: bool = True,
 ) -> torch.Tensor:
-    r"""
-    Global linear attention via Random Fourier Feature (RFF) positive kernel mapping.
-
-    Mathematical Formulation:
-        $$\phi(x) = \frac{\exp\left(\frac{x}{\|x\|_2} W_{\text{rff}}\right)}{\sqrt{F}}$$
-        $$\text{Output}_i = \frac{\phi(Q_i) \sum_{j=1}^N \phi(K_j)^T V_j}{\phi(Q_i) \sum_{j=1}^N \phi(K_j)^T \mathbf{1} + \epsilon}$$
-
-    Complexity:
-        - Time: $\mathcal{O}(B \cdot H_g \cdot N \cdot d_h \cdot F)$.
-        - Memory: $\mathcal{O}(B \cdot H_g \cdot F \cdot d_h)$ recurrent state.
-
-    Args:
-        Q (torch.Tensor): Global query representations $[B, H_g, N, d_h]$.
-        K (torch.Tensor): Global key representations $[B, H_g, N, d_h]$.
-        V (torch.Tensor): Global value representations $[B, H_g, N, d_h]$.
-        rff_proj (torch.Tensor): Random projection matrix $[H_g, d_h, F]$.
-        use_zero_sum (bool): Whether to subtract mean keys across sequence.
-
-    Returns:
-        torch.Tensor: Global linear attention context $[B, H_g, N, d_h]$.
-    """
     B, H, N, D = Q.shape
     F_dim = rff_proj.size(-1)
+    orig_dtype = Q.dtype
+    
+    Q, K, V = Q.float(), K.float(), V.float()
+    rff_proj = rff_proj.float()
+    
     if use_zero_sum:
         K = K - K.mean(dim=2, keepdim=True)
-    Q_norm = F.normalize(Q, p=2, dim=-1)
-    K_norm = F.normalize(K, p=2, dim=-1)
-    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj)
-    K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj)
-    Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
-    K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
+    Q_norm = torch.nn.functional.normalize(Q, p=2, dim=-1)
+    K_norm = torch.nn.functional.normalize(K, p=2, dim=-1)
+    
+    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj).clamp(max=11.0)
+    K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj).clamp(max=11.0)
+    Q_feat = torch.exp(Q_proj) / __import__('math').sqrt(F_dim)
+    K_feat = torch.exp(K_proj) / __import__('math').sqrt(F_dim)
 
     KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)  # (B, H, F, D)
     K_sum = K_feat.sum(dim=2)  # (B, H, F)
@@ -190,7 +164,7 @@ def kernel_linear_attention(
 
     ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)  # (B, H, N, D)
     ctx = ctx / (denom + 1e-8)
-    return ctx
+    return ctx.to(orig_dtype)
 
 
 class AegisAttention(nn.Module):
@@ -329,9 +303,9 @@ class AegisAttention(nn.Module):
         token_valid: Optional[torch.Tensor] = None
         if mask is not None:
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-                token_valid = mask[:, 0, 0, :] > -1e9
+                token_valid = mask[:, 0, 0, :] > -10000.0
             elif mask.dim() == 4:
-                token_valid = mask.squeeze(1).squeeze(1) > -1e9
+                token_valid = mask.squeeze(1).squeeze(1) > -10000.0
             elif mask.dim() == 3:
                 token_valid = mask.squeeze(1).bool()
             elif mask.dim() == 2:
