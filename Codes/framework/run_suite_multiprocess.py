@@ -137,6 +137,19 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
         else:
             cfg.batch_size = 8
 
+        # Dynamic Override from UI Settings Panel
+        settings_file = PROJECT_DIR / "orchestrator_settings.json"
+        if settings_file.exists():
+            try:
+                import json
+                user_settings = json.loads(settings_file.read_text(encoding="utf-8"))
+                if "batch_size" in user_settings:
+                    cfg.batch_size = user_settings["batch_size"]
+                if "dl_workers" in user_settings:
+                    cfg.num_workers = user_settings["dl_workers"]
+            except Exception:
+                pass
+
         cfg.lr = 3e-5 if attn in ("svd_linear", "full") else 5e-5
 
         t0 = time.time()
