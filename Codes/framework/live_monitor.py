@@ -545,6 +545,9 @@ HTML_PAGE = """<!DOCTYPE html>
                             <td class="loss">${r.loss.toFixed(4)}</td>
                             <td style="color:#a78bfa;">${Math.round(r.throughput || 0)}/s</td>
                             <td style="color:#9ca3af;">${Math.round(r.runtime_s)}s</td>
+                            <td>
+                                <button onclick="showPlots('${r.key}', '${r.attn}', '${r.task}')" style="background:rgba(6,182,212,0.2); color:#38bdf8; border:1px solid rgba(6,182,212,0.4); padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; font-weight:600;">📊 Plots</button>
+                            </td>
                         </tr>
                     `).join('');
                 }
@@ -558,9 +561,41 @@ HTML_PAGE = """<!DOCTYPE html>
             }
         }
 
+        function showPlots(key, attn, task) {
+            const modal = document.getElementById('plotModal');
+            document.getElementById('modalTitle').innerText = `${attn.toUpperCase()} on ${task.toUpperCase()} — Saved Plots`;
+            document.getElementById('lossImg').src = `/plots/${key}/loss_curve.png?t=${Date.now()}`;
+            document.getElementById('metricImg').src = `/plots/${key}/metric_curve.png?t=${Date.now()}`;
+            modal.style.display = 'flex';
+        }
+
+        function closePlots() {
+            document.getElementById('plotModal').style.display = 'none';
+        }
+
         setInterval(updateDashboard, 1500);
         updateDashboard();
     </script>
+
+    <!-- Modal for Saved Plot Images -->
+    <div id="plotModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+        <div style="background:#111827; border:1px solid #374151; border-radius:16px; max-width:900px; width:100%; max-height:90vh; overflow-y:auto; padding:24px; position:relative; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #374151; padding-bottom:12px;">
+                <h3 id="modalTitle" style="color:#38bdf8; font-size:18px; font-weight:700;">Saved Experiment Plots</h3>
+                <button onclick="closePlots()" style="background:#ef4444; color:#fff; border:none; padding:4px 12px; border-radius:8px; cursor:pointer; font-weight:700;">✕ Close</button>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(350px, 1fr)); gap:16px;">
+                <div style="background:#1f2937; padding:12px; border-radius:10px; border:1px solid #374151;">
+                    <div style="color:#9ca3af; font-size:12px; margin-bottom:8px; font-weight:600;">LOSS TRAJECTORY CURVE</div>
+                    <img id="lossImg" style="width:100%; border-radius:8px;" onerror="this.src=''; this.alt='Plot generating or unavailable';" />
+                </div>
+                <div style="background:#1f2937; padding:12px; border-radius:10px; border:1px solid #374151;">
+                    <div style="color:#9ca3af; font-size:12px; margin-bottom:8px; font-weight:600;">VALIDATION ACCURACY / METRIC CURVE</div>
+                    <img id="metricImg" style="width:100%; border-radius:8px;" onerror="this.src=''; this.alt='Plot generating or unavailable';" />
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 """
@@ -611,6 +646,25 @@ class DashboardHandler(http.server.BaseHTTPRequestHandler):
                 "logs": logs,
             }
             self.wfile.write(json.dumps(payload).encode("utf-8"))
+        elif self.path.startswith("/plots/"):
+            # Format: /plots/<exp_name>/<filename.png>
+            parts = self.path.strip("/").split("/")
+            if len(parts) >= 3:
+                exp_name = parts[1]
+                filename = parts[2]
+                img_path = RESULTS_DIR / exp_name / "plots" / filename
+                if not img_path.exists():
+                    img_path = RESULTS_DIR / exp_name / filename
+                if img_path.exists() and img_path.is_file():
+                    self.send_response(200)
+                    self.send_header("Content-type", "image/png")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.send_header("Cache-Control", "no-cache")
+                    self.end_headers()
+                    self.wfile.write(img_path.read_bytes())
+                    return
+            self.send_response(404)
+            self.end_headers()
         else:
             self.send_response(404)
             self.end_headers()
