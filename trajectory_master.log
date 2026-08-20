@@ -100,3 +100,45 @@ ompleted)
 [2026-08-20 22:54:56] [Worker-3] [35/120] >> Launching: attn=performer | task=qnli | seed=42
 [2026-08-20 22:58:13] [Worker-2] [34/120] << SUCCESS: attn=lora_attn | task=qnli | Acc: 49.46% | F1: 33.09% | Loss: nan | Time: 403.3s
 [2026-08-20 22:58:15] [Worker-2] [36/120] >> Launching: attn=nystrom | task=qnli | seed=42
+[2026-08-21 00:51:49] ============================================================
+[2026-08-21 00:51:49]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-21 00:51:49] ============================================================
+[2026-08-21 00:51:49] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-21 00:51:49] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-21 00:52:12] [Worker-1] [1/120] -- SKIPPING: attn=svd_linear | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [2/120] -- SKIPPING: attn=svd | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [3/120] -- SKIPPING: attn=full | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [4/120] -- SKIPPING: attn=lora_attn | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [5/120] -- SKIPPING: attn=performer | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [6/120] -- SKIPPING: attn=nystrom | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [7/120] -- SKIPPING: attn=linformer | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [8/120] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [9/120] -- SKIPPING: attn=mamba | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [10/120] -- SKIPPING: attn=gated_delta_net | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [11/120] -- SKIPPING: attn=adasplash | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [12/120] -- SKIPPING: attn=aegis_v3 | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [13/120] -- SKIPPING: attn=griffin_ssd | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [14/120] -- SKIPPING: attn=spectra_v2 | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [15/120] -- SKIPPING: attn=samba_m3 | task=sst2 (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [16/120] -- SKIPPING: attn=svd_linear | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [17/120] -- SKIPPING: attn=svd | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [18/120] -- SKIPPING: attn=full | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [19/120] -- SKIPPING: attn=lora_attn | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [20/120] -- SKIPPING: attn=performer | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [21/120] -- SKIPPING: attn=nystrom | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [22/120] -- SKIPPING: attn=linformer | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [23/120] -- SKIPPING: attn=flash3 | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [24/120] -- SKIPPING: attn=mamba | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [25/120] -- SKIPPING: attn=gated_delta_net | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [26/120] -- SKIPPING: attn=adasplash | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [27/120] -- SKIPPING: attn=aegis_v3 | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [28/120] -- SKIPPING: attn=griffin_ssd | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [29/120] -- SKIPPING: attn=spectra_v2 | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [30/120] -- SKIPPING: attn=samba_m3 | task=mrpc (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [31/120] -- SKIPPING: attn=svd_linear | task=qnli (Already completed)
+[2026-08-21 00:52:12] [Worker-1] [32/120] >> Launching: attn=svd | task=qnli | seed=42
+[2026-08-21 00:52:14] [Worker-2] [33/120] -- SKIPPING: attn=full | task=qnli (Already completed)
+[2026-08-21 00:52:14] [Worker-2] [34/120] -- SKIPPING: attn=lora_attn | task=qnli (Already completed)
+[2026-08-21 00:52:14] [Worker-2] [35/120] >> Launching: attn=performer | task=qnli | seed=42
+[2026-08-21 00:52:18] [Worker-3] [36/120] >> Launching: attn=nystrom | task=qnli | seed=42
+[2026-08-21 00:55:31] [Worker-2] [35/120] << SUCCESS: attn=performer | task=qnli | Acc: 49.46% | F1: 33.09% | Loss: 0.6931 | Time: 196.7s
