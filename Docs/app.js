@@ -154,7 +154,7 @@ async function loadCatalog() {
         if (!res.ok) throw new Error('Network response not ok');
         catalogData = await res.json();
     } catch (e) {
-        catalogData = { attentions: [], compressions: [], framework: [] };
+        catalogData = { attentions: [], compressions: [], framework: [], blog_series: [] };
         console.warn('catalog.json not found, using empty catalog:', e);
     }
     try {
@@ -167,6 +167,7 @@ async function loadCatalog() {
         ...(catalogData.attentions   || []).map(i => ({ ...i, category: 'attentions' })),
         ...(catalogData.compressions || []).map(i => ({ ...i, category: 'compressions' })),
         ...(catalogData.framework    || []).map(i => ({ ...i, category: 'framework' })),
+        ...(catalogData.blog_series  || []).map(i => ({ ...i, category: 'blog_series' })),
     ];
 
     // Stats
@@ -210,6 +211,7 @@ function renderNav(query = '', filter = activeFilter) {
     const sections = [
         { key: 'attentions',   label: 'Attention Mechanisms', icon: '⚡' },
         { key: 'compressions', label: 'Compression Engines',  icon: '🗜' },
+        { key: 'blog_series',  label: 'Research Blog Series', icon: '📝' },
         { key: 'framework',    label: 'Framework Docs',        icon: '📖' },
     ];
 
@@ -781,10 +783,10 @@ function renderHome() {
                 <div class="stat-card-label">Compression Engines</div>
                 <div class="stat-card-icon" style="background:rgba(6,182,212,.12);color:var(--accent-2);">🗜</div>
             </div>
-            <div class="stat-card" style="--card-accent: var(--accent-3);" onclick="document.querySelector('.fchip[data-filter=svd]').click()">
-                <div class="stat-card-num">32+</div>
-                <div class="stat-card-label">SVD Low-Rank Variants</div>
-                <div class="stat-card-icon" style="background:rgba(16,185,129,.12);color:var(--accent-3);">📐</div>
+            <div class="stat-card" style="--card-accent: #a855f7;" onclick="document.querySelector('.fchip[data-filter=blog_series]').click()">
+                <div class="stat-card-num">${(catalogData.blog_series || []).length}</div>
+                <div class="stat-card-label">Research Blog Series</div>
+                <div class="stat-card-icon" style="background:rgba(168,85,247,.12);color:#a855f7;">📝</div>
             </div>
             <div class="stat-card" style="--card-accent: var(--accent-4);" onclick="document.querySelector('.fchip[data-filter=ssm]').click()">
                 <div class="stat-card-num">18+</div>
