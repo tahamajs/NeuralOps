@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-08-20T06:05:23.544999",
+  "eval_loss": 0.37901389598846436,
+  "eval_accuracy": 0.8383671975105254,
+  "eval_f1_macro": 0.838224938690813,
+  "eval_f1_weighted": 0.8381731283799301,
+  "eval_runtime": 5.6899,
+  "eval_samples_per_second": 960.118,
+  "eval_steps_per_second": 15.114,
+  "epoch": 0.5,
+  "gpu_memory_allocated": 707.94970703125,
+  "gpu_memory_reserved": 2162.0,
+  "elapsed_time": 224.62366580963135
+}
