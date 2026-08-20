@@ -183,8 +183,8 @@ def kernel_linear_attention(
         K = K - K.mean(dim=2, keepdim=True)
     Q_norm = F.normalize(Q, p=2, dim=-1)
     K_norm = F.normalize(K, p=2, dim=-1)
-    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj)
-    K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj)
+    Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj).clamp(max=11.0)
+    K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj).clamp(max=11.0)
     Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
     K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
 
