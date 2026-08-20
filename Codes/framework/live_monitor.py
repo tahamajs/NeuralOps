@@ -228,25 +228,27 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(css_path.read_bytes())
                 return
-        elif self.path.endswith(".md"):
-            md_path = WEB_DIR / self.path.lstrip('/')
-            if md_path.exists():
+        elif self.path.endswith(".md") or self.path.endswith("catalog.json"):
+            # Markdown files and catalog.json are in the Docs directory!
+            file_path = WORKDIR.parent.parent / "Docs" / self.path.lstrip('/')
+            if file_path.exists():
                 self.send_response(200)
-                self.send_header("Content-type", "text/markdown; charset=utf-8")
+                content_type = "text/markdown; charset=utf-8" if self.path.endswith(".md") else "application/json; charset=utf-8"
+                self.send_header("Content-type", content_type)
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(md_path.read_bytes())
+                self.wfile.write(file_path.read_bytes())
                 return
-        elif self.path.endswith(".json"):
-            json_path = WEB_DIR / self.path.lstrip('/')
-            if json_path.exists():
+        elif self.path.endswith(".json") and "all_histories.json" in self.path:
+            file_path = WORKDIR.parent.parent / "Docs" / "results" / "all_histories.json"
+            if file_path.exists():
                 self.send_response(200)
                 self.send_header("Content-type", "application/json; charset=utf-8")
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(json_path.read_bytes())
+                self.wfile.write(file_path.read_bytes())
                 return
-        
+
         elif self.path == "/api/stats":
 
 
