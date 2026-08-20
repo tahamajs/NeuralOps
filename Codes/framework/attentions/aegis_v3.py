@@ -104,11 +104,18 @@ def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.
     Returns:
         torch.Tensor: Normalized probability distribution.
     """
+    orig_dtype = x.dtype
+    x = x.float()
     m = x.max(dim=dim, keepdim=True).values
     e = torch.exp((x - m) / temperature)
-    denom = e - torch.exp(-m / temperature)
+    
+    # Clamp to avoid overflow if m is large negative.
+    # Since we are in float32, max exp argument is ~88.0.
+    m_scaled = torch.clamp(-m / temperature, max=80.0)
+    denom = e - torch.exp(m_scaled)
+    
     p = F.relu(denom)
-    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
 
 
 def local_window_attention(
@@ -139,9 +146,12 @@ def local_window_attention(
     dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
     mask = (dist <= window // 2).unsqueeze(0).unsqueeze(0)
     scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-    scores = scores.masked_fill(~mask, -1e9)
+    
+    # Use -10000.0 instead of -1e9 to avoid FP16 representation limits
+    scores = scores.masked_fill(~mask, -10000.0)
     if token_valid is not None:
-        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -1e9)
+        scores = scores.masked_fill(~token_valid.unsqueeze(1).unsqueeze(2), -10000.0)
+    
     attn = softpick(scores, dim=-1, temperature=temperature)
     return torch.matmul(attn, V)
 
@@ -179,10 +189,18 @@ def kernel_linear_attention(
     """
     B, H, N, D = Q.shape
     F_dim = rff_proj.size(-1)
+    orig_dtype = Q.dtype
+    
+    Q, K, V = Q.float(), K.float(), V.float()
+    rff_proj = rff_proj.float()
+    
     if use_zero_sum:
         K = K - K.mean(dim=2, keepdim=True)
     Q_norm = F.normalize(Q, p=2, dim=-1)
     K_norm = F.normalize(K, p=2, dim=-1)
+    
+    # We can clamp max to 10.0 to be safe, but since it's float32 now, it won't overflow anyway,
+    # however float32 max exp is ~88. We'll leave the clamp to prevent extreme scaling.
     Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, rff_proj).clamp(max=11.0)
     K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, rff_proj).clamp(max=11.0)
     Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
@@ -194,7 +212,7 @@ def kernel_linear_attention(
 
     ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)  # (B, H, N, D)
     ctx = ctx / (denom + 1e-8)
-    return ctx
+    return ctx.to(orig_dtype)
 
 
 @ATTENTION_REGISTRY.register("aegis_v3")
