@@ -88,13 +88,16 @@ class LEKAV1Attention(BaseAttention):
         return phi
 
     @staticmethod
-    def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-        r"""Numerically stable soft selection function."""
-        m = x.max(dim=dim, keepdim=True).values
-        e = torch.exp((x - m) / temperature)
-        denom = e - torch.exp(-m / temperature)
-        p = F.relu(denom)
-        return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+    def softpick(x, dim: int = -1, temperature: float = 1.0):
+    import torch.nn.functional as F
+    orig_dtype = x.dtype
+    x = x.float()
+    m = x.max(dim=dim, keepdim=True).values
+    e = torch.exp((x - m) / temperature)
+    m_scaled = torch.clamp(-m / temperature, max=80.0)
+    denom = e - torch.exp(m_scaled)
+    p = F.relu(denom)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
 
     def forward(
         self,

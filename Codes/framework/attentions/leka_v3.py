@@ -125,13 +125,16 @@ class LEKAV3Attention(BaseAttention):
         return K_land, V_land
 
     @staticmethod
-    def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-        r"""Numerically stable soft-selection operator."""
-        m = x.max(dim=dim, keepdim=True).values
-        e = torch.exp((x - m) / temperature)
-        denom = e - torch.exp(-m / temperature)
-        p = F.relu(denom)
-        return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+    def softpick(x, dim: int = -1, temperature: float = 1.0):
+    import torch.nn.functional as F
+    orig_dtype = x.dtype
+    x = x.float()
+    m = x.max(dim=dim, keepdim=True).values
+    e = torch.exp((x - m) / temperature)
+    m_scaled = torch.clamp(-m / temperature, max=80.0)
+    denom = e - torch.exp(m_scaled)
+    p = F.relu(denom)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
 
     def forward(
         self,
@@ -176,9 +179,9 @@ class LEKAV3Attention(BaseAttention):
             mask = kwargs.get("attn_mask", None)
         if mask is not None:
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-                token_valid = mask[:, 0, 0, :] > -1e9
+                token_valid = mask[:, 0, 0, :] > -10000.0
             elif mask.dim() == 4:
-                token_valid = mask.squeeze(1).squeeze(1) > -1e9
+                token_valid = mask.squeeze(1).squeeze(1) > -10000.0
             elif mask.dim() == 3:
                 token_valid = mask.squeeze(1).bool()
             elif mask.dim() == 2:
@@ -187,7 +190,7 @@ class LEKAV3Attention(BaseAttention):
                 token_valid = None
             if token_valid is not None:
                 attn_weights = attn_weights.masked_fill(
-                    ~token_valid.unsqueeze(1).unsqueeze(-1), float("-1e9")
+                    ~token_valid.unsqueeze(1).unsqueeze(-1), float("-10000.0")
                 )
 
         attn_weights = self.softpick(attn_weights, dim=-1)
@@ -204,7 +207,7 @@ class LEKAV3Attention(BaseAttention):
 
         scale = 1.0 / math.sqrt(self.head_dim)
         local_scores = torch.matmul(Q, K.transpose(-2, -1)) * scale
-        local_scores = local_scores.masked_fill(~window_mask, float("-1e9"))
+        local_scores = local_scores.masked_fill(~window_mask, float("-10000.0"))
         local_attn = F.softmax(local_scores, dim=-1)
         context_local = torch.matmul(local_attn, V)
 
