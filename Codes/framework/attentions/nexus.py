@@ -88,26 +88,16 @@ class NEXUSConfig:
 # ============================================================================
 # Utility: Softpick rectified softmax
 # ============================================================================
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    r"""Rectified sparse softmax with dynamic thresholding and no attention sink.
-
-    Computes:
-        $$\text{Softpick}(x) = \frac{\max(0, \exp((x - m)/\tau) - \exp(-m/\tau))}{\sum_j \max(0, \exp((x_j - m)/\tau) - \exp(-m/\tau)) + \epsilon}$$
-    where $m = \max(x)$.
-
-    Args:
-        x: Input logits tensor of shape `[..., N]`.
-        dim: Dimension along which to normalize.
-        temperature: Softmax temperature scaling parameter $\tau$.
-
-    Returns:
-        Normalized non-negative sparse probabilities of shape `[..., N]`.
-    """
+def softpick(x, dim: int = -1, temperature: float = 1.0):
+    import torch.nn.functional as F
+    orig_dtype = x.dtype
+    x = x.float()
     m = x.max(dim=dim, keepdim=True).values
     e = torch.exp((x - m) / temperature)
-    denom = e - torch.exp(-m / temperature)
+    m_scaled = torch.clamp(-m / temperature, max=80.0)
+    denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
 
 
 # ============================================================================
@@ -343,11 +333,11 @@ class DualStageStripeAttention(nn.Module):
             scores = torch.matmul(Q_b, K_total.transpose(-2, -1)) * scale
 
             if stripe_mask is not None:
-                scores = scores.masked_fill(~stripe_mask, -1e9)
+                scores = scores.masked_fill(~stripe_mask, -10000.0)
 
             if token_valid is not None:
                 intra_valid = token_valid[:, start:end].unsqueeze(1).unsqueeze(-1)
-                scores = scores.masked_fill(~intra_valid.bool(), -1e9)
+                scores = scores.masked_fill(~intra_valid.bool(), -10000.0)
 
             attn = (
                 softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
@@ -397,8 +387,12 @@ class SpectraformerRectify(nn.Module):
         B, H, N, D = Q.shape
         F_dim = self.rff_features
 
-        Q_proj = torch.matmul(F.normalize(Q, p=2, dim=-1), self.proj.to(Q.device))
-        K_proj = torch.matmul(F.normalize(K, p=2, dim=-1), self.proj.to(Q.device))
+        orig_dtype = Q.dtype
+        Q, K, V = Q.float(), K.float(), V.float()
+        proj = self.proj.to(Q.device).float()
+        
+        Q_proj = torch.matmul(F.normalize(Q, p=2, dim=-1), proj).clamp(max=11.0)
+        K_proj = torch.matmul(F.normalize(K, p=2, dim=-1), proj).clamp(max=11.0)
 
         Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
         K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
@@ -407,7 +401,7 @@ class SpectraformerRectify(nn.Module):
         Z = K_feat.sum(dim=2)
         ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)
         norm = torch.einsum("bhnf,bhf->bhn", Q_feat, Z).unsqueeze(-1)
-        return ctx / (norm + 1e-8)
+        return (ctx / (norm + 1e-6)).to(orig_dtype)
 
 
 # ============================================================================
@@ -486,9 +480,9 @@ class NEXUSAttention(BaseAttention):
         if mask is None:
             return None
         if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-            token_valid = mask[:, 0, 0, :] > -1e9
+            token_valid = mask[:, 0, 0, :] > -10000.0
         elif mask.dim() == 4:
-            token_valid = mask.squeeze(1).squeeze(1) > -1e9
+            token_valid = mask.squeeze(1).squeeze(1) > -10000.0
         elif mask.dim() == 3:
             token_valid = mask.squeeze(1).bool()
         elif mask.dim() == 2:
