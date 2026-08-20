@@ -58,25 +58,16 @@ class ORIONConfig:
     dropout: float = 0.1
 
 
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    r"""Rectified non-negative sparse activation function without sink token collapse.
-
-    Args:
-        x: Input logits tensor of shape `[..., N]`.
-        dim: Normalization dimension.
-        temperature: Temperature parameter $\tau$.
-
-    Returns:
-        Sparse normalized probability distribution `[..., N]`.
-    """
+def softpick(x, dim: int = -1, temperature: float = 1.0):
+    import torch.nn.functional as F
+    orig_dtype = x.dtype
+    x = x.float()
     m = x.max(dim=dim, keepdim=True).values
-    scaled = (x - m) / max(temperature, 1e-6)
-    scaled_clamped = torch.clamp(scaled, min=-50.0, max=50.0)
-    e = torch.exp(scaled_clamped)
-    m_clamped = torch.clamp(-m / max(temperature, 1e-6), min=-50.0, max=50.0)
-    denom = e - torch.exp(m_clamped)
+    e = torch.exp((x - m) / temperature)
+    m_scaled = torch.clamp(-m / temperature, max=80.0)
+    denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
 
 
 class FactorisedLinear(nn.Module):
@@ -203,18 +194,21 @@ class ORIONAttention(nn.Module):
         r"""Compute kernel linear attention via RFF projections in $\mathcal{O}(N \cdot F \cdot d)$."""
         B, Hk, N, D = Q.shape
         F_dim = self.cfg.rff_features
+        orig_dtype = Q.dtype
+        Q, K, V = Q.float(), K.float(), V.float()
+        proj = self.rff_proj.to(Q.device).float()
+        
         Q_norm = F.normalize(Q, p=2, dim=-1)
         K_norm = F.normalize(K, p=2, dim=-1)
-        proj = self.rff_proj.to(Q.device)
-        Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, proj)
-        K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, proj)
+        Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_norm, proj).clamp(max=11.0)
+        K_proj = torch.einsum("bhnd,hdf->bhnf", K_norm, proj).clamp(max=11.0)
         Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
         K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
         KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
         K_sum = K_feat.sum(dim=2)
         denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
         ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-8)
-        return ctx
+        return ctx.to(orig_dtype)
 
     def _full_softpick_attention(
         self,
@@ -276,9 +270,9 @@ class ORIONAttention(nn.Module):
         token_valid = None
         if mask is not None:
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-                token_valid = mask[:, 0, 0, :] > -1e9
+                token_valid = mask[:, 0, 0, :] > -10000.0
             elif mask.dim() == 4:
-                token_valid = mask.squeeze(1).squeeze(1) > -1e9
+                token_valid = mask.squeeze(1).squeeze(1) > -10000.0
             elif mask.dim() == 3:
                 token_valid = mask.squeeze(1).bool()
             elif mask.dim() == 2:

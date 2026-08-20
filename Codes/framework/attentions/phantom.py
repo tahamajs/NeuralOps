@@ -50,32 +50,16 @@ class PHANTOMConfig:
     dropout: float = 0.1
 
 
-def softpick(x: torch.Tensor, dim: int = -1, temperature: float = 1.0) -> torch.Tensor:
-    r"""Compute rectified softmax avoiding artificial sink tokens.
-
-    Uses a modified softmax where values are shifted, exponentiated, and rectified to produce a sparse probability distribution.
-    Math:
-        $$m = \max(x)$$
-        $$p = \max(0, \exp(\frac{x - m}{\tau}) - \exp(-\frac{m}{\tau}))$$
-        $$\text{Softpick}(x) = \frac{p}{\sum p + \epsilon}$$
-
-    Args:
-        x (torch.Tensor): Input logit tensor.
-        dim (int): Normalization dimension.
-        temperature (float): Temperature factor $\tau$.
-
-    Returns:
-        torch.Tensor: Sparse normalized probability tensor.
-
-    Shape:
-        - Input: `[..., D]`
-        - Output: `[..., D]`
-    """
+def softpick(x, dim: int = -1, temperature: float = 1.0):
+    import torch.nn.functional as F
+    orig_dtype = x.dtype
+    x = x.float()
     m = x.max(dim=dim, keepdim=True).values
     e = torch.exp((x - m) / temperature)
-    denom = e - torch.exp(torch.clamp(-m / temperature, min=-50, max=50))
+    m_scaled = torch.clamp(-m / temperature, max=80.0)
+    denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return p / (p.sum(dim=dim, keepdim=True) + 1e-9)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
 
 
 class FactorisedLinear_CUR(nn.Module):
@@ -346,9 +330,9 @@ class PHANTOMAttention(nn.Module):
         token_valid = None
         if mask is not None:
             if mask.dim() == 4 and mask.shape[-2] == mask.shape[-1]:
-                token_valid = mask[:, 0, 0, :] > -1e9
+                token_valid = mask[:, 0, 0, :] > -10000.0
             elif mask.dim() == 4:
-                token_valid = mask.squeeze(1).squeeze(1) > -1e9
+                token_valid = mask.squeeze(1).squeeze(1) > -10000.0
             elif mask.dim() == 3:
                 token_valid = mask.squeeze(1).bool()
             elif mask.dim() == 2:
