@@ -233,11 +233,20 @@ async function sendCommand(action) {
 async function saveSettings() {
     const batch = document.getElementById('set-batch').value;
     const workers = document.getElementById('set-workers').value;
+    const lr = document.getElementById('set-lr').value;
+    const epochs = document.getElementById('set-epochs').value;
+    const seed = document.getElementById('set-seed').value;
     try {
         const res = await fetch('/api/settings', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ batch_size: parseInt(batch), dl_workers: parseInt(workers) })
+            body: JSON.stringify({ 
+                batch_size: parseInt(batch), 
+                dl_workers: parseInt(workers),
+                lr: parseFloat(lr),
+                epochs: parseFloat(epochs),
+                seed: parseInt(seed)
+            })
         });
         const data = await res.json();
         alert(data.message || "Settings updated. They will apply to the next task.");
