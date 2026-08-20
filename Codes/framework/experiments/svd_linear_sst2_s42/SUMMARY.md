@@ -1,11 +1,11 @@
 # Run Summary: `svd_linear_sst2_s42`
-> Generated: 2026-08-20 21:48:03
+> Generated: 2026-08-21 01:27:57
 
 ## Configuration
 ```
   attn_implementation: full
   attn_type: svd_linear
-  batch_size: 32
+  batch_size: 16
   compression_rank: 64
   compressor: None
   config: None
@@ -41,7 +41,7 @@
   model_name: distilbert-base-uncased
   num_landmarks: 16
   num_seeds: 1
-  output_dir: ./experiments
+  output_dir: C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments
   progressive: True
   r3f_epsilon: 1e-05
   rdrop_alpha: 5.0
@@ -58,18 +58,18 @@
 
 | Metric | Value |
 |:---|:---|
-| eval_loss | 0.278538 |
-| eval_accuracy | 0.886468 |
-| eval_f1_macro | 0.886285 |
-| eval_f1_weighted | 0.886368 |
-| eval_runtime | 0.926000 |
-| eval_samples_per_second | 941.692000 |
-| eval_steps_per_second | 15.119000 |
-| epoch | 0.500238 |
-| gpu_memory_allocated | 706.449707 |
-| gpu_memory_reserved | 2154.000000 |
-| elapsed_time | 131.723630 |
+| eval_loss | 0.263323 |
+| eval_accuracy | 0.892202 |
+| eval_f1_macro | 0.892156 |
+| eval_f1_weighted | 0.892197 |
+| eval_runtime | 2.227800 |
+| eval_samples_per_second | 391.425000 |
+| eval_steps_per_second | 12.569000 |
+| epoch | 0.500000 |
+| gpu_memory_allocated | 706.199707 |
+| gpu_memory_reserved | 1642.000000 |
+| elapsed_time | 453.432519 |
 
-**Total runtime:** 2m 11s
+**Total runtime:** 7m 31s
 
-**Output dir:** `experiments\svd_linear_sst2_s42`
+**Output dir:** `C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments\svd_linear_sst2_s42`
