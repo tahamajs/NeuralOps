@@ -1,11 +1,11 @@
 # Run Summary: `full_sst2_s42`
-> Generated: 2026-08-20 05:31:08
+> Generated: 2026-08-20 22:08:39
 
 ## Configuration
 ```
   attn_implementation: full
   attn_type: full
-  batch_size: 32
+  batch_size: 16
   compression_rank: 64
   compressor: None
   config: None
@@ -41,7 +41,7 @@
   model_name: distilbert-base-uncased
   num_landmarks: 16
   num_seeds: 1
-  output_dir: ./experiments
+  output_dir: C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments
   progressive: True
   r3f_epsilon: 1e-05
   rdrop_alpha: 5.0
@@ -58,18 +58,18 @@
 
 | Metric | Value |
 |:---|:---|
-| eval_loss | 0.276261 |
-| eval_accuracy | 0.897936 |
-| eval_f1_macro | 0.897838 |
-| eval_f1_weighted | 0.897896 |
-| eval_runtime | 0.693900 |
-| eval_samples_per_second | 1256.681000 |
-| eval_steps_per_second | 20.176000 |
-| epoch | 0.500238 |
-| gpu_memory_allocated | 803.610840 |
-| gpu_memory_reserved | 1992.000000 |
-| elapsed_time | 108.225391 |
+| eval_loss | 0.322715 |
+| eval_accuracy | 0.887615 |
+| eval_f1_macro | 0.887529 |
+| eval_f1_weighted | 0.887586 |
+| eval_runtime | 1.747700 |
+| eval_samples_per_second | 498.940000 |
+| eval_steps_per_second | 16.021000 |
+| epoch | 0.500000 |
+| gpu_memory_allocated | 2003.477539 |
+| gpu_memory_reserved | 3380.000000 |
+| elapsed_time | 315.768416 |
 
-**Total runtime:** 1m 47s
+**Total runtime:** 5m 14s
 
-**Output dir:** `experiments\full_sst2_s42`
+**Output dir:** `C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments\full_sst2_s42`

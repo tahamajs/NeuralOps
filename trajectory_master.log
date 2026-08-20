@@ -1,0 +1,62 @@
+C:\Users\Hadi Schumacher\anaconda3\Lib\site-packages\transformers\utils\hub.py:111: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+usage: python main.py [-h] {train,eval,compress,sweep,list} ...
+python main.py: error: unrecognized arguments: mrpc qnli
+[COMPLETED] 
+[2026-08-20 21:45:21] ============================================================
+[2026-08-20 21:45:21]   STARTING SVD COMPRESSION GPU ORCHESTRATION SUITE  
+[2026-08-20 21:45:21] ============================================================
+[2026-08-20 21:45:21]   Device: NVIDIA GeForce RTX 4070 Laptop GPU
+[2026-08-20 21:45:21]   VRAM: 8.6 GB | CUDA: 12.4 | PyTorch: 2.6.0+cu124
+[2026-08-20 21:45:21]   Storage Policy: ZERO-BLOAT (Metrics JSON only, no weights saved)
+[2026-08-20 21:45:21] ============================================================
+[2026-08-20 21:45:32] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-20 21:45:32] ▶ GLUE TASK: SST2
+[2026-08-20 21:45:32] [1/120] >> Launching: attn=svd_linear | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 21:48:03] [1/120] << SUCCESS: attn=svd_linear | task=sst2 | Acc: 88.65% | F1: 88.63% | Loss: 0.2785 | Time: 151.3s
+[2026-08-20 21:48:04] [2/120] >> Launching: attn=svd | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 21:51:18] ============================================================
+[2026-08-20 21:51:18]   STARTING SVD COMPRESSION GPU ORCHESTRATION SUITE  
+[2026-08-20 21:51:18] ============================================================
+[2026-08-20 21:51:18]   Device: NVIDIA GeForce RTX 4070 Laptop GPU
+[2026-08-20 21:51:18]   VRAM: 8.6 GB | CUDA: 12.4 | PyTorch: 2.6.0+cu124
+[2026-08-20 21:51:18]   Storage Policy: ZERO-BLOAT (Metrics JSON only, no weights saved)
+[2026-08-20 21:51:18] ============================================================
+[2026-08-20 21:51:27] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-20 21:51:27] ▶ GLUE TASK: SST2
+[2026-08-20 21:51:27] [1/120] -- SKIPPING: attn=svd_linear | task=sst2 (Already in master log)
+[2026-08-20 21:51:27] [2/120] >> Launching: attn=svd | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 21:54:52] ============================================================
+[2026-08-20 21:54:52]   STARTING SVD COMPRESSION GPU ORCHESTRATION SUITE  
+[2026-08-20 21:54:52] ============================================================
+[2026-08-20 21:54:52]   Device: NVIDIA GeForce RTX 4070 Laptop GPU
+[2026-08-20 21:54:52]   VRAM: 8.6 GB | CUDA: 12.4 | PyTorch: 2.6.0+cu124
+[2026-08-20 21:54:52]   Storage Policy: ZERO-BLOAT (Metrics JSON only, no weights saved)
+[2026-08-20 21:54:52] ============================================================
+[2026-08-20 21:55:09] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-20 21:55:09] ▶ GLUE TASK: SST2
+[2026-08-20 21:55:09] [1/120] -- SKIPPING: attn=svd_linear | task=sst2 (Already in master log)
+[2026-08-20 21:55:09] [2/120] >> Launching: attn=svd | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 22:01:50] ============================================================
+[2026-08-20 22:01:50]   STARTING PARALLEL SVD DUAL-WORKER GPU ORCHESTRATION  
+[2026-08-20 22:01:50] ============================================================
+[2026-08-20 22:01:50]   Device: NVIDIA GeForce RTX 4070 Laptop GPU
+[2026-08-20 22:01:50]   VRAM: 8.6 GB | CUDA: 12.4 | PyTorch: 2.6.0+cu124
+[2026-08-20 22:01:50]   Mode: 2 Concurrent GPU Streams | Policy: ZERO-BLOAT
+[2026-08-20 22:01:50] ============================================================
+[2026-08-20 22:01:58] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-20 22:01:58] [Worker-1] [1/120] -- SKIPPING: attn=svd_linear | task=sst2 (Already in master log)
+[2026-08-20 22:01:58] [Worker-1] [2/120] >> Launching: attn=svd | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 22:02:00] [Worker-2] [3/120] >> Launching: attn=full | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 22:03:11] ============================================================
+[2026-08-20 22:03:11]   STARTING PARALLEL SVD DUAL-WORKER GPU ORCHESTRATION  
+[2026-08-20 22:03:11] ============================================================
+[2026-08-20 22:03:11]   Device: NVIDIA GeForce RTX 4070 Laptop GPU
+[2026-08-20 22:03:11]   VRAM: 8.6 GB | CUDA: 12.4 | PyTorch: 2.6.0+cu124
+[2026-08-20 22:03:11]   Mode: 2 Concurrent GPU Streams | Policy: ZERO-BLOAT
+[2026-08-20 22:03:11] ============================================================
+[2026-08-20 22:03:18] Trajectory Matrix: 15 Models x 8 Tasks = 120 Runs
+[2026-08-20 22:03:18] [Worker-1] [1/120] -- SKIPPING: attn=svd_linear | task=sst2 (Already in master log)
+[2026-08-20 22:03:18] [Worker-1] [2/120] >> Launching: attn=svd | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 22:03:20] [Worker-2] [3/120] >> Launching: attn=full | task=sst2 | epochs=0.5 | seed=42
+[2026-08-20 22:08:39] [Worker-2] [3/120] << SUCCESS: attn=full | task=sst2 | Acc: 88.76% | F1: 88.75% | Loss: 0.3227 | Time: 318.3s
