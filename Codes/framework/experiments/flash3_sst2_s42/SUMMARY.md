@@ -1,11 +1,11 @@
 # Run Summary: `flash3_sst2_s42`
-> Generated: 2026-08-20 22:27:01
+> Generated: 2026-08-21 01:59:59
 
 ## Configuration
 ```
   attn_implementation: full
   attn_type: flash3
-  batch_size: 16
+  batch_size: 8
   compression_rank: 64
   compressor: None
   config: None
@@ -58,18 +58,18 @@
 
 | Metric | Value |
 |:---|:---|
-| eval_loss | 0.407254 |
+| eval_loss | 0.471143 |
 | eval_accuracy | 0.829128 |
-| eval_f1_macro | 0.829078 |
-| eval_f1_weighted | 0.829132 |
-| eval_runtime | 1.610900 |
-| eval_samples_per_second | 541.321000 |
-| eval_steps_per_second | 17.382000 |
-| epoch | 0.500000 |
-| gpu_memory_allocated | 2014.868164 |
-| gpu_memory_reserved | 3446.000000 |
-| elapsed_time | 312.031049 |
+| eval_f1_macro | 0.828988 |
+| eval_f1_weighted | 0.829078 |
+| eval_runtime | 2.284500 |
+| eval_samples_per_second | 381.707000 |
+| eval_steps_per_second | 24.076000 |
+| epoch | 0.500059 |
+| gpu_memory_allocated | 796.485840 |
+| gpu_memory_reserved | 1392.000000 |
+| elapsed_time | 701.337826 |
 
-**Total runtime:** 5m 10s
+**Total runtime:** 11m 39s
 
 **Output dir:** `C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments\flash3_sst2_s42`
