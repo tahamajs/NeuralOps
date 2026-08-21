@@ -61,9 +61,12 @@ class MambaSVDFlash(BaseAttention):
             config_obj = None
         else:
             config_obj = config
-            dim = d_model or hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 64))
+            if isinstance(config, dict):
+                dim = d_model or hidden_size or config.get("hidden_size", config.get("dim", 768))
+            else:
+                dim = d_model or hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768))
         super().__init__(config_obj, rank)
-        self.d_model: int = dim or 64
+        self.d_model: int = dim or 768
         self.rank: int = rank or 16
 
         # SVD-SSM path projections

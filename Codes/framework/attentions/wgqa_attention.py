@@ -117,7 +117,13 @@ class WeightedGroupedQueryAttention(nn.Module):
 
         scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.head_dim)
         if attention_mask is not None:
-            scores = scores + attention_mask.unsqueeze(1)
+            if attention_mask.dim() == 2:
+                # Usually (B, L) with 0 for pad and 1 for valid
+                scores = scores + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+            elif attention_mask.dim() == 4:
+                scores = scores + attention_mask
+            else:
+                scores = scores + attention_mask.unsqueeze(1).unsqueeze(2)
 
         attn_probs = torch.softmax(scores, dim=-1)
         attn_probs = self.dropout(attn_probs)

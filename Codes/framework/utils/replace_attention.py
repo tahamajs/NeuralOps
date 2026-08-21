@@ -1,4 +1,5 @@
-from typing import Any, Optional, Tuple
+from typing import Any, List, Optional, Tuple
+import inspect
 import torch
 import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
@@ -86,85 +87,177 @@ class UniversalAttentionWrapper(nn.Module):
             return getattr(self.inner, name)
 
 
+
+def _try_instantiate(attn_fn: Any, config: Any, layer_idx: int, total_layers: int, old_attn: Any) -> nn.Module:
+    """
+    Instantiate a registered attention function / class using multiple
+    call-signature strategies, from most-specific to most-permissive.
+
+    Handles all 4 observed patterns across 126 registry entries:
+      1. inject_fn(layer, model_config, comp_config, layer_idx, total_layers, old_attn)
+      2. inject_fn(model_config, layer_idx=N, total_layers=N)
+      3. AttnClass(config, layer_idx=N, total_layers=N)
+      4. AttnClass(config)
+    """
+    # Enrich config with commonly missing attributes so modules don't crash
+    for attr, default in [
+        ("dropout", 0.1),
+        ("hidden_dropout_prob", 0.1),
+        ("attention_probs_dropout_prob", 0.1),
+        ("intermediate_size", 3072),
+        ("max_position_embeddings", 512),
+        ("layer_norm_eps", 1e-12),
+        ("is_decoder", False),
+        ("add_cross_attention", False),
+        ("chunk_size_feed_forward", 0),
+        ("position_embedding_type", "absolute"),
+    ]:
+        if not hasattr(config, attr):
+            setattr(config, attr, default)
+
+    # Build a default ranks dict for spectron/svd_compressed which require it
+    _default_ranks = {"q": 64, "k": 64, "v": 64, "o": 64}
+
+    attempts = [
+        # Pattern A: full positional (layer, model_config, comp_config, layer_idx, total_layers, old_attn)
+        lambda: attn_fn(old_attn, config, None, layer_idx, total_layers, old_attn),
+        # Pattern A2: 5-arg positional (layer, model_config, comp_config, layer_idx, total_layers)
+        lambda: attn_fn(old_attn, config, None, layer_idx, total_layers),
+        # Pattern A3: keyword comp_config
+        lambda: attn_fn(old_attn, config, comp_config=None, layer_idx=layer_idx, total_layers=total_layers),
+        # Pattern A4: layer + model_config only
+        lambda: attn_fn(old_attn, config),
+        # Pattern A5: layer only (with defaults)
+        lambda: attn_fn(old_attn),
+        # Pattern B: full inject keyword (comp_config + old_attn + layer aware)
+        lambda: attn_fn(config, comp_config=None, old_attn=old_attn, layer_idx=layer_idx, total_layers=total_layers),
+        # Pattern B2: inject with layer only
+        lambda: attn_fn(config, layer_idx=layer_idx, total_layers=total_layers),
+        # Pattern B3: inject with comp_config + old_attn, no layer
+        lambda: attn_fn(config, comp_config=None, old_attn=old_attn),
+        # Pattern C: spectron/svd_compressed: (model_config, pretrained_attn=..., ranks=...)
+        lambda: attn_fn(config, pretrained_attn=old_attn, ranks=_default_ranks, layer_idx=layer_idx),
+        lambda: attn_fn(config, pretrained_attn=old_attn, ranks=_default_ranks),
+        # Pattern D: config + pretrained_attn (mla, nha, salt, vig, vspec, soa_fused_module)
+        lambda: attn_fn(config, pretrained_attn=old_attn, layer_idx=layer_idx),
+        lambda: attn_fn(config, pretrained_attn=old_attn),
+        # Pattern E: soa_module: (model_config, k_rank=32, pretrained_attn=...)
+        lambda: attn_fn(config, k_rank=32, pretrained_attn=old_attn),
+        # Pattern F: orion_module/phantom_module: (model_config, None)
+        lambda: attn_fn(config, None, pretrained_attn=old_attn),
+        lambda: attn_fn(config, None),
+        # Pattern G: nha_compressor: (model, tokenizer)
+        lambda: attn_fn(None, None),
+        # Pattern H: config + hidden_size derived
+        lambda: attn_fn(config, config.hidden_size, getattr(config, 'num_attention_heads', 12)),
+        # Pattern I: class(config) only
+        lambda: attn_fn(config),
+        # Pattern J: class(hidden_size, heads)
+        lambda: attn_fn(config.hidden_size, getattr(config, 'num_attention_heads', 12)),
+        # Pattern K: compressed_attention_layer(original_layer, rank_qkv, rank_out)
+        lambda: attn_fn(old_attn, 32, 32),
+        # Pattern L: compressed_attention_layer_energy(original_layer, energy_threshold)
+        lambda: attn_fn(old_attn, 0.95),
+        # Pattern M: no-arg fallback
+        lambda: attn_fn(),
+    ]
+
+    last_err = None
+    for attempt in attempts:
+        try:
+            result = attempt()
+            if isinstance(result, nn.Module):
+                return result
+        except (TypeError, AttributeError, ValueError) as e:
+            last_err = e
+            continue
+        except Exception as e:
+            last_err = e
+            continue
+
+    raise RuntimeError(
+        f"Could not instantiate {getattr(attn_fn, '__name__', str(attn_fn))} "
+        f"with any known signature. Last error: {last_err}"
+    )
+
+
 def replace_attention(model, attention_key, layer_indices=None, **kwargs) -> Any:
     """
     Replace attention modules in a model with a registered attention block.
 
     Args:
         model: A PyTorch model (typically a Hugging Face transformer)
-        attention_key: String key registered in ATTENTION_REGISTRY, e.g., "nha", "hybrid", etc.
+        attention_key: String key registered in ATTENTION_REGISTRY
         layer_indices: Optional list of layer indices to replace (0-indexed).
                        If None, replace all attention layers.
-        **kwargs: Additional arguments passed to the attention block constructor
-                  (e.g., rank, window_size, num_experts).
+        **kwargs: Additional arguments passed to the attention block constructor.
 
     Returns:
         Model with attention layers replaced.
     """
-    # Get the attention class from registry
-    attn_class = ATTENTION_REGISTRY.get(attention_key)
-    if attn_class is None:
+    attn_fn = ATTENTION_REGISTRY.get(attention_key)
+    if attn_fn is None:
         raise ValueError(
             f"Attention key '{attention_key}' not found in registry. "
-            f"Available: {ATTENTION_REGISTRY.keys()}"
+            f"Available: {list(ATTENTION_REGISTRY.keys())}"
         )
 
-    # Check if model has a config (Hugging Face style)
-    if hasattr(model, "config"):
-        config = model.config
-    else:
-        # Try to infer or use default; raise error if missing
-        raise AttributeError(
-            "Model does not have a 'config' attribute. "
-            "Please provide attention block arguments directly."
-        )
+    if not hasattr(model, "config"):
+        raise AttributeError("Model does not have a 'config' attribute.")
+
+    config = model.config
+    total_layers = getattr(config, "num_hidden_layers", 12)
 
     # Collect top-level attention module targets (avoiding submodules)
-    targets = []
+    targets: List[Tuple[str, nn.Module, int]] = []
     for name, module in model.named_modules():
         parts = name.split(".")
         if not parts or not parts[-1]:
             continue
         leaf = parts[-1].lower()
-        if leaf in ["attention", "self_attn", "self", "attn"] or isinstance(module, (nn.MultiheadAttention,)):
-            # Check if an ancestor was already selected
+        if leaf in ["attention", "self_attn", "self", "attn"] or isinstance(module, nn.MultiheadAttention):
             if not any(name.startswith(t[0] + ".") for t in targets):
-                # Check layer_indices if specified
-                layer_idx = None
+                layer_idx = 0
                 for part in parts:
                     if part.isdigit():
                         layer_idx = int(part)
                         break
                 if layer_indices is None or layer_idx in layer_indices:
-                    targets.append((name, module))
+                    targets.append((name, module, layer_idx))
 
     replaced_count = 0
-    for name, old_module in targets:
-        # Instantiate the new attention block
+    failed_count = 0
+    for name, old_module, layer_idx in targets:
         try:
-            new_attn = attn_class(config, **kwargs)
-        except TypeError:
-            new_attn = attn_class(**kwargs)
+            new_attn = _try_instantiate(attn_fn, config, layer_idx, total_layers, old_module)
+        except Exception as e:
+            print(f"[WARN] Could not replace {name} with '{attention_key}': {e}")
+            failed_count += 1
+            continue
 
-        # Copy weights if copy_weights is supported
+        # Copy weights if supported
         if hasattr(new_attn, "copy_weights") and callable(new_attn.copy_weights):
             try:
                 new_attn.copy_weights(old_module)
             except Exception:
                 pass
 
-        # Wrap in universal adapter to support any HuggingFace model signature (DistilBERT, BERT, etc.)
+        # Wrap in universal adapter
         wrapped_attn = UniversalAttentionWrapper(new_attn)
 
-        # Find parent module and replace
         parts = name.split(".")
         parent_name = ".".join(parts[:-1])
         child_name = parts[-1]
         parent = model.get_submodule(parent_name) if parent_name else model
-
         setattr(parent, child_name, wrapped_attn)
         replaced_count += 1
-        print(f"Replaced {name} with {attention_key}")
 
-    print(f"Replaced {replaced_count} attention layers.")
+    if replaced_count == 0 and failed_count == 0:
+        print(f"[WARN] No attention layers found to replace for key='{attention_key}'.")
+    elif failed_count > 0:
+        print(f"Replaced {replaced_count}/{replaced_count+failed_count} layers with '{attention_key}' ({failed_count} skipped).")
+    else:
+        print(f"Successfully replaced {replaced_count} attention layers with '{attention_key}'.")
+
     return model
+

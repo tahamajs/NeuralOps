@@ -252,14 +252,19 @@ class PHANTOMAttention(nn.Module):
 
     def __init__(
         self,
-        model_config: Any,
-        phantom_cfg: PHANTOMConfig,
+        model_config: Optional[Any] = None,
+        phantom_cfg: Optional[PHANTOMConfig] = None,
         pretrained_attn: Optional[Any] = None,
         bert_mode: bool = False,
+        config: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
+        model_config = config if config is not None else model_config
+        if phantom_cfg is None:
+            phantom_cfg = PHANTOMConfig()
         if pretrained_attn is None:
-            raise ValueError("PHANTOM requires pretrained_attn for CUR init")
+            raise ValueError("PHANTOM requires pretrained_attn for SVD initialization")
         self.num_heads: int = model_config.num_attention_heads
         self.head_dim: int = model_config.hidden_size // self.num_heads
         self.all_head_size: int = self.num_heads * self.head_dim

@@ -103,7 +103,10 @@ class NHAAttention(BaseAttention):
             Dh**0.5
         )
         if attention_mask is not None:
-            scores = scores + (attention_mask.float() - 1.0) * -10000.0
+            if attention_mask.dim() == 2:
+                scores = scores + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * -10000.0
+            elif attention_mask.dim() == 4:
+                scores = scores + attention_mask
         attn_full: torch.Tensor = F.softmax(scores, dim=-1)
         attn_full = self.dropout(attn_full)
         full_out: torch.Tensor = torch.matmul(attn_full, v)
@@ -111,10 +114,14 @@ class NHAAttention(BaseAttention):
         q_lin: torch.Tensor = F.elu(q) + 1.0
         k_lin: torch.Tensor = F.elu(k) + 1.0
         if attention_mask is not None:
-            mask_expanded: torch.Tensor = (attention_mask.float() - 1.0) * -10000.0
-            k_lin = k_lin + mask_expanded.unsqueeze(1).unsqueeze(-1).expand_as(
-                k_lin
-            )
+            if attention_mask.dim() == 2:
+                mask_expanded = attention_mask.unsqueeze(1).unsqueeze(-1)
+            elif attention_mask.dim() == 4:
+                mask_expanded = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(1).unsqueeze(-1)
+            else:
+                mask_expanded = attention_mask.unsqueeze(1).unsqueeze(-1)
+            mask_expanded = (mask_expanded.float() - 1.0) * -10000.0
+            k_lin = k_lin + mask_expanded
 
         kv_lin: torch.Tensor = torch.einsum(
             "b h n d, b h n e -> b h d e", k_lin, v
