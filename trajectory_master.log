@@ -271,3 +271,5 @@ ompleted)
 [2026-08-22 01:21:17] [Worker-1] [15/1008] NOTICE: attn=bam_umoe | task=sst2 | Error: The size of tensor a (8) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 11.1s
 [2026-08-22 01:21:19] [Worker-1] [16/1008] >> Launching: attn=block_transformer_hiba | task=sst2 | seed=42
 [2026-08-22 01:28:57] [Worker-1] [16/1008] << SUCCESS: attn=block_transformer_hiba | task=sst2 | Acc: 57.80% | F1: 49.47% | Loss: 0.6347 | Time: 458.5s
+[2026-08-22 01:28:59] [Worker-1] [17/1008] >> Launching: attn=chela_slay | task=sst2 | seed=42
+[2026-08-22 01:29:00] [Worker-1] [17/1008] NOTICE: attn=chela_slay | task=sst2 | Error: The size of tensor a (512) must match the size of tensor b (128) at non-singleton dimension 3 | Time: 1.1s
