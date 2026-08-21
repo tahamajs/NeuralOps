@@ -67,3 +67,14 @@ try:
 except ImportError:
     pass
 
+
+class AttentionMetric(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    run = models.ForeignKey('experiment.TrainingRun', on_delete=models.CASCADE, related_name="attention_metrics", null=True)
+    layer = models.IntegerField()
+    head = models.IntegerField()
+    importance = models.FloatField()
+    stability = models.FloatField()
+    similarity = models.FloatField()
+    ablation_delta_ppl = models.FloatField()
+    created_at = models.DateTimeField(auto_now_add=True)

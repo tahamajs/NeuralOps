@@ -1,4 +1,4 @@
-from api import views, views_attention_dashboard
+from api import views, views_attention_dashboard, views_attention
 from django.urls import path
 from experiment import views as experiment_views
 
@@ -143,3 +143,4 @@ urlpatterns = [
     path("attention-visualization/studios/optimization/", views_attention_dashboard.optimization_studios_endpoint, name="studio_optimization_api"),
     path("attention-visualization/compare/", views_attention_dashboard.compare_architectures_endpoint, name="attn_compare_api"),
 ]
+path("attention-metrics/", views_attention.get_attention_metrics),

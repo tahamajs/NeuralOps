@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, views_trading
 
 urlpatterns = [
     # ── Reference Data ────────────────────────────────────────
@@ -74,3 +74,4 @@ router = DefaultRouter()
 router.register(r"trading/orders", TradeOrderViewSet, basename="trading-order")
 router.register(r"trading/portfolio", PortfolioViewSet, basename="trading-portfolio")
 urlpatterns += router.urls
+path("gpu-trading/", views_trading.get_gpu_trading),
