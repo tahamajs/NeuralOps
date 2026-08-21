@@ -1,11 +1,11 @@
 # Run Summary: `adasplash_sst2_s42`
-> Generated: 2026-08-20 22:34:59
+> Generated: 2026-08-21 03:50:08
 
 ## Configuration
 ```
   attn_implementation: full
   attn_type: adasplash
-  batch_size: 32
+  batch_size: 4
   compression_rank: 64
   compressor: None
   config: None
@@ -58,18 +58,18 @@
 
 | Metric | Value |
 |:---|:---|
-| eval_loss | 0.692884 |
-| eval_accuracy | 0.509174 |
-| eval_f1_macro | 0.337386 |
-| eval_f1_weighted | 0.343577 |
-| eval_runtime | 4.388700 |
-| eval_samples_per_second | 198.694000 |
-| eval_steps_per_second | 3.190000 |
-| epoch | 0.500238 |
-| gpu_memory_allocated | 1318.472168 |
-| gpu_memory_reserved | 6484.000000 |
-| elapsed_time | 466.299990 |
+| eval_loss | 0.694671 |
+| eval_accuracy | 0.490826 |
+| eval_f1_macro | 0.329231 |
+| eval_f1_weighted | 0.323190 |
+| eval_runtime | 10.399300 |
+| eval_samples_per_second | 83.852000 |
+| eval_steps_per_second | 10.481000 |
+| epoch | 0.500000 |
+| gpu_memory_allocated | 272.748535 |
+| gpu_memory_reserved | 1000.000000 |
+| elapsed_time | 1697.741089 |
 
-**Total runtime:** 7m 42s
+**Total runtime:** 28m 7s
 
 **Output dir:** `C:\Users\Hadi Schumacher\SVD_Project\Codes\framework\experiments\adasplash_sst2_s42`

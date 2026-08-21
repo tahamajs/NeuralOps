@@ -203,3 +203,17 @@ ompleted)
 [2026-08-21 02:09:46] [Worker-1] [9/120] << SUCCESS: attn=mamba | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6986 | Time: 1075.4s
 [2026-08-21 02:09:49] [Worker-1] [12/120] >> Launching: attn=aegis_v3 | task=sst2 | seed=42
 [2026-08-21 02:10:00] [Worker-1] [12/120] NOTICE: attn=aegis_v3 | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 10.6s
+[2026-08-21 03:21:46] [Worker-1] [1/120] -- SKIPPING: attn=svd_linear | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [2/120] -- SKIPPING: attn=svd | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [3/120] -- SKIPPING: attn=full | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [4/120] -- SKIPPING: attn=lora_attn | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [5/120] -- SKIPPING: attn=performer | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [6/120] -- SKIPPING: attn=nystrom | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [7/120] -- SKIPPING: attn=linformer | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [8/120] -- SKIPPING: attn=flash3 | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [9/120] -- SKIPPING: attn=mamba | task=sst2 (Already completed)
+[2026-08-21 03:21:46] [Worker-1] [10/120] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
+[2026-08-21 03:21:48] [Worker-2] [11/120] >> Launching: attn=adasplash | task=sst2 | seed=42
+[2026-08-21 03:21:51] [Worker-3] [12/120] -- SKIPPING: attn=aegis_v3 | task=sst2 (Already completed)
+[2026-08-21 03:21:51] [Worker-3] [13/120] >> Launching: attn=griffin_ssd | task=sst2 | seed=42
+[2026-08-21 03:50:08] [Worker-2] [11/120] << SUCCESS: attn=adasplash | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: 0.6947 | Time: 1700.1s
