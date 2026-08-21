@@ -32,8 +32,6 @@ def well_known_ignore(request):
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),
-    # Main dashboard (SPA)
-    path("", include("web_dashboard.urls")),
     # REST API root
     path("api/", include("api.urls")),
     # ------------------------------------------------------------------
@@ -167,6 +165,8 @@ urlpatterns = [
         CollaborationConsumer.as_asgi(),
         name="collab_ws",
     ),
+    # Main dashboard (SPA)
+    path("", include("web_dashboard.urls")),
 ]
 
 # ----------------------------------------------------------------------

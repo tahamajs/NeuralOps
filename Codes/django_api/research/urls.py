@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, views_stream
 
 urlpatterns = [
     path("", views.publication_list, name="research_root"),
@@ -13,3 +13,4 @@ urlpatterns = [
     path("citations/", views.add_citation, name="add_citation"),
     path("publications/<uuid:pub_id>/reviews/", views.review_list, name="review_list"),
 ]
+path("research-stream/", views_stream.get_research_stream),

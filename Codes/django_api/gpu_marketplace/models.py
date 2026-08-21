@@ -601,3 +601,11 @@ class Portfolio(models.Model):
 
     def __str__(self):
         return f"{self.user.username} holds {self.quantity}h of {self.gpu_model}"
+
+class GpuTrading(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    buyer = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="gpu_trades_bought")
+    seller = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="gpu_trades_sold")
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=50, default="pending")
+    created_at = models.DateTimeField(auto_now_add=True)
