@@ -91,3 +91,9 @@ class Review(models.Model):
 
     class Meta:
         unique_together = [["publication", "reviewer"]]
+
+class ResearchStream(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -110,3 +110,9 @@ class Feedback(models.Model):
 
     def __str__(self):
         return f"Feedback for {self.ticket.title} by {self.user.username}"
+
+class SupportSolution(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
