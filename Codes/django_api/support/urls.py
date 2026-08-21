@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, views_solutions
 
 urlpatterns = [
     # Tickets
@@ -24,3 +24,4 @@ urlpatterns = [
         name="upvote_solution",
     ),
 ]
+path("support-solutions/", views_solutions.get_support_solutions),
