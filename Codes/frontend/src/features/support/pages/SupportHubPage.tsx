@@ -157,7 +157,7 @@ export default function SupportHubPage() {
       ? (rawSelectedTicket as any).data
       : rawSelectedTicket;
 
-  // Safe data retrieval (use mock data if backend empty/fails)
+  // Safe data retrieval (safe fallback if backend fails)
   const tickets: SupportTicket[] = Array.isArray(ticketsData)
     ? ticketsData
     : [];
