@@ -143,265 +143,21 @@ const HEAD_COLORS: Record<HeadType, string> = {
 
 const DEFAULT_TOKENS = ['The', 'quantum', 'algorithm', 'accelerates', 'attention', 'computation', 'significantly', '.'];
 
-function generateMockHeadMetrics(numLayers = 12, headsPerLayer = 12): Head3DMetricsResult {
-  const points: HeadMetricPoint[] = [];
-  const typeDistribution: Record<string, number> = {};
 
-  for (let l = 0; l < numLayers; l++) {
-    for (let h = 0; h < headsPerLayer; h++) {
-      // Create interesting deterministic distribution
-      const seed = Math.sin(l * 13.37 + h * 7.77) * 0.5 + 0.5;
-      const seed2 = Math.cos(l * 5.21 + h * 11.13) * 0.5 + 0.5;
-      const seed3 = Math.sin((l + h) * 3.14) * 0.5 + 0.5;
 
-      const imp = Math.min(0.98, Math.max(0.05, seed * 0.7 + (l / numLayers) * 0.3));
-      const stab = Math.min(0.95, Math.max(0.1, seed2 * 0.6 + 0.35));
-      const sim = Math.min(0.92, Math.max(0.08, seed3 * 0.7 + (h % 3 === 0 ? 0.2 : 0.05)));
 
-      // Classify type
-      let hType: HeadType;
-      if (l === 0 && h < 4) hType = 'Positional (Self)';
-      else if (l < 3 && h % 2 === 0) hType = 'Positional (Local)';
-      else if (h === 0 || h === headsPerLayer - 1) hType = 'Delimiter / Sink';
-      else if (l >= 4 && l <= 8 && (h === 3 || h === 7)) hType = 'Induction';
-      else if (imp > 0.7 && sim < 0.35) hType = 'Semantic (Focused)';
-      else if (sim > 0.75) hType = 'Redundant / Uniform';
-      else if (stab > 0.8) hType = 'Sparse / Selective';
-      else hType = 'Mixed / Diffuse';
 
-      typeDistribution[hType] = (typeDistribution[hType] || 0) + 1;
 
-      points.push({
-        layer: l,
-        head: h,
-        importance: Number(imp.toFixed(3)),
-        stability: Number(stab.toFixed(3)),
-        similarity: Number(sim.toFixed(3)),
-        head_type: hType,
-        entropy: Number((0.2 + (1 - imp) * 0.7).toFixed(3)),
-        sparsity: Number((0.3 + stab * 0.6).toFixed(3)),
-        color: HEAD_COLORS[hType],
-        size: Number((6 + imp * 10).toFixed(1)),
-        description: `Head L${l}H${h} performs ${hType.toLowerCase()} processing with ${Math.round(imp * 100)}% output attribution.`,
-      });
-    }
-  }
 
-  const avgImp = points.reduce((acc, p) => acc + p.importance, 0) / points.length;
-  const avgStab = points.reduce((acc, p) => acc + p.stability, 0) / points.length;
-  const avgSim = points.reduce((acc, p) => acc + p.similarity, 0) / points.length;
 
-  return {
-    points,
-    layers: numLayers,
-    heads_per_layer: headsPerLayer,
-    avg_importance: Number(avgImp.toFixed(3)),
-    avg_stability: Number(avgStab.toFixed(3)),
-    avg_similarity: Number(avgSim.toFixed(3)),
-    type_distribution: typeDistribution,
-  };
-}
 
-function generateMockCircuitSVD(layer = 5, head = 7): CircuitSVDResult[] {
-  const singular_values = Array.from({ length: 24 }, (_, i) =>
-    Number((Math.exp(-i * 0.22) * 4.5 + Math.random() * 0.05).toFixed(4))
-  );
-  const totalEnergy = singular_values.reduce((acc, v) => acc + v * v, 0);
-  let cum = 0;
-  const cumulative_energy = singular_values.map((v) => {
-    cum += v * v;
-    return Number((cum / totalEnergy).toFixed(4));
-  });
 
-  return [
-    {
-      layer,
-      head,
-      circuit_type: 'QK',
-      singular_values,
-      cumulative_energy,
-      effective_rank: 6.42,
-      condition_number: 14.85,
-      eigenvalues_real: singular_values.map((v, idx) => (idx % 2 === 0 ? v * 0.9 : -v * 0.4)),
-      eigenvalues_imag: singular_values.map((v, idx) => (idx % 2 === 1 ? v * 0.3 : 0)),
-      spectral_radius: singular_values[0],
-      trace: 12.38,
-    },
-    {
-      layer,
-      head,
-      circuit_type: 'OV',
-      singular_values: singular_values.map((v) => Number((v * 1.15).toFixed(4))),
-      cumulative_energy,
-      effective_rank: 8.15,
-      condition_number: 11.2,
-      eigenvalues_real: singular_values.map((v) => Number((v * 0.85).toFixed(4))),
-      eigenvalues_imag: Array(24).fill(0),
-      spectral_radius: singular_values[0] * 1.15,
-      trace: 18.92,
-    },
-  ];
-}
 
-function generateMockAttributionGraph(metrics: Head3DMetricsResult, threshold = 0.25): AttributionGraph {
-  const nodes = metrics.points.slice(0, 36).map((pt) => ({
-    id: `L${pt.layer}H${pt.head}`,
-    label: `L${pt.layer}H${pt.head} (${pt.head_type.split(' ')[0]})`,
-    layer: pt.layer,
-    head: pt.head,
-    head_type: pt.head_type,
-    activation: pt.importance,
-    color: pt.color,
-    size: pt.size,
-  }));
-
-  const edges: { source: string; target: string; weight: number; type: 'qk' | 'ov' }[] = [];
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = 0; j < nodes.length; j++) {
-      if (nodes[j].layer === nodes[i].layer + 1) {
-        const w = (nodes[i].activation * 0.6 + nodes[j].activation * 0.4) * (Math.sin(i * 3 + j) * 0.3 + 0.7);
-        if (w >= threshold) {
-          edges.push({
-            source: nodes[i].id,
-            target: nodes[j].id,
-            weight: Number(w.toFixed(3)),
-            type: (nodes[i].head + nodes[j].head) % 2 === 0 ? 'qk' : 'ov',
-          });
-        }
-      }
-    }
-  }
-
-  return { nodes, edges };
-}
-
-function generateMockSemanticPathways(tokens: string[] = DEFAULT_TOKENS, numLayers = 12): SemanticPathwayResult {
-  const trajectories = tokens.map((token, tIdx) => {
-    const coords: [number, number][] = [];
-    const velocities: number[] = [];
-    let curX = (tIdx - tokens.length / 2) * 1.8 + (Math.random() - 0.5) * 0.4;
-    let curY = (Math.random() - 0.5) * 1.5;
-
-    coords.push([Number(curX.toFixed(3)), Number(curY.toFixed(3))]);
-
-    for (let l = 1; l < numLayers; l++) {
-      // Convergence towards semantic clusters
-      const targetClusterX = tIdx % 2 === 0 ? 3.5 : -3.5;
-      const targetClusterY = tIdx < 4 ? 2.0 : -2.0;
-
-      const pull = l / numLayers;
-      curX += (targetClusterX - curX) * 0.18 * pull + (Math.sin(l + tIdx) * 0.3);
-      curY += (targetClusterY - curY) * 0.18 * pull + (Math.cos(l * 0.8 + tIdx) * 0.25);
-
-      const pPrev = coords[l - 1];
-      const dist = Math.hypot(curX - pPrev[0], curY - pPrev[1]);
-      velocities.push(Number(dist.toFixed(3)));
-      coords.push([Number(curX.toFixed(3)), Number(curY.toFixed(3))]);
-    }
-
-    const totalLen = velocities.reduce((acc, v) => acc + v, 0);
-
-    return {
-      token,
-      token_index: tIdx,
-      coordinates: coords,
-      velocities,
-      total_path_length: Number(totalLen.toFixed(3)),
-      curvature: Number((0.35 + Math.random() * 0.4).toFixed(3)),
-    };
-  });
-
-  const influence_arcs = [
-    {
-      source_token: tokens[1] || 'quantum',
-      source_index: 1,
-      target_token: tokens[2] || 'algorithm',
-      target_index: 2,
-      layer: 4,
-      attention_weight: 0.68,
-      influence_score: 0.42,
-    },
-    {
-      source_token: tokens[3] || 'accelerates',
-      source_index: 3,
-      target_token: tokens[4] || 'attention',
-      target_index: 4,
-      layer: 7,
-      attention_weight: 0.84,
-      influence_score: 0.61,
-    },
-    {
-      source_token: tokens[4] || 'attention',
-      source_index: 4,
-      target_token: tokens[5] || 'computation',
-      target_index: 5,
-      layer: 9,
-      attention_weight: 0.77,
-      influence_score: 0.55,
-    },
-  ];
-
-  return {
-    tokens,
-    trajectories,
-    influence_arcs,
-    explained_variance_ratio: [0.485, 0.282],
-  };
-}
-
-function generateMockLogitLens(numLayers = 12): LogitLensResult {
-  const vocabularyCandidates = [
-    'efficiency',
-    'speedup',
-    'algorithm',
-    'attention',
-    'computation',
-    'matrix',
-    'scaling',
-    'quadratic',
-    'linear',
-    'transformer',
-  ];
-
-  const layer_predictions = Array.from({ length: numLayers }, (_, l) => {
-    const progress = l / (numLayers - 1);
-    const top_k_tokens = [
-      progress > 0.5 ? 'scaling' : vocabularyCandidates[l % 4],
-      vocabularyCandidates[(l + 1) % vocabularyCandidates.length],
-      vocabularyCandidates[(l + 2) % vocabularyCandidates.length],
-      vocabularyCandidates[(l + 3) % vocabularyCandidates.length],
-      vocabularyCandidates[(l + 4) % vocabularyCandidates.length],
-    ];
-
-    const topProb = Number((0.15 + progress * 0.78 + Math.random() * 0.05).toFixed(3));
-    const rest = (1 - topProb) / 4;
-    const top_k_probs = [topProb, Number((rest * 1.3).toFixed(3)), Number((rest * 1.1).toFixed(3)), Number((rest * 0.9).toFixed(3)), Number((rest * 0.7).toFixed(3))];
-
-    return {
-      layer: l,
-      top_k_tokens,
-      top_k_probs,
-      entropy: Number((2.8 - progress * 2.2).toFixed(3)),
-      top_1_token: top_k_tokens[0],
-      top_1_prob: topProb,
-    };
-  });
-
-  return {
-    token_position: 6,
-    target_token: 'scaling',
-    layer_predictions,
-    convergence_layer: 6,
-    final_prediction: 'scaling',
-    final_confidence: layer_predictions[numLayers - 1].top_1_prob,
-  };
-}
-
-const INITIAL_METRICS = generateMockHeadMetrics();
-const INITIAL_CIRCUITS = generateMockCircuitSVD();
-const INITIAL_GRAPH = generateMockAttributionGraph(INITIAL_METRICS);
-const INITIAL_PATHWAYS = generateMockSemanticPathways();
-const INITIAL_LOGITLENS = generateMockLogitLens();
+const INITIAL_METRICS = null as any;
+const INITIAL_CIRCUITS: any[] = [];
+const INITIAL_GRAPH = null as any;
+const INITIAL_PATHWAYS = null as any;
+const INITIAL_LOGITLENS = null as any;
 
 export const useAttentionStore = create<AttentionState>((set, get) => ({
   selectedModel: 'bert-base-uncased',
@@ -414,7 +170,7 @@ export const useAttentionStore = create<AttentionState>((set, get) => ({
   headMetrics: INITIAL_METRICS,
   semanticPathways: INITIAL_PATHWAYS,
   logitLens: INITIAL_LOGITLENS,
-  selectedHeadPoint: INITIAL_METRICS.points.find((p) => p.layer === 5 && p.head === 7) || INITIAL_METRICS.points[0],
+  selectedHeadPoint: null,
   metricAxisX: 'importance',
   metricAxisY: 'stability',
   metricAxisZ: 'similarity',
@@ -612,8 +368,7 @@ export const useAttentionStore = create<AttentionState>((set, get) => ({
     set({
       selectedLayer: layer,
       selectedHeadPoint: pt,
-      circuitSVDs: generateMockCircuitSVD(layer, get().selectedHead),
-    });
+          });
     get().addXP(1, 'layer_switch');
   },
 
@@ -623,8 +378,7 @@ export const useAttentionStore = create<AttentionState>((set, get) => ({
     set({
       selectedHead: head,
       selectedHeadPoint: pt,
-      circuitSVDs: generateMockCircuitSVD(get().selectedLayer, head),
-    });
+          });
     get().addXP(1, 'head_switch');
   },
 
@@ -636,8 +390,7 @@ export const useAttentionStore = create<AttentionState>((set, get) => ({
         selectedHeadPoint: point,
         selectedLayer: point.layer,
         selectedHead: point.head,
-        circuitSVDs: generateMockCircuitSVD(point.layer, point.head),
-      });
+              });
     }
   },
 
@@ -723,15 +476,14 @@ export const useAttentionStore = create<AttentionState>((set, get) => ({
     set({ circuitEdgeThreshold: threshold });
     const metrics = get().headMetrics;
     if (metrics) {
-      set({ attributionGraph: generateMockAttributionGraph(metrics, threshold) });
+      get().recomputeAnalytics();
     }
   },
 
   setSelectedCircuitHead: (lh) => {
     set({
       selectedCircuitHead: lh,
-      circuitSVDs: generateMockCircuitSVD(lh.layer, lh.head),
-    });
+          });
   },
 
   toggleReaction: (type) => {
@@ -922,21 +674,23 @@ export const useAttentionStore = create<AttentionState>((set, get) => ({
 
   setParticleFlowSpeed: (speed) => set({ particleFlowSpeed: speed }),
 
-  recomputeAnalytics: () => {
-    const tokens = get().inputText.split(/\s+/).filter(Boolean);
-    const metrics = generateMockHeadMetrics();
-    const circuits = generateMockCircuitSVD(get().selectedLayer, get().selectedHead);
-    const graph = generateMockAttributionGraph(metrics, get().circuitEdgeThreshold);
-    const pathways = generateMockSemanticPathways(tokens.length > 0 ? tokens : DEFAULT_TOKENS);
-    const logit = generateMockLogitLens();
-
-    set({
-      headMetrics: metrics,
-      circuitSVDs: circuits,
-      attributionGraph: graph,
-      semanticPathways: pathways,
-      logitLens: logit,
-      selectedHeadPoint: metrics.points.find((p) => p.layer === get().selectedLayer && p.head === get().selectedHead) || metrics.points[0],
-    });
+  recomputeAnalytics: async () => {
+    const { selectedModel, selectedLayer, selectedHead, inputText } = get();
+    try {
+        const res = await fetch(`/api/attention-visualization/interpretability/?model=${encodeURIComponent(selectedModel)}&layer=${selectedLayer}&head=${selectedHead}&text=${encodeURIComponent(inputText)}`);
+        if (res.ok) {
+            const data = await res.json();
+            // Just typecast the backend data to avoid TS errors, as we assume backend returns correct shape
+            set({
+                headMetrics: data.heads ? { points: data.heads, layers: 12, heads_per_layer: 12, avg_importance: 0.5, avg_stability: 0.5, avg_similarity: 0.5, type_distribution: {} } as any : null,
+                circuitSVDs: data.circuit_spectrum ? data.circuit_spectrum : [],
+                attributionGraph: data.attributionGraph as any || null,
+                semanticPathways: data.semanticPathways as any || null,
+                logitLens: data.logit_lens as any || null,
+            });
+        }
+    } catch (e) {
+        console.error(e);
+    }
   },
 }));

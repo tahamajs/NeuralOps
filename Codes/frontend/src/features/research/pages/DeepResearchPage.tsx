@@ -68,58 +68,8 @@ export default function DeepResearchPage({ onClose }: { onClose?: () => void }) 
 
   const finalReport = events.find((e) => e.type === "final_report")?.report;
 
-  const fallbackReport = `
-# Deep Research Synthesis: SVD Low-Rank Linear Attention Optimization
-
-## Executive Abstract
-We investigate the application of adaptive **Singular Value Decomposition (SVD)** to approximate the key-value projection manifolds within Transformer multi-head self-attention. By projecting the $N \\times d$ attention maps through an orthonormal low-rank basis:
-
-$$W_k \\approx U_k \\Sigma_k V_k^T$$
-
-the time and space complexity diminishes from $O(N^2)$ to $O(N \\cdot r)$ where $r \\ll N$, enabling stable inference on sequence lengths exceeding 64k tokens.
-
----
-
-## 1. Key Findings
-1. **Perplexity Preservation**: On WikiText-103 and PG-19, retaining the top $r=64$ singular components preserves $99.1\\%$ of full attention associative recall capacity.
-2. **Computational Benchmarks**:
-   - $3.8\\times$ speedup on NVIDIA H100 SXM5 with sequence length $N=32,768$.
-   - VRAM footprint reduced by $62\\%$ during backward pass gradient checkpointing.
-3. **Spectral Stability**: Spectral norm bounds prevent exponential gradient vanishing encountered in standard recurrent linear approximations.
-
----
-
-## 2. Recommended Implementation
-\`\`\`python
-import torch
-import torch.nn as nn
-
-class SVDLinearAttention(nn.Module):
-    def __init__(self, dim: int, rank: int = 64):
-        super().__init__()
-        self.dim = dim
-        self.rank = rank
-        self.q_proj = nn.Linear(dim, dim, bias=False)
-        self.u_proj = nn.Linear(dim, rank, bias=False)
-        self.v_proj = nn.Linear(rank, dim, bias=False)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Linear complexity projection: O(N * rank)
-        q = torch.relu(self.q_proj(x))
-        k_comp = self.u_proj(x)
-        kv = torch.einsum("btr, btd -> brd", k_comp, x)
-        return torch.einsum("btd, brd -> btd", q, kv)
-\`\`\`
-
----
-
-## 3. Related Foundations
-- **Katharopoulos et al.** (2020): *Transformers are RNNs: Fast Autoregressive Transformers with Linear Attention*.
-- **De et al.** (2024): *Griffin: Mixing Recurrent with Local Attention for Efficient Language Models*.
-- **Dao et al.** (2023): *FlashAttention-2: Faster Attention with Better Parallelism and Work Partitioning*.
-`;
-
-  const displayReport = finalReport || (isResearching && !isActive ? fallbackReport : (!isResearching ? fallbackReport : ""));
+  
+  const displayReport = finalReport || "";
 
   const handleCopyReport = () => {
     if (!displayReport) return;
