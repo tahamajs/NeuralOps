@@ -253,3 +253,8 @@ ompleted)
 [2026-08-21 23:59:28] [Worker-1] [4/1008] -- SKIPPING: attn=adasplash | task=sst2 (Already completed)
 [2026-08-21 23:59:28] [Worker-1] [5/1008] >> Launching: attn=aegis_hybrid | task=sst2 | seed=42
 [2026-08-22 00:12:42] [Worker-1] [5/1008] << SUCCESS: attn=aegis_hybrid | task=sst2 | Acc: 82.34% | F1: 82.34% | Loss: 0.4443 | Time: 793.6s
+[2026-08-22 00:12:54] [Worker-1] [6/1008] -- SKIPPING: attn=aegis_hybrid_attn | task=sst2 (Already completed)
+[2026-08-22 00:12:54] [Worker-1] [7/1008] -- SKIPPING: attn=aegis_spectron_fp8 | task=sst2 (Already completed)
+[2026-08-22 00:12:54] [Worker-1] [8/1008] -- SKIPPING: attn=aegis_spectron_fp8_attn | task=sst2 (Already completed)
+[2026-08-22 00:12:54] [Worker-1] [9/1008] >> Launching: attn=aegis_v2 | task=sst2 | seed=42
+[2026-08-22 00:24:48] [Worker-1] [9/1008] << SUCCESS: attn=aegis_v2 | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: nan | Time: 713.3s
