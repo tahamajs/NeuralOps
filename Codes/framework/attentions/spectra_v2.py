@@ -156,7 +156,7 @@ class SpectraV2Attention(nn.Module):
         idx = torch.arange(N, device=device, dtype=torch.float)
         dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs().unsqueeze(0)
         logit = torch.log(
-            (torch.sigmoid((span.unsqueeze(1).unsqueeze(1) - dist) * 5.0) + 1e-9)
+            (torch.sigmoid((span.unsqueeze(1).unsqueeze(1) - dist) * 5.0) + 1e-5)
         )
         return logit
 
@@ -346,7 +346,7 @@ class SpectraV2Attention(nn.Module):
             KV = torch.matmul(K_feat.transpose(-2, -1), V)
             Z = K_feat.sum(dim=2, keepdim=True)
             context = torch.matmul(Q_feat, KV) / (
-                torch.matmul(Q_feat, Z.transpose(-2, -1)) + 1e-8
+                torch.matmul(Q_feat, Z.transpose(-2, -1)) + 1e-5
             )
         else:
             context = self._block_sparse_attention(Q, K, V, token_mask)
@@ -409,5 +409,4 @@ def inject_spectra_v2(
             new_attn.out_proj.weight.data.copy_(old_attn.out_lin.weight.data)
             if old_attn.out_lin.bias is not None:
                 new_attn.out_proj.bias.data.copy_(old_attn.out_lin.bias.data)
-    layer.attention = new_attn
     return new_attn

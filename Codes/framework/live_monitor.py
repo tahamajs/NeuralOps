@@ -201,7 +201,8 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
+        req_path = self.path.split('?')[0]
+        if req_path in ("/", "/index.html"):
             index_path = WEB_DIR / "index.html"
             if index_path.exists():
                 self.send_response(200)
@@ -210,7 +211,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(index_path.read_bytes())
                 return
-        elif self.path == "/app.js":
+        elif req_path == "/app.js":
             js_path = WEB_DIR / "app.js"
             if js_path.exists():
                 self.send_response(200)
@@ -219,7 +220,7 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(js_path.read_bytes())
                 return
-        elif self.path == "/styles.css":
+        elif req_path == "/styles.css":
             css_path = WEB_DIR / "styles.css"
             if css_path.exists():
                 self.send_response(200)
@@ -228,26 +229,24 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(css_path.read_bytes())
                 return
-        elif self.path.endswith(".md") or self.path.endswith("catalog.json"):
-            # Markdown files and catalog.json are in the Docs directory!
-            file_path = WORKDIR.parent.parent / "Docs" / self.path.lstrip('/')
-            if file_path.exists():
-                self.send_response(200)
-                content_type = "text/markdown; charset=utf-8" if self.path.endswith(".md") else "application/json; charset=utf-8"
-                self.send_header("Content-type", content_type)
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(file_path.read_bytes())
-                return
-        elif self.path.endswith(".json") and "all_histories.json" in self.path:
-            file_path = WORKDIR.parent.parent / "Docs" / "results" / "all_histories.json"
-            if file_path.exists():
-                self.send_response(200)
-                self.send_header("Content-type", "application/json; charset=utf-8")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(file_path.read_bytes())
-                return
+
+        # Check Docs directory for markdown, json, images, and other assets
+        docs_file = PROJECT_DIR / "Docs" / req_path.lstrip('/')
+        if docs_file.is_file():
+            self.send_response(200)
+            ct = "text/plain; charset=utf-8"
+            if req_path.endswith(".md"): ct = "text/markdown; charset=utf-8"
+            elif req_path.endswith(".json"): ct = "application/json; charset=utf-8"
+            elif req_path.endswith(".html"): ct = "text/html; charset=utf-8"
+            elif req_path.endswith(".js"): ct = "application/javascript; charset=utf-8"
+            elif req_path.endswith(".css"): ct = "text/css; charset=utf-8"
+            elif req_path.endswith(".svg"): ct = "image/svg+xml"
+            elif req_path.endswith(".png"): ct = "image/png"
+            self.send_header("Content-type", ct)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(docs_file.read_bytes())
+            return
 
         elif self.path == "/api/stats":
 
