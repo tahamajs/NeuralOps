@@ -64,11 +64,17 @@ class FSDPStrategy(BaseStrategy):
 
     def wrap_model(self, model, **kw):
         """Wrap model."""
+        import functools
         from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
         from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
         from transformers.models.bert.modeling_bert import BertLayer
 
-        return FSDP(model, auto_wrap_policy=transformer_auto_wrap_policy(BertLayer))
+        my_auto_wrap_policy = functools.partial(
+            transformer_auto_wrap_policy,
+            transformer_layer_cls={BertLayer}
+        )
+        local_rank = int(os.environ.get("LOCAL_RANK", 0))
+        return FSDP(model, auto_wrap_policy=my_auto_wrap_policy, device_id=local_rank)
 
 
 @STRATEGY_REGISTRY.register("deepspeed")

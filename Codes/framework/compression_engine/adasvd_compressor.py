@@ -59,33 +59,27 @@ class AdaSVDCompressor(BaseCompressor):
 
                 W = module.weight.data.float().cpu().numpy()
                 U, S, Vt = np.linalg.svd(W, full_matrices=False)
-                U_r = U[:, :rank]
-                S_r = S[:rank]
-                Vt_r = Vt[:rank, :]
-                W_approx = U_r @ np.diag(S_r) @ Vt_r
+                
+                # Initialize A and B for ALS: W ≈ A @ B
+                sqrt_S = np.sqrt(S[:rank])
+                A = U[:, :rank] * sqrt_S[np.newaxis, :]
+                B = sqrt_S[:, np.newaxis] * Vt[:rank, :]
 
-                # Iterative refinement
+                # Alternating Least Squares (ALS) refinement
                 for _ in range(self.num_iters):
-                    # Update U
-                    U_r = W @ Vt_r.T @ np.linalg.inv(np.diag(S_r) + 1e-6 * np.eye(rank))
-                    # Update Vt
-                    Vt_r = np.linalg.inv(U_r.T @ U_r + 1e-6 * np.eye(rank)) @ U_r.T @ W
-                    # Recompute S from the current factors to keep diagonal
-                    S_r = np.sqrt(
-                        np.sum((U_r @ np.diag(np.ones(rank)) @ Vt_r - W) ** 2)
-                    )  # not exact, but keeps diagonal idea? simpler: keep S as before
-                    # Better: keep S fixed and just alternate U and V
-                    # Actually, the product U_r @ diag(S_r) @ Vt_r is the approximation, we can recompute S after U,V updates by solving diag(S_r) = U_r^+ W Vt_r^+
-                    # We'll just recompute S_r = diag(U_r^T W Vt_r^T)??? Let's use a rough approach:
-                    S_r = np.linalg.norm(
-                        W - U_r @ Vt_r
-                    )  # this doesn't give diagonal S. We'll skip and keep original S.
-                    # For simplicity, only alternate once and keep S fixed.
-                    pass
+                    # Update A: minimize ||W - A @ B||_F^2
+                    # A = W @ B^T @ (B @ B^T + eps * I)^-1
+                    B_Bt = B @ B.T
+                    A = W @ B.T @ np.linalg.inv(B_Bt + 1e-6 * np.eye(rank))
+                    
+                    # Update B: minimize ||W - A @ B||_F^2
+                    # B = (A^T @ A + eps * I)^-1 @ A^T @ W
+                    At_A = A.T @ A
+                    B = np.linalg.inv(At_A + 1e-6 * np.eye(rank)) @ A.T @ W
+                
                 # After refinement, final approximation
-                # Use the refined U_r, Vt_r with original S_r? Better: compute new S_r from U_r, Vt_r
-                S_r = np.diag(U_r.T @ W @ Vt_r.T)  # approximate diagonal
-                W_approx = U_r @ np.diag(S_r) @ Vt_r
+                W_approx = A @ B
+                
                 module.weight.data = torch.tensor(
                     W_approx, dtype=module.weight.dtype, device=module.weight.device
                 )

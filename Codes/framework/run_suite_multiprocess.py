@@ -51,16 +51,9 @@ def log_master(msg: str):
 
 def update_worker_status_file(worker_id: int, status_dict: dict):
     try:
-        current = {}
-        if WORKER_STATE_FILE.exists():
-            try:
-                with open(WORKER_STATE_FILE, "r", encoding="utf-8", errors="ignore") as f:
-                    current = json.load(f)
-            except Exception:
-                current = {}
-        current[str(worker_id)] = status_dict
-        with open(WORKER_STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump(current, f, indent=2)
+        worker_file = BASE_DIR / f"worker_status_{worker_id}.json"
+        with open(worker_file, "w", encoding="utf-8") as f:
+            json.dump(status_dict, f, indent=2)
     except Exception:
         pass
 
@@ -236,6 +229,23 @@ def telemetry_sync_thread():
     docs_res_dir = PROJECT_DIR / "Docs" / "results"
     while True:
         try:
+            # Combine worker statuses
+            combined_status = {}
+            for i in range(1, 10):
+                w_file = BASE_DIR / f"worker_status_{i}.json"
+                if w_file.exists():
+                    try:
+                        with open(w_file, "r", encoding="utf-8") as f:
+                            combined_status[str(i)] = json.load(f)
+                    except Exception:
+                        pass
+            if combined_status:
+                try:
+                    with open(BASE_DIR / "worker_status.json", "w", encoding="utf-8") as f:
+                        json.dump(combined_status, f, indent=2)
+                except Exception:
+                    pass
+
             hist_res = {}
             for p in glob.glob(str(RESULTS_DIR / "*" / "history" / "log_history.json")):
                 d = os.path.basename(os.path.dirname(os.path.dirname(p)))

@@ -37,7 +37,7 @@ class GPUAllocator:
     """Singleton GPU pool with multiple allocation strategies."""
 
     _instance = None
-    _lock = threading.Lock()
+    _lock = threading.RLock()
 
     def __new__(cls):
         if cls._instance is None:
