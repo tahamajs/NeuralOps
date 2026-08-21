@@ -237,3 +237,5 @@ ompleted)
 [2026-08-21 09:36:53] [Worker-2] [5/1008] >> Launching: attn=aegis_hybrid | task=sst2 | seed=42
 [2026-08-21 09:37:00] [Worker-1] [6/1008] >> Launching: attn=aegis_hybrid_attn | task=sst2 | seed=42
 [2026-08-21 09:37:00] [Worker-1] [6/1008] NOTICE: attn=aegis_hybrid_attn | task=sst2 | Error: The paging file is too small for this operation to complete. (os error 1455) | Time: 0.2s
+[2026-08-21 09:37:11] [Worker-1] [7/1008] >> Launching: attn=aegis_spectron_fp8 | task=sst2 | seed=42
+[2026-08-21 09:37:11] [Worker-1] [7/1008] NOTICE: attn=aegis_spectron_fp8 | task=sst2 | Error: The paging file is too small for this operation to complete. (os error 1455) | Time: 0.2s
