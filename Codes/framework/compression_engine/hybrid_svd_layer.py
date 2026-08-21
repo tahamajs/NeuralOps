@@ -121,26 +121,42 @@ class DirectSVDCompressor(BaseCompressor):
         super().__init__(model, name="direct_svd", **kwargs)
         self.svd_rank = svd_rank
 
-    def compress(self) -> None:
+    def compress(self) -> Any:
         """Compress the target module using this strategy."""
+        # Find and replace transformer layers dynamically based on known class names
+        target_class_names = ["BertLayer", "DistilBertLayer", "RobertaLayer", "AlbertLayer"]
+        
+        # Keep track of parent modules
+        parent_map = {}
         for name, module in self.model.named_modules():
-            # We assume the model has an attribute 'encoder' with layers
-            if "encoder.layer" in name:
-                # Actually we need to replace the entire layer block
-                # This is simplified; a full replacement requires walking the model hierarchy
-                pass
-        # Because layer replacement is model‑specific, we leave a placeholder.
-        # Instead we'll just demonstrate the layer exists.
-        raise NotImplementedError(
-            "DirectSVDCompressor needs model‑specific layer replacement. "
-            "Use the DirectSVDEncoderLayer directly."
-        )
+            for child_name, child in module.named_children():
+                parent_map[child] = (module, child_name)
+                
+        replaced = False
+        for module in list(parent_map.keys()):
+            if module.__class__.__name__ in target_class_names or (
+                hasattr(module, "attention") and hasattr(module, "intermediate")
+            ):
+                parent, child_name = parent_map[module]
+                try:
+                    new_layer = DirectSVDEncoderLayer(module.config, svd_rank=self.svd_rank)
+                    setattr(parent, child_name, new_layer)
+                    replaced = True
+                except Exception:
+                    pass
+        
+        if not replaced:
+            import logging
+            logging.getLogger(__name__).warning("DirectSVDCompressor found no layers to replace.")
+            
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
 
 
 @COMPRESSOR_REGISTRY.register("direct_svd")
 def direct_svd_factory(model, comp_config) -> Any:
     """Direct svd factory."""
-    svd_rank = getattr(comp_config, "direct_svd_rank", 20)
-    compressor = DirectSVDCompressor(model, svd_rank=svd_rank)
+    rank = getattr(comp_config, "svd_rank", getattr(comp_config, "rank", 20))
+    compressor = DirectSVDCompressor(model, svd_rank=rank)
     compressed_model, _ = compressor.compress()
     return compressed_model

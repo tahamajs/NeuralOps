@@ -232,16 +232,15 @@ class AegisAttention(nn.Module):
         self.num_global_heads: int = aegis_cfg.num_global_heads
 
         if pretrained_attn is None:
-            # Mock for registry initialization
-            class MockAttn: pass
-            pretrained_attn = MockAttn()
-            m = torch.nn.Linear(model_config.hidden_size, model_config.hidden_size)
-            pretrained_attn.q_lin = m; pretrained_attn.k_lin = m; pretrained_attn.v_lin = m; pretrained_attn.out_lin = m
-
-        q_lin = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
-        k_lin = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
-        v_lin = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
-        out_lin = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
+            q_lin = torch.nn.Linear(model_config.hidden_size, model_config.hidden_size)
+            k_lin = torch.nn.Linear(model_config.hidden_size, model_config.hidden_size)
+            v_lin = torch.nn.Linear(model_config.hidden_size, model_config.hidden_size)
+            out_lin = torch.nn.Linear(model_config.hidden_size, model_config.hidden_size)
+        else:
+            q_lin = getattr(pretrained_attn, "q_lin", getattr(pretrained_attn, "query", None))
+            k_lin = getattr(pretrained_attn, "k_lin", getattr(pretrained_attn, "key", None))
+            v_lin = getattr(pretrained_attn, "v_lin", getattr(pretrained_attn, "value", None))
+            out_lin = getattr(pretrained_attn, "out_lin", getattr(pretrained_attn, "dense", None))
 
         self.q_proj = FactorisedLinear(
             q_lin.weight.data,

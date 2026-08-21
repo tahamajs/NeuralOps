@@ -369,32 +369,10 @@ class TTLinearLayer(nn.Module):
 
     def materialize_weight(self) -> torch.Tensor:
         """
-        Reconstruct the full weight matrix from TT‑cores.
+        Reconstruct the full weight matrix from TT-cores.
         Warning: O(in_features * out_features) memory.
         """
-        # Start with a tensor of shape (1, p1, q1, 1) for first core?
-        # We'll compute the TT‑contraction to produce a full tensor of shape (p1,...,pd, q1,...,qd)
-        # then flatten.
-        # Use tensorly or a custom loop.
-        # For simplicity, we'll use einsum sequentially.
-        # Initialize with first core (1, p1, q1, r1)
-        self.cores[0]  # (1, p1, q1, r1)
-        for core in self.cores[1:-1]:
-            # core shape (r_left, p_i, q_i, r_right)
-            # res currently (1, p1, q1, ..., r_prev)
-            # We need to contract the last dim of res with first dim of core
-            # Using einsum: '... r, r p q s -> ... p q s'
-            # But dimensions are mixed. We'll reshape res to (product(p1..p_{i-1}), product(q1..q_{i-1}), r)
-            # Actually easier: use tensorly's tt_to_tensor if available.
-            pass
-        # To avoid overcomplicating, we'll just raise NotImplementedError and suggest using `tntorch` or `tensorly`.
-        raise NotImplementedError(
-            "Efficient materialisation not implemented. Use a dedicated TT library (tensorly, tntorch) or implement contraction."
-        )
-
-    # For the user's immediate need, we'll provide a simpler alternative: the class can be used with `from_linear`
-    # but the forward pass will materialise the weight using a helper that builds the matrix via a series of contractions
-    # that are easy to write. Since this answer is already long, I'll put a working materialization below.
+        return self._materialize_weight()
 
     # Actually I'll implement a fully functional TTLinearLayer with materializing forward.
     # It will reconstruct W each forward pass (inefficient but correct).
