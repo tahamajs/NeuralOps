@@ -220,37 +220,38 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(js_path.read_bytes())
                 return
+        elif req_path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
         elif req_path in ("/styles.css", "/style.css"):
-            css_path = WEB_DIR / "style.css"
-            if not css_path.exists():
-                css_path = WEB_DIR / "styles.css"
-            if not css_path.exists():
-                css_path = PROJECT_DIR / "Docs" / "style.css"
-            if css_path.exists():
+            for candidate in [WEB_DIR / "style.css", WEB_DIR / "styles.css", PROJECT_DIR / "Docs" / "style.css"]:
+                if candidate.exists():
+                    self.send_response(200)
+                    self.send_header("Content-type", "text/css; charset=utf-8")
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(candidate.read_bytes())
+                    return
+
+        # Check WEB_DIR, Docs, and PROJECT_DIR for static assets (markdown, json, js, css, images)
+        for base in (WEB_DIR, PROJECT_DIR / "Docs", PROJECT_DIR):
+            target = base / req_path.lstrip('/')
+            if target.is_file():
                 self.send_response(200)
-                self.send_header("Content-type", "text/css; charset=utf-8")
+                ct = "text/plain; charset=utf-8"
+                if req_path.endswith(".md"): ct = "text/markdown; charset=utf-8"
+                elif req_path.endswith(".json"): ct = "application/json; charset=utf-8"
+                elif req_path.endswith(".html"): ct = "text/html; charset=utf-8"
+                elif req_path.endswith(".js"): ct = "application/javascript; charset=utf-8"
+                elif req_path.endswith(".css"): ct = "text/css; charset=utf-8"
+                elif req_path.endswith(".svg"): ct = "image/svg+xml"
+                elif req_path.endswith(".png"): ct = "image/png"
+                self.send_header("Content-type", ct)
                 self.send_header("Access-Control-Allow-Origin", "*")
                 self.end_headers()
-                self.wfile.write(css_path.read_bytes())
+                self.wfile.write(target.read_bytes())
                 return
-
-        # Check Docs directory for markdown, json, images, and other assets
-        docs_file = PROJECT_DIR / "Docs" / req_path.lstrip('/')
-        if docs_file.is_file():
-            self.send_response(200)
-            ct = "text/plain; charset=utf-8"
-            if req_path.endswith(".md"): ct = "text/markdown; charset=utf-8"
-            elif req_path.endswith(".json"): ct = "application/json; charset=utf-8"
-            elif req_path.endswith(".html"): ct = "text/html; charset=utf-8"
-            elif req_path.endswith(".js"): ct = "application/javascript; charset=utf-8"
-            elif req_path.endswith(".css"): ct = "text/css; charset=utf-8"
-            elif req_path.endswith(".svg"): ct = "image/svg+xml"
-            elif req_path.endswith(".png"): ct = "image/png"
-            self.send_header("Content-type", ct)
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(docs_file.read_bytes())
-            return
 
         elif self.path == "/api/stats":
 
