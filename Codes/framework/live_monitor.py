@@ -244,16 +244,12 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if req_path in ("/", "/index.html"):
-            index_path = WEB_DIR / "index.html"
-            if not index_path.exists():
-                index_path = PROJECT_DIR / "Docs" / "index.html"
-            if index_path.exists():
-                self.send_response(200)
-                self.send_header("Content-type", "text/html; charset=utf-8")
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(index_path.read_bytes())
-                return
+            self.send_response(200)
+            self.send_header("Content-type", "text/html; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(HTML_PAGE.encode("utf-8"))
+            return
 
         if req_path in ("/styles.css", "/style.css"):
             for candidate in [WEB_DIR / "style.css", WEB_DIR / "styles.css", PROJECT_DIR / "Docs" / "style.css"]:
