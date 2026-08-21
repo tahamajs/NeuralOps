@@ -21,7 +21,7 @@ Computational Complexity:
     - Total module complexity: $\mathcal{O}(B \cdot L \cdot D)$.
 """
 
-from typing import Tuple
+from typing import Tuple, Any
 
 import torch
 import torch.nn as nn

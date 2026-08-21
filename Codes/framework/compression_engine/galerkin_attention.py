@@ -79,26 +79,24 @@ class GalerkinAttention(nn.Module):
         # Use a buffer to avoid per‑forward random generation (optional)
         sketch = torch.randn(N, self.rank, device=hidden_states.device) / math.sqrt(N)
 
-        # Project keys and values onto low‑rank subspace (B, H, rank, D)
+        # Mask handling - apply to K and V before sketching
+        if attention_mask is not None:
+            if attention_mask.dim() == 2:
+                mask_bool = attention_mask.bool()[:, None, :, None] # (B, 1, N, 1)
+            else:
+                # Assuming (B, 1, 1, N) from HF, convert to (B, 1, N, 1)
+                mask_bool = attention_mask.bool().squeeze(1).transpose(-1, -2)
+            
+            K = K.masked_fill(~mask_bool, 0.0)
+            V = V.masked_fill(~mask_bool, 0.0)
+
+        # Project keys and values onto low-rank subspace (B, H, rank, D)
         K_sketch = torch.einsum("bhnd,nr->bhrd", K, sketch)
         V_sketch = torch.einsum("bhnd,nr->bhrd", V, sketch)
 
         # Attention scores: (B, H, N, rank)
         scale = D**-0.5
         scores = torch.matmul(Q, K_sketch.transpose(-2, -1)) * scale
-
-        # Mask handling – attention_mask is (B, N) or (B, 1, 1, N)
-        if attention_mask is not None:
-            # Convert to (B, 1, 1, N) if necessary
-            if attention_mask.dim() == 2:
-                mask_bool = attention_mask.bool()
-                # Expand to (B, 1, 1, N)
-                mask_bool = mask_bool[:, None, None, :]
-            else:
-                mask_bool = attention_mask.bool()
-            # Apply mask: set scores of padding tokens to -inf
-            # mask_bool is True for valid tokens, False for padding
-            scores = scores.masked_fill(~mask_bool, -1e9)
 
         probs = F.softmax(scores, dim=-1)
         probs = self.dropout(probs)
