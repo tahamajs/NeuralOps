@@ -225,8 +225,26 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 except Exception:
                     pass
 
+            # Enrich GPU with numeric keys for array-style indexing
+            gpu["0"] = gpu.get("gpu_util", 0.0)
+            gpu["1"] = gpu.get("mem_used_mb", 0.0)
+            gpu["2"] = gpu.get("mem_total_mb", 8188.0)
+            gpu["3"] = gpu.get("temp_c", 0.0)
+            gpu["4"] = gpu.get("power_w", 0.0)
+            gpu["5"] = gpu.get("sys_ram_used_gb", 0.0)
+
+            total_completed = len(results)
+            first_active = train_multi[0] if (train_multi and len(train_multi) > 0) else {}
+            train_obj = {
+                "active_model": first_active.get("active_model", "SVD"),
+                "active_task": first_active.get("active_task", "SST2"),
+                "active_index": f"{total_completed}/45",
+                "loss_history": first_active.get("loss_history", [])
+            }
+
             response = {
                 "gpu": gpu,
+                "train": train_obj,
                 "storage": storage,
                 "workers": workers,
                 "results": results,
