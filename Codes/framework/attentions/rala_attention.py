@@ -120,7 +120,7 @@ class RALALinearAttention(nn.Module):
 
         denom: torch.Tensor = (
             torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1)
-            + 1e-8
+            + 1e-5
         )
         lin_out: torch.Tensor = (
             torch.einsum("b h n d, b h d e -> b h n e", q_prime, kv) / denom

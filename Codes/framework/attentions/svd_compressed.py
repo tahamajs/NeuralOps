@@ -72,7 +72,7 @@ def calculate_spectral_entropy(singular_values: np.ndarray) -> float:
     if s_sum == 0:
         return 0.0
     prob = s / s_sum
-    prob = prob[prob > 1e-12]
+    prob = prob[prob > 1e-5]
     return float(-np.sum(prob * np.log(prob)))
 
 
@@ -99,7 +99,7 @@ def lagrangian_rank_allocation(
     target_budget: int,
     layer_proj_names: List[str],
     max_rank_factor: float = 0.5,
-    lambda_bracket: Tuple[float, float] = (1e-8, 10.0),
+    lambda_bracket: Tuple[float, float] = (1e-5, 10.0),
     num_lambda_steps: int = 100,
 ) -> Dict[str, int]:
     r"""Allocate per-projection ranks under global parameter constraint via binary search on Lagrange multiplier."""

@@ -106,7 +106,7 @@ class XAttention(nn.Module):
         mask_blk_float = mask_blk.unsqueeze(-1).to(dtype)
         K_blk_masked = K_blk * mask_blk_float
         Q_mean: torch.Tensor = Q_blk.mean(dim=3)  # (B, H, n_blocks, d)
-        K_mean: torch.Tensor = K_blk_masked.sum(dim=3) / (mask_blk_float.sum(dim=3) + 1e-8)
+        K_mean: torch.Tensor = K_blk_masked.sum(dim=3) / (mask_blk_float.sum(dim=3) + 1e-5)
 
         block_scores: torch.Tensor = (
             torch.matmul(Q_mean, K_mean.transpose(-2, -1)) * scale

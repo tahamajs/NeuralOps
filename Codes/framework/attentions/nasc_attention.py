@@ -53,7 +53,7 @@ def softpick(x, dim: int = -1, temperature: float = 1.0):
     m_scaled = torch.clamp(-m / temperature, max=80.0)
     denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
 
 
 class FactorisedSVDLoRAProjection(nn.Module):
@@ -224,7 +224,7 @@ class NASCAttention(BaseAttention):
         num = torch.matmul(phi_Q, KV)  # (B, H, L, d)
 
         K_sum = phi_K.sum(dim=-2, keepdim=True)  # (B, H, 1, 2*F)
-        den = torch.matmul(phi_Q, K_sum.transpose(-2, -1)) + 1e-6  # (B, H, L, 1)
+        den = torch.matmul(phi_Q, K_sum.transpose(-2, -1)) + 1e-5  # (B, H, L, 1)
 
         return num / den
 

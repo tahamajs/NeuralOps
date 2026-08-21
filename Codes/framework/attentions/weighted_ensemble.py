@@ -149,7 +149,7 @@ class SmartWeightedEnsemble:
                 # Confidence = max probability across classes, averaged over batch
                 conf = probs.max(dim=-1)[0].mean()
                 weights[i] = conf
-        return weights / (weights.sum() + 1e-8)
+        return weights / (weights.sum() + 1e-5)
 
     def combine_logits(
         self,
@@ -174,7 +174,7 @@ class SmartWeightedEnsemble:
         elif method == "weighted":
             # Use performance matrix as fixed weights
             perf_weights = self.performance[:, task_id]  # (M,)
-            perf_weights = perf_weights / (perf_weights.sum() + 1e-8)
+            perf_weights = perf_weights / (perf_weights.sum() + 1e-5)
             return (all_logits * perf_weights.view(-1, 1, 1)).sum(dim=0)
 
         elif method == "task_aware_attention":

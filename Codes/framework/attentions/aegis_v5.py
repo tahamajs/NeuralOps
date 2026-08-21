@@ -64,7 +64,7 @@ class FactorisedLinear(nn.Module):
         with torch.no_grad():
             U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
             total = (S**2).sum()
-            cum = torch.cumsum(S**2, dim=0) / (total + 1e-12)
+            cum = torch.cumsum(S**2, dim=0) / (total + 1e-5)
             rank = int(torch.searchsorted(cum, energy).item()) + 1
             rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
             self.rank: int = rank
@@ -94,7 +94,7 @@ def softpick(x, dim: int = -1, temperature: float = 1.0):
     m_scaled = torch.clamp(-m / temperature, max=80.0)
     denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
 
 
 def local_window_attention(
@@ -299,7 +299,7 @@ class AegisAttention(nn.Module):
 
         KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_global)
         K_sum = K_feat.sum(dim=2, keepdim=True)
-        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-8
+        denom = torch.matmul(Q_feat, K_sum.transpose(-1, -2)) + 1e-5
         ctx_global = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / denom
 
         if self.blend_logits is not None:

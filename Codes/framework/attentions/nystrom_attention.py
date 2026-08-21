@@ -71,7 +71,7 @@ class NystromAttention(nn.Module):
         # Compute ||A||_1 and ||A||_inf
         norm_1 = A.abs().sum(dim=-2).amax(dim=-1, keepdim=True).unsqueeze(-1)
         norm_inf = A.abs().sum(dim=-1).amax(dim=-1, keepdim=True).unsqueeze(-1)
-        alpha = 1.0 / (norm_1 * norm_inf + 1e-7)
+        alpha = 1.0 / (norm_1 * norm_inf + 1e-5)
 
         # V_0 = alpha * A^T
         V = alpha * A.transpose(-2, -1)
