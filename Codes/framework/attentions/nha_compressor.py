@@ -17,6 +17,7 @@ Computational Complexity:
 
 from typing import Any, Optional, Tuple
 
+import torch
 import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
 from framework.utils import replace_attention

@@ -184,12 +184,14 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
             update_worker_status_file(worker_id, {
                 "status": "completed", "attn": attn, "task": task, "idx": f"{idx}/{total_tasks}", "last_acc": round(acc*100, 2), "last_loss": round(loss, 4), "pid": os.getpid()
             })
+            commit_msg = f"feat(benchmark): [{idx}/{total_tasks}] {attn} on {task} | Acc: {acc*100:.2f}% | F1: {f1*100:.2f}% | Loss: {loss:.4f}"
         except Exception as e:
             elapsed = time.time() - t0
             log_master(f"[Worker-{worker_id}] [{idx}/{total_tasks}] NOTICE: attn={attn} | task={task} | Error: {e} | Time: {elapsed:.1f}s")
             update_worker_status_file(worker_id, {
                 "status": "error", "attn": attn, "task": task, "idx": f"{idx}/{total_tasks}", "error": str(e), "pid": os.getpid()
             })
+            commit_msg = f"fix(crash): [{idx}/{total_tasks}] {attn} on {task} failed with exception"
 
         # Auto-commit to Git
         try:
@@ -206,9 +208,8 @@ def worker_process_main(worker_id: int, task_queue: mp.Queue, total_tasks: int):
             with open(docs_res_dir / "all_histories.json", "w", encoding="utf-8") as f:
                 json.dump(hist_res, f)
 
-            msg = f"feat(benchmark): [{idx}/{total_tasks}] {attn} on {task} | Acc: {acc*100:.2f}% | F1: {f1*100:.2f}% | Loss: {loss:.4f}"
             subprocess.run(["git", "add", "-f", str(RESULTS_DIR), str(MASTER_LOG), str(docs_res_dir / "all_histories.json")], cwd=str(PROJECT_DIR), check=True)
-            subprocess.run(["git", "commit", "-m", msg], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
+            subprocess.run(["git", "commit", "-m", commit_msg], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
             subprocess.run(["git", "pull", "origin", "main", "--rebase"], cwd=str(PROJECT_DIR), capture_output=True, check=False)
             subprocess.run(["git", "push", "origin", "main"], cwd=str(PROJECT_DIR), capture_output=True, text=True, check=False)
         except Exception as e:
@@ -443,7 +444,7 @@ def main():
     log_master(f"Trajectory Matrix: {len(ATTN_MODELS)} Models x {len(TASKS)} Tasks = {total} Runs")
     log_master("Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.")
 
-    NUM_WORKERS = 3
+    NUM_WORKERS = 1
     processes = []
     for w_id in range(1, NUM_WORKERS + 1):
         p = mp.Process(target=worker_process_main, args=(w_id, task_queue, total), daemon=False)
@@ -455,7 +456,7 @@ def main():
         p.join()
 
     log_master("=" * 60)
-    log_master("  ALL 120 MULTI-PROCESS RUNS COMPLETED SUCCESSFULLY!")
+    log_master("  ALL MULTI-PROCESS RUNS COMPLETED!")
     log_master("=" * 60)
 
 
