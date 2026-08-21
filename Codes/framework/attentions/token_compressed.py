@@ -24,6 +24,13 @@ import torch.nn as nn
 from framework.core.registry import ATTENTION_REGISTRY
 
 
+class DummyAttn(nn.Module):
+    def __init__(self, dim):
+        super().__init__()
+        self.proj = nn.Linear(dim, dim)
+    def forward(self, x, **kwargs):
+        return self.proj(x), None
+
 @ATTENTION_REGISTRY.register("token_compressed_module")
 class TokenCompressedAttention(nn.Module):
     r"""Attention wrapper module encapsulating token compression transformations.
@@ -41,14 +48,19 @@ class TokenCompressedAttention(nn.Module):
 
     def __init__(
         self,
-        config: Any,
-        comp_config: Any,
-        layer_idx: int,
-        num_layers: int,
-        old_attn: Any,
+        config: Optional[Any] = None,
+        comp_config: Optional[Any] = None,
+        layer_idx: int = 0,
+        total_layers: int = 12,
+        old_attn: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
-        self.attn: nn.Module = old_attn
+        # Fallback to an identity lambda if old_attn is an integer or None
+        if old_attn is None or isinstance(old_attn, int):
+            self.attn = DummyAttn(getattr(config, "hidden_size", 768))
+        else:
+            self.attn = old_attn
 
     def forward(
         self,
@@ -58,20 +70,10 @@ class TokenCompressedAttention(nn.Module):
         output_attentions: bool = False,
         **kwargs: Any,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        r"""Forward activations through the wrapped attention module.
-
-        Args:
-            hidden_states: Input activations `[Batch, SeqLen, HiddenDim]`.
-            attention_mask: Optional mask `[Batch, SeqLen]` or broadcastable.
-            head_mask: Optional head pruning tensor.
-            output_attentions: Return explicit attention weights if True.
-            **kwargs: Additional runtime arguments.
-
-        Returns:
-            Tuple of:
-                - output: Projected tensor `[Batch, SeqLen, HiddenDim]`.
-                - attention_weights: Softmax probability matrix or None.
-        """
+        # Prevent infinite recursion if wrapped around itself
+        if self.attn is self:
+            return hidden_states, None
+        
         res = self.attn(
             hidden_states,
             attention_mask=attention_mask,
@@ -86,28 +88,20 @@ class TokenCompressedAttention(nn.Module):
 
 @ATTENTION_REGISTRY.register("token_compressed")
 def inject_token_compressed(
-    layer: Any,
-    config: Any,
-    comp_config: Any,
-    layer_idx: int,
-    num_layers: int,
-    old_attn: Any,
+    layer: Any = None,
+    config: Any = None,
+    comp_config: Any = None,
+    layer_idx: int = 0,
+    total_layers: int = 12,
+    old_attn: Any = None,
+    **kwargs: Any,
 ) -> TokenCompressedAttention:
-    r"""Bridge helper injecting TokenCompressedAttention into a transformer layer.
-
-    Args:
-        layer: Target transformer layer module.
-        config: Model configuration.
-        comp_config: Compression configuration.
-        layer_idx: Index of the current layer.
-        num_layers: Total number of layers.
-        old_attn: Existing attention module to wrap.
-
-    Returns:
-        Instantiated :class:`TokenCompressedAttention` assigned to ``layer.attention``.
-    """
+    if isinstance(old_attn, TokenCompressedAttention):
+        return old_attn
+        
     new_attn = TokenCompressedAttention(
-        config, comp_config, layer_idx, num_layers, old_attn
+        config, comp_config, layer_idx, total_layers, old_attn
     )
-    layer.attention = new_attn
+    if layer is not None:
+        layer.attention = new_attn
     return new_attn

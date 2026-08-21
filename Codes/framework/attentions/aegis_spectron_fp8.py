@@ -112,14 +112,20 @@ class AegisSpectronFP8Attention(BaseAttention):
         **kwargs: Any,
     ):
         if not isinstance(config, AegisSpectronFP8Config):
-            h_size = hidden_size or getattr(config, "hidden_size", 64)
-            n_heads = num_heads or getattr(config, "num_attention_heads", 4)
+            if isinstance(config, dict):
+                h_size = hidden_size or config.get("hidden_size", config.get("dim", 768))
+                n_heads = num_heads or config.get("num_attention_heads", 12)
+                rank = config.get("svd_rank", min(32, h_size))
+            else:
+                h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768))
+                n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+                rank = getattr(config, "svd_rank", min(32, h_size))
             config = AegisSpectronFP8Config(
                 hidden_size=h_size,
                 num_heads=n_heads,
                 head_dim=h_size // max(1, n_heads),
-                window_size=getattr(config, "window_size", 64) if config else 64,
-                svd_rank=getattr(config, "svd_rank", min(32, h_size)) if config else min(32, h_size),
+                window_size=getattr(config, "window_size", 64) if not isinstance(config, dict) else config.get("window_size", 64),
+                svd_rank=rank,
             )
         super().__init__(config)
         self.config = config

@@ -141,9 +141,9 @@ class LEKAV1Attention(BaseAttention):
 
         if attention_mask is not None:
             if attention_mask.dim() == 2:
-                mask = attention_mask[:, None, None, :].to(context.dtype)
+                mask = attention_mask[:, None, :, None].to(context.dtype)
             elif attention_mask.dim() == 4:
-                mask = attention_mask[:, 0, 0, :].unsqueeze(1).unsqueeze(2)
+                mask = (attention_mask[:, 0, 0, :] > -10000.0).unsqueeze(1).unsqueeze(-1).to(context.dtype)
             else:
                 mask = attention_mask
             context = context * mask

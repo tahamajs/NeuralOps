@@ -181,7 +181,7 @@ class HymbaTransXBlock(BaseAttention):
         diff_attn = F.relu(attn1 - 0.5 * attn2)
         A_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, D)
 
-        M_out = self.mamba(x_rope, attention_mask=attention_mask)
+        M_out, _ = self.mamba(x_rope, attention_mask=attention_mask)
         alpha = torch.sigmoid(self.alpha)
         out = self.out_proj(x + alpha * A_out + (1.0 - alpha) * M_out)
         if attention_mask is not None:
