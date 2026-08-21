@@ -1,234 +1,290 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SVD Linear Attention · Research Hub</title>
-    <meta name="description" content="Publication-grade documentation and interactive research hub for 104+ Attention Mechanisms, 80+ Neural Compression Engines, and Next-Gen Triton Kernels.">
-    <meta name="author" content="Taha Majedsoltani">
-    <meta name="keywords" content="SVD, Linear Attention, Neural Compression, Transformers, Research Hub, Attention Mechanisms">
-    <meta name="theme-color" content="#080a12">
-    <meta property="og:title" content="SVD Linear Attention · Research Hub">
-    <meta property="og:description" content="104+ Attention Mechanisms, 80+ Compression Engines, Next-Gen AI Research Platform">
-    <meta property="og:type" content="website">
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <!-- KaTeX -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-    <!-- Prism -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
-    <!-- Chart.js for Training Plots -->
+    <title>SVD Compression Hub · GPU Orchestrator Live</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Stylesheet -->
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .glass-card { background: rgba(17, 24, 39, 0.85); border: 1px solid rgba(55, 65, 81, 0.6); backdrop-filter: blur(12px); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 3px; }
+    </style>
 </head>
-<body>
-    <div id="reading-progress-bar" aria-hidden="true"></div>
+<body class="text-slate-100 min-h-screen p-6">
+    <div class="max-w-7xl mx-auto space-y-6">
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center glass-card p-5 rounded-2xl shadow-xl gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <div class="h-3 w-3 rounded-full bg-cyan-400 animate-ping"></div>
+                    <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+                        SVD Linear Attention <span class="text-cyan-400">· GPU Cluster Live</span>
+                    </h1>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">Multi-Worker SVD Kernel & Matrix Training Telemetry · 120-Run Sweep</p>
+            </div>
+            <div class="flex items-center gap-4 text-xs font-mono">
+                <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800 text-slate-400">
+                    Host: <span class="text-slate-200">192.168.1.100:8080</span>
+                </div>
+                <div class="flex items-center gap-2 bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-lg font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="conn-status">ONLINE</span>
+                </div>
+            </div>
+        </header>
 
-    <!-- Command Palette -->
-    <div id="cmd-overlay" class="cmd-overlay hidden" role="dialog" aria-modal="true">
-        <div class="cmd-backdrop" id="cmd-backdrop"></div>
-        <div class="cmd-panel">
-            <div class="cmd-search-row">
-                <svg class="cmd-mag" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input id="cmd-input" type="text" placeholder="Search 184+ architectures, compressors, papers..." autocomplete="off" spellcheck="false">
-                <kbd class="cmd-esc-kbd">ESC</kbd>
+        <!-- Hardware & Cluster Overview -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass-card p-4 rounded-xl">
+                <div class="flex justify-between items-center text-xs text-slate-400 font-medium">
+                    <span>GPU COMPUTE</span>
+                    <span id="gpu-name" class="text-[10px] text-cyan-400 font-mono">NVIDIA RTX 4070</span>
+                </div>
+                <div class="text-2xl font-black text-cyan-400 mt-2" id="gpu-util">--%</div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                    <div id="gpu-bar" class="bg-cyan-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
             </div>
-            <div class="cmd-categories" id="cmd-filter-row">
-                <button class="cmd-cat active" data-cat="all">All</button>
-                <button class="cmd-cat" data-cat="attentions">Attentions</button>
-                <button class="cmd-cat" data-cat="compressions">Compressions</button>
+
+            <div class="glass-card p-4 rounded-xl">
+                <div class="flex justify-between items-center text-xs text-slate-400 font-medium">
+                    <span>VRAM ALLOCATION</span>
+                    <span class="text-[10px] text-purple-400 font-mono">GDDR6</span>
+                </div>
+                <div class="text-2xl font-black text-purple-400 mt-2">
+                    <span id="vram-used">--</span> <span class="text-xs font-normal text-slate-400">/ <span id="vram-total">8.0</span> GB</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                    <div id="vram-bar" class="bg-purple-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
             </div>
-            <div class="cmd-results" id="cmd-results"></div>
-            <div class="cmd-footer-bar">
-                <span><kbd>↑↓</kbd> navigate</span>
-                <span><kbd>↵</kbd> open</span>
-                <span><kbd>ESC</kbd> close</span>
+
+            <div class="glass-card p-4 rounded-xl">
+                <div class="flex justify-between items-center text-xs text-slate-400 font-medium">
+                    <span>THERMAL & POWER</span>
+                    <span class="text-[10px] text-amber-400 font-mono">Telemetry</span>
+                </div>
+                <div class="text-2xl font-black text-amber-400 mt-2 flex items-baseline gap-2">
+                    <span id="gpu-temp">--°C</span>
+                    <span class="text-xs font-mono text-slate-400 font-normal" id="gpu-power">-- W</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-2 font-mono">System RAM: <span id="ram-usage" class="text-slate-300">--</span> GB</div>
+            </div>
+
+            <div class="glass-card p-4 rounded-xl">
+                <div class="flex justify-between items-center text-xs text-slate-400 font-medium">
+                    <span>WORKERS ACTIVE</span>
+                    <span class="text-[10px] text-emerald-400 font-mono">Multiprocess</span>
+                </div>
+                <div class="text-2xl font-black text-emerald-400 mt-2" id="active-workers-count">3 Active</div>
+                <div class="text-[11px] text-slate-400 mt-2 truncate font-mono" id="active-jobs-summary">Parallel GPU Orchestration</div>
+            </div>
+        </div>
+
+        <!-- Main Workspace Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Training Loss Chart -->
+            <div class="lg:col-span-2 glass-card p-6 rounded-2xl shadow-xl flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <span>Live Loss Trajectory</span>
+                            <span class="text-xs font-mono bg-cyan-950/80 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800/40" id="current-active-badge">Syncing...</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">Real-time convergence curves sampled directly from worker threads</p>
+                    </div>
+                </div>
+                <div class="h-72 w-full">
+                    <canvas id="lossChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Pipeline Matrix -->
+            <div class="lg:col-span-1 glass-card p-6 rounded-2xl shadow-xl flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold text-white">Execution Matrix</h2>
+                    <span class="text-xs font-mono text-cyan-400 bg-slate-800/80 px-2.5 py-1 rounded-lg border border-slate-700">
+                        <span id="completed-count">0</span> Completed
+                    </span>
+                </div>
+                <div id="matrix-container" class="space-y-3 overflow-y-auto pr-1 flex-1 max-h-72 text-xs font-mono">
+                    <div class="text-slate-500 text-center py-10">Loading run matrix...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal Output -->
+        <div class="glass-card p-5 rounded-2xl shadow-xl">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300">Master Orchestrator Console Stream</h3>
+                </div>
+                <span class="text-[11px] text-slate-500 font-mono">Auto-scrolling tail (last 50 events)</span>
+            </div>
+            <div class="bg-slate-950/90 p-4 rounded-xl font-mono text-xs h-56 overflow-y-auto text-slate-300 space-y-1 border border-slate-900" id="terminal-out">
+                <span class="text-cyan-400">&gt; Connecting to cluster telemetry server on port 8080...</span>
             </div>
         </div>
     </div>
 
-    <!-- Interactive Comparison Modal -->
-    <div id="compare-overlay" class="compare-overlay hidden" role="dialog" aria-modal="true">
-        <div class="compare-backdrop" id="compare-backdrop"></div>
-        <div class="compare-modal">
-            <div class="compare-modal-header">
-                <div class="compare-modal-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
-                    <span>Architecture Comparison Studio</span>
-                </div>
-                <button class="compare-close-btn" id="compare-close-btn" aria-label="Close comparison">✕</button>
-            </div>
-            <div class="compare-modal-body">
-                <div class="compare-selector-bar">
-                    <span class="compare-sel-label">Select Architectures to Compare (Max 4):</span>
-                    <div class="compare-chips-container" id="compare-chips-container"></div>
-                </div>
-                <div class="compare-matrix-view" id="compare-matrix-view"></div>
-            </div>
-        </div>
-    </div>
+    <script>
+        let lossChart = null;
 
-    <div id="app-container">
-        <!-- SIDEBAR -->
-        <aside id="sidebar" aria-label="Documentation Navigation">
-            <div class="sidebar-header">
-                <div class="brand-wrap">
-                    <div class="brand-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-                            <path d="M2 17l10 5 10-5"/>
-                            <path d="M2 12l10 5 10-5"/>
-                        </svg>
-                    </div>
-                    <div class="brand-text">
-                        <div class="brand-name">SVD-Attn Hub</div>
-                        <div class="brand-version">Research Platform · v3.1</div>
-                    </div>
-                </div>
-                <button id="sidebar-collapse-btn" class="icon-btn collapse-btn" aria-label="Collapse sidebar">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-            </div>
+        function initChart() {
+            const ctx = document.getElementById('lossChart').getContext('2d');
+            lossChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Training Loss',
+                        data: [],
+                        borderColor: '#22d3ee',
+                        backgroundColor: 'rgba(34, 211, 238, 0.08)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                            ticks: { color: '#94a3b8', font: { family: 'monospace', size: 10 } }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { family: 'monospace', size: 10 }, maxTicksLimit: 8 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
 
-            <div class="sidebar-search-wrap">
-                <button class="sidebar-search-btn" id="sidebar-search-trigger" aria-label="Open search">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <span>Search architectures...</span>
-                    <kbd id="search-shortcut-hint">⌘K</kbd>
-                </button>
-            </div>
+        async function updateDashboard() {
+            try {
+                const res = await fetch('/api/stats');
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                const data = await res.json();
 
-            <div class="sidebar-stats-row">
-                <div class="stat-chip" data-filter="attentions">
-                    <span class="stat-n" id="stat-attn">—</span>
-                    <span class="stat-l">Attentions</span>
-                </div>
-                <div class="stat-divider"></div>
-                <div class="stat-chip" data-filter="compressions">
-                    <span class="stat-n" id="stat-comp">—</span>
-                    <span class="stat-l">Compressors</span>
-                </div>
-            </div>
+                document.getElementById('conn-status').innerText = 'ONLINE';
+                document.getElementById('conn-status').className = 'text-emerald-400 font-bold';
 
-            <div class="filter-chips-row">
-                <button class="fchip active" data-filter="all">All</button>
-                <button class="fchip" data-filter="attentions">Attn</button>
-                <button class="fchip" data-filter="compressions">Compress</button>
-                <button class="fchip" data-filter="blog_series">Blog</button>
-                <button class="fchip" data-filter="svd">SVD</button>
-                <button class="fchip" data-filter="ssm">SSM</button>
-                <button class="fchip" data-filter="moe">MoE</button>
-            </div>
+                // Hardware telemetry - Universal extractor
+                if (data.gpu) {
+                    const util = (typeof data.gpu.gpu_util !== 'undefined') ? Math.round(data.gpu.gpu_util) : Math.round(data.gpu[0] || 0);
+                    const memUsed = (typeof data.gpu.mem_used_mb !== 'undefined') ? (data.gpu.mem_used_mb / 1024).toFixed(1) : ((data.gpu[1] || 0) / 1024).toFixed(1);
+                    const memTotal = (typeof data.gpu.mem_total_mb !== 'undefined') ? (data.gpu.mem_total_mb / 1024).toFixed(1) : ((data.gpu[2] || 8188) / 1024).toFixed(1);
+                    const temp = (typeof data.gpu.temp_c !== 'undefined') ? Math.round(data.gpu.temp_c) : Math.round(data.gpu[3] || 0);
+                    const power = (typeof data.gpu.power_w !== 'undefined') ? Math.round(data.gpu.power_w) : Math.round(data.gpu[4] || 0);
+                    const ramUsed = (typeof data.gpu.sys_ram_used_gb !== 'undefined') ? data.gpu.sys_ram_used_gb : (data.gpu[5] || '--');
 
-            <div class="sidebar-nav" id="nav-content" role="navigation">
-                <div id="nav-skeleton" class="nav-skeleton">
-                    <div class="sk-group-label"></div>
-                    <div class="sk-item"></div><div class="sk-item"></div><div class="sk-item"></div>
-                    <div class="sk-group-label" style="margin-top:14px"></div>
-                    <div class="sk-item"></div><div class="sk-item"></div>
-                </div>
-            </div>
+                    const gpuUtilEl = document.getElementById('gpu-util');
+                    const gpuBarEl = document.getElementById('gpu-bar');
+                    const vramUsedEl = document.getElementById('vram-used');
+                    const vramTotalEl = document.getElementById('vram-total');
+                    const vramBarEl = document.getElementById('vram-bar');
+                    const gpuTempEl = document.getElementById('gpu-temp');
+                    const gpuPowerEl = document.getElementById('gpu-power');
+                    const ramEl = document.getElementById('ram-usage');
 
-            <div class="sidebar-footer">
-                <a href="https://github.com/tahamajs/SVD_linear_Attention" target="_blank" rel="noopener noreferrer" class="sf-btn" id="github-link">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                    GitHub
-                </a>
-                <button class="sf-btn" id="theme-toggle-btn" title="Toggle theme">
-                    <svg id="theme-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                    <span id="theme-label">Light Mode</span>
-                </button>
-            </div>
-        </aside>
+                    if (gpuUtilEl) gpuUtilEl.innerText = util + '%';
+                    if (gpuBarEl) gpuBarEl.style.width = Math.min(100, util) + '%';
+                    if (vramUsedEl) vramUsedEl.innerText = memUsed;
+                    if (vramTotalEl) vramTotalEl.innerText = memTotal;
+                    if (vramBarEl) vramBarEl.style.width = Math.min(100, (parseFloat(memUsed) / (parseFloat(memTotal) || 8.0)) * 100) + '%';
+                    if (gpuTempEl) gpuTempEl.innerText = temp + '°C';
+                    if (gpuPowerEl) gpuPowerEl.innerText = power + ' W';
+                    if (ramEl) ramEl.innerText = ramUsed;
+                }
 
-        <!-- MAIN -->
-        <main id="main-content">
-            <header class="topbar" id="topbar">
-                <div class="topbar-left">
-                    <button id="mobile-menu-btn" class="icon-btn" aria-label="Toggle navigation">
-                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                    </button>
-                    <nav id="breadcrumbs" class="breadcrumbs" aria-label="Breadcrumb">
-                        <button class="bc-home-btn" id="bc-home" title="Hub Overview">Hub</button>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        <span class="bc-section" id="bc-section">Overview</span>
-                        <svg class="bc-sep-2 hidden" id="bc-sep2" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        <span class="bc-page hidden" id="bc-page"></span>
-                    </nav>
-                </div>
-                <div class="topbar-right">
-                    <div id="gpu-stats-panel" style="display:flex; gap:10px; font-size: 0.75rem; color: #10b981; border: 1px solid #10b98140; padding: 4px 8px; border-radius: 6px; background: rgba(16,185,129,0.05); white-space: nowrap; font-family: 'JetBrains Mono', monospace;">
-                        <span id="gpu-util">GPU: --%</span>
-                        <span id="gpu-mem">VRAM: -- GB</span>
-                    </div>
-                    <button class="tb-search-pill" id="topbar-search-btn" aria-label="Open search">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <span>Search</span>
-                        <kbd>⌘K</kbd>
-                    </button>
-                    <button id="home-btn" class="tb-action-btn" title="Hub Overview">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        Overview
-                    </button>
-                    <button id="compendium-quick-btn" class="tb-action-btn accent-btn" title="Next-Gen Synthesis Compendium">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                        Compendium
-                    </button>
-                    <a href="./app/" class="tb-action-btn" style="background: rgba(0, 255, 157, 0.1); border-color: rgba(0, 255, 157, 0.3); color: #00ff9d; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="Open Interactive React Component Studios">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 9h6"/><path d="M15 15h6"/></svg>
-                        Studios (UI)
-                    </a>
-                    <button id="compare-modal-btn" class="tb-action-btn" title="Compare Architectures">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
-                        Compare
-                    </button>
-                    <button id="random-btn" class="tb-icon-btn" title="Random architecture">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
-                    </button>
-                    <button id="copy-link-btn" class="tb-icon-btn" title="Copy link to page">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    </button>
-                </div>
-            </header>
+                // Active training curve
+                if (data.train_multi && Array.isArray(data.train_multi) && data.train_multi.length > 0) {
+                    const firstActive = data.train_multi.find(w => w.loss_history && w.loss_history.length > 0) || data.train_multi[0];
+                    const attn = (firstActive.active_model || 'Model').toUpperCase();
+                    const task = (firstActive.active_task || 'Task').toUpperCase();
+                    const workerId = firstActive.worker_id || '1';
 
-            <div class="content-viewport" id="content-viewport">
-                <div class="article-layout">
-                    <article id="markdown-container" class="markdown-body"></article>
-                    <aside id="toc-container" class="toc-sidebar" aria-label="Table of contents">
-                        <div class="toc-sticky">
-                            <div class="toc-header-row">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-                                ON THIS PAGE
-                            </div>
-                            <nav id="toc-nav" class="toc-nav-list"></nav>
-                            <div id="toc-meta" class="toc-meta-box"></div>
-                        </div>
-                    </aside>
-                </div>
-            </div>
+                    document.getElementById('current-active-badge').innerText = `Worker-${workerId} · ${attn} on ${task}`;
 
-            <button id="back-to-top-btn" class="back-to-top-btn" aria-label="Scroll to top">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-            </button>
-            <div class="sidebar-overlay" id="sidebar-overlay"></div>
-        </main>
-    </div>
+                    if (firstActive.loss_history && firstActive.loss_history.length > 0 && lossChart) {
+                        const labels = firstActive.loss_history.map(d => 'Step ' + (d.step || (Math.round((d.epoch || 0)*1000))));
+                        const losses = firstActive.loss_history.map(d => d.loss);
+                        lossChart.data.labels = labels;
+                        lossChart.data.datasets[0].data = losses;
+                        lossChart.update();
+                    }
+                }
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/mhchem.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
-    <script src="app.js"></script>
+                // Matrix
+                if (data.matrix && Array.isArray(data.matrix)) {
+                    let completed = 0;
+                    let html = '';
+                    data.matrix.forEach(t => {
+                        html += `<div class="mb-3"><div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">${t.task || 'TASK'}</div><div class="space-y-1">`;
+                        if (t.runs && Array.isArray(t.runs)) {
+                            t.runs.forEach(r => {
+                                let statusClass = 'text-slate-500';
+                                let dot = '○';
+                                if (r.status === 'completed') {
+                                    statusClass = 'text-emerald-400';
+                                    dot = '●';
+                                    completed++;
+                                } else if (r.status === 'running') {
+                                    statusClass = 'text-cyan-300 font-bold animate-pulse';
+                                    dot = '►';
+                                }
+                                html += `<div class="flex items-center justify-between py-0.5 ${statusClass}">
+                                    <span><span class="mr-1.5">${dot}</span>${r.attn_id}</span>
+                                    <span class="text-[10px] text-slate-500">${r.status}</span>
+                                </div>`;
+                            });
+                        }
+                        html += '</div></div>';
+                    });
+                    document.getElementById('matrix-container').innerHTML = html;
+                    document.getElementById('completed-count').innerText = completed;
+                }
+
+                // Console stream
+                if (data.logs && Array.isArray(data.logs)) {
+                    const term = document.getElementById('terminal-out');
+                    term.innerHTML = data.logs.map(line => {
+                        let color = 'text-slate-300';
+                        if (line.includes('SUCCESS')) color = 'text-emerald-400 font-bold';
+                        else if (line.includes('Launching') || line.includes('>>')) color = 'text-cyan-300';
+                        else if (line.includes('Error') || line.includes('NOTICE')) color = 'text-amber-400';
+                        return `<div class="${color}">${line}</div>`;
+                    }).join('');
+                    term.scrollTop = term.scrollHeight;
+                }
+
+            } catch (err) {
+                console.error("Telemetry update error:", err);
+                const conn = document.getElementById('conn-status');
+                if (conn) {
+                    conn.innerText = 'OFFLINE';
+                    conn.className = 'text-red-400 font-bold';
+                }
+            }
+        }
+
+        initChart();
+        updateDashboard();
+        setInterval(updateDashboard, 3000);
+    </script>
 </body>
 </html>
