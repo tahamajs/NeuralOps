@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-20T22:34:57.961141",
+  "timestamp": "2026-08-21T03:50:07.559842",
   "python_version": "3.13.5",
   "platform": "Windows-11-10.0.26200-SP0",
   "device": "cuda",
@@ -7,6 +7,6 @@
   "mps_available": false,
   "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
   "trainable_params": 66955010,
-  "elapsed_seconds": 462.15,
-  "elapsed_human": "7m 42s"
+  "elapsed_seconds": 1687.53,
+  "elapsed_human": "28m 7s"
 }
