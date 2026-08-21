@@ -221,3 +221,13 @@ ompleted)
 [2026-08-21 03:50:14] [Worker-2] [14/120] NOTICE: attn=spectra_v2 | task=sst2 | Error: name 'layer' is not defined | Time: 0.4s
 [2026-08-21 03:50:16] [Worker-2] [15/120] >> Launching: attn=samba_m3 | task=sst2 | seed=42
 [2026-08-21 04:26:02] [Worker-2] [15/120] << SUCCESS: attn=samba_m3 | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6995 | Time: 2145.7s
+[2026-08-21 09:36:28] ============================================================
+[2026-08-21 09:36:28]   STARTING MULTI-PROCESS TRIPLE-WORKER GPU ORCHESTRATION  
+[2026-08-21 09:36:28] ============================================================
+[2026-08-21 09:36:28] Started background telemetry sync thread.
+[2026-08-21 09:36:28] Trajectory Matrix: 126 Models x 8 Tasks = 1008 Runs
+[2026-08-21 09:36:28] Targeting 90-100% GPU Compute Utilization via 3 Isolated OS Processes.
+[2026-08-21 09:36:52] [Worker-1] [2/1008] >> Launching: attn=adaptive_svd | task=sst2 | seed=42
+
+[2026-08-21 09:36:52] [Worker-1] [2/1008] NOTICE: attn=adaptive_svd | task=sst2 | Error: The paging file is too small for this operation to complete. (os error 1455) | Time: 0.3s
+[2026-08-21 09:36:52] [Worker-2] [1/1008] NOTICE: attn=adaptive_span | task=sst2 | Error: The paging file is too small for this operation to complete. (os error 1455) | Time: 0.3s
