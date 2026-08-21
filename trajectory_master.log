@@ -263,3 +263,5 @@ ompleted)
 [2026-08-22 00:41:05] [Worker-1] [11/1008] << SUCCESS: attn=aegis_v4 | task=sst2 | Acc: 84.06% | F1: 84.05% | Loss: 0.4713 | Time: 976.3s
 [2026-08-22 00:41:06] [Worker-1] [12/1008] >> Launching: attn=aegis_v5 | task=sst2 | seed=42
 [2026-08-22 00:53:20] [Worker-1] [12/1008] << SUCCESS: attn=aegis_v5 | task=sst2 | Acc: 48.05% | F1: 36.72% | Loss: nan | Time: 733.7s
+[2026-08-22 00:53:22] [Worker-1] [13/1008] >> Launching: attn=aegis_v6 | task=sst2 | seed=42
+[2026-08-22 01:11:42] [Worker-1] [13/1008] << SUCCESS: attn=aegis_v6 | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: 0.6958 | Time: 1099.3s
