@@ -522,7 +522,7 @@ function renderMarkdown(md, item) {
     // Training Plots Injection
     const taskNames = ['sst2', 'mrpc', 'qnli', 'qqp', 'mnli', 'cola', 'rte', 'stsb', 'wnli'];
     let plotMatches = [];
-    if (plotHistories) {
+    if (plotHistories && Object.keys(plotHistories).length > 0) {
         if (item.category === 'blog_series') {
             const blogMap = {
                 '01': ['svd_linear', 'aegis', 'svd', 'asvd', 'nystrom', 'spectra_v2', 'full'],
@@ -531,19 +531,30 @@ function renderMarkdown(md, item) {
                 '04': ['lora', 'lowrank', 'svd_compressed', 'lora_attn'],
                 '05': ['quant', 'prun', 'fp8', 'int4']
             };
-            const prefix = item.id.substring(0, 2);
+            const prefix = (item.id || '').substring(0, 2);
             const targets = blogMap[prefix] || [];
             plotMatches = Object.keys(plotHistories).filter(k => {
                 return targets.some(t => k.startsWith(t));
+            });
+        } else if (item.category === 'compressions') {
+            const idClean = (item.id || '').replace('.md', '').toLowerCase();
+            plotMatches = Object.keys(plotHistories).filter(k => {
+                const kLow = k.toLowerCase();
+                if (idClean.includes('svd') && (kLow.startsWith('svd') || kLow.startsWith('aegis'))) return true;
+                if (idClean.includes('lora') && kLow.startsWith('lora')) return true;
+                if (idClean.includes('quant') || idClean.includes('astro') || idClean.includes('coopq')) return kLow.includes('int') || kLow.includes('fp8');
+                if (idClean.includes('prun') || idClean.includes('admm') || idClean.includes('armor')) return kLow.includes('prun') || kLow.includes('svd');
+                if (idClean.includes('kronecker') || idClean.includes('tt')) return kLow.includes('lora') || kLow.includes('svd');
+                return kLow.startsWith(idClean.split('_')[0]);
             });
         } else {
             plotMatches = Object.keys(plotHistories).filter(k => {
                 for (let t of taskNames) {
                     if (k.includes('_' + t + '_')) {
                         let attn = k.split('_' + t + '_')[0];
-                        let idBase = item.id.replace('.md', '').replace('_attention', '');
+                        let idBase = (item.id || '').replace('.md', '').replace('_attention', '');
                         let attnBase = attn.replace('_attention', '');
-                        if (idBase === attnBase || item.id.startsWith(attn + '.md') || item.id.startsWith(attn + '_')) {
+                        if (idBase === attnBase || (item.id || '').startsWith(attn + '.md') || (item.id || '').startsWith(attn + '_')) {
                             return true;
                         }
                     }
@@ -551,11 +562,6 @@ function renderMarkdown(md, item) {
                 return false;
             });
         }
-    }
-                }
-            }
-            return false;
-        });
     }
     
     if (plotMatches.length > 0) {
