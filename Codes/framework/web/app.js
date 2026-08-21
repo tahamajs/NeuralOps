@@ -523,19 +523,23 @@ function renderMarkdown(md, item) {
     const taskNames = ['sst2', 'mrpc', 'qnli', 'qqp', 'mnli', 'cola', 'rte', 'stsb', 'wnli'];
     let plotMatches = [];
     if (plotHistories && Object.keys(plotHistories).length > 0) {
-        if (item.category === 'blog_series') {
-            const blogMap = {
-                '01': ['svd_linear', 'aegis', 'svd', 'asvd', 'nystrom', 'spectra_v2', 'full'],
-                '02': ['mamba', 'gated_delta_net', 'linformer', 'performer', 'flash3', 'griffin_ssd', 'samba_m3'],
-                '03': ['mla', 'nsa', 'adaptive', 'sparse', 'adasplash'],
-                '04': ['lora', 'lowrank', 'svd_compressed', 'lora_attn'],
-                '05': ['quant', 'prun', 'fp8', 'int4']
-            };
-            const prefix = (item.id || '').substring(0, 2);
-            const targets = blogMap[prefix] || [];
-            plotMatches = Object.keys(plotHistories).filter(k => {
-                return targets.some(t => k.startsWith(t));
-            });
+        if (item.category === 'blog_series' || item.category === 'framework') {
+            if ((item.id || '').toLowerCase().includes('readme') || (item.id || '').toLowerCase().includes('master_empirical')) {
+                plotMatches = Object.keys(plotHistories); // Show all available plots
+            } else if (item.category === 'blog_series') {
+                const blogMap = {
+                    '01': ['svd_linear', 'aegis', 'svd', 'asvd', 'nystrom', 'spectra_v2', 'full'],
+                    '02': ['mamba', 'gated_delta_net', 'linformer', 'performer', 'flash3', 'griffin_ssd', 'samba_m3'],
+                    '03': ['mla', 'nsa', 'adaptive', 'sparse', 'adasplash'],
+                    '04': ['lora', 'lowrank', 'svd_compressed', 'lora_attn'],
+                    '05': ['quant', 'prun', 'fp8', 'int4']
+                };
+                const prefix = (item.id || '').substring(0, 2);
+                const targets = blogMap[prefix] || [];
+                plotMatches = Object.keys(plotHistories).filter(k => {
+                    return targets.some(t => k.startsWith(t));
+                });
+            }
         } else if (item.category === 'compressions') {
             const idClean = (item.id || '').replace('.md', '').toLowerCase();
             plotMatches = Object.keys(plotHistories).filter(k => {

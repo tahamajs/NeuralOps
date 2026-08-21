@@ -220,8 +220,12 @@ class DashboardHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(js_path.read_bytes())
                 return
-        elif req_path == "/styles.css":
-            css_path = WEB_DIR / "styles.css"
+        elif req_path in ("/styles.css", "/style.css"):
+            css_path = WEB_DIR / "style.css"
+            if not css_path.exists():
+                css_path = WEB_DIR / "styles.css"
+            if not css_path.exists():
+                css_path = PROJECT_DIR / "Docs" / "style.css"
             if css_path.exists():
                 self.send_response(200)
                 self.send_header("Content-type", "text/css; charset=utf-8")
