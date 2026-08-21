@@ -147,7 +147,7 @@ if (copyLinkBtn) {
 }
 
 let plotHistories = {};
-// ── Catalog Load ─────────────────────────────────────────────
+// ── Catalog & Telemetry Load ─────────────────────────────────
 async function loadCatalog() {
     try {
         const res = await fetch('catalog.json');
@@ -157,10 +157,7 @@ async function loadCatalog() {
         catalogData = { attentions: [], compressions: [], framework: [], blog_series: [] };
         console.warn('catalog.json not found, using empty catalog:', e);
     }
-    try {
-        const hRes = await fetch('results/all_histories.json');
-        if (hRes.ok) plotHistories = await hRes.json();
-    } catch (e) { console.warn('Could not load plot histories'); }
+    await refreshLiveTelemetry();
 
     // Flatten all items
     allItems = [
@@ -181,6 +178,59 @@ async function loadCatalog() {
 
     renderNav();
     renderHome();
+
+    // Start background live telemetry polling every 10 seconds
+    if (!window._telemetryInterval) {
+        window._telemetryInterval = setInterval(refreshLiveTelemetry, 10000);
+    }
+}
+
+async function refreshLiveTelemetry() {
+    let updated = false;
+    try {
+        const hRes = await fetch('results/all_histories.json?t=' + Date.now());
+        if (hRes.ok) {
+            plotHistories = await hRes.json();
+            updated = true;
+        }
+    } catch (e) { /* ignore */ }
+
+    // If local API stats available, merge real-time active worker loss histories
+    try {
+        const sRes = await fetch('/api/stats');
+        if (sRes.ok) {
+            const stats = await sRes.json();
+            if (stats.train_multi) {
+                if (!plotHistories) plotHistories = {};
+                for (let k of Object.keys(stats.train_multi)) {
+                    if (stats.train_multi[k] && stats.train_multi[k].length > 0) {
+                        plotHistories[k] = {
+                            config: { model: k.split('_')[0], task: k.split('_')[1] || 'sst2' },
+                            metrics: (stats.results && stats.results[k]) ? stats.results[k] : {},
+                            history: stats.train_multi[k].map((loss, idx) => ({ step: (idx + 1) * 10, loss: loss }))
+                        };
+                        updated = true;
+                    }
+                }
+            }
+        }
+    } catch (e) { /* non-local environment, ignore */ }
+
+    // If current page contains active charts, dynamically update them
+    if (updated && window.Chart) {
+        document.querySelectorAll('canvas[id^="chart-"]').forEach(canvas => {
+            const k = canvas.id.replace('chart-', '');
+            if (plotHistories && plotHistories[k] && canvas._chartInstance) {
+                const dataObj = plotHistories[k];
+                const hist = Array.isArray(dataObj) ? dataObj : (dataObj.history || []);
+                if (hist.length > 0) {
+                    canvas._chartInstance.data.labels = hist.map(d => `Step ${d.step || Math.round(d.epoch * 1000)}`);
+                    canvas._chartInstance.data.datasets[0].data = hist.map(d => d.loss);
+                    canvas._chartInstance.update('none');
+                }
+            }
+        });
+    }
 }
 
 // ── Tag detection ────────────────────────────────────────────
@@ -623,7 +673,10 @@ function renderMarkdown(md, item) {
                 const hist = Array.isArray(dataObj) ? dataObj : (dataObj.history || []);
                 const labels = hist.map(d => `Step ${d.step || Math.round(d.epoch*1000)}`);
                 const data = hist.map(d => d.loss);
-                new Chart(ctx.getContext('2d'), {
+                if (ctx._chartInstance) {
+                    try { ctx._chartInstance.destroy(); } catch (e) {}
+                }
+                ctx._chartInstance = new Chart(ctx.getContext('2d'), {
                     type: 'line',
                     data: {
                         labels: labels,
