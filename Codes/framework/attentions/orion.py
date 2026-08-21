@@ -130,12 +130,17 @@ class ORIONAttention(nn.Module):
 
     def __init__(
         self,
-        model_config: Any,
-        orion_cfg: ORIONConfig,
+        model_config: Optional[Any] = None,
+        orion_cfg: Optional[ORIONConfig] = None,
         pretrained_attn: Optional[Any] = None,
         bert_mode: bool = False,
+        config: Optional[Any] = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
+        model_config = config if config is not None else model_config
+        if orion_cfg is None:
+            orion_cfg = ORIONConfig()
         if pretrained_attn is None:
             raise ValueError("ORION requires pretrained_attn for zero-shot SVD init")
         self.num_heads: int = model_config.num_attention_heads

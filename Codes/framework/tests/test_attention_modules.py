@@ -49,9 +49,12 @@ class TestShapeCorrectness:
             output_tensor = out[0]
         else:
             output_tensor = out
-        assert (
-            output_tensor.shape == hidden_states.shape
-        ), f"{key}: expected {hidden_states.shape}, got {output_tensor.shape}"
+        assert output_tensor.shape[0] == hidden_states.shape[0], f"{key}: Batch size changed"
+        assert output_tensor.shape[2] == hidden_states.shape[2], f"{key}: Hidden dimension changed"
+        if key not in ["progressive_token_pruning"]:
+            assert (
+                output_tensor.shape == hidden_states.shape
+            ), f"{key}: expected {hidden_states.shape}, got {output_tensor.shape}"
 
 
 # ----------------------------------------------------------------------

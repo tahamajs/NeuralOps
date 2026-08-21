@@ -46,12 +46,13 @@ class ClusterAttention(nn.Module):
         config: Any,
         num_clusters: int = 64,
         n_iters: int = 3,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.hidden_size // self.num_heads
-        self.num_clusters: int = num_clusters
-        self.n_iters: int = n_iters
+        self.num_clusters: int = num_clusters if num_clusters is not None else 64
+        self.n_iters: int = n_iters if n_iters is not None else 3
         self.q_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.k_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.v_proj = nn.Linear(config.hidden_size, config.hidden_size)
