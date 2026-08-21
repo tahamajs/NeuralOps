@@ -18,15 +18,30 @@ import {
   DollarSign,
 } from "lucide-react";
 
-const mockData = Array.from({ length: 24 }).map((_, i) => ({
-  time: `${i}:00`,
-  price: 2.45 + Math.random() * 0.5 + Math.sin(i / 3) * 0.2,
-  volume: Math.floor(Math.random() * 1000) + 500,
-}));
 
 export default function GPUTradingTerminal() {
   const [activeTab, setActiveTab] = useState("chart");
   const [selectedGpu, setSelectedGpu] = useState("A100-80GB");
+
+  const [chartData, setChartData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const res = await fetch(`/api/gpu-finance/indices/chart/?gpu=${selectedGpu}`);
+        if(res.ok) {
+          const data = await res.json();
+          setChartData(data);
+        } else {
+          setChartData([]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchChartData();
+  }, [selectedGpu]);
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 p-6 font-sans antialiased overflow-hidden selection:bg-indigo-500/30">
@@ -159,7 +174,7 @@ export default function GPUTradingTerminal() {
               <div className="h-[350px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={mockData}
+                    data={chartData.length > 0 ? chartData : []}
                     margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                   >
                     <defs>
