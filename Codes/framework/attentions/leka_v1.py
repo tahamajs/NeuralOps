@@ -97,7 +97,7 @@ class LEKAV1Attention(BaseAttention):
         m_scaled = torch.clamp(-m / temperature, max=80.0)
         denom = e - torch.exp(m_scaled)
         p = F.relu(denom)
-        return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
+        return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
 
     def forward(
         self,
@@ -135,7 +135,7 @@ class LEKAV1Attention(BaseAttention):
         num = torch.einsum("bhnf,bhfd->bhnd", Q_features, KV)
         denom = (
             torch.einsum("bhnf,bhf->bhn", Q_features, K_sum.squeeze(2)).unsqueeze(-1)
-            + 1e-8
+            + 1e-5
         )
         context = num / denom
 

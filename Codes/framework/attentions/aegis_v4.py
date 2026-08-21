@@ -66,7 +66,7 @@ class FactorisedLinear(nn.Module):
         with torch.no_grad():
             U, S, Vt = torch.linalg.svd(pretrained_weight.float(), full_matrices=False)
             total = (S**2).sum()
-            cum = torch.cumsum(S**2, dim=0) / (total + 1e-12)
+            cum = torch.cumsum(S**2, dim=0) / (total + 1e-5)
             rank = int(torch.searchsorted(cum, energy).item()) + 1
             rank = max(min_rank, min(rank, min(out_dim, in_dim), max_rank))
             self.rank: int = rank
@@ -96,7 +96,7 @@ def softpick(x, dim: int = -1, temperature: float = 1.0):
     m_scaled = torch.clamp(-m / temperature, max=80.0)
     denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
 
 
 def local_window_attention(
@@ -163,7 +163,7 @@ def kernel_linear_attention(
     denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)  # (B, H, N, 1)
 
     ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)  # (B, H, N, D)
-    ctx = ctx / (denom + 1e-8)
+    ctx = ctx / (denom + 1e-5)
     return ctx.to(orig_dtype)
 
 

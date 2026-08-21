@@ -94,14 +94,14 @@ class ZeroSAttention(BaseAttention):
         k_centered = k - k.mean(dim=2, keepdim=True)
 
         # Linear attention: O = Q (K^T V) / (Q sum(K))
-        q_nonneg = torch.relu(q) + 1e-8
-        k_nonneg = torch.relu(k_centered) + 1e-8
+        q_nonneg = torch.relu(q) + 1e-5
+        k_nonneg = torch.relu(k_centered) + 1e-5
 
         kv = torch.einsum("bhnk,bhnd->bhkd", k_nonneg, v)  # (B, H, d, d)
         k_sum = k_nonneg.sum(dim=2, keepdim=True)  # (B, H, 1, d)
 
         num = torch.matmul(q_nonneg, kv)  # (B, H, L, d)
-        den = torch.matmul(q_nonneg, k_sum.transpose(-2, -1)) + 1e-8
+        den = torch.matmul(q_nonneg, k_sum.transpose(-2, -1)) + 1e-5
         out = num / den
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         return self.out(out), None

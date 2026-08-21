@@ -128,7 +128,7 @@ class ChelaSlayAttention(BaseAttention):
 
         kv = torch.matmul(k_feat.transpose(-2, -1), v)  # (B, H, 2F, D_h)
         k_sum = k_feat.sum(dim=2, keepdim=True)  # (B, H, 1, 2F)
-        denom = torch.matmul(q_feat, k_sum.transpose(-2, -1)) + 1e-8  # (B, H, L, 1)
+        denom = torch.matmul(q_feat, k_sum.transpose(-2, -1)) + 1e-5  # (B, H, L, 1)
         out = torch.matmul(q_feat, kv) / denom
         out = out.permute(0, 2, 1, 3).contiguous().view(B, L, D)
         return self.out_proj(out), None

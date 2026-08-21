@@ -113,7 +113,7 @@ class RALALinearAttention(nn.Module):
 
         kv = torch.einsum("b h n d, b h n e -> b h d e", k_prime, v)
         z = k_prime.sum(dim=2)
-        denom = torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1) + 1e-8
+        denom = torch.einsum("b h n d, b h d -> b h n", q_prime, z).unsqueeze(-1) + 1e-5
         lin_out = torch.einsum("b h n d, b h d e -> b h n e", q_prime, kv) / denom
 
         rank_mat = torch.einsum("h d r, h e r -> h d e", self.U, self.V)

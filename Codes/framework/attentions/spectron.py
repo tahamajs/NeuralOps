@@ -74,7 +74,7 @@ def spectral_entropy(singular_values: np.ndarray) -> float:
     if total == 0:
         return 0.0
     prob = s2 / total
-    prob = prob[prob > 1e-12]
+    prob = prob[prob > 1e-5]
     return float(-np.sum(prob * np.log(prob)))
 
 
@@ -98,7 +98,7 @@ def allocate_ranks_spectron(
     target_budget: int,
     names: List[str],
     max_rank_factor: float = 0.75,
-    lambda_range: Tuple[float, float] = (1e-8, 5.0),
+    lambda_range: Tuple[float, float] = (1e-5, 5.0),
     steps: int = 100,
 ) -> Dict[str, int]:
     r"""Solve constrained Lagrangian optimization allocating rank per weight matrix under a parameter budget."""

@@ -59,12 +59,12 @@ def compute_exponential_decay(
     """
     if activation == "softplus":
         # RESEARCH FIX: softplus is strictly non-negative; negating guarantees exp result <= 1.0.
-        # Clamping to [1e-7, 1.0] prevents float underflow to 0.0 while preserving decay dynamics.
+        # Clamping to [1e-5, 1.0] prevents float underflow to 0.0 while preserving decay dynamics.
         decay = torch.exp(-F.softplus(decay_logits))
-        return torch.clamp(decay, min=1e-7, max=1.0)
+        return torch.clamp(decay, min=1e-5, max=1.0)
     elif activation == "sigmoid":
         decay = torch.sigmoid(decay_logits)
-        return torch.clamp(decay, min=1e-7, max=1.0 - 1e-7)
+        return torch.clamp(decay, min=1e-5, max=1.0 - 1e-5)
     else:
         raise ValueError(
             f"Unsupported decay activation '{activation}'. Must be 'softplus' or 'sigmoid'."
@@ -426,7 +426,7 @@ class SVDLinearAttention(BaseAttention):
             U, S, Vt = torch.linalg.svd(weight.detach().cpu().float(), full_matrices=False)
             r = min(target_linear.rank, U.size(1), Vt.size(0))
             # FIX: Symmetrical Square-Root Singular Energy Allocation: U_r = U @ sqrt(S), V_r = sqrt(S) @ V^T
-            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-5))
             U_r = (U[:, :r] * sqrt_S.unsqueeze(0)).to(device=weight.device, dtype=weight.dtype)
             V_r = (sqrt_S.unsqueeze(1) * Vt[:r, :]).to(device=weight.device, dtype=weight.dtype)
             target_linear.set_low_rank_factors(U_r, V_r)

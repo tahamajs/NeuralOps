@@ -104,7 +104,7 @@ class FUSIONATTN(nn.Module):
         q_gate = self.attn_gate(q_blocks).squeeze(-1)  # (B, H, num_blocks)
         k_gate = self.attn_gate(k_blocks).squeeze(-1)  # (B, H, num_blocks)
 
-        gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2)) / (self.gate_temp.abs() + 1e-6)
+        gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2)) / (self.gate_temp.abs() + 1e-5)
         return gate_scores
 
     def _moba_block_attention(
