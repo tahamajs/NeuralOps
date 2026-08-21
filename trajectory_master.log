@@ -239,3 +239,5 @@ ompleted)
 [2026-08-21 09:37:00] [Worker-1] [6/1008] NOTICE: attn=aegis_hybrid_attn | task=sst2 | Error: The paging file is too small for this operation to complete. (os error 1455) | Time: 0.2s
 [2026-08-21 09:37:11] [Worker-1] [7/1008] >> Launching: attn=aegis_spectron_fp8 | task=sst2 | seed=42
 [2026-08-21 09:37:11] [Worker-1] [7/1008] NOTICE: attn=aegis_spectron_fp8 | task=sst2 | Error: The paging file is too small for this operation to complete. (os error 1455) | Time: 0.2s
+[2026-08-21 09:37:17] [Worker-1] [8/1008] >> Launching: attn=aegis_spectron_fp8_attn | task=sst2 | seed=42
+[2026-08-21 09:37:23] [Worker-1] [8/1008] NOTICE: attn=aegis_spectron_fp8_attn | task=sst2 | Error: mat1 and mat2 shapes cannot be multiplied (8x768 and 64x3) | Time: 5.3s
