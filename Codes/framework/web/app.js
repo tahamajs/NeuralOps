@@ -188,7 +188,8 @@ async function loadCatalog() {
 async function refreshLiveTelemetry() {
     let updated = false;
     try {
-        const hRes = await fetch('results/all_histories.json?t=' + Date.now());
+        const API_BASE = (window.location.hostname === '192.168.1.100') ? '' : 'http://192.168.1.100:8080';
+        const hRes = await fetch(API_BASE + '/results/all_histories.json?t=' + Date.now());
         if (hRes.ok) {
             plotHistories = await hRes.json();
             updated = true;
@@ -197,9 +198,16 @@ async function refreshLiveTelemetry() {
 
     // If local API stats available, merge real-time active worker loss histories
     try {
-        const sRes = await fetch('/api/stats');
+        const API_BASE = (window.location.hostname === '192.168.1.100') ? '' : 'http://192.168.1.100:8080';
+        const sRes = await fetch(API_BASE + '/api/stats');
         if (sRes.ok) {
             const stats = await sRes.json();
+            if (stats.gpu && stats.gpu.length >= 2) {
+                const utilEl = document.getElementById('gpu-util');
+                const memEl = document.getElementById('gpu-mem');
+                if (utilEl) utilEl.innerText = 'GPU: ' + stats.gpu[0] + '%';
+                if (memEl) memEl.innerText = 'VRAM: ' + (stats.gpu[1] / 1024).toFixed(1) + ' GB';
+            }
             if (stats.train_multi) {
                 if (!plotHistories) plotHistories = {};
                 for (let k of Object.keys(stats.train_multi)) {
