@@ -827,16 +827,7 @@ def run_detail(request, pk):
     try:
         run = TrainingRun.objects.filter(pk=pk).first()
         if not run:
-            default_exp, _ = Experiment.objects.get_or_create(
-                name="Default Experiment",
-                defaults={"description": "Default workspace experiment"}
-            )
-            run = TrainingRun.objects.create(
-                id=pk,
-                experiment=default_exp,
-                status="completed",
-                config={},
-            )
+            return Response({"error": "Run not found"}, status=404)
         return Response(TrainingRunSerializer(run).data)
     except Exception as e:
         logger.exception("Error in run_detail: %s", e)

@@ -33,36 +33,6 @@ import {
   Star,
 } from "lucide-react";
 
-// Mock Fallback Data in case backend is empty
-const MOCK_SOLUTIONS: Solution[] = [
-  {
-    id: "sol-1",
-    ticket: "t-1",
-    ticket_title: "How to configure custom Nova Attention?",
-    content:
-      "Nova Attention incorporates structural pruning (ARMOR and AST). To configure it, set `attn_type: 'nova'` in your run configuration and specify the `rank` parameter (e.g. `rank: 64`). Make sure your dataset tokenizer is initialized with padding='max_length' to prevent CUDA compilation bounds errors.",
-    upvotes: 42,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "sol-2",
-    ticket: "t-2",
-    ticket_title: "GPU listing shows offline - how to fix?",
-    content:
-      "If your GPU marketplace listing shows offline, verify that the daemon agent is running on your compute node. Run `python -m gpu_marketplace.agent` and inspect `~/.neuralops/agent.log`. Ensure ports 8000 (API) and 50051 (gRPC) are open and accessible.",
-    upvotes: 18,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "sol-3",
-    ticket: "t-3",
-    ticket_title: "Optuna sweep trials failing with CUDA Out of Memory (OOM)",
-    content:
-      "Optuna sweeps launch parallel trials that can saturate VRAM. To resolve this, use `batch_runner.py` with the `--parallel 2` flag instead of 4, or implement HybridKV caching to prune key-value size dynamically. You can also specify `--max_samples 1000` to limit sequence size.",
-    upvotes: 29,
-    created_at: new Date().toISOString(),
-  },
-];
 
 export default function SupportHubPage() {
   const [activeTab, setActiveTab] = useState<"tickets" | "faq" | "diagnostics">(
@@ -194,7 +164,7 @@ export default function SupportHubPage() {
   const solutions: Solution[] =
     Array.isArray(solutionsData) && solutionsData.length > 0
       ? solutionsData
-      : MOCK_SOLUTIONS;
+      : [];
 
   const handleCreateTicketSubmit = (e: React.FormEvent) => {
     e.preventDefault();
