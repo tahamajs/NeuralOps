@@ -67,7 +67,7 @@ def softpick(x, dim: int = -1, temperature: float = 1.0):
     m_scaled = torch.clamp(-m / temperature, max=80.0)
     denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
 
 
 class FactorisedLinear(nn.Module):
@@ -207,7 +207,7 @@ class ORIONAttention(nn.Module):
         KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
         K_sum = K_feat.sum(dim=2)
         denom = torch.einsum("bhnf,bhf->bhn", Q_feat, K_sum).unsqueeze(-1)
-        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-8)
+        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV) / (denom + 1e-5)
         return ctx.to(orig_dtype)
 
     def _full_softpick_attention(

@@ -182,7 +182,7 @@ class ViGAttention(BaseAttention):
         ).unsqueeze(-1)
         out_row: torch.Tensor = torch.einsum(
             "b m n d, b m d e -> b m n e", q_row_lin, kv_row
-        ) / (denom_row + 1e-8)
+        ) / (denom_row + 1e-5)
         out_row = (
             out_row.transpose(2, 3)
             .reshape(B, Hh, W, H, Dh)
@@ -219,7 +219,7 @@ class ViGAttention(BaseAttention):
         ).unsqueeze(-1)
         out_col_flat: torch.Tensor = torch.einsum(
             "b n d, b d e -> b n e", q_col_lin, kv_col
-        ) / (denom_col + 1e-8)
+        ) / (denom_col + 1e-5)
         out_col: torch.Tensor = out_col_flat.view(B, Hh, H, W, Dh)
 
         gate_row: torch.Tensor = (

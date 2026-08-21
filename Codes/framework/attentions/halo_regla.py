@@ -120,7 +120,7 @@ class ReGLALayer(nn.Module):
         kv = torch.einsum("bhld,bhlm->bhldm", k, v)  # (B, H, L, d, d)
         z = k.cumsum(dim=2)  # (B, H, L, d)
         num = torch.einsum("bhld,bhldm->bhlm", q, kv.cumsum(dim=2))
-        den = torch.einsum("bhld,bhld->bhl", q, z) + 1e-8
+        den = torch.einsum("bhld,bhld->bhl", q, z) + 1e-5
         out = (num / den.unsqueeze(-1)).transpose(1, 2).contiguous().view(B, L, D)
         return self.out_proj(out)
 
@@ -244,7 +244,7 @@ class HALOReGLAAttention(BaseAttention):
         num = torch.einsum("b h n d, b h d e -> b h n e", q, kv)
         den = (
             torch.einsum("b h n d, b h d -> b h n", q, z.squeeze(2)).unsqueeze(-1)
-            + 1e-8
+            + 1e-5
         )
         out = num / den
         out = out.transpose(1, 2).contiguous().view(B, L, D)

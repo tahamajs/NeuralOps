@@ -65,9 +65,9 @@ class SpectronSpectralEntropyRouter(nn.Module):
             try:
                 S = torch.linalg.svdvals(svd_input)
                 S_sq = S.pow(2)
-                S_sum = S_sq.sum(dim=-1, keepdim=True) + 1e-9
+                S_sum = S_sq.sum(dim=-1, keepdim=True) + 1e-5
                 p = S_sq / S_sum
-                entropy = -(p * torch.log(p + 1e-9)).sum(dim=-1).to(dtype=X.dtype)
+                entropy = -(p * torch.log(p + 1e-5)).sum(dim=-1).to(dtype=X.dtype)
             except Exception:
                 entropy = torch.ones(B, device=X.device, dtype=X.dtype)
                 
