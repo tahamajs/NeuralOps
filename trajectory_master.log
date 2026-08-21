@@ -219,3 +219,5 @@ ompleted)
 [2026-08-21 03:50:08] [Worker-2] [11/120] << SUCCESS: attn=adasplash | task=sst2 | Acc: 49.08% | F1: 32.92% | Loss: 0.6947 | Time: 1700.1s
 [2026-08-21 03:50:13] [Worker-2] [14/120] >> Launching: attn=spectra_v2 | task=sst2 | seed=42
 [2026-08-21 03:50:14] [Worker-2] [14/120] NOTICE: attn=spectra_v2 | task=sst2 | Error: name 'layer' is not defined | Time: 0.4s
+[2026-08-21 03:50:16] [Worker-2] [15/120] >> Launching: attn=samba_m3 | task=sst2 | seed=42
+[2026-08-21 04:26:02] [Worker-2] [15/120] << SUCCESS: attn=samba_m3 | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6995 | Time: 2145.7s
