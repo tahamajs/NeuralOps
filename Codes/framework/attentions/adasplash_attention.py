@@ -131,8 +131,24 @@ class AdaSplashAttention(BaseAttention):
 
         if self.alpha == 1.5:
             attn = entmax15(logits, dim=-1, n_iter=self.n_iter)
+        elif self.alpha == 1.0:
+            attn = F.softmax(logits, dim=-1)
         else:
-            raise NotImplementedError(f"Alpha {self.alpha} is not currently supported; only 1.5 is implemented.")
+            alpha_minus_1 = self.alpha - 1.0
+            max_scores, _ = logits.max(dim=-1, keepdim=True)
+            scores_shift = logits - max_scores
+            scaled_scores = scores_shift * alpha_minus_1
+            tau_lo = scaled_scores.min(dim=-1, keepdim=True).values - 1.0
+            tau_hi = scaled_scores.max(dim=-1, keepdim=True).values
+            for _ in range(50):
+                tau = (tau_lo + tau_hi) / 2.0
+                p = torch.clamp(scaled_scores - tau, min=0.0) ** (1.0 / alpha_minus_1)
+                sum_p = p.sum(dim=-1, keepdim=True)
+                mask = sum_p > 1.0
+                tau_lo = torch.where(mask, tau, tau_lo)
+                tau_hi = torch.where(mask, tau_hi, tau)
+            tau = (tau_lo + tau_hi) / 2.0
+            attn = torch.clamp(scaled_scores - tau, min=0.0) ** (1.0 / alpha_minus_1)
 
         attn = self.dropout(attn)
         out = torch.matmul(attn, v).transpose(1, 2).contiguous().view(B, L, D)

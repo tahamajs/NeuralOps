@@ -62,8 +62,28 @@ def _replace_bert_attention(
     encoder = getattr(model, "encoder", None) or getattr(getattr(model, "bert", None), "encoder", None)
     if encoder is None:
         raise AttributeError("Could not locate encoder in model architecture.")
-    for layer in encoder.layer:
+    inject_fn = ATTENTION_REGISTRY.get(attention_name)
+    if inject_fn is None:
+        raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
+        
+    layers = encoder.layer
+    total_layers = len(layers)
+    for idx, layer in enumerate(layers):
         old_attn = layer.attention.self
+        
+        # Try to use the injection function directly first
+        try:
+            import inspect
+            if hasattr(inject_fn, "__code__") and "layer_idx" in inspect.getfullargspec(inject_fn).args:
+                new_attn = inject_fn(layer, getattr(model, "config", None), attention_params, idx, total_layers, old_attn)
+                if getattr(layer, "attention", None) is not new_attn:
+                    # Some injectors replace the whole layer.attention; others just return the module.
+                    layer.attention.self = new_attn
+                continue
+        except Exception:
+            pass
+            
+        # Fallback to build_attention
         hidden_size = old_attn.query.in_features
         num_heads = old_attn.num_attention_heads
         new_attn = build_attention(
@@ -81,8 +101,25 @@ def _replace_gpt_attention(
     transformer = getattr(model, "transformer", None)
     if transformer is None:
         raise AttributeError("Could not locate transformer in GPT-2 model architecture.")
-    for block in transformer.h:
+    inject_fn = ATTENTION_REGISTRY.get(attention_name)
+    if inject_fn is None:
+        raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
+
+    layers = transformer.h
+    total_layers = len(layers)
+    for idx, block in enumerate(layers):
         old_attn = block.attn
+        
+        try:
+            import inspect
+            if hasattr(inject_fn, "__code__") and "layer_idx" in inspect.getfullargspec(inject_fn).args:
+                new_attn = inject_fn(block, getattr(model, "config", None), attention_params, idx, total_layers, old_attn)
+                if getattr(block, "attn", None) is not new_attn:
+                    block.attn = new_attn
+                continue
+        except Exception:
+            pass
+            
         hidden_size = old_attn.embed_dim
         num_heads = old_attn.num_heads
         new_attn = build_attention(
@@ -127,10 +164,23 @@ def build_attention(
     if attn_cls is None:
         raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
     if hasattr(attn_cls, "__call__"):
+        import inspect
         try:
-            return attn_cls(hidden_size=hidden_size, num_attention_heads=num_heads, **kwargs)
-        except Exception:
-            raise NotImplementedError(
-                f"Direct instantiation failed for '{attention_name}'. Use registry injection functions."
-            )
-    raise NotImplementedError("Use the registry inject functions with a full model.")
+            # First try standard signature
+            return attn_cls(hidden_size=hidden_size, num_heads=num_heads, **kwargs)
+        except TypeError:
+            try:
+                # Try with num_attention_heads
+                return attn_cls(hidden_size=hidden_size, num_attention_heads=num_heads, **kwargs)
+            except TypeError:
+                try:
+                    # Try with config object
+                    from argparse import Namespace
+                    config = Namespace(hidden_size=hidden_size, num_attention_heads=num_heads, **kwargs)
+                    return attn_cls(config=config, **kwargs)
+                except Exception as e:
+                    raise ValueError(f"Failed to instantiate '{attention_name}': {e}")
+        except Exception as e:
+            raise ValueError(f"Failed to instantiate '{attention_name}': {e}")
+            
+    raise ValueError(f"Attention '{attention_name}' is not callable.")
