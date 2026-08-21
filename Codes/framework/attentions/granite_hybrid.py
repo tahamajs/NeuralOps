@@ -51,11 +51,11 @@ class Mamba2(nn.Module):
         self.conv1d: nn.Conv1d = nn.Conv1d(
             inner_dim, inner_dim, d_conv, groups=inner_dim, padding=d_conv - 1
         )
-        self.dt_proj: nn.Linear = nn.Linear(inner_dim, d_model)
+        self.dt_proj: nn.Linear = nn.Linear(inner_dim, inner_dim)
         self.A_log: nn.Parameter = nn.Parameter(
-            torch.log(torch.rand(d_model, d_state) * 0.1)
+            torch.log(torch.rand(inner_dim, d_state) * 0.1)
         )
-        self.D: nn.Parameter = nn.Parameter(torch.ones(d_model))
+        self.D: nn.Parameter = nn.Parameter(torch.ones(inner_dim))
         self.out_proj: nn.Linear = nn.Linear(inner_dim, d_model)
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> torch.Tensor:
@@ -70,17 +70,18 @@ class Mamba2(nn.Module):
             Projected output tensor of shape `[B, L, D]`.
         """
         B, L, D = x.shape
+        inner_dim = self.in_proj.out_features // 2
         x_proj = self.in_proj(x)  # (B, L, 2*inner)
         x_ssm, z = x_proj.chunk(2, dim=-1)  # each (B, L, inner)
         x_ssm = self.conv1d(x_ssm.transpose(1, 2))[..., :L].transpose(1, 2)
-        dt = F.softplus(self.dt_proj(x_ssm))  # (B, L, D)
-        A = -torch.exp(self.A_log)  # (D, d_state)
+        dt = F.softplus(self.dt_proj(x_ssm))  # (B, L, inner_dim)
+        A = -torch.exp(self.A_log)  # (inner_dim, d_state)
 
         # Recurrent scan
-        h = torch.zeros(B, D, self.d_state, device=x.device, dtype=x.dtype)
+        h = torch.zeros(B, inner_dim, self.d_state, device=x.device, dtype=x.dtype)
         outputs = []
         for t in range(L):
-            xt = x_ssm[:, t, : self.d_model]  # take first d_model channels as input
+            xt = x_ssm[:, t, :]  # take all channels as input
             h = h * torch.exp(dt[:, t].unsqueeze(-1) * A) + (
                 xt.unsqueeze(-1) * dt[:, t].unsqueeze(-1)
             )

@@ -44,16 +44,22 @@ class AegisHybridAttention(nn.Module):
     ) -> None:
         super().__init__()
         if not isinstance(config, AegisHybridConfig):
-            h_size = hidden_size or getattr(config, "hidden_size", 64)
-            n_heads = num_heads or getattr(config, "num_attention_heads", 4)
+            if isinstance(config, dict):
+                h_size = hidden_size or config.get("hidden_size", config.get("dim", 768))
+                n_heads = num_heads or config.get("num_attention_heads", 12)
+                rank = config.get("rank", min(32, h_size))
+            else:
+                h_size = hidden_size or getattr(config, "hidden_size", getattr(config, "dim", 768))
+                n_heads = num_heads or getattr(config, "num_attention_heads", getattr(config, "n_heads", 12))
+                rank = getattr(config, "rank", min(32, h_size))
             config = AegisHybridConfig(
                 hidden_size=h_size,
                 num_attention_heads=n_heads,
                 head_dim=h_size // max(1, n_heads),
-                local_window=getattr(config, "local_window", 64) if config else 64,
-                rank=getattr(config, "rank", min(32, h_size)) if config else min(32, h_size),
-                kernel_feature_dim=getattr(config, "kernel_feature_dim", 64) if config else 64,
-                dropout=getattr(config, "dropout", 0.0) if config else 0.0,
+                local_window=getattr(config, "local_window", 64) if not isinstance(config, dict) else config.get("local_window", 64),
+                rank=rank,
+                kernel_feature_dim=getattr(config, "kernel_feature_dim", 64) if not isinstance(config, dict) else config.get("kernel_feature_dim", 64),
+                dropout=getattr(config, "dropout", 0.0) if not isinstance(config, dict) else config.get("dropout", 0.0),
             )
         self.hidden_size: int = config.hidden_size
         self.num_heads: int = config.num_attention_heads

@@ -38,12 +38,12 @@ class NativeSparseAttention(nn.Module):
         top_k: Number of highest-scoring non-local tokens to retain per query ($k$).
     """
 
-    def __init__(self, config: Any, window_size: int = 128, top_k: int = 32) -> None:
+    def __init__(self, config: Any, window_size: Optional[int] = 128, top_k: Optional[int] = 32, **kwargs: Any) -> None:
         super().__init__()
         self.num_heads: int = config.num_attention_heads
         self.head_dim: int = config.hidden_size // self.num_heads
-        self.window_size: int = window_size
-        self.top_k: int = top_k
+        self.window_size: int = window_size if window_size is not None else 128
+        self.top_k: int = top_k if top_k is not None else 32
         dropout_p: float = float(
             getattr(config, "dropout", getattr(config, "attention_probs_dropout_prob", 0.1))
         )
