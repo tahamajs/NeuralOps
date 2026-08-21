@@ -120,7 +120,7 @@ class KernelFeatureConfig:
     clamp_min: float = -20.0
     clamp_max: float = 20.0
     use_float64_exp: bool = False
-    eps: float = 1e-8
+    eps: float = 1e-5
     scaling: Optional[float] = None
     projection_scale: Optional[float] = None
     seed: Optional[int] = None
@@ -343,8 +343,8 @@ class AegisAttentionV3(BaseAttention):
 
         self.pre_norm: bool = config.use_pre_norm
         if self.pre_norm:
-            self.q_norm: nn.RMSNorm = nn.RMSNorm(self.d, eps=1e-6)
-            self.k_norm: nn.RMSNorm = nn.RMSNorm(self.d, eps=1e-6)
+            self.q_norm: nn.RMSNorm = nn.RMSNorm(self.d, eps= 1e-5)
+            self.k_norm: nn.RMSNorm = nn.RMSNorm(self.d, eps= 1e-5)
 
         kernel_cfg = KernelFeatureConfig(
             head_dim=self.d,
@@ -478,7 +478,7 @@ class AegisAttentionV3(BaseAttention):
 
         num = torch.matmul(Q_feat, KV)
         denom = torch.matmul(Q_feat, Z.transpose(-2, -1))
-        safe = denom > 1e-6
+        safe = denom >  1e-5
         out = torch.where(safe, num / denom, torch.zeros_like(num))
         return out
 

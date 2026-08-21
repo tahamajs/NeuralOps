@@ -103,7 +103,7 @@ class ReGLAAttention(BaseAttention):
         z = k_gated.sum(dim=2, keepdim=True)
 
         num = torch.matmul(q, kv)
-        den = torch.matmul(q, z.transpose(-2, -1)) + 1e-8
+        den = torch.matmul(q, z.transpose(-2, -1)) + 1e-5
         out = num / den
 
         out = out.transpose(1, 2).contiguous().view(B, L, D)

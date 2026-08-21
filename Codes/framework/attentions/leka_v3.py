@@ -134,7 +134,7 @@ class LEKAV3Attention(BaseAttention):
         m_scaled = torch.clamp(-m / temperature, max=80.0)
         denom = e - torch.exp(m_scaled)
         p = F.relu(denom)
-        return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
+        return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
 
     def forward(
         self,

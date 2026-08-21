@@ -14,7 +14,7 @@ from framework.core.base import BaseAttention
 from framework.core.registry import ATTENTION_REGISTRY
 
 
-def entmax15(scores: torch.Tensor, dim: int = -1, n_iter: int = 10, eps: float = 1e-8) -> torch.Tensor:
+def entmax15(scores: torch.Tensor, dim: int = -1, n_iter: int = 10, eps: float = 1e-5) -> torch.Tensor:
     r"""
     Approximates the 1.5-entmax transformation via iterative fixed-point normalization.
 
@@ -29,7 +29,7 @@ def entmax15(scores: torch.Tensor, dim: int = -1, n_iter: int = 10, eps: float =
         scores (torch.Tensor): Input attention logits of arbitrary shape with reduction along `dim`.
         dim (int): Dimension over which to compute entmax normalization (default: -1).
         n_iter (int): Maximum number of fixed-point iterations (default: 10).
-        eps (float): Convergence threshold for absolute difference (default: 1e-8).
+        eps (float): Convergence threshold for absolute difference (default: 1e-5).
 
     Returns:
         torch.Tensor: Sparse probability distribution with identical shape to `scores`.
@@ -38,7 +38,7 @@ def entmax15(scores: torch.Tensor, dim: int = -1, n_iter: int = 10, eps: float =
     for _ in range(n_iter):
         q = p.sqrt()
         tau = torch.sum(q * p, dim=dim, keepdim=True)
-        p_next = q / (tau + 1e-12)
+        p_next = q / (tau + 1e-5)
         if torch.max(torch.abs(p_next - p)) < eps:
             p = p_next
             break

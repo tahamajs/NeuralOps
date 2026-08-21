@@ -225,7 +225,7 @@ class AegisAttentionV2(nn.Module):
         phi_Q_t = phi_Q.permute(0, 2, 1, 3).unsqueeze(-2)  # (B, h, N, 1, d)
         global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2)  # (B, h, N, d)
         norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)  # (B, h, N, 1)
-        global_out = global_out / (norm + 1e-8)
+        global_out = global_out / (norm + 1e-5)
         global_out = global_out.permute(0, 2, 1, 3)  # (B, N, h, d)
 
         if mask_2d is not None:

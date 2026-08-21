@@ -75,7 +75,7 @@ class OptimizedHybridAttentionConfig:
     compression_rank: int = 64
     use_gate: bool = True
     gate_bias: float = 2.0
-    layer_norm_eps: float = 1e-12
+    layer_norm_eps: float = 1e-5
 
 
 @ATTENTION_REGISTRY.register("oha")

@@ -59,7 +59,7 @@ def softpick(x, dim: int = -1, temperature: float = 1.0):
     m_scaled = torch.clamp(-m / temperature, max=80.0)
     denom = e - torch.exp(m_scaled)
     p = F.relu(denom)
-    return (p / (p.sum(dim=dim, keepdim=True) + 1e-9)).to(orig_dtype)
+    return (p / (p.sum(dim=dim, keepdim=True) + 1e-5)).to(orig_dtype)
 
 
 class FactorisedLinear_CUR(nn.Module):
@@ -89,9 +89,9 @@ class FactorisedLinear_CUR(nn.Module):
             W = pretrained_weight.float()
             U_full, S_full, Vt_full = torch.linalg.svd(W, full_matrices=False)
             col_leverage = (Vt_full**2).sum(dim=0)
-            col_leverage = col_leverage / torch.clamp(col_leverage.sum(), min=1e-9)
+            col_leverage = col_leverage / torch.clamp(col_leverage.sum(), min=1e-5)
             row_leverage = (U_full**2).sum(dim=1)
-            row_leverage = row_leverage / torch.clamp(row_leverage.sum(), min=1e-9)
+            row_leverage = row_leverage / torch.clamp(row_leverage.sum(), min=1e-5)
 
             _, col_idx = torch.topk(col_leverage, k=rank, largest=True)
             _, row_idx = torch.topk(row_leverage, k=rank, largest=True)
@@ -166,8 +166,8 @@ def lsh_attention(
     B, H, N, D = Q.shape
     scale = D**-0.5
 
-    Q_norm = F.normalize(Q, p=2, dim=-1, eps=1e-6)
-    K_norm = F.normalize(K, p=2, dim=-1, eps=1e-6)
+    Q_norm = F.normalize(Q, p=2, dim=-1, eps= 1e-5)
+    K_norm = F.normalize(K, p=2, dim=-1, eps= 1e-5)
 
     out = torch.zeros_like(V)
     bit_shifts = torch.tensor(
@@ -176,7 +176,7 @@ def lsh_attention(
 
     for _ in range(rounds):
         hash_proj = torch.randn(D, bucket_size, device=Q.device, dtype=Q.dtype)
-        hash_proj = F.normalize(hash_proj, p=2, dim=0, eps=1e-6)
+        hash_proj = F.normalize(hash_proj, p=2, dim=0, eps= 1e-5)
 
         hash_code_q = (
             (torch.matmul(Q_norm, hash_proj) > 0).to(torch.int64).mul(bit_shifts).sum(dim=-1)

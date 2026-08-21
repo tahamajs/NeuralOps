@@ -217,7 +217,7 @@ class AegisHybridAttention(nn.Module):
         phi_Q_t = phi_Q.permute(0, 2, 1, 3).unsqueeze(-2)  # (B, h, N, 1, d)
 
         global_out = torch.matmul(phi_Q_t, KV.unsqueeze(2)).squeeze(-2)  # (B, h, N, d)
-        norm_eps = 1e-4 if Kg.dtype in (torch.float16, torch.bfloat16) else 1e-8
+        norm_eps = 1e-4 if Kg.dtype in (torch.float16, torch.bfloat16) else 1e-5
         norm = torch.matmul(phi_Q_t, Z.unsqueeze(2)).squeeze(-2)  # (B, h, N, 1)
         global_out = global_out / (norm + norm_eps)
         global_out = global_out.permute(0, 2, 1, 3)  # (B, N, h, d)

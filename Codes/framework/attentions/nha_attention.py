@@ -119,7 +119,7 @@ class NHAAttention(BaseAttention):
         kv_lin: torch.Tensor = torch.einsum(
             "b h n d, b h n e -> b h d e", k_lin, v
         )
-        z_lin: torch.Tensor = k_lin.sum(dim=2) + 1e-8
+        z_lin: torch.Tensor = k_lin.sum(dim=2) + 1e-5
         denom: torch.Tensor = torch.einsum(
             "b h n d, b h d -> b h n", q_lin, z_lin
         ).unsqueeze(-1)
