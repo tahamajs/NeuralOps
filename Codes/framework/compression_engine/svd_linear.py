@@ -79,4 +79,43 @@ class SVDLinearLayer(nn.Module):
         return out
 
 
-__all__ = ["SVDLinearLayer", "FusedSVDLinear", "fused_svd_linear"]
+from framework.core.base import BaseCompressor
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+
+class SVDLinearCompressor(BaseCompressor):
+    """Compresses model by replacing Linear layers with SVDLinearLayer."""
+
+    def __init__(self, model: nn.Module, rank: int = 64, **kwargs) -> None:
+        super().__init__(model, name="svd_linear", **kwargs)
+        self.rank = rank
+
+    def compress(self):
+        """Compress linear layers with SVD factorization."""
+        for name, module in list(self.model.named_modules()):
+            if isinstance(module, nn.Linear):
+                parent_name = name.rsplit(".", 1)[0] if "." in name else ""
+                child_name = name.rsplit(".", 1)[-1] if "." in name else name
+                parent = self.model.get_submodule(parent_name) if parent_name else self.model
+                setattr(parent, child_name, SVDLinearLayer(module, rank=self.rank))
+
+        self._compressed_params = self._count_params(self.model)
+        return self.model, self.get_compression_stats()
+
+
+@COMPRESSOR_REGISTRY.register("svd_linear")
+def svd_linear_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
+    """SVD Linear compressor factory."""
+    rank = getattr(comp_config, "rank", kwargs.get("rank", 64))
+    compressor = SVDLinearCompressor(model, rank=rank, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model
+
+
+__all__ = [
+    "SVDLinearLayer",
+    "SVDLinearCompressor",
+    "svd_linear_factory",
+    "FusedSVDLinear",
+    "fused_svd_linear",
+]
