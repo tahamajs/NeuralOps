@@ -1660,3 +1660,5 @@ ompleted)
 [2026-08-22 05:10:05] [Worker-2] [71/126] -- SKIPPING: attn=moba | task=sst2 (Already completed)
 [2026-08-22 05:10:05] [Worker-2] [72/126] >> Launching: attn=moe_deltakv_paged | task=sst2 | seed=42
 [2026-08-22 05:10:59] [Worker-2] [72/126] << SUCCESS: attn=moe_deltakv_paged | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6982 | Time: 53.9s
+[2026-08-22 05:11:02] [Worker-2] [73/126] >> Launching: attn=nasc | task=sst2 | seed=42
+[2026-08-22 05:11:33] [Worker-2] [73/126] << SUCCESS: attn=nasc | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7020 | Time: 31.2s
