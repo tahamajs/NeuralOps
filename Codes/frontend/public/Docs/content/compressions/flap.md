@@ -36,12 +36,8 @@ Let $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ be the weight matri
    $$\sigma_j^2 = \text{Var}_i(X_{i, j}) = \frac{1}{N} \sum_{i=1}^N \left( X_{i, j} - \mu_j \right)^2 \quad \text{for } j \in \{1, \dots, D_{\text{in}}\}$$
 
 2. **Metric Variants**:
-   - **Input Feature Variance (IFV)**:
-     $$S_j^{\text{IFV}} = \sigma_j^2$$
-   - **Weighted Input Feature Variance (WIFV)**:
-     $$S_j^{\text{WIFV}} = \sigma_j^2 \cdot \sum_{i=1}^{D_{\text{out}}} W_{i, j}^2$$
-   - **Weighted Input Feature Norm (WIFN)**:
-     $$S_j^{\text{WIFN}} = \frac{1}{D_{\text{out}}} \sum_{i=1}^{D_{\text{out}}} \left( |W_{i, j}| \cdot \sigma_j \right)$$
+Specifically, regarding \textbf{Input Feature Variance (IFV)}, $$S_j^{\text{IFV}} = \sigma_j^2$$ Furthermore, regarding \textbf{Weighted Input Feature Variance (WIFV)}, $$S_j^{\text{WIFV}} = \sigma_j^2 \cdot \sum_{i=1}^{D_{\text{out}}} W_{i, j}^2$$ Concurrently, regarding \textbf{Weighted Input Feature Norm (WIFN)}, $$S_j^{\text{WIFN}} = \frac{1}{D_{\text{out}}} \sum_{i=1}^{D_{\text{out}}} \left( |W_{i, j}| \cdot \sigma_j \right)$$
+
 
 3. **Structured Column Pruning**:
    Let $k = \lfloor (1 - S) \cdot D_{\text{in}} \rfloor$ be the number of channels to retain. Select index set $\mathcal{K} \subset \{1, \dots, D_{\text{in}}\}$ containing indices of the top $k$ scores in $S^{\text{WIFV}}$. Construct column mask vector $\mathbf{m} \in \{0, 1\}^{D_{\text{in}}}$:
@@ -57,18 +53,17 @@ Let $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ be the weight matri
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Calibration Input Pass**:
-   - Tokenize calibration text corpus (e.g., 1024 samples).
-   - Feed tokens through embedding layer to obtain input activations $X$.
+Tokenize calibration text corpus (e.g., 1024 samples). Furthermore, Feed tokens through embedding layer to obtain input activations $X$.
+
 2. **Layer-by-Layer Fluctuation Computation**:
-   - Iterate through Transformer encoder layers `model.encoder.layer`.
-   - Calculate input column variance `inp_var = torch.var(flat_inputs, dim=0)`.
-   - Compute score vector `scores = inp_var * torch.sum(weight**2, dim=0)`.
+Iterate through Transformer encoder layers `model.encoder.layer`. Furthermore, Calculate input column variance `inp_var = torch.var(flat_inputs, dim=0)`. Concurrently, Compute score vector `scores = inp_var * torch.sum(weight**2, dim=0)`.
+
 3. **Structured Column Zeroing**:
-   - Determine retain count $n_{\text{keep}} = \lfloor D_{\text{in}} \cdot (1 - S) \rfloor$.
-   - Sort scores to get kept indices `keep_idx = np.argsort(scores)[-n_keep:]`.
-   - Apply 1D mask to weight columns: `weight * mask.unsqueeze(0)`.
+Determine retain count $n_{\text{keep}} = \lfloor D_{\text{in}} \cdot (1 - S) \rfloor$. Furthermore, Sort scores to get kept indices `keep_idx = np.argsort(scores)[-n_keep:]`. Concurrently, Apply 1D mask to weight columns: `weight * mask.unsqueeze(0)`.
+
 4. **Cascading Input Update**:
-   - Slice flat inputs `flat_inputs = flat_inputs[:, keep_idx]` for downstream layers.
+Slice flat inputs `flat_inputs = flat_inputs[:, keep_idx]` for downstream layers.
+
 
 ```
 Calibration Inputs ──► Forward Embeddings ──► Compute Var(X) per Column
@@ -102,7 +97,8 @@ $$\mathbb{E}\left[ \| Y - Y_{\text{FLAP}} \|_2^2 \right] \le \sum_{j \notin \mat
 
 ### 5.2 Failure Cases
 
-- **Outlier Channels**: Channels with massive variance spikes (common in OPT and LLaMA models) can dominate importance metrics, leaving remaining columns severely under-allocated.
+Specifically, regarding \textbf{Outlier Channels}, channels with massive variance spikes (common in OPT and LLaMA models) can dominate importance metrics, leaving remaining columns severely under-allocated.
+
 
 ---
 

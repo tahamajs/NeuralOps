@@ -137,6 +137,7 @@ class ADMMCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("admm")
+@COMPRESSOR_REGISTRY.register("admm_compressor")
 def admm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for ADMM compressor."""
     sparsity = getattr(comp_config, "admm_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)

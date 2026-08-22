@@ -99,9 +99,8 @@ Following convergence of $H$ and $W_{\text{comp}}$, the un-shifted low-rank weig
 ### 4.1 Memory Footprint Formulas
 When NMF factorized matrices $H$ ($d_{\text{out}} \times r$) and $W_{\text{comp}}$ ($r \times d_{\text{in}}$) are stored alongside scalar shift value $w_{\min}$:
 
-- **Uncompressed Parameters**: $P_{\text{base}} = d_{\text{out}} \cdot d_{\text{in}}$
-- **NMF Factorized Parameters**: $P_{\text{NMF}} = r(d_{\text{out}} + d_{\text{in}}) + 1$
-- **Compression Ratio**: $\mathcal{C}_R = \frac{d_{\text{out}} \cdot d_{\text{in}}}{r(d_{\text{out}} + d_{\text{in}})}$
+Specifically, regarding \textbf{Uncompressed Parameters}, $P_{\text{base}} = d_{\text{out}} \cdot d_{\text{in}}$ Furthermore, regarding \textbf{NMF Factorized Parameters}, $P_{\text{NMF}} = r(d_{\text{out}} + d_{\text{in}}) + 1$ Concurrently, regarding \textbf{Compression Ratio}, $\mathcal{C}_R = \frac{d_{\text{out}} \cdot d_{\text{in}}}{r(d_{\text{out}} + d_{\text{in}})}$
+
 
 ### 4.2 Resource Profile Table ($d_{\text{out}}=4096, d_{\text{in}}=4096$, Rank $r=128$)
 

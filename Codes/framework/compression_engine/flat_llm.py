@@ -163,6 +163,7 @@ class FLATLLMCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("flat_llm")
+@COMPRESSOR_REGISTRY.register("flat_llm_compressor")
 def flat_llm_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for FLAT-LLM compressor."""
     keep_ratio = getattr(comp_config, "flat_llm_keep_ratio", getattr(comp_config, "keep_ratio", 0.7)) if comp_config else kwargs.get("keep_ratio", 0.7)

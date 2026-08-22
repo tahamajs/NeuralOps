@@ -57,10 +57,8 @@ The gradient flows through the indexing operation, allowing the hash table to be
 ### 4. Compression Process
 
 The `HashedNetCompressor.compress()` method:
-- Iterates over all named modules.
-- For each `nn.Linear`, creates a `HashedLinear.from_linear(module, self.n_buckets)`.
-- Replaces the original module in the parent hierarchy.
-- Updates the internal compressed parameter count.
+Iterates over all named modules. Furthermore, For each `nn.Linear`, creates a `HashedLinear.from_linear(module, self.n_buckets)`. Concurrently, Replaces the original module in the parent hierarchy. In this setting, Updates the internal compressed parameter count.
+
 
 After compression, the model has far fewer parameters, but its output will deviate from the original. It is intended for **fine‑tuning** rather than zero‑shot use, as the averaging initialisation loses some information.
 
@@ -77,13 +75,12 @@ class HashedNetCompressor(BaseCompressor):
         self.n_buckets = n_buckets
 ```
 
-- **`n_buckets`**: Size of the hash table (shared weight vector). Default 1024. Larger values give more capacity but less compression.
+Specifically, regarding \textbf{`n_buckets`}, size of the hash table (shared weight vector). Default 1024. Larger values give more capacity but less compression.
+
 
 **`compress()`**:
-- Uses `HashedLinear.from_linear(original_linear, n_buckets)` to create the compressed replacement.
-- The parent module is located via `_get_parent(full_name)`, and the child is replaced using `setattr`.
-- After all replacements, `_compressed_params` is recomputed.
-- Returns `(compressed_model, stats)`.
+Uses `HashedLinear.from_linear(original_linear, n_buckets)` to create the compressed replacement. Furthermore, The parent module is located via `_get_parent(full_name)`, and the child is replaced using `setattr`. Concurrently, After all replacements, `_compressed_params` is recomputed. In this setting, Returns `(compressed_model, stats)`.
+
 
 **`_get_parent(full_name)`**: navigates the model tree using the dotted name.
 
@@ -127,19 +124,13 @@ Then run the compression pipeline. The model will be structurally altered; all l
 
 ### Advantages
 
-- **Extreme compression ratio**: For a 768×768 weight matrix, using 1024 buckets reduces parameters from ~590k to ~1k (plus bias). The model size can shrink by orders of magnitude.
-- **Fast reconstruction**: The weight is materialized by an indexed lookup, not a matrix multiplication; forward pass overhead is minimal.
-- **Learnable**: The hash table can be fine‑tuned on data, allowing recovery of accuracy.
-- **Good initialization**: Averaging original weights per bucket provides a much better start than random initialization.
-- **Drop‑in replacement**: The compressor seamlessly integrates into the framework.
+Specifically, regarding \textbf{Extreme compression ratio}, for a 768×768 weight matrix, using 1024 buckets reduces parameters from ~590k to ~1k (plus bias). The model size can shrink by orders of magnitude. Furthermore, regarding \textbf{Fast reconstruction}, the weight is materialized by an indexed lookup, not a matrix multiplication; forward pass overhead is minimal. Concurrently, regarding \textbf{Learnable}, the hash table can be fine‑tuned on data, allowing recovery of accuracy. In this setting, regarding \textbf{Good initialization}, averaging original weights per bucket provides a much better start than random initialization. Additionally, regarding \textbf{Drop‑in replacement}, the compressor seamlessly integrates into the framework.
+
 
 ### Limitations
 
-- **Requires fine‑tuning**: The initial compressed model will typically have a non‑trivial accuracy drop. Fine‑tuning is mandatory, which requires data and compute.
-- **Collision‑induced information loss**: Different weight positions that map to the same bucket are forced to share the exact same value. The averaging initialization can set important weights to near‑zero if they cancel each other. Fine‑tuning must disentangle these collisions, which may be difficult.
-- **Fixed hash mapping**: The mapping is random and static; it might be suboptimal for the layer’s functional role. Learned or importance‑based hashing could improve results but is not implemented.
-- **Storage of hash indices**: The precomputed `hash_idx` buffer is of size `out_features × in_features` (as integers). Although it does not contribute to the parameter count, it consumes memory. For very large layers, this buffer can be sizeable, reducing the net memory saving. It can be recomputed on‑the‑fly if memory is scarce.
-- **Uniform bucket size**: All layers get the same number of buckets; some layers may need more capacity than others.
+Specifically, regarding \textbf{Requires fine‑tuning}, the initial compressed model will typically have a non‑trivial accuracy drop. Fine‑tuning is mandatory, which requires data and compute. Furthermore, regarding \textbf{Collision‑induced information loss}, different weight positions that map to the same bucket are forced to share the exact same value. The averaging initialization can set important weights to near‑zero if they cancel each other. Fine‑tuning must disentangle these collisions, which may be difficult. Concurrently, regarding \textbf{Fixed hash mapping}, the mapping is random and static; it might be suboptimal for the layer’s functional role. Learned or importance‑based hashing could improve results but is not implemented. In this setting, regarding \textbf{Storage of hash indices}, the precomputed `hash_idx` buffer is of size `out_features × in_features` (as integers). Although it does not contribute to the parameter count, it consumes memory. For very large layers, this buffer can be sizeable, reducing the net memory saving. It can be recomputed on‑the‑fly if memory is scarce. Additionally, regarding \textbf{Uniform bucket size}, all layers get the same number of buckets; some layers may need more capacity than others.
+
 
 ### Comparison with Other Compression Methods
 

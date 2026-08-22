@@ -6,23 +6,38 @@ Evicting Key-Value (KV) cache entries indiscriminately causes catastrophic atten
 
 ZeroKV-Neo computes output neuron L2 norms across Query/Key/Value projection layers. It partitions the target keep ratio $R_{\text{keep}}$ into two components: pinning the top $N_{\text{sinks}}$ attention sink neurons (e.g., first 4 sequence position projections) and allocating the remaining capacity to top $N_{\text{heavy}}$ heavy-hitter neurons.
 
-```
- Attention Projection Weight W [Out, In]
-                   │
-                   ▼
-  Compute L2 Norm per Row: ||W_{i, :}||_2
-                   │
-                   ▼
- ┌──────────────────────────────────────────────┐
- │ Preserved Partition Selection                │
- │ 1. Pin Attention Sinks: Top N_sinks Norms    │
- │ 2. Exclude Sinks from Remaining Set          │
- │ 3. Pin Heavy Hitters: Top N_heavy Norms      │
- └─────────────────────┬────────────────────────┘
-                       │
-                       ▼
-   Combined Keep Index Mask (Sinks U Heavy Hitters)
-   Prune Weights & Biases Outside Mask
+```latex_raw
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    block/.style={rectangle, draw, rounded corners, align=center, font=\small, fill=blue!5, inner sep=8pt, text width=0.85\columnwidth},
+    arrow/.style={-{Stealth[scale=1.2]}, thick}
+]
+
+    \node[block] (input) {\textbf{Input Tensor}: $[B, N, D]$};
+    
+    \node[block, below of=input] (mask) {\textbf{ZeroKV-Neo Dynamic Pruning}\\Extract Sinks \& Heavy Hitters $\rightarrow$ Mask: $[B, N, H, d_k]$};
+    
+    \node[block, below of=mask] (scan) {\textbf{Associative Linear Attention Scan}\\Outer Product KV Memory: $\phi(K)^\top V \in \mathbb{R}^{H \times d_k \times d_v}$};
+    
+    \node[block, below of=scan] (gate) {\textbf{Adaptive Fusion Gate}\\$\alpha = \sigma(X W_{\text{fusion}}), \quad \text{Fused} = \alpha \cdot \text{Local} + (1-\alpha) \cdot \text{Global}$};
+    
+    \node[block, below of=gate] (proj) {\textbf{Low-Rank Factorized Output Projection}\\$W_{O1} \cdot W_{O2}$};
+    
+    \node[block, below of=proj] (output) {\textbf{Output Tensor}: $[B, N, D]$};
+
+    % Arrows
+    \draw[arrow] (input) -- (mask);
+    \draw[arrow] (mask) -- (scan);
+    \draw[arrow] (scan) -- (gate);
+    \draw[arrow] (gate) -- (proj);
+    \draw[arrow] (proj) -- (output);
+
+\end{tikzpicture}
+\caption{\textbf{ZeroKV-Neo Dataflow Pipeline.} Integration of L2-norm KV cache eviction with associative linear attention and adaptive gated fusion.}
+\label{fig:zerokv_flow}
+\end{figure}
 ```
 
 ---
@@ -45,11 +60,8 @@ Let $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ be an attention pro
    $$N_{\text{heavy}} = \min\left( \max\left(1, \lfloor D_{\text{out}} \cdot R_{\text{heavy}} \rfloor\right), \; K_{\text{total}} - N_{\text{sinks}} \right)$$
 
 3. **Partition Index Extraction**:
-   - Extract top $N_{\text{sinks}}$ attention sink indices:
-     $$\mathcal{I}_{\text{sink}} = \text{TopK}_{N_{\text{sinks}}}\left( \mathbf{n} \right)$$
-   - Construct boolean mask excluding sink indices: $\mathbf{m}_{\text{rem}} = \mathbf{1} \setminus \mathcal{I}_{\text{sink}}$.
-   - Extract top $N_{\text{heavy}}$ heavy hitter indices from remaining set:
-     $$\mathcal{I}_{\text{heavy}} = \text{TopK}_{N_{\text{heavy}}}\left( \mathbf{n}[\mathbf{m}_{\text{rem}}] \right)$$
+Extract top $N_{\text{sinks}}$ attention sink indices: $$\mathcal{I}_{\text{sink}} = \text{TopK}_{N_{\text{sinks}}}\left( \mathbf{n} \right)$$ Furthermore, Construct boolean mask excluding sink indices: $\mathbf{m}_{\text{rem}} = \mathbf{1} \setminus \mathcal{I}_{\text{sink}}$. Concurrently, Extract top $N_{\text{heavy}}$ heavy hitter indices from remaining set: $$\mathcal{I}_{\text{heavy}} = \text{TopK}_{N_{\text{heavy}}}\left( \mathbf{n}[\mathbf{m}_{\text{rem}}] \right)$$
+
 
 4. **Mask Application**:
    Combine index sets $\mathcal{I}_{\text{keep}} = \mathcal{I}_{\text{sink}} \cup \mathcal{I}_{\text{heavy}}$. Construct binary mask $\mathbf{m} \in \{0, 1\}^{D_{\text{out}}}$:
@@ -63,16 +75,17 @@ Let $W \in \mathbb{R}^{D_{\text{out}} \times D_{\text{in}}}$ be an attention pro
 ### 3.1 Dataflow & Pipeline Execution
 
 1. **Attention Projection Identification**:
-   - Filter `nn.Linear` modules matching attention projection names.
+Filter `nn.Linear` modules matching attention projection names.
+
 2. **Norm Calculation**:
-   - Compute row L2 norm `row_norms = torch.norm(W.float(), dim=1)`.
+Compute row L2 norm `row_norms = torch.norm(W.float(), dim=1)`.
+
 3. **Partition Index Search**:
-   - Extract top sink indices `_, top_sink_idx = torch.topk(row_norms, n_sinks, largest=True)`.
-   - Mask out sink indices `mask_all[top_sink_idx] = False`.
-   - Retrieve remaining norms and extract top heavy hitter indices `top_heavy_idx`.
-   - Combine index sets `keep_idx = torch.cat([top_sink_idx, top_heavy_idx])`.
+Extract top sink indices `_, top_sink_idx = torch.topk(row_norms, n_sinks, largest=True)`. Furthermore, Mask out sink indices `mask_all[top_sink_idx] = False`. Concurrently, Retrieve remaining norms and extract top heavy hitter indices `top_heavy_idx`. In this setting, Combine index sets `keep_idx = torch.cat([top_sink_idx, top_heavy_idx])`.
+
 4. **Pruning Assignment**:
-   - Apply binary mask to weight matrix $W$ and bias vector $b$.
+Apply binary mask to weight matrix $W$ and bias vector $b$.
+
 
 ```
 Attention Modules ──► Compute Row Norms ──► Extract Sink Indices

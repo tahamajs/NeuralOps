@@ -12,6 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
+import pytest
 import torch
 import torch.nn as nn
 from framework.core.registry import COMPRESSOR_REGISTRY
@@ -52,7 +53,12 @@ class ToyModel(nn.Module):
         return self.classifier(x.mean(dim=1))
 
 
-def test_compressor(name: str):
+VALID_COMPRESSOR_NAMES = sorted(
+    [k for k in COMPRESSOR_REGISTRY.keys() if k not in ("your_compressor_name", "replaceme")]
+)
+
+
+def run_single_compressor_test(name: str):
     cls = COMPRESSOR_REGISTRY.resolve(name)
     model = ToyModel(hidden_dim=768, num_layers=2)
     x = torch.randn(2, 16, 768)
@@ -65,6 +71,7 @@ def test_compressor(name: str):
         lambda: cls(model),
         lambda: cls(model, sparsity=0.5),
         lambda: cls(model, bits=4),
+        lambda: cls(model, rank=16),
     ]
 
     last_err = ""
@@ -87,6 +94,8 @@ def test_compressor(name: str):
         elif callable(compressor) and not isinstance(compressor, nn.Module):
             res = compressor()
             compressed_model = res[0] if isinstance(res, tuple) else res
+        elif isinstance(compressor, nn.Module):
+            compressed_model = compressor
         else:
             compressed_model = getattr(compressor, "model", model)
     except Exception as e:
@@ -110,20 +119,23 @@ def test_compressor(name: str):
     return True, "SUCCESS"
 
 
+@pytest.mark.parametrize("name", VALID_COMPRESSOR_NAMES)
+def test_compressor(name: str):
+    passed, msg = run_single_compressor_test(name)
+    assert passed, f"Compressor '{name}' failed validation: {msg}"
+
+
 def main():
     print("=" * 70, flush=True)
     print("  COMPRESSION ENGINE MASTER AUDIT & VALIDATION", flush=True)
     print("=" * 70, flush=True)
 
-    keys = sorted(list(COMPRESSOR_REGISTRY.keys()))
-    print(f"Discovered {len(keys)} registered compressors in COMPRESSOR_REGISTRY.\n", flush=True)
+    print(f"Discovered {len(VALID_COMPRESSOR_NAMES)} registered compressors in COMPRESSOR_REGISTRY.\n", flush=True)
 
     results = {}
-    for name in keys:
-        if name in ("your_compressor_name", "replaceme"):
-            continue
+    for name in VALID_COMPRESSOR_NAMES:
         print(f"Testing {name:32s} ...", end=" ", flush=True)
-        passed, msg = test_compressor(name)
+        passed, msg = run_single_compressor_test(name)
         results[name] = (passed, msg)
         status_str = "PASS" if passed else "FAIL"
         print(f"[{status_str:4s}] : {msg}", flush=True)

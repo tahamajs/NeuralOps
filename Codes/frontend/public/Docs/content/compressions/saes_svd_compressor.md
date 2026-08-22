@@ -93,9 +93,8 @@ Through iterative error injection and re-factorization, inter-layer error accumu
 ### 4.1 Parameter Budget Formulas
 Because SAES modifies weight values to absorb error without expanding tensor ranks, parameter savings match standard factorized SVD:
 
-- **Baseline Parameters**: $P_{\text{base}} = d_{\text{out}} \cdot d_{\text{in}}$
-- **SAES Factorized Parameters**: $P_{\text{SAES}} = r(d_{\text{out}} + d_{\text{in}} + 1)$
-- **Compression Ratio**: $\mathcal{C}_R = \frac{d_{\text{out}} \cdot d_{\text{in}}}{r(d_{\text{out}} + d_{\text{in}} + 1)}$
+Specifically, regarding \textbf{Baseline Parameters}, $P_{\text{base}} = d_{\text{out}} \cdot d_{\text{in}}$ Furthermore, regarding \textbf{SAES Factorized Parameters}, $P_{\text{SAES}} = r(d_{\text{out}} + d_{\text{in}} + 1)$ Concurrently, regarding \textbf{Compression Ratio}, $\mathcal{C}_R = \frac{d_{\text{out}} \cdot d_{\text{in}}}{r(d_{\text{out}} + d_{\text{in}} + 1)}$
+
 
 ### 4.2 Comparative Memory Profile ($d_{\text{out}}=4096, d_{\text{in}}=4096$, Rank $r=128$)
 
