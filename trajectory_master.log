@@ -1649,3 +1649,11 @@ ompleted)
 [2026-08-22 05:09:58] [Worker-2] [62/126] -- SKIPPING: attn=mamba_svd_flash | task=sst2 (Already completed)
 [2026-08-22 05:09:58] [Worker-2] [63/126] >> Launching: attn=mamba_svd_flash_inject | task=sst2 | seed=42
 [2026-08-22 05:10:00] [Worker-2] [63/126] NOTICE: attn=mamba_svd_flash_inject | task=sst2 | Error: CUDA out of memory. Tried to allocate 20.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.13 GiB is free. 3.20 GiB allowed; Of the allocated memory 3.03 GiB is allocated by PyTorch, and 159.15 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 1.4s
+[2026-08-22 05:10:02] [Worker-2] [64/126] -- SKIPPING: attn=minimal_aurora | task=sst2 (Already completed)
+[2026-08-22 05:10:02] [Worker-2] [65/126] -- SKIPPING: attn=minimal_nova | task=sst2 (Already completed)
+[2026-08-22 05:10:02] [Worker-2] [66/126] -- SKIPPING: attn=minimal_prism | task=sst2 (Already completed)
+[2026-08-22 05:10:02] [Worker-2] [67/126] -- SKIPPING: attn=minimal_svd | task=sst2 (Already completed)
+[2026-08-22 05:10:02] [Worker-2] [68/126] -- SKIPPING: attn=minimal_svd_v2 | task=sst2 (Already completed)
+[2026-08-22 05:10:02] [Worker-2] [69/126] -- SKIPPING: attn=mixattention_moska | task=sst2 (Already completed)
+[2026-08-22 05:10:02] [Worker-2] [70/126] >> Launching: attn=mla | task=sst2 | seed=42
+[2026-08-22 05:10:03] [Worker-2] [70/126] NOTICE: attn=mla | task=sst2 | Error: CUDA out of memory. Tried to allocate 192.00 MiB. GPU 0 has a total capacity of 8.00 GiB of which 1.16 GiB is free. 3.20 GiB allowed; Of the allocated memory 3.13 GiB is allocated by PyTorch, and 22.02 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables) | Time: 0.6s
