@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from framework.core.registry import ATTENTION_REGISTRY
+from framework.attentions.simple_ssm import SimpleSSM
 
 
 
@@ -24,7 +25,7 @@ class SpectralMamba(nn.Module):
         elif hasattr(d_model, "hidden_size"):
             d_model = d_model.hidden_size
 
-        self.mamba = Mamba(d_model)
+        self.mamba = SimpleSSM(d_model=d_model)
         self.dt_scale = nn.Parameter(torch.zeros(d_model))
 
     def forward(self, x: torch.Tensor, **kwargs: Any) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:

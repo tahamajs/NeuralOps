@@ -124,11 +124,11 @@ class NASCAttention(BaseAttention):
         mask = dist > self.window_size
         if is_causal:
             mask = mask | (idx.unsqueeze(0) < idx.unsqueeze(1))
-        scores = scores.masked_fill(mask.unsqueeze(0).unsqueeze(0), float("-inf"))
+        scores = scores.masked_fill(mask.unsqueeze(0).unsqueeze(0).bool(), -10000.0)
 
         # Padding mask
-        pad_k = (~valid_mask).unsqueeze(1).unsqueeze(2).to(scores.dtype)
-        scores = scores.masked_fill(pad_k, float("-inf"))
+        pad_k = (~valid_mask).unsqueeze(1).unsqueeze(2)
+        scores = scores.masked_fill(pad_k.bool(), -10000.0)
 
         attn = F.softmax(scores, dim=-1)
         attn = self.dropout(attn)
@@ -180,12 +180,14 @@ class NASCAttention(BaseAttention):
             if is_causal:
                 q_pos = (i * self.block_size + torch.arange(self.block_size, device=Q.device)).view(1, 1, self.block_size, 1)
                 k_pos = (idx.unsqueeze(-1) * self.block_size + torch.arange(self.block_size, device=Q.device).view(1, 1, 1, self.block_size)).view(B, H, 1, top_k * self.block_size)
-                scores_i = scores_i.masked_fill(k_pos > q_pos, float("-inf"))
+                scores_i = scores_i.masked_fill((k_pos > q_pos).bool(), -10000.0)
 
             # Mask padding keys
-            valid_sel = torch.gather(valid_b, 1, idx.view(B, H, top_k).unsqueeze(-1).expand(-1, -1, -1, self.block_size)).view(B, H, top_k * self.block_size)
-            pad_sel = ~valid_sel.unsqueeze(1).unsqueeze(2).to(scores_i.dtype)  # [B,H,1,L_sel]
-            scores_i = scores_i.masked_fill(pad_sel, float("-inf"))
+            valid_b_exp = valid_b.unsqueeze(1).expand(B, H, nb, self.block_size)
+            idx_v = idx.unsqueeze(-1).expand(-1, -1, -1, self.block_size)
+            valid_sel = torch.gather(valid_b_exp, 2, idx_v).view(B, H, top_k * self.block_size)
+            pad_sel = ~valid_sel.unsqueeze(2)  # [B,H,1,L_sel]
+            scores_i = scores_i.masked_fill(pad_sel.bool(), -10000.0)
 
             attn_i = softpick(scores_i, dim=-1)
             out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
@@ -196,7 +198,7 @@ class NASCAttention(BaseAttention):
     def _global_spectral_rff_attention(self, Q, K, V, valid_mask):
         """Global RFF linear attention with padding mask."""
         B, H, L, d = Q.shape
-        pad = (~valid_mask).unsqueeze(1).unsqueeze(-1).to(Q.dtype)  # [B,1,N,1]
+        pad = (~valid_mask).unsqueeze(1).unsqueeze(-1)  # [B,1,N,1]
 
         Qf = torch.matmul(Q, self.rff_proj)
         Kf = torch.matmul(K, self.rff_proj)
@@ -205,8 +207,8 @@ class NASCAttention(BaseAttention):
         phi_K = torch.cat([torch.cos(Kf), torch.sin(Kf)], dim=-1) * norm
 
         # Mask K and V
-        phi_K = phi_K.masked_fill(pad, 0.0)
-        V_masked = V.masked_fill(pad, 0.0)
+        phi_K = phi_K.masked_fill(pad.bool(), 0.0)
+        V_masked = V.masked_fill(pad.bool(), 0.0)
 
         KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
         Z = phi_K.sum(dim=-2, keepdim=True)
