@@ -1213,3 +1213,5 @@ ompleted)
 [2026-08-22 04:41:08] [Worker-2] [104/126] << SUCCESS: attn=span_expanded | task=sst2 | Acc: 81.31% | F1: 81.31% | Loss: 0.4050 | Time: 95.6s
 [2026-08-22 04:41:11] [Worker-2] [105/126] >> Launching: attn=spectra_v2 | task=sst2 | seed=42
 [2026-08-22 04:41:12] [Worker-2] [105/126] NOTICE: attn=spectra_v2 | task=sst2 | Error: Index tensor must have the same number of dimensions as input tensor | Time: 0.6s
+[2026-08-22 04:41:14] [Worker-2] [106/126] >> Launching: attn=spectral_mamba | task=sst2 | seed=42
+[2026-08-22 04:42:39] [Worker-2] [106/126] << SUCCESS: attn=spectral_mamba | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6972 | Time: 84.7s
