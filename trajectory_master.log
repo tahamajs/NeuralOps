@@ -2018,3 +2018,5 @@ ompleted)
 [2026-08-22 10:16:38] [Worker-2] [120/145] NOTICE: attn=upi_stuffed_mamba | task=sst2 | Error: mat1 and mat2 shapes cannot be multiplied (8192x768 and 1x2) | Time: 0.8s
 [2026-08-22 10:16:40] [Worker-2] [121/145] >> Launching: attn=vig | task=sst2 | seed=42
 [2026-08-22 10:16:40] [Worker-2] [121/145] NOTICE: attn=vig | task=sst2 | Error: shape '[64, 11, 12]' is invalid for input of size 1048576 | Time: 0.6s
+[2026-08-22 10:16:42] [Worker-2] [122/145] >> Launching: attn=vspec | task=sst2 | seed=42
+[2026-08-22 10:16:46] [Worker-2] [122/145] NOTICE: attn=vspec | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 4.2s
