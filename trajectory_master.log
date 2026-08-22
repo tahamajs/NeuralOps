@@ -1355,3 +1355,5 @@ ompleted)
 [2026-08-22 04:48:40] [Worker-2] [81/126] NOTICE: attn=oha | task=sst2 | Error: The size of tensor a (64) must match the size of tensor b (128) at non-singleton dimension 1 | Time: 0.5s
 [2026-08-22 04:48:42] [Worker-2] [82/126] >> Launching: attn=orion | task=sst2 | seed=42
 [2026-08-22 04:48:46] [Worker-2] [82/126] NOTICE: attn=orion | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 3.7s
+[2026-08-22 04:48:48] [Worker-2] [83/126] >> Launching: attn=orion_module | task=sst2 | seed=42
+[2026-08-22 04:48:52] [Worker-2] [83/126] NOTICE: attn=orion_module | task=sst2 | Error: value cannot be converted to type at::Half without overflow | Time: 3.7s
