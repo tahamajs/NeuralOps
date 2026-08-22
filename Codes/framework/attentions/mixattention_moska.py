@@ -69,7 +69,7 @@ class MixAttentionMoSKA(BaseAttention):
             Tuple `(k_pruned, v_pruned, pruned_mask)`.
         """
         B, H, L, D_h = k.shape
-        importance = k.var(dim=-1).mean(dim=1)  # (B, L)
+        importance = k.float().var(dim=-1).mean(dim=1)  # (B, L)
         keep = max(1, int(L * self.fasa_keep_ratio))
         _, idx = torch.topk(importance, keep, dim=-1)
         idx_exp = idx.unsqueeze(1).unsqueeze(-1).expand(-1, H, -1, D_h)
