@@ -132,9 +132,8 @@ Y = Z_2 C^T + b \quad \in \mathbb{R}^{B \times N \times d_{\text{out}}}
 ### 4.1 Memory Footprint Formulas
 Let $M = d_{\text{out}}$ and $N = d_{\text{in}}$.
 
-- **Dense Baseline Parameters**: $P_{\text{dense}} = M \cdot N + M$
-- **CUR Factorized Parameters**: $P_{\text{CUR}} = M \cdot r + r \cdot r + r \cdot N + M = r(M + N + r) + M$
-- **Compression Ratio $\mathcal{C}_R$**:
+Specifically, regarding \textbf{Dense Baseline Parameters}, $P_{\text{dense}} = M \cdot N + M$ Furthermore, regarding \textbf{CUR Factorized Parameters}, $P_{\text{CUR}} = M \cdot r + r \cdot r + r \cdot N + M = r(M + N + r) + M$ Concurrently, regarding \textbf{Compression Ratio $\mathcal{C}_R$}, 
+
 \[
 \mathcal{C}_R = \frac{M \cdot N}{r(M + N + r)}
 \]

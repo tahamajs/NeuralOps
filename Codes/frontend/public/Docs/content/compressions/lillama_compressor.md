@@ -66,9 +66,8 @@ class LiLLaMACompressor(BaseCompressor):
         self.calibration_texts = calibration_texts or ["Distill"]
 ```
 
-- **`tokenizer`**: Required to encode calibration texts.
-- **`rank`**: Target rank for the SVD of cross‑covariance (default 64).
-- **`calibration_texts`**: List of strings for calibration; default `["Distill"]`.
+Specifically, regarding \textbf{`tokenizer`}, required to encode calibration texts. Furthermore, regarding \textbf{`rank`}, target rank for the SVD of cross‑covariance (default 64). Concurrently, regarding \textbf{`calibration_texts`}, list of strings for calibration; default `["Distill"]`.
+
 
 The `compress()` method:
 
@@ -76,13 +75,8 @@ The `compress()` method:
 2. Tokenizes calibration texts, runs a forward pass.
 3. Removes hooks.
 4. For each layer with activations:
-   - Flattens `inp` and `out` to 2D (N, in_features) and (N, out_features).
-   - Moves to CPU, converts to float32 NumPy.
-   - Computes `C = inp.T @ out / N` (shape `in_features × out_features`).
-   - Performs SVD on **C**.
-   - Truncates to `r = min(rank, min(C.shape), len(S))`.
-   - Forms `W_new = U[:, :r] @ diag(S[:r]) @ Vt[:r, :]` (shape `in × out`).
-   - **Bug**: Assigns this directly to `module.weight.data`, which expects shape `out × in`. This will transpose the weight if `in == out` (causing output to be permuted) or cause a size mismatch otherwise.
+Flattens `inp` and `out` to 2D (N, in_features) and (N, out_features). Furthermore, Moves to CPU, converts to float32 NumPy. Concurrently, Computes `C = inp.T @ out / N` (shape `in_features × out_features`). In this setting, Performs SVD on **C**. Additionally, Truncates to `r = min(rank, min(C.shape), len(S))`. Moreover, Forms `W_new = U[:, :r] @ diag(S[:r]) @ Vt[:r, :]` (shape `in × out`). From an analytical standpoint, regarding \textbf{Bug}, assigns this directly to `module.weight.data`, which expects shape `out × in`. This will transpose the weight if `in == out` (causing output to be permuted) or cause a size mismatch otherwise.
+
 5. Updates `_compressed_params` and returns model with stats.
 
 ### Factory Function
@@ -134,18 +128,13 @@ Then run the compression pipeline.
 
 ### Advantages
 
-- **Data‑aware**: The compression uses real input‑output correlations, potentially preserving the layer’s functional behaviour better than weight‑only SVD.
-- **Simple and fast**: Only one forward pass over a tiny calibration set is needed.
-- **Local distillation**: The low‑rank approximation effectively distills the layer’s response to the calibration data into a compact form.
-- **No gradient computation**: Unlike Fisher‑based methods, no backward pass is required.
+Specifically, regarding \textbf{Data‑aware}, the compression uses real input‑output correlations, potentially preserving the layer’s functional behaviour better than weight‑only SVD. Furthermore, regarding \textbf{Simple and fast}, only one forward pass over a tiny calibration set is needed. Concurrently, regarding \textbf{Local distillation}, the low‑rank approximation effectively distills the layer’s response to the calibration data into a compact form. In this setting, regarding \textbf{No gradient computation}, unlike Fisher‑based methods, no backward pass is required.
+
 
 ### Limitations
 
-- **Critical shape bug**: The current code produces a weight of incorrect shape, likely causing errors or severe degradation. A corrected implementation should compute `C = out.T @ inp / N` (shape `out × in`) and take SVD of that, or transpose the resulting product appropriately.
-- **Calibration data quality**: With only a single word (`"Distill"`), the cross‑covariance may be poorly estimated, leading to a suboptimal approximation. A more representative calibration set is strongly recommended.
-- **Dense weight output**: The weight remains a full matrix; no parameter reduction in terms of storage format unless the factors are stored separately.
-- **Bias unchanged**: The bias is not adjusted to account for the changed weight, which may cause a shift.
-- **Single‑sample statistics**: The cross‑covariance is estimated from a single forward pass, which may be noisy; multiple batches could improve stability.
+Specifically, regarding \textbf{Critical shape bug}, the current code produces a weight of incorrect shape, likely causing errors or severe degradation. A corrected implementation should compute `C = out.T @ inp / N` (shape `out × in`) and take SVD of that, or transpose the resulting product appropriately. Furthermore, regarding \textbf{Calibration data quality}, with only a single word (`"Distill"`), the cross‑covariance may be poorly estimated, leading to a suboptimal approximation. A more representative calibration set is strongly recommended. Concurrently, regarding \textbf{Dense weight output}, the weight remains a full matrix; no parameter reduction in terms of storage format unless the factors are stored separately. In this setting, regarding \textbf{Bias unchanged}, the bias is not adjusted to account for the changed weight, which may cause a shift. Additionally, regarding \textbf{Single‑sample statistics}, the cross‑covariance is estimated from a single forward pass, which may be noisy; multiple batches could improve stability.
+
 
 ### Comparison with Other Activation‑Based Methods
 

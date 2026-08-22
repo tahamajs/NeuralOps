@@ -86,12 +86,12 @@ def quantize_dequantize_tensor(
             min_val = torch.amin(t, dim=dim_to_reduce, keepdim=True)
             max_val = torch.amax(t, dim=dim_to_reduce, keepdim=True)
             scale = torch.clamp((max_val - min_val) / max(float(qmax), 1.0), min=1e-8)
-            zero_point = torch.round(-min_val / scale)
+            zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
         else:
             min_val = torch.min(t)
             max_val = torch.max(t)
             scale = torch.clamp((max_val - min_val) / max(float(qmax), 1.0), min=1e-8)
-            zero_point = torch.round(-min_val / scale)
+            zero_point = torch.clamp(torch.round(-min_val / scale), qmin, qmax)
 
     if use_ste and t.requires_grad:
         out = STEFakeQuantize.apply(t, scale, zero_point, qmin, qmax)
@@ -168,7 +168,11 @@ class AstroLinear(nn.Module):
                 per_channel=False,
                 use_ste=self.training,
             )
-        return nn.functional.linear(x, w_q, b_q)
+        return nn.functional.linear(
+            x,
+            w_q.to(dtype=x.dtype, device=x.device),
+            b_q.to(dtype=x.dtype, device=x.device) if b_q is not None else None,
+        )
 
 
 class AstroQuantizer(BaseCompressor):
@@ -243,12 +247,12 @@ class AstroQuantizer(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("astro")
-def astro_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def astro_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Astro compressor factory function."""
-    bits = getattr(comp_config, "astro_bits", 8) if comp_config else 8
-    symmetric = getattr(comp_config, "astro_symmetric", True) if comp_config else True
-    per_channel = getattr(comp_config, "astro_per_channel", False) if comp_config else False
-    use_ste = getattr(comp_config, "astro_use_ste", False) if comp_config else False
+    bits = kwargs.get("bits", getattr(comp_config, "astro_bits", 8) if comp_config is not None else 8)
+    symmetric = kwargs.get("symmetric", getattr(comp_config, "astro_symmetric", True) if comp_config is not None else True)
+    per_channel = kwargs.get("per_channel", getattr(comp_config, "astro_per_channel", False) if comp_config is not None else False)
+    use_ste = kwargs.get("use_ste", getattr(comp_config, "astro_use_ste", False) if comp_config is not None else False)
 
     compressor = AstroQuantizer(
         model,
@@ -256,6 +260,7 @@ def astro_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
         symmetric=symmetric,
         per_channel=per_channel,
         use_ste=use_ste,
+        **kwargs,
     )
     compressed_model, _ = compressor.compress()
     return compressed_model

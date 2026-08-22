@@ -138,8 +138,19 @@ class MGIESVDBudgetCompressor(BaseCompressor):
         return self.model, stats
 
 
-def mgie_budget_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
+def mgie_budget_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """MGIE budget factory function."""
     compressor = MGIESVDBudgetCompressor(model, comp_config=comp_config, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
+
+
+mgie_svd_budget_factory = mgie_budget_factory
+mgie_svd_compressor_factory = mgie_budget_factory
+
+__all__ = [
+    "MGIESVDBudgetCompressor",
+    "mgie_budget_factory",
+    "mgie_svd_budget_factory",
+    "mgie_svd_compressor_factory",
+]

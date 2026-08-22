@@ -71,12 +71,8 @@ The process can be interpreted as: each token attends to a small set of “meta�
 
 ### 5. Complexity Analysis
 
-- **SVD per head**: O(N·D·min(N,D)) for each head. For N > D, it's O(N·D²). This could be a bottleneck for very long sequences, but for moderate N (e.g., 512) and D (64), it's manageable. For large N, one can use randomized SVD to reduce the cost.
-- **Attention**: Instead of O(N²·D), we compute:
-  - Scores: `Q @ U_r^T` → O(N·r·D)
-  - Softmax: O(N·r)
-  - Value projection: `U_r^T @ V` → O(N·r·D)
-  - Context: `A' @ V_proj` → O(N·r·D)
+Specifically, regarding \textbf{SVD per head}, o(N·D·min(N,D)) for each head. For N > D, it's O(N·D²). This could be a bottleneck for very long sequences, but for moderate N (e.g., 512) and D (64), it's manageable. For large N, one can use randomized SVD to reduce the cost. Furthermore, regarding \textbf{Attention}, instead of O(N²·D), we compute: Concurrently, Scores: `Q @ U_r^T` → O(N·r·D) In this setting, Softmax: O(N·r) Additionally, Value projection: `U_r^T @ V` → O(N·r·D) Moreover, Context: `A' @ V_proj` → O(N·r·D)
+
   Total: O(N·r·D + N·r²). Since r is small (e.g., 64) and N can be large, this is effectively linear in N.
 
 Thus, the method reduces the quadratic dependency on N to linear, at the cost of computing an SVD per head each forward pass.
@@ -98,7 +94,8 @@ class RPCAttention(BaseAttention):
         ...
 ```
 
-- **`rank`**: The number of principal key components to keep (default 64). This determines the bottleneck size and the approximation fidelity.
+Specifically, regarding \textbf{`rank`}, the number of principal key components to keep (default 64). This determines the bottleneck size and the approximation fidelity.
+
 
 The constructor creates standard linear projections for Q, K, V, and output.
 
@@ -149,18 +146,13 @@ Then inject into the model. The existing projection weights will need to be tran
 
 ### Advantages
 
-- **Linear complexity in N**: Attention cost becomes O(N·r·D) instead of O(N²·D), enabling much longer sequences with fixed memory.
-- **Data‑dependent**: The SVD adapts the low‑rank basis to the current input, capturing the most relevant key directions dynamically.
-- **No extra trainable parameters**: The compression is purely in the forward computation; the model size remains the same as standard attention.
-- **Interpretable**: The principal components can be inspected to understand what patterns the attention heads are focusing on.
+Specifically, regarding \textbf{Linear complexity in N}, attention cost becomes O(N·r·D) instead of O(N²·D), enabling much longer sequences with fixed memory. Furthermore, regarding \textbf{Data‑dependent}, the SVD adapts the low‑rank basis to the current input, capturing the most relevant key directions dynamically. Concurrently, regarding \textbf{No extra trainable parameters}, the compression is purely in the forward computation; the model size remains the same as standard attention. In this setting, regarding \textbf{Interpretable}, the principal components can be inspected to understand what patterns the attention heads are focusing on.
+
 
 ### Limitations
 
-- **SVD cost per forward pass**: Computing SVD on each key matrix is expensive, especially for long sequences or large batch*heads. This offsets some of the gains from linear attention. Randomized SVD or pre‑computing a fixed basis could mitigate this.
-- **Per‑head loop**: The current implementation uses a Python loop over heads, which is slow. Batched SVD (`torch.linalg.svd` on 3D tensor) should be used instead.
-- **Mask handling**: The mask addition may not be robust to all mask types; testing and adjustment are needed.
-- **Pretrained weight transfer required**: To use with a pretrained model, the Q/K/V/O weights must be copied into the new module. The compressor/injection function must handle this.
-- **Approximation quality depends on rank**: For very large N, a small rank may not capture enough information, leading to accuracy loss. The rank can be increased at higher cost.
+Specifically, regarding \textbf{SVD cost per forward pass}, computing SVD on each key matrix is expensive, especially for long sequences or large batch*heads. This offsets some of the gains from linear attention. Randomized SVD or pre‑computing a fixed basis could mitigate this. Furthermore, regarding \textbf{Per‑head loop}, the current implementation uses a Python loop over heads, which is slow. Batched SVD (`torch.linalg.svd` on 3D tensor) should be used instead. Concurrently, regarding \textbf{Mask handling}, the mask addition may not be robust to all mask types; testing and adjustment are needed. In this setting, regarding \textbf{Pretrained weight transfer required}, to use with a pretrained model, the Q/K/V/O weights must be copied into the new module. The compressor/injection function must handle this. Additionally, regarding \textbf{Approximation quality depends on rank}, for very large N, a small rank may not capture enough information, leading to accuracy loss. The rank can be increased at higher cost.
+
 
 ### Comparison with Other Linear Attentions
 

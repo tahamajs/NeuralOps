@@ -55,17 +55,17 @@ Let $T_{\text{type}} \in \{\text{'qa'}, \text{'summarize'}, \text{'code'}, \text
 ### 3.1 Dataflow & Execution Pipeline
 
 1. **Task Parameter Initialization**:
-   - Set task type `task_type` and target `keep_ratio`.
+Set task type `task_type` and target `keep_ratio`.
+
 2. **Layer Iteration**:
-   - Loop over all `nn.Linear` modules in the target model.
+Loop over all `nn.Linear` modules in the target model.
+
 3. **CPT & Norm Scoring**:
-   - Generate CPT importance vector `importance = CPT.generate_importance(task_type, out_f)`.
-   - Calculate weight row L2 norms `row_norms = torch.norm(W.float(), dim=1)`.
-   - Compute combined score array `combined = row_norms * (1.0 + importance)`.
+Generate CPT importance vector `importance = CPT.generate_importance(task_type, out_f)`. Furthermore, Calculate weight row L2 norms `row_norms = torch.norm(W.float(), dim=1)`. Concurrently, Compute combined score array `combined = row_norms * (1.0 + importance)`.
+
 4. **Task-Guided Pruning**:
-   - Extract top indices `_, top_idx = torch.topk(combined, keep_n)`.
-   - Construct binary mask vector `mask[top_idx] = 1.0`.
-   - Apply row mask `W * mask.unsqueeze(1)`.
+Extract top indices `_, top_idx = torch.topk(combined, keep_n)`. Furthermore, Construct binary mask vector `mask[top_idx] = 1.0`. Concurrently, Apply row mask `W * mask.unsqueeze(1)`.
+
 
 ```
 Task Type ('qa'/'code') ──► Generate CPT Importance ──► Calculate Combined Scores

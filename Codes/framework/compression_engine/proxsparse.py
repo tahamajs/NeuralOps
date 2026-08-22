@@ -55,7 +55,7 @@ class ProxSparsePruner(BaseCompressor):
         self.stats: Dict[str, Any] = {}
 
     def _soft_threshold(self, tensor: torch.Tensor, threshold: float) -> torch.Tensor:
-        """Soft-thresholding operator prox_{\lambda ||.||_1}."""
+        r"""Soft-thresholding operator prox_{\lambda ||.||_1}."""
         return torch.sign(tensor) * torch.clamp(torch.abs(tensor) - threshold, min=0.0)
 
     def _project_sparse(self, tensor: torch.Tensor) -> torch.Tensor:
@@ -116,6 +116,8 @@ ProxSparseCompressor = ProxSparsePruner
 
 
 @COMPRESSOR_REGISTRY.register("proxsparse")
+@COMPRESSOR_REGISTRY.register("proxsparse_pruner")
+@COMPRESSOR_REGISTRY.register("proxsparse_compressor")
 def proxsparse_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for ProxSparse pruner."""
     sparsity = getattr(comp_config, "proxsparse_sparsity", getattr(comp_config, "sparsity", 0.5)) if comp_config else kwargs.get("sparsity", 0.5)

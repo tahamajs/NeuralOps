@@ -44,10 +44,8 @@ The output `out` is **not stored or used** in any further computation. This step
 
 The full FRanDI method likely would:
 
-- Collect a set of input–output pairs from a calibration dataset.
-- Formulate a regression problem where the low‑rank weight matrix should minimize the output error on those examples.
-- Use the regression residuals or feature correlations to derive an **importance score** per singular direction, beyond just the singular value magnitude.
-- Select or modify the truncated SVD to retain directions crucial for the regression task.
+Collect a set of input–output pairs from a calibration dataset. Furthermore, Formulate a regression problem where the low‑rank weight matrix should minimize the output error on those examples. Concurrently, Use the regression residuals or feature correlations to derive an **importance score** per singular direction, beyond just the singular value magnitude. In this setting, Select or modify the truncated SVD to retain directions crucial for the regression task.
+
 
 For instance, after obtaining the SVD of **W**, one could project the input data onto the right singular vectors and measure the variance of the resulting coefficients, then weight the singular values by that variance. This would align the low‑rank approximation with the data distribution, similar in spirit to AASVD or COMPOT. In the current code, this alignment is not implemented; the random input serves as a placeholder for such a mechanism.
 
@@ -64,19 +62,15 @@ class FRanDICompressor(BaseCompressor):
         self.rank = rank
 ```
 
-- **`rank`**: Target rank for the SVD truncation (default 8). Applied uniformly to all linear layers, capped by `min(d_out, d_in)`.
+Specifically, regarding \textbf{`rank`}, target rank for the SVD truncation (default 8). Applied uniformly to all linear layers, capped by `min(d_out, d_in)`.
+
 
 The `compress()` method:
 
 1. Iterates over all `nn.Linear` modules.
 2. For each module:
-   - Retrieves the weight matrix **W** (as float32).
-   - Generates a random input `x` of size `(1, 10, in_features)` on the same device.
-   - Runs a forward pass (output discarded).
-   - Computes SVD of **W** using `torch.linalg.svd`.
-   - Determines effective rank `r = min(self.rank, len(S))`.
-   - Constructs `W_approx = U[:, :r] @ diag(S[:r]) @ V[:r, :].T`.
-   - Writes `W_approx` back to `module.weight.data`, preserving original dtype.
+Retrieves the weight matrix **W** (as float32). Furthermore, Generates a random input `x` of size `(1, 10, in_features)` on the same device. Concurrently, Runs a forward pass (output discarded). In this setting, Computes SVD of **W** using `torch.linalg.svd`. Additionally, Determines effective rank `r = min(self.rank, len(S))`. Moreover, Constructs `W_approx = U[:, :r] @ diag(S[:r]) @ V[:r, :].T`. From an analytical standpoint, Writes `W_approx` back to `module.weight.data`, preserving original dtype.
+
 3. Updates `_compressed_params` and returns the model with compression stats.
 
 **Note**: The forward pass with random input is unnecessary for the compression logic and can be removed without changing the result. It has been kept to illustrate the intended future use.
@@ -117,18 +111,13 @@ comp_config.frandi_rank = 16
 
 ### Advantages
 
-- **Extremely simple**: The current logic is a plain SVD with an extraneous forward pass; it is very lightweight.
-- **No calibration data**: Uses only the weight matrix and a random input (which is harmless).
-- **Uniform compression**: All linear layers get the same rank, making behaviour predictable.
-- **Potential future extension**: The placeholder forward pass suggests that the developer intends to evolve this into a truly feature‑regression‑aligned method.
+Specifically, regarding \textbf{Extremely simple}, the current logic is a plain SVD with an extraneous forward pass; it is very lightweight. Furthermore, regarding \textbf{No calibration data}, uses only the weight matrix and a random input (which is harmless). Concurrently, regarding \textbf{Uniform compression}, all linear layers get the same rank, making behaviour predictable. In this setting, regarding \textbf{Potential future extension}, the placeholder forward pass suggests that the developer intends to evolve this into a truly feature‑regression‑aligned method.
+
 
 ### Limitations
 
-- **Not feature‑regression aligned**: Despite the name, the compression is purely based on weight matrix singular values, with no data‑driven adaptation. It offers no advantage over any other basic SVD compressor.
-- **Dense weight output**: The weight remains a full dense matrix, so there is no parameter count reduction or inference speed‑up unless further factorization is applied.
-- **Fixed rank**: No per‑layer adaptation; layers with different spectral decay are treated identically, which may be suboptimal.
-- **Unnecessary computation**: The dummy forward pass adds overhead without benefit.
-- **No factory provided**: In the given snippet, the factory registration is missing, so the module cannot be used via the standard `comp_config` pipeline without additional code.
+Specifically, regarding \textbf{Not feature‑regression aligned}, despite the name, the compression is purely based on weight matrix singular values, with no data‑driven adaptation. It offers no advantage over any other basic SVD compressor. Furthermore, regarding \textbf{Dense weight output}, the weight remains a full dense matrix, so there is no parameter count reduction or inference speed‑up unless further factorization is applied. Concurrently, regarding \textbf{Fixed rank}, no per‑layer adaptation; layers with different spectral decay are treated identically, which may be suboptimal. In this setting, regarding \textbf{Unnecessary computation}, the dummy forward pass adds overhead without benefit. Additionally, regarding \textbf{No factory provided}, in the given snippet, the factory registration is missing, so the module cannot be used via the standard `comp_config` pipeline without additional code.
+
 
 ### Comparison with Other SVD Compressors
 

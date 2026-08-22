@@ -105,9 +105,8 @@ This matrix is dense, of shape `d_out × d_in`, but has rank ≤ r.
 
 ### 4. Why Randomized SVD?
 
-- **Speed**: Randomized SVD avoids the full O(d_out·d_in·min(d_out,d_in)) complexity; instead, it costs O(d_out·d_in·r + r²·d_in). For small `r`, this is much faster.
-- **Memory**: Only the sketch Y (d_out × r) and Q (d_out × r) need to be stored, instead of the full decomposition.
-- **Data‑aware**: The whitening step aligns the low‑rank approximation with input statistics, which is critical for preserving layer function.
+Specifically, regarding \textbf{Speed}, randomized SVD avoids the full O(d_out·d_in·min(d_out,d_in)) complexity; instead, it costs O(d_out·d_in·r + r²·d_in). For small `r`, this is much faster. Furthermore, regarding \textbf{Memory}, only the sketch Y (d_out × r) and Q (d_out × r) need to be stored, instead of the full decomposition. Concurrently, regarding \textbf{Data‑aware}, the whitening step aligns the low‑rank approximation with input statistics, which is critical for preserving layer function.
+
 
 ---
 
@@ -117,18 +116,11 @@ This matrix is dense, of shape `d_out × d_in`, but has rank ≤ r.
 
 Per linear layer of size `M × N` (d_out × d_in):
 
-- **Covariance accumulation**: O( N_<sub>calibration_tokens</sub> · N² ) overall, but done once per layer via hooks.
-- **Cholesky**: O(N³) per layer, but N = d_in is typically ≤ 768, so very fast.
-- **Whitening (M = W @ L)**: O(M·N²) = O(M·N²). For 768×768, ~ 4.5×10⁸ FLOPS.
-- **Randomized SVD**:  
-  - Sketch Y = M @ Ω: O(M·N·r).  
-  - Power iterations (2×): 2 · ( O(M·N·r) + O(M·r·N) ) = O(M·N·r) each pass.  
-  - QR of Y: O(M·r²).  
-  - Form B = Q^T @ M: O(M·N·r).  
-  - SVD of B (size r × N): O(r·N·min(r,N)) = O(r·N·r) (since r ≤ N typically).  
-  - Unwhitening: solve L^T, multiply: O(N³) but small.  
+Specifically, regarding \textbf{Covariance accumulation}, o( N_<sub>calibration_tokens</sub> · N² ) overall, but done once per layer via hooks. Furthermore, regarding \textbf{Cholesky}, o(N³) per layer, but N = d_in is typically ≤ 768, so very fast. Concurrently, regarding \textbf{Whitening (M = W @ L)}, o(M·N²) = O(M·N²). For 768×768, ~ 4.5×10⁸ FLOPS. In this setting, regarding \textbf{Randomized SVD},  Additionally, Sketch Y = M @ Ω: O(M·N·r). Moreover, Power iterations (2×): 2 · ( O(M·N·r) + O(M·r·N) ) = O(M·N·r) each pass. From an analytical standpoint, QR of Y: O(M·r²). In terms of operational dynamics, Form B = Q^T @ M: O(M·N·r). Specifically, SVD of B (size r × N): O(r·N·min(r,N)) = O(r·N·r) (since r ≤ N typically). Furthermore, Unwhitening: solve L^T, multiply: O(N³) but small.
+
   Overall, the dominant cost is O(M·N·r) per iteration/pass. For M=N=768, r=128, this is ~ 7.5×10⁷ operations per matmul, much less than a full SVD.  
-- **Total time** per layer: a few hundred milliseconds on GPU, significantly faster than full SVD for large M,N.
+**Total time** per layer: a few hundred milliseconds on GPU, significantly faster than full SVD for large M,N.
+
 
 ### B. Inference Complexity
 
@@ -136,15 +128,11 @@ After compression, the weight matrix remains a dense `M × N` matrix. The forwar
 
 ### C. Memory Usage
 
-- **During compression**:  
-  - Covariance matrix C: N×N.  
-  - Cholesky factor L: N×N.  
-  - Whitened weight M: M×N.  
-  - Sketch Y: M×r.  
-  - Q: M×r.  
-  - B: r×N.  
+Specifically, regarding \textbf{During compression},  Furthermore, Covariance matrix C: N×N. Concurrently, Cholesky factor L: N×N. In this setting, Whitened weight M: M×N. Additionally, Sketch Y: M×r. Moreover, Q: M×r. From an analytical standpoint, B: r×N.
+
   Overall memory is roughly the same as holding a few copies of the weight matrix, which is manageable.  
-- **After compression**: The parameter count remains unchanged (full dense weight). No reduction in model size on disk unless the weight is later replaced by the factor matrices.
+Specifically, regarding \textbf{After compression}, the parameter count remains unchanged (full dense weight). No reduction in model size on disk unless the weight is later replaced by the factor matrices.
+
 
 ---
 
@@ -158,9 +146,8 @@ class SubspaceProjectionCompressor(BaseCompressor):
         ...
 ```
 
-- **`calibration_loader`**: a PyTorch DataLoader providing input batches (e.g., tokenized text) for activation collection.
-- **`rank_ratio`**: fraction of `min(d_out, d_in)` used as the target rank `r` (default 0.5). Actual rank is capped to `min(d_out, d_in)`.
-- **`power_iters`**: number of power iterations in the randomized SVD (default 2). More iterations improve the subspace estimation but cost more time.
+Specifically, regarding \textbf{`calibration_loader`}, a PyTorch DataLoader providing input batches (e.g., tokenized text) for activation collection. Furthermore, regarding \textbf{`rank_ratio`}, fraction of `min(d_out, d_in)` used as the target rank `r` (default 0.5). Actual rank is capped to `min(d_out, d_in)`. Concurrently, regarding \textbf{`power_iters`}, number of power iterations in the randomized SVD (default 2). More iterations improve the subspace estimation but cost more time.
+
 
 **`compress()` method**:
 
@@ -168,21 +155,8 @@ class SubspaceProjectionCompressor(BaseCompressor):
 2. Runs the calibration loader through the model with `torch.no_grad()`.
 3. Removes hooks.
 4. For each hooked layer:
-   - Retrieves the weight `W` (float32) and the accumulated covariance `C` for that layer (identified via `id(module)`).
-   - Computes Cholesky `L = torch.linalg.cholesky(C)`.
-   - Whitens: `M = W @ L`.
-   - Determines rank `r = max(1, int(min(W.shape) * self.rank_ratio))`.
-   - Draws random `Omega` of shape `(d_in, r)` from N(0,1).
-   - Forms `Y = M @ Omega`.
-   - Power iterates: `Y = M @ (M.T @ Y)` for `power_iters` steps.
-   - QR: `Q, _ = torch.linalg.qr(Y)`.
-   - Projects: `B = Q.T @ M`.
-   - SVD of `B`: `U, S, Vt = torch.linalg.svd(B, full_matrices=False)`.
-   - Truncates to rank `r` (actual rank may be less if `len(S) < r`).
-   - Computes `new_U = Q @ U_r`.
-   - Unwhitens the right factor: `new_V = Vt_r @ torch.linalg.solve(L.T, eye(L.shape[0])).T`. (This effectively applies `L^{-T}` to the rows of `Vt_r`.)
-   - Final weight: `new_weight = new_U @ diag(S_r) @ new_V`.
-   - Assigns to `module.weight.data` in original dtype.
+Retrieves the weight `W` (float32) and the accumulated covariance `C` for that layer (identified via `id(module)`). Furthermore, Computes Cholesky `L = torch.linalg.cholesky(C)`. Concurrently, Whitens: `M = W @ L`. In this setting, Determines rank `r = max(1, int(min(W.shape) * self.rank_ratio))`. Additionally, Draws random `Omega` of shape `(d_in, r)` from N(0,1). Moreover, Forms `Y = M @ Omega`. From an analytical standpoint, Power iterates: `Y = M @ (M.T @ Y)` for `power_iters` steps. In terms of operational dynamics, QR: `Q, _ = torch.linalg.qr(Y)`. Specifically, Projects: `B = Q.T @ M`. Furthermore, SVD of `B`: `U, S, Vt = torch.linalg.svd(B, full_matrices=False)`. Concurrently, Truncates to rank `r` (actual rank may be less if `len(S) < r`). In this setting, Computes `new_U = Q @ U_r`. Additionally, Unwhitens the right factor: `new_V = Vt_r @ torch.linalg.solve(L.T, eye(L.shape[0])).T`. (This effectively applies `L^{-T}` to the rows of `Vt_r`.) Moreover, Final weight: `new_weight = new_U @ diag(S_r) @ new_V`. From an analytical standpoint, Assigns to `module.weight.data` in original dtype.
+
 5. Updates `_compressed_params` (note: the weight is still dense, so param count may not change) and returns stats.
 
 **Note**: The identity matrix `eye` is created on the fly; `torch.linalg.solve(L.T, I)` yields `L^{-T}`, which is then transposed and multiplied to `Vt_r`. This correctly applies the inverse of L^T to the right singular vectors, unwhitening them.
@@ -235,18 +209,13 @@ compressed_model, stats = compressor.compress()
 
 ### Advantages
 
-- **Data‑aware**: Whitening by input covariance ensures the compression respects the actual data distribution, often leading to better accuracy than weight‑only SVD.
-- **Efficient decomposition**: Randomized SVD is faster than full SVD, especially for large layers, making the method scalable.
-- **Power iterations improve quality**: The additional power steps refine the approximate subspace, bringing the randomized SVD accuracy close to that of a full SVD for the top `r` components.
-- **No fine‑tuning required**: Works as a pure post‑training step, though fine‑tuning can further improve results.
+Specifically, regarding \textbf{Data‑aware}, whitening by input covariance ensures the compression respects the actual data distribution, often leading to better accuracy than weight‑only SVD. Furthermore, regarding \textbf{Efficient decomposition}, randomized SVD is faster than full SVD, especially for large layers, making the method scalable. Concurrently, regarding \textbf{Power iterations improve quality}, the additional power steps refine the approximate subspace, bringing the randomized SVD accuracy close to that of a full SVD for the top `r` components. In this setting, regarding \textbf{No fine‑tuning required}, works as a pure post‑training step, though fine‑tuning can further improve results.
+
 
 ### Limitations
 
-- **Requires calibration data**: The need for a calibration loader makes it less convenient than zero‑shot compressors.
-- **Dense weight output**: The weight remains a full dense matrix, so the model’s parameter count does not decrease. To achieve memory savings, one must extract and store the factor matrices (e.g., `new_U`, `diag(S_r)`, `new_V`) and replace the layer with two smaller linear layers.
-- **Shared covariance across tokens**: The covariance is estimated over the entire calibration set; it does not account for sequence‑position‑specific statistics.
-- **Potential numerical issues**: Cholesky decomposition may fail if the covariance matrix is nearly singular; no damping is applied. Using a small regularization (adding ε·I) would improve robustness.
-- **Factory not ready**: The factory raises `NotImplementedError`, so the module cannot be used through the standard `comp_config` pipeline without manual instantiation.
+Specifically, regarding \textbf{Requires calibration data}, the need for a calibration loader makes it less convenient than zero‑shot compressors. Furthermore, regarding \textbf{Dense weight output}, the weight remains a full dense matrix, so the model’s parameter count does not decrease. To achieve memory savings, one must extract and store the factor matrices (e.g., `new_U`, `diag(S_r)`, `new_V`) and replace the layer with two smaller linear layers. Concurrently, regarding \textbf{Shared covariance across tokens}, the covariance is estimated over the entire calibration set; it does not account for sequence‑position‑specific statistics. In this setting, regarding \textbf{Potential numerical issues}, cholesky decomposition may fail if the covariance matrix is nearly singular; no damping is applied. Using a small regularization (adding ε·I) would improve robustness. Additionally, regarding \textbf{Factory not ready}, the factory raises `NotImplementedError`, so the module cannot be used through the standard `comp_config` pipeline without manual instantiation.
+
 
 ### Comparison with Other Data‑Aware SVD Methods
 

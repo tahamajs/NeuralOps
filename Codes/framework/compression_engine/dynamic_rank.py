@@ -612,3 +612,26 @@ class DynamicEntropySVDCompressorRegistered(DynamicEntropySVDCompressor):
 @COMPRESSOR_REGISTRY.register("entropy_rank_allocator")
 class EntropyRankAllocatorRegistered(DynamicEntropySVDCompressor):
     pass
+
+
+def dynamic_entropy_svd_factory(
+    model: Any, comp_config: Any = None, **kwargs: Any
+) -> nn.Module:
+    """Dynamic Entropy SVD factory function."""
+    compressor = DynamicEntropySVDCompressor(model, comp_config=comp_config, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model
+
+
+dynamic_rank_factory = dynamic_entropy_svd_factory
+entropy_rank_allocator_factory = dynamic_entropy_svd_factory
+
+__all__ = [
+    "compute_singular_entropy",
+    "allocate_entropy_ranks",
+    "DynamicSVDLinear",
+    "DynamicEntropySVDCompressor",
+    "dynamic_entropy_svd_factory",
+    "dynamic_rank_factory",
+    "entropy_rank_allocator_factory",
+]

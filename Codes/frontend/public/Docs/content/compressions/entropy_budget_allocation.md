@@ -103,31 +103,24 @@ class EntropyBudgetCompressor(BaseCompressor):
         self.total_budget_ratio = total_budget_ratio
 ```
 
-- **`calibration_loader`**: A PyTorch DataLoader yielding batches of input data (dictionaries compatible with the model’s forward method).
-- **`total_budget_ratio`**: Fraction of total singular components to keep (default 0.7). Must be in (0,1].
+Specifically, regarding \textbf{`calibration_loader`}, a PyTorch DataLoader yielding batches of input data (dictionaries compatible with the model’s forward method). Furthermore, regarding \textbf{`total_budget_ratio`}, fraction of total singular components to keep (default 0.7). Must be in (0,1].
+
 
 #### `collect_covariances()`
-- Registers forward hooks on all `nn.Linear` layers.
-- Each hook captures the input tensor, flattens batch and sequence dimensions, computes the covariance `X^T X / N`, and accumulates it (since multiple batches are processed).
-- Iterates through the calibration loader with `torch.no_grad()`, performing forward passes to collect covariances.
-- Returns a dictionary mapping layer names to their covariance matrices (on the same device as the model).
+Registers forward hooks on all `nn.Linear` layers. Furthermore, Each hook captures the input tensor, flattens batch and sequence dimensions, computes the covariance `X^T X / N`, and accumulates it (since multiple batches are processed). Concurrently, Iterates through the calibration loader with `torch.no_grad()`, performing forward passes to collect covariances. In this setting, Returns a dictionary mapping layer names to their covariance matrices (on the same device as the model).
+
 
 #### `compress()`
 1. Collects covariances via `collect_covariances()`.
 2. For each linear layer with a covariance:
-   - Extracts weight **W** (float32).
-   - Computes Cholesky decomposition `L = torch.linalg.cholesky(C)` (requires C to be positive definite; in practice, a small regularisation might be needed, but not explicitly added here).
-   - Computes whitened weight `M = W @ L`.
-   - Performs SVD on `M`: `U, S, _ = torch.linalg.svd(M, full_matrices=False)`.
-   - Computes total entropy `E = 0.5 * Σ log(2π e σ_i²)`.
-   - For each singular index `i` and its value `σ_i`, appends `(name, i, σ_i, E)` to a global list `components`.
+Extracts weight **W** (float32). Furthermore, Computes Cholesky decomposition `L = torch.linalg.cholesky(C)` (requires C to be positive definite; in practice, a small regularisation might be needed, but not explicitly added here). Concurrently, Computes whitened weight `M = W @ L`. In this setting, Performs SVD on `M`: `U, S, _ = torch.linalg.svd(M, full_matrices=False)`. Additionally, Computes total entropy `E = 0.5 * Σ log(2π e σ_i²)`. Moreover, For each singular index `i` and its value `σ_i`, appends `(name, i, σ_i, E)` to a global list `components`.
+
 3. Sorts `components` by `importance = σ_i² / E` descending.
 4. Determines `total_components = len(components)`, `keep_count = max(1, int(total_components * total_budget_ratio))`.
 5. Selects the top‑ranked components; builds a set `keep_set` of `(layer_name, component_index)`.
 6. For each linear layer:
-   - Counts its surviving components → `rank`.
-   - If `rank == 0`, continues (skips layer, leaving weight unchanged).
-   - Otherwise, computes SVD of original **W**, truncates to `r = min(rank, len(S))`, reconstructs low‑rank weight, and writes back.
+Counts its surviving components → `rank`. Furthermore, If `rank == 0`, continues (skips layer, leaving weight unchanged). Concurrently, Otherwise, computes SVD of original **W**, truncates to `r = min(rank, len(S))`, reconstructs low‑rank weight, and writes back.
+
 
 **Important**: The SVD of **W** is performed **again** on the original weight, not on **M**. This is because the truncation is applied to **W**, not to the whitened weight. The global selection of component indices refers to the singular values of **M**, but the truncation is on **W**’s SVD, assuming a correspondence between the orders. This may not be strictly correct, as the singular values of **W** and **M** differ; the component ranking should ideally be applied to **W**’s singular values after weighting by whitening factors, or directly truncate **M** and then unwhiten. The current implementation has a conceptual gap, but the idea is to use the ranking from whitened entropy to decide how many of **W**’s singular values to keep.
 
@@ -181,20 +174,13 @@ The calibration loader should provide data in the same format as the model’s f
 
 ### Advantages
 
-- **Data‑driven importance**: Incorporates activation statistics via covariance, making the compression sensitive to the actual data distribution.
-- **Global budget control**: A single ratio dictates the overall compression, automatically allocating more components to critical layers.
-- **Whitening**: Removes input correlations, giving a more faithful measure of each singular direction’s contribution.
-- **No per‑layer rank tuning**: Ranks are determined automatically from the budget and the global ranking.
+Specifically, regarding \textbf{Data‑driven importance}, incorporates activation statistics via covariance, making the compression sensitive to the actual data distribution. Furthermore, regarding \textbf{Global budget control}, a single ratio dictates the overall compression, automatically allocating more components to critical layers. Concurrently, regarding \textbf{Whitening}, removes input correlations, giving a more faithful measure of each singular direction’s contribution. In this setting, regarding \textbf{No per‑layer rank tuning}, ranks are determined automatically from the budget and the global ranking.
+
 
 ### Limitations
 
-- **Calibration data required**: A representative dataset and loader are needed, increasing setup complexity.
-- **Conceptual mismatch**: The ranking is based on singular values of the whitened weight **M**, but truncation is applied to **W**’s SVD. The indices of components may not align, potentially causing suboptimal compression.
-- **Cholesky may fail**: If covariance is not positive definite (due to numerical issues or insufficient samples), `torch.linalg.cholesky` will raise an error. A regularisation term (e.g., adding a small diagonal) is not included.
-- **Layer entropy shared**: All singular components of a layer are tagged with the same total layer entropy; a more precise per‑component entropy (e.g., `½ log(2π e σ_i²)`) would be more accurate but is not used.
-- **Layer skipped if no components kept**: If a layer loses all its components in the ranking, it is left uncompressed. This can cause the actual compression ratio to deviate from the target budget.
-- **High memory usage**: Storing full covariances and performing SVD on **M** can be memory‑intensive for large layers.
-- **Factory not implemented**: The factory raises an error, meaning the module cannot be used via the standard `comp_config` pipeline without modification.
+Specifically, regarding \textbf{Calibration data required}, a representative dataset and loader are needed, increasing setup complexity. Furthermore, regarding \textbf{Conceptual mismatch}, the ranking is based on singular values of the whitened weight **M**, but truncation is applied to **W**’s SVD. The indices of components may not align, potentially causing suboptimal compression. Concurrently, regarding \textbf{Cholesky may fail}, if covariance is not positive definite (due to numerical issues or insufficient samples), `torch.linalg.cholesky` will raise an error. A regularisation term (e.g., adding a small diagonal) is not included. In this setting, regarding \textbf{Layer entropy shared}, all singular components of a layer are tagged with the same total layer entropy; a more precise per‑component entropy (e.g., `½ log(2π e σ_i²)`) would be more accurate but is not used. Additionally, regarding \textbf{Layer skipped if no components kept}, if a layer loses all its components in the ranking, it is left uncompressed. This can cause the actual compression ratio to deviate from the target budget. Moreover, regarding \textbf{High memory usage}, storing full covariances and performing SVD on **M** can be memory‑intensive for large layers. From an analytical standpoint, regarding \textbf{Factory not implemented}, the factory raises an error, meaning the module cannot be used via the standard `comp_config` pipeline without modification.
+
 
 ### Comparison with Other Adaptive Methods
 

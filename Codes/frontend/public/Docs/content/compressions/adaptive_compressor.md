@@ -100,9 +100,8 @@ Replacing $W_Q, W_K, W_V, W_O$ with factorized operators reduces total Multihead
 ### 4.1 Attention Parameter Formulas
 For a multi-head attention layer with model dimension $d_{\text{model}}$:
 
-- **Original Parameters**: $P_{\text{attn}} = 4 \cdot d_{\text{model}}^2 + 4 \cdot d_{\text{model}}$
-- **Compressed Parameters**: $P_{\text{compressed}} = \sum_{m \in \{Q,K,V,O\}} \left( r_m^* \cdot (2 d_{\text{model}} + 1) + d_{\text{model}} \right)$
-- **Average Compression Ratio**: $\mathcal{C}_R \approx \frac{4 d_{\text{model}}}{2 \cdot \bar{r} \cdot 4} = \frac{d_{\text{model}}}{2 \bar{r}}$
+Specifically, regarding \textbf{Original Parameters}, $P_{\text{attn}} = 4 \cdot d_{\text{model}}^2 + 4 \cdot d_{\text{model}}$ Furthermore, regarding \textbf{Compressed Parameters}, $P_{\text{compressed}} = \sum_{m \in \{Q,K,V,O\}} \left( r_m^* \cdot (2 d_{\text{model}} + 1) + d_{\text{model}} \right)$ Concurrently, regarding \textbf{Average Compression Ratio}, $\mathcal{C}_R \approx \frac{4 d_{\text{model}}}{2 \cdot \bar{r} \cdot 4} = \frac{d_{\text{model}}}{2 \bar{r}}$
+
 
 ### 4.2 Resource Profile Table ($d_{\text{model}} = 4096$, $\eta = 0.95$, $r_{\min} = 16$)
 

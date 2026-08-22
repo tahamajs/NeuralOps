@@ -80,6 +80,7 @@ class ASTPruner(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("ast_pruner")
+@COMPRESSOR_REGISTRY.register("ast")
 def ast_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for AST pruner."""
     block_size = getattr(comp_config, "ast_block_size", getattr(comp_config, "block_size", 4)) if comp_config else kwargs.get("block_size", 4)

@@ -12,16 +12,17 @@ class UniQLCompressor(BaseCompressor):
         self.bits = bits
 
     @staticmethod
-    def _quantize(tensor, bits) -> Any:
-        """ quantize."""
+    def _quantize(tensor: torch.Tensor, bits: int) -> torch.Tensor:
+        """Uniform min-max quantization for FP16/FP32 stability."""
         if bits >= 32:
             return tensor.float()
         t = tensor.float()
         min_val, max_val = t.min(), t.max()
         if max_val == min_val:
             return t
-        scale = (max_val - min_val) / (2**bits - 1)
-        quant = torch.round((t - min_val) / scale) * scale + min_val
+        qmax = float(max((2**bits) - 1, 1))
+        scale = torch.clamp((max_val - min_val) / qmax, min=1e-8)
+        quant = torch.clamp(torch.round((t - min_val) / scale), 0.0, qmax) * scale + min_val
         return quant
 
     def compress(self) -> Any:
@@ -30,7 +31,7 @@ class UniQLCompressor(BaseCompressor):
             if isinstance(module, torch.nn.Linear):
                 W = module.weight.data.float()
                 U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                r = min(self.rank, min(W.shape))
+                r = max(1, min(self.rank, min(W.shape), len(S)))
                 U_r = U[:, :r]
                 S_r = S[:r]
                 Vt_r = Vt[:r, :]
@@ -38,9 +39,23 @@ class UniQLCompressor(BaseCompressor):
                 U_q = self._quantize(U_r, self.bits)
                 S_q = self._quantize(S_r, self.bits)
                 Vt_q = self._quantize(Vt_r, self.bits)
-                W_new = U_q @ torch.diag(S_q) @ Vt_q
-                module.weight.data = W_new.to(dtype=module.weight.dtype)
+                W_new = (U_q * S_q.unsqueeze(0)) @ Vt_q
+                module.weight.data = W_new.to(dtype=module.weight.dtype, device=module.weight.device)
                 if module.bias is not None:
-                    module.bias.data = self._quantize(module.bias.data, self.bits)
+                    b_q = self._quantize(module.bias.data, self.bits)
+                    module.bias.data = b_q.to(dtype=module.bias.dtype, device=module.bias.device)
         self._compressed_params = self._count_params(self.model)
         return self.model, self.get_compression_stats()
+
+
+from framework.core.registry import COMPRESSOR_REGISTRY
+
+
+@COMPRESSOR_REGISTRY.register("uniql")
+def uniql_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
+    """UniQL factory."""
+    rank = kwargs.get("rank", getattr(comp_config, "uniql_rank", 64) if comp_config is not None else 64)
+    bits = kwargs.get("bits", getattr(comp_config, "uniql_bits", 8) if comp_config is not None else 8)
+    compressor = UniQLCompressor(model, rank=rank, bits=bits, **kwargs)
+    compressed_model, _ = compressor.compress()
+    return compressed_model

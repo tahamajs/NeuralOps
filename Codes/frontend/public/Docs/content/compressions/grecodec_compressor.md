@@ -55,7 +55,8 @@ If a `calibration_loader` is provided, the compressor registers forward hooks on
 
 After optionally collecting activations, the model is set back to training mode and the compression proceeds:
 
-- For each `nn.Linear`:
+For each `nn.Linear`:
+
   1. Compute SVD of the weight matrix.
   2. Determine rank `k` using the selected rule.
   3. Construct the low‑rank weight `W_approx`.
@@ -75,9 +76,8 @@ class FRanDICompressor(BaseCompressor):
         ...
 ```
 
-- **`rank`**: Fixed rank used when `energy_threshold` is `None` (default 8).
-- **`energy_threshold`**: If set, overrides the fixed rank and selects per‑layer ranks to retain at least this fraction of singular value energy.
-- **`calibration_loader`**: Optional DataLoader; if provided, activations are collected (but not yet used).
+Specifically, regarding \textbf{`rank`}, fixed rank used when `energy_threshold` is `None` (default 8). Furthermore, regarding \textbf{`energy_threshold`}, if set, overrides the fixed rank and selects per‑layer ranks to retain at least this fraction of singular value energy. Concurrently, regarding \textbf{`calibration_loader`}, optional DataLoader; if provided, activations are collected (but not yet used).
+
 
 **`_select_rank(S)`**: Returns `min(rank, len(S))` if no energy threshold; else returns the smallest `k` such that cumulative energy ≥ threshold.
 
@@ -140,19 +140,13 @@ compressed_model, stats = compressor.compress()
 
 ### Advantages
 
-- **Dual rank control**: Provides both a simple fixed‑rank mode and an energy‑preserving adaptive mode, giving users flexibility.
-- **Energy‑threshold adaptivity**: Automatically assigns higher ranks to layers with slow singular value decay, preventing unnecessary damage to critical layers.
-- **Infrastructure for feature alignment**: The activation collection hooks lay the groundwork for future data‑driven compression, where the SVD could be weighted by input variance.
-- **No calibration needed for basic use**: Works out‑of‑the‑box with just a rank or energy threshold.
-- **Uniform interface**: Integrates smoothly with the compression registry.
+Specifically, regarding \textbf{Dual rank control}, provides both a simple fixed‑rank mode and an energy‑preserving adaptive mode, giving users flexibility. Furthermore, regarding \textbf{Energy‑threshold adaptivity}, automatically assigns higher ranks to layers with slow singular value decay, preventing unnecessary damage to critical layers. Concurrently, regarding \textbf{Infrastructure for feature alignment}, the activation collection hooks lay the groundwork for future data‑driven compression, where the SVD could be weighted by input variance. In this setting, regarding \textbf{No calibration needed for basic use}, works out‑of‑the‑box with just a rank or energy threshold. Additionally, regarding \textbf{Uniform interface}, integrates smoothly with the compression registry.
+
 
 ### Limitations
 
-- **Activations unused**: The current code does not actually align the SVD with the collected input features; the feature‑regression aspect is not yet implemented.
-- **Dense weight output**: The weight remains a full dense matrix; actual parameter reduction requires subsequent factorization.
-- **Fixed‑rank mode applies same rank to all layers**: May be suboptimal; energy threshold mode mitigates this.
-- **SVD cost**: Full SVD on GPU for every linear layer can be expensive for very large models; no approximate SVD fallback.
-- **Bias unchanged**: Could slightly mismatch the compressed weight.
+Specifically, regarding \textbf{Activations unused}, the current code does not actually align the SVD with the collected input features; the feature‑regression aspect is not yet implemented. Furthermore, regarding \textbf{Dense weight output}, the weight remains a full dense matrix; actual parameter reduction requires subsequent factorization. Concurrently, regarding \textbf{Fixed‑rank mode applies same rank to all layers}, may be suboptimal; energy threshold mode mitigates this. In this setting, regarding \textbf{SVD cost}, full SVD on GPU for every linear layer can be expensive for very large models; no approximate SVD fallback. Additionally, regarding \textbf{Bias unchanged}, could slightly mismatch the compressed weight.
+
 
 ### Comparison with Other SVD‑Based Compressors
 

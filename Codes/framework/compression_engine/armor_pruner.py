@@ -109,6 +109,7 @@ class ARMORPruner(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("armor_pruner")
+@COMPRESSOR_REGISTRY.register("armor")
 def armor_pruner_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """Factory function for ARMOR pruner."""
     block_size = getattr(comp_config, "armor_block_size", getattr(comp_config, "block_size", 4)) if comp_config else kwargs.get("block_size", 4)
