@@ -193,10 +193,10 @@ class CacheNotesCompressor(BaseCompressor):
 
 
 @COMPRESSOR_REGISTRY.register("cachenotes")
-def cachenotes_factory(model: nn.Module, comp_config: Any = None) -> nn.Module:
+def cachenotes_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) -> nn.Module:
     """CacheNotes compressor factory function."""
-    task_type = getattr(comp_config, "cachenotes_task", "qa") if comp_config else "qa"
-    keep_ratio = getattr(comp_config, "cachenotes_keep_ratio", 0.3) if comp_config else 0.3
-    compressor = CacheNotesCompressor(model, task_type=task_type, keep_ratio=keep_ratio)
+    task_type = kwargs.pop("task_type", getattr(comp_config, "cachenotes_task", "qa") if comp_config else "qa")
+    keep_ratio = kwargs.pop("keep_ratio", getattr(comp_config, "cachenotes_keep_ratio", 0.3) if comp_config else 0.3)
+    compressor = CacheNotesCompressor(model, task_type=task_type, keep_ratio=keep_ratio, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model

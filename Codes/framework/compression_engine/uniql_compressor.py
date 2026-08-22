@@ -54,8 +54,8 @@ from framework.core.registry import COMPRESSOR_REGISTRY
 @COMPRESSOR_REGISTRY.register("uniql")
 def uniql_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     """UniQL factory."""
-    rank = kwargs.get("rank", getattr(comp_config, "uniql_rank", 64) if comp_config is not None else 64)
-    bits = kwargs.get("bits", getattr(comp_config, "uniql_bits", 8) if comp_config is not None else 8)
+    rank = kwargs.pop("rank", getattr(comp_config, "uniql_rank", 64) if comp_config is not None else 64)
+    bits = kwargs.pop("bits", getattr(comp_config, "uniql_bits", 8) if comp_config is not None else 8)
     compressor = UniQLCompressor(model, rank=rank, bits=bits, **kwargs)
     compressed_model, _ = compressor.compress()
     return compressed_model
