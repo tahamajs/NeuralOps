@@ -614,3 +614,5 @@ ompleted)
 [2026-08-22 04:23:45] [Worker-1] [31/126] NOTICE: attn=galerkin | task=sst2 | Error: The size of tensor a (128) must match the size of tensor b (64) at non-singleton dimension 3 | Time: 0.6s
 [2026-08-22 04:23:47] [Worker-1] [32/126] >> Launching: attn=gated_delta_net | task=sst2 | seed=42
 [2026-08-22 04:24:50] [Worker-1] [32/126] << SUCCESS: attn=gated_delta_net | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.6950 | Time: 63.0s
+[2026-08-22 04:24:53] [Worker-1] [33/126] >> Launching: attn=gated_delta_net_inject | task=sst2 | seed=42
+[2026-08-22 04:25:26] [Worker-1] [33/126] << SUCCESS: attn=gated_delta_net_inject | task=sst2 | Acc: 50.92% | F1: 33.74% | Loss: 0.7084 | Time: 33.2s
